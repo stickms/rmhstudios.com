@@ -9,6 +9,7 @@ import { networkClient, type ServerMessage, type LobbyListing } from '@/lib/kowl
 import { CLASS_DISPLAY, ALL_FIGHTERS } from '@/lib/kowloon-knockout/game/fighters/stats';
 import { TEAM_COLORS } from '@/lib/kowloon-knockout/game/config';
 import ModelPicker from '@/components/kowloon-knockout/ModelPicker';
+import './kk-screens.css';
 
 export default function MultiplayerLobby() {
     const { t } = useTranslation('c-kowloon-knockout');
@@ -123,53 +124,59 @@ export default function MultiplayerLobby() {
         if (inRoom) networkClient.setFighter(cls, myTeam, selectedModel);
     };
 
+    const selected = CLASS_DISPLAY[selectedClass];
+
     return (
-        <div className="lobby-container">
-            <motion.h1 className="lobby-title" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-                {t('versus-mode', { defaultValue: 'VERSUS MODE' })}
-            </motion.h1>
+        <div className="kk-screen kk-lobby">
+            <motion.div className="kk-head" initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
+                <span className="kk-ticket" aria-hidden="true">REEL 07 · FRAME 22A</span>
+                <h1 className="kk-title kk-title--yellow">{t('versus-mode', { defaultValue: 'VERSUS MODE' })}</h1>
+            </motion.div>
 
             <AnimatePresence mode="wait">
                 {!inRoom ? (
                     // ── Browser: public lobbies + create + join-by-code ──
-                    <motion.div key="browse" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, width: '100%', maxWidth: 560 }}>
+                    <motion.div key="browse" className="kk-lobby__col" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
 
-                        <div className="lobby-list">
-                            <div className="lobby-list-head">{t('open-lobbies', { defaultValue: 'OPEN LOBBIES' })}</div>
-                            {lobbies.length === 0 ? (
-                                <div className="lobby-status" style={{ padding: 16 }}>
-                                    {connecting ? t('connecting', { defaultValue: 'CONNECTING...' }) : t('no-lobbies', { defaultValue: 'NO OPEN LOBBIES — CREATE ONE!' })}
-                                </div>
-                            ) : lobbies.map((l) => {
-                                const d = CLASS_DISPLAY[l.host];
-                                return (
-                                    <button key={l.code} className="lobby-list-row" onClick={() => handleJoinListed(l.code)}>
-                                        <span style={{ color: d.color, flex: 1, textAlign: 'left' }}>{d.name}</span>
-                                        <span style={{ color: '#888' }}>{l.mode === 'teams' ? 'TEAMS' : 'FFA'}</span>
-                                        <span style={{ color: '#ffcc00' }}>{l.players}/{l.arenaSize}</span>
-                                        <span className="lobby-list-join">{t('join', { defaultValue: 'JOIN' })}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
+                        <section className="kk-panel kk-panel--yellow" aria-label={t('open-lobbies', { defaultValue: 'OPEN LOBBIES' })}>
+                            <h2 className="kk-panel-label">{t('open-lobbies', { defaultValue: 'OPEN LOBBIES' })}</h2>
+                            <div className="kk-lobby-list">
+                                {lobbies.length === 0 ? (
+                                    <div className="lobby-status">
+                                        {connecting ? t('connecting', { defaultValue: 'CONNECTING...' }) : t('no-lobbies', { defaultValue: 'NO OPEN LOBBIES — CREATE ONE!' })}
+                                    </div>
+                                ) : lobbies.map((l) => {
+                                    const d = CLASS_DISPLAY[l.host];
+                                    return (
+                                        <button key={l.code} type="button" className="lobby-list-row" style={{ '--seat': d.color } as React.CSSProperties} onClick={() => handleJoinListed(l.code)}>
+                                            <span className="kk-row-name">{d.name}</span>
+                                            <span className="kk-row-meta">{l.mode === 'teams' ? 'TEAMS' : 'FFA'}</span>
+                                            <span className="kk-row-count">{l.players}/{l.arenaSize}</span>
+                                            <span className="lobby-list-join">{t('join', { defaultValue: 'JOIN' })}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </section>
 
                         {!joining ? (
                             <div className="lobby-buttons">
-                                <motion.button className="neon-button neon-button-fight" onClick={handleCreate} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                <button type="button" className="neon-button neon-button-fight" onClick={handleCreate}>
                                     {t('create-room', { defaultValue: 'CREATE ROOM' })}
-                                </motion.button>
-                                <motion.button className="neon-button neon-button-versus" onClick={() => setJoining(true)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                </button>
+                                <button type="button" className="neon-button neon-button-versus" onClick={() => setJoining(true)}>
                                     {t('join-by-code', { defaultValue: 'JOIN BY CODE' })}
-                                </motion.button>
+                                </button>
                             </div>
                         ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div className="kk-join-row">
                                 <input className="lobby-input" type="text" maxLength={6}
+                                    aria-label={t('code-placeholder', { defaultValue: 'CODE' })}
+                                    autoCapitalize="characters" autoCorrect="off" spellCheck={false}
                                     placeholder={t('code-placeholder', { defaultValue: 'CODE' })}
                                     value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                                     onKeyDown={(e) => { if (e.key === 'Enter') handleJoinCode(); }} autoFocus />
-                                <button className="neon-button neon-button-fight" onClick={handleJoinCode}>{t('join', { defaultValue: 'JOIN' })}</button>
+                                <button type="button" className="neon-button neon-button-fight" onClick={handleJoinCode}>{t('join', { defaultValue: 'JOIN' })}</button>
                             </div>
                         )}
 
@@ -180,20 +187,19 @@ export default function MultiplayerLobby() {
                     </motion.div>
                 ) : (
                     // ── In a room ──
-                    <motion.div key="room" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, width: '100%', maxWidth: 560 }}>
+                    <motion.div key="room" className="kk-lobby__col" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
 
                         {roomCode && (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 10 }}>
+                            <div className="kk-room">
                                 <div className="lobby-room-code">{roomCode}</div>
-                                <button className="neon-button neon-button-controls"
+                                <button type="button" className="neon-button neon-button-controls"
                                     onClick={() => { if (roomCode) { navigator.clipboard.writeText(roomCode); setCopied(true); setTimeout(() => setCopied(false), 1500); } }}>
                                     {copied ? t('copied', { defaultValue: 'COPIED!' }) : t('copy-code', { defaultValue: 'COPY CODE' })}
                                 </button>
-                                <button className="neon-button neon-button-controls" onClick={() => void copyLink()}>
+                                <button type="button" className="neon-button neon-button-controls" onClick={() => void copyLink()}>
                                     {linkCopied ? t('copied', { defaultValue: 'COPIED!' }) : t('copy-link', { defaultValue: 'COPY LINK' })}
                                 </button>
-                                <span className="lobby-visibility" style={{ color: isPublic ? '#33ff99' : '#888' }}>
+                                <span className="lobby-visibility" style={{ color: isPublic ? '#2cff9a' : '#d0a3be' }}>
                                     {isPublic ? t('public', { defaultValue: 'PUBLIC' }) : t('private', { defaultValue: 'PRIVATE' })}
                                 </span>
                             </div>
@@ -204,63 +210,67 @@ export default function MultiplayerLobby() {
                                 const d = CLASS_DISPLAY[s.className];
                                 const teamColor = mode === 'teams' ? TEAM_COLORS[s.team] ?? d.color : d.color;
                                 return (
-                                    <div key={s.seat} className={`lobby-seat ${s.seat === localSeat ? 'lobby-seat-you' : ''}`} style={{ borderColor: teamColor, color: teamColor }}>
-                                        <span style={{ color: teamColor, fontSize: 9 }}>{s.human ? (s.seat === localSeat ? 'YOU' : `P${s.seat + 1}`) : 'CPU'}</span>
-                                        <span style={{ color: d.color, fontSize: 8, marginTop: 4 }}>{d.name}</span>
-                                        {mode === 'teams' && <span style={{ color: teamColor, fontSize: 7, marginTop: 3 }}>TEAM {String.fromCharCode(65 + s.team)}</span>}
+                                    <div key={s.seat} className={`lobby-seat ${s.seat === localSeat ? 'lobby-seat-you' : ''}`} style={{ '--seat': teamColor } as React.CSSProperties}>
+                                        <span className="kk-seat__tag">{s.human ? (s.seat === localSeat ? 'YOU' : `P${s.seat + 1}`) : 'CPU'}</span>
+                                        <span className="kk-seat__class">{d.name}</span>
+                                        {mode === 'teams' && <span className="kk-seat__team">TEAM {String.fromCharCode(65 + s.team)}</span>}
                                     </div>
                                 );
                             })}
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <button className="carousel-arrow" onClick={() => changeFighter(-1)}>◀</button>
-                            <span style={{ color: CLASS_DISPLAY[selectedClass].color, fontSize: 9, minWidth: 140, textAlign: 'center' }}>{CLASS_DISPLAY[selectedClass].name}</span>
-                            <button className="carousel-arrow" onClick={() => changeFighter(1)}>▶</button>
-                        </div>
-                        <ModelPicker
-                            value={selectedModel}
-                            onChange={(id) => {
-                                setSelectedModel(id);
-                                const myTeam = lobbySeats.find((s) => s.seat === localSeat)?.team ?? localSeat;
-                                networkClient.setFighter(selectedClass, myTeam, id);
-                            }}
-                        />
+                        <section className="kk-panel kk-panel--violet" aria-label={t('your-fighter', { defaultValue: 'Your fighter' })}>
+                            <div className="kk-fighter-pick">
+                                <button type="button" className="carousel-arrow" aria-label={t('previous-fighter', { defaultValue: 'Previous fighter' })} onClick={() => changeFighter(-1)}>◀</button>
+                                <span className="kk-fighter-pick__name" style={{ color: selected.accent, textShadow: `0 0 10px ${selected.color}` }}>{selected.name}</span>
+                                <button type="button" className="carousel-arrow" aria-label={t('next-fighter', { defaultValue: 'Next fighter' })} onClick={() => changeFighter(1)}>▶</button>
+                            </div>
+                            <ModelPicker
+                                value={selectedModel}
+                                onChange={(id) => {
+                                    setSelectedModel(id);
+                                    const myTeam = lobbySeats.find((s) => s.seat === localSeat)?.team ?? localSeat;
+                                    networkClient.setFighter(selectedClass, myTeam, id);
+                                }}
+                            />
+                        </section>
 
                         {isHost ? (
                             <>
-                                <div className="option-row">
-                                    <span className="option-label">{t('fighters', { defaultValue: 'FIGHTERS' })}</span>
-                                    <div className="option-chips">
-                                        {[2, 3, 4].map((n) => (
-                                            <button key={n} className={`option-chip ${playerCount === n ? 'option-chip-active' : ''}`}
-                                                onClick={() => networkClient.setConfig({ arenaSize: n })}>{n}</button>
-                                        ))}
+                                <section className="kk-panel kk-panel--cyan match-options" aria-label={t('match-options', { defaultValue: 'Match options' })}>
+                                    <div className="option-row" role="group" aria-label={t('fighters', { defaultValue: 'FIGHTERS' })}>
+                                        <span className="option-label" aria-hidden="true">{t('fighters', { defaultValue: 'FIGHTERS' })}</span>
+                                        <div className="option-chips">
+                                            {[2, 3, 4].map((n) => (
+                                                <button key={n} type="button" aria-pressed={playerCount === n} className={`option-chip ${playerCount === n ? 'option-chip-active' : ''}`}
+                                                    onClick={() => networkClient.setConfig({ arenaSize: n })}>{n}</button>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="option-row">
-                                    <span className="option-label">{t('mode', { defaultValue: 'MODE' })}</span>
-                                    <div className="option-chips">
-                                        <button className={`option-chip ${mode === 'ffa' ? 'option-chip-active' : ''}`} onClick={() => networkClient.setConfig({ mode: 'ffa' })}>{t('ffa', { defaultValue: 'FREE-FOR-ALL' })}</button>
-                                        <button className={`option-chip ${mode === 'teams' ? 'option-chip-active' : ''}`} disabled={playerCount % 2 !== 0} style={{ opacity: playerCount % 2 !== 0 ? 0.35 : 1 }} onClick={() => networkClient.setConfig({ mode: 'teams' })}>{t('teams', { defaultValue: 'TEAMS' })}</button>
+                                    <div className="option-row" role="group" aria-label={t('mode', { defaultValue: 'MODE' })}>
+                                        <span className="option-label" aria-hidden="true">{t('mode', { defaultValue: 'MODE' })}</span>
+                                        <div className="option-chips">
+                                            <button type="button" aria-pressed={mode === 'ffa'} className={`option-chip ${mode === 'ffa' ? 'option-chip-active' : ''}`} onClick={() => networkClient.setConfig({ mode: 'ffa' })}>{t('ffa', { defaultValue: 'FREE-FOR-ALL' })}</button>
+                                            <button type="button" aria-pressed={mode === 'teams'} className={`option-chip ${mode === 'teams' ? 'option-chip-active' : ''}`} disabled={playerCount % 2 !== 0} onClick={() => networkClient.setConfig({ mode: 'teams' })}>{t('teams', { defaultValue: 'TEAMS' })}</button>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="option-row">
-                                    <span className="option-label">{t('visibility', { defaultValue: 'VISIBILITY' })}</span>
-                                    <div className="option-chips">
-                                        <button className={`option-chip ${isPublic ? 'option-chip-active' : ''}`} onClick={() => networkClient.setConfig({ isPublic: true })}>{t('public', { defaultValue: 'PUBLIC' })}</button>
-                                        <button className={`option-chip ${!isPublic ? 'option-chip-active' : ''}`} onClick={() => networkClient.setConfig({ isPublic: false })}>{t('private', { defaultValue: 'PRIVATE' })}</button>
+                                    <div className="option-row" role="group" aria-label={t('visibility', { defaultValue: 'VISIBILITY' })}>
+                                        <span className="option-label" aria-hidden="true">{t('visibility', { defaultValue: 'VISIBILITY' })}</span>
+                                        <div className="option-chips">
+                                            <button type="button" aria-pressed={isPublic} className={`option-chip ${isPublic ? 'option-chip-active' : ''}`} onClick={() => networkClient.setConfig({ isPublic: true })}>{t('public', { defaultValue: 'PUBLIC' })}</button>
+                                            <button type="button" aria-pressed={!isPublic} className={`option-chip ${!isPublic ? 'option-chip-active' : ''}`} onClick={() => networkClient.setConfig({ isPublic: false })}>{t('private', { defaultValue: 'PRIVATE' })}</button>
+                                        </div>
                                     </div>
-                                </div>
-                                <motion.button className="neon-button neon-button-fight fight-button-large" onClick={() => networkClient.start()} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                </section>
+                                <button type="button" className="neon-button neon-button-fight fight-button-large" onClick={() => networkClient.start()}>
                                     {t('start-match', { defaultValue: 'START MATCH' })}
-                                </motion.button>
+                                </button>
                             </>
                         ) : (
-                            <div className="lobby-status">{t('waiting-host', { defaultValue: 'WAITING FOR HOST TO START...' })}</div>
+                            <div className="lobby-status" role="status">{t('waiting-host', { defaultValue: 'WAITING FOR HOST TO START...' })}</div>
                         )}
 
-                        <button className="neon-button neon-button-back" onClick={handleLeaveRoom}>{t('leave', { defaultValue: 'LEAVE' })}</button>
+                        <button type="button" className="neon-button neon-button-back" onClick={handleLeaveRoom}>{t('leave', { defaultValue: 'LEAVE' })}</button>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -268,9 +278,9 @@ export default function MultiplayerLobby() {
             {mpError && <div className="lobby-error" role="alert">{errorText(mpError)}</div>}
 
             {!inRoom && (
-                <motion.button className="neon-button neon-button-back" onClick={handleBack} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+                <button type="button" className="neon-button neon-button-back" onClick={handleBack}>
                     {t('back', { defaultValue: 'BACK' })}
-                </motion.button>
+                </button>
             )}
         </div>
     );
