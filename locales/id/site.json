@@ -771,5 +771,9 @@
   "membership-action-failed": "Tidak dapat menghubungi penagihan. Coba lagi.",
   "space-end-offline": "Tidak terhubung. Coba lagi sebentar lagi.",
   "market-under-review": "Sedang ditinjau",
-  "market-under-review-hint": "Pembelian dengan harga ini dijeda untuk pemeriksaan singkat. Tidak ada koin yang berpindah. Batalkan untuk mendapatkan item kembali sekarang."
+  "market-under-review-hint": "Pembelian dengan harga ini dijeda untuk pemeriksaan singkat. Tidak ada koin yang berpindah. Batalkan untuk mendapatkan item kembali sekarang.",
+  "call-mutes-heading": "Muted callers",
+  "call-mutes-until": "Until {{time}}",
+  "call-mutes-unmute": "Unmute",
+  "call-mutes-unmute-aria": "Unmute {{name}}"
 }

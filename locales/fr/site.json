@@ -803,5 +803,9 @@
   "membership-action-failed": "Impossible de joindre la facturation. Réessayez.",
   "space-end-offline": "Non connecté. Réessayez dans un instant.",
   "market-under-review": "En cours d'examen",
-  "market-under-review-hint": "Un achat à ce prix a été suspendu pour une vérification rapide. Aucune pièce n'a été déplacée. Annulez pour récupérer l'objet maintenant."
+  "market-under-review-hint": "Un achat à ce prix a été suspendu pour une vérification rapide. Aucune pièce n'a été déplacée. Annulez pour récupérer l'objet maintenant.",
+  "call-mutes-heading": "Muted callers",
+  "call-mutes-until": "Until {{time}}",
+  "call-mutes-unmute": "Unmute",
+  "call-mutes-unmute-aria": "Unmute {{name}}"
 }

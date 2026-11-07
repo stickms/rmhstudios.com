@@ -787,5 +787,9 @@
   "membership-action-failed": "Faturalandırmaya ulaşılamadı. Tekrar deneyin.",
   "space-end-offline": "Bağlı değil. Birazdan tekrar deneyin.",
   "market-under-review": "İnceleniyor",
-  "market-under-review-hint": "Bu fiyattan bir satın alma hızlı bir kontrol için duraklatıldı. Hiç jeton aktarılmadı. Ürünü hemen geri almak için iptal edin."
+  "market-under-review-hint": "Bu fiyattan bir satın alma hızlı bir kontrol için duraklatıldı. Hiç jeton aktarılmadı. Ürünü hemen geri almak için iptal edin.",
+  "call-mutes-heading": "Muted callers",
+  "call-mutes-until": "Until {{time}}",
+  "call-mutes-unmute": "Unmute",
+  "call-mutes-unmute-aria": "Unmute {{name}}"
 }

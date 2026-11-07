@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
     userBlock: { findMany: vi.fn(), findFirst: vi.fn() },
     notificationPreference: { findMany: vi.fn() },
     follow: { findMany: vi.fn() },
+    callMute: { findMany: vi.fn() },
     groupCall: { create: vi.fn(), update: vi.fn() },
     conversation: { findFirst: vi.fn() },
     groupCallParticipant: { upsert: vi.fn() },
@@ -133,6 +134,7 @@ describe('group-call admission races', () => {
         Promise.resolve(where.userId.in.map((userId) => ({ userId, callPrivacy: 'everyone' }))),
       );
     mocks.prisma.follow.findMany.mockReset().mockResolvedValue([]);
+    mocks.prisma.callMute.findMany.mockReset().mockResolvedValue([]);
     mocks.prisma.groupCall.create.mockReset().mockResolvedValue({});
     mocks.prisma.conversation.findFirst.mockReset().mockResolvedValue(null);
     mocks.prisma.groupCall.update.mockReset().mockResolvedValue({});

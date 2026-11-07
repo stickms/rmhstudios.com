@@ -7,31 +7,40 @@
  * on the person you are talking to. That rules out rendering it inside any
  * particular route.
  *
- * Shape:
- *   - **incoming** → a centred dialog, because it demands an answer now.
- *   - **outgoing / connecting / connected** → a compact bar pinned to the top,
- *     because the user should be able to keep using the site while talking.
+ * Shape — one banner pinned to the top for every phase, because the user should
+ * be able to keep using the site whether a call is ringing or connected:
+ *   - **incoming** → the caller, Accept / Decline, and a menu to mute that
+ *     caller for a while or block them. A ringing call is announced
+ *     (`role="alert"`) but never steals focus: a stray Enter on a focused
+ *     Accept would open the microphone for a call the user was not reading.
+ *   - **outgoing / connecting / connected** → the compact call bar.
  *   - **ended** → the bar, briefly, with the reason. Auto-dismisses.
  */
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Phone, PhoneOff, Mic, MicOff, PhoneIncoming } from 'lucide-react';
+import { Ban, MoreHorizontal, Phone, PhoneOff, Mic, MicOff, PhoneIncoming } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   useCallStore,
   acceptCall,
   declineCall,
+  declineAndRestrict,
   hangUp,
   toggleMute,
   dismissCall,
+  type CallRestriction,
 } from '@/lib/call/store';
 import { formatDuration } from '@/lib/call/state';
+import { CALL_MUTE_DURATION_KEYS, type CallMuteDuration } from '@/lib/call/mute';
 import type { CallEndReason } from '@/lib/call/events';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { MenuItem, MenuLabel, MenuSeparator } from '@/components/ui/menu';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { cn } from '@/lib/utils';
 
 /** How long the ended-call card lingers before it clears itself. */
@@ -76,6 +85,9 @@ function endReasonLabel(
 
 export function CallOverlay() {
   const { t } = useTranslation('feed');
+  const confirm = useConfirm();
+  const moreRef = useRef<HTMLButtonElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const phase = useCallStore((s) => s.phase);
   const callId = useCallStore((s) => s.callId);
   const peer = useCallStore((s) => s.peer);
@@ -93,63 +105,161 @@ export function CallOverlay() {
     return () => clearTimeout(id);
   }, [phase]);
 
-  // Escape declines a ringing call — Radix's onOpenChange below, the same affordance as the button.
+  // The menu belongs to one ring. If the call ends under it (the caller hung up,
+  // the ring timed out) it must not stay open over nothing.
+  useEffect(() => {
+    if (phase !== 'incoming') setMenuOpen(false);
+  }, [phase]);
 
   if (phase === 'idle' || !peer) return null;
 
   const name = peer.name || peer.handle || t('someone', { defaultValue: 'Someone' });
+  // Read once, here: the restriction applies to whoever was ringing when the
+  // user opened the menu, even if the store has moved on by the time they pick.
+  const peerId = peer.id;
 
-  /* ── Incoming: a dialog, because it needs an answer now ─────────────── */
+  const durationLabel = (d: CallMuteDuration): string => {
+    switch (d) {
+      case '1h':
+        return t('call-duration-1h', { defaultValue: '1 hour' });
+      case '8h':
+        return t('call-duration-8h', { defaultValue: '8 hours' });
+      case '24h':
+        return t('call-duration-24h', { defaultValue: '24 hours' });
+      case '1w':
+        return t('call-duration-1w', { defaultValue: '1 week' });
+    }
+  };
+
+  async function restrict(restriction: CallRestriction) {
+    const saved = await declineAndRestrict(peerId, restriction);
+    if (!saved) {
+      toast.error(
+        t('call-restrict-failed', {
+          defaultValue: 'Declined, but that could not be saved. They may be able to call again.',
+        }),
+      );
+      return;
+    }
+    toast.success(
+      restriction.kind === 'mute'
+        ? t('call-muted-toast', {
+            defaultValue: 'Muted {{name}} for {{duration}}',
+            name,
+            duration: durationLabel(restriction.duration),
+          })
+        : t('call-blocked-toast', { defaultValue: 'Blocked {{name}}', name }),
+    );
+  }
+
+  async function onBlock() {
+    // Block also drops follows both ways, which a mis-tap on a ringing call
+    // should not do silently. The ring keeps going while the question is up.
+    const ok = await confirm({
+      title: t('call-block-title', { defaultValue: 'Block {{name}}?', name }),
+      description: t('call-block-desc', {
+        defaultValue:
+          'They will not be able to call you, and you will both stop following each other.',
+      }),
+      confirmLabel: t('call-block-confirm', { defaultValue: 'Block' }),
+      danger: true,
+    });
+    if (ok) await restrict({ kind: 'block' });
+  }
+
+  /* ── Incoming: a banner at the top, with room to say "not now" ──────── */
   if (phase === 'incoming') {
     return (
-      <Dialog open onOpenChange={(o) => !o && declineCall()}>
-        {/* Floating UI is L4 per the design language — DialogContent is `.glass-overlay`.
-            z-120 keeps it above the call banner's band. */}
-        <DialogContent
-          overlayClassName="z-[120]"
-          aria-describedby={undefined}
-          className="z-[120] max-w-sm text-center"
+      <div
+        className="call-banner pointer-events-none fixed inset-x-0 top-3 z-[120] flex justify-center p-2"
+        style={{ paddingTop: 'max(0.5rem, var(--safe-top, 0px))' }}
+      >
+        <div
+          className="glass-overlay pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-site px-3 py-2"
+          role="alert"
         >
-          <p className="flex items-center justify-center gap-2 text-sm text-site-text-muted">
-            <PhoneIncoming className="h-4 w-4" aria-hidden />
-            {t('call-incoming', { defaultValue: 'Incoming voice call' })}
-          </p>
-
-          <div className="mt-5 flex flex-col items-center gap-3">
-            <UserAvatar src={peer.image} alt={name} size={80} fallbackName={name} />
-            <DialogTitle className="font-sans text-lg font-semibold text-site-text">
-              {name}
-            </DialogTitle>
+          <UserAvatar
+            src={peer.image}
+            alt=""
+            size={40}
+            className="shrink-0"
+            fallbackName={name}
+          />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-site-text">{name}</p>
+            <p className="flex items-center gap-1.5 truncate text-xs text-site-text-muted">
+              <PhoneIncoming className="h-3 w-3 shrink-0" aria-hidden />
+              {t('call-incoming', { defaultValue: 'Incoming voice call' })}
+            </p>
           </div>
 
-          <div className="mt-7 flex items-center justify-center gap-4">
-            <Button
-              type="button"
-              variant="destructive"
-              className="h-14 w-14 rounded-full p-0"
-              onClick={() => declineCall()}
-              aria-label={t('call-decline', { defaultValue: 'Decline' })}
-            >
-              <PhoneOff className="h-5 w-5" aria-hidden />
-            </Button>
-            <Button
-              type="button"
-              variant="accent"
-              className="h-14 w-14 rounded-full p-0"
-              onClick={() => void acceptCall()}
-              aria-label={t('call-accept', { defaultValue: 'Accept' })}
-            >
-              <Phone className="h-5 w-5" aria-hidden />
-            </Button>
-          </div>
+          <Button
+            ref={moreRef}
+            type="button"
+            variant="ghost"
+            className="h-9 w-9 shrink-0 rounded-full p-0"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            aria-label={t('call-more-options', { defaultValue: 'Mute or block this caller' })}
+          >
+            <MoreHorizontal className="h-4 w-4" aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            className="h-9 w-9 shrink-0 rounded-full p-0"
+            onClick={() => declineCall()}
+            aria-label={t('call-decline', { defaultValue: 'Decline' })}
+          >
+            <PhoneOff className="h-4 w-4" aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="accent"
+            className="h-9 w-9 shrink-0 rounded-full p-0"
+            onClick={() => void acceptCall()}
+            aria-label={t('call-accept', { defaultValue: 'Accept' })}
+          >
+            <Phone className="h-4 w-4" aria-hidden />
+          </Button>
+        </div>
 
-          <p className="mt-4 text-xs text-site-text-muted">
-            {t('call-answer-hint', {
-              defaultValue: 'Answering asks for microphone access.',
-            })}
-          </p>
-        </DialogContent>
-      </Dialog>
+        <AnchoredMenu
+          open={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          anchorRef={moreRef}
+          side="bottom"
+          align="end"
+          label={t('call-more-options', { defaultValue: 'Mute or block this caller' })}
+        >
+          <MenuLabel>
+            {t('call-mute-heading', { defaultValue: 'Mute calls from {{name}}', name })}
+          </MenuLabel>
+          {CALL_MUTE_DURATION_KEYS.map((d) => (
+            <MenuItem
+              key={d}
+              onSelect={() => {
+                setMenuOpen(false);
+                void restrict({ kind: 'mute', duration: d });
+              }}
+            >
+              {t('call-mute-for', { defaultValue: 'For {{duration}}', duration: durationLabel(d) })}
+            </MenuItem>
+          ))}
+          <MenuSeparator />
+          <MenuItem
+            icon={Ban}
+            tone="danger"
+            onSelect={() => {
+              setMenuOpen(false);
+              void onBlock();
+            }}
+          >
+            {t('call-block', { defaultValue: 'Block {{name}}', name })}
+          </MenuItem>
+        </AnchoredMenu>
+      </div>
     );
   }
 

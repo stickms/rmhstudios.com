@@ -851,5 +851,9 @@
   "membership-action-failed": "تعذّر الوصول إلى الفوترة. حاول مرة أخرى.",
   "space-end-offline": "غير متصل. حاول مرة أخرى بعد قليل.",
   "market-under-review": "قيد المراجعة",
-  "market-under-review-hint": "أُوقف الشراء بهذا السعر مؤقتًا لفحص سريع. لم تُنقل أي عملات. ألغِ الآن لاستعادة العنصر."
+  "market-under-review-hint": "أُوقف الشراء بهذا السعر مؤقتًا لفحص سريع. لم تُنقل أي عملات. ألغِ الآن لاستعادة العنصر.",
+  "call-mutes-heading": "Muted callers",
+  "call-mutes-until": "Until {{time}}",
+  "call-mutes-unmute": "Unmute",
+  "call-mutes-unmute-aria": "Unmute {{name}}"
 }

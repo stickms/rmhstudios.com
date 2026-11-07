@@ -803,5 +803,9 @@
   "membership-action-failed": "No se pudo conectar con la facturación. Inténtalo de nuevo.",
   "space-end-offline": "Sin conexión. Inténtalo de nuevo en un momento.",
   "market-under-review": "En revisión",
-  "market-under-review-hint": "Una compra a este precio se pausó para una revisión rápida. No se movieron monedas. Cancela para recuperar el artículo ahora."
+  "market-under-review-hint": "Una compra a este precio se pausó para una revisión rápida. No se movieron monedas. Cancela para recuperar el artículo ahora.",
+  "call-mutes-heading": "Muted callers",
+  "call-mutes-until": "Until {{time}}",
+  "call-mutes-unmute": "Unmute",
+  "call-mutes-unmute-aria": "Unmute {{name}}"
 }

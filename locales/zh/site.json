@@ -771,5 +771,9 @@
   "membership-action-failed": "无法连接账单服务。请重试。",
   "space-end-offline": "未连接。请稍后重试。",
   "market-under-review": "审核中",
-  "market-under-review-hint": "以此价格的购买已暂停以进行快速检查。没有转移任何硬币。取消即可立即取回物品。"
+  "market-under-review-hint": "以此价格的购买已暂停以进行快速检查。没有转移任何硬币。取消即可立即取回物品。",
+  "call-mutes-heading": "Muted callers",
+  "call-mutes-until": "Until {{time}}",
+  "call-mutes-unmute": "Unmute",
+  "call-mutes-unmute-aria": "Unmute {{name}}"
 }

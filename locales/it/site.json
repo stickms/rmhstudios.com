@@ -803,5 +803,9 @@
   "membership-action-failed": "Impossibile raggiungere la fatturazione. Riprova.",
   "space-end-offline": "Non connesso. Riprova tra un momento.",
   "market-under-review": "In revisione",
-  "market-under-review-hint": "Un acquisto a questo prezzo è stato sospeso per un rapido controllo. Nessuna moneta è stata spostata. Annulla per riavere subito l'oggetto."
+  "market-under-review-hint": "Un acquisto a questo prezzo è stato sospeso per un rapido controllo. Nessuna moneta è stata spostata. Annulla per riavere subito l'oggetto.",
+  "call-mutes-heading": "Muted callers",
+  "call-mutes-until": "Until {{time}}",
+  "call-mutes-unmute": "Unmute",
+  "call-mutes-unmute-aria": "Unmute {{name}}"
 }

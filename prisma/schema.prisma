@@ -248,12 +248,14 @@ model User {
   appealsDecided UserStrike[]    @relation("StrikeAppealAdmin")
 
   // Moderation (reports filed / received, blocks & mutes)
-  reportsFiled    ContentReport[] @relation("ReportReporter")
-  reportsResolved ContentReport[] @relation("ReportResolver")
-  blocksMade      UserBlock[]     @relation("BlockBlocker")
-  blocksReceived  UserBlock[]     @relation("BlockBlocked")
-  mutesMade       UserMute[]      @relation("MuteMuter")
-  mutesReceived   UserMute[]      @relation("MuteMuted")
+  reportsFiled      ContentReport[] @relation("ReportReporter")
+  reportsResolved   ContentReport[] @relation("ReportResolver")
+  blocksMade        UserBlock[]     @relation("BlockBlocker")
+  blocksReceived    UserBlock[]     @relation("BlockBlocked")
+  mutesMade         UserMute[]      @relation("MuteMuter")
+  mutesReceived     UserMute[]      @relation("MuteMuted")
+  callMutesMade     CallMute[]      @relation("CallMuteOwner")
+  callMutesReceived CallMute[]      @relation("CallMuteTarget")
 
   // Direct Messages
   conversationsAsOne     Conversation[]          @relation("ConversationParticipantOne")
@@ -5688,6 +5690,26 @@ model UserMute {
   @@unique([muterId, mutedId])
   @@index([muterId])
   @@map("user_mute")
+}
+
+/// "Don't let this person ring me until `until`." Written from the incoming-call
+/// banner. Enforced server-side in the call and group-call handlers exactly like
+/// a privacy refusal (the caller sees the same generic "can't call" a block or
+/// the privacy setting gives, never a distinct "muted"). A row past `until` is
+/// inert and is overwritten the next time the same person is muted.
+model CallMute {
+  id          String   @id @default(cuid())
+  userId      String
+  mutedUserId String
+  until       DateTime
+  createdAt   DateTime @default(now())
+
+  user  User @relation("CallMuteOwner", fields: [userId], references: [id], onDelete: Cascade)
+  muted User @relation("CallMuteTarget", fields: [mutedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mutedUserId])
+  @@index([userId, until])
+  @@map("call_mute")
 }
 
 // ─── Bookmarks ────────────────────────────────────────────────────────────

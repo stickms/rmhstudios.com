@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => {
       userBlock: { findFirst: vi.fn() },
       notificationPreference: { findUnique: vi.fn() },
       follow: { findFirst: vi.fn() },
+      callMute: { findFirst: vi.fn() },
       call: { create: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
       user: { findUnique: vi.fn() },
     },
@@ -35,6 +36,7 @@ describe('1:1 call busy claims', () => {
     mocks.prisma.userBlock.findFirst.mockReset();
     mocks.prisma.notificationPreference.findUnique.mockReset();
     mocks.prisma.follow.findFirst.mockReset();
+    mocks.prisma.callMute.findFirst.mockReset().mockResolvedValue(null);
     mocks.prisma.call.create.mockReset();
     mocks.prisma.call.update.mockReset();
     mocks.prisma.user.findUnique.mockReset();
@@ -132,6 +134,46 @@ describe('1:1 call busy claims', () => {
     expect(getBusy('callee')).toBeNull();
     expect(mocks.prisma.call.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ status: 'CANCELLED' }) }),
+    );
+  });
+
+  it('refuses a caller the callee has muted, as a privacy refusal, before anything rings', async () => {
+    mocks.prisma.userBlock.findFirst.mockResolvedValue(null);
+    // `everyone` and a mutual follow: only the mute can be what stops this call.
+    mocks.prisma.notificationPreference.findUnique.mockResolvedValue({ callPrivacy: 'everyone' });
+    mocks.prisma.follow.findFirst.mockResolvedValue({ followerId: 'x' });
+    mocks.prisma.callMute.findFirst.mockResolvedValue({ id: 'mute-1' });
+
+    const handlers = new Map<string, (payload: unknown) => Promise<void> | void>();
+    const emitted: Array<{ event: string; payload: unknown }> = [];
+    const socket = {
+      id: 'caller-socket-3',
+      data: { userId: 'caller' },
+      on: (event: string, handler: (payload: unknown) => Promise<void> | void) =>
+        handlers.set(event, handler),
+      emit: (event: string, payload: unknown) => emitted.push({ event, payload }),
+      join: () => {},
+    } as unknown as Socket;
+    const io = {
+      in: () => ({ fetchSockets: async () => [{ id: 'callee-socket' }] }),
+      to: () => ({ emit: vi.fn() }),
+    } as unknown as Server;
+
+    registerCallHandlers(io, socket);
+    await handlers.get(CALL_C2S.INVITE)?.({ calleeId: 'callee' });
+
+    // The caller learns only "privacy" — indistinguishable from the setting.
+    expect(emitted).toEqual([{ event: CALL_S2C.REJECTED, payload: { reason: 'privacy' } }]);
+    expect(mocks.prisma.call.create).not.toHaveBeenCalled();
+    // The lookup is scoped to THIS callee muting THIS caller, and to unexpired rows.
+    expect(mocks.prisma.callMute.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          userId: 'callee',
+          mutedUserId: 'caller',
+          until: { gt: expect.any(Date) },
+        }),
+      }),
     );
   });
 });

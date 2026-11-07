@@ -229,7 +229,10 @@ export function isCallPrivacy(v: unknown): v is CallPrivacy {
  *
  * Ordering matters and is deliberate: a block wins over everything, including
  * an `everyone` setting, because a blocked user must not be able to make a
- * stranger's phone ring. `mutuals` means the two follow EACH OTHER. The callee's
+ * stranger's phone ring. A timed mute is next: it is the callee saying "not now,
+ * not you", which an `everyone` setting must not override either. It is reported
+ * as `privacy`, never as its own reason, so a mute cannot be told from the
+ * setting by the person it applies to. `mutuals` means the two follow EACH OTHER. The callee's
  * half is the permission they grant; the caller's half is what makes it a
  * mutual rather than a fan ringing a celebrity who happens to follow back one
  * account in a hundred. Both are read from the follow table by the server,
@@ -239,12 +242,15 @@ export function canCall(args: {
   privacy: CallPrivacy;
   /** Either direction of block bars the call. */
   blocked: boolean;
+  /** Has the CALLEE muted the CALLER, and has that mute not lapsed? */
+  muted: boolean;
   /** Does the CALLEE follow the CALLER? */
   calleeFollowsCaller: boolean;
   /** Does the CALLER follow the CALLEE? */
   callerFollowsCallee: boolean;
 }): { allowed: true } | { allowed: false; reason: 'blocked' | 'privacy' } {
   if (args.blocked) return { allowed: false, reason: 'blocked' };
+  if (args.muted) return { allowed: false, reason: 'privacy' };
   if (args.privacy === 'nobody') return { allowed: false, reason: 'privacy' };
   if (args.privacy === 'mutuals' && !(args.calleeFollowsCaller && args.callerFollowsCallee)) {
     return { allowed: false, reason: 'privacy' };

@@ -114,7 +114,7 @@ async function loadCallPermission(
 ): Promise<{ allowed: true } | { allowed: false; reason: CallRejectReason }> {
   const prisma = getPrismaClient();
 
-  const [block, prefs, calleeFollow, callerFollow, caller] = await Promise.all([
+  const [block, prefs, calleeFollow, callerFollow, caller, mute] = await Promise.all([
     // Either direction bars the call.
     prisma.userBlock.findFirst({
       where: {
@@ -142,6 +142,11 @@ async function loadCallPermission(
     }),
     // Admins may call anybody: no block, privacy or follow requirement applies.
     prisma.user.findUnique({ where: { id: callerId }, select: { isAdmin: true } }),
+    // A timed "not now" from the callee. Only a mute that has not lapsed counts.
+    prisma.callMute.findFirst({
+      where: { userId: calleeId, mutedUserId: callerId, until: { gt: new Date() } },
+      select: { id: true },
+    }),
   ]);
   if (caller?.isAdmin) return { allowed: true };
 
@@ -151,6 +156,7 @@ async function loadCallPermission(
   const verdict = canCall({
     privacy,
     blocked: Boolean(block),
+    muted: Boolean(mute),
     calleeFollowsCaller: Boolean(calleeFollow),
     callerFollowsCallee: Boolean(callerFollow),
   });
