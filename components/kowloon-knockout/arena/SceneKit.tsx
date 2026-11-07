@@ -7,18 +7,26 @@
 import { useEffect } from 'react';
 import { useThree } from '@react-three/fiber';
 import type { MenuQuality } from '@/lib/kowloon-knockout/render/menuQuality';
+import { rigColors } from '@/lib/kowloon-knockout/render/mute';
 
 /** A three-point neon rig: a warm key from the front, a hot-pink rim from behind-left and a cyan rim from
  *  behind-right (the card art's two inks), with a violet hemisphere fill so shadows stay plum, not black.
  *  Weak devices keep the key and the pink rim. */
-export function NeonRig({ lights }: { lights: MenuQuality['lights'] }) {
+export function NeonRig({ lights, strength = 1, muted = false }: {
+    lights: MenuQuality['lights'];
+    /** Scales every light: 1 as designed, less for set-dressing (the menu's background duel). */
+    strength?: number;
+    /** Softer, less saturated colours (the menu's background duel). */
+    muted?: boolean;
+}) {
+    const c = rigColors(muted);
     return (
         <>
-            <hemisphereLight args={['#9a86d6', '#1a0b24', 0.85]} />
-            <directionalLight position={[2.5, 4.5, 4]} intensity={1.6} color="#ffd9c0" />
-            <pointLight position={[-3.2, 2.2, -1.4]} intensity={34} color="#ff2e88" distance={14} />
-            {lights >= 2 && <pointLight position={[3.4, 2.0, -1.2]} intensity={30} color="#46e6ff" distance={14} />}
-            {lights >= 3 && <pointLight position={[0, 0.8, 3.2]} intensity={7} color="#8f5cff" distance={10} />}
+            <hemisphereLight args={[c.sky, c.ground, 0.85 * strength]} />
+            <directionalLight position={[2.5, 4.5, 4]} intensity={1.6 * strength} color={c.key} />
+            <pointLight position={[-3.2, 2.2, -1.4]} intensity={34 * strength} color={c.pink} distance={14} />
+            {lights >= 2 && <pointLight position={[3.4, 2.0, -1.2]} intensity={30 * strength} color={c.cyan} distance={14} />}
+            {lights >= 3 && <pointLight position={[0, 0.8, 3.2]} intensity={7 * strength} color={c.violet} distance={10} />}
         </>
     );
 }

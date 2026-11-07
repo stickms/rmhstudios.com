@@ -184,27 +184,36 @@ function windowColour(id: number, cx: number, cy: number, t: number, strong: boo
   return ramp[strong ? 2 : 1];
 }
 
+/** An explicit shake for a frame: whole-pixel offsets and a small brightness lift (menuShake.ts). */
+export interface StreetShake { x: number; y: number; pulse: number }
+
 /**
  * Render one frame.
  * @param t     seconds since the scene began
  * @param px,py pointer offset in -1..1 (parallax); pass 0,0 for none
+ * @param shake a blow's shake, from the 3D duel standing on the street (menuShake.ts); none by default.
+ *              (The scene's own one-pixel jolt on its pixel stick-figures' blows only runs when those
+ *              figures are drawn, `scene.cast`.)
  */
-export function renderStreet(scene: StreetScene, t: number, px = 0, py = 0): void {
+export function renderStreet(scene: StreetScene, t: number, px = 0, py = 0, shake?: StreetShake): void {
   const { width: W, height: H, buf, streetY, col } = scene;
   const lt = ((t % LOOP_SECONDS) + LOOP_SECONDS) % LOOP_SECONDS;
 
-  // Screen shake: one pixel for ~0.12 s after a hit lands.
-  let shake = 0;
-  for (let b = 0; b < BEATS.length; b++) {
-    const dt = lt - (BEATS[b].t + IMPACT_DELAY);
-    if (dt >= 0 && dt < 0.12 && BEATS[b].result !== 'slip') shake = (Math.floor(t * 60) & 1) === 0 ? 1 : -1;
+  // The pixel cast's own screen shake: one pixel for ~0.12 s after one of its blows lands.
+  let castShake = 0;
+  if (scene.cast) {
+    for (let b = 0; b < BEATS.length; b++) {
+      const dt = lt - (BEATS[b].t + IMPACT_DELAY);
+      if (dt >= 0 && dt < 0.12 && BEATS[b].result !== 'slip') castShake = (Math.floor(t * 60) & 1) === 0 ? 1 : -1;
+    }
   }
+  const sx = castShake + (shake?.x ?? 0);
 
   const cam = t * 1.4;
-  const offFar = Math.floor(cam * 0.3 + px * 5) + shake;
-  const offNear = Math.floor(cam * 0.7 + px * 11) + shake;
+  const offFar = Math.floor(cam * 0.3 + px * 5) + sx;
+  const offNear = Math.floor(cam * 0.7 + px * 11) + sx;
   const boostMax = Math.min(60, H * 0.28);
-  const shiftY = Math.round(py * 2);
+  const shiftY = Math.round(py * 2) + (shake?.y ?? 0);
 
   for (let x = 0; x < W; x++) {
     const wf = modP(x + offFar);
@@ -280,13 +289,31 @@ export function renderStreet(scene: StreetScene, t: number, px = 0, py = 0): voi
   }
 
   drawSigns(scene, t, offNear, shiftY);
-  if (scene.cast) drawCast(scene, t, lt, px, shake);
+  if (scene.cast) drawCast(scene, t, lt, px, castShake);
   drawReflection(scene, t);
   drawRain(scene, t);
   drawSplashes(scene, t);
   drawSteam(scene, t, px);
-  if (scene.cast) drawSparks(scene, lt, px, shake);
+  if (scene.cast) drawSparks(scene, lt, px, castShake);
   drawVignette(scene);
+  if (shake && shake.pulse > 0.004) liftBrightness(buf, shake.pulse);
+}
+
+/**
+ * Lift every pixel's brightness by `amount` (0..1 of full scale): the street takes a blow's light.
+ * Additive and clamped, a few ms at street resolution; callers keep `amount` small (menuShake.ts caps it
+ * at 0.07, well under a WCAG flash).
+ */
+export function liftBrightness(buf: Uint32Array, amount: number): void {
+  const add = Math.min(40, Math.round(amount * 255));
+  if (add <= 0) return;
+  for (let i = 0; i < buf.length; i++) {
+    const p = buf[i];
+    const r = Math.min(255, (p & 0xff) + add);
+    const g = Math.min(255, ((p >>> 8) & 0xff) + add);
+    const b = Math.min(255, ((p >>> 16) & 0xff) + add);
+    buf[i] = ((p & 0xff000000) | (b << 16) | (g << 8) | r) >>> 0;
+  }
 }
 
 // ---- Neon signs ----------------------------------------------------------------

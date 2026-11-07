@@ -166,4 +166,17 @@ describe('ImpactBus', () => {
         bus.emit(hit({ kind: 'block', attacker: null }), 0);
         expect(seen).toEqual(['hit']);
     });
+    it('a calm impact (Jelly motion Still) tells listeners but moves nothing', () => {
+        const bus = new ImpactBus();
+        const got: number[] = [];
+        bus.subscribe((_e, prof) => got.push(prof.ringSize + prof.trauma + prof.hitStopMs + prof.recoil));
+        const prof = bus.emitCalm(hit({ power: 40 }));
+        expect(got).toEqual([0]);
+        expect(prof.sparks).toBeGreaterThan(0);
+        expect(prof.sparks).toBeLessThanOrEqual(8);
+        expect(bus.trauma).toBe(0);
+        expect(bus.timeScaleFor(1, 1)).toBe(1);
+        bus.step(0.016);
+        expect(bus.reaction(1)).toMatchObject({ ox: 0, squash: 0, flash: 0 });
+    });
 });

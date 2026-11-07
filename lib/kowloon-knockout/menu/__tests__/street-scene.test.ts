@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { STILL_TIME, bufferSizeFor, createStreetScene, renderStreet } from '../street-scene';
+import { STILL_TIME, bufferSizeFor, createStreetScene, liftBrightness, renderStreet } from '../street-scene';
+import { BEATS, IMPACT_DELAY } from '../choreography';
 
 describe('bufferSizeFor', () => {
   it('keeps the short side at 180 px on a phone held upright', () => {
@@ -94,5 +95,75 @@ describe('renderStreet', () => {
     for (let i = 0; i < bare.buf.length; i++) if (bare.buf[i] !== withCast.buf[i]) differs++;
     expect(differs).toBeGreaterThan(50); // the fighters are gone from the buffer
     expect(differs).toBeLessThan(bare.buf.length / 4); // and only they: the street is the same
+  });
+
+  describe('shake from the 3D duel', () => {
+    const frame = (scene: ReturnType<typeof createStreetScene>, t: number, shake?: { x: number; y: number; pulse: number }) => {
+      renderStreet(scene, t, 0, 0, shake);
+      return Uint32Array.from(scene.buf);
+    };
+    const differing = (a: Uint32Array, b: Uint32Array) => {
+      let n = 0;
+      for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) n++;
+      return n;
+    };
+
+    it('does not jolt on the OLD stick-figure choreography beats once the cast is off', () => {
+      // Two frames a sixtieth of a second apart inside an old impact window. The cast scene jolts one pixel
+      // the other way between them (its shake alternates every frame), so the whole skyline shifts; the
+      // bare scene must not, leaving only rain, windows and splashes to differ.
+      const t0 = BEATS[0].t + IMPACT_DELAY + 0.03;
+      const t1 = t0 + 1 / 60;
+      const jolt = (cast: boolean) => {
+        const scene = createStreetScene(320, 180, { cast });
+        return differing(frame(scene, t0), frame(scene, t1));
+      };
+      const withCast = jolt(true);
+      const bare = jolt(false);
+      expect(bare).toBeLessThan(withCast / 2);
+      expect(bare).toBeLessThan(1500);
+    });
+
+    it('an explicit shake moves the street sideways, without redrawing it differently', () => {
+      const scene = createStreetScene(320, 180, { cast: false });
+      const rest = frame(scene, 5);
+      const shaken = frame(scene, 5, { x: 3, y: 0, pulse: 0 });
+      expect(differing(rest, shaken)).toBeGreaterThan(300);
+      // shaking back to zero is the rest frame exactly (shake leaves no residue in the scene)
+      expect(differing(rest, frame(scene, 5, { x: 0, y: 0, pulse: 0 }))).toBe(0);
+    });
+
+    it('shakes vertically too and never writes out of range at the extremes', () => {
+      const scene = createStreetScene(180, 320, { cast: false });
+      for (const s of [{ x: 5, y: 3, pulse: 0.07 }, { x: -5, y: -3, pulse: 0.07 }, { x: 0, y: 3, pulse: 0 }]) {
+        renderStreet(scene, 9, 1, -1, s);
+        expect(scene.buf.length).toBe(180 * 320);
+      }
+    });
+
+    it('a brightness pulse lifts the street a little, clamped, and nothing else', () => {
+      const scene = createStreetScene(320, 180, { cast: false });
+      const rest = frame(scene, 4);
+      const lit = frame(scene, 4, { x: 0, y: 0, pulse: 0.07 });
+      let brighter = 0;
+      for (let i = 0; i < rest.length; i++) {
+        const r0 = rest[i] & 0xff, r1 = lit[i] & 0xff;
+        expect(r1).toBeGreaterThanOrEqual(r0);
+        expect(r1 - r0).toBeLessThanOrEqual(18);
+        expect(lit[i] >>> 24).toBe(0xff); // alpha untouched
+        if (r1 > r0) brighter++;
+      }
+      expect(brighter).toBeGreaterThan(rest.length * 0.8);
+    });
+
+    it('liftBrightness clamps at white and ignores a zero amount', () => {
+      const buf = Uint32Array.of(0xffffffff, 0xff0000f0, 0xff101010);
+      liftBrightness(buf, 0);
+      expect([...buf]).toEqual([0xffffffff, 0xff0000f0, 0xff101010]);
+      liftBrightness(buf, 0.07);
+      expect(buf[0]).toBe(0xffffffff);
+      expect(buf[1] & 0xff).toBe(0xff);
+      expect(buf[2] & 0xff).toBeGreaterThan(0x10);
+    });
   });
 });

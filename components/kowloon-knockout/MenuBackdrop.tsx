@@ -21,6 +21,7 @@ import { useGraphicsStore } from '@/lib/kowloon-knockout/render/graphicsStore';
 import {
   STILL_TIME, bufferSizeFor, createStreetScene, renderStreet, type StreetScene,
 } from '@/lib/kowloon-knockout/menu/street-scene';
+import { readMenuShake } from '@/lib/kowloon-knockout/menu/menuShake';
 import './kk-backdrop.css';
 
 // The 3D duel (three.js + the model loaders) is its own chunk: the menu paints the street first.
@@ -51,7 +52,8 @@ export default function MenuBackdrop() {
 
     const paint = (t: number) => {
       if (!scene || !image) return;
-      renderStreet(scene, t, pointer.x, pointer.y);
+      // A blow in the 3D duel shakes the street with it (menuShake.ts: read from the clock, no timers of its own).
+      renderStreet(scene, t, pointer.x, pointer.y, readMenuShake(performance.now()));
       ctx.putImageData(image, 0, 0);
       if (!painted) {
         painted = true;

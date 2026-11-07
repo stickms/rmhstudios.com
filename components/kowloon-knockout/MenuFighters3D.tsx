@@ -18,7 +18,13 @@ import Fighter from '@/components/kowloon-knockout/arena/Fighter';
 import type { RenderFighter } from '@/lib/kowloon-knockout/net/session';
 import { CLASS_STATS } from '@/lib/kowloon-knockout/game/fighters/stats';
 import type { FighterClass } from '@/lib/kowloon-knockout/game/fighters/types';
-import { duelAt, DUEL_PERIOD, cameraDistance } from '@/lib/kowloon-knockout/render/menuDuel';
+import { duelAt, duelImpacts, DUEL_PERIOD, cameraDistance } from '@/lib/kowloon-knockout/render/menuDuel';
+import { ImpactBus } from '@/lib/kowloon-knockout/render/impact';
+import { stepBus } from '@/lib/kowloon-knockout/render/impactStep';
+import { MENU_MUTE, muteMaterial, type MutableMaterial } from '@/lib/kowloon-knockout/render/mute';
+import { pushMenuTrauma } from '@/lib/kowloon-knockout/menu/menuShake';
+import ImpactFx from '@/components/kowloon-knockout/arena/ImpactFx';
+import { ImpactProvider } from '@/components/kowloon-knockout/arena/ImpactContext';
 import { loadFighterRoster } from '@/lib/kowloon-knockout/render/fighter/useFighterRoster';
 import { DEFAULT_FIGHTER_MODEL } from '@/lib/kowloon-knockout/render/fighter/models';
 import { pickMatchup } from '@/lib/kowloon-knockout/render/menuMatchup';
@@ -36,7 +42,10 @@ const SEAT_COLORS = [
     { color: '#46e6ff', accent: '#c8f8ff' },
 ] as const;
 
-function CameraFit() {
+/** The camera's resting pose; the impact shake is laid on top of it each frame and never replaces it. */
+interface BasePose { x: number; y: number; z: number; targetY: number }
+
+function CameraFit({ base }: { base: React.MutableRefObject<BasePose | null> }) {
     const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
     const size = useThree((s) => s.size);
     const invalidate = useThree((s) => s.invalidate);
@@ -47,12 +56,58 @@ function CameraFit() {
         const tanHalf = Math.tan((FOV * Math.PI) / 360);
         // Aim so the feet sit FEET_AT of the way down: ndc(feet) = 1 - 2 * FEET_AT.
         const target = (2 * FEET_AT - 1) * d * tanHalf;
+        base.current = { x: 0.35, y: target + 0.3, z: d, targetY: target };
         camera.position.set(0.35, target + 0.3, d);
         camera.lookAt(0, target, 0);
+        camera.fov = FOV;
         camera.updateProjectionMatrix();
         invalidate();
-    }, [camera, size.width, size.height, invalidate]);
+    }, [camera, size.width, size.height, invalidate, base]);
     return null;
+}
+
+/**
+ * Steps the impact bus and lays its shake (a sideways/up translation and a roll) and field-of-view kick on
+ * top of the camera's resting pose. While nothing shakes it does no work.
+ */
+function MenuCamera({ bus, base }: { bus: ImpactBus; base: React.MutableRefObject<BasePose | null> }) {
+    const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
+    const wasShaking = useRef(false);
+    useFrame((_, delta) => {
+        stepBus(bus, delta, performance.now());
+        const b = base.current;
+        if (!b) return;
+        const s = bus.shake();
+        const shaking = s.x !== 0 || s.y !== 0 || s.roll !== 0 || bus.fovKick !== 0;
+        if (!shaking && !wasShaking.current) return;
+        wasShaking.current = shaking;
+        camera.position.set(b.x + s.x, b.y + s.y, b.z);
+        camera.lookAt(s.x, b.targetY + s.y, 0);
+        camera.rotateZ(s.roll);
+        const fov = FOV - bus.fovKick;
+        if (Math.abs(camera.fov - fov) > 0.005) { camera.fov = fov; camera.updateProjectionMatrix(); }
+    });
+    return null;
+}
+
+/**
+ * Quiet set-dressing: patches every material under it ONCE (flagged in userData) to render desaturated and a
+ * little darker (lib/kowloon-knockout/render/mute.ts). Models load whenever their download lands, so it looks
+ * again every few frames; each material costs nothing after its first patch. Plain WebGL only — the menu's.
+ */
+function MutedGroup({ children }: { children: React.ReactNode }) {
+    const ref = useRef<THREE.Group>(null);
+    const frame = useRef(0);
+    useFrame(() => {
+        frame.current++;
+        if (frame.current % 6 !== 1 || !ref.current) return;
+        ref.current.traverse((o) => {
+            const m = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
+            if (!m) return;
+            for (const mat of Array.isArray(m) ? m : [m]) muteMaterial(mat as unknown as MutableMaterial, MENU_MUTE);
+        });
+    });
+    return <group ref={ref}>{children}</group>;
 }
 
 function makeFrame(seat: number, modelId: string): RenderFighter {
@@ -66,14 +121,24 @@ function makeFrame(seat: number, modelId: string): RenderFighter {
     };
 }
 
-function Duel({ models, onLoop }: { models: [string, string]; onLoop: () => void }) {
+function Duel({ models, onLoop, bus, script }: { models: [string, string]; onLoop: () => void; bus: ImpactBus; script: boolean }) {
     const framesRef = useRef<RenderFighter[]>([makeFrame(0, models[0]), makeFrame(1, models[1])]);
     const clock = useRef(0);
     const loops = useRef(0);
     useFrame((_, delta) => {
-        clock.current += Math.min(0.1, delta);
-        const now = Math.floor(clock.current / DUEL_PERIOD);
-        if (now !== loops.current) { loops.current = now; if (now % 2 === 0) onLoop(); }
+        // `script` false holds the first pose (tests and previews that drive the bus by hand).
+        if (script) {
+            const prev = clock.current;
+            clock.current += Math.min(0.1, delta);
+            // Every blow that landed since the last frame goes to the bus: the camera, the street, the
+            // fighters and the effects all answer it.
+            const now = performance.now();
+            for (const i of duelImpacts(prev, clock.current)) {
+                bus.emit({ ...i, color: i.kind === 'hit' ? SEAT_COLORS[i.attacker].color : undefined }, now);
+            }
+            const loop = Math.floor(clock.current / DUEL_PERIOD);
+            if (loop !== loops.current) { loops.current = loop; if (loop % 2 === 0) onLoop(); }
+        }
         const [a, b] = duelAt(clock.current);
         Object.assign(framesRef.current[0], a);
         Object.assign(framesRef.current[1], b);
@@ -113,12 +178,21 @@ function useOnScreen(ref: React.RefObject<Element | null>): boolean {
     return on;
 }
 
-export default function MenuFighters3D({ className, models: forced }: {
+export default function MenuFighters3D({ className, models: forced, bus: injectedBus, script = true }: {
     className?: string;
     /** Fix the pairing (tests, previews); otherwise it rotates through the roster. */
     models?: [string, string];
+    /** Use this impact bus instead of making one (a test or preview that fires impacts by hand). */
+    bus?: ImpactBus;
+    /** false: the duel holds still and fires nothing by itself (pair with `bus`). */
+    script?: boolean;
 }) {
     const wrapRef = useRef<HTMLDivElement>(null);
+    const bus = useMemo(() => injectedBus ?? new ImpactBus(), [injectedBus]);
+    const basePose = useRef<BasePose | null>(null);
+
+    // The 3D layer tells the pixel street when a blow lands, so the street shakes with it.
+    useEffect(() => bus.subscribe((_e, prof) => { if (prof.trauma > 0) pushMenuTrauma(prof.trauma, performance.now()); }), [bus]);
     const [mounted, setMounted] = useState(false);
     const [picked, setModels] = useState<[string, string]>([DEFAULT_FIGHTER_MODEL, DEFAULT_FIGHTER_MODEL]);
     const [roster, setRoster] = useState<string[]>([]);
@@ -176,11 +250,20 @@ export default function MenuFighters3D({ className, models: forced }: {
                 gl={{ antialias: quality.antialias, alpha: true, stencil: false, powerPreference: pixel ? 'low-power' : 'default' }}
                 style={{ imageRendering: pixel ? 'pixelated' : 'auto', pointerEvents: 'none' }}
             >
-                <CameraFit />
-                <FrameDriver fps={quality.fps} active={onScreen} />
-                <NeonRig lights={quality.lights} />
-                {/* key = the pairing, so each Fighter's load state starts fresh with its models */}
-                <Duel key={models.join('|')} models={models} onLoop={reroll} />
+                <ImpactProvider value={bus}>
+                    <CameraFit base={basePose} />
+                    <MenuCamera bus={bus} base={basePose} />
+                    <FrameDriver fps={quality.fps} active={onScreen} />
+                    {/* Quiet lighting and muted materials: the fighters are set-dressing; the hits are the show. */}
+                    <NeonRig lights={quality.lights} strength={0.8} muted />
+                    <MutedGroup>
+                        {/* key = the pairing, so each Fighter's load state starts fresh with its models */}
+                        <Duel key={models.join('|')} models={models} onLoop={reroll} bus={bus} script={script} />
+                    </MutedGroup>
+                    {/* Sparks, rings and flashes stay vivid, and scale with the device. The canvas is transparent
+                        over the street, so they add light to it rather than painting over it. */}
+                    <ImpactFx sparkCap={quality.lights >= 3 ? (pixel ? 56 : 90) : 36} lite={quality.lights < 3} overTransparent />
+                </ImpactProvider>
             </Canvas>
         </div>
     );

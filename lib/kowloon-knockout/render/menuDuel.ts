@@ -120,3 +120,61 @@ export function cameraDistance(aspect: number, fovDeg: number, halfWidth = 2.3, 
     const tanHalf = Math.tan((fovDeg * Math.PI) / 360);
     return Math.max(minDistance, halfWidth / (tanHalf * Math.max(0.2, aspect)));
 }
+
+// ── Impacts: when and how hard each blow lands, for the effects ─────────────────
+
+/** An impact in the format the ImpactBus takes, minus the clock (the caller stamps `now`). */
+export interface DuelImpact {
+    kind: 'hit' | 'block' | 'ko';
+    victim: 0 | 1;
+    attacker: 0 | 1;
+    power: number;
+    x: number; y: number; z: number;
+    dirX: number; dirZ: number;
+}
+
+/** Damage each punch is shown as: a jab is a tap, an uppercut a haymaker, the knockdown the biggest. */
+export const DUEL_POWER: Record<PunchType, number> = { jab: 6, cross: 10, hook: 14, uppercut: 20 };
+export const DUEL_KO_POWER = 34;
+const BLOCK_POWER_SHOWN = 9;
+const CONTACT_Y = 1.15;
+
+/** Seconds into the loop at which each beat starts. */
+const BEAT_STARTS: { beat: Beat; start: number }[] = (() => {
+    let start = 0;
+    return BEATS.map((beat) => { const out = { beat, start }; start += beat.length; return out; });
+})();
+
+/** The impact of one beat, positioned from the fighters' poses at the instant of contact. */
+function impactOf(beat: Beat): DuelImpact {
+    const [l, r] = beatFrames(beat, HIT_AT);
+    const victim = (1 - beat.attacker) as 0 | 1;
+    const vf = victim === 0 ? l : r;
+    const af = beat.attacker === 0 ? l : r;
+    const dir = Math.sign(vf.x - af.x) || 1;
+    return {
+        kind: beat.reaction === 'block' ? 'block' : beat.reaction === 'ko' ? 'ko' : 'hit',
+        victim, attacker: beat.attacker,
+        power: beat.reaction === 'ko' ? DUEL_KO_POWER : beat.reaction === 'block' ? BLOCK_POWER_SHOWN : DUEL_POWER[beat.punch],
+        x: vf.x, y: CONTACT_Y, z: 0, dirX: dir, dirZ: 0,
+    };
+}
+
+/**
+ * The impacts that land in the time window (prevT, t], times in seconds since the loop began. A window may
+ * span the loop's end (the duel repeats every DUEL_PERIOD); one longer than the loop returns each impact
+ * once per pass. Empty when `t <= prevT`.
+ */
+export function duelImpacts(prevT: number, t: number): DuelImpact[] {
+    if (!(t > prevT)) return [];
+    const out: DuelImpact[] = [];
+    const firstLoop = Math.floor(prevT / DUEL_PERIOD);
+    const lastLoop = Math.floor(t / DUEL_PERIOD);
+    for (let loop = firstLoop; loop <= lastLoop; loop++) {
+        for (const { beat, start } of BEAT_STARTS) {
+            const at = loop * DUEL_PERIOD + start + HIT_AT;
+            if (at > prevT && at <= t) out.push(impactOf(beat));
+        }
+    }
+    return out;
+}

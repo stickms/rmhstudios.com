@@ -4,6 +4,7 @@ import { useRef, type MutableRefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { RenderFighter } from '@/lib/kowloon-knockout/net/session';
+import { useImpactBus } from './ImpactContext';
 
 type FramesRef = MutableRefObject<RenderFighter[]>;
 
@@ -11,17 +12,29 @@ type FramesRef = MutableRefObject<RenderFighter[]>;
  * Cinematic auto-framing camera: keeps every (living) fighter on screen by
  * tracking their centroid and pulling back as they spread out. A 3/4 angle
  * preserves the brawler read while showing depth.
+ *
+ * Impacts come from the ImpactBus and are applied AFTER the smoothed framing each frame — a translation
+ * and roll from the bus's trauma shake, and a field-of-view kick — so the shake never fights the follow
+ * (the framing is recomputed from scratch every frame, so nothing accumulates). A knockout's slow motion
+ * slows the camera's own drift too.
  */
-export default function CameraRig({ framesRef, shakeRef }: { framesRef: FramesRef; shakeRef: MutableRefObject<number> }) {
+export default function CameraRig({ framesRef }: { framesRef: FramesRef }) {
     const { camera } = useThree();
+    const bus = useImpactBus();
     const target = useRef(new THREE.Vector3(0, 1, 0));
     const lookAt = useRef(new THREE.Vector3(0, 1, 0));
+    const desired = useRef(new THREE.Vector3());
+    const focus = useRef(new THREE.Vector3(0, 1.1, 0));
+    const baseFov = useRef<number | null>(null);
 
-    useFrame((state, delta) => {
+    useFrame((_, deltaRaw) => {
         const fs = framesRef.current;
-        const focus = fs.filter((f) => f.alive);
-        const pool = focus.length ? focus : fs;
+        const alive = fs.filter((f) => f.alive);
+        const pool = alive.length ? alive : fs;
         if (pool.length === 0) return;
+
+        const slow = bus ? bus.slowScaleAt(performance.now()) : 1;
+        const delta = deltaRaw * slow;
 
         let cx = 0, cz = 0;
         for (const f of pool) { cx += f.x; cz += f.z; }
@@ -34,20 +47,33 @@ export default function CameraRig({ framesRef, shakeRef }: { framesRef: FramesRe
         const height = dist * 0.62;
 
         // Desired camera position: in front-ish (+Z) and above.
-        const desired = new THREE.Vector3(cx * 0.6, height, cz * 0.6 + dist);
+        desired.current.set(cx * 0.6, height, cz * 0.6 + dist);
         const k = 1 - Math.pow(0.001, delta); // frame-rate independent damp
-        target.current.lerp(desired, Math.min(1, k * 1.4));
+        target.current.lerp(desired.current, Math.min(1, k * 1.4));
 
-        // Screen shake.
-        const sh = shakeRef.current;
-        const ox = sh > 0 ? (Math.random() - 0.5) * sh * 0.06 : 0;
-        const oy = sh > 0 ? (Math.random() - 0.5) * sh * 0.06 : 0;
-        camera.position.set(target.current.x + ox, target.current.y + oy, target.current.z);
-
-        lookAt.current.lerp(new THREE.Vector3(cx, 1.1, cz), Math.min(1, k * 1.4));
+        camera.position.copy(target.current);
+        focus.current.set(cx, 1.1, cz);
+        lookAt.current.lerp(focus.current, Math.min(1, k * 1.4));
         camera.lookAt(lookAt.current);
 
-        if (shakeRef.current > 0) shakeRef.current *= 0.85;
+        if (!bus) return;
+        // Impact shake: camera-local sideways/up offset and a roll about the view axis.
+        const s = bus.shake();
+        if (s.x !== 0 || s.y !== 0 || s.roll !== 0) {
+            camera.translateX(s.x);
+            camera.translateY(s.y);
+            camera.rotateZ(s.roll);
+        }
+        // Field-of-view kick: a quick punch-in that eases back. Rebuild the projection only when it moves.
+        const cam = camera as THREE.PerspectiveCamera;
+        if (cam.isPerspectiveCamera) {
+            if (baseFov.current === null) baseFov.current = cam.fov + bus.fovKick;
+            const fov = baseFov.current - bus.fovKick; // narrower view = zoom in
+            if (Math.abs(cam.fov - fov) > 0.005) {
+                cam.fov = fov;
+                cam.updateProjectionMatrix();
+            }
+        }
     });
 
     return null;
