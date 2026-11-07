@@ -723,12 +723,14 @@ async function screenInvitees(
   let prefs: Array<{ userId: string; callPrivacy: string }>;
   let follows: Array<{ followerId: string }>;
   let users: Array<{ id: string; name: string | null; image: string | null; handle: string | null }>;
+  let inviterIsAdmin = false;
   try {
     // A mesh connects every pair directly — each sees the other's IP and
     // hears their voice — so a block between an invitee and anybody else in
     // the room bars the ring just as one with the inviter does.
     const others = [...new Set([...roomIds, ...inviteeIds])].filter((id) => id !== inviterId);
-    [blocks, pairBlocks, prefs, follows, users] = await Promise.all([
+    let inviter: { isAdmin: boolean } | null;
+    [blocks, pairBlocks, prefs, follows, users, inviter] = await Promise.all([
       prisma.userBlock.findMany({
         // Either direction bars the ring.
         where: {
@@ -760,7 +762,9 @@ async function screenInvitees(
         where: { id: { in: inviteeIds } },
         select: userChipSelect,
       }),
+      prisma.user.findUnique({ where: { id: inviterId }, select: { isAdmin: true } }),
     ]);
+    inviterIsAdmin = Boolean(inviter?.isAdmin);
   } catch (err) {
     logger.warn({ event: 'group_call_permission_failed', error: String(err) });
     // Refusing everyone is the safe direction: an unreadable block table must
@@ -820,7 +824,8 @@ async function screenInvitees(
       blocked: blocked.has(id),
       calleeFollowsCaller: followsInviter.has(id),
     });
-    if (!verdict.allowed) {
+    // Admins may ring anybody: their own block/privacy/follow screen is skipped.
+    if (!verdict.allowed && !inviterIsAdmin) {
       refusals.push(verdict.reason);
       continue;
     }
