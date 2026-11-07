@@ -43,7 +43,7 @@ writing, not necessarily the current code).
   hashed deployment assets and the one-time Apache CSP update.
 - [`hearthworks-models.md`](./hearthworks-models.md) — Hearthworks skinned character
   models, loaded at run time from the site's own Steam-sourced R2 channels (no model
-  data in the repo): the `public/models/hearthworks/manifest.json` v2 contract, index
+  data in the repo): the `lib/hearthworks/skins/models.manifest.json` v2 contract, index
   resolution, clip selection, fallbacks, how the animator blends clips, the
   model/procedural budget, the live-channel browser check, and how to add a skin.
 

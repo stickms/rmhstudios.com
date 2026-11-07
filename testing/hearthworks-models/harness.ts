@@ -4,7 +4,7 @@
  *
  *   /                                     the page
  *   /bundle.js                            the bundle
- *   /models/hearthworks/manifest.json     this checkout's manifest (public/); HW_TF2_SKIN=<n> sets the TF2 skin family
+ *   (the manifest is bundled into the page; HW_TF2_SKIN=<n> sets the TF2 skin family at bundle time)
  *   /api/<game>-game/assets/<kind>/<file> -> ${HW_ASSET_ORIGIN:-https://rmhstudios.com}/api/<game>-game/assets/...
  *   /__sizes                              what was fetched: wire (content-length, compressed) and decoded bytes per file
  *
@@ -12,7 +12,6 @@
  * proxy). Responses are cached in memory for the life of the server; the assets are content-addressed and immutable.
  */
 
-import { readFile } from 'node:fs/promises';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import path from 'node:path';
@@ -50,6 +49,7 @@ export async function bundlePage(): Promise<string> {
     define: {
       'import.meta.env': JSON.stringify({ DEV: false, PROD: true, MODE: 'model-harness' }),
       'process.env.NODE_ENV': '"production"',
+      'process.env.HW_TF2_SKIN': JSON.stringify(process.env.HW_TF2_SKIN ?? ''),
     },
   });
   return out.outputFiles[0].text;
@@ -74,16 +74,6 @@ export async function startModelHarness(): Promise<ModelHarness> {
         res.writeHead(200, { 'content-type': 'text/html' }).end(PAGE);
       } else if (u.pathname === '/bundle.js') {
         res.writeHead(200, { 'content-type': 'text/javascript' }).end(bundle);
-      } else if (u.pathname === '/models/hearthworks/manifest.json') {
-        let body = await readFile(path.join(root, 'public/models/hearthworks/manifest.json'), 'utf8');
-        // HW_TF2_SKIN=1 shows the TF2 classes in BLU (skin family 1) without touching the manifest.
-        const family = process.env.HW_TF2_SKIN;
-        if (family !== undefined) {
-          const json = JSON.parse(body) as { models: Record<string, { game?: string; skin?: number }> };
-          for (const e of Object.values(json.models)) if (e.game === 'tf2') e.skin = Number(family);
-          body = JSON.stringify(json);
-        }
-        res.writeHead(200, { 'content-type': 'application/json' }).end(body);
       } else if (u.pathname === '/favicon.ico') {
         res.writeHead(204).end();
       } else if (u.pathname === '/__sizes') {

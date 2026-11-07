@@ -9,12 +9,12 @@ total, so the game is complete with no model at all.
 **No model data lives in this repository.** The characters are Valve's (Half-Life 2, Team Fortress 2). They are loaded
 at run time from the site's own asset channels in Cloudflare R2 (`hl2-game/mdl/`, `tf2-game/mdl/`, ...), the ones the
 Source games on this site already use (docs/tf2-game.md "Game assets" and "Models"), which `tf2-assets-sync.yml`
-builds from retail installs downloaded with SteamCMD. `public/models/hearthworks/manifest.json` only says which model,
-which skin and which sequences. Credits and provenance: `public/models/hearthworks/CREDITS.md`.
+builds from retail installs downloaded with SteamCMD. `lib/hearthworks/skins/models.manifest.json` (bundled into the app, not fetched: `/models/` is an R2-hosted
+static directory and the app origin serves nothing there) only says which model, which skin and which sequences. Credits and provenance: `public/models/hearthworks/CREDITS.md`.
 
 ## The contract (manifest v2)
 
-`public/models/hearthworks/manifest.json`:
+`lib/hearthworks/skins/models.manifest.json`:
 
 ```json
 {
@@ -71,7 +71,7 @@ which skin and which sequences. Credits and provenance: `public/models/hearthwor
 - `note` is free text for people reading the file.
 
 The manifest is validated per entry with zod (`lib/hearthworks/skins/model-manifest.ts`): a bad entry is dropped, a
-wrong `version` (the retired v1 `file` manifest included), a 404 or invalid JSON means "no models". Nothing here ever
+wrong `version` (the retired v1 `file` manifest included), invalid JSON means "no models". Nothing here ever
 throws.
 
 ## Loading a model
@@ -182,7 +182,7 @@ asset route has no index (local dev without R2), and for anyone past the budget.
 1. Add the skin to `lib/hearthworks/skins/catalog.ts` (and a stand-in look in `looks.ts`) if it is new.
 2. Find its model in the channel's `mdl/index.json` (`curl https://rmhstudios.com/api/<game>-game/assets/mdl/index.json`).
    A model that is not there is not available: use a `stand-in` entry, do not substitute another model.
-3. Add its entry to `manifest.json`: `game`, `mdl`, `skin`, `handBone`, and the sequences for `idle` and `walk` at least.
+3. Add its entry to `models.manifest.json`: `game`, `mdl`, `skin`, `handBone`, and the sequences for `idle` and `walk` at least.
    To find sequence names, open the pack named by the index (`anims`) and read its animation names, `extras.delta`
    (a delta layer is rebased for you), `extras.movement` (the forward cell of a blend set) and `extras.frames`.
    Prefer a sequence whose last pose is where you want a one-shot to end (death lying down, not mid-flip).

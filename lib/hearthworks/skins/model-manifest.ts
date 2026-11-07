@@ -1,5 +1,5 @@
 /**
- * The manifest of skinned character models (public/models/hearthworks/manifest.json) and everything that can be
+ * The manifest of skinned character models (lib/hearthworks/skins/models.manifest.json) and everything that can be
  * decided from it without touching WebGL: which skins have a model, where it lives, which animation plays for a
  * logical clip, and what to play when a model lacks a clip. The contract is documented in docs/hearthworks-models.md.
  *
@@ -13,11 +13,10 @@
  */
 
 import { z } from 'zod';
+import bundledManifest from './models.manifest.json';
 import type { GameId } from '@/lib/tf2-game/assets/versions';
 import { isSkinId, type SkinId } from './catalog';
 
-export const MODEL_BASE = '/models/hearthworks/';
-export const MANIFEST_URL = `${MODEL_BASE}manifest.json`;
 
 export const CLIP_SLOTS = [
   'idle',
@@ -233,65 +232,25 @@ export function missingRequiredClips(
 
 export type { GameId };
 
-// --- loading (the only impure part) ------------------------------------------------------------------------------
+// --- the bundled manifest -------------------------------------------------------------------------------------------
+
+/**
+ * The manifest ships INSIDE the app bundle (it is a few KB), not as a file under `public/`. `public/models/` is an
+ * R2-hosted static directory (lib/storage/asset.ts): production serves nothing at `/models/...` from the app origin,
+ * so a runtime fetch of it failed and every skin silently stayed procedural. Bundling also removes a request from
+ * the critical path of the first figure.
+ */
+let current: Manifest = parseManifest(bundledManifest);
 
 type Listener = () => void;
-
-let current: Manifest = EMPTY_MANIFEST;
-let inflight: Promise<Manifest> | null = null;
-let settledAt = 0;
-let succeeded = false;
 const listeners = new Set<Listener>();
 
-/** A failed fetch is retried after this long, so a transient outage does not hide the models for the whole visit. */
-const RETRY_MS = 30_000;
-const FETCH_TIMEOUT_MS = 8_000;
-
-export interface LoadManifestOptions {
-  fetch?: typeof fetch;
-  /** Ignore the cache. */
-  force?: boolean;
-  now?: () => number;
+/** The manifest, already available (async only so callers need not change). Never rejects. */
+export function loadManifest(): Promise<Manifest> {
+  return Promise.resolve(current);
 }
 
-/** Fetch the manifest once and cache it. Resolves (never rejects) with the manifest, or the empty one on any failure. */
-export function loadManifest(opts: LoadManifestOptions = {}): Promise<Manifest> {
-  const now = opts.now ?? Date.now;
-  if (!opts.force) {
-    if (inflight) return inflight;
-    if (settledAt !== 0 && (succeeded || now() - settledAt < RETRY_MS)) return Promise.resolve(current);
-  }
-  const doFetch = opts.fetch ?? (typeof fetch === 'function' ? fetch : undefined);
-  if (!doFetch || (!opts.fetch && typeof window === 'undefined')) return Promise.resolve(current);
-
-  const run = (async (): Promise<Manifest> => {
-    let next = EMPTY_MANIFEST;
-    let ok = false;
-    const ctl = typeof AbortController === 'function' ? new AbortController() : null;
-    const timer = ctl ? setTimeout(() => ctl.abort(), FETCH_TIMEOUT_MS) : null;
-    try {
-      const res = await doFetch(MANIFEST_URL, { signal: ctl?.signal, headers: { accept: 'application/json' } });
-      if (res.ok) {
-        next = parseManifest(await res.json());
-        ok = true;
-      }
-    } catch {
-      /* offline, 404 as HTML, invalid JSON, timeout: no models */
-    } finally {
-      if (timer) clearTimeout(timer);
-    }
-    current = next;
-    succeeded = ok;
-    settledAt = now();
-    inflight = null;
-    for (const l of [...listeners]) l();
-    return current;
-  })();
-  inflight = run;
-  return run;
-}
-
-/** The manifest as loaded so far (empty until `loadManifest` resolves). Stable between loads, for `useSyncExternalStore`. */
+/** The manifest. Stable between changes, for `useSyncExternalStore`. */
 export function getManifest(): Manifest {
   return current;
 }
@@ -301,11 +260,8 @@ export function subscribeManifest(listener: Listener): () => void {
   return () => void listeners.delete(listener);
 }
 
-/** Test seam: forget everything loaded. */
-export function resetManifestForTests(next: Manifest = EMPTY_MANIFEST): void {
+/** Test seam: replace the manifest (default: the bundled one). */
+export function resetManifestForTests(next: Manifest = parseManifest(bundledManifest)): void {
   current = next;
-  inflight = null;
-  settledAt = next === EMPTY_MANIFEST ? 0 : Date.now();
-  succeeded = next !== EMPTY_MANIFEST;
   for (const l of [...listeners]) l();
 }
