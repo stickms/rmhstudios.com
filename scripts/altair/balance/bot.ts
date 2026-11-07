@@ -131,6 +131,11 @@ function steer(
   let ry = 0;
   let danger = 0;
   const sense2 = p.senseRadius * p.senseRadius;
+  // In a boss fight the hazards on the ground (the Hollow King's bone spikes and prison ring are enemy
+  // projectiles that sit for seconds) are what decide the fight, and a human reads and steps out of them.
+  const bossOn = enemies.some((e) => e.isBoss && !e.isDead);
+  const hazardRadius = bossOn ? 230 : 150;
+  const hazardPush = bossOn ? 2.5 : 1;
   for (const e of enemies) {
     if (e.isDead) continue; // a corpse fading out is not a threat
     const dx = px - e.x;
@@ -151,11 +156,11 @@ function steer(
     const dx = px - pr.x;
     const dy = py - pr.y;
     const d2 = dx * dx + dy * dy;
-    if (d2 > 150 * 150 || d2 < 1) continue;
+    if (d2 > hazardRadius * hazardRadius || d2 < 1) continue;
     const d = Math.sqrt(d2);
-    rx += (dx / d) * (40 / Math.max(16, d));
-    ry += (dy / d) * (40 / Math.max(16, d));
-    danger += 40 / Math.max(16, d);
+    rx += (dx / d) * hazardPush * (40 / Math.max(16, d));
+    ry += (dy / d) * hazardPush * (40 / Math.max(16, d));
+    danger += hazardPush * (40 / Math.max(16, d));
   }
   // Loot: the nearest item inside the radius.
   let best: PickupEntity | null = null;
@@ -209,7 +214,8 @@ function steer(
     const dx = boss.x - px;
     const dy = boss.y - py;
     const d = Math.hypot(dx, dy) || 1;
-    const want = hpFrac > 0.7 ? 130 : 210;
+    // Just outside the Hollow King's 150 px cleave while healthy, further back when hurt.
+    const want = hpFrac > 0.7 ? 175 : 240;
     if (d > want) {
       rx += (dx / d) * 1.4;
       ry += (dy / d) * 1.4;

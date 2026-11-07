@@ -100,9 +100,9 @@ export const WAVE_TIMELINE: readonly WaveEvent[] = [
   {
     startTime: 240,
     endTime: 300,
-    description: 'Pre-boss ramp. 1.2x budget. First Cultist spawns (1 per 15s).',
+    description: 'Pre-boss ramp. 1.5x budget. First Cultist spawns (1 per 15s).',
     enemyComposition: ['shambler', 'bat', 'skeleton_warrior', 'ghost', 'swarm_rat', 'cultist'],
-    spawnRateMultiplier: 1.2,
+    spawnRateMultiplier: 1.5,
     specialEvent: 'pre_boss_ramp',
   },
 

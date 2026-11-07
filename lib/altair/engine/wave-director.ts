@@ -283,9 +283,7 @@ export function updateWaveDirector(
   }
 
   // Calculate spawn budget
-  // Growth trimmed ~20% (was 1.5 / 0.15): the balance bot found the minute before the first boss (a screen
-  // already at the 200-enemy cap from ~1:30) wore every class down before the boss ever spawned.
-  const baseBudget = 2 + timeMinutes * 1.2 + timeMinutes * timeMinutes * 0.12;
+  const baseBudget = 2 + timeMinutes * 1.5 + timeMinutes * timeMinutes * 0.15;
   const effectiveBudget = baseBudget * currentWave.spawnRateMultiplier;
 
   // During boss fights, reduce spawn rate
