@@ -434,6 +434,7 @@ import { Route as ApiCalcNotebooksIndexRouteImport } from './routes/api/calc-not
 import { Route as ApiCalcNotebooksIdRouteImport } from './routes/api/calc-notebooks/$id'
 import { Route as ApiCalendarFeedIndexRouteImport } from './routes/api/calendar-feed/index'
 import { Route as ApiCalendarTokenRouteImport } from './routes/api/calendar/$token'
+import { Route as ApiCallsAnswerRouteImport } from './routes/api/calls/answer'
 import { Route as ApiCallsHistoryRouteImport } from './routes/api/calls/history'
 import { Route as ApiCallsIceRouteImport } from './routes/api/calls/ice'
 import { Route as ApiCallsMuteRouteImport } from './routes/api/calls/mute'
@@ -547,6 +548,7 @@ import { Route as ApiHomesListingsRouteImport } from './routes/api/homes/listing
 import { Route as ApiHomesRoommateRouteImport } from './routes/api/homes/roommate'
 import { Route as ApiHomesWatchesRouteImport } from './routes/api/homes/watches'
 import { Route as ApiHuntIndexRouteImport } from './routes/api/hunt/index'
+import { Route as ApiInternalCallAutoReplyRouteImport } from './routes/api/internal/call-auto-reply'
 import { Route as ApiInternalMatchResultRouteImport } from './routes/api/internal/match-result'
 import { Route as ApiInternalNotifyMessageRouteImport } from './routes/api/internal/notify-message'
 import { Route as ApiInternalNotifyTypingRouteImport } from './routes/api/internal/notify-typing'
@@ -3529,6 +3531,11 @@ const ApiCalendarTokenRoute = ApiCalendarTokenRouteImport.update({
   path: '/api/calendar/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCallsAnswerRoute = ApiCallsAnswerRouteImport.update({
+  id: '/api/calls/answer',
+  path: '/api/calls/answer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCallsHistoryRoute = ApiCallsHistoryRouteImport.update({
   id: '/api/calls/history',
   path: '/api/calls/history',
@@ -4100,6 +4107,12 @@ const ApiHuntIndexRoute = ApiHuntIndexRouteImport.update({
   path: '/api/hunt/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInternalCallAutoReplyRoute =
+  ApiInternalCallAutoReplyRouteImport.update({
+    id: '/api/internal/call-auto-reply',
+    path: '/api/internal/call-auto-reply',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiInternalMatchResultRoute = ApiInternalMatchResultRouteImport.update({
   id: '/api/internal/match-result',
   path: '/api/internal/match-result',
@@ -8934,6 +8947,7 @@ export interface FileRoutesByFullPath {
   '/api/bulk/preview': typeof ApiBulkPreviewRoute
   '/api/calc-notebooks/$id': typeof ApiCalcNotebooksIdRoute
   '/api/calendar/$token': typeof ApiCalendarTokenRoute
+  '/api/calls/answer': typeof ApiCallsAnswerRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
   '/api/calls/mute': typeof ApiCallsMuteRoute
@@ -9027,6 +9041,7 @@ export interface FileRoutesByFullPath {
   '/api/homes/listings': typeof ApiHomesListingsRouteWithChildren
   '/api/homes/roommate': typeof ApiHomesRoommateRoute
   '/api/homes/watches': typeof ApiHomesWatchesRoute
+  '/api/internal/call-auto-reply': typeof ApiInternalCallAutoReplyRoute
   '/api/internal/match-result': typeof ApiInternalMatchResultRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
@@ -10292,6 +10307,7 @@ export interface FileRoutesByTo {
   '/api/bulk/preview': typeof ApiBulkPreviewRoute
   '/api/calc-notebooks/$id': typeof ApiCalcNotebooksIdRoute
   '/api/calendar/$token': typeof ApiCalendarTokenRoute
+  '/api/calls/answer': typeof ApiCallsAnswerRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
   '/api/calls/mute': typeof ApiCallsMuteRoute
@@ -10385,6 +10401,7 @@ export interface FileRoutesByTo {
   '/api/homes/listings': typeof ApiHomesListingsRouteWithChildren
   '/api/homes/roommate': typeof ApiHomesRoommateRoute
   '/api/homes/watches': typeof ApiHomesWatchesRoute
+  '/api/internal/call-auto-reply': typeof ApiInternalCallAutoReplyRoute
   '/api/internal/match-result': typeof ApiInternalMatchResultRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
@@ -11677,6 +11694,7 @@ export interface FileRoutesById {
   '/api/bulk/preview': typeof ApiBulkPreviewRoute
   '/api/calc-notebooks/$id': typeof ApiCalcNotebooksIdRoute
   '/api/calendar/$token': typeof ApiCalendarTokenRoute
+  '/api/calls/answer': typeof ApiCallsAnswerRoute
   '/api/calls/history': typeof ApiCallsHistoryRoute
   '/api/calls/ice': typeof ApiCallsIceRoute
   '/api/calls/mute': typeof ApiCallsMuteRoute
@@ -11770,6 +11788,7 @@ export interface FileRoutesById {
   '/api/homes/listings': typeof ApiHomesListingsRouteWithChildren
   '/api/homes/roommate': typeof ApiHomesRoommateRoute
   '/api/homes/watches': typeof ApiHomesWatchesRoute
+  '/api/internal/call-auto-reply': typeof ApiInternalCallAutoReplyRoute
   '/api/internal/match-result': typeof ApiInternalMatchResultRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
@@ -13062,6 +13081,7 @@ export interface FileRouteTypes {
     | '/api/bulk/preview'
     | '/api/calc-notebooks/$id'
     | '/api/calendar/$token'
+    | '/api/calls/answer'
     | '/api/calls/history'
     | '/api/calls/ice'
     | '/api/calls/mute'
@@ -13155,6 +13175,7 @@ export interface FileRouteTypes {
     | '/api/homes/listings'
     | '/api/homes/roommate'
     | '/api/homes/watches'
+    | '/api/internal/call-auto-reply'
     | '/api/internal/match-result'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
@@ -14420,6 +14441,7 @@ export interface FileRouteTypes {
     | '/api/bulk/preview'
     | '/api/calc-notebooks/$id'
     | '/api/calendar/$token'
+    | '/api/calls/answer'
     | '/api/calls/history'
     | '/api/calls/ice'
     | '/api/calls/mute'
@@ -14513,6 +14535,7 @@ export interface FileRouteTypes {
     | '/api/homes/listings'
     | '/api/homes/roommate'
     | '/api/homes/watches'
+    | '/api/internal/call-auto-reply'
     | '/api/internal/match-result'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
@@ -15804,6 +15827,7 @@ export interface FileRouteTypes {
     | '/api/bulk/preview'
     | '/api/calc-notebooks/$id'
     | '/api/calendar/$token'
+    | '/api/calls/answer'
     | '/api/calls/history'
     | '/api/calls/ice'
     | '/api/calls/mute'
@@ -15897,6 +15921,7 @@ export interface FileRouteTypes {
     | '/api/homes/listings'
     | '/api/homes/roommate'
     | '/api/homes/watches'
+    | '/api/internal/call-auto-reply'
     | '/api/internal/match-result'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
@@ -16969,6 +16994,7 @@ export interface RootRouteChildren {
   ApiBulkPreviewRoute: typeof ApiBulkPreviewRoute
   ApiCalcNotebooksIdRoute: typeof ApiCalcNotebooksIdRoute
   ApiCalendarTokenRoute: typeof ApiCalendarTokenRoute
+  ApiCallsAnswerRoute: typeof ApiCallsAnswerRoute
   ApiCallsHistoryRoute: typeof ApiCallsHistoryRoute
   ApiCallsIceRoute: typeof ApiCallsIceRoute
   ApiCallsMuteRoute: typeof ApiCallsMuteRoute
@@ -17062,6 +17088,7 @@ export interface RootRouteChildren {
   ApiHomesListingsRoute: typeof ApiHomesListingsRouteWithChildren
   ApiHomesRoommateRoute: typeof ApiHomesRoommateRoute
   ApiHomesWatchesRoute: typeof ApiHomesWatchesRoute
+  ApiInternalCallAutoReplyRoute: typeof ApiInternalCallAutoReplyRoute
   ApiInternalMatchResultRoute: typeof ApiInternalMatchResultRoute
   ApiInternalNotifyMessageRoute: typeof ApiInternalNotifyMessageRoute
   ApiInternalNotifyTypingRoute: typeof ApiInternalNotifyTypingRoute
@@ -20649,6 +20676,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCalendarTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/calls/answer': {
+      id: '/api/calls/answer'
+      path: '/api/calls/answer'
+      fullPath: '/api/calls/answer'
+      preLoaderRoute: typeof ApiCallsAnswerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/calls/history': {
       id: '/api/calls/history'
       path: '/api/calls/history'
@@ -21438,6 +21472,13 @@ declare module '@tanstack/react-router' {
       path: '/api/hunt'
       fullPath: '/api/hunt/'
       preLoaderRoute: typeof ApiHuntIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/call-auto-reply': {
+      id: '/api/internal/call-auto-reply'
+      path: '/api/internal/call-auto-reply'
+      fullPath: '/api/internal/call-auto-reply'
+      preLoaderRoute: typeof ApiInternalCallAutoReplyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/internal/match-result': {
@@ -29806,6 +29847,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiBulkPreviewRoute: ApiBulkPreviewRoute,
   ApiCalcNotebooksIdRoute: ApiCalcNotebooksIdRoute,
   ApiCalendarTokenRoute: ApiCalendarTokenRoute,
+  ApiCallsAnswerRoute: ApiCallsAnswerRoute,
   ApiCallsHistoryRoute: ApiCallsHistoryRoute,
   ApiCallsIceRoute: ApiCallsIceRoute,
   ApiCallsMuteRoute: ApiCallsMuteRoute,
@@ -29899,6 +29941,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHomesListingsRoute: ApiHomesListingsRouteWithChildren,
   ApiHomesRoommateRoute: ApiHomesRoommateRoute,
   ApiHomesWatchesRoute: ApiHomesWatchesRoute,
+  ApiInternalCallAutoReplyRoute: ApiInternalCallAutoReplyRoute,
   ApiInternalMatchResultRoute: ApiInternalMatchResultRoute,
   ApiInternalNotifyMessageRoute: ApiInternalNotifyMessageRoute,
   ApiInternalNotifyTypingRoute: ApiInternalNotifyTypingRoute,

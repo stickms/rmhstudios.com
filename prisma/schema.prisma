@@ -660,6 +660,15 @@ model NotificationPreference {
   /// signaling handler, never by the caller's client.
   callPrivacy String @default("mutuals") @db.VarChar(10)
 
+  /// How this user wants calls answered: 'ring' (ring normally, no reply) |
+  /// 'ring_reply' (ring; if busy or unanswered, send a short automatic DM) |
+  /// 'reply_only' (do not ring; send the automatic DM instead). Enforced by the
+  /// call hub, and the DM is sent by the web tier (lib/call/auto-reply.server.ts).
+  callAnswerMode String  @default("ring") @db.VarChar(12)
+  /// What the automatic reply may say about why the user is unavailable. Free
+  /// text from the user, treated as data (never instructions) by the writer.
+  callBusyNote   String? @db.VarChar(200)
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notification_preference")

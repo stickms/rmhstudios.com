@@ -94,6 +94,7 @@ import {
   shouldOffer,
 } from '../../../lib/groupcall/state';
 import { isCallPrivacy, DEFAULT_CALL_PRIVACY, type CallPrivacy } from '../../../lib/call/state';
+import { isCallAnswerMode, ringsPhone } from '../../../lib/call/answer';
 import { userChipSelect } from '../../../lib/user-display';
 import { PEER_GRACE_MS } from '../../../lib/shared/realtime/types';
 
@@ -720,7 +721,7 @@ async function screenInvitees(
   const prisma = getPrismaClient();
   let blocks: Array<{ blockerId: string; blockedId: string }>;
   let pairBlocks: Array<{ blockerId: string; blockedId: string }>;
-  let prefs: Array<{ userId: string; callPrivacy: string }>;
+  let prefs: Array<{ userId: string; callPrivacy: string; callAnswerMode?: string }>;
   let follows: Array<{ followerId: string }>;
   let followedBy: Array<{ followingId: string }>;
   let mutes: Array<{ userId: string }>;
@@ -754,7 +755,7 @@ async function screenInvitees(
       }),
       prisma.notificationPreference.findMany({
         where: { userId: { in: inviteeIds } },
-        select: { userId: true, callPrivacy: true },
+        select: { userId: true, callPrivacy: true, callAnswerMode: true },
       }),
       prisma.follow.findMany({
         where: { followerId: { in: inviteeIds }, followingId: inviterId },
@@ -801,8 +802,11 @@ async function screenInvitees(
   // invitees admitted ahead of them in this batch.
   const present = new Set(roomIds);
   const privacyBy = new Map<string, CallPrivacy>();
+  // Invitees who asked not to be rung at all (`reply_only`). A group ring is a ring.
+  const doNotRing = new Set<string>();
   for (const p of prefs) {
     if (isCallPrivacy(p.callPrivacy)) privacyBy.set(p.userId, p.callPrivacy);
+    if (isCallAnswerMode(p.callAnswerMode) && !ringsPhone(p.callAnswerMode)) doNotRing.add(p.userId);
   }
   const followsInviter = new Set(follows.map((f) => f.followerId));
   const followedByInviter = new Set(followedBy.map((f) => f.followingId));
@@ -843,6 +847,11 @@ async function screenInvitees(
     // Admins may ring anybody: their own block/privacy/follow screen is skipped.
     if (!verdict.allowed && !inviterIsAdmin) {
       refusals.push(verdict.reason);
+      continue;
+    }
+    if (doNotRing.has(id)) {
+      // No automatic DM from a group ring: it has no single caller to answer.
+      refusals.push('busy');
       continue;
     }
     const theirs = conflicts.get(id);

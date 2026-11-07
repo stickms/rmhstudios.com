@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 987 files across 197 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 989 files across 197 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -328,10 +328,11 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/calls`
 
-4 routes.
+5 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/calls/answer` | `GET` `PUT` | `app/routes/api/calls/answer.ts` |
 | `/api/calls/history` | `GET` | `app/routes/api/calls/history.ts` |
 | `/api/calls/ice` | `GET` | `app/routes/api/calls/ice.ts` |
 | `/api/calls/mute` | `DELETE` `GET` `POST` | `app/routes/api/calls/mute.ts` |
@@ -1035,10 +1036,11 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/internal`
 
-7 routes.
+8 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/internal/call-auto-reply` | `POST` | `app/routes/api/internal/call-auto-reply.ts` |
 | `/api/internal/match-result` | `POST` | `app/routes/api/internal/match-result.ts` |
 | `/api/internal/notify-message` | `POST` | `app/routes/api/internal/notify-message.ts` |
 | `/api/internal/notify-typing` | `POST` | `app/routes/api/internal/notify-typing.ts` |

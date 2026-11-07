@@ -807,5 +807,17 @@
   "call-mutes-heading": "Muted callers",
   "call-mutes-until": "Until {{time}}",
   "call-mutes-unmute": "Unmute",
-  "call-mutes-unmute-aria": "Unmute {{name}}"
+  "call-mutes-unmute-aria": "Unmute {{name}}",
+  "call-answer-title": "Answering calls",
+  "call-answer-subtitle": "Choose what happens when you can’t pick up. Only people who are allowed to call you ever get a reply.",
+  "call-answer-who": "When someone calls me",
+  "call-answer-ring": "Ring me",
+  "call-answer-ring-hint": "Calls ring as normal. Nothing is sent automatically.",
+  "call-answer-ring-reply": "Ring me, then reply if I can’t answer",
+  "call-answer-ring-reply-hint": "If you are on another call or miss it, the caller gets a short automatic message.",
+  "call-answer-reply-only": "Don’t ring me, reply instead",
+  "call-answer-reply-only-hint": "Calls never ring. The caller gets a short automatic message instead.",
+  "call-answer-note-label": "Why you might be unavailable (optional)",
+  "call-answer-note-placeholder": "e.g. In class until 3pm",
+  "call-answer-note-hint": "AI turns this into a short, friendly reply. Each one is labelled as automatic, and a caller gets at most one every 30 minutes."
 }
