@@ -100,6 +100,27 @@
     --color-red-400: #f677b3;
     --color-red-500: #f4509f;
     --color-red-600: #d93a89;
+    /* Status colours: the print has two inks. Good news (ready, connected, done) is
+       the cyan; warnings (reconnecting, unranked, a slow song) are the pink. */
+    --color-green-100: #050921;
+    --color-green-400: #5cc4f3;
+    --color-green-500: #2db3f0;
+    --color-green-600: #1c9bd6;
+    --color-green-800: #8fd8f7;
+    --color-emerald-500: #2db3f0;
+    --color-teal-500: #2db3f0;
+    --color-lime-500: #2db3f0;
+    --color-amber-50: #050921;
+    --color-amber-400: #f677b3;
+    --color-amber-500: #f4509f;
+    --color-amber-700: #d93a89;
+    --color-amber-800: #f89cc8;
+    --color-orange-400: #f677b3;
+    --color-orange-500: #f4509f;
+    --color-orange-600: #d93a89;
+    --color-yellow-400: #f677b3;
+    --color-yellow-500: #f4509f;
+    --color-purple-500: #f4509f;
   }
 }
 
@@ -269,6 +290,28 @@ html.perf-lite .slice-tokens [data-jelly-rest='flat']:not(.slice-btn-primary, .s
   color: var(--slice-label);
 }
 
+/*
+ * Under `perf-lite` the site paints every flat button an opaque surface with an
+ * unlayered rule of higher specificity than the classes above, so the game's own
+ * two buttons restate their fills at the same specificity (and for hover).
+ */
+html.perf-lite .slice-theme .slice-btn-primary[data-jelly-rest='flat'] {
+  background-color: var(--slice-paper);
+  color: var(--slice-bg);
+}
+html.perf-lite .slice-theme .slice-btn-primary[data-jelly-rest='flat']:hover {
+  background-color: var(--slice-primary);
+}
+html.perf-lite .slice-theme .slice-btn-alt[data-jelly-rest='flat'] {
+  background-color: transparent;
+  color: var(--slice-paper);
+  border-color: transparent;
+}
+html.perf-lite .slice-theme .slice-btn-alt[data-jelly-rest='flat']:hover {
+  background-color: var(--slice-paper);
+  color: var(--slice-bg);
+}
+
 /* The primary action: a paper slab whose right edge is the cut. */
 .slice-btn-primary {
   display: inline-flex;
@@ -336,8 +379,44 @@ html .slice-tokens :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay) 
   background-color: var(--slice-card-bg);
   background-image: none;
   border: 1px solid var(--slice-border);
+  border-radius: 0;
   box-shadow: none;
   color: var(--slice-text);
+}
+
+/* The site's flat buttons carry a faint sheen; in here a button is a flat fill. */
+html .slice-theme [data-slot='button'],
+html.perf-lite .slice-theme [data-slot='button'],
+html .slice-tokens [data-slot='button'] {
+  background-image: none;
+  box-shadow: none;
+}
+
+/*
+ * Toasts are the site's (portalled out of the game), so they are reached from the
+ * document: while the game is on screen a toast is a ticket — a paper slip with a
+ * notch cut in its left edge — instead of a white pill.
+ */
+html body:has(.slice-theme) [data-sonner-toaster] [data-sonner-toast][data-styled='true'] {
+  border: 0;
+  border-radius: 0;
+  background: #f0f1f6;
+  background-image: none;
+  box-shadow: none;
+  color: #050921;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 10px 50%);
+  padding-left: 26px;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+html
+  body:has(.slice-theme)
+  [data-sonner-toaster]
+  [data-sonner-toast][data-styled='true'][data-type='error'] {
+  background: #f4509f;
 }
 
 html .slice-theme .glass-inset,
@@ -615,4 +694,170 @@ a.neumorphic-sm:hover,
   height: 10px;
   background: var(--slice-paper);
   opacity: 0.5;
+}
+
+/* ─── Results ───────────────────────────────────────────────────────────────
+ *
+ * The end of the side: a grade the size of the sleeve, cut on the slice, and the
+ * liner notes beside it — dotted leaders, a crooked stamp for a new best.
+ */
+.slice-results {
+  font-family: var(--slice-body);
+  color: var(--slice-text);
+}
+
+.slice-results__line {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: calc(36px + var(--safe-top, 0px));
+  padding: var(--safe-top, 0px) max(28px, var(--safe-right, 0px)) 0 max(28px, var(--safe-left, 0px));
+  border-bottom: 1px solid var(--slice-border);
+}
+
+.slice-results__line .slice-label i {
+  font-style: normal;
+  padding: 0 4px;
+}
+
+.slice-results__grid {
+  display: grid;
+  gap: 24px;
+  padding: 24px max(24px, var(--safe-right, 0px)) calc(32px + var(--safe-bottom, 0px))
+    max(24px, var(--safe-left, 0px));
+}
+
+@media (min-width: 1024px) {
+  .slice-results__grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: 48px;
+    padding: 28px max(52px, var(--safe-right, 0px)) 32px max(36px, var(--safe-left, 0px));
+  }
+}
+
+.slice-results__grade {
+  position: relative;
+  min-width: 0;
+}
+
+.slice-grade {
+  position: relative;
+  width: 100%;
+  height: clamp(220px, 46vh, 640px);
+  font-size: clamp(220px, 58vh, 760px);
+}
+
+/* The letter is two clips of itself; the lower half is shifted along the cut. */
+.slice-grade__half {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--slice-display);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  line-height: 0.86;
+  color: var(--slice-paper);
+}
+
+.slice-grade__half--top {
+  clip-path: polygon(0 0, 100% 0, 100% 44%, 0 56%);
+}
+
+.slice-grade__half--bot {
+  clip-path: polygon(0 56%, 100% 44%, 100% 100%, 0 100%);
+  transform: translate(0.035em, 0.03em);
+}
+
+.slice-results__best {
+  position: absolute;
+  top: 6%;
+  right: 4%;
+}
+
+.slice-results__notes {
+  min-width: 0;
+}
+
+.slice-results__title {
+  margin: 12px 0 0;
+  font-size: clamp(28px, 3.6vw, 50px);
+  overflow-wrap: anywhere;
+}
+
+.slice-results__score {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.slice-results__figure {
+  font-family: var(--slice-mono);
+  font-weight: 600;
+  font-size: clamp(40px, 5.4vw, 78px);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.slice-results__tally {
+  margin: 20px 0 0;
+  border-top: 1px solid var(--slice-border);
+}
+
+.slice-leader {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 0;
+  font-family: var(--slice-mono);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.slice-leader i {
+  flex: 1;
+  border-bottom: 2px dotted var(--slice-border);
+  transform: translateY(-3px);
+}
+
+.slice-leader dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.slice-results__timing {
+  margin-top: 16px;
+}
+
+.slice-results__timing-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+  margin: 0;
+  font-family: var(--slice-mono);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--slice-text-muted);
+}
+
+.slice-results__timing-list dd {
+  margin: 0;
+  text-align: right;
+  color: var(--slice-paper);
+  font-variant-numeric: tabular-nums;
+}
+
+.slice-results__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 28px;
 }

@@ -661,7 +661,7 @@ export function SongLibrary({
                 <Shuffle className="w-4 h-4" aria-hidden />
               </Button>
             </DialogTrigger>
-            <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none shadow-2xl rounded-2xl max-w-sm">
+            <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none rounded-2xl max-w-sm">
               <DialogHeader>
                 <DialogTitle className="text-slice-text font-black">
                   {ts('random-title', { defaultValue: 'Surprise Me' })}
@@ -692,7 +692,7 @@ export function SongLibrary({
                 <Layers className="w-4 h-4" aria-hidden />
               </Button>
             </DialogTrigger>
-            <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none shadow-2xl rounded-2xl max-w-lg">
+            <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none rounded-2xl max-w-lg">
               <DialogHeader>
                 <DialogTitle className="text-slice-text font-black">
                   {ts('packs-title', { defaultValue: 'Packs' })}
@@ -713,7 +713,7 @@ export function SongLibrary({
                 <Upload className="w-4 h-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none shadow-2xl rounded-2xl max-w-lg">
+            <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none rounded-2xl max-w-lg">
               <DialogHeader>
                 <DialogTitle className="text-slice-text font-black">
                   {t('upload-track-title', { defaultValue: 'UPLOAD TRACK' })}
@@ -729,8 +729,6 @@ export function SongLibrary({
           </Dialog>
         )}
       </div>
-
-
 
       {/* L15 — the artist facet. Hidden while a search is running: chips are a
           way to browse, and a query is a statement that you already know what
@@ -883,7 +881,9 @@ export function SongLibrary({
               <span>#</span>
               <span />
               <span>{t('col-title', { defaultValue: 'Title / artist' })}</span>
-              <span className="slice-trow__dens-col">{t('col-density', { defaultValue: 'Density' })}</span>
+              <span className="slice-trow__dens-col">
+                {t('col-density', { defaultValue: 'Density' })}
+              </span>
               <span className="slice-trow__num-col">{t('col-bpm', { defaultValue: 'BPM' })}</span>
               <span className="slice-trow__num-col">{t('col-time', { defaultValue: 'Time' })}</span>
               <span />

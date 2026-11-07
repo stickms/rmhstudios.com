@@ -331,11 +331,8 @@ export function SongDetailsPanel({
       {/* Edit Modal */}
       {showEdit && (
         <div className="fixed inset-0 z-200 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-            onClick={() => setShowEdit(false)}
-          />
-          <div className="relative bg-slice-bg rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 flex flex-col gap-4">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowEdit(false)} />
+          <div className="relative bg-slice-bg rounded-2xl w-full max-w-md mx-4 p-6 flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-black text-slice-text uppercase tracking-tight">
                 {t('edit-track', { defaultValue: 'Edit Track' })}
@@ -390,7 +387,7 @@ export function SongDetailsPanel({
                 <Input
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="bg-(--slice-input-bg) text-slice-text border-(--slice-input-border) shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]"
+                  className="bg-(--slice-input-bg) text-slice-text border-(--slice-input-border) border border-slice-border"
                 />
               </div>
               <div className="space-y-1">
@@ -400,7 +397,7 @@ export function SongDetailsPanel({
                 <Input
                   value={editArtist}
                   onChange={(e) => setEditArtist(e.target.value)}
-                  className="bg-(--slice-input-bg) text-slice-text border-(--slice-input-border) shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]"
+                  className="bg-(--slice-input-bg) text-slice-text border-(--slice-input-border) border border-slice-border"
                 />
               </div>
               <div className="space-y-1">
@@ -411,7 +408,7 @@ export function SongDetailsPanel({
                   type="number"
                   value={editBpm}
                   onChange={(e) => setEditBpm(e.target.value)}
-                  className="bg-(--slice-input-bg) text-slice-text border-(--slice-input-border) shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]"
+                  className="bg-(--slice-input-bg) text-slice-text border-(--slice-input-border) border border-slice-border"
                   placeholder={t('bpm-placeholder', { defaultValue: 'e.g. 120' })}
                 />
               </div>
@@ -422,7 +419,7 @@ export function SongDetailsPanel({
                 <Input
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
-                  className="bg-(--slice-input-bg) text-slice-text border-(--slice-input-border) shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]"
+                  className="bg-(--slice-input-bg) text-slice-text border-(--slice-input-border) border border-slice-border"
                   placeholder={t('description-placeholder-song-details-panel', {
                     defaultValue: 'Optional description...',
                   })}
@@ -572,7 +569,7 @@ export function SongDetailsPanel({
                       <Layers className="size-5" aria-hidden />
                     </button>
                   </DialogTrigger>
-                  <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none shadow-2xl rounded-2xl max-w-lg">
+                  <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none rounded-2xl max-w-lg">
                     <DialogHeader>
                       <DialogTitle className="text-slice-text font-black">
                         {t('add-to-pack', { defaultValue: 'Add to pack' })}
@@ -583,7 +580,9 @@ export function SongDetailsPanel({
                 </Dialog>
               )}
               <div className="slice-rec__mult">
-                <span className="slice-label">{t('multiplier', { defaultValue: 'Multiplier' })}</span>
+                <span className="slice-label">
+                  {t('multiplier', { defaultValue: 'Multiplier' })}
+                </span>
                 <b>×{getScoreMultiplier().toFixed(2)}</b>
               </div>
             </div>
@@ -677,9 +676,7 @@ export function SongDetailsPanel({
               with no fail state is not comparable to one with it, and no penalty
               because charging a player for needing an assist is the design
               mistake `ASSIST_MODIFIERS` exists to avoid. */}
-          <h3 className="slice-section-title">
-            {t('assists', { defaultValue: 'Assists' })}
-          </h3>
+          <h3 className="slice-section-title">{t('assists', { defaultValue: 'Assists' })}</h3>
           <p className="text-[10px] text-slice-text-light font-bold leading-snug mb-3">
             {t('assists-hint', {
               defaultValue:
@@ -751,9 +748,7 @@ export function SongDetailsPanel({
 
         {/* Comments Section */}
         <div className="slice-sec">
-          <h3 className="slice-section-title">
-            {t('comments', { defaultValue: 'Comments' })}
-          </h3>
+          <h3 className="slice-section-title">{t('comments', { defaultValue: 'Comments' })}</h3>
           <div className="bg-slice-shadow-dark/20 rounded-lg border border-slice-shadow-dark/50 p-3 min-h-[200px]">
             {belowFold ? <SongComments songId={song.id} /> : <FoldPlaceholder rows={3} />}
           </div>

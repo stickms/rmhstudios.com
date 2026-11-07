@@ -136,7 +136,7 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="absolute inset-0 z-60 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-slice-bg p-4">
-      <Card className="w-full max-w-md bg-slice-bg text-slice-text shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none">
+      <Card className="w-full max-w-md bg-slice-bg text-slice-text border border-slice-border">
         <CardHeader>
           <CardTitle className="text-2xl font-black text-center text-slice-text-darker">
             {t('audio-calibration', { defaultValue: 'AUDIO CALIBRATION' })}
@@ -151,10 +151,10 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
           </p>
 
           <div
-            className={`bg-slice-bg p-8 rounded-full w-48 h-48 mx-auto flex items-center justify-center transition duration-75 ${beatFlash ? 'shadow-[0_0_30px_rgba(59,130,246,0.8),inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]' : 'shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]'}`}
+            className={`bg-slice-bg p-8 rounded-full w-48 h-48 mx-auto flex items-center justify-center transition duration-75 ${beatFlash ? 'border border-slice-border' : 'border border-slice-border'}`}
           >
             <Button
-              className={`w-32 h-32 rounded-full font-bold text-xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] transition ${isPlaying ? 'bg-blue-500 text-white' : 'bg-slice-bg text-slice-text-muted'} ${beatFlash ? 'scale-95' : 'scale-100'}`}
+              className={`w-32 h-32 rounded-full font-bold text-xl border border-slice-border transition ${isPlaying ? 'bg-blue-500 text-white' : 'bg-slice-bg text-slice-text-muted'} ${beatFlash ? 'scale-95' : 'scale-100'}`}
               onClick={isPlaying ? handleTap : startMetronome}
             >
               {isPlaying
@@ -203,7 +203,7 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
           <div className="flex gap-4">
             <Button
               variant="ghost"
-              className="flex-1 bg-slice-bg text-slice-text-muted shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] rounded-xl"
+              className="flex-1 bg-slice-bg text-slice-text-muted border border-slice-border rounded-xl"
               onClick={stopMetronome}
               disabled={!isPlaying}
             >
@@ -211,7 +211,7 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
             </Button>
             <Button
               variant="ghost"
-              className="flex-1 bg-slice-bg text-slice-text-muted shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] rounded-xl"
+              className="flex-1 bg-slice-bg text-slice-text-muted border border-slice-border rounded-xl"
               onClick={() => {
                 setTempOffset(0);
                 setBeats([]);
@@ -232,7 +232,7 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
               {t('cancel', { defaultValue: 'CANCEL' })}
             </Button>
             <Button
-              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg rounded-xl"
+              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl"
               onClick={saveAndBack}
             >
               {t('save-and-exit', { defaultValue: 'SAVE & EXIT' })}

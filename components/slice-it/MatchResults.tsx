@@ -49,8 +49,8 @@ export function MatchResults({
   const pending = standings.filter((s) => !s.finished).length;
 
   return (
-    <div className="absolute inset-0 z-70 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-slice-bg/90 backdrop-blur-md p-4">
-      <div className="w-full max-w-xl bg-slice-bg shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] overflow-hidden my-auto">
+    <div className="absolute inset-0 z-70 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-slice-bg/90 p-4">
+      <div className="w-full max-w-xl bg-slice-bg border border-slice-border rounded-[2rem] overflow-hidden my-auto">
         <header className="text-center py-6 px-4">
           <h2 className="text-3xl font-black text-slice-text-darker uppercase tracking-tighter">
             {results
@@ -193,7 +193,7 @@ function TeamScoreboard({ teams }: { teams: TeamTotal[] }) {
         {teams.map((team) => (
           <li
             key={team.team}
-            className={`p-4 rounded-xl bg-slice-bg shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] ${
+            className={`p-4 rounded-xl bg-slice-bg border border-slice-border ${
               team.place === 1 && !drawn ? 'ring-2 ring-yellow-500/50' : ''
             }`}
           >
@@ -231,7 +231,7 @@ function StandingRow({ standing, isSelf }: { standing: FinalStanding; isSelf: bo
 
   return (
     <li
-      className={`flex items-center gap-3 p-4 rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] ${
+      className={`flex items-center gap-3 p-4 rounded-xl border border-slice-border ${
         isSelf ? 'bg-blue-500/10 ring-2 ring-blue-500/30' : 'bg-slice-bg'
       }`}
     >
