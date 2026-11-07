@@ -291,7 +291,7 @@ These are not UI, but each fails or asserts a removed thing when the owning task
 | --- | --- | --- | --- | --- |
 | 47 | `lib/__tests__/site-infinite-animation.test.ts:16,26,190-273` | the `jelly-drift`/`jelly-current` keyframes run only under `.jelly-flow >`; `html[data-scrolling]` pause; `[data-liquid-canvas='on']`, `[data-jelly-flow='on']`, `[data-jelly-haze='on']` isolation selectors (lines 271-273) | (b) | T2 (N3, N12), T5 |
 | 48 | `lib/__tests__/jelly-contract.test.ts:539,594` | "no `@keyframes` except the sanctioned `.jelly-flow` haze drift" | (b) | T2 |
-| 49 | `lib/__tests__/jelly-coverage.test.ts:333,348` | message "motion comes from the jelly services and .jelly-flow carriers"; `expect(skeleton).toMatch(/data-jelly-flow="off"/)` | (b) | T2 |
+| 49 | `lib/__tests__/jelly-coverage.test.ts:333,348,393-399` | message "motion comes from the jelly services and .jelly-flow carriers"; `expect(skeleton).toMatch(/data-jelly-flow="off"/)`; and at 393-399 the legacy press-cue probe fails if any `:active` selector of the cue lacks `:not([data-jelly-active])` (item 37's rule) | (b) | T2 for 333/348; T3 for 393-399 |
 | 50 | `lib/__tests__/jelly-legibility.test.ts:224` | token list entry `--site-jelly-flow-speed` | (a) | T5 only if the token is removed |
 
 ### 2.4 Same family, outside the brief's list (found while reading)
@@ -321,7 +321,7 @@ are the same-family names outside the brief's list.
 
 | ID | Defect | Item | Owner |
 | --- | --- | --- | --- |
-| D-B1 | `:not([data-jelly-active]):active { opacity: 0.6 }` presses (`app/globals.css:3444-3451`) lose their suppressor when physics stops being installed: double press cue on every link, tab, menu item, legacy button. Rewrite the guard to the new press state (or remove the opacity cue for hosts that spring). | 37 | T3 |
+| D-B1 | `:not([data-jelly-active]):active { opacity: 0.6 }` presses (`app/globals.css:3444-3451`) lose their suppressor when physics stops being installed: double press cue on every link, tab, menu item, legacy button. Rewrite the guard to the new press state (or remove the opacity cue for hosts that spring). **T3 must amend the gate in the same commit:** `lib/__tests__/jelly-coverage.test.ts:393-399` (item 49) fails CI if any `:active` selector of the cue lacks `:not([data-jelly-active])`, so changing the guard without updating that probe breaks the build. | 37, 49 | T3 |
 | D-B2 | Gate `site-infinite-animation` N3/N12 pins the carrier selectors and `[data-liquid-canvas|jelly-flow|jelly-haze='on']` isolation list. | 47 | T2 |
 | D-B3 | Gate `jelly-contract` allows `@keyframes` only for the `.jelly-flow` drift. | 48 | T2 |
 | D-B4 | Gate `jelly-coverage` pins carriers in its message and `data-jelly-flow="off"` on the skeleton. | 49 | T2 |
