@@ -3,7 +3,7 @@ import { Group, PerspectiveCamera } from 'three';
 import { CharacterAnimator, newDrive } from '../animator';
 import { DEFAULT_BUDGET, planBudget, type BudgetEntry, type Tier } from '../figure-budget';
 import { FigureRegistry } from '../figure-registry';
-import { FIXTURE_ENTRY, buildFixture } from './fixture-model';
+import { FIXTURE_CLIPS, buildFixture } from './fixture-model';
 
 const crowd = (n: number, visible = true): BudgetEntry[] =>
   Array.from({ length: n }, (_, i) => ({ id: i + 1, distSq: (i + 1) ** 2, pinned: false, visible }));
@@ -79,7 +79,7 @@ describe('FigureRegistry', () => {
       g.updateMatrixWorld(true);
       h.object = g;
       const f = buildFixture();
-      h.animator = new CharacterAnimator(f.scene, new Map(f.animations.map((c) => [c.name, c])), FIXTURE_ENTRY, { seed: i / n });
+      h.animator = new CharacterAnimator(f.scene, new Map(f.animations.map((c) => [c.name, c])), FIXTURE_CLIPS, { seed: i / n });
       return h;
     });
     return { reg, handles };

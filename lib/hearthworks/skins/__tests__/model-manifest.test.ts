@@ -1,9 +1,15 @@
+import { readFileSync, readdirSync } from 'node:fs';
+import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { GAME_IDS } from '@/lib/tf2-game/assets/versions';
+import { SKIN_IDS, SKINS } from '../catalog';
 import {
   CLIP_FALLBACKS,
   CLIP_SLOTS,
   EMPTY_MANIFEST,
   MANIFEST_URL,
+  MODEL_GAMES,
+  clipNamesOf,
   getManifest,
   hasClip,
   loadManifest,
@@ -13,68 +19,145 @@ import {
   resolveClip,
 } from '../model-manifest';
 import { FIGURE_SCALE, figureWorldHeight, modelScale } from '../figure-scale';
-import { FIXTURE_ENTRY, MINIMAL_ENTRY } from './fixture-model';
+import { FIXTURE_CLIPS, MINIMAL_CLIPS } from './fixture-model';
 
 const entry = (over: Record<string, unknown> = {}) => ({
-  file: 'citizen.glb',
-  height: 1.8,
-  yaw: 0,
-  handBone: 'ValveBiped.Bip01_R_Hand',
-  bytes: 123_456,
-  provenance: 'valve-source',
-  clips: { idle: 'idle01', walk: 'walk_all' },
+  game: 'hl2',
+  mdl: 'models/humans/group01/male_01.mdl',
+  skin: 0,
+  handBone: 'valvebiped.bip01_r_hand',
+  provenance: 'steam-r2',
+  clips: { idle: 'idle_subtle', walk: 'walk_all@4' },
   ...over,
 });
 
-describe('parseManifest', () => {
+const v2 = (models: Record<string, unknown>) => ({ version: 2, models });
+
+describe('parseManifest (v2: remote sources, no files)', () => {
   it('accepts the documented shape and keeps only skins in the catalog', () => {
-    const m = parseManifest({ version: 1, models: { citizen: entry(), 'not-a-skin': entry() } });
+    const m = parseManifest(v2({ citizen: entry(), 'not-a-skin': entry() }));
     expect(Object.keys(m.models)).toEqual(['citizen']);
-    expect(m.models.citizen?.clips.idle).toBe('idle01');
+    expect(m.models.citizen).toMatchObject({ game: 'hl2', mdl: 'models/humans/group01/male_01.mdl', skin: 0, yaw: 0 });
+    // a bare string is a clip name; every spec comes out as an object
+    expect(m.models.citizen?.clips.idle).toEqual({ clip: 'idle_subtle' });
+    expect(m.models.citizen?.clips.walk).toEqual({ clip: 'walk_all@4' });
   });
 
-  it('treats null optional clips as absent', () => {
-    const m = parseManifest({ version: 1, models: { citizen: entry({ clips: { idle: 'i', walk: 'w', run: null, shoot: null } }) } });
-    expect(m.models.citizen?.clips.run).toBeUndefined();
-    expect(m.models.citizen?.clips.shoot).toBeUndefined();
+  it('defaults skin to family 0, yaw to 0 and the hand bone to none', () => {
+    const m = parseManifest(v2({ citizen: { game: 'tf2', mdl: 'models/player/scout.mdl', provenance: 'steam-r2', clips: { idle: 'i', walk: 'w' } } }));
+    expect(m.models.citizen).toMatchObject({ skin: 0, yaw: 0, handBone: null });
+    expect(m.models.citizen?.height).toBeUndefined();
+  });
+
+  it('keeps the team skin, height, yaw and hold offset when given', () => {
+    const m = parseManifest(v2({ scout: entry({ game: 'tf2', mdl: 'models/player/scout.mdl', skin: 1, height: 1.7, yaw: 3.14, hold: { pos: [0, 0.01, 0], rot: [0, 1, 0] } }) }));
+    expect(m.models.scout).toMatchObject({ skin: 1, height: 1.7, yaw: 3.14, hold: { rot: [0, 1, 0] } });
+  });
+
+  it('reads a clip given as { clip, trim } and treats null optional clips as absent', () => {
+    const m = parseManifest(
+      v2({
+        citizen: entry({ clips: { idle: 'i', walk: 'w', death: { clip: 'cit_door', trim: [12, 52] }, run: null, shoot: null } }),
+      }),
+    );
+    const c = m.models.citizen!.clips;
+    expect(c.death).toEqual({ clip: 'cit_door', trim: [12, 52] });
+    expect(c.run).toBeUndefined();
+    expect(c.shoot).toBeUndefined();
+    expect(clipNamesOf(m.models.citizen!)).toEqual({ idle: 'i', walk: 'w', death: 'cit_door' });
   });
 
   it('allows a null hand bone', () => {
-    expect(parseManifest({ version: 1, models: { citizen: entry({ handBone: null }) } }).models.citizen?.handBone).toBeNull();
+    expect(parseManifest(v2({ citizen: entry({ handBone: null }) })).models.citizen?.handBone).toBeNull();
   });
 
   it('drops a bad entry but keeps the good ones', () => {
-    const m = parseManifest({
-      version: 1,
-      models: { citizen: entry({ height: -1 }), worker: entry(), rebel: entry({ clips: { idle: 'x' } }) },
-    });
+    const m = parseManifest(
+      v2({
+        citizen: entry({ height: -1 }),
+        worker: entry(),
+        rebel: entry({ clips: { idle: 'x' } }),
+        barney: entry({ clips: { idle: 'i', walk: 'w', death: { clip: 'd', trim: [50, 10] } } }),
+      }),
+    );
     expect(Object.keys(m.models)).toEqual(['worker']);
   });
 
   it.each([
-    ['a file path', '../../etc/passwd.glb'],
-    ['a url', 'https://evil.example/m.glb'],
-    ['a subdirectory', 'a/b.glb'],
-    ['a non-glb', 'citizen.gltf'],
-  ])('refuses %s as a file name', (_n, file) => {
-    expect(parseManifest({ version: 1, models: { citizen: entry({ file }) } }).models.citizen).toBeUndefined();
+    ['a url', 'https://evil.example/models/a.mdl'],
+    ['a path out of the channel', '../../etc/passwd.mdl'],
+    ['an upper-case path (the index is lower-case)', 'models/Barney.mdl'],
+    ['a non-mdl', 'models/barney.glb'],
+    ['a path outside models/', 'maps/x.mdl'],
+  ])('refuses %s as a model path', (_n, mdl) => {
+    expect(parseManifest(v2({ citizen: entry({ mdl }) })).models.citizen).toBeUndefined();
   });
 
-  it.each([null, undefined, 3, 'x', [], { version: 2, models: {} }, { version: 1 }, { version: 1, models: [] }])(
+  it('refuses a game that is not an asset channel, and the retired v1 `file` shape', () => {
+    expect(parseManifest(v2({ citizen: entry({ game: 'gmod' }) })).models.citizen).toBeUndefined();
+    const v1 = { version: 1, models: { citizen: { file: 'citizen.glb', height: 1.8, yaw: 0, handBone: null, bytes: 1, provenance: 'valve-source', clips: { idle: 'a', walk: 'b' } } } };
+    expect(parseManifest(v1)).toBe(EMPTY_MANIFEST);
+    expect(parseManifest(v2({ citizen: { file: 'citizen.glb', provenance: 'valve-source', clips: { idle: 'a', walk: 'b' } } })).models.citizen).toBeUndefined();
+  });
+
+  it('lists the skins the file marks as stand-ins and gives them no model', () => {
+    const m = parseManifest(v2({ breen: { provenance: 'stand-in', reason: 'not in the channel' }, citizen: entry() }));
+    expect(m.standIns).toEqual(['breen']);
+    expect(m.models.breen).toBeUndefined();
+    expect(Object.keys(m.models)).toEqual(['citizen']);
+  });
+
+  it.each([null, undefined, 3, 'x', [], { version: 1, models: {} }, { version: 3, models: {} }, { version: 2 }, { version: 2, models: [] }])(
     'answers "no models" for garbage: %j',
     (junk) => {
       expect(parseManifest(junk)).toBe(EMPTY_MANIFEST);
     },
   );
 
-  it('keeps the optional hold offset when valid', () => {
-    const m = parseManifest({ version: 1, models: { citizen: entry({ hold: { pos: [0, 0.01, 0], rot: [0, 1, 0] } }) } });
-    expect(m.models.citizen?.hold?.rot).toEqual([0, 1, 0]);
+  it('keeps the asset channel list in step with the site’s GAME_IDS', () => {
+    expect([...MODEL_GAMES]).toEqual([...GAME_IDS]);
+  });
+});
+
+describe('the committed manifest.json', () => {
+  const raw = JSON.parse(readFileSync(path.join(process.cwd(), 'public/models/hearthworks/manifest.json'), 'utf8')) as { version: number; models: Record<string, unknown> };
+  const parsed = parseManifest(raw);
+
+  it('is v2 and accounts for every skin: a remote model or an explicit stand-in', () => {
+    expect(raw.version).toBe(2);
+    for (const id of SKIN_IDS) expect(Boolean(parsed.models[id]) !== parsed.standIns.includes(id), id).toBe(true);
+    // nothing in the file is dropped by validation
+    expect(Object.keys(raw.models).sort()).toEqual([...SKIN_IDS].sort());
+  });
+
+  it('names the catalog’s own source model for each skin that has one', () => {
+    for (const id of SKIN_IDS) {
+      const e = parsed.models[id];
+      if (!e) continue;
+      const source = SKINS[id].source;
+      expect(source, id).not.toBeNull();
+      // citizen/worker/rebel are mapped to the group01 models the hl2 channel does have (group03 is absent there)
+      if (e.game === 'tf2') expect(source).toBe(`tf2:${e.mdl}`);
+      else expect(e.game).toBe(source!.split(':')[0]);
+    }
+  });
+
+  it('gives every model the two required clips, by a plain glTF animation name', () => {
+    for (const e of Object.values(parsed.models)) {
+      const names = clipNamesOf(e!);
+      expect(missingRequiredClips({ clips: names }, new Set(Object.values(names)))).toEqual([]);
+      for (const n of Object.values(names)) expect(n).toMatch(/^[A-Za-z0-9_]+(@\d+)?$/);
+    }
+  });
+
+  it('ships no model data: nothing but the manifest and the credits in the folder', () => {
+    const files = readdirSync(path.join(process.cwd(), 'public/models/hearthworks'));
+    expect(files.sort()).toEqual(['CREDITS.md', 'manifest.json']);
   });
 });
 
 describe('resolveClip', () => {
-  const full = FIXTURE_ENTRY;
+  const full = FIXTURE_CLIPS;
   it('returns the model’s own clip when it has one', () => {
     for (const slot of CLIP_SLOTS) {
       expect(resolveClip(full, slot)).toEqual({ slot, animation: full.clips[slot] });
@@ -83,7 +166,7 @@ describe('resolveClip', () => {
   });
 
   it('falls back run→walk→idle, shoot/reload/interact/hurt→idle, death→hurt→idle, jump/fall→idle', () => {
-    const min = MINIMAL_ENTRY;
+    const min = MINIMAL_CLIPS;
     expect(resolveClip(min, 'run')).toEqual({ slot: 'walk', animation: 'Walk' });
     for (const s of ['shoot', 'reload', 'interact', 'hurt', 'jump', 'fall', 'death'] as const) {
       expect(resolveClip(min, s)).toEqual({ slot: 'idle', animation: 'Idle' });
@@ -110,9 +193,9 @@ describe('resolveClip', () => {
   });
 
   it('requires idle and walk to exist in the file', () => {
-    expect(missingRequiredClips(FIXTURE_ENTRY, new Set(['Idle', 'Walk']))).toEqual([]);
-    expect(missingRequiredClips(FIXTURE_ENTRY, new Set(['Walk']))).toEqual(['idle']);
-    expect(missingRequiredClips(FIXTURE_ENTRY, new Set())).toEqual(['idle', 'walk']);
+    expect(missingRequiredClips(FIXTURE_CLIPS, new Set(['Idle', 'Walk']))).toEqual([]);
+    expect(missingRequiredClips(FIXTURE_CLIPS, new Set(['Walk']))).toEqual(['idle']);
+    expect(missingRequiredClips(FIXTURE_CLIPS, new Set())).toEqual(['idle', 'walk']);
   });
 });
 
@@ -143,7 +226,7 @@ describe('loadManifest', () => {
     vi.fn(async (_url?: unknown, _init?: unknown) => ({ ok: status >= 200 && status < 300, status, json: async () => body }) as unknown as Response);
 
   it('fetches the manifest once and caches it', async () => {
-    const f = ok({ version: 1, models: { citizen: entry() } });
+    const f = ok(v2({ citizen: entry() }));
     const a = await loadManifest({ fetch: f });
     const b = await loadManifest({ fetch: f });
     expect(f).toHaveBeenCalledTimes(1);
@@ -157,6 +240,7 @@ describe('loadManifest', () => {
     ['invalid JSON', () => vi.fn(async () => ({ ok: true, json: async () => { throw new SyntaxError('x'); } }) as unknown as Response)],
     ['a network error', () => vi.fn(async () => { throw new TypeError('offline'); })],
     ['an invalid manifest', () => ok({ version: 9, models: {} })],
+    ['the retired v1 manifest', () => ok({ version: 1, models: {} })],
   ])('never throws on %s: the answer is "no models"', async (_n, make) => {
     const m = await loadManifest({ fetch: make() });
     expect(m.models).toEqual({});
@@ -168,14 +252,14 @@ describe('loadManifest', () => {
     await loadManifest({ fetch: bad, now: () => t });
     await loadManifest({ fetch: bad, now: () => (t += 5_000) });
     expect(bad).toHaveBeenCalledTimes(1);
-    const good = ok({ version: 1, models: { citizen: entry() } });
+    const good = ok(v2({ citizen: entry() }));
     const m = await loadManifest({ fetch: good, now: () => (t += 60_000) });
     expect(good).toHaveBeenCalledTimes(1);
     expect(m.models.citizen).toBeDefined();
   });
 
   it('shares one request between concurrent callers', async () => {
-    const f = ok({ version: 1, models: {} });
+    const f = ok(v2({}));
     await Promise.all([loadManifest({ fetch: f }), loadManifest({ fetch: f })]);
     expect(f).toHaveBeenCalledTimes(1);
   });

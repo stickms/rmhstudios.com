@@ -10,11 +10,12 @@ import {
   strideCadence,
   type FigureDrive,
 } from '../animator';
-import { FIXTURE_ENTRY, MINIMAL_ENTRY, buildFixture } from './fixture-model';
+import type { ClipSlot } from '../model-manifest';
+import { FIXTURE_CLIPS, MINIMAL_CLIPS, buildFixture } from './fixture-model';
 
 const DT = 1 / 60;
 
-function make(entry = FIXTURE_ENTRY, seed = 0.3) {
+function make(entry: { clips: Partial<Record<ClipSlot, string>> } = FIXTURE_CLIPS, seed = 0.3) {
   const f = buildFixture();
   const clips = new Map(f.animations.map((c) => [c.name, c]));
   const anim = new CharacterAnimator(f.scene, clips, entry, { seed });
@@ -125,7 +126,7 @@ describe('locomotion blend', () => {
   });
 
   it('advances the stride only as fast as the ground speed says (no skating)', () => {
-    const { anim, drive } = make(FIXTURE_ENTRY, 0);
+    const { anim, drive } = make(FIXTURE_CLIPS, 0);
     const actions = anim['actions'] as Map<string, { time: number; getClip(): { duration: number } }>;
     drive.speed = WALK_SPEED;
     anim.update(0, drive);
@@ -136,7 +137,7 @@ describe('locomotion blend', () => {
   });
 
   it('uses walk for run when the model has no run clip', () => {
-    const { anim, drive } = make(MINIMAL_ENTRY);
+    const { anim, drive } = make(MINIMAL_CLIPS);
     drive.speed = RUN_SPEED;
     run(anim, drive, 1);
     expect(anim.weightOf('Walk')).toBeGreaterThan(0.97);
@@ -177,7 +178,7 @@ describe('air', () => {
   });
 
   it('stays idle when the model has no jump or fall clip', () => {
-    const { anim, drive } = make(MINIMAL_ENTRY);
+    const { anim, drive } = make(MINIMAL_CLIPS);
     drive.air = 'jump';
     run(anim, drive, 0.6);
     expect(anim.weightOf('Idle')).toBeGreaterThan(0.99);
@@ -220,7 +221,7 @@ describe('one-shots', () => {
   });
 
   it('does nothing for a clip the model lacks (shoot falls back to idle, which is already playing)', () => {
-    const { anim, drive } = make(MINIMAL_ENTRY);
+    const { anim, drive } = make(MINIMAL_CLIPS);
     expect(anim.trigger('shoot')).toBe(false);
     pushTrigger(drive, 'hurt');
     run(anim, drive, 0.3);
@@ -267,14 +268,16 @@ describe('death', () => {
   });
 
   it('falls back to hurt, then to nothing at all', () => {
-    const hurtOnly = { ...MINIMAL_ENTRY, clips: { ...MINIMAL_ENTRY.clips, hurt: 'Hurt' } };
+    const hurtOnly = { ...MINIMAL_CLIPS, clips: { ...MINIMAL_CLIPS.clips, hurt: 'Hurt' } };
     const a = make(hurtOnly);
     a.drive.dead = true;
     run(a.anim, a.drive, 1);
     expect(a.anim.weightOf('Hurt')).toBeGreaterThan(0.95);
-    expect(a.anim.hasOwnClip('death')).toBe(true);
+    // played by the flinch, but it is not a death of its own: the figure topples as well (ModelFigure)
+    expect(a.anim.hasOwnClip('death')).toBe(false);
+    expect(a.anim.hasOwnClip('hurt')).toBe(true);
 
-    const b = make(MINIMAL_ENTRY);
+    const b = make(MINIMAL_CLIPS);
     expect(b.anim.hasOwnClip('death')).toBe(false);
   });
 
@@ -338,8 +341,8 @@ describe('robustness and disposal', () => {
   });
 
   it('gives each person its own idle phase so a crowd does not move in lockstep', () => {
-    const a = make(FIXTURE_ENTRY, 0.11);
-    const b = make(FIXTURE_ENTRY, 0.77);
+    const a = make(FIXTURE_CLIPS, 0.11);
+    const b = make(FIXTURE_CLIPS, 0.77);
     a.anim.update(0, a.drive);
     b.anim.update(0, b.drive);
     expect(a.scene.getObjectByName('Spine')!.quaternion.x).not.toBeCloseTo(b.scene.getObjectByName('Spine')!.quaternion.x, 4);

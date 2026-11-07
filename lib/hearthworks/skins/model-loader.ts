@@ -1,13 +1,17 @@
 /**
  * Loads the skinned character models named by the manifest and hands out per-person instances.
  *
- * One GLB per skin is fetched, decoded (GLTFLoader + EXT_meshopt_compression; no Draco) and kept as a TEMPLATE. Each
- * person is a `SkeletonUtils.clone` of it: its own skeleton and bones, but the same geometry, materials and textures,
- * so a street of citizens costs one set of GPU buffers. Templates are reference counted and the unused ones are evicted
+ * A skin's model lives in the site's own Steam-sourced asset channel (R2), not in this repository. Loading one is:
+ * resolve `game` + `mdl` through the channel's `mdl/index.json` (model-index.ts) → fetch the mesh GLB (skeleton, webp
+ * textures, no animations) and the anim pack (every Source sequence of the model as a glTF animation) from the
+ * same-origin asset route → pick the skin (material) family → keep only the sequences the manifest names, adapted
+ * to the game (clip-tools.ts) → bake the standing pose. The result is a TEMPLATE. Each person is a
+ * `SkeletonUtils.clone` of it: its own skeleton and bones, but the same geometry, materials and textures, so a street
+ * of citizens costs one set of GPU buffers. Templates are reference counted and the unused ones are evicted
  * least-recently-used past a size cap, which is what keeps WebGL memory bounded when a player tries on many skins.
  *
  * Nothing in here throws to the caller: every failure resolves to `null`, which the figure turns into the procedural
- * stand-in. Client-only (it fetches and decodes); `prepareGltf` and `instantiate` are pure enough to unit-test in node.
+ * stand-in. Client-only (it fetches and decodes); `prepareModel` and `instantiate` are pure enough to unit-test in node.
  */
 
 import {
@@ -17,6 +21,7 @@ import {
   SRGBColorSpace,
   Vector3,
   type AnimationClip,
+  type Bone,
   type Material,
   type Mesh,
   type MeshStandardMaterial,
@@ -24,22 +29,65 @@ import {
   type SkinnedMesh,
   type Texture,
 } from 'three';
-import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import type { SkinId } from './catalog';
+import {
+  applyClipPose,
+  capturePose,
+  clipBytes,
+  filterGlbAnimations,
+  keepInPlace,
+  nodeName,
+  onlyNodes,
+  poseDuration,
+  rebaseDelta,
+  restorePose,
+  trimClip,
+} from './clip-tools';
 import { modelScale } from './figure-scale';
-import { modelUrl, missingRequiredClips, type ModelEntry } from './model-manifest';
+import { loadModelIndex, resolveModelFiles } from './model-index';
+import {
+  CLIP_SLOTS,
+  clipNamesOf,
+  type ClipNames,
+  type ClipSlot,
+  type ModelEntry,
+} from './model-manifest';
+
+/** What the loader keeps of a manifest entry once the model is loaded: the animator's clip names and the hand. */
+export interface RuntimeEntry {
+  game: ModelEntry['game'];
+  mdl: string;
+  skin: number;
+  yaw: number;
+  handBone: string | null;
+  hold?: ModelEntry['hold'];
+  /** Each kept clip is named after its slot, so this maps a slot to itself for the slots the model has. */
+  clips: ClipNames;
+}
 
 export interface LoadedModel {
   skin: SkinId;
-  entry: ModelEntry;
-  /** Never added to a scene: only cloned. */
+  entry: RuntimeEntry;
+  /** Never added to a scene: only cloned. Its bones hold the standing pose. */
   template: Object3D;
+  /** The kept animations, by slot name. */
   clips: Map<string, AnimationClip>;
-  /** Metres. The manifest's value unless the file measures wildly differently. */
+  /** Metres: the manifest's value, or measured from the standing pose. */
   height: number;
+  /** Metres to lower the feet to y = 0 (the standing pose's lowest point). */
+  groundOffset: number;
+  /**
+   * The hand bone's rotation (relative to the template's root) in the pose a held weapon is aligned to: the middle of
+   * the shoot clip when there is one, else the standing pose. A prop rotated by its inverse points where the
+   * weapon points when the model aims, and follows the hand the rest of the time.
+   */
+  handRef: Quaternion | null;
   triangles: number;
+  /** Approximate resident cost: the mesh GLB plus the kept keyframes. */
+  bytes: number;
   /** Live instances (plus pins from `acquireModel`). Only unreferenced models are evicted. */
   refs: number;
   lastUsed: number;
@@ -63,10 +111,16 @@ export interface ModelInstance {
 /** Keep this many templates resident at most (a skin is a few hundred KB to a few MB on the GPU). */
 export const MAX_RESIDENT_MODELS = 10;
 export const MAX_RESIDENT_BYTES = 48 * 1024 * 1024;
-/** Concurrent downloads: models are loaded in the background and must not fight the page for bandwidth. */
+/**
+ * Concurrent model loads (each is two downloads, mesh + anim pack): models are loaded in the background and must not
+ * fight the page for bandwidth, and each decoded anim pack is held in memory until it has been cut down.
+ */
 const MAX_CONCURRENT = 2;
-/** Largest GLB we will decode, whatever the manifest says. */
-const MAX_FILE_BYTES = 24 * 1024 * 1024;
+/** Largest decoded mesh GLB (observed 0.1-0.4 MB on the wire) and anim pack (observed 6-14 MB decoded) we will take. */
+export const MAX_MESH_BYTES = 8 * 1024 * 1024;
+export const MAX_ANIMS_BYTES = 24 * 1024 * 1024;
+/** A download that has not finished in this long is abandoned (the skin keeps its procedural figure). */
+const FETCH_TIMEOUT_MS = 60_000;
 
 /**
  * May skinned models be used at all on this device right now? Not under the site's low-performance tier, not on
@@ -104,31 +158,161 @@ function eachMaterial(root: Object3D, fn: (m: Material) => void): void {
 }
 
 /**
- * Validate a parsed GLB against its manifest entry and tidy it for the game: refuse it when `idle`/`walk` are missing,
- * drop embedded lights and cameras, make colour textures sRGB and the surfaces matte like the rest of the diorama.
- * Returns null when the model cannot be used.
+ * Show a skin (material) family of the model. The mesh GLB carries family 0 on its primitives; `scene.userData.skins`
+ * lists, per family, the material index of each skin-reference slot (`geometry.userData.slot`), `-1` meaning the
+ * slot has no material in that family (hidden). TF2 classes: family 0 is RED, 1 is BLU. Throws on a family the model
+ * does not have, which the loader turns into "no model".
  */
-export function prepareGltf(skin: SkinId, entry: ModelEntry, gltf: ParsedGltf): LoadedModel | null {
-  const clips = new Map<string, AnimationClip>();
-  for (const c of gltf.animations ?? []) if (c.name && !clips.has(c.name)) clips.set(c.name, c);
-  if (missingRequiredClips(entry, new Set(clips.keys())).length > 0) return null;
+export async function applySkinFamily(gltf: GLTF, skin: number): Promise<void> {
+  if (skin === 0) return;
+  const families = (gltf.scene.userData as { skins?: unknown }).skins;
+  const family = Array.isArray(families) ? (families[skin] as unknown) : undefined;
+  if (!Array.isArray(family)) throw new Error(`model has no skin family ${skin}`);
+  const meshes: Mesh[] = [];
+  gltf.scene.traverse((o) => {
+    if ((o as Mesh).isMesh) meshes.push(o as Mesh);
+  });
+  const replaced = new Set<Material>();
+  for (const mesh of meshes) {
+    const slot = (mesh.geometry.userData as { slot?: unknown }).slot;
+    if (typeof slot !== 'number') continue;
+    const index = family[slot];
+    if (typeof index !== 'number') continue;
+    if (index < 0) {
+      mesh.visible = false;
+      continue;
+    }
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const m of mats) replaced.add(m);
+    mesh.material = (await gltf.parser.getDependency('material', index)) as Material;
+  }
+  // The family-0 materials nothing shows any more.
+  const still = new Set<Material>();
+  eachMaterial(gltf.scene, (m) => still.add(m));
+  for (const m of replaced) if (!still.has(m)) disposeMaterial(m);
+}
 
-  const root = gltf.scene;
+function disposeMaterial(m: Material): void {
+  for (const v of Object.values(m)) if (v && (v as Texture).isTexture) (v as Texture).dispose();
+  m.dispose();
+}
+
+/**
+ * Turn the two parsed files into a model the game can use. `mesh` is the body (skeleton, geometry, materials);
+ * `pack` is the model's anim pack (any number of Source sequences, each a glTF animation named as the manifest names
+ * it, its `userData` the animation's extras). Only the clips the entry names are kept, each renamed to its slot:
+ *
+ *   - a `trim` window is cut out with its end poses intact;
+ *   - tracks for bones the mesh does not have are dropped;
+ *   - a delta layer (additive sequence) is rebased onto the standing pose, so it is a full-body clip like the rest;
+ *   - the root bone is kept in place (no clip walks the pelvis away from the figure);
+ *   - a static pose (single keys) gets the sequence's length as its duration.
+ *
+ * Refused (null) when idle or walk are missing, when nothing is skinned, or when the pack has no clip with a name the
+ * manifest asks for. Clones start in the standing pose (idle at t=0), which also decides the model's height and where
+ * its feet are, and the pose a held prop is aligned to.
+ */
+export function prepareModel(
+  skin: SkinId,
+  entry: ModelEntry,
+  mesh: ParsedGltf,
+  pack: readonly AnimationClip[],
+  meshBytes = 0,
+): LoadedModel | null {
+  const root = mesh.scene;
   const strip: Object3D[] = [];
-  let skinned = 0;
+  const skinnedMeshes: SkinnedMesh[] = [];
   let triangles = 0;
+  const bones = new Map<string, Bone>();
   root.traverse((o) => {
     if (isLightOrCamera(o)) strip.push(o);
-    const mesh = o as Mesh;
-    if (mesh.isMesh) {
-      if ((o as SkinnedMesh).isSkinnedMesh) skinned++;
-      const g = mesh.geometry;
+    if ((o as Bone).isBone) bones.set(o.name, o as Bone);
+    const m = o as Mesh;
+    if (m.isMesh) {
+      // The channel exports every submodel of a body group as its own primitive (`bodygroup`, `sub`). The model is
+      // shown with body 0: submodel 0 of each group. The others (a Soldier's rocket and medals) are not worn.
+      const u = m.geometry.userData as { bodygroup?: unknown; sub?: unknown };
+      if (typeof u.bodygroup === 'string' && typeof u.sub === 'number' && u.sub !== 0) {
+        strip.push(o);
+        return;
+      }
+      if ((o as SkinnedMesh).isSkinnedMesh) skinnedMeshes.push(o as SkinnedMesh);
+      const g = m.geometry;
       triangles += (g.index ? g.index.count : (g.attributes.position?.count ?? 0)) / 3;
     }
   });
-  if (skinned === 0) return null; // an animation needs something to deform
-  for (const o of strip) o.removeFromParent();
+  if (skinnedMeshes.length === 0 || bones.size === 0) return null; // an animation needs something to deform
+  for (const o of strip) {
+    o.removeFromParent();
+    (o as Mesh).geometry?.dispose();
+  }
 
+  // --- the clips the entry names
+  const source = new Map<string, AnimationClip>();
+  for (const c of pack) if (c.name && !source.has(c.name)) source.set(c.name, c);
+  const names = clipNamesOf(entry);
+  const have = new Set<string>(Object.keys(names).filter((slot) => source.has(names[slot])));
+  if (!have.has('idle') || !have.has('walk')) return null;
+
+  const boneNames = new Set(bones.keys());
+  const rootBones = new Set([...bones.values()].filter((b) => !(b.parent as Bone | null)?.isBone).map((b) => b.name));
+  const fit = (slot: ClipSlot): AnimationClip | null => {
+    const spec = entry.clips[slot];
+    const src = spec ? source.get(spec.clip) : undefined;
+    if (!spec || !src) return null;
+    const extras = (src.userData ?? {}) as Record<string, unknown>;
+    let c = src;
+    if (spec.trim) {
+      const fps = typeof extras.fps === 'number' && extras.fps > 0 ? extras.fps : 30;
+      c = trimClip(src, slot, spec.trim[0] / fps, spec.trim[1] / fps);
+    }
+    c = onlyNodes(c, boneNames, slot);
+    c.userData = { ...extras, source: spec.clip };
+    if (!(c.duration > 0)) c.duration = poseDuration(extras);
+    // The figure's position moves, never the pelvis: a gait or a knock-down that travels is kept where it stands.
+    keepInPlace(c, rootBones);
+    return c;
+  };
+
+  const clips = new Map<string, AnimationClip>();
+  // Idle first: it is the standing pose every delta layer is rebased on.
+  const idle = fit('idle');
+  if (!idle || idle.tracks.length === 0) return null;
+  clips.set('idle', idle);
+  applyClipPose(bones, idle, 0);
+  root.updateMatrixWorld(true);
+  const standing = capturePose(bones.values());
+
+  for (const slot of CLIP_SLOTS) {
+    if (slot === 'idle' || !have.has(slot)) continue;
+    let c = fit(slot);
+    if (!c || c.tracks.length === 0) continue;
+    if ((c.userData as { delta?: unknown }).delta === true) {
+      const rebased = rebaseDelta(c, slot, standing, rootBones);
+      rebased.userData = c.userData;
+      c = rebased;
+    }
+    clips.set(slot, c);
+  }
+  if (!clips.has('walk')) return null;
+  const clipNames = Object.fromEntries([...clips.keys()].map((slot) => [slot, slot])) as unknown as ClipNames;
+
+  // --- where a held prop is aligned: the aiming pose
+  let handRef: Quaternion | null = null;
+  const handBone = entry.handBone ? bones.get(nodeName(entry.handBone)) : undefined;
+  if (handBone) {
+    const aim = clips.get('shoot');
+    // (the middle of the shot: some sequences raise the arm first, so their first frame is still at the side)
+    if (aim) applyClipPose(bones, aim, aim.duration * 0.5);
+    root.updateMatrixWorld(true);
+    handRef = handBone.getWorldQuaternion(new Quaternion());
+    if (aim) {
+      restorePose(bones, standing);
+      root.updateMatrixWorld(true);
+    }
+  }
+
+  // --- the standing model
   eachMaterial(root, (m) => {
     const std = m as MeshStandardMaterial;
     for (const key of ['map', 'emissiveMap'] as const) {
@@ -145,14 +329,36 @@ export function prepareGltf(skin: SkinId, entry: ModelEntry, gltf: ParsedGltf): 
   });
 
   root.updateMatrixWorld(true);
-  const box = new Box3().setFromObject(root);
-  const measured = box.max.y - Math.min(box.min.y, 0);
+  const box = new Box3();
+  for (const m of skinnedMeshes) {
+    if (!m.visible) continue;
+    m.skeleton.update();
+    m.computeBoundingBox();
+    if (m.boundingBox) box.union(m.boundingBox);
+  }
+  const measured = box.isEmpty() ? NaN : box.max.y - box.min.y;
+  const sane = Number.isFinite(measured) && measured > 0.05 && measured < 100;
   // The manifest says how tall it is; believe the file instead only when they disagree by a lot (a wrong unit).
   const height =
-    Number.isFinite(measured) && measured > 0.05 && Math.abs(measured - entry.height) / entry.height > 0.35
-      ? measured
-      : entry.height;
-  return { skin, entry, template: root, clips, height, triangles, refs: 0, lastUsed: Date.now() };
+    entry.height !== undefined && (!sane || Math.abs(measured - entry.height) / entry.height <= 0.35)
+      ? entry.height
+      : sane
+        ? measured
+        : 1.8;
+  const groundOffset = sane && Math.abs(box.min.y) < height ? box.min.y : 0;
+
+  let bytes = meshBytes;
+  for (const c of clips.values()) bytes += clipBytes(c);
+  const runtime: RuntimeEntry = {
+    game: entry.game,
+    mdl: entry.mdl,
+    skin: entry.skin,
+    yaw: entry.yaw,
+    handBone: entry.handBone,
+    hold: entry.hold,
+    clips: clipNames,
+  };
+  return { skin, entry: runtime, template: root, clips, height, groundOffset, handRef, triangles, bytes, refs: 0, lastUsed: Date.now() };
 }
 
 // --- instances ------------------------------------------------------------------------------------------------------
@@ -170,11 +376,12 @@ export function instantiate(model: LoadedModel, lookHeight: number): ModelInstan
   root.scale.setScalar(scale);
   root.rotation.y = model.entry.yaw;
   root.add(skeletonRoot);
+  skeletonRoot.position.y = -model.groundOffset;
   skeletonRoot.traverse((o) => {
     const m = o as SkinnedMesh;
     if (!m.isSkinnedMesh) return;
     o.castShadow = false;
-    // The bounding sphere is taken from the bind pose; an arm swinging out of it must not make the mesh blink out.
+    // The bounding sphere is taken from the standing pose; an arm swinging out of it must not make the mesh blink out.
     m.computeBoundingSphere();
     if (m.boundingSphere) m.boundingSphere.radius *= 1.5;
   });
@@ -183,14 +390,15 @@ export function instantiate(model: LoadedModel, lookHeight: number): ModelInstan
   let hand: ModelInstance['hand'] = null;
   const boneName = model.entry.handBone;
   if (boneName) {
-    handBone = skeletonRoot.getObjectByName(boneName) ?? null;
+    handBone = skeletonRoot.getObjectByName(nodeName(boneName)) ?? null;
     if (handBone) {
       root.updateMatrixWorld(true);
       const bone = handBone;
       bone.matrixWorld.decompose(tmpP, tmpQ, tmpS);
-      // In the bind pose the person faces +z with `root`'s yaw undone: a prop rotated by the inverse of the bone's
-      // world rotation (relative to the wrapper's parent) sits upright and points forward whatever the bone's axes are.
-      const inv = tmpQ.clone().invert();
+      // A prop rotated by the inverse of the bone's rotation in the aiming pose (the template's own frame) points
+      // along the model's +z there, whatever the bone's own axes are (Source bones are oriented along their length, so
+      // they are never aligned with the model). Without an aiming pose: the standing one.
+      const inv = (model.handRef ?? tmpQ).clone().invert();
       const boneScale = Math.max(Math.abs(tmpS.x), 1e-6);
       hand = { quaternion: inv, scale: 1 / boneScale };
     }
@@ -258,16 +466,63 @@ export function isModelBad(skin: SkinId): boolean {
   return bad.has(skin);
 }
 
+/** Download a file with a size cap and a deadline. Null when it is missing, too big, or the request fails. */
+async function fetchBytes(url: string, cap: number): Promise<ArrayBuffer | null> {
+  const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = ctl ? setTimeout(() => ctl.abort(), FETCH_TIMEOUT_MS) : null;
+  try {
+    const res = await fetch(url, { signal: ctl?.signal });
+    if (!res.ok) return null;
+    // (content-length is the wire size; the cap below is on the decoded bytes)
+    const len = Number(res.headers.get('content-length') ?? 0);
+    if (len > cap) return null;
+    const buf = await res.arrayBuffer();
+    return buf.byteLength > cap || buf.byteLength < 20 ? null : buf;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+function disposeScene(root: Object3D): void {
+  const seen = new Set<unknown>();
+  root.traverse((o) => {
+    const mesh = o as Mesh;
+    if (!mesh.isMesh) return;
+    mesh.geometry.dispose();
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const m of mats) {
+      if (seen.has(m)) continue;
+      seen.add(m);
+      disposeMaterial(m);
+    }
+  });
+}
+
 async function fetchAndParse(skin: SkinId, entry: ModelEntry): Promise<LoadedModel | null> {
-  const res = await fetch(modelUrl(entry));
-  if (!res.ok) return null;
-  const len = Number(res.headers.get('content-length') ?? 0);
-  if (len > MAX_FILE_BYTES) return null;
-  const buf = await res.arrayBuffer();
-  if (buf.byteLength > MAX_FILE_BYTES || buf.byteLength < 20) return null;
-  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-  const gltf = await loader.parseAsync(buf, `${modelUrl(entry).replace(/[^/]*$/, '')}`);
-  return prepareGltf(skin, entry, gltf);
+  const index = await loadModelIndex(entry.game);
+  const files = resolveModelFiles(index, entry);
+  if (!files || !files.animsUrl || entry.skin >= files.skins) return null;
+  const [meshBuf, packBuf] = await Promise.all([
+    fetchBytes(files.meshUrl, MAX_MESH_BYTES),
+    fetchBytes(files.animsUrl, MAX_ANIMS_BYTES),
+  ]);
+  if (!meshBuf || !packBuf) return null;
+
+  // Cut the pack down to the sequences we play BEFORE parsing it, so the other ~1000 are never decoded.
+  const cut = filterGlbAnimations(packBuf, new Set(Object.values(clipNamesOf(entry))));
+  if (!cut || cut.kept.length === 0) return null;
+
+  // The mesh references its textures as `../tex/<sha>.webp`, relative to the GLB's own directory in the channel.
+  const mesh = await new Tf2GLTFLoader().parseAsync(meshBuf, files.meshUrl.slice(0, files.meshUrl.lastIndexOf('/') + 1));
+  let model: LoadedModel | null = null;
+  try {
+    await applySkinFamily(mesh, entry.skin);
+    const pack = await new GLTFLoader().parseAsync(cut.buffer, '');
+    model = prepareModel(skin, entry, mesh, pack.animations, meshBuf.byteLength);
+  } finally {
+    if (!model) disposeScene(mesh.scene);
+  }
+  return model;
 }
 
 /**
@@ -324,19 +579,7 @@ export function acquireModel(model: LoadedModel): () => void {
 }
 
 function disposeTemplate(model: LoadedModel): void {
-  const seen = new Set<unknown>();
-  model.template.traverse((o) => {
-    const mesh = o as Mesh;
-    if (!mesh.isMesh) return;
-    mesh.geometry.dispose();
-    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    for (const m of mats) {
-      if (seen.has(m)) continue;
-      seen.add(m);
-      for (const v of Object.values(m)) if (v && (v as Texture).isTexture) (v as Texture).dispose();
-      m.dispose();
-    }
-  });
+  disposeScene(model.template);
 }
 
 function evict(skin: SkinId): void {
@@ -351,7 +594,7 @@ function trim(keep?: SkinId): void {
   const resident = () => [...slots.entries()].filter(([, s]) => s.model).map(([id, s]) => [id, s.model!] as const);
   for (;;) {
     const list = resident();
-    const bytes = list.reduce((n, [, m]) => n + m.entry.bytes, 0);
+    const bytes = list.reduce((n, [, m]) => n + m.bytes, 0);
     if (list.length <= MAX_RESIDENT_MODELS && bytes <= MAX_RESIDENT_BYTES) return;
     const victim = list
       .filter(([id, m]) => id !== keep && m.refs === 0)

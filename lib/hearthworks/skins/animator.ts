@@ -29,7 +29,6 @@ import {
   CLIP_SLOTS,
   resolveClip,
   type ClipSlot,
-  type ModelEntry,
   type OneShotSlot,
 } from './model-manifest';
 
@@ -102,6 +101,8 @@ export class CharacterAnimator {
   private readonly root: Object3D;
   private readonly clips: ReadonlyMap<string, AnimationClip>;
   private readonly anim: Record<ClipSlot, string>;
+  /** Whether each slot is played by a clip of its own rather than a fallback. */
+  private readonly own: Record<ClipSlot, boolean>;
   private readonly actions = new Map<string, AnimationAction>();
   private readonly overlays: Overlay[] = [];
   /** Shared locomotion phase in cycles (0..1). */
@@ -120,13 +121,18 @@ export class CharacterAnimator {
   /** Final weight per animation name, as applied on the last update (for tests and debugging). */
   readonly applied = new Map<string, number>();
 
-  constructor(root: Object3D, clips: ReadonlyMap<string, AnimationClip>, entry: Pick<ModelEntry, 'clips'>, opts: AnimatorOptions = {}) {
+  constructor(root: Object3D, clips: ReadonlyMap<string, AnimationClip>, entry: { clips: Partial<Record<ClipSlot, string>> }, opts: AnimatorOptions = {}) {
     this.root = root;
     this.clips = clips;
     this.mixer = new AnimationMixer(root);
     const available = new Set(clips.keys());
     this.anim = {} as Record<ClipSlot, string>;
-    for (const slot of CLIP_SLOTS) this.anim[slot] = resolveClip(entry, slot, available).animation;
+    this.own = {} as Record<ClipSlot, boolean>;
+    for (const slot of CLIP_SLOTS) {
+      const resolved = resolveClip(entry, slot, available);
+      this.anim[slot] = resolved.animation;
+      this.own[slot] = resolved.slot === slot;
+    }
     const seed = opts.seed ?? Math.random();
     this.phase = frac(seed * 7.13);
     this.idleVariation = 0.94 + frac(seed * 3.77) * 0.12;
@@ -171,9 +177,12 @@ export class CharacterAnimator {
     return a;
   }
 
-  /** True when the model has its own clip for this slot (death falling back to hurt still counts; falling back to idle does not). */
+  /**
+   * True when the model has a clip of its own for this slot. A fallback (death played by hurt, run by walk) does not
+   * count, so a figure with only a flinch to die with still topples over instead of holding that flinch standing.
+   */
   hasOwnClip(slot: ClipSlot): boolean {
-    return this.anim[slot] !== this.anim.idle || slot === 'idle';
+    return this.own[slot];
   }
 
   /** The animation (not a fallback) a one-shot plays, or null when this model has none and the body just carries on. */

@@ -1,185 +1,328 @@
 {
-  "version": 1,
+  "version": 2,
+  "_comment": "Hearthworks skin -> Source model in the site-owned asset channels (R2: <game>-game/mdl/index.json). Nothing Valve-owned is committed. See docs/hearthworks-models.md and CREDITS.md.",
   "models": {
-    "barney": {
-      "file": "barney.glb",
-      "height": 1.3696,
-      "yaw": 0.0,
-      "handBone": "ValveBiped_Bip01_R_Hand",
-      "bytes": 560796,
-      "provenance": "valve-source",
-      "clips": {
-        "idle": "idle",
-        "walk": "walk",
-        "run": "run",
-        "jump": "jump",
-        "fall": "fall",
-        "shoot": "shoot",
-        "reload": "reload",
-        "hurt": "hurt",
-        "death": "death",
-        "interact": "interact"
-      }
-    },
-    "breen": {
-      "file": "breen.glb",
-      "height": 1.3612,
-      "yaw": 0.0,
-      "handBone": "ValveBiped_Bip01_R_Hand",
-      "bytes": 657820,
-      "provenance": "valve-source",
-      "clips": {
-        "idle": "idle",
-        "walk": "walk",
-        "run": "run",
-        "jump": "jump",
-        "fall": "fall",
-        "shoot": "shoot",
-        "reload": "reload",
-        "hurt": "hurt",
-        "death": "death",
-        "interact": "interact"
-      }
-    },
     "citizen": {
-      "file": "citizen.glb",
-      "height": 1.3635,
-      "yaw": 0.0,
-      "handBone": "ValveBiped_Bip01_R_Hand",
-      "bytes": 520496,
-      "provenance": "valve-source",
+      "game": "hl2",
+      "mdl": "models/humans/group01/male_01.mdl",
+      "skin": 0,
+      "handBone": "valvebiped.bip01_r_hand",
+      "provenance": "steam-r2",
       "clips": {
-        "idle": "idle",
-        "walk": "walk",
-        "run": "run",
-        "jump": "jump",
-        "fall": "fall",
-        "shoot": "shoot",
-        "reload": "reload",
-        "hurt": "hurt",
-        "death": "death",
-        "interact": "interact"
+        "idle": "idle_subtle",
+        "walk": "walk_all@4",
+        "run": "run_all@4",
+        "jump": "jump_holding_jump",
+        "fall": "jump_holding_glide",
+        "shoot": "shootp1",
+        "reload": "reload_pistol",
+        "hurt": "Fear_Reaction",
+        "death": {
+          "clip": "cit_door",
+          "trim": [
+            12,
+            52
+          ]
+        },
+        "interact": "Open_door_away"
+      },
+      "note": "HL2 citizen (group01 male_01)."
+    },
+    "worker": {
+      "game": "hl2",
+      "mdl": "models/humans/group01/male_02.mdl",
+      "skin": 0,
+      "handBone": "valvebiped.bip01_r_hand",
+      "provenance": "steam-r2",
+      "clips": {
+        "idle": "idle_subtle",
+        "walk": "walk_all@4",
+        "run": "run_all@4",
+        "jump": "jump_holding_jump",
+        "fall": "jump_holding_glide",
+        "shoot": "shootp1",
+        "reload": "reload_pistol",
+        "hurt": "Fear_Reaction",
+        "death": {
+          "clip": "cit_door",
+          "trim": [
+            12,
+            52
+          ]
+        },
+        "interact": "Open_door_away"
+      },
+      "note": "HL2 citizen male_02 (the hl2 channel has no group03 humans)."
+    },
+    "rebel": {
+      "game": "hl2",
+      "mdl": "models/humans/group01/female_06.mdl",
+      "skin": 0,
+      "handBone": "valvebiped.bip01_r_hand",
+      "provenance": "steam-r2",
+      "clips": {
+        "idle": "idle_subtle",
+        "walk": "walk_all@4",
+        "run": "run_all@4",
+        "jump": "jump_holding_jump",
+        "fall": "jump_holding_glide",
+        "shoot": "shootp1",
+        "reload": "reloadpistol",
+        "hurt": "Fear_Reaction",
+        "interact": "Open_door_away"
+      },
+      "note": "HL2 citizen female_06 (the hl2 channel has no group03 humans). Its anim pack has no knock-down: death falls back to hurt and the figure topples."
+    },
+    "barney": {
+      "game": "hl2",
+      "mdl": "models/barney.mdl",
+      "skin": 0,
+      "handBone": "valvebiped.bip01_r_hand",
+      "provenance": "steam-r2",
+      "clips": {
+        "idle": "idle_subtle",
+        "walk": "walk_all@4",
+        "run": "run_all@4",
+        "jump": "jump_holding_jump",
+        "fall": "jump_holding_glide",
+        "shoot": "shootp1",
+        "reload": "reload_pistol",
+        "hurt": "Fear_Reaction",
+        "death": {
+          "clip": "cit_door",
+          "trim": [
+            12,
+            52
+          ]
+        },
+        "interact": "Open_door_away"
+      },
+      "note": "HL2 Barney."
+    },
+    "metrocop": {
+      "game": "hl2",
+      "mdl": "models/police.mdl",
+      "skin": 0,
+      "handBone": "valvebiped.bip01_r_hand",
+      "provenance": "steam-r2",
+      "clips": {
+        "idle": "batonidle1",
+        "walk": "walk_all@4",
+        "run": "run_all@4",
+        "jump": "jump_holding_jump",
+        "fall": "jump_holding_glide",
+        "shoot": "shootp1",
+        "reload": "reload_pistol",
+        "hurt": "flinch2",
+        "interact": "thrust"
+      },
+      "note": "HL2 metrocop. Its anim pack has no knock-down: death falls back to hurt and the figure topples."
+    },
+    "gman": {
+      "game": "hl2",
+      "mdl": "models/gman_high.mdl",
+      "skin": 0,
+      "handBone": "valvebiped.bip01_r_hand",
+      "provenance": "steam-r2",
+      "clips": {
+        "idle": "idle_subtle",
+        "walk": "walk_all_Moderate@4",
+        "run": "run_all@4",
+        "jump": "jump_holding_jump",
+        "fall": "jump_holding_glide",
+        "shoot": "shootp1",
+        "reload": "reload_pistol",
+        "hurt": "Fear_Reaction",
+        "death": {
+          "clip": "cit_door",
+          "trim": [
+            12,
+            52
+          ]
+        },
+        "interact": "tiefidget"
+      },
+      "note": "HL2 G-Man (gman_high)."
+    },
+    "scout": {
+      "game": "tf2",
+      "mdl": "models/player/scout.mdl",
+      "skin": 0,
+      "handBone": "bip_hand_r",
+      "provenance": "steam-r2",
+      "note": "RED (skin family 0). TF2 has no walk cycle: walk and run are the same forward run cell. Death is the backstab/headshot sequence whose last pose lies on the ground.",
+      "clips": {
+        "idle": "stand_PRIMARY",
+        "walk": "run_PRIMARY@7",
+        "run": "run_PRIMARY@7",
+        "jump": "Jump_Start_primary@7",
+        "fall": "Jump_Float_primary@7",
+        "shoot": "AttackStand_PRIMARY",
+        "reload": "PRIMARY_reload_start",
+        "hurt": "a_flinch01",
+        "death": "primary_death_backstab"
       }
     },
-    "combine-elite": {
-      "file": "combine-elite.glb",
-      "height": 1.3972,
-      "yaw": 0.0,
-      "handBone": "ValveBiped_Bip01_R_Hand",
-      "bytes": 614940,
-      "provenance": "valve-source",
+    "soldier": {
+      "game": "tf2",
+      "mdl": "models/player/soldier.mdl",
+      "skin": 0,
+      "handBone": "bip_hand_r",
+      "provenance": "steam-r2",
+      "note": "RED (skin family 0). TF2 has no walk cycle: walk and run are the same forward run cell. Death is the backstab/headshot sequence whose last pose lies on the ground.",
       "clips": {
-        "idle": "idle",
-        "walk": "walk",
-        "run": "run",
-        "jump": "jump",
-        "fall": "fall",
-        "shoot": "shoot",
-        "reload": "reload",
-        "hurt": "hurt",
-        "death": "death",
-        "interact": "interact"
+        "idle": "stand_PRIMARY",
+        "walk": "run_PRIMARY@7",
+        "run": "run_PRIMARY@7",
+        "jump": "airwalk_PRIMARY",
+        "fall": "airwalk_PRIMARY",
+        "shoot": "AttackStand_PRIMARY",
+        "reload": "ReloadStand_PRIMARY",
+        "hurt": "a_flinch01",
+        "death": "primary_death_headshot"
+      }
+    },
+    "pyro": {
+      "game": "tf2",
+      "mdl": "models/player/pyro.mdl",
+      "skin": 0,
+      "handBone": "bip_hand_r",
+      "provenance": "steam-r2",
+      "note": "RED (skin family 0). TF2 has no walk cycle: walk and run are the same forward run cell. Death is the backstab/headshot sequence whose last pose lies on the ground.",
+      "clips": {
+        "idle": "stand_PRIMARY",
+        "walk": "run_PRIMARY@7",
+        "run": "run_PRIMARY@7",
+        "jump": "airwalk_PRIMARY",
+        "fall": "airwalk_PRIMARY",
+        "shoot": "AttackStand_PRIMARY",
+        "reload": "ReloadStand_PRIMARY",
+        "hurt": "a_flinch01",
+        "death": "primary_death_backstab"
+      }
+    },
+    "demoman": {
+      "game": "tf2",
+      "mdl": "models/player/demo.mdl",
+      "skin": 0,
+      "handBone": "bip_hand_r",
+      "provenance": "steam-r2",
+      "note": "RED (skin family 0). TF2 has no walk cycle: walk and run are the same forward run cell. Death is the backstab/headshot sequence whose last pose lies on the ground.",
+      "clips": {
+        "idle": "stand_PRIMARY",
+        "walk": "run_PRIMARY@7",
+        "run": "run_PRIMARY@7",
+        "jump": "airwalk_PRIMARY",
+        "fall": "airwalk_PRIMARY",
+        "shoot": "AttackStand_PRIMARY",
+        "hurt": "a_flinch01",
+        "death": "PRIMARY_death_backstab"
+      }
+    },
+    "heavy": {
+      "game": "tf2",
+      "mdl": "models/player/heavy.mdl",
+      "skin": 0,
+      "handBone": "bip_hand_r",
+      "provenance": "steam-r2",
+      "note": "RED (skin family 0). TF2 has no walk cycle: walk and run are the same forward run cell. Death is the backstab/headshot sequence whose last pose lies on the ground.",
+      "clips": {
+        "idle": "stand_PRIMARY",
+        "walk": "run_PRIMARY@7",
+        "run": "run_PRIMARY@7",
+        "jump": "airwalk_PRIMARY",
+        "fall": "airwalk_PRIMARY",
+        "shoot": "attackStand_PRIMARY",
+        "death": "PRIMARY_death_headshot"
+      }
+    },
+    "engineer": {
+      "game": "tf2",
+      "mdl": "models/player/engineer.mdl",
+      "skin": 0,
+      "handBone": "bip_hand_r",
+      "provenance": "steam-r2",
+      "note": "RED (skin family 0). TF2 has no walk cycle: walk and run are the same forward run cell. Death is the backstab/headshot sequence whose last pose lies on the ground.",
+      "clips": {
+        "idle": "stand_PRIMARY",
+        "walk": "run_PRIMARY@7",
+        "run": "run_PRIMARY@7",
+        "jump": "airwalk_PRIMARY",
+        "fall": "airwalk_PRIMARY",
+        "shoot": "AttackStand_PRIMARY",
+        "reload": "ReloadStand_PRIMARY",
+        "hurt": "a_flinch01",
+        "death": "PRIMARY_death_backstab"
+      }
+    },
+    "medic": {
+      "game": "tf2",
+      "mdl": "models/player/medic.mdl",
+      "skin": 0,
+      "handBone": "bip_hand_r",
+      "provenance": "steam-r2",
+      "note": "RED (skin family 0). TF2 has no walk cycle: walk and run are the same forward run cell. Death is the backstab/headshot sequence whose last pose lies on the ground.",
+      "clips": {
+        "idle": "stand_PRIMARY",
+        "walk": "run_PRIMARY@7",
+        "run": "run_PRIMARY@7",
+        "jump": "jump_start_PRIMARY@7",
+        "fall": "jump_float_PRIMARY@7",
+        "shoot": "AttackStand_PRIMARY",
+        "reload": "ReloadStand_PRIMARY",
+        "hurt": "a_flinch01",
+        "death": "primary_death_backstab"
+      }
+    },
+    "sniper": {
+      "game": "tf2",
+      "mdl": "models/player/sniper.mdl",
+      "skin": 0,
+      "handBone": "bip_hand_r",
+      "provenance": "steam-r2",
+      "note": "RED (skin family 0). TF2 has no walk cycle: walk and run are the same forward run cell. Death is the backstab/headshot sequence whose last pose lies on the ground.",
+      "clips": {
+        "idle": "stand_PRIMARY",
+        "walk": "run_PRIMARY@7",
+        "run": "run_PRIMARY@7",
+        "jump": "airwalk_PRIMARY",
+        "fall": "airwalk_PRIMARY",
+        "shoot": "AttackStand_PRIMARY",
+        "reload": "ReloadStand_PRIMARY",
+        "hurt": "a_flinch01",
+        "death": "primary_death_headshot"
+      }
+    },
+    "spy": {
+      "game": "tf2",
+      "mdl": "models/player/spy.mdl",
+      "skin": 0,
+      "handBone": "bip_hand_r",
+      "provenance": "steam-r2",
+      "note": "RED (skin family 0). TF2 has no walk cycle: walk and run are the same forward run cell. Death is the backstab/headshot sequence whose last pose lies on the ground.",
+      "clips": {
+        "idle": "stand_SECONDARY",
+        "walk": "run_SECONDARY@7",
+        "run": "run_SECONDARY@7",
+        "jump": "airwalk_SECONDARY",
+        "fall": "airwalk_SECONDARY",
+        "shoot": "AttackStand_SECONDARY",
+        "reload": "ReloadStand_SECONDARY",
+        "hurt": "a_flinch01",
+        "death": "primary_death_backstab"
       }
     },
     "combine-soldier": {
-      "file": "combine-soldier.glb",
-      "height": 1.3822,
-      "yaw": 0.0,
-      "handBone": "ValveBiped_Bip01_R_Hand",
-      "bytes": 600484,
-      "provenance": "valve-source",
-      "clips": {
-        "idle": "idle",
-        "walk": "walk",
-        "run": "run",
-        "jump": "jump",
-        "fall": "fall",
-        "shoot": "shoot",
-        "reload": "reload",
-        "hurt": "hurt",
-        "death": "death",
-        "interact": "interact"
-      }
+      "provenance": "stand-in",
+      "reason": "models/combine_soldier.mdl is not in the hl2 asset channel (checked mdl/index.json)."
     },
-    "gman": {
-      "file": "gman.glb",
-      "height": 1.387,
-      "yaw": 0.0,
-      "handBone": "ValveBiped_Bip01_R_Hand",
-      "bytes": 738460,
-      "provenance": "valve-source",
-      "clips": {
-        "idle": "idle",
-        "walk": "walk",
-        "run": "run",
-        "jump": "jump",
-        "fall": "fall",
-        "shoot": "shoot",
-        "reload": "reload",
-        "hurt": "hurt",
-        "death": "death",
-        "interact": "interact"
-      }
+    "combine-elite": {
+      "provenance": "stand-in",
+      "reason": "models/combine_super_soldier.mdl is not in the hl2 asset channel."
     },
-    "metrocop": {
-      "file": "metrocop.glb",
-      "height": 1.3762,
-      "yaw": 0.0,
-      "handBone": "ValveBiped_Bip01_R_Hand",
-      "bytes": 424948,
-      "provenance": "valve-source",
-      "clips": {
-        "idle": "idle",
-        "walk": "walk",
-        "run": "run",
-        "jump": "jump",
-        "fall": "fall",
-        "shoot": "shoot",
-        "reload": "reload",
-        "hurt": "hurt",
-        "death": "death",
-        "interact": "interact"
-      }
-    },
-    "rebel": {
-      "file": "rebel.glb",
-      "height": 1.3207,
-      "yaw": 0.0,
-      "handBone": "ValveBiped_Bip01_R_Hand",
-      "bytes": 572648,
-      "provenance": "valve-source",
-      "clips": {
-        "idle": "idle",
-        "walk": "walk",
-        "run": "run",
-        "jump": "jump",
-        "fall": "fall",
-        "shoot": "shoot",
-        "reload": "reload",
-        "hurt": "hurt",
-        "death": "death",
-        "interact": "interact"
-      }
-    },
-    "worker": {
-      "file": "worker.glb",
-      "height": 1.3725,
-      "yaw": 0.0,
-      "handBone": "ValveBiped_Bip01_R_Hand",
-      "bytes": 596116,
-      "provenance": "valve-source",
-      "clips": {
-        "idle": "idle",
-        "walk": "walk",
-        "run": "run",
-        "jump": "jump",
-        "fall": "fall",
-        "shoot": "shoot",
-        "reload": "reload",
-        "hurt": "hurt",
-        "death": "death",
-        "interact": "interact"
-      }
+    "breen": {
+      "provenance": "stand-in",
+      "reason": "models/breen.mdl is not in the hl2 asset channel."
     }
   }
 }
