@@ -1,144 +1,148 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import type { HudState, HudFighter } from '@/lib/kowloon-knockout/net/session';
 import { TEAM_COLORS } from '@/lib/kowloon-knockout/game/config';
+import {
+    TIMER_URGENT_SECONDS, classifyRoundEnd, hpFraction, hpTone, hudColumns, isLowHealth, litSegments, secondsLeft,
+} from '@/lib/kowloon-knockout/render/hudModel';
+import './kk-hud.css';
 
-const CORNERS = [
-    { top: 12, left: 12, align: 'left' as const },
-    { top: 12, right: 12, align: 'right' as const },
-    { bottom: 84, left: 12, align: 'left' as const },
-    { bottom: 84, right: 12, align: 'right' as const },
-];
+/** Hong Kong shop-sign glyphs, one per seat: decoration only (aria-hidden). */
+const SEAT_KANJI = ['龍', '武', '港', '夜'] as const;
+const HP_SEGMENTS = 10;
 
-function hpColor(pct: number): string {
-    return pct > 0.5 ? '#33ff99' : pct > 0.25 ? '#ffcc00' : '#ff3366';
-}
-
-function FighterPanel({ f, corner, mode }: { f: HudFighter; corner: typeof CORNERS[number]; mode: 'ffa' | 'teams' }) {
-    const hpPct = Math.max(0, f.health / f.maxHealth);
-    const stPct = Math.max(0, f.stamina / f.maxStamina);
-    const right = corner.align === 'right';
-    const teamColor = mode === 'teams' ? TEAM_COLORS[f.team] ?? f.color : f.color;
+function FighterPanel({ f, side, mode }: { f: HudFighter; side: 'l' | 'r'; mode: 'ffa' | 'teams' }) {
+    const { t } = useTranslation('c-kowloon-knockout');
+    const hp = hpFraction(f.health, f.maxHealth);
+    const st = hpFraction(f.stamina, f.maxStamina);
+    const tone = hpTone(hp);
+    const low = isLowHealth(hp, f.alive);
+    const seatColor = mode === 'teams' ? TEAM_COLORS[f.team] ?? f.color : f.color;
+    const wins = Math.max(0, f.roundWins);
+    const cls = ['kk-fp', `kk-fp--${side}`, f.isLocal ? 'is-local' : '', f.alive ? '' : 'is-down', low ? 'is-low' : '']
+        .filter(Boolean).join(' ');
     return (
-        <div
-            style={{
-                position: 'absolute', ...corner, width: 'min(34vw, 260px)',
-                textAlign: corner.align, opacity: f.alive ? 1 : 0.45,
-                filter: f.alive ? 'none' : 'grayscale(0.7)', transition: 'opacity 0.3s',
-            }}
-        >
-            <div style={{
-                display: 'flex', justifyContent: right ? 'flex-end' : 'flex-start',
-                alignItems: 'center', gap: 6, marginBottom: 3,
-            }}>
-                {f.isLocal && <span style={{ color: '#ffcc00', fontSize: 9 }}>▶</span>}
-                <span style={{ color: teamColor, fontSize: 9, textShadow: `0 0 8px ${teamColor}90`, letterSpacing: 0.5 }}>
-                    {f.name}
+        <article className={cls} style={{ '--seat': seatColor } as CSSProperties}>
+            <span className="kk-fp__kanji" aria-hidden="true">{SEAT_KANJI[f.seat % 4]}</span>
+            <header className="kk-fp__head">
+                <span className="kk-fp__tag">P{f.seat + 1}</span>
+                {f.isLocal && <span className="kk-fp__you" aria-hidden="true">▶</span>}
+                <span className="kk-fp__name">{f.name}</span>
+                <span
+                    className="kk-fp__pips"
+                    role="img"
+                    aria-label={t('hud-round-wins', { n: wins, defaultValue: 'Round wins: {{n}}' })}
+                >
+                    {'◆'.repeat(wins)}{'◇'.repeat(Math.max(0, 2 - wins))}
                 </span>
-                <span style={{ color: '#ffcc00', fontSize: 8 }}>
-                    {'●'.repeat(f.roundWins)}{'○'.repeat(Math.max(0, 2 - f.roundWins))}
-                </span>
+            </header>
+            <div
+                className="kk-bar kk-bar--hp"
+                data-tone={tone}
+                role="meter"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(hp * 100)}
+                aria-label={t('hud-health', { name: f.name, defaultValue: '{{name}} health' })}
+            >
+                <i style={{ '--lit': litSegments(hp, HP_SEGMENTS), '--cells': HP_SEGMENTS } as CSSProperties} />
             </div>
-            <div style={{
-                height: 12, background: '#0a0a0a', border: `1px solid ${hpColor(hpPct)}`,
-                boxShadow: `0 0 6px ${hpColor(hpPct)}70`, position: 'relative', overflow: 'hidden',
-            }}>
-                <div style={{
-                    position: 'absolute', top: 0, bottom: 0, [right ? 'right' : 'left']: 0,
-                    width: `${hpPct * 100}%`, background: hpColor(hpPct), transition: 'width 0.15s',
-                }} />
+            <div
+                className="kk-bar kk-bar--st"
+                role="meter"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(st * 100)}
+                aria-label={t('hud-stamina', { name: f.name, defaultValue: '{{name}} stamina' })}
+            >
+                <i style={{ width: `${st * 100}%` }} />
             </div>
-            <div style={{
-                height: 4, background: '#0a0a0a', marginTop: 2, position: 'relative', overflow: 'hidden',
-            }}>
-                <div style={{
-                    position: 'absolute', top: 0, bottom: 0, [right ? 'right' : 'left']: 0,
-                    width: `${stPct * 100}%`, background: '#33ccff',
-                }} />
-            </div>
-        </div>
+        </article>
     );
 }
 
 export default function HUD({ hud }: { hud: HudState }) {
-    const seconds = Math.max(0, Math.ceil(hud.roundTime / 60));
-    // Local fighter first, then the rest, mapped to corners.
-    const ordered = [...hud.fighters].sort((a, b) => (a.isLocal ? -1 : 0) - (b.isLocal ? -1 : 0));
+    const { t } = useTranslation('c-kowloon-knockout');
+    const seconds = secondsLeft(hud.roundTime);
+    const urgent = seconds <= TIMER_URGENT_SECONDS;
+    const { left, right } = hudColumns(hud.fighters);
+    const end = classifyRoundEnd(hud.roundEndText);
+    const endText =
+        end.kind === 'ko' ? t('hud-ko', { defaultValue: 'K.O.' })
+        : end.kind === 'draw' ? t('hud-draw', { defaultValue: 'DRAW' })
+        : end.kind === 'decision' ? t('hud-decision', { defaultValue: 'DECISION' })
+        : end.kind === 'wins' ? t('hud-wins', { name: end.name, defaultValue: '{{name}} WINS' })
+        : hud.roundEndText;
+    const endKanji = end.kind === 'ko' ? '擊倒' : end.kind === 'draw' ? '平手' : '勝利';
 
     return (
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', fontFamily: '"Press Start 2P", monospace' }} data-jelly-zone="hud">
-            {ordered.slice(0, 4).map((f, i) => (
-                <FighterPanel key={f.seat} f={f} corner={CORNERS[i]} mode={hud.mode} />
-            ))}
+        // `app-hud` insets the layer by the device's safe area, so nothing here sits under a
+        // notch or home indicator; the panels keep ordinary small offsets from its edges.
+        <div className="app-hud kk-hud" data-jelly-zone="hud">
+            <div className="kk-hud__bar">
+                <div className="kk-hud__col kk-hud__col--l">
+                    {left.map((f) => <FighterPanel key={f.seat} f={f} side="l" mode={hud.mode} />)}
+                </div>
 
-            {/* Centre: round + timer */}
-            <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}>
-                <div style={{ color: '#ffcc00', fontSize: 9, textShadow: '0 0 6px #ffcc00' }}>ROUND {hud.round}</div>
-                <div style={{
-                    color: seconds <= 10 ? '#ff3366' : '#fff', fontSize: 22, marginTop: 4,
-                    textShadow: seconds <= 10 ? '0 0 10px #ff3366' : '0 0 8px #fff',
-                }}>{seconds}</div>
-                <div style={{ color: '#888', fontSize: 7, marginTop: 2 }}>{hud.mode === 'teams' ? 'TEAMS' : 'FREE-FOR-ALL'}</div>
+                <div
+                    className={`kk-plate${urgent ? ' is-urgent' : ''}`}
+                    role="timer"
+                    aria-label={t('hud-time-left', { n: seconds, defaultValue: 'Seconds left: {{n}}' })}
+                >
+                    <div className="kk-plate__round">{t('hud-round', { n: hud.round, defaultValue: 'ROUND {{n}}' })}</div>
+                    <div className="kk-plate__time" aria-hidden="true">{seconds}</div>
+                    <div className="kk-plate__mode">
+                        {hud.mode === 'teams' ? t('hud-teams', { defaultValue: 'TEAMS' }) : t('hud-ffa', { defaultValue: 'FREE-FOR-ALL' })}
+                    </div>
+                </div>
+
+                <div className="kk-hud__col kk-hud__col--r">
+                    {right.map((f) => <FighterPanel key={f.seat} f={f} side="r" mode={hud.mode} />)}
+                </div>
             </div>
 
-            {/* Combo text */}
+            {/* Combo / counter-strike callout */}
             <AnimatePresence>
                 {hud.comboText && (
                     <motion.div
                         key={hud.comboText}
-                        initial={{ scale: 0.4, opacity: 0, y: 0 }}
-                        animate={{ scale: 1, opacity: 1, y: -10 }}
-                        exit={{ opacity: 0, y: -30 }}
-                        transition={{ duration: 0.25 }}
-                        style={{
-                            position: 'absolute', top: '32%', left: '50%', transform: 'translateX(-50%)',
-                            color: hud.comboColor, fontSize: 18, textShadow: `0 0 14px ${hud.comboColor}`,
-                            whiteSpace: 'nowrap',
-                        }}
+                        className="kk-callout"
+                        style={{ '--c': hud.comboColor } as CSSProperties}
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ opacity: 0, y: -16 }}
+                        transition={{ duration: 0.22 }}
+                        role="status"
                     >
                         {hud.comboText}
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Countdown */}
+            {/* Countdown: one slam per number, never a strobe */}
             {hud.phase === 'countdown' && (
-                <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(0,0,0,0.35)' }}>
-                    <motion.div
+                <div className="kk-banner-layer">
+                    <div
                         key={hud.countdownValue}
-                        initial={{ scale: 1.6, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ duration: 0.3 }}
-                        style={{
-                            color: hud.countdownValue > 0 ? '#ffcc00' : '#ff3366',
-                            fontSize: hud.countdownValue > 0 ? 64 : 44,
-                            textShadow: `0 0 24px ${hud.countdownValue > 0 ? '#ffcc00' : '#ff3366'}`,
-                        }}
+                        className={`kk-banner kk-banner--slam ${hud.countdownValue > 0 ? 'kk-banner--count' : 'kk-banner--fight'}`}
                     >
-                        {hud.countdownValue > 0 ? hud.countdownValue : 'FIGHT!'}
-                    </motion.div>
+                        {hud.countdownValue > 0 ? hud.countdownValue : t('hud-fight', { defaultValue: 'FIGHT!' })}
+                    </div>
                 </div>
             )}
 
             {/* Round end */}
             {hud.phase === 'roundEnd' && (
-                <motion.div
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                    style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(0,0,0,0.5)' }}
-                >
-                    <div style={{ textAlign: 'center' }}>
-                        <motion.div
-                            initial={{ scale: 1.8 }} animate={{ scale: 1 }} transition={{ type: 'spring', duration: 0.5 }}
-                            style={{
-                                color: hud.roundEndText === 'K.O.' ? '#ff3366' : '#ffcc00',
-                                fontSize: 40, textShadow: `0 0 20px ${hud.roundEndText === 'K.O.' ? '#ff3366' : '#ffcc00'}`,
-                            }}
-                        >
-                            {hud.roundEndText}
-                        </motion.div>
+                <div className="kk-banner-layer kk-banner-layer--end">
+                    <div className={`kk-banner-band kk-banner-band--${end.kind}`} aria-hidden="true" />
+                    <div className="kk-banner-stack">
+                        <div className={`kk-banner kk-banner--slam kk-banner--end kk-banner--${end.kind}`} role="status">{endText}</div>
+                        <div className="kk-banner-kanji" aria-hidden="true">{endKanji}</div>
                     </div>
-                </motion.div>
+                </div>
             )}
         </div>
     );

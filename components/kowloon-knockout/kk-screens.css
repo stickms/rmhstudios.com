@@ -1,0 +1,1282 @@
+@import '../shared/game-fonts/fonts.css';
+
+/* ============================================================
+   Kowloon Knockout: every screen except the arena and the main-menu backdrop.
+   Scheme: docs/game-design-schemes/kowloon-knockout.json and the game card.
+   Two-ink halftone: hot pink and warm yellow on near-black plum, a cyan
+   hanzi sign, chunky 2px neon outlines whose glow is stacked box-shadows
+   (never a filter, never backdrop-filter), Bungee for signage, Jost for text,
+   Press Start 2P only for tiny stamps. Static: no looping animation here.
+
+   Phones first: every screen is a column that scrolls inside `.app-container`
+   (which already carries the device safe-area padding), controls are 44px+,
+   and nothing is pinned to a screen edge.
+   ============================================================ */
+
+.kowloon-knockout {
+  --kk-bg: #05020d;
+  --kk-bg-alt: #14082b;
+  --kk-surface: #0f0620;
+  --kk-surface-hover: #1d0b3a;
+  --kk-panel: rgba(15, 6, 32, 0.9);
+  --kk-ink: #ffe8f3;
+  --kk-ink-muted: #d0a3be;
+  --kk-pink: #ff2e88;
+  --kk-yellow: #ffc400;
+  --kk-cyan: #46e6ff;
+  --kk-violet: #b366ff;
+  --kk-green: #2cff9a;
+  --kk-danger: #ff5a3c;
+  --kk-border: #5a1b7a;
+  --kk-display: 'Bungee', 'Impact', 'Arial Black', sans-serif;
+  --kk-body: 'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --kk-stamp: 'Press Start 2P', 'Courier New', monospace;
+  --kk-halftone: radial-gradient(circle at 50% 50%, rgba(255, 46, 136, 0.2) 1.1px, transparent 1.7px);
+}
+
+/* ── Screen shell ────────────────────────────────────────────── */
+
+.kowloon-knockout .kk-screen {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(12px, 2.4vh, 22px);
+  width: 100%;
+  min-height: 100%;
+  padding: clamp(14px, 3vw, 30px) clamp(12px, 3vw, 28px) clamp(18px, 3vw, 30px);
+  font-family: var(--kk-body);
+  color: var(--kk-ink);
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 104%, rgba(255, 46, 136, 0.34), transparent 72%),
+    radial-gradient(ellipse 50% 36% at 8% 0%, rgba(70, 230, 255, 0.12), transparent 70%),
+    radial-gradient(ellipse 50% 36% at 96% 6%, rgba(179, 102, 255, 0.14), transparent 70%),
+    linear-gradient(180deg, var(--kk-bg) 0%, var(--kk-bg-alt) 70%, #1f0b3b 100%);
+  isolation: isolate;
+}
+
+/* Halftone dots fading in from the top: the "printed" texture of the card art. */
+.kowloon-knockout .kk-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--kk-halftone);
+  background-size: 9px 9px;
+  -webkit-mask-image: linear-gradient(180deg, #000, transparent 55%);
+  mask-image: linear-gradient(180deg, #000, transparent 55%);
+  pointer-events: none;
+}
+
+.kowloon-knockout .kk-screen *,
+.kowloon-knockout .kk-screen *::before,
+.kowloon-knockout .kk-screen *::after {
+  box-sizing: border-box;
+}
+
+.kowloon-knockout .kk-screen > * {
+  width: 100%;
+  max-width: 920px;
+  min-width: 0;
+}
+
+/* Heading block: a yellow film-label stamp over a Bungee title. */
+.kowloon-knockout .kk-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.kowloon-knockout .kk-ticket {
+  display: inline-block;
+  padding: 5px 9px 4px;
+  background: var(--kk-yellow);
+  color: #1a0b00;
+  font-family: var(--kk-stamp);
+  font-size: 8px;
+  line-height: 1.5;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transform: rotate(-1.6deg);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 3px 50%);
+}
+
+.kowloon-knockout .kk-title {
+  margin: 0;
+  font-family: var(--kk-display);
+  font-weight: 400;
+  font-size: clamp(22px, 6.4vw, 40px);
+  line-height: 1.05;
+  letter-spacing: 0.08em;
+  color: #ffd2e7;
+  text-shadow:
+    0 0 3px var(--kk-pink),
+    0 0 12px var(--kk-pink),
+    0 0 28px rgba(255, 46, 136, 0.5);
+}
+
+.kowloon-knockout .kk-title--yellow {
+  color: #fff2c2;
+  text-shadow:
+    0 0 3px var(--kk-yellow),
+    0 0 12px var(--kk-yellow),
+    0 0 28px rgba(255, 196, 0, 0.45);
+}
+
+/* ── Panel: dark plum slab, solid neon border, halftone ──────── */
+
+.kowloon-knockout .kk-panel {
+  --c: var(--kk-pink);
+  position: relative;
+  box-sizing: border-box;
+  padding: clamp(12px, 3vw, 20px);
+  border: 2px solid var(--c);
+  border-radius: 4px;
+  background:
+    var(--kk-halftone) 0 0 / 9px 9px,
+    linear-gradient(180deg, color-mix(in srgb, var(--c) 10%, transparent), transparent 90px),
+    var(--kk-panel);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--c) 28%, transparent),
+    0 0 8px color-mix(in srgb, var(--c) 65%, transparent),
+    0 0 26px color-mix(in srgb, var(--c) 30%, transparent),
+    inset 0 0 16px color-mix(in srgb, var(--c) 16%, transparent);
+}
+
+.kowloon-knockout .kk-panel--cyan {
+  --c: var(--kk-cyan);
+}
+.kowloon-knockout .kk-panel--yellow {
+  --c: var(--kk-yellow);
+}
+.kowloon-knockout .kk-panel--violet {
+  --c: var(--kk-violet);
+}
+
+.kowloon-knockout .kk-panel-label {
+  margin: 0 0 10px;
+  font-family: var(--kk-display);
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--c, var(--kk-yellow));
+  text-shadow: 0 0 8px color-mix(in srgb, var(--c, var(--kk-yellow)) 60%, transparent);
+}
+
+/* ── Buttons (shared by every screen) ────────────────────────── */
+
+.kowloon-knockout .neon-button {
+  --c: var(--kk-pink);
+  --on: #ffd2e7;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 48px;
+  min-width: 44px;
+  margin: 0;
+  padding: 10px clamp(16px, 5vw, 30px);
+  border: 2px solid var(--c);
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--c) 14%, transparent), transparent 70%),
+    var(--kk-surface);
+  color: var(--on);
+  font-family: var(--kk-display);
+  font-size: clamp(13px, 3.6vw, 16px);
+  letter-spacing: 0.1em;
+  line-height: 1.1;
+  text-align: center;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--c) 70%, transparent);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--c) 30%, transparent),
+    0 0 7px color-mix(in srgb, var(--c) 65%, transparent),
+    0 0 20px color-mix(in srgb, var(--c) 30%, transparent),
+    inset 0 0 10px color-mix(in srgb, var(--c) 26%, transparent);
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.kowloon-knockout .neon-button:hover:not(:disabled),
+.kowloon-knockout .neon-button:focus-visible {
+  color: #fff;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--c) 30%, transparent), color-mix(in srgb, var(--c) 6%, transparent) 90%),
+    var(--kk-surface-hover);
+  text-shadow:
+    0 0 6px #fff,
+    0 0 16px var(--c);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--c) 50%, transparent),
+    0 0 10px var(--c),
+    0 0 30px color-mix(in srgb, var(--c) 50%, transparent),
+    inset 0 0 16px color-mix(in srgb, var(--c) 42%, transparent);
+}
+
+.kowloon-knockout .neon-button:active:not(:disabled) {
+  background: var(--kk-surface-hover);
+  box-shadow:
+    0 0 6px var(--c),
+    inset 0 0 22px color-mix(in srgb, var(--c) 55%, transparent);
+}
+
+.kowloon-knockout .neon-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.kowloon-knockout .kk-screen button:focus-visible,
+.kowloon-knockout .kk-screen input:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+.kowloon-knockout .neon-button-versus,
+.kowloon-knockout .neon-button-close {
+  --c: var(--kk-yellow);
+  --on: #fff2c2;
+}
+.kowloon-knockout .neon-button-controls {
+  --c: var(--kk-cyan);
+  --on: #8df0ff;
+}
+.kowloon-knockout .neon-button-back {
+  --c: var(--kk-violet);
+  --on: #e3ccff;
+}
+.kowloon-knockout .fight-button-large {
+  min-height: 60px;
+  font-size: clamp(18px, 5.4vw, 24px);
+  letter-spacing: 0.16em;
+  padding-inline: clamp(24px, 9vw, 56px);
+}
+
+/* Action row: the primary button on top on phones, side by side from tablet up. */
+.kowloon-knockout .kk-actions {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: stretch;
+  gap: 12px;
+  max-width: 460px;
+}
+
+@media (min-width: 560px) {
+  .kowloon-knockout .kk-actions {
+    flex-direction: row;
+    justify-content: center;
+    max-width: none;
+  }
+}
+
+/* ── Toggle groups (fighters / mode / CPU / visibility) ──────── */
+
+.kowloon-knockout .match-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kowloon-knockout .option-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.kowloon-knockout .option-label {
+  flex: 0 0 auto;
+  min-width: 82px;
+  font-family: var(--kk-display);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--kk-yellow);
+  text-shadow: 0 0 8px rgba(255, 196, 0, 0.5);
+}
+
+.kowloon-knockout .option-chips {
+  display: flex;
+  flex: 1 1 200px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kowloon-knockout .option-chip {
+  flex: 1 1 auto;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 2px solid color-mix(in srgb, var(--kk-cyan) 70%, transparent);
+  border-radius: 4px;
+  background: var(--kk-surface);
+  color: #8df0ff;
+  font-family: var(--kk-display);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.2s ease;
+}
+
+.kowloon-knockout .option-chip:hover:not(:disabled) {
+  color: #fff;
+  background: var(--kk-surface-hover);
+}
+
+.kowloon-knockout .option-chip:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.kowloon-knockout .option-chip-active {
+  color: #fff;
+  border-color: var(--kk-pink);
+  background: color-mix(in srgb, var(--kk-pink) 30%, var(--kk-surface));
+  box-shadow:
+    0 0 9px var(--kk-pink),
+    inset 0 0 12px color-mix(in srgb, var(--kk-pink) 45%, transparent);
+}
+
+/* ── Character select ────────────────────────────────────────── */
+
+.kowloon-knockout .kk-select__stage {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  align-items: center;
+}
+
+@media (min-width: 640px) {
+  .kowloon-knockout .kk-select__stage {
+    grid-template-columns: minmax(180px, 280px) 1fr;
+    gap: 22px;
+  }
+}
+
+/* Landscape phones: the preview beside the info, shorter. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .kowloon-knockout .kk-select__stage {
+    grid-template-columns: 150px 1fr;
+    gap: 14px;
+  }
+}
+
+.kowloon-knockout .kk-stage__preview {
+  --size: clamp(150px, 46vw, 260px);
+  position: relative;
+  width: var(--size);
+  height: var(--size);
+  margin-inline: auto;
+  border: 2px solid var(--seat, var(--kk-pink));
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--seat, var(--kk-pink)) 32%, transparent), transparent 72%),
+    var(--kk-halftone) 0 0 / 7px 7px,
+    #080314;
+  overflow: hidden;
+  box-shadow:
+    0 0 9px color-mix(in srgb, var(--seat, var(--kk-pink)) 70%, transparent),
+    inset 0 0 18px color-mix(in srgb, var(--seat, var(--kk-pink)) 25%, transparent);
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .kowloon-knockout .kk-stage__preview {
+    --size: 150px;
+  }
+}
+
+/* The live preview fills its frame whatever size prop it was given. */
+.kowloon-knockout .kk-stage__preview > div {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.kowloon-knockout .kk-stage__info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.kowloon-knockout .kk-stage__nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kowloon-knockout .carousel-arrow {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid var(--kk-yellow);
+  border-radius: 4px;
+  background: var(--kk-surface);
+  color: var(--kk-yellow);
+  font-family: var(--kk-display);
+  font-size: 16px;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: 0 0 6px rgba(255, 196, 0, 0.55);
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.kowloon-knockout .carousel-arrow:hover {
+  color: #fff;
+  background: var(--kk-surface-hover);
+}
+
+.kowloon-knockout .fighter-name {
+  flex: 1 1 auto;
+  margin: 0;
+  min-width: 0;
+  font-family: var(--kk-display);
+  font-weight: 400;
+  font-size: clamp(17px, 5vw, 26px);
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  overflow-wrap: anywhere;
+}
+
+.kowloon-knockout .fighter-desc {
+  margin: 0;
+  font-size: clamp(13px, 3.5vw, 15px);
+  line-height: 1.4;
+  color: var(--kk-ink-muted);
+}
+
+.kowloon-knockout .stat-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.kowloon-knockout .stat-bar {
+  display: grid;
+  grid-template-columns: 78px 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.kowloon-knockout .stat-label {
+  font-family: var(--kk-display);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--kk-ink);
+}
+
+/* Ten neon segments: the track and its fill are both cut into cells. */
+.kowloon-knockout .stat-track {
+  height: 12px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0 calc(10% - 3px), transparent calc(10% - 3px) 10%);
+}
+
+.kowloon-knockout .stat-fill {
+  height: 100%;
+  -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 calc(10% - 3px), transparent calc(10% - 3px) 10%);
+  mask-image: repeating-linear-gradient(90deg, #000 0 calc(10% - 3px), transparent calc(10% - 3px) 10%);
+}
+
+/* Roster: a row of vertical neon signs, scrolling sideways when it must. */
+.kowloon-knockout .roster-strip {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 6px 4px 10px;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: var(--kk-pink) transparent;
+}
+
+.kowloon-knockout .roster-slot {
+  --seat: var(--kk-pink);
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 76px;
+  padding: 4px;
+  border: 2px solid color-mix(in srgb, var(--seat) 45%, #3a2a55);
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--seat) 26%, transparent), transparent 75%),
+    var(--kk-surface);
+  color: #fff;
+  font-family: var(--kk-display);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  scroll-snap-align: center;
+  touch-action: manipulation;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.2s ease;
+}
+
+.kowloon-knockout .roster-slot-selected {
+  border-color: var(--seat);
+  box-shadow:
+    0 0 9px var(--seat),
+    0 0 22px color-mix(in srgb, var(--seat) 45%, transparent),
+    inset 0 0 14px color-mix(in srgb, var(--seat) 35%, transparent);
+}
+
+.kowloon-knockout .roster-slot-code {
+  text-shadow:
+    0 0 4px var(--seat),
+    0 0 12px var(--seat);
+}
+
+/* ── Model picker ────────────────────────────────────────────── */
+
+.kowloon-knockout .kk-model-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kowloon-knockout .kk-model-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 14px;
+  border: 2px solid var(--kk-violet);
+  border-radius: 4px;
+  background: var(--kk-surface);
+  color: var(--kk-ink);
+  font-family: var(--kk-body);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(179, 102, 255, 0.5);
+}
+
+.kowloon-knockout .kk-model-toggle__label {
+  font-family: var(--kk-display);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--kk-yellow);
+}
+
+.kowloon-knockout .kk-model-toggle__value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kowloon-knockout .kk-model-toggle__caret {
+  color: var(--kk-violet);
+}
+
+.kowloon-knockout .kk-model-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: min(42dvh, 320px);
+  padding: 10px;
+  border: 2px solid var(--kk-violet);
+  border-radius: 4px;
+  background: var(--kk-panel);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.kowloon-knockout .kk-model-group h3 {
+  margin: 0 0 6px;
+  font-family: var(--kk-display);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--kk-cyan);
+}
+
+.kowloon-knockout .kk-model-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 8px;
+}
+
+.kowloon-knockout .kk-model-card {
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 2px solid #3a2a55;
+  border-radius: 4px;
+  background: var(--kk-surface);
+  color: var(--kk-ink);
+  font-family: var(--kk-body);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.kowloon-knockout .kk-model-card:hover {
+  border-color: var(--kk-violet);
+  background: var(--kk-surface-hover);
+}
+
+.kowloon-knockout .kk-model-card[aria-pressed='true'] {
+  border-color: var(--kk-pink);
+  color: #fff;
+  background: color-mix(in srgb, var(--kk-pink) 26%, var(--kk-surface));
+  box-shadow: 0 0 9px var(--kk-pink);
+}
+
+/* The preview shows the model alone: no floating P1 nameplate. */
+.kowloon-knockout .kk-stage__preview .kk-nameplate {
+  display: none;
+}
+
+/* ── Lobby ───────────────────────────────────────────────────── */
+
+.kowloon-knockout .kk-lobby__col {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: clamp(12px, 2.4vh, 18px);
+  max-width: 600px;
+  margin-inline: auto;
+}
+
+.kowloon-knockout .kk-lobby-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: min(34dvh, 280px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.kowloon-knockout .lobby-status {
+  padding: 14px 10px;
+  text-align: center;
+  font-family: var(--kk-display);
+  font-size: clamp(12px, 3.2vw, 14px);
+  letter-spacing: 0.1em;
+  line-height: 1.4;
+  color: var(--kk-ink-muted);
+}
+
+/* A listed room: a ticket with a coloured spine. */
+.kowloon-knockout .lobby-list-row {
+  --seat: var(--kk-pink);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 8px 12px 8px 18px;
+  border: 2px solid color-mix(in srgb, var(--seat) 60%, transparent);
+  border-radius: 4px;
+  background: var(--kk-surface);
+  color: var(--kk-ink);
+  font-family: var(--kk-body);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.kowloon-knockout .lobby-list-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  background: var(--seat);
+  box-shadow: 0 0 8px var(--seat);
+}
+
+.kowloon-knockout .lobby-list-row:hover {
+  background: var(--kk-surface-hover);
+  border-color: var(--seat);
+}
+
+.kowloon-knockout .kk-row-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--seat) 55%, #fff);
+}
+
+.kowloon-knockout .kk-row-meta {
+  color: var(--kk-ink-muted);
+  font-size: 13px;
+}
+
+.kowloon-knockout .kk-row-count {
+  color: var(--kk-yellow);
+  font-family: var(--kk-display);
+  font-size: 13px;
+}
+
+.kowloon-knockout .lobby-list-join {
+  padding: 5px 9px 4px;
+  background: var(--kk-yellow);
+  color: #1a0b00;
+  font-family: var(--kk-display);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  transform: rotate(-1.6deg);
+}
+
+.kowloon-knockout .lobby-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 560px) {
+  .kowloon-knockout .lobby-buttons {
+    flex-direction: row;
+  }
+  .kowloon-knockout .lobby-buttons .neon-button {
+    flex: 1 1 0;
+  }
+}
+
+.kowloon-knockout .kk-join-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.kowloon-knockout .lobby-input {
+  flex: 1 1 140px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 8px 14px;
+  border: 2px solid var(--kk-cyan);
+  border-radius: 4px;
+  background: #080314;
+  color: #8df0ff;
+  font-family: var(--kk-display);
+  font-size: 22px;
+  letter-spacing: 0.3em;
+  text-align: center;
+  text-transform: uppercase;
+  box-shadow: 0 0 8px rgba(70, 230, 255, 0.5);
+}
+
+.kowloon-knockout .lobby-input::placeholder {
+  color: #7fb3bf;
+  letter-spacing: 0.2em;
+}
+
+.kowloon-knockout .lobby-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--kk-ink-muted);
+  cursor: pointer;
+}
+
+.kowloon-knockout .lobby-toggle input {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  accent-color: var(--kk-pink);
+}
+
+.kowloon-knockout .lobby-error {
+  box-sizing: border-box;
+  max-width: 600px;
+  padding: 10px 14px;
+  border: 2px solid var(--kk-danger);
+  border-radius: 4px;
+  background: rgba(255, 90, 60, 0.12);
+  color: #ffd0c4;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Room code: the cyan hanzi-sign treatment. */
+.kowloon-knockout .kk-room {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.kowloon-knockout .lobby-room-code {
+  padding: 8px 18px;
+  border: 2px solid var(--kk-cyan);
+  border-radius: 4px;
+  background: #080314;
+  color: #c9f8ff;
+  font-family: var(--kk-display);
+  font-size: clamp(24px, 8vw, 36px);
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  text-shadow:
+    0 0 4px var(--kk-cyan),
+    0 0 14px var(--kk-cyan);
+  box-shadow:
+    0 0 9px var(--kk-cyan),
+    inset 0 0 12px rgba(70, 230, 255, 0.28);
+}
+
+.kowloon-knockout .lobby-visibility {
+  padding: 5px 9px 4px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  font-family: var(--kk-display);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.kowloon-knockout .kk-room .neon-button {
+  min-height: 44px;
+  padding-inline: 14px;
+  font-size: 12px;
+}
+
+/* Seats: ticket stubs with a perforated edge. */
+.kowloon-knockout .lobby-seats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 560px) {
+  .kowloon-knockout .lobby-seats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.kowloon-knockout .lobby-seat {
+  --seat: var(--kk-pink);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 92px;
+  padding: 12px 10px 10px 18px;
+  border: 2px solid var(--seat);
+  border-radius: 4px;
+  background:
+    var(--kk-halftone) 0 0 / 8px 8px,
+    var(--kk-surface);
+  overflow: hidden;
+}
+
+.kowloon-knockout .lobby-seat::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  bottom: 8px;
+  border-left: 2px dashed color-mix(in srgb, var(--seat) 65%, transparent);
+}
+
+.kowloon-knockout .lobby-seat-you {
+  box-shadow:
+    0 0 10px var(--seat),
+    inset 0 0 14px color-mix(in srgb, var(--seat) 30%, transparent);
+}
+
+.kowloon-knockout .kk-seat__tag {
+  font-family: var(--kk-display);
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  color: color-mix(in srgb, var(--seat) 55%, #fff);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--seat) 60%, transparent);
+}
+
+.kowloon-knockout .kk-seat__class {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--kk-ink);
+}
+
+.kowloon-knockout .kk-seat__team {
+  font-family: var(--kk-stamp);
+  font-size: 7px;
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--seat) 55%, #fff);
+}
+
+.kowloon-knockout .kk-fighter-pick {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.kowloon-knockout .kk-fighter-pick__name {
+  flex: 1 1 auto;
+  max-width: 260px;
+  text-align: center;
+  font-family: var(--kk-display);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+}
+
+/* ── Result ──────────────────────────────────────────────────── */
+
+.kowloon-knockout .kk-result {
+  --tone: var(--kk-yellow);
+  justify-content: center;
+}
+
+.kowloon-knockout .kk-result--win {
+  --tone: var(--kk-green);
+}
+.kowloon-knockout .kk-result--lose {
+  --tone: var(--kk-pink);
+}
+
+.kowloon-knockout .ko-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.kowloon-knockout .kk-result__banner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: clamp(18px, 5vw, 30px) clamp(12px, 4vw, 24px);
+  border: 3px solid var(--tone);
+  border-radius: 4px;
+  background:
+    var(--kk-halftone) 0 0 / 9px 9px,
+    var(--kk-panel);
+  text-align: center;
+  box-shadow:
+    0 0 10px var(--tone),
+    0 0 36px color-mix(in srgb, var(--tone) 40%, transparent),
+    inset 0 0 22px color-mix(in srgb, var(--tone) 22%, transparent);
+}
+
+.kowloon-knockout .result-title {
+  margin: 0;
+  font-family: var(--kk-display);
+  font-weight: 400;
+  font-size: clamp(30px, 11vw, 64px);
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--tone) 45%, #fff);
+  text-shadow:
+    0 0 4px var(--tone),
+    0 0 16px var(--tone),
+    0 0 40px color-mix(in srgb, var(--tone) 60%, transparent);
+  overflow-wrap: anywhere;
+}
+
+.kowloon-knockout .result-sub {
+  font-family: var(--kk-display);
+  font-size: clamp(12px, 3.6vw, 16px);
+  letter-spacing: 0.12em;
+  color: var(--tone);
+}
+
+.kowloon-knockout .result-scoreboard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 560px;
+}
+
+.kowloon-knockout .result-row {
+  --seat: var(--kk-pink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 2px solid color-mix(in srgb, var(--seat) 55%, transparent);
+  border-radius: 4px;
+  background: var(--kk-surface);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.kowloon-knockout .result-rank {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  background: var(--kk-yellow);
+  color: #1a0b00;
+  font-family: var(--kk-display);
+  font-size: 15px;
+}
+
+.kowloon-knockout .kk-row-team {
+  font-family: var(--kk-stamp);
+  font-size: 8px;
+}
+
+.kowloon-knockout .kk-row-wins {
+  color: var(--kk-yellow);
+  letter-spacing: 0.1em;
+}
+
+.kowloon-knockout .kk-row-hp {
+  min-width: 48px;
+  text-align: right;
+  font-family: var(--kk-display);
+  font-size: 13px;
+}
+
+.kowloon-knockout .kk-row-hp--alive {
+  color: var(--kk-green);
+}
+.kowloon-knockout .kk-row-hp--down {
+  color: var(--kk-pink);
+}
+
+/* ── Training panel (floats over the arena) ──────────────────── */
+
+.kowloon-knockout .kk-training-panel {
+  position: absolute;
+  /* Below the in-fight HUD bar (kk-hud.css): the two fighters' panels sit above it. */
+  --kk-panel-top: calc(var(--kk-hud-top, 60px) + clamp(52px, 9vh, 68px));
+  top: var(--kk-panel-top);
+  right: 12px;
+  z-index: 30;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(280px, calc(100% - 24px));
+  max-height: calc(100% - var(--kk-panel-top) - 12px);
+  padding: 10px 12px;
+  border: 2px solid var(--kk-cyan);
+  border-radius: 4px;
+  background: rgba(15, 6, 32, 0.92);
+  color: var(--kk-ink);
+  font-family: var(--kk-body);
+  font-size: 12px;
+  font-weight: 500;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-shadow:
+    0 0 8px rgba(70, 230, 255, 0.55),
+    inset 0 0 12px rgba(70, 230, 255, 0.15);
+}
+
+.kowloon-knockout .kk-training-panel h2 {
+  margin: 0 0 2px;
+  font-family: var(--kk-display);
+  font-weight: 400;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  color: var(--kk-cyan);
+}
+
+.kowloon-knockout .kk-training-panel h3 {
+  margin: 6px 0 2px;
+  font-family: var(--kk-display);
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--kk-yellow);
+}
+
+.kowloon-knockout .kk-training-panel dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 10px;
+  margin: 0;
+}
+.kowloon-knockout .kk-training-panel dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.kowloon-knockout .kk-training-panel p {
+  margin: 0;
+}
+.kowloon-knockout .kk-train-held {
+  font-size: 16px;
+  color: var(--kk-green);
+}
+.kowloon-knockout .kk-train-history {
+  color: var(--kk-ink-muted);
+  word-break: break-word;
+}
+.kowloon-knockout .kk-train-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.kowloon-knockout .kk-train-row button {
+  min-height: 36px;
+  min-width: 36px;
+  padding: 4px 10px;
+  border: 2px solid var(--kk-cyan);
+  border-radius: 4px;
+  background: var(--kk-surface);
+  color: #8df0ff;
+  font-family: var(--kk-body);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.kowloon-knockout .kk-train-row button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.kowloon-knockout .kk-train-row button[aria-pressed='true'] {
+  color: #fff;
+  background: color-mix(in srgb, var(--kk-cyan) 24%, var(--kk-surface));
+  box-shadow: 0 0 8px var(--kk-cyan);
+}
+
+/* On a phone the panel is a compact strip at the bottom, clear of the touch controls' thumbs. */
+@media (max-width: 640px) {
+  .kowloon-knockout .kk-training-panel {
+    top: 56px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: 30dvh;
+  }
+}
+
+/* ── Small screens and landscape handsets ────────────────────── */
+
+@media (max-width: 380px) {
+  .kowloon-knockout .stat-bar {
+    grid-template-columns: 66px 1fr;
+    gap: 8px;
+  }
+  .kowloon-knockout .option-label {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .kowloon-knockout .kk-screen {
+    gap: 10px;
+    padding-block: 10px;
+  }
+  .kowloon-knockout .kk-title {
+    font-size: 20px;
+  }
+  .kowloon-knockout .kk-ticket {
+    display: none;
+  }
+  .kowloon-knockout .kk-model-list {
+    max-height: 56dvh;
+  }
+  .kowloon-knockout .kk-result__banner {
+    padding-block: 12px;
+  }
+  .kowloon-knockout .result-title {
+    font-size: clamp(26px, 8vw, 40px);
+  }
+}
+
+/* ── Main-menu panels: layout the kk-menu.css skin builds on ─── */
+
+.kowloon-knockout .controls-title {
+  text-align: center;
+}
+
+.kowloon-knockout .controls-touch-note {
+  margin: -8px 0 16px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--kk-ink-muted);
+}
+
+.kowloon-knockout .controls-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.kowloon-knockout .combos-section {
+  grid-column: span 2;
+}
+
+.kowloon-knockout .control-row {
+  display: flex;
+  align-items: center;
+}
+
+.kowloon-knockout .kk-graphics-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.kowloon-knockout .kk-graphics-presets {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.kowloon-knockout .kk-graphics-subtitle {
+  margin: 14px 0 8px;
+  font-size: 10px;
+  font-weight: 400;
+  color: #ffc400;
+}
+
+.kowloon-knockout .kk-graphics-fps {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The menu column keeps its distance from the screen edges on notched phones. */
+.kowloon-knockout .kk-menu .kk-menu__scroll {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+/* Menu title block: the film-label stamp sits under the tagline. */
+.kowloon-knockout .kk-menu .title-container .kk-ticket {
+  margin-top: 6px;
+  font-size: 7px;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}

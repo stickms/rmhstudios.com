@@ -21,3 +21,17 @@ export function findBone(root: THREE.Object3D, names: string[]): THREE.Object3D 
     }
     return undefined;
 }
+
+/**
+ * The yaw (radians, about +Y) that turns a model so its left side lies on +X — which, with Y up,
+ * makes it face +Z, the way every fighter renderer expects. `left` and `right` are world positions
+ * of the character's left and right shoulders (or hips). The model-axes hull detection can leave a
+ * character turned a quarter (HL2's humans come out facing sideways), so the skeleton, not the
+ * detection, has the last word. Returns 0 when the two points are (nearly) on the vertical axis.
+ */
+export function lateralYaw(left: THREE.Vector3, right: THREE.Vector3): number {
+    const vx = left.x - right.x;
+    const vz = left.z - right.z;
+    if (Math.hypot(vx, vz) < 1e-6) return 0;
+    return Math.atan2(vz, vx);
+}

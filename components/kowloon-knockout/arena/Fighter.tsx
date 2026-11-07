@@ -44,7 +44,7 @@ class FighterBoundary extends Component<
 /** Shown while a model loads: the shadow and nameplate follow the seat, the body
  *  appears when ready. Deliberately NOT a stick figure — that read as the "real"
  *  fighter being replaced by a low-poly one. */
-function LoadingPlaceholder({ seat, framesRef }: { seat: number; framesRef: FramesRef }) {
+function LoadingPlaceholder({ seat, framesRef, showNameplate }: { seat: number; framesRef: FramesRef; showNameplate: boolean }) {
     const root = useRef<THREE.Group>(null);
     const shadow = useRef<THREE.Mesh>(null);
     const initial = framesRef.current.find((f) => f.seat === seat);
@@ -58,7 +58,7 @@ function LoadingPlaceholder({ seat, framesRef }: { seat: number; framesRef: Fram
     return (
         <group ref={root}>
             <FighterTrappings
-                showNameplate
+                showNameplate={showNameplate}
                 plateColor={initial?.isLocal ? '#ffcc00' : (initial?.accent ?? '#ffffff')}
                 plateLabel={`P${seat + 1}`}
                 shadowRef={shadow}
@@ -69,7 +69,7 @@ function LoadingPlaceholder({ seat, framesRef }: { seat: number; framesRef: Fram
 
 /** Per-seat fighter: the seat's chosen Source model, else the animated Y-Bot (also
  *  the fallback if that model cannot load); the procedural StickFighter only if both fail. */
-export default function Fighter({ seat, framesRef }: { seat: number; framesRef: FramesRef }) {
+export default function Fighter({ seat, framesRef, showNameplate = true }: { seat: number; framesRef: FramesRef; showNameplate?: boolean }) {
     const modelId = sanitizeFighterModelId(framesRef.current.find((f) => f.seat === seat)?.modelId);
     const [failed, setFailed] = useState<FighterFailures>({ source: false, skeletal: false });
     // A different model gets a fresh chance.
@@ -79,10 +79,10 @@ export default function Fighter({ seat, framesRef }: { seat: number; framesRef: 
     // console noise); while that is still being looked up, show the placeholder.
     const availability = useModelAvailability(modelId);
     const view = chooseFighterView(modelId, availability === 'no' ? { ...failed, source: true } : failed);
-    const placeholder = <LoadingPlaceholder seat={seat} framesRef={framesRef} />;
+    const placeholder = <LoadingPlaceholder seat={seat} framesRef={framesRef} showNameplate={showNameplate} />;
     if (view === 'source' && availability === 'unknown') return placeholder;
 
-    if (view === 'stick') return <StickFighter seat={seat} framesRef={framesRef} />;
+    if (view === 'stick') return <StickFighter seat={seat} framesRef={framesRef} showNameplate={showNameplate} />;
     if (view === 'source') {
         return (
             <FighterBoundary
@@ -91,7 +91,7 @@ export default function Fighter({ seat, framesRef }: { seat: number; framesRef: 
                 onRetryReset={() => clearSourceModel(modelId)}
             >
                 <Suspense fallback={placeholder}>
-                    <SourceFighter seat={seat} framesRef={framesRef} modelId={modelId} />
+                    <SourceFighter seat={seat} framesRef={framesRef} modelId={modelId} showNameplate={showNameplate} />
                 </Suspense>
             </FighterBoundary>
         );
@@ -105,7 +105,7 @@ export default function Fighter({ seat, framesRef }: { seat: number; framesRef: 
             }}
         >
             <Suspense fallback={placeholder}>
-                <SkeletalFighter seat={seat} framesRef={framesRef} />
+                <SkeletalFighter seat={seat} framesRef={framesRef} showNameplate={showNameplate} />
             </Suspense>
         </FighterBoundary>
     );
