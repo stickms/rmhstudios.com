@@ -14,6 +14,7 @@ import sharp from 'sharp';
 import { renderSheet, SIZE } from './figure';
 import { CLASS_ART } from './characters';
 import { ENEMY_ART, ECHO_ALLY, renderEnemySheet } from './creatures';
+import { BOSS_ART, BOSS_SHEET, renderBossSheet } from './boss-art';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_ALTAIR = join(HERE, '..', '..', '..', 'public', 'sprites', 'altair');
@@ -46,6 +47,29 @@ async function main() {
     await sharp(Buffer.from(rgba.buffer), { raw: { width: W, height: W, channels: 4 } })
       .png({ compressionLevel: 9 })
       .toFile(join(enemyOut, art.file));
+  }
+  // Bosses: 32x32 frames, 4 columns by 3 rows (128x96).
+  const bossOut = arg('out') ? join(out, 'bosses') : join(PUBLIC_ALTAIR, 'bosses');
+  mkdirSync(bossOut, { recursive: true });
+  for (const art of BOSS_ART) {
+    const rgba = renderBossSheet(art.draw, art.palette);
+    await sharp(Buffer.from(rgba.buffer), { raw: { width: BOSS_SHEET.width, height: BOSS_SHEET.height, channels: 4 } })
+      .png({ compressionLevel: 9 })
+      .toFile(join(bossOut, art.file));
+    if (arg('boss-preview')) {
+      const sc = 4;
+      const pw = BOSS_SHEET.width * sc;
+      const ph = BOSS_SHEET.height * sc;
+      const big = Buffer.alloc(pw * ph * 4);
+      for (let i = 0; i < big.length; i += 4) { big[i] = 5; big[i + 1] = 11; big[i + 2] = 20; big[i + 3] = 255; }
+      for (let y = 0; y < ph; y++) for (let x = 0; x < pw; x++) {
+        const si = (Math.floor(y / sc) * BOSS_SHEET.width + Math.floor(x / sc)) * 4;
+        if (!rgba[si + 3]) continue;
+        const di = (y * pw + x) * 4;
+        big[di] = rgba[si]; big[di + 1] = rgba[si + 1]; big[di + 2] = rgba[si + 2]; big[di + 3] = 255;
+      }
+      await sharp(big, { raw: { width: pw, height: ph, channels: 4 } }).png().toFile(join(arg('boss-preview')!, `${art.id}.png`));
+    }
   }
   // The Echo-Binder's allies get their own cyan sheet (they used to borrow the skeleton's).
   const echo = renderEnemySheet(ECHO_ALLY.draw, ECHO_ALLY.palette);
