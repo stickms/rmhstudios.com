@@ -11,6 +11,7 @@
 
 import { replayRun, type ReplayOptions, type ReplayResult } from './replay';
 import { STEPS_PER_SECOND, type LogPlayer, type RunLog } from './run-log';
+import { SIM_VERSION, logSimVersion } from '../sim-version';
 
 export interface TrustedCoopSetup {
   seed: number;
@@ -68,6 +69,8 @@ export interface VerifiedCoopRun {
 export type VerifyFailure =
   | 'invalid_log'
   | 'setup_mismatch'
+  /** Played on other rules than the server runs now (a deploy landed mid-match): cannot be replayed, not cheating. */
+  | 'stale_sim'
   | 'too_long_for_wall_clock'
   | 'incomplete'
   | 'timeout'
@@ -135,6 +138,10 @@ export async function verifyCoopRun(
   }
   if (!Array.isArray(l.joins) || !l.joins.every((j) => trusted.joins.some((t) => samePlayer(j, t)))) {
     return { ok: false, reason: 'setup_mismatch', detail: 'log has a drop-in the hub never admitted' };
+  }
+  const playedOn = logSimVersion(l);
+  if (playedOn !== SIM_VERSION) {
+    return { ok: false, reason: 'stale_sim', detail: `played on sim ${playedOn}, the server runs sim ${SIM_VERSION}` };
   }
   if (typeof l.steps === 'number') {
     const seconds = l.steps / STEPS_PER_SECOND;

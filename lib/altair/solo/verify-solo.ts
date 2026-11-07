@@ -10,6 +10,7 @@
 // =============================================================================
 
 import { runExclusive } from '../verify/replay';
+import { SIM_VERSION, logSimVersion } from '../sim-version';
 import { STEPS_PER_SECOND } from '../verify/run-log';
 import { SoloRun, type SoloResult } from './solo-run';
 import { checkLoadout, checkSoloLog, type SoloLoadout, type SoloLog } from './solo-log';
@@ -33,6 +34,8 @@ export interface ClaimedSoloResult {
 export type SoloFailure =
   | 'invalid_log'
   | 'setup_mismatch'
+  /** Played on other rules than the server runs now (a deploy landed mid-run): cannot be replayed, not cheating. */
+  | 'stale_sim'
   | 'too_long_for_wall_clock'
   | 'illegal_event'
   | 'stalled'
@@ -153,6 +156,11 @@ export async function verifySoloRun(
   if (l.doubleTime !== trusted.doubleTime) return { ok: false, reason: 'setup_mismatch', detail: 'doubleTime differs' };
   if (!checkLoadout(l.loadout) || JSON.stringify(canonicalLoadout(l.loadout)) !== JSON.stringify(canonicalLoadout(trusted.loadout))) {
     return { ok: false, reason: 'setup_mismatch', detail: 'loadout differs from the one the server issued' };
+  }
+  // After the setup checks, so only a log that matches the run the server issued gets the benign verdict.
+  const playedOn = logSimVersion(l);
+  if (playedOn !== SIM_VERSION) {
+    return { ok: false, reason: 'stale_sim', detail: `played on sim ${playedOn}, the server runs sim ${SIM_VERSION}` };
   }
   if (typeof l.steps === 'number') {
     const seconds = l.steps / STEPS_PER_SECOND;

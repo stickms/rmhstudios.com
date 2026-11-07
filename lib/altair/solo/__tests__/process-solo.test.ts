@@ -10,6 +10,7 @@ import { processSoloRun, allowSoloSubmission, type SoloProcessDeps, type SoloRun
 import { verifySoloRun } from '../verify-solo';
 import { MAX_SOLO_SUBMISSIONS_PER_HOUR, type SoloRunJob } from '../job';
 import { reconcileMetaSave } from '../../meta-guard';
+import { SIM_VERSION } from '../../sim-version';
 import { playSoloRun, type Recorded } from './fixture';
 
 vi.setConfig({ testTimeout: 120_000 });
@@ -32,6 +33,7 @@ function fakeDb(row: SoloRunRow) {
   const rows = new Map([[row.id, { ...row }]]);
   const credited: { runId: string; coins: number; kills: number }[] = [];
   const rejected: string[] = [];
+  const unverified: string[] = [];
   const verify = vi.fn(verifySoloRun);
   const deps: SoloProcessDeps = {
     load: async (id) => rows.get(id) ?? null,
@@ -47,11 +49,28 @@ function fakeDb(row: SoloRunRow) {
       rows.get(id)!.status = 'rejected';
       rejected.push(reason);
     },
+    markUnverified: async (id, reason) => {
+      rows.get(id)!.status = 'unverified';
+      unverified.push(reason);
+    },
   };
-  return { rows, credited, rejected, verify, deps };
+  return { rows, credited, rejected, unverified, verify, deps };
 }
 
 describe('processSoloRun', () => {
+  it('a run played on another sim version is settled as unverified: not paid by replay, not rejected', async () => {
+    const db = fakeDb(rowFor(honest));
+    const job = jobFor(honest);
+    (job.log as { sim?: number }).sim = SIM_VERSION + 1;
+    const out = await processSoloRun(job, db.deps);
+    expect(out).toMatchObject({ status: 'unverified', reason: 'stale_sim' });
+    expect(db.rows.get('run-1')!.status).toBe('unverified');
+    expect(db.unverified).toHaveLength(1);
+    expect(db.unverified[0]).toMatch(/^stale_sim:/);
+    expect(db.rejected).toEqual([]);
+    expect(db.credited).toEqual([]);
+  });
+
   it('credits an honest run with the replay-computed numbers', async () => {
     const db = fakeDb(rowFor(honest));
     const out = await processSoloRun(jobFor(honest), db.deps);

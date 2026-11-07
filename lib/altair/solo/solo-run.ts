@@ -33,6 +33,7 @@ import type { TileGenerator } from '../engine/tile-generator';
 import type { Camera, CatalystState, GameWorld, InputState, PassiveState, WeaponState } from '../engine/types';
 import { useAltairGameStore } from '../stores/game-store';
 import { finalCoinsFor } from './loadout';
+import { SIM_VERSION } from '../sim-version';
 import {
   KEY_DOWN,
   KEY_LEFT,
@@ -447,6 +448,7 @@ export class SoloRun {
   toLog(end?: SoloEnd): SoloLog {
     return {
       v: SOLO_LOG_VERSION,
+      sim: SIM_VERSION,
       seed: this.setup.seed,
       classId: this.setup.classId,
       doubleTime: this.setup.doubleTime,
