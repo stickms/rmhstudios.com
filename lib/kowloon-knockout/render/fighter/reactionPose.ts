@@ -39,7 +39,7 @@ export function flashStyle(busFlash: number, kind: ImpactKind, legacy: number): 
     const legacyAmt = Math.min(1, Math.max(0, legacy / 8));
     const bus = Math.min(1, Math.max(0, busFlash));
     if (bus >= legacyAmt && bus > 0) {
-        if (kind === 'block') return { color: GUARD, amount: bus * 0.7 };
+        if (kind === 'block') return { color: GUARD, amount: bus * 0.42 };
         // above ~0.55 the colour runs from red toward white-hot, so a fresh heavy hit pops white then cools to red
         const hot = Math.min(1, Math.max(0, (bus - 0.55) / 0.45));
         const color: FlashRgb = [
@@ -47,7 +47,8 @@ export function flashStyle(busFlash: number, kind: ImpactKind, legacy: number): 
             RED[1] + (WHITE_HOT[1] - RED[1]) * hot,
             RED[2] + (WHITE_HOT[2] - RED[2]) * hot,
         ];
-        return { color, amount: bus * 0.95 };
+        // capped well under 1: a fully white emissive turns the model into a flat cut-out, the texture must show through
+        return { color, amount: bus * 0.6 };
     }
-    return { color: RED, amount: legacyAmt * 0.9 };
+    return { color: RED, amount: legacyAmt * 0.75 };
 }

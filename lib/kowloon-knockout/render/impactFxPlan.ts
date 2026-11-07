@@ -68,7 +68,7 @@ export function planImpactFx(e: ImpactEvent, prof: ImpactProfile, opts: PlanOpti
             rings.push({ kind: 'ground', size: prof.ringSize, life: prof.ringLife, color: KO_COLOR });
             if (!opts.lite) rings.push({ kind: 'contact', size: prof.ringSize * 0.5, life: prof.ringLife * 0.45, color: KO_SPARK_COLOR });
         }
-        if (prof.flash > 0) flash = { size: 0.9, life: 0.16, color: KO_SPARK_COLOR };
+        if (prof.flash > 0) flash = { size: 0.5, life: 0.16, color: KO_SPARK_COLOR };
         // Everything flies: a big omnidirectional burst, with a ring of heavier gold streaks.
         sparks.push({ count: take(prof.sparks), speedMin: 4, speedMax: 11, spread: 1, up: 0.5, ...dir, lifeMin: 0.45, lifeMax: 0.9, color: KO_SPARK_COLOR });
         return { rings, flash, sparks };
@@ -79,7 +79,7 @@ export function planImpactFx(e: ImpactEvent, prof: ImpactProfile, opts: PlanOpti
             // A small hard ring at the guard, nothing on the ground: the blow did not get through.
             rings.push({ kind: 'contact', size: prof.ringSize, life: prof.ringLife, color: BLOCK_COLOR });
         }
-        if (prof.flash > 0) flash = { size: 0.22 + 0.1 * w, life: 0.09, color: BLOCK_COLOR };
+        if (prof.flash > 0) flash = { size: 0.14 + 0.08 * w, life: 0.09, color: BLOCK_COLOR };
         // A tight, fast, forward shower along the blow, cool white-blue.
         sparks.push({
             count: take(prof.sparks), speedMin: 4.5 + 2 * w, speedMax: 9 + 3 * w, spread: 0.28, up: 0.25, ...dir,
@@ -94,7 +94,7 @@ export function planImpactFx(e: ImpactEvent, prof: ImpactProfile, opts: PlanOpti
         rings.push({ kind: 'ground', size: prof.ringSize, life: prof.ringLife, color: hitColor });
         if (!opts.lite) rings.push({ kind: 'contact', size: prof.ringSize * 0.42, life: 0.2 + 0.08 * w, color: '#ffffff' });
     }
-    if (prof.flash > 0) flash = { size: 0.3 + 0.35 * w, life: 0.12, color: '#fff6e0' };
+    if (prof.flash > 0) flash = { size: 0.16 + 0.22 * w, life: 0.12, color: '#fff6e0' };
     const total = take(prof.sparks);
     const hot = Math.round(total * 0.25);
     sparks.push({
@@ -152,5 +152,5 @@ export function sparkVelocity(plan: SparkPlan, r1: number, r2: number, r3: numbe
 
 /** Streak length (m) for a spark moving at `speed` m/s: faster sparks draw longer, capped so none is a pole. */
 export function streakLength(speed: number): number {
-    return Math.min(0.9, Math.max(0.05, speed * 0.055));
+    return Math.min(0.55, Math.max(0.04, speed * 0.04));
 }

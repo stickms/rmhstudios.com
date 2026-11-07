@@ -14,6 +14,7 @@ import type { BoneFamily } from './models';
 
 export const JOINTS = [
     'hips', 'spine', 'chest', 'neck', 'head',
+    'shoulderL', 'shoulderR',
     'upperArmL', 'foreArmL', 'upperArmR', 'foreArmR',
     'thighL', 'shinL', 'footL', 'thighR', 'shinR', 'footR',
 ] as const;
@@ -31,6 +32,7 @@ export const BONE_NAMES: Record<BoneFamily, Candidates> = {
         chest: ['bip_spine_2', 'bip_spine_3', 'bip_spine_1'],
         neck: ['bip_neck'],
         head: ['bip_head'],
+        shoulderL: ['bip_collar_L'], shoulderR: ['bip_collar_R'],
         upperArmL: ['bip_upperArm_L'], foreArmL: ['bip_lowerArm_L'],
         upperArmR: ['bip_upperArm_R'], foreArmR: ['bip_lowerArm_R'],
         thighL: ['bip_hip_L'], shinL: ['bip_knee_L'], footL: ['bip_foot_L'],
@@ -42,6 +44,7 @@ export const BONE_NAMES: Record<BoneFamily, Candidates> = {
         chest: [`${VB}Spine2`, `${VB}Spine4`, `${VB}Spine1`],
         neck: [`${VB}Neck1`],
         head: [`${VB}Head1`],
+        shoulderL: [`${VB}L_Clavicle`], shoulderR: [`${VB}R_Clavicle`],
         upperArmL: [`${VB}L_UpperArm`], foreArmL: [`${VB}L_Forearm`],
         upperArmR: [`${VB}R_UpperArm`], foreArmR: [`${VB}R_Forearm`],
         thighL: [`${VB}L_Thigh`], shinL: [`${VB}L_Calf`], footL: [`${VB}L_Foot`],
@@ -53,6 +56,7 @@ export const BONE_NAMES: Record<BoneFamily, Candidates> = {
         chest: ['spine_2', 'spine_3', 'spine_1'],
         neck: ['neck_0'],
         head: ['head_0'],
+        shoulderL: ['clavicle_L'], shoulderR: ['clavicle_R'],
         upperArmL: ['arm_upper_L'], foreArmL: ['arm_lower_L'],
         upperArmR: ['arm_upper_R'], foreArmR: ['arm_lower_R'],
         thighL: ['leg_upper_L'], shinL: ['leg_lower_L'], footL: ['ankle_L'],

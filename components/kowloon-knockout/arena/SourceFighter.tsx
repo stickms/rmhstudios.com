@@ -175,7 +175,7 @@ export default function SourceFighter({ seat, framesRef, modelId, showNameplate 
 
         // Smoothed position/facing, the clip driver and the impact reaction (useFighterMotion).
         const flash = motion.step({
-            rf, root: r, host, mixer: inst.mixer, actions: inst.actions, want: resolveClip(rf).clip, deltaRaw,
+            rf, root: r, host, mixer: inst.mixer, actions: inst.actions, want: resolveClip(rf).clip, deltaRaw, strafe: true,
         });
         for (const mat of inst.emissiveMats) {
             mat.emissive.setRGB(flash.color[0], flash.color[1], flash.color[2]).multiplyScalar(flash.amount);

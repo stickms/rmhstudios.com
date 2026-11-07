@@ -31,6 +31,8 @@ export interface DriveInput {
     actionProgress: number;
     punchFrame: number;
     state: string;
+    /** Playback speed of a walk / strafe loop (negative = backward); see locomotion.ts. Ignored for other clips. */
+    locoScale?: number;
 }
 
 /** Rate (1/s) at which a one-shot's clip time chases the sim's progress: ~2 frames, enough to hide the 60 Hz steps. */
@@ -98,6 +100,10 @@ export class ClipDriver {
         }
 
         const active = this.current ? actions[this.current] : undefined;
+        if (active && this.current) {
+            // A walk or strafe plays at the speed (and direction) the fighter is actually moving; everything else at 1.
+            active.timeScale = (this.current === 'walk' || this.current === 'strafe') && input.locoScale ? input.locoScale : 1;
+        }
         if (this.current && active && oneShot(this.current)) {
             const goal = Math.min(1, Math.max(0, input.actionProgress));
             if (goal >= this.time) this.time += (goal - this.time) * (dt > 0 ? 1 - Math.exp(-PROGRESS_LAMBDA * dt) : 0);

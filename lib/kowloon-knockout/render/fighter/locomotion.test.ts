@@ -1,0 +1,61 @@
+import { describe, expect, it } from 'vitest';
+import { MAX_CADENCE, MIN_CADENCE, STAND_SPEED, leanFor, locomotion, standingness } from './locomotion';
+
+describe('locomotion', () => {
+    it('walks forward at a cadence matched to the speed', () => {
+        const slow = locomotion(1.2, 0, true);
+        const fast = locomotion(4.8, 0, true);
+        expect(slow.clip).toBe('walk');
+        expect(slow.timeScale).toBeGreaterThan(0);
+        expect(fast.timeScale).toBeGreaterThan(slow.timeScale);
+        expect(fast.timeScale).toBeLessThanOrEqual(MAX_CADENCE);
+        expect(locomotion(0.2, 0, true).timeScale).toBeGreaterThanOrEqual(MIN_CADENCE);
+    });
+    it('backs off by playing the walk BACKWARD, not by walking forward while going back', () => {
+        const back = locomotion(-2.4, 0, true);
+        expect(back.clip).toBe('walk');
+        expect(back.timeScale).toBeLessThan(0);
+        expect(Math.abs(back.timeScale)).toBeCloseTo(1, 1);
+    });
+    it('circles with the sideways shuffle, reversed for the other direction', () => {
+        const left = locomotion(0.1, 2, true);
+        const right = locomotion(0.1, -2, true);
+        expect(left.clip).toBe('strafe');
+        expect(right.clip).toBe('strafe');
+        expect(left.timeScale).toBeGreaterThan(0);
+        expect(right.timeScale).toBeLessThan(0);
+    });
+    it('a diagonal advance is still a forward walk; a diagonal retreat a backward one', () => {
+        expect(locomotion(2, 1, true).clip).toBe('walk');
+        expect(locomotion(2, 1, true).timeScale).toBeGreaterThan(0);
+        expect(locomotion(-2, 1, true).timeScale).toBeLessThan(0);
+    });
+    it('a model with no strafe clip walks instead', () => {
+        const l = locomotion(0, 2.5, false);
+        expect(l.clip).toBe('walk');
+        expect(l.timeScale).toBeGreaterThan(0);
+    });
+    it('standing still plays the walk at normal speed (the driver is idle anyway), never NaN', () => {
+        for (const [f, l] of [[0, 0], [STAND_SPEED / 2, 0], [NaN, 0]] as const) {
+            const r = locomotion(f, l, true);
+            expect(Number.isFinite(r.timeScale)).toBe(true);
+            expect(r.timeScale).toBe(1);
+        }
+    });
+    it('leans into the movement: forward on a dash, back on a retreat, toward the side on a strafe, bounded', () => {
+        expect(leanFor(5, 0).pitch).toBeGreaterThan(0.1);
+        expect(leanFor(-5, 0).pitch).toBeLessThan(0);
+        expect(leanFor(100, 0).pitch).toBeLessThanOrEqual(0.2);
+        expect(leanFor(-100, 0).pitch).toBeGreaterThanOrEqual(-0.1);
+        // moving left (+lat): roll about +Z by a NEGATIVE angle tips the head toward +X (left)
+        expect(leanFor(0, 3).roll).toBeLessThan(0);
+        expect(leanFor(0, -3).roll).toBeGreaterThan(0);
+        expect(Math.abs(leanFor(0, 100).roll)).toBeLessThanOrEqual(0.12);
+    });
+    it('standingness fades the stance bounce out as the fighter starts to move', () => {
+        expect(standingness(0)).toBe(1);
+        expect(standingness(STAND_SPEED)).toBe(1);
+        expect(standingness(STAND_SPEED + 0.3)).toBeCloseTo(0.5, 1);
+        expect(standingness(3)).toBe(0);
+    });
+});
