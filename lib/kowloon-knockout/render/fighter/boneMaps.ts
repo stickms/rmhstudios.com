@@ -15,7 +15,7 @@ import type { BoneFamily } from './models';
 export const JOINTS = [
     'hips', 'spine', 'chest', 'neck', 'head',
     'upperArmL', 'foreArmL', 'upperArmR', 'foreArmR',
-    'thighL', 'shinL', 'thighR', 'shinR',
+    'thighL', 'shinL', 'footL', 'thighR', 'shinR', 'footR',
 ] as const;
 export type JointName = (typeof JOINTS)[number];
 export type RigJoints = Partial<Record<JointName, Object3D>>;
@@ -33,8 +33,8 @@ export const BONE_NAMES: Record<BoneFamily, Candidates> = {
         head: ['bip_head'],
         upperArmL: ['bip_upperArm_L'], foreArmL: ['bip_lowerArm_L'],
         upperArmR: ['bip_upperArm_R'], foreArmR: ['bip_lowerArm_R'],
-        thighL: ['bip_hip_L'], shinL: ['bip_knee_L'],
-        thighR: ['bip_hip_R'], shinR: ['bip_knee_R'],
+        thighL: ['bip_hip_L'], shinL: ['bip_knee_L'], footL: ['bip_foot_L'],
+        thighR: ['bip_hip_R'], shinR: ['bip_knee_R'], footR: ['bip_foot_R'],
     },
     valvebiped: {
         hips: [`${VB}Pelvis`],
@@ -44,8 +44,8 @@ export const BONE_NAMES: Record<BoneFamily, Candidates> = {
         head: [`${VB}Head1`],
         upperArmL: [`${VB}L_UpperArm`], foreArmL: [`${VB}L_Forearm`],
         upperArmR: [`${VB}R_UpperArm`], foreArmR: [`${VB}R_Forearm`],
-        thighL: [`${VB}L_Thigh`], shinL: [`${VB}L_Calf`],
-        thighR: [`${VB}R_Thigh`], shinR: [`${VB}R_Calf`],
+        thighL: [`${VB}L_Thigh`], shinL: [`${VB}L_Calf`], footL: [`${VB}L_Foot`],
+        thighR: [`${VB}R_Thigh`], shinR: [`${VB}R_Calf`], footR: [`${VB}R_Foot`],
     },
     csgo: {
         hips: ['pelvis'],
@@ -55,8 +55,8 @@ export const BONE_NAMES: Record<BoneFamily, Candidates> = {
         head: ['head_0'],
         upperArmL: ['arm_upper_L'], foreArmL: ['arm_lower_L'],
         upperArmR: ['arm_upper_R'], foreArmR: ['arm_lower_R'],
-        thighL: ['leg_upper_L'], shinL: ['leg_lower_L'],
-        thighR: ['leg_upper_R'], shinR: ['leg_lower_R'],
+        thighL: ['leg_upper_L'], shinL: ['leg_lower_L'], footL: ['ankle_L'],
+        thighR: ['leg_upper_R'], shinR: ['leg_lower_R'], footR: ['ankle_R'],
     },
 };
 

@@ -31,7 +31,9 @@ function makeSkeleton(names: Record<string, string>, tpose: boolean, mirror = fa
         bone(`hand${side}`, fore, tpose ? sx * s * 0.25 : sx * s * 0.05, tpose ? 0 : -0.24, 0);
         const thigh = bone(`thigh${side}`, pelvis, sx * s * 0.1, -0.05, 0);
         const shin = bone(`shin${side}`, thigh, 0, -0.45, 0);
-        bone(`foot${side}`, shin, 0, -0.45, 0);
+        const foot = bone(`foot${side}`, shin, 0, -0.45, 0);
+        // The toes: out in front of the ankle and a little below it, as a standing foot's are.
+        bone(`toe${side}`, foot, 0, -0.05, 0.2);
     }
     root.updateMatrixWorld(true);
     return root;
@@ -43,6 +45,7 @@ const vbNames: Record<string, string> = {
     clavR: `${VB}R_Clavicle`, upperArmR: `${VB}R_UpperArm`, foreArmR: `${VB}R_Forearm`, handR: `${VB}R_Hand`,
     thighL: `${VB}L_Thigh`, shinL: `${VB}L_Calf`, footL: `${VB}L_Foot`,
     thighR: `${VB}R_Thigh`, shinR: `${VB}R_Calf`, footR: `${VB}R_Foot`,
+    toeL: `${VB}L_Toe0`, toeR: `${VB}R_Toe0`,
 };
 
 function pose(root: Group, clip: ReturnType<typeof buildSourceClips>[keyof ReturnType<typeof buildSourceClips>], at: number) {
@@ -59,7 +62,7 @@ describe('resolveRig', () => {
     it('matches names regardless of case and punctuation', () => {
         const root = makeSkeleton(vbNames, true);
         const rig = resolveRig(root, 'valvebiped');
-        expect(Object.keys(rig)).toHaveLength(13);
+        expect(Object.keys(rig)).toHaveLength(15);
         expect(normalizeBoneName('ValveBiped.Bip01_L_UpperArm')).toBe(normalizeBoneName('valvebipedBip01_l_upperarm'));
     });
     it('copes with a skeleton missing bones', () => {
@@ -157,5 +160,81 @@ describe('lateralYaw', () => {
     });
     it('does not blow up when the shoulders are stacked', () => {
         expect(lateralYaw(new Vector3(0, 1, 0), new Vector3(0, 0.5, 0))).toBe(0);
+    });
+});
+
+describe('idle bounce', () => {
+    const lowestFootPoint = (root: Group): number => {
+        let lo = Infinity;
+        for (const n of ['L_Foot', 'R_Foot', 'L_Toe0', 'R_Toe0']) {
+            lo = Math.min(lo, root.getObjectByName(`${VB}${n}`)!.getWorldPosition(new Vector3()).y);
+        }
+        return lo;
+    };
+    const at = (t: number) => {
+        const fresh = makeSkeleton(vbNames, false);
+        const c = buildSourceClips(resolveRig(fresh, 'valvebiped'), { height: 1.65, worldScale: 1 });
+        pose(fresh, c.idle, t);
+        return fresh;
+    };
+    const duration = (() => {
+        const fresh = makeSkeleton(vbNames, false);
+        return buildSourceClips(resolveRig(fresh, 'valvebiped'), { height: 1.65, worldScale: 1 }).idle!.duration;
+    })();
+
+    it('loops without a seam: the last key is the first', () => {
+        const fresh = makeSkeleton(vbNames, false);
+        const idle = buildSourceClips(resolveRig(fresh, 'valvebiped'), { height: 1.65, worldScale: 1 }).idle!;
+        for (const track of idle.tracks) {
+            const n = track.getValueSize();
+            const v = track.values;
+            for (let k = 0; k < n; k++) expect(v[v.length - n + k]).toBeCloseTo(v[k], 5);
+        }
+    });
+
+    it('bounces: the body rises and falls several centimetres every cycle', () => {
+        const hipsY = (t: number) => at(t).getObjectByName(`${VB}Pelvis`)!.getWorldPosition(new Vector3()).y;
+        const ys = [0, 0.25, 0.5, 0.75].map((f) => hipsY(f * duration));
+        expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(0.04);
+        expect(ys[2]).toBeGreaterThan(ys[0]); // up on the toes at mid-cycle
+        expect(ys[1]).toBeCloseTo(ys[3], 2);   // and symmetric on the way down
+    });
+
+    it('stays on the balls of the feet: heels lift at the top while the toes stay on the floor', () => {
+        const dirY = (root: Group) => {
+            const foot = root.getObjectByName(`${VB}L_Foot`)!.getWorldPosition(new Vector3());
+            return root.getObjectByName(`${VB}L_Toe0`)!.getWorldPosition(new Vector3()).sub(foot).normalize().y;
+        };
+        const bottom = at(0);
+        const top = at(duration * 0.5);
+        expect(dirY(top)).toBeLessThan(dirY(bottom) - 0.25); // toes pitched well down at the top
+        // the lowest point of either foot never sinks through the floor (y = 0) nor floats high
+        for (const f of [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875]) {
+            const lo = lowestFootPoint(at(duration * f));
+            expect(lo).toBeGreaterThan(-0.03);
+            expect(lo).toBeLessThan(0.04);
+        }
+    });
+
+    it('keeps the guard up while bouncing: both fists stay near face height and in front', () => {
+        for (const f of [0, 0.5]) {
+            const root = at(duration * f);
+            for (const side of ['L', 'R']) {
+                const hand = root.getObjectByName(`${VB}${side}_Hand`)!.getWorldPosition(new Vector3());
+                expect(hand.y).toBeGreaterThan(1.05);
+                expect(hand.z).toBeGreaterThan(0.1);
+            }
+        }
+    });
+
+    it('still builds when a skeleton has no foot bones (no foot tracks, no throw)', () => {
+        const noFeet = Object.fromEntries(Object.entries(vbNames).filter(([k]) => !/^(foot|toe)/.test(k)));
+        const root = makeSkeleton(noFeet, false);
+        const rig = resolveRig(root, 'valvebiped');
+        expect(rig.footL).toBeUndefined();
+        const clips = buildSourceClips(rig, { height: 1.65, worldScale: 1 });
+        expect(clips.idle).toBeDefined();
+        // (the unnamed foot bones still exist in this fixture, but nothing maps them, so nothing animates them)
+        expect(clips.idle!.tracks.some((t) => /^foot[LR]\./.test(t.name))).toBe(false);
     });
 });

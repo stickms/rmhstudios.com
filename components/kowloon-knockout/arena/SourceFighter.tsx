@@ -109,7 +109,10 @@ export default function SourceFighter({ seat, framesRef, modelId, showNameplate 
         const scale = autoScaleToHeight(scaleGroup, TARGET_HEIGHT);
         host.updateMatrixWorld(true);
         const box = new THREE.Box3().setFromObject(scaleGroup);
-        scaleGroup.position.y -= box.min.y; // feet on the floor
+        // Feet on the floor — measured against where this fighter's origin is, not the world's: a host
+        // that sits above or below y = 0 (the character-select preview lowers its group) must not push
+        // the model up or down by that much.
+        scaleGroup.position.y -= box.min.y - host.getWorldPosition(new THREE.Vector3()).y;
         host.updateMatrixWorld(true);
 
         // Skinned bounds can be a frustum-culling trap for posed models: cull by the animated pose instead.
