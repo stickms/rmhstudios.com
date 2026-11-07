@@ -142,9 +142,6 @@ importers:
       '@fontsource/ibm-plex-mono':
         specifier: ^5.3.0
         version: 5.3.0
-      '@fontsource/medievalsharp':
-        specifier: ^5.3.0
-        version: 5.3.0
       '@fontsource/patrick-hand':
         specifier: ^5.3.0
         version: 5.3.0
@@ -1473,9 +1470,6 @@ packages:
 
   '@fontsource/ibm-plex-mono@5.3.0':
     resolution: {integrity: sha512-eTgnZjZEGk1QtD3ZstF+Vclo2HLAni8YMy34/DxllwZvyz1lR/1RF/xTiAquOBO7MvqBx8D2Ig2WCPMVfdZu7Q==}
-
-  '@fontsource/medievalsharp@5.3.0':
-    resolution: {integrity: sha512-vaqsQ/qp5kL/WuJ/4dZG2ScHDG1Tu+n83q9JvgkYLqhay2n6bbXqL5WBppJxU40pKH6fTDE5CA33hEkJUmSbaA==}
 
   '@fontsource/patrick-hand@5.3.0':
     resolution: {integrity: sha512-V8C38IlIFfdWg0Xtri3F7sLCVpm069rUwn6w4n+oyn38gt7H4arOJmuReg3tAw1Q6jHqZp89wTnAAJagq4Atxw==}
@@ -8714,8 +8708,6 @@ snapshots:
   '@fontsource/great-vibes@5.3.0': {}
 
   '@fontsource/ibm-plex-mono@5.3.0': {}
-
-  '@fontsource/medievalsharp@5.3.0': {}
 
   '@fontsource/patrick-hand@5.3.0': {}
 

@@ -66,7 +66,7 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center altair-overlay">
       <div className="absolute inset-0 bg-(--altair-hud-scrim)/80" />
-      <div className="altair-parchment-surface relative z-10 w-full max-w-md mx-4 bg-(--altair-surface) border border-(--altair-border) rounded-(--altair-radius-lg) p-6 altair-modal">
+      <div className="altair-scan-surface relative z-10 w-full max-w-md mx-4 bg-(--altair-surface) border border-(--altair-border) rounded-(--altair-radius-lg) p-6 altair-modal">
         {/* Header */}
         <div className="text-center mb-6">
           {isVictory ? (

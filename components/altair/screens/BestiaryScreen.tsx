@@ -113,7 +113,7 @@ export default function BestiaryScreen({ onBack }: BestiaryScreenProps) {
   const discoveredBosses = BOSSES.filter((b) => discovered(b.id)).length;
 
   return (
-    <div className="altair-parchment flex flex-col items-center flex-1 px-4 pt-4 pb-12">
+    <div className="altair-scan flex flex-col items-center flex-1 px-4 pt-4 pb-12">
       <div className="w-full max-w-2xl flex flex-col gap-4">
         {/* Title */}
         <div className="text-center">

@@ -769,3 +769,11 @@ Only open licences. No new licence class; two sources were re-fetched at higher 
 - **versecraft**: the owner's illustrated card art, figure untouched; no third-party asset.
 
 Source resolution limits: see the report (Wikimedia would only serve up to 1920 px wide; the Hubble original is 1417 px; versecraft's card art exists only at 800 px).
+
+---
+
+## Altair "Outpost 13" visual pass (2026-11-07)
+
+No new third-party art was added in this pass. The in-game sprite sheets in `public/sprites/altair/` are the existing CC0 sheets (Ninja Adventure, 16x16 DungeonTileset II) graded to the Altair card palette by `scripts/altair/grade-sprites.ts`; the untouched originals live in `scripts/altair/sprite-src/` and the script never writes there, so it can be re-run safely. Palette roles: cyan = allies, magenta = hostiles, amber = loot and hazards, dark teal = floor and props. The UI uses Michroma, Jost and IBM Plex Mono (SIL OFL 1.1, already in `components/shared/game-fonts/`); MedievalSharp was removed.
+
+Candidates checked and rejected for this pass: OpenGameArt "Spacers" (CC0, but side-view platformer frames, not top-down) and OpenGameArt "Sci-fi platform tiles" (CC0, side-view). Several itch.io top-down sci-fi packs were found, but their licences are paid or unstated, so none were used.

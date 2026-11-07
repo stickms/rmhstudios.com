@@ -80,11 +80,6 @@ const GROUPS: Group[] = [
     sources: [{ pkg: '@fontsource-variable/outfit', css: ['wght.css'], family: 'Outfit' }],
   },
   {
-    out: 'app/fonts/medievalsharp.css',
-    usedBy: 'app/routes/altair.tsx',
-    sources: [{ pkg: '@fontsource/medievalsharp', css: ['400.css'], family: 'MedievalSharp' }],
-  },
-  {
     out: 'app/fonts/press-start-2p.css',
     usedBy: 'app/routes/kowloon-knockout.tsx',
     sources: [{ pkg: '@fontsource/press-start-2p', css: ['400.css'], family: 'Press Start 2P' }],

@@ -57,7 +57,7 @@ export default function AltairHeader({
   }, [onBack]);
 
   return (
-    <header className="altair-parchment-surface grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 overflow-hidden border-b border-(--altair-border) bg-(--altair-bg) px-3 sm:px-4">
+    <header className="altair-scan-surface grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 overflow-hidden border-b border-(--altair-border) bg-(--altair-bg) px-3 sm:px-4">
       {/* Left side */}
       <div className="flex min-w-0 items-center gap-2">
         {hasBack && (
