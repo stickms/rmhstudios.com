@@ -6,10 +6,13 @@
  * design problem, not a signal-processing one. The rules below are the ones
  * every mainstream rhythm game converges on:
  *
- * - **Notes land on the grid.** Human timing and onset detection are both a few
- *   milliseconds loose; a chart that reproduces that looseness feels wrong even
- *   when it is technically more faithful. Quantising to subdivisions of the
- *   tracked beat is what makes a chart feel *composed*.
+ * - **Notes are LABELLED by the grid and PLACED by the audio.** Which subdivision
+ *   of the beat an onset belongs to is musical information (it drives the flags and
+ *   the beaming), and it is read off the tracked grid. But where the note sits in
+ *   time is where the player HEARS the attack: moving it to a grid line is a
+ *   timing error of exactly the size it is moved, against a 15 ms MARVELOUS window.
+ *   A note is only moved onto the grid when the move is smaller than the detector's
+ *   own precision; a live or old recording whose tempo wanders keeps its true timing.
  * - **Difficulties are nested.** Easy ⊆ Normal ⊆ Hard ⊆ Expert, always. A player
  *   who learns a pattern on Normal finds that same pattern still there on Hard,
  *   with more between the notes. Generating each difficulty independently
@@ -41,16 +44,24 @@ const MAX_SNAP_SECONDS = 0.055;
 /** …and as a fraction of the beat, so slow songs do not get a sloppier filter. */
 const MAX_SNAP_FRACTION = 0.18;
 /**
- * How far a note may be MOVED to sit on the grid.
- *
- * Onset times are accurate to a few milliseconds now (see `attack.ts`), so moving
- * a note 50 ms to a grid line only moves it off the sound the player hears. A note
- * within this distance of a grid position is snapped to it (the composed feel);
- * one further out — a swung or human hit — keeps its true time and is marked
- * off-grid, which the renderer and the editor already know how to show.
+ * How far an onset may be from a grid position and still be LABELLED with it
+ * (given that position's subdivision, flags and beam group). One further out — a
+ * swung or human hit — is marked off-grid, which the renderer and the editor
+ * already know how to show.
  */
 const SNAP_MOVE_SECONDS = 0.03;
 const SNAP_MOVE_FRACTION = 0.1;
+/**
+ * How far a note's TIME may be moved onto the grid line it was labelled with.
+ *
+ * Onset times are accurate to a couple of milliseconds (see `attack.ts`), so a
+ * correction this small is inside the measurement's own noise and tidies a tight
+ * electronic track onto exact grid lines. Anything larger is real timing in the
+ * music, and moving it would put the note off the sound the player hears: the old
+ * 30 ms move was twice the MARVELOUS window and is the largest single cause of a
+ * chart "feeling off" on a song that is not machine-quantised.
+ */
+const SNAP_TIME_SECONDS = 0.006;
 
 export interface QuantizedNote {
   /** Snapped time, seconds. */
@@ -188,7 +199,10 @@ export function quantizeOnsets(onsets: Onset[], beats: number[]): QuantizedNote[
     const snappedLength =
       beatIndex + 1 < beats.length ? beats[beatIndex + 1] - snappedStart : beatLength;
 
-    const time = snap ? snappedStart + snappedFraction * snappedLength : onset.time;
+    // The label snaps (within SNAP_MOVE_*); the time snaps only inside the detector's
+    // own noise.
+    const gridTime = snappedStart + snappedFraction * snappedLength;
+    const time = snap && Math.abs(gridTime - onset.time) <= SNAP_TIME_SECONDS ? gridTime : onset.time;
     out.push({
       time,
       strength: onset.strength,
@@ -221,11 +235,14 @@ const MAX_HOLD_BEATS = 4;
 const TAIL_DIVISIONS = 4;
 
 /**
- * Snap a tail time to the nearest quarter-beat of the grid.
+ * Snap a tail time to the nearest quarter-beat of the grid, when it is already
+ * that close.
  *
- * The audio's own release lands a little before or after the grid line (a bass
- * note gated at 92% of two beats ends at 1.84, not 2.0), and a tail drawn at 1.84
- * reads as a mistake. The grid position it was aiming for is the one to chart.
+ * A tail that is within a few milliseconds of a grid line is that line, and is
+ * charted there. One that is further is the audio's own release (a bass note gated
+ * at 92% of two beats ends at 1.84, not 2.0) and is charted where it is heard: the
+ * release is judged against the sound, and a tail drawn on a grid line 60 ms away
+ * from the sound it follows reads as the game being out of time.
  */
 function snapTail(time: number, beats: readonly number[]): number {
   const index = Math.max(0, Math.min(beats.length - 2, beatIndexAt(beats as number[], time)));
@@ -234,7 +251,8 @@ function snapTail(time: number, beats: readonly number[]): number {
   if (!(length > 0)) return time;
   const fraction = (time - start) / length;
   const snapped = Math.round(fraction * TAIL_DIVISIONS) / TAIL_DIVISIONS;
-  return start + snapped * length;
+  const gridTime = start + snapped * length;
+  return Math.abs(gridTime - time) <= SNAP_TIME_SECONDS * 2 ? gridTime : time;
 }
 
 /** `{ holdDuration }` for a sustained onset that is long enough to chart as one, else `{}`. */
@@ -252,12 +270,26 @@ function holdFor(
     : {};
 }
 
-/** Two onsets that snapped to the same grid position are one note. */
+/**
+ * Two onsets that landed in the same grid slot are one note.
+ *
+ * They used to be recognisable by sharing a time (both were moved to the grid line).
+ * Notes now keep their own time, so the slot is compared instead, and the merged
+ * note sits where the STRONGER attack is — the one the player is following.
+ */
 function mergeCoincident(notes: QuantizedNote[]): QuantizedNote[] {
   const out: QuantizedNote[] = [];
   for (const note of notes) {
     const previous = out[out.length - 1];
-    if (previous && Math.abs(previous.time - note.time) < 0.001) {
+    const sameSlot =
+      previous !== undefined &&
+      !previous.offGrid &&
+      !note.offGrid &&
+      previous.beatIndex === note.beatIndex &&
+      previous.fraction === note.fraction &&
+      Math.abs(previous.time - note.time) <= SNAP_MOVE_SECONDS * 2;
+    if (previous && (sameSlot || Math.abs(previous.time - note.time) < 0.001)) {
+      if (note.strength > previous.strength) previous.time = note.time;
       previous.strength = Math.max(previous.strength, note.strength);
       previous.sustain = Math.max(previous.sustain, note.sustain);
       if (note.holdDuration && !(previous.holdDuration && previous.holdDuration >= note.holdDuration)) {

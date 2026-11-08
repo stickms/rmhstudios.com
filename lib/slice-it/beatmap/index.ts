@@ -113,7 +113,7 @@ export interface AnalysisArtefacts {
  * reproduce. Version 1 is the legacy `BeatDetector` output, which carries no
  * version field at all — hence `analysisVersion ?? 1`.
  */
-export const BEATMAP_VERSION = 3;
+export const BEATMAP_VERSION = 4;
 // v3: notes sit on the audible attack (was ~16 ms early), held notes are detected
 // per onset and snapped to the grid (was none), lanes follow the song's own timbre
 // clusters, the sparse tiers rank hits within their register, and a steady tempo

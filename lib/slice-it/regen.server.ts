@@ -16,6 +16,7 @@
  * bulk, at night, with no request to trace it to.
  */
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { decodeAudio } from '@/lib/audio/decode.server';
 
@@ -147,33 +148,79 @@ export async function backfillStaleCharts(limit = 25): Promise<{
   // One regeneration per SONG, not per chart: `regenerateSong` rewrites every
   // generated difficulty of a song in one pass, so a song with four stale
   // charts would otherwise be decoded four times.
-  const songIds = [...new Set(stale.map((chart) => chart.songId))];
+  const songIds = new Set(stale.map((chart) => chart.songId));
+  // Songs with NO chart rows have only their stored analysis (the fallback every
+  // play starts from), and the query above never sees them: most of a library.
+  for (const id of await staleAnalysisSongIds(limit)) {
+    if (songIds.size >= limit) break;
+    songIds.add(id);
+  }
 
   let updated = 0;
   let failed = 0;
+  let attempted = 0;
   for (const songId of songIds) {
+    if (unreadableSongs.has(songId)) continue;
+    attempted++;
     try {
       await regenerateSong(songId);
       updated++;
     } catch (error) {
       failed++;
+      // Remembered for this process, so one undecodable file at the head of the
+      // queue is not retried every hour in front of everything behind it.
+      unreadableSongs.add(songId);
       console.error('[slice-it] regen failed', songId, error);
     }
   }
-  return { attempted: songIds.length, updated, failed };
+  return { attempted, updated, failed };
+}
+
+/** Songs a regeneration failed on in this process; skipped until a restart. */
+const unreadableSongs = new Set<string>();
+
+/**
+ * Ready songs whose stored analysis was made by an older generator.
+ *
+ * A missing or non-numeric `analysisVersion` is version 1 — the legacy detector,
+ * which wrote no version at all. Raw SQL because the version lives inside the JSON.
+ */
+async function staleAnalysisSongIds(limit: number): Promise<string[]> {
+  const skip = [...unreadableSongs];
+  const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+    SELECT s.id
+    FROM "Song" s
+    WHERE s."analysisState" = 'ready'
+      AND s."analysisData" IS NOT NULL
+      AND (
+        CASE
+          WHEN (s."analysisData"->>'analysisVersion') ~ '^[0-9]+$'
+            THEN (s."analysisData"->>'analysisVersion')::int
+          ELSE 1
+        END
+      ) < ${BEATMAP_VERSION}
+      ${skip.length > 0 ? Prisma.sql`AND s.id NOT IN (${Prisma.join(skip)})` : Prisma.empty}
+    ORDER BY s.id
+    LIMIT ${limit}
+  `);
+  return rows.map((row) => row.id);
 }
 
 /** How many songs the backfill still has to get through. */
 export async function staleChartCount(): Promise<number> {
-  return prisma.chart.count({
-    where: { isGenerated: true, generatorVersion: { lt: BEATMAP_VERSION } },
-  });
+  const [charts, songs] = await Promise.all([
+    prisma.chart.count({
+      where: { isGenerated: true, generatorVersion: { lt: BEATMAP_VERSION } },
+    }),
+    staleAnalysisSongIds(1_000_000).then((ids) => ids.length),
+  ]);
+  return charts + songs;
 }
 
 /**
  * C8's scheduled half: bring stale generated charts forward, slowly.
  *
- * Hourly and 25 songs at a time, deliberately. This is a full decode and
+ * Hourly and 60 songs at a time, deliberately. This is a full decode and
  * analysis per song — the exact work `O3` moved off the web tier — so a sweep
  * that tried to catch the library up in one pass would just move the CPU spike
  * to a different container. At this rate a library of a few thousand songs
@@ -194,7 +241,7 @@ export async function registerRegenCron(boss: {
   // rarity rollup is how a scheduled job becomes an incident.
   await boss.schedule(REGEN_QUEUE, REGEN_CRON, {}, { tz: 'UTC' });
   await boss.work(REGEN_QUEUE, async () => {
-    const result = await backfillStaleCharts(25);
+    const result = await backfillStaleCharts(60);
     if (result.attempted > 0) {
       console.info('[slice-it] regen sweep', result, 'remaining:', await staleChartCount());
     }
