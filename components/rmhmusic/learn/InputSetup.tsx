@@ -43,7 +43,7 @@ export function InputSetup({ open, onOpenChange, returnFocus }: InputSetupProps)
         <Dialog open={open} onOpenChange={change}>
           <DialogContent
             container={host}
-            className="app-glass max-w-md gap-4 p-5 text-(--app-text) sm:p-6"
+            className="app-glass max-w-md grid-cols-[minmax(0,1fr)] gap-4 p-5 text-(--app-text) sm:p-6"
             aria-describedby={undefined}
             onCloseAutoFocus={(e) => {
               const target = returnFocus?.current;

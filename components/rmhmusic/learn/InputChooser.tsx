@@ -39,10 +39,12 @@ interface RowProps {
 function Row({ id, icon: Icon, title, description, action, children }: RowProps) {
   return (
     <li data-input={id} className="space-y-1 py-3">
-      <div className="flex min-h-11 items-center gap-3">
+      {/* The action sits beside the title while the title keeps 6rem; past that (large text, a
+          narrow phone, the long "Not supported" note) it wraps below, at the end. */}
+      <div className="flex min-h-11 flex-wrap items-center gap-3">
         <Icon className="h-5 w-5 shrink-0 text-(--app-accent)" aria-hidden="true" />
-        <p className="min-w-0 flex-1 font-medium text-(--app-text)">{title}</p>
-        <div className="shrink-0">{action}</div>
+        <p className="min-w-24 flex-1 font-medium text-(--app-text)">{title}</p>
+        <div className="ms-auto shrink-0">{action}</div>
       </div>
       <div className="space-y-3 ps-8">
         <p className="text-sm text-(--app-text-muted)">{description}</p>
