@@ -1237,7 +1237,9 @@ export function LiquidGlobe({
           if (stage.dataset.globeCoat) delete stage.dataset.globeCoat;
         }
         if (g.status === 'ready') {
-          // Linked but not drawn yet: let the frame loop send this mount's first surface so the worker draws.
+          // Linked but not drawn yet. The worker draws its first frame on its own once its program links (every piece
+          // of state is dirty then) and says `drawn`, which calls this again to append the canvas; until then the loop
+          // sends no surface (its canvas is not this mount's yet). Holding the host now lets the clock reach it.
           coatHost.current = g;
           jellyDirty.current = true;
           dirty.current = true;
@@ -1562,7 +1564,8 @@ export function LiquidGlobe({
       window.clearTimeout(idle);
       const lease = skinLease.current;
       skinLease.current = null;
-      const canvas = lease?.host.skinCanvas({ persp: PERSP, lens: LENS });
+      // Read, never start: `skinCanvas()` would transfer a fresh canvas to the worker on the way out.
+      const canvas = lease?.host.currentSkinCanvas;
       if (canvas && canvas.parentElement === stage) canvas.remove();
       lease?.release();
       skinOn.current = false;
@@ -2196,6 +2199,9 @@ export function LiquidGlobe({
      * worker's own clock. Held still during the eversion hand-off. The host coalesces to one message per frame.
      */
     let coatDrawnAt = -1;
+    const coatRipples = new Array<number>(12).fill(0);
+    /** The skin frame's drawn rotation (row-major 3×3), refilled from `DM` per frame instead of `Array.from(DM)`. */
+    const skinM = new Array<number>(9).fill(0);
     const drawCoat = (now: number, soft: boolean): boolean => {
       const g = coatHost.current;
       // Only the mount that holds the shared canvas drives it.
@@ -2206,7 +2212,9 @@ export function LiquidGlobe({
       // The ripples' impact points, turned by the DRAWN rotation into the
       // material's screen space — the same rotation the cage is drawn at.
       const m = DM;
-      const ripplesOut = new Array<number>(12);
+      // One array for the component's life: the host posts (structured-clones) it within this frame or replaces it
+      // with a newer surface, so reusing it never changes a frame already sent.
+      const ripplesOut = coatRipples;
       for (let i = 0; i < 3; i++) {
         const o = i * 4;
         if (i >= waveCount) {
@@ -2337,8 +2345,10 @@ export function LiquidGlobe({
       }
 
       drawCage(now);
-      if (skinOn.current && selfRun.e >= 0)
-        skinLease.current?.host.skinFrame({ e: selfRun.e, m: Array.from(DM), fit: selfRun.fit });
+      if (skinOn.current && selfRun.e >= 0) {
+        for (let k = 0; k < 9; k++) skinM[k] = DM[k]!;
+        skinLease.current?.host.skinFrame({ e: selfRun.e, m: skinM, fit: selfRun.fit });
+      }
     };
 
     /**
@@ -2604,6 +2614,12 @@ export function LiquidGlobe({
       // 3b. The self-eversion, if one is playing: it redraws every frame until it
       //     ends, then once more as the ordinary globe.
       if (selfEvert.current) {
+        // A skin whose context was lost mid-run draws nothing: give the run back to the resting glass at once, rather
+        // than fading the glass out under an empty canvas (the worker reports it as `skin ok:false`).
+        if (skinOn.current && !skinLease.current?.host.skinReady) {
+          skinOn.current = false;
+          stageRef.current?.removeAttribute('data-skin');
+        }
         const u = (now - selfEvert.current) / SELF_EVERT_MS;
         if (u >= 1) {
           selfEvert.current = 0;

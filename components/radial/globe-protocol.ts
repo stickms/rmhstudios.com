@@ -15,7 +15,7 @@
 /**
  * Bumped whenever a message changes shape. The worker refuses an `init` from a different version. 2 (2026-11-08): the
  * clock's `held` became `engaged` (engaged WITH THE GLOBE, `globe-engagement.ts`) and `engagedUntil` the end of its
- * short settle.
+ * short settle; an `ack` may hand a dough-field buffer back.
  */
 export const GLOBE_PROTOCOL_VERSION = 2;
 
@@ -127,8 +127,11 @@ export type GlobeOut =
   | { type: 'ready'; version: number; ok: false; reason: GlobeFailReason }
   /** The coat's first frame is on its canvas: the page may fade it in over the CSS glass. */
   | { type: 'drawn' }
-  /** Frame `seq` (and everything before it) has been taken. */
-  | { type: 'ack'; seq: number }
+  /**
+   * Frame `seq` (and everything before it) has been taken. `field` is the last dough-field buffer the worker uploaded,
+   * transferred back so the page reuses it for the next version instead of allocating a copy.
+   */
+  | { type: 'ack'; seq: number; field?: Float32Array }
   /** The coat's context is gone. The canvases are dead; the page restarts the worker or falls back. */
   | { type: 'lost' }
   | { type: 'skin'; ok: boolean };
@@ -138,6 +141,28 @@ export function isGlobeOut(m: unknown): m is GlobeOut {
   if (!m || typeof m !== 'object') return false;
   const t = (m as { type?: unknown }).type;
   return t === 'ready' || t === 'drawn' || t === 'ack' || t === 'lost' || t === 'skin';
+}
+
+const GLOBE_IN_TYPES = new Set<string>([
+  'init',
+  'size',
+  'theme',
+  'scene',
+  'scene-off',
+  'place',
+  'clock',
+  'frame',
+  'skin-init',
+  'skin-size',
+  'skin-theme',
+  'skin-clear',
+]);
+
+/** Narrow an unknown page message to {@link GlobeIn}: the worker ignores null, non-objects and unknown types. */
+export function isGlobeIn(m: unknown): m is GlobeIn {
+  if (!m || typeof m !== 'object') return false;
+  const t = (m as { type?: unknown }).type;
+  return typeof t === 'string' && GLOBE_IN_TYPES.has(t);
 }
 
 /* ── Back-pressure ──────────────────────────────────────────────────────────────────────────────────────────────────

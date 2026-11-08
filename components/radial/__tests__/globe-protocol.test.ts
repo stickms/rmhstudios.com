@@ -14,6 +14,7 @@ import {
   afterFailure,
   clockChanged,
   decideGlobeBackend,
+  isGlobeIn,
   isGlobeOut,
   type CoatClock,
   type CoatSurface,
@@ -51,6 +52,20 @@ describe('message shapes', () => {
     const c = clock();
     expect(c).toHaveProperty('engaged');
     expect(c).not.toHaveProperty('held');
+  });
+
+  it('narrows inbound (page → worker) messages defensively', () => {
+    expect(isGlobeIn({ type: 'size', cssPx: 320, dpr: 2 })).toBe(true);
+    expect(isGlobeIn({ type: 'clock', clock: clock() })).toBe(true);
+    expect(isGlobeIn({ type: 'frame', seq: 1 })).toBe(true);
+    expect(isGlobeIn({ type: 'skin-clear' })).toBe(true);
+    expect(isGlobeIn(null)).toBe(false);
+    expect(isGlobeIn(undefined)).toBe(false);
+    expect(isGlobeIn(7)).toBe(false);
+    expect(isGlobeIn('size')).toBe(false);
+    expect(isGlobeIn({})).toBe(false);
+    expect(isGlobeIn({ type: 'ready' })).toBe(false);
+    expect(isGlobeIn({ type: 'explode' })).toBe(false);
   });
 
   it('narrows only the worker messages it knows', () => {

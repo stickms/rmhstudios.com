@@ -151,6 +151,7 @@ export class SelfEvertSkin {
       this.u = null;
       this.posBuf = null;
       this.nrmBuf = null;
+      this.onLost?.();
     };
     canvas.addEventListener('contextlost', onLost);
     canvas.addEventListener('webglcontextlost', onLost);
@@ -164,6 +165,8 @@ export class SelfEvertSkin {
 
   /** Called once the program has linked (`ready`) or failed (`failed`). */
   onSettled: (() => void) | null = null;
+  /** Called when the context is lost: frames drawn from now on show nothing (`ready` is false). */
+  onLost: (() => void) | null = null;
 
   /** Whether frames drawn now will show. */
   get ready(): boolean {

@@ -48,6 +48,8 @@ import {
 export const READY_TIMEOUT_MS = 12000;
 /** How long the worker outlives the last unmounted globe, so the hub reopening finds its programs built. */
 export const HOST_LINGER_MS = 30000;
+/** Handed-back field buffers kept for reuse: two frames can be in flight, so two cover the steady state. */
+const FIELD_POOL_MAX = 2;
 
 export type GlobeHostStatus = 'starting' | 'ready' | 'css';
 
@@ -87,6 +89,8 @@ export interface GlobeWorkerHost {
    * is the globe's `PERSP` and `LENS`, so the skin projects exactly as the cage does.
    */
   skinCanvas(projection: { persp: number; lens: number }): HTMLCanvasElement | null;
+  /** The skin's placeholder canvas if one exists, without starting one (side-effect free, for teardown). */
+  readonly currentSkinCanvas: HTMLCanvasElement | null;
   skinSize(span: number, radius: number, dpr: number): void;
   skinTheme(ink: string, accent: string, bg: string): void;
   skinClear(): void;
@@ -124,6 +128,8 @@ export function createGlobeHost(deps: GlobeHostDeps): GlobeWorkerHost {
   let sceneSent = -1;
   let sceneGen = 0;
   let fieldSent = -1;
+  /** Dough-field buffers the worker uploaded and handed back (`ack.field`), reused for the next versions. */
+  const fieldPool: Float32Array[] = [];
 
   const notify = () => {
     if (disposed) return;
@@ -169,6 +175,7 @@ export function createGlobeHost(deps: GlobeHostDeps): GlobeWorkerHost {
     drawn = false;
     sceneSent = -1;
     fieldSent = -1;
+    fieldPool.length = 0;
     sceneGen++;
     frames.reset();
   };
@@ -224,6 +231,8 @@ export function createGlobeHost(deps: GlobeHostDeps): GlobeWorkerHost {
         }
         return;
       case 'ack':
+        if (m.field instanceof Float32Array && fieldPool.length < FIELD_POOL_MAX)
+          fieldPool.push(m.field);
         if (frames.ack(m.seq)) flush();
         return;
       case 'lost':
@@ -232,6 +241,9 @@ export function createGlobeHost(deps: GlobeHostDeps): GlobeWorkerHost {
       case 'skin':
         if (m.ok) skinReady = true;
         else {
+          // Never built, or its context was lost after it was ready: either way it draws nothing now, so the page must
+          // stop fading the resting glass out under it (`skinReady` is what LiquidGlobe reads each frame).
+          skinReady = false;
           skinFailed = true;
           skin?.remove();
           skin = null;
@@ -406,11 +418,16 @@ export function createGlobeHost(deps: GlobeHostDeps): GlobeWorkerHost {
     },
     surface(s) {
       if (status !== 'ready') return;
-      // The field is reused by the dough every step: copy it (once per version) so it can be transferred.
+      // The field is reused by the dough every step: copy it (once per version) so it can be transferred — into a
+      // buffer the worker handed back when there is one, so a moving dough does not allocate 36 KB per version.
       let next: CoatSurface = s;
       if (s.field && s.fieldVersion !== fieldSent) {
         fieldSent = s.fieldVersion;
-        next = { ...s, field: s.field.slice() };
+        let copy = fieldPool.pop();
+        while (copy && copy.length !== s.field.length) copy = fieldPool.pop();
+        if (copy) copy.set(s.field);
+        else copy = s.field.slice();
+        next = { ...s, field: copy };
       } else if (s.field) {
         next = { ...s, field: undefined };
       }
@@ -426,6 +443,9 @@ export function createGlobeHost(deps: GlobeHostDeps): GlobeWorkerHost {
       skinPersp = { persp: projection.persp, lens: projection.lens };
       skinWanted = true;
       startSkin();
+      return skin;
+    },
+    get currentSkinCanvas() {
       return skin;
     },
     skinSize(span, radius, dpr) {
