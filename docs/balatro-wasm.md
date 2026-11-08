@@ -94,7 +94,7 @@ script checks the tarball's SHA-256 and fails if the anchor it patches is missin
 Page and Lua share no API in this build, but Lua's `io` library can reach the whole
 Emscripten filesystem. So the two sides trade small files under `/rmh`: the page
 writes `/rmh/size` (the frame's pixel size), and Lua drops `/rmh/dirty` after any
-write to the save directory.
+write to the save directory, and `/rmh/quit` when the player presses Options → QUIT.
 
 ## 4. The platform layer (`rmh_web.lua`)
 
@@ -168,7 +168,9 @@ game never sets a mipmap filter.
 **Platform flags.** Balatro picks features per OS in `Game:set_globals()`.
 `love.system.getOS()` returns `Web`, which matches none of its branches. The shim
 applies the desktop set (5-second run saves, every language) minus what a tab
-can't do: Quit and the Video tab are hidden. `https` (crash reports and high
+can't do: the desktop Quit button and the Video tab are hidden. Options → QUIT (main
+menu only, `rmh_quit.lua`; a run's pause menu never has it) is the web replacement: it
+drops `/rmh/quit`, and the page flushes the saves and leaves for `/games`. `https` (crash reports and high
 scores, both off) and `luasteam` get stubs. Since `getOS()` is never Windows or
 OS X, the game never loads Steam and tracks unlocks itself.
 
