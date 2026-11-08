@@ -56,7 +56,7 @@ app/                TanStack Start routes (file-based)
 components/          React components by feature (~860 files); ui/ holds shared primitives
 lib/                Utilities, schemas, server helpers (~950 files); seo.ts, schema.ts, rum.ts,
                     client-errors.ts, rate-limit.ts, auth.ts, prisma.server.ts, i18n/
-server/             Node service tier (socket-server + rmhmusic, rmhbox, rmhtube, ladder-worker,
+server/             Node service tier (socket-server, rmhbox, rmhtube, ladder-worker,
                     homes-worker, jobs, nitro/ plugins, shared/) — see §3
 go-services/        Go worker fleet: supervisor + status + assets (Bazel + gazelle) — see §4
 stores/             Zustand stores (theme, locale, feed, …)
@@ -80,7 +80,7 @@ locales/            32 locale dirs × 66 namespaces (en is the reference)
 | Service          | Port | Role                                                                          |
 | ---------------- | ---- | ----------------------------------------------------------------------------- |
 | web (Vite/Nitro) | 7005 | React SSR app + API routes                                                    |
-| socket-server    | 7001 | Games realtime hub (Slice It!, Neon Driftway, …) — also hosts rmhmusic        |
+| socket-server    | 7001 | Games realtime hub (Slice It!, Neon Driftway, …)                              |
 | rmhtube          | 7003 | Watch-together                                                                |
 | rmhbox           | 7676 | Party-game hub                                                                |
 | ladder-worker    | —    | RMHLadder job-discovery cron (`lib/rmhladder` pipeline)                       |
@@ -99,7 +99,7 @@ The backend service layer has a Go implementation (built with Bazel +
 gazelle). **Production today is a hybrid:** Go runs the background workers
 (one `supervisor` process), `status`, and `assets`; Node runs the web SSR and
 every realtime hub. The old full-Go realtime topology (a `gateway` fronting Go
-`gamehub`/`rmhbox`/`rmhtube`/`rmhmusic` hubs with a Redis backplane, plus its
+`gamehub`/`rmhbox`/`rmhtube` hubs with a Redis backplane, plus its
 Helm/k3s charts) was **removed in the rewrite** — it never served production.
 Details: [`architecture.md`](./architecture.md) and
 [`../go-services/CLAUDE.md`](../go-services/CLAUDE.md).

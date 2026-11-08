@@ -74,7 +74,14 @@ bundle only**. SSR/server builds get the real module.
   (`rmhtube/`, `rmhmusic/`, `rmhtype/`, `rmhstudy/`, `rmhvibe/`, `studio/`,
   `personas/`, `rideshare/`, `homes/`, `predictions/`). Realtime client
   sockets live at `lib/<app>/socket.ts` with event names in
-  `lib/<app>/events.ts` (see `server/CLAUDE.md`).
+  `lib/<app>/events.ts` (see `server/CLAUDE.md`). **`rmhmusic/` is the
+  exception: it has no socket.** It is the piano & guitar learning app, and
+  everything lives in `lib/rmhmusic/learn/` — pure client-safe engines (`pitch/`
+  note maths + YIN detector, `input/` mic/MIDI/keyboard/on-screen adapters fanned
+  into one hub, `content/` lesson path, `audio/`), the client Zustand `store.ts`,
+  and server-only progress (`progress.server.ts`) behind the
+  `app/routes/api/rmhmusic/learn/` routes. `lib/rmhmusic/constants.ts` is kept
+  only for the room-code alphabet that `studio-jam` imports.
 - **`shared/`:** the cross-app tier. `realtime/client.ts` is the socket.io
   factory every app's `socket.ts` builds on (fast reconnect, wake signals,
   per-attempt auth, an opt-in outbox); `realtime/types.ts` holds the

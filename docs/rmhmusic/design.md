@@ -1,5 +1,7 @@
 # RMHMusic — Design Document
 
+> **Superseded by [`docs/superpowers/specs/2026-11-08-rmhmusic-learning-design.md`](../superpowers/specs/2026-11-08-rmhmusic-learning-design.md)** — this documents the retired Spotify listening-party app.
+
 **Date**: 2026-03-02
 **Status**: Approved
 

@@ -14,7 +14,7 @@ Generated from `lib/apps.ts`, the single source of truth every card on the site 
 | --- | ----- | ------ | ---- | ---- |
 | **RMHTube** | [`/rmhtube`](https://rmhstudios.com/rmhtube) | — | required | `Watch Party` `Real-time` `Beta` |
 | **RMH Type** | [`/rmhtype`](https://rmhstudios.com/rmhtype) | — | required | `Typing` `Multiplayer` `Competitive` `Beta` |
-| **RMHMusic** | [`/rmhmusic`](https://rmhstudios.com/rmhmusic) | Beta | required | `Music` `Spotify` `Real-time` `Beta` |
+| **RMHMusic** | [`/rmhmusic`](https://rmhstudios.com/rmhmusic) | Beta | required | `Music` `Learning` `Piano` `Guitar` `Beta` |
 | **RMH Study** | [`/rmhstudy`](https://rmhstudios.com/rmhstudy) | — | required | `Pomodoro` `Study` `Productivity` `Beta` |
 | **RMH TF2 Hub** | [`/tf2`](https://rmhstudios.com/tf2) | — | — | `TF2` `HUD` `Loadout` `Beta` |
 | **RMH Studio** | [`/studio`](https://rmhstudios.com/studio) | — | required | `DAW` `Music Production` `Beta` |
@@ -50,7 +50,7 @@ RMH Type is a competitive typing platform. Practice solo to improve your WPM, or
 
 ### RMHMusic
 
-RMHMusic is a social music player powered by Spotify. Connect your Premium account, create a listening room, and enjoy synced playback with friends. Features a mesmerizing WebGL particle visualizer, shared queues, real-time chat, and Guess the Song — create and solve music puzzles for coins.
+RMHMusic is a beginner-friendly app for learning piano and guitar. Pick your instrument, connect a microphone or MIDI keyboard (or use the on-screen keys), calibrate its delay and start with a first note lesson, with your progress saved to your account. It is a Beta: reading notes on a staff, pitch and chord ear training, rhythm and time signatures, a tuner and play-along with sheet music are being added in stages.
 
 **Route:** `/rmhmusic` · **Catalog id:** `rmhmusic` · **Status:** Beta · **Sign-in:** required
 
