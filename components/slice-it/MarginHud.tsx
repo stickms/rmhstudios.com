@@ -85,29 +85,16 @@ export function MarginHud({
           </div>
 
           <div className="slice-mh__score">
-            <div className="slice-label">{t('score-hud', { defaultValue: 'Score' })}</div>
             <div className="flex items-center gap-4">
               <span className="slice-mh__figure">{r.score.toLocaleString()}</span>
               <span className="slice-hud-stamp">{r.grade}</span>
             </div>
-            <div className="flex flex-wrap items-baseline gap-x-3">
-              <span className="slice-figure text-[13px] text-slice-text">
-                {(r.sample.accuracy * 100).toFixed(2)}%
-              </span>
-              {r.next && r.missesLeft !== null && (
-                <span className="slice-label normal-case tracking-normal">
-                  {ts('misses-for-grade', {
-                    defaultValue: '{{n}} misses left for {{grade}}',
-                    n: r.missesLeft,
-                    grade: r.next.grade,
-                  })}
-                </span>
-              )}
-            </div>
+            <span className="slice-figure text-[13px] text-slice-text">
+              {(r.sample.accuracy * 100).toFixed(2)}%
+            </span>
           </div>
 
           <div className="slice-mh__aside">
-            <div className="slice-label">{t('speed', { defaultValue: 'Speed' })}</div>
             <div className="slice-mh__speed">{r.modifiers.speed.toFixed(1)}×</div>
             <div className="slice-label">×{multiplier.toFixed(2)}</div>
           </div>
