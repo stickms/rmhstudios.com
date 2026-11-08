@@ -489,6 +489,10 @@
      of cards would hold one backing store per host (measured on /jelly at rest: 107 compositor layers with a paused
      drift on every host plus a scroll-driven current on every card, 9 with neither). Nothing moves, and nothing is
      promoted, on an idle page. (A scroll-tied variant was dropped for the same reason.)
+     Nor is anything painted (Task 11): the layer has no box at all at rest (`display: none`) and gets one only under
+     the wake selectors, fading in from 0 (`@starting-style`) and out through a discrete `display` transition. A
+     resting layer of five gradients on every host was re-rasterised on every scroll frame by Firefox's WebRender on a
+     software rasteriser (cross-engine profiling, 2026-11-08: /jelly scroll 58 → 5 fps at p95) although it never moved.
 
      Why `::after`: `[data-evert]::before` is the eversion state layer and lib/evert-auto.ts adopts every control whose
      `::before` is free, so `::before` is taken on every interactive host. On a role host `::after` is used only by
@@ -586,6 +590,8 @@
         *
     )::after {
     content: '';
+    /* No box at rest (Task 11): the wake rule below gives it one. */
+    display: none;
     position: absolute;
     inset: 0;
     z-index: -3;
@@ -653,8 +659,12 @@
         transparent 100%
       );
     background-repeat: no-repeat;
-    opacity: calc(0.75 * var(--jelly-amp, 1));
-    transition: opacity calc(var(--site-transition-speed, 200ms) * 1.5) var(--ease-smooth);
+    opacity: 0;
+    /* The discrete `display` step keeps the box through the fade-out; an engine without discrete transitions just
+       drops it at once (a ≤ 1% α layer: nothing visible snaps). */
+    transition:
+      opacity calc(var(--site-transition-speed, 200ms) * 1.5) var(--ease-smooth),
+      display calc(var(--site-transition-speed, 200ms) * 1.5) allow-discrete;
     /* 22 s per leg, alternate, scaled by the role's speed, the app palette's gain and the motion level (calm: 0.4). */
     --jelly-drift-dur: calc(
       22s /
@@ -733,8 +743,76 @@
         )
         *
     ):has(:focus-visible)::after {
+    display: block;
     opacity: var(--jelly-amp, 1);
     animation: jelly-drift var(--jelly-drift-dur) var(--ease-in-out, ease-in-out) infinite alternate;
+  }
+  /* The box is born on wake, so it fades in from 0 rather than popping (Task 11). Same selectors as the wake rule. */
+  @starting-style {
+    html:not(.native-material, .perf-lite)
+      :is(
+        .glass-fill,
+        .glass-pane,
+        .glass-chrome,
+        .glass-overlay,
+        [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+      ):not(
+        [data-jelly='off'],
+        [data-jelly='none'],
+        [data-jelly='lite'],
+        [data-jelly-flow='off'],
+        [data-liquid-material='off'],
+        [data-liquid-glass='off'],
+        [data-liquid-motion='off'],
+        [data-fluid-press='off'],
+        [data-fluid-press='none'],
+        [contenteditable='true'],
+        [contenteditable=''],
+        [data-evert~='select'],
+        .touch-target,
+        :is(
+            [data-jelly-scope='off'],
+            [data-jelly-zone='playfield'],
+            [data-liquid-motion='off'],
+            .slice-theme,
+            .slice-tokens,
+            .stm-legacy
+          )
+          *
+      ):hover::after,
+    html:not(.native-material, .perf-lite)
+      :is(
+        .glass-fill,
+        .glass-pane,
+        .glass-chrome,
+        .glass-overlay,
+        [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+      ):not(
+        [data-jelly='off'],
+        [data-jelly='none'],
+        [data-jelly='lite'],
+        [data-jelly-flow='off'],
+        [data-liquid-material='off'],
+        [data-liquid-glass='off'],
+        [data-liquid-motion='off'],
+        [data-fluid-press='off'],
+        [data-fluid-press='none'],
+        [contenteditable='true'],
+        [contenteditable=''],
+        [data-evert~='select'],
+        .touch-target,
+        :is(
+            [data-jelly-scope='off'],
+            [data-jelly-zone='playfield'],
+            [data-liquid-motion='off'],
+            .slice-theme,
+            .slice-tokens,
+            .stm-legacy
+          )
+          *
+      ):has(:focus-visible)::after {
+      opacity: 0;
+    }
   }
 
   /* ── 4. Static CSS rim (01 §3.4) ────────────────────────────────────────────────────────────────────────────────
