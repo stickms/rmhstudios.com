@@ -11,7 +11,7 @@
       `--jelly-plasma-gain`, `--jelly-flow-gain` — are UNSET on the site tier (every consumer falls back to the
       `--site-jelly-*` theme token) and set by `.app-glass` (components/shared/app-theme.css) to the `--app-jelly-*`
       palette, so one contract serves both tiers.
-   2. The static haze floor — a soft milky gradient plus a 192 px neutral grain tile
+   2. The static haze floor — a 192 px neutral grain tile
       (`public/jelly/haze-tile.webp`, scripts/generate-jelly-haze-tile.mjs) in every role's background stack, so a
       surface reads as jelly before, and without, any JavaScript or WebGL. It steps aside when something better
       draws the haze: a haze canvas (`[data-jelly-haze='on']`) or a CSS carrier (`[data-jelly-flow='on']`).
@@ -219,9 +219,11 @@
   }
 
   /* ── 2. Static haze floor (01 §3.6) ─────────────────────────────────────────────────────────────────────────────
-     Declared per role so `--jelly-haze-a` resolves on the role itself. The gradient never falls below half density,
-     matching the legibility test's min/max composites (α × 0.5 … α × 1.0). Two layers, always: `--jelly-floor-size`
-     must stay in step with them. */
+     The grain tile alone, one image layer (`--jelly-floor-size` stays in step with it). Task 11 (cross-engine
+     profiling, 2026-11-08) dropped the milky radial gradient that sat over it on every role: at the roles' haze
+     alphas (≈ 1–2 %) it moved no pixel by more than 4/255 in any theme, yet it was one more gradient for a software
+     rasteriser to paint on every host, every frame of a scroll. The grain is what reads as haze (up to 15/255 on the
+     dark themes), so it stays. The woken floors (§8: veil + plasma wake) are unchanged. */
   :is(
     .glass-fill,
     .glass-pane,
@@ -231,22 +233,8 @@
     [data-slot='input'],
     [data-slot='textarea']
   ) {
-    --jelly-static-haze: radial-gradient(
-      120% 90% at 25% 15%,
-      color-mix(
-        in srgb,
-        var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 100%),
-        transparent
-      ),
-      color-mix(
-          in srgb,
-          var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 50%),
-          transparent
-        )
-        70%
-    );
-    --jelly-floor: var(--jelly-static-haze), var(--jelly-tile);
-    --jelly-floor-size: auto, var(--jelly-tile-size);
+    --jelly-floor: var(--jelly-tile);
+    --jelly-floor-size: var(--jelly-tile-size);
   }
 
   /* ── 2b. Gel layers (#989 layers 1 and 4, the non-shader tier; docs/plasmatic-jelly-system.md §1.1) ─────────────
@@ -520,8 +508,9 @@
 
      The layer is the host's box (inset 0, its radius), not an oversized span: nothing clips it, so every gradient on
      it fades to nothing inside the box and the drift's few percent of travel carries only that falloff (≤ 1% α) past
-     the edge. While the layer is on, the floor flattens to the veil at half density (the old carrier's veil), so veil +
-     streak (≤ 0.45 α) stays inside the α/2 … α range jelly-legibility.test.ts bounds. The grain tile stays on the floor.
+     the edge. Under it the floor is the grain alone (§2) at rest, and the woken floor (§8) adds the veil at half
+     density on a fine-pointer hover, so veil + streak (≤ 0.45 α) stays inside the α range jelly-legibility.test.ts
+     bounds.
      The negative z-index needs an isolated host, so the host rule isolates it (liquid-glass.css isolates only while an
      engine attribute is set, and none is now); the roles are positioned already (liquid-glass.css, the button's
      `relative`). Wake starts at the identity frame (no phase delay): only the hovered host runs, so there is nothing
@@ -558,17 +547,6 @@
         *
     ) {
     isolation: isolate;
-    --jelly-floor:
-      linear-gradient(
-        color-mix(
-            in srgb,
-            var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 50%),
-            transparent
-          )
-          0 0
-      ),
-      var(--jelly-tile);
-    --jelly-floor-size: auto, var(--jelly-tile-size);
   }
   html:not(.native-material, .perf-lite)
     :is(
