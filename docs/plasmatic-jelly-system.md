@@ -510,7 +510,8 @@ arcs and the fallback light are drivers on it (§8.1). **Components never import
 the one exception) and never add their own pointer loop, deformation or arc code; they
 take jelly through role classes and `data-jelly*` attributes. The globe keeps its name,
 its dough simulation (`lib/dough.ts`) and its own coat (`components/radial/jelly-glass.ts`,
-"the globe's jelly coat" — unrelated to `lib/jelly/`); it shares the plasma palette only
+"the globe's jelly coat" — unrelated to `lib/jelly/`; drawn in the globe's worker, `components/radial/globe-worker.ts`,
+on a transferred `OffscreenCanvas`, with the CSS glass as the fallback); it shares the plasma palette only
 through tokens (R15). That coat draws the material's layers itself — haze, dormant plasma, the RGB-led rim and
 Fresnel edge — clipped to the sphere, so no globe element may ever be a rectangular host: `GLOBE_SELECTOR` in
 `lib/jelly/tiers.ts` is part of `OPT_OUT_SELECTOR` and of the engine's and registry's excludes, and click arcs never

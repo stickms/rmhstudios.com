@@ -426,9 +426,12 @@ function collect(dir: string, out: string[] = []): string[] {
  * Stripping cannot hide a real call: code that runs is code outside a comment.
  */
 function usesRaf(file: string): boolean {
-  const src = readFileSync(join(ROOT, file), 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+  const raw = readFileSync(join(ROOT, file), 'utf8');
+  // A dedicated worker's own `requestAnimationFrame` (`/// <reference lib="webworker" />` entries, e.g. the liquid
+  // globe's `components/radial/globe-worker.ts`) is not a page frame: it never wakes the page's frame driver or its
+  // main thread, which is what this gate guards. Read before comments are stripped (the directive IS a comment).
+  if (/^\/\/\/ <reference lib="webworker" \/>/m.test(raw)) return false;
+  const src = raw.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
   return src.includes('requestAnimationFrame');
 }
 

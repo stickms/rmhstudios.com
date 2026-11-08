@@ -52,6 +52,14 @@
  * 30 Hz idle, never while Still, hidden, off screen or everting). Spinning alone
  * issues no GL work. One context is created per page and reused by every
  * mount of the globe, so opening the menu never compiles a shader twice.
+ *
+ * ## Where it runs
+ *
+ * In the globe's worker (`globe-worker.ts`), on the `OffscreenCanvas` the page transferred to it
+ * (`globe-worker-host.ts`): this module touches no `document` and no `window`. On the page's thread every frame of this
+ * shader had to leave the GL context through the page itself — the readback and the wait for the GPU showed up as the
+ * site's own main thread being busy — so it never runs there; where a worker cannot own a WebGL 2 context the globe
+ * keeps its CSS glass instead.
  */
 
 import { startProgram, whenLinked } from '@/lib/render/gl-program';
@@ -59,7 +67,6 @@ import { CONTACT, DOUGH_EXTENT, DOUGH_N } from '@/lib/dough';
 import { GLASS_OPTICS_GLSL } from '@/lib/liquid/optics';
 import { NOISE_GLSL } from '@/lib/liquid/glass/jelly-glsl';
 import { LIQUID_GLOBE_MATERIAL_GLSL } from '@/lib/liquid/globe-material';
-import type { SharedScene } from '@/lib/liquid/glass/scene-store';
 
 /** Everything the material needs for one frame. All coordinates are in radii of the sphere, y DOWN. */
 export interface JellyFrame {
@@ -79,6 +86,14 @@ export interface JellyFrame {
   amp: number;
   /** Eased dormant-plasma level: `PLASMA.rest` 0, `PLASMA.wake` on hover, `PLASMA.press` 1 while pressed. */
   plasma: number;
+}
+
+/** A page snapshot as the worker holds it: the bitmap, the CSS px it covers, and a version to upload it once. */
+export interface JellyScene {
+  bitmap: ImageBitmap;
+  width: number;
+  height: number;
+  version: number;
 }
 
 /** A theme colour with its alpha, 0–1 sRGB (not premultiplied). */
@@ -471,7 +486,7 @@ export let lastShaderError = '';
  * Without WebGL 2 `create()` returns null and the globe keeps its CSS material (the cage and pins still deform).
  */
 export class JellyGlass {
-  readonly canvas: HTMLCanvasElement;
+  readonly canvas: OffscreenCanvas;
   private gl: GL | null = null;
   private u: Uniforms | null = null;
   private tex: WebGLTexture | null = null;
@@ -484,15 +499,17 @@ export class JellyGlass {
   /** The program will not build on this driver: the CSS glass stays for the rest of the page. */
   failed = false;
   private builds = 0;
-  /** Called when the context is lost or restored, or the program has finished building, so the owner can swap to or from the CSS material. */
+  /**
+   * Called when the context is lost, or the program has finished building (or failed to), so the owner can tell the
+   * page. A lost context is not restored here: the page starts a fresh worker with a fresh canvas instead.
+   */
   onChange: (() => void) | null = null;
 
-  private constructor(canvas: HTMLCanvasElement) {
+  private constructor(canvas: OffscreenCanvas) {
     this.canvas = canvas;
-    canvas.className = 'radial-globe__jelly';
-    canvas.setAttribute('aria-hidden', 'true');
-    canvas.addEventListener('webglcontextlost', (e) => {
+    const onLost = (e: Event) => {
       e.preventDefault();
+      if (this.lost) return;
       this.lost = true;
       this.builds++;
       this.gl = null;
@@ -501,20 +518,21 @@ export class JellyGlass {
       this.sceneTex = null;
       this.sceneVersion = -1;
       this.onChange?.();
-    });
-    canvas.addEventListener('webglcontextrestored', () => {
-      this.lost = false;
-      this.px = 0;
-      this.uploaded = -1;
-      this.sceneVersion = -1;
-      this.init();
-      this.onChange?.();
-    });
+    };
+    // `contextlost` on an OffscreenCanvas; `webglcontextlost` where an engine still uses the canvas element's name.
+    canvas.addEventListener('contextlost', onLost);
+    canvas.addEventListener('webglcontextlost', onLost);
   }
 
-  static create(): JellyGlass | null {
-    const g = new JellyGlass(document.createElement('canvas'));
+  /** A material on `canvas`, or null where WebGL 2 will not start. The program builds in the background. */
+  static create(canvas: OffscreenCanvas): JellyGlass | null {
+    const g = new JellyGlass(canvas);
     return g.init() ? g : null;
+  }
+
+  /** The context was lost. */
+  get isLost(): boolean {
+    return this.lost;
   }
 
   /** Whether frames drawn now will show. */
@@ -532,7 +550,7 @@ export class JellyGlass {
       preserveDrawingBuffer: false,
       powerPreference: 'low-power',
     };
-    const gl = this.canvas.getContext('webgl2', opts) as GL | null;
+    const gl = this.canvas.getContext('webgl2', opts) as unknown as GL | null;
     if (!gl) return false;
     // Built in the background (`lib/render/gl-program.ts`): nothing waits on the driver, so the globe's first paint
     // never stalls a frame on this shader. `ready` stays false — the CSS glass is the material — until it links, and
@@ -687,7 +705,7 @@ export class JellyGlass {
    * Hand the shader the page snapshot to refract (or `null` to stop). Uploaded once per new picture and mip-mapped, so
    * the globe can read it at the hub's blur radius. Returns whether a picture is now in use.
    */
-  setScene(scene: SharedScene | null): boolean {
+  setScene(scene: JellyScene | null): boolean {
     const gl = this.gl;
     const u = this.u;
     if (!gl || !u || this.lost) return false;
@@ -749,65 +767,5 @@ export class JellyGlass {
     gl.uniform1f(u.plasma, f.plasma);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-  }
-}
-
-let shared: JellyGlass | null | undefined;
-
-/**
- * The page's one material instance, created on first use. `null` when WebGL is
- * unavailable or the program will not compile — the globe keeps its CSS glass.
- */
-export function acquireJellyGlass(): JellyGlass | null {
-  if (shared === undefined) shared = JellyGlass.create();
-  if (shared?.failed) shared = null;
-  return shared;
-}
-
-/**
- * Resolve any CSS colour to 0–1 sRGB WITH its alpha (the `--gel-*` tokens are translucent), by letting the canvas
- * parse it onto a transparent pixel. One 1×1 2D context per call, used at mount and on theme change only.
- */
-export function resolveRgba(css: string, fallback: JellyRGBA): JellyRGBA {
-  try {
-    const c = document.createElement('canvas');
-    c.width = c.height = 1;
-    const ctx = c.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return fallback;
-    ctx.clearRect(0, 0, 1, 1);
-    ctx.fillStyle = 'rgba(0,0,0,0)';
-    ctx.fillStyle = css;
-    ctx.fillRect(0, 0, 1, 1);
-    const d = ctx.getImageData(0, 0, 1, 1).data;
-    const a = d[3]! / 255;
-    if (a <= 0) return [0, 0, 0, 0];
-    // getImageData is un-premultiplied already.
-    return [d[0]! / 255, d[1]! / 255, d[2]! / 255, a];
-  } catch {
-    return fallback;
-  }
-}
-
-/**
- * Resolve any CSS colour (`rgb()`, `color(srgb …)`, `oklch()`, `color-mix()` as
- * computed) to 0–1 sRGB by letting the canvas parse it. One 1×1 2D context, used
- * once per mount.
- */
-export function resolveColor(
-  css: string,
-  fallback: [number, number, number],
-): [number, number, number] {
-  try {
-    const c = document.createElement('canvas');
-    c.width = c.height = 1;
-    const ctx = c.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return fallback;
-    ctx.fillStyle = '#000';
-    ctx.fillStyle = css;
-    ctx.fillRect(0, 0, 1, 1);
-    const d = ctx.getImageData(0, 0, 1, 1).data;
-    return [d[0]! / 255, d[1]! / 255, d[2]! / 255];
-  } catch {
-    return fallback;
   }
 }
