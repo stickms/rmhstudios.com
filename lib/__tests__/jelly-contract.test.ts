@@ -536,8 +536,9 @@ describe('N7 — arcs reach only admitted surfaces, never past their range', () 
  * jelly sheets (`app/jelly*.css` and the role base `app/liquid-glass.css`):
  *  - no transition of `transform` / `translate` / `scale` / `rotate` / `all` — a body's motion is the soft body's
  *    spring, and a CSS transition on top of it is a second, unphysical spring that also fights the envelope writes;
- *  - no `@keyframes` except the sanctioned `.jelly-flow` haze drift (`jelly-drift`, `jelly-current`; N3 in
- *    `site-infinite-animation.test.ts` pins where they may be used);
+ *  - no `@keyframes` except the sanctioned haze drift (`jelly-drift`, `jelly-current`), run by the woken-haze layer
+ *    (the glass roles' own `::after`, CSS-first jelly PR 2) and the retired `.jelly-flow` rules until PR 5; N3 in
+ *    `site-infinite-animation.test.ts` pins where they may be used;
  *  - no `filter` (or `backdrop-filter`) declaration other than `none` — the only filter on a body is the press lens,
  *    set from `lib/jelly/lens.ts` while the dent exists. Likewise, under `lib/jelly` and `lib/liquid` only `lens.ts`
  *    writes an element's `style.filter`.
@@ -591,7 +592,7 @@ describe('N13 — never fake a law', () => {
     ).toEqual([]);
   });
 
-  it('no @keyframes but the sanctioned .jelly-flow haze drift', () => {
+  it('no @keyframes but the sanctioned haze drift', () => {
     const offenders = SHEETS.flatMap((f) =>
       [...css(f).matchAll(/@(?:-webkit-)?keyframes\s+([\w-]+)/g)]
         .map((m) => m[1])

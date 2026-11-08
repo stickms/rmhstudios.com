@@ -291,10 +291,17 @@ if [ -n "$n2_hits" ]; then
   printf '%s    → %s%s\n' "$dim" 'Components take jelly through role classes and data-jelly* attributes; the services mount once from hooks/useLiquidInteractions.ts (docs/plasmatic-jelly-system.md).' "$off"
 fi
 
-blocking "Perpetual CSS animation (N3)" \
-  '^(app/[^/]*|components/(ui|radial|feed|site)/.*)\.css$' \
-  '(animation[^:;]*:[^;]*infinite|animation-iteration-count:[[:space:]]*infinite)' \
-  'A free-standing infinite keyframe never stops (hidden tab, offscreen, jellyMotion=still, degraded tiers). Ambient motion goes through the jelly services — lib/__tests__/site-infinite-animation.test.ts.'
+# The two sanctioned haze keyframes (jelly-drift / jelly-current) in app/jelly-material.css are filtered out: the
+# vitest gate (site-infinite-animation N3) pins the exact selectors they may run on (the woken-haze layer, paused until
+# hover or focus) and stays the authority for those lines.
+n3_hits=$(scan '^(app/[^/]*|components/(ui|radial|feed|site)/.*)\.css$' \
+  '(animation[^:;]*:[^;]*infinite|animation-iteration-count:[[:space:]]*infinite)' |
+  grep -Ev '^  app/jelly-material\.css:[0-9]+[[:space:]].*jelly-(drift|current)' || true)
+if [ -n "$n3_hits" ]; then
+  fail "Perpetual CSS animation (N3)"
+  printf '%s\n' "$n3_hits"
+  printf '%s    → %s%s\n' "$dim" 'A free-standing infinite keyframe never stops (hidden tab, offscreen, jellyMotion=still, degraded tiers). Ambient motion goes through the jelly services — lib/__tests__/site-infinite-animation.test.ts.' "$off"
+fi
 
 review_site "Framer gesture transform on a site surface (N11)" \
   'while(Hover|Tap)[[:space:]]*=[[:space:]]*\{[^}]*(scale|[^a-z]x|[^a-z]y)[[:space:]]*:' \

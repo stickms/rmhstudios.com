@@ -26,10 +26,12 @@
    Hard rules (gates: filter-cost-budget, site-infinite-animation N3/N12, stacking N6):
    - No backdrop-filter, no SVG/`url()` filters, no animated custom properties (`@property`), no animated
      gradient positions. The keyframes animate `transform` only.
-   - Every jelly paint layer sits at a NEGATIVE z-index inside an isolated host (isolation is set in
-     liquid-glass.css for `[data-jelly-flow='on']` / `[data-jelly-haze='on']`). Nothing jelly paints at z ≥ 0.
+   - Every jelly paint layer sits at a NEGATIVE z-index inside an isolated host (the woken-haze host isolates itself,
+     §3b; liquid-glass.css isolates the engine's hosts). Nothing jelly paints at z ≥ 0.
    - Colours come only from tokens (`--site-jelly-*`, `--site-glass-*`); raw values live in globals.css theme blocks.
-   - The only `infinite` animations are `jelly-drift` / `jelly-current`, and only on spans inside `.jelly-flow`. */
+   - The only `infinite` animations are `jelly-drift` / `jelly-current`, only on the woken-haze `::after` (§3b, attached
+     only under hover or focus) and on the retired `.jelly-flow` spans (nothing injects a carrier any more; PR 5 deletes
+     those rules and lib/jelly/flow-carriers.ts). */
 
 @layer components {
   /* ── 0. Motion level (html[data-jelly-motion], stamped pre-paint by W1-B) ───────────────────────────────────────
@@ -376,6 +378,257 @@
     display: none;
   }
 
+  /* ── 3b. Woken haze (CSS-first jelly, PR 2; docs/superpowers/specs/2026-11-07-css-first-jelly-design.md §2) ──────
+     The haze's motion, with no node injected by JavaScript: one transform-only layer on the host's own `::after`,
+     which carries NO animation at rest and gets one only while the host is hovered or holds focus. Not even a paused
+     one: Blink counts a paused transform animation as current and gives the box its own compositor layer, so a page
+     of cards would hold one backing store per host (measured on /jelly at rest: 107 compositor layers with a paused
+     drift on every host plus a scroll-driven current on every card, 9 with neither). Nothing moves, and nothing is
+     promoted, on an idle page. (A scroll-tied variant was dropped for the same reason.)
+
+     Why `::after`: `[data-evert]::before` is the eversion state layer and lib/evert-auto.ts adopts every control whose
+     `::before` is free, so `::before` is taken on every interactive host. On a role host `::after` is used only by
+     `[data-evert~='select']` (the nav rail) and `.touch-target` (the coarse-pointer hit area): both are excluded.
+     `.glass-inset` gets no layer: it is not positioned (an absolute layer would escape to an ancestor) and most fields
+     are replaced `<input>`s with no pseudo-elements at all. It keeps the static floor (§2).
+
+     The exclusions mirror the services' opt-outs (lib/jelly/tiers.ts `OPT_OUT_SELECTOR` without the globe, which
+     is never a role host, and `OPT_OUT_SCOPE_SELECTOR`), the old carrier's (`[data-jelly='lite']`,
+     `[data-jelly-flow='off']`, contenteditable, ghost/link buttons) and the own-scheme subtrees that hid the carrier
+     in their own sheets (Slice It!, the Steam library). `html.native-material` (stamped by components/Providers.tsx and
+     pre-paint by __root.tsx on lib/native-material-routes.ts routes) keeps all of it off /tf2 and /games.
+
+     The layer is the host's box (inset 0, its radius), not an oversized span: nothing clips it, so every gradient on
+     it fades to nothing inside the box and the drift's few percent of travel carries only that falloff (≤ 1% α) past
+     the edge. While the layer is on, the floor flattens to the veil at half density (the old carrier's veil), so veil +
+     streak (≤ 0.45 α) stays inside the α/2 … α range jelly-legibility.test.ts bounds. The grain tile stays on the floor.
+     The negative z-index needs an isolated host, so the host rule isolates it (liquid-glass.css isolates only while an
+     engine attribute is set, and none is now); the roles are positioned already (liquid-glass.css, the button's
+     `relative`). Wake starts at the identity frame (no phase delay): only the hovered host runs, so there is nothing
+     to fall into lockstep with, and a delay would snap the streaks to a later frame on wake. */
+  html:not(.native-material, .perf-lite)
+    :is(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+    ):not(
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='lite'],
+      [data-jelly-flow='off'],
+      [data-liquid-material='off'],
+      [data-liquid-glass='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      [contenteditable='true'],
+      [contenteditable=''],
+      [data-evert~='select'],
+      .touch-target,
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          .slice-theme,
+          .slice-tokens,
+          .stm-legacy
+        )
+        *
+    ) {
+    isolation: isolate;
+    --jelly-floor:
+      linear-gradient(
+        color-mix(
+            in srgb,
+            var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 50%),
+            transparent
+          )
+          0 0
+      ),
+      var(--jelly-tile);
+    --jelly-floor-size: auto, var(--jelly-tile-size);
+  }
+  html:not(.native-material, .perf-lite)
+    :is(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+    ):not(
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='lite'],
+      [data-jelly-flow='off'],
+      [data-liquid-material='off'],
+      [data-liquid-glass='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      [contenteditable='true'],
+      [contenteditable=''],
+      [data-evert~='select'],
+      .touch-target,
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          .slice-theme,
+          .slice-tokens,
+          .stm-legacy
+        )
+        *
+    )::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -3;
+    border-radius: inherit;
+    pointer-events: none;
+    user-select: none;
+    --jelly-streak: color-mix(
+      in srgb,
+      var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 45%),
+      transparent
+    );
+    --jelly-streak-mid: color-mix(
+      in srgb,
+      var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 22%),
+      transparent
+    );
+    /* The carrier's drift and current (§3) on one box: three slanted streaks, the plasma blob and the current band
+       (plasma B, or the button's own ink on filled buttons), each fitted inside the box with room for the travel. */
+    background-image:
+      radial-gradient(
+        26% 14% at 36% 30%,
+        var(--jelly-streak),
+        var(--jelly-streak-mid) 55%,
+        transparent 100%
+      ),
+      radial-gradient(
+        14% 30% at 72% 42%,
+        var(--jelly-streak),
+        var(--jelly-streak-mid) 50%,
+        transparent 100%
+      ),
+      radial-gradient(
+        28% 13% at 48% 74%,
+        var(--jelly-streak),
+        var(--jelly-streak-mid) 55%,
+        transparent 100%
+      ),
+      radial-gradient(
+        24% 30% at 68% 64%,
+        color-mix(
+          in srgb,
+          var(--jelly-plasma-a, var(--site-jelly-plasma-a))
+            calc(
+              var(--jelly-plasma-k, 0) * var(--jelly-plasma-gain, var(--site-jelly-plasma, 1)) *
+                100%
+            ),
+          transparent
+        ),
+        transparent 70%
+      ),
+      radial-gradient(
+        18% 40% at 50% 50%,
+        color-mix(
+          in srgb,
+          var(--jelly-current-color, var(--jelly-plasma-b, var(--site-jelly-plasma-b)))
+            var(
+              --jelly-current-mix,
+              calc(
+                var(--jelly-plasma-k, 0) * var(--jelly-plasma-gain, var(--site-jelly-plasma, 1)) *
+                  80%
+              )
+            ),
+          transparent
+        ),
+        transparent 100%
+      );
+    background-repeat: no-repeat;
+    opacity: calc(0.75 * var(--jelly-amp, 1));
+    transition: opacity calc(var(--site-transition-speed, 200ms) * 1.5) var(--ease-smooth);
+    /* 22 s per leg, alternate, scaled by the role's speed, the app palette's gain and the motion level (calm: 0.4). */
+    --jelly-drift-dur: calc(
+      22s /
+        max(
+          0.05,
+          var(--jelly-flow-speed, 1) * var(--jelly-flow-gain, var(--site-jelly-flow-speed, 1)) *
+            var(--jelly-tempo, 1)
+        )
+    );
+  }
+  /* Woken: hover or focus inside the host. The drift is attached here and only here, so it exists only while woken.
+     A little more of the same material, never a colour change. */
+  html:not(.native-material, .perf-lite)
+    :is(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+    ):not(
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='lite'],
+      [data-jelly-flow='off'],
+      [data-liquid-material='off'],
+      [data-liquid-glass='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      [contenteditable='true'],
+      [contenteditable=''],
+      [data-evert~='select'],
+      .touch-target,
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          .slice-theme,
+          .slice-tokens,
+          .stm-legacy
+        )
+        *
+    ):hover::after,
+  html:not(.native-material, .perf-lite)
+    :is(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+    ):not(
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='lite'],
+      [data-jelly-flow='off'],
+      [data-liquid-material='off'],
+      [data-liquid-glass='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      [contenteditable='true'],
+      [contenteditable=''],
+      [data-evert~='select'],
+      .touch-target,
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          .slice-theme,
+          .slice-tokens,
+          .stm-legacy
+        )
+        *
+    ):focus-within::after {
+    opacity: var(--jelly-amp, 1);
+    animation: jelly-drift var(--jelly-drift-dur) var(--ease-in-out, ease-in-out) infinite alternate;
+  }
+
   /* ── 4. Static CSS rim (01 §3.4) ────────────────────────────────────────────────────────────────────────────────
      Every surface the shader does NOT draw gets one lit top line, a faint plasma subsurface glow, and the gel edge
      (§2b: the RGB-led band and the Fresnel line — a hard 1px line only where `--gel-feather` is 0, otherwise a soft
@@ -459,6 +712,172 @@ html[data-game-state='playing'] .jelly-flow > span,
 :is(.glass-inset, [data-slot='textarea'], [data-slot='input']):focus-within > .jelly-flow > span {
   animation-play-state: paused;
 }
+/* The woken haze (§3b) pauses the same way: while scrolling, while a game is in play, and on a host that itself holds
+   keyboard focus (04 §4.5: a ring over a moving ground is harder to track; focus INSIDE a card still wakes it). */
+html[data-scrolling]
+  :is(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+  ):not(
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='lite'],
+    [data-jelly-flow='off'],
+    [data-liquid-material='off'],
+    [data-liquid-glass='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    [contenteditable='true'],
+    [contenteditable=''],
+    [data-evert~='select'],
+    .touch-target,
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        .slice-theme,
+        .slice-tokens,
+        .stm-legacy
+      )
+      *
+  )::after,
+html[data-game-state='playing']
+  :is(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+  ):not(
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='lite'],
+    [data-jelly-flow='off'],
+    [data-liquid-material='off'],
+    [data-liquid-glass='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    [contenteditable='true'],
+    [contenteditable=''],
+    [data-evert~='select'],
+    .touch-target,
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        .slice-theme,
+        .slice-tokens,
+        .stm-legacy
+      )
+      *
+  )::after,
+:is(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+  ):not(
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='lite'],
+    [data-jelly-flow='off'],
+    [data-liquid-material='off'],
+    [data-liquid-glass='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    [contenteditable='true'],
+    [contenteditable=''],
+    [data-evert~='select'],
+    .touch-target,
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        .slice-theme,
+        .slice-tokens,
+        .stm-legacy
+      )
+      *
+  ):focus-visible::after {
+  animation-play-state: paused;
+}
+/* Still (WCAG 2.2.2) and every device that cannot hover — touch, and the handheld tier (the exact query from
+   handheld-tier.test.ts) — get no haze motion at all, even when hovered: the layer holds its resting frame over
+   the static floor. Hover and press still respond on their own. */
+html[data-jelly-motion='still']
+  :is(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+  ):not(
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='lite'],
+    [data-jelly-flow='off'],
+    [data-liquid-material='off'],
+    [data-liquid-glass='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    [contenteditable='true'],
+    [contenteditable=''],
+    [data-evert~='select'],
+    .touch-target,
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        .slice-theme,
+        .slice-tokens,
+        .stm-legacy
+      )
+      *
+  )::after {
+  animation: none;
+}
+@media (hover: none), (pointer: coarse) and (max-width: 1024px) {
+  :is(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+    ):not(
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='lite'],
+      [data-jelly-flow='off'],
+      [data-liquid-material='off'],
+      [data-liquid-glass='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      [contenteditable='true'],
+      [contenteditable=''],
+      [data-evert~='select'],
+      .touch-target,
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          .slice-theme,
+          .slice-tokens,
+          .stm-legacy
+        )
+        *
+    )::after {
+    animation: none;
+  }
+}
 
 /* Handheld (the exact query from handheld-tier.test.ts): one span per carrier (01 §3.2) — the drift alone. */
 @media (pointer: coarse) and (max-width: 1024px) {
@@ -473,6 +892,71 @@ html[data-game-state='playing'] .jelly-flow > span,
    CSS rim; only the moving layers go (no carriers, no haze canvases). `!important` because these are accessibility
    contracts, not looks: they outrank theme, material and utility layers alike. */
 :is(.perf-lite, .app-high-contrast) :is(.jelly-flow, .jelly-haze-canvas) {
+  display: none !important;
+}
+:is(.perf-lite, .app-high-contrast)
+  :is(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+  ):not(
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='lite'],
+    [data-jelly-flow='off'],
+    [data-liquid-material='off'],
+    [data-liquid-glass='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    [contenteditable='true'],
+    [contenteditable=''],
+    [data-evert~='select'],
+    .touch-target,
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        .slice-theme,
+        .slice-tokens,
+        .stm-legacy
+      )
+      *
+  )::after,
+html[data-game-state='playing']
+  [data-jelly-zone='hud']
+  :is(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+  ):not(
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='lite'],
+    [data-jelly-flow='off'],
+    [data-liquid-material='off'],
+    [data-liquid-glass='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    [contenteditable='true'],
+    [contenteditable=''],
+    [data-evert~='select'],
+    .touch-target,
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        .slice-theme,
+        .slice-tokens,
+        .stm-legacy
+      )
+      *
+  )::after {
   display: none !important;
 }
 :is(.app-high-contrast)
@@ -492,6 +976,38 @@ html[data-game-state='playing'] .jelly-flow > span,
 @media print {
   .jelly-flow,
   .jelly-haze-canvas {
+    display: none !important;
+  }
+  :is(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+    ):not(
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='lite'],
+      [data-jelly-flow='off'],
+      [data-liquid-material='off'],
+      [data-liquid-glass='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      [contenteditable='true'],
+      [contenteditable=''],
+      [data-evert~='select'],
+      .touch-target,
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          .slice-theme,
+          .slice-tokens,
+          .stm-legacy
+        )
+        *
+    )::after {
     display: none !important;
   }
   :is(
@@ -542,9 +1058,11 @@ html[data-game-state='playing'] .jelly-flow > span,
   }
 }
 
+/* jelly-drift starts at the identity: the woken-haze layer (§3b) rests untransformed and gets this animation only on
+   hover or focus, so its first frame must be that resting frame or the haze would snap on wake. */
 @keyframes jelly-drift {
   0% {
-    transform: translate3d(-8%, -6%, 0) rotate(-8deg) scale(1.04);
+    transform: none;
   }
   50% {
     transform: translate3d(7%, 4%, 0) rotate(6deg) scale(0.98);

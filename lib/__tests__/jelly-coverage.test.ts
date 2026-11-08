@@ -330,13 +330,13 @@ describe('jelly coverage — the primitives adapter (app/jelly-coverage.css) and
     }
     expect(
       offenders,
-      'The coverage adapter is static: motion comes from the jelly services and .jelly-flow carriers ' +
+      'The coverage adapter is static: motion comes from the jelly services and the woken-haze layer ' +
         '(site-infinite-animation.test.ts), blur never returns (N6), and an !important box-shadow would also eat ' +
         'every ring-* focus ring and the high-contrast outline.',
     ).toEqual([]);
   });
 
-  it('the switch is a jelly control, the slider thumb a drag host, the skeleton lite with no carrier', () => {
+  it('the switch is a jelly control, the slider thumb a drag host, the skeleton lite with no haze layer', () => {
     expect(tagAround(read('components/ui/switch.tsx'), 'data-slot="switch"')).toMatch(
       /data-jelly="control"/,
     );
@@ -345,6 +345,8 @@ describe('jelly coverage — the primitives adapter (app/jelly-coverage.css) and
     );
     const skeleton = tagAround(read('components/ui/skeleton.tsx'), 'data-slot="skeleton"');
     expect(skeleton).toMatch(/data-jelly="lite"/);
+    // `data-jelly-flow="off"` is now read by the woken-haze layer's exclusions (app/jelly-material.css §3b), as it was
+    // by the retired carrier service; the IconButton carries the same opt-out.
     expect(skeleton).toMatch(/data-jelly-flow="off"/);
   });
 
