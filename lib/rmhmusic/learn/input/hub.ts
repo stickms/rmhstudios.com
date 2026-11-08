@@ -6,11 +6,12 @@
  * unit-tested with fakes.
  *
  * Each source's start/stop/cancel lifecycle is the pure machine in
- * `../machines/device-lifecycle.ts`; this file only interprets its effects
- * (subscribe and start the adapter, stop it, unsubscribe, settle the callers'
- * promises) and feeds the adapter's answers back as events.
+ * `../machines/device-lifecycle.ts`, run by `device-runner.ts`; this file only
+ * says what its effects mean for an adapter (subscribe then start it, stop it,
+ * unsubscribe) and keeps the active order and the phase snapshot.
  */
-import * as life from '../machines/device-lifecycle';
+import type * as life from '../machines/device-lifecycle';
+import { createDeviceRunner, type DeviceRunner } from './device-runner';
 import type { InputAdapter, InputSource, NoteEvent, NoteListener } from './events';
 
 export type InputPhase = life.Phase;
@@ -38,120 +39,50 @@ export interface InputHub {
 
 const SOURCES: readonly InputSource[] = ['mic', 'midi', 'keys', 'screen'];
 
-interface Waiter {
-  resolve(): void;
-  reject(err: Error): void;
-}
-
-interface Slot {
-  adapter: InputAdapter;
-  state: life.State;
-  unsubscribe: (() => void) | null;
-  /** `start()` callers, by the run that answers them. */
-  waiters: Map<number, Waiter[]>;
-}
-
 export function createInputHub(adapters: InputAdapter[]): InputHub {
-  const slots = new Map<InputSource, Slot>(
-    adapters.map((a) => [
-      a.source,
-      { adapter: a, state: life.initial, unsubscribe: null, waiters: new Map() },
-    ]),
-  );
   const listeners = new Set<NoteListener>();
   const changeListeners = new Set<() => void>();
   /** Started sources in the order they became active. */
   let order: InputSource[] = [];
-  let snapshot: InputPhases = phasesNow();
-
-  function phasesNow(): InputPhases {
-    const out = {} as Record<InputSource, InputPhase>;
-    for (const s of SOURCES) out[s] = slots.get(s) ? life.phase(slots.get(s)!.state) : 'idle';
-    return out;
-  }
 
   const forward = (e: NoteEvent) => {
     for (const l of [...listeners]) l(e);
   };
 
-  const join = (slot: Slot, run: number, w: Waiter) => {
-    const list = slot.waiters.get(run);
-    if (list) list.push(w);
-    else slot.waiters.set(run, [w]);
-  };
-
-  const answer = (slot: Slot, run: number, error: Error | null) => {
-    const list = slot.waiters.get(run);
-    slot.waiters.delete(run);
-    for (const w of list ?? []) {
-      if (error) w.reject(error);
-      else w.resolve();
-    }
-  };
-
-  const launch = (source: InputSource, slot: Slot, run: number) => {
-    // Subscribe first so a note emitted while start() resolves is not lost.
-    slot.unsubscribe?.();
-    slot.unsubscribe = slot.adapter.subscribe(forward);
-    let started: Promise<void>;
-    try {
-      started = slot.adapter.start();
-    } catch (err) {
-      started = Promise.reject(err);
-    }
-    started.then(
-      () => send(source, { type: 'started', run }),
-      (err: unknown) =>
-        send(source, {
-          type: 'failed',
-          run,
-          error: err instanceof Error ? err : new Error(String(err)),
-        }),
+  const runners = new Map<InputSource, DeviceRunner>();
+  for (const adapter of adapters) {
+    const source = adapter.source;
+    let unsubscribe: (() => void) | null = null;
+    runners.set(
+      source,
+      createDeviceRunner({
+        launch() {
+          // Subscribe first so a note emitted while start() resolves is not lost.
+          unsubscribe?.();
+          unsubscribe = adapter.subscribe(forward);
+          return adapter.start();
+        },
+        stopDevice: () => adapter.stop(),
+        unsubscribe() {
+          unsubscribe?.();
+          unsubscribe = null;
+        },
+        onPhase(phase) {
+          order = order.filter((s) => s !== source);
+          if (phase === 'active') order.push(source);
+          snapshot = phasesNow();
+          for (const l of [...changeListeners]) l();
+        },
+      }),
     );
-  };
-
-  /** Feed one event to a source's machine and carry out what it says. */
-  function send(source: InputSource, event: life.Event, waiter?: Waiter): void {
-    const slot = slots.get(source);
-    if (!slot) return;
-    const before = life.phase(slot.state);
-    const { state, effects } = life.step(slot.state, event);
-    slot.state = state;
-    const after = life.phase(state);
-    if (after === 'active' && !order.includes(source)) order = [...order, source];
-    if (after !== 'active' && order.includes(source)) order = order.filter((s) => s !== source);
-    for (const fx of effects) {
-      switch (fx.type) {
-        case 'launch':
-          launch(source, slot, fx.run);
-          break;
-        case 'join':
-          if (waiter) join(slot, fx.run, waiter);
-          break;
-        case 'answer-now':
-          waiter?.resolve();
-          break;
-        case 'stop-device':
-          slot.adapter.stop();
-          break;
-        case 'unsubscribe':
-          slot.unsubscribe?.();
-          slot.unsubscribe = null;
-          break;
-        case 'answer':
-          answer(slot, fx.run, fx.error);
-          break;
-        default: {
-          const never: never = fx;
-          throw new Error(`hub: unhandled effect ${JSON.stringify(never)}`);
-        }
-      }
-    }
-    if (after !== before) {
-      snapshot = phasesNow();
-      for (const l of [...changeListeners]) l();
-    }
   }
+
+  function phasesNow(): InputPhases {
+    const out = {} as Record<InputSource, InputPhase>;
+    for (const s of SOURCES) out[s] = runners.get(s)?.phase() ?? 'idle';
+    return out;
+  }
+  let snapshot: InputPhases = phasesNow();
 
   return {
     subscribe(l) {
@@ -162,14 +93,13 @@ export function createInputHub(adapters: InputAdapter[]): InputHub {
     },
 
     start(source) {
-      if (!slots.has(source)) return Promise.reject(new Error(`No input adapter for "${source}"`));
-      return new Promise<void>((resolve, reject) =>
-        send(source, { type: 'start' }, { resolve, reject }),
-      );
+      const runner = runners.get(source);
+      if (!runner) return Promise.reject(new Error(`No input adapter for "${source}"`));
+      return runner.start();
     },
 
     stop(source) {
-      send(source, { type: 'stop' });
+      runners.get(source)?.stop();
     },
 
     active() {
@@ -177,8 +107,7 @@ export function createInputHub(adapters: InputAdapter[]): InputHub {
     },
 
     lastError(source) {
-      const slot = slots.get(source);
-      return slot ? life.lastError(slot.state) : null;
+      return runners.get(source)?.lastError() ?? null;
     },
 
     phase(source) {

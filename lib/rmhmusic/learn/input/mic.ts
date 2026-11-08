@@ -13,6 +13,7 @@ import { getAudioContext } from '@/lib/shared/platform';
 import { nearestNote } from '../pitch/notes';
 import { detectPitch } from '../pitch/yin';
 import type { InputAdapter, NoteEvent, NoteListener } from './events';
+import { createDeviceRunner } from './device-runner';
 import { createSegmenter, type Segmenter } from './mic-segmenter';
 
 /** Analysis rate. A timer, not requestAnimationFrame: the repo gates rAF loops. */
@@ -26,15 +27,11 @@ export function createMicInput(opts: { onLevel?: (rms: number) => void } = {}): 
     for (const l of [...listeners]) l(e);
   };
 
-  let running = false;
   let timer: ReturnType<typeof setInterval> | null = null;
   let stream: MediaStream | null = null;
   let source: MediaStreamAudioSourceNode | null = null;
   let analyser: AnalyserNode | null = null;
   let segmenter: Segmenter | null = null;
-  /** Bumped by every stop(); a start that finds it changed has been cancelled. */
-  let generation = 0;
-  let pending: { promise: Promise<void>; generation: number } | null = null;
 
   const teardown = () => {
     if (timer !== null) clearInterval(timer);
@@ -47,7 +44,8 @@ export function createMicInput(opts: { onLevel?: (rms: number) => void } = {}): 
     analyser = null;
   };
 
-  const open = async (gen: number): Promise<void> => {
+  /** Acquire the mic for one run of the lifecycle; `wanted()` turns false when a stop() arrives. */
+  const open = async (wanted: () => boolean): Promise<void> => {
     const ctx = getAudioContext();
     if (!ctx) throw new Error('Web Audio is not available in this browser.');
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
@@ -56,7 +54,7 @@ export function createMicInput(opts: { onLevel?: (rms: number) => void } = {}): 
     // iOS Safari starts suspended; start() runs from a user click, which is
     // what allows the resume. Do it before the (possibly slow) permission prompt.
     if (ctx.state === 'suspended') await ctx.resume();
-    if (gen !== generation) return;
+    if (!wanted()) return;
 
     // Rejections keep their original `name` (NotAllowedError, NotFoundError).
     const media = await navigator.mediaDevices.getUserMedia({
@@ -64,7 +62,7 @@ export function createMicInput(opts: { onLevel?: (rms: number) => void } = {}): 
     });
     // stop() arrived while the permission prompt was open: release what we
     // were just handed rather than leave the mic recording.
-    if (gen !== generation) {
+    if (!wanted()) {
       media.getTracks().forEach((t) => t.stop());
       return;
     }
@@ -98,43 +96,26 @@ export function createMicInput(opts: { onLevel?: (rms: number) => void } = {}): 
       }, POLL_MS);
     } catch (err) {
       teardown();
+      segmenter = null;
       throw err;
     }
-    running = true;
   };
 
-  const adapter: InputAdapter = {
-    source: 'mic',
-
-    start() {
-      if (running) return Promise.resolve();
-      const requested = generation;
-      if (pending) {
-        if (pending.generation === generation) return pending.promise;
-        // The in-flight start was cancelled; begin afresh once it has let go,
-        // unless a stop() has arrived since this start was requested.
-        const again = () => (requested === generation ? adapter.start() : Promise.resolve());
-        return pending.promise.then(again, again);
-      }
-      const gen = generation;
-      const promise = open(gen).finally(() => {
-        pending = null;
-      });
-      pending = { promise, generation: gen };
-      return promise;
-    },
-
-    stop() {
-      generation++;
-      if (!running) {
-        teardown();
-        return;
-      }
-      running = false;
+  // Start/stop/cancel is the shared device lifecycle; this adapter only says how to open and release the mic.
+  const life = createDeviceRunner({
+    launch: (_run, wanted) => open(wanted),
+    stopDevice() {
       teardown();
+      // Release the sounding note, if the mic was running.
       if (segmenter) for (const e of segmenter.flush(performance.now())) emit(e);
       segmenter = null;
     },
+  });
+
+  const adapter: InputAdapter = {
+    source: 'mic',
+    start: () => life.start(),
+    stop: () => life.stop(),
 
     subscribe(l) {
       listeners.add(l);
