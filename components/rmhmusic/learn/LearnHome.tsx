@@ -42,9 +42,9 @@ export function LearnHome() {
   const [setupOpen, setSetupOpen] = useState(false);
   const onOpenLesson = (lessonId: string) =>
     void navigate({ to: '/rmhmusic/lesson/$lessonId', params: { lessonId } });
-  // Leaving home (back button, any route change) or hiding the tab stops the mic; see useInputRelease.
-  const [, setReleased] = useState(0);
-  useInputRelease(() => setReleased((n) => n + 1));
+  // Leaving the screen (any route change) or hiding the tab stops the mic; the screen sees it
+  // through the hub's phases (useInputPhases), so nothing here needs to re-render.
+  useInputRelease();
   const onSetupChange = (open: boolean) => {
     setSetupOpen(open);
     // The microphone listens only while it is being set up or used in a lesson.

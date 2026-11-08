@@ -61,9 +61,9 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
   const status = useLearnStore((s) => s.status);
   const error = useLearnStore((s) => s.error);
   const [setupOpen, setSetupOpen] = useState(false);
-  // Re-render after an automatic mic stop (tab hidden) so the lesson offers to restart it.
-  const [, setReleased] = useState(0);
-  useInputRelease(() => setReleased((n) => n + 1));
+  // Leaving the screen (any route change) or hiding the tab stops the mic; the screen sees it
+  // through the hub's phases (useInputPhases), so nothing here needs to re-render.
+  useInputRelease();
   const lesson = getLesson(lessonId);
   const playable = lesson?.available === true && lesson.mode === 'play-note';
 

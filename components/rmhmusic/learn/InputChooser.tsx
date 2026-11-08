@@ -12,17 +12,18 @@
  * mid-session; and each offers the on-screen keys, which always work.
  */
 
-import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Check, Keyboard, Loader2, Mic, Piano, Timer, Usb } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { isMidiSupported } from '@/lib/rmhmusic/learn/input/midi';
+import { inputChoiceMachine, type Effect } from '@/lib/rmhmusic/learn/machines/input-choice';
 import type { LearnInput } from '@/lib/rmhmusic/learn/schemas';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from './buttons';
 import { InputErrorNotice, MicDetails, MidiDetails } from './InputDetails';
-import { chooseInput } from './useLearnInput';
+import { chooseInput, useInputPhases } from './useLearnInput';
+import { useMachine } from './useMachine';
 
 interface RowProps {
   icon: LucideIcon;
@@ -52,11 +53,9 @@ function Row({ icon: Icon, title, description, action, children }: RowProps) {
 interface InputChooserProps {
   /** Shows the timing row, opening calibration. */
   onCalibrate?: () => void;
-  /** Called after each choice settles (started or failed), so a parent can re-read the hub. */
-  onChosen?: () => void;
 }
 
-export function InputChooser({ onCalibrate, onChosen }: InputChooserProps) {
+export function InputChooser({ onCalibrate }: InputChooserProps) {
   const { t } = useTranslation('c-rmhmusic');
   const hub = useLearnStore((s) => s.hub);
   const selected = useLearnStore((s) => s.profile?.input ?? 'screen');
@@ -66,21 +65,22 @@ export function InputChooser({ onCalibrate, onChosen }: InputChooserProps) {
   const saveFailed = useLearnStore(
     (s) => s.saveFailed.includes('input') || s.saveFailed.includes('latencyMs'),
   );
-  const [busy, setBusy] = useState<LearnInput | null>(null);
-  const [failed, setFailed] = useState<LearnInput | null>(null);
+  const [choice, send] = useMachine(inputChoiceMachine);
+  const phases = useInputPhases();
   const midiSupported = isMidiSupported();
-  const active = hub?.active() ?? [];
+  const busy = choice.kind === 'choosing' ? choice.input : null;
+  const failed = choice.kind === 'failed' ? choice.input : null;
 
-  const choose = async (next: LearnInput) => {
-    setBusy(next);
-    setFailed(null);
-    const ok = await chooseInput(next);
-    setBusy(null);
-    if (!ok) setFailed(next);
-    onChosen?.();
+  const perform = (effects: Effect[]) => {
+    for (const fx of effects) {
+      void chooseInput(fx.input).then((ok) =>
+        perform(send({ type: 'settled', token: fx.token, ok })),
+      );
+    }
   };
+  const choose = (next: LearnInput) => perform(send({ type: 'choose', input: next }));
 
-  const inUse = (id: LearnInput) => selected === id && (id === 'screen' || active.includes(id));
+  const inUse = (id: LearnInput) => selected === id && (id === 'screen' || phases[id] === 'active');
 
   const action = (id: LearnInput, name: string) => {
     if (busy === id) {
@@ -103,7 +103,7 @@ export function InputChooser({ onCalibrate, onChosen }: InputChooserProps) {
       <button
         type="button"
         disabled={busy !== null}
-        onClick={() => void choose(id)}
+        onClick={() => choose(id)}
         aria-label={t('input-use-named', { name, defaultValue: 'Use {{name}}' })}
         className={SECONDARY_BUTTON}
       >
@@ -115,7 +115,7 @@ export function InputChooser({ onCalibrate, onChosen }: InputChooserProps) {
   const error = (id: 'mic' | 'midi') => {
     const err = failed === id ? hub?.lastError(id) : null;
     return err ? (
-      <InputErrorNotice source={id} error={err} onFallback={() => void choose('screen')} />
+      <InputErrorNotice source={id} error={err} onFallback={() => choose('screen')} />
     ) : null;
   };
 

@@ -16,7 +16,7 @@
  * input chooser shows inline, and its click starts them.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { CheckCircle2, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -28,7 +28,13 @@ import { getAudioContext } from '@/lib/shared/platform';
 import { PRIMARY_BUTTON } from './buttons';
 import { InputChooser } from './InputChooser';
 import { OnScreenKeyboard } from './OnScreenKeyboard';
-import { permissionGranted, useLastNote, useNoteEvents, useNoteSound } from './useLearnInput';
+import {
+  permissionGranted,
+  useInputPhases,
+  useLastNote,
+  useNoteEvents,
+  useNoteSound,
+} from './useLearnInput';
 import { useMachine } from './useMachine';
 
 /** `lessonId` is the lesson being completed; `paused` (a dialog is open over the lesson) stops notes counting. */
@@ -43,13 +49,12 @@ export function FirstNoteLesson({
   const hub = useLearnStore((s) => s.hub);
   const input = useLearnStore((s) => s.profile?.input ?? 'screen');
   const [lesson, send] = useMachine(firstNoteMachine);
-  // Bumped when the inline chooser settles, so `active()` is read again.
-  const [, setChosen] = useState(0);
+  const phases = useInputPhases();
   const last = useLastNote();
   useNoteSound(!paused);
 
   const needsDevice = input === 'mic' || input === 'midi';
-  const inputOn = !needsDevice || (hub?.active().includes(input) ?? false);
+  const inputOn = !needsDevice || phases[input] === 'active';
 
   // Start the chosen input (switching inputs mid-lesson goes through `chooseInput`, which stops the old one).
   useEffect(() => {
@@ -58,11 +63,10 @@ export function FirstNoteLesson({
     if (input === 'keys') void hub.start('keys').catch(() => {});
     if (input === 'mic' || input === 'midi') {
       void (async () => {
-        if (hub.active().includes(input) || !(await permissionGranted(input))) return;
+        if (hub.phase(input) !== 'idle' || !(await permissionGranted(input))) return;
         if (input === 'mic' && getAudioContext()?.state !== 'running') return;
         if (cancelled) return;
         await (input === 'mic' ? startMic(hub) : hub.start(input)).catch(() => {});
-        if (!cancelled) setChosen((n) => n + 1);
       })();
     }
     return () => {
@@ -202,7 +206,7 @@ export function FirstNoteLesson({
 
       {needsDevice && !inputOn ? (
         <section className="app-glass rounded-(--app-radius) px-4 py-2">
-          <InputChooser onChosen={() => setChosen((n) => n + 1)} />
+          <InputChooser />
         </section>
       ) : (
         (input === 'screen' || input === 'keys') && <OnScreenKeyboard />

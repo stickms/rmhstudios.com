@@ -8,10 +8,12 @@
  * click, which is what iOS needs to grant them).
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { playNote, MAX_VOICES } from '@/lib/rmhmusic/learn/audio/voice';
 import type { InputSource, NoteEvent } from '@/lib/rmhmusic/learn/input/events';
-import { bindMicRelease, startMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
+import type { InputPhases } from '@/lib/rmhmusic/learn/input/hub';
+import { bindMicRelease } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
+import { switchInput } from '@/lib/rmhmusic/learn/input/switch';
 import type { MidiDevice } from '@/lib/rmhmusic/learn/input/midi';
 import type { LearnInput } from '@/lib/rmhmusic/learn/schemas';
 import { subscribeMicLevel, useLearnStore } from '@/lib/rmhmusic/learn/store';
@@ -125,33 +127,35 @@ export function useMicLevel(): number {
   return level;
 }
 
-/** Sources that need a device or a permission, as opposed to keys on screen. */
-const DEVICE_INPUTS: ReadonlyArray<LearnInput> = ['mic', 'midi'];
+const NO_PHASES: InputPhases = { mic: 'idle', midi: 'idle', keys: 'idle', screen: 'idle' };
+const noSubscribe = () => () => {};
 
 /**
- * Switch to `next`: stop the previous interactive source, start the new one,
- * and save it to the profile. The microphone and MIDI are saved only once they
- * have started, so a blocked permission does not leave the profile pointing at
- * an input that cannot play. Resolves to false when the start failed (the
- * reason is in `hub.lastError(next)`). Call from a click for mic and MIDI.
+ * Every input source's lifecycle phase (`idle` / `starting` / `active` /
+ * `stopping`), live: the screen re-renders when one changes, and only then.
+ */
+export function useInputPhases(): InputPhases {
+  const hub = useLearnStore((s) => s.hub);
+  return useSyncExternalStore(
+    hub ? hub.onChange : noSubscribe,
+    () => hub?.phases() ?? NO_PHASES,
+    () => NO_PHASES,
+  );
+}
+
+/**
+ * Switch to `next` and save it to the profile. The new input starts before
+ * the previous one stops (`switchInput`), so a failed switch leaves the old
+ * input playing. The microphone and MIDI are saved only once they have
+ * started, so a blocked permission does not leave the profile pointing at an
+ * input that cannot play. Resolves to false when the start failed (the reason
+ * is in `hub.lastError(next)`). Call from a click for mic and MIDI.
  */
 export async function chooseInput(next: LearnInput): Promise<boolean> {
   const { hub, profile, setInput } = useLearnStore.getState();
   if (!hub) return false;
   const previous = profile?.input;
-  // The on-screen keys stay started: they only emit while someone presses them.
-  for (const source of ['keys', 'mic', 'midi'] as const) {
-    if (source !== next && (source === previous || hub.active().includes(source))) {
-      hub.stop(source);
-    }
-  }
-  try {
-    // The mic goes through `startMic` so a screen leaving mid-prompt can still stop it.
-    await (next === 'mic' ? startMic(hub) : hub.start(next));
-  } catch {
-    return false;
-  }
-  if (DEVICE_INPUTS.includes(next) && !hub.active().includes(next)) return false;
+  if (!(await switchInput(hub, previous, next))) return false;
   if (previous !== next) await setInput(next);
   return true;
 }
@@ -177,8 +181,8 @@ export async function permissionGranted(source: 'mic' | 'midi'): Promise<boolean
  * microphone stops when the page is hidden, on `pagehide` and when the screen
  * unmounts, and on unmount the computer keys stop listening too. Only the
  * devices stop; the saved input preference is untouched, and nothing restarts
- * by itself. `onRelease` runs after an automatic mic stop, so the screen can
- * re-render what `hub.active()` says.
+ * by itself. Screens see the stop through `useInputPhases`; `onRelease` is
+ * for anything else that must react to it.
  */
 export function useInputRelease(onRelease?: () => void): void {
   const hub = useLearnStore((s) => s.hub);
