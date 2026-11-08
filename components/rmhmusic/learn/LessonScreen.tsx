@@ -131,7 +131,7 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
       </div>
     );
   } else {
-    body = <FirstNoteLesson paused={setupOpen} />;
+    body = <FirstNoteLesson lessonId={lesson.id} paused={setupOpen} />;
   }
 
   return (

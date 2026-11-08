@@ -1,10 +1,14 @@
 'use client';
 
 /**
- * FirstNoteLesson — lesson `play-first-note`: "Play any note". The first note
+ * FirstNoteLesson — a "play any note" lesson (`play-first-note`): the first note
  * from any started input completes it with three stars. On-screen and
  * computer keys show the piano; MIDI and the microphone show the note they
  * hear. A failed save says so and offers Retry, so the learner is never stuck.
+ *
+ * The listening → saving → saved / failed / signed-out lifecycle is the pure
+ * machine in `machines/first-note.ts`: the first note leaves `listening`
+ * synchronously, so a chord's notes in one tick complete it once.
  *
  * On entry the chosen input is started: the keys need no permission; the mic
  * and MIDI start by themselves only when the browser already granted them (and,
@@ -12,12 +16,12 @@
  * input chooser shows inline, and its click starts them.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { CheckCircle2, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { releaseMic, startMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
-import { createOnceGuard } from '@/lib/rmhmusic/learn/once';
+import { firstNoteMachine, type Effect } from '@/lib/rmhmusic/learn/machines/first-note';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { getAudioContext } from '@/lib/shared/platform';
@@ -25,18 +29,20 @@ import { PRIMARY_BUTTON } from './buttons';
 import { InputChooser } from './InputChooser';
 import { OnScreenKeyboard } from './OnScreenKeyboard';
 import { permissionGranted, useLastNote, useNoteEvents, useNoteSound } from './useLearnInput';
+import { useMachine } from './useMachine';
 
-const LESSON_ID = 'play-first-note';
-
-type Save = 'idle' | 'saving' | 'saved' | 'failed' | 'signed-out';
-
-/** `paused` (a dialog is open over the lesson) stops notes counting. */
-export function FirstNoteLesson({ paused = false }: { paused?: boolean }) {
+/** `lessonId` is the lesson being completed; `paused` (a dialog is open over the lesson) stops notes counting. */
+export function FirstNoteLesson({
+  lessonId,
+  paused = false,
+}: {
+  lessonId: string;
+  paused?: boolean;
+}) {
   const { t } = useTranslation('c-rmhmusic');
   const hub = useLearnStore((s) => s.hub);
   const input = useLearnStore((s) => s.profile?.input ?? 'screen');
-  const [played, setPlayed] = useState<number | null>(null);
-  const [save, setSave] = useState<Save>('idle');
+  const [lesson, send] = useMachine(firstNoteMachine);
   // Bumped when the inline chooser settles, so `active()` is read again.
   const [, setChosen] = useState(0);
   const last = useLastNote();
@@ -66,32 +72,30 @@ export function FirstNoteLesson({ paused = false }: { paused?: boolean }) {
 
   // Leaving the lesson (keys and mic stop) is LessonScreen's `useInputRelease`.
 
-  /** The first note claims completion synchronously; state is too late for a chord in one tick. */
-  const once = useRef(createOnceGuard());
-
-  const complete = async () => {
-    setSave('saving');
-    const outcome = await useLearnStore.getState().completeLesson(LESSON_ID, 3, 100);
-    setSave(outcome === 'saved' ? 'saved' : outcome === 'unauthorized' ? 'signed-out' : 'failed');
+  const perform = (effects: Effect[]) => {
+    for (const fx of effects) {
+      if (fx.type === 'release-mic') {
+        // The lesson is done listening; the success screen needs no microphone.
+        if (hub) releaseMic(hub);
+      } else {
+        void useLearnStore
+          .getState()
+          .completeLesson(lessonId, 3, 100)
+          .then((outcome) => perform(send({ type: 'answered', attempt: fx.attempt, outcome })));
+      }
+    }
   };
 
   useNoteEvents((e) => {
-    if (paused || e.type !== 'on' || !once.current.claim()) return;
-    // The first event wins: its note is the one shown.
-    setPlayed(e.midi);
-    // The lesson is done listening; the success screen needs no microphone.
-    if (hub) releaseMic(hub);
-    void complete();
+    if (paused || e.type !== 'on') return;
+    perform(send({ type: 'note', midi: e.midi }));
   });
 
-  /** Retry only after a failed save: re-arm the guard on purpose and complete again. */
-  const retry = () => {
-    if (save !== 'failed') return;
-    once.current.reset();
-    if (once.current.claim()) void complete();
-  };
+  const retry = () => perform(send({ type: 'retry' }));
 
-  if (played !== null) {
+  if (lesson.kind !== 'listening') {
+    const played = lesson.midi;
+    const save = lesson.kind;
     const name = midiToName(played);
     return (
       <section className="app-glass space-y-4 rounded-(--app-radius) p-5 text-center sm:p-6">
@@ -143,7 +147,7 @@ export function FirstNoteLesson({ paused = false }: { paused?: boolean }) {
             {save === 'signed-out' ? (
               <Link
                 to="/login"
-                search={{ callbackURL: `/rmhmusic/lesson/${LESSON_ID}` }}
+                search={{ callbackURL: `/rmhmusic/lesson/${lessonId}` }}
                 className={PRIMARY_BUTTON}
               >
                 {t('sign-in', { defaultValue: 'Sign in' })}
