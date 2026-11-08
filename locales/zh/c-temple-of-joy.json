@@ -297,5 +297,21 @@
   "vigil-sinner-note": "罪人所持有的一切，会在你击中他们的那一刻成倍归还。",
   "vigil-sinners_other": "{{count}} 名罪人，持有中",
   "vigil-title": "夜间祷告",
-  "vigil-window": "计入的时辰"
+  "vigil-window": "计入的时辰",
+  "quit": "Quit",
+  "main-menu": "Main menu",
+  "setting-main-menu": "Main menu",
+  "setting-main-menu-note": "Saves, then returns to the title screen. Your temple is waiting when you come back.",
+  "menu-admit": "Admit one",
+  "menu-catalogue": "RMH Studios / Catalogue No. 080",
+  "menu-continue": "Continue",
+  "menu-enter": "Enter the Temple",
+  "menu-figure-caption": "Fig. 1 — Smiling figure (Sonriente), Veracruz, 600–1000 CE",
+  "menu-footnote": "Gladness is non-refundable",
+  "menu-fresh": "A fresh temple is waiting for its first joy.",
+  "menu-label": "Main menu",
+  "menu-saved-joy": "Saved joy",
+  "menu-tagline": "An unreasonable amount of gladness.",
+  "menu-tags": "Idle · Clicker · Prestige",
+  "menu-ticket-no": "No. 080 · Row J"
 }

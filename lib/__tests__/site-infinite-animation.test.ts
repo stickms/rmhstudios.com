@@ -12,19 +12,20 @@
  *  - every `infinite` animation in the site-tier stylesheets (`app/*.css`, `components/{ui,radial,feed,site}/**`)
  *    is either on the frozen, justified {@link BASELINE} (loaders, skeletons, live dots — all on transient or tiny
  *    elements), or
- *  - it is one of the two SANCTIONED carrier keyframes, `jelly-drift` / `jelly-current`, declared only on selectors
- *    under `.jelly-flow` — the carrier `lib/jelly/flow-carriers.ts` attaches only to visible hosts within budget and
- *    removes under every non-ambient state;
- *  - the carrier is killed (`display: none`) under every degraded root class (read from `DEGRADED_ROOT_SELECTOR` —
- *    not restated) plus the app high-contrast theme, reduced transparency, forced colours and print, and PAUSED
- *    (`animation-play-state: paused`) while scrolling, under `still`, and while a game is in play.
+ *  - it is one of the two SANCTIONED haze keyframes, `jelly-drift` / `jelly-current`, declared only on the woken-haze
+ *    layer (the glass roles' own `::after`, app/jelly-material.css §3b, CSS-first jelly PR 2) — attached ONLY under
+ *    `:hover` / `:has(:focus-visible)`, with no animation at all at rest (lib/__tests__/jelly-woken-haze.test.ts pins it) — or on the
+ *    retired `.jelly-flow` carrier spans, whose rules stay until PR 5 deletes them (nothing injects a carrier any more);
+ *  - the layer is killed (`display: none`) under every degraded root class (read from `DEGRADED_ROOT_SELECTOR` —
+ *    not restated) plus the app high-contrast theme and print, PAUSED (`animation-play-state: paused`) while
+ *    scrolling and while a game is in play, and has no animation at all under `still`.
  *
  * The baseline only shrinks: an entry that no longer matches fails "the baseline stays honest".
  *
  * ## N12 — the haze is under the text, always
  *
- * 01 §6 item 1. Every jelly paint layer inside a host (`.jelly-flow`, `.jelly-haze-canvas`, the rim
- * `.liquid-glass-canvas`, the fallback `.liquid-light`) declares a NEGATIVE z-index, and the hosts that carry them are
+ * 01 §6 item 1. Every jelly paint layer inside a host (the woken-haze `::after`, `.jelly-flow`, `.jelly-haze-canvas`,
+ * the rim `.liquid-glass-canvas`, the fallback `.liquid-light`) declares a NEGATIVE z-index, and the hosts that carry them are
  * isolated (`isolation: isolate`), so the negative layer resolves inside the host — above its tint, below every
  * child. Nothing jelly paints at z ≥ 0 inside a host. The one body-level exception is the arc layer (03 D1), which is
  * `pointer-events: none` and stacks on the named `--z-arcs` token.
@@ -153,9 +154,33 @@ const BASELINE = new Map<string, string>([
   ['components/feed/feed.css :: feed-live-pulse', 'the live indicator dot on a live item'],
 ]);
 
-/** The two carrier keyframes the jelly material owns (01 §3.2), and the only selector they may run under. */
+/** The two haze keyframes the jelly material owns (01 §3.2), and the only selectors they may run under. */
 const SANCTIONED = new Set(['jelly-drift', 'jelly-current']);
 const MATERIAL = 'app/jelly-material.css';
+const flat = (s: string) =>
+  s.replace(/\s+/g, ' ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').trim();
+/**
+ * The woken-haze layer (jelly-material.css §3b): the glass roles' own `::after`, off native-material routes and
+ * perf-lite. Exactly this selector head, nothing broader.
+ */
+const HAZE_LAYER_HEAD =
+  "html:not(.native-material, .perf-lite) :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])):not(";
+const isHazeLayer = (selector: string) => {
+  const s = flat(selector);
+  return s.endsWith('::after') && s.startsWith(HAZE_LAYER_HEAD);
+};
+/** The one rule that may run the drift: the haze layer's wake, `…:hover::after, …:has(:focus-visible)::after`. */
+const isHazeWake = (selector: string) => {
+  const s = flat(selector);
+  return (
+    isHazeLayer(selector) &&
+    s.endsWith('):has(:focus-visible)::after') &&
+    s.includes(`):hover::after, ${HAZE_LAYER_HEAD}`)
+  );
+};
+/** A rule that targets the haze layer (any state of it): a role host's `::after` in the material sheet. */
+const onHazeLayer = (selector: string) =>
+  /\.glass-fill/.test(selector) && /::after$/.test(flat(selector));
 
 describe('N3 — no perpetual CSS animation on the site tier without an owner', () => {
   const found = SHEETS.flatMap(perpetual);
@@ -187,13 +212,20 @@ describe('N3 — no perpetual CSS animation on the site tier without an owner', 
     ).toEqual([]);
   });
 
-  it('the carrier keyframes run only on spans inside .jelly-flow', () => {
+  it('the haze keyframes run only on the woken-haze layer (or the retired carrier spans)', () => {
     const carriers = found.filter((p) => SANCTIONED.has(p.name));
-    expect(carriers.map((p) => p.name).sort()).toEqual([...SANCTIONED].sort());
+    expect(carriers.map((p) => p.name).sort()).toEqual(
+      ['jelly-current', 'jelly-drift', 'jelly-drift'].sort(),
+    );
     for (const p of carriers) {
       expect(p.file).toBe(MATERIAL);
-      expect(p.selector, `${p.name} is declared outside the carrier`).toMatch(/^\.jelly-flow\s*>/);
+      expect(
+        /^\.jelly-flow\s*>/.test(p.selector) || isHazeWake(p.selector),
+        `${p.name} is declared outside the haze layer: ${flat(p.selector)}`,
+      ).toBe(true);
     }
+    // One wake rule (hover / keyboard focus inside): nothing at rest, nothing scroll-driven, nothing broader.
+    expect(carriers.filter((p) => isHazeLayer(p.selector))).toHaveLength(1);
   });
 
   it('the baseline stays honest (it only shrinks)', () => {
@@ -202,14 +234,14 @@ describe('N3 — no perpetual CSS animation on the site tier without an owner', 
     expect(stale, 'These no longer loop — remove them from BASELINE.').toEqual([]);
   });
 
-  describe('the carrier stops wherever the material does', () => {
+  describe('the haze layer stops wherever the material does', () => {
     const css = read(MATERIAL);
     const all = rules(css);
-    /** `display: none` on `.jelly-flow` from a rule whose selector mentions `root`. */
+    /** `display: none` on the haze layer from a rule whose selector mentions `root`. */
     const hides = (root: RegExp) =>
       all.some(
         ({ selector, body }) =>
-          root.test(selector) && /\.jelly-flow\b/.test(selector) && /display\s*:\s*none/.test(body),
+          root.test(selector) && onHazeLayer(selector) && /display\s*:\s*none/.test(body),
       );
 
     it.each([...DEGRADED_ROOT_SELECTOR.split(',').map((s) => s.trim()), '.app-high-contrast'])(
@@ -222,7 +254,9 @@ describe('N3 — no perpetual CSS animation on the site tier without an owner', 
     it('killed under print', () => {
       for (const q of ['print']) {
         const block = [...css.matchAll(/@media([^{]+)\{((?:[^{}]*\{[^{}]*\})+)\s*\}/g)].find(
-          (m) => m[1].includes(q) && /\.jelly-flow[\s\S]*?display\s*:\s*none/.test(m[2]),
+          (m) =>
+            m[1].includes(q) &&
+            /\.glass-fill[\s\S]*?\)::after\s*\{\s*display\s*:\s*none/.test(m[2]),
         );
         expect(block, q).toBeDefined();
       }
@@ -230,15 +264,25 @@ describe('N3 — no perpetual CSS animation on the site tier without an owner', 
 
     it.each([
       ['scrolling', 'html[data-scrolling]'],
-      ['jellyMotion = still (WCAG 2.2.2)', "html[data-jelly-motion='still']"],
       ['a game in play (R16)', "html[data-game-state='playing']"],
     ])('paused while %s', (_label, root) => {
       const paused = all.some(
         ({ selector, body }) =>
-          selector.split(',').some((s) => s.trim().startsWith(root) && /\.jelly-flow/.test(s)) &&
+          flat(selector).includes(`${root} :is(`) &&
+          onHazeLayer(selector) &&
           /animation-play-state\s*:\s*paused/.test(body),
       );
       expect(paused).toBe(true);
+    });
+
+    it('has no animation at all under jellyMotion = still (WCAG 2.2.2)', () => {
+      const none = all.some(
+        ({ selector, body }) =>
+          flat(selector).startsWith("html[data-jelly-motion='still'] :is(") &&
+          onHazeLayer(selector) &&
+          /(?:^|;)\s*animation\s*:\s*none/.test(body),
+      );
+      expect(none).toBe(true);
     });
   });
 });
@@ -251,6 +295,16 @@ describe('N12 — nothing jelly paints at z ≥ 0 inside a host', () => {
         .filter(({ selector }) => selector.split(',').some((s) => s.trim() === cls))
         .map((r) => ({ f, ...r })),
     );
+
+  it('the woken-haze layer declares a negative z-index', () => {
+    const decls = sheets
+      .flatMap(({ all }) => all)
+      .filter(({ selector }) => isHazeLayer(selector))
+      .map((r) => /(?:^|;)\s*z-index\s*:\s*([^;]+)/.exec(r.body)?.[1]?.trim())
+      .filter(Boolean) as string[];
+    expect(decls.length, 'the haze layer must declare its z-index').toBeGreaterThan(0);
+    for (const z of decls) expect(Number(z), `haze layer z-index ${z}`).toBeLessThan(0);
+  });
 
   it.each(['.jelly-flow', '.jelly-haze-canvas', '.liquid-glass-canvas', '.liquid-light'])(
     '%s declares a negative z-index',
@@ -267,16 +321,17 @@ describe('N12 — nothing jelly paints at z ≥ 0 inside a host', () => {
     const iso = sheets.flatMap(({ all }) =>
       all.filter(({ body }) => /isolation\s*:\s*isolate/.test(body)).map((r) => r.selector),
     );
-    for (const host of [
-      "[data-liquid-canvas='on']",
-      "[data-jelly-flow='on']",
-      "[data-jelly-haze='on']",
-    ]) {
+    for (const host of ["[data-liquid-canvas='on']", "[data-jelly-haze='on']"]) {
       expect(
         iso.some((s) => s.includes(host)),
         `${host} must be isolated`,
       ).toBe(true);
     }
+    // The woken-haze host isolates itself: no engine attribute is set any more (CSS-first jelly PR 2).
+    expect(
+      iso.some((s) => !s.includes('::') && flat(s).startsWith(HAZE_LAYER_HEAD)),
+      'the woken-haze host must be isolated',
+    ).toBe(true);
   });
 
   it('the arc layer is the one body-level exception: click-through, on the named token', () => {

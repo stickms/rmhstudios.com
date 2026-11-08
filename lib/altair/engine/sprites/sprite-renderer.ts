@@ -11,9 +11,12 @@
 
 import type { SpriteSheet } from './sprite-loader';
 import type { AnimationState } from './sprite-animator';
-import { getCurrentFrameIndex, getFrameRect } from './sprite-animator';
+import { getCurrentFrameIndex, frameRectInto } from './sprite-animator';
 import type { SpriteBatch } from '../webgl/webgl-sprite-batch';
 import { getGLContext, getContextGeneration, createTextureFromImage } from '../webgl/webgl-textures';
+
+/** Reused by every draw helper below (they never nest), so a sprite costs no allocation. */
+const FRAME_SCRATCH = { sx: 0, sy: 0, sw: 0, sh: 0 };
 
 /**
  * Ensure a sprite sheet has a GL texture for the current context.
@@ -46,7 +49,7 @@ export function drawSprite(
   const tex = ensureTexture(sheet);
   if (!tex) return;
 
-  const { sx, sy, sw, sh } = getFrameRect(sheet, frameIndex);
+  const { sx, sy, sw, sh } = frameRectInto(FRAME_SCRATCH, sheet, frameIndex);
   const dw = sw * scale;
   const dh = sh * scale;
   const dx = Math.round(x - dw / 2);
@@ -92,7 +95,7 @@ export function drawTileSprite(
   const tex = ensureTexture(sheet);
   if (!tex) return;
 
-  const { sx, sy, sw, sh } = getFrameRect(sheet, tileIndex);
+  const { sx, sy, sw, sh } = frameRectInto(FRAME_SCRATCH, sheet, tileIndex);
   batch.drawQuad(
     tex,
     sx, sy, sw, sh,
@@ -120,7 +123,7 @@ export function drawSpriteCorpse(
   const tex = ensureTexture(sheet);
   if (!tex) return;
 
-  const { sx, sy, sw, sh } = getFrameRect(sheet, frameIndex);
+  const { sx, sy, sw, sh } = frameRectInto(FRAME_SCRATCH, sheet, frameIndex);
   const dw = sw * scale;
   const dh = sh * scale;
   const dx = Math.round(x - dw / 2);
@@ -154,7 +157,7 @@ export function drawSpriteFlash(
   const tex = ensureTexture(sheet);
   if (!tex) return;
 
-  const { sx, sy, sw, sh } = getFrameRect(sheet, frameIndex);
+  const { sx, sy, sw, sh } = frameRectInto(FRAME_SCRATCH, sheet, frameIndex);
   const dw = sw * scale;
   const dh = sh * scale;
   const dx = Math.round(x - dw / 2);

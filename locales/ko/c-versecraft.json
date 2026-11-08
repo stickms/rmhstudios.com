@@ -76,5 +76,6 @@
   "tutorial-step2-tip": "보너스는 모든 캐릭터의 점수에 적용되므로 항상 추구할 가치가 있습니다.",
   "tutorial-step2-title": "보너스 기법",
   "words-selected-count": "{{selected}}/{{total}} 선택됨",
-  "your-journey": "당신의 여정"
+  "your-journey": "당신의 여정",
+  "quit": "Quit"
 }

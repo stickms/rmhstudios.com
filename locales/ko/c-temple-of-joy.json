@@ -297,5 +297,21 @@
   "vigil-sinner-note": "죄인이 쥐고 있는 모든 것은 그들을 치는 순간 몇 배가 되어 돌아옵니다.",
   "vigil-sinners_other": "죄인 {{count}}명이 쥐고 있음",
   "vigil-title": "밤의 기도",
-  "vigil-window": "반영되는 시간"
+  "vigil-window": "반영되는 시간",
+  "quit": "Quit",
+  "main-menu": "Main menu",
+  "setting-main-menu": "Main menu",
+  "setting-main-menu-note": "Saves, then returns to the title screen. Your temple is waiting when you come back.",
+  "menu-admit": "Admit one",
+  "menu-catalogue": "RMH Studios / Catalogue No. 080",
+  "menu-continue": "Continue",
+  "menu-enter": "Enter the Temple",
+  "menu-figure-caption": "Fig. 1 — Smiling figure (Sonriente), Veracruz, 600–1000 CE",
+  "menu-footnote": "Gladness is non-refundable",
+  "menu-fresh": "A fresh temple is waiting for its first joy.",
+  "menu-label": "Main menu",
+  "menu-saved-joy": "Saved joy",
+  "menu-tagline": "An unreasonable amount of gladness.",
+  "menu-tags": "Idle · Clicker · Prestige",
+  "menu-ticket-no": "No. 080 · Row J"
 }

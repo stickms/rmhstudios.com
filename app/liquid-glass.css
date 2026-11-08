@@ -67,11 +67,14 @@
     background-color: color-mix(in srgb, var(--site-text) 3%, transparent);
     border-radius: var(--site-control-radius);
   }
+  /* The list carries the soft body's spring hook (`--jelly-spring-t`, app/jelly-material.css §8): this rule outranks the
+     hook's zero-specificity default and would otherwise leave the press unsprung. */
   .glass-interactive {
     position: relative;
     transition:
       background-color calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out),
-      border-color calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out);
+      border-color calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out),
+      var(--jelly-spring-t);
   }
   /* The eversion hover/press layer (`[data-evert]::before`, globals.css §7.3) pours out of the pointer INSIDE the host.
      Over glass the NEUTRAL hover must be translucent so the slab still reads through it, and it must reach the whole

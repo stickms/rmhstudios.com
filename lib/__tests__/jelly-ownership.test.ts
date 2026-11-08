@@ -98,10 +98,6 @@ describe('N2 — the jelly services have one owner each', () => {
    */
   const SERVICE_IMPORT_ALLOW = new Map<string, string>([
     [
-      'hooks/useFluidDrag.ts',
-      'reports drags to the physics service (`reportJellyDrag`) so a dragged surface stretches through the ONE soft body instead of its own (02 §3.4)',
-    ],
-    [
       'hooks/useCelebration.ts',
       'lazy `dischargeAt` hook-in for celebrations, through the arc runtime and its flash ledger (master plan W2-C)',
     ],
@@ -254,8 +250,8 @@ describe('N2 — the jelly services have one owner each', () => {
     ).sort();
     expect(
       found.filter((f) => !POINTER_TRANSFORM_BASELINE.has(f)),
-      'Hover lean, press squash, release wobble and drag stretch come from lib/jelly/physics.ts, which composes ' +
-        'with every other transform writer (02 §3.4). Mark the element (`data-jelly="card|control|drag"`) instead ' +
+      'Hover plump, press squash and the release spring come from the CSS soft body (app/jelly-material.css §8), ' +
+        'which yields to every other transform writer. Mark the element (`data-jelly="card|control"`) instead ' +
         'of writing style.transform/scale/translate from a pointer handler. Gesture input that IS the content ' +
         '(a swipe, a 3D turn) belongs to a game/app tier or needs a reviewed entry here.',
     ).toEqual([]);

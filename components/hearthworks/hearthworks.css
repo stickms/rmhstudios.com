@@ -35,7 +35,7 @@
 .hw-top {
   position: absolute;
   top: max(12px, env(safe-area-inset-top, 0px));
-  left: 56px;
+  left: 12px;
   right: 12px;
   display: flex;
   align-items: center;

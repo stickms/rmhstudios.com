@@ -79,14 +79,25 @@ export function getFrameRect(
   sheet: SpriteSheet,
   frameIndex: number,
 ): { sx: number; sy: number; sw: number; sh: number } {
+  return frameRectInto({ sx: 0, sy: 0, sw: 0, sh: 0 }, sheet, frameIndex);
+}
+
+/**
+ * {@link getFrameRect} written into a caller-owned rect. The per-sprite draw helpers run once per tile, enemy,
+ * projectile and pickup every frame and used to allocate a fresh rect each time; they share one scratch instead.
+ */
+export function frameRectInto(
+  out: { sx: number; sy: number; sw: number; sh: number },
+  sheet: SpriteSheet,
+  frameIndex: number,
+): { sx: number; sy: number; sw: number; sh: number } {
   const col = frameIndex % sheet.cols;
   const row = Math.floor(frameIndex / sheet.cols);
-  return {
-    sx: col * sheet.frameWidth,
-    sy: row * sheet.frameHeight,
-    sw: sheet.frameWidth,
-    sh: sheet.frameHeight,
-  };
+  out.sx = col * sheet.frameWidth;
+  out.sy = row * sheet.frameHeight;
+  out.sw = sheet.frameWidth;
+  out.sh = sheet.frameHeight;
+  return out;
 }
 
 /**

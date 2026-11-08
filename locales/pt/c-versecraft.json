@@ -78,5 +78,6 @@
   "tutorial-step2-tip": "Os bônus se aplicam à pontuação de todos os personagens, então sempre vale a pena buscá-los.",
   "tutorial-step2-title": "Técnicas de Bônus",
   "words-selected-count": "{{selected}}/{{total}} selecionadas",
-  "your-journey": "Sua Jornada"
+  "your-journey": "Sua Jornada",
+  "quit": "Quit"
 }

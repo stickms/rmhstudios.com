@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { runInNewContext } from 'node:vm';
 import { collectRoutes, parseRouteTree } from '../../testing/e2e/fouc-routes.mjs';
 import { DEFAULT_STYLE, SITE_STYLES, THEME_BG } from '../../stores/themeStore';
+import { NATIVE_MATERIAL_BASES } from '../../lib/native-material-routes';
 
 /**
  * The FOUC contract — the half of `testing/e2e/fouc.mjs` that does not need a
@@ -50,6 +51,7 @@ describe('retired glass preferences before first paint', () => {
       DEFAULT_STYLE: 'default',
       THEME_EXCLUDED_ROUTES: [],
       THEME_EXCLUDED_EXCEPTIONS: [],
+      NATIVE_MATERIAL_BASES,
       ACCENT_MAP: {},
     });
     const stored = new Map([
@@ -102,6 +104,7 @@ describe('default theme before first paint', () => {
       DEFAULT_STYLE,
       THEME_EXCLUDED_ROUTES: [],
       THEME_EXCLUDED_EXCEPTIONS: [],
+      NATIVE_MATERIAL_BASES,
       ACCENT_MAP: {},
     });
     const stored = new Map(Object.entries(initial));

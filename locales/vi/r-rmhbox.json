@@ -49,5 +49,6 @@
   "winner-none": "Không có",
   "loading": "Loading…",
   "room-code": "Room code",
-  "player-count-of-max_other": "Người chơi: {{count}}/{{max}}"
+  "player-count-of-max_other": "Người chơi: {{count}}/{{max}}",
+  "quit": "Quit"
 }

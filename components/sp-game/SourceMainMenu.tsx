@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Lock, X } from 'lucide-react';
-import { useNavigate } from '@tanstack/react-router';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import {
   backgroundFor,
   gameUiStyle,
@@ -91,7 +91,7 @@ function VguiFrame({
 
 export default function SourceMainMenu({ game, channel, chapters, savedChapter, onNewGame, onLoadGame }: SourceMainMenuProps) {
   const { t } = useTranslation('c-tf2-game');
-  const navigate = useNavigate();
+  const quit = useQuitGame();
   const style = useMemo(() => gameUiStyle(channel), [channel]);
   const source = useMenuSource(game);
   const [dialog, setDialog] = useState<null | 'newgame' | 'options'>(null);
@@ -120,7 +120,11 @@ export default function SourceMainMenu({ game, channel, chapters, savedChapter, 
       { label: '#GameUI_GameMenu_Options', action: 'options' },
       { label: '#GameUI_GameMenu_Quit', action: 'quit' },
     ];
-    return listed.length ? listed : fallback;
+    if (!listed.length) return fallback;
+    // gamemenu.res is the game's own list; Quit is how the player leaves, so it is always there.
+    return listed.some((e) => e.action === 'quit')
+      ? listed
+      : [...listed, { label: '#GameUI_GameMenu_Quit', action: 'quit' as const, onlyInGame: false }];
   }, [channel]);
   const words: Record<SourceMenuAction, string> = {
     resume: t('menu_resume', { defaultValue: 'Resume game' }),
@@ -139,7 +143,7 @@ export default function SourceMainMenu({ game, channel, chapters, savedChapter, 
     if (a === 'newgame') setDialog('newgame');
     else if (a === 'loadgame') onLoadGame();
     else if (a === 'options') setDialog('options');
-    else if (a === 'quit') void navigate({ to: '/games' });
+    else if (a === 'quit') quit();
   };
 
   const listRef = useRef<HTMLUListElement>(null);

@@ -11,7 +11,6 @@
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt, fmtCount, formatDuration } from '@/lib/temple-of-joy/numbers';
-import { saveNow } from '@/lib/temple-of-joy/persistence';
 import {
   computeDevotion,
   computeRateModifiers,
@@ -20,7 +19,7 @@ import {
 } from '@/lib/temple-of-joy/engine';
 import { MANNA_KIND_MAP, ripenDuration } from '@/lib/temple-of-joy/minigames/manna';
 import { useShortViewport, useTempleSnapshot } from './hooks';
-import { LiveValue, TempleButton, Glyph } from './ui';
+import { LiveValue, Glyph } from './ui';
 
 export function TempleHud() {
   const { t } = useTranslation('c-temple-of-joy');
@@ -128,22 +127,6 @@ export function TempleHud() {
             />
           </button>
         )}
-      </div>
-
-      <div className="toj-hud-actions">
-        <TempleButton
-          variant="quiet"
-          size="sm"
-          onClick={() => {
-            // Best-effort: leaving should not be blocked on the network. The
-            // local half of this write is synchronous and always lands, so the
-            // save is safe even if the request never completes.
-            saveNow().catch(() => {});
-            window.location.href = '/builds';
-          }}
-        >
-          ← {t('back-to-builds', { defaultValue: 'Builds' })}
-        </TempleButton>
       </div>
     </header>
   );

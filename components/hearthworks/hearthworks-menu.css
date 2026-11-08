@@ -1,0 +1,1079 @@
+/*
+ * Hearthworks — the main menu.
+ *
+ * Painted to match the game's banner (public/images/games/banners/hearthworks.webp): a teal-to-pale-sky
+ * ground over the faint garden-plan sketch, floating isometric islands with a cottage, a bubbling pot and
+ * two villagers, puffy outlined clouds along the bottom, drifting leaves and cogs. The sketch is
+ * public/images/hearthworks/menu-plate.webp (the banner's left side, captions and clouds retouched out);
+ * everything that moves is live SVG/CSS, transform and opacity only. Colours come from the `.hw` palette
+ * (hearthworks.css) plus the illustration tokens below.
+ *
+ * Layout is the §12.1 viewport contract: `.app-screen` centres while the menu fits and scrolls when it does
+ * not (a landscape phone), insets by the device's safe area, and the illustration sits in the flow so
+ * Start and Quit are never covered by it.
+ */
+
+.hw-menu {
+  --hwm-line: #1d6f77;
+  --hwm-pale: #e3f3f6;
+  --hwm-grass: #93ddc4;
+  --hwm-grass-l: #5cc0a7;
+  --hwm-grass-r: #78d2b8;
+  --hwm-grid: #62c2a6;
+  --hwm-rock: #c9e1f2;
+  --hwm-rock-d: #9fc6e6;
+  --hwm-rock-line: #86b0d6;
+  --hwm-wall-l: #bcd9e9;
+  --hwm-wall-r: #e6f3f8;
+  --hwm-roof-l: #3f9a92;
+  --hwm-roof-r: #6cc3b4;
+  --hwm-cloud: #f7fbfd;
+  --hwm-cloud-shade: #bcd9ea;
+  --hwm-stage-w: min(54vw, 60rem, calc((100dvh - 3rem) * 1.25));
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  overflow: hidden;
+  background: var(--hwm-pale);
+  color: var(--hw-ink);
+  isolation: isolate;
+}
+
+/* ── ground ─────────────────────────────────────────────────────────────── */
+
+.hwm-scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hwm-plate {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 82%;
+  background: url('/images/hearthworks/menu-plate.webp') left top / cover no-repeat;
+  -webkit-mask-image: linear-gradient(#000 60%, transparent 100%);
+  mask-image: linear-gradient(#000 60%, transparent 100%);
+}
+
+/* The banner's ground: deep teal on the left, pale sky on the right. */
+.hwm-wash {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgb(20 78 90 / 34%), rgb(20 78 90 / 0%) 46%),
+    linear-gradient(
+      90deg,
+      rgb(227 243 246 / 0%) 40%,
+      rgb(227 243 246 / 90%) 76%,
+      var(--hwm-pale) 100%
+    );
+}
+
+.hwm-sun {
+  position: absolute;
+  top: -24vmin;
+  right: -10vmin;
+  width: 80vmin;
+  height: 80vmin;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(255 244 204 / 90%) 0%,
+    rgb(255 244 204 / 38%) 36%,
+    rgb(255 244 204 / 0%) 68%
+  );
+  animation: hwm-glow 9s var(--hw-ease) infinite alternate;
+}
+
+/* ── the illustration ───────────────────────────────────────────────────── */
+
+.hwm-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.hwm-stage {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: var(--hwm-stage-w);
+  aspect-ratio: 5 / 4;
+  pointer-events: none;
+}
+
+.hwm-isle {
+  position: absolute;
+  pointer-events: auto;
+  animation: hwm-bob var(--hwm-t, 6s) ease-in-out var(--hwm-d, 0s) infinite alternate;
+}
+
+.hwm-isle--hero {
+  --hwm-t: 6.4s;
+  left: 1%;
+  top: 14%;
+  width: 62%;
+}
+
+.hwm-isle--field {
+  --hwm-t: 5.2s;
+  --hwm-d: -2.1s;
+  right: -1%;
+  top: 0;
+  width: 37%;
+}
+
+.hwm-isle--market {
+  --hwm-t: 5.8s;
+  --hwm-d: -3.6s;
+  right: 1%;
+  top: 46%;
+  width: 40%;
+}
+
+.hwm-isle--far {
+  --hwm-t: 7.4s;
+  --hwm-d: -1.2s;
+  left: 0;
+  top: 0;
+  width: 21%;
+  opacity: 0.62;
+}
+
+.hwm-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.hwm-svg :is(path, polygon, rect, circle, ellipse) {
+  stroke: var(--hwm-line);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.hwm-svg .hwm-grid,
+.hwm-svg .hwm-furrow {
+  fill: none;
+  stroke: var(--hwm-grid);
+  stroke-width: 1.7;
+}
+
+.hwm-svg .hwm-grass {
+  fill: var(--hwm-grass);
+}
+.hwm-svg .hwm-grass-l {
+  fill: var(--hwm-grass-l);
+}
+.hwm-svg .hwm-grass-r {
+  fill: var(--hwm-grass-r);
+}
+.hwm-svg .hwm-rock {
+  fill: var(--hwm-rock);
+  stroke: none;
+}
+.hwm-svg .hwm-rock-shade {
+  fill: var(--hwm-rock-d);
+  stroke: none;
+}
+.hwm-svg .hwm-rock-line {
+  fill: none;
+  stroke: var(--hwm-rock-line);
+  stroke-width: 2;
+}
+.hwm-svg .hwm-rock-edge {
+  fill: none;
+  stroke-width: 2.6;
+}
+.hwm-svg .hwm-drip {
+  fill: #cfe7f7;
+  stroke-width: 1.4;
+  animation: hwm-drip 3.6s ease-in infinite;
+}
+.hwm-svg .hwm-drip--b {
+  animation-delay: -1.7s;
+  animation-duration: 4.2s;
+}
+.hwm-svg .hwm-shadow {
+  fill: rgb(31 106 116 / 22%);
+  stroke: none;
+}
+.hwm-svg .hwm-trunk {
+  fill: #8db3b0;
+}
+.hwm-svg .hwm-pine {
+  fill: #4fb59d;
+}
+.hwm-svg .hwm-leafy {
+  fill: #c4e5f3;
+}
+.hwm-svg .hwm-leafy-hi {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.6;
+}
+.hwm-svg .hwm-tuft {
+  fill: none;
+  stroke-width: 1.9;
+}
+.hwm-svg .hwm-bloom {
+  stroke-width: 1.4;
+}
+.hwm-svg .hwm-bloom--butter {
+  fill: var(--hw-butter);
+}
+.hwm-svg .hwm-bloom--blush {
+  fill: var(--hw-blush);
+}
+.hwm-svg .hwm-shroom-stem {
+  fill: #fff;
+  stroke-width: 1.6;
+}
+.hwm-svg .hwm-shroom-cap {
+  fill: var(--hw-blush);
+  stroke-width: 1.8;
+}
+
+/* the cottage */
+.hwm-svg .hwm-wall-l {
+  fill: var(--hwm-wall-l);
+}
+.hwm-svg .hwm-wall-r {
+  fill: var(--hwm-wall-r);
+}
+.hwm-svg .hwm-plank {
+  fill: none;
+  stroke-width: 1.3;
+  opacity: 0.4;
+}
+.hwm-svg .hwm-door {
+  fill: var(--hw-blush);
+  stroke-width: 2;
+}
+.hwm-svg .hwm-door-knob {
+  fill: var(--hw-butter);
+  stroke: none;
+}
+.hwm-svg .hwm-glass {
+  fill: #d4edf8;
+  stroke-width: 2;
+}
+.hwm-svg .hwm-shutter {
+  fill: var(--hwm-roof-r);
+  stroke-width: 1.6;
+}
+.hwm-svg .hwm-brick-l {
+  fill: #c3d9e6;
+}
+.hwm-svg .hwm-brick-r {
+  fill: #e8f2f7;
+}
+.hwm-svg .hwm-brick-t {
+  fill: #f5fafc;
+}
+.hwm-svg .hwm-roof-l {
+  fill: var(--hwm-roof-l);
+}
+.hwm-svg .hwm-roof-r {
+  fill: var(--hwm-roof-r);
+}
+.hwm-svg .hwm-roof-line {
+  fill: none;
+  stroke-width: 1.5;
+  opacity: 0.5;
+}
+.hwm-svg .hwm-roof-hi {
+  fill: none;
+  stroke: #d2f4ea;
+  stroke-width: 2.2;
+  opacity: 0.7;
+}
+.hwm-svg .hwm-puff {
+  fill: #fff;
+  stroke-width: 2.1;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hwm-puff 3.6s ease-out infinite;
+}
+.hwm-svg .hwm-puff--b {
+  animation-delay: -1.2s;
+}
+.hwm-svg .hwm-puff--c {
+  animation-delay: -2.4s;
+}
+
+.hwm-svg .hwm-cog {
+  fill: #86d0c4;
+  stroke-width: 1.9;
+}
+.hwm-svg .hwm-cog--spin {
+  transform-origin: 0 0;
+  animation: hwm-spin 16s linear infinite;
+}
+
+/* the pot */
+.hwm-svg .hwm-cube-l {
+  fill: #cfe5f0;
+}
+.hwm-svg .hwm-cube-r {
+  fill: #eef7fb;
+}
+.hwm-svg .hwm-cube-t {
+  fill: #fafdfe;
+}
+.hwm-svg .hwm-emblem {
+  fill: var(--hw-butter);
+  stroke-width: 1.8;
+}
+.hwm-svg .hwm-bowl {
+  fill: var(--hw-ink);
+}
+.hwm-svg .hwm-soup {
+  fill: #9be2c7;
+  stroke-width: 2;
+}
+.hwm-svg .hwm-bubble {
+  fill: #dcf7ea;
+  stroke-width: 1.4;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hwm-bubble 1.9s ease-in-out infinite;
+}
+.hwm-svg .hwm-bubble--b {
+  animation-delay: -0.6s;
+  animation-duration: 2.3s;
+}
+.hwm-svg .hwm-bubble--c {
+  animation-delay: -1.2s;
+  animation-duration: 1.6s;
+}
+.hwm-svg .hwm-wisp {
+  fill: none;
+  stroke-width: 2.2;
+  opacity: 0;
+  animation: hwm-wisp 2.8s ease-out infinite;
+}
+.hwm-svg .hwm-wisp--b {
+  animation-delay: -0.9s;
+}
+.hwm-svg .hwm-wisp--c {
+  animation-delay: -1.9s;
+}
+.hw-menu[data-hot='start'] .hwm-bubble {
+  animation-duration: 0.55s;
+}
+
+/* villagers */
+.hwm-svg .hwm-coat {
+  fill: #f6fbfd;
+}
+.hwm-svg .hwm-boot {
+  fill: #6fa5aa;
+  stroke-width: 1.6;
+}
+.hwm-svg .hwm-scarf {
+  fill: none;
+  stroke: var(--hw-blush);
+  stroke-width: 3.4;
+}
+.hwm-svg .hwm-sleeve {
+  fill: #e0f0f7;
+  stroke-width: 1.8;
+}
+.hwm-svg .hwm-skin {
+  fill: #fde7d4;
+  stroke-width: 1.9;
+}
+.hwm-svg .hwm-hat--teal {
+  fill: #4fa79c;
+}
+.hwm-svg .hwm-hat--butter {
+  fill: var(--hw-butter);
+}
+.hwm-svg .hwm-hat {
+  stroke-width: 1.9;
+}
+.hwm-svg .hwm-pom {
+  fill: #fff;
+  stroke-width: 1.6;
+}
+.hwm-svg .hwm-eye {
+  fill: var(--hwm-line);
+  stroke: none;
+}
+.hwm-svg .hwm-cheek {
+  fill: var(--hw-blush);
+  stroke: none;
+}
+.hwm-folk {
+  animation: hwm-hop 3.2s ease-in-out infinite alternate;
+}
+.hwm-folk--b {
+  animation-delay: -1.4s;
+}
+.hwm-arm {
+  transform-origin: 9.5px -30px;
+}
+.hw-menu[data-hot] .hwm-arm,
+.hwm-isle:hover .hwm-arm {
+  animation: hwm-wave 0.62s ease-in-out 5;
+}
+
+/* the field */
+.hwm-svg .hwm-stalk {
+  fill: none;
+  stroke: #3d9d88;
+  stroke-width: 2.3;
+}
+.hwm-svg .hwm-corn-leaf {
+  fill: #58bba3;
+  stroke-width: 1.4;
+}
+.hwm-svg .hwm-corn-ear {
+  fill: var(--hw-butter);
+  stroke-width: 1.4;
+}
+.hwm-svg .hwm-tassel {
+  fill: none;
+  stroke: #d3b658;
+  stroke-width: 1.5;
+}
+.hwm-sway {
+  transform-origin: 0 0;
+  animation: hwm-sway 3.4s ease-in-out infinite alternate;
+}
+.hwm-svg .hwm-hay-l {
+  fill: #f1cf70;
+}
+.hwm-svg .hwm-hay-r {
+  fill: #ffe29c;
+}
+.hwm-svg .hwm-hay-t {
+  fill: #ffefbb;
+}
+.hwm-svg .hwm-hay-line {
+  fill: none;
+  stroke: #c79b3b;
+  stroke-width: 1.5;
+}
+.hwm-svg .hwm-board {
+  fill: var(--hw-butter);
+  stroke-width: 2;
+}
+
+/* the market */
+.hwm-svg .hwm-table-l {
+  fill: #bcd9e9;
+}
+.hwm-svg .hwm-table-r {
+  fill: #e0eff6;
+}
+.hwm-svg .hwm-table-t {
+  fill: #f6fbfd;
+}
+.hwm-svg .hwm-crate-l {
+  stroke-width: 1.6;
+}
+.hwm-svg .hwm-crate-r {
+  stroke-width: 1.6;
+}
+.hwm-svg .hwm-crate-t {
+  stroke-width: 1.6;
+}
+.hwm-svg .hwm-crate-l--butter {
+  fill: #f1cf70;
+}
+.hwm-svg .hwm-crate-r--butter {
+  fill: #ffe29c;
+}
+.hwm-svg .hwm-crate-t--butter {
+  fill: #ffefbb;
+}
+.hwm-svg .hwm-crate-l--blush {
+  fill: #f2aba1;
+}
+.hwm-svg .hwm-crate-r--blush {
+  fill: var(--hw-blush);
+}
+.hwm-svg .hwm-crate-t--blush {
+  fill: #ffdfda;
+}
+.hwm-svg .hwm-crate-l--mint {
+  fill: #7fd0b6;
+}
+.hwm-svg .hwm-crate-r--mint {
+  fill: #9de1c8;
+}
+.hwm-svg .hwm-crate-t--mint {
+  fill: #c0f1de;
+}
+.hwm-svg .hwm-awning-a {
+  fill: var(--hw-blush);
+}
+.hwm-svg .hwm-awning-b {
+  fill: #fff;
+}
+.hwm-svg .hwm-awning-c {
+  fill: #ffdbd5;
+}
+.hwm-svg .hwm-awning-line {
+  fill: none;
+  stroke-width: 1.8;
+  opacity: 0.45;
+}
+
+/* clouds */
+.hwm-cloud-edge :is(rect, circle) {
+  fill: var(--hwm-line);
+  stroke: var(--hwm-line);
+  stroke-width: 6;
+  stroke-linejoin: round;
+}
+.hwm-cloud-fill :is(rect, circle) {
+  fill: var(--hwm-cloud);
+}
+.hwm-cloud-swoosh {
+  fill: none;
+  stroke: var(--hwm-cloud-shade);
+  stroke-width: 4.5;
+  stroke-linecap: round;
+}
+
+.hwm-row {
+  --hwm-h: clamp(120px, 22dvh, 260px);
+  position: absolute;
+  left: 0;
+  bottom: var(--hwm-b, 0);
+  display: flex;
+  width: max-content;
+  height: var(--hwm-h);
+  animation: hwm-row var(--hwm-t, 90s) linear infinite;
+  will-change: transform;
+}
+.hwm-row--back {
+  --hwm-b: 8dvh;
+  --hwm-t: 150s;
+  --hwm-h: clamp(90px, 18dvh, 210px);
+  opacity: 0.8;
+}
+.hwm-row--mid {
+  --hwm-b: 1dvh;
+  --hwm-t: 100s;
+}
+.hwm-row--front {
+  --hwm-b: -5dvh;
+  --hwm-t: 64s;
+  --hwm-h: clamp(130px, 24dvh, 290px);
+}
+.hwm-strip {
+  flex: none;
+  width: calc(var(--hwm-h) * 6.3158);
+  height: var(--hwm-h);
+  overflow: visible;
+}
+
+.hwm-sky-cloud {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  top: var(--hwm-y);
+  opacity: 0.9;
+  animation: hwm-sail var(--hwm-t) linear var(--hwm-d) infinite;
+  will-change: transform;
+}
+.hwm-sky-svg {
+  display: block;
+  overflow: visible;
+}
+
+/* leaves and cogs */
+.hwm-fall {
+  position: absolute;
+  top: -6dvh;
+  left: var(--hwm-x);
+  animation: hwm-fall var(--hwm-t) linear var(--hwm-d) infinite;
+  will-change: transform;
+}
+.hwm-fall > div {
+  animation: hwm-swing calc(var(--hwm-t) / 6) ease-in-out infinite alternate;
+}
+.hwm-leaf-svg {
+  display: block;
+  width: var(--hwm-s, 22px);
+  height: auto;
+  overflow: visible;
+  animation: hwm-tumble calc(var(--hwm-t) / 5) linear infinite;
+}
+.hwm-leaf {
+  stroke: var(--hwm-line);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+.hwm-leaf--mint {
+  fill: #8fdcc2;
+}
+.hwm-leaf--teal {
+  fill: #4fa79c;
+}
+.hwm-leaf-rib {
+  fill: none;
+  stroke: var(--hwm-line);
+  stroke-width: 1.2;
+  opacity: 0.6;
+}
+.hwm-fcog {
+  position: absolute;
+  left: var(--hwm-x);
+  top: var(--hwm-y);
+  width: var(--hwm-s, 34px);
+  height: auto;
+  overflow: visible;
+  animation: hwm-bob var(--hwm-t, 6s) ease-in-out var(--hwm-d, 0s) infinite alternate;
+}
+.hwm-fcog .hwm-cog {
+  fill: #86d0c4;
+  stroke: var(--hwm-line);
+  stroke-width: 1.9;
+}
+
+/* ── the menu itself ────────────────────────────────────────────────────── */
+
+.hwm-scene--front {
+  z-index: 2;
+}
+
+/* No z-index here on purpose: the screen must not form its own stacking context, so the stage (1) sits under the
+   front clouds (2) and the menu's text and buttons (3) sit over them. */
+.hwm-screen {
+  position: relative;
+  flex-direction: row;
+  gap: clamp(1rem, 4vw, 4rem);
+  pointer-events: none;
+  touch-action: pan-y;
+  color: var(--hw-ink);
+}
+
+.hwm-col {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: min(100%, 22rem);
+}
+
+.hwm-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+  z-index: 3;
+  pointer-events: auto;
+  color: #f2fbfb;
+  text-shadow: 0 1px 0 rgb(24 84 94 / 70%);
+}
+
+.hwm-logo {
+  display: block;
+  width: min(100%, 22rem);
+  height: auto;
+  filter: drop-shadow(0 2px 0 rgb(24 84 94 / 35%));
+}
+
+.hwm-kicker {
+  margin: 0;
+  font-family: var(--app-font-mono, ui-monospace, monospace);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.88;
+}
+
+.hwm-tag {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.hwm-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  position: relative;
+  z-index: 3;
+  pointer-events: auto;
+}
+
+.hwm-item {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr 1.25rem;
+  align-items: center;
+  gap: 0.875rem;
+  width: 100%;
+  min-height: 3.75rem;
+  padding: 0.5rem 1rem 0.5rem 0.75rem;
+  border: 1px solid var(--hw-rule);
+  border-radius: var(--hw-radius);
+  background: rgb(247 251 252 / 96%);
+  color: var(--hw-ink);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    background-color 160ms var(--hw-ease),
+    transform 160ms var(--hw-ease);
+}
+
+.hwm-item:hover,
+.hwm-item:focus-visible {
+  background: var(--hw-powder);
+  transform: translateY(-2px);
+}
+
+.hwm-item:active {
+  transform: translateY(0);
+}
+
+.hwm-item:focus-visible {
+  outline: 3px solid var(--hw-ink);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 7px rgb(255 255 255 / 85%);
+}
+
+.hwm-item--primary {
+  border-color: rgb(31 106 116 / 40%);
+  background: var(--hw-butter);
+}
+
+.hwm-item--primary:hover,
+.hwm-item--primary:focus-visible {
+  background: #fff0c4;
+}
+
+.hwm-item__badge {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 70%);
+  border: 1px solid var(--hw-rule);
+}
+
+.hwm-item--primary .hwm-item__badge {
+  background: #fff;
+}
+
+.hwm-item__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hwm-item__label {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.hwm-item__hint {
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  color: var(--hw-ink-soft);
+}
+
+.hwm-item__go {
+  opacity: 0.55;
+}
+
+.hwm-fig {
+  margin: 0;
+  font-family: var(--app-font-mono, ui-monospace, monospace);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--hw-ink-soft);
+  position: relative;
+  z-index: 3;
+  pointer-events: auto;
+}
+
+/* ── portrait: logo, the islands, then the buttons — one column ─────────── */
+
+@media (max-aspect-ratio: 1/1) {
+  .hw-menu {
+    --hwm-stage-w: min(100%, 36rem, calc((100dvh - 24rem) * 1.25));
+  }
+
+  .hwm-screen {
+    flex-direction: column;
+    gap: 0.5rem;
+    /* Keep the buttons above the cloud band that fills the bottom of a tall screen. */
+    padding-bottom: calc(1rem + var(--safe-bottom) + 9dvh);
+  }
+
+  .hwm-col {
+    display: contents;
+  }
+
+  .hwm-head {
+    order: 1;
+    align-items: center;
+    width: min(100%, 22rem);
+    text-align: center;
+  }
+
+  .hwm-stage {
+    order: 2;
+  }
+
+  .hwm-navwrap {
+    order: 3;
+    width: min(100%, 22rem);
+  }
+
+  .hwm-fig {
+    display: none;
+  }
+
+  .hwm-wash {
+    background:
+      linear-gradient(180deg, rgb(20 78 90 / 30%), rgb(20 78 90 / 0%) 34%),
+      linear-gradient(
+        180deg,
+        rgb(227 243 246 / 0%) 26%,
+        rgb(227 243 246 / 80%) 58%,
+        var(--hwm-pale) 84%
+      );
+  }
+
+  .hwm-plate {
+    height: 70%;
+  }
+}
+
+/* ── landscape phone: the menu column tightens, everything stays one screen ─ */
+
+@media (max-height: 520px) and (min-aspect-ratio: 1/1) {
+  .hwm-col {
+    gap: 0.75rem;
+    width: min(100%, 19rem);
+  }
+
+  .hwm-logo {
+    width: 14rem;
+  }
+
+  .hwm-tag {
+    font-size: 1rem;
+  }
+
+  .hwm-kicker,
+  .hwm-fig {
+    display: none;
+  }
+
+  .hwm-nav {
+    gap: 0.5rem;
+  }
+
+  /* Less cloud on a short screen: the bottom band must not climb under the buttons. */
+  .hwm-row--back {
+    --hwm-h: 64px;
+    --hwm-b: 6dvh;
+  }
+
+  .hwm-row--mid {
+    --hwm-h: 70px;
+    --hwm-b: 0;
+  }
+
+  .hwm-row--front {
+    --hwm-h: 80px;
+    --hwm-b: -3dvh;
+  }
+
+  .hwm-item {
+    min-height: 3rem;
+    padding-block: 0.25rem;
+  }
+
+  .hwm-item__badge {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .hwm-item {
+    grid-template-columns: 2rem 1fr 1.25rem;
+  }
+
+  .hwm-item__hint {
+    display: none;
+  }
+}
+
+/* ── motion (transform / opacity only) ──────────────────────────────────── */
+
+@keyframes hwm-bob {
+  from {
+    transform: translate3d(0, -7px, 0) rotate(-0.5deg);
+  }
+  to {
+    transform: translate3d(0, 7px, 0) rotate(0.5deg);
+  }
+}
+
+@keyframes hwm-glow {
+  from {
+    opacity: 0.7;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes hwm-row {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-25%, 0, 0);
+  }
+}
+
+@keyframes hwm-sail {
+  from {
+    transform: translate3d(-8%, 0, 0);
+  }
+  to {
+    transform: translate3d(104%, 0, 0);
+  }
+}
+
+@keyframes hwm-fall {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(var(--hwm-dx, 12vw), 112dvh, 0);
+  }
+}
+
+@keyframes hwm-swing {
+  from {
+    transform: translate3d(-28px, 0, 0);
+  }
+  to {
+    transform: translate3d(28px, 0, 0);
+  }
+}
+
+@keyframes hwm-tumble {
+  from {
+    transform: rotate(0deg) scaleX(1);
+  }
+  50% {
+    transform: rotate(180deg) scaleX(0.55);
+  }
+  to {
+    transform: rotate(360deg) scaleX(1);
+  }
+}
+
+@keyframes hwm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes hwm-puff {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.4);
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(9px, -52px, 0) scale(1.25);
+  }
+}
+
+@keyframes hwm-bubble {
+  from {
+    transform: translate3d(0, 1px, 0) scale(0.7);
+  }
+  to {
+    transform: translate3d(0, -2.5px, 0) scale(1.15);
+  }
+}
+
+@keyframes hwm-wisp {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  35% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes hwm-drip {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -4px, 0);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 34px, 0);
+  }
+}
+
+@keyframes hwm-sway {
+  from {
+    transform: rotate(-3.5deg);
+  }
+  to {
+    transform: rotate(3.5deg);
+  }
+}
+
+@keyframes hwm-hop {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, -1.6px, 0);
+  }
+}
+
+@keyframes hwm-wave {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-26deg);
+  }
+}
+
+/* The game proper sits in one box so the menu can lift over it (and make it inert). */
+.hw-world {
+  position: absolute;
+  inset: 0;
+}

@@ -1051,8 +1051,8 @@ describe('design consistency — no debossed surfaces (audit 2026-10-09)', () =>
 /**
  * ────────────── one writer on `scale` / `translate` (Plasmatic Jelly N11) ──────────────
  *
- * Every jelly host is now a soft body: `lib/jelly/physics.ts` writes the individual `scale` / `translate`
- * properties on hover, press, release and drag (02 §1.2), composing with any base value it finds (02 §3.4). A
+ * Every jelly host is a soft body: the CSS soft body (app/jelly-material.css §8, CSS-first jelly PR 3) sets the
+ * individual `scale` property on hover and press and springs it back on release. A
  * framer-motion `whileHover` / `whileTap` that animates `scale`, `x` or `y` on the same element is a second writer
  * on the same property: the two fight, and the element snaps between them. It is the same reasoning as
  * `lib/liquid/hover-css.ts`, which strips hand-written CSS hover lifts.
@@ -1096,7 +1096,7 @@ describe('design consistency — no framer gesture transform on a jelly surface 
     expect(
       offenders,
       'framer-motion `whileHover`/`whileTap` animating scale / x / y is a second writer on the property the jelly ' +
-        'soft body owns (lib/jelly/physics.ts, 02 §3.3). Drop the gesture prop: the role class (or ' +
+        'soft body owns (app/jelly-material.css §8). Drop the gesture prop: the role class (or ' +
         '`data-jelly="card|control"`) already gives the surface hover plump, press squash and release wobble. ' +
         'Opacity/colour gestures are fine.',
     ).toEqual([]);

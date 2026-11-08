@@ -12,7 +12,6 @@ import { worldToScreen } from './camera';
 import { getTileSheet, getPropSheet, getStructurePropSheet, TILE_FRAMES, ALL_TILE_FRAMES, PROP_FRAMES, PROP_DAMAGED_FRAMES, STRUCTURE_PROP_FRAMES, STRUCTURE_PROP_DAMAGED_FRAMES, PROP_SCALE } from './sprites/sprite-defs';
 import { drawTileSprite, drawSprite } from './sprites/sprite-renderer';
 import type { WebGLRenderer } from './renderer';
-import type { SpriteBatch } from './webgl/webgl-sprite-batch';
 
 // ---- Types ------------------------------------------------------------------
 
@@ -70,6 +69,29 @@ const PROP_DEFAULT_HP: Record<PropType, number> = {
  * Collision uses (prop.x, prop.y + PROP_COLLISION_OFFSET_Y) as center.
  */
 export const PROP_COLLISION_OFFSET_Y = -8;
+
+/** Scratch screen position for the per-tile loop in `renderTiles`. */
+const SCREEN_SCRATCH = { x: 0, y: 0 };
+
+// ---- Cell keys --------------------------------------------------------------
+
+/**
+ * A cell's numeric key. These used to be the strings `${tx},${ty}`, built for every tile of the window on every
+ * terrain update (60 a second) and again every frame to draw: thousands of short-lived strings a second, which is
+ * what the garbage collector spent its time on. `ty` is offset into [0, 131072) so the pair maps to one unique
+ * number for any |cell| below 65,536 (±4M px at 64px tiles), far beyond the arena.
+ */
+function cellKey(x: number, y: number): number {
+  return x * 131072 + (y + 65536);
+}
+
+function cellKeyX(key: number): number {
+  return Math.floor(key / 131072);
+}
+
+function cellKeyY(key: number): number {
+  return key - Math.floor(key / 131072) * 131072 - 65536;
+}
 
 // ---- Deterministic hash for tile generation ---------------------------------
 
@@ -332,16 +354,36 @@ const STRUCTURE_TEMPLATES: StructureTemplate[] = [
 // =============================================================================
 
 export class TileGenerator {
-  private tiles: Map<string, Tile>;
+  private tiles: Map<number, Tile>;
   private props: DestructibleProp[];
-  private propsMap: Map<string, DestructibleProp>; // keyed by tile coord for random props
+  private propsMap: Map<number, DestructibleProp>; // keyed by tile coord for random props
   private tileSize: number;
   private nextPropId: number;
 
   // Structure generation
-  private generatedStructures: Set<string>; // zone keys that have been generated
-  private structureTiles: Set<string>; // tile keys that belong to a structure (no random props)
+  private generatedStructures: Set<number>; // zone keys that have been generated
+  private structureTiles: Set<number>; // tile keys that belong to a structure (no random props)
   private pendingPickups: PendingPickup[];
+
+  /**
+   * The window `update` last generated/pruned for. The window only changes when the camera crosses a tile edge
+   * (about every 0.3 s of walking), so a call with the same bounds has nothing to generate and nothing to prune
+   * and returns at once instead of rescanning every tile and prop it owns.
+   */
+  private lastMinTX = NaN;
+  private lastMaxTX = NaN;
+  private lastMinTY = NaN;
+  private lastMaxTY = NaN;
+
+  /**
+   * Bumped whenever the set of collidable/damageable props changes (generated, pruned or destroyed), so callers
+   * can reuse what they derived from {@link getProps} / {@link getDamageableProps} instead of refiltering and
+   * rebuilding a spatial hash every simulation step.
+   */
+  private propsRev = 0;
+  private cachedProps: DestructibleProp[] | null = null;
+  private cachedDamageable: DestructibleProp[] | null = null;
+  private readonly visibleScratch: Tile[] = [];
 
   constructor() {
     this.tiles = new Map();
@@ -370,10 +412,24 @@ export class TileGenerator {
     const minTY = Math.floor((camera.y - halfH) / this.tileSize) - GENERATION_MARGIN;
     const maxTY = Math.ceil((camera.y + halfH) / this.tileSize) + GENERATION_MARGIN;
 
+    // Same window as the last call: every tile in it exists and nothing new is out of range.
+    if (
+      minTX === this.lastMinTX &&
+      maxTX === this.lastMaxTX &&
+      minTY === this.lastMinTY &&
+      maxTY === this.lastMaxTY
+    ) {
+      return;
+    }
+    this.lastMinTX = minTX;
+    this.lastMaxTX = maxTX;
+    this.lastMinTY = minTY;
+    this.lastMaxTY = maxTY;
+
     // Generate missing tiles
     for (let tx = minTX; tx <= maxTX; tx++) {
       for (let ty = minTY; ty <= maxTY; ty++) {
-        const key = `${tx},${ty}`;
+        const key = cellKey(tx, ty);
         if (!this.tiles.has(key)) {
           this.generateTile(tx, ty, key);
         }
@@ -386,7 +442,7 @@ export class TileGenerator {
     const cleanMinTY = minTY - CLEANUP_MARGIN;
     const cleanMaxTY = maxTY + CLEANUP_MARGIN;
 
-    for (const [key, tile] of this.tiles) {
+    this.tiles.forEach((tile, key) => {
       if (
         tile.x < cleanMinTX ||
         tile.x > cleanMaxTX ||
@@ -394,15 +450,18 @@ export class TileGenerator {
         tile.y > cleanMaxTY
       ) {
         this.tiles.delete(key);
-        if (this.propsMap.has(key)) {
-          const prop = this.propsMap.get(key)!;
+        const prop = this.propsMap.get(key);
+        if (prop) {
           this.propsMap.delete(key);
           const idx = this.props.indexOf(prop);
-          if (idx !== -1) this.props.splice(idx, 1);
+          if (idx !== -1) {
+            this.props.splice(idx, 1);
+            this.propsChanged();
+          }
         }
         this.structureTiles.delete(key);
       }
-    }
+    });
 
     // Clean up structure props and zones that are entirely out of range
     for (let i = this.props.length - 1; i >= 0; i--) {
@@ -412,14 +471,14 @@ export class TileGenerator {
       const pty = Math.floor(p.y / this.tileSize);
       if (ptx < cleanMinTX || ptx > cleanMaxTX || pty < cleanMinTY || pty > cleanMaxTY) {
         this.props.splice(i, 1);
+        this.propsChanged();
       }
     }
 
     // Clean up structure zone tracking for distant zones
-    for (const zoneKey of this.generatedStructures) {
-      const [zxStr, zyStr] = zoneKey.split(',');
-      const zx = Number(zxStr);
-      const zy = Number(zyStr);
+    this.generatedStructures.forEach((zoneKey) => {
+      const zx = cellKeyX(zoneKey);
+      const zy = cellKeyY(zoneKey);
       const zoneTileMinX = zx * STRUCTURE_ZONE_SIZE;
       const zoneTileMaxX = zoneTileMinX + STRUCTURE_ZONE_SIZE - 1;
       const zoneTileMinY = zy * STRUCTURE_ZONE_SIZE;
@@ -428,9 +487,13 @@ export class TileGenerator {
           zoneTileMaxY < cleanMinTY || zoneTileMinY > cleanMaxTY) {
         this.generatedStructures.delete(zoneKey);
       }
-    }
+    });
   }
 
+  /**
+   * The generated tiles around the camera. The returned array is a scratch buffer reused by every call (the
+   * renderer reads it straight away); copy it if you need to keep it.
+   */
   getVisibleTiles(camera: Camera): Tile[] {
     const halfW = camera.width / 2;
     const halfH = camera.height / 2;
@@ -439,24 +502,46 @@ export class TileGenerator {
     const minTY = Math.floor((camera.y - halfH) / this.tileSize) - 1;
     const maxTY = Math.ceil((camera.y + halfH) / this.tileSize) + 1;
 
-    const visible: Tile[] = [];
+    const visible = this.visibleScratch;
+    visible.length = 0;
     for (let tx = minTX; tx <= maxTX; tx++) {
       for (let ty = minTY; ty <= maxTY; ty++) {
-        const tile = this.tiles.get(`${tx},${ty}`);
+        const tile = this.tiles.get(cellKey(tx, ty));
         if (tile) visible.push(tile);
       }
     }
     return visible;
   }
 
-  /** Get all non-destroyed collidable props (excludes urns). */
-  getProps(): DestructibleProp[] {
-    return this.props.filter((p) => !p.destroyed && p.type !== 'urn');
+  /**
+   * Bumped whenever the props returned by {@link getProps} / {@link getDamageableProps} change. Compare it with the
+   * value from when you last built something from them.
+   */
+  get propsRevision(): number {
+    return this.propsRev;
   }
 
-  /** Get all non-destroyed props that can be targeted by damage (includes urns). */
+  /**
+   * All non-destroyed collidable props (excludes urns). The array is cached until the prop set changes and shared
+   * between callers: do not mutate it.
+   */
+  getProps(): DestructibleProp[] {
+    return (this.cachedProps ??= this.props.filter((p) => !p.destroyed && p.type !== 'urn'));
+  }
+
+  /**
+   * All non-destroyed props that can be targeted by damage (includes urns). Cached like {@link getProps}: do not
+   * mutate it.
+   */
   getDamageableProps(): DestructibleProp[] {
-    return this.props.filter((p) => !p.destroyed);
+    return (this.cachedDamageable ??= this.props.filter((p) => !p.destroyed));
+  }
+
+  /** Drop the cached prop lists and tell watchers the prop set changed. */
+  private propsChanged(): void {
+    this.propsRev++;
+    this.cachedProps = null;
+    this.cachedDamageable = null;
   }
 
   /** Damage a prop by id. Returns true if the prop was destroyed. */
@@ -468,6 +553,7 @@ export class TileGenerator {
         prop.hp -= 1;
         if (prop.hp <= 0) {
           prop.destroyed = true;
+          this.propsChanged();
           return true;
         }
         return false;
@@ -497,7 +583,10 @@ export class TileGenerator {
     for (const tile of tiles) {
       const worldX = tile.x * this.tileSize;
       const worldY = tile.y * this.tileSize;
-      const screen = worldToScreen(camera, worldX, worldY);
+      // Inline worldToScreen: one object per tile per frame was the biggest single source of garbage.
+      const screen = SCREEN_SCRATCH;
+      screen.x = worldX - camera.x + camera.width / 2 + camera.shakeX;
+      screen.y = worldY - camera.y + camera.height / 2 + camera.shakeY;
 
       if (sheet) {
         const frames = TILE_FRAMES[tile.type];
@@ -695,7 +784,7 @@ export class TileGenerator {
   // Private: Tile + structure generation
   // --------------------------------------------------------------------------
 
-  private generateTile(tx: number, ty: number, key: string): void {
+  private generateTile(tx: number, ty: number, key: number): void {
     const h = hashCoord(tx, ty);
 
     const frameIdx = ALL_TILE_FRAMES[h % ALL_TILE_FRAMES.length];
@@ -715,7 +804,7 @@ export class TileGenerator {
     // Check if this tile triggers structure zone generation
     const zx = Math.floor(tx / STRUCTURE_ZONE_SIZE);
     const zy = Math.floor(ty / STRUCTURE_ZONE_SIZE);
-    const zoneKey = `${zx},${zy}`;
+    const zoneKey = cellKey(zx, zy);
 
     if (!this.generatedStructures.has(zoneKey)) {
       this.generatedStructures.add(zoneKey);
@@ -751,6 +840,7 @@ export class TileGenerator {
 
       this.props.push(prop);
       this.propsMap.set(key, prop);
+      this.propsChanged();
     }
   }
 
@@ -783,7 +873,7 @@ export class TileGenerator {
     // Mark structure tiles (suppress random props)
     for (let dy = 0; dy < template.height; dy++) {
       for (let dx = 0; dx < template.width; dx++) {
-        this.structureTiles.add(`${baseTX + dx},${baseTY + dy}`);
+        this.structureTiles.add(cellKey(baseTX + dx, baseTY + dy));
       }
     }
 
@@ -803,6 +893,7 @@ export class TileGenerator {
       };
       this.props.push(prop);
     }
+    this.propsChanged();
 
     // Queue pickup spawns
     for (const pickup of template.pickups) {

@@ -22,13 +22,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, BookOpen, Dices, ListOrdered, Plus, Users } from 'lucide-react';
+import { BookOpen, Dices, ListOrdered, LogOut, Plus, Users } from 'lucide-react';
 import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import { lobbyReturnPath } from '@/lib/lobby-link';
 import { MAX_PLAYERS, MIN_PLAYERS, MIRROR_NAME } from '@/lib/gabriels-horn/constants';
 import { HornLeaderboard } from './Leaderboard';
 import { HornButton, Panel } from './ui';
-import { useBackOrFallback } from '@/hooks/useBackOrFallback';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import { HornStillLife, MenuBackdrop } from './MenuScene';
 import './gh-menu.css';
 
@@ -50,7 +50,7 @@ export function MainMenu({
   onRules: () => void;
 }) {
   const { t } = useTranslation('c-gabriels-horn');
-  const goBack = useBackOrFallback();
+  const quit = useQuitGame();
   // Signing in is a detour, not a change of plan: come back to the invite.
   const invite = useLobbyInvite();
   const [code, setCode] = useState('');
@@ -58,13 +58,6 @@ export function MainMenu({
   return (
     <div className="ghm-scene app-page app-safe-x">
       <MenuBackdrop />
-      <header className="app-safe-top px-4 pt-4">
-        <Link to="/games" onClick={goBack} className="ghm-back">
-          <ArrowLeft className="size-3.5" aria-hidden="true" />
-          {t('back-to-games', { defaultValue: 'All games' })}
-        </Link>
-      </header>
-
       <main className="ghm-main">
         <div className="ghm-hero">
           <h1 className="m-0">
@@ -164,6 +157,11 @@ export function MainMenu({
               </Panel>
             </>
           )}
+
+          <HornButton variant="ghost" size="sm" onClick={quit} className="justify-self-center">
+            <LogOut className="size-4" aria-hidden="true" />
+            {t('quit', { defaultValue: 'Quit' })}
+          </HornButton>
 
           <Panel>
             <h2 className="ghm-h2">

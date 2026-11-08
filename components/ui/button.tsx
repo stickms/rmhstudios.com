@@ -8,12 +8,12 @@ import { cn } from '@/lib/utils';
 // Hover is the shared optical glass response (tilted reflections and rim light).
 // Resting variant colours stay stable; focus keeps the site-wide ring (§8).
 const buttonVariants = cva(
-  "relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--site-control-radius)] border border-transparent text-sm font-medium tracking-[-0.01em] transition-[scale,color,background-color,border-color,opacity] duration-site-fast ease-out active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
+  "relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--site-control-radius)] border border-transparent text-sm font-medium tracking-[-0.01em] disabled:pointer-events-none disabled:opacity-45 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
   {
     variants: {
       variant: {
-        // Flat at rest, like the globe menu's buttons: just the label on the ground. The slab (a soft gel body that
-        // bulges and sags) is drawn only while the button is touched (`data-jelly-rest="flat"`, lib/liquid/glass/engine.ts).
+        // Flat at rest, like the globe menu's buttons: just the label on the ground (`data-jelly-rest="flat"`; the
+        // degraded tiers give it an opaque slab, app/liquid-glass.css).
         default: 'font-semibold text-site-accent hover:text-site-accent-hover',
         destructive: 'bg-site-danger text-site-danger-fg hover:opacity-85',
         danger: 'bg-site-danger text-site-danger-fg hover:opacity-85',
@@ -107,13 +107,11 @@ function Button({
       data-jelly-rest={FLAT_VARIANTS.has(variant) ? 'flat' : undefined}
       data-size={size}
       data-loading={loading ? '' : undefined}
-      // A control-mode jelly body (lib/jelly/physics.ts, which absorbed the old
-      // press layer; `data-fluid-press` stays an accepted alias): a squash toward
-      // the contact that starts on pointerdown, is interruptible, wobbles back on
-      // release, and cancels itself if the gesture turns into a scroll. The
-      // `active:scale-[0.98]` in the variants above stays as the no-JS fallback
-      // and for the frame before the spring's first tick — the inline `scale`
-      // the service writes wins over it while a finger is down.
+      // A control-mode jelly body: the CSS soft body (app/jelly-material.css §8)
+      // dents it under a hovering mouse, squashes it while pressed and springs
+      // it back on release, for every variant. Its transition and the plain
+      // 0.98 press off the jelly scope live in app/globals.css (`[data-slot='button']`),
+      // not in the variants above, so the soft body's spring can join the list.
       data-fluid-press=""
       className={cn(buttonVariants({ variant, size, className }))}
       disabled={asChild ? disabled : disabled || loading}

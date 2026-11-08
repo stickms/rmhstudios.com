@@ -78,5 +78,6 @@
   "tutorial-step2-tip": "I bonus si applicano al punteggio di ogni personaggio, quindi vale sempre la pena perseguirli.",
   "tutorial-step2-title": "Tecniche bonus",
   "words-selected-count": "{{selected}}/{{total}} selezionate",
-  "your-journey": "Il tuo viaggio"
+  "your-journey": "Il tuo viaggio",
+  "quit": "Quit"
 }

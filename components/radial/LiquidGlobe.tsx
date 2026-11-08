@@ -1038,8 +1038,9 @@ export function LiquidGlobe({
     const stage = stageRef.current;
     const host = glassRef.current;
     const root = document.documentElement;
-    /* The page behind the hub, refracted through the ball. The glass engine keeps the latest snapshot of the page (taken
-       while it was idle, i.e. BEFORE the hub opened); the coat samples it through a ball-lens model at the hub's own blur.
+    /* The page behind the hub, refracted through the ball. The scene feed (lib/liquid/glass/scene-feed.ts, held by
+       RadialShell) keeps the latest snapshot of the page (taken while it was idle, i.e. BEFORE the hub opened); the
+       coat samples it through a ball-lens model at the hub's own blur.
        Placing it reads layout, so it happens when the globe attaches, resizes, finishes blooming, or a new picture lands,
        never per frame. */
     const attachScene = (g: JellyGlass) => {

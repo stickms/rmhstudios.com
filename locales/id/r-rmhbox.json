@@ -49,5 +49,6 @@
   "winner-none": "Tidak ada",
   "loading": "Loading…",
   "room-code": "Room code",
-  "player-count-of-max_other": "Pemain: {{count}}/{{max}}"
+  "player-count-of-max_other": "Pemain: {{count}}/{{max}}",
+  "quit": "Quit"
 }

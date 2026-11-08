@@ -41,6 +41,7 @@ const MENU_ITEMS = [
     { key: '3', label: '[ 3 ] 多人巡航  ·  MULTIPLAYER', action: 'multiplayer' },
     { key: '4', label: '[ 4 ] 数据导出  ·  EXPORT', action: 'export' },
     { key: '5', label: '[ 5 ] 系统设置  ·  SETTINGS', action: 'settings' },
+    { key: '6', label: '[ 6 ] 退出  ·  QUIT', action: 'quit' },
 ];
 
 const PALETTE_NAMES = [

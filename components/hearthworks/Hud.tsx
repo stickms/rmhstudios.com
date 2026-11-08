@@ -12,6 +12,7 @@ import {
   Factory,
   Handshake,
   Landmark,
+  Menu,
   Shirt,
   Users,
   Coins,
@@ -120,7 +121,11 @@ function ToolButton({
   );
 }
 
-export function Hud() {
+/**
+ * `onMainMenu` returns to the main menu (progress persists); `togetherSignal` opens the multiplayer panel each time the
+ * menu's "Play together" bumps it.
+ */
+export function Hud({ onMainMenu, togetherSignal = 0 }: { onMainMenu: () => void; togetherSignal?: number }) {
   const { t } = useTranslation('c-hearthworks');
   const money = useHearthworks((s) => s.world.players[s.playerId]?.money ?? 0);
   const inventory = useHearthworks((s) => s.world.players[s.playerId]?.inventory);
@@ -139,6 +144,9 @@ export function Hud() {
   useEffect(() => {
     if (invite) setPanel('multiplayer');
   }, [invite]);
+  useEffect(() => {
+    if (togetherSignal > 0) setPanel('multiplayer');
+  }, [togetherSignal]);
   const customers = useHearthworks((s) => s.world.npcs.filter((n) => n.mode !== 'leaving').length);
   const pantry = panel === 'pantry';
 
@@ -274,6 +282,10 @@ export function Hud() {
         >
           <Wheat aria-hidden size={18} />
           <span>{t('pantry-title', { defaultValue: 'Pantry' })}</span>
+        </button>
+        <button type="button" className="hw-chip hw-chip--button" onClick={onMainMenu}>
+          <Menu aria-hidden size={18} />
+          <span>{t('main-menu', { defaultValue: 'Main menu' })}</span>
         </button>
       </header>
 

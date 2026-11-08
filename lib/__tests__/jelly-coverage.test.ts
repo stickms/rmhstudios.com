@@ -330,13 +330,13 @@ describe('jelly coverage — the primitives adapter (app/jelly-coverage.css) and
     }
     expect(
       offenders,
-      'The coverage adapter is static: motion comes from the jelly services and .jelly-flow carriers ' +
+      'The coverage adapter is static: motion comes from the jelly services and the woken-haze layer ' +
         '(site-infinite-animation.test.ts), blur never returns (N6), and an !important box-shadow would also eat ' +
         'every ring-* focus ring and the high-contrast outline.',
     ).toEqual([]);
   });
 
-  it('the switch is a jelly control, the slider thumb a drag host, the skeleton lite with no carrier', () => {
+  it('the switch is a jelly control, the slider thumb a drag host, the skeleton lite with no haze layer', () => {
     expect(tagAround(read('components/ui/switch.tsx'), 'data-slot="switch"')).toMatch(
       /data-jelly="control"/,
     );
@@ -345,6 +345,8 @@ describe('jelly coverage — the primitives adapter (app/jelly-coverage.css) and
     );
     const skeleton = tagAround(read('components/ui/skeleton.tsx'), 'data-slot="skeleton"');
     expect(skeleton).toMatch(/data-jelly="lite"/);
+    // `data-jelly-flow="off"` is now read by the woken-haze layer's exclusions (app/jelly-material.css §3b), as it was
+    // by the retired carrier service; the IconButton carries the same opt-out.
     expect(skeleton).toMatch(/data-jelly-flow="off"/);
   });
 
@@ -380,7 +382,7 @@ describe('jelly coverage — the primitives adapter (app/jelly-coverage.css) and
     ).toEqual([]);
   });
 
-  it("globals.css's legacy :active opacity cue stands down while the soft body holds a press", () => {
+  it("globals.css's legacy :active opacity cue stands down where the CSS soft body springs", () => {
     const cue = cssRules(read('app/globals.css')).filter(
       (r) => r.sel.includes(':active') && /(?:^|[;\s])opacity\s*:\s*0?\.\d/.test(r.body),
     );
@@ -388,15 +390,18 @@ describe('jelly coverage — the primitives adapter (app/jelly-coverage.css) and
       cue.length,
       'the legacy press cue rule was not found — update this probe',
     ).toBeGreaterThan(0);
+    // The soft body is CSS (app/jelly-material.css §8), so nothing stamps the old `data-jelly-active` suppressor any
+    // more; the cue carries the soft body's own scope and host list as a zero-specificity guard instead
+    // (jelly-soft-body.test.ts holds the guard equal to the host rule).
+    const GUARD =
+      /:not\(\s*:where\(\s*html:not\(\.native-material, \[data-game-state='playing'\]\)\s/;
     const missing = cue.flatMap((r) =>
-      splitSelectors(r.sel).filter(
-        (s) => s.includes(':active') && !s.includes(':not([data-jelly-active])'),
-      ),
+      splitSelectors(r.sel).filter((s) => s.includes(':active') && !GUARD.test(s)),
     );
     expect(
       missing,
-      'An opacity flicker on a press that lib/jelly/physics.ts is squashing is two press cues fighting; every ' +
-        'selector of the cue must carry :not([data-jelly-active]).',
+      'An opacity flicker on a press that the CSS soft body is squashing is two press cues fighting; every ' +
+        "selector of the cue must carry the soft body's :not(:where(html:not(.native-material, …) …)) guard.",
     ).toEqual([]);
   });
 });

@@ -49,5 +49,6 @@
   "winner-none": "なし",
   "loading": "Loading…",
   "room-code": "Room code",
-  "player-count-of-max_other": "プレイヤー: {{count}}/{{max}}"
+  "player-count-of-max_other": "プレイヤー: {{count}}/{{max}}",
+  "quit": "Quit"
 }

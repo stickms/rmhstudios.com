@@ -15,11 +15,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { Play, Users, Search, LogIn, Swords, WashingMachine } from 'lucide-react';
+import { Play, Users, Search, LogIn, LogOut, Swords, WashingMachine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { useLobbyInvite } from '@/hooks/useLobbyLink';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import { lobbyReturnPath } from '@/lib/lobby-link';
 import {
   DIFFICULTIES,
@@ -57,6 +58,7 @@ export function MainMenu({
   const { t } = useTranslation('c-laundry-sort');
   // Signing in is a detour, not a change of plan: come back to the invite.
   const invite = useLobbyInvite();
+  const quit = useQuitGame();
   const durationSec = useLaundryStore((s) => s.durationSec);
   const difficulty = useLaundryStore((s) => s.difficulty);
   const setDuration = useLaundryStore((s) => s.setDuration);
@@ -119,79 +121,88 @@ export function MainMenu({
             </div>
           </div>
 
-          {signedIn ? (
-            <div className="grid gap-2 sm:grid-cols-2">
-              <Button onClick={onSolo} className="w-full" size="lg">
-                <Play className="size-4" aria-hidden="true" />
-                {t('start-solo', { defaultValue: 'Start solo run' })}
-              </Button>
-              <Button
-                onClick={onQuickMatch}
-                variant="outline"
-                className="w-full"
-                size="lg"
-                disabled={connecting}
-              >
-                <Swords className="size-4" aria-hidden="true" />
-                {connecting
-                  ? t('connecting', { defaultValue: 'Connecting…' })
-                  : t('quick-match', { defaultValue: 'Quick match' })}
-              </Button>
-
-              <Button onClick={onCreateLobby} variant="ghost" disabled={connecting}>
-                <Users className="size-4" aria-hidden="true" />
-                {t('create-lobby', { defaultValue: 'Create lobby' })}
-              </Button>
-              <Button onClick={onBrowse} variant="ghost" disabled={connecting}>
-                <Search className="size-4" aria-hidden="true" />
-                {t('browse-lobbies', { defaultValue: 'Browse lobbies' })}
-              </Button>
-
-              <form
-                className="flex gap-2 sm:col-span-2"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const clean = code.trim().toUpperCase();
-                  if (clean.length >= 4) onJoinCode(clean);
-                }}
-              >
-                <Input
-                  value={code}
-                  onChange={(event) => setCode(event.target.value.toUpperCase().slice(0, 8))}
-                  placeholder={t('room-code', { defaultValue: 'Room code' })}
-                  aria-label={t('room-code', { defaultValue: 'Room code' })}
-                  className="ls-numeric uppercase tracking-[0.3em]"
-                  // Room codes are A–Z/0–9. Without these, iOS opens a
-                  // lowercase keyboard, autocapitalises the first letter only,
-                  // and autocorrects a six-letter code into a dictionary word.
-                  autoComplete="off"
-                  autoCapitalize="characters"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  inputMode="text"
-                  enterKeyHint="go"
-                  maxLength={8}
-                />
-                <Button type="submit" variant="outline" disabled={connecting || code.length < 4}>
-                  {t('join', { defaultValue: 'Join' })}
+          {/* Play / sign-in and Quit are one grid item: in short landscape the panel is two columns,
+              and Quit has to stay under the buttons it belongs with. */}
+          <div className="flex flex-col gap-4">
+            {signedIn ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button onClick={onSolo} className="w-full" size="lg">
+                  <Play className="size-4" aria-hidden="true" />
+                  {t('start-solo', { defaultValue: 'Start solo run' })}
                 </Button>
-              </form>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <p className="ls-muted text-sm">
-                {t('sign-in-to-play', {
-                  defaultValue: 'Sign in to play, save scores and race other people.',
-                })}
-              </p>
-              <Button asChild size="lg" className="w-full sm:w-auto">
-                <Link to="/login" search={{ callbackURL: lobbyReturnPath('/laundry-sort', invite) }}>
-                  <LogIn className="size-4" aria-hidden="true" />
-                  {t('sign-in', { defaultValue: 'Sign in' })}
-                </Link>
-              </Button>
-            </div>
-          )}
+                <Button
+                  onClick={onQuickMatch}
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                  disabled={connecting}
+                >
+                  <Swords className="size-4" aria-hidden="true" />
+                  {connecting
+                    ? t('connecting', { defaultValue: 'Connecting…' })
+                    : t('quick-match', { defaultValue: 'Quick match' })}
+                </Button>
+
+                <Button onClick={onCreateLobby} variant="ghost" disabled={connecting}>
+                  <Users className="size-4" aria-hidden="true" />
+                  {t('create-lobby', { defaultValue: 'Create lobby' })}
+                </Button>
+                <Button onClick={onBrowse} variant="ghost" disabled={connecting}>
+                  <Search className="size-4" aria-hidden="true" />
+                  {t('browse-lobbies', { defaultValue: 'Browse lobbies' })}
+                </Button>
+
+                <form
+                  className="flex gap-2 sm:col-span-2"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const clean = code.trim().toUpperCase();
+                    if (clean.length >= 4) onJoinCode(clean);
+                  }}
+                >
+                  <Input
+                    value={code}
+                    onChange={(event) => setCode(event.target.value.toUpperCase().slice(0, 8))}
+                    placeholder={t('room-code', { defaultValue: 'Room code' })}
+                    aria-label={t('room-code', { defaultValue: 'Room code' })}
+                    className="ls-numeric uppercase tracking-[0.3em]"
+                    // Room codes are A–Z/0–9. Without these, iOS opens a
+                    // lowercase keyboard, autocapitalises the first letter only,
+                    // and autocorrects a six-letter code into a dictionary word.
+                    autoComplete="off"
+                    autoCapitalize="characters"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    inputMode="text"
+                    enterKeyHint="go"
+                    maxLength={8}
+                  />
+                  <Button type="submit" variant="outline" disabled={connecting || code.length < 4}>
+                    {t('join', { defaultValue: 'Join' })}
+                  </Button>
+                </form>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="ls-muted text-sm">
+                  {t('sign-in-to-play', {
+                    defaultValue: 'Sign in to play, save scores and race other people.',
+                  })}
+                </p>
+                <Button asChild size="lg" className="w-full sm:w-auto">
+                  <Link to="/login" search={{ callbackURL: lobbyReturnPath('/laundry-sort', invite) }}>
+                    <LogIn className="size-4" aria-hidden="true" />
+                    {t('sign-in', { defaultValue: 'Sign in' })}
+                  </Link>
+                </Button>
+              </div>
+            )}
+
+            <Button onClick={quit} variant="ghost" className="w-full sm:w-auto sm:self-start">
+              <LogOut className="size-4" aria-hidden="true" />
+              {t('quit', { defaultValue: 'Quit' })}
+            </Button>
+          </div>
 
           {/* Scoring reference, deliberately last. On a phone in landscape the
               panel is taller than the screen, and whatever sits above the fold

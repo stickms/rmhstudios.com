@@ -5,6 +5,7 @@ import { useGameStore } from '@/lib/kowloon-knockout/store';
 import { useState } from 'react';
 import { COMBO_DEFS } from '@/lib/kowloon-knockout/game/combat/combos';
 import { useTranslation } from 'react-i18next';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import GraphicsSettings from './GraphicsSettings';
 import { TrainingMenuButton } from './TrainingRoom';
 import MenuBackdrop from './MenuBackdrop';
@@ -14,6 +15,7 @@ import './kk-screens.css';
 export default function MainMenu() {
     const { t } = useTranslation("c-kowloon-knockout");
     const { setPhase, setMultiplayer } = useGameStore();
+    const quit = useQuitGame();
     const [showControls, setShowControls] = useState(false);
     const [showCombos, setShowCombos] = useState(false);
     const [showGraphics, setShowGraphics] = useState(false);
@@ -100,6 +102,15 @@ export default function MainMenu() {
                             whileTap={{ scale: 0.97 }}
                         >
                             {t("graphics", { defaultValue: "GRAPHICS" })}
+                        </motion.button>
+
+                        <motion.button
+                            className="neon-button neon-button-controls kk-util kk-quit"
+                            onClick={quit}
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                        >
+                            {t("quit", { defaultValue: "QUIT" })}
                         </motion.button>
                     </motion.div>
 

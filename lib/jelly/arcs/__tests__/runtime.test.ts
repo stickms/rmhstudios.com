@@ -7,38 +7,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createJellyBus } from '../../bus';
-import type { JellyEntry, JellyRegistry } from '../../registry';
 import { activeElectricArcs, dischargeAt, installElectricArcs, strike } from '../index';
 import { createFlashLedger } from '../ledger';
-import { FakeEl, fakeEnv, type FakeEnv } from './arc-dom';
-
-function fakeRegistry(els: FakeEl[]): JellyRegistry {
-  const entries: JellyEntry[] = els.map((el, order) => ({
-    el: el as unknown as Element,
-    role: 'control',
-    order,
-    visible: true,
-    rect: { ...el.box },
-  }));
-  return {
-    visible: () => entries,
-    ambientSlots: () => [],
-    liveSet: () => [],
-    entryFor: () => undefined,
-    onChange: () => () => {},
-    scrolling: false,
-    epoch: 0,
-    refresh: () => {},
-    dispose: () => {},
-  };
-}
-
-/** Three buttons in a row, 10px apart. */
-function buttons() {
-  return [0, 1, 2].map(
-    (i) => new FakeEl('button', { left: 100 + i * 90, top: 100, width: 80, height: 32 }, true),
-  );
-}
+import { fakeButtons, fakeRegistry, fakeEnv, type FakeEl, type FakeEnv } from './arc-dom';
 
 describe('electric arcs runtime', () => {
   let env: FakeEnv;
@@ -48,12 +19,14 @@ describe('electric arcs runtime', () => {
     o: {
       ledger?: ReturnType<typeof createFlashLedger>;
       bus?: ReturnType<typeof createJellyBus>;
+      ambient?: boolean;
     } = {},
   ) => {
     teardown = installElectricArcs(env.doc, {
       registry: fakeRegistry(els),
       seed: 1,
       warmupMs: 3000,
+      ambient: o.ambient,
       ledger: o.ledger ?? createFlashLedger(),
       bus: o.bus ?? createJellyBus(),
     });
@@ -63,7 +36,7 @@ describe('electric arcs runtime', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     env = fakeEnv();
-    els = buttons();
+    els = fakeButtons();
     env.state.hit = els[0];
   });
   afterEach(() => {
@@ -177,6 +150,62 @@ describe('electric arcs runtime', () => {
     expect(rt.active).toBe(true);
   });
 
+  it('ambient: false (full preference): no warm-up timer, no ambient arcs, no breakdown, no attraction; clicks still arc and hop', () => {
+    const bus = createJellyBus();
+    const kinds: string[] = [];
+    const pulses: Element[] = [];
+    let attracted = 0;
+    bus.on('arc:strike', (p) => kinds.push(p.kind));
+    bus.on('charge:pulse', (p) => pulses.push(p.el));
+    bus.on('charge:attract', () => attracted++);
+    const rt = install({ bus, ambient: false });
+    // Nothing is armed at install (the warm-up timer is the ambient system's), and none ever appears on its own.
+    expect(vi.getTimerCount()).toBe(0);
+    vi.advanceTimersByTime(10_000);
+    expect(rt.active).toBe(true);
+    expect(rt.ambient).toBe(false);
+    expect(rt.ambientArmed).toBe(false);
+    expect(vi.getTimerCount()).toBe(0);
+    // The buttons are 10px apart, inside the uncharged breakdown gap, yet nothing strikes.
+    for (let i = 0; i < 30; i++) {
+      vi.advanceTimersByTime(16);
+      env.frame();
+    }
+    expect(kinds).toHaveLength(0);
+    // A click still arcs, deposits charge and hops it on; no attraction pull is ever emitted.
+    expect(dischargeAt(140, 116)).toBe(true);
+    for (let i = 0; i < 120; i++) {
+      vi.advanceTimersByTime(16);
+      env.frame();
+    }
+    expect(pulses.length).toBeGreaterThanOrEqual(2);
+    expect(kinds.every((k) => k === 'click')).toBe(true);
+    expect(attracted).toBe(0);
+  });
+
+  it('press(event) replays a pointerdown through the same gates; a stale target is skipped', () => {
+    const rt = install({ ambient: false });
+    const down = (target: unknown, over: object = {}) =>
+      ({
+        isPrimary: true,
+        pointerType: 'mouse',
+        button: 0,
+        target,
+        clientX: 230,
+        clientY: 116,
+        ...over,
+      }) as unknown as PointerEvent;
+    expect(rt.press(down(els[1], { button: 2 }))).toBe(false);
+    expect(rt.press(down(null))).toBe(false);
+    expect(rt.press(down(els[1]))).toBe(true);
+    // A target that left the document while the chunk loaded.
+    expect(rt.press(down(Object.assign(Object.create(els[1]), { isConnected: false })))).toBe(
+      false,
+    );
+    env.state.hub = true;
+    expect(rt.press(down(els[1]))).toBe(false);
+  });
+
   it('a hidden tab kills live arcs and arms nothing', () => {
     const rt = install();
     vi.advanceTimersByTime(3000);
@@ -190,7 +219,7 @@ describe('electric arcs runtime', () => {
 
   it('a low-end device gets click arcs only', () => {
     env = fakeEnv({ cores: 2 });
-    els = buttons();
+    els = fakeButtons();
     env.state.hit = els[0];
     const rt = install();
     vi.advanceTimersByTime(3000);

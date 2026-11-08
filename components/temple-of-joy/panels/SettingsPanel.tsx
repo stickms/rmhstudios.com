@@ -25,6 +25,7 @@ import {
   saveNow,
 } from '@/lib/temple-of-joy/persistence';
 import { useSession } from '@/components/Providers';
+import { useMainMenu } from '../menu-context';
 import { useTempleSnapshot, useTempleValue } from '../hooks';
 import { TempleButton, TempleSection, TempleSlider, TempleSwitch } from '../ui';
 
@@ -32,6 +33,7 @@ export function SettingsPanel() {
   const { t } = useTranslation('c-temple-of-joy');
   const store = useTempleStore;
   const signedIn = Boolean(useSession().data?.user);
+  const mainMenu = useMainMenu();
 
   const sound = useTempleValue((s) => s.soundEnabled);
   const music = useTempleValue((s) => s.musicVolume);
@@ -54,6 +56,28 @@ export function SettingsPanel() {
 
   return (
     <>
+      {mainMenu && (
+        <Setting
+          name={t('setting-main-menu', { defaultValue: 'Main menu' })}
+          note={t('setting-main-menu-note', {
+            defaultValue: 'Saves, then returns to the title screen. Your temple is waiting when you come back.',
+          })}
+        >
+          <TempleButton
+            size="sm"
+            onClick={() => {
+              // Best-effort: leaving should not be blocked on the network. The
+              // local half of this write is synchronous and always lands, so the
+              // save is safe even if the request never completes.
+              saveNow().catch(() => {});
+              mainMenu();
+            }}
+          >
+            {t('main-menu', { defaultValue: 'Main menu' })}
+          </TempleButton>
+        </Setting>
+      )}
+
       <TempleSection>{t('section-sound', { defaultValue: 'Sound' })}</TempleSection>
 
       <Setting

@@ -26,10 +26,12 @@
    Hard rules (gates: filter-cost-budget, site-infinite-animation N3/N12, stacking N6):
    - No backdrop-filter, no SVG/`url()` filters, no animated custom properties (`@property`), no animated
      gradient positions. The keyframes animate `transform` only.
-   - Every jelly paint layer sits at a NEGATIVE z-index inside an isolated host (isolation is set in
-     liquid-glass.css for `[data-jelly-flow='on']` / `[data-jelly-haze='on']`). Nothing jelly paints at z ≥ 0.
+   - Every jelly paint layer sits at a NEGATIVE z-index inside an isolated host (the woken-haze host isolates itself,
+     §3b; liquid-glass.css isolates the engine's hosts). Nothing jelly paints at z ≥ 0.
    - Colours come only from tokens (`--site-jelly-*`, `--site-glass-*`); raw values live in globals.css theme blocks.
-   - The only `infinite` animations are `jelly-drift` / `jelly-current`, and only on spans inside `.jelly-flow`. */
+   - The only `infinite` animations are `jelly-drift` / `jelly-current`, only on the woken-haze `::after` (§3b, attached
+     only under hover or focus) and on the retired `.jelly-flow` spans (nothing injects a carrier any more; PR 5 deletes
+     those rules and lib/jelly/flow-carriers.ts). */
 
 @layer components {
   /* ── 0. Motion level (html[data-jelly-motion], stamped pre-paint by W1-B) ───────────────────────────────────────
@@ -45,6 +47,110 @@
   html[data-jelly-motion='calm'] {
     --jelly-tempo: 0.4;
     --jelly-amp: 0.55;
+  }
+
+  /* ── 0b. Spring tokens (CSS-first jelly, PR 3; the soft body, §8) ─────────────────────────────────────────────────
+     GENERATED — do not hand-edit. Each curve is `dampedSpringLinear` (lib/jelly/spring-curves.ts) of a spring in
+     `CSS_SPRINGS` (lib/jelly/soft-policy.ts: the soft body's own `jellyPress` / `jellyRelease`), with its settle time
+     as the duration; the poses are `CSS_SOFT_BODY`. lib/__tests__/jelly-spring-tokens.test.ts holds every literal equal
+     to its generator: retune the TypeScript, then paste what the test expects. */
+  :root {
+    --spring-press: linear(
+      0,
+      0.023,
+      0.0791,
+      0.1536,
+      0.2367,
+      0.3215,
+      0.4039,
+      0.4811,
+      0.5519,
+      0.6156,
+      0.672,
+      0.7216,
+      0.7646,
+      0.8018,
+      0.8336,
+      0.8608,
+      0.8838,
+      0.9033,
+      0.9196,
+      0.9334,
+      0.9449,
+      0.9544,
+      0.9624,
+      0.969,
+      0.9745,
+      0.9791,
+      0.9828,
+      0.9859,
+      0.9885,
+      0.9906,
+      0.9923,
+      0.9937,
+      0.9949,
+      0.9958,
+      0.9966,
+      0.9972,
+      0.9977,
+      0.9982,
+      0.9985,
+      0.9988,
+      1
+    );
+    --spring-press-dur: 265ms;
+    --spring-release: linear(
+      0,
+      0.0658,
+      0.23,
+      0.4449,
+      0.6698,
+      0.8739,
+      1.0373,
+      1.151,
+      1.2145,
+      1.2337,
+      1.2184,
+      1.1801,
+      1.1299,
+      1.0773,
+      1.0296,
+      0.9914,
+      0.9648,
+      0.9499,
+      0.9454,
+      0.949,
+      0.9579,
+      0.9696,
+      0.9819,
+      0.993,
+      1.002,
+      1.0082,
+      1.0117,
+      1.0128,
+      1.0119,
+      1.0098,
+      1.0071,
+      1.0042,
+      1.0016,
+      0.9995,
+      0.9981,
+      0.9973,
+      0.997,
+      0.9972,
+      0.9977,
+      0.9983,
+      1
+    );
+    --spring-release-dur: 1077ms;
+    --jelly-hover-plump: 1.008;
+    --jelly-hover-dent: 0.996;
+    --jelly-press-control: 0.97;
+    --jelly-press-card: 0.99;
+    /* The size cap (lib/jelly/soft-policy.ts `cssEdgeReach`): 2 · MOTION_BOUNDS.maxEdgeTravelPx / (1 + 2 · the release
+       overshoot). Each pose's delta is at most this over the host's larger side (`--jelly-s`, written by
+       lib/jelly/pointer-vars.ts; 1000 until it is), so no edge travels more than 4px, overshoot included. */
+    --jelly-edge-reach: 5.4518;
   }
 
   /* ── 1. Role knobs (01 §1 table, §3.3) ──────────────────────────────────────────────────────────────────────────
@@ -376,6 +482,261 @@
     display: none;
   }
 
+  /* ── 3b. Woken haze (CSS-first jelly, PR 2; docs/superpowers/specs/2026-11-07-css-first-jelly-design.md §2) ──────
+     The haze's motion, with no node injected by JavaScript: one transform-only layer on the host's own `::after`,
+     which carries NO animation at rest and gets one only while the host is hovered or holds focus. Not even a paused
+     one: Blink counts a paused transform animation as current and gives the box its own compositor layer, so a page
+     of cards would hold one backing store per host (measured on /jelly at rest: 107 compositor layers with a paused
+     drift on every host plus a scroll-driven current on every card, 9 with neither). Nothing moves, and nothing is
+     promoted, on an idle page. (A scroll-tied variant was dropped for the same reason.)
+
+     Why `::after`: `[data-evert]::before` is the eversion state layer and lib/evert-auto.ts adopts every control whose
+     `::before` is free, so `::before` is taken on every interactive host. On a role host `::after` is used only by
+     `[data-evert~='select']` (the nav rail) and `.touch-target` (the coarse-pointer hit area): both are excluded.
+     `.glass-inset` gets no layer: it is not positioned (an absolute layer would escape to an ancestor) and most fields
+     are replaced `<input>`s with no pseudo-elements at all. It keeps the static floor (§2).
+
+     The exclusions mirror the services' opt-outs (lib/jelly/tiers.ts `OPT_OUT_SELECTOR` without the globe, which
+     is never a role host, and `OPT_OUT_SCOPE_SELECTOR`), the old carrier's (`[data-jelly='lite']`,
+     `[data-jelly-flow='off']`, contenteditable, ghost/link buttons) and the own-scheme subtrees that hid the carrier
+     in their own sheets (Slice It!, the Steam library). `html.native-material` (stamped by components/Providers.tsx and
+     pre-paint by __root.tsx on lib/native-material-routes.ts routes) keeps all of it off /tf2 and /games.
+
+     The layer is the host's box (inset 0, its radius), not an oversized span: nothing clips it, so every gradient on
+     it fades to nothing inside the box and the drift's few percent of travel carries only that falloff (≤ 1% α) past
+     the edge. While the layer is on, the floor flattens to the veil at half density (the old carrier's veil), so veil +
+     streak (≤ 0.45 α) stays inside the α/2 … α range jelly-legibility.test.ts bounds. The grain tile stays on the floor.
+     The negative z-index needs an isolated host, so the host rule isolates it (liquid-glass.css isolates only while an
+     engine attribute is set, and none is now); the roles are positioned already (liquid-glass.css, the button's
+     `relative`). Wake starts at the identity frame (no phase delay): only the hovered host runs, so there is nothing
+     to fall into lockstep with, and a delay would snap the streaks to a later frame on wake. */
+  html:not(.native-material, .perf-lite)
+    :is(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+    ):not(
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='lite'],
+      [data-jelly-flow='off'],
+      [data-liquid-material='off'],
+      [data-liquid-glass='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      [contenteditable='true'],
+      [contenteditable=''],
+      [data-evert~='select'],
+      .touch-target,
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          .slice-theme,
+          .slice-tokens,
+          .stm-legacy
+        )
+        *
+    ) {
+    isolation: isolate;
+    --jelly-floor:
+      linear-gradient(
+        color-mix(
+            in srgb,
+            var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 50%),
+            transparent
+          )
+          0 0
+      ),
+      var(--jelly-tile);
+    --jelly-floor-size: auto, var(--jelly-tile-size);
+  }
+  html:not(.native-material, .perf-lite)
+    :is(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+    ):not(
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='lite'],
+      [data-jelly-flow='off'],
+      [data-liquid-material='off'],
+      [data-liquid-glass='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      [contenteditable='true'],
+      [contenteditable=''],
+      [data-evert~='select'],
+      .touch-target,
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          .slice-theme,
+          .slice-tokens,
+          .stm-legacy
+        )
+        *
+    )::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -3;
+    border-radius: inherit;
+    pointer-events: none;
+    user-select: none;
+    --jelly-streak: color-mix(
+      in srgb,
+      var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 45%),
+      transparent
+    );
+    --jelly-streak-mid: color-mix(
+      in srgb,
+      var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 22%),
+      transparent
+    );
+    /* The carrier's drift and current (§3) on one box: three slanted streaks, the plasma blob and the current band
+       (plasma B, or the button's own ink on filled buttons), each fitted inside the box with room for the travel. */
+    background-image:
+      radial-gradient(
+        26% 14% at 36% 30%,
+        var(--jelly-streak),
+        var(--jelly-streak-mid) 55%,
+        transparent 100%
+      ),
+      radial-gradient(
+        14% 30% at 72% 42%,
+        var(--jelly-streak),
+        var(--jelly-streak-mid) 50%,
+        transparent 100%
+      ),
+      radial-gradient(
+        28% 13% at 48% 74%,
+        var(--jelly-streak),
+        var(--jelly-streak-mid) 55%,
+        transparent 100%
+      ),
+      radial-gradient(
+        24% 30% at 68% 64%,
+        color-mix(
+          in srgb,
+          var(--jelly-plasma-a, var(--site-jelly-plasma-a))
+            calc(
+              var(--jelly-plasma-k, 0) * var(--jelly-plasma-gain, var(--site-jelly-plasma, 1)) *
+                100%
+            ),
+          transparent
+        ),
+        transparent 70%
+      ),
+      radial-gradient(
+        18% 40% at 50% 50%,
+        color-mix(
+          in srgb,
+          var(--jelly-current-color, var(--jelly-plasma-b, var(--site-jelly-plasma-b)))
+            var(
+              --jelly-current-mix,
+              calc(
+                var(--jelly-plasma-k, 0) * var(--jelly-plasma-gain, var(--site-jelly-plasma, 1)) *
+                  80%
+              )
+            ),
+          transparent
+        ),
+        transparent 100%
+      );
+    background-repeat: no-repeat;
+    opacity: calc(0.75 * var(--jelly-amp, 1));
+    transition: opacity calc(var(--site-transition-speed, 200ms) * 1.5) var(--ease-smooth);
+    /* 22 s per leg, alternate, scaled by the role's speed, the app palette's gain and the motion level (calm: 0.4). */
+    --jelly-drift-dur: calc(
+      22s /
+        max(
+          0.05,
+          var(--jelly-flow-speed, 1) * var(--jelly-flow-gain, var(--site-jelly-flow-speed, 1)) *
+            var(--jelly-tempo, 1)
+        )
+    );
+  }
+  /* Woken: hover, or keyboard focus inside the host. The drift is attached here and only here, so it exists only while
+     woken. A little more of the same material, never a colour change. Not `:focus-within`: a mouse click leaves focus
+     on the clicked control, and the drift then ran on every role around it until focus moved (measured on /jelly: 25
+     compositor layers instead of 10). `:has(:focus-visible)` is keyboard focus only. The host's own keyboard focus
+     does not wake it: §6 pauses the haze there (a ring over a moving ground), and a paused animation would only
+     promote the layer. */
+  html:not(.native-material, .perf-lite)
+    :is(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+    ):not(
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='lite'],
+      [data-jelly-flow='off'],
+      [data-liquid-material='off'],
+      [data-liquid-glass='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      [contenteditable='true'],
+      [contenteditable=''],
+      [data-evert~='select'],
+      .touch-target,
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          .slice-theme,
+          .slice-tokens,
+          .stm-legacy
+        )
+        *
+    ):hover::after,
+  html:not(.native-material, .perf-lite)
+    :is(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+    ):not(
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='lite'],
+      [data-jelly-flow='off'],
+      [data-liquid-material='off'],
+      [data-liquid-glass='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      [contenteditable='true'],
+      [contenteditable=''],
+      [data-evert~='select'],
+      .touch-target,
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          .slice-theme,
+          .slice-tokens,
+          .stm-legacy
+        )
+        *
+    ):has(:focus-visible)::after {
+    opacity: var(--jelly-amp, 1);
+    animation: jelly-drift var(--jelly-drift-dur) var(--ease-in-out, ease-in-out) infinite alternate;
+  }
+
   /* ── 4. Static CSS rim (01 §3.4) ────────────────────────────────────────────────────────────────────────────────
      Every surface the shader does NOT draw gets one lit top line, a faint plasma subsurface glow, and the gel edge
      (§2b: the RGB-led band and the Fresnel line — a hard 1px line only where `--gel-feather` is 0, otherwise a soft
@@ -459,6 +820,172 @@ html[data-game-state='playing'] .jelly-flow > span,
 :is(.glass-inset, [data-slot='textarea'], [data-slot='input']):focus-within > .jelly-flow > span {
   animation-play-state: paused;
 }
+/* The woken haze (§3b) pauses the same way: while scrolling, while a game is in play, and on a host that itself holds
+   keyboard focus (04 §4.5: a ring over a moving ground is harder to track; focus INSIDE a card still wakes it). */
+html[data-scrolling]
+  :is(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+  ):not(
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='lite'],
+    [data-jelly-flow='off'],
+    [data-liquid-material='off'],
+    [data-liquid-glass='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    [contenteditable='true'],
+    [contenteditable=''],
+    [data-evert~='select'],
+    .touch-target,
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        .slice-theme,
+        .slice-tokens,
+        .stm-legacy
+      )
+      *
+  )::after,
+html[data-game-state='playing']
+  :is(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+  ):not(
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='lite'],
+    [data-jelly-flow='off'],
+    [data-liquid-material='off'],
+    [data-liquid-glass='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    [contenteditable='true'],
+    [contenteditable=''],
+    [data-evert~='select'],
+    .touch-target,
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        .slice-theme,
+        .slice-tokens,
+        .stm-legacy
+      )
+      *
+  )::after,
+:is(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+  ):not(
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='lite'],
+    [data-jelly-flow='off'],
+    [data-liquid-material='off'],
+    [data-liquid-glass='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    [contenteditable='true'],
+    [contenteditable=''],
+    [data-evert~='select'],
+    .touch-target,
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        .slice-theme,
+        .slice-tokens,
+        .stm-legacy
+      )
+      *
+  ):focus-visible::after {
+  animation-play-state: paused;
+}
+/* Still (WCAG 2.2.2) and every device that cannot hover — touch, and the handheld tier (the exact query from
+   handheld-tier.test.ts) — get no haze motion at all, even when hovered: the layer holds its resting frame over
+   the static floor. Hover and press still respond on their own. */
+html[data-jelly-motion='still']
+  :is(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+  ):not(
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='lite'],
+    [data-jelly-flow='off'],
+    [data-liquid-material='off'],
+    [data-liquid-glass='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    [contenteditable='true'],
+    [contenteditable=''],
+    [data-evert~='select'],
+    .touch-target,
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        .slice-theme,
+        .slice-tokens,
+        .stm-legacy
+      )
+      *
+  )::after {
+  animation: none;
+}
+@media (hover: none), (pointer: coarse) and (max-width: 1024px) {
+  :is(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+    ):not(
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='lite'],
+      [data-jelly-flow='off'],
+      [data-liquid-material='off'],
+      [data-liquid-glass='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      [contenteditable='true'],
+      [contenteditable=''],
+      [data-evert~='select'],
+      .touch-target,
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          .slice-theme,
+          .slice-tokens,
+          .stm-legacy
+        )
+        *
+    )::after {
+    animation: none;
+  }
+}
 
 /* Handheld (the exact query from handheld-tier.test.ts): one span per carrier (01 §3.2) — the drift alone. */
 @media (pointer: coarse) and (max-width: 1024px) {
@@ -473,6 +1000,71 @@ html[data-game-state='playing'] .jelly-flow > span,
    CSS rim; only the moving layers go (no carriers, no haze canvases). `!important` because these are accessibility
    contracts, not looks: they outrank theme, material and utility layers alike. */
 :is(.perf-lite, .app-high-contrast) :is(.jelly-flow, .jelly-haze-canvas) {
+  display: none !important;
+}
+:is(.perf-lite, .app-high-contrast)
+  :is(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+  ):not(
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='lite'],
+    [data-jelly-flow='off'],
+    [data-liquid-material='off'],
+    [data-liquid-glass='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    [contenteditable='true'],
+    [contenteditable=''],
+    [data-evert~='select'],
+    .touch-target,
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        .slice-theme,
+        .slice-tokens,
+        .stm-legacy
+      )
+      *
+  )::after,
+html[data-game-state='playing']
+  [data-jelly-zone='hud']
+  :is(
+    .glass-fill,
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+  ):not(
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='lite'],
+    [data-jelly-flow='off'],
+    [data-liquid-material='off'],
+    [data-liquid-glass='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    [contenteditable='true'],
+    [contenteditable=''],
+    [data-evert~='select'],
+    .touch-target,
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        .slice-theme,
+        .slice-tokens,
+        .stm-legacy
+      )
+      *
+  )::after {
   display: none !important;
 }
 :is(.app-high-contrast)
@@ -495,6 +1087,38 @@ html[data-game-state='playing'] .jelly-flow > span,
     display: none !important;
   }
   :is(
+      .glass-fill,
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+    ):not(
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='lite'],
+      [data-jelly-flow='off'],
+      [data-liquid-material='off'],
+      [data-liquid-glass='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      [contenteditable='true'],
+      [contenteditable=''],
+      [data-evert~='select'],
+      .touch-target,
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          .slice-theme,
+          .slice-tokens,
+          .stm-legacy
+        )
+        *
+    )::after {
+    display: none !important;
+  }
+  :is(
     .glass-fill,
     .glass-pane,
     .glass-chrome,
@@ -508,20 +1132,13 @@ html[data-game-state='playing'] .jelly-flow > span,
     box-shadow: none !important;
   }
 }
-@media print {
-  /* Soft-body transforms (02, `lib/jelly/physics.ts`) never apply where the OS owns the colours or on paper. */
-  [data-jelly-body] {
-    translate: none !important;
-    scale: none !important;
-  }
-}
 
 /* ── 7. Entrance (2026-10-29): glass that mounts AFTER the page is up fades in, it does not pop ────────────────────────
    A feed card streamed in, a panel opened, a list filled after its fetch: each arrives as a finished slab in one frame,
    which reads as a pop next to the page-level enter and the rim's own cross-fade. `@starting-style` gives the host a
    first frame at 0 and a transition on `opacity` carries it up on the site's one curve (`--ease-smooth`: zero speed at
-   both ends, so a surface re-mounted mid-fade turns around from the frame it is on). Opacity ONLY: the soft body owns the
-   host's `translate`/`scale`, and a transition on those would fight it (and the layout never moves anyway).
+   both ends, so a surface re-mounted mid-fade turns around from the frame it is on). The fade is on `opacity`; the list also
+   carries the soft body's spring hook (`--jelly-spring-t`, §8), which this rule would otherwise override on a card.
 
    Gated on `html[data-jelly-ready]`, stamped by `useLiquidInteractions` once the material has started, so the document's
    own first paint is never faded: an element at opacity 0 is not an LCP candidate and the server-rendered page must be
@@ -532,7 +1149,9 @@ html[data-game-state='playing'] .jelly-flow > span,
 @layer components {
   html[data-jelly-ready]
     :is(.glass-fill, .glass-pane):not([data-liquid-material='off'], [data-jelly-enter='off']) {
-    transition: opacity var(--liquid-enter, 450ms) var(--ease-smooth);
+    transition:
+      opacity var(--liquid-enter, 450ms) var(--ease-smooth),
+      var(--jelly-spring-t);
   }
   @starting-style {
     html[data-jelly-ready]
@@ -542,9 +1161,1178 @@ html[data-game-state='playing'] .jelly-flow > span,
   }
 }
 
+/* ── 8. Soft body: CSS springs (CSS-first jelly, PR 3; docs/superpowers/specs/2026-11-07-css-first-jelly-design.md §3) ──
+   The soft body is CSS now. A host plumps under a hovering fine pointer (cards to `--jelly-hover-plump`, controls dent to
+   `--jelly-hover-dent`), squashes while pressed (`--jelly-press-card` / `--jelly-press-control`) and springs back on
+   release, by a transition on `scale` ONLY, eased by the generated `--spring-*` curves (§0b: the soft body's own
+   springs, so the release wobbles and settles in ~1.1 s). Every pose and every frame between them stays inside
+   `MOTION_BOUNDS`: ≤ 3%, and ≤ 4px of edge travel, because each pose is capped by the host's size (`--jelly-s`, the
+   larger side in px, written by lib/jelly/pointer-vars.ts on the hovered or pressed host and the hosts around it;
+   `--jelly-edge-reach` above, 1000px assumed until it is written); layout never changes and nothing here touches `translate`. Nothing runs at rest: no
+   `will-change`, no animation, and a transition exists only while a state flips (a CSS transition does not carry velocity
+   across an interruption; the spec accepts that).
+
+   The hosts mirror the old physics service's (lib/jelly/soft-policy.ts `SOFT_BODY_SELECTOR` and its exclusions): cards
+   (`.glass-fill`, `.glass-interactive`, eversion targets, `[data-liquid-surface]`, explicit `data-jelly` card marks) and
+   controls (buttons, tabs, menu items, switches, options, `summary`, `[data-fluid-press]`). Panes, chrome, overlays and
+   fields never move; opt-outs (`data-jelly="off"` and its aliases), disabled controls, gesture surfaces, the globe, a
+   card's delegate link (the card is the body), prose links, and anything inside an opt-out scope or a game's play-field
+   are not hosts. A control press is the full bound; a card sinks gently (cards are wide, and the bound is in pixels too).
+
+   Press-through: CSS `:active` matches every ancestor of the pressed element, so a card would squash with the button
+   inside it. A host does not squash while an interactive descendant is the thing pressed (`:has(… :active)`), and a
+   host marked `data-jelly-press-through` (a JellyGroup, the top bar, the selection bar) never squashes from a
+   descendant's press at all. lib/__tests__/jelly-soft-body.test.ts pins both.
+
+   Scope: off native-material routes (`html.native-material`: /tf2, /games keep their own scheme) and while a game is in
+   play. `perf-lite` and the app tier's high contrast keep the press, plain: critically damped both ways, no hover. Touch
+   and other no-hover pointers get the press and its spring, never the hover plump (the hover rules sit in a fine-pointer
+   query). Print resets it (below).
+
+   The transition: a host whose own sheet or utility states a `transition` keeps it (the hook is zero-specificity, in
+   `@layer base`), so its scale change applies without the spring; the shared ones that matter append the hook
+   (`--jelly-spring-t`: the Button in globals.css, `.glass-interactive` in liquid-glass.css, the entrance fade in §7). */
+:root {
+  /* The no-op the hook falls back to off the jelly scope: a custom property cannot transition, so this does nothing. */
+  --jelly-spring-t: --jelly-spring-none 0s;
+}
+@layer base {
+  :where(
+    .glass-fill,
+    .glass-interactive,
+    [data-evert],
+    [data-liquid-surface],
+    [data-fluid-press],
+    [data-jelly='card'],
+    [data-jelly='lift'],
+    [data-jelly='control'],
+    [data-jelly='sink'],
+    [data-jelly='firm'],
+    button,
+    [role='button'],
+    [role='tab'],
+    [role='menuitem'],
+    [role='switch'],
+    [role='option'],
+    summary,
+    [data-slot='button']
+  ) {
+    transition: var(--jelly-spring-t);
+  }
+}
+@layer components {
+  /* Rest and hover: the release spring carries every move that is not into a press. */
+  html:not(.native-material, [data-game-state='playing'])
+    :is(
+      .glass-fill,
+      .glass-interactive,
+      [data-evert],
+      [data-liquid-surface],
+      [data-fluid-press],
+      [data-jelly='card'],
+      [data-jelly='lift'],
+      [data-jelly='control'],
+      [data-jelly='sink'],
+      [data-jelly='firm'],
+      button,
+      [role='button'],
+      [role='tab'],
+      [role='menuitem'],
+      [role='switch'],
+      [role='option'],
+      summary,
+      [data-slot='button']
+    ):not(
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      .glass-inset,
+      .app-glass,
+      [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='pane'],
+      [data-jelly='drag'],
+      [data-liquid-material='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      :disabled,
+      [aria-disabled='true'],
+      [data-evert-delegate],
+      [data-gesture]:not([data-gesture='hold']),
+      [draggable='true'],
+      input,
+      textarea,
+      select,
+      [contenteditable='true'],
+      [contenteditable=''],
+      canvas,
+      video,
+      iframe,
+      .radial-globe,
+      .radial-globe__stage,
+      .radial-globe__glass,
+      .radial-globe__jelly,
+      .radial-globe__cage,
+      .radial-globe__skin,
+      .rad-globe-dock,
+      .eversion-overlay,
+      .evert-ghost,
+      :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          [inert]
+        )
+        *
+    ) {
+    --jelly-spring-t: scale var(--spring-release-dur) var(--spring-release);
+    --jelly-spring-dur: var(--spring-release-dur);
+    --jelly-spring-ease: var(--spring-release);
+  }
+  /* No wobble where the material is off: perf-lite and the app tier's high contrast press, then settle critically. */
+  html.perf-lite:not(.native-material, [data-game-state='playing'])
+    :is(
+      .glass-fill,
+      .glass-interactive,
+      [data-evert],
+      [data-liquid-surface],
+      [data-fluid-press],
+      [data-jelly='card'],
+      [data-jelly='lift'],
+      [data-jelly='control'],
+      [data-jelly='sink'],
+      [data-jelly='firm'],
+      button,
+      [role='button'],
+      [role='tab'],
+      [role='menuitem'],
+      [role='switch'],
+      [role='option'],
+      summary,
+      [data-slot='button']
+    ):not(
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      .glass-inset,
+      .app-glass,
+      [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='pane'],
+      [data-jelly='drag'],
+      [data-liquid-material='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      :disabled,
+      [aria-disabled='true'],
+      [data-evert-delegate],
+      [data-gesture]:not([data-gesture='hold']),
+      [draggable='true'],
+      input,
+      textarea,
+      select,
+      [contenteditable='true'],
+      [contenteditable=''],
+      canvas,
+      video,
+      iframe,
+      .radial-globe,
+      .radial-globe__stage,
+      .radial-globe__glass,
+      .radial-globe__jelly,
+      .radial-globe__cage,
+      .radial-globe__skin,
+      .rad-globe-dock,
+      .eversion-overlay,
+      .evert-ghost,
+      :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          [inert]
+        )
+        *
+    ),
+  html:not(.native-material, [data-game-state='playing'])
+    .app-high-contrast
+    :is(
+      .glass-fill,
+      .glass-interactive,
+      [data-evert],
+      [data-liquid-surface],
+      [data-fluid-press],
+      [data-jelly='card'],
+      [data-jelly='lift'],
+      [data-jelly='control'],
+      [data-jelly='sink'],
+      [data-jelly='firm'],
+      button,
+      [role='button'],
+      [role='tab'],
+      [role='menuitem'],
+      [role='switch'],
+      [role='option'],
+      summary,
+      [data-slot='button']
+    ):not(
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      .glass-inset,
+      .app-glass,
+      [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='pane'],
+      [data-jelly='drag'],
+      [data-liquid-material='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      :disabled,
+      [aria-disabled='true'],
+      [data-evert-delegate],
+      [data-gesture]:not([data-gesture='hold']),
+      [draggable='true'],
+      input,
+      textarea,
+      select,
+      [contenteditable='true'],
+      [contenteditable=''],
+      canvas,
+      video,
+      iframe,
+      .radial-globe,
+      .radial-globe__stage,
+      .radial-globe__glass,
+      .radial-globe__jelly,
+      .radial-globe__cage,
+      .radial-globe__skin,
+      .rad-globe-dock,
+      .eversion-overlay,
+      .evert-ghost,
+      :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          [inert]
+        )
+        *
+    ) {
+    --jelly-spring-t: scale var(--spring-press-dur) var(--spring-press);
+    --jelly-spring-dur: var(--spring-press-dur);
+    --jelly-spring-ease: var(--spring-press);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    html:not(.native-material, [data-game-state='playing'], .perf-lite)
+      :is(
+        .glass-fill,
+        .glass-interactive,
+        [data-evert],
+        [data-liquid-surface],
+        [data-fluid-press],
+        [data-jelly='card'],
+        [data-jelly='lift'],
+        [data-jelly='control'],
+        [data-jelly='sink'],
+        [data-jelly='firm'],
+        button,
+        [role='button'],
+        [role='tab'],
+        [role='menuitem'],
+        [role='switch'],
+        [role='option'],
+        summary,
+        [data-slot='button']
+      ):not(
+        .glass-pane,
+        .glass-chrome,
+        .glass-overlay,
+        .glass-inset,
+        .app-glass,
+        [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+        [data-jelly='off'],
+        [data-jelly='none'],
+        [data-jelly='pane'],
+        [data-jelly='drag'],
+        [data-liquid-material='off'],
+        [data-liquid-motion='off'],
+        [data-fluid-press='off'],
+        [data-fluid-press='none'],
+        :disabled,
+        [aria-disabled='true'],
+        [data-evert-delegate],
+        [data-gesture]:not([data-gesture='hold']),
+        [draggable='true'],
+        input,
+        textarea,
+        select,
+        [contenteditable='true'],
+        [contenteditable=''],
+        canvas,
+        video,
+        iframe,
+        .radial-globe,
+        .radial-globe__stage,
+        .radial-globe__glass,
+        .radial-globe__jelly,
+        .radial-globe__cage,
+        .radial-globe__skin,
+        .rad-globe-dock,
+        .eversion-overlay,
+        .evert-ghost,
+        :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+        :is(
+            [data-jelly-scope='off'],
+            [data-jelly-zone='playfield'],
+            [data-liquid-motion='off'],
+            [inert]
+          )
+          *
+      ):not(.app-high-contrast *):hover {
+      scale: min(
+        var(--jelly-hover-plump),
+        calc(1 + var(--jelly-edge-reach) / var(--jelly-s, 1000))
+      );
+    }
+    html:not(.native-material, [data-game-state='playing'], .perf-lite)
+      :is(
+        .glass-fill,
+        .glass-interactive,
+        [data-evert],
+        [data-liquid-surface],
+        [data-fluid-press],
+        [data-jelly='card'],
+        [data-jelly='lift'],
+        [data-jelly='control'],
+        [data-jelly='sink'],
+        [data-jelly='firm'],
+        button,
+        [role='button'],
+        [role='tab'],
+        [role='menuitem'],
+        [role='switch'],
+        [role='option'],
+        summary,
+        [data-slot='button']
+      ):not(
+        .glass-pane,
+        .glass-chrome,
+        .glass-overlay,
+        .glass-inset,
+        .app-glass,
+        [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+        [data-jelly='off'],
+        [data-jelly='none'],
+        [data-jelly='pane'],
+        [data-jelly='drag'],
+        [data-liquid-material='off'],
+        [data-liquid-motion='off'],
+        [data-fluid-press='off'],
+        [data-fluid-press='none'],
+        :disabled,
+        [aria-disabled='true'],
+        [data-evert-delegate],
+        [data-gesture]:not([data-gesture='hold']),
+        [draggable='true'],
+        input,
+        textarea,
+        select,
+        [contenteditable='true'],
+        [contenteditable=''],
+        canvas,
+        video,
+        iframe,
+        .radial-globe,
+        .radial-globe__stage,
+        .radial-globe__glass,
+        .radial-globe__jelly,
+        .radial-globe__cage,
+        .radial-globe__skin,
+        .rad-globe-dock,
+        .eversion-overlay,
+        .evert-ghost,
+        :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+        :is(
+            [data-jelly-scope='off'],
+            [data-jelly-zone='playfield'],
+            [data-liquid-motion='off'],
+            [inert]
+          )
+          *
+      ):is(
+        button,
+        [role='button'],
+        [role='tab'],
+        [role='menuitem'],
+        [role='switch'],
+        [role='option'],
+        summary,
+        [data-slot='button'],
+        [data-fluid-press],
+        [data-jelly='control'],
+        [data-jelly='sink']
+      ):not(
+        .glass-fill,
+        .glass-interactive,
+        [data-jelly='card'],
+        [data-jelly='lift'],
+        [data-jelly='firm'],
+        [data-fluid-press='lift'],
+        [data-fluid-press='firm']
+      ):not(.app-high-contrast *):hover {
+      scale: max(var(--jelly-hover-dent), calc(1 - var(--jelly-edge-reach) / var(--jelly-s, 1000)));
+    }
+  }
+  /* Press: the press spring in, the release spring out (the rest rule above). */
+  html:not(.native-material, [data-game-state='playing'])
+    :is(
+      .glass-fill,
+      .glass-interactive,
+      [data-evert],
+      [data-liquid-surface],
+      [data-fluid-press],
+      [data-jelly='card'],
+      [data-jelly='lift'],
+      [data-jelly='control'],
+      [data-jelly='sink'],
+      [data-jelly='firm'],
+      button,
+      [role='button'],
+      [role='tab'],
+      [role='menuitem'],
+      [role='switch'],
+      [role='option'],
+      summary,
+      [data-slot='button']
+    ):not(
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      .glass-inset,
+      .app-glass,
+      [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='pane'],
+      [data-jelly='drag'],
+      [data-liquid-material='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      :disabled,
+      [aria-disabled='true'],
+      [data-evert-delegate],
+      [data-gesture]:not([data-gesture='hold']),
+      [draggable='true'],
+      input,
+      textarea,
+      select,
+      [contenteditable='true'],
+      [contenteditable=''],
+      canvas,
+      video,
+      iframe,
+      .radial-globe,
+      .radial-globe__stage,
+      .radial-globe__glass,
+      .radial-globe__jelly,
+      .radial-globe__cage,
+      .radial-globe__skin,
+      .rad-globe-dock,
+      .eversion-overlay,
+      .evert-ghost,
+      :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          [inert]
+        )
+        *
+    ):active:not(
+      :has(
+        :is(
+          a:not([data-evert-delegate]),
+          button,
+          [role='button'],
+          [role='tab'],
+          [role='menuitem'],
+          [role='switch'],
+          [role='option'],
+          [data-slot='button'],
+          input,
+          textarea,
+          select,
+          summary
+        ):active
+      )
+    ):not([data-jelly-press-through]:has(:active)) {
+    scale: max(var(--jelly-press-card), calc(1 - var(--jelly-edge-reach) / var(--jelly-s, 1000)));
+    --jelly-spring-t: scale var(--spring-press-dur) var(--spring-press);
+    --jelly-spring-dur: var(--spring-press-dur);
+    --jelly-spring-ease: var(--spring-press);
+  }
+  html:not(.native-material, [data-game-state='playing'])
+    :is(
+      .glass-fill,
+      .glass-interactive,
+      [data-evert],
+      [data-liquid-surface],
+      [data-fluid-press],
+      [data-jelly='card'],
+      [data-jelly='lift'],
+      [data-jelly='control'],
+      [data-jelly='sink'],
+      [data-jelly='firm'],
+      button,
+      [role='button'],
+      [role='tab'],
+      [role='menuitem'],
+      [role='switch'],
+      [role='option'],
+      summary,
+      [data-slot='button']
+    ):not(
+      .glass-pane,
+      .glass-chrome,
+      .glass-overlay,
+      .glass-inset,
+      .app-glass,
+      [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+      [data-jelly='off'],
+      [data-jelly='none'],
+      [data-jelly='pane'],
+      [data-jelly='drag'],
+      [data-liquid-material='off'],
+      [data-liquid-motion='off'],
+      [data-fluid-press='off'],
+      [data-fluid-press='none'],
+      :disabled,
+      [aria-disabled='true'],
+      [data-evert-delegate],
+      [data-gesture]:not([data-gesture='hold']),
+      [draggable='true'],
+      input,
+      textarea,
+      select,
+      [contenteditable='true'],
+      [contenteditable=''],
+      canvas,
+      video,
+      iframe,
+      .radial-globe,
+      .radial-globe__stage,
+      .radial-globe__glass,
+      .radial-globe__jelly,
+      .radial-globe__cage,
+      .radial-globe__skin,
+      .rad-globe-dock,
+      .eversion-overlay,
+      .evert-ghost,
+      :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+      :is(
+          [data-jelly-scope='off'],
+          [data-jelly-zone='playfield'],
+          [data-liquid-motion='off'],
+          [inert]
+        )
+        *
+    ):is(
+      button,
+      [role='button'],
+      [role='tab'],
+      [role='menuitem'],
+      [role='switch'],
+      [role='option'],
+      summary,
+      [data-slot='button'],
+      [data-fluid-press],
+      [data-jelly='control'],
+      [data-jelly='sink']
+    ):not(
+      .glass-fill,
+      .glass-interactive,
+      [data-jelly='card'],
+      [data-jelly='lift'],
+      [data-jelly='firm'],
+      [data-fluid-press='lift'],
+      [data-fluid-press='firm']
+    ):active:not(
+      :has(
+        :is(
+          a:not([data-evert-delegate]),
+          button,
+          [role='button'],
+          [role='tab'],
+          [role='menuitem'],
+          [role='switch'],
+          [role='option'],
+          [data-slot='button'],
+          input,
+          textarea,
+          select,
+          summary
+        ):active
+      )
+    ):not([data-jelly-press-through]:has(:active)) {
+    scale: max(
+      var(--jelly-press-control),
+      calc(1 - var(--jelly-edge-reach) / var(--jelly-s, 1000))
+    );
+  }
+
+  /* The plasma wake and the dent's light dot (spec §3): radial gradients at the pointer, `--px` / `--py`, written on the
+     one hovered host by lib/jelly/pointer-vars.ts (fine pointers only). They join the woken host's floor (§3b: veil +
+     grain) as one more layer, so nothing new is painted at rest; without the variables (another host is the hovered one,
+     or a touch) the gradients sit outside the box and draw nothing. The wake is the role's plasma at `--plasma-wake`
+     strength, the dot is `--gel-specular`, both faint enough to keep text at 4.5:1. */
+  @media (hover: hover) and (pointer: fine) {
+    html:not(.native-material, .perf-lite)
+      :is(
+        .glass-fill,
+        .glass-pane,
+        .glass-chrome,
+        .glass-overlay,
+        [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+      ):not(
+        [data-jelly='off'],
+        [data-jelly='none'],
+        [data-jelly='lite'],
+        [data-jelly-flow='off'],
+        [data-liquid-material='off'],
+        [data-liquid-glass='off'],
+        [data-liquid-motion='off'],
+        [data-fluid-press='off'],
+        [data-fluid-press='none'],
+        [contenteditable='true'],
+        [contenteditable=''],
+        [data-evert~='select'],
+        .touch-target,
+        :is(
+            [data-jelly-scope='off'],
+            [data-jelly-zone='playfield'],
+            [data-liquid-motion='off'],
+            .slice-theme,
+            .slice-tokens,
+            .stm-legacy
+          )
+          *
+      ):hover {
+      --jelly-floor:
+        radial-gradient(
+          circle 96px at var(--px, -100vmax) var(--py, -100vmax),
+          color-mix(
+            in srgb,
+            var(--jelly-plasma-a, var(--site-jelly-plasma-a))
+              calc(
+                var(--plasma-wake, 0.35) * var(--jelly-plasma-k, 0) *
+                  var(--jelly-plasma-gain, var(--site-jelly-plasma, 1)) * 400%
+              ),
+            transparent
+          ),
+          transparent
+        ),
+        linear-gradient(
+          color-mix(
+              in srgb,
+              var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 50%),
+              transparent
+            )
+            0 0
+        ),
+        var(--jelly-tile);
+      --jelly-floor-size: auto, auto, var(--jelly-tile-size);
+    }
+    html:not(.native-material, .perf-lite)
+      :is(
+        .glass-fill,
+        .glass-pane,
+        .glass-chrome,
+        .glass-overlay,
+        [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+      ):not(
+        [data-jelly='off'],
+        [data-jelly='none'],
+        [data-jelly='lite'],
+        [data-jelly-flow='off'],
+        [data-liquid-material='off'],
+        [data-liquid-glass='off'],
+        [data-liquid-motion='off'],
+        [data-fluid-press='off'],
+        [data-fluid-press='none'],
+        [contenteditable='true'],
+        [contenteditable=''],
+        [data-evert~='select'],
+        .touch-target,
+        :is(
+            [data-jelly-scope='off'],
+            [data-jelly-zone='playfield'],
+            [data-liquid-motion='off'],
+            .slice-theme,
+            .slice-tokens,
+            .stm-legacy
+          )
+          *
+      ):active:not(
+        :has(
+          :is(
+            a:not([data-evert-delegate]),
+            button,
+            [role='button'],
+            [role='tab'],
+            [role='menuitem'],
+            [role='switch'],
+            [role='option'],
+            [data-slot='button'],
+            input,
+            textarea,
+            select,
+            summary
+          ):active
+        )
+      ):not([data-jelly-press-through]:has(:active)) {
+      --jelly-floor:
+        radial-gradient(
+          circle 14px at var(--px, -100vmax) var(--py, -100vmax),
+          color-mix(in srgb, var(--gel-specular, white) 25%, transparent),
+          transparent
+        ),
+        radial-gradient(
+          circle 96px at var(--px, -100vmax) var(--py, -100vmax),
+          color-mix(
+            in srgb,
+            var(--jelly-plasma-a, var(--site-jelly-plasma-a))
+              calc(
+                var(--plasma-wake, 0.35) * var(--jelly-plasma-k, 0) *
+                  var(--jelly-plasma-gain, var(--site-jelly-plasma, 1)) * 400%
+              ),
+            transparent
+          ),
+          transparent
+        ),
+        linear-gradient(
+          color-mix(
+              in srgb,
+              var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 50%),
+              transparent
+            )
+            0 0
+        ),
+        var(--jelly-tile);
+      --jelly-floor-size: auto, auto, auto, var(--jelly-tile-size);
+    }
+  }
+}
+/* ── 8b. Tailwind transition utilities on a soft-body host ────────────────────────────────────────────────────────────
+   A host that carries `transition`, `transition-colors`, `transition-opacity` or `transition-shadow` keeps that
+   utility's own transition (utilities outrank the §8 hook), so its pose would snap. Unlayered, so these outrank the
+   utility: each restates the utility's exact property list (Tailwind v4's compiled output, with this site's inline
+   `--default-transition-duration` / `--default-transition-timing-function` from globals.css @theme) and its timing, so
+   `duration-*` / `ease-*` still apply to the colours, and puts `scale` and `translate` on the soft body's spring
+   (`--jelly-spring-dur` / `--jelly-spring-ease`, set beside `--jelly-spring-t` by the §8 state rules). Same scope and
+   hosts as §8. An arbitrary `transition-[…]` utility on a host cannot be restated here; those are a one-directional
+   ratchet in lib/__tests__/jelly-soft-body.test.ts. */
+html:not(.native-material, [data-game-state='playing'])
+  :is(
+    .glass-fill,
+    .glass-interactive,
+    [data-evert],
+    [data-liquid-surface],
+    [data-fluid-press],
+    [data-jelly='card'],
+    [data-jelly='lift'],
+    [data-jelly='control'],
+    [data-jelly='sink'],
+    [data-jelly='firm'],
+    button,
+    [role='button'],
+    [role='tab'],
+    [role='menuitem'],
+    [role='switch'],
+    [role='option'],
+    summary,
+    [data-slot='button']
+  ):not(
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    .glass-inset,
+    .app-glass,
+    [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='pane'],
+    [data-jelly='drag'],
+    [data-liquid-material='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    :disabled,
+    [aria-disabled='true'],
+    [data-evert-delegate],
+    [data-gesture]:not([data-gesture='hold']),
+    [draggable='true'],
+    input,
+    textarea,
+    select,
+    [contenteditable='true'],
+    [contenteditable=''],
+    canvas,
+    video,
+    iframe,
+    .radial-globe,
+    .radial-globe__stage,
+    .radial-globe__glass,
+    .radial-globe__jelly,
+    .radial-globe__cage,
+    .radial-globe__skin,
+    .rad-globe-dock,
+    .eversion-overlay,
+    .evert-ghost,
+    :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        [inert]
+      )
+      *
+  )[class~='transition'] {
+  transition-property:
+    color,
+    background-color,
+    border-color,
+    outline-color,
+    text-decoration-color,
+    fill,
+    stroke,
+    --tw-gradient-from,
+    --tw-gradient-via,
+    --tw-gradient-to,
+    opacity,
+    box-shadow,
+    transform,
+    translate,
+    scale,
+    rotate,
+    filter,
+    -webkit-backdrop-filter,
+    backdrop-filter,
+    display,
+    content-visibility,
+    overlay,
+    pointer-events;
+  transition-duration:
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)), var(--jelly-spring-dur),
+    var(--jelly-spring-dur), var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75));
+  transition-timing-function:
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--jelly-spring-ease), var(--jelly-spring-ease),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth));
+}
+html:not(.native-material, [data-game-state='playing'])
+  :is(
+    .glass-fill,
+    .glass-interactive,
+    [data-evert],
+    [data-liquid-surface],
+    [data-fluid-press],
+    [data-jelly='card'],
+    [data-jelly='lift'],
+    [data-jelly='control'],
+    [data-jelly='sink'],
+    [data-jelly='firm'],
+    button,
+    [role='button'],
+    [role='tab'],
+    [role='menuitem'],
+    [role='switch'],
+    [role='option'],
+    summary,
+    [data-slot='button']
+  ):not(
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    .glass-inset,
+    .app-glass,
+    [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='pane'],
+    [data-jelly='drag'],
+    [data-liquid-material='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    :disabled,
+    [aria-disabled='true'],
+    [data-evert-delegate],
+    [data-gesture]:not([data-gesture='hold']),
+    [draggable='true'],
+    input,
+    textarea,
+    select,
+    [contenteditable='true'],
+    [contenteditable=''],
+    canvas,
+    video,
+    iframe,
+    .radial-globe,
+    .radial-globe__stage,
+    .radial-globe__glass,
+    .radial-globe__jelly,
+    .radial-globe__cage,
+    .radial-globe__skin,
+    .rad-globe-dock,
+    .eversion-overlay,
+    .evert-ghost,
+    :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        [inert]
+      )
+      *
+  )[class~='transition-colors'] {
+  transition-property:
+    color, background-color, border-color, outline-color, text-decoration-color, fill, stroke,
+    --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, translate, scale;
+  transition-duration:
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)), var(--jelly-spring-dur),
+    var(--jelly-spring-dur);
+  transition-timing-function:
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--jelly-spring-ease), var(--jelly-spring-ease);
+}
+html:not(.native-material, [data-game-state='playing'])
+  :is(
+    .glass-fill,
+    .glass-interactive,
+    [data-evert],
+    [data-liquid-surface],
+    [data-fluid-press],
+    [data-jelly='card'],
+    [data-jelly='lift'],
+    [data-jelly='control'],
+    [data-jelly='sink'],
+    [data-jelly='firm'],
+    button,
+    [role='button'],
+    [role='tab'],
+    [role='menuitem'],
+    [role='switch'],
+    [role='option'],
+    summary,
+    [data-slot='button']
+  ):not(
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    .glass-inset,
+    .app-glass,
+    [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='pane'],
+    [data-jelly='drag'],
+    [data-liquid-material='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    :disabled,
+    [aria-disabled='true'],
+    [data-evert-delegate],
+    [data-gesture]:not([data-gesture='hold']),
+    [draggable='true'],
+    input,
+    textarea,
+    select,
+    [contenteditable='true'],
+    [contenteditable=''],
+    canvas,
+    video,
+    iframe,
+    .radial-globe,
+    .radial-globe__stage,
+    .radial-globe__glass,
+    .radial-globe__jelly,
+    .radial-globe__cage,
+    .radial-globe__skin,
+    .rad-globe-dock,
+    .eversion-overlay,
+    .evert-ghost,
+    :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        [inert]
+      )
+      *
+  )[class~='transition-opacity'] {
+  transition-property: opacity, translate, scale;
+  transition-duration:
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)), var(--jelly-spring-dur),
+    var(--jelly-spring-dur);
+  transition-timing-function:
+    var(--tw-ease, var(--ease-smooth)), var(--jelly-spring-ease), var(--jelly-spring-ease);
+}
+html:not(.native-material, [data-game-state='playing'])
+  :is(
+    .glass-fill,
+    .glass-interactive,
+    [data-evert],
+    [data-liquid-surface],
+    [data-fluid-press],
+    [data-jelly='card'],
+    [data-jelly='lift'],
+    [data-jelly='control'],
+    [data-jelly='sink'],
+    [data-jelly='firm'],
+    button,
+    [role='button'],
+    [role='tab'],
+    [role='menuitem'],
+    [role='switch'],
+    [role='option'],
+    summary,
+    [data-slot='button']
+  ):not(
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    .glass-inset,
+    .app-glass,
+    [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='pane'],
+    [data-jelly='drag'],
+    [data-liquid-material='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    :disabled,
+    [aria-disabled='true'],
+    [data-evert-delegate],
+    [data-gesture]:not([data-gesture='hold']),
+    [draggable='true'],
+    input,
+    textarea,
+    select,
+    [contenteditable='true'],
+    [contenteditable=''],
+    canvas,
+    video,
+    iframe,
+    .radial-globe,
+    .radial-globe__stage,
+    .radial-globe__glass,
+    .radial-globe__jelly,
+    .radial-globe__cage,
+    .radial-globe__skin,
+    .rad-globe-dock,
+    .eversion-overlay,
+    .evert-ghost,
+    :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        [inert]
+      )
+      *
+  )[class~='transition-shadow'] {
+  transition-property: box-shadow, translate, scale;
+  transition-duration:
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)), var(--jelly-spring-dur),
+    var(--jelly-spring-dur);
+  transition-timing-function:
+    var(--tw-ease, var(--ease-smooth)), var(--jelly-spring-ease), var(--jelly-spring-ease);
+}
+
+@media print {
+  /* The soft body never applies on paper (it replaces the physics service's `[data-jelly-body]` reset). */
+  :is(
+    .glass-fill,
+    .glass-interactive,
+    [data-evert],
+    [data-liquid-surface],
+    [data-fluid-press],
+    [data-jelly='card'],
+    [data-jelly='lift'],
+    [data-jelly='control'],
+    [data-jelly='sink'],
+    [data-jelly='firm'],
+    button,
+    [role='button'],
+    [role='tab'],
+    [role='menuitem'],
+    [role='switch'],
+    [role='option'],
+    summary,
+    [data-slot='button']
+  ):is(:hover, :active) {
+    translate: none !important;
+    scale: none !important;
+  }
+}
+
+/* jelly-drift starts at the identity: the woken-haze layer (§3b) rests untransformed and gets this animation only on
+   hover or focus, so its first frame must be that resting frame or the haze would snap on wake. */
 @keyframes jelly-drift {
   0% {
-    transform: translate3d(-8%, -6%, 0) rotate(-8deg) scale(1.04);
+    transform: none;
   }
   50% {
     transform: translate3d(7%, 4%, 0) rotate(6deg) scale(0.98);

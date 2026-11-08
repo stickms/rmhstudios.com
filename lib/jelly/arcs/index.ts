@@ -1,8 +1,10 @@
 /**
  * Electric arcs — the public API (docs/plans/plasmatic-jelly/03-arcs.md §3, §6).
  *
- * - {@link installElectricArcs}`(document)` mounts the system and returns its teardown. The integration hook
- *   lazy-imports this module in the shared jelly idle callback.
+ * - {@link installElectricArcs}`(document, { ambient: false })` mounts the system and returns its teardown. The site
+ *   never calls it at load: `lib/jelly/arc-lazy.ts` imports this module on the first `pointerdown`, installs the
+ *   click-only runtime and removes it 10 s after the last click. Until then `dischargeAt` and `strike` are no-ops;
+ *   `ensureClickArcs()` (arc-lazy) installs it for a caller that has no press, as the /jelly lab's button does.
  * - {@link dischargeAt}`(x, y)` behaves like a pointer press at a viewport point (a "send" success state, a
  *   celebration). {@link strike}`(a, b)` arcs between two specific elements.
  *

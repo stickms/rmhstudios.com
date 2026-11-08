@@ -65,6 +65,13 @@ export interface WebGLRenderer {
   spriteBatch: SpriteBatch;
   shapeBatch: ShapeBatch;
   overlayCtx: CanvasRenderingContext2D;
+  /**
+   * True when something was drawn on the 2D overlay since it was last cleared. Every overlay draw sets it and
+   * `renderFrame` clears the overlay only when it is set. Clearing a full-size 2D canvas every frame, even an
+   * empty one, makes Firefox re-composite it each frame (≈25% of frames over 20 ms vs ≈10% when left alone in
+   * a micro-benchmark), and during play the overlay is empty most of the time.
+   */
+  overlayDirty: boolean;
 }
 
 /**
@@ -168,8 +175,11 @@ export function renderFrame(
   gl.clearColor(0.067, 0.067, 0.067, 1); // #111111
   gl.clear(gl.COLOR_BUFFER_BIT);
 
-  // Clear overlay canvas
-  overlayCtx.clearRect(0, 0, camera.width, camera.height);
+  // Clear the overlay only if the last frame drew on it (see WebGLRenderer.overlayDirty).
+  if (renderer.overlayDirty) {
+    overlayCtx.clearRect(0, 0, camera.width, camera.height);
+    renderer.overlayDirty = false;
+  }
 
   // Begin batches
   spriteBatch.begin(camera.width, camera.height);
@@ -229,11 +239,13 @@ export function renderFrame(
 
   // 11. Boss warning arrows
   if (world.bossWarning) {
+    renderer.overlayDirty = true;
     renderBossWarning(overlayCtx, world, camera);
   }
 
   // 12. Minimap (shown while Tab is held)
   if (world.inputState.keys.has('tab')) {
+    renderer.overlayDirty = true;
     renderMinimap(overlayCtx, world, camera);
   }
 }
@@ -545,6 +557,7 @@ function renderEnemies(
 
     // Armor indicator — 2D overlay text
     if (e.armor > 0) {
+      renderer.overlayDirty = true;
       overlayCtx.fillStyle = '#aaaacc';
       overlayCtx.font = '10px monospace';
       overlayCtx.textAlign = 'center';
@@ -858,6 +871,7 @@ function renderPlayerMarkers(
   }
 
   // Pass 2: name tags on the 2D overlay.
+  renderer.overlayDirty = true;
   overlayCtx.save();
   overlayCtx.font = 'bold 11px monospace';
   overlayCtx.textAlign = 'center';
@@ -954,6 +968,7 @@ function renderParticles(
 
     if (p.text) {
       // Text particles go on the 2D overlay
+      renderer.overlayDirty = true;
       const size = p.fontSize || 14;
       overlayCtx.save();
       overlayCtx.globalAlpha = alpha;

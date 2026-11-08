@@ -12,15 +12,28 @@
  * save follows you to another device. That line lives in Settings, next to the
  * save, with a button.
  *
+ * Once the save is known the title screen opens (`TempleMenu`): Enter starts the
+ * game exactly as it always started, Quit is the one way out to the games list.
+ *
  * The loading screen is the temple's own, not a generic spinner: it is the
  * first thing anyone sees and it should already feel like the game.
  */
 'use client';
 
 import './temple-of-joy.css';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCloudSave } from '@/hooks/useCloudSave';
-import { saveToState, summarizeTempleSave, templeSave } from '@/lib/temple-of-joy/persistence';
+import {
+  saveToState,
+  stateToSave,
+  summarizeTempleSave,
+  templeSave,
+} from '@/lib/temple-of-joy/persistence';
+import { useTempleStore } from '@/lib/temple-of-joy/store';
+import type { SaveData } from '@/lib/temple-of-joy/types';
+import { MainMenuContext } from './menu-context';
+import { TempleMenu } from './TempleMenu';
 import { TempleOfJoyGame } from './TempleOfJoyGame';
 import { TempleButton } from './ui';
 
@@ -47,6 +60,27 @@ export function TempleOfJoyGate() {
     // it emits English. Here there is one.
     summarize: (save) => summarizeTempleSave(save, t),
   });
+
+  // Which screen is up. The title screen comes first, every time the doors
+  // open; the game is mounted only once the player walks in, and unmounted
+  // again by "Main menu" in Settings (which saves on the way out).
+  const [view, setView] = useState<'menu' | 'game'>('menu');
+  // The temple as it was left. After a run, the cloud save the gate resolved is
+  // stale, so the menu and the next entry read this instead.
+  const [resume, setResume] = useState<SaveData | null>(null);
+
+  // A new identity or a reload re-resolves the save; start from the title.
+  useEffect(() => {
+    if (cloud.status !== 'ready') {
+      setView('menu');
+      setResume(null);
+    }
+  }, [cloud.status]);
+
+  const returnToMenu = useCallback(() => {
+    setResume(stateToSave(useTempleStore.getState()));
+    setView('menu');
+  }, []);
 
   if (cloud.status === 'loading') return <LoadingScreen />;
 
@@ -84,5 +118,15 @@ export function TempleOfJoyGate() {
     );
   }
 
-  return <TempleOfJoyGame initialSave={cloud.save ? saveToState(cloud.save) : null} />;
+  const save = resume ?? cloud.save;
+
+  if (view === 'menu') {
+    return <TempleMenu save={save} onEnter={() => setView('game')} />;
+  }
+
+  return (
+    <MainMenuContext.Provider value={returnToMenu}>
+      <TempleOfJoyGame initialSave={save ? saveToState(save) : null} />
+    </MainMenuContext.Provider>
+  );
 }

@@ -40,6 +40,7 @@ import { jellyBus, type JellyBus } from '../bus';
 import { installJellyRegistry, jellyRegistry, type JellyRegistry } from '../registry';
 import {
   FINE_POINTER_QUERY,
+  HUB_OR_EVERSION_SELECTOR,
   jellyBudget,
   jellyMode,
   jellyOptedOut,
@@ -49,6 +50,7 @@ import {
 import {
   createArcActions,
   installClickArcs,
+  pressFromEvent,
   pressHost,
   type ArcActions,
   type DischargeOptions,
@@ -74,8 +76,8 @@ import {
 /** The site-wide flash ledger (≤ 3 onsets in any 1000ms, WCAG 2.3.1). */
 export const arcFlashLedger: FlashLedger = createFlashLedger();
 
-/** The hub is open or an eversion is running: arcs are off (§2.3 global-off list). */
-export const HUB_OR_EVERSION_SELECTOR = '.radial-hub:not([data-phase="closed"]),.eversion-overlay';
+/** The hub is open or an eversion is running: arcs are off (§2.3 global-off list). Defined in `tiers.ts`. */
+export { HUB_OR_EVERSION_SELECTOR };
 
 /**
  * Never an arc endpoint (05 §2 N7, 04 §4.4): hidden or inert subtrees and explicit opt-outs; fields, where a bolt
@@ -95,6 +97,12 @@ export interface ElectricArcsOptions {
   ledger?: FlashLedger;
   seed?: number;
   warmupMs?: number;
+  /**
+   * Ambient arcs, breakdown strikes between charged neighbours and Coulomb attraction (default `true`). `false` is the
+   * click-only runtime the lazy installer (`lib/jelly/arc-lazy.ts`) mounts: no warm-up timer, no scheduler timer, no
+   * field tick; a click still arcs, deposits its charge and hops it on.
+   */
+  ambient?: boolean;
 }
 
 export interface ElectricArcsRuntime {
@@ -106,6 +114,12 @@ export interface ElectricArcsRuntime {
   /** The ambient timer is armed. */
   readonly ambientArmed: boolean;
   dischargeAt(x: number, y: number, opts?: DischargeOptions): boolean;
+  /**
+   * Fire the click arc for a `pointerdown` that already happened (the press that woke the lazy installer, whose own
+   * subscription missed it). Same gates and same target rules as a live press; a target that has left the document
+   * since is skipped. True when anything flashed.
+   */
+  press(e: PointerEvent): boolean;
   strike(a: Element, b: Element, opts?: StrikeOptions): boolean;
   dispose(): void;
 }
@@ -172,6 +186,7 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
   let warm = false;
   let ambientOk = false;
   let budget: JellyBudget = jellyBudget({ doc });
+  const ambientWanted = opts.ambient !== false;
 
   // ── Candidates (cached per registry change) ────────────────────────────────
   const radii = new WeakMap<Element, { w: number; h: number; r: number }>();
@@ -295,7 +310,7 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
       now: clock,
       hops: arcsOn,
       breakdown: () => ambientOk && arcsOn() && !quiet.quiet(),
-      attract: () => arcsOn() && !quiet.quiet(),
+      attract: () => ambientWanted && arcsOn() && !quiet.quiet(),
       scrolling: () => reg?.scrolling ?? false,
     });
     const fld = field;
@@ -339,7 +354,11 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
       return;
     }
     ambientOk =
-      warm && !lowEnd && mode.arcs === 'full' && Number.isFinite(budget.ambientArcMinIntervalMs);
+      ambientWanted &&
+      warm &&
+      !lowEnd &&
+      mode.arcs === 'full' &&
+      Number.isFinite(budget.ambientArcMinIntervalMs);
     live ??= enable();
     live.scheduler.poke();
     live.field.poke();
@@ -356,10 +375,12 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
   const offRelease = bus.on('body:release', ({ el, energy }) => {
     charge.add(el, RELEASE_CHARGE * Math.max(0, Math.min(1, energy)), clock());
   });
-  const warmTimer = setTimeout(() => {
-    warm = true;
-    evaluate();
-  }, opts.warmupMs ?? ARC_BUDGET.warmupMs);
+  const warmTimer = ambientWanted
+    ? setTimeout(() => {
+        warm = true;
+        evaluate();
+      }, opts.warmupMs ?? ARC_BUDGET.warmupMs)
+    : undefined;
 
   evaluate();
 
@@ -392,6 +413,11 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
         return false;
       return l.actions.background(x, y);
     },
+    press(e) {
+      const l = gateAction();
+      if (!l) return false;
+      return pressFromEvent(e, l.actions);
+    },
     strike(a, b, o) {
       const l = gateAction();
       if (!l) return false;
@@ -403,7 +429,7 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
       if (disposed) return;
       disable();
       disposed = true;
-      clearTimeout(warmTimer);
+      if (warmTimer !== undefined) clearTimeout(warmTimer);
       offEnv();
       hubWatch.disconnect();
       overlayWatch.disconnect();

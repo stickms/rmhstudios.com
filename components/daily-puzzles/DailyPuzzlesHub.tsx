@@ -30,6 +30,7 @@ import {
   Share2,
   Star,
   ListChecks,
+  LogOut,
 } from 'lucide-react';
 import { DESK_MODES, type DeskMode } from '@/lib/daily-puzzles/desk-modes';
 import { formatDateKey, getTodayEST, getPuzzleNumber } from '@/lib/daily-puzzles/seed';
@@ -46,6 +47,7 @@ import {
 } from '@/lib/lights-out/persistence';
 import { useClipboard } from '@/hooks/useClipboard';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import { useCelebration } from '@/hooks/useCelebration';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
@@ -157,6 +159,7 @@ type Filter = 'all' | 'todo' | 'done';
 export function DailyPuzzlesHub() {
   const { t } = useTranslation('c-daily-puzzles');
   const navigate = useNavigate();
+  const quit = useQuitGame();
   const reduced = useReducedMotion();
   const celebrate = useCelebration();
   const session = useSession();
@@ -423,16 +426,22 @@ export function DailyPuzzlesHub() {
             aria-label={t('filter-label', { defaultValue: 'Filter puzzles' })}
           />
 
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={shareToday}
-            disabled={!mounted || solvedToday === 0}
-          >
-            <Share2 aria-hidden />
-            {t('share-today', { defaultValue: 'Share today' })}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={shareToday}
+              disabled={!mounted || solvedToday === 0}
+            >
+              <Share2 aria-hidden />
+              {t('share-today', { defaultValue: 'Share today' })}
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={quit}>
+              <LogOut aria-hidden />
+              {t('quit', { defaultValue: 'Quit' })}
+            </Button>
+          </div>
         </div>
 
         {/* ── All-cleared banner ──────────────────────────────────────────── */}

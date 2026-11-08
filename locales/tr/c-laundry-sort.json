@@ -101,5 +101,6 @@
   "wins-count_one": "{{count}}W",
   "wins-count_other": "{{count}}W",
   "wrong-bin": "Wrong bin",
-  "you-suffix": "(you)"
+  "you-suffix": "(you)",
+  "quit": "Quit"
 }

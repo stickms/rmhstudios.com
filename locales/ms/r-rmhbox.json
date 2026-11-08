@@ -48,5 +48,6 @@
   "winner-none": "None",
   "loading": "Loading…",
   "room-code": "Room code",
-  "player-count-of-max_other": "{{count}}/{{max}} players"
+  "player-count-of-max_other": "{{count}}/{{max}} players",
+  "quit": "Quit"
 }

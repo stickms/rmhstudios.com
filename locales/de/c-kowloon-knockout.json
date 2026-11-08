@@ -126,5 +126,6 @@
   "wins": "SIEGE",
   "you-lose": "DU VERLIERST",
   "you-win": "DU GEWINNST!",
-  "your-fighter": "Your fighter"
+  "your-fighter": "Your fighter",
+  "quit": "QUIT"
 }

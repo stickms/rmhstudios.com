@@ -17,7 +17,7 @@
  */
 'use client';
 
-import { ArrowLeft, Download, Maximize, Minimize, RotateCw, Upload, X } from 'lucide-react';
+import { Download, LogOut, Maximize, Minimize, RotateCw, Upload, X } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -175,6 +175,8 @@ function attach(
     messages: Record<'webgl' | 'signedOut' | 'boot' | 'tooLarge' | 'audio', string>;
     /** Multiplayer must start at boot: preload its pack with the core. */
     mpAutoload: MpAutoload | null;
+    /** The game's Options → QUIT (main menu only); the saves are already flushed. */
+    onQuit: () => void;
   },
 ): BootRun {
   if (current && !current.stopped) {
@@ -221,6 +223,7 @@ function attach(
       if (isError || import.meta.env.VITE_BALATRO_MP_TEST === '1') console.warn('[balatro]', line);
     },
     onAudioError: () => toast.error(opts.messages.audio),
+    onQuit: opts.onQuit,
     mp: opts.mpAutoload
       ? { autoload: opts.mpAutoload, files: loadMp().then((mod) => mod.fetchMpPack()) }
       : undefined,
@@ -282,6 +285,10 @@ export default function BalatroPage() {
         audio: t('audio_failed', { defaultValue: 'The sound could not load. Reload the page to try again.' }),
       },
       mpAutoload: inviteRef.current ? 'invite' : readRejoinHint() ? 'rejoin' : null,
+      onQuit: () => {
+        sessionRef.current?.stop();
+        window.location.assign('/games');
+      },
     });
     runRef.current = run;
     run.mp.listener = setMp;
@@ -410,8 +417,8 @@ export default function BalatroPage() {
           <div className="balatro-boot" role="alert">
             <p className="max-w-sm px-4 text-center text-sm">{stage.message}</p>
             <a href="/games" className="balatro-action">
-              <ArrowLeft className="size-4 rtl-flip" aria-hidden />
-              {t('back', { defaultValue: 'Games' })}
+              <LogOut className="size-4 rtl-flip" aria-hidden />
+              {t('quit', { defaultValue: 'Quit' })}
             </a>
           </div>
         )}
@@ -426,9 +433,9 @@ export default function BalatroPage() {
         )}
         {stage.kind === 'running' && (
           <div className="balatro-toolbar" role="toolbar" aria-label={t('toolbar', { defaultValue: 'Game controls' })}>
-            <Tooltip content={t('leave_hint', { defaultValue: 'Leave the game. Your progress is saved.' })}>
-              <button type="button" onClick={leave} aria-label={t('leave', { defaultValue: 'Leave' })}>
-                <ArrowLeft className="size-4 rtl-flip" aria-hidden />
+            <Tooltip content={t('quit_hint', { defaultValue: 'Quit the game. Your progress is saved.' })}>
+              <button type="button" onClick={leave} aria-label={t('quit', { defaultValue: 'Quit' })}>
+                <LogOut className="size-4 rtl-flip" aria-hidden />
               </button>
             </Tooltip>
             <Tooltip
