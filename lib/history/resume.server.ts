@@ -391,13 +391,14 @@ async function readTitles(
  * exactly the pair `shouldResume` and `progressRatio` model.
  *
  * ⚠ These produce no cards today, and that is a routing gap rather than a bug
- * here: RMHTube and RMHMusic are ROOM-based (`/rmhtube/$roomId`,
- * `/rmhmusic/$roomId`), so there is no per-video or per-song URL to deep-link
- * at — `lib/saves/saves.server.ts` records the same gap for saved items
- * ("types without a hydrator yet"). Rather than pointing a card at
- * `/rmhmusic/player` and letting it open on the wrong thing, the resolver
- * returns `null` and the row is skipped. When a watch route lands, this becomes
- * a one-line change and the filtering above is already right.
+ * here: RMHTube is ROOM-based (`/rmhtube/$roomId`) and songs have no player
+ * page of their own (RMHMusic is now an instrument-learning app, not a music
+ * player), so there is no per-video or per-song URL to deep-link at —
+ * `lib/saves/saves.server.ts` records the same gap for saved items ("types
+ * without a hydrator yet"). Rather than pointing a card at a page that would
+ * open on the wrong thing, the resolver returns `null` and the row is skipped.
+ * When a watch route lands, this becomes a one-line change and the filtering
+ * above is already right.
  */
 const WATCH_TYPES = ['tube_video', 'song'] as const;
 

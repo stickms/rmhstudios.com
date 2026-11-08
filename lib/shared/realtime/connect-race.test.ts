@@ -48,7 +48,6 @@ const cases: [string, () => Promise<() => Promise<unknown>>][] = [
   ['laundry-sort', async () => (await import('@/lib/laundry-sort/net/client')).connectLaundry],
   ['gabriels-horn', async () => (await import('@/lib/gabriels-horn/net/client')).connectHorn],
   ['slice-it', async () => (await import('@/lib/slice-it/net/client')).connectSliceIt],
-  ['rmhmusic', async () => (await import('@/lib/rmhmusic/socket')).connectToRmhMusic],
 ];
 
 describe('concurrent connect builds one socket', () => {

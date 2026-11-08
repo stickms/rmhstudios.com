@@ -321,12 +321,6 @@
    "auth": "both"
   },
   {
-   "id": "music-trivia",
-   "path": "/music-trivia",
-   "class": "interactive",
-   "auth": "both"
-  },
-  {
    "id": "emoji-packs",
    "path": "/emoji-packs",
    "class": "interactive",

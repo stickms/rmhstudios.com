@@ -218,7 +218,7 @@ COPY public ./public/
 # lib/rmhbox) are intentionally kept.
 COPY --exclude=go-services \
      --exclude=server/socket-server --exclude=server/rmhtube \
-     --exclude=server/rmhmusic --exclude=server/recap \
+     --exclude=server/recap \
      --exclude=server/bot-worker --exclude=server/doctrine-worker \
      --exclude=server/status --exclude=server/vibe-worker \
      --exclude=server/shared . .

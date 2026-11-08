@@ -204,7 +204,6 @@ import { Route as RmhcodeIndexRouteImport } from './routes/rmhcode/index'
 import { Route as RmhcodeAuthRouteImport } from './routes/rmhcode/auth'
 import { Route as RmhmusicIndexRouteImport } from './routes/rmhmusic/index'
 import { Route as RmhmusicRoomIdRouteImport } from './routes/rmhmusic/$roomId'
-import { Route as RmhmusicPlayerRouteImport } from './routes/rmhmusic/player'
 import { Route as RmhstudyIndexRouteImport } from './routes/rmhstudy/index'
 import { Route as RmhstudyRoomIdRouteImport } from './routes/rmhstudy/$roomId'
 import { Route as RmhstudyPlannerRouteImport } from './routes/rmhstudy/planner'
@@ -687,7 +686,6 @@ import { Route as ApiRmhladderInterviewReportsRouteImport } from './routes/api/r
 import { Route as ApiRmhladderPrepRouteImport } from './routes/api/rmhladder/prep'
 import { Route as ApiRmhladderReferralsRouteImport } from './routes/api/rmhladder/referrals'
 import { Route as ApiRmhladderSearchesRouteImport } from './routes/api/rmhladder/searches'
-import { Route as ApiRmhmusicTrackCommentsRouteImport } from './routes/api/rmhmusic/track-comments'
 import { Route as ApiRmhtubeCommentaryRouteImport } from './routes/api/rmhtube/commentary'
 import { Route as ApiRmhtubeHeatRouteImport } from './routes/api/rmhtube/heat'
 import { Route as ApiRmhtubeOembedRouteImport } from './routes/api/rmhtube/oembed'
@@ -1154,10 +1152,8 @@ import { Route as ApiRmhladderReferralRequestsIdRouteImport } from './routes/api
 import { Route as ApiRmhladderReferralsIdRouteImport } from './routes/api/rmhladder/referrals.$id'
 import { Route as ApiRmhladderResumeIndexRouteImport } from './routes/api/rmhladder/resume/index'
 import { Route as ApiRmhladderResumeIdRouteImport } from './routes/api/rmhladder/resume/$id'
-import { Route as ApiRmhmusicGuessIndexRouteImport } from './routes/api/rmhmusic/guess/index'
 import { Route as ApiRmhmusicLearnLessonCompleteRouteImport } from './routes/api/rmhmusic/learn/lesson-complete'
 import { Route as ApiRmhmusicLearnProfileRouteImport } from './routes/api/rmhmusic/learn/profile'
-import { Route as ApiRmhmusicSpotifySearchRouteImport } from './routes/api/rmhmusic/spotify/search'
 import { Route as ApiRmhtubeSubscribeChannelIdRouteImport } from './routes/api/rmhtube/subscribe/$channelId'
 import { Route as ApiSavesFoldersIdRouteImport } from './routes/api/saves/folders.$id'
 import { Route as ApiScheduledIdPublishRouteImport } from './routes/api/scheduled/$id/publish'
@@ -1331,8 +1327,6 @@ import { Route as ApiRmhboxPacksIdReportRouteImport } from './routes/api/rmhbox/
 import { Route as ApiRmhladderReferralsIdRequestRouteImport } from './routes/api/rmhladder/referrals.$id.request'
 import { Route as ApiRmhladderResumeIdAnalyzeRouteImport } from './routes/api/rmhladder/resume/$id/analyze'
 import { Route as ApiRmhladderResumeIdConfirmRouteImport } from './routes/api/rmhladder/resume/$id/confirm'
-import { Route as ApiRmhmusicGuessIdIndexRouteImport } from './routes/api/rmhmusic/guess/$id/index'
-import { Route as ApiRmhmusicGuessIdAttemptRouteImport } from './routes/api/rmhmusic/guess/$id/attempt'
 import { Route as ApiSeriesIdPostsPostIdRouteImport } from './routes/api/series/$id/posts/$postId'
 import { Route as ApiShopLoadoutsIdIndexRouteImport } from './routes/api/shop/loadouts/$id/index'
 import { Route as ApiShopLoadoutsIdApplyRouteImport } from './routes/api/shop/loadouts/$id/apply'
@@ -2371,11 +2365,6 @@ const RmhmusicIndexRoute = RmhmusicIndexRouteImport.update({
 const RmhmusicRoomIdRoute = RmhmusicRoomIdRouteImport.update({
   id: '/$roomId',
   path: '/$roomId',
-  getParentRoute: () => RmhmusicRoute,
-} as any)
-const RmhmusicPlayerRoute = RmhmusicPlayerRouteImport.update({
-  id: '/player',
-  path: '/player',
   getParentRoute: () => RmhmusicRoute,
 } as any)
 const RmhstudyIndexRoute = RmhstudyIndexRouteImport.update({
@@ -4818,12 +4807,6 @@ const ApiRmhladderSearchesRoute = ApiRmhladderSearchesRouteImport.update({
   path: '/api/rmhladder/searches',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiRmhmusicTrackCommentsRoute =
-  ApiRmhmusicTrackCommentsRouteImport.update({
-    id: '/api/rmhmusic/track-comments',
-    path: '/api/rmhmusic/track-comments',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiRmhtubeCommentaryRoute = ApiRmhtubeCommentaryRouteImport.update({
   id: '/api/rmhtube/commentary',
   path: '/api/rmhtube/commentary',
@@ -7261,11 +7244,6 @@ const ApiRmhladderResumeIdRoute = ApiRmhladderResumeIdRouteImport.update({
   path: '/api/rmhladder/resume/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiRmhmusicGuessIndexRoute = ApiRmhmusicGuessIndexRouteImport.update({
-  id: '/api/rmhmusic/guess/',
-  path: '/api/rmhmusic/guess/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiRmhmusicLearnLessonCompleteRoute =
   ApiRmhmusicLearnLessonCompleteRouteImport.update({
     id: '/api/rmhmusic/learn/lesson-complete',
@@ -7277,12 +7255,6 @@ const ApiRmhmusicLearnProfileRoute = ApiRmhmusicLearnProfileRouteImport.update({
   path: '/api/rmhmusic/learn/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiRmhmusicSpotifySearchRoute =
-  ApiRmhmusicSpotifySearchRouteImport.update({
-    id: '/api/rmhmusic/spotify/search',
-    path: '/api/rmhmusic/spotify/search',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiRmhtubeSubscribeChannelIdRoute =
   ApiRmhtubeSubscribeChannelIdRouteImport.update({
     id: '/api/rmhtube/subscribe/$channelId',
@@ -8218,17 +8190,6 @@ const ApiRmhladderResumeIdConfirmRoute =
     path: '/confirm',
     getParentRoute: () => ApiRmhladderResumeIdRoute,
   } as any)
-const ApiRmhmusicGuessIdIndexRoute = ApiRmhmusicGuessIdIndexRouteImport.update({
-  id: '/api/rmhmusic/guess/$id/',
-  path: '/api/rmhmusic/guess/$id/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiRmhmusicGuessIdAttemptRoute =
-  ApiRmhmusicGuessIdAttemptRouteImport.update({
-    id: '/api/rmhmusic/guess/$id/attempt',
-    path: '/api/rmhmusic/guess/$id/attempt',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiSeriesIdPostsPostIdRoute = ApiSeriesIdPostsPostIdRouteImport.update({
   id: '/$postId',
   path: '/$postId',
@@ -8773,7 +8734,6 @@ export interface FileRoutesByFullPath {
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
-  '/rmhmusic/player': typeof RmhmusicPlayerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
@@ -9176,7 +9136,6 @@ export interface FileRoutesByFullPath {
   '/api/rmhladder/prep': typeof ApiRmhladderPrepRoute
   '/api/rmhladder/referrals': typeof ApiRmhladderReferralsRouteWithChildren
   '/api/rmhladder/searches': typeof ApiRmhladderSearchesRoute
-  '/api/rmhmusic/track-comments': typeof ApiRmhmusicTrackCommentsRoute
   '/api/rmhtube/commentary': typeof ApiRmhtubeCommentaryRoute
   '/api/rmhtube/heat': typeof ApiRmhtubeHeatRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
@@ -9681,7 +9640,6 @@ export interface FileRoutesByFullPath {
   '/api/rmhladder/resume/$id': typeof ApiRmhladderResumeIdRouteWithChildren
   '/api/rmhmusic/learn/lesson-complete': typeof ApiRmhmusicLearnLessonCompleteRoute
   '/api/rmhmusic/learn/profile': typeof ApiRmhmusicLearnProfileRoute
-  '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
@@ -9814,7 +9772,6 @@ export interface FileRoutesByFullPath {
   '/api/reading/shelves/': typeof ApiReadingShelvesIndexRoute
   '/api/rmhbox/packs/': typeof ApiRmhboxPacksIndexRoute
   '/api/rmhladder/resume/': typeof ApiRmhladderResumeIndexRoute
-  '/api/rmhmusic/guess/': typeof ApiRmhmusicGuessIndexRoute
   '/api/shop/loadouts/': typeof ApiShopLoadoutsIndexRoute
   '/api/slice-it/daily/': typeof ApiSliceItDailyIndexRoute
   '/api/slice-it/packs/': typeof ApiSliceItPacksIndexRoute
@@ -9896,7 +9853,6 @@ export interface FileRoutesByFullPath {
   '/api/rmhladder/referrals/$id/request': typeof ApiRmhladderReferralsIdRequestRoute
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
-  '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
   '/api/series/$id/posts/$postId': typeof ApiSeriesIdPostsPostIdRoute
   '/api/shop/loadouts/$id/apply': typeof ApiShopLoadoutsIdApplyRoute
   '/api/slice-it/charts/$id/reviews': typeof ApiSliceItChartsIdReviewsRoute
@@ -9950,7 +9906,6 @@ export interface FileRoutesByFullPath {
   '/api/office-hours/host/$id/': typeof ApiOfficeHoursHostIdIndexRoute
   '/api/playlists/$id/collaborators/': typeof ApiPlaylistsIdCollaboratorsIndexRoute
   '/api/playlists/$id/items/': typeof ApiPlaylistsIdItemsIndexRoute
-  '/api/rmhmusic/guess/$id/': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/shop/loadouts/$id/': typeof ApiShopLoadoutsIdIndexRoute
   '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
   '/api/studio/challenges/$id/': typeof ApiStudioChallengesIdIndexRoute
@@ -10136,7 +10091,6 @@ export interface FileRoutesByTo {
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
-  '/rmhmusic/player': typeof RmhmusicPlayerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
@@ -10539,7 +10493,6 @@ export interface FileRoutesByTo {
   '/api/rmhladder/prep': typeof ApiRmhladderPrepRoute
   '/api/rmhladder/referrals': typeof ApiRmhladderReferralsRouteWithChildren
   '/api/rmhladder/searches': typeof ApiRmhladderSearchesRoute
-  '/api/rmhmusic/track-comments': typeof ApiRmhmusicTrackCommentsRoute
   '/api/rmhtube/commentary': typeof ApiRmhtubeCommentaryRoute
   '/api/rmhtube/heat': typeof ApiRmhtubeHeatRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
@@ -11043,7 +10996,6 @@ export interface FileRoutesByTo {
   '/api/rmhladder/resume/$id': typeof ApiRmhladderResumeIdRouteWithChildren
   '/api/rmhmusic/learn/lesson-complete': typeof ApiRmhmusicLearnLessonCompleteRoute
   '/api/rmhmusic/learn/profile': typeof ApiRmhmusicLearnProfileRoute
-  '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
@@ -11176,7 +11128,6 @@ export interface FileRoutesByTo {
   '/api/reading/shelves': typeof ApiReadingShelvesIndexRoute
   '/api/rmhbox/packs': typeof ApiRmhboxPacksIndexRoute
   '/api/rmhladder/resume': typeof ApiRmhladderResumeIndexRoute
-  '/api/rmhmusic/guess': typeof ApiRmhmusicGuessIndexRoute
   '/api/shop/loadouts': typeof ApiShopLoadoutsIndexRoute
   '/api/slice-it/daily': typeof ApiSliceItDailyIndexRoute
   '/api/slice-it/packs': typeof ApiSliceItPacksIndexRoute
@@ -11258,7 +11209,6 @@ export interface FileRoutesByTo {
   '/api/rmhladder/referrals/$id/request': typeof ApiRmhladderReferralsIdRequestRoute
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
-  '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
   '/api/series/$id/posts/$postId': typeof ApiSeriesIdPostsPostIdRoute
   '/api/shop/loadouts/$id/apply': typeof ApiShopLoadoutsIdApplyRoute
   '/api/slice-it/charts/$id/reviews': typeof ApiSliceItChartsIdReviewsRoute
@@ -11312,7 +11262,6 @@ export interface FileRoutesByTo {
   '/api/office-hours/host/$id': typeof ApiOfficeHoursHostIdIndexRoute
   '/api/playlists/$id/collaborators': typeof ApiPlaylistsIdCollaboratorsIndexRoute
   '/api/playlists/$id/items': typeof ApiPlaylistsIdItemsIndexRoute
-  '/api/rmhmusic/guess/$id': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/shop/loadouts/$id': typeof ApiShopLoadoutsIdIndexRoute
   '/api/storefront/products/$id': typeof ApiStorefrontProductsIdIndexRoute
   '/api/studio/challenges/$id': typeof ApiStudioChallengesIdIndexRoute
@@ -11525,7 +11474,6 @@ export interface FileRoutesById {
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
-  '/rmhmusic/player': typeof RmhmusicPlayerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
@@ -11929,7 +11877,6 @@ export interface FileRoutesById {
   '/api/rmhladder/prep': typeof ApiRmhladderPrepRoute
   '/api/rmhladder/referrals': typeof ApiRmhladderReferralsRouteWithChildren
   '/api/rmhladder/searches': typeof ApiRmhladderSearchesRoute
-  '/api/rmhmusic/track-comments': typeof ApiRmhmusicTrackCommentsRoute
   '/api/rmhtube/commentary': typeof ApiRmhtubeCommentaryRoute
   '/api/rmhtube/heat': typeof ApiRmhtubeHeatRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
@@ -12434,7 +12381,6 @@ export interface FileRoutesById {
   '/api/rmhladder/resume/$id': typeof ApiRmhladderResumeIdRouteWithChildren
   '/api/rmhmusic/learn/lesson-complete': typeof ApiRmhmusicLearnLessonCompleteRoute
   '/api/rmhmusic/learn/profile': typeof ApiRmhmusicLearnProfileRoute
-  '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
@@ -12567,7 +12513,6 @@ export interface FileRoutesById {
   '/api/reading/shelves/': typeof ApiReadingShelvesIndexRoute
   '/api/rmhbox/packs/': typeof ApiRmhboxPacksIndexRoute
   '/api/rmhladder/resume/': typeof ApiRmhladderResumeIndexRoute
-  '/api/rmhmusic/guess/': typeof ApiRmhmusicGuessIndexRoute
   '/api/shop/loadouts/': typeof ApiShopLoadoutsIndexRoute
   '/api/slice-it/daily/': typeof ApiSliceItDailyIndexRoute
   '/api/slice-it/packs/': typeof ApiSliceItPacksIndexRoute
@@ -12649,7 +12594,6 @@ export interface FileRoutesById {
   '/api/rmhladder/referrals/$id/request': typeof ApiRmhladderReferralsIdRequestRoute
   '/api/rmhladder/resume/$id/analyze': typeof ApiRmhladderResumeIdAnalyzeRoute
   '/api/rmhladder/resume/$id/confirm': typeof ApiRmhladderResumeIdConfirmRoute
-  '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
   '/api/series/$id/posts/$postId': typeof ApiSeriesIdPostsPostIdRoute
   '/api/shop/loadouts/$id/apply': typeof ApiShopLoadoutsIdApplyRoute
   '/api/slice-it/charts/$id/reviews': typeof ApiSliceItChartsIdReviewsRoute
@@ -12703,7 +12647,6 @@ export interface FileRoutesById {
   '/api/office-hours/host/$id/': typeof ApiOfficeHoursHostIdIndexRoute
   '/api/playlists/$id/collaborators/': typeof ApiPlaylistsIdCollaboratorsIndexRoute
   '/api/playlists/$id/items/': typeof ApiPlaylistsIdItemsIndexRoute
-  '/api/rmhmusic/guess/$id/': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/shop/loadouts/$id/': typeof ApiShopLoadoutsIdIndexRoute
   '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
   '/api/studio/challenges/$id/': typeof ApiStudioChallengesIdIndexRoute
@@ -12916,7 +12859,6 @@ export interface FileRouteTypes {
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
     | '/rmhmusic/$roomId'
-    | '/rmhmusic/player'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
@@ -13319,7 +13261,6 @@ export interface FileRouteTypes {
     | '/api/rmhladder/prep'
     | '/api/rmhladder/referrals'
     | '/api/rmhladder/searches'
-    | '/api/rmhmusic/track-comments'
     | '/api/rmhtube/commentary'
     | '/api/rmhtube/heat'
     | '/api/rmhtube/oembed'
@@ -13824,7 +13765,6 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id'
     | '/api/rmhmusic/learn/lesson-complete'
     | '/api/rmhmusic/learn/profile'
-    | '/api/rmhmusic/spotify/search'
     | '/api/rmhtube/subscribe/$channelId'
     | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
@@ -13957,7 +13897,6 @@ export interface FileRouteTypes {
     | '/api/reading/shelves/'
     | '/api/rmhbox/packs/'
     | '/api/rmhladder/resume/'
-    | '/api/rmhmusic/guess/'
     | '/api/shop/loadouts/'
     | '/api/slice-it/daily/'
     | '/api/slice-it/packs/'
@@ -14039,7 +13978,6 @@ export interface FileRouteTypes {
     | '/api/rmhladder/referrals/$id/request'
     | '/api/rmhladder/resume/$id/analyze'
     | '/api/rmhladder/resume/$id/confirm'
-    | '/api/rmhmusic/guess/$id/attempt'
     | '/api/series/$id/posts/$postId'
     | '/api/shop/loadouts/$id/apply'
     | '/api/slice-it/charts/$id/reviews'
@@ -14093,7 +14031,6 @@ export interface FileRouteTypes {
     | '/api/office-hours/host/$id/'
     | '/api/playlists/$id/collaborators/'
     | '/api/playlists/$id/items/'
-    | '/api/rmhmusic/guess/$id/'
     | '/api/shop/loadouts/$id/'
     | '/api/storefront/products/$id/'
     | '/api/studio/challenges/$id/'
@@ -14279,7 +14216,6 @@ export interface FileRouteTypes {
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
     | '/rmhmusic/$roomId'
-    | '/rmhmusic/player'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
@@ -14682,7 +14618,6 @@ export interface FileRouteTypes {
     | '/api/rmhladder/prep'
     | '/api/rmhladder/referrals'
     | '/api/rmhladder/searches'
-    | '/api/rmhmusic/track-comments'
     | '/api/rmhtube/commentary'
     | '/api/rmhtube/heat'
     | '/api/rmhtube/oembed'
@@ -15186,7 +15121,6 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id'
     | '/api/rmhmusic/learn/lesson-complete'
     | '/api/rmhmusic/learn/profile'
-    | '/api/rmhmusic/spotify/search'
     | '/api/rmhtube/subscribe/$channelId'
     | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
@@ -15319,7 +15253,6 @@ export interface FileRouteTypes {
     | '/api/reading/shelves'
     | '/api/rmhbox/packs'
     | '/api/rmhladder/resume'
-    | '/api/rmhmusic/guess'
     | '/api/shop/loadouts'
     | '/api/slice-it/daily'
     | '/api/slice-it/packs'
@@ -15401,7 +15334,6 @@ export interface FileRouteTypes {
     | '/api/rmhladder/referrals/$id/request'
     | '/api/rmhladder/resume/$id/analyze'
     | '/api/rmhladder/resume/$id/confirm'
-    | '/api/rmhmusic/guess/$id/attempt'
     | '/api/series/$id/posts/$postId'
     | '/api/shop/loadouts/$id/apply'
     | '/api/slice-it/charts/$id/reviews'
@@ -15455,7 +15387,6 @@ export interface FileRouteTypes {
     | '/api/office-hours/host/$id'
     | '/api/playlists/$id/collaborators'
     | '/api/playlists/$id/items'
-    | '/api/rmhmusic/guess/$id'
     | '/api/shop/loadouts/$id'
     | '/api/storefront/products/$id'
     | '/api/studio/challenges/$id'
@@ -15667,7 +15598,6 @@ export interface FileRouteTypes {
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
     | '/rmhmusic/$roomId'
-    | '/rmhmusic/player'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
@@ -16071,7 +16001,6 @@ export interface FileRouteTypes {
     | '/api/rmhladder/prep'
     | '/api/rmhladder/referrals'
     | '/api/rmhladder/searches'
-    | '/api/rmhmusic/track-comments'
     | '/api/rmhtube/commentary'
     | '/api/rmhtube/heat'
     | '/api/rmhtube/oembed'
@@ -16576,7 +16505,6 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id'
     | '/api/rmhmusic/learn/lesson-complete'
     | '/api/rmhmusic/learn/profile'
-    | '/api/rmhmusic/spotify/search'
     | '/api/rmhtube/subscribe/$channelId'
     | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
@@ -16709,7 +16637,6 @@ export interface FileRouteTypes {
     | '/api/reading/shelves/'
     | '/api/rmhbox/packs/'
     | '/api/rmhladder/resume/'
-    | '/api/rmhmusic/guess/'
     | '/api/shop/loadouts/'
     | '/api/slice-it/daily/'
     | '/api/slice-it/packs/'
@@ -16791,7 +16718,6 @@ export interface FileRouteTypes {
     | '/api/rmhladder/referrals/$id/request'
     | '/api/rmhladder/resume/$id/analyze'
     | '/api/rmhladder/resume/$id/confirm'
-    | '/api/rmhmusic/guess/$id/attempt'
     | '/api/series/$id/posts/$postId'
     | '/api/shop/loadouts/$id/apply'
     | '/api/slice-it/charts/$id/reviews'
@@ -16845,7 +16771,6 @@ export interface FileRouteTypes {
     | '/api/office-hours/host/$id/'
     | '/api/playlists/$id/collaborators/'
     | '/api/playlists/$id/items/'
-    | '/api/rmhmusic/guess/$id/'
     | '/api/shop/loadouts/$id/'
     | '/api/storefront/products/$id/'
     | '/api/studio/challenges/$id/'
@@ -17219,7 +17144,6 @@ export interface RootRouteChildren {
   ApiRmhladderPrepRoute: typeof ApiRmhladderPrepRoute
   ApiRmhladderReferralsRoute: typeof ApiRmhladderReferralsRouteWithChildren
   ApiRmhladderSearchesRoute: typeof ApiRmhladderSearchesRoute
-  ApiRmhmusicTrackCommentsRoute: typeof ApiRmhmusicTrackCommentsRoute
   ApiRmhtubeCommentaryRoute: typeof ApiRmhtubeCommentaryRoute
   ApiRmhtubeHeatRoute: typeof ApiRmhtubeHeatRoute
   ApiRmhtubeOembedRoute: typeof ApiRmhtubeOembedRoute
@@ -17575,7 +17499,6 @@ export interface RootRouteChildren {
   ApiRmhladderResumeIdRoute: typeof ApiRmhladderResumeIdRouteWithChildren
   ApiRmhmusicLearnLessonCompleteRoute: typeof ApiRmhmusicLearnLessonCompleteRoute
   ApiRmhmusicLearnProfileRoute: typeof ApiRmhmusicLearnProfileRoute
-  ApiRmhmusicSpotifySearchRoute: typeof ApiRmhmusicSpotifySearchRoute
   ApiRmhtubeSubscribeChannelIdRoute: typeof ApiRmhtubeSubscribeChannelIdRoute
   ApiSeriesPostPostIdRoute: typeof ApiSeriesPostPostIdRoute
   ApiSliceItAdminContentRoute: typeof ApiSliceItAdminContentRoute
@@ -17662,7 +17585,6 @@ export interface RootRouteChildren {
   ApiReadingShelvesIndexRoute: typeof ApiReadingShelvesIndexRoute
   ApiRmhboxPacksIndexRoute: typeof ApiRmhboxPacksIndexRoute
   ApiRmhladderResumeIndexRoute: typeof ApiRmhladderResumeIndexRoute
-  ApiRmhmusicGuessIndexRoute: typeof ApiRmhmusicGuessIndexRoute
   ApiShopLoadoutsIndexRoute: typeof ApiShopLoadoutsIndexRoute
   ApiSliceItDailyIndexRoute: typeof ApiSliceItDailyIndexRoute
   ApiSliceItPacksIndexRoute: typeof ApiSliceItPacksIndexRoute
@@ -17699,7 +17621,6 @@ export interface RootRouteChildren {
   ApiOfficeHoursHostIdSummaryRoute: typeof ApiOfficeHoursHostIdSummaryRoute
   ApiPlaylistsIdCollaboratorsUserIdRoute: typeof ApiPlaylistsIdCollaboratorsUserIdRoute
   ApiPlaylistsIdItemsItemIdRoute: typeof ApiPlaylistsIdItemsItemIdRoute
-  ApiRmhmusicGuessIdAttemptRoute: typeof ApiRmhmusicGuessIdAttemptRoute
   ApiShopLoadoutsIdApplyRoute: typeof ApiShopLoadoutsIdApplyRoute
   ApiStorefrontProductsIdBuyRoute: typeof ApiStorefrontProductsIdBuyRoute
   ApiStudioChallengesIdEntryRoute: typeof ApiStudioChallengesIdEntryRoute
@@ -17721,7 +17642,6 @@ export interface RootRouteChildren {
   ApiOfficeHoursHostIdIndexRoute: typeof ApiOfficeHoursHostIdIndexRoute
   ApiPlaylistsIdCollaboratorsIndexRoute: typeof ApiPlaylistsIdCollaboratorsIndexRoute
   ApiPlaylistsIdItemsIndexRoute: typeof ApiPlaylistsIdItemsIndexRoute
-  ApiRmhmusicGuessIdIndexRoute: typeof ApiRmhmusicGuessIdIndexRoute
   ApiShopLoadoutsIdIndexRoute: typeof ApiShopLoadoutsIdIndexRoute
   ApiStorefrontProductsIdIndexRoute: typeof ApiStorefrontProductsIdIndexRoute
   ApiStudioChallengesIdIndexRoute: typeof ApiStudioChallengesIdIndexRoute
@@ -19103,13 +19023,6 @@ declare module '@tanstack/react-router' {
       path: '/$roomId'
       fullPath: '/rmhmusic/$roomId'
       preLoaderRoute: typeof RmhmusicRoomIdRouteImport
-      parentRoute: typeof RmhmusicRoute
-    }
-    '/rmhmusic/player': {
-      id: '/rmhmusic/player'
-      path: '/player'
-      fullPath: '/rmhmusic/player'
-      preLoaderRoute: typeof RmhmusicPlayerRouteImport
       parentRoute: typeof RmhmusicRoute
     }
     '/rmhstudy/': {
@@ -22486,13 +22399,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmhladderSearchesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/rmhmusic/track-comments': {
-      id: '/api/rmhmusic/track-comments'
-      path: '/api/rmhmusic/track-comments'
-      fullPath: '/api/rmhmusic/track-comments'
-      preLoaderRoute: typeof ApiRmhmusicTrackCommentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/rmhtube/commentary': {
       id: '/api/rmhtube/commentary'
       path: '/api/rmhtube/commentary'
@@ -25755,13 +25661,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmhladderResumeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/rmhmusic/guess/': {
-      id: '/api/rmhmusic/guess/'
-      path: '/api/rmhmusic/guess'
-      fullPath: '/api/rmhmusic/guess/'
-      preLoaderRoute: typeof ApiRmhmusicGuessIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/rmhmusic/learn/lesson-complete': {
       id: '/api/rmhmusic/learn/lesson-complete'
       path: '/api/rmhmusic/learn/lesson-complete'
@@ -25774,13 +25673,6 @@ declare module '@tanstack/react-router' {
       path: '/api/rmhmusic/learn/profile'
       fullPath: '/api/rmhmusic/learn/profile'
       preLoaderRoute: typeof ApiRmhmusicLearnProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/rmhmusic/spotify/search': {
-      id: '/api/rmhmusic/spotify/search'
-      path: '/api/rmhmusic/spotify/search'
-      fullPath: '/api/rmhmusic/spotify/search'
-      preLoaderRoute: typeof ApiRmhmusicSpotifySearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rmhtube/subscribe/$channelId': {
@@ -26994,20 +26886,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmhladderResumeIdConfirmRouteImport
       parentRoute: typeof ApiRmhladderResumeIdRoute
     }
-    '/api/rmhmusic/guess/$id/': {
-      id: '/api/rmhmusic/guess/$id/'
-      path: '/api/rmhmusic/guess/$id'
-      fullPath: '/api/rmhmusic/guess/$id/'
-      preLoaderRoute: typeof ApiRmhmusicGuessIdIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/rmhmusic/guess/$id/attempt': {
-      id: '/api/rmhmusic/guess/$id/attempt'
-      path: '/api/rmhmusic/guess/$id/attempt'
-      fullPath: '/api/rmhmusic/guess/$id/attempt'
-      preLoaderRoute: typeof ApiRmhmusicGuessIdAttemptRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/series/$id/posts/$postId': {
       id: '/api/series/$id/posts/$postId'
       path: '/$postId'
@@ -28153,14 +28031,12 @@ const RmhcodeRouteWithChildren =
 
 interface RmhmusicRouteChildren {
   RmhmusicRoomIdRoute: typeof RmhmusicRoomIdRoute
-  RmhmusicPlayerRoute: typeof RmhmusicPlayerRoute
   RmhmusicIndexRoute: typeof RmhmusicIndexRoute
   RmhmusicLessonLessonIdRoute: typeof RmhmusicLessonLessonIdRoute
 }
 
 const RmhmusicRouteChildren: RmhmusicRouteChildren = {
   RmhmusicRoomIdRoute: RmhmusicRoomIdRoute,
-  RmhmusicPlayerRoute: RmhmusicPlayerRoute,
   RmhmusicIndexRoute: RmhmusicIndexRoute,
   RmhmusicLessonLessonIdRoute: RmhmusicLessonLessonIdRoute,
 }
@@ -30097,7 +29973,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhladderPrepRoute: ApiRmhladderPrepRoute,
   ApiRmhladderReferralsRoute: ApiRmhladderReferralsRouteWithChildren,
   ApiRmhladderSearchesRoute: ApiRmhladderSearchesRoute,
-  ApiRmhmusicTrackCommentsRoute: ApiRmhmusicTrackCommentsRoute,
   ApiRmhtubeCommentaryRoute: ApiRmhtubeCommentaryRoute,
   ApiRmhtubeHeatRoute: ApiRmhtubeHeatRoute,
   ApiRmhtubeOembedRoute: ApiRmhtubeOembedRoute,
@@ -30456,7 +30331,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhladderResumeIdRoute: ApiRmhladderResumeIdRouteWithChildren,
   ApiRmhmusicLearnLessonCompleteRoute: ApiRmhmusicLearnLessonCompleteRoute,
   ApiRmhmusicLearnProfileRoute: ApiRmhmusicLearnProfileRoute,
-  ApiRmhmusicSpotifySearchRoute: ApiRmhmusicSpotifySearchRoute,
   ApiRmhtubeSubscribeChannelIdRoute: ApiRmhtubeSubscribeChannelIdRoute,
   ApiSeriesPostPostIdRoute: ApiSeriesPostPostIdRoute,
   ApiSliceItAdminContentRoute: ApiSliceItAdminContentRoute,
@@ -30543,7 +30417,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiReadingShelvesIndexRoute: ApiReadingShelvesIndexRoute,
   ApiRmhboxPacksIndexRoute: ApiRmhboxPacksIndexRoute,
   ApiRmhladderResumeIndexRoute: ApiRmhladderResumeIndexRoute,
-  ApiRmhmusicGuessIndexRoute: ApiRmhmusicGuessIndexRoute,
   ApiShopLoadoutsIndexRoute: ApiShopLoadoutsIndexRoute,
   ApiSliceItDailyIndexRoute: ApiSliceItDailyIndexRoute,
   ApiSliceItPacksIndexRoute: ApiSliceItPacksIndexRoute,
@@ -30582,7 +30455,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPlaylistsIdCollaboratorsUserIdRoute:
     ApiPlaylistsIdCollaboratorsUserIdRoute,
   ApiPlaylistsIdItemsItemIdRoute: ApiPlaylistsIdItemsItemIdRoute,
-  ApiRmhmusicGuessIdAttemptRoute: ApiRmhmusicGuessIdAttemptRoute,
   ApiShopLoadoutsIdApplyRoute: ApiShopLoadoutsIdApplyRoute,
   ApiStorefrontProductsIdBuyRoute: ApiStorefrontProductsIdBuyRoute,
   ApiStudioChallengesIdEntryRoute: ApiStudioChallengesIdEntryRoute,
@@ -30604,7 +30476,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOfficeHoursHostIdIndexRoute: ApiOfficeHoursHostIdIndexRoute,
   ApiPlaylistsIdCollaboratorsIndexRoute: ApiPlaylistsIdCollaboratorsIndexRoute,
   ApiPlaylistsIdItemsIndexRoute: ApiPlaylistsIdItemsIndexRoute,
-  ApiRmhmusicGuessIdIndexRoute: ApiRmhmusicGuessIdIndexRoute,
   ApiShopLoadoutsIdIndexRoute: ApiShopLoadoutsIdIndexRoute,
   ApiStorefrontProductsIdIndexRoute: ApiStorefrontProductsIdIndexRoute,
   ApiStudioChallengesIdIndexRoute: ApiStudioChallengesIdIndexRoute,

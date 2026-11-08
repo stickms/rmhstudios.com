@@ -36,7 +36,6 @@ import {
   registerKowloonKnockoutHandlers,
   handleKowloonKnockoutDisconnect,
 } from './handlers/kowloon-knockout';
-import { registerRmhMusicHandlers, handleRmhMusicDisconnect } from './handlers/rmhmusic';
 import { registerStudioJamHandlers } from './handlers/studio-jam';
 import {
   registerBlackjackHandlers,
@@ -525,7 +524,6 @@ io.on('connection', (socket) => {
   registerRmhStudyHandlers(io, socket);
   registerAltairHandlers(io, socket);
   registerKowloonKnockoutHandlers(io, socket);
-  registerRmhMusicHandlers(io, socket);
   registerStudioJamHandlers(io, socket); // F13: self-cleans on disconnect
   registerBlackjackHandlers(io, socket);
   registerHoldemHandlers(io, socket);
@@ -580,7 +578,6 @@ io.on('connection', (socket) => {
     handleRmhStudyDisconnect(io, socket);
     handleAltairDisconnect(io, socket);
     handleKowloonKnockoutDisconnect(io, socket);
-    if (!shuttingDown) handleRmhMusicDisconnect(io, socket);
     handleBlackjackDisconnect(io, socket);
     handleHoldemDisconnect(io, socket);
     handleBaccaratDisconnect(io, socket);

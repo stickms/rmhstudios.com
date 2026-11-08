@@ -381,6 +381,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/pricing': 'redirect', // → /store?tab=membership
   '/personas': 'redirect', // → /create/personas
   '/playlists': 'redirect', // → /library?view=music
+  '/music-trivia': 'redirect', // → /rmhmusic (Guess the Song retired with the listening-party app)
   '/spaces': 'redirect', // → /communities?tab=spaces
   '/v': 'redirect', // → /create
   '/search': 'redirect', // → /explore (the two pages were merged)
@@ -393,7 +394,6 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   // coverage gate — and it comes out, with the `unlisted` flag, in the commit
   // that makes the game playable.
   '/offline': 'noindex', // the service worker's offline shell
-  '/music-trivia': 'noindex', // an in-page widget, not a destination
   '/discord/lights-out': 'noindex', // Discord Activity surface, minimal head
   '/discord/rmhbox': 'noindex',
   // The Plasmatic Jelly lab: a live gallery of every elevation role, the soft
@@ -429,7 +429,6 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
 
   // ── ephemeral realtime rooms ──
   '/altair/multiplayer': 'ephemeral',
-  '/rmhmusic/player': 'ephemeral',
   '/rmhtype/multiplayer': 'ephemeral',
   '/tf2/hud-editor/editor': 'noindex', // the workspace itself; its content is the viewer's own HUD
   '/tf2/hud-editor/mine': 'personal', // a member's own HUDs and local drafts
@@ -571,7 +570,7 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/altair/multiplayer/$lobbyId': null, // ephemeral lobby
   '/rmhbox/$lobbyId': null,
   '/rmhbox/minigames/$minigameId/history': null,
-  '/rmhmusic/$roomId': null,
+  '/rmhmusic/$roomId': null, // redirects to /rmhmusic (the retired listening rooms)
   '/rmhmusic/lesson/$lessonId': null, // personal learning progress, behind auth
   '/rmhstudy/$roomId': null,
   '/rmhtube/$roomId': null,

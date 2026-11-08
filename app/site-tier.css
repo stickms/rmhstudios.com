@@ -66,6 +66,7 @@
 @source not "../components/rmhbox";
 @source not "../components/rmhcalculator";
 @source not "../components/rmhcode";
+@source not "../components/rmhmusic";
 @source not "../components/rmhstudy";
 @source not "../components/rmhtech";
 @source not "../components/rmhtube";
@@ -113,6 +114,7 @@
 @source not "../lib/rmhbox";
 @source not "../lib/rmhcalculator";
 @source not "../lib/rmhcode";
+@source not "../lib/rmhmusic";
 @source not "../lib/rmhstudy";
 @source not "../lib/rmhtube";
 @source not "../lib/rmhtype";
@@ -173,6 +175,8 @@
 @source not "./routes/rmhcalculator.tsx";
 @source not "./routes/rmhcode.tsx";
 @source not "./routes/rmhcode";
+@source not "./routes/rmhmusic.tsx";
+@source not "./routes/rmhmusic";
 @source not "./routes/rmhstudy.tsx";
 @source not "./routes/rmhstudy";
 @source not "./routes/rmhtube.tsx";

@@ -378,7 +378,6 @@ const ALLOW = new Set<string>([
   // runs only on pages that mount a governed Canvas, and writes nothing to the
   // DOM.
   'lib/render/refresh-rate.ts',
-  'lib/rmhmusic/spotify-player.ts',
   'lib/rmhvibe/vibe.server.ts',
   'lib/vega/VegaGame.ts',
   // The browser TF2 / Half-Life 2 / Portal clients' ONE frame loop (`GameLoop`). Every

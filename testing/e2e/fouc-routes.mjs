@@ -254,9 +254,9 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     why: 'Not-found branch; RMHLadder keeps the site theme.',
   },
   '/rmhmusic/$roomId': {
-    path: '/rmhmusic/fouc-audit',
+    path: null,
     fidelity: 'shell',
-    why: 'A non-existent room; the app shell paints before any socket work.',
+    why: 'Legacy redirect: old listening-room links are sent to /rmhmusic in beforeLoad, so the route never paints.',
   },
   '/rmhmusic/lesson/$lessonId': {
     path: '/rmhmusic/lesson/play-first-note',
