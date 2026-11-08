@@ -195,12 +195,14 @@ function Board() {
   );
 }
 
-export default function Scene() {
+/** `paused` stops drawing and the sim with it (the main menu is up); a shared world is never paused. */
+export default function Scene({ paused = false }: { paused?: boolean }) {
   const size = useHearthworks((s) => s.world.size);
   const mid = (size - 1) / 2;
   return (
     <Canvas
       dpr={[1, 2]}
+      frameloop={paused ? 'never' : 'always'}
       camera={{ position: [mid + 100, 90, mid + 100], fov: 6, near: 0.3, far: 900 }}
       gl={{ antialias: true }}
       style={{ touchAction: 'none' }}

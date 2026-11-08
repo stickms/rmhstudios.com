@@ -4398,3 +4398,907 @@ button.toj-row:active:not(:disabled) {
     min-height: 2.75rem;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   18. The title screen
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Drawn to match the poster the game is sold with (`/images/games/banners/`):
+ * gold paper with a sunburst, halftone dots, smileys, the Veracruz figure cut
+ * out like a sticker, and an ADMIT ONE ticket. The art owns its own warm
+ * palette — it is the same on Dawn and Vespers, because it is a poster, not the
+ * room — and everything is transform or opacity: nothing here triggers layout.
+ *
+ * Structure: `.toj-menu-ground` is the fixed paper (burst, halftone, grain,
+ * drifting smileys); `.toj-menu` is the `.app-screen` that scrolls over it when
+ * the window is too short, so the ticket's buttons are always reachable.
+ */
+
+.toj-title {
+  --tm-ray-a: #efc654;
+  --tm-ray-b: #e4ae31;
+  --tm-ray-line: #cf9622;
+  --tm-disc: #e39b1b;
+  --tm-ink: #3a1d0a;
+  --tm-ink-2: #5b3314;
+  --tm-cream: #f8eecf;
+  --tm-gold-hi: #f7d56a;
+  --tm-gold-lo: #e0a82a;
+  --tm-red: #b3361f;
+  --tm-mono: var(--site-font-mono, ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace);
+  /* Where the rays come from: the middle of the figure. */
+  --tm-cx: 70%;
+  --tm-cy: 46%;
+
+  background: var(--tm-ray-b);
+  color: var(--tm-ink);
+}
+
+/* ── Ground ──────────────────────────────────────────────────────────────── */
+
+.toj-menu-ground {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.toj-menu-burst {
+  position: absolute;
+  left: var(--tm-cx);
+  top: var(--tm-cy);
+  width: calc(max(100vw, 100vh) * 1.7);
+  height: calc(max(100vw, 100vh) * 1.7);
+  transform: translate(-50%, -50%);
+  background: repeating-conic-gradient(
+    from 0deg,
+    var(--tm-ray-a) 0deg 5.4deg,
+    var(--tm-ray-line) 5.4deg 5.9deg,
+    var(--tm-ray-b) 5.9deg 11.4deg,
+    var(--tm-ray-line) 11.4deg 12deg
+  );
+  animation: toj-menu-spin 160s linear infinite;
+  will-change: transform;
+}
+
+/* Light where the figure stands, and the paper darkening toward its edges. */
+.toj-menu-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at var(--tm-cx) var(--tm-cy), rgb(255 233 156 / 0.62), transparent 36%),
+    radial-gradient(
+      130% 110% at var(--tm-cx) var(--tm-cy),
+      transparent 42%,
+      rgb(122 66 8 / 0.34) 100%
+    );
+}
+
+/* Halftone dots, pooled bottom-left like the shadow in the poster. */
+.toj-menu-halftone {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgb(88 48 8 / 0.34) 0 1.1px, transparent 1.7px);
+  background-size: 8px 8px;
+  -webkit-mask-image: radial-gradient(70% 80% at 14% 74%, #000, transparent 72%);
+  mask-image: radial-gradient(70% 80% at 14% 74%, #000, transparent 72%);
+  opacity: 0.55;
+}
+
+.toj-menu-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.2;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Smileys, glints ─────────────────────────────────────────────────────── */
+
+.toj-menu-drift {
+  position: absolute;
+  animation: toj-menu-float var(--tm-dur, 7s) ease-in-out infinite;
+  animation-delay: var(--tm-delay, 0s);
+}
+
+.toj-menu-smiley {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.toj-menu-smiley-face {
+  fill: rgb(247 214 96 / 0.6);
+  stroke: var(--tm-ink);
+  stroke-width: 2.4;
+}
+
+.toj-menu-smiley-eye {
+  fill: var(--tm-ink);
+}
+
+.toj-menu-smiley-mouth {
+  fill: none;
+  stroke: var(--tm-ink);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.toj-menu-glint {
+  position: absolute;
+  translate: -50% -50%;
+  opacity: 0;
+  animation: toj-menu-twinkle 3.6s ease-in-out infinite;
+  animation-delay: var(--tm-delay, 0s);
+}
+
+.toj-menu-glint-star {
+  display: block;
+  width: 100%;
+  height: auto;
+  fill: #fff6d2;
+}
+
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+
+.toj-menu {
+  position: relative;
+  z-index: 1;
+}
+
+.toj-menu-wrap {
+  --fig: min(72vw, 34dvh, 26rem);
+  width: min(100%, 74rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'top'
+    'art'
+    'side';
+  justify-items: center;
+  row-gap: var(--toj-3);
+}
+
+.toj-menu-top {
+  grid-area: top;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--toj-4);
+  font-family: var(--tm-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tm-ink-2);
+  animation: toj-menu-rise 600ms var(--toj-ease-out) backwards;
+}
+
+.toj-menu-top-tags {
+  display: none;
+}
+
+.toj-menu-caption {
+  display: none;
+  grid-area: cap;
+  max-width: var(--fig);
+  text-align: center;
+  font-family: var(--tm-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tm-ink-2);
+}
+
+.toj-menu-side {
+  grid-area: side;
+  width: 100%;
+  max-width: 32rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--toj-2);
+}
+
+@media (min-width: 31rem) {
+  .toj-menu-top-tags {
+    display: inline;
+  }
+}
+
+@media (min-width: 700px) {
+  .toj-menu-wrap {
+    --fig: min(40vw, 66dvh, 38rem);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'top top'
+      'side art'
+      '. cap';
+    column-gap: clamp(1.5rem, 5vw, 5rem);
+    align-items: center;
+    row-gap: var(--toj-4);
+  }
+}
+
+@media (min-width: 700px) and (min-height: 560px) {
+  .toj-menu-caption {
+    display: block;
+  }
+}
+
+/* A phone on its side: the figure takes the height, the ticket the rest. */
+@media (min-width: 700px) and (max-height: 520px) {
+  .toj-menu-wrap {
+    --fig: min(40vw, 76dvh);
+    row-gap: var(--toj-2);
+  }
+}
+
+/* ── The figure ──────────────────────────────────────────────────────────── */
+
+.toj-menu-art {
+  grid-area: art;
+  position: relative;
+  width: var(--fig);
+  height: var(--fig);
+}
+
+.toj-menu-rings {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.toj-menu-ring {
+  fill: none;
+  stroke: var(--tm-ink);
+  vector-effect: non-scaling-stroke;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.toj-menu-ring-a {
+  stroke-width: 1px;
+  opacity: 0.7;
+}
+
+.toj-menu-ring-b {
+  stroke-width: 2px;
+  stroke-dasharray: 2 6;
+  opacity: 0.7;
+  animation: toj-menu-ring-spin 120s linear infinite;
+}
+
+.toj-menu-ring-c {
+  stroke-width: 1px;
+  stroke-dasharray: 16 6;
+  opacity: 0.55;
+  animation: toj-menu-ring-spin 180s linear infinite reverse;
+}
+
+.toj-menu-disc {
+  position: absolute;
+  left: 14%;
+  top: 10%;
+  width: 72%;
+  height: 72%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 38%, #f0ad28, var(--tm-disc) 62%, #d78f12);
+  transition:
+    scale 420ms var(--toj-ease),
+    opacity 420ms var(--toj-ease);
+}
+
+/* Halftone on the lower half of the disc, as in the poster. */
+.toj-menu-disc::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background-image: radial-gradient(circle, rgb(110 58 4 / 0.34) 0 1px, transparent 1.6px);
+  background-size: 6px 6px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 38%, #000 100%);
+  mask-image: linear-gradient(to bottom, transparent 38%, #000 100%);
+}
+
+.toj-menu-halo {
+  position: absolute;
+  left: -2%;
+  top: -6%;
+  width: 104%;
+  height: 104%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 228 140 / 0.7), transparent 64%);
+  animation: toj-menu-halo 5.6s ease-in-out infinite;
+}
+
+.toj-menu-coins {
+  position: absolute;
+  inset: 0;
+}
+
+.toj-menu-coin {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  border: max(2px, calc(var(--fig) * 0.009)) solid var(--tm-ink);
+  border-radius: calc(var(--fig) * 0.014);
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 calc(var(--fig) * 0.018),
+      var(--tm-ink) calc(var(--fig) * 0.018) calc(var(--fig) * 0.03),
+      transparent calc(var(--fig) * 0.03) calc(var(--fig) * 0.05)
+    )
+    center / 92% 40% no-repeat,
+    linear-gradient(180deg, #f6d25c, #dca127);
+}
+
+.toj-menu-coin-lo {
+  bottom: 4%;
+  width: 82%;
+  height: 8.6%;
+}
+
+.toj-menu-coin-hi {
+  bottom: 12%;
+  width: 60%;
+  height: 7.6%;
+}
+
+.toj-menu-figure {
+  position: absolute;
+  left: 22.4%;
+  bottom: 17.8%;
+  width: 55.3%;
+  height: 72%;
+  transform-origin: 50% 100%;
+  transition: transform 460ms var(--toj-ease);
+  animation: toj-menu-pop 760ms var(--toj-ease-out) 120ms backwards;
+}
+
+.toj-menu-figure-bob {
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 100%;
+  animation: toj-menu-bob 4.8s ease-in-out infinite;
+}
+
+.toj-menu-figure-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.toj-menu-stamp {
+  position: absolute;
+  right: -3%;
+  bottom: 3%;
+  width: 25%;
+  height: auto;
+  rotate: -14deg;
+  overflow: visible;
+  opacity: 0.92;
+  animation: toj-menu-rise 700ms var(--toj-ease-out) 500ms backwards;
+}
+
+.toj-menu-stamp-line {
+  fill: none;
+  stroke: var(--tm-red);
+  stroke-width: 2.6;
+}
+
+.toj-menu-stamp-inner {
+  stroke-width: 2;
+}
+
+.toj-menu-stamp-text {
+  font-family: var(--tm-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  fill: var(--tm-red);
+}
+
+.toj-menu-stamp-dot {
+  fill: var(--tm-red);
+}
+
+.toj-menu-stamp-mouth {
+  fill: none;
+  stroke: var(--tm-red);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+/* The figure answers whichever button the player is on. */
+.toj-menu[data-aim='enter'] .toj-menu-figure {
+  transform: translateY(-2.4%) scale(1.04);
+}
+
+.toj-menu[data-aim='enter'] .toj-menu-disc {
+  scale: 1.07;
+}
+
+.toj-menu[data-aim='quit'] .toj-menu-figure {
+  transform: translateX(1.5%) rotate(3deg);
+}
+
+.toj-menu[data-aim='quit'] .toj-menu-disc {
+  opacity: 0.72;
+}
+
+.toj-menu[data-phase='tearing'] .toj-menu-stamp {
+  animation: toj-menu-thump 460ms var(--toj-ease-out) both;
+}
+
+/* ── Title and tagline ───────────────────────────────────────────────────── */
+
+.toj-menu-title {
+  width: 100%;
+}
+
+.toj-menu-logo {
+  display: block;
+  width: min(100%, 17rem);
+  height: auto;
+  margin: -5% auto -5.5%;
+  animation: toj-menu-rise 700ms var(--toj-ease-out) 60ms backwards;
+}
+
+.toj-menu-tagline {
+  font-family: var(--toj-display);
+  font-style: italic;
+  font-size: clamp(0.95rem, 1.5vw, 1.15rem);
+  letter-spacing: 0.005em;
+  color: var(--tm-ink);
+  text-align: center;
+  animation: toj-menu-rise 700ms var(--toj-ease-out) 160ms backwards;
+}
+
+@media (min-width: 700px) {
+  .toj-menu-logo {
+    width: min(100%, 30rem);
+  }
+}
+
+/* ── The ticket ──────────────────────────────────────────────────────────── */
+
+.toj-ticket {
+  position: relative;
+  display: flex;
+  width: 100%;
+  margin-top: var(--toj-1);
+  rotate: -1.2deg;
+  color: var(--tm-cream);
+  animation: toj-menu-rise 700ms var(--toj-ease-out) 260ms backwards;
+}
+
+.toj-ticket-main {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: var(--toj-4) var(--toj-5);
+  background: var(--tm-ink);
+  border-radius: 8px 0 0 8px;
+  /* A torn edge: half-moons bitten out of the perforation, top and bottom. */
+  -webkit-mask:
+    radial-gradient(circle at 100% 0, transparent 0 9px, #000 9.5px) top / 100% 51% no-repeat,
+    radial-gradient(circle at 100% 100%, transparent 0 9px, #000 9.5px) bottom / 100% 51% no-repeat;
+  mask:
+    radial-gradient(circle at 100% 0, transparent 0 9px, #000 9.5px) top / 100% 51% no-repeat,
+    radial-gradient(circle at 100% 100%, transparent 0 9px, #000 9.5px) bottom / 100% 51% no-repeat;
+  transition: transform 300ms var(--toj-ease);
+}
+
+.toj-ticket-main::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgb(248 238 207 / 0.16);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.toj-ticket-stub {
+  position: relative;
+  flex: none;
+  width: 5.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--toj-2);
+  padding: var(--toj-4) var(--toj-3);
+  background: var(--tm-ink);
+  border-radius: 0 8px 8px 0;
+  -webkit-mask:
+    radial-gradient(circle at 0 0, transparent 0 9px, #000 9.5px) top / 100% 51% no-repeat,
+    radial-gradient(circle at 0 100%, transparent 0 9px, #000 9.5px) bottom / 100% 51% no-repeat;
+  mask:
+    radial-gradient(circle at 0 0, transparent 0 9px, #000 9.5px) top / 100% 51% no-repeat,
+    radial-gradient(circle at 0 100%, transparent 0 9px, #000 9.5px) bottom / 100% 51% no-repeat;
+  transform-origin: 0 100%;
+  transition:
+    transform 280ms var(--toj-ease),
+    opacity 280ms var(--toj-ease);
+}
+
+/* The perforation, drawn on the stub so it leaves with it. */
+.toj-ticket-stub::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  border-left: 2px dashed rgb(248 238 207 / 0.38);
+}
+
+.toj-ticket-bars {
+  flex: 1;
+  width: 100%;
+  min-height: 4rem;
+  fill: var(--tm-cream);
+}
+
+.toj-ticket-serial {
+  font-family: var(--tm-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  color: rgb(248 238 207 / 0.7);
+}
+
+.toj-ticket-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--toj-3);
+  padding-bottom: var(--toj-2);
+  margin-bottom: var(--toj-3);
+  border-bottom: 1px dashed rgb(248 238 207 / 0.26);
+  font-family: var(--tm-mono);
+  text-transform: uppercase;
+}
+
+.toj-ticket-admit {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+}
+
+.toj-ticket-no {
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  color: rgb(248 238 207 / 0.68);
+}
+
+/* Phone width: the stub and the margins give a little back so the ticket's
+   header stays on one line. */
+@media (max-width: 480px) {
+  .toj-ticket-main {
+    padding: var(--toj-4);
+  }
+
+  .toj-ticket-stub {
+    width: 4.2rem;
+    padding-inline: var(--toj-2);
+  }
+
+  .toj-ticket-admit {
+    font-size: 0.95rem;
+    letter-spacing: 0.1em;
+  }
+
+  .toj-ticket-no {
+    font-size: 0.56rem;
+    letter-spacing: 0.06em;
+  }
+}
+
+.toj-ticket-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--toj-2) var(--toj-4);
+  margin: 0 0 var(--toj-4);
+}
+
+.toj-ticket-stats dt {
+  font-family: var(--tm-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(248 238 207 / 0.66);
+}
+
+.toj-ticket-stats dd {
+  margin: 0;
+  font-family: var(--tm-mono);
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.toj-ticket-joy {
+  grid-column: 1 / -1;
+}
+
+.toj-ticket-joy dd {
+  font-family: var(--toj-display);
+  font-size: clamp(1.7rem, 4.6vw, 2.3rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: var(--toj-display-tracking);
+  color: var(--tm-gold-hi);
+}
+
+.toj-ticket-fresh {
+  margin: 0 0 var(--toj-4);
+  font-size: 0.84rem;
+  font-style: italic;
+  color: rgb(248 238 207 / 0.8);
+}
+
+.toj-ticket-foot {
+  margin-top: var(--toj-3);
+  text-align: center;
+  font-family: var(--tm-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(248 238 207 / 0.5);
+}
+
+/* ── The menu itself ─────────────────────────────────────────────────────── */
+
+.toj-menu-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--toj-2);
+}
+
+.toj-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--toj-3);
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--toj-2) var(--toj-4);
+  border-radius: var(--toj-radius-sm);
+  font-family: var(--toj-sans);
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: start;
+  transition:
+    transform var(--toj-quick) var(--toj-ease),
+    background-color var(--toj-base) var(--toj-ease),
+    border-color var(--toj-base) var(--toj-ease),
+    color var(--toj-base) var(--toj-ease);
+}
+
+.toj-menu-btn:active {
+  transform: translateY(1px);
+}
+
+.toj-menu-btn:focus-visible {
+  outline: 3px solid var(--tm-cream);
+  outline-offset: 3px;
+  border-radius: var(--toj-radius-sm);
+}
+
+.toj-menu-btn-icon {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  transition: translate var(--toj-base) var(--toj-ease);
+}
+
+.toj-menu-btn-enter {
+  min-height: 3.4rem;
+  font-size: 1.1rem;
+  border: 2px solid #fbe9a6;
+  background: linear-gradient(180deg, var(--tm-gold-hi), var(--tm-gold-lo));
+  color: var(--tm-ink);
+}
+
+.toj-menu-btn-enter:hover,
+.toj-menu-btn-enter:focus-visible {
+  background: linear-gradient(180deg, #fbe188, #eab636);
+}
+
+.toj-menu-btn-enter:hover .toj-menu-btn-icon,
+.toj-menu-btn-enter:focus-visible .toj-menu-btn-icon {
+  translate: 4px 0;
+}
+
+.toj-menu-btn-quit {
+  border: 1.5px solid rgb(248 238 207 / 0.4);
+  background: transparent;
+  color: var(--tm-cream);
+}
+
+.toj-menu-btn-quit:hover,
+.toj-menu-btn-quit:focus-visible {
+  border-color: rgb(248 238 207 / 0.8);
+  background: rgb(248 238 207 / 0.09);
+}
+
+.toj-menu-btn-quit:hover .toj-menu-btn-icon,
+.toj-menu-btn-quit:focus-visible .toj-menu-btn-icon {
+  translate: 3px 0;
+}
+
+/* The stub lifts as the player reaches for Enter, and goes when they take it. */
+.toj-menu[data-aim='enter'] .toj-ticket-stub {
+  transform: translateX(4px) rotate(4.5deg);
+}
+
+.toj-ticket[data-phase='tearing'] .toj-ticket-stub {
+  transform: translate(70%, -50%) rotate(28deg);
+  opacity: 0;
+  transition-duration: 480ms;
+  transition-timing-function: cubic-bezier(0.55, 0, 0.9, 0.6);
+}
+
+.toj-ticket[data-phase='tearing'] .toj-ticket-main {
+  transform: translateX(-6px);
+}
+
+/* A short, wide window (a phone on its side): tighten, don't crop. */
+@media (min-width: 700px) and (max-height: 520px) {
+  .toj-menu-logo {
+    width: min(100%, 14rem);
+  }
+
+  .toj-menu-tagline,
+  .toj-ticket-foot {
+    display: none;
+  }
+
+  .toj-ticket-main {
+    padding: var(--toj-3) var(--toj-4);
+  }
+
+  .toj-ticket-head {
+    padding-bottom: var(--toj-1);
+    margin-bottom: var(--toj-2);
+  }
+
+  .toj-ticket-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--toj-1) var(--toj-3);
+    margin-bottom: var(--toj-3);
+  }
+
+  .toj-ticket-joy dd {
+    font-size: 1.5rem;
+  }
+
+  .toj-ticket-fresh {
+    margin-bottom: var(--toj-3);
+  }
+
+  .toj-menu-btn-enter {
+    min-height: 2.9rem;
+  }
+
+  .toj-ticket-stub {
+    width: 4.4rem;
+  }
+}
+
+/* ── Motion ──────────────────────────────────────────────────────────────── */
+
+@keyframes toj-menu-spin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes toj-menu-ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes toj-menu-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(-0.8rem) rotate(6deg);
+  }
+}
+
+@keyframes toj-menu-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-0.8deg) scale(1, 1);
+  }
+  50% {
+    transform: translateY(-1.8%) rotate(0.8deg) scale(1.008, 1.02);
+  }
+}
+
+@keyframes toj-menu-halo {
+  0%,
+  100% {
+    transform: scale(0.96);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.07);
+    opacity: 0.85;
+  }
+}
+
+@keyframes toj-menu-twinkle {
+  0%,
+  55%,
+  100% {
+    opacity: 0;
+    transform: scale(0.2) rotate(0deg);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1) rotate(45deg);
+  }
+  40% {
+    opacity: 0.85;
+    transform: scale(0.7) rotate(80deg);
+  }
+}
+
+@keyframes toj-menu-rise {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+}
+
+@keyframes toj-menu-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6%) scale(0.88);
+  }
+}
+
+@keyframes toj-menu-thump {
+  0% {
+    opacity: 0;
+    scale: 1.9;
+  }
+  55% {
+    opacity: 1;
+    scale: 0.94;
+  }
+  100% {
+    opacity: 0.92;
+    scale: 1;
+  }
+}
+
+/* The game's own "reduced flourish" setting (carried on the save) quiets the
+   ambient layers here too. State changes — the stub leaving — stay. */
+.toj[data-flourish='off'] .toj-menu-burst,
+.toj[data-flourish='off'] .toj-menu-ring-b,
+.toj[data-flourish='off'] .toj-menu-ring-c,
+.toj[data-flourish='off'] .toj-menu-drift,
+.toj[data-flourish='off'] .toj-menu-figure-bob,
+.toj[data-flourish='off'] .toj-menu-halo {
+  animation: none;
+}
+
+.toj[data-flourish='off'] .toj-menu-glint {
+  display: none;
+}

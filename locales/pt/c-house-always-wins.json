@@ -31,5 +31,22 @@
   "touch-menu-aria": "Abrir menu",
   "touch-right": "Mover para a direita",
   "touch-use": "Usar",
-  "touch-use-aria": "Interagir"
+  "touch-use-aria": "Interagir",
+  "menu-main-menu": "Main menu",
+  "main-continue": "Continue",
+  "main-help-back": "Back",
+  "main-help-goal": "Explore the Mirage Royale, collect chips to pay down your debt, recover three Vault Keys and face The House.",
+  "main-help-title": "How to play",
+  "main-help-touch": "Use the on-screen pad to move, jump, dash and interact.",
+  "main-how-to-play": "How to play",
+  "main-keys-hint": "↑ ↓ to choose · Enter to select",
+  "main-logo-alt": "House Always Wins",
+  "main-marker-due": "Balance due",
+  "main-marker-interest": "Interest compounds nightly",
+  "main-marker-no": "Marker No. 0777",
+  "main-nav-aria": "Main menu",
+  "main-new-game": "New game",
+  "main-play": "Play",
+  "main-quit": "Quit",
+  "main-tagline": "Explore the abandoned Mirage Royale and outwit The House."
 }
