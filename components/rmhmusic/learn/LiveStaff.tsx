@@ -16,15 +16,17 @@ import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { InputSource } from '@/lib/rmhmusic/learn/input/events';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
-import { fitToStaff } from '@/lib/rmhmusic/learn/staff';
+import {
+  GAP,
+  LABEL_FONT,
+  NOTE_X,
+  TOP,
+  VIEW_H,
+  VIEW_W,
+  liveStaffLayout,
+} from '@/lib/rmhmusic/learn/live-staff-layout';
 import { cn } from '@/lib/utils';
 import { useLastNote } from './useLearnInput';
-
-const GAP = 10;
-/** The top line's y; the drawing runs from 3 ledger lines above to 4 below. */
-const TOP = 42;
-const NOTE_X = 128;
-const yOf = (step: number) => TOP + 4 * GAP - (step * GAP) / 2;
 
 /** A treble (G) clef drawn as one pen stroke curling round the G line (y = TOP + 30). */
 const CLEF =
@@ -49,7 +51,7 @@ export function LiveStaff({ source, note, announce = true, className }: LiveStaf
   const last = useLastNote(source);
   const midi = note ?? last?.midi ?? null;
   const name = midi === null ? null : midiToName(midi);
-  const fit = midi === null ? null : fitToStaff(midi);
+  const fit = midi === null ? null : liveStaffLayout(midi);
   const label = name
     ? t('staff-last-note', { note: name, defaultValue: 'Last note: {{note}}' })
     : t('staff-empty', { defaultValue: 'Staff: no note played yet' });
@@ -57,7 +59,7 @@ export function LiveStaff({ source, note, announce = true, className }: LiveStaf
   return (
     <figure className={cn('mx-auto w-full max-w-64', className)}>
       <svg
-        viewBox="0 0 200 132"
+        viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
         role="img"
         aria-labelledby={titleId}
         className="block h-auto w-full text-(--app-text)"
@@ -65,60 +67,44 @@ export function LiveStaff({ source, note, announce = true, className }: LiveStaf
         <title id={titleId}>{label}</title>
         <g stroke="currentColor" strokeWidth="1" opacity="0.55">
           {[0, 1, 2, 3, 4].map((i) => (
-            <line key={i} x1="4" x2="196" y1={TOP + i * GAP} y2={TOP + i * GAP} />
+            <line key={i} x1="4" x2={VIEW_W - 4} y1={TOP + i * GAP} y2={TOP + i * GAP} />
           ))}
           <line x1="4" x2="4" y1={TOP} y2={TOP + 4 * GAP} />
-          <line x1="196" x2="196" y1={TOP} y2={TOP + 4 * GAP} />
+          <line x1={VIEW_W - 4} x2={VIEW_W - 4} y1={TOP} y2={TOP + 4 * GAP} />
         </g>
         <path d={CLEF} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
         <circle cx="19" cy={TOP + 52} r="3" fill="currentColor" />
         {fit && (
           <g className="text-(--app-accent)" stroke="currentColor" fill="currentColor">
-            {fit.position.ledgerLines.map((s) => (
-              <line
-                key={s}
-                x1={NOTE_X - 12}
-                x2={NOTE_X + 12}
-                y1={yOf(s)}
-                y2={yOf(s)}
-                strokeWidth="1.4"
-              />
+            {fit.ledgerYs.map((y) => (
+              <line key={y} x1={NOTE_X - 12} x2={NOTE_X + 12} y1={y} y2={y} strokeWidth="1.4" />
             ))}
             <ellipse
               cx={NOTE_X}
-              cy={yOf(fit.position.step)}
+              cy={fit.noteY}
               rx="6.6"
               ry="4.6"
-              transform={`rotate(-20 ${NOTE_X} ${yOf(fit.position.step)})`}
+              transform={`rotate(-20 ${NOTE_X} ${fit.noteY})`}
               stroke="none"
             />
-            {fit.position.accidental === 'sharp' && (
-              <g
-                strokeWidth="1.4"
-                transform={`translate(${NOTE_X - 17} ${yOf(fit.position.step)})`}
-              >
+            {fit.sharp && (
+              <g strokeWidth="1.4" transform={`translate(${NOTE_X - 17} ${fit.noteY})`}>
                 <line x1="-2" x2="-2" y1="-9" y2="10" />
                 <line x1="2.5" x2="2.5" y1="-10" y2="9" />
                 <line x1="-5.5" x2="6" y1="-1.5" y2="-4.5" strokeWidth="2.4" />
                 <line x1="-5.5" x2="6" y1="4.5" y2="1.5" strokeWidth="2.4" />
               </g>
             )}
-            {fit.ottava !== 0 && (
+            {fit.label && (
               <text
-                x={NOTE_X + 14}
-                y={fit.ottava < 0 ? yOf(fit.position.step) + 20 : yOf(fit.position.step) - 12}
+                x={fit.label.x}
+                y={fit.label.y}
                 stroke="none"
-                fontSize="11"
+                fontSize={LABEL_FONT}
                 fontStyle="italic"
                 className="rmm-display"
               >
-                {fit.ottava < 0
-                  ? fit.ottava === -1
-                    ? '8vb'
-                    : '15mb'
-                  : fit.ottava === 1
-                    ? '8va'
-                    : '15ma'}
+                {fit.label.text}
               </text>
             )}
           </g>
