@@ -12,8 +12,12 @@
  * Pure: no DOM, no worker globals. Unit-tested (`__tests__/globe-protocol.test.ts`).
  */
 
-/** Bumped whenever a message changes shape. The worker refuses an `init` from a different version. */
-export const GLOBE_PROTOCOL_VERSION = 1;
+/**
+ * Bumped whenever a message changes shape. The worker refuses an `init` from a different version. 2 (2026-11-08): the
+ * clock's `held` became `engaged` (engaged WITH THE GLOBE, `globe-engagement.ts`) and `engagedUntil` the end of its
+ * short settle; an `ack` may hand a dough-field buffer back.
+ */
+export const GLOBE_PROTOCOL_VERSION = 2;
 
 /** The ripple's shape, as `lib/fluid` §RIPPLE gives it. */
 export interface GlobeRippleShape {
@@ -68,7 +72,9 @@ export interface SkinFrame {
 
 /**
  * What the coat's own clock may do (the jelly ambient clock, `lib/jelly/tiers.ts`), sent only when it changes. The
- * worker runs the haze and eases the plasma itself, so a globe at rest posts nothing at all.
+ * worker runs the haze and eases the plasma itself, so a globe at rest posts nothing at all. The rate follows
+ * `engagedRate` (`globe-engagement.ts`), the same rule the page's frame loop uses: the page posts the engaged EDGES
+ * (pointer arriving at or leaving the globe, a press, keyboard focus), never window-wide input timestamps.
  */
 export interface CoatClock {
   /** Engaged and idle-floor tick rates; 0 = no ambient motion (Still, degraded, rehearsal). */
@@ -78,9 +84,12 @@ export interface CoatClock {
   amp: number;
   /** On screen, tab visible and focused: the clock may tick. */
   active: boolean;
-  /** A fine pointer is over the ball or a hand is on it: engaged regardless of time. */
-  held: boolean;
-  /** Page `performance.now()` until which the clock runs at the engaged rate (the last input + `IDLE_AFTER_MS`). */
+  /** Engaged with the globe right now (a pointer over or near it, a press/drag/hold, keyboard focus in the dock or hub). */
+  engaged: boolean;
+  /**
+   * Page `performance.now()` until which the clock keeps the engaged rate after `engaged` went false (the settle,
+   * `GLOBE_SETTLE_MS`); 0 while engaged. It changes only on an edge.
+   */
   engagedUntil: number;
   /** The plasma level the worker eases toward (`PLASMA.rest` / `wake` / `press`). */
   plasma: number;
@@ -118,8 +127,11 @@ export type GlobeOut =
   | { type: 'ready'; version: number; ok: false; reason: GlobeFailReason }
   /** The coat's first frame is on its canvas: the page may fade it in over the CSS glass. */
   | { type: 'drawn' }
-  /** Frame `seq` (and everything before it) has been taken. */
-  | { type: 'ack'; seq: number }
+  /**
+   * Frame `seq` (and everything before it) has been taken. `field` is the last dough-field buffer the worker uploaded,
+   * transferred back so the page reuses it for the next version instead of allocating a copy.
+   */
+  | { type: 'ack'; seq: number; field?: Float32Array }
   /** The coat's context is gone. The canvases are dead; the page restarts the worker or falls back. */
   | { type: 'lost' }
   | { type: 'skin'; ok: boolean };
@@ -129,6 +141,28 @@ export function isGlobeOut(m: unknown): m is GlobeOut {
   if (!m || typeof m !== 'object') return false;
   const t = (m as { type?: unknown }).type;
   return t === 'ready' || t === 'drawn' || t === 'ack' || t === 'lost' || t === 'skin';
+}
+
+const GLOBE_IN_TYPES = new Set<string>([
+  'init',
+  'size',
+  'theme',
+  'scene',
+  'scene-off',
+  'place',
+  'clock',
+  'frame',
+  'skin-init',
+  'skin-size',
+  'skin-theme',
+  'skin-clear',
+]);
+
+/** Narrow an unknown page message to {@link GlobeIn}: the worker ignores null, non-objects and unknown types. */
+export function isGlobeIn(m: unknown): m is GlobeIn {
+  if (!m || typeof m !== 'object') return false;
+  const t = (m as { type?: unknown }).type;
+  return typeof t === 'string' && GLOBE_IN_TYPES.has(t);
 }
 
 /* ── Back-pressure ──────────────────────────────────────────────────────────────────────────────────────────────────
@@ -207,7 +241,7 @@ export function clockChanged(a: CoatClock | null, b: CoatClock, slackMs = 500): 
     a.idleHz !== b.idleHz ||
     a.amp !== b.amp ||
     a.active !== b.active ||
-    a.held !== b.held ||
+    a.engaged !== b.engaged ||
     a.plasma !== b.plasma ||
     a.plasmaEaseMs !== b.plasmaEaseMs ||
     a.frozen !== b.frozen ||

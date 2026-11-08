@@ -14,16 +14,20 @@
  * slow GPU drops stale cursor frames instead of queueing them.
  */
 import type { GlFrame, GlobeSurface } from './gl';
+import {
+  CURSOR_PROTOCOL_VERSION,
+  type CursorWorkerIn,
+  type CursorWorkerOut,
+} from './cursor-protocol';
 
 export const CURSOR_READY_TIMEOUT_MS = 8000;
 export const CURSOR_FRAMES_IN_FLIGHT = 2;
 
-export type CursorWorkerIn =
-  | { type: 'init'; canvas: OffscreenCanvas; software: boolean }
-  | { type: 'frame'; seq: number; f: GlFrame };
-
-export type CursorWorkerOut =
-  { type: 'ready'; ok: boolean } | { type: 'ack'; seq: number } | { type: 'lost' };
+export {
+  CURSOR_PROTOCOL_VERSION,
+  type CursorWorkerIn,
+  type CursorWorkerOut,
+} from './cursor-protocol';
 
 export interface RemoteGlDeps {
   /** Worker + OffscreenCanvas + transferControlToOffscreen are all available. */
@@ -130,7 +134,12 @@ export function startRemoteGlobeGl(deps: RemoteGlDeps): Promise<RemoteGlobeGl | 
     };
     try {
       worker.postMessage(
-        { type: 'init', canvas: off, software: deps.software } satisfies CursorWorkerIn,
+        {
+          type: 'init',
+          version: CURSOR_PROTOCOL_VERSION,
+          canvas: off,
+          software: deps.software,
+        } satisfies CursorWorkerIn,
         [off],
       );
     } catch {
@@ -149,23 +158,29 @@ export function canUseCursorWorker(win: Window & typeof globalThis): boolean {
 }
 
 let shared: Promise<RemoteGlobeGl | null> | null = null;
+
+function startInBrowser(software: boolean): Promise<RemoteGlobeGl | null> {
+  const win = window as Window & typeof globalThis;
+  return startRemoteGlobeGl({
+    supported: canUseCursorWorker(win),
+    software,
+    createWorker: () =>
+      new Worker(new URL('./cursor.worker.ts', import.meta.url), {
+        type: 'module',
+        name: 'globe-cursor',
+      }),
+    createCanvas: () => win.document.createElement('canvas'),
+  });
+}
+
 /**
  * The page's one worker-backed cursor surface, started on first use and shared by later mounts; a lost one is
- * replaced on the next acquire. `software` caps the mesh on a software rasteriser.
+ * replaced on the next acquire. `software` caps the mesh on a software rasteriser. `start` is for tests.
  */
-export function acquireRemoteGlobeGl(software: boolean): Promise<RemoteGlobeGl | null> {
-  const win = window as Window & typeof globalThis;
-  const start = () =>
-    startRemoteGlobeGl({
-      supported: canUseCursorWorker(win),
-      software,
-      createWorker: () =>
-        new Worker(new URL('./cursor.worker.ts', import.meta.url), {
-          type: 'module',
-          name: 'globe-cursor',
-        }),
-      createCanvas: () => win.document.createElement('canvas'),
-    });
+export function acquireRemoteGlobeGl(
+  software: boolean,
+  start: () => Promise<RemoteGlobeGl | null> = () => startInBrowser(software),
+): Promise<RemoteGlobeGl | null> {
   if (shared) {
     const prev = shared;
     shared = prev.then((g) => (g && !g.ok ? start() : g));
@@ -173,4 +188,14 @@ export function acquireRemoteGlobeGl(software: boolean): Promise<RemoteGlobeGl |
   }
   shared = start();
   return shared;
+}
+
+/**
+ * Stop the shared cursor worker and release its GL context (the trail and sparkle modes draw on the page-side surface,
+ * so a worker kept for them would hold a second GPU context for nothing). A later direct mode starts a fresh one.
+ */
+export function releaseRemoteGlobeGl(): void {
+  const p = shared;
+  shared = null;
+  void p?.then((g) => g?.dispose());
 }

@@ -101,7 +101,7 @@ const CLOCK: CoatClock = {
   idleHz: 30,
   amp: 1,
   active: true,
-  held: false,
+  engaged: false,
   engagedUntil: 0,
   plasma: 0,
   plasmaEaseMs: 180,
@@ -368,6 +368,45 @@ describe('messages: small, deduplicated, back-pressured', () => {
     expect(w.last('frame')!.surface?.field).toBeUndefined();
   });
 
+  it('reuses a field buffer the worker hands back instead of allocating a new copy per version', () => {
+    const { deps, workers } = rig();
+    const host = createGlobeHost(deps);
+    const w = workers[0]!;
+    ready(w);
+    const field = new Float32Array([1, 2, 3, 4]);
+    const s = { ripples: new Array(12).fill(0), gx: 0, gy: 0, pinch: 0 };
+    host.surface({ ...s, field, fieldVersion: 1 });
+    host.flush();
+    // The worker uploaded it and transfers the buffer back with the ack.
+    const back = new Float32Array(4);
+    w.reply({ type: 'ack', seq: 1, field: back });
+    field.set([5, 6, 7, 8]);
+    host.surface({ ...s, field, fieldVersion: 2 });
+    host.flush();
+    const sent = w.last('frame')!.surface!.field!;
+    expect(sent).toBe(back);
+    expect([...sent]).toEqual([5, 6, 7, 8]);
+    expect(w.sent.at(-1)!.transfer).toEqual([back.buffer]);
+  });
+
+  it('ignores a handed-back buffer of the wrong size', () => {
+    const { deps, workers } = rig();
+    const host = createGlobeHost(deps);
+    const w = workers[0]!;
+    ready(w);
+    const field = new Float32Array(4);
+    const s = { ripples: new Array(12).fill(0), gx: 0, gy: 0, pinch: 0 };
+    host.surface({ ...s, field, fieldVersion: 1 });
+    host.flush();
+    const wrong = new Float32Array(2);
+    w.reply({ type: 'ack', seq: 1, field: wrong });
+    host.surface({ ...s, field, fieldVersion: 2 });
+    host.flush();
+    const sent = w.last('frame')!.surface!.field!;
+    expect(sent).not.toBe(wrong);
+    expect(sent.length).toBe(4);
+  });
+
   it('drops frames while starting rather than queueing them for the worker', () => {
     const { deps, workers } = rig();
     const host = createGlobeHost(deps);
@@ -451,6 +490,33 @@ describe('the self-eversion skin', () => {
     workers[0]!.reply({ type: 'skin', ok: false });
     expect(host.skinFailed).toBe(true);
     expect(host.skinCanvas(PROJ)).toBeNull();
+  });
+
+  it('a skin that loses its context after it was ready reports not-ready, so the page stops fading the glass', () => {
+    const { deps, workers, canvases } = rig();
+    const host = createGlobeHost(deps);
+    ready(workers[0]!);
+    host.skinCanvas(PROJ);
+    workers[0]!.reply({ type: 'skin', ok: true });
+    expect(host.skinReady).toBe(true);
+    const seen: boolean[] = [];
+    host.subscribe(() => seen.push(host.skinReady));
+    workers[0]!.reply({ type: 'skin', ok: false });
+    expect(host.skinReady).toBe(false);
+    expect(host.skinFailed).toBe(true);
+    expect(canvases[1]!.removed).toBe(true);
+    expect(seen).toEqual([false]);
+  });
+
+  it('currentSkinCanvas reads the skin without starting one', () => {
+    const { deps, workers, canvases } = rig();
+    const host = createGlobeHost(deps);
+    ready(workers[0]!);
+    expect(host.currentSkinCanvas).toBeNull();
+    expect(workers[0]!.types()).not.toContain('skin-init');
+    expect(canvases).toHaveLength(1);
+    const skin = host.skinCanvas(PROJ);
+    expect(host.currentSkinCanvas).toBe(skin);
   });
 
   it('has no skin in the CSS fallback', () => {

@@ -14,6 +14,7 @@ import {
   afterFailure,
   clockChanged,
   decideGlobeBackend,
+  isGlobeIn,
   isGlobeOut,
   type CoatClock,
   type CoatSurface,
@@ -33,7 +34,7 @@ const clock = (over: Partial<CoatClock> = {}): CoatClock => ({
   idleHz: 30,
   amp: 1,
   active: true,
-  held: false,
+  engaged: false,
   engagedUntil: 1000,
   plasma: 0,
   plasmaEaseMs: 180,
@@ -44,6 +45,27 @@ const clock = (over: Partial<CoatClock> = {}): CoatClock => ({
 describe('message shapes', () => {
   it('has a protocol version the init carries', () => {
     expect(GLOBE_PROTOCOL_VERSION).toBeGreaterThanOrEqual(1);
+  });
+
+  it('is version 2: the clock carries the engaged state (engaged with the globe), not window-wide input', () => {
+    expect(GLOBE_PROTOCOL_VERSION).toBe(2);
+    const c = clock();
+    expect(c).toHaveProperty('engaged');
+    expect(c).not.toHaveProperty('held');
+  });
+
+  it('narrows inbound (page → worker) messages defensively', () => {
+    expect(isGlobeIn({ type: 'size', cssPx: 320, dpr: 2 })).toBe(true);
+    expect(isGlobeIn({ type: 'clock', clock: clock() })).toBe(true);
+    expect(isGlobeIn({ type: 'frame', seq: 1 })).toBe(true);
+    expect(isGlobeIn({ type: 'skin-clear' })).toBe(true);
+    expect(isGlobeIn(null)).toBe(false);
+    expect(isGlobeIn(undefined)).toBe(false);
+    expect(isGlobeIn(7)).toBe(false);
+    expect(isGlobeIn('size')).toBe(false);
+    expect(isGlobeIn({})).toBe(false);
+    expect(isGlobeIn({ type: 'ready' })).toBe(false);
+    expect(isGlobeIn({ type: 'explode' })).toBe(false);
   });
 
   it('narrows only the worker messages it knows', () => {
@@ -130,6 +152,12 @@ describe('clockChanged', () => {
     expect(clockChanged(clock(), clock({ active: false }))).toBe(true);
     expect(clockChanged(clock(), clock({ frozen: true }))).toBe(true);
     expect(clockChanged(clock(), clock({ hz: 0 }))).toBe(true);
+  });
+
+  it('posts the engaged edge, both ways', () => {
+    expect(clockChanged(clock(), clock({ engaged: true }))).toBe(true);
+    expect(clockChanged(clock({ engaged: true }), clock())).toBe(true);
+    expect(clockChanged(clock({ engaged: true }), clock({ engaged: true }))).toBe(false);
   });
 
   it('does not post every pointer move: engagedUntil only past the slack', () => {

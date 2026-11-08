@@ -191,3 +191,28 @@ Owner directive: more oomph and impact in feel and lighting for the plasma and l
 7. Safety: total frame luminance change per flash is capped; the existing flash ledger decides whether a flash may occur; every effect scales with the arc intensity and the `calm` setting.
 
 **Tests:** the pure helpers (dispersion offsets monotonic in distance, refraction displacement bounded and zero outside hosts, impact timeline monotonic and bounded, luminance cap), the ledger still refusing a fourth onset within 1 s, nothing scheduled at rest, teardown removes canvas and nudge properties.
+
+### Task 10: Globe drift only when the globe is engaged, plus Task 7's deferred fixes
+
+After Task 7 (PR #1480) the globe's WebGL and readbacks run in workers. What remains on the main thread is the docked globe's DOM pin drift and the 2D cage at the ENGAGED rate: `components/radial/LiquidGlobe.tsx` treats ANY `pointermove` / `pointerdown` / `keydown` / `wheel` in the window (`lastInputAt`, the `onInput` listeners near line 1278) as "someone is here", so for an active user the ambient tick runs at 60 Hz for `IDLE_AFTER_MS` (20 s) after every input, anywhere on the page. Measured in the software-GL harness: ~255 ms/s of main-thread time while engaged versus 85–158 ms/s at the 30 Hz idle floor. The reviewer's recommendation (accepted): cut the engaged drift first; only if that is not enough, move the dough sim and the cage into the worker.
+
+**Files:** `components/radial/LiquidGlobe.tsx`, `lib/jelly/ambient-tick.ts` and `lib/jelly/tiers.ts` (read-only unless a constant belongs there), `components/radial/globe-worker.ts`, `globe-worker-host.ts`, `globe-protocol.ts`, `components/globe-cursor/*`, `lib/globe-cursor/*`, `lib/__tests__/globe-off-main-thread.test.ts`, `lib/__tests__/raf-loop-allowlist.test.ts`, `lib/slice-it/editor/lint.worker.ts` (stale comment), tests next to each.
+
+**Decisions:**
+1. **Engaged means engaged WITH THE GLOBE.** The 60 Hz engaged rate applies only while the pointer is over (or within a small margin of) the globe or its dock, while a press / drag / hold on it is active, while keyboard focus is inside the dock or open hub, and for a short settle (about 1.5 s, not 20 s) after any of those so a release can finish its spring. Input elsewhere on the page (moving over cards, scrolling, typing in a field) NO LONGER raises the globe's rate. Everything else runs at the existing idle floor (30 Hz on desktop, handheld as today). `still`, hidden, unfocused and the degraded tiers are unchanged (nothing scheduled).
+2. The coat in the worker uses the same rule: the host posts the engaged state change (edge-triggered, de-duplicated by the existing slack logic), not window-wide input timestamps.
+3. Keep the visual: pins and cage still drift (nothing freezes); only the rate while the user is elsewhere changes. State the rates you chose as named constants next to `IDLE_AFTER_MS` use, with the reasoning.
+4. Do NOT move the dough sim or the cage into the worker in this task unless the measurement below still misses the target after the rate change; if it does, stop and report with numbers.
+
+**Acceptance (measure with the harness scripts under `/tmp/claude-0/-home-user-rmhstudios-com/d7a40218-f807-5b6f-8aec-c3c3b43927c8/scratchpad/live-*.cjs`, adapted to a local production build, spoofed full tier, software GL, medians of at least 4 runs):** main-thread TaskDuration with the pointer moving over page cards (the globe NOT hovered) stays at or below the idle-floor figure (about 85–158 ms/s) instead of ~255; hovering the globe still reaches the 60 Hz interactive rate and the springs/dent look unchanged (screenshots); no long tasks at rest.
+
+**Deferred minors from the Task 7 review to fix here (each with a test where it is testable):**
+- The static guard in `lib/__tests__/globe-off-main-thread.test.ts` must also catch dynamic imports of the render modules: extend the regex to `import\(\s*['"][^'"]*(jelly-glass|self-evert-skin)`.
+- The rAF-allowlist exemption (`usesRaf` in `lib/__tests__/raf-loop-allowlist.test.ts`) must not be keyed on the `/// <reference lib="webworker" />` directive alone: require that the file is the target of a `new Worker(new URL('./<name>', import.meta.url)` call somewhere in the repo AND contains no `document.` / `window.`.
+- A skin-only WebGL context loss must reach the page: from the worker's skin `onLost` post `{ type: 'skin', ok: false }` (and handle it in the host) so the resting glass is not faded under a skin that draws nothing.
+- Replace the unmount cleanup's call to `host.skinCanvas(...)` (it can start a skin) with a side-effect-free getter.
+- Remove per-frame allocations on the freed thread: preallocate the 12-element array in `drawCoat` and the `Array.from(DM)` copy per skin frame, avoid `field.slice()` per dough version where a transfer or reuse is safe, and stop `coatClockState()` allocating and calling `document.hasFocus()` every busy frame.
+- Close the worker's copy of the full-page scene bitmap right after `setScene` uploads it.
+- Narrow inbound worker messages defensively (ignore null / non-object / unknown `type`).
+- Fix the misleading comment near the "let the frame loop send this mount's first surface" line, and the stale comment in `lib/slice-it/editor/lint.worker.ts` lines 12–16 about the webworker lib reference.
+- Cursor: release the shared remote GL (`acquireRemoteGlobeGl`) when switching to trail / sparkle modes, and add a protocol version field plus the shared `FrameCoalescer` instead of the duplicated in-flight logic if it is a small change; otherwise note it.

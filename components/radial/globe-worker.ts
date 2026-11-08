@@ -22,8 +22,10 @@ import { parseColor, type RGBA } from '@/lib/liquid/glass/color';
 import { ambientTickDue, msToAmbientTick } from '@/lib/jelly/ambient-tick';
 import { JellyGlass, type JellyFrame, type JellyRGBA } from './jelly-glass';
 import { SelfEvertSkin } from './self-evert-skin';
+import { engagedRate, msToSettleEnd } from './globe-engagement';
 import {
   GLOBE_PROTOCOL_VERSION,
+  isGlobeIn,
   type CoatClock,
   type CoatSurface,
   type GlobeIn,
@@ -131,12 +133,14 @@ const sleepUntil = (ms: number) => {
   );
 };
 
-/** The ambient tick rate right now, in the page's time. */
+/** The ambient tick rate right now, in the page's time: the page loop's own rule (`engagedRate`), held at the hand-off. */
 function tickHz(pageNow: number): number {
   const c = clock;
-  if (!c || !c.active || c.frozen || c.hz <= 0) return 0;
-  return c.held || pageNow < c.engagedUntil ? c.hz : c.idleHz;
+  if (!c || c.frozen) return 0;
+  return engagedRate(c, pageNow);
 }
+/** The last dough-field buffer uploaded, handed back to the page with the next ack (`GlobeOut` `ack.field`). */
+let fieldBack: Float32Array | null = null;
 
 function applyCoatState(g: JellyGlass): void {
   if (dirty.size) {
@@ -172,7 +176,9 @@ function applyCoatState(g: JellyGlass): void {
   }
   dirty.theme = false;
   if (dirty.scene) {
-    g.setScene(scene);
+    // Once the GPU has its copy the bitmap is dead weight — a full-page picture held for nothing — so it is closed at
+    // once. A restarted worker gets a fresh one from the page; `scene.version` keeps it from being uploaded again.
+    if (g.setScene(scene) && scene) scene.bitmap.close();
     dirty.scene = false;
   }
   if (dirty.place) {
@@ -185,7 +191,12 @@ function applyCoatState(g: JellyGlass): void {
     frame.gx = s.gx;
     frame.gy = s.gy;
     frame.pinch = s.pinch;
-    if (s.field) g.setField(s.field, s.fieldVersion);
+    if (s.field) {
+      g.setField(s.field, s.fieldVersion);
+      // Uploaded (texSubImage2D copied it): the buffer goes back to the page with the next ack, for reuse.
+      fieldBack = s.field;
+      s.field = undefined;
+    }
   }
   dirty.surface = false;
 }
@@ -241,18 +252,25 @@ function onFrame(now: number): void {
 
   if (ackSeq !== ackSent) {
     ackSent = ackSeq;
-    post({ type: 'ack', seq: ackSeq });
+    const back = fieldBack;
+    fieldBack = null;
+    if (back)
+      scope.postMessage({ type: 'ack', seq: ackSeq, field: back } satisfies GlobeOut, [
+        back.buffer,
+      ]);
+    else post({ type: 'ack', seq: ackSeq });
   }
 
   if (moving) {
     requestFrame();
     return;
   }
-  const wait = msToAmbientTick(pageNow, tickHz(pageNow));
-  if (clock && clock.active && !clock.held && pageNow < clock.engagedUntil) {
-    // The engaged window ends between ticks: wake for the idle rate's grid after it.
-    sleepUntil(Math.min(wait, clock.engagedUntil - pageNow + 1));
-  } else if (wait !== Infinity) sleepUntil(wait);
+  // The settle can end between ticks: wake for the idle rate's grid after it.
+  const wait = Math.min(
+    msToAmbientTick(pageNow, tickHz(pageNow)),
+    clock && !clock.frozen ? msToSettleEnd(clock, pageNow) : Infinity,
+  );
+  if (wait !== Infinity) sleepUntil(wait);
 }
 
 /* ── Messages ─────────────────────────────────────────────────────────────────────────────────────────────────────── */
@@ -297,6 +315,12 @@ function startSkin(m: Extract<GlobeIn, { type: 'skin-init' }>): void {
     return;
   }
   skin = s;
+  // A context lost after the skin was ready must reach the page too, or it keeps fading the resting glass out under a
+  // skin that draws nothing.
+  s.onLost = () => {
+    skinFrame = null;
+    post({ type: 'skin', ok: false });
+  };
   const report = () => {
     if (skinReported) return;
     if (s.ready || s.failed) {
@@ -336,8 +360,10 @@ function applySkin(): void {
   }
 }
 
-scope.onmessage = (e: MessageEvent<GlobeIn>) => {
+scope.onmessage = (e: MessageEvent<unknown>) => {
   const m = e.data;
+  // Defensive: anything that is not one of the page's messages (null, a non-object, an unknown type) is ignored.
+  if (!isGlobeIn(m)) return;
   switch (m.type) {
     case 'init':
       if (!coat) start(m);
