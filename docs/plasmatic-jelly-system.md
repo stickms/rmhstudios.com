@@ -19,8 +19,9 @@ capture for site surfaces. Four things are not CSS:
   `--px` / `--py` / `--jelly-s` on the hovered host;
 - the **scene feed** (`lib/liquid/glass/scene-feed.ts`), the page picture the liquid globe
   refracts, taken a few times per page (load, route change, theme change, resize);
-- the **liquid globe and the globe cursor**, which are their own WebGL scenes and draw in
-  workers (`components/radial/globe-worker.ts`, `lib/globe-cursor/cursor.worker.ts`).
+- the **liquid globe**, its own WebGL scene, which draws in a worker
+  (`components/radial/globe-worker.ts`). (The everting globe cursor that used to share this tier was removed 2026-11-08;
+  the OS pointer shows everywhere.)
 
 The short statement every agent reads is the "Design system: Plasmatic Jelly" section of
 [`CLAUDE.md`](../CLAUDE.md); this file is the detail behind it. Every number is a named
@@ -123,9 +124,9 @@ shader (`components/radial/jelly-glass.ts`): see §8.
 
 ## 2. The ambient clock and the idle policy (R7)
 
-Site surfaces have no clock. The only ambient clock left belongs to the **liquid globe and the
-globe cursor**, which draw in workers and keep the page's tick grid
-(`lib/jelly/ambient-tick.ts`) so two clocks at the same rate draw in the same frame:
+Site surfaces have no clock. The only ambient clock left belongs to the **liquid globe**, which draws in a
+worker and keeps the page's tick grid
+(`lib/jelly/ambient-tick.ts`) so its main-thread and worker clocks at the same rate draw in the same frame:
 
 | State                                                                                           | Globe clock                                   |
 | ----------------------------------------------------------------------------------------------- | --------------------------------------------- |
@@ -247,7 +248,7 @@ it that way; they are unreachable in production and are the next thing to cut, w
 ## 5. Budgets per tier (R6)
 
 From `JELLY_BUDGETS` in `lib/jelly/tiers.ts` (the tests read the constants, never this table). A budget now
-carries only what something reads: the globe's and the cursor's clock, and the click arcs.
+carries only what something reads: the globe's clock, and the click arcs.
 
 | Tier                                   | Clock / idle | Ambient arcs (installer passes `ambient: false`) | Click bolts |
 | -------------------------------------- | ------------ | ------------------------------------------------ | ----------- |
@@ -276,7 +277,7 @@ modulation above 3 Hz; ambient motion never moves a host's position.
 ## 6. Degradation matrix
 
 `jellyMode()` in `tiers.ts` folds the tier, the off predicate, both preferences and game state into
-`{ambient, arcs}` for the globe, its cursor and the arcs. The CSS material reads the same signals through selectors.
+`{ambient, arcs}` for the globe and the arcs. The CSS material reads the same signals through selectors.
 
 | Condition                                                           | Woken haze            | Soft body (CSS) | Click arcs         | Globe clock | CSS             |
 | ------------------------------------------------------------------- | --------------------- | --------------- | ------------------ | ----------- | --------------- |
@@ -314,25 +315,25 @@ theme (`jelly-legibility.test.ts`).
 
 ## 8. Ownership
 
-| File                                                                                               | Owns                                                                                                                                                    |
-| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `app/jelly-material.css` · `app/liquid-glass.css`                                                  | the material: tint, gel coat, static rim, haze floor, woken haze (§3b), degradation, the CSS soft body (§8, §8b)                                        |
-| `app/jelly-coverage.css` · `app/jelly-arcs.css`                                                    | coverage adapters (tab thumb, switch, slider, skeleton, toasts, bare `[data-jelly]`), the arc layer                                                     |
-| `components/shared/app-theme.css`                                                                  | the `--app-jelly-*` adapter for `.app-glass` and the app tier's cards                                                                                   |
-| `lib/jelly/tiers.ts`                                                                               | the single shared policy: tiers, budgets, `jellyMode`, off predicate, selectors, bounds, flash ledger, `PLASMA`, `CHARGE`, `JELLY_LAYOUT`               |
-| `lib/jelly/soft-policy.ts` · `spring-curves.ts`                                                    | the soft body's numbers (`SOFT_BODY`, `CSS_SPRINGS`, `CSS_SOFT_BODY`, the size cap) and the `linear()` sampler for the `--spring-*` tokens              |
-| `lib/jelly/pointer-vars.ts`                                                                        | the pointer variable: `--px`, `--py`, `--jelly-s`                                                                                                       |
-| `lib/jelly/frame.ts`                                                                               | **the one `requestAnimationFrame`** under `lib/jelly/`: every service registers a driver with `drive(fn, { order })`                                    |
-| `lib/jelly/pointer.ts`                                                                             | **the one window pointer listener set**, fanned out with `onJellyPointer(type, fn)`                                                                     |
-| `lib/jelly/arc-lazy.ts` · `lib/jelly/arcs/*`                                                       | the lazy installer; arcs, charge, hops, impact, the ledger and flash caps; `renderer.ts` is a frame driver (order 30)                                   |
-| `lib/jelly/registry.ts` · `bus.ts`                                                                 | the observers over every jelly host (installed by the arcs, with them) · the typed event bus (`arc:strike`, `drag:*`, `charge:pulse`, `charge:attract`) |
-| `lib/jelly/drag-report.ts` · `hooks/useFluidDrag.ts`                                               | the drag owners' report on the bus; the hook owns the drag position and its settle spring                                                               |
-| `lib/jelly/ambient-tick.ts`                                                                        | the tick grid the globe, its worker and the cursor share                                                                                                |
-| `lib/liquid/glass/scene.ts` · `scene-feed.ts` · `scene-store.ts`                                   | the page picture for the globe: capture, the refcounted feed, the store; `RadialShell` holds the feed for the shell's life                              |
-| `lib/liquid/glass/{policy,color,jelly-glsl}.ts` · `lib/liquid/optics.ts`                           | what the globe still imports: `innerRadius`, `PLASMA_LOOK`; the colour parser; the noise GLSL; the N-BK7 optics                                         |
-| `components/radial/{LiquidGlobe,globe-worker,jelly-glass,globe-engagement}` · `lib/globe-cursor/*` | the liquid globe (its dough simulation `lib/dough.ts`, its own coat and shader, its worker) and the globe cursor (its own worker)                       |
-| `hooks/useLiquidInteractions.ts`                                                                   | mounts the pointer variable at once, then `installLazyClickArcs` after `load` + idle; one teardown                                                      |
-| `app/routes/jelly.tsx`                                                                             | the `/jelly` material lab (`/liquid-glass` redirects there)                                                                                             |
+| File                                                                        | Owns                                                                                                                                                    |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/jelly-material.css` · `app/liquid-glass.css`                           | the material: tint, gel coat, static rim, haze floor, woken haze (§3b), degradation, the CSS soft body (§8, §8b)                                        |
+| `app/jelly-coverage.css` · `app/jelly-arcs.css`                             | coverage adapters (tab thumb, switch, slider, skeleton, toasts, bare `[data-jelly]`), the arc layer                                                     |
+| `components/shared/app-theme.css`                                           | the `--app-jelly-*` adapter for `.app-glass` and the app tier's cards                                                                                   |
+| `lib/jelly/tiers.ts`                                                        | the single shared policy: tiers, budgets, `jellyMode`, off predicate, selectors, bounds, flash ledger, `PLASMA`, `CHARGE`, `JELLY_LAYOUT`               |
+| `lib/jelly/soft-policy.ts` · `spring-curves.ts`                             | the soft body's numbers (`SOFT_BODY`, `CSS_SPRINGS`, `CSS_SOFT_BODY`, the size cap) and the `linear()` sampler for the `--spring-*` tokens              |
+| `lib/jelly/pointer-vars.ts`                                                 | the pointer variable: `--px`, `--py`, `--jelly-s`                                                                                                       |
+| `lib/jelly/frame.ts`                                                        | **the one `requestAnimationFrame`** under `lib/jelly/`: every service registers a driver with `drive(fn, { order })`                                    |
+| `lib/jelly/pointer.ts`                                                      | **the one window pointer listener set**, fanned out with `onJellyPointer(type, fn)`                                                                     |
+| `lib/jelly/arc-lazy.ts` · `lib/jelly/arcs/*`                                | the lazy installer; arcs, charge, hops, impact, the ledger and flash caps; `renderer.ts` is a frame driver (order 30)                                   |
+| `lib/jelly/registry.ts` · `bus.ts`                                          | the observers over every jelly host (installed by the arcs, with them) · the typed event bus (`arc:strike`, `drag:*`, `charge:pulse`, `charge:attract`) |
+| `lib/jelly/drag-report.ts` · `hooks/useFluidDrag.ts`                        | the drag owners' report on the bus; the hook owns the drag position and its settle spring                                                               |
+| `lib/jelly/ambient-tick.ts`                                                 | the tick grid the globe and its worker share                                                                                                            |
+| `lib/liquid/glass/scene.ts` · `scene-feed.ts` · `scene-store.ts`            | the page picture for the globe: capture, the refcounted feed, the store; `RadialShell` holds the feed for the shell's life                              |
+| `lib/liquid/glass/{policy,color,jelly-glsl}.ts` · `lib/liquid/optics.ts`    | what the globe still imports: `innerRadius`, `PLASMA_LOOK`; the colour parser; the noise GLSL; the N-BK7 optics                                         |
+| `components/radial/{LiquidGlobe,globe-worker,jelly-glass,globe-engagement}` | the liquid globe (its dough simulation `lib/dough.ts`, its own coat and shader, its worker)                                                             |
+| `hooks/useLiquidInteractions.ts`                                            | mounts the pointer variable at once, then `installLazyClickArcs` after `load` + idle; one teardown                                                      |
+| `app/routes/jelly.tsx`                                                      | the `/jelly` material lab (`/liquid-glass` redirects there)                                                                                             |
 
 Exactly **one** jelly frame owner exists, `lib/jelly/frame.ts`; the pointer variable, the arc renderer and the
 drag-settle spring are drivers on it (§8.1). **Components never import the arc service** (the lab is the one

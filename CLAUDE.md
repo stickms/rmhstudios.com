@@ -379,8 +379,8 @@ canvases, workers and snapshot captures for the site material. One frame driver
 through `drive(fn)`), one window pointer listener fan-out, one overlay canvas
 (arcs only, created on a click). Hover wakes the haze by attaching its animation
 to one host's `::after`; nothing is promoted to a compositor layer at rest. The
-only ambient clock left is the liquid globe's and the globe cursor's: they draw in
-workers (`components/radial/globe-worker.ts`, `lib/globe-cursor/cursor.worker.ts`)
+only ambient clock left is the liquid globe's: it draws in a
+worker (`components/radial/globe-worker.ts`)
 at 60 Hz when you are engaged with the globe, a 30 Hz floor otherwise (30 / 15 on
 handhelds), and 0 when the tab is hidden or unfocused, the globe is off screen,
 the tier is degraded, or Jelly motion is Still (`JELLY_BUDGETS` in

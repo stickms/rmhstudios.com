@@ -114,7 +114,7 @@ Panels refer to colours, fonts and borders by **name**, and those names live in 
 
 ## Look and feel
 
-The editor is plain Team Fortress 2, not the site's Plasmatic Jelly: flat panels (`--tf2-panel`), square-ish corners, the TF2 faces, and the system cursor. On `/tf2-hud/**` the jelly services and the globe cursor are not installed at all (`lib/native-material-routes.ts`, read by `Providers` and `GlobeCursorRoot`), tabs are `TfTabs` (flat, orange underline) and toggles are native checkboxes. Do not add `glass-*` classes or `data-jelly*` attributes here.
+The editor is plain Team Fortress 2, not the site's Plasmatic Jelly: flat panels (`--tf2-panel`), square-ish corners, the TF2 faces, and the system cursor. On `/tf2-hud/**` the jelly services are not installed at all (`lib/native-material-routes.ts`, read by `Providers`), tabs are `TfTabs` (flat, orange underline) and toggles are native checkboxes. Do not add `glass-*` classes or `data-jelly*` attributes here.
 
 ## Storage and the API
 
