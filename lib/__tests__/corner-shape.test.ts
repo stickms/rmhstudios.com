@@ -21,6 +21,22 @@ const isCircle = (value: string): boolean => {
   return [...value.matchAll(/(\d+(?:\.\d+)?)px/g)].some((m) => Number(m[1]) >= 99);
 };
 
+function missingNextTo(pattern: RegExp, want: RegExp, accept: (value: string) => boolean): string[] {
+  const missing: string[] = [];
+  for (const file of cssFiles) {
+    const lines = readFileSync(`${root}${file}`, 'utf8').split('\n');
+    lines.forEach((line, i) => {
+      for (const m of line.matchAll(pattern)) {
+        if (!accept(m[1])) continue;
+        let rest = line.slice((m.index ?? 0) + m[0].length);
+        for (let j = i + 1; j < Math.min(lines.length, i + 8) && !rest.includes('}'); j++) rest += `\n${lines[j]}`;
+        if (!want.test(line) && !want.test(rest.split('}')[0])) missing.push(`${file}:${i + 1}  border-radius: ${m[1].trim()}`);
+      }
+    });
+  }
+  return missing;
+}
+
 describe('corner shape', () => {
   it('the universal squircle default and the Tailwind full-radius override exist', () => {
     const css = readFileSync(`${root}app/globals.css`, 'utf8');
@@ -47,5 +63,16 @@ describe('corner shape', () => {
       });
     }
     expect(missing, `add \`corner-shape: round;\` beside:\n${missing.join('\n')}`).toEqual([]);
+  });
+
+  it('every `border-radius: inherit` also inherits the corner shape', () => {
+    const missing = missingNextTo(/border-radius:\s*([^;{}]+);/g, /corner-shape:\s*inherit/, (v) => v.trim() === 'inherit');
+    expect(missing, `add \`corner-shape: inherit;\` beside:\n${missing.join('\n')}`).toEqual([]);
+  });
+
+  it('the universal rule keeps pseudo-elements on their host shape, controls as capsules and the toast close round', () => {
+    const css = readFileSync(`${root}app/globals.css`, 'utf8');
+    expect(css).toMatch(/::before,\s*::after\s*\{\s*corner-shape: inherit;/);
+    expect(css).toMatch(/\[data-slot='button'\][\s\S]*?\[data-sonner-toast\] \[data-close-button\]\s*\{\s*corner-shape: round;/);
   });
 });

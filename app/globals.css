@@ -3185,18 +3185,45 @@ html:not(.app-route) body {
    button, a bespoke background) still wins. Unlayered, they out-specified every
    utility — `color: inherit` alone repainted accent-filled buttons in body ink. */
 @layer base {
-  /* Corner shape: every rounded corner on the site is a continuous-curvature squircle where the browser supports it
-     (`corner-shape`, Chromium today; Firefox and Safari ignore it and keep the circular arc). A circular corner jumps
-     from straight to curved with a visible kink, most obvious on a thin high-contrast border; a squircle eases in.
-     CIRCLES AND PILLS stay `round`, or an avatar would become a rounded square and a capsule's cap would flatten:
-     `corner-shape: round` goes beside every `border-radius: 50%` / ≥ 99px / pill-token declaration (enforced by
-     lib/__tests__/corner-shape.test.ts) and on Tailwind's `rounded-full` (`@utility` below). The property is not
-     inherited, so `border-radius: inherit` children must match through this universal default. */
+  /* Corner shape: every rounded SURFACE corner on the site is a continuous-curvature squircle where the browser
+     supports `corner-shape` (Chromium and recent WebKit; Firefox ignores it and keeps the circular arc). A circular
+     corner jumps from straight to curved with a visible kink, most obvious on a thin high-contrast border; a squircle
+     eases in. Three things stay circular:
+       - CIRCLES AND PILLS: `corner-shape: round` goes beside every `border-radius: 50%` / ≥ 99px / pill-token
+         declaration (lib/__tests__/corner-shape.test.ts enforces it) and on Tailwind's `rounded-full` (`@utility`).
+       - CONTROLS: a control's 24px radius clamps to a capsule up to 48px tall, and a squircle would turn the capsule
+         into a rounded rectangle, so the control primitives below are `round` (surfaces are squircles, controls are
+         capsules, as on Apple platforms).
+       - Anything with `border-radius: inherit` also says `corner-shape: inherit` (the test enforces that too),
+         and pseudo-elements inherit their host's shape, because the property is not inherited by itself. */
   @supports (corner-shape: squircle) {
     *,
     ::before,
     ::after {
       corner-shape: squircle;
+    }
+    ::before,
+    ::after {
+      corner-shape: inherit;
+    }
+    :is(
+        [data-slot='button'],
+        [data-slot='input'],
+        [data-slot='search-field'],
+        [data-slot='select-control'],
+        [data-slot='switch'],
+        [data-slot='menu-item'],
+        [data-slot='select-item'],
+        [data-slot='jelly-group'],
+        [data-slot='jelly-group-item'],
+        [role='tab'],
+        [role='tablist'],
+        [role='switch'],
+        [class*='site-control-radius']
+      ),
+    /* The toast library injects `border-radius: 50%` on its close button with no corner-shape. */
+    [data-sonner-toast] [data-close-button] {
+      corner-shape: round;
     }
   }
 
@@ -4937,6 +4964,7 @@ html.nav-pop .page-root > * {
     inset: 0;
     z-index: -1;
     border-radius: inherit;
+    corner-shape: inherit;
     background: var(--site-surface-hover);
     opacity: 0;
     pointer-events: none;
@@ -5088,6 +5116,7 @@ html.nav-pop .page-root > * {
     position: absolute;
     inset: 0;
     border-radius: inherit;
+    corner-shape: inherit;
     background: var(--site-accent);
     opacity: 0;
     transition: opacity var(--site-transition-speed) var(--ease-glass);
@@ -5137,6 +5166,7 @@ html.nav-pop .page-root > * {
       position: absolute;
       inset: -1.5px;
       border-radius: inherit;
+      corner-shape: inherit;
       background: var(--site-accent);
       opacity: 0;
       transition: opacity var(--site-transition-speed) var(--ease-glass);
@@ -5655,6 +5685,7 @@ body {
   z-index: 1;
   inset: 32% 34% 0 0;
   border-radius: inherit;
+  corner-shape: inherit;
   background: linear-gradient(135deg, var(--site-surface) 36%, transparent 86%);
   pointer-events: none;
 }

@@ -320,6 +320,7 @@
   pointer-events: none;
   z-index: -1;
   border-radius: inherit;
+  corner-shape: inherit;
   background-image: repeating-linear-gradient(
     to bottom,
     transparent 0,

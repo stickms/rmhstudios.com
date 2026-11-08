@@ -241,6 +241,7 @@
     inset: 0;
     overflow: hidden;
     border-radius: inherit;
+    corner-shape: inherit;
     pointer-events: none;
     contain: strict;
     z-index: -1;

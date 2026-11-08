@@ -680,6 +680,7 @@
   inset: 0;
   z-index: -1;
   border-radius: inherit;
+  corner-shape: inherit;
   background: radial-gradient(120% 150% at 50% 130%, rgba(244, 200, 78, 0.5), transparent 62%);
   opacity: 0;
   transition: opacity 0.35s var(--ease-smooth, ease);

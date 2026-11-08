@@ -245,6 +245,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
+  corner-shape: inherit;
   padding: 1px;
   pointer-events: none;
   background: linear-gradient(

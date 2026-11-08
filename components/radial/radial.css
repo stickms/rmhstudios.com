@@ -1276,6 +1276,7 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
   inset: 0;
   z-index: -1;
   border-radius: inherit;
+  corner-shape: inherit;
   /* The orb as a lit sphere. On a phone this is only the placeholder until the real globe is docked over it
      (`data-dock`): wider screens keep it. */
   background: radial-gradient(
@@ -2161,6 +2162,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
   position: absolute;
   inset: calc((2.75rem - 2.15rem) / -2);
   border-radius: inherit;
+  corner-shape: inherit;
 }
 /* The name resolves only for the pins actually facing you — `--near` is written
    per frame from the pin's depth — so a dozen labels never pile up in the middle
@@ -2219,6 +2221,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
   position: absolute;
   inset: -2px;
   border-radius: inherit;
+  corner-shape: inherit;
   border: 2px solid var(--site-accent);
   pointer-events: none;
   opacity: 0;

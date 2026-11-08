@@ -335,6 +335,7 @@
     z-index: -3;
     overflow: hidden;
     border-radius: inherit;
+    corner-shape: inherit;
     contain: strict;
     pointer-events: none;
     user-select: none;
@@ -586,6 +587,7 @@
     inset: 0;
     z-index: -3;
     border-radius: inherit;
+    corner-shape: inherit;
     pointer-events: none;
     user-select: none;
     --jelly-streak: color-mix(
@@ -866,6 +868,7 @@
     height: 100%;
     z-index: -3;
     border-radius: inherit;
+    corner-shape: inherit;
     pointer-events: none;
     user-select: none;
     image-rendering: auto;

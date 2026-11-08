@@ -2133,3 +2133,9 @@ html:has(.ds)::-webkit-scrollbar-thumb {
     inset: -10px;
   }
 }
+
+/* The vendored 7.css radio dots are `border-radius: 50%` pseudo-elements with no corner-shape of their own. */
+.win7 input[type='radio'] + label::before,
+.win7 input[type='radio']:checked + label::after {
+  corner-shape: round;
+}

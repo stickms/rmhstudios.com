@@ -903,6 +903,7 @@
   background: rgba(8, 8, 8, 0.55);
   color: #fff;
   border-radius: inherit;
+  corner-shape: inherit;
 }
 /* Collection view modal — wider so the book shelf breathes. */
 .lib-coll-modal {
@@ -1967,6 +1968,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
+  corner-shape: inherit;
   z-index: -1;
   background: var(--site-surface, rgba(255, 255, 255, 0.05));
   border: 1px solid var(--site-border, rgba(255, 255, 255, 0.1));
