@@ -21,21 +21,26 @@
   class by role** (`.glass-fill` / `.glass-pane` / `.glass-chrome` /
   `.glass-overlay` / `.glass-inset`) rather than a hand-rolled equivalent box;
   use `components/ui/` primitives and `components/feed/PageLayout.tsx`.
-  **Jelly:** the role classes keep their `glass-*` names; the haze and rim
-  (`lib/liquid/glass/engine.ts`, one ambient clock that idles to a floor and
-  stops when unseen), the soft body (`lib/jelly/physics.ts`) and the electric
-  arcs (`lib/jelly/arcs/`) are document services under one policy
+  **Jelly:** the role classes keep their `glass-*` names. The material is static
+  CSS plus effects woken by an event (`app/jelly-material.css`): a soft molded rim,
+  a haze that drifts only while a host is hovered or keyboard-focused, and a soft
+  body made of CSS springs on `scale`; a page at rest runs no frame loop, canvas or
+  worker for it. One delegated pointer variable writes `--px` / `--py` / `--jelly-s`
+  (`lib/jelly/pointer-vars.ts`); the electric click arc (`lib/jelly/arcs/`) is
+  imported on the first press and removed 10 s after the last click; the liquid
+  globe and its cursor draw in workers and refract a page snapshot from the scene
+  feed (`lib/liquid/glass/scene-feed.ts`). All under one policy
   (`lib/jelly/tiers.ts`). No `backdrop-filter`; no component-level pointer
   loops, deformation, arc code, `infinite` keyframes or animated custom
   properties on `<html>` — components take jelly through role classes and
-  `data-jelly*` attributes only; layout never changes (hosts squash ≤4px/3%,
-  neighbours nudge ≤1.5px). Ambient motion and arcs have their own material
-  switches (`jellyMotion`, `electricArcs`; WCAG 2.2.2/2.3.1) read only by
+  `data-jelly*` attributes only; layout never changes (hosts squash ≤4px/3%, an
+  arc nudges the struck hosts ≤1.5px). Ambient motion and arcs have their own
+  material switches (`jellyMotion`, `electricArcs`; WCAG 2.2.2/2.3.1) read only by
   `lib/jelly/tiers.ts`; the retired reduced-motion setting does not return. See
   `docs/plasmatic-jelly-system.md`. On top of that, the owner's #989 layers add
-  dormant plasma that wakes on hover and brightens on press, a molded RGB-led edge
-  (a lit shoulder, no hairline), a liquid-glass lens dent with a light dot that slides with the
-  pointer on press, and Coulomb-law charge between neighbours; the full rules are
+  dormant plasma that wakes on hover and brightens on press, a molded RGB-tinted
+  edge (a lit shoulder, no hairline), a light dot that follows the pointer on
+  press, and charge that hops between neighbours on a click; the full rules are
   the "Design system: Plasmatic Jelly" section of `CLAUDE.md`. Full-screen apps use the parallel
   `--app-*` contract (`components/shared/app-theme.css` + `AppShell`). The
   statement of the language is `design.md` at the root; read

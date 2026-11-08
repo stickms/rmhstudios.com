@@ -97,8 +97,8 @@ export default function AppShell({
         .filter(Boolean)
         .join(' ')}
       data-app-theme={appearance}
-      // Historic claim on the app subtree for the old press layer. The jelly
-      // soft-body service (lib/jelly/physics.ts) now presses every button, tab
+      // Historic claim on the app subtree for the old press layer. The CSS soft
+      // body (app/jelly-material.css §8) now presses every button, tab
       // and menu item everywhere by default, so the attribute is a no-op alias
       // kept for readers. Gesture surfaces opt out with `data-jelly="off"` (or
       // the alias `data-fluid-press="none"`), and held HUD regions with

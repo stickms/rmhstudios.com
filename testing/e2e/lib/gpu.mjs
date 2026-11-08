@@ -2,7 +2,7 @@
  * Is this browser rendering on a real GPU, or in software?
  *
  * CI runners have no GPU: Chromium falls back to SwiftShader (or Mesa's llvmpipe), where every GL frame is slow
- * enough that the jelly governor (lib/jelly/governor.ts) legitimately steps the ambient clock down to 0 ("static
+ * enough that the retired jelly governor legitimately stepped the ambient clock down to 0 ("static
  * haze"). On such a machine a check that needs real frames — R7 "never freezes while haze is visible" — cannot be
  * judged either way. Scripts call this once and report those checks as SKIP with the renderer string, never as a
  * silent pass; every deterministic check (budgets, ledger, rest-return, teardown, frames under `still`) stays a real

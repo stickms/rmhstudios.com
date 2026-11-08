@@ -297,7 +297,7 @@ describe('where the haze does not move', () => {
 });
 
 describe('the keyframes it reuses', () => {
-  it.each(['jelly-drift', 'jelly-current'])('%s animates transform only', (name) => {
+  it.each(['jelly-drift'])('%s animates transform only', (name) => {
     const block = new RegExp(`@keyframes\\s+${name}\\s*\\{((?:[^{}]*\\{[^{}]*\\})+)\\s*\\}`).exec(
       CSS,
     );

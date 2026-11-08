@@ -1338,7 +1338,6 @@ button.stm-star {
   border-radius: var(--stm-radius) !important;
   box-shadow: none !important;
 }
-.stm-legacy .jelly-flow,
 .stm-legacy canvas {
   display: none !important;
 }

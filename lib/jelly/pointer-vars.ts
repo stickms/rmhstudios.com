@@ -5,8 +5,8 @@
  * ONE delegated service writes `--px` / `--py` — the pointer's position as a percentage of the host's box — on the
  * single jelly host under a fine pointer. CSS reads them to place the plasma wake under the hovering pointer and the
  * dent's light dot under a press (`app/jelly-material.css` §8). It replaces the fallback cursor light
- * (`lib/liquid/runtime.ts`, which appended a span per host and moved it per pointer move) and the soft-body physics'
- * pointer tracking. Nothing else moves: hover plump, press squash and the release spring are CSS transitions.
+ * (which appended a span per host and moved it per pointer move) and the soft-body physics' pointer tracking, both
+ * deleted. Nothing else moves: hover plump, press squash and the release spring are CSS transitions.
  *
  * It also writes `--jelly-s`, the host's larger side in px (unitless), on the hovered element and every soft-body host
  * around it, so the CSS can cap each pose to the 4 px edge bound (`MOTION_BOUNDS.maxEdgeTravelPx`): edge travel is

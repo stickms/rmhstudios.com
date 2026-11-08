@@ -103,7 +103,7 @@ export interface LiquidTabRenderProps {
   id: string;
   /** `'page'` on the active item — link mode marks the current route this way. */
   'aria-current': 'page' | undefined;
-  /** Thumb appearance only (games/apps): route tabs press like button tabs, a control-mode jelly body (`lib/jelly/physics.ts`). Absent in the flat glow, where the whole strip is one opted-out subtree. */
+  /** Thumb appearance only (games/apps): route tabs press like button tabs, a control-mode jelly body (the CSS soft body, `app/jelly-material.css` §8). Absent in the flat glow, where the whole strip is one opted-out subtree. */
   'data-fluid-press'?: string;
   /** Class string matching a tablist-mode tab (pad + accent-on-active). */
   className: string;

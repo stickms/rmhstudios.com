@@ -277,7 +277,7 @@ review_site "Hex colour literal" \
 # hooks retain their own input semantics.
 review_site "Pointer-position effect — verify jelly service ownership" \
   "(pointermove|mousemove)" \
-  'Decorative light, haze, squash, wobble and arcs belong to the jelly service (lib/jelly, lib/liquid/glass; docs/plasmatic-jelly-system.md). No per-card listeners, animated gradient centres or inherited root writes. Gesture/gameplay input remains local.'
+  'Decorative light, haze, squash, wobble and arcs belong to the jelly service (lib/jelly, app/jelly-material.css; docs/plasmatic-jelly-system.md). No per-card listeners, animated gradient centres or inherited root writes. Gesture/gameplay input remains local.'
 
 # Plasmatic Jelly (lib/__tests__/jelly-ownership.test.ts N2, site-infinite-animation N3,
 # design-consistency N11). Previews of the vitest gates, scoped to added lines.
@@ -320,7 +320,7 @@ fi
 review "Old Liquid Glass vocabulary (N9)" \
   '^(components|app|hooks|lib)/.*\.(tsx?|css)$' \
   '(data-liquid-[a-z]+|@/lib/liquid/(runtime|glass/engine))' \
-  'New opt-outs are data-jelly="off" / data-jelly-scope="off" (lib/jelly/tiers.ts OPT_OUT_SELECTOR); the engine mounts from hooks/useLiquidInteractions.ts only. The old spelling is still read, never newly written.'
+  'New opt-outs are data-jelly="off" / data-jelly-scope="off" (lib/jelly/tiers.ts OPT_OUT_SELECTOR); the jelly services mount from hooks/useLiquidInteractions.ts only. The old spelling is still read, never newly written.'
 if git "${DIFF[@]}" --name-only --diff-filter=A 2>/dev/null | grep -qE '(^|/)(liquid-[^/]*|useLiquid[^/]*)$'; then
   warn "New file named liquid-* / useLiquid* (N9)"
   git "${DIFF[@]}" --name-only --diff-filter=A 2>/dev/null | grep -E '(^|/)(liquid-[^/]*|useLiquid[^/]*)$' | sed 's/^/  /'
@@ -452,9 +452,8 @@ else
     # same reason: they are the settle proof the rAF allowlist and N2(b) cite.
     lib/jelly/__tests__/frame.test.ts
     lib/jelly/__tests__/pointer.test.ts
-    # The press lens (the only filter on a body) and the engine/runtime frame
-    # and pointer ownership (#989).
-    lib/jelly/__tests__/lens.test.ts
+    # The pointer-variable service's and the arc renderer's frame and pointer
+    # ownership (#989).
     lib/liquid/__tests__/frame-owners.test.ts
     lib/jelly/
     lib/liquid/

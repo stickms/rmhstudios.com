@@ -1,5 +1,5 @@
 /**
- * The ambient tick grid every ambient clock shares: the glass engine's haze (`lib/liquid/glass/engine.ts`), the
+ * The ambient tick grid every ambient clock shares: the
  * docked navigation globe (`components/radial/LiquidGlobe.tsx`, its idle drift and its coat's haze) and the globe
  * cursor (`components/globe-cursor/GlobeCursor.tsx`, its eversion while the pointer rests).
  *

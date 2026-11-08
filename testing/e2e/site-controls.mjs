@@ -31,17 +31,15 @@ const js = await bundle({
     resolveDir: root,
     loader: 'tsx',
     contents: `
-      import React, {useEffect, useState} from 'react';
+      import React, {useState} from 'react';
       import {createRoot} from 'react-dom/client';
       import {LazyMotion, MotionConfig, domMax} from 'framer-motion';
       import {LiquidTabs} from './components/ui/liquid-tabs';
       import {Button} from './components/ui/button';
       import {Card} from './components/ui/card';
-      import {installJellyPhysics} from './lib/jelly/physics';
       const tabs = [{id:'latest',label:'Latest'}, {id:'following',label:'Following'},
         {id:'saved',label:'Saved'}, {id:'disabled',label:'Unavailable',disabled:true}];
       function Fixture() {
-        useEffect(() => installJellyPhysics(document), []);
         const [value,setValue] = useState('latest');
         return <LazyMotion features={domMax}><MotionConfig reducedMotion="never">
           <main className="vibe-app" data-fluid-press-scope>
@@ -51,8 +49,7 @@ const js = await bundle({
               <Card id="post" interactive className="social-post">
                 <h2>A place to share what you make</h2>
                 <p>Glass stays visible while words remain easy to read and select.</p>
-                {/* A link in running text is prose, never a soft body (lib/jelly/physics.ts PROSE_SELECTOR).
-                    A BARE link in a card is a card body under the jelly soft-policy, so it would press. */}
+                {/* A link in running text is prose; a bare link in a card presses the card (app/jelly-material.css §8). */}
                 <p>Written by our community. <a href="#author" id="author">Visit the author</a></p>
                 <div className="actions">
                   <Button id="primary">New post</Button>

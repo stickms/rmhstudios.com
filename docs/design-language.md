@@ -69,8 +69,8 @@ without a single component change.
 > ledger (≤ 3 per second). Every jelly service runs on **one** frame driver
 > (`lib/jelly/frame.ts`) and **one** pointer hub (`lib/jelly/pointer.ts`); bodies sit
 > ≥ 16 px apart with a 16 px unclipped margin; nothing fakes a law (no transform
-> transitions, no keyframes but the `.jelly-flow` drift, no `filter:` in jelly CSS —
-> the press lens is applied from `lib/jelly/lens.ts` only). Everywhere below that speaks of a tier's "backdrop blur",
+> transitions off the `--spring-*` curves, no keyframes but the woken-haze drift, no `filter:` in jelly CSS —
+> the press lens is retired). Everywhere below that speaks of a tier's "backdrop blur",
 > a "≤8 backdrop-filters" budget, an `@supports not (backdrop-filter)` fallback,
 > "taps never emit ripples" or "nothing reacts to the pointer", read it through
 > that contract. The role-by-purpose rules are unchanged.
@@ -205,7 +205,7 @@ them locally.
 
 | Principle                              | What it means here                                                                                                                                                                           | API                                                 |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| **Instantaneous response**             | A surface reacts on `pointerdown`, never on `click` and never after a recognition delay. Site-wide via one delegated listener: every jelly host is a soft body; `data-fluid-press` tunes it. | `lib/jelly/physics.ts`                              |
+| **Instantaneous response**             | A surface reacts on `pointerdown`, never on `click` and never after a recognition delay. Site-wide via one delegated listener: every jelly host is a soft body; `data-fluid-press` tunes it. | `app/jelly-material.css` §8                         |
 | **Interruptible & redirectable**       | Motion is a spring carrying position _and velocity_, so grabbing something mid-flight retargets it from where it is and how fast it is going. A duration tween structurally cannot do this.  | `springStep`                                        |
 | **Momentum crosses the lift**          | The velocity the finger left with is handed to the animation, not discarded.                                                                                                                 | `VelocityTracker` → `springStep`                    |
 | **Intent is read from the projection** | "Where would this throw come to rest?", not "is it past the line right now?" — which is why a fast flick dismisses a sheet that has barely moved.                                            | `projectDistance`, `resolveDetent`, `shouldDismiss` |
@@ -218,8 +218,8 @@ moves 4px or 400px. The two animation tiers share one vocabulary — `SPRINGS` i
 (framer-motion) — and a test asserts they cannot drift apart.
 
 Where it ships today: every jelly host — buttons, cards, fields, panes — through
-the soft-body service (`lib/jelly/physics.ts`, which absorbed the old
-`useFluidPress` press layer); phone-width sheet dialogs (drag-to-dismiss
+the CSS soft body (`app/jelly-material.css` §8, which absorbed the old
+`useFluidPress` press layer and the `lib/jelly/physics.ts` service); phone-width sheet dialogs (drag-to-dismiss
 with rubber-banding and flick projection); and the navigation globe (throw,
 magnetism and keyboard glide all on one interruptible spring). Touch-friendly by
 construction: `touch-action: manipulation` removes the ~300ms tap delay on
@@ -1754,11 +1754,11 @@ remain the authority:
   and namespace-registry integrity for §10.
 - **`lib/__tests__/raf-loop-allowlist.test.ts`** — keeps rAF loops (the §7
   radial motion layer) to the sanctioned owners instead of one per feature.
-  Everything is held to "idle at rest" except one: the glass engine's ambient
-  haze clock is "idle when unseen" (it stops for a hidden tab, nothing hazy on
-  screen, a degraded tier or `still`). Since #989 the whole jelly has ONE rAF,
-  `lib/jelly/frame.ts`: the engine, `lib/jelly/physics.ts`, the arc renderer and
-  the fallback light are drivers on it, awake only while something moves, and
+  Everything is held to "idle at rest" except one: the liquid globe's ambient
+  clock is "idle when unseen" (it stops for a hidden tab, an off-screen globe, a
+  degraded tier or `still`). Since #989 the whole jelly has ONE rAF,
+  `lib/jelly/frame.ts`: the pointer variable, the drag-settle spring and the arc
+  renderer are drivers on it, awake only while something moves, and
   `jelly-ownership.test.ts` (N2 b) pins that single owner plus the single pointer
   hub `lib/jelly/pointer.ts`. `useGlassLight.ts`, `useCardSheen.ts` and
   `useParallax.ts` were removed with the hooks themselves (§5.1.1).
@@ -1772,7 +1772,7 @@ remain the authority:
   `appearance-jelly-motion.test.ts` / `appearance-electric-arcs.test.ts` keep the
   two preference pipelines in agreement. The jelly gates in
   `scripts/check-consistency.sh` (ownership, no site `infinite` animation outside
-  `.jelly-flow`, negative-z paint layers, no blur in any role) are listed in
+  the woken haze, negative-z paint layers, no blur in any role) are listed in
   [`plasmatic-jelly-system.md`](plasmatic-jelly-system.md) §9.
 - **`pnpm lint`** — `eslint-plugin-jsx-a11y` at "warn"; the bar is no _new_
   warnings versus the base branch.

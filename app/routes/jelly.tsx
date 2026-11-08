@@ -36,8 +36,8 @@ const DESC =
  * it renders every role, the soft body, the arcs and the motion levels over the real backdrop, which is how the
  * material gets reviewed.
  *
- * Nothing here draws jelly itself. Every effect on this page comes from the document services (`lib/liquid/glass`
- * for rims and haze, `lib/jelly/physics.ts` for the soft body, `lib/jelly/arcs` for arcs) acting on role classes.
+ * Nothing here draws jelly itself. Every effect on this page comes from the stylesheets (`app/jelly-material.css`:
+ * static rim, woken haze, CSS-spring soft body) and the click-arc service (`lib/jelly/arcs`) acting on role classes.
  * The one direct call is `strike(a, b)`, the public arc API, which passes the same gates and flash ledger as every
  * other arc and simply returns false when arcs are off.
  */

@@ -1,10 +1,11 @@
 /**
- * The jelly event bus: one tiny synchronous typed emitter shared by the engine, carriers, physics and arcs (master
- * plan §4.2, R4; 03 §6.3).
+ * The jelly event bus: one tiny synchronous typed emitter shared by the arcs and the drag owners (master plan §4.2, R4;
+ * 03 §6.3).
  *
  * It exists so the services can react to each other without importing each other: arcs announce a strike and never
- * need physics to exist; physics announces a release and never needs arcs. Synchronous on purpose — a strike's
- * impulse lands in the same frame as the bolt — and with no React, so it runs from document services.
+ * need a listener to exist; a drag owner announces a drag and never needs arcs. Synchronous on purpose — a strike's
+ * impulse lands in the same frame as the bolt — and with no React, so it runs from document services. (The engine,
+ * carriers and soft-body physics that used to share it are gone; their events went with them.)
  *
  * A throwing listener is reported asynchronously (it still reaches the console and `client-errors`) and never stops
  * the listeners after it: one broken consumer must not silence the others.
@@ -20,29 +21,15 @@ export type JellyEvents = {
     energy: number;
     kind: 'ambient' | 'click' | 'key';
   };
-  /** physics → arcs (charge) + material pulse. */
-  'body:release': { el: Element; x: number; y: number; energy: number };
   'drag:start': { el: Element };
   'drag:end': { el: Element };
-  /** engine → carriers (`data-jelly-haze`). */
-  'haze:change': { el: Element; on: boolean };
-  /**
-   * arcs → engine: charge `q` (0..1) deposited at viewport point (x, y) on `el` — rendered as a ring travelling
-   * through the gel at `CHARGE.pulseSpeedPxS`, decaying with `CHARGE.pulseTauMs` (#989).
-   */
+  /** arcs → anyone: charge `q` (0..1) deposited at viewport point (x, y) on `el` (#989). Nothing in the site listens. */
   'charge:pulse': { el: Element; x: number; y: number; q: number };
   /**
-   * arcs → physics: Coulomb attraction on `el` toward a charged neighbour, unit direction (nx, ny) and force in
-   * [0, 1]; physics turns it into a bounded translate (≤ MOTION_BOUNDS.nudgePx), equal and opposite on the pair.
+   * arcs → anyone: Coulomb attraction on `el` toward a charged neighbour, unit direction (nx, ny) and force in
+   * [0, 1]. Only the ambient runtime emits it; nothing in the site listens.
    */
   'charge:attract': { el: Element; nx: number; ny: number; force: number };
-  /** physics → engine + arcs: plasma wake level of `el` (0 rest, `PLASMA.wake` hover, 1 press/focus/click). */
-  'plasma:level': { el: Element; level: number };
-  /**
-   * engine → carriers: an ambient haze tick was drawn in this frame. Idle carriers advance on it, so the page at rest
-   * makes ONE frame per tick for haze and carriers together instead of two unsynchronised clocks' worth.
-   */
-  'ambient:tick': Record<string, never>;
 };
 
 export type JellyEventName = keyof JellyEvents;

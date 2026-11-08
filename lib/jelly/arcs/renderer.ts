@@ -8,7 +8,7 @@
  * ## Idle at rest
  *
  * Frames come from the jelly frame driver (`lib/jelly/frame.ts`, the ONE `requestAnimationFrame` behind every jelly
- * service) at `order: 30`, after physics (10) and the engine (20). {@link ArcRenderer.add} wakes the driver and it stays
+ * service) at `order: 30`, after the drag owners (5) and the pointer variable (25). {@link ArcRenderer.add} wakes the driver and it stays
  * awake only while an arc, its afterglow or a contact flare is alive (≤ ~410ms after the last add); the frame that
  * finds nothing left clears what it drew and lets the driver sleep. Teardown, {@link ArcRenderer.clear} (hidden tab,
  * global off) and a resize unregister the driver, which cancels a pending frame no other service wants. A page with

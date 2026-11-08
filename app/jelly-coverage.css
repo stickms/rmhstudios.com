@@ -16,21 +16,21 @@
      Badge, NotificationBadge                          L   static rim only, no press, no haze (§7)
      UserAvatar                                        L   ring-only rim, nothing over the face (§7)
      Skeleton                                          L   static haze + rim; its own drift is the only motion (§7)
-     Icon buttons                                      L   button material, no carrier (icon-button.tsx opts out)
+     Icon buttons                                      L   button material, no woken haze (icon-button.tsx opts out)
 
    Rules (same as app/jelly-material.css; gates: filter-cost-budget, design-consistency, handheld-tier):
    - tokens only (`--site-jelly-*`, `--site-glass-*`), no raw colours, no radii other than `inherit`;
    - no backdrop-filter, no filters, no animated custom properties, no transitions on box-shadow, no animations at all:
-     every moving layer is the shared `.jelly-flow` carrier from jelly-material.css;
+     the only moving layer is the woken haze from jelly-material.css §3b;
    - rims go through `--jelly-rim` so the degradation block (§9) can hand the theme's own `--site-shadow-sm` back
      (high contrast draws its 1px ring with it) without an `!important` box-shadow that would also eat a `ring-*`;
    - nothing here paints over a focus ring: rims are inset or a 1px ring, focus is a 2px outline outside the box. */
 
 @layer components {
   /* ── 1. Generic opt-in: `data-jelly` on an element no role class reaches (02 §3.2) ──────────────────────────────────
-     Knobs per mode, so a CSS carrier the service attaches has the right palette, plus the static floor and the CSS
-     rim. A role class on the same element wins: these never restate a role's knobs. Utilities (a `bg-gradient-*`, a
-     `shadow-*`) still win on layer, so a host that paints its own image or shadow keeps it. */
+     Knobs per mode, so the woken haze has the right palette, plus the static floor and the CSS rim. A role class on
+     the same element wins: these never restate a role's knobs. Utilities (a `bg-gradient-*`, a `shadow-*`) still win
+     on layer, so a host that paints its own image or shadow keeps it. */
   :is([data-jelly='card'], [data-jelly='lift']):not(
     .glass-fill,
     .glass-pane,
@@ -43,7 +43,6 @@
     --jelly-haze-a: var(--site-jelly-haze-fill);
     --jelly-plasma-k: 0.05;
     --jelly-flow-speed: 1;
-    --jelly-flow-axis-deg: 100deg;
   }
   [data-jelly='pane']:not(
     .glass-fill,
@@ -57,7 +56,6 @@
     --jelly-haze-a: var(--site-jelly-haze-pane);
     --jelly-plasma-k: 0.06;
     --jelly-flow-speed: 1;
-    --jelly-flow-axis-deg: 100deg;
   }
   /* Raw controls the migration tagged (`data-jelly` bare, or a press style): they have a surface of their own, so the
      haze is the field-level whisper, not a card's. */
@@ -81,7 +79,6 @@
     --jelly-haze-a: var(--site-jelly-haze-inset);
     --jelly-plasma-k: 0.04;
     --jelly-flow-speed: 1.2;
-    --jelly-flow-axis-deg: 100deg;
   }
 
   /* Static floor + rim for every host this file owns. Declared on the host so `--jelly-haze-a` resolves there. */
@@ -151,25 +148,10 @@
   ):not([data-liquid-canvas='on']) {
     box-shadow: var(--jelly-rim, var(--site-shadow-sm));
   }
-  /* A carrier draws the haze: the floor steps aside (perf-lite keeps the floor; no carrier runs there). */
-  html:not(.perf-lite)
-    :is([data-jelly], [data-slot='switch'], [data-slot='skeleton'])[data-jelly-flow='on'] {
-    --jelly-floor: none, none;
-  }
-
-  /* `lite` (04 C1 tier L): rim, static haze and press, never a moving layer. The carrier service is also told to
-     skip these (`data-jelly-flow="off"` at the call site); this is the backstop for a host that forgot. */
-  [data-jelly='lite'] > .jelly-flow {
-    display: none;
-  }
-
-  /* Opted out (02 §3.2): no floor and no carrier. Its own box-shadow is left alone — an opt-out removes jelly, it
-     does not restyle the element. */
+  /* Opted out (02 §3.2): no floor. Its own box-shadow is left alone — an opt-out removes jelly, it does not restyle
+     the element. */
   :is([data-jelly='off'], [data-jelly='none']) {
     --jelly-floor: none, none;
-  }
-  :is([data-jelly='off'], [data-jelly='none']) > .jelly-flow {
-    display: none;
   }
 
   /* ── 3. Switch (04 §1: C — the track is an inset, the knob a droplet) ───────────────────────────────────────────────
@@ -181,7 +163,6 @@
     --jelly-haze-a: var(--site-jelly-haze-inset);
     --jelly-plasma-k: 0.04;
     --jelly-flow-speed: 0.6;
-    --jelly-flow-axis-deg: 90deg;
   }
   [data-slot='switch'] > [data-switch-knob] {
     background-image: var(--liquid-coat);
@@ -288,7 +269,6 @@ html [data-sonner-toaster] [data-sonner-toast] {
   --jelly-haze-a: var(--site-jelly-haze-overlay);
   --jelly-plasma-k: 0.07;
   --jelly-flow-speed: 0.6;
-  --jelly-flow-axis-deg: 100deg;
   --jelly-static-haze: radial-gradient(
     120% 90% at 25% 15%,
     color-mix(
@@ -321,9 +301,6 @@ html [data-sonner-toaster] [data-sonner-toast] {
   background-size: var(--jelly-floor-size);
   box-shadow: var(--jelly-rim, var(--site-shadow-sm));
 }
-html:not(.perf-lite) [data-sonner-toaster] [data-sonner-toast][data-jelly-flow='on'] {
-  --jelly-floor: none, none;
-}
 
 /* ── 6. LiquidTabs selection thumb (04 §1: C — a droplet; the strip's track is `.glass-inset`) ─────────────────────
    Unlayered and one `[data-slot]` deeper than globals.css's `[data-tab-thumb]`, whose `background` shorthand would
@@ -344,12 +321,8 @@ html:not(.perf-lite) [data-sonner-toaster] [data-sonner-toast][data-jelly-flow='
 }
 
 /* ── 8. Zones (04 §1, §3.2) ────────────────────────────────────────────────────────────────────────────────────────
-   A play-field is never jelly: no carrier, no haze canvas, no floor inside it — whatever role a board tile carries.
-   A HUD while the game is in play is tier L: its carriers already pause (jelly-material.css §6); here they go. */
-[data-jelly-zone='playfield'] :is(.jelly-flow, .jelly-haze-canvas),
-html[data-game-state='playing'] [data-jelly-zone='hud'] :is(.jelly-flow, .jelly-haze-canvas) {
-  display: none !important;
-}
+   A play-field is never jelly: no woken haze (jelly-material.css §3b excludes the zone), no floor inside it —
+   whatever role a board tile carries. */
 [data-jelly-zone='playfield'],
 [data-jelly-zone='playfield'] * {
   --jelly-floor: none, none;

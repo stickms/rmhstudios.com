@@ -1,22 +1,17 @@
 /**
- * The registry is shared by four services, so its cost rules are the contract: one observer of each kind, mutation
- * adds batched into one pass, rects read in one batched pass at scroll end / resize and never per scroll event, slot
- * ranking by role then distance, and nothing touched at import (SSR).
+ * The registry is shared by the services that walk it (the click arcs), so its cost rules are the contract: one observer
+ * of each kind, mutation adds batched into one pass, rects read in one batched pass at scroll end / resize and never
+ * per scroll event, and nothing touched at import (SSR).
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  ROLE_PRIORITY,
   SCROLL_END_MS,
   createJellyRegistry,
   installJellyRegistry,
   jellyRegistry,
-  rankEntries,
-  takeWithin,
-  type JellyEntry,
 } from '../registry';
-import { JELLY_BUDGETS } from '../tiers';
 
 // ── A tiny fake DOM: elements declare the simple selectors they match ───────
 
@@ -178,8 +173,8 @@ describe('discovery', () => {
     expect(mo).toHaveLength(1);
     expect(io[0]!.opts).toMatchObject({ rootMargin: '0px' });
     expect([...io[0]!.observed]).toEqual([pane, btn]);
-    expect(reg.entryFor(pane as unknown as Element)?.role).toBe('pane');
-    expect(reg.entryFor(btn as unknown as Element)?.role).toBe('control');
+    expect(reg.entryFor(pane as unknown as Element)).toBeDefined();
+    expect(reg.entryFor(btn as unknown as Element)).toBeDefined();
     expect(reg.entryFor(plain as unknown as Element)).toBeUndefined();
     reg.dispose();
   });
@@ -219,28 +214,23 @@ describe('discovery', () => {
   });
 
   it('notifies when a service layer is wiped out of a still-connected host (React setTextContent)', () => {
-    // Regression (testing/e2e/jelly-interaction.mjs): membership does not change when React replaces a <Button>'s
-    // text, so the registry used to stay silent and the carrier service kept `data-jelly-flow="on"` on a host whose
-    // carrier was gone. A removed layer node must reach every consumer in the next batched pass.
+    // Membership does not change when React replaces a <Button>'s text, so the registry would stay silent about a
+    // service layer that went with it. A removed layer node must reach every consumer in the next batched pass.
     const btn = new El(['[data-slot="button"]']);
     root.append(btn);
     const reg = createJellyRegistry(doc);
     const changed = vi.fn();
     reg.onChange(changed);
-    const carrier = new El(['.jelly-flow']);
-    const rim = new El(['canvas[data-liquid-glass]', 'canvas']);
-    btn.append(carrier, rim);
+    const layer = new El(['.jelly-arc-layer', 'canvas']);
+    btn.append(layer);
     // Adding our own layers is not content: never a host walk, never a notification.
-    mo[0]!.cb([{ type: 'childList', target: btn, addedNodes: [carrier, rim], removedNodes: [] }]);
+    mo[0]!.cb([{ type: 'childList', target: btn, addedNodes: [layer], removedNodes: [] }]);
     vi.runOnlyPendingTimers();
     expect(changed).not.toHaveBeenCalled();
     // setTextContent: every child goes, the host stays.
-    carrier.remove();
-    rim.remove();
+    layer.remove();
     const text = { nodeType: 3 };
-    mo[0]!.cb([
-      { type: 'childList', target: btn, addedNodes: [text], removedNodes: [carrier, rim] },
-    ]);
+    mo[0]!.cb([{ type: 'childList', target: btn, addedNodes: [text], removedNodes: [layer] }]);
     mo[0]!.cb([{ type: 'childList', target: btn, addedNodes: [], removedNodes: [text] }]);
     expect(changed).not.toHaveBeenCalled(); // batched, not per mutation
     vi.runOnlyPendingTimers();
@@ -256,13 +246,13 @@ describe('discovery', () => {
     reg.dispose();
   });
 
-  it('maps the app tier adapter surfaces to cards (fill)', () => {
+  it('admits the app tier adapter surfaces', () => {
     const surface = new El(['[data-liquid-surface]']);
     const adapter = new El(['.app-theme [class~="bg-(--app-surface)"]']);
     root.append(surface, adapter);
     const reg = createJellyRegistry(doc);
-    expect(reg.entryFor(surface as unknown as Element)?.role).toBe('fill');
-    expect(reg.entryFor(adapter as unknown as Element)?.role).toBe('fill');
+    expect(reg.entryFor(surface as unknown as Element)).toBeDefined();
+    expect(reg.entryFor(adapter as unknown as Element)).toBeDefined();
     reg.dispose();
   });
 
@@ -336,57 +326,6 @@ describe('rect cache', () => {
     vi.runOnlyPendingTimers();
     expect(on.rectReads).toBe(1);
     expect(offscreen.rectReads).toBe(0);
-    reg.dispose();
-  });
-});
-
-describe('slots', () => {
-  const entry = (
-    role: JellyEntry['role'],
-    left: number,
-    order: number,
-    size = 100,
-  ): JellyEntry => ({
-    el: {} as Element,
-    role,
-    order,
-    visible: true,
-    rect: { left, top: 0, width: size, height: size },
-  });
-
-  it('rank by role priority, then distance to the focus, then discovery order', () => {
-    expect(ROLE_PRIORITY.overlay).toBeLessThan(ROLE_PRIORITY.chrome);
-    expect(ROLE_PRIORITY.chrome).toBeLessThan(ROLE_PRIORITY.pane);
-    expect(ROLE_PRIORITY.pane).toBeLessThan(ROLE_PRIORITY.fill);
-    expect(ROLE_PRIORITY.fill).toBeLessThan(ROLE_PRIORITY.control);
-    const far = entry('fill', 900, 0);
-    const near = entry('fill', 0, 1);
-    const ctl = entry('control', 0, 2);
-    const ov = entry('overlay', 900, 3);
-    expect(rankEntries([ctl, far, near, ov], { x: 50, y: 50 })).toEqual([ov, near, far, ctl]);
-  });
-
-  it('cap by count and by animated area', () => {
-    const big = entry('pane', 0, 0, 1000);
-    const small = [1, 2, 3].map((i) => entry('fill', 0, i));
-    expect(takeWithin([big, ...small], 2)).toEqual([big, small[0]]);
-    // The big one does not fit the area; the smaller ones further down still do.
-    expect(takeWithin([big, ...small], 8, 25_000)).toEqual(small.slice(0, 2));
-  });
-
-  it('ambientSlots and liveSet honour the tier budget', () => {
-    const cards = Array.from(
-      { length: 30 },
-      (_, i) => new El(['.glass-fill'], { left: i, top: 0, width: 10, height: 10 }),
-    );
-    root.append(...cards);
-    const reg = createJellyRegistry(doc);
-    intersect(...cards.map((c) => [c, true] as [El, boolean]));
-    expect(reg.ambientSlots(JELLY_BUDGETS.full)).toHaveLength(8);
-    expect(reg.ambientSlots(JELLY_BUDGETS.handheld)).toHaveLength(4);
-    expect(reg.liveSet(JELLY_BUDGETS.full)).toHaveLength(24);
-    expect(reg.liveSet(JELLY_BUDGETS.lite)).toHaveLength(0);
-    expect(reg.liveSet(5)).toHaveLength(5);
     reg.dispose();
   });
 });

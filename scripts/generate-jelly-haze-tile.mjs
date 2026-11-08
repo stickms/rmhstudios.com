@@ -4,9 +4,8 @@
  * Plasmatic Jelly material (docs/plans/plasmatic-jelly/01-material.md §3.2, §3.6, M4).
  *
  * What it is: a 192 px, seamlessly TILEABLE, neutral (white) fbm grain whose
- * alpha never exceeds 0.06. `app/jelly-material.css` lays it under the static
- * haze gradient (`--jelly-static-haze`) and inside the `.jelly-flow` carrier's
- * drift span, so a surface reads as faintly milky jelly before — and without —
+ * alpha never exceeds 0.06. `app/jelly-material.css` lays it under every role's
+ * background stack (the static haze floor, `--jelly-floor`), so a surface reads as faintly milky jelly before — and without —
  * any JavaScript or WebGL. It carries no hue: colour lives in the light (the
  * plasma tokens), never in the grain, so one file serves every theme.
  *
