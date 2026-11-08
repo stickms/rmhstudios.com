@@ -76,9 +76,9 @@ describe('budgets (R6, R10, 04 §3.1)', () => {
       const b = JELLY_BUDGETS[t];
       return [b.clockHz, b.idleClockHz, b.clickBolts];
     };
-    expect(row('full')).toEqual([60, 30, 3]);
-    expect(row('coarse')).toEqual([60, 30, 2]);
-    expect(row('handheld')).toEqual([30, 15, 1]);
+    expect(row('full')).toEqual([60, 15, 3]);
+    expect(row('coarse')).toEqual([60, 15, 2]);
+    expect(row('handheld')).toEqual([30, 7, 1]);
     expect(row('lite')).toEqual([0, 0, 0]);
     expect(row('off')).toEqual([0, 0, 0]);
   });
@@ -108,9 +108,11 @@ describe('budgets (R6, R10, 04 §3.1)', () => {
     for (const b of Object.values(JELLY_BUDGETS)) {
       expect(b.idleClockHz).toBeLessThanOrEqual(b.clockHz);
     }
-    // R7: always moving while someone is there — a 30 Hz floor, never a freeze, on the desktop tiers.
-    expect(JELLY_BUDGETS.full.idleClockHz).toBe(30);
-    expect(JELLY_BUDGETS.coarse.idleClockHz).toBe(30);
+    // R7: always moving while someone is there — a 15 Hz floor (2026-11-08: halved from 30, the
+    // drift is 5.5 deg/s), never a freeze, on the desktop tiers; 7 Hz on handhelds.
+    expect(JELLY_BUDGETS.full.idleClockHz).toBe(15);
+    expect(JELLY_BUDGETS.coarse.idleClockHz).toBe(15);
+    expect(JELLY_BUDGETS.handheld.idleClockHz).toBe(7);
     const off = JELLY_BUDGETS.off;
     expect([off.clockHz, off.clickBolts]).toEqual([0, 0]);
   });
