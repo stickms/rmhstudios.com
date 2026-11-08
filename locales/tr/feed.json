@@ -906,6 +906,7 @@
   "playlist-rename-failed": "Yeniden adlandırılamadı.",
   "playlist-rename-prompt": "Çalma listesini yeniden adlandır",
   "playlists-empty-desc": "Yukarıdan bir tane oluşturun, ardından RMHMusic'ten parça ekleyin.",
+  "playlists-empty-desc-rmhtube": "Save videos from an RMHTube room to start a playlist.",
   "playlists-empty-title": "Henüz çalma listesi yok",
   "playlists-search-empty-desc": "Try a different title or music source.",
   "playlists-search-empty-title": "No matching playlists",

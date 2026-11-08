@@ -883,6 +883,7 @@
   "playlist-rename-failed": "名前を変更できませんでした。",
   "playlist-rename-prompt": "プレイリスト名を変更",
   "playlists-empty-desc": "上で作成してから、RMHMusicからトラックを追加してください。",
+  "playlists-empty-desc-rmhtube": "Save videos from an RMHTube room to start a playlist.",
   "playlists-empty-title": "プレイリストはまだありません",
   "playlists-search-empty-desc": "Try a different title or music source.",
   "playlists-search-empty-title": "No matching playlists",

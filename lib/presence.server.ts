@@ -5,7 +5,7 @@
  * Two surfaces read this and they have deliberately different scopes:
  *
  *  - {@link getOnlineFriends} — everyone the viewer **follows**, with the public
- *    RMHTube/RMHMusic room they're in (the "Friends online" sidebar widget).
+ *    RMHTube room they're in (the "Friends online" sidebar widget).
  *  - {@link getActiveFriends} — the viewer's **mutuals** only, with rich §9
  *    activity and a one-tap join target (the Friends rail/sheet).
  *
@@ -52,7 +52,7 @@ const ONLINE_IDS_TTL_MS = 15_000;
 export interface OnlineFriend {
   user: ReturnType<typeof resolveUser>;
   /** A joinable public room the friend is in, or null. */
-  activity: { kind: 'rmhtube' | 'rmhmusic'; label: string; href: string } | null;
+  activity: { kind: 'rmhtube'; label: string; href: string } | null;
 }
 
 interface OnlineFollows {
@@ -135,34 +135,23 @@ export async function getOnlineFriends(viewerId: string, limit = 12): Promise<On
   const onlineIds = online.map((u) => u.id);
 
   // Active room memberships (leftAt null, room still open + public) so we can
-  // show "watching together" / "in a listening room" with a join link.
-  const [tubeMembers, musicMembers] = await Promise.all([
-    prisma.rmhTubeRoomMember.findMany({
-      where: {
-        userId: { in: onlineIds },
-        leftAt: null,
-        room: { closedAt: null, isPublic: true },
-      },
-      select: { userId: true, roomId: true },
-    }),
-    prisma.rmhMusicRoomMember.findMany({
-      where: { userId: { in: onlineIds }, leftAt: null, room: { isPublic: true } },
-      select: { userId: true, room: { select: { code: true } } },
-    }),
-  ]);
+  // show "watching together" with a join link.
+  const tubeMembers = await prisma.rmhTubeRoomMember.findMany({
+    where: {
+      userId: { in: onlineIds },
+      leftAt: null,
+      room: { closedAt: null, isPublic: true },
+    },
+    select: { userId: true, roomId: true },
+  });
 
   const tubeByUser = new Map(tubeMembers.map((m) => [m.userId, m.roomId]));
-  const musicByUser = new Map(musicMembers.map((m) => [m.userId, m.room.code]));
 
   return online.map((u) => {
-    let activity: OnlineFriend['activity'] = null;
     const tubeRoom = tubeByUser.get(u.id);
-    const musicRoom = musicByUser.get(u.id);
-    if (tubeRoom) {
-      activity = { kind: 'rmhtube', label: 'Watching together', href: `/rmhtube/${tubeRoom}` };
-    } else if (musicRoom) {
-      activity = { kind: 'rmhmusic', label: 'In a listening room', href: `/rmhmusic/${musicRoom}` };
-    }
+    const activity: OnlineFriend['activity'] = tubeRoom
+      ? { kind: 'rmhtube', label: 'Watching together', href: `/rmhtube/${tubeRoom}` }
+      : null;
     return { user: resolveUser(u), activity };
   });
 }

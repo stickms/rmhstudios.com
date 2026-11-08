@@ -998,6 +998,7 @@
   "playlist-rename-failed": "تعذرت إعادة التسمية.",
   "playlist-rename-prompt": "إعادة تسمية قائمة التشغيل",
   "playlists-empty-desc": "أنشئ واحدة أعلاه، ثم أضف مقاطع من RMHMusic.",
+  "playlists-empty-desc-rmhtube": "Save videos from an RMHTube room to start a playlist.",
   "playlists-empty-title": "لا توجد قوائم تشغيل بعد",
   "playlists-search-empty-desc": "Try a different title or music source.",
   "playlists-search-empty-title": "No matching playlists",

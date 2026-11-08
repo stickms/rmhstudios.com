@@ -5,6 +5,10 @@
  * without pulling in Prisma.
  */
 
+/**
+ * `music_room` is legacy: it pinned a retired RMHMusic listening room. New pins of
+ * that kind are refused; stored ones render their label with no link.
+ */
 export type SpacePinnedKind = 'post' | 'url' | 'music_room' | 'tube_room';
 
 export interface SpacePinned {

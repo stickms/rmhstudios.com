@@ -1,7 +1,7 @@
 /**
  * Live Spaces (§4 Phase 1) — socket handler for the unified games hub.
  *
- * Mirrors the other room-based handlers (rmhstudy / rmhmusic): module-level
+ * Mirrors the other room-based handlers (rmhstudy / studio-jam): module-level
  * in-memory Maps for ephemeral live state (audience, pinned, status), keyed by
  * spaceId. The DB is the source of truth for lifecycle (host/status/recordChat)
  * and for the chat transcript when `recordChat` is set — chat is persisted
@@ -76,7 +76,8 @@ function isPinned(value: unknown): value is SpacePinned {
     typeof v.ref === 'string' &&
     v.ref.length > 0 &&
     v.ref.length <= 500 &&
-    (v.kind === 'post' || v.kind === 'url' || v.kind === 'music_room' || v.kind === 'tube_room')
+    // `music_room` pins pointed at the retired RMHMusic rooms; new ones are refused.
+    (v.kind === 'post' || v.kind === 'url' || v.kind === 'tube_room')
   );
 }
 

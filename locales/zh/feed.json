@@ -883,6 +883,7 @@
   "playlist-rename-failed": "无法重命名。",
   "playlist-rename-prompt": "重命名播放列表",
   "playlists-empty-desc": "在上方创建一个，然后从 RMHMusic 添加曲目。",
+  "playlists-empty-desc-rmhtube": "Save videos from an RMHTube room to start a playlist.",
   "playlists-empty-title": "还没有播放列表",
   "playlists-search-empty-desc": "Try a different title or music source.",
   "playlists-search-empty-title": "No matching playlists",

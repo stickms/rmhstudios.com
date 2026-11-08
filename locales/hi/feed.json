@@ -906,6 +906,7 @@
   "playlist-rename-failed": "नाम नहीं बदला जा सका।",
   "playlist-rename-prompt": "प्लेलिस्ट का नाम बदलें",
   "playlists-empty-desc": "ऊपर एक बनाएँ, फिर RMHMusic से ट्रैक जोड़ें।",
+  "playlists-empty-desc-rmhtube": "Save videos from an RMHTube room to start a playlist.",
   "playlists-empty-title": "अभी तक कोई प्लेलिस्ट नहीं",
   "playlists-search-empty-desc": "Try a different title or music source.",
   "playlists-search-empty-title": "No matching playlists",

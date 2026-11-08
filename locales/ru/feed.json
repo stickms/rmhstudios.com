@@ -952,6 +952,7 @@
   "playlist-rename-failed": "Не удалось переименовать.",
   "playlist-rename-prompt": "Переименовать плейлист",
   "playlists-empty-desc": "Создайте плейлист выше, затем добавьте треки из RMHMusic.",
+  "playlists-empty-desc-rmhtube": "Save videos from an RMHTube room to start a playlist.",
   "playlists-empty-title": "Пока нет плейлистов",
   "playlists-search-empty-desc": "Try a different title or music source.",
   "playlists-search-empty-title": "No matching playlists",

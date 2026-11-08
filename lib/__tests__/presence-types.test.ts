@@ -10,7 +10,6 @@ describe('joinTargetFor', () => {
   it('routes each activity kind to the right surface', () => {
     const cases: [PresenceActivity, string][] = [
       [{ kind: 'game', gameId: 'void-breaker', label: 'x' }, '/arcade/void-breaker'],
-      [{ kind: 'music_room', roomId: 'ABC', label: 'x' }, '/rmhmusic/ABC'],
       [{ kind: 'tube_room', roomId: 'r1', label: 'x' }, '/rmhtube/r1'],
       [{ kind: 'space', spaceId: 's9', label: 'x' }, '/spaces/s9'],
     ];
@@ -24,7 +23,6 @@ describe('contextVerb', () => {
   it('uses the right verb per kind', () => {
     expect(contextVerb('game')).toBe('Join');
     expect(contextVerb('space')).toBe('Hop in');
-    expect(contextVerb('music_room')).toBe('Watch');
     expect(contextVerb('tube_room')).toBe('Watch');
   });
 });

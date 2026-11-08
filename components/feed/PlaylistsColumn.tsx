@@ -316,8 +316,8 @@ export function PlaylistsColumn({
                   ? t('playlists-search-empty-desc', {
                       defaultValue: 'Try a different title or music source.',
                     })
-                  : t('playlists-empty-desc', {
-                      defaultValue: 'Create one above, then add tracks from RMHMusic.',
+                  : t('playlists-empty-desc-rmhtube', {
+                      defaultValue: 'Save videos from an RMHTube room to start a playlist.',
                     })
               }
             />

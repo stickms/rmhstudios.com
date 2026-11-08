@@ -75,14 +75,16 @@ function Avatar({
 
 function PinnedPanel({ pinned }: { pinned: SpacePinned }) {
   const { t } = useTranslation('site');
+  // `music_room` pins point at the retired RMHMusic listening rooms. Stored pins
+  // keep their label but get no link: there is no room to open any more.
   const href =
     pinned.kind === 'url'
       ? pinned.ref
       : pinned.kind === 'post'
         ? `/post/${pinned.ref}`
-        : pinned.kind === 'music_room'
-          ? `/rmhmusic/${pinned.ref}`
-          : `/rmhtube/${pinned.ref}`;
+        : pinned.kind === 'tube_room'
+          ? `/rmhtube/${pinned.ref}`
+          : null;
   const label =
     pinned.kind === 'url'
       ? t('space-pinned-link', { defaultValue: 'Pinned link' })
@@ -97,15 +99,19 @@ function PinnedPanel({ pinned }: { pinned: SpacePinned }) {
         <Pin className="size-3.5" aria-hidden />
         {label}
       </div>
-      <a
-        href={href}
-        className="break-words text-sm text-site-text underline-offset-2 hover:underline"
-        {...(pinned.kind === 'url'
-          ? { target: '_blank', rel: 'noopener noreferrer nofollow' }
-          : {})}
-      >
-        {pinned.ref}
-      </a>
+      {href ? (
+        <a
+          href={href}
+          className="break-words text-sm text-site-text underline-offset-2 hover:underline"
+          {...(pinned.kind === 'url'
+            ? { target: '_blank', rel: 'noopener noreferrer nofollow' }
+            : {})}
+        >
+          {pinned.ref}
+        </a>
+      ) : (
+        <span className="break-words text-sm text-site-text-muted">{pinned.ref}</span>
+      )}
     </div>
   );
 }

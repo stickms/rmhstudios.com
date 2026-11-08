@@ -942,6 +942,7 @@
   "playlist-rename-failed": "Could not rename.",
   "playlist-rename-prompt": "Rename playlist",
   "playlists-empty-desc": "Create one above, then add tracks from RMHMusic.",
+  "playlists-empty-desc-rmhtube": "Save videos from an RMHTube room to start a playlist.",
   "playlists-empty-title": "No playlists yet",
   "playlists-search-empty-desc": "Try a different title or music source.",
   "playlists-search-empty-title": "No matching playlists",
