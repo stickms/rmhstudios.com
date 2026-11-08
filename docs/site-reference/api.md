@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 989 files across 197 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 991 files across 197 groups. This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1744,13 +1744,15 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 ## `/api/rmhmusic`
 
-5 routes.
+7 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/rmhmusic/guess` | `GET` `POST` | `app/routes/api/rmhmusic/guess/index.ts` |
 | `/api/rmhmusic/guess/:id` | `GET` | `app/routes/api/rmhmusic/guess/$id/index.ts` |
 | `/api/rmhmusic/guess/:id/attempt` | `POST` | `app/routes/api/rmhmusic/guess/$id/attempt.ts` |
+| `/api/rmhmusic/learn/lesson-complete` | `POST` | `app/routes/api/rmhmusic/learn/lesson-complete.ts` |
+| `/api/rmhmusic/learn/profile` | `GET` `PUT` | `app/routes/api/rmhmusic/learn/profile.ts` |
 | `/api/rmhmusic/spotify/search` | `GET` | `app/routes/api/rmhmusic/spotify/search.ts` |
 | `/api/rmhmusic/track-comments` | `DELETE` `GET` `POST` | `app/routes/api/rmhmusic/track-comments.ts` |
 
