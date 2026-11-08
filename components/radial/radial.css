@@ -2936,7 +2936,9 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
      so the hover doesn't end at a second rounded box above the actions. */
   margin: calc(var(--rad-card-pad) * -1) calc(var(--rad-card-pad) * -1) 0;
   padding: var(--rad-card-pad) var(--rad-card-pad) 0;
-  border-radius: inherit;
+  /* The link's box is the card's PADDING box, inside its border, so its corner is the card's radius minus the border
+     width (concentric). `inherit` gave it the full radius, a slightly tighter curve than the border it sits in. */
+  border-radius: calc(var(--site-radius, 22px) - var(--site-border-width, 1px));
   overflow: clip;
   text-decoration: none;
   color: inherit;
@@ -2955,12 +2957,22 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   border: var(--site-border-width, 1px) solid var(--site-border);
   transition: border-color 0.2s ease;
 }
+/* Keyboard focus: the ring sits on the CARD, not on the link. The link is inset inside the card's border with its own
+   corner radius, so a ring on it ran inside the border as a second, tighter curve (a doubled black line in the light
+   theme). On the card, a 2px solid `--focus-ring` is concentric with the card's real corner, and the border keeps its
+   resting colour so the ring is the one signal. */
 .rmhark:has(.rmhark__link:focus-visible) {
-  border-color: var(--site-border-bright);
+  outline: 2px solid var(--focus-ring, var(--site-accent));
+  outline-offset: 2px;
 }
+.rmhark__link:focus-visible {
+  outline: none;
+}
+/* Hover: a soft step toward the bright border, not the bright border itself. `--site-border-bright` is pure black in the
+   light theme, which drew a hard black outline round the card and a grey hover fill whose corner did not match it. */
 @media (hover: hover) and (pointer: fine) {
   .rmhark:has(.rmhark__link:hover) {
-    border-color: var(--site-border-bright);
+    border-color: color-mix(in srgb, var(--site-border-bright) 30%, var(--site-border));
   }
 }
 .rmhark__head {
