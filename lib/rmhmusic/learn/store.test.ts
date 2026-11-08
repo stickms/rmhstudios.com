@@ -101,6 +101,30 @@ describe('learn store', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('load() after a successful load issues no request and stays ready', async () => {
+    fetchMock.mockResolvedValue(json({ profile: PROFILE, progress: [ROW] }));
+    await useLearnStore.getState().load();
+    fetchMock.mockClear();
+    await useLearnStore.getState().load();
+    expect(fetchMock).not.toHaveBeenCalled();
+    const s = useLearnStore.getState();
+    expect(s.status).toBe('ready');
+    expect(s.profile).toEqual(PROFILE);
+    expect(s.progress).toEqual([ROW]);
+  });
+
+  it('load() after an error fetches again and recovers', async () => {
+    fetchMock.mockResolvedValue(json({ error: 'x' }, 500));
+    await useLearnStore.getState().load();
+    expect(useLearnStore.getState().status).toBe('error');
+    fetchMock.mockClear();
+    fetchMock.mockResolvedValue(json({ profile: PROFILE, progress: [ROW] }));
+    await useLearnStore.getState().load();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(useLearnStore.getState().status).toBe('ready');
+    expect(useLearnStore.getState().error).toBeNull();
+  });
+
   it('load() maps a failure to status error without throwing', async () => {
     fetchMock.mockResolvedValue(json({ error: 'x' }, 500));
     await expect(useLearnStore.getState().load()).resolves.toBeUndefined();

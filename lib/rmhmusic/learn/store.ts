@@ -172,6 +172,10 @@ export const useLearnStore = create<LearnState>()((set, get) => {
 
     load() {
       if (loading) return loading;
+      // Already loaded this session (a remount, e.g. returning from a lesson): keep what is on
+      // screen. A refetch would blank the page and could overwrite a profile write still in flight.
+      // `idle` and `error` still fetch, so Retry works.
+      if (get().status === 'ready') return Promise.resolve();
       const run = (async () => {
         const built = ensureInput();
         set({ status: 'loading', error: null, ...(built ?? {}) });

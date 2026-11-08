@@ -24,12 +24,13 @@ interface LearnHomeProps {
   onOpenLesson?: (lessonId: string) => void;
 }
 
+/** Loading placeholder, built from the static path so it is as tall as the loaded page. */
 function HomeSkeleton() {
   return (
     <div aria-hidden="true" className="space-y-4">
-      <div className="app-skeleton h-11 w-full" />
+      <div className="app-skeleton h-12 w-full pointer-coarse:h-13" />
       {PATH.map((unit) => (
-        <div key={unit.id} className="app-skeleton h-56 w-full rounded-(--app-radius)" />
+        <PathUnit key={unit.id} unit={unit} progress={new Map()} placeholder />
       ))}
     </div>
   );
@@ -142,16 +143,19 @@ export function LearnHome({ onOpenLesson }: LearnHomeProps) {
                   : t('heading-piano', { defaultValue: 'Learn piano' })
                 : t('heading-default', { defaultValue: 'Learn music' })}
             </h1>
-            {status === 'ready' && profile && (
-              <p className="mt-1 text-(--app-text-muted)">
-                {t('lessons-started', {
+            {/* The line is reserved in every state so the toggle and units do not move when data arrives. */}
+            <p className="mt-1 min-h-6 text-(--app-text-muted)">
+              {status === 'ready' && profile ? (
+                t('lessons-started', {
                   count: available.length,
                   started,
                   defaultValue_one: '{{started}} of {{count}} lesson started',
                   defaultValue: '{{started}} of {{count}} lessons started',
-                })}
-              </p>
-            )}
+                })
+              ) : status === 'error' ? null : (
+                <span aria-hidden="true" className="app-skeleton block h-6 w-44" />
+              )}
+            </p>
           </div>
           {body}
         </main>
