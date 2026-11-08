@@ -163,16 +163,16 @@ describe('the fallback decision', () => {
   it('restarts a crashed worker a bounded number of times', () => {
     for (let n = 1; n <= MAX_WORKER_ERRORS; n++)
       expect(afterFailure('worker-error', { workerErrors: n, contextLosses: 0 })).toBe('restart');
-    expect(afterFailure('worker-error', { workerErrors: MAX_WORKER_ERRORS + 1, contextLosses: 0 })).toBe(
-      'fallback',
-    );
+    expect(
+      afterFailure('worker-error', { workerErrors: MAX_WORKER_ERRORS + 1, contextLosses: 0 }),
+    ).toBe('fallback');
   });
 
   it('survives a bounded number of context losses, then falls back for good', () => {
     for (let n = 1; n <= MAX_CONTEXT_LOSSES; n++)
       expect(afterFailure('context-lost', { workerErrors: 0, contextLosses: n })).toBe('restart');
-    expect(afterFailure('context-lost', { workerErrors: 0, contextLosses: MAX_CONTEXT_LOSSES + 1 })).toBe(
-      'fallback',
-    );
+    expect(
+      afterFailure('context-lost', { workerErrors: 0, contextLosses: MAX_CONTEXT_LOSSES + 1 }),
+    ).toBe('fallback');
   });
 });

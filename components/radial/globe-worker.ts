@@ -328,7 +328,11 @@ function applySkin(): void {
     const ink = colour(t.ink, [0, 0, 0, 1]);
     const accent = colour(t.accent, [0.4, 0.5, 1, 1]);
     const bg = colour(t.bg, [1, 1, 1, 1]);
-    s.palette({ ink: rgb(ink), accent: rgb(accent), light: lum(bg) > 0.5 ? 1 : 0 }, pendingSkin.persp, pendingSkin.lens);
+    s.palette(
+      { ink: rgb(ink), accent: rgb(accent), light: lum(bg) > 0.5 ? 1 : 0 },
+      pendingSkin.persp,
+      pendingSkin.lens,
+    );
   }
 }
 

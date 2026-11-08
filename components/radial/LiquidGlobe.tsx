@@ -1210,11 +1210,7 @@ export function LiquidGlobe({
         stage.dataset.globeCoat = 'entering';
         window.clearTimeout(coatTimer);
         coatTimer = window.setTimeout(() => {
-          if (
-            !cancelled &&
-            canvas.parentElement === host &&
-            stage.dataset.globeCoat === 'entering'
-          )
+          if (!cancelled && canvas.parentElement === host && stage.dataset.globeCoat === 'entering')
             stage.dataset.globeCoat = 'on';
         }, COAT_FADE_MS);
       }

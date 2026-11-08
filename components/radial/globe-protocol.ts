@@ -246,11 +246,15 @@ export const MAX_WORKER_ERRORS = 1;
 export const MAX_CONTEXT_LOSSES = 2;
 
 /** Whether this page can try the worker at all. */
-export function decideGlobeBackend(env: GlobeEnv): { backend: GlobeBackend; reason?: GlobeFallbackReason } {
+export function decideGlobeBackend(env: GlobeEnv): {
+  backend: GlobeBackend;
+  reason?: GlobeFallbackReason;
+} {
   if (env.forced) return { backend: 'css', reason: 'forced' };
   if (env.perfLite) return { backend: 'css', reason: 'perf-lite' };
   if (!env.hasWorker) return { backend: 'css', reason: 'no-worker' };
-  if (!env.hasOffscreenCanvas || !env.canTransfer) return { backend: 'css', reason: 'no-offscreen' };
+  if (!env.hasOffscreenCanvas || !env.canTransfer)
+    return { backend: 'css', reason: 'no-offscreen' };
   return { backend: 'worker' };
 }
 
@@ -269,6 +273,7 @@ export function afterFailure(
   failures: GlobeFailures,
 ): 'restart' | 'fallback' {
   if (kind === 'ready-failed' || kind === 'worker-start') return 'fallback';
-  if (kind === 'worker-error') return failures.workerErrors <= MAX_WORKER_ERRORS ? 'restart' : 'fallback';
+  if (kind === 'worker-error')
+    return failures.workerErrors <= MAX_WORKER_ERRORS ? 'restart' : 'fallback';
   return failures.contextLosses <= MAX_CONTEXT_LOSSES ? 'restart' : 'fallback';
 }

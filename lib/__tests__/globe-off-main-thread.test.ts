@@ -51,9 +51,10 @@ describe('the globe draws off the main thread', () => {
     const src = code(file);
     expect(src, `${file}: no synchronous readback on the page's thread`).not.toMatch(READBACK);
     expect(src, `${file}: the globe's GL contexts live in the worker`).not.toMatch(GL_CONTEXT);
-    expect(src, `${file}: no main-thread WebGL probe (the worker reports whether it can draw)`).not.toMatch(
-      /\bsupportsWebGL\b/,
-    );
+    expect(
+      src,
+      `${file}: no main-thread WebGL probe (the worker reports whether it can draw)`,
+    ).not.toMatch(/\bsupportsWebGL\b/);
   });
 
   it('LiquidGlobe resolves no colour through a canvas (the worker parses computed-style strings)', () => {
@@ -65,7 +66,11 @@ describe('the globe draws off the main thread', () => {
   it('only the worker entry imports the render modules', () => {
     const importers = ['components', 'app', 'hooks', 'lib', 'stores']
       .flatMap((d) => collect(d))
-      .filter((f) => /from\s+['"](?:\.\/|@\/components\/radial\/)(?:jelly-glass|self-evert-skin)['"]/.test(code(f)))
+      .filter((f) =>
+        /from\s+['"](?:\.\/|@\/components\/radial\/)(?:jelly-glass|self-evert-skin)['"]/.test(
+          code(f),
+        ),
+      )
       .map((f) => relative(ROOT, join(ROOT, f)))
       .sort();
     expect(importers).toEqual([WORKER_ENTRY]);

@@ -74,8 +74,7 @@ class FakeWorker {
   }
   last<T extends GlobeIn['type']>(type: T) {
     return [...this.sent].reverse().find((s) => s.msg.type === type)?.msg as
-      | Extract<GlobeIn, { type: T }>
-      | undefined;
+      Extract<GlobeIn, { type: T }> | undefined;
   }
 }
 
@@ -148,7 +147,8 @@ function rig(over: Partial<GlobeHostDeps> = {}) {
 }
 
 const PROJ = { persp: 3.1, lens: 0.42 };
-const ready = (w: FakeWorker) => w.reply({ type: 'ready', version: GLOBE_PROTOCOL_VERSION, ok: true });
+const ready = (w: FakeWorker) =>
+  w.reply({ type: 'ready', version: GLOBE_PROTOCOL_VERSION, ok: true });
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -195,7 +195,12 @@ describe('start-up and the fallback decision', () => {
   it('falls back for good when the worker cannot make a WebGL 2 context', () => {
     const { deps, workers } = rig();
     const host = createGlobeHost(deps);
-    workers[0]!.reply({ type: 'ready', version: GLOBE_PROTOCOL_VERSION, ok: false, reason: 'no-webgl2' });
+    workers[0]!.reply({
+      type: 'ready',
+      version: GLOBE_PROTOCOL_VERSION,
+      ok: false,
+      reason: 'no-webgl2',
+    });
     expect(host.status).toBe('css');
     expect(host.reason).toBe('no-webgl2');
     expect(workers[0]!.terminated).toBe(true);
@@ -205,7 +210,12 @@ describe('start-up and the fallback decision', () => {
   it('falls back when the program will not build, or the worker speaks another version', () => {
     const a = rig();
     const h1 = createGlobeHost(a.deps);
-    a.workers[0]!.reply({ type: 'ready', version: GLOBE_PROTOCOL_VERSION, ok: false, reason: 'program' });
+    a.workers[0]!.reply({
+      type: 'ready',
+      version: GLOBE_PROTOCOL_VERSION,
+      ok: false,
+      reason: 'program',
+    });
     expect(h1.status).toBe('css');
     const b = rig();
     const h2 = createGlobeHost(b.deps);
@@ -391,7 +401,9 @@ describe('the page snapshot', () => {
     expect(msg.bitmap).toBe(bitmaps[0]);
     expect(w.sent.find((x) => x.msg.type === 'scene')!.transfer).toEqual([bitmaps[0]]);
     expect(bitmaps[0]!.closed).toBe(true);
-    expect((s.bitmap as unknown as FakeBitmap).closed, 'the store keeps its own picture').toBe(false);
+    expect((s.bitmap as unknown as FakeBitmap).closed, 'the store keeps its own picture').toBe(
+      false,
+    );
     expect(msg.width).toBe(1440);
   });
 
@@ -502,7 +514,12 @@ describe('teardown', () => {
   it('a page that fell back stays fallen back for every later mount', () => {
     const { deps, workers } = rig();
     const a = acquireGlobeHost(deps);
-    workers[0]!.reply({ type: 'ready', version: GLOBE_PROTOCOL_VERSION, ok: false, reason: 'no-webgl2' });
+    workers[0]!.reply({
+      type: 'ready',
+      version: GLOBE_PROTOCOL_VERSION,
+      ok: false,
+      reason: 'no-webgl2',
+    });
     a.release();
     vi.advanceTimersByTime(HOST_LINGER_MS + 1);
     const b = acquireGlobeHost(deps);

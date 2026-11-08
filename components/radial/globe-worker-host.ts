@@ -181,7 +181,10 @@ export function createGlobeHost(deps: GlobeHostDeps): GlobeWorkerHost {
     notify();
   };
 
-  const fail = (kind: 'ready-failed' | 'worker-error' | 'context-lost' | 'worker-start', why?: GlobeFallbackReason) => {
+  const fail = (
+    kind: 'ready-failed' | 'worker-error' | 'context-lost' | 'worker-start',
+    why?: GlobeFallbackReason,
+  ) => {
     if (disposed || status === 'css') return;
     if (kind === 'worker-error') failures.workerErrors++;
     if (kind === 'context-lost') failures.contextLosses++;
@@ -289,7 +292,12 @@ export function createGlobeHost(deps: GlobeHostDeps): GlobeWorkerHost {
       version: GLOBE_PROTOCOL_VERSION,
       canvas: off,
       timeOrigin: deps.timeOrigin,
-      ripple: { speed: RIPPLE.speed, width: RIPPLE.width, amplitude: RIPPLE.amplitude, life: RIPPLE.life },
+      ripple: {
+        speed: RIPPLE.speed,
+        width: RIPPLE.width,
+        amplitude: RIPPLE.amplitude,
+        life: RIPPLE.life,
+      },
     };
     if (!post(init, [off])) return;
     readyTimer = setTimeout(() => {
@@ -468,11 +476,15 @@ function browserDeps(): GlobeHostDeps {
       perfLite: win.document.documentElement.classList.contains('perf-lite'),
       hasWorker: typeof win.Worker === 'function',
       hasOffscreenCanvas: typeof win.OffscreenCanvas === 'function',
-      canTransfer: typeof win.HTMLCanvasElement?.prototype.transferControlToOffscreen === 'function',
+      canTransfer:
+        typeof win.HTMLCanvasElement?.prototype.transferControlToOffscreen === 'function',
       forced,
     },
     createWorker: () =>
-      new Worker(new URL('./globe-worker.ts', import.meta.url), { type: 'module', name: 'liquid-globe' }),
+      new Worker(new URL('./globe-worker.ts', import.meta.url), {
+        type: 'module',
+        name: 'liquid-globe',
+      }),
     createCanvas: () => win.document.createElement('canvas'),
     cloneBitmap: (src) => win.createImageBitmap(src),
     timeOrigin: win.performance.timeOrigin,
