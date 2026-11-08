@@ -81,6 +81,7 @@
   "mic-level": "Microphone level",
   "mic-listening": "Listening… play or sing a note.",
   "mic-not-found": "No microphone was found. Connect one, or check that it is turned on.",
+  "mic-unsupported": "This browser can't use a microphone on this page.",
   "midi-blocked": "MIDI access was blocked. Allow MIDI devices for this site in your browser settings, then try again.",
   "midi-disconnected": "{{name}} was disconnected.",
   "midi-failed": "MIDI couldn't start in this browser.",

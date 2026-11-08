@@ -47,9 +47,11 @@ export function createMicInput(opts: { onLevel?: (rms: number) => void } = {}): 
   /** Acquire the mic for one run of the lifecycle; `wanted()` turns false when a stop() arrives. */
   const open = async (wanted: () => boolean): Promise<void> => {
     const ctx = getAudioContext();
-    if (!ctx) throw new Error('Web Audio is not available in this browser.');
+    if (!ctx) throw unsupported('Web Audio is not available in this browser.');
+    // No API at all (an insecure origin, some embedded webviews): a different sentence from a
+    // busy or broken microphone, so the setup row can say what is actually wrong.
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      throw new Error('Microphone access is not available in this browser.');
+      throw unsupported('Microphone access is not available in this browser.');
     }
     // iOS Safari starts suspended; start() runs from a user click, which is
     // what allows the resume. Do it before the (possibly slow) permission prompt.
@@ -137,4 +139,11 @@ export function createMicInput(opts: { onLevel?: (rms: number) => void } = {}): 
     },
   };
   return adapter;
+}
+
+/** An error named like the DOMException a browser raises for a missing capability. */
+function unsupported(message: string): Error {
+  const error = new Error(message);
+  error.name = 'NotSupportedError';
+  return error;
 }

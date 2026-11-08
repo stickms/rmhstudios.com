@@ -91,3 +91,25 @@ describe('createMicInput stop during a pending start', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 });
+
+// A browser with no microphone API here (an insecure origin, an embedded webview) must say so, not
+// blame "another app": the setup row maps the error's name to its sentence.
+describe('createMicInput with no microphone API', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('rejects with NotSupportedError when navigator.mediaDevices is missing', async () => {
+    vi.stubGlobal('navigator', {});
+    const mic = createMicInput();
+    await expect(mic.start()).rejects.toMatchObject({ name: 'NotSupportedError' });
+    mic.stop();
+  });
+
+  it('rejects with NotSupportedError when getUserMedia is missing', async () => {
+    vi.stubGlobal('navigator', { mediaDevices: {} });
+    const mic = createMicInput();
+    await expect(mic.start()).rejects.toMatchObject({ name: 'NotSupportedError' });
+    mic.stop();
+  });
+});

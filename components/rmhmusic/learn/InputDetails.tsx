@@ -140,6 +140,10 @@ export function InputErrorNotice({
     message = t('mic-not-found', {
       defaultValue: 'No microphone was found. Connect one, or check that it is turned on.',
     });
+  } else if (source === 'mic' && error.name === 'NotSupportedError') {
+    message = t('mic-unsupported', {
+      defaultValue: "This browser can't use a microphone on this page.",
+    });
   } else if (source === 'mic') {
     message = t('mic-failed', {
       defaultValue:
