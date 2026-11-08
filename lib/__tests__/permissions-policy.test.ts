@@ -102,6 +102,14 @@ const FEATURES: { name: string; detect: (src: string) => boolean; why: string }[
     detect: (src) => /requestSession\s*\(\s*['"]immersive-(?:ar|vr)['"]/.test(src),
     why: "navigator.xr.requestSession('immersive-…')",
   },
+  {
+    name: 'midi',
+    // The CALL (`navigator.requestMIDIAccess(…)`, optionally `?.(`), not the
+    // probe: `typeof navigator.requestMIDIAccess === 'function'` only checks
+    // that Web MIDI exists and needs no permission.
+    detect: (src) => /\brequestMIDIAccess\s*(?:\?\.\s*)?\(/.test(src),
+    why: 'navigator.requestMIDIAccess()',
+  },
 ];
 
 /** `name=(allowlist)` → the allowlist text, or null when the feature is absent. */
