@@ -6,7 +6,7 @@
  * subsurface glow round the stage's bounding box, and the click-arc service took it for a host.
  *
  * This pins both halves: the globe never spells the material's opt-ins on its own elements, and every service's
- * admission rule (registry → carriers/arcs, the engine's slab exclude, physics' opt-out, click arcs) drops the globe
+ * admission rule (the registry, the pointer-variable hook's opt-out, click arcs) drops the globe
  * through the one shared `GLOBE_SELECTOR` even if a role were put on it by mistake.
  */
 import { readFileSync } from 'node:fs';
@@ -14,7 +14,6 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { pressHost } from '../arcs/clicks';
 import { REGISTRY_EXCLUDE, isJellyHost } from '../registry';
-import { resolveSoftPolicy } from '../soft-policy';
 import { GLOBE_SELECTOR, JELLY_SELECTOR, OPT_OUT_SELECTOR, jellyOptedOut } from '../tiers';
 
 const ROOT = join(__dirname, '..', '..', '..');
@@ -132,27 +131,14 @@ describe('the liquid globe is never a rectangular jelly host', () => {
     for (const el of els) expect(jellyOptedOut(asEl(el)), el.className).toBe(true);
   });
 
-  it('no globe element is admitted by the registry, the engine, physics or click arcs — even when mis-marked', () => {
+  it('no globe element is admitted by the registry or the click arcs — even when mis-marked', () => {
     // The worst case: the stage carries the old flag AND a role class. Still out.
     const g = mountGlobe({ 'data-jelly': 'on', 'data-globe-coat': 'on' }, 'glass-fill');
     expect(g.stage.matches(JELLY_SELECTOR), 'the fixture really is mis-marked').toBe(true);
     for (const el of g.parts) {
       expect(isJellyHost(asEl(el)), `registry admits ${el.className}`).toBe(false);
       expect(el.matches(REGISTRY_EXCLUDE) || jellyOptedOut(asEl(el))).toBe(true);
-      // Physics: its traits mark an element matching OPT_OUT_SELECTOR as scope-off, which resolves to mode off.
-      expect(
-        resolveSoftPolicy({
-          tag: el.tagName.toLowerCase(),
-          role: null,
-          classes: [...el.classList],
-          attrs: { 'data-jelly': 'card' },
-          scopeOff: el.matches(OPT_OUT_SELECTOR),
-        }).mode,
-        `physics body on ${el.className}`,
-      ).toBe('off');
     }
-    // The engine excludes the same selector from slab admission.
-    expect(read('lib/liquid/glass/engine.ts')).toMatch(/const EXCLUDE = `[^`]*\$\{GLOBE_SELECTOR\}/);
     // A press anywhere on the globe — the glass, a pin — never makes a rect host (the globe's, or the rail's) arc.
     expect(pressHost(asEl(g.coat))).toBeNull();
     expect(pressHost(asEl(g.pinName))).toBeNull();

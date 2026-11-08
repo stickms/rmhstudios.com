@@ -167,23 +167,12 @@ describe('safety bounds (04 §4.3–4.5, R12, R13)', () => {
 });
 
 describe('selectors', () => {
-  it('the degraded root is spelled exactly as the engine and the cursor runtime match it', () => {
+  it('the degraded root is spelled exactly as the scene feed matches it', () => {
     expect(DEGRADED_ROOT_SELECTOR).toBe('.perf-lite');
-    for (const file of ['lib/liquid/glass/engine.ts', 'lib/liquid/runtime.ts']) {
-      const src = read(file);
-      // Either the literal (today) or the shared import (after W2-A/W2-D adopt it).
-      expect(
-        src.includes(`'${DEGRADED_ROOT_SELECTOR}'`) || src.includes('DEGRADED_ROOT_SELECTOR'),
-      ).toBe(true);
-    }
-  });
-
-  it('every surface the glass engine can draw as a slab is a jelly host', () => {
-    const engine = read('lib/liquid/glass/engine.ts');
-    const m = engine.match(/const SELECTOR\s*=\s*'([^']+)'/);
-    if (!m) return; // the engine imports JELLY_SELECTOR instead: nothing to compare.
-    const jelly = JELLY_SELECTOR.split(',');
-    for (const part of m[1]!.split(',')) expect(jelly).toContain(part.trim());
+    const src = read('lib/liquid/glass/scene-feed.ts');
+    expect(
+      src.includes(`'${DEGRADED_ROOT_SELECTOR}'`) || src.includes('DEGRADED_ROOT_SELECTOR'),
+    ).toBe(true);
   });
 
   it('covers toasts and explicit opt-ins, and accepts every legacy opt-out alias', () => {
