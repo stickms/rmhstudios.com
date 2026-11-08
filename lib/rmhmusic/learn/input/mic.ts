@@ -10,8 +10,8 @@
  * level of a sustained instrument tone.
  */
 import { getAudioContext } from '@/lib/shared/platform';
-import { nearestNote } from '../pitch/notes';
-import { detectPitch } from '../pitch/yin';
+import { freqToMidi } from '../pitch/notes';
+import { DEFAULT_MIN_RMS, detectPitch } from '../pitch/yin';
 import type { InputAdapter, NoteEvent, NoteListener } from './events';
 import { createDeviceRunner } from './device-runner';
 import { createSegmenter, type Segmenter } from './mic-segmenter';
@@ -78,21 +78,33 @@ export function createMicInput(opts: { onLevel?: (rms: number) => void } = {}): 
 
       const node = analyser;
       const seg = segmenter;
+      const rate = ctx.sampleRate;
+      // Reused every poll: the frame buffer and the one pitch frame handed to the segmenter.
       const buf = new Float32Array(node.fftSize);
+      const frame = { midi: 0, cents: 0 };
       timer = setInterval(() => {
         node.getFloatTimeDomainData(buf);
         const now = performance.now();
 
-        if (opts.onLevel) {
-          let sumSq = 0;
-          for (let i = 0; i < buf.length; i++) sumSq += buf[i] * buf[i];
-          opts.onLevel(Math.sqrt(sumSq / buf.length));
-        }
+        let sumSq = 0;
+        for (let i = 0; i < buf.length; i++) sumSq += buf[i] * buf[i];
+        const rms = Math.sqrt(sumSq / buf.length);
+        opts.onLevel?.(rms);
 
-        // detectPitch only ever returns a finite, positive freq (or null).
-        const pitch = detectPitch(buf, ctx.sampleRate);
-        const frame = pitch ? nearestNote(pitch.freq) : null;
-        for (const e of seg.push(frame && { midi: frame.midi, cents: frame.cents }, now)) emit(e);
+        // Silence (most frames) skips the detector entirely; a NaN level fails this test too.
+        let pitched = false;
+        if (rms >= DEFAULT_MIN_RMS) {
+          // detectPitch only ever returns a finite, positive freq (or null).
+          const pitch = detectPitch(buf, rate);
+          if (pitch) {
+            const exact = freqToMidi(pitch.freq);
+            frame.midi = Math.round(exact);
+            frame.cents = (exact - frame.midi) * 100;
+            pitched = true;
+          }
+        }
+        const events = seg.push(pitched ? frame : null, now);
+        for (let i = 0; i < events.length; i++) emit(events[i]);
       }, POLL_MS);
     } catch (err) {
       teardown();
