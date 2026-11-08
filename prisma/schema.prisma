@@ -257,6 +257,10 @@ model User {
   callMutesMade     CallMute[]      @relation("CallMuteOwner")
   callMutesReceived CallMute[]      @relation("CallMuteTarget")
 
+  // RMH Music learning programme
+  musicLearnProfile MusicLearnProfile?
+  musicLearnLessons MusicLearnLessonProgress[]
+
   // Direct Messages
   conversationsAsOne     Conversation[]          @relation("ConversationParticipantOne")
   conversationsAsTwo     Conversation[]          @relation("ConversationParticipantTwo")
@@ -5719,6 +5723,40 @@ model CallMute {
   @@unique([userId, mutedUserId])
   @@index([userId, until])
   @@map("call_mute")
+}
+
+// ─── RMH Music learning programme ─────────────────────────────────────────
+/// One row per learner: the instrument and input they chose in setup, the
+/// latency offset they calibrated, and their daily goal. Created on first save.
+model MusicLearnProfile {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  instrument String   @default("piano")
+  input      String   @default("screen")
+  latencyMs  Int      @default(0)
+  dailyGoal  Int      @default(1)
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("music_learn_profile")
+}
+
+/// Best result per learner per lesson. `lessonId` is validated against the
+/// static catalogue in `lib/rmhmusic/learn/content/path.ts`, not a FK.
+model MusicLearnLessonProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  lessonId    String
+  stars       Int       @default(0)
+  bestScore   Int       @default(0)
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("music_learn_lesson_progress")
 }
 
 // ─── Bookmarks ────────────────────────────────────────────────────────────

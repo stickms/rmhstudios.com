@@ -1154,6 +1154,8 @@ import { Route as ApiRmhladderReferralsIdRouteImport } from './routes/api/rmhlad
 import { Route as ApiRmhladderResumeIndexRouteImport } from './routes/api/rmhladder/resume/index'
 import { Route as ApiRmhladderResumeIdRouteImport } from './routes/api/rmhladder/resume/$id'
 import { Route as ApiRmhmusicGuessIndexRouteImport } from './routes/api/rmhmusic/guess/index'
+import { Route as ApiRmhmusicLearnLessonCompleteRouteImport } from './routes/api/rmhmusic/learn/lesson-complete'
+import { Route as ApiRmhmusicLearnProfileRouteImport } from './routes/api/rmhmusic/learn/profile'
 import { Route as ApiRmhmusicSpotifySearchRouteImport } from './routes/api/rmhmusic/spotify/search'
 import { Route as ApiRmhtubeSubscribeChannelIdRouteImport } from './routes/api/rmhtube/subscribe/$channelId'
 import { Route as ApiSavesFoldersIdRouteImport } from './routes/api/saves/folders.$id'
@@ -7258,6 +7260,17 @@ const ApiRmhmusicGuessIndexRoute = ApiRmhmusicGuessIndexRouteImport.update({
   path: '/api/rmhmusic/guess/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRmhmusicLearnLessonCompleteRoute =
+  ApiRmhmusicLearnLessonCompleteRouteImport.update({
+    id: '/api/rmhmusic/learn/lesson-complete',
+    path: '/api/rmhmusic/learn/lesson-complete',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiRmhmusicLearnProfileRoute = ApiRmhmusicLearnProfileRouteImport.update({
+  id: '/api/rmhmusic/learn/profile',
+  path: '/api/rmhmusic/learn/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRmhmusicSpotifySearchRoute =
   ApiRmhmusicSpotifySearchRouteImport.update({
     id: '/api/rmhmusic/spotify/search',
@@ -9659,6 +9672,8 @@ export interface FileRoutesByFullPath {
   '/api/rmhladder/referral-requests/$id': typeof ApiRmhladderReferralRequestsIdRoute
   '/api/rmhladder/referrals/$id': typeof ApiRmhladderReferralsIdRouteWithChildren
   '/api/rmhladder/resume/$id': typeof ApiRmhladderResumeIdRouteWithChildren
+  '/api/rmhmusic/learn/lesson-complete': typeof ApiRmhmusicLearnLessonCompleteRoute
+  '/api/rmhmusic/learn/profile': typeof ApiRmhmusicLearnProfileRoute
   '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
@@ -11018,6 +11033,8 @@ export interface FileRoutesByTo {
   '/api/rmhladder/referral-requests/$id': typeof ApiRmhladderReferralRequestsIdRoute
   '/api/rmhladder/referrals/$id': typeof ApiRmhladderReferralsIdRouteWithChildren
   '/api/rmhladder/resume/$id': typeof ApiRmhladderResumeIdRouteWithChildren
+  '/api/rmhmusic/learn/lesson-complete': typeof ApiRmhmusicLearnLessonCompleteRoute
+  '/api/rmhmusic/learn/profile': typeof ApiRmhmusicLearnProfileRoute
   '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
@@ -12406,6 +12423,8 @@ export interface FileRoutesById {
   '/api/rmhladder/referral-requests/$id': typeof ApiRmhladderReferralRequestsIdRoute
   '/api/rmhladder/referrals/$id': typeof ApiRmhladderReferralsIdRouteWithChildren
   '/api/rmhladder/resume/$id': typeof ApiRmhladderResumeIdRouteWithChildren
+  '/api/rmhmusic/learn/lesson-complete': typeof ApiRmhmusicLearnLessonCompleteRoute
+  '/api/rmhmusic/learn/profile': typeof ApiRmhmusicLearnProfileRoute
   '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
@@ -13793,6 +13812,8 @@ export interface FileRouteTypes {
     | '/api/rmhladder/referral-requests/$id'
     | '/api/rmhladder/referrals/$id'
     | '/api/rmhladder/resume/$id'
+    | '/api/rmhmusic/learn/lesson-complete'
+    | '/api/rmhmusic/learn/profile'
     | '/api/rmhmusic/spotify/search'
     | '/api/rmhtube/subscribe/$channelId'
     | '/api/saves/folders/$id'
@@ -15152,6 +15173,8 @@ export interface FileRouteTypes {
     | '/api/rmhladder/referral-requests/$id'
     | '/api/rmhladder/referrals/$id'
     | '/api/rmhladder/resume/$id'
+    | '/api/rmhmusic/learn/lesson-complete'
+    | '/api/rmhmusic/learn/profile'
     | '/api/rmhmusic/spotify/search'
     | '/api/rmhtube/subscribe/$channelId'
     | '/api/saves/folders/$id'
@@ -16539,6 +16562,8 @@ export interface FileRouteTypes {
     | '/api/rmhladder/referral-requests/$id'
     | '/api/rmhladder/referrals/$id'
     | '/api/rmhladder/resume/$id'
+    | '/api/rmhmusic/learn/lesson-complete'
+    | '/api/rmhmusic/learn/profile'
     | '/api/rmhmusic/spotify/search'
     | '/api/rmhtube/subscribe/$channelId'
     | '/api/saves/folders/$id'
@@ -17536,6 +17561,8 @@ export interface RootRouteChildren {
   ApiRmhcodeAuthValidateRoute: typeof ApiRmhcodeAuthValidateRoute
   ApiRmhladderReferralRequestsIdRoute: typeof ApiRmhladderReferralRequestsIdRoute
   ApiRmhladderResumeIdRoute: typeof ApiRmhladderResumeIdRouteWithChildren
+  ApiRmhmusicLearnLessonCompleteRoute: typeof ApiRmhmusicLearnLessonCompleteRoute
+  ApiRmhmusicLearnProfileRoute: typeof ApiRmhmusicLearnProfileRoute
   ApiRmhmusicSpotifySearchRoute: typeof ApiRmhmusicSpotifySearchRoute
   ApiRmhtubeSubscribeChannelIdRoute: typeof ApiRmhtubeSubscribeChannelIdRoute
   ApiSeriesPostPostIdRoute: typeof ApiSeriesPostPostIdRoute
@@ -25716,6 +25743,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmhmusicGuessIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rmhmusic/learn/lesson-complete': {
+      id: '/api/rmhmusic/learn/lesson-complete'
+      path: '/api/rmhmusic/learn/lesson-complete'
+      fullPath: '/api/rmhmusic/learn/lesson-complete'
+      preLoaderRoute: typeof ApiRmhmusicLearnLessonCompleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rmhmusic/learn/profile': {
+      id: '/api/rmhmusic/learn/profile'
+      path: '/api/rmhmusic/learn/profile'
+      fullPath: '/api/rmhmusic/learn/profile'
+      preLoaderRoute: typeof ApiRmhmusicLearnProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/rmhmusic/spotify/search': {
       id: '/api/rmhmusic/spotify/search'
       path: '/api/rmhmusic/spotify/search'
@@ -30392,6 +30433,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhcodeAuthValidateRoute: ApiRmhcodeAuthValidateRoute,
   ApiRmhladderReferralRequestsIdRoute: ApiRmhladderReferralRequestsIdRoute,
   ApiRmhladderResumeIdRoute: ApiRmhladderResumeIdRouteWithChildren,
+  ApiRmhmusicLearnLessonCompleteRoute: ApiRmhmusicLearnLessonCompleteRoute,
+  ApiRmhmusicLearnProfileRoute: ApiRmhmusicLearnProfileRoute,
   ApiRmhmusicSpotifySearchRoute: ApiRmhmusicSpotifySearchRoute,
   ApiRmhtubeSubscribeChannelIdRoute: ApiRmhtubeSubscribeChannelIdRoute,
   ApiSeriesPostPostIdRoute: ApiSeriesPostPostIdRoute,
