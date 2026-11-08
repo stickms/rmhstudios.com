@@ -28,7 +28,7 @@
   worker for it. One delegated pointer variable writes `--px` / `--py` / `--jelly-s`
   (`lib/jelly/pointer-vars.ts`); the electric click arc (`lib/jelly/arcs/`) is
   imported on the first press and removed 10 s after the last click; the liquid
-  globe and its cursor draw in workers and refract a page snapshot from the scene
+  globe draws in a worker and refracts a page snapshot from the scene
   feed (`lib/liquid/glass/scene-feed.ts`). All under one policy
   (`lib/jelly/tiers.ts`). No `backdrop-filter`; no component-level pointer
   loops, deformation, arc code, `infinite` keyframes or animated custom

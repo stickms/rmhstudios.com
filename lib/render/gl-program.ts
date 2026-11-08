@@ -4,7 +4,7 @@
  * `compileShader` and `linkProgram` are asynchronous in every engine that matters — Chromium and Gecko hand them to a
  * GPU process, ANGLE on Windows compiles to HLSL there, WebKit to Metal — and what makes them block is the FIRST
  * status query (`getShaderParameter(COMPILE_STATUS)`, `getProgramParameter(LINK_STATUS)`, `getUniformLocation`): the
- * caller waits for the driver to finish. The cursor, the globe's coat and skin and the glass rims each built their
+ * caller waits for the driver to finish. The globe's coat and skin and the glass rims each built their
  * programs that way on mount, so a cold compile — the larger shaders here are thousands of lines of GLSL — landed in
  * the frames where the page was coming up: the stutter.
  *

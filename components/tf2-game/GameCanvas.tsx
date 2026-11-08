@@ -311,7 +311,6 @@ export default function GameCanvas({
       className="tf2g-stage relative h-full w-full overflow-hidden bg-black text-(--app-text)"
       data-jelly-zone="playfield"
       data-jelly="off"
-      data-globe-cursor="off"
       data-touch={touchFirst ? 'true' : undefined}
       data-game={game}
       data-phase={phase}

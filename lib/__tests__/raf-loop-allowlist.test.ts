@@ -88,7 +88,7 @@ import { join, posix } from 'node:path';
  *                                       ambient tick (drift + coat haze: engaged
  *                                       rate, then the 30 Hz idle floor after
  *                                       IDLE_AFTER_MS, on the grid it shares with
- *                                       the globe cursor) — and with NOTHING
+ *                                       the globe worker's coat clock) — and with NOTHING
  *                                       scheduled under jellyMotion `still`, the
  *                                       degraded tiers, a hidden/unfocused tab or
  *                                       off screen. Every handler that moves it
@@ -212,19 +212,6 @@ const ALLOW = new Set<string>([
   // change (scene, zoom, selection) to coalesce redraws, and the effect's cleanup
   // cancels any pending frame on re-run and on unmount. Nothing is scheduled at rest.
   'components/tf2-hud/Preview.tsx',
-  // The globe cursor (owner, 2026-10-22: "a constantly everting globe"). Every
-  // vsync only while something the pointer did is still settling — movement, a
-  // spring, the fade, sparkles, the trail (`GlobeCursorEngine.busy()`). With the
-  // pointer resting, the eversion alone runs on the jelly ambient tick (a timer to
-  // the shared grid in lib/jelly/ambient-tick.ts: engaged rate, then the
-  // idle floor after IDLE_AFTER_MS — `everting()`), never per vsync; under
-  // jellyMotion `still`, the degraded tiers, a game in play or a hidden tab the
-  // eversion holds and nothing is scheduled once the cursor rests. Nothing either
-  // with the pointer out of the window, the window blurred or touch input. Under
-  // reduced motion it draws one still frame per pointer event. Mounted once per
-  // document; unmount cancels the frame and the timer. It loads only on a fine,
-  // hovering pointer with the cursor switched on.
-  'components/globe-cursor/GlobeCursor.tsx',
   'app/routes/_site/library/index.tsx',
   'app/routes/_site/rmhladder/pipeline.tsx',
   'components/assistant/ConciergePanel.tsx',
@@ -532,9 +519,7 @@ describe('the worker exemption bites (fixtures)', () => {
   it("the repo's worker rAF loops are the exempt ones", () => {
     const real = repoWorkerTargets();
     expect(real.has('components/radial/globe-worker.ts')).toBe(true);
-    expect(real.has('lib/globe-cursor/cursor.worker.ts')).toBe(true);
     expect(usesRaf('components/radial/globe-worker.ts')).toBe(false);
-    expect(usesRaf('lib/globe-cursor/cursor.worker.ts')).toBe(false);
     expect(usesRaf('components/radial/LiquidGlobe.tsx')).toBe(true);
   });
 });

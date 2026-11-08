@@ -36,7 +36,7 @@
 //    / WebGL draw calls and a MutationObserver record which frames (keyed by
 //    `document.timeline.currentTime`) each source painted or mutated in —
 //    `arcs`, `globe` (the dock globe's canvases and DOM),
-//    `cursor` (the globe cursor), `canvas` (any other), `dom` (any other DOM
+//    `canvas` (any other), `dom` (any other DOM
 //    write) — plus `any`, the frames at least one of them touched. Hooks only,
 //    never a frame request. A rest count above `any` was drawn by something
 //    none of them sees (a CSS animation or transition).
@@ -244,7 +244,6 @@ async function measure(browser, cdp, binary, route, profile) {
       if (el.tagName !== 'CANVAS') return 'dom';
       if (!el.isConnected) return 'offscreen';
       if (el.classList.contains('jelly-arc-layer')) return 'arcs';
-      if (String(el.className).includes('--z-cursor')) return 'cursor';
       return 'canvas';
     };
     const wrap = (proto, names) => {

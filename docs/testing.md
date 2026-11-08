@@ -275,7 +275,7 @@ target but not gated.
 Each route also says **what drew** its rest frames: during the same trace,
 hooks on Canvas2D/WebGL draw calls and a MutationObserver record which frames
 each source touched — `haze`, `rim`, `arcs`, `globe` (the dock globe's canvases
-and pin DOM), `cursor`, `offscreen` (the shared WebGL canvas), `canvas`, `dom`
+and pin DOM), `offscreen` (the shared WebGL canvas), `canvas`, `dom`
 (with its top three targets) — and `any`, the frames at least one touched, e.g.
 `drew in: globe 16.5, haze 8.5, offscreen 8.5 (any 23)`. Hooks only, never a
 frame request. When `any` exceeds the busiest single source, two sources are
