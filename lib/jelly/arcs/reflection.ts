@@ -17,7 +17,7 @@ export const RIM_LIGHT = {
   /** Stroke width, px. */
   widthPx: 1.5,
   /** Peak alpha of the stroke (× the bolt's intensity and the luminance cap). */
-  alpha: 0.85,
+  alpha: 0.32,
   /** Outline sampling: straight edges every this many px, corners in this many steps. */
   edgeStepPx: 4,
   cornerSteps: 10,

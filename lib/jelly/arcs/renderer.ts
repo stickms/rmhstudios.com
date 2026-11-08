@@ -42,13 +42,22 @@ import { buildArcFx, type ArcFx } from './fx';
 import type { RoundedRect } from './geometry';
 import { arcIntensityScale, glowPasses } from './glow';
 import {
-  FLASH_LUMINANCE,
-  IMPACT,
-  IMPACT_STOPS,
-  impactSample,
-  impactShare,
-  type ImpactSample,
-} from './impact';
+  BRANCH_WIDTH,
+  CONTACT_GLOW,
+  GEL_LIGHT,
+  HALO,
+  RIM_STOPS,
+  STREAK_STOPS,
+  boltLayers,
+  centreScales,
+  colourValue,
+  fitFrame,
+  impactItem,
+  type AreaLayer,
+  type CentreItem,
+  type ImpactAlphas,
+} from './flash-budget';
+import { IMPACT, IMPACT_STOPS, impactSample, type ImpactSample } from './impact';
 import { RIM_LIGHT } from './reflection';
 import type { FlashLedger } from './ledger';
 import { ARC_BUDGET } from './rate';
@@ -138,17 +147,10 @@ export const CONTACT_RADIUS = { ambient: 10, click: 14 } as const;
 export const IMPACT_PAD =
   Math.max(IMPACT.ringEndPx, IMPACT.clickFlashRadiusPx, IMPACT.streakLenPx / 2) + 2;
 
-/**
- * How a bolt's light reads inside the gel (the refracted stubs), relative to the channel in air: dimmer, as light
- * scattered by the haze, and a little narrower. A branch's passes are thinner than the main channel's.
- */
-export const GEL_LIGHT = { glow: 0.8, core: 0.55, hot: 0.45, width: 0.8 } as const;
-export const BRANCH_WIDTH = 0.6;
-/** The rim light: a white line inside the coloured one on dark themes, at this share of its alpha. */
-export const RIM_WHITE_SHARE = 0.5;
 /** An impact's brightness is × (floor + (1 − floor)·energy): a dim keyboard arc lands softer than a click. */
 export const IMPACT_ENERGY_FLOOR = 0.5;
 const WHITE = 'rgb(255 255 255)';
+const WHITE_RGB = [255, 255, 255] as const;
 
 /** How long an arc stays alive: its timeline, or until its impact has played out, whichever is later. */
 export function arcLife(arc: LiveArc): number {
@@ -159,17 +161,6 @@ export function arcLife(arc: LiveArc): number {
   }
   return arc.timeline.lifeMs;
 }
-/** On light themes a flash cannot add light to white; the disc and streaks tint with the core colour at this share. */
-export const LIGHT_THEME_FLASH = 0.45;
-
-/** The faint halo of a high-energy click bolt and the pre-glow contact glows. The channel itself is `glow.ts`. */
-const STROKE = {
-  haloWidth: 12,
-  haloAlpha: 0.06,
-  haloMinEnergy: 0.8,
-  contactAlpha: 0.35,
-  contactSquash: 0.6,
-} as const;
 
 let nextId = 1;
 
@@ -212,7 +203,7 @@ function boundsOfPoints(arrays: readonly Float32Array[], ends: readonly ArcEnd[]
 
 /** Pad = the widest stroke's half width (halo 6) or the contact glow radius, plus 2px of anti-aliasing. */
 function padFor(contactRadius: number): number {
-  return Math.max(STROKE.haloWidth / 2, contactRadius) + 2;
+  return Math.max(HALO.width / 2, contactRadius) + 2;
 }
 
 // ── Arc construction (pure: no DOM, no clock) ────────────────────────────────
@@ -262,7 +253,7 @@ export function boltArc(spec: BoltArcSpec): LiveArc {
     contacts,
     contactRadius,
     energy,
-    halo: click && energy >= STROKE.haloMinEnergy,
+    halo: click && energy >= HALO.minEnergy,
     modal: !!spec.modal,
     bounds,
     admitted: 0,
@@ -426,6 +417,8 @@ export interface ArcPalette {
   glowAlpha: number;
   composite: GlobalCompositeOperation;
   dark: boolean;
+  /** Coverage values for the flash budget (`flash-budget.ts` `colourValue`): glow, disc/streak light, core, fringes. */
+  values: { glow: number; hot: number; core: number; fringe: number };
 }
 
 const FALLBACK_CORE: RGBA = [0.42, 0.3, 0.86, 1];
@@ -454,6 +447,13 @@ export function paletteFrom(core: RGBA, glow: RGBA, bg: RGBA): ArcPalette {
     glowAlpha: clamp01(glow[3] ?? 1),
     composite: dark ? 'lighter' : 'source-over',
     dark,
+    values: {
+      glow: colourValue(g, dark),
+      // Dark: the disc and streaks are white. Light: they tint with the core, fading through the glow.
+      hot: dark ? 1 : Math.max(colourValue(c, false), colourValue(g, false)),
+      core: colourValue(c, dark),
+      fringe: Math.max(colourValue(ch.r, dark), colourValue(ch.g, dark), colourValue(ch.b, dark)),
+    },
   };
 }
 
@@ -636,17 +636,26 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
     c.stroke();
   };
 
-  const drawContact = (c: CanvasRenderingContext2D, e: ArcEnd, radius: number, alpha: number) => {
+  /** A contact glow on a rim (or the press flare): `alpha` is final (the flash budget's, already scaled). */
+  const drawContact = (
+    c: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    nx: number,
+    ny: number,
+    radius: number,
+    alpha: number,
+  ) => {
     if (!(alpha > 0.002)) return;
     c.save();
-    c.translate(e.x, e.y);
+    c.translate(x, y);
     // x along the normal, y along the rim tangent: squash the tangent so the glow sits ON the rim.
-    c.rotate(Math.atan2(e.ny, e.nx));
-    c.scale(1, STROKE.contactSquash);
+    c.rotate(Math.atan2(ny, nx));
+    c.scale(1, CONTACT_GLOW.squash);
     const g = c.createRadialGradient(0, 0, 0, 0, 0, radius);
     g.addColorStop(0, pal.glow);
     g.addColorStop(1, 'rgb(0 0 0 / 0)');
-    c.globalAlpha = Math.min(1, alpha * pal.glowAlpha);
+    c.globalAlpha = Math.min(1, alpha);
     c.fillStyle = g;
     c.beginPath();
     c.arc(0, 0, radius, 0, Math.PI * 2);
@@ -661,7 +670,10 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
     strokeLine(c, pts);
   };
 
-  /** The channel's layered passes (`glow.ts`), the glow ones as three channel copies (`fx.channels`). */
+  /**
+   * The channel's layered passes (`glow.ts`), the glow ones as three channel copies (`fx.channels`). Glow passes are
+   * drawn × `fGlow`, the core and white-hot lines × `fLine` (the frame's flash budget, `flash-budget.ts`).
+   */
   const drawChannel = (
     c: CanvasRenderingContext2D,
     main: Float32Array,
@@ -669,6 +681,7 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
     energy: number,
     k: number,
     after: boolean,
+    f: Factors,
     widthScale = 1,
   ) => {
     for (const p of glowPasses(pal.dark, energy, k)) {
@@ -676,14 +689,14 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
       if (after && p.colour === 'glow') continue;
       c.lineWidth = p.width * widthScale;
       if (p.colour === 'glow') {
-        const a = p.alpha * pal.glowAlpha;
+        const a = p.alpha * pal.glowAlpha * f.glow;
         const ch = channels?.find((q) => q.id === p.id);
         if (ch) {
           stroke(c, ch.r, pal.chR, a);
           stroke(c, main, pal.chG, a);
           stroke(c, ch.b, pal.chB, a);
         } else stroke(c, main, pal.glow, a);
-      } else stroke(c, main, p.colour === 'white' ? WHITE : pal.core, p.alpha);
+      } else stroke(c, main, p.colour === 'white' ? WHITE : pal.core, p.alpha * f.line);
     }
   };
 
@@ -694,110 +707,190 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
     energy: number,
     k: number,
     after: boolean,
+    f: Factors,
   ) => {
     for (const p of glowPasses(pal.dark, energy, k)) {
       if (p.id === 'bloom' || (after && p.colour === 'glow')) continue;
       c.lineWidth = p.width * GEL_LIGHT.width;
       for (const st of fx.stubs) {
         if (p.colour === 'glow') {
-          const a = p.alpha * pal.glowAlpha * GEL_LIGHT.glow;
+          const a = p.alpha * pal.glowAlpha * GEL_LIGHT.glow * f.glow;
           stroke(c, st.r, pal.chR, a);
           stroke(c, st.g, pal.chG, a);
           stroke(c, st.b, pal.chB, a);
-        } else if (p.colour === 'white') stroke(c, st.g, WHITE, p.alpha * GEL_LIGHT.hot);
-        else stroke(c, st.g, pal.core, p.alpha * GEL_LIGHT.core);
+        } else if (p.colour === 'white') stroke(c, st.g, WHITE, p.alpha * GEL_LIGHT.hot * f.line);
+        else stroke(c, st.g, pal.core, p.alpha * GEL_LIGHT.core * f.line);
       }
     }
   };
 
-  /** The struck rims catching the bolt's light: a thin stroke, brightest at the contact, fading along the rim. */
-  const drawRims = (c: CanvasRenderingContext2D, fx: ArcFx, k: number) => {
-    const a = RIM_LIGHT.alpha * k;
-    if (!(a > 0.002)) return;
-    const [r, g, b] = pal.glowRgb;
-    for (const rim of fx.rims) {
-      const grad = c.createRadialGradient(rim.x, rim.y, 0, rim.x, rim.y, RIM_LIGHT.spanPx / 2);
-      grad.addColorStop(0, `rgb(${r} ${g} ${b} / ${a})`);
-      grad.addColorStop(1, `rgb(${r} ${g} ${b} / 0)`);
-      c.globalAlpha = 1;
-      c.strokeStyle = grad;
-      c.lineWidth = RIM_LIGHT.widthPx;
-      strokeLine(c, rim.points);
-      if (pal.dark) {
-        const hot = c.createRadialGradient(rim.x, rim.y, 0, rim.x, rim.y, RIM_LIGHT.spanPx / 4);
-        hot.addColorStop(0, `rgb(255 255 255 / ${a * RIM_WHITE_SHARE})`);
-        hot.addColorStop(1, 'rgb(255 255 255 / 0)');
-        c.strokeStyle = hot;
-        c.lineWidth = RIM_LIGHT.widthPx / 2;
-        strokeLine(c, rim.points);
-      }
-    }
-  };
-
-  const drawArc = (c: CanvasRenderingContext2D, arc: LiveArc, s: ArcSample, fade: number) => {
-    const scale = arc.scale ?? 1;
-    if (s.glow > 0) {
-      for (const e of arc.contacts) {
-        drawContact(c, e, arc.contactRadius, STROKE.contactAlpha * s.glow * fade * scale);
-      }
-    }
-    if (!(s.I > 0)) return;
-    const k = s.I * fade * scale;
+  /** The bolt itself: halo, channel, branches and the refracted stubs (impacts, rims and contacts are points). */
+  const drawBolt = (c: CanvasRenderingContext2D, pl: Plan, f: Factors) => {
+    const { arc, k, after } = pl;
+    if (!(k > 0)) return;
     const e = arc.energy;
-    const after = s.phase === 'afterglow';
     if (arc.shape === 'fizz') {
-      for (const sp of arc.sparks) drawChannel(c, sp, undefined, e, k, after);
+      for (const sp of arc.sparks) drawChannel(c, sp, undefined, e, k, after, f);
       return;
     }
-    const idx = Math.max(0, Math.min(arc.paths.length - 1, s.strike));
-    const path = arc.paths[idx];
+    const path = arc.paths[pl.idx];
     if (!path) return;
-    const sfx = arc.fx?.strikes[idx];
+    const sfx = arc.fx?.strikes[pl.idx];
     const main = sfx?.main ?? path.points;
     if (!after && arc.halo) {
-      c.lineWidth = STROKE.haloWidth;
-      stroke(c, main, pal.glow, STROKE.haloAlpha * k * pal.glowAlpha);
+      c.lineWidth = HALO.width;
+      stroke(c, main, pal.glow, HALO.alpha * k * pal.glowAlpha * f.glow);
     }
-    drawChannel(c, main, sfx?.channels, e, k, after);
+    drawChannel(c, main, sfx?.channels, e, k, after, f);
     if (!after) {
       for (const br of path.branches)
-        drawChannel(c, br.points, undefined, e, k * br.intensity, false, BRANCH_WIDTH);
+        drawChannel(c, br.points, undefined, e, k * br.intensity, false, f, BRANCH_WIDTH);
     }
-    if (arc.fx) {
-      drawStubs(c, arc.fx, e, k, after);
-      drawRims(c, arc.fx, k);
-    }
+    if (arc.fx) drawStubs(c, arc.fx, e, k, after, f);
   };
 
-  // ── Impacts ────────────────────────────────────────────────────────────────
+  // ── Points: contact glows, lit rims and impacts ────────────────────────────
 
-  interface Impact {
+  interface Point {
     x: number;
     y: number;
-    /** Outward normal (the streak runs along the tangent); absent at the press point. */
+    /** Outward normal (the contact glow squashes across it, the streak runs along the tangent); absent at the press point. */
     nx?: number;
     ny?: number;
     rect?: RoundedRect | null;
-    sample: ImpactSample;
+    sample: ImpactSample | null;
+    rim?: Float32Array;
+    contactRadius: number;
+    alphas: ImpactAlphas;
   }
 
-  /** The impacts an arc draws at `age`: its struck rims and its press point, from its first (admitted) strike. */
-  const impactsOf = (arc: LiveArc, age: number, fade: number, out: Impact[]) => {
-    if (arc.shape !== 'bolt' || !arc.fx) return;
-    const first = arc.timeline.strikes[0];
-    if (!first) return;
-    const t = age - first.at;
-    const scale =
-      (arc.scale ?? 1) * fade * (IMPACT_ENERGY_FLOOR + (1 - IMPACT_ENERGY_FLOOR) * arc.energy);
-    const rim = impactSample(t, { scale });
-    if (rim) {
-      for (const e of arc.contacts) {
-        if (e.rect) out.push({ x: e.x, y: e.y, nx: e.nx, ny: e.ny, rect: e.rect, sample: rim });
-      }
+  interface Plan {
+    arc: LiveArc;
+    k: number;
+    after: boolean;
+    idx: number;
+  }
+
+  interface Factors {
+    /** Glow passes, stubs' glow, halo. */
+    glow: number;
+    /** Core and white-hot lines. */
+    line: number;
+  }
+
+  const lengths = new WeakMap<Float32Array, number>();
+  const lengthOf = (pts: Float32Array): number => {
+    let L = lengths.get(pts);
+    if (L === undefined) {
+      L = 0;
+      for (let i = 2; i < pts.length; i += 2)
+        L += Math.hypot(pts[i] - pts[i - 2], pts[i + 1] - pts[i - 1]);
+      lengths.set(pts, L);
     }
-    if (arc.origin) {
-      const o = impactSample(t, { scale, click: true });
-      if (o) out.push({ x: arc.origin.x, y: arc.origin.y, rect: arc.origin.rect, sample: o });
+    return L;
+  };
+
+  /** One arc's share of the frame: its bolt's area layers, and its points' per-pixel profiles and area layers. */
+  const planFrameArc = (
+    arc: LiveArc,
+    s: ArcSample,
+    age: number,
+    fade: number,
+    out: {
+      plans: Plan[];
+      points: Point[];
+      items: CentreItem[];
+      scaled: AreaLayer[];
+      lines: AreaLayer[];
+    },
+  ) => {
+    const scale = arc.scale ?? 1;
+    const k = s.I > 0 ? s.I * fade * scale : 0;
+    const g = s.glow > 0 ? s.glow * fade * scale : 0;
+    const after = s.phase === 'afterglow';
+    const idx = Math.max(0, Math.min(arc.paths.length - 1, s.strike));
+    out.plans.push({ arc, k, after, idx });
+    const v = pal.values;
+    if (k > 0) {
+      const path = arc.paths[idx];
+      const main = arc.fx?.strikes[idx]?.main ?? path?.points;
+      const bolt = boltLayers({
+        energy: arc.energy,
+        k,
+        dark: pal.dark,
+        glowAlpha: pal.glowAlpha,
+        coreValue: v.core,
+        fringeValue: v.fringe,
+        halo: arc.halo,
+        after,
+        mainLength:
+          arc.shape === 'fizz'
+            ? arc.sparks.reduce((n, sp) => n + lengthOf(sp), 0)
+            : main
+              ? lengthOf(main)
+              : 0,
+        branches: path
+          ? path.branches.map((b) => ({ length: lengthOf(b.points), intensity: b.intensity }))
+          : [],
+        stubLengths: arc.fx ? arc.fx.stubs.map((st) => lengthOf(st.g)) : [],
+      });
+      out.scaled.push(...bolt.scaled);
+      out.lines.push(...bolt.lines);
+    }
+    // The impact, from the first (admitted) strike on.
+    const first = arc.timeline.strikes[0];
+    const t = first ? age - first.at : -1;
+    const iScale = scale * fade * (IMPACT_ENERGY_FLOOR + (1 - IMPACT_ENERGY_FLOOR) * arc.energy);
+    const live = arc.shape === 'bolt' && !!arc.fx;
+    const rimSample = live ? impactSample(t, { scale: iScale }) : null;
+    const point = (p: Omit<Point, 'alphas'>, contactAlpha: number, rimK: number, tag: string) => {
+      const it = impactItem({
+        x: p.x,
+        y: p.y,
+        sample: p.sample,
+        ring: !!p.rect,
+        contactAlpha,
+        rimK,
+        dark: pal.dark,
+        glowAlpha: pal.glowAlpha,
+        values: { glow: v.glow, hot: v.hot },
+        contactRadius: p.contactRadius,
+        contactTag: tag,
+      });
+      if (it.centre.profiles.length === 0) return;
+      out.points.push({ ...p, alphas: it.alphas });
+      out.items.push(it.centre);
+      out.scaled.push(...it.area);
+    };
+    for (const e of arc.contacts) {
+      const rim =
+        k > 0 && e.rect ? arc.fx?.rims.find((r) => r.x === e.x && r.y === e.y) : undefined;
+      point(
+        {
+          x: e.x,
+          y: e.y,
+          nx: e.nx,
+          ny: e.ny,
+          rect: e.rect,
+          sample: e.rect ? rimSample : null,
+          rim: rim?.points,
+          contactRadius: arc.contactRadius,
+        },
+        g,
+        rim ? k : 0,
+        arc.shape === 'flare' ? 'flare' : 'contact',
+      );
+    }
+    if (live && arc.origin) {
+      const o = impactSample(t, { scale: iScale, click: true });
+      if (o) {
+        point(
+          { x: arc.origin.x, y: arc.origin.y, rect: arc.origin.rect, sample: o, contactRadius: 0 },
+          0,
+          0,
+          'contact',
+        );
+      }
     }
   };
 
@@ -808,7 +901,18 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
     else c.rect(r.x, r.y, r.w, r.h);
   };
 
-  /** A soft elliptical streak through (0, 0) along +x: a radial gradient squashed across. */
+  /** A gradient's colour stops from the flash budget's own stop list, so drawn and counted shapes are the same. */
+  const fillStops = (
+    grad: CanvasGradient,
+    stops: readonly (readonly [number, number])[],
+    rgb: readonly number[],
+    alpha: number,
+  ) => {
+    for (const [o, v] of stops)
+      grad.addColorStop(o, `rgb(${rgb[0]} ${rgb[1]} ${rgb[2]} / ${alpha * v})`);
+  };
+
+  /** A soft elliptical streak through (0, 0) along +x: a radial gradient squashed across, hollow at the disc. */
   const streak = (
     c: CanvasRenderingContext2D,
     len: number,
@@ -819,8 +923,7 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
     c.save();
     c.scale(1, IMPACT.streakWidthPx / (len / 2));
     const g = c.createRadialGradient(0, 0, 0, 0, 0, len / 2);
-    g.addColorStop(0, `rgb(${rgb[0]} ${rgb[1]} ${rgb[2]} / ${alpha})`);
-    g.addColorStop(1, `rgb(${rgb[0]} ${rgb[1]} ${rgb[2]} / 0)`);
+    fillStops(g, STREAK_STOPS, rgb, alpha);
     c.fillStyle = g;
     c.beginPath();
     c.arc(0, 0, len / 2, 0, Math.PI * 2);
@@ -828,48 +931,66 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
     c.restore();
   };
 
-  /** One impact: the shock ring (clipped to the host), the flash disc and its specular streaks. */
-  const drawImpact = (c: CanvasRenderingContext2D, im: Impact, share: number) => {
-    const sm = im.sample;
-    // The disc centre's added luminance, read as white: the per-flash cap (impact.ts FLASH_LUMINANCE).
-    const peak = Math.min(FLASH_LUMINANCE.maxPeak, sm.flash * IMPACT.peak * share);
-    const hot: readonly number[] = pal.dark ? [255, 255, 255] : pal.coreRgb;
-    const tint = pal.dark ? 1 : LIGHT_THEME_FLASH;
+  /**
+   * One point: its contact glow, its lit rim, and (when an impact is live) the shock ring clipped to the host, the
+   * flash disc and its specular streaks. Every alpha is `impactItem`'s (the flash budget's own figure) × `f`.
+   */
+  const drawPoint = (c: CanvasRenderingContext2D, p: Point, f: number) => {
+    const a = p.alphas;
+    drawContact(c, p.x, p.y, p.nx ?? 0, p.ny ?? -1, p.contactRadius, a.contact * f);
     const [gr, gg, gb] = pal.glowRgb;
+    if (p.rim && a.rim * f > 0.002) {
+      const grad = c.createRadialGradient(p.x, p.y, 0, p.x, p.y, RIM_LIGHT.spanPx / 2);
+      fillStops(grad, RIM_STOPS, pal.glowRgb, a.rim * f);
+      c.globalAlpha = 1;
+      c.strokeStyle = grad;
+      c.lineWidth = RIM_LIGHT.widthPx;
+      strokeLine(c, p.rim);
+      if (a.rimWhite * f > 0.002) {
+        const hot = c.createRadialGradient(p.x, p.y, 0, p.x, p.y, RIM_LIGHT.spanPx / 4);
+        fillStops(hot, RIM_STOPS, WHITE_RGB, a.rimWhite * f);
+        c.strokeStyle = hot;
+        c.lineWidth = RIM_LIGHT.widthPx / 2;
+        strokeLine(c, p.rim);
+      }
+    }
+    const sm = p.sample;
+    if (!sm) return;
     c.globalAlpha = 1;
-    if (im.rect && sm.ringAlpha > 0.002) {
+    if (p.rect && a.ring * f > 0.002) {
       c.save();
-      roundRectPath(c, im.rect);
+      roundRectPath(c, p.rect);
       c.clip();
       c.beginPath();
-      c.arc(im.x, im.y, sm.ringRadius, 0, Math.PI * 2);
+      c.arc(p.x, p.y, sm.ringRadius, 0, Math.PI * 2);
       c.lineWidth = sm.ringWidth;
       c.strokeStyle = pal.glow;
-      c.globalAlpha = Math.min(1, sm.ringAlpha * share * pal.glowAlpha * tint);
+      c.globalAlpha = Math.min(1, a.ring * f);
       c.stroke();
       c.restore();
       c.globalAlpha = 1;
     }
-    if (!(peak > 0.002)) return;
-    const disc = c.createRadialGradient(im.x, im.y, 0, im.x, im.y, sm.flashRadius);
-    const a = peak * tint;
-    disc.addColorStop(
+    const disc = a.disc * f;
+    if (!(disc > 0.002)) return;
+    const hot: readonly number[] = pal.dark ? WHITE_RGB : pal.coreRgb;
+    const grad = c.createRadialGradient(p.x, p.y, 0, p.x, p.y, sm.flashRadius);
+    grad.addColorStop(
       IMPACT_STOPS[0][0],
-      `rgb(${hot[0]} ${hot[1]} ${hot[2]} / ${a * IMPACT_STOPS[0][1]})`,
+      `rgb(${hot[0]} ${hot[1]} ${hot[2]} / ${disc * IMPACT_STOPS[0][1]})`,
     );
-    disc.addColorStop(IMPACT_STOPS[1][0], `rgb(${gr} ${gg} ${gb} / ${a * IMPACT_STOPS[1][1]})`);
-    disc.addColorStop(IMPACT_STOPS[2][0], `rgb(${gr} ${gg} ${gb} / 0)`);
-    c.fillStyle = disc;
+    grad.addColorStop(IMPACT_STOPS[1][0], `rgb(${gr} ${gg} ${gb} / ${disc * IMPACT_STOPS[1][1]})`);
+    grad.addColorStop(IMPACT_STOPS[2][0], `rgb(${gr} ${gg} ${gb} / 0)`);
+    c.fillStyle = grad;
     c.beginPath();
-    c.arc(im.x, im.y, sm.flashRadius, 0, Math.PI * 2);
+    c.arc(p.x, p.y, sm.flashRadius, 0, Math.PI * 2);
     c.fill();
     c.save();
-    c.translate(im.x, im.y);
+    c.translate(p.x, p.y);
     // Along the rim tangent (perpendicular to the normal); the press point streaks horizontally, like a lens.
-    c.rotate(im.nx === undefined ? 0 : Math.atan2(im.ny ?? 0, im.nx) + Math.PI / 2);
-    streak(c, sm.streakLength, hot, a * IMPACT.streakAlpha);
+    c.rotate(p.nx === undefined ? 0 : Math.atan2(p.ny ?? 0, p.nx) + Math.PI / 2);
+    streak(c, sm.streakLength, hot, a.streak * f);
     c.rotate(Math.PI / 2);
-    streak(c, sm.streakLength * IMPACT.crossStreakShare, hot, a * IMPACT.streakAlpha);
+    streak(c, sm.streakLength * IMPACT.crossStreakShare, hot, a.cross * f);
     c.restore();
   };
 
@@ -878,8 +999,13 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
     if (disposed) return false;
     const t = now();
     const c = ctx;
-    const drawable: { arc: LiveArc; s: ArcSample; fade: number }[] = [];
-    const impacts: Impact[] = [];
+    const plan = {
+      plans: [] as Plan[],
+      points: [] as Point[],
+      items: [] as CentreItem[],
+      scaled: [] as AreaLayer[],
+      lines: [] as AreaLayer[],
+    };
     const keep: LiveArc[] = [];
     let cur: Bounds | null = null;
     for (const arc of arcs) {
@@ -889,8 +1015,7 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
       if (fade <= 0 || age >= arcLife(arc)) continue;
       keep.push(arc);
       if (age < 0) continue;
-      drawable.push({ arc, s: sample(arc, age), fade });
-      impactsOf(arc, age, fade, impacts);
+      planFrameArc(arc, sample(arc, age), age, fade, plan);
       cur = union(cur, arc.bounds);
     }
     const modalBefore = arcs.some((a) => a.modal);
@@ -902,13 +1027,16 @@ export function createArcRenderer(doc: Document, opts: ArcRendererOptions = {}):
       if (dirty) {
         c.clearRect(dirty.x0, dirty.y0, dirty.x1 - dirty.x0, dirty.y1 - dirty.y0);
       }
+      // The frame's flash budget (flash-budget.ts, WCAG 2.3.1): one area scale for everything the frame draws, and the
+      // per-pixel cap over every point's overlapping layers.
+      const fit = fitFrame(plan.scaled, plan.lines, pal.dark);
+      const f: Factors = { glow: fit.scale, line: fit.lineScale };
+      const caps = centreScales(plan.items, pal.dark);
       c.globalCompositeOperation = pal.composite;
       c.lineJoin = 'round';
       c.lineCap = 'round';
-      for (const d of drawable) drawArc(c, d.arc, d.s, d.fade);
-      // Every impact of the frame shares one flash-area budget (impact.ts, WCAG 2.3.1).
-      const share = impactShare(impacts.length);
-      for (const im of impacts) drawImpact(c, im, share);
+      for (const pl of plan.plans) drawBolt(c, pl, f);
+      plan.points.forEach((p, i) => drawPoint(c, p, Math.min(fit.scale, caps[i])));
       c.globalAlpha = 1;
       c.globalCompositeOperation = 'source-over';
     }

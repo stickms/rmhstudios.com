@@ -1,15 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { ARC_BUDGET } from '../rate';
-import {
-  FLASH_LUMINANCE,
-  IMPACT,
-  IMPACT_STOPS,
-  discAreaAbove,
-  impactSample,
-  impactShare,
-  radiusAbove,
-} from '../impact';
+import { FLASH_LUMINANCE, IMPACT, IMPACT_STOPS, impactSample, radiusAbove } from '../impact';
 
 describe('impact timeline', () => {
   it('lasts 260–420ms and is gone after', () => {
@@ -62,14 +53,6 @@ describe('impact timeline', () => {
 });
 
 describe('the luminance cap (WCAG 2.3.1)', () => {
-  it('peak added luminance of an impact is capped', () => {
-    expect(IMPACT.peak).toBeLessThanOrEqual(FLASH_LUMINANCE.maxPeak);
-    for (let t = 0; t < IMPACT.lifeMs; t += 1) {
-      const s = impactSample(t)!;
-      expect(s.flash * IMPACT.peak).toBeLessThanOrEqual(FLASH_LUMINANCE.maxPeak);
-    }
-  });
-
   it('the radius above a threshold follows the gradient stops', () => {
     expect(radiusAbove(IMPACT_STOPS, 1, 0)).toBe(1);
     expect(radiusAbove(IMPACT_STOPS, 1, 1)).toBe(0);
@@ -78,24 +61,5 @@ describe('the luminance cap (WCAG 2.3.1)', () => {
     const b = radiusAbove(IMPACT_STOPS, 0.9, 0.1);
     expect(b).toBeGreaterThan(a);
   });
-
-  it('every impact a full click can draw at once fits the per-frame flash-area budget', () => {
-    // A full-tier click: 3 bolts × 2 ends, plus the press point.
-    const n = ARC_BUDGET.maxLiveArcs * 2 + 1;
-    const each = discAreaAbove(IMPACT.peak, IMPACT.clickFlashRadiusPx);
-    const share = impactShare(n);
-    expect(share).toBeGreaterThan(0);
-    expect(share).toBeLessThanOrEqual(1);
-    expect(n * discAreaAbove(IMPACT.peak * share, IMPACT.clickFlashRadiusPx)).toBeLessThanOrEqual(
-      FLASH_LUMINANCE.areaBudgetPx2 + 1e-6,
-    );
-    expect(each).toBeGreaterThan(0);
-    // The budget is a quarter of WCAG's small-area threshold (0.006 sr ≈ 341×256 px at 1024×768).
-    expect(FLASH_LUMINANCE.areaBudgetPx2 * 4).toBeLessThanOrEqual(341 * 256);
-    // Few impacts: no scaling at all.
-    expect(impactShare(1)).toBe(1);
-    expect(impactShare(0)).toBe(1);
-    // More impacts never get brighter in total.
-    expect(impactShare(20)).toBeLessThan(impactShare(7));
-  });
+  // The combined per-pixel cap and the frame's area budget over every layer: flash-budget.test.ts.
 });

@@ -311,6 +311,59 @@ describe('arc renderer', () => {
     }
   });
 
+  it('every drawn alpha passes through the flash budget (a new layer must be added to flash-budget.ts first)', () => {
+    const src = readFileSync(join(process.cwd(), 'lib/jelly/arcs/renderer.ts'), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+    // The frame sizes everything it draws by the budget's two caps.
+    expect(src).toMatch(/fitFrame\(plan\.scaled, plan\.lines, pal\.dark\)/);
+    expect(src).toMatch(/centreScales\(plan\.items, pal\.dark\)/);
+    expect(src).toMatch(/drawPoint\(c, p, Math\.min\(fit\.scale, caps\[i\]\)\)/);
+    // Every alpha sink: a reset to 1, the stroke/contact helpers' (already scaled) argument, or a point layer × f.
+    const sinks = [...src.matchAll(/globalAlpha = ([^;]+);/g)].map((m) => m[1].trim());
+    expect(sinks.sort()).toEqual(
+      [
+        '1',
+        '1',
+        '1',
+        '1',
+        'Math.min(1, a.ring * f)',
+        'Math.min(1, alpha)',
+        'Math.min(1, alpha)',
+      ].sort(),
+    );
+    // Each addColorStop call's argument list (balanced parentheses), then its second argument.
+    const stops: string[] = [];
+    for (let i = src.indexOf('addColorStop('); i >= 0; i = src.indexOf('addColorStop(', i + 1)) {
+      let depth = 0;
+      let j = i + 'addColorStop'.length;
+      for (; j < src.length; j++) {
+        if (src[j] === '(') depth++;
+        else if (src[j] === ')' && --depth === 0) break;
+      }
+      const args = src.slice(i + 'addColorStop('.length, j);
+      stops.push(args.slice(args.indexOf(',') + 1));
+    }
+    expect(stops).toHaveLength(6);
+    for (const stop of stops) {
+      // Transparent ends, the contact glow's colour (its alpha is the helper's), or an alpha built from the budget's
+      // own figures (`fillStops`' `alpha · stop`, called with `a.* × f`; the disc's `disc`, already × f).
+      expect(stop, stop).toMatch(
+        /\/ 0\)|^\s*pal\.glow\s*$|\$\{(alpha \* v|disc \* IMPACT_STOPS\[\d\]\[1\])\}/,
+      );
+    }
+    // The point layers' alphas come only from the budget's impactItem; the bolt's from glowPasses/HALO/GEL_LIGHT × f.
+    expect(src).toMatch(/alphas: it\.alphas/);
+    expect(src).not.toMatch(
+      /IMPACT\.peak|IMPACT\.streakAlpha|RIM_LIGHT\.alpha|CONTACT_GLOW\.alpha/,
+    );
+    // fillStops is only fed the budget's stop lists and alphas.
+    for (const m of src.matchAll(/fillStops\((\w+), (\w+), ([^,]+), ([^)]+)\)/g)) {
+      expect(m[2], m[0]).toMatch(/^(RIM_STOPS|STREAK_STOPS|stops)$/);
+      expect(m[4], m[0]).toMatch(/^(alpha|a\.rim \* f|a\.rimWhite \* f)$/);
+    }
+  });
+
   it('never assigns shadowBlur or a canvas filter (the arc cost model)', () => {
     const src = readFileSync(join(process.cwd(), 'lib/jelly/arcs/renderer.ts'), 'utf8')
       .replace(/\/\*[\s\S]*?\*\//g, ' ')

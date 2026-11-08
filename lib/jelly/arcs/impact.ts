@@ -13,11 +13,12 @@
  * (`FLASH_LEDGER`, which alone already satisfies the "three flashes" rule):
  *
  * - **Small.** No impact draws past {@link FLASH_LUMINANCE.maxFlashRadiusPx}; the flash disc is far smaller.
- * - **Bounded peak and bounded area.** The disc's peak added luminance is at most {@link FLASH_LUMINANCE.maxPeak}
- *   (scaled by the arc's intensity and `calm`), treating its colour as white, which over-estimates every real
- *   palette. And the total area in which ALL impacts drawn in one frame raise luminance by ≥ 0.1 stays within
- *   {@link FLASH_LUMINANCE.areaBudgetPx2}, a quarter of WCAG's threshold area: {@link impactShare} dims every impact
- *   of a crowded frame until the sum fits. The bolt strokes themselves are lines a few px wide.
+ * - **Bounded per pixel.** The summed coverage of EVERY impact layer at any pixel — disc, both streaks, ring, lit rim,
+ *   contact glow and press flare, within one impact and between neighbours — changes luminance by at most
+ *   {@link FLASH_LUMINANCE.maxPeak} (`flash-budget.ts` `centreScale`, which the renderer applies to all of them).
+ * - **Bounded area.** Summed over every layer of every arc live in a frame (bolt passes, stubs, halo, rims, rings,
+ *   discs, streaks, contacts, flares), the area that changes by ≥ 0.1 stays within
+ *   {@link FLASH_LUMINANCE.areaBudgetPx2} (`flash-budget.ts` `fitFrame`). The arithmetic is in flash-budget.ts.
  *
  * Pure: plain numbers, no DOM.
  */
@@ -26,14 +27,17 @@ export const FLASH_LUMINANCE = {
   /** WCAG 2.3.1: a change of this much relative luminance (of white) is a flash transition. */
   flashDelta: 0.1,
   /**
-   * The px² per frame in which impacts may raise luminance by ≥ `flashDelta`: a quarter of WCAG's small-area
-   * threshold (0.006 sr ≈ 341 × 256 px = 87,296 px²), so even a stray overlap with other flashing content stays
-   * well under it.
+   * The px² per frame, summed over every layer the arc layer draws, in which luminance may change by ≥ `flashDelta`:
+   * a quarter of WCAG's small-area threshold (0.006 sr ≈ 341 × 256 px = 87,296 px²), so even a stray overlap with
+   * other flashing content stays well under it.
    */
   areaBudgetPx2: 21_824,
   /** No impact element draws past this radius from its point, px (well under the ~160px "small" bound). */
   maxFlashRadiusPx: 140,
-  /** The most an impact disc's centre may add to relative luminance (treated as white): 0.6 of full white. */
+  /**
+   * The most the impact layers together may change relative luminance at any one pixel, on the worst ground (see
+   * flash-budget.ts `centreBudget`): bright enough to read as a hit, never a white-out of the area under it.
+   */
   maxPeak: 0.6,
 } as const;
 
@@ -48,8 +52,8 @@ export const IMPACT = {
   clickFlashRadiusPx: 44,
   /** The disc starts at this share of its radius and eases out to the full radius. */
   flashGrowFrom: 0.75,
-  /** Peak added luminance of the disc centre (≤ `FLASH_LUMINANCE.maxPeak`). */
-  peak: 0.6,
+  /** The disc centre's alpha at the flash's peak (the frame's per-pixel cap scales it with every other layer). */
+  peak: 0.45,
   /** Shock ring: radius from → to, px, ease-out. */
   ringStartPx: 4,
   ringEndPx: 96,
@@ -64,7 +68,7 @@ export const IMPACT = {
   /** Streak thickness (the ellipse's minor radius), px. */
   streakWidthPx: 2.5,
   /** Streak brightness relative to the flash. */
-  streakAlpha: 0.7,
+  streakAlpha: 0.55,
 } as const;
 
 /** The flash disc's radial gradient: [offset 0..1, share of peak]. Monotonically decreasing. */
@@ -142,33 +146,4 @@ export function radiusAbove(
     }
   }
   return stops[stops.length - 1][0];
-}
-
-/** Area (px²) of a flash disc of `radiusPx` over which it adds at least `threshold` relative luminance. */
-export function discAreaAbove(
-  peak: number,
-  radiusPx: number,
-  threshold: number = FLASH_LUMINANCE.flashDelta,
-): number {
-  const r =
-    radiusAbove(IMPACT_STOPS, Math.min(peak, FLASH_LUMINANCE.maxPeak), threshold) * radiusPx;
-  return Math.PI * r * r;
-}
-
-/**
- * The brightness share every impact of a frame drawing `n` of them gets, so their combined ≥ 0.1 area fits
- * {@link FLASH_LUMINANCE.areaBudgetPx2} (each counted at the larger, press-point disc). 1 when they already fit.
- */
-export function impactShare(n: number): number {
-  if (!(n > 1)) return 1;
-  const area = (s: number) => n * discAreaAbove(IMPACT.peak * s, IMPACT.clickFlashRadiusPx);
-  if (area(1) <= FLASH_LUMINANCE.areaBudgetPx2) return 1;
-  let lo = 0;
-  let hi = 1;
-  for (let i = 0; i < 30; i++) {
-    const mid = (lo + hi) / 2;
-    if (area(mid) <= FLASH_LUMINANCE.areaBudgetPx2) lo = mid;
-    else hi = mid;
-  }
-  return lo;
 }
