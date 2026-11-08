@@ -6,128 +6,121 @@
  * and note (`medianOffset`) is saved as the profile's `latencyMs`. Skippable at
  * any point; too few taps asks to try again rather than saving a guess.
  *
- * Clocks: clicks are scheduled on the AudioContext clock (`ctx.currentTime`,
- * seconds), while note events carry `performance.now()` ms. One offset,
- * `performance.now() - ctx.currentTime * 1000`, measured once just before
- * scheduling, maps each click onto the note clock. It is the *scheduled* time,
- * so the result includes the output delay before the click is heard as well as
- * the input path's delay — the total a lesson has to allow for.
+ * The intro → preparing → running → done / retry / no-audio lifecycle is the
+ * pure machine in `machines/calibration.ts`; this component carries out its
+ * effects. The click track (`audio/clicks.ts`) is tracked as a whole, so Skip
+ * and unmount silence the clicks still to come and clear every timer, and a
+ * start that is still resuming sound when the dialog closes schedules nothing.
+ * Click times are on the note clock (see `audio/clicks.ts`), so the result
+ * includes the output delay as well as the input path's.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { medianOffset } from '@/lib/rmhmusic/learn/calibration';
+import { scheduleClicks, type ScheduledClicks } from '@/lib/rmhmusic/learn/audio/clicks';
+import { calibrationMachine, shown, type Effect } from '@/lib/rmhmusic/learn/machines/calibration';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { getAudioContext } from '@/lib/shared/platform';
 import { cn } from '@/lib/utils';
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from './buttons';
+import { useMachine } from './useMachine';
 import { useNoteEvents } from './useLearnInput';
 
 const CLICKS = 8;
-const BEAT_S = 60 / 100;
-/** Time before the first click, so the learner is ready. */
-const LEAD_S = 1;
-const CLICK_LEN_S = 0.05;
+const PLAN = { count: CLICKS, beatS: 60 / 100, leadS: 1, clickS: 0.05 };
 /** The note the tap pad sends through the on-screen keys. */
 const PAD_NOTE = 72;
-
-type Phase = 'intro' | 'running' | 'done' | 'retry' | 'no-audio';
 
 export function LatencyCalibration({ onDone }: { onDone: () => void }) {
   const { t } = useTranslation('c-rmhmusic');
   const input = useLearnStore((s) => s.profile?.input ?? 'screen');
-  const [phase, setPhase] = useState<Phase>('intro');
-  const [beat, setBeat] = useState(-1);
-  const [taps, setTaps] = useState(0);
-  const [result, setResult] = useState<number | null>(null);
-  const clicks = useRef<number[]>([]);
-  const responses = useRef<number[]>([]);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const running = useRef(false);
+  const [state, send] = useMachine(calibrationMachine);
+  /** The click track of the run in progress: a resource the effects own, not machine state. */
+  const audio = useRef<ScheduledClicks | null>(null);
 
-  const clearTimers = () => {
-    for (const id of timers.current) clearTimeout(id);
-    timers.current = [];
+  const perform = (effects: Effect[]) => {
+    for (const fx of effects) {
+      switch (fx.type) {
+        case 'prepare':
+          void prepare(fx.token);
+          break;
+        case 'schedule': {
+          const ctx = getAudioContext();
+          if (!ctx) {
+            perform(send({ type: 'prepared', token: fx.token, ok: false }));
+            break;
+          }
+          audio.current?.cancel();
+          const token = fx.token;
+          audio.current = scheduleClicks(ctx, PLAN, {
+            beat: (i) => perform(send({ type: 'beat', token, i })),
+            end: () => perform(send({ type: 'finished', token })),
+          });
+          perform(send({ type: 'scheduled', token, clicks: audio.current.clicks }));
+          break;
+        }
+        case 'cancel-audio':
+          audio.current?.cancel();
+          audio.current = null;
+          break;
+        case 'save':
+          void useLearnStore.getState().setLatency(fx.ms);
+          break;
+        case 'close':
+          onDone();
+          break;
+        default: {
+          const never: never = fx;
+          throw new Error(`calibration: unhandled effect ${JSON.stringify(never)}`);
+        }
+      }
+    }
   };
-  useEffect(() => clearTimers, []);
 
-  useNoteEvents((e) => {
-    if (!running.current || e.type !== 'on') return;
-    responses.current.push(e.time);
-    setTaps((n) => n + 1);
-  });
-
-  const start = async () => {
+  const prepare = async (token: number) => {
     const ctx = getAudioContext();
     if (!ctx) {
-      setPhase('no-audio');
+      perform(send({ type: 'prepared', token, ok: false }));
       return;
     }
     try {
       if (ctx.state === 'suspended') await ctx.resume();
     } catch {
-      setPhase('no-audio');
+      perform(send({ type: 'prepared', token, ok: false }));
       return;
     }
     const { hub } = useLearnStore.getState();
     // Keys inputs need their source on; mic and MIDI were turned on from the chooser.
     if (input === 'keys') await hub?.start('keys').catch(() => {});
     await hub?.start('screen').catch(() => {});
-
-    clearTimers();
-    clicks.current = [];
-    responses.current = [];
-    setTaps(0);
-    setBeat(-1);
-    setResult(null);
-
-    // The one clock conversion (see the docblock).
-    const offsetMs = performance.now() - ctx.currentTime * 1000;
-    const t0 = ctx.currentTime + LEAD_S;
-    for (let i = 0; i < CLICKS; i++) {
-      const at = t0 + i * BEAT_S;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.frequency.value = i === 0 ? 1500 : 1000;
-      gain.gain.setValueAtTime(0, at);
-      gain.gain.linearRampToValueAtTime(0.3, at + 0.002);
-      gain.gain.exponentialRampToValueAtTime(0.0001, at + CLICK_LEN_S);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(at);
-      osc.stop(at + CLICK_LEN_S);
-      osc.onended = () => {
-        osc.disconnect();
-        gain.disconnect();
-      };
-      const clickMs = at * 1000 + offsetMs;
-      clicks.current.push(clickMs);
-      timers.current.push(setTimeout(() => setBeat(i), clickMs - performance.now()));
-    }
-
-    running.current = true;
-    setPhase('running');
-    const endMs = clicks.current[CLICKS - 1] + BEAT_S * 1000;
-    timers.current.push(
-      setTimeout(() => {
-        running.current = false;
-        const ms = medianOffset(clicks.current, responses.current);
-        if (ms === null) {
-          setPhase('retry');
-          return;
-        }
-        setResult(Math.max(-500, Math.min(500, ms)));
-        setPhase('done');
-        void useLearnStore.getState().setLatency(ms);
-      }, endMs - performance.now()),
-    );
+    perform(send({ type: 'prepared', token, ok: true }));
   };
 
-  const skip = () => {
-    running.current = false;
-    clearTimers();
-    onDone();
-  };
+  // Unmount (the dialog closed): silence the clicks and clear the timers; a start still preparing is dropped.
+  useEffect(
+    () => () => {
+      // `dispose` only ever asks to cancel the audio.
+      if (send({ type: 'dispose' }).some((fx) => fx.type === 'cancel-audio')) {
+        audio.current?.cancel();
+        audio.current = null;
+      }
+    },
+    [send],
+  );
+
+  useNoteEvents((e) => {
+    if (e.type === 'on') perform(send({ type: 'tap', time: e.time }));
+  });
+
+  const view = shown(state);
+  const phase = view.kind;
+  const beat =
+    view.kind === 'running' || view.kind === 'done' || view.kind === 'retry' ? view.beat : -1;
+  const taps = view.kind === 'running' ? view.responses.length : 0;
+  const result = view.kind === 'done' ? view.ms : null;
+
+  const start = () => perform(send({ type: 'start' }));
+  const skip = () => perform(send({ type: 'skip' }));
 
   const pad = (down: boolean) => {
     const { screen } = useLearnStore.getState();
@@ -228,7 +221,7 @@ export function LatencyCalibration({ onDone }: { onDone: () => void }) {
             : t('latency-skip', { defaultValue: 'Skip' })}
         </button>
         {phase !== 'running' && phase !== 'no-audio' && (
-          <button type="button" onClick={() => void start()} className={PRIMARY_BUTTON}>
+          <button type="button" onClick={start} className={PRIMARY_BUTTON}>
             {phase === 'intro'
               ? t('latency-start', { defaultValue: 'Start' })
               : t('latency-again', { defaultValue: 'Try again' })}
