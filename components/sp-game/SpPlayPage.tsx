@@ -108,7 +108,6 @@ export default function SpPlayPage({ game, title, subtitle, chapters }: SpPlayPa
               title={chapters[running.map] ?? running.map}
               create={(mount) => createSpClient({ ...mount, game, map: running.map, transition: running.transition })}
               onExit={leave}
-              onQuit={quit}
               loadingScreen={(view) => (
                 <SourceLoadingScreen
                   game={game}
@@ -209,7 +208,6 @@ export default function SpPlayPage({ game, title, subtitle, chapters }: SpPlayPa
             title={chapters[running.map] ?? running.map}
             create={(mount) => createSpClient({ ...mount, game, map: running.map, transition: running.transition })}
             onExit={leave}
-            onQuit={quit}
           />
         </div>
       ) : null}

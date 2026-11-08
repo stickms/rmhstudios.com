@@ -31,7 +31,7 @@ export interface StartInfo {
     practice?: PracticeTarget & { onEnd: (o: PracticeOutcome) => void };
 }
 
-export function GameStage({ start, onExit, onQuitGame }: { start: StartInfo; onExit: () => void; onQuitGame: () => void }) {
+export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => void }) {
     const { music, sfx, input, assets } = useRuntime();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const wrapRef = useRef<HTMLDivElement>(null);
@@ -177,7 +177,7 @@ export function GameStage({ start, onExit, onQuitGame }: { start: StartInfo; onE
                     Connection lost. Reconnecting to your squad…
                 </div>
             )}
-            {paused && <PauseOverlay onResume={() => useDreamRift.getState().setPaused(false)} onQuit={onExit} onQuitGame={onQuitGame} />}
+            {paused && <PauseOverlay onResume={() => useDreamRift.getState().setPaused(false)} onQuit={onExit} />}
             <MobileControls input={input} />
             <PhoneControllerHost sink={input} />
         </div>

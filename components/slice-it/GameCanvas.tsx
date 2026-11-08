@@ -28,7 +28,6 @@ import { fadeRise, popIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 import { COMBO_MILESTONES, GameEngine } from '@/lib/slice-it/engine';
 import { useGameSession } from '@/hooks/useGameSession';
-import { useQuitGame } from '@/hooks/useQuitGame';
 import { useSliceItStore, approachSeconds, reactionWindowMs } from '@/lib/slice-it/store';
 import { visibilityAlpha } from '@/lib/slice-it/modifiers';
 import { AudioManager } from '@/lib/audio/AudioManager';
@@ -38,7 +37,7 @@ import { GameOver } from './GameOver';
 import { MainMenu } from './MainMenu';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { LogOut, RotateCcw, Settings, SkipForward, X } from 'lucide-react';
+import { RotateCcw, Settings, SkipForward, X } from 'lucide-react';
 import { MultiplayerSidebar } from './MultiplayerSidebar';
 import { MatchResults } from './MatchResults';
 import { addMatchListener, leaveLobby } from '@/lib/slice-it/net/client';
@@ -1317,7 +1316,6 @@ export function GameCanvas() {
 
   const { t } = useTranslation('c-game');
   const { t: ts } = useTranslation('r-slice-it');
-  const quitGame = useQuitGame();
   const {
     status,
     keybinds,
@@ -3824,15 +3822,6 @@ export function GameCanvas() {
                     leaveLobby();
                   }}
                 >
-                  {t('leave-song', { defaultValue: 'SONG SELECT' })}
-                </Button>
-                <Button
-                  size="lg"
-                  variant="ghost"
-                  className="w-full text-red-400 hover:text-red-500 hover:bg-transparent"
-                  onClick={quitGame}
-                >
-                  <LogOut className="size-4" aria-hidden />
                   {t('quit', { defaultValue: 'QUIT' })}
                 </Button>
               </div>

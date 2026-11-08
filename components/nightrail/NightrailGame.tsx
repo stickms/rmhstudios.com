@@ -19,7 +19,6 @@ import { Camera } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { isLowPowerDevice, supportsWebGL } from '@/lib/shared/platform';
 import { useGameSession } from '@/hooks/useGameSession';
-import { useQuitGame } from '@/hooks/useQuitGame';
 
 // U14 — loaded only when a player opens photo mode.
 const PhotoMode = lazy(() => import('@/components/games/PhotoMode'));
@@ -114,10 +113,6 @@ export function NightrailGame() {
   const inputRef = useRef<InputState>(emptyInput());
 
   const [uiState, setUiState] = useState<UIState>('menu');
-  // Mirrors run.phase === 'paused' so the Quit entry can render in React; the
-  // HUD's own "PAUSED" panel is imperative and aria-hidden.
-  const [paused, setPaused] = useState(false);
-  const quit = useQuitGame();
   const [runStats, setRunStats] = useState<RunStats | null>(null);
   const [unlockedLevels, setUnlockedLevels] = useState<Set<LevelId>>(
     () => new Set<LevelId>([LEVEL_ORDER[0]]),
@@ -451,7 +446,6 @@ export function NightrailGame() {
         const drawDt = cap.tick(timestamp, dt, run.phase === 'paused' ? MENU_BACKDROP_FPS : null);
         if (drawDt !== null) withInterpolatedPose(run, () => renderer.draw(run, drawDt));
         hudRef.current?.sync(run);
-        setPaused(run.phase === 'paused');
 
         if (run.phase === 'runComplete' || run.phase === 'crashed') {
           setRunStats({ ...run.stats });
@@ -568,18 +562,6 @@ export function NightrailGame() {
       )}
 
       <NightrailHud ref={hudRef} visible={uiState === 'playing' && !photoMode} />
-
-      {paused && uiState === 'playing' && !photoMode && (
-        <div className="pointer-events-none absolute inset-x-0 top-1/2 z-40 mt-14 flex justify-center">
-          <button
-            type="button"
-            onClick={quit}
-            className="pointer-events-auto min-h-11 rounded border border-slate-600 bg-slate-950/70 px-5 py-2 text-sm font-bold text-white hover:bg-slate-800"
-          >
-            {t('quit', { defaultValue: 'Quit' })}
-          </button>
-        </div>
-      )}
 
       <NightrailTouchControls inputRef={inputRef} visible={uiState === 'playing' && !photoMode} />
 
