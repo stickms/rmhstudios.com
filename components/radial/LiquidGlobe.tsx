@@ -15,7 +15,7 @@ import {
 import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { supportsWebGL, vibrate } from '@/lib/shared/platform';
+import { vibrate } from '@/lib/shared/platform';
 import { prefersLessData } from '@/lib/viewport-prefetch';
 import {
   DECELERATION,
@@ -35,10 +35,9 @@ import { isNavLeafActive, type NavLeaf } from '@/lib/sidebar-nav';
 import { DoughBody } from '@/lib/dough';
 import type { GlobeStartState } from '@/lib/eversion/types';
 import type { EntryPoint } from '@/lib/eversion/marks';
-import type { JellyFrame, JellyGlass } from './jelly-glass';
-import type { SelfEvertSkin } from './self-evert-skin';
 import { GLOBE_EVERT_EVENT, SELF_EVERT_MS } from './self-evert-timing';
-import { luminance, resolveColor } from '@/lib/liquid/glass/color';
+import { acquireGlobeHost, type GlobeWorkerHost } from './globe-worker-host';
+import type { CoatClock, GlobeThemeCss } from './globe-protocol';
 import { currentScene, onSceneChange } from '@/lib/liquid/glass/scene-store';
 import { PLASMA_LOOK } from '@/lib/liquid/glass/policy';
 import {
@@ -237,15 +236,14 @@ const lensScale = (x: number, y: number, z: number) => {
 };
 
 /**
- * Whether this visit gets the shader material (`./jelly-glass`). The CSS glass
- * stays for `perf-lite` (a weak device should not pay for a second GL
- * context), and anywhere WebGL will not start.
+ * Whether this visit may get the shader material (`./jelly-glass`, drawn in the globe's worker). The CSS glass stays
+ * for `perf-lite` (a weak device should not pay for a second GL context). Whether a worker can own a WebGL 2 context
+ * at all is the host's decision (`globe-worker-host.ts`): where it cannot, the CSS glass stays too — the page's own
+ * thread never makes a GL context for the globe, not even to probe for one.
  */
 function jellyEligible(): boolean {
   if (typeof window === 'undefined') return false;
-  const html = document.documentElement.classList;
-  if (html.contains('perf-lite')) return false;
-  return supportsWebGL();
+  return !document.documentElement.classList.contains('perf-lite');
 }
 
 /**
@@ -839,30 +837,24 @@ export function LiquidGlobe({
   const contactRef = useRef<HTMLSpanElement | null>(null);
   const paintedGlass = useRef('');
   /**
-   * The shader material (`./jelly-glass`), once its chunk has loaded — null for
-   * the CSS glass. It redraws only when the SURFACE changes (a ripple, the soft
-   * body), never for a turn: a uniform glass ball looks the same at any rotation.
+   * The globe's worker host while THIS mount holds the coat canvas (`./globe-worker-host`) — null for the CSS glass.
+   * The coat redraws (in the worker) only when the SURFACE changes (a ripple, the soft body) or on its own ambient
+   * clock, never for a turn: a uniform glass ball looks the same at any rotation.
    */
-  const jellyGlass = useRef<JellyGlass | null>(null);
+  const coatHost = useRef<GlobeWorkerHost | null>(null);
+  /** Post the coat's clock state to the worker (de-duplicated by the host). A no-op without a coat. */
+  const postClock = useRef<() => void>(() => {});
+  /** The host lease the self-eversion skin rides on (its canvas lives in the same worker). */
+  const skinLease = useRef<{ host: GlobeWorkerHost; release(): void } | null>(null);
   /** Force one material frame (attach, resize). Raising it wakes the loop (`wakeOnRaise`). */
   const jellyDirty = useRef(false);
   useState(() => wakeOnRaise([dirty, jellyDirty], wakeLoop));
   /** Whether the last paint drew a moving surface, so the frame it comes to rest is drawn too. */
   const jellyLive = useRef(false);
-  /** The material's per-frame inputs, preallocated — the loop must not allocate. Ripples are (x, y, z, age) × 3. */
-  const [jellyFrame] = useState<JellyFrame>(() => ({
-    ripples: new Float32Array(12),
-    gx: 0,
-    gy: 0,
-    pinch: 0,
-    time: 0,
-    amp: 0,
-    plasma: 0,
-  }));
   /**
-   * The coat's Plasmatic Jelly clock (jelly-glass.ts header): the ambient rate it may redraw the haze at (0 = still,
-   * hidden, degraded or off screen), the haze amplitude, the eased plasma level and whether a fine pointer is over
-   * the ball. Driven by the globe's own (allowlisted) frame loop — no second rAF; the jelly env watcher refreshes it.
+   * The jelly ambient clock as the policy allows it right now (0 = still, hidden, degraded or off screen), the haze
+   * amplitude, and whether a fine pointer is over the ball. The idle drift ticks on it here (`last`); the coat's haze
+   * and plasma run on the same numbers in the worker (`coatClockState`), so this loop never wakes for the coat.
    */
   const coatClock = useRef({
     hz: 0,
@@ -870,9 +862,24 @@ export function LiquidGlobe({
     amp: 0,
     onScreen: false,
     last: 0,
-    plasma: 0,
     over: false,
   });
+  /** What the worker's coat clock should be doing, from the refs above (`CoatClock`). */
+  const coatClockState = useCallback((): CoatClock => {
+    const c = coatClock.current;
+    const d = drag.current;
+    return {
+      hz: c.hz,
+      idleHz: c.idleHz,
+      amp: c.amp,
+      active: c.hz > 0 && c.onScreen && !quiet.current && document.hasFocus(),
+      held: c.over || d.active,
+      engagedUntil: Math.max(lastMoveAt.current, lastInputAt.current) + IDLE_AFTER_MS,
+      plasma: d.held || d.active ? PLASMA.press : c.over ? PLASMA.wake : PLASMA.rest,
+      plasmaEaseMs: PLASMA.easeMs,
+      frozen: everting.current,
+    };
+  }, []);
 
   // Only these three reach the render: the caption, the ring's state classes.
   const [lock, setLock] = useState(-1);
@@ -1003,10 +1010,10 @@ export function LiquidGlobe({
           width: parseFloat(cs.getPropertyValue('--cage-width')) || 1,
         };
       }
-      // The material's backing store tracks the stage the same way (its own,
-      // lower DPR ceiling — see JELLY_MAX_DPR).
-      if (jellyGlass.current) {
-        jellyGlass.current.resize(size, storeDpr());
+      // The material's backing store tracks the stage the same way (its own, lower DPR ceiling — JELLY_MAX_DPR in
+      // the worker): one small message per real resize.
+      if (coatHost.current) {
+        coatHost.current.size(size, storeDpr());
         jellyDirty.current = true;
       }
       dirty.current = true;
@@ -1021,31 +1028,36 @@ export function LiquidGlobe({
   /* ── The material ────────────────────────────────────────────────────────
      A gelatinous glass ball — reflection, Fresnel rim, specular, the room seen
      upside-down through it, a caustic, the accent as its subsurface tint — is a
-     fragment shader (`./jelly-glass`), loaded as its own chunk so none of it is
-     on the entry or the hub's first paint. The idle rehearsal mounts this
-     component once before the first real open, so the chunk is fetched and the
-     page's one GL context and program are built there, off the open.
+     fragment shader (`./jelly-glass`) that runs in the globe's WORKER
+     (`./globe-worker`, started by `./globe-worker-host`): the coat's canvas is
+     transferred there once and this thread only posts small messages (size, the
+     theme as computed strings, the scene, the clock, surface frames). The idle
+     rehearsal mounts this component once before the first real open, so the
+     worker and its program are built there, off the open.
 
      The CSS glass stays underneath as the fallback, and the stage only drops it
-     (`data-globe-coat="on"`) once the material has drawn its first frame, so the swap
-     happens inside one frame and there is never a frame with neither. */
+     (`data-globe-coat="on"`) once the coat has drawn its first frame in the worker
+     and faded in over it, so there is never a frame with neither. Where the worker
+     cannot own a WebGL 2 context the host says `css` and the CSS glass simply stays. */
   useEffect(() => {
     let cancelled = false;
-    let loading = false;
-    let glass: JellyGlass | null = null;
-    let factory: typeof import('./jelly-glass') | null = null;
     let coatTimer = 0;
+    let lease: { host: GlobeWorkerHost; release(): void } | null = null;
+    let stopHost: (() => void) | null = null;
+    /** The coat canvas this mount appended (the host's placeholder; a restarted worker brings a new one). */
+    let held: HTMLCanvasElement | null = null;
     const stage = stageRef.current;
     const host = glassRef.current;
     const root = document.documentElement;
     /* The page behind the hub, refracted through the ball. The scene feed (lib/liquid/glass/scene-feed.ts, held by
        RadialShell) keeps the latest snapshot of the page (taken while it was idle, i.e. BEFORE the hub opened); the
-       coat samples it through a ball-lens model at the hub's own blur.
-       Placing it reads layout, so it happens when the globe attaches, resizes, finishes blooming, or a new picture lands,
-       never per frame. */
-    const attachScene = (g: JellyGlass) => {
+       host clones it and transfers the clone to the worker, where the coat samples it through a ball-lens model at the
+       hub's own blur. Placing it reads layout, so it happens when the globe attaches, resizes, finishes blooming, or a
+       new picture lands, never per frame. */
+    const attachScene = (g: GlobeWorkerHost) => {
       const scene = currentScene();
-      if (!stage || !scene || !g.setScene(scene)) return;
+      g.scene(scene);
+      if (!stage || !scene) return;
       const rect = stage.getBoundingClientRect();
       g.place(
         rect.left + rect.width / 2,
@@ -1056,8 +1068,9 @@ export function LiquidGlobe({
       );
     };
     const refreshScene = () => {
-      if (cancelled || !glass?.ready || jellyGlass.current !== glass) return;
-      attachScene(glass);
+      const g = coatHost.current;
+      if (cancelled || !g) return;
+      attachScene(g);
       jellyDirty.current = true;
       dirty.current = true;
     };
@@ -1096,94 +1109,99 @@ export function LiquidGlobe({
     };
     if (ambient) window.addEventListener('scroll', onScroll, { passive: true });
     const stopScene = onSceneChange(refreshScene);
-    const sync = () => {
-      if (cancelled || !host || !stage) return;
-      if (!jellyEligible()) {
-        if (glass?.canvas.parentElement === host) glass.canvas.remove();
-        jellyGlass.current = null;
-        delete stage.dataset.globeCoat;
-        return;
-      }
-      if (!factory) {
-        if (!loading) {
-          loading = true;
-          void import('./jelly-glass')
-            .then((m) => {
-              if (cancelled) return;
-              factory = m;
-              sync();
-            })
-            .catch(() => {
-              /* Keep the CSS fallback if the optional chunk fails. */
-            });
-        }
-        return;
-      }
-      glass = factory.acquireJellyGlass();
-      if (!glass) return;
-      const g = glass;
-      g.onChange = sync;
-      if (!g.ready) {
-        jellyGlass.current = null;
-        delete stage.dataset.globeCoat;
-        return;
-      }
-      // The theme's tokens, resolved through one probe (var() and color-mix() computed by the browser): the ground,
-      // and the Plasmatic Jelly layers' colours — the same tokens the slab services and jelly-material.css draw with.
+    /** The theme's tokens, as computed-style STRINGS: the worker resolves them to numbers, nothing reads a canvas. */
+    const readTheme = (el: HTMLElement): GlobeThemeCss => {
+      // One probe resolves var() and color-mix() through the browser: the ground, and the Plasmatic Jelly layers'
+      // colours — the same tokens the slab services and jelly-material.css draw with.
       const probe = document.createElement('span');
-      host.appendChild(probe);
+      el.appendChild(probe);
       const ps = getComputedStyle(probe);
       const token = (name: string) => {
         probe.style.color = `var(${name})`;
         return ps.color;
       };
-      const bgCss = token('--site-bg');
-      const accentCss = token('--site-accent');
-      const hazeCss = token('--site-jelly-haze');
-      const edgeCss = [token('--gel-edge-r'), token('--gel-edge-g'), token('--gel-edge-b')];
-      const fresnelCss = token('--gel-fresnel');
+      const bg = token('--site-bg');
+      const accent = token('--site-accent');
+      const haze = token('--site-jelly-haze');
+      const edgeR = token('--gel-edge-r');
+      const edgeG = token('--gel-edge-g');
+      const edgeB = token('--gel-edge-b');
+      const fresnel = token('--gel-fresnel');
       probe.remove();
-      const hs = getComputedStyle(host);
+      const hs = getComputedStyle(el);
       const num = (name: string, fallback: number) => {
         const v = parseFloat(hs.getPropertyValue(name));
         return Number.isFinite(v) ? v : fallback;
       };
-      const ink = factory.resolveColor(hs.color || 'rgb(0 0 0)', [0, 0, 0]);
-      const bg = factory.resolveColor(bgCss, [1, 1, 1]);
-      const lum = 0.2126 * bg[0] + 0.7152 * bg[1] + 0.0722 * bg[2];
-      const rgba = factory.resolveRgba;
-      const haze = factory.resolveColor(hazeCss, [0.9, 0.9, 0.95]);
-      g.resize(sizeRef.current, storeDpr());
-      g.palette(
-        {
-          ink,
-          light: lum > 0.5 ? 1 : 0,
-          bg: [bg[0], bg[1], bg[2]],
-          accent: factory.resolveColor(accentCss, [0.16, 0.6, 1]),
-          haze: [haze[0], haze[1], haze[2], num('--site-jelly-haze-pane', 0.14)],
-          quiet: num('--site-jelly-quiet', 0.35),
-          edgeR: rgba(edgeCss[0]!, [1, 0.33, 0.41, 0.16]),
-          edgeG: rgba(edgeCss[1]!, [0.25, 0.78, 0.55, 0.08]),
-          edgeB: rgba(edgeCss[2]!, [0.28, 0.47, 1, 0.16]),
-          fresnel: rgba(fresnelCss, [1, 1, 1, 0.55]),
-          bevelPx: num('--gel-bevel', 6),
-          disperseRPx: num('--gel-disperse-r', -1.5),
-          disperseBPx: num('--gel-disperse-b', 1.5),
-          plasmaPeak: lum > 0.5 ? PLASMA_LOOK.peakLight : PLASMA_LOOK.peakDark,
-        },
-        RIPPLE,
-      );
+      return {
+        ink: hs.color || 'rgb(0 0 0)',
+        bg,
+        accent,
+        haze,
+        edgeR,
+        edgeG,
+        edgeB,
+        fresnel,
+        hazePane: num('--site-jelly-haze-pane', 0.14),
+        quiet: num('--site-jelly-quiet', 0.35),
+        bevelPx: num('--gel-bevel', 6),
+        disperseRPx: num('--gel-disperse-r', -1.5),
+        disperseBPx: num('--gel-disperse-b', 1.5),
+        plasmaPeakLight: PLASMA_LOOK.peakLight,
+        plasmaPeakDark: PLASMA_LOOK.peakDark,
+      };
+    };
+    const detach = () => {
+      window.clearTimeout(coatTimer);
+      if (held && host && held.parentElement === host) held.remove();
+      held = null;
+      coatHost.current = null;
+      postClock.current = () => {};
+      if (stage) delete stage.dataset.globeCoat;
+    };
+    const sync = () => {
+      if (cancelled || !host || !stage) return;
+      if (!jellyEligible()) {
+        detach();
+        return;
+      }
+      if (!lease) {
+        lease = acquireGlobeHost();
+        stopHost = lease.host.subscribe(sync);
+      }
+      const g = lease.host;
+      if (g.status === 'css') {
+        detach();
+        return;
+      }
+      // Size, theme and scene go to the worker as soon as it exists (it holds them until its program links), so the
+      // first frame it draws is already this globe's.
+      g.size(sizeRef.current, storeDpr());
+      g.theme(readTheme(host));
       attachScene(g);
-      const f = jellyFrame;
-      f.ripples.fill(0);
-      for (let i = 3; i < 12; i += 4) f.ripples[i] = -1;
-      f.gx = f.gy = f.pinch = 0;
+      postClock.current = () => g.clock(coatClockState());
+      postClock.current();
+      const canvas = g.coatCanvas;
+      if (held && held !== canvas) detach();
+      if (g.status !== 'ready' || !canvas || !g.drawn) {
+        // Starting (or restarting after a lost context): the CSS glass is the material until the coat has drawn.
+        if (!canvas || g.status !== 'ready') {
+          coatHost.current = null;
+          if (stage.dataset.globeCoat) delete stage.dataset.globeCoat;
+        }
+        if (g.status === 'ready') {
+          // Linked but not drawn yet: let the frame loop send this mount's first surface so the worker draws.
+          coatHost.current = g;
+          jellyDirty.current = true;
+          dirty.current = true;
+        }
+        return;
+      }
       // Re-appending an attached canvas would move it, and a moved node starts its `@starting-style` fade again.
-      const fresh = g.canvas.parentElement !== host;
-      if (fresh) host.appendChild(g.canvas);
-      g.setField(jelly.field, jelly.version);
-      g.render(f);
-      jellyGlass.current = g;
+      const fresh = canvas.parentElement !== host;
+      if (fresh) host.appendChild(canvas);
+      held = canvas;
+      coatHost.current = g;
       jellyDirty.current = true;
       dirty.current = true;
       // The coat FADES in over the CSS glass (`entering`: both are drawn, radial.css), and only once it is fully up
@@ -1194,7 +1212,7 @@ export function LiquidGlobe({
         coatTimer = window.setTimeout(() => {
           if (
             !cancelled &&
-            g.canvas.parentElement === host &&
+            canvas.parentElement === host &&
             stage.dataset.globeCoat === 'entering'
           )
             stage.dataset.globeCoat = 'on';
@@ -1213,14 +1231,11 @@ export function LiquidGlobe({
       window.removeEventListener('scroll', onScroll);
       cancelAnimationFrame(scrollRaf);
       observer.disconnect();
-      // The single cached canvas may already belong to a newer mount.
-      if (glass?.onChange === sync) glass.onChange = null;
-      window.clearTimeout(coatTimer);
-      if (glass?.canvas.parentElement === host) glass.canvas.remove();
-      jellyGlass.current = null;
-      if (stage) delete stage.dataset.globeCoat;
+      stopHost?.();
+      detach();
+      lease?.release();
     };
-  }, [jelly, jellyFrame, ambient]);
+  }, [ambient, coatClockState]);
 
   /* ── The coat's ambient clock ─────────────────────────────────────────────
      What the jelly policy allows the coat's haze to do right now (lib/jelly/tiers.ts — the same budget every slab's
@@ -1237,6 +1252,7 @@ export function LiquidGlobe({
       clock.idleHz = on ? budget.idleClockHz : 0;
       clock.amp = on ? (jellyMotionLevel() === 'calm' ? CALM.amplitude : 1) : 0;
       jellyDirty.current = true;
+      postClock.current();
     };
     read();
     const stopEnv = onJellyEnvChange(read);
@@ -1244,6 +1260,7 @@ export function LiquidGlobe({
       typeof IntersectionObserver === 'function'
         ? new IntersectionObserver((entries) => {
             for (const e of entries) clock.onScreen = e.isIntersecting;
+            postClock.current();
             wakeLoop.current();
           })
         : null;
@@ -1253,6 +1270,7 @@ export function LiquidGlobe({
       stopEnv();
       io?.disconnect();
       clock.onScreen = false;
+      postClock.current();
     };
   }, []);
 
@@ -1266,21 +1284,30 @@ export function LiquidGlobe({
       const now = performance.now();
       const idle = now - lastInputAt.current >= IDLE_AFTER_MS;
       lastInputAt.current = now;
+      // The coat's clock in the worker keeps its engaged rate for as long as someone is there; the host only posts
+      // when the engaged window moves by more than its slack, so this is not a message per pointer move.
+      postClock.current();
       if (idle) wakeLoop.current();
     };
-    const onFocus = () => wakeLoop.current();
+    const onFocus = () => {
+      postClock.current();
+      wakeLoop.current();
+    };
+    const onBlur = () => postClock.current();
     const opts = { passive: true, capture: true } as const;
     window.addEventListener('pointermove', onInput, opts);
     window.addEventListener('pointerdown', onInput, opts);
     window.addEventListener('keydown', onInput, opts);
     window.addEventListener('wheel', onInput, opts);
     window.addEventListener('focus', onFocus);
+    window.addEventListener('blur', onBlur);
     return () => {
       window.removeEventListener('pointermove', onInput, opts);
       window.removeEventListener('pointerdown', onInput, opts);
       window.removeEventListener('keydown', onInput, opts);
       window.removeEventListener('wheel', onInput, opts);
       window.removeEventListener('focus', onFocus);
+      window.removeEventListener('blur', onBlur);
     };
   }, []);
 
@@ -1408,42 +1435,35 @@ export function LiquidGlobe({
      disc. `./self-evert-skin` draws the everting sphere itself as lit glass,
      through the cage's own projection, and radial.css fades the resting glass
      out under it while `data-skin="on"` (and back as the run lands on the round
-     sphere again). The module is fetched with the docked globe; its WebGL
-     context is made on the first run. Where the shader material is not eligible
-     (`jellyEligible`), or WebGL2 will not start, the run is the wireframe over
-     the resting glass, as before. */
-  const skin = useRef<SelfEvertSkin | null>(null);
-  const skinModule = useRef<typeof import('./self-evert-skin') | null>(null);
+     sphere again). It runs in the globe's worker beside the coat (its own
+     `OffscreenCanvas` and WebGL 2 context there, the mesh evaluated there too);
+     the canvas is transferred while nothing is happening, so the first run finds
+     its program built. Where the shader material is not eligible (`jellyEligible`),
+     or the worker cannot draw it, the run is the wireframe over the resting
+     glass, as before. */
   /** Whether the playing run is drawn by the skin. Read by the frame loop. */
   const skinOn = useRef(false);
   useEffect(() => {
     if (!(ambient || evertInPlace)) return;
     let cancelled = false;
-    let idle = 0;
-    void import('./self-evert-skin')
-      .then((m) => {
-        if (cancelled) return;
-        skinModule.current = m;
-        // Warm the skin while nothing is happening, so the first navigation's run finds its program built (it builds
-        // in the background either way; this just starts it before anyone navigates).
-        idle = window.setTimeout(
-          () => {
-            if (!cancelled && !skin.current && jellyEligible()) {
-              skin.current = m.SelfEvertSkin.create();
-              if (!skin.current) skinModule.current = null;
-            }
-          },
-          evertInPlace ? SKIN_WARM_IN_PLACE_MS : SKIN_WARM_MS,
-        );
-      })
-      .catch(() => {
-        /* The run keeps its wireframe-only form. */
-      });
+    const stage = stageRef.current;
+    const idle = window.setTimeout(
+      () => {
+        if (cancelled || !jellyEligible()) return;
+        const lease = acquireGlobeHost();
+        skinLease.current = lease;
+        lease.host.skinCanvas({ persp: PERSP, lens: LENS });
+      },
+      evertInPlace ? SKIN_WARM_IN_PLACE_MS : SKIN_WARM_MS,
+    );
     return () => {
       cancelled = true;
       window.clearTimeout(idle);
-      skin.current?.canvas.remove();
-      skin.current = null;
+      const lease = skinLease.current;
+      skinLease.current = null;
+      const canvas = lease?.host.skinCanvas({ persp: PERSP, lens: LENS });
+      if (canvas && canvas.parentElement === stage) canvas.remove();
+      lease?.release();
       skinOn.current = false;
     };
   }, [ambient, evertInPlace]);
@@ -1451,46 +1471,18 @@ export function LiquidGlobe({
   /** Mount, size and colour the skin for a run. False when the run should go without it. */
   function prepareSkin(): boolean {
     const stage = stageRef.current;
-    const mod = skinModule.current;
-    if (!stage || !mod || !jellyEligible()) return false;
-    let s = skin.current;
-    if (s?.failed) {
-      skin.current = null;
-      skinModule.current = null; // the program will not build here: do not try again
-      return false;
-    }
-    if (!s) {
-      s = mod.SelfEvertSkin.create();
-      if (!s) {
-        skinModule.current = null; // no WebGL2 here: do not try again
-        return false;
-      }
-      skin.current = s;
-    }
-    if (!s.ready) return false;
-    if (s.canvas.parentElement !== stage) stage.insertBefore(s.canvas, cageRef.current);
-    // Once per run, not per frame: a computed-style read is a style flush.
-    s.resize(cageSpan.current, sizeRef.current / 2, storeDpr());
+    const host = skinLease.current?.host;
+    if (!stage || !host || !jellyEligible()) return false;
+    const canvas = host.skinCanvas({ persp: PERSP, lens: LENS });
+    if (!canvas || !host.skinReady) return false;
+    if (canvas.parentElement !== stage) stage.insertBefore(canvas, cageRef.current);
+    // Once per run, not per frame: a computed-style read is a style flush. The colours go to the worker as strings.
+    host.skinSize(cageSpan.current, sizeRef.current / 2, storeDpr());
     const cs = getComputedStyle(stage);
-    const ink = resolveColor(cs.color || 'rgb(0 0 0)', [0, 0, 0, 1], document);
-    const accent = resolveColor(
+    host.skinTheme(
+      cs.color || 'rgb(0 0 0)',
       cs.getPropertyValue('--site-accent').trim() || cs.color,
-      [0.4, 0.5, 1, 1],
-      document,
-    );
-    const bg = resolveColor(
       cs.getPropertyValue('--site-bg').trim() || 'rgb(255 255 255)',
-      [1, 1, 1, 1],
-      document,
-    );
-    s.palette(
-      {
-        ink: [ink[0], ink[1], ink[2]],
-        accent: [accent[0], accent[1], accent[2]],
-        light: luminance(bg) > 0.5 ? 1 : 0,
-      },
-      PERSP,
-      LENS,
     );
     return true;
   }
@@ -2097,42 +2089,44 @@ export function LiquidGlobe({
        Only `transform` genuinely changes every frame, which is the one write
        that is free — it never leaves the compositor. */
     /**
-     * Draw the coat (jelly-glass) if anything it shows changed, or unconditionally with `force` (an ambient haze tick
-     * or a plasma level step). A turn alone does not touch it: a uniform glass ball looks the same at any rotation.
-     * It is held still during the eversion, which owns the GPU for that second. Returns whether it drew.
+     * Hand the coat (jelly-glass, in the worker) this frame's SURFACE if anything it shows changed: the ripples turned
+     * into its screen space, the dough's grab point and pressure, and the dough field when its version moved. A turn
+     * alone sends nothing: a uniform glass ball looks the same at any rotation. The haze and the plasma easing are the
+     * worker's own clock. Held still during the eversion hand-off. The host coalesces to one message per frame.
      */
     let coatDrawnAt = -1;
-    const drawCoat = (now: number, soft: boolean, force: boolean): boolean => {
-      const jg = jellyGlass.current;
-      // Only the mount that holds the shared canvas draws into it.
-      if (!jg || jg.canvas.parentElement !== glassRef.current || everting.current) return false;
+    const drawCoat = (now: number, soft: boolean): boolean => {
+      const g = coatHost.current;
+      // Only the mount that holds the shared canvas drives it.
+      if (!g || g.coatCanvas?.parentElement !== glassRef.current || everting.current) return false;
       if (coatDrawnAt === now) return false;
       const live = soft || waveCount > 0;
-      if (!(force || live || jellyLive.current || jellyDirty.current)) return false;
+      if (!(live || jellyLive.current || jellyDirty.current)) return false;
       // The ripples' impact points, turned by the DRAWN rotation into the
       // material's screen space — the same rotation the cage is drawn at.
       const m = DM;
-      const f = jellyFrame;
+      const ripplesOut = new Array<number>(12);
       for (let i = 0; i < 3; i++) {
         const o = i * 4;
         if (i >= waveCount) {
-          f.ripples[o + 3] = -1;
+          ripplesOut[o] = ripplesOut[o + 1] = ripplesOut[o + 2] = 0;
+          ripplesOut[o + 3] = -1;
           continue;
         }
         const w = waveWin[i];
-        f.ripples[o] = m[0]! * w.bx + m[1]! * w.by + m[2]! * w.bz;
-        f.ripples[o + 1] = m[3]! * w.bx + m[4]! * w.by + m[5]! * w.bz;
-        f.ripples[o + 2] = m[6]! * w.bx + m[7]! * w.by + m[8]! * w.bz;
-        f.ripples[o + 3] = waveAge[i]!;
+        ripplesOut[o] = m[0]! * w.bx + m[1]! * w.by + m[2]! * w.bz;
+        ripplesOut[o + 1] = m[3]! * w.bx + m[4]! * w.by + m[5]! * w.bz;
+        ripplesOut[o + 2] = m[6]! * w.bx + m[7]! * w.by + m[8]! * w.bz;
+        ripplesOut[o + 3] = waveAge[i]!;
       }
-      f.gx = soft ? jelly.gx : 0;
-      f.gy = soft ? jelly.gy : 0;
-      f.pinch = soft ? jelly.pinch : 0;
-      const clock = coatClock.current;
-      f.amp = clock.amp;
-      f.plasma = clock.plasma;
-      jg.setField(jelly.field, jelly.version);
-      jg.render(f);
+      g.surface({
+        ripples: ripplesOut,
+        gx: soft ? jelly.gx : 0,
+        gy: soft ? jelly.gy : 0,
+        pinch: soft ? jelly.pinch : 0,
+        field: jelly.field,
+        fieldVersion: jelly.version,
+      });
       coatDrawnAt = now;
       jellyDirty.current = false;
       jellyLive.current = live;
@@ -2170,7 +2164,7 @@ export function LiquidGlobe({
       }
       // The material redraws while the SURFACE is moving (a ripple, the soft body), plus the one frame it comes to
       // rest on; its own jelly life (haze clock, plasma easing) is driven from step 4b below.
-      drawCoat(now, soft, false);
+      drawCoat(now, soft);
 
       for (let rank = 0; rank < count; rank++) {
         const i = order[rank];
@@ -2242,7 +2236,8 @@ export function LiquidGlobe({
       }
 
       drawCage(now);
-      if (skinOn.current && selfRun.e >= 0) skin.current?.render(selfRun.e, DM, selfRun.fit);
+      if (skinOn.current && selfRun.e >= 0)
+        skinLease.current?.host.skinFrame({ e: selfRun.e, m: Array.from(DM), fit: selfRun.fit });
     };
 
     /**
@@ -2551,30 +2546,13 @@ export function LiquidGlobe({
         dirty.current = false;
       }
 
-      // 4b. The coat's own jelly life (jelly-glass.ts header), on this loop rather than a second one. The dormant
-      //     plasma eases toward its target (press while held, wake while a fine pointer is over the ball, rest
-      //     otherwise) on PLASMA.easeMs; the haze advances on the jelly ambient clock — the engaged rate while the
-      //     ball is touched or pointed at, the idle floor after IDLE_AFTER_MS, nothing when Still, degraded, hidden,
-      //     unfocused or off screen. Either one is a coat-only redraw: the cage and pins are not repainted for it.
-      const target =
-        drag.current.held || drag.current.active
-          ? PLASMA.press
-          : clock.over
-            ? PLASMA.wake
-            : PLASMA.rest;
-      let coatDue = false;
-      if (clock.plasma !== target) {
-        const k = 1 - Math.exp((-dt * 1000) / PLASMA.easeMs);
-        const next = clock.plasma + (target - clock.plasma) * k;
-        clock.plasma = Math.abs(target - next) < 0.004 ? target : next;
-        coatDue = true;
-      }
-      if (tick > 0) {
-        // The haze clock only runs while it is being drawn, so a pause (Still, a hidden tab) resumes in place.
-        jellyFrame.time += tick;
-        coatDue = true;
-      }
-      if (coatDue) drawCoat(now, jelly.active(), true);
+      // 4b. The coat's own jelly life (jelly-glass.ts header) runs in the globe's worker: it eases the dormant plasma
+      //     toward the target this clock state names (press while held, wake while a fine pointer is over the ball,
+      //     rest otherwise) and advances the haze on the same ambient tick grid. This loop only tells it when that
+      //     state changes (the host de-duplicates), and posts the one coalesced frame it built above.
+      postClock.current();
+      coatHost.current?.flush();
+      skinLease.current?.host.flush();
 
       // 5. The dwell ring. It only fills while the pointer is DOWN on a locked-on
       //    pin, so nothing can ever navigate without a deliberate hold-and-release
@@ -2654,7 +2632,6 @@ export function LiquidGlobe({
         wobble.current !== null ||
         soft ||
         jellyLive.current ||
-        clock.plasma !== target ||
         fill.current !== 0 ||
         selfEvert.current !== 0 ||
         everting.current;
@@ -2663,7 +2640,10 @@ export function LiquidGlobe({
         return;
       }
       const at = performance.now();
-      let wait = msToAmbientTick(at, tickHz);
+      // Only the idle drift needs this loop on the ambient tick: the coat's haze ticks in the worker. A globe that is
+      // held still (touched, or a pointer resting over an ambient one) sleeps until something wakes it.
+      const drifts = !touched.current && !hovering.current;
+      let wait = drifts ? msToAmbientTick(at, tickHz) : Infinity;
       const letGo = lastMoveAt.current + AMBIENT_RESUME_MS + 1 - at;
       if (ambient && touched.current && letGo > 0) wait = Math.min(wait, letGo);
       // A sleep restarts `dt` from one nominal frame, so whatever wakes the loop starts from where it was.
@@ -2686,7 +2666,7 @@ export function LiquidGlobe({
       timer = 0;
       wakeLoop.current = () => {};
     };
-  }, [nodes, jelly, jellyFrame, ambient]);
+  }, [nodes, jelly, ambient]);
 
   // An ambient globe holds its drift while the pointer is over it: a pin you are
   // reading or about to click should not slide out from under the cursor. Every
@@ -2698,11 +2678,13 @@ export function LiquidGlobe({
     const enter = (e: PointerEvent) => {
       if (ambient) hovering.current = true;
       coatClock.current.over = e.pointerType !== 'touch' && matchMedia(FINE_POINTER_QUERY).matches;
+      postClock.current();
       wakeLoop.current();
     };
     const leave = () => {
       hovering.current = false;
       coatClock.current.over = false;
+      postClock.current();
       wakeLoop.current();
     };
     // Focus entering or leaving the globe changes whether an ambient globe may let go of its pose (step 3).
@@ -3082,6 +3064,7 @@ export function LiquidGlobe({
       const active = root.getAttribute('data-phase') === 'everting';
       everting.current = active;
       if (active) nextEvertPulse.current = 0;
+      postClock.current();
       wakeLoop.current();
     };
     read();

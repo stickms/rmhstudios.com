@@ -397,7 +397,15 @@ cheapest at:
   back — goes through a ball-lens remap that magnifies the middle and crowds the
   rim, growing with depth (identity at the limb, so the cage never tears). One
   division per back-face sample; the lines stay vector-crisp. Display only.
-- **Light is a shader** (`jelly-glass.ts`, its own lazy chunk, ~3 KB gzip):
+- **The GPU work runs in a worker** (2026-11-08, owner: "keep the webgl globe on a separate thread, separate from
+  the website entirely"). The coat and the self-eversion skin are WebGL 2 contexts on `OffscreenCanvas`es the page
+  transfers once to `globe-worker.ts`; `globe-worker-host.ts` forwards only small messages (size, the theme as
+  computed strings, the coat clock, coalesced surface/skin frames, the cloned scene bitmap) and owns the fallback: no
+  worker WebGL 2, a failed program, a crashed worker or repeated context loss leave the CSS glass globe — never GL on
+  the page's thread (`globe-protocol.ts`; gate `lib/__tests__/globe-off-main-thread.test.ts`). In development
+  `?globe=css` forces the fallback. The cage and the pins stay on the main thread on purpose: they turn every frame
+  with the DOM pins and must stay in lockstep with them.
+- **Light is a shader** (`jelly-glass.ts`, run in the globe's worker):
   a softbox reflection and sky placed in reflection space, Fresnel, a hard
   glint plus a kicker, a hairline at the limb with an absorption band inside it,
   the room seen upside-down through the ball, a crescent caustic on the far inner
