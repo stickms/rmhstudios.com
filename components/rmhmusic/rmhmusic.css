@@ -113,7 +113,11 @@
     --app-scrim: rgb(5 9 18 / 0.6);
     --app-gel-body: rgb(255 255 255 / 0.015);
     --app-gel-depth: rgb(0 0 0 / 0.14);
-    --app-jelly-haze: color-mix(in srgb, var(--app-text) 18%, white);
+    /* The haze stays in the night-paper family (blue ink in the paper), not milky white. */
+    --app-jelly-haze: color-mix(in srgb, var(--app-accent) 30%, var(--app-surface));
+    --jelly-tile: none;
+    /* …and without the material's white cloud tile, which reads as milk on night paper. */
+    --jelly-tile: none;
     --rmm-rule: #2a3b5e;
     --rmm-margin: #6a3a48;
     --rmm-staff: #1f2d4d;
@@ -151,7 +155,7 @@
   --app-scrim: rgb(5 9 18 / 0.6);
   --app-gel-body: rgb(255 255 255 / 0.015);
   --app-gel-depth: rgb(0 0 0 / 0.14);
-  --app-jelly-haze: color-mix(in srgb, var(--app-text) 18%, white);
+  --app-jelly-haze: color-mix(in srgb, var(--app-accent) 30%, var(--app-surface));
   --rmm-rule: #2a3b5e;
   --rmm-margin: #6a3a48;
   --rmm-staff: #1f2d4d;
@@ -337,6 +341,21 @@
   font-family: var(--app-font-display);
 }
 
+/* ── The lesson's input region (FirstNoteLesson.tsx, LessonScreen's placeholder) ─────
+   One box for every state of the lesson below its instruction page: the keys, the input
+   chooser, "listening" for a running mic or MIDI controller, the result card. It is exactly the
+   keyboard's height (the octave bar 2.75rem + 0.5rem gap + the bed 10rem, 12rem from 640px), so
+   the page is the same height whatever the input and before, during and after the first note.
+   Taller content (the chooser) scrolls inside it. */
+.rmm-input-region {
+  height: calc(2.75rem + 0.5rem + 10rem);
+}
+@media (min-width: 640px) {
+  .rmm-input-region {
+    height: calc(2.75rem + 0.5rem + 12rem);
+  }
+}
+
 /* ── The on-screen keyboard (OnScreenKeyboard.tsx) ───────────────────────────
    How many white keys show is decided here, from the keyboard's own width, so the server render
    and the first client render are the same and nothing moves after mount: one more key per 44px,
@@ -389,10 +408,14 @@
   flex: none;
   width: calc(100% / var(--rmm-white-count));
 }
-/* Black keys are placed in white-key units (`--rmm-at`, `--rmm-share`) of the same width. */
+/* Black keys are placed in white-key units (`--rmm-at`, `--rmm-share`) of the same width. One
+   whose right-hand white is past the last visible white (`--rmm-wb` ≥ the count) would be a sliver
+   at the clipped edge: `--rmm-shown` is 0 for it, collapsing its width and border to nothing. */
 .rmm-keys__black {
+  --rmm-shown: clamp(0, (var(--rmm-white-count) - var(--rmm-wb)) * 999, 1);
   left: calc(100% / var(--rmm-white-count) * var(--rmm-at));
-  width: calc(100% / var(--rmm-white-count) * var(--rmm-share));
+  width: calc(100% / var(--rmm-white-count) * var(--rmm-share) * var(--rmm-shown));
+  border-width: calc(1px * var(--rmm-shown));
 }
 /* Focus on a key: the app's accent ring would vanish against the pale keys in dark mode (1.4:1),
    so keys take a two-tone ring inside their own box — a dark ring with a light one within it —

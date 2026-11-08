@@ -53,9 +53,13 @@ export function windowKeys(octave: number): PianoKey[] {
   return out;
 }
 
-/** Whether a key is (at least partly) in view when `whites` white keys show. */
+/**
+ * Whether a key is in view when `whites` white keys show. A black key counts only when the white
+ * key to its right is in view too: the one past the last white would be a sliver at the clipped
+ * edge, so the CSS collapses it (`.rmm-keys__black`, `--rmm-shown`) and it leaves the tab order.
+ */
 export function inView(key: PianoKey, whites: number): boolean {
-  return key.black ? key.whiteBefore <= whites : key.whiteBefore < whites;
+  return key.whiteBefore < whites;
 }
 
 export function clampOctave(octave: number): number {

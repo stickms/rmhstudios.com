@@ -41,6 +41,14 @@ import { cn } from '@/lib/utils';
 import { SECONDARY_BUTTON } from './buttons';
 import { useSoundingNotes } from './useLearnInput';
 
+/**
+ * The octave buttons: icon-only, so their edge is what shows them as controls (`border-bright`,
+ * 3:1 or more in both modes). At either end of the range they are `aria-disabled` rather than
+ * `disabled`, so the button the learner is pressing keeps focus instead of dropping it to <body>
+ * (`shift` already does nothing past the range).
+ */
+const OCTAVE_BUTTON = 'w-11 shrink-0 border-(--app-border-bright) px-0 aria-disabled:opacity-50';
+
 /** How long after the keyboard goes away a stray click is still the lifted finger's. */
 const GHOST_CLICK_MS = 700;
 
@@ -176,9 +184,9 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
         <button
           type="button"
           onClick={() => shift(-1)}
-          disabled={octave <= MIN_OCTAVE}
+          aria-disabled={octave <= MIN_OCTAVE || undefined}
           aria-label={t('keyboard-octave-down', { defaultValue: 'Lower octave' })}
-          className={`${SECONDARY_BUTTON} w-11 shrink-0 px-0`}
+          className={cn(SECONDARY_BUTTON, OCTAVE_BUTTON)}
         >
           <Minus className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -207,9 +215,9 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
         <button
           type="button"
           onClick={() => shift(1)}
-          disabled={octave >= MAX_OCTAVE}
+          aria-disabled={octave >= MAX_OCTAVE || undefined}
           aria-label={t('keyboard-octave-up', { defaultValue: 'Higher octave' })}
-          className={`${SECONDARY_BUTTON} w-11 shrink-0 px-0`}
+          className={cn(SECONDARY_BUTTON, OCTAVE_BUTTON)}
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -254,6 +262,7 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
                 ...(key.black
                   ? ({
                       '--rmm-at': key.whiteBefore - BLACK_SHARE / 2,
+                      '--rmm-wb': key.whiteBefore,
                       '--rmm-share': BLACK_SHARE,
                     } as CSSProperties)
                   : null),

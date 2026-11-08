@@ -39,6 +39,13 @@ describe('on-screen keyboard window', () => {
     }
   });
 
+  it('the CSS collapses a black key past the last white (the sliver)', () => {
+    const css = readFileSync(join(__dirname, '../../../components/rmhmusic/rmhmusic.css'), 'utf8');
+    expect(css).toMatch(
+      /--rmm-shown: clamp\(0, \(var\(--rmm-white-count\) - var\(--rmm-wb\)\) \* 999, 1\);/,
+    );
+  });
+
   it('a window is two octaves from a C', () => {
     const keys = windowKeys(4);
     expect(keys[0]).toEqual({ midi: 60, black: false, whiteBefore: 0 });
@@ -51,8 +58,26 @@ describe('on-screen keyboard window', () => {
   it('knows which keys are in view', () => {
     const keys = windowKeys(4);
     const shown = keys.filter((k) => inView(k, 8)).map((k) => k.midi);
-    // C4 … C5 plus C#5, half of which shows at the right edge.
-    expect(shown).toEqual([60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73]);
+    // C4 … C5; C#5 would be a sliver at the clipped edge, so it is out.
+    expect(shown).toEqual([60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72]);
+    // 10 whites end on E5: D#5 sits between two visible whites, nothing past E5.
+    expect(
+      keys
+        .filter((k) => inView(k, 10))
+        .map((k) => k.midi)
+        .at(-1),
+    ).toBe(76);
+    expect(keys.filter((k) => inView(k, 10)).some((k) => k.midi === 75)).toBe(true);
+    // 12 whites end on G5: G#5 (whiteBefore 12) is out.
+    const twelve = keys.filter((k) => inView(k, 12)).map((k) => k.midi);
+    expect(twelve.at(-1)).toBe(79);
+    expect(twelve).not.toContain(80);
+    // Every black key in view has its right-hand white in view.
+    for (const n of [7, 8, 10, 12, 14]) {
+      for (const k of keys.filter((x) => x.black && inView(x, n))) {
+        expect(k.whiteBefore).toBeLessThan(n);
+      }
+    }
     expect(keys.filter((k) => inView(k, 14))).toHaveLength(24);
   });
 

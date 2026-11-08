@@ -71,18 +71,18 @@ function Shell({
 }
 
 /**
- * The loading placeholder: the same boxes as the "play any note" lesson with the on-screen keys
- * (the default input) — instruction page, staff, octave bar and keys — so loading → loaded moves
- * nothing for the default input. (A mic or MIDI learner gets the input chooser instead of the
- * keys once loaded; which input it is is not known until the profile arrives.) The lesson's hint
- * reserves two lines (`min-h-10`) for the same reason: it differs per input.
+ * The loading placeholder: the same boxes as the lesson — the instruction page (title line, a
+ * three-line hint, the staff) and the input region (`.rmm-input-region`), which the lesson keeps
+ * the same size for every input and every state — so loading → loaded → done moves nothing.
  */
 function LessonSkeleton() {
   return (
     <div aria-hidden="true" className="space-y-4">
       <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
-        <div className="app-skeleton mx-auto h-7 w-40" />
-        <div className="min-h-10">
+        <div className="h-7">
+          <div className="app-skeleton mx-auto h-7 w-40" />
+        </div>
+        <div className="h-15">
           <div className="app-skeleton mx-auto h-5 w-56 max-w-full" />
         </div>
         <div className="mx-auto w-full max-w-64 pt-2">
@@ -90,9 +90,8 @@ function LessonSkeleton() {
           <div className="min-h-9" />
         </div>
       </section>
-      <div className="-mx-2 sm:mx-0">
-        <div className="app-skeleton mb-2 h-11" />
-        <div className="app-skeleton h-40 sm:h-48" />
+      <div className="rmm-input-region">
+        <div className="app-skeleton h-full w-full" />
       </div>
     </div>
   );

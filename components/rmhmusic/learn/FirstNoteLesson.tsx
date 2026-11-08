@@ -17,6 +17,7 @@
  */
 
 import { useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -92,111 +93,139 @@ export function FirstNoteLesson({
 
   const retry = () => perform(send({ type: 'retry' }));
 
-  if (lesson.kind !== 'listening') {
-    const played = lesson.midi;
-    const save = lesson.kind;
-    const name = midiToName(played);
-    return (
-      <section className="rmm-sheet space-y-4 p-5 text-center sm:p-6">
-        {save === 'saved' || save === 'saving' ? (
-          <>
-            <CheckCircle2 className="mx-auto h-10 w-10 text-(--app-success)" aria-hidden="true" />
-            <h2 className="rmm-display text-2xl font-bold text-(--app-text)">
-              {t('lesson-complete', { defaultValue: 'Lesson complete' })}
-            </h2>
-            <p className="text-(--app-text-muted)">
-              {t('first-note-played', { note: name, defaultValue: 'You played {{note}}.' })}
-            </p>
-            <LiveStaff note={played} announce={false} className="max-w-56" />
-            <p
-              className="flex justify-center gap-1"
-              aria-label={t('lesson-stars', {
-                count: 3,
-                defaultValue_one: '{{count}} star',
-                defaultValue: '{{count}} stars',
-              })}
-              role="img"
-            >
-              {[0, 1, 2].map((i) => (
-                <Notehead key={i} kind="filled" className="h-5 w-7 text-(--app-accent)" />
-              ))}
-            </p>
-            <p role="status" className="min-h-5 text-sm text-(--app-text-dim)">
-              {save === 'saving' ? t('lesson-saving', { defaultValue: 'Saving…' }) : null}
-            </p>
-          </>
-        ) : (
-          <div role="alert" className="space-y-3">
-            <p className="font-medium text-(--app-text)">
-              {t('first-note-played', { note: name, defaultValue: 'You played {{note}}.' })}
-            </p>
-            <p className="text-(--app-danger)">
-              {save === 'signed-out'
-                ? t('error-signed-out', {
-                    defaultValue: 'Your session ended. Sign in again to continue.',
-                  })
-                : t('lesson-save-failed', {
-                    defaultValue:
-                      "Couldn't save your progress. Check your connection and try again.",
-                  })}
-            </p>
-            {save === 'signed-out' ? (
-              <Link
-                to="/login"
-                search={{ callbackURL: `/rmhmusic/lesson/${lessonId}` }}
-                className={PRIMARY_BUTTON}
-              >
-                {t('sign-in', { defaultValue: 'Sign in' })}
-              </Link>
-            ) : (
-              <button type="button" onClick={retry} className={PRIMARY_BUTTON}>
-                {t('retry', { defaultValue: 'Try again' })}
-              </button>
-            )}
-          </div>
-        )}
-        <Link
-          to="/rmhmusic"
-          className="block min-h-11 py-2 text-sm font-medium text-(--app-accent)"
+  const done = lesson.kind !== 'listening';
+  const played = done ? lesson.midi : null;
+  const name = played === null ? '' : midiToName(played);
+
+  // The page is one fixed frame in every state — listening on any input, saving, saved, failed —
+  // so nothing below the header ever moves: a title line, a hint reserved at three lines (clamped;
+  // the full text stays in the DOM for screen readers and in `title`), the staff, and the input
+  // region (`.rmm-input-region`, the same box the loading placeholder reserves). What changes is
+  // only what each box holds.
+  const title = !done
+    ? t('first-note-instruction', { defaultValue: 'Play any note' })
+    : lesson.kind === 'saved' || lesson.kind === 'saving'
+      ? t('lesson-complete', { defaultValue: 'Lesson complete' })
+      : t('lesson-not-saved', { defaultValue: 'Not saved yet' });
+  const line = done
+    ? t('first-note-played', { note: name, defaultValue: 'You played {{note}}.' })
+    : input === 'keys'
+      ? t('first-note-hint-keys', {
+          defaultValue: 'Press A, S, D, F, G, H, J or K on your computer keyboard. A is C4.',
+        })
+      : input === 'midi'
+        ? t('first-note-hint-midi', {
+            defaultValue: 'Press any key on your MIDI controller.',
+          })
+        : input === 'mic'
+          ? t('first-note-hint-mic', {
+              defaultValue: 'Play one note on your instrument, or sing one, near the microphone.',
+            })
+          : t('first-note-hint-screen', { defaultValue: 'Tap any key on the piano below.' });
+
+  const back = (
+    <Link
+      to="/rmhmusic"
+      className="inline-flex min-h-11 items-center justify-center px-2 text-sm font-medium text-(--app-accent)"
+    >
+      {t('lesson-back-to-path', { defaultValue: 'Back to your lessons' })}
+    </Link>
+  );
+
+  let region: ReactNode;
+  if (lesson.kind === 'saved' || lesson.kind === 'saving') {
+    region = (
+      <div className="rmm-sheet flex h-full flex-col items-center-safe justify-center-safe gap-2 overflow-y-auto p-4 text-center">
+        <CheckCircle2 className="h-8 w-8 shrink-0 text-(--app-success)" aria-hidden="true" />
+        <p
+          className="flex justify-center gap-1"
+          aria-label={t('lesson-stars', {
+            count: 3,
+            defaultValue_one: '{{count}} star',
+            defaultValue: '{{count}} stars',
+          })}
+          role="img"
         >
-          {t('lesson-back-to-path', { defaultValue: 'Back to your lessons' })}
-        </Link>
+          {[0, 1, 2].map((i) => (
+            <Notehead key={i} kind="filled" className="h-5 w-7 text-(--app-accent)" />
+          ))}
+        </p>
+        <p role="status" className="min-h-5 text-sm text-(--app-text-dim)">
+          {lesson.kind === 'saving' ? t('lesson-saving', { defaultValue: 'Saving…' }) : null}
+        </p>
+        {back}
+      </div>
+    );
+  } else if (done) {
+    region = (
+      <div
+        role="alert"
+        className="rmm-sheet flex h-full flex-col items-center-safe justify-center-safe gap-3 overflow-y-auto p-4 text-center"
+      >
+        <p className="text-sm text-(--app-danger)">
+          {lesson.kind === 'signed-out'
+            ? t('error-signed-out', {
+                defaultValue: 'Your session ended. Sign in again to continue.',
+              })
+            : t('lesson-save-failed', {
+                defaultValue: "Couldn't save your progress. Check your connection and try again.",
+              })}
+        </p>
+        {lesson.kind === 'signed-out' ? (
+          <Link
+            to="/login"
+            search={{ callbackURL: `/rmhmusic/lesson/${lessonId}` }}
+            className={PRIMARY_BUTTON}
+          >
+            {t('sign-in', { defaultValue: 'Sign in' })}
+          </Link>
+        ) : (
+          <button type="button" onClick={retry} className={PRIMARY_BUTTON}>
+            {t('retry', { defaultValue: 'Try again' })}
+          </button>
+        )}
+        {back}
+      </div>
+    );
+  } else if (needsDevice && !inputOn) {
+    // Taller than the region: it scrolls inside it rather than growing the page.
+    region = (
+      <section className="rmm-sheet h-full overflow-y-auto overscroll-contain px-4 py-2">
+        <InputChooser />
       </section>
     );
+  } else if (needsDevice) {
+    region = (
+      <div className="rmm-sheet flex h-full items-center justify-center p-4 text-center">
+        <p className="text-sm text-(--app-text-muted)">
+          {input === 'mic'
+            ? t('first-note-listening-mic', { defaultValue: 'Listening to your microphone.' })
+            : t('first-note-listening-midi', {
+                defaultValue: 'Listening to your MIDI controller.',
+              })}
+        </p>
+      </div>
+    );
+  } else {
+    region = <OnScreenKeyboard className="-mx-2 sm:mx-0" />;
   }
 
   return (
     <div className="space-y-4">
       <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
-        <h2 className="rmm-display text-xl font-semibold text-(--app-text)">
-          {t('first-note-instruction', { defaultValue: 'Play any note' })}
+        <h2
+          title={title}
+          className="rmm-display line-clamp-1 h-7 text-xl font-semibold text-(--app-text)"
+        >
+          {/* Keyed so a new state is a new text node: centred text rewritten in place counts as a layout shift. */}
+          <span key={lesson.kind}>{title}</span>
         </h2>
-        <p className="min-h-10 text-sm text-(--app-text-muted)">
-          {input === 'keys'
-            ? t('first-note-hint-keys', {
-                defaultValue: 'Press A, S, D, F, G, H, J or K on your computer keyboard. A is C4.',
-              })
-            : input === 'midi'
-              ? t('first-note-hint-midi', {
-                  defaultValue: 'Press any key on your MIDI controller.',
-                })
-              : input === 'mic'
-                ? t('first-note-hint-mic', {
-                    defaultValue:
-                      'Play one note on your instrument, or sing one, near the microphone.',
-                  })
-                : t('first-note-hint-screen', { defaultValue: 'Tap any key on the piano below.' })}
+        <p title={line} className="line-clamp-3 h-15 text-sm leading-5 text-(--app-text-muted)">
+          <span key={done ? 'done' : 'hint'}>{line}</span>
         </p>
-        <LiveStaff className="pt-2" />
+        <LiveStaff className="pt-2" note={played ?? undefined} announce={!done} />
       </section>
-
-      {needsDevice && !inputOn ? (
-        <section className="rmm-sheet px-4 py-2">
-          <InputChooser />
-        </section>
-      ) : (
-        (input === 'screen' || input === 'keys') && <OnScreenKeyboard className="-mx-2 sm:mx-0" />
-      )}
+      <div className="rmm-input-region">{region}</div>
     </div>
   );
 }
