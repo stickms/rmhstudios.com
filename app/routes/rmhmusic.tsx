@@ -12,6 +12,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { rmhmusicReturnPath } from '@/lib/rmhmusic/learn/return-path';
 import { RmhMusicStyles } from '@/components/rmhmusic/RmhMusicStyles';
+import { PaperBackdrop } from '@/components/rmhmusic/learn/PaperBackdrop';
 import { useRmhMusicModeRoot } from '@/components/rmhmusic/useRmhMusicMode';
 
 const checkAuth = createServerFn({ method: 'GET' })
@@ -26,13 +27,15 @@ const checkAuth = createServerFn({ method: 'GET' })
  * `.app-theme` is the shared app chrome and `.rmhmusic-theme` its palette and paper
  * (rmhmusic.css). The site theme class is never applied here (THEME_EXCLUDED_ROUTES). Light /
  * dark is resolved by CSS and the pre-paint script before this renders; the hook keeps it in
- * step afterwards (toggle, system changes, client navigation in and out).
+ * step afterwards (toggle, system changes, client navigation in and out). The backdrop sits in
+ * the layout so it carries on, unbroken, from the home into a lesson and back.
  */
 function RmhMusicLayout() {
   useRmhMusicModeRoot();
   return (
     <div className="app-theme rmhmusic-theme">
       <RmhMusicStyles />
+      <PaperBackdrop />
       <Outlet />
     </div>
   );

@@ -1,0 +1,43 @@
+{
+  "id": "rmhmusic",
+  "mood": "A quiet practice notebook: cream staff paper and fountain-pen ink by day, a night manuscript in pale ink by night. Calm, literal, for beginners.",
+  "palette": {
+    "bg": "#F6F0E1",
+    "bgAlt": "#EFE7D4",
+    "surface": "#FCF8EE",
+    "surfaceHover": "#F0E8D5",
+    "ink": "#1A2747",
+    "inkMuted": "#3F4D70",
+    "accent": "#4338CA",
+    "danger": "#B02331",
+    "border": "#C3CFE4",
+    "marginRule": "#E3A7A2",
+    "dark": {
+      "bg": "#0F182B",
+      "surface": "#162238",
+      "ink": "#F2EBD9",
+      "inkMuted": "#C9C1AD",
+      "accent": "#A8B4FF",
+      "border": "#2A3B5E"
+    }
+  },
+  "fonts": {
+    "display": "System book serif (Iowan Old Style, Palatino, Georgia); italic for handwritten-feeling tags",
+    "body": "The app tier's system sans"
+  },
+  "shape": {
+    "radius": "24px cards, 18px controls, 32px hero (the --app-radius scale)",
+    "borderStyle": "1px ruled-line blue, no shadows",
+    "texture": "Paper grain from two faint CSS dot lattices; no raster texture"
+  },
+  "motifs": [
+    "five-line staves",
+    "noteheads, stems, rests and bar lines",
+    "blue ruled lines",
+    "a red-pencil margin rule",
+    "treble clef on the live staff"
+  ],
+  "buttonStyle": "Primary is a filled indigo ink pill with paper-coloured text; secondary is an outlined pill in navy ink.",
+  "backdrop": "A band of staff paper across the top of the app (the staves are CSS); notes, rests and the odd bar line drift slowly left (5-11 px/s), and a note the learner plays pops onto a staff at its pitch in the accent and drifts away. Canvas, pure renderer in lib/rmhmusic/learn/backdrop/scene.ts.",
+  "motion": "Slow drifts only; nothing flashes (a played note fades in over 0.35 s). Jelly motion Still stops the backdrop on one frame; the loop also stops while the tab is hidden or the band is off screen."
+}

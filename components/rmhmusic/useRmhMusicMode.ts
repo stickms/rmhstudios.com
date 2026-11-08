@@ -58,15 +58,18 @@ function apply(mode: Mode) {
   for (const fn of listeners) fn();
 }
 
-function subscribe(fn: () => void) {
+/** Run `fn` whenever the mode changes (for imperative readers such as the backdrop canvas). */
+export function subscribeMode(fn: () => void): () => void {
   listeners.add(fn);
-  return () => listeners.delete(fn);
+  return () => {
+    listeners.delete(fn);
+  };
 }
 
 /** The mode on screen, or null on the server and until the app's root has mounted. */
 export function useMode(): Mode | null {
   return useSyncExternalStore(
-    subscribe,
+    subscribeMode,
     () => current,
     () => null,
   );
