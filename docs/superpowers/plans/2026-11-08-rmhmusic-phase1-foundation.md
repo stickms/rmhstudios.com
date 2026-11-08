@@ -30,6 +30,7 @@ Branch is always `claude/hopeful-bohr-99d1vw`. After a PR merges: `git fetch ori
 - Mobile first: usable at 360px wide, tap targets ≥44px, `.app-page`/`.app-screen` viewport primitives, safe-area insets (components/CLAUDE.md "Full-screen games/apps").
 - Tests: colocated `*.test.ts`, only for pure non-obvious logic (docs/testing.md scope). Run `pnpm exec vitest run <path>`.
 - Old Prisma tables (`RmhMusic*`, `MusicGuess*`) are **NOT dropped or altered**; existing achievements definitions are left untouched.
+- Toolchain: run every command with `PATH=/opt/node24/bin:$PATH` (the repo needs Node ≥24.18; the default `node` is v22). Dependencies are already installed.
 - Every commit passes `pnpm check:consistency` (a failing gate is fixed, never bypassed). Commit messages end with the two attribution trailer lines from the session reminder.
 
 ## Review Focus
@@ -101,14 +102,14 @@ Branch is always `claude/hopeful-bohr-99d1vw`. After a PR merges: `git fetch ori
 **Interfaces:**
 - Consumes: Task 1 `nearestNote`, Task 2 `detectPitch`, Task 3 types/`parseMidiMessage`/`keyToMidi`, `getAudioContext` from `@/lib/shared/platform`.
 - Produces:
-  - `createSegmenter(): { push(frame: { midi: number; cents: number } | null, time: number): NoteEvent[] }` — emits `on` after **3** consecutive frames of the same `midi`, `off` after **4** consecutive `null` frames or when the note changes (off then new on after 3 stable frames). Source `'mic'`, velocity 0.8.
+  - `createSegmenter(): { push(frame: { midi: number; cents: number } | null, time: number): NoteEvent[] }` — emits `on` after **3** consecutive frames of the same `midi`; emits `off` after **4** consecutive `null` frames; a *different* note only replaces the active one once it has itself been stable for 3 consecutive frames, at which point `off` (old) then `on` (new) are emitted together — a shorter blip of another note, or one stray frame, changes nothing and resets only the candidate count. Source `'mic'`, velocity 0.8.
   - `createMicInput(opts?: { onLevel?: (rms: number) => void }): InputAdapter` — `getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })`, analyser `fftSize 2048`, **`setInterval` 25 ms** (no rAF); `stop()` releases tracks and timer. `start()` rejects with `Error` whose `name` is `'NotAllowedError'`/`'NotFoundError'` preserved.
   - `isMidiSupported(): boolean`; `createMidiInput(): InputAdapter & { devices(): { id: string; name: string }[]; onDevicesChange(l: () => void): () => void }` — `requestMIDIAccess({ sysex: false })`, listens to `statechange`, re-binds inputs.
   - `createKeyboardInput(opts?: { octaveShift?: number }): InputAdapter` — window `keydown`/`keyup`; ignores `e.repeat`, modifier combos, and targets that are `input`/`textarea`/`select`/contenteditable.
   - `createScreenInput(): InputAdapter & { press(midi: number, velocity?: number): void; release(midi: number): void }`.
   - `createInputHub(adapters: InputAdapter[]): { subscribe(l: NoteListener): () => void; start(source: InputSource): Promise<void>; stop(source: InputSource): void; active(): InputSource[]; lastError(source: InputSource): Error | null }` — fan-in; `start` failure is recorded in `lastError` (and rethrown), other sources unaffected.
 
-- [ ] **Step 1: Write failing tests**: segmenter — 2 frames of 60 emit nothing, 3rd emits one `on` 60; then 4 `null` frames emit one `off`; 60→62 change emits `off` 60 then (after 3 frames) `on` 62; a single stray 61 frame between 60 frames emits nothing extra. Hub — with two fake adapters, listener gets events from both after `start`; `stop('mic')` stops only that adapter; a fake adapter whose `start` rejects sets `lastError` and does not affect the other.
+- [ ] **Step 1: Write failing tests**: segmenter — 2 frames of 60 emit nothing, 3rd emits one `on` 60; then 4 `null` frames emit one `off`; 60→62 change emits nothing for 2 frames of 62, then `off` 60 + `on` 62 on the 3rd; a single stray 61 frame between 60 frames emits nothing extra. Hub — with two fake adapters, listener gets events from both after `start`; `stop('mic')` stops only that adapter; a fake adapter whose `start` rejects sets `lastError` and does not affect the other.
 - [ ] **Step 2: Run** — expect FAIL.
 - [ ] **Step 3: Implement** all six modules (browser adapters are not unit-tested; keep their logic thin and push decisions into the tested segmenter/parsers).
 - [ ] **Step 4: Run** the two test files — expect PASS; `pnpm exec tsc --noEmit` clean.
@@ -138,18 +139,19 @@ Branch is always `claude/hopeful-bohr-99d1vw`. After a PR merges: `git fetch ori
 
 **Files:**
 - Modify: `prisma/schema.prisma` (add models + back-relations on `User`), create migration `prisma/migrations/<timestamp>_music_learn/migration.sql` via `pnpm db:migrate`
-- Create: `lib/rmhmusic/learn/schemas.ts`, `lib/rmhmusic/learn/xp.ts`, `lib/rmhmusic/learn/progress.server.ts`, `app/routes/api/rmhmusic/learn/profile.ts`, `app/routes/api/rmhmusic/learn/lesson-complete.ts`
-- Test: `lib/rmhmusic/learn/xp.test.ts`
+- Create: `lib/rmhmusic/learn/content/path.ts`, `lib/rmhmusic/learn/schemas.ts`, `lib/rmhmusic/learn/xp.ts`, `lib/rmhmusic/learn/progress.server.ts`, `app/routes/api/rmhmusic/learn/profile.ts`, `app/routes/api/rmhmusic/learn/lesson-complete.ts`
+- Test: `lib/rmhmusic/learn/xp.test.ts`, `lib/rmhmusic/learn/content/path.test.ts`
 
 **Interfaces:**
 - Prisma: `MusicLearnProfile { id cuid, userId @unique → User (Cascade), instrument String @default("piano"), input String @default("screen"), latencyMs Int @default(0), dailyGoal Int @default(1), updatedAt }` `@@map("music_learn_profile")`; `MusicLearnLessonProgress { id cuid, userId → User (Cascade), lessonId String, stars Int @default(0), bestScore Int @default(0), completedAt DateTime?, updatedAt, @@unique([userId, lessonId]) }` `@@map("music_learn_lesson_progress")`.
 - Produces (schemas.ts): `INSTRUMENTS = ['piano','guitar'] as const`; `INPUTS = ['screen','keys','midi','mic'] as const`; zod `profileSchema` (`instrument`, `input` enums, `latencyMs` int −500..500, `dailyGoal` int 1..10) and `lessonCompleteSchema` (`lessonId` string ≤64, `stars` int 0..3, `score` int 0..100).
 - Produces (xp.ts): `xpForCompletion(prevStars: number, nextStars: number): number` = `10 × max(0, nextStars − prevStars)`.
-- Produces (progress.server.ts): `getProfile(userId): Promise<Profile>` (defaults when none); `saveProfile(userId, input): Promise<Profile>`; `completeLesson(userId, input): Promise<{ stars: number; xpAwarded: number; progress: LessonProgressRow[] }>` — validates `lessonId` against `getLesson` from Task 7's `content/path.ts`… **to avoid a forward dependency, Task 6 defines the lesson id check via an injected `isKnownLesson: (id: string) => boolean` parameter; Task 7 supplies it in the route.** Calls `awardXp` (`lib/xp/engine.server.ts`) only when `xpAwarded > 0`, and `checkIn(userId)` (`lib/streak.server.ts`) on every completion; mirror how `app/routes/api/rmhstudy/*` calls them.
+- Produces (content/path.ts): `interface Lesson { id: string; unit: string; title: string; summary: string; mode: 'staff-flashcards'|'keyboard-map'|'fretboard'|'rhythm-basics'|'play-note'; available: boolean }`; `PATH: { id: string; title: string; lessons: Lesson[] }[]` — Unit 1 "Meet the staff & the keys" (lessons: what is a staff, treble clef notes, find middle C, keyboard layout / guitar strings & open notes, first note played); Unit 2 "Rhythm basics" (note values, 4/4 vs 3/4, tap the beat). **All lessons `available: false` in Phase 1 except `play-note` "First note played" (`available: true`).** Content holds ids + English default strings used as `defaultValue`s at render time. `getLesson(id): Lesson | undefined`; `isKnownLesson(id): boolean`.
+- Produces (progress.server.ts): `getProfile(userId): Promise<Profile>` (defaults when none); `saveProfile(userId, input): Promise<Profile>`; `completeLesson(userId, input): Promise<{ stars: number; xpAwarded: number; progress: LessonProgressRow[] }>` — rejects unknown `lessonId` via `isKnownLesson`; calls `awardXp` (`lib/xp/engine.server.ts`) only when `xpAwarded > 0`, and `checkIn(userId)` (`lib/streak.server.ts`) on every completion; mirror how `app/routes/api/rmhstudy/*` calls them.
 - Routes: `GET /api/rmhmusic/learn/profile` → `{ profile, progress }`; `PUT` same path (rateLimit `'write'`, body `profileSchema`); `POST /api/rmhmusic/learn/lesson-complete` (rateLimit `'write'`, body `lessonCompleteSchema`). All `defineHandler`, auth required.
 
-- [ ] **Step 1: Write failing tests** for `xpForCompletion`: `(0,3)===30`, `(1,3)===20`, `(3,3)===0`, `(2,1)===0`, `(0,0)===0`.
-- [ ] **Step 2: Run** `pnpm exec vitest run lib/rmhmusic/learn/xp.test.ts` — FAIL.
+- [ ] **Step 1: Write failing tests**: `xpForCompletion`: `(0,3)===30`, `(1,3)===20`, `(3,3)===0`, `(2,1)===0`, `(0,0)===0`; path: lesson ids unique across units and ≤64 chars, `isKnownLesson('nope')===false`, `isKnownLesson('<the play-note lesson id>')===true`, at least one lesson `available`, every unit has ≥1 lesson.
+- [ ] **Step 2: Run** `pnpm exec vitest run lib/rmhmusic/learn` — FAIL.
 - [ ] **Step 3: Implement** `xp.ts`, schemas, Prisma models + migration (additive only), `progress.server.ts` (stars never decrease; `bestScore` is the max; XP computed from stored vs new stars), and the routes. Unknown `lessonId` → 400; signed out → 401 (handled by `defineHandler`).
 - [ ] **Step 4: Run** the test — PASS; `pnpm exec prisma validate`; `pnpm exec tsc --noEmit`; `pnpm db:migrate` applies cleanly to a throwaway local Postgres if available (else state in the PR that it was only validated).
 - [ ] **Step 5: Commit** `feat(rmhmusic): learner profile and lesson progress`.
@@ -160,22 +162,19 @@ Branch is always `claude/hopeful-bohr-99d1vw`. After a PR merges: `git fetch ori
 
 ## PR C
 
-### Task 7: Path content and learn store
+### Task 7: Learn store
 
 **Files:**
-- Create: `lib/rmhmusic/learn/content/path.ts`, `lib/rmhmusic/learn/store.ts`
-- Modify: `app/routes/api/rmhmusic/learn/lesson-complete.ts` (pass `isKnownLesson`)
-- Test: `lib/rmhmusic/learn/content/path.test.ts`
+- Create: `lib/rmhmusic/learn/store.ts`
+- Test: none (thin client state over tested parts; verified through Tasks 8–9)
 
 **Interfaces:**
-- Produces (path.ts): `interface Lesson { id: string; unit: string; title: string; summary: string; mode: 'staff-flashcards'|'keyboard-map'|'fretboard'|'rhythm-basics'|'play-note'; available: boolean }`; `PATH: { id: string; title: string; lessons: Lesson[] }[]` — Unit 1 "Meet the staff & the keys" (lessons: what is a staff, treble clef notes, find middle C, keyboard layout / guitar strings & open notes, first note played); Unit 2 "Rhythm basics" (note values, 4/4 vs 3/4, tap the beat). **All lessons `available: false` in Phase 1 except `play-note` "First note played" (`available: true`, completes when the learner plays any detected note) so the loop is end-to-end.** `getLesson(id): Lesson | undefined`; `isKnownLesson(id): boolean`.
-- Produces (store.ts): Zustand `useLearnStore` — `{ profile, progress, hub, status: 'idle'|'loading'|'ready'|'error', load(): Promise<void>, setInstrument(i), setInput(i), setLatency(ms), completeLesson(id, stars, score): Promise<void> }`; optimistic update then PUT/POST to the Task 6 routes; creates the hub once (`createInputHub([...])`) lazily on the client only.
+- Consumes: Task 4 `createInputHub`/adapters, Task 6 schemas/routes and `PATH`.
+- Produces (store.ts): Zustand `useLearnStore` — `{ profile, progress, hub, screen /*the createScreenInput() handle*/, status: 'idle'|'loading'|'ready'|'error', load(): Promise<void>, setInstrument(i), setInput(i), setLatency(ms), completeLesson(id, stars, score): Promise<void> }`; optimistic update then PUT/POST to the Task 6 routes; creates the hub once (`createInputHub([...])`) lazily on the client only.
 
-- [ ] **Step 1: Write failing tests**: `PATH` lesson ids are unique across all units; every lesson id ≤64 chars; `isKnownLesson('nope')===false`; at least one lesson `available`; every unit has ≥1 lesson.
-- [ ] **Step 2: Run** `pnpm exec vitest run lib/rmhmusic/learn/content/path.test.ts` — FAIL.
-- [ ] **Step 3: Implement** content (all user-visible text via `t` at render time; content holds ids + English defaults used as `defaultValue`s), the store, and wire `isKnownLesson` into the route.
-- [ ] **Step 4: Run** — PASS; `tsc` clean.
-- [ ] **Step 5: Commit** `feat(rmhmusic): learning path content and store`.
+- [ ] **Step 1: Implement** the store (optimistic updates, rollback + error status on failed requests; hub and `screen` created once, client-side only, never during SSR).
+- [ ] **Step 2:** `tsc --noEmit` and `lint` clean.
+- [ ] **Step 3: Commit** `feat(rmhmusic): learn store`.
 
 ### Task 8: New home and shell
 
@@ -185,7 +184,7 @@ Branch is always `claude/hopeful-bohr-99d1vw`. After a PR merges: `git fetch ori
 
 **Interfaces:**
 - Consumes: `useLearnStore`, `PATH`, `getStreak`-backed data via an existing client hook (find how `RmhStudy`/header shows streak; reuse, don't add an API).
-- Produces: `LearnHome` — header with back-to-builds link (keep the existing labelled exit and its `useBackOrFallback`), streak chip, instrument toggle (piano/guitar — reuse the app-tier segmented control RMHType/RMHStudy settings already use; read `components/shared/app-theme.css` and a sibling's settings UI first, and do not hand-roll one), the unit/lesson list (available lessons are links, unavailable show "Coming soon"), and a "Set up input" button opening Task 9's `InputSetup`.
+- Produces: `LearnHome` — header with back-to-builds link (keep the existing labelled exit and its `useBackOrFallback`), streak chip, instrument toggle (piano/guitar — reuse the app-tier segmented control RMHType/RMHStudy settings already use; read `components/shared/app-theme.css` and a sibling's settings UI first, and do not hand-roll one), the unit/lesson list (available lessons are links, unavailable show "Coming soon"). There is no input-setup button yet — Task 9 adds it.
 
 - [ ] **Step 1:** Implement the screens as a `.app-page` document (scrolls the document on mobile), `--app-*` tokens only, `t()` strings in `c-rmhmusic`; keep `Visualizer`-style dark ground via existing `app-ground`.
 - [ ] **Step 2:** Run `pnpm exec tsc --noEmit && pnpm lint` — clean, no new warnings.
@@ -199,6 +198,7 @@ Branch is always `claude/hopeful-bohr-99d1vw`. After a PR merges: `git fetch ori
 
 **Interfaces:**
 - Consumes: `useLearnStore().hub`, `isMidiSupported`, `createScreenInput` handle (expose via store: `screen: ReturnType<typeof createScreenInput>`).
+- Modify: `components/rmhmusic/learn/LearnHome.tsx` — add a "Set up input" button that opens `InputSetup` in a dialog (use `components/ui` Dialog primitives).
 - Produces: `InputSetup` — choose Screen keys / Computer keys / MIDI controller / Microphone; MIDI row shows device list or "Not supported in this browser (iPhone/iPad Safari)"; mic row shows a live level bar and the detected note name + cents; permission/no-device errors from `hub.lastError` shown as plain messages with "Use on-screen keys instead". `LatencyCalibration` — plays 8 clicks via `getAudioContext()`; learner taps/plays along; stores the median offset (ms) via `setLatency`; skippable. `OnScreenKeyboard` — touch/pointer piano of 2 octaves C4–B5, `touch-action: none`, calls `screen.press/release`, labelled with note names. `FirstNoteLesson` — shows an instruction and completes (3 stars) on the first `on` event from any enabled input, then `completeLesson`.
 
 - [ ] **Step 1:** Implement; hub subscriptions are cleaned up on unmount; mic/MIDI start only on explicit user click (user-gesture requirement on iOS).
