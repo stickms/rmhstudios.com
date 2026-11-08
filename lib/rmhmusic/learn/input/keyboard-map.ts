@@ -21,8 +21,15 @@ const KEY_TO_MIDI: ReadonlyMap<string, number> = new Map([
   ['KeyK', 72], // C5
 ]);
 
-/** MIDI note for a `KeyboardEvent.code`, shifted by whole octaves; null if unmapped. */
+/**
+ * MIDI note for a `KeyboardEvent.code`, shifted by whole octaves. Null if the
+ * key is unmapped, the shift is not a whole number of octaves, or the shifted
+ * note is not an integer in 0..127 (null rather than clamping: a clamped note
+ * would be a wrong pitch that still sounds plausible).
+ */
 export function keyToMidi(code: string, octaveShift = 0): number | null {
   const base = KEY_TO_MIDI.get(code);
-  return base === undefined ? null : base + octaveShift * 12;
+  if (base === undefined || !Number.isInteger(octaveShift)) return null;
+  const midi = base + octaveShift * 12;
+  return Number.isInteger(midi) && midi >= 0 && midi <= 127 ? midi : null;
 }

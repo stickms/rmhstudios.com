@@ -35,6 +35,25 @@ describe('keyToMidi', () => {
     expect(keyToMidi('KeyQ', 1)).toBeNull();
   });
 
+  it('returns null when the shifted note leaves the MIDI range', () => {
+    expect(keyToMidi('KeyK', 5)).toBeNull();
+    expect(keyToMidi('KeyA', -6)).toBeNull();
+    expect(keyToMidi('KeyA', 10)).toBeNull();
+  });
+
+  it('returns null for a NaN or fractional octave shift', () => {
+    expect(keyToMidi('KeyA', Number.NaN)).toBeNull();
+    expect(keyToMidi('KeyA', 1.5)).toBeNull();
+    expect(keyToMidi('KeyA', 0.5)).toBeNull();
+    expect(keyToMidi('KeyA', Infinity)).toBeNull();
+  });
+
+  it('still returns notes at the edges of the valid range', () => {
+    expect(keyToMidi('KeyA', 5)).toBe(120);
+    expect(keyToMidi('KeyK', 4)).toBe(120);
+    expect(keyToMidi('KeyA', -5)).toBe(0);
+  });
+
   it('does not match inherited object keys', () => {
     expect(keyToMidi('toString')).toBeNull();
     expect(keyToMidi('constructor')).toBeNull();
