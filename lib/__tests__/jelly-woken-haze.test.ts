@@ -4,7 +4,8 @@
  * The haze no longer moves on its own. A transform-only layer on each glass role's own `::after` (no node injected by
  * JavaScript) carries NO animation at rest — not even a paused one, which Blink still counts as a current transform
  * animation and promotes to its own compositor layer — and gets `animation` only while its host is hovered or holds
- * focus, starting from the identity frame (no phase delay). `still` and no-hover devices get no motion; `calm` is
+ * focus, starting from the identity frame (no phase delay). Since Task 11 it has no box at rest either (`display:
+ * none`): a box only while woken, faded in from 0. `still` and no-hover devices get no motion; `calm` is
  * slower (`--jelly-tempo`) and fainter (`--jelly-amp`). These are CSS-text assertions, like the N3 gate in
  * site-infinite-animation.test.ts.
  *
@@ -141,6 +142,31 @@ describe('the woken haze layer', () => {
     expect(Number(decl(body, 'z-index'))).toBeLessThan(0);
   });
 
+  /**
+   * Task 11 (cross-engine profiling, 2026-11-08): a resting layer with five gradients on every host, even with no
+   * animation, was re-rasterised on every scroll frame by Firefox's WebRender on a software rasteriser (/jelly scroll
+   * 58 → 5 fps at p95). So at rest the layer has no box at all: `display: none` in the base rule, a box only under the
+   * wake selectors, faded in from 0 by `@starting-style` and out by a discrete `display` transition.
+   */
+  it('paints nothing at rest: no box until woken, faded in from 0', () => {
+    expect(decl(BASE!.body, 'display'), 'the resting layer has no box').toBe('none');
+    const boxed = HAZE_RULES.filter((r) => {
+      const d = decl(r.body, 'display');
+      return d !== undefined && !/^none\b/.test(d);
+    });
+    expect(
+      boxed.map((r) => r.selectors.join(', ')),
+      'only the wake rule gives the layer a box',
+    ).toHaveLength(1);
+    expect([...boxed[0].selectors].sort()).toEqual([...WAKE].sort());
+    expect(boxed[0].at.some((a) => a.startsWith('@starting-style'))).toBe(false);
+    const enter = HAZE_RULES.filter((r) => r.at.some((a) => a.startsWith('@starting-style')));
+    expect(enter.length, 'an @starting-style rule fades the woken layer in').toBe(1);
+    expect([...enter[0].selectors].sort()).toEqual([...WAKE].sort());
+    expect(decl(enter[0].body, 'opacity')).toBe('0');
+    expect(decl(BASE!.body, 'transition')).toMatch(/\bdisplay\b.*\ballow-discrete\b/);
+  });
+
   it('carries no animation at rest, in any layer or at-rule (not even a paused one)', () => {
     expect(HAZE_RULES.length).toBeGreaterThan(5);
     const resting = HAZE_RULES.filter(
@@ -174,7 +200,8 @@ describe('the woken haze layer', () => {
     const wake = HAZE_RULES.find((r) => attaches(r.body))!;
     expect(decl(BASE!.body, '--jelly-drift-dur')).toMatch(/var\(--jelly-tempo, 1\)/);
     expect(decl(wake.body, 'animation')).toMatch(/var\(--jelly-drift-dur\)/);
-    expect(decl(BASE!.body, 'opacity')).toMatch(/var\(--jelly-amp, 1\)/);
+    // The resting layer has no box (opacity 0, the fade's end); the woken one is the one calm makes fainter.
+    expect(decl(wake.body, 'opacity')).toMatch(/var\(--jelly-amp, 1\)/);
   });
 
   it('has no scroll-driven variant (it would hold a running animation on every card)', () => {

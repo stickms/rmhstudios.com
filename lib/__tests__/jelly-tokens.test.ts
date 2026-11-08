@@ -209,7 +209,13 @@ describe('#989 CSS gel layers (the non-shader tier)', () => {
     expect(flat).toContain(
       'inset 0 0 var(--gel-feather, 0px) calc(1px - min(var(--gel-feather, 0px), 1px)) var(--gel-fresnel, transparent)',
     );
-    expect(flat).toContain('var(--gel-edge, 0 0 0 0 transparent)');
+    // `--gel-edge` stays the list the jelly-coverage.css hosts use. The static rim (§4) draws `--gel-glow` since
+    // Task 11: the same lip as ONE inset shadow (seven insets per host were the WebKit/Firefox software-raster cost),
+    // still built from the bevel, Fresnel and red/blue edge tokens.
+    expect(flat).toContain(
+      '--gel-glow: inset 0 0 calc(var(--gel-bevel, 4px) * var(--gel-shoulder, 1) + 1px) 1px color-mix(in srgb, var(--gel-fresnel, transparent) 80%, color-mix(in srgb, var(--gel-edge-r, transparent), var(--gel-edge-b, transparent)))',
+    );
+    expect(flat).toContain('box-shadow: var(--gel-glow, 0 0 0 0 transparent);');
   });
 });
 
