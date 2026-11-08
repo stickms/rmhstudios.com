@@ -38,8 +38,14 @@ const DARK_QUERY = '(prefers-color-scheme: dark)';
 
 let current: Mode | null = null;
 const listeners = new Set<() => void>();
+/**
+ * A choice made this visit that storage would not keep (blocked or full): it stands in for the
+ * stored value, so a later system light/dark change does not undo it.
+ */
+let unsaved: string | null = null;
 
 function readStored(): string | null {
+  if (unsaved !== null) return unsaved;
   try {
     return localStorage.getItem(MODE_STORAGE_KEY);
   } catch {
@@ -79,8 +85,10 @@ export function useMode(): Mode | null {
 export function setMode(mode: Mode): void {
   try {
     localStorage.setItem(MODE_STORAGE_KEY, serializeMode(mode));
+    unsaved = null;
   } catch {
-    // The choice still applies until the page is closed.
+    // The choice still applies, and holds, until the page is closed.
+    unsaved = serializeMode(mode);
   }
   apply(mode);
 }
