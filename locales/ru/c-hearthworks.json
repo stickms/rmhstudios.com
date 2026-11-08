@@ -223,5 +223,17 @@
   "zone-homes": "Дома",
   "zone-market": "Магазины",
   "zone-workshop": "Мастерские",
-  "quit": "Quit"
+  "quit": "Quit",
+  "main-menu": "Main menu",
+  "menu-aria": "Hearthworks main menu",
+  "menu-continue": "Continue",
+  "menu-continue-hint": "Pick up where you left off",
+  "menu-fig": "Fig. — Bird’s-eye view of a château and formal garden",
+  "menu-kicker": "No. 5 · Sow any season",
+  "menu-nav": "Menu",
+  "menu-quit-hint": "Back to all games",
+  "menu-start": "Start building",
+  "menu-start-hint": "Found a town on a floating island",
+  "menu-tagline": "Found a town. Plan it from above.",
+  "menu-together-hint": "Build side by side with friends"
 }

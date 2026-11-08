@@ -13,9 +13,11 @@ import { Check, Volume2, VolumeX, Music, Music2 } from "lucide-react";
 interface MenuOverlayProps {
   open: boolean;
   onClose: () => void;
+  /** Return to the main menu (the save persists; the run stays paused underneath). */
+  onMainMenu: () => void;
 }
 
-export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
+export function MenuOverlay({ open, onClose, onMainMenu }: MenuOverlayProps) {
   const { t } = useTranslation("c-house-always-wins");
   const [musicVol, setMusicVol] = useState(() => MusicManager.getVolume());
   const [musicMuted, setMusicMuted] = useState(() => MusicManager.isMuted());
@@ -198,12 +200,18 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
           <div>{t("menu-ctl-menu", { defaultValue: "Menu" })} — M / Esc</div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={onClose}
             className="flex-1 rounded-lg border border-[#d4a054]/30 bg-[#d4a054]/10 py-2 pointer-coarse:min-h-11 font-mono text-sm text-[#f0c674] transition-colors hover:bg-[#d4a054]/20"
           >
             {t("menu-resume", { defaultValue: "Resume" })}<span className="[@media(pointer:coarse)]:hidden"> [M]</span>
+          </button>
+          <button
+            onClick={onMainMenu}
+            className="rounded-lg border border-[#d4a054]/30 bg-black/30 px-3 py-2 pointer-coarse:min-h-11 font-mono text-xs text-[#cabba0] transition-colors hover:bg-white/5"
+          >
+            {t("menu-main-menu", { defaultValue: "Main menu" })}
           </button>
           <button
             onClick={confirmReset}

@@ -154,11 +154,13 @@ export const IMAGE_VARIANTS: Readonly<Record<string, ImageVariant>> = {
   "/images/hearthworks/banner.webp": { hash: 'bb725895', widths: [320, 640, 960, 1280] },
   "/images/hearthworks/icon-512.png": { hash: '656722ad', widths: [320] },
   "/images/hearthworks/logo.png": { hash: 'da86d01d', widths: [320, 640, 960] },
+  "/images/hearthworks/menu-plate.webp": { hash: '5b0729ec', widths: [320, 640, 960, 1280] },
   "/images/merch-mug.jpg": { hash: '96167d86', widths: [320, 640, 960] },
   "/images/merch-stickers.jpg": { hash: '2cae6ca9', widths: [320, 640, 960] },
   "/images/merch-tee.jpg": { hash: 'ef0d99f7', widths: [320, 640, 960] },
   "/images/screenshots/feed-wide.png": { hash: '92ee7dcb', widths: [320, 640, 960] },
   "/images/screenshots/games-narrow.png": { hash: 'bc390b5c', widths: [320, 640] },
+  "/images/temple-of-joy/figure.webp": { hash: 'a0670138', widths: [320, 640] },
 };
 
 /**
