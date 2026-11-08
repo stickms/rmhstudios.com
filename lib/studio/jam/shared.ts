@@ -57,6 +57,10 @@ export const jamProjectSchema = z.object({
 });
 export type JamProject = z.infer<typeof jamProjectSchema>;
 
+/** Jam room codes: 6 characters from an alphabet with no 0/O/1/I. */
+export const JAM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export const JAM_CODE_LENGTH = 6;
+
 export const jamCodeSchema = z.object({
   code: z
     .string()
