@@ -248,6 +248,22 @@ things drive all of it, and neither is a timer:
   most-complained-about thing in the game.
 - **The music** (`V7`, the stage backdrops) — see below.
 
+### The margins, and the notes
+
+On a wide monitor the 16:9 playfield leaves a strip of ink either side. `SideWaves.tsx`
+fills it with the track, read live from an `AnalyserNode` tapped off the music's gain
+stage (so uploaded and old songs behave the same): a halftone field of square pixels, a
+turning A / B record per side that thumps on the kick, the spectrum as line-screened
+bars with held-peak ticks, a "slam" column at the field's edge and pixel sparks on each
+kick, the live waveform as a trace, a ruler that scrolls with the energy, song progress
+down the outer edge and a little telemetry. It is gated like the stage backdrop
+(performance tier, Reduced Flash, Effect Intensity) and is idle at rest: with nothing
+sounding it stops asking for animation frames and polls on a 4 Hz timer.
+
+The default note is a plain circle in the lane's ink with a paper pip (`dot`). **Pixel**
+builds it from squares, **Record** is the groove-ringed 45 with a stem and a flag per
+subdivision, **Notation** the engraved notehead; all keep the same hit target.
+
 ### Where a backdrop's audio comes from
 
 **Nothing runs an FFT at play time, and there is no `AnalyserNode` on the audio

@@ -57,6 +57,7 @@ import {
   MIN_LANE_COVER,
 } from '@/lib/slice-it/constants';
 import { judge } from '@/lib/slice-it/scoring';
+import { SideWaves } from './SideWaves';
 
 // Fallback palette (the live colours are read from the lane palette and the --slice-* tokens at render time)
 const COLORS = {
@@ -427,6 +428,113 @@ function drawDisc(
 }
 
 /**
+ * The plain disc: a solid circle in the lane's ink with a paper pip. The quietest
+ * body the game has, so what stands out is where it is, not what it is.
+ */
+function drawDot(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+  color: string,
+  paper: string,
+  dpr: number,
+): void {
+  const key = `dot|${size}|${color}|${paper}|${dpr}`;
+  let sprite = noteSprites.get(key);
+  if (!sprite) {
+    const side = Math.ceil(size * dpr) + 4;
+    sprite = document.createElement('canvas');
+    sprite.width = side;
+    sprite.height = side;
+    const sctx = sprite.getContext('2d');
+    if (!sctx) return;
+    sctx.scale(dpr, dpr);
+    const c = side / dpr / 2;
+    const r = size / 2;
+    sctx.fillStyle = color;
+    sctx.beginPath();
+    sctx.arc(c, c, r, 0, Math.PI * 2);
+    sctx.fill();
+    sctx.fillStyle = paper;
+    sctx.beginPath();
+    sctx.arc(c, c, Math.max(2, r * 0.16), 0, Math.PI * 2);
+    sctx.fill();
+    if (noteSprites.size >= NOTE_SPRITE_LIMIT) noteSprites.clear();
+    noteSprites.set(key, sprite);
+  }
+  const span = sprite.width / dpr;
+  ctx.drawImage(sprite, cx - span / 2, cy - span / 2, span, span);
+}
+
+/**
+ * The same disc as square pixels: the circle sampled on a grid, every cell whose
+ * centre falls inside it filled, and the middle cell in paper. Hard-edged like
+ * everything else in the print, and unmistakably not a note.
+ */
+function drawPixelDot(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+  color: string,
+  paper: string,
+  dpr: number,
+): void {
+  const key = `pixel|${size}|${color}|${paper}|${dpr}`;
+  let sprite = noteSprites.get(key);
+  if (!sprite) {
+    const side = Math.ceil(size * dpr) + 4;
+    sprite = document.createElement('canvas');
+    sprite.width = side;
+    sprite.height = side;
+    const sctx = sprite.getContext('2d');
+    if (!sctx) return;
+    sctx.scale(dpr, dpr);
+    const c = side / dpr / 2;
+    const r = size / 2;
+    // An odd number of cells across, so there is a middle cell to put the pip in.
+    const cells = Math.max(7, Math.round(size / 4) | 1);
+    const cell = size / cells;
+    const origin = c - size / 2;
+    sctx.fillStyle = color;
+    for (let iy = 0; iy < cells; iy++) {
+      for (let ix = 0; ix < cells; ix++) {
+        const px = origin + (ix + 0.5) * cell - c;
+        const py = origin + (iy + 0.5) * cell - c;
+        if (px * px + py * py <= r * r) {
+          sctx.fillRect(origin + ix * cell, origin + iy * cell, Math.ceil(cell * dpr) / dpr, Math.ceil(cell * dpr) / dpr);
+        }
+      }
+    }
+    const mid = (cells - 1) / 2;
+    sctx.fillStyle = paper;
+    sctx.fillRect(origin + mid * cell, origin + mid * cell, cell, cell);
+    if (noteSprites.size >= NOTE_SPRITE_LIMIT) noteSprites.clear();
+    noteSprites.set(key, sprite);
+  }
+  const span = sprite.width / dpr;
+  ctx.drawImage(sprite, cx - span / 2, cy - span / 2, span, span);
+}
+
+/** Paints a tap's body for whichever printed shape the skin asked for. */
+function drawNoteBody(
+  ctx: CanvasRenderingContext2D,
+  shape: NoteShape,
+  cx: number,
+  cy: number,
+  size: number,
+  color: string,
+  paper: string,
+  ink: string,
+  dpr: number,
+): void {
+  if (shape === 'dot') drawDot(ctx, cx, cy, size, color, paper, dpr);
+  else if (shape === 'pixel') drawPixelDot(ctx, cx, cy, size, color, paper, dpr);
+  else drawDisc(ctx, cx, cy, size, color, paper, ink, dpr);
+}
+
+/**
  * A struck disc, cut in two on the slice and sliding apart as it fades.
  *
  * Two clips of the same sprite along a line steeper than the lane — the same device
@@ -435,6 +543,7 @@ function drawDisc(
  */
 function drawDiscCut(
   ctx: CanvasRenderingContext2D,
+  shape: NoteShape,
   cx: number,
   cy: number,
   size: number,
@@ -468,7 +577,7 @@ function drawDiscCut(
     }
     ctx.closePath();
     ctx.clip();
-    drawDisc(ctx, cx, cy, size, color, paper, ink, dpr);
+    drawNoteBody(ctx, shape, cx, cy, size, color, paper, ink, dpr);
     ctx.restore();
   };
   half(-1);
@@ -744,6 +853,8 @@ function traceNoteBody(
       // reads as notation rather than as a circle that happens to be squashed.
       ctx.ellipse(cx, cy, size * 0.58, size * 0.42, -0.36, 0, Math.PI * 2);
       break;
+    case 'dot':
+    case 'pixel':
     case 'disc':
     case 'circle':
       ctx.arc(cx, cy, half, 0, Math.PI * 2);
@@ -2839,7 +2950,7 @@ export function GameCanvas() {
               Boolean(isHeldActive),
               dpr,
             );
-            drawDisc(ctx, nx, ny, BAR_H, color, theme.paper, theme.ink, dpr);
+            drawNoteBody(ctx, skin.noteShape, nx, ny, BAR_H, color, theme.paper, theme.ink, dpr);
           } else if (remainingDuration > 0) {
             const len = remainingDuration * PPS;
             ctx.fillStyle = isHeldActive ? theme.holdTrailHeld : theme.holdTrail;
@@ -2964,9 +3075,9 @@ export function GameCanvas() {
           // there is no halo, just the body and the rim.
           if (groove) {
             if (cutProgress >= 0) {
-              drawDiscCut(ctx, nx, ny, size, color, theme.paper, theme.ink, dpr, cutProgress);
+              drawDiscCut(ctx, skin.noteShape, nx, ny, size, color, theme.paper, theme.ink, dpr, cutProgress);
             } else {
-              drawDisc(ctx, nx, ny, size, color, theme.paper, theme.ink, dpr);
+              drawNoteBody(ctx, skin.noteShape, nx, ny, size, color, theme.paper, theme.ink, dpr);
             }
           }
           ctx.save();
@@ -3462,7 +3573,11 @@ export function GameCanvas() {
     // Column below `lg` so the opponent board can sit as a strip ABOVE the
     // playfield; a row above it so the board is the familiar right-hand column.
     // As a row at every width, that 288px column was most of a 360px phone.
-    <div className="flex flex-col lg:flex-row w-full h-full bg-slice-bg">
+    <div className="relative flex flex-col lg:flex-row w-full h-full bg-slice-bg">
+      {/* The margins either side of the 16:9 field, filled with the music. Behind
+          everything, and only while the field is locked to its ratio in landscape —
+          anywhere else there is no margin to fill. */}
+      <SideWaves stageRef={wrapperRef} enabled={lockAspect && !isPortrait} />
       {/* Game Area Container - Flex Grow.
           Landscape used `aspect-video` capped at `min(1400px, (100vh - 6rem) * 16/9)`
           — a hand-derived fit with two problems. `100vh` on a phone is the
@@ -3496,7 +3611,7 @@ export function GameCanvas() {
           seeing further up the lane than an opponent is exactly the advantage
           the lock exists to deny. */}
       <div
-        className={`w-full min-w-0 flex-1 ${
+        className={`relative z-10 w-full min-w-0 flex-1 ${
           !lockAspect
             ? ''
             : isPortrait
