@@ -1,33 +1,27 @@
 /**
  * The microphone never outlives the screen that opened it. Every mic start in
- * the learn UI goes through `startMic`, which remembers a start still waiting
- * on its permission prompt, and every screen that can start it binds
- * `bindMicRelease`, which stops it when the page is hidden, on `pagehide`, and
- * when the screen unmounts. Nothing here restarts the mic (the learner does,
- * with a click) or touches the saved input preference: these are automatic
- * stops of the device, not a change of choice.
+ * the learn UI goes through `startMic`, and every screen that can start it
+ * binds `bindMicRelease`, which stops it when the page is hidden, on
+ * `pagehide`, and when the screen unmounts. Nothing here restarts the mic (the
+ * learner does, with a click) or touches the saved input preference: these are
+ * automatic stops of the device, not a change of choice.
  *
- * Pure over the `InputHub` interface and two event targets, so it is tested
- * with fakes; the hooks pass the real `document` and `window`.
+ * "In use" is the hub's own lifecycle phase for the mic (`starting` covers a
+ * start still waiting on its permission prompt), so there is no counter here
+ * to drift from it. Pure over the `InputHub` interface and two event targets,
+ * so it is tested with fakes; the hooks pass the real `document` and `window`.
  */
 import type { InputHub } from './hub';
 
-/** Mic starts still in flight, per hub (a start waiting on the permission prompt). */
-const pending = new WeakMap<InputHub, number>();
-
-/** Start the hub's mic, tracking the start until it settles. Rejects as `hub.start` does. */
-export async function startMic(hub: InputHub): Promise<void> {
-  pending.set(hub, (pending.get(hub) ?? 0) + 1);
-  try {
-    await hub.start('mic');
-  } finally {
-    pending.set(hub, (pending.get(hub) ?? 1) - 1);
-  }
+/** Start the hub's mic. Rejects as `hub.start` does. */
+export function startMic(hub: InputHub): Promise<void> {
+  return hub.start('mic');
 }
 
 /** True while the mic is running or a start of it is pending. */
 export function micInUse(hub: InputHub): boolean {
-  return (pending.get(hub) ?? 0) > 0 || hub.active().includes('mic');
+  const phase = hub.phase('mic');
+  return phase === 'starting' || phase === 'active';
 }
 
 /** Stop the mic if it is running or starting; returns whether it did. Never touches other sources. */
@@ -41,7 +35,7 @@ export interface MicReleaseEnv {
   hub: InputHub;
   doc: Pick<Document, 'visibilityState' | 'addEventListener' | 'removeEventListener'>;
   win: Pick<Window, 'addEventListener' | 'removeEventListener'>;
-  /** Called after an automatic stop, so the UI can re-read `hub.active()`. */
+  /** Called after an automatic stop. */
   onRelease?: () => void;
 }
 
