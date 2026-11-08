@@ -23,6 +23,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { CSS_SIZE_FALLBACK_PX } from '@/lib/jelly/soft-policy';
 import { GLOBE_SELECTOR } from '@/lib/jelly/tiers';
 
 const ROOT = process.cwd();
@@ -74,8 +75,10 @@ function rules(css: string): Rule[] {
   }
   return out;
 }
-const decl = (body: string, prop: string) =>
-  new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`).exec(body)?.[1]?.trim().replace(/\s+/g, ' ');
+const decl = (body: string, prop: string) => {
+  const v = new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`).exec(body)?.[1];
+  return v === undefined ? undefined : flat(v);
+};
 
 const MATERIAL = rules(read('app/jelly-material.css'));
 const GLOBALS = rules(read('app/globals.css'));
@@ -86,6 +89,9 @@ const SCOPE_HOVER = "html:not(.native-material, [data-game-state='playing'], .pe
 const FINE = '@media (hover: hover) and (pointer: fine)';
 const RELEASE = 'scale var(--spring-release-dur) var(--spring-release)';
 const PRESS = 'scale var(--spring-press-dur) var(--spring-press)';
+/** Every pose is capped by the host's size (`--jelly-s`, lib/jelly/pointer-vars.ts) to the 4 px edge bound. */
+const capped = (token: string, up: boolean) =>
+  `${up ? 'min' : 'max'}(var(${token}), calc(1 ${up ? '+' : '-'} var(--jelly-edge-reach) / var(--jelly-s, ${CSS_SIZE_FALLBACK_PX})))`;
 
 /** The rest rule: the one rule that puts the release spring on the hook. Its selector is SCOPE + HOST. */
 const REST = MATERIAL.filter((r) => decl(r.body, '--jelly-spring-t') === RELEASE);
@@ -194,7 +200,7 @@ describe('the CSS soft body (app/jelly-material.css §8)', () => {
   it('plumps cards and dents controls on hover, fine pointers only, never under perf-lite or app high contrast', () => {
     const card = ruleFor(MATERIAL, `${SCOPE_HOVER}${HOST}:not(.app-high-contrast *):hover`, FINE);
     expect(card).toHaveLength(1);
-    expect(decl(card[0].body, 'scale')).toBe('var(--jelly-hover-plump)');
+    expect(decl(card[0].body, 'scale')).toBe(capped('--jelly-hover-plump', true));
     const dent = MATERIAL.filter(
       (r) =>
         r.at.some((a) => a.includes(FINE)) &&
@@ -205,7 +211,7 @@ describe('the CSS soft body (app/jelly-material.css §8)', () => {
         ),
     );
     expect(dent).toHaveLength(1);
-    expect(decl(dent[0].body, 'scale')).toBe('var(--jelly-hover-dent)');
+    expect(decl(dent[0].body, 'scale')).toBe(capped('--jelly-hover-dent', false));
     // No hover pose anywhere else: touch never plumps.
     const poses = MATERIAL.filter((r) => /var\(--jelly-hover-/.test(decl(r.body, 'scale') ?? ''));
     expect(poses.every((r) => r.at.some((a) => a.includes(FINE)))).toBe(true);
@@ -221,10 +227,10 @@ describe('the CSS soft body (app/jelly-material.css §8)', () => {
     expect(pressRules).toHaveLength(2);
     const [card, control] = pressRules;
     expect(card.selectors[0].startsWith(`${SCOPE}${HOST}:active:not(:has(`)).toBe(true);
-    expect(decl(card.body, 'scale')).toBe('var(--jelly-press-card)');
+    expect(decl(card.body, 'scale')).toBe(capped('--jelly-press-card', false));
     expect(decl(card.body, '--jelly-spring-t')).toBe(PRESS);
     expect(control.selectors[0].startsWith(`${SCOPE}${HOST}:is(button`)).toBe(true);
-    expect(decl(control.body, 'scale')).toBe('var(--jelly-press-control)');
+    expect(decl(control.body, 'scale')).toBe(capped('--jelly-press-control', false));
   });
 
   it('presses every Button variant (D-C3): the control rule never singles one out', () => {
@@ -336,7 +342,7 @@ describe('the soft body elsewhere', () => {
   it('the hub compose pill presses as one body (D-C6)', () => {
     const pill = ruleFor(RADIAL, `${SCOPE}.radial-feed__compose:active`);
     expect(pill).toHaveLength(1);
-    expect(decl(pill[0].body, 'scale')).toBe('var(--jelly-press-control)');
+    expect(decl(pill[0].body, 'scale')).toBe(capped('--jelly-press-control', false));
     expect(decl(pill[0].body, '--jelly-spring-t')).toBe(PRESS);
     const inner = ruleFor(RADIAL, `${SCOPE}.radial-feed__compose > button`);
     expect(inner).toHaveLength(1);

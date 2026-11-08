@@ -147,6 +147,10 @@
     --jelly-hover-dent: 0.996;
     --jelly-press-control: 0.97;
     --jelly-press-card: 0.99;
+    /* The size cap (lib/jelly/soft-policy.ts `cssEdgeReach`): 2 · MOTION_BOUNDS.maxEdgeTravelPx / (1 + 2 · the release
+       overshoot). Each pose's delta is at most this over the host's larger side (`--jelly-s`, written by
+       lib/jelly/pointer-vars.ts; 1000 until it is), so no edge travels more than 4px, overshoot included. */
+    --jelly-edge-reach: 5.4518;
   }
 
   /* ── 1. Role knobs (01 §1 table, §3.3) ──────────────────────────────────────────────────────────────────────────
@@ -1158,7 +1162,9 @@ html[data-game-state='playing']
    `--jelly-hover-dent`), squashes while pressed (`--jelly-press-card` / `--jelly-press-control`) and springs back on
    release, by a transition on `scale` ONLY, eased by the generated `--spring-*` curves (§0b: the soft body's own
    springs, so the release wobbles and settles in ~1.1 s). Every pose and every frame between them stays inside
-   `MOTION_BOUNDS` (≤ 3%); layout never changes and nothing here touches `translate`. Nothing runs at rest: no
+   `MOTION_BOUNDS`: ≤ 3%, and ≤ 4px of edge travel, because each pose is capped by the host's size (`--jelly-s`, the
+   larger side in px, written by lib/jelly/pointer-vars.ts on the hovered or pressed host and the hosts around it;
+   `--jelly-edge-reach` above, 1000px assumed until it is written); layout never changes and nothing here touches `translate`. Nothing runs at rest: no
    `will-change`, no animation, and a transition exists only while a state flips (a CSS transition does not carry velocity
    across an interruption; the spec accepts that).
 
@@ -1483,7 +1489,10 @@ html[data-game-state='playing']
           )
           *
       ):not(.app-high-contrast *):hover {
-      scale: var(--jelly-hover-plump);
+      scale: min(
+        var(--jelly-hover-plump),
+        calc(1 + var(--jelly-edge-reach) / var(--jelly-s, 1000))
+      );
     }
     html:not(.native-material, [data-game-state='playing'], .perf-lite)
       :is(
@@ -1571,7 +1580,7 @@ html[data-game-state='playing']
         [data-fluid-press='lift'],
         [data-fluid-press='firm']
       ):not(.app-high-contrast *):hover {
-      scale: var(--jelly-hover-dent);
+      scale: max(var(--jelly-hover-dent), calc(1 - var(--jelly-edge-reach) / var(--jelly-s, 1000)));
     }
   }
   /* Press: the press spring in, the release spring out (the rest rule above). */
@@ -1658,7 +1667,7 @@ html[data-game-state='playing']
         ):active
       )
     ):not([data-jelly-press-through]:has(:active)) {
-    scale: var(--jelly-press-card);
+    scale: max(var(--jelly-press-card), calc(1 - var(--jelly-edge-reach) / var(--jelly-s, 1000)));
     --jelly-spring-t: scale var(--spring-press-dur) var(--spring-press);
   }
   html:not(.native-material, [data-game-state='playing'])
@@ -1764,7 +1773,10 @@ html[data-game-state='playing']
         ):active
       )
     ):not([data-jelly-press-through]:has(:active)) {
-    scale: var(--jelly-press-control);
+    scale: max(
+      var(--jelly-press-control),
+      calc(1 - var(--jelly-edge-reach) / var(--jelly-s, 1000))
+    );
   }
 
   /* The plasma wake and the dent's light dot (spec §3): radial gradients at the pointer, `--px` / `--py`, written on the

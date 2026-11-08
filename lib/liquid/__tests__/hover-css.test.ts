@@ -36,6 +36,20 @@ describe('material hover CSS policy', () => {
       html:not(.native-material) button:hover { scale: var(--jelly-hover-dent); color: red }`);
     expect(css).toContain('.glass-fill:hover { scale: var(--jelly-hover-plump) }');
     expect(css).toMatch(/button:hover \{ scale: var\(--jelly-hover-dent\); color: red \}/);
+    // The size-capped form the sheet actually ships (app/jelly-material.css §8) passes too.
+    const cap =
+      'min(var(--jelly-hover-plump), calc(1 + var(--jelly-edge-reach) / var(--jelly-s, 1000)))';
+    expect(await compile(`.glass-fill:hover { scale: ${cap} }`)).toBe(
+      `.glass-fill:hover { scale: ${cap} }`,
+    );
+    // …however Prettier wraps it.
+    const wrapped = `.glass-fill:hover {\n  scale: min(\n    var(--jelly-hover-plump),\n    calc(1 + var(--jelly-edge-reach) / var(--jelly-s, 1000))\n  );\n}`;
+    expect(await compile(wrapped)).toBe(wrapped);
+    const dent =
+      'max(var(--jelly-hover-dent), calc(1 - var(--jelly-edge-reach) / var(--jelly-s, 1000)))';
+    expect(await compile(`button:hover { scale: ${dent} }`)).toBe(
+      `button:hover { scale: ${dent} }`,
+    );
     // A hand-written lift, a pose computed from the token, or a raw value is still a second writer.
     const lifts = await compile(`.card:hover { scale: 1.02 }
       .tile:hover { scale: calc(var(--jelly-hover-plump) * 1.01) }

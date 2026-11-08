@@ -13,6 +13,8 @@
 
 import { SPRINGS, type Spring } from '@/lib/fluid';
 
+import { springCurveStops } from './spring-curves';
+
 import {
   AMBIENT_BOUNDS,
   JELLY_BODY,
@@ -131,6 +133,44 @@ export const CSS_SOFT_BODY = {
   /** A card sinks gently: cards are wide, and the bound is in pixels too. */
   pressCard: 1 - SOFT_BODY.pressCardSquash,
 } as const;
+
+/**
+ * The host size CSS assumes before `--jelly-s` is written (a keyboard press, the frame before the first write): a
+ * conservative 1000px, so a pose computed with it is within the edge bound for every host up to that size.
+ */
+export const CSS_SIZE_FALLBACK_PX = 1000;
+
+/**
+ * The size cap's numerator (the `--jelly-edge-reach` token). A host whose larger side is `S` px moves its edge by
+ * `S · |scale − 1| / 2`, so `MOTION_BOUNDS.maxEdgeTravelPx` allows a scale delta of `2 · maxEdgeTravelPx / S`. The
+ * worst CSS move is the release from a press on one side of rest to the hover pose on the other (0.99 → 1.008): it
+ * travels both deltas and overshoots by the release spring's overshoot `o` of that span, reaching `c · (1 + 2o)` for
+ * equal caps `c`. So each pose's delta is capped at `reach / S` with `reach = 2 · maxEdgeTravelPx / (1 + 2o)`, `o`
+ * measured from the very stops the CSS curve carries, floored to the 4 decimals the token is written with.
+ */
+let edgeReach: number | null = null;
+export function cssEdgeReach(): number {
+  // Sampling the curve costs a settle search: computed once, on first use (nothing runs at import).
+  if (edgeReach === null) {
+    const overshoot = Math.max(...springCurveStops(CSS_SPRINGS.release)) - 1;
+    edgeReach = Math.floor(((2 * MOTION_BOUNDS.maxEdgeTravelPx) / (1 + 2 * overshoot)) * 1e4) / 1e4;
+  }
+  return edgeReach;
+}
+
+/**
+ * The pose CSS gives a host of larger side `sizePx` (app/jelly-material.css §8): the configured pose, capped by size —
+ * `min(pose, 1 + reach / S)` above rest, `max(pose, 1 − reach / S)` below it. The JS twin of the CSS, for the tests.
+ */
+export function cssCappedPose(
+  pose: number,
+  sizePx: number = CSS_SIZE_FALLBACK_PX,
+  reach: number = cssEdgeReach(),
+): number {
+  if (pose > 1) return Math.min(pose, 1 + reach / sizePx);
+  if (pose < 1) return Math.max(pose, 1 - reach / sizePx);
+  return 1;
+}
 
 /* ── Element traits → policy ──────────────────────────────────────────────── */
 

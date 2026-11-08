@@ -11,7 +11,13 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { SPRINGS } from '@/lib/fluid';
-import { CSS_SOFT_BODY, CSS_SPRINGS } from '../soft-policy';
+import {
+  CSS_SIZE_FALLBACK_PX,
+  CSS_SOFT_BODY,
+  CSS_SPRINGS,
+  cssCappedPose,
+  cssEdgeReach,
+} from '../soft-policy';
 import { MOTION_BOUNDS } from '../tiers';
 import {
   SPRING_SETTLE_EPSILON,
@@ -134,5 +140,60 @@ describe('springSettleMs', () => {
   it('the CSS springs are the soft body’s own (lib/fluid.ts SPRINGS)', () => {
     expect(CSS_SPRINGS.press).toBe(SPRINGS.jellyPress);
     expect(CSS_SPRINGS.release).toBe(SPRINGS.jellyRelease);
+  });
+});
+
+describe('size-capped poses (the 4 px edge bound)', () => {
+  /** Worst edge travel, px, of a host of larger side `size` moving from `from` to `to` on `curve`'s stops. */
+  const travel = (size: number, from: number, to: number, curve: number[]) =>
+    Math.max(...curve.map((x) => (Math.abs(from + (to - from) * x - 1) * size) / 2));
+  const release = stops(dampedSpringLinear(CSS_SPRINGS.release));
+  const press = stops(dampedSpringLinear(CSS_SPRINGS.press));
+
+  it('derives the reach from MOTION_BOUNDS and the release overshoot', () => {
+    const overshoot = Math.max(...release) - 1;
+    const reach = cssEdgeReach();
+    expect(reach).toBeLessThanOrEqual((2 * MOTION_BOUNDS.maxEdgeTravelPx) / (1 + 2 * overshoot));
+    expect(reach).toBeGreaterThan((2 * MOTION_BOUNDS.maxEdgeTravelPx) / (1 + 2 * overshoot) - 1e-3);
+  });
+
+  it('caps every pose by size, and leaves small hosts on their configured pose', () => {
+    expect(cssCappedPose(CSS_SOFT_BODY.pressControl, 100)).toBe(CSS_SOFT_BODY.pressControl);
+    expect(cssCappedPose(CSS_SOFT_BODY.hoverPlump, 100)).toBe(CSS_SOFT_BODY.hoverPlump);
+    expect(cssCappedPose(CSS_SOFT_BODY.pressCard, 2000)).toBeGreaterThan(CSS_SOFT_BODY.pressCard);
+    expect(cssCappedPose(CSS_SOFT_BODY.hoverPlump, 2000)).toBeLessThan(CSS_SOFT_BODY.hoverPlump);
+    expect(cssCappedPose(1, 640)).toBe(1);
+    // No size written yet (a keyboard press): the fallback is a safe, small pose.
+    expect(CSS_SIZE_FALLBACK_PX).toBe(1000);
+    expect(cssCappedPose(CSS_SOFT_BODY.pressControl)).toBe(
+      cssCappedPose(CSS_SOFT_BODY.pressControl, 1000),
+    );
+  });
+
+  it('keeps every edge within MOTION_BOUNDS.maxEdgeTravelPx for hosts of 100–2000 px, overshoot included', () => {
+    const bound = MOTION_BOUNDS.maxEdgeTravelPx + 1e-9;
+    for (let size = 100; size <= 2000; size += 10) {
+      // The pose a host of this size gets with its size written, and with the fallback (only valid up to it).
+      const sized = (p: number) => cssCappedPose(p, size);
+      const variants = [sized];
+      if (size <= CSS_SIZE_FALLBACK_PX) variants.push((p: number) => cssCappedPose(p));
+      for (const pose of variants) {
+        const settled = [1, pose(CSS_SOFT_BODY.hoverPlump), pose(CSS_SOFT_BODY.hoverDent)];
+        const pressed = [pose(CSS_SOFT_BODY.pressControl), pose(CSS_SOFT_BODY.pressCard)];
+        const all = [...settled, ...pressed];
+        for (const from of all) {
+          for (const to of pressed)
+            expect(
+              travel(size, from, to, press),
+              `press ${from}→${to} @${size}px`,
+            ).toBeLessThanOrEqual(bound);
+          for (const to of settled)
+            expect(
+              travel(size, from, to, release),
+              `release ${from}→${to} @${size}px`,
+            ).toBeLessThanOrEqual(bound);
+        }
+      }
+    }
   });
 });

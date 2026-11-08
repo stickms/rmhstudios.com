@@ -13,7 +13,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { CSS_SOFT_BODY, CSS_SPRINGS } from '@/lib/jelly/soft-policy';
+import { CSS_SOFT_BODY, CSS_SPRINGS, cssEdgeReach } from '@/lib/jelly/soft-policy';
 import { dampedSpringLinear, springSettleMs } from '@/lib/jelly/spring-curves';
 
 const MATERIAL = readFileSync(join(process.cwd(), 'app', 'jelly-material.css'), 'utf8').replace(
@@ -55,6 +55,8 @@ const EXPECTED: Record<string, string> = {
   '--jelly-hover-dent': num(CSS_SOFT_BODY.hoverDent),
   '--jelly-press-control': num(CSS_SOFT_BODY.pressControl),
   '--jelly-press-card': num(CSS_SOFT_BODY.pressCard),
+  // 2 · MOTION_BOUNDS.maxEdgeTravelPx / (1 + 2 · the release overshoot): each pose is capped at reach / size.
+  '--jelly-edge-reach': num(cssEdgeReach()),
 };
 
 describe('CSS spring tokens are generated, not hand-written', () => {

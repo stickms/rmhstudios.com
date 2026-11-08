@@ -84,13 +84,21 @@ const stop = (v: number) => `${+v.toFixed(4)}`;
  * {@link springSettleMs}, the first exactly 0 and the last exactly 1. Use it with that duration.
  */
 export function dampedSpringLinear(opts: DampedSpringOptions): string {
+  return `linear(${springCurveStops(opts).map(String).join(', ')})`;
+}
+
+/**
+ * The stops {@link dampedSpringLinear} emits, as numbers (rounded exactly as in the CSS): what a transition on the
+ * curve actually reaches, so the edge-travel bound is checked against the curve the browser runs.
+ */
+export function springCurveStops(opts: DampedSpringOptions): number[] {
   const samples = opts.samples ?? DEFAULT_SAMPLES;
   if (!Number.isInteger(samples) || samples < 2)
     throw new RangeError(`a spring curve needs at least 2 samples (got ${samples})`);
   const duration = springSettleMs(opts) / 1000;
-  const values: string[] = ['0'];
+  const values: number[] = [0];
   for (let i = 1; i < samples; i++)
-    values.push(stop(springResponse((duration * i) / samples, opts)));
-  values.push('1');
-  return `linear(${values.join(', ')})`;
+    values.push(Number(stop(springResponse((duration * i) / samples, opts))));
+  values.push(1);
+  return values;
 }

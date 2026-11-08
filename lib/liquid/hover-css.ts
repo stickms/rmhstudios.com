@@ -9,7 +9,7 @@
  * generated `--spring-*` curves. A hand-written hover `scale` would be a second writer on
  * the same property, fighting that spring. One writer per property is the invariant this
  * plugin enforces, so the one sanctioned writer is let through: a `scale` / `translate`
- * whose whole value is a `--jelly-hover-*` pose token (see {@link jellyPose}).
+ * whose whole value is a `--jelly-hover-*` pose token, bare or size-capped (see {@link jellyPose}).
  */
 import type { Declaration, Plugin, Rule } from 'postcss';
 import selectorParser from 'postcss-selector-parser';
@@ -61,12 +61,21 @@ function hoverSelector(selector: string): { quiet: string; hover: boolean; own: 
   return { quiet, hover, own };
 }
 
-/** The soft body's own hover pose (app/jelly-material.css §8): `scale: var(--jelly-hover-plump)` and its kin. */
+/**
+ * The soft body's own hover pose (app/jelly-material.css §8): `scale: var(--jelly-hover-plump)` and its kin, bare or in
+ * the size-capped form the sheet ships, `min|max(var(--jelly-hover-*), calc(1 ± var(--jelly-edge-reach) /
+ * var(--jelly-s, N)))`.
+ */
+const POSE = /^var\(--jelly-hover-[a-z-]+\)$/;
+const CAPPED_POSE =
+  /^(?:min|max)\(var\(--jelly-hover-[a-z-]+\), calc\(1 [+-] var\(--jelly-edge-reach\) \/ var\(--jelly-s, \d+\)\)\)$/;
 export function jellyPose(decl: Declaration): boolean {
-  return (
-    /^(?:scale|translate)$/.test(decl.prop) &&
-    /^var\(--jelly-hover-[a-z-]+\)$/.test(decl.value.trim())
-  );
+  const value = decl.value
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/\(\s+/g, '(')
+    .replace(/\s+\)/g, ')');
+  return /^(?:scale|translate)$/.test(decl.prop) && (POSE.test(value) || CAPPED_POSE.test(value));
 }
 
 function expensivePaint(decl: Declaration): boolean {

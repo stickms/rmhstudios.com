@@ -10,7 +10,10 @@
  *  - pointercancel, and pointerout to outside the window, clear both; moving to another host moves them;
  *  - opted-out hosts are skipped (to the next host up), opt-out scopes (play-fields) and native-material / in-play
  *    roots write nothing;
- *  - a `(hover: none)` pointer writes nothing and attaches no listener at all.
+ *  - `--jelly-s` (the host's larger side, unitless px) is written on the hovered host and the hosts around it from the
+ *    same once-per-change rect read, so CSS can cap each pose to the 4 px edge bound; a touch press sizes the pressed
+ *    host with one read on `pointerdown` and clears it on `pointerup` / `pointercancel`;
+ *  - a `(hover: none)` device tracks no movement: press, release and cancel only, no frame, no scroll listener.
  */
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -245,7 +248,8 @@ describe('installPointerVars', () => {
     t.frame();
     expect(card.props.get('--px')).toBe('50%');
     expect(card.props.get('--py')).toBe('50%');
-    expect(card.writes, 'two moves in one frame coalesce to one write per variable').toBe(2);
+    // --px, --py and the size (--jelly-s): two moves in one frame coalesce to one write per variable.
+    expect(card.writes).toBe(3);
     expect(other.props.size).toBe(0);
     expect(label.props.size).toBe(0);
   });
@@ -354,16 +358,86 @@ describe('installPointerVars', () => {
     expect(card.props.size).toBe(0);
   });
 
-  it('a (hover: none) pointer writes nothing and attaches no listener', () => {
+  it('a (hover: none) device tracks no movement: only press, release and cancel, no frame, no scroll listener', () => {
     const t = setup(false);
     const card = el('div', t.body, { cls: ['glass-fill'] });
     stop = installPointerVars(t.doc as unknown as Document);
-    expect(hub.subscribe).toBe(0);
+    expect(
+      [...hub.handlers.entries()]
+        .filter(([, s]) => s.size)
+        .map(([k]) => k)
+        .sort(),
+    ).toEqual(['pointercancel', 'pointerdown', 'pointerup']);
     expect(t.doc.addEventListener).not.toHaveBeenCalled();
     expect(t.win.addEventListener).not.toHaveBeenCalled();
-    move(card, 10, 10);
+    move(card, 10, 10, 'touch');
     expect(t.frames).toHaveLength(0);
     expect(card.props.size).toBe(0);
+  });
+
+  it('writes --jelly-s (the larger side, unitless px) on the hovered host and the hosts around it, once', () => {
+    const t = setup();
+    const card = el('div', t.body, {
+      cls: ['glass-fill'],
+      box: { left: 0, top: 0, width: 660, height: 240 },
+    });
+    const btn = el('button', card, { box: { left: 20, top: 20, width: 120.4, height: 44 } });
+    stop = installPointerVars(t.doc as unknown as Document);
+    move(card, 30, 200);
+    t.frame();
+    expect(card.props.get('--jelly-s')).toBe('660');
+    expect(rectReads).toBe(1);
+    // Over the inner button: it is sized, and so is the card around it (both may move); --px moves to the button's host.
+    move(btn, 30, 30);
+    t.frame();
+    expect(btn.props.get('--jelly-s')).toBe('120');
+    expect(card.props.get('--jelly-s')).toBe('660');
+    for (let i = 0; i < 5; i++) {
+      hub.fire('pointermove', { target: btn, clientX: 31 + i, clientY: 30, pointerType: 'mouse' });
+      t.frame();
+    }
+    expect(rectReads, 'one read per sized element per change, never per move').toBe(3);
+    hub.fire('pointerout', { target: btn, relatedTarget: null, pointerType: 'mouse' });
+    expect(btn.props.has('--jelly-s')).toBe(false);
+    expect(card.props.has('--jelly-s')).toBe(false);
+  });
+
+  it('a touch press sizes the pressed host with one rect read, and pointerup / pointercancel clear it', () => {
+    for (const fine of [false, true]) {
+      const t = setup(fine);
+      const card = el('div', t.body, {
+        cls: ['glass-fill'],
+        box: { left: 0, top: 0, width: 360, height: 700 },
+      });
+      stop = installPointerVars(t.doc as unknown as Document);
+      hub.fire('pointerdown', { target: card, clientX: 5, clientY: 5, pointerType: 'touch' });
+      expect(card.props.get('--jelly-s'), `fine=${fine}`).toBe('700');
+      expect(rectReads).toBe(1);
+      expect(t.frames, 'no frame for a touch press').toHaveLength(0);
+      expect(card.props.has('--px'), 'touch never writes the pointer position').toBe(false);
+      hub.fire('pointerup', { target: card, pointerType: 'touch' });
+      expect(card.props.has('--jelly-s')).toBe(false);
+      hub.fire('pointerdown', { target: card, clientX: 5, clientY: 5, pointerType: 'touch' });
+      expect(card.props.get('--jelly-s')).toBe('700');
+      hub.fire('pointercancel', { target: card, pointerType: 'touch' });
+      expect(card.props.has('--jelly-s')).toBe(false);
+      stop();
+      stop = null;
+    }
+  });
+
+  it('a touch press inside a play-field or on a native-material route writes nothing', () => {
+    const t = setup(false);
+    const field = el('div', t.body, { attrs: { 'data-jelly-zone': 'playfield' } });
+    const piece = el('div', field, { cls: ['glass-fill'] });
+    stop = installPointerVars(t.doc as unknown as Document);
+    hub.fire('pointerdown', { target: piece, clientX: 5, clientY: 5, pointerType: 'touch' });
+    expect(piece.props.size).toBe(0);
+    html.classes.add('native-material');
+    const card = el('div', t.body, { cls: ['glass-fill'] });
+    hub.fire('pointerdown', { target: card, clientX: 5, clientY: 5, pointerType: 'touch' });
+    expect(card.props.size).toBe(0);
+    expect(rectReads).toBe(0);
   });
 
   it('teardown unsubscribes, removes its listeners and clears the host', () => {

@@ -2795,7 +2795,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
    stands down for a host whose inner button is the thing pressed), and the buttons themselves stay still inside it so
    the label and the gradient move together. Same scope, poses and springs as the soft body (§8). */
 html:not(.native-material, [data-game-state='playing']) .radial-feed__compose:active {
-  scale: var(--jelly-press-control);
+  scale: max(var(--jelly-press-control), calc(1 - var(--jelly-edge-reach) / var(--jelly-s, 1000)));
   --jelly-spring-t: scale var(--spring-press-dur) var(--spring-press);
 }
 html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > button {
