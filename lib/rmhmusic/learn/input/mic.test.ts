@@ -27,6 +27,7 @@ describe('createMicInput stop during a pending start', () => {
   let getUserMedia: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.useFakeTimers();
     getUserMedia = vi.fn(
       () =>
@@ -51,6 +52,29 @@ describe('createMicInput stop during a pending start', () => {
     resolveMedia(stream);
     await started;
     expect(track.stop).toHaveBeenCalledTimes(1);
+    expect(ctx.createMediaStreamSource).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('start, stop, start, stop leaves every track stopped and no timer', async () => {
+    const mic = createMicInput();
+    const resolvers: ((s: MediaStream) => void)[] = [];
+    getUserMedia.mockImplementation(
+      () =>
+        new Promise<MediaStream>((res) => {
+          resolvers.push(res);
+        }),
+    );
+    const first = mic.start();
+    await vi.advanceTimersByTimeAsync(0);
+    mic.stop();
+    const second = mic.start();
+    mic.stop();
+    const a = fakeStream();
+    resolvers[0](a.stream);
+    await Promise.all([first, second]);
+    expect(a.track.stop).toHaveBeenCalledTimes(1);
+    expect(getUserMedia).toHaveBeenCalledTimes(1);
     expect(ctx.createMediaStreamSource).not.toHaveBeenCalled();
     expect(vi.getTimerCount()).toBe(0);
   });

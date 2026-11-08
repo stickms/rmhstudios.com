@@ -27,6 +27,14 @@ export function createInputHub(adapters: InputAdapter[]): InputHub {
   const starting = new Map<InputSource, Promise<void>>();
   /** Sources whose in-flight start was stopped before it settled. */
   const cancelled = new Set<InputSource>();
+  /**
+   * Bumped by every stop(). A start remembers the value from when it was
+   * requested and abandons itself if it has moved on by the time it would run,
+   * so the user's last action (stop) always wins over a start queued behind a
+   * cancelled one.
+   */
+  const stops = new Map<InputSource, number>();
+  const stopCount = (source: InputSource) => stops.get(source) ?? 0;
   const errors = new Map<InputSource, Error>();
 
   const forward = (e: NoteEvent) => {
@@ -67,21 +75,31 @@ export function createInputHub(adapters: InputAdapter[]): InputHub {
     start(source) {
       const adapter = bySource.get(source);
       if (!adapter) return Promise.reject(new Error(`No input adapter for "${source}"`));
-      if (started.has(source)) return Promise.resolve();
-      const pending = starting.get(source);
-      if (pending) {
-        if (!cancelled.has(source)) return pending;
-        // Stopped while starting: wait for that start to unwind, then start afresh.
-        const again = () => hub.start(source);
-        return pending.then(again, again);
-      }
-      const run = startAdapter(source, adapter).finally(() => starting.delete(source));
-      starting.set(source, run);
-      return run;
+      const requested = stopCount(source);
+      const launch = (): Promise<void> => {
+        if (stopCount(source) !== requested) return Promise.resolve();
+        if (started.has(source)) return Promise.resolve();
+        const pending = starting.get(source);
+        if (pending) {
+          if (!cancelled.has(source)) return pending;
+          // Stopped while starting: wait for that start to unwind, then start afresh.
+          return pending.then(launch, launch);
+        }
+        const run = startAdapter(source, adapter).finally(() => starting.delete(source));
+        starting.set(source, run);
+        return run;
+      };
+      return launch();
     },
 
     stop(source) {
-      if (starting.has(source)) cancelled.add(source);
+      stops.set(source, stopCount(source) + 1);
+      if (starting.has(source)) {
+        cancelled.add(source);
+        // Tell the adapter now, so it releases the device the instant it is
+        // handed over rather than only when the hub hears the start settle.
+        bySource.get(source)?.stop();
+      }
       const unsubscribe = started.get(source);
       if (!unsubscribe) return;
       // Stop before unsubscribing: stopping releases held notes, and those

@@ -177,10 +177,11 @@ describe('createInputHub', () => {
       hub.subscribe((e) => got.push(e));
       const started = hub.start('mic');
       hub.stop('mic');
-      expect(mic.state.stops).toBe(0);
+      // The adapter hears about the stop at once, and again when the start settles.
+      expect(mic.state.stops).toBe(1);
       gate.resolve();
       await expect(started).resolves.toBeUndefined();
-      expect(mic.state.stops).toBe(1);
+      expect(mic.state.stops).toBe(2);
       expect(hub.active()).toEqual([]);
       expect(hub.lastError('mic')).toBeNull();
       expect(mic.listenerCount()).toBe(0);
@@ -210,9 +211,47 @@ describe('createInputHub', () => {
       const second = hub.start('mic');
       gate.resolve();
       await second;
-      expect(mic.state.stops).toBe(1);
+      expect(mic.state.stops).toBe(2);
       expect(mic.state.starts).toBe(2);
       expect(hub.active()).toEqual(['mic']);
+    });
+
+    it('stop, start, stop while the first start is pending ends with nothing live', async () => {
+      const gate = deferred();
+      const mic = fakeAdapter('mic', { gate: gate.promise });
+      const hub = createInputHub([mic.adapter]);
+      const first = hub.start('mic');
+      hub.stop('mic');
+      const second = hub.start('mic');
+      hub.stop('mic');
+      gate.resolve();
+      await Promise.all([first, second]);
+      expect(mic.state.starts).toBe(1);
+      expect(mic.state.started).toBe(false);
+      expect(hub.active()).toEqual([]);
+      expect(hub.lastError('mic')).toBeNull();
+      expect(mic.listenerCount()).toBe(0);
+    });
+
+    it('stop then start (no second stop) starts afresh and is active', async () => {
+      const gate = deferred();
+      const mic = fakeAdapter('mic', { gate: gate.promise });
+      const hub = createInputHub([mic.adapter]);
+      const first = hub.start('mic');
+      hub.stop('mic');
+      const second = hub.start('mic');
+      gate.resolve();
+      await Promise.all([first, second]);
+      expect(mic.state.starts).toBe(2);
+      expect(mic.state.started).toBe(true);
+      expect(hub.active()).toEqual(['mic']);
+    });
+
+    it('a stop with nothing started or starting does not call the adapter', () => {
+      const mic = fakeAdapter('mic');
+      const hub = createInputHub([mic.adapter]);
+      hub.stop('mic');
+      expect(mic.state.stops).toBe(0);
     });
 
     it('records no error when the cancelled start rejects', async () => {

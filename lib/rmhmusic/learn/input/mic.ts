@@ -108,10 +108,12 @@ export function createMicInput(opts: { onLevel?: (rms: number) => void } = {}): 
 
     start() {
       if (running) return Promise.resolve();
+      const requested = generation;
       if (pending) {
         if (pending.generation === generation) return pending.promise;
-        // The in-flight start was cancelled; begin afresh once it has let go.
-        const again = () => adapter.start();
+        // The in-flight start was cancelled; begin afresh once it has let go,
+        // unless a stop() has arrived since this start was requested.
+        const again = () => (requested === generation ? adapter.start() : Promise.resolve());
         return pending.promise.then(again, again);
       }
       const gen = generation;

@@ -17,10 +17,12 @@ export interface MidiDevice {
   name: string;
 }
 
-export function createMidiInput(): InputAdapter & {
+export type MidiInputAdapter = InputAdapter & {
   devices(): MidiDevice[];
   onDevicesChange(l: () => void): () => void;
-} {
+};
+
+export function createMidiInput(): MidiInputAdapter {
   const listeners = new Set<NoteListener>();
   const deviceListeners = new Set<() => void>();
   const emit = (e: NoteEvent) => {
@@ -74,15 +76,17 @@ export function createMidiInput(): InputAdapter & {
     for (const l of [...deviceListeners]) l();
   };
 
-  const adapter = {
-    source: 'midi' as const,
+  const adapter: MidiInputAdapter = {
+    source: 'midi',
 
     start(): Promise<void> {
       if (access) return Promise.resolve();
+      const requested = generation;
       if (pending) {
         if (pending.generation === generation) return pending.promise;
-        // The in-flight start was cancelled; begin afresh once it has let go.
-        const again = () => adapter.start();
+        // The in-flight start was cancelled; begin afresh once it has let go,
+        // unless a stop() has arrived since this start was requested.
+        const again = () => (requested === generation ? adapter.start() : Promise.resolve());
         return pending.promise.then(again, again);
       }
       const gen = generation;
