@@ -100,4 +100,19 @@ describe('the globe draws off the main thread', () => {
     expect(src).toMatch(/post\(\{ type: 'scene', bitmap: clone, width, height \}, \[clone\]\)/);
     expect(src).toMatch(/clone\.close\(\)/);
   });
+
+  it('the globe cursor draws its default (direct) mode in its own worker, and never composites a worker canvas', () => {
+    const cursor = code('components/globe-cursor/GlobeCursor.tsx');
+    expect(cursor).toMatch(/local\s*\?\s*acquireRemoteGlobeGl\(/);
+    const remote = code('lib/globe-cursor/remote-gl.ts');
+    expect(remote).toMatch(/new Worker\(new URL\('\.\/cursor\.worker\.ts', import\.meta\.url\)/);
+    expect(remote).toMatch(/directOnly: true/);
+    expect(remote).not.toMatch(READBACK);
+    expect(remote).not.toMatch(GL_CONTEXT);
+    // A worker-owned canvas can be shown but never drawn onto the page's 2D canvas (that would be a readback).
+    expect(code('lib/globe-cursor/engine.ts')).toMatch(
+      /this\.gpu\?\.ok && \(direct \|\| !this\.gpu\.directOnly\)/,
+    );
+    expect(code('lib/globe-cursor/cursor.worker.ts')).not.toMatch(/\bdocument\.|\bwindow\./);
+  });
 });

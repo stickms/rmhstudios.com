@@ -43,7 +43,7 @@
  */
 
 import { evert, stageParams } from '@/lib/eversion/thurston';
-import { GlobeGl } from './gl';
+import type { GlobeSurface } from './gl';
 import { BASE_EVERT_SECONDS, type CursorDetail, type GlobeCursorSettings } from './settings';
 
 const PI = Math.PI;
@@ -246,17 +246,18 @@ export class GlobeCursorEngine {
   private spriteCss = 0;
   private spriteSource: CanvasImageSource;
   private dpr = 1;
-  private gpu: GlobeGl | null;
+  private gpu: GlobeSurface | null;
   private stage = new Float64Array(8);
   private model = new Float64Array(9);
   private deform = new Float64Array(9);
   private deformIT = new Float64Array(9);
 
   /**
-   * `gpu` is the page's shared surface (`acquireGlobeGl()` in `./gl`), already built — or null for the CPU path. The
-   * engine borrows it: `dispose` hands it back for the next mount rather than destroying a compiled program.
+   * `gpu` is the page's shared surface (`acquireGlobeGl()` in `./gl`, or the worker-backed `acquireRemoteGlobeGl()` in
+   * `./remote-gl` for direct mode), already built — or null for the CPU path. The engine borrows it: `dispose` hands it
+   * back for the next mount rather than destroying a compiled program.
    */
-  constructor(settings: GlobeCursorSettings, gpu: GlobeGl | null = null) {
+  constructor(settings: GlobeCursorSettings, gpu: GlobeSurface | null = null) {
     this.s = settings;
     this.outsideHsl = hexToHsl(settings.outside);
     this.insideHsl = hexToHsl(settings.inside);
@@ -719,7 +720,11 @@ export class GlobeCursorEngine {
   /* ── Drawing ───────────────────────────────────────────────────────────── */
 
   /** Paint the globe into the sprite. Returns the sprite's CSS size. */
-  private paintSprite(): number {
+  /**
+   * Paint the sprite at its fixed size; returns its CSS side. `direct`: it will be shown as the GPU canvas itself, so a
+   * worker-backed (`directOnly`) surface may draw it; otherwise only a surface the page can composite from may.
+   */
+  private paintSprite(direct = false): number {
     const s = this.s;
     const { nT, nP, pos } = this;
     const R = s.size / 2;
@@ -747,7 +752,7 @@ export class GlobeCursorEngine {
     const wob = this.wobble * 0.13;
     const tw = this.time * 7;
 
-    if (this.gpu?.ok) {
+    if (this.gpu?.ok && (direct || !this.gpu.directOnly)) {
       this.spriteSource = this.paintGpu(px, css, e, flipped, {
         dX,
         dY,
@@ -1049,7 +1054,7 @@ export class GlobeCursorEngine {
     if (alpha < 0.005) {
       return { visible: false, x: cx, y: cy, size: 0, opacity: 0, halo: null, hotspot: null };
     }
-    const css = this.paintSprite();
+    const css = this.paintSprite(true);
     const R = (s.size / 2) * this.scale;
     const gr = R * (1.6 + s.glow * 1.6);
     return {
