@@ -28,8 +28,10 @@
  *      that does not know Heat.
  *   3  Boss fights and spawn pacing: an arena seal when a boss spawns, a spawn bank bounded to ~3 s of
  *      spawning (it used to be unbounded while the screen sat at the enemy cap), a leaner Hollow King.
+ *   4  Level-up offers: passive and catalyst upgrades are not offered until every held weapon is
+ *      maxed (level 8 or evolved). Changes which choices a level-up generates.
  */
-export const SIM_VERSION: number = 3;
+export const SIM_VERSION: number = 4;
 
 /** The version a log was played on; logs that predate the stamp are version 1. */
 export function logSimVersion(log: { sim?: unknown }): number {
