@@ -14,8 +14,7 @@
  *    elements), or
  *  - it is one of the two SANCTIONED haze keyframes, `jelly-drift` / `jelly-current`, declared only on the woken-haze
  *    layer (the glass roles' own `::after`, app/jelly-material.css §3b, CSS-first jelly PR 2) — attached ONLY under
- *    `:hover` / `:has(:focus-visible)`, with no animation at all at rest (lib/__tests__/jelly-woken-haze.test.ts pins it) — or on the
- *    retired `.jelly-flow` carrier spans, whose rules stay until PR 5 deletes them (nothing injects a carrier any more);
+ *    `:hover` / `:has(:focus-visible)`, with no animation at all at rest (lib/__tests__/jelly-woken-haze.test.ts pins it);
  *  - the layer is killed (`display: none`) under every degraded root class (read from `DEGRADED_ROOT_SELECTOR` —
  *    not restated) plus the app high-contrast theme and print, PAUSED (`animation-play-state: paused`) while
  *    scrolling and while a game is in play, and has no animation at all under `still`.
@@ -24,10 +23,9 @@
  *
  * ## N12 — the haze is under the text, always
  *
- * 01 §6 item 1. Every jelly paint layer inside a host (the woken-haze `::after`, `.jelly-flow`, `.jelly-haze-canvas`,
- * the rim `.liquid-glass-canvas`, the fallback `.liquid-light`) declares a NEGATIVE z-index, and the hosts that carry them are
- * isolated (`isolation: isolate`), so the negative layer resolves inside the host — above its tint, below every
- * child. Nothing jelly paints at z ≥ 0 inside a host. The one body-level exception is the arc layer (03 D1), which is
+ * 01 §6 item 1. The jelly paint layer inside a host (the woken-haze `::after`) declares a NEGATIVE z-index, and the host
+ * that carries it is isolated (`isolation: isolate`), so the negative layer resolves inside the host — above its tint,
+ * below every child. Nothing jelly paints at z ≥ 0 inside a host. The one body-level exception is the arc layer (03 D1), which is
  * `pointer-events: none` and stacks on the named `--z-arcs` token.
  */
 import { readFileSync, readdirSync } from 'node:fs';
@@ -198,7 +196,7 @@ describe('N3 — no perpetual CSS animation on the site tier without an owner', 
     expect(found.length).toBeGreaterThan(10);
   });
 
-  it('every infinite animation is on the frozen baseline or is a sanctioned carrier', () => {
+  it('every infinite animation is on the frozen baseline or is a sanctioned haze keyframe', () => {
     const offenders = found
       .filter((p) => !(SANCTIONED.has(p.name) && p.file === MATERIAL))
       .filter((p) => !BASELINE.has(`${p.file} :: ${p.name}`))
@@ -212,15 +210,12 @@ describe('N3 — no perpetual CSS animation on the site tier without an owner', 
     ).toEqual([]);
   });
 
-  it('the haze keyframes run only on the woken-haze layer (or the retired carrier spans)', () => {
+  it('the haze keyframes run only on the woken-haze layer', () => {
     const carriers = found.filter((p) => SANCTIONED.has(p.name));
-    expect(carriers.map((p) => p.name).sort()).toEqual(
-      ['jelly-current', 'jelly-drift', 'jelly-drift'].sort(),
-    );
     for (const p of carriers) {
       expect(p.file).toBe(MATERIAL);
       expect(
-        /^\.jelly-flow\s*>/.test(p.selector) || isHazeWake(p.selector),
+        isHazeWake(p.selector),
         `${p.name} is declared outside the haze layer: ${flat(p.selector)}`,
       ).toBe(true);
     }
@@ -289,12 +284,6 @@ describe('N3 — no perpetual CSS animation on the site tier without an owner', 
 
 describe('N12 — nothing jelly paints at z ≥ 0 inside a host', () => {
   const sheets = ['app/liquid-glass.css', MATERIAL].map((f) => ({ f, all: rules(read(f)) }));
-  const layer = (cls: string) =>
-    sheets.flatMap(({ f, all }) =>
-      all
-        .filter(({ selector }) => selector.split(',').some((s) => s.trim() === cls))
-        .map((r) => ({ f, ...r })),
-    );
 
   it('the woken-haze layer declares a negative z-index', () => {
     const decls = sheets
@@ -306,28 +295,11 @@ describe('N12 — nothing jelly paints at z ≥ 0 inside a host', () => {
     for (const z of decls) expect(Number(z), `haze layer z-index ${z}`).toBeLessThan(0);
   });
 
-  it.each(['.jelly-flow', '.jelly-haze-canvas', '.liquid-glass-canvas', '.liquid-light'])(
-    '%s declares a negative z-index',
-    (cls) => {
-      const decls = layer(cls)
-        .map((r) => /(?:^|;)\s*z-index\s*:\s*([^;]+)/.exec(r.body)?.[1]?.trim())
-        .filter(Boolean) as string[];
-      expect(decls.length, `${cls} must declare its z-index`).toBeGreaterThan(0);
-      for (const z of decls) expect(Number(z), `${cls} z-index ${z}`).toBeLessThan(0);
-    },
-  );
-
-  it('the hosts that carry those layers are isolated', () => {
+  it('the host that carries the haze layer is isolated', () => {
     const iso = sheets.flatMap(({ all }) =>
       all.filter(({ body }) => /isolation\s*:\s*isolate/.test(body)).map((r) => r.selector),
     );
-    for (const host of ["[data-liquid-canvas='on']", "[data-jelly-haze='on']"]) {
-      expect(
-        iso.some((s) => s.includes(host)),
-        `${host} must be isolated`,
-      ).toBe(true);
-    }
-    // The woken-haze host isolates itself: no engine attribute is set any more (CSS-first jelly PR 2).
+    // The woken-haze host isolates itself (CSS-first jelly PR 2).
     expect(
       iso.some((s) => !s.includes('::') && flat(s).startsWith(HAZE_LAYER_HEAD)),
       'the woken-haze host must be isolated',

@@ -19,9 +19,8 @@ import { reconcileSoftRender } from '@/lib/perf-tier';
  * fades in (app/jelly-material.css §7).
  *
  * The static CSS tier (`app/liquid-glass.css`, `app/jelly-material.css`) is the material. The soft body is CSS too
- * (CSS-first jelly, PR 3: §8, springs on `scale`), so the soft-body physics, the jelly registry (whose observers had
- * no consumer left) and the fallback cursor light (`lib/liquid/runtime.ts`, replaced by the `--px` / `--py` wake) are
- * no longer installed; neither are the glass engine, the CSS flow carriers or the governor (PR 1). The electric arc is
+ * (CSS-first jelly, PR 3: §8, springs on `scale`); the soft-body physics, the glass engine, the CSS flow carriers, the
+ * governor and the fallback cursor light are deleted (their `--px` / `--py` wake is `lib/jelly/pointer-vars.ts`). The electric arc is
  * the one event-woken effect: **after the same idle step**, `installLazyClickArcs` (`lib/jelly/arc-lazy.ts`) subscribes
  * to the first `pointerdown` through the pointer hub; the arcs chunk is imported and the click-only runtime installed
  * on that press, and removed again 10 s after the last click. Ambient arcs no longer exist.

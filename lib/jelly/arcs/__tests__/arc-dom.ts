@@ -271,15 +271,12 @@ export function fakeEnv(opts: { cores?: number } = {}): FakeEnv {
 export function fakeRegistry(els: FakeEl[]): JellyRegistry {
   const entries: JellyEntry[] = els.map((el, order) => ({
     el: el as unknown as Element,
-    role: 'control',
     order,
     visible: true,
     rect: { ...el.box },
   }));
   return {
     visible: () => entries,
-    ambientSlots: () => [],
-    liveSet: () => [],
     entryFor: () => undefined,
     onChange: () => () => {},
     scrolling: false,

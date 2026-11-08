@@ -16,6 +16,18 @@
  * was dead code and the weakest laptop on the site rendered the full effect
  * stack. That is what this module fixes.
  *
+ * ## What it means for the jelly material now (CSS-first jelly, 2026-11-08)
+ *
+ * The material is static CSS plus effects woken by an event, so it no longer needs
+ * a tier to stay cheap at rest, and `perf-lite` no longer strips canvases or
+ * shader rims (there are none on site surfaces). On the material the class now
+ * means: keep the static haze floor, the CSS rim and a plain press, and wake
+ * nothing — no woken haze, no click arcs, no scene capture for the globe, no
+ * ambient globe clock (`lib/jelly/tiers.ts` `DEGRADED_ROOT_SELECTOR`,
+ * `app/jelly-material.css` §6/§7). What the class is for on the rest of the site
+ * (the aurora, games, canvases listed above) is unchanged. A separate planned
+ * change owns its future.
+ *
  * ## Why capability reads and not a frame-rate probe
  *
  * A measured-fps heuristic sounds better and behaves worse: it has to sample

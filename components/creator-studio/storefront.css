@@ -652,8 +652,3 @@
   display: inline;
   vertical-align: -1px;
 }
-
-/* The molded rim: while the shader draws this card's edge, its own hairline would outline what the rim dissolves. */
-.store-spot__link[data-liquid-canvas='on'] {
-  border-color: transparent;
-}

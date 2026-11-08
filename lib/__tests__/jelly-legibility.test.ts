@@ -223,8 +223,6 @@ const TOKENS = [
   '--site-jelly-plasma',
   '--site-jelly-flow-speed',
   '--site-jelly-quiet',
-  '--site-jelly-haze-edge',
-  '--site-jelly-on',
   '--site-arc-core',
   '--site-arc-glow',
 ];
@@ -410,7 +408,6 @@ describe('Plasmatic Jelly legibility — app tier (01 §4.3)', () => {
       '--app-jelly-plasma-a',
       '--app-jelly-plasma-b',
       '--app-jelly-plasma',
-      '--app-jelly-on',
     ]) {
       expect(['0', 'transparent'], tok).toContain(hc[tok]);
     }

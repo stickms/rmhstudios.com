@@ -438,7 +438,7 @@ const playingRuns = new WeakMap<Document, number>();
 /**
  * Stamp `html[data-game-state="playing"]` for the duration of a run and return
  * the release. While it is set the jelly material stops everything that moves
- * on its own — haze, flow carriers, ambient and click arcs, soft bodies — so
+ * on its own — the woken haze, click arcs, the soft body's springs — so
  * nothing competes with the play-field for the frame or the eye
  * (`lib/jelly/tiers.ts` `gamePlaying()` / `GAME_PLAYING_BUDGET`,
  * `app/jelly-material.css` §6, `app/jelly-arcs.css`). Menus, pause screens and

@@ -35,7 +35,7 @@
 //    Attributed by source (`sources`): during the same trace, hooks on Canvas2D
 //    / WebGL draw calls and a MutationObserver record which frames (keyed by
 //    `document.timeline.currentTime`) each source painted or mutated in —
-//    `haze`, `rim`, `arcs`, `globe` (the dock globe's canvases and DOM),
+//    `arcs`, `globe` (the dock globe's canvases and DOM),
 //    `cursor` (the globe cursor), `canvas` (any other), `dom` (any other DOM
 //    write) — plus `any`, the frames at least one of them touched. Hooks only,
 //    never a frame request. A rest count above `any` was drawn by something
@@ -105,9 +105,9 @@ const ENGAGED_FRAME_LIMIT = Math.max(...Object.values(JELLY_BUDGETS).map((b) => 
 /** Advisory browser-CPU budget at rest on `/` (04 §3.5); printed next to the cadence, never gated. */
 const REST_CPU_TARGET_MS = 250;
 /**
- * The only perpetual animations a site page may hold: the CSS flow carriers' two keyframes, and only on spans inside
- * `.jelly-flow` (site-infinite-animation.test.ts N3 sanctions exactly these). They are owned by
- * `lib/jelly/flow-carriers.ts`, which removes them under every non-ambient state.
+ * The only perpetual animations a site page may hold: the woken haze's keyframes, and only on a host's `::after` while
+ * it is hovered or holds keyboard focus (site-infinite-animation.test.ts N3 sanctions exactly these; a page at rest has
+ * none).
  */
 const SANCTIONED_INFINITE = new Set(['jelly-drift', 'jelly-current']);
 
@@ -243,8 +243,6 @@ async function measure(browser, cdp, binary, route, profile) {
       if (el.closest('.radial-globe, .radial-globe__glass')) return 'globe';
       if (el.tagName !== 'CANVAS') return 'dom';
       if (!el.isConnected) return 'offscreen';
-      if (el.classList.contains('jelly-haze-canvas')) return 'haze';
-      if (el.classList.contains('liquid-glass-canvas')) return 'rim';
       if (el.classList.contains('jelly-arc-layer')) return 'arcs';
       if (String(el.className).includes('--z-cursor')) return 'cursor';
       return 'canvas';
@@ -294,12 +292,14 @@ async function measure(browser, cdp, binary, route, profile) {
         .getAnimations()
         .filter((a) => a.playState === 'running' && a.effect?.getTiming().iterations === Infinity);
       const sanctioned = (a) =>
-        sanctionedNames.includes(a.animationName) && !!a.effect?.target?.closest?.('.jelly-flow');
+        sanctionedNames.includes(a.animationName) && a.effect?.pseudoElement === '::after';
       return {
         siteShell: !!document.querySelector('.radial-shell'),
         nodes: document.getElementsByTagName('*').length,
         infinite: running.filter((a) => !sanctioned(a)).map(describe),
         jellyCarriers: running.filter(sanctioned).length,
+        // The glass engine's haze canvases are gone, so this is 0 and R7 below is never judged; kept so the gate's shape
+        // (and its GPU skip bookkeeping) is unchanged if a canvas-drawn haze ever returns.
         hazeCanvases: document.querySelectorAll('.jelly-haze-canvas').length,
       };
     }, [...SANCTIONED_INFINITE]);
@@ -447,7 +447,7 @@ for (const profile of profiles) {
       `${idleFail ? '✗' : ' '} ${profile.padEnd(7)} ${route.padEnd(28)} ` +
         `rest ${String(r.restFramesPerSec ?? '—').padStart(5)} frames/s ${String(r.restCpuMsPerSec ?? '—').padStart(5)} cpu-ms/s · ` +
         `idle ${r.idle?.fps ?? '—'}fps · scroll ${r.scroll?.fps ?? '—'}fps p95 ${r.scroll?.p95 ?? '—'}ms` +
-        (r.jellyCarriers || r.hazeCanvases ? ` · jelly ${r.jellyCarriers ?? 0} carrier anims, ${r.hazeCanvases ?? 0} haze` : '') +
+        (r.jellyCarriers || r.hazeCanvases ? ` · jelly ${r.jellyCarriers ?? 0} haze anims, ${r.hazeCanvases ?? 0} haze canvases` : '') +
         (r.sources && r.restFramesPerSec > 0
           ? ` · drew in: ${Object.entries(r.sources)
               .filter(([k, v]) => k !== 'any' && k !== 'domTop' && v > 0)

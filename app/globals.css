@@ -21,7 +21,7 @@
 @import './fonts/site-display.css';
 @import './liquid-glass.css';
 /* Plasmatic Jelly (docs/plans/plasmatic-jelly/00-master-plan.md): the material
-   (role knobs, CSS flow carriers, static haze floor, CSS rim, degradation), the
+   (role knobs, woken haze, static haze floor, CSS rim, degradation), the
    electric-arc layer, and the coverage adapters. After liquid-glass.css on
    purpose — jelly-material.css restates some of its role rules at the same
    specificity and must win on source order. */
@@ -353,8 +353,6 @@
   --site-jelly-plasma: 0.069;
   --site-jelly-flow-speed: 1;
   --site-jelly-quiet: 0.15;
-  --site-jelly-haze-edge: 0.16;
-  --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
   --site-arc-core: color-mix(in oklch, #5b3fd6 85%, var(--site-accent));
   --site-arc-glow: color-mix(in oklch, #7c6cff 60%, transparent);
@@ -383,27 +381,17 @@
   --gel-disperse-r: -0.75px;
   --gel-disperse-g: 0px;
   --gel-disperse-b: 0.75px;
-  /* The molded rim (2026-10-25): the slab rises out of the ground instead of being outlined on it.
-     `--gel-mold` is the shoulder's depth (0 = the outlined rim), `--gel-feather` how far the outermost
-     pixels dissolve into the ground, `--gel-shoulder` widens the bevel for the rounded shoulder. Read
-     per surface by the rim shader (lib/liquid/glass/shader.ts "Molded shoulder"). */
-  --gel-mold: 0.8;
+  /* The molded rim (2026-10-25), now drawn in CSS: `--gel-feather` is how far the outermost pixels dissolve into the
+     ground and `--gel-shoulder` widens the bevel for the rounded shoulder (the static rim, `--gel-glow` in
+     app/jelly-material.css §4, reads both). */
   --gel-feather: 2px;
   --gel-shoulder: 1;
-  /* The lens (docs/plasmatic-jelly-system.md §1.1, lib/liquid/glass/shader.ts): `--gel-dispersion` scales the
-     red-to-blue refraction spread against real crown glass (×8 makes the fringe ~2px at the steepest rim instead of
-     0.2px), `--gel-lens` scales the slab thickness the refraction travels, `--gel-reflect` the Fresnel environment
-     reflection on the shoulder. All three are free per pixel (no extra texture read). */
-  --gel-dispersion: 3;
-  --gel-lens: 1;
-  --gel-reflect: 1;
-  /* Where the shader cannot draw the rim (an <input> holds no canvas; a surface past the rim budget), CSS molds it
-     instead: the 1px Fresnel line softens into a `--gel-feather` glow, a field keeps only `--gel-field-line` of its
-     border, and a soft `--gel-well-shade` falls inside its top lip, so it reads as pressed into the ground rather
-     than outlined on it. */
+  /* CSS molds the rim: the 1px Fresnel line softens into a `--gel-feather` glow, a field keeps only `--gel-field-line`
+     of its border, and a soft `--gel-well-shade` falls inside its top lip, so it reads as pressed into the ground
+     rather than outlined on it. */
   --gel-field-line: 40%;
-  /* The same for a role's hairline where the shader draws no rim (past the budget, before admission): the share of
-     `--site-border` it keeps, so an unadmitted slab fades into the ground instead of snapping to an outline. */
+  /* The same for a role's hairline: the share of `--site-border` it keeps, so a slab fades into the ground instead of
+     snapping to an outline. */
   --gel-edge-line: 55%;
   --gel-well-shade: rgba(16, 20, 36, 0.1);
   /* How strong a dropdown row's hover glow is: the accent at this share, fading to nothing at the row's edges. Light
@@ -415,18 +403,7 @@
   /* Mirrors of lib/jelly/tiers.ts — the TS constant is the source of truth and
      lib/__tests__/jelly-tokens.test.ts fails if these drift. Never retune one here. */
   --plasma-wake: 0.35; /* PLASMA.wake */
-  --jelly-dent-depth: 6px; /* DENT.depthPx */
-  --jelly-dent-damping: 0.9; /* DENT.damping */
-  --jelly-lens-strength: 0.6; /* DENT.lensStrength */
-  --jelly-lens-dispersion: 1.5px; /* DENT.lensDispersionPx */
-  --jelly-content-strain: 0.04; /* DENT.contentStrain */
   --jelly-margin: 16px; /* JELLY_LAYOUT.marginPx */
-  --jelly-body-budget: 24; /* JELLY_LAYOUT.bodyBudget */
-  --sim-hz: 120; /* JELLY_LAYOUT.simHz */
-  --arc-breakdown-gap: 12px; /* CHARGE.breakdownGapPx */
-  --arc-formative-lag: 120ms; /* CHARGE.formativeLagMs */
-  --pulse-speed: 900; /* CHARGE.pulseSpeedPxS, px/s (no CSS unit exists) */
-  --pulse-tau: 260ms; /* CHARGE.pulseTauMs */
   --space-4: 16px; /* JELLY_LAYOUT.minGapPx: bodies sit at least this far apart */
 
   /* The site's one tween curve (lib/motion.ts EASE.smooth): it leaves at zero speed, moves quickly through the middle
@@ -435,9 +412,9 @@
      var(--ease-smooth), covered 22% of its distance in the first 5% of its time. */
   --ease-smooth: cubic-bezier(0.3, 0, 0.15, 1);
   --ease-glass: var(--ease-smooth);
-  /* Entrances of the shader-drawn layers, each the CSS twin of the constant that times its hand-over: a rim or haze
-     canvas fading in over the CSS material (engine.ts ENTER_MS), the globe's coat fading in over its CSS glass
-     (LiquidGlobe COAT_FADE_MS), and the docked globe growing in when its chunk lands. */
+  /* Entrances, each the CSS twin of the constant that times it: glass that mounts after the page fades in
+     (app/jelly-material.css §7), the globe's coat fading in over its CSS glass (LiquidGlobe COAT_FADE_MS), and the
+     docked globe growing in when its chunk lands. */
   --liquid-enter: 450ms;
   --globe-coat-fade: 420ms;
   --globe-enter: 560ms;
@@ -1021,8 +998,6 @@
   --site-jelly-plasma: 0.069;
   --site-jelly-flow-speed: 1;
   --site-jelly-quiet: 0.15;
-  --site-jelly-haze-edge: 0.16;
-  --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
   --site-arc-core: color-mix(in oklch, #5b3fd6 85%, var(--site-accent));
   --site-arc-glow: color-mix(in oklch, #7c6cff 60%, transparent);
@@ -1108,8 +1083,6 @@
   --site-jelly-plasma: 0.138;
   --site-jelly-flow-speed: 1;
   --site-jelly-quiet: 0.15;
-  --site-jelly-haze-edge: 0.14;
-  --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
   --site-arc-core: color-mix(in oklch, var(--site-accent) 80%, #1b1240);
   --site-arc-glow: color-mix(in oklch, var(--site-accent) 45%, transparent);
@@ -1218,8 +1191,6 @@
   --site-jelly-plasma: 0.22;
   --site-jelly-flow-speed: 1;
   --site-jelly-quiet: 0.125;
-  --site-jelly-haze-edge: 0.04;
-  --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
   --site-arc-core: color-mix(in oklch, white 70%, var(--site-accent));
   --site-arc-glow: color-mix(in oklch, var(--site-accent) 55%, transparent);
@@ -1304,8 +1275,6 @@
   --site-jelly-plasma: 0.138;
   --site-jelly-flow-speed: 1;
   --site-jelly-quiet: 0.15;
-  --site-jelly-haze-edge: 0.1;
-  --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
   --site-arc-core: color-mix(in oklch, var(--site-accent) 70%, #3a1d6e);
   --site-arc-glow: color-mix(in oklch, var(--site-accent) 40%, transparent);
@@ -1392,8 +1361,6 @@
   --site-jelly-plasma: 0.22;
   --site-jelly-flow-speed: 1;
   --site-jelly-quiet: 0.125;
-  --site-jelly-haze-edge: 0.04;
-  --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
   --site-arc-core: color-mix(in oklch, white 70%, var(--site-accent));
   --site-arc-glow: color-mix(in oklch, var(--site-accent) 55%, transparent);
@@ -1524,8 +1491,6 @@
   --site-jelly-plasma: 0.247;
   --site-jelly-flow-speed: 1;
   --site-jelly-quiet: 0.125;
-  --site-jelly-haze-edge: 0.04;
-  --site-jelly-on: 1;
   /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
   --site-arc-core: color-mix(in oklch, white 60%, var(--site-accent));
   --site-arc-glow: color-mix(in oklch, var(--site-accent) 50%, #b46cff 20%);

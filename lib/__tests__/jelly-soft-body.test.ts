@@ -1,14 +1,14 @@
 /**
  * The soft body is CSS (CSS-first jelly, PR 3; spec docs/superpowers/specs/2026-11-07-css-first-jelly-design.md §3).
  *
- * The physics service (lib/jelly/physics.ts) is no longer installed. Hover plump, press squash and the release spring
+ * The physics service (lib/jelly/physics.ts, deleted in CSS-first jelly PR 5) is gone. Hover plump, press squash and the release spring
  * are CSS transitions on `scale` in app/jelly-material.css §8, eased by the generated `--spring-*` curves
  * (jelly-spring-tokens.test.ts holds the literals), and the plasma wake / the dent's light dot are radial gradients at
  * `--px` / `--py`, the one pointer variable (lib/jelly/pointer-vars.ts). These are CSS-text assertions, like the
  * woken-haze and N3 gates: what each rule must say, and where it must not apply.
  *
- *  - one host list, scoped off native-material routes and a game in play, mirroring the physics service's hosts and
- *    exclusions (panes never move; opt-outs, disabled controls, gesture surfaces, the globe, prose links and play-fields
+ *  - one host list, scoped off native-material routes and a game in play, mirroring the hosts and exclusions of the physics
+ *    service it replaced (panes never move; opt-outs, disabled controls, gesture surfaces, the globe, prose links and play-fields
  *    are not hosts);
  *  - hover plumps cards and dents controls, fine pointers only, never under perf-lite or the app high-contrast mode;
  *  - press squashes on the press spring and releases on the release spring; every Button variant presses (D-C3);

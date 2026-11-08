@@ -15,8 +15,8 @@
  * (design-language §5.1.1), and everything is written on the control itself, never on <html> (design.md §4,
  * cost 3), and only when it changes.
  *
- * One delegated set of capture-phase, passive listeners for the whole document, like the jelly soft-body service
- * (`lib/jelly/physics.ts`): a hook per component reaches the components somebody remembered. It schedules no frames.
+ * One delegated set of capture-phase, passive listeners for the whole document, like the jelly pointer variable
+ * (`lib/jelly/pointer-vars.ts`): a hook per component reaches the components somebody remembered. It schedules no frames.
  *
  * It also reaches the components nobody remembered (amended 2026-10-21): a button, link, tab or field without
  * `data-evert` is adopted on first contact (`lib/evert-auto.ts`) - tagged for the same layer, or, where it cannot

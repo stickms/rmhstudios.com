@@ -23,7 +23,7 @@
  *      `DEGRADED_ROOT_SELECTOR` in `lib/jelly/tiers.ts`. It used to be hand-copied into the engine and the runtime,
  *      and a theme added to one copy left the other drawing.
  *  (d) No site-tier file writes `style.transform` / `style.scale` / `style.translate` in a file that handles
- *      pointer input — a per-component deformation outside the physics service. The baseline is today's gesture
+ *      pointer input — a per-component deformation outside the CSS soft body. The baseline is today's gesture
  *      surfaces (a swipe row, a 3D book, the globe, the news hero); games and apps are exempt, read
  *      from `design-consistency.test.ts` like `scripts/check-consistency.sh` does.
  */
@@ -118,7 +118,7 @@ describe('N2 — the jelly services have one owner each', () => {
     expect(
       offenders,
       'Components take jelly through role classes (`glass-*`) and `data-jelly*` attributes, never by importing ' +
-        '`@/lib/jelly/physics|compose|arcs`. One soft body, one arc service — mounted once from ' +
+        '`@/lib/jelly/arcs`. One soft body (CSS), one arc service — mounted once from ' +
         'hooks/useLiquidInteractions.ts (docs/plasmatic-jelly-system.md).',
     ).toEqual([]);
     // Reads every source file on its first call (cold file cache): 5-9s on a loaded machine, past the 5s default.

@@ -220,7 +220,6 @@
   /* Controls and panels sit on this; it is the app surface, named so no jelly adapter claims it. */
   --tf2-panel: #38312c;
   /* No jelly anywhere in this app (the same kill switch high contrast uses). */
-  --app-jelly-on: 0;
   --tf2-red: #b8383b;
   --tf2-blu: #5885a2;
   --tf2-paper: #ebe3cb;

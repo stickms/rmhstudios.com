@@ -360,8 +360,8 @@ export function Providers({
 
   // The backdrop stays still; bounded material responses live on surfaces.
   useLiquidBackground();
-  // Also mounts the jelly soft-body physics (press/hover/release on every jelly host, `data-fluid-press` included),
-  // the registry, the CSS flow carriers, the arcs and the glass engine — see hooks/useLiquidInteractions.ts.
+  // Mounts the pointer variable (`--px` / `--py` for the CSS soft body and woken haze) and the lazy click arcs — see
+  // hooks/useLiquidInteractions.ts. The rest of the material is CSS.
   // The TF2 HUD Editor is deliberately plain Team Fortress 2 — it installs none of the jelly.
   useLiquidInteractions(!isNativeMaterialRoute(pathname));
   // The CSS-only material (the woken haze) has no install step to skip, so a native-material route is marked on <html>

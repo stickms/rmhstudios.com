@@ -327,8 +327,6 @@ body:has(.radial-shell) .call-banner {
   padding: 0 max(1.25rem, calc(var(--rad-gutter) - 0.75rem));
   /* A thicker, more refractive shoulder than a card: the bar is the one surface that always has moving page under it. */
   --gel-bevel: 9px;
-  --gel-lens: 1.3;
-  --gel-reflect: 1.2;
   /* The bar is `.glass-chrome`: the glass role owns its fill and its shape (app/liquid-glass.css), so no background or
      radius is set here. A local `background` is unlayered and would beat the role, which is how this bar stayed an
      opaque white strip over the page. No border: the shader draws the edge; the degraded tiers get the role's own. No
@@ -4062,12 +4060,4 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   .radial-shell:is([data-layout='catalog'], [data-layout='workspace']) .radial-frame {
     grid-template-columns: var(--rad-rail-nav) minmax(0, 1fr);
   }
-}
-
-/* The molded rim: these three spell their own hairline in this sheet, so the shader's lit rim would sit on top of it —
-   two edges where the slab should dissolve into the ground. While the engine draws the rim (`data-liquid-canvas`) the
-   hairline goes clear; the degraded tiers remove that attribute and keep it. Width stays: layout never changes. */
-.radial-topbar__signin[data-liquid-canvas='on'],
-.radial-topbar__search[data-liquid-canvas='on'] {
-  border-color: transparent;
 }
