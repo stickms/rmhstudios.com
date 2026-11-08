@@ -7,8 +7,8 @@
  * real capture-phase event does — the jelly pointer hub (`lib/jelly/pointer.ts`) listens on the window — and carries
  * its `type`, which the hub dispatches on.
  */
-import { FINE_POINTER_QUERY, JELLY_SELECTOR } from '../../tiers';
-import { HUB_OR_EVERSION_SELECTOR } from '../runtime';
+import { FINE_POINTER_QUERY, HUB_OR_EVERSION_SELECTOR, JELLY_SELECTOR } from '../../tiers';
+import type { JellyEntry, JellyRegistry } from '../../registry';
 
 type Fn = (...args: never[]) => unknown;
 
@@ -253,4 +253,33 @@ export function fakeEnv(opts: { cores?: number } = {}): FakeEnv {
   env.doc = doc as unknown as Document;
   env.win = win as unknown as Window;
   return env;
+}
+
+/** A registry that reports `els` as the visible hosts, with their boxes as rects (no observers, no timers). */
+export function fakeRegistry(els: FakeEl[]): JellyRegistry {
+  const entries: JellyEntry[] = els.map((el, order) => ({
+    el: el as unknown as Element,
+    role: 'control',
+    order,
+    visible: true,
+    rect: { ...el.box },
+  }));
+  return {
+    visible: () => entries,
+    ambientSlots: () => [],
+    liveSet: () => [],
+    entryFor: () => undefined,
+    onChange: () => () => {},
+    scrolling: false,
+    epoch: 0,
+    refresh: () => {},
+    dispose: () => {},
+  };
+}
+
+/** Three buttons in a row, 10px apart. */
+export function fakeButtons(): FakeEl[] {
+  return [0, 1, 2].map(
+    (i) => new FakeEl('button', { left: 100 + i * 90, top: 100, width: 80, height: 32 }, true),
+  );
 }
