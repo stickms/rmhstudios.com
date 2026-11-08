@@ -18,8 +18,8 @@
    3. The CSS flow carrier `.jelly-flow` — injected by `lib/jelly/flow-carriers.ts` (W2-D) as the host's FIRST
       child; 1–2 spans whose only animated property is `transform` (compositor-only). Per-element phase via
       `--jelly-phase` (a negative delay) so neighbours never pulse in sync.
-   4. The static CSS rim — one inset light line + a faint plasma subsurface glow on every surface the shader does
-      not draw (`:not([data-liquid-canvas='on'])`).
+   4. The static CSS rim — one soft inset glow (`--gel-glow`) under a lit top hairline on every surface the shader
+      does not draw (`:not([data-liquid-canvas='on'])`); fields add the well.
    5. The degradation block — high contrast, reduced transparency, forced colours and print hide every jelly layer;
       `perf-lite` keeps the static haze and the CSS rim but nothing moves.
 
@@ -296,6 +296,18 @@
         var(--jelly-edge-blur) 0 var(--gel-edge-b, transparent),
       inset 0 0 var(--gel-feather, 0px) calc(1px - min(var(--gel-feather, 0px), 1px))
         var(--gel-fresnel, transparent);
+    /* `--gel-glow` is the static rim's ONE shadow (§4, Task 11): the soft lip that `--gel-edge` and the Fresnel line
+       paint together, folded into a single zero-offset inset glow — the Fresnel colour carrying the red/blue edge
+       tint, `--gel-bevel` wide. Each inset shadow on a rounded box is a full clip-and-paint pass on a software
+       rasteriser (WebKitGTK, Firefox's WebRender on llvmpipe), so seven of them on every host cost a theme switch
+       1.6 s instead of 0.6 s; one costs about what none did. What it gives up: the red-toward-the-light /
+       blue-away offset split, which at the tokens' 3–10 % alphas moved no pixel by more than 14/255. */
+    --gel-glow: inset 0 0 calc(var(--gel-bevel, 4px) * var(--gel-shoulder, 1) + 1px) 1px
+      color-mix(
+        in srgb,
+        var(--gel-fresnel, transparent) 80%,
+        color-mix(in srgb, var(--gel-edge-r, transparent), var(--gel-edge-b, transparent))
+      );
   }
   /* Something better draws the haze: a haze canvas (engine) or a CSS carrier. Under perf-lite neither may run, so
      the floor stays whatever the attributes say. */
@@ -816,11 +828,16 @@
   }
 
   /* ── 4. Static CSS rim (01 §3.4) ────────────────────────────────────────────────────────────────────────────────
-     Every surface the shader does NOT draw gets one lit top line, a faint plasma subsurface glow, and the gel edge
-     (§2b: the RGB-led band and the Fresnel line — a hard 1px line only where `--gel-feather` is 0, otherwise a soft
-     glow that far in, the molded rim's CSS twin). A field adds the well: a soft shade inside its top lip and a fainter
-     border (`--gel-well-shade`, `--gel-field-line`), so it reads as pressed into the ground. Static: never in a
-     transition list (hover-css.ts forbids shadow transitions), so it costs nothing at rest. */
+     Every surface the shader does NOT draw gets the gel's soft lip as ONE inset shadow, `--gel-glow` (§2b); the lit top
+     edge is the hairline's `border-top-color` (below). A field adds the well: a soft shade inside its top lip and a
+     fainter border (`--gel-well-shade`, `--gel-field-line`), so it reads as pressed into the ground; it is the only
+     list with two shadows. Static: never in a transition list (hover-css.ts forbids shadow transitions).
+     Task 11 (cross-engine profiling, 2026-11-08): this was seven insets (a lit top line, a 14px plasma subsurface glow,
+     a transparent well, the three RGB bands and the Fresnel line) on every host. A software rasteriser paints each one
+     as its own rounded clip pass, on every host, on every frame of a scroll or a theme switch: WebKitGTK's feed theme
+     switch went from 0.57 s to 1.6 s, Firefox's feed scroll to 3 fps. Folded into one, the lip looks the same to the
+     eye (≤ 15/255 anywhere on /jelly, light and graphite); what is gone at rest is the plasma subsurface tint (the
+     hover wake still lights the plasma) and the R/B offset split. */
   :is(
       .glass-fill,
       .glass-pane,
@@ -829,21 +846,16 @@
       .glass-inset,
       [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
     ):not([data-liquid-canvas='on']):not([data-liquid-material='off']) {
+    box-shadow: var(--gel-glow, 0 0 0 0 transparent);
+  }
+  /* The field's well joins the glow. Its own rule, not an inherited variable: a variable set on a track would reach
+     every control inside it. `:not([data-slot='button'])` only lifts it over the rule above (a field is no button). */
+  .glass-inset:not([data-liquid-canvas='on']):not([data-liquid-material='off']):not(
+      [data-slot='button']
+    ) {
     box-shadow:
-      inset 0 1px calc(var(--gel-feather, 0px) + 1px) -0.5px
-        color-mix(in srgb, var(--site-glass-light) 60%, transparent),
-      inset 0 0 14px -4px
-        color-mix(
-          in srgb,
-          var(--jelly-plasma-a, var(--site-jelly-plasma-a))
-            calc(
-              var(--jelly-plasma-k, 0) * var(--jelly-plasma-gain, var(--site-jelly-plasma, 1)) *
-                220%
-            ),
-          transparent
-        ),
-      inset 0 1.5px 4px -1px var(--jelly-well, transparent),
-      var(--gel-edge, 0 0 0 0 transparent);
+      var(--gel-glow, 0 0 0 0 transparent),
+      inset 0 1.5px 4px -1px var(--gel-well-shade, transparent);
   }
   /* A role's hairline where the shader draws no rim keeps only `--gel-edge-line` of its colour (a lit top edge keeps its
      ratio), so a slab outside the budget is molded out of the ground like its neighbours, not outlined. The degraded
@@ -863,7 +875,6 @@
   :is(.glass-inset, [data-slot='input'], [data-slot='textarea']):not([data-liquid-canvas='on']):not(
       [data-liquid-material='off']
     ) {
-    --jelly-well: var(--gel-well-shade, transparent);
     border-color: color-mix(in srgb, var(--site-border) var(--gel-field-line, 100%), transparent);
   }
 
