@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, posix } from 'node:path';
 
 /**
  * §17.3 — "animations always end": a `requestAnimationFrame` file allowlist so a
@@ -146,9 +146,11 @@ import { join } from 'node:path';
  *   - components/radial/eversion/useEversionController.ts — the eversion controller's two
  *                                       one-shot rAF waits (`nextFrame()`): each resolves one
  *                                       promise and never re-requests a frame.
- *   - lib/eversion/gl/worker.ts, lib/eversion/gl/host.ts — the globe-eversion
- *                                       navigation effect's frame loop (the
- *                                       worker's own scheduler, and the same
+ *   - lib/eversion/gl/host.ts — the globe-eversion
+ *                                       navigation effect's frame loop (its
+ *                                       worker, lib/eversion/gl/worker.ts, is a
+ *                                       dedicated worker and exempt, see
+ *                                       `isWorkerOnlyRaf`; this is the same
  *                                       core's in-thread scheduler where workers
  *                                       cannot present). Bounded by the
  *                                       navigation: the loop starts at `start`
@@ -338,7 +340,6 @@ const ALLOW = new Set<string>([
   // Globe eversion (T25): bounded by the navigation — the loop starts at `start` and stops at
   // `done`/`abort`/`context-lost`; no loop runs at rest.
   'lib/eversion/gl/host.ts',
-  'lib/eversion/gl/worker.ts',
   // Globe eversion (T31): ONE-SHOT rAFs, never a loop. `nextFrame()` resolves a single promise
   // (the two-frame waits before the AFTER capture and before `reveal`, spec §6.3/§6.6), with a
   // 100 ms timer so a hidden tab cannot hang it. Nothing re-requests a frame from the callback.
@@ -425,12 +426,118 @@ function collect(dir: string, out: string[] = []): string[] {
  *
  * Stripping cannot hide a real call: code that runs is code outside a comment.
  */
-function usesRaf(file: string): boolean {
-  const src = readFileSync(join(ROOT, file), 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
-  return src.includes('requestAnimationFrame');
+const stripComments = (src: string) =>
+  src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+
+const WORKER_URL = /new\s+Worker\(\s*new\s+URL\(\s*['"]([^'"]+)['"]\s*,\s*import\.meta\.url/g;
+
+/**
+ * Every file some source starts as a dedicated worker — `new Worker(new URL('./x.worker.ts', import.meta.url))` — as a
+ * repo-relative path. Comments are stripped first, so a doc block quoting the pattern does not count.
+ */
+function workerTargets(sources: ReadonlyArray<{ file: string; src: string }>): Set<string> {
+  const out = new Set<string>();
+  for (const { file, src } of sources) {
+    for (const m of stripComments(src).matchAll(WORKER_URL)) {
+      out.add(posix.normalize(posix.join(posix.dirname(file), m[1]!)));
+    }
+  }
+  return out;
 }
+
+/**
+ * A dedicated worker's own `requestAnimationFrame` (e.g. the liquid globe's `components/radial/globe-worker.ts`) is
+ * not a page frame: it never wakes the page's frame driver or its main thread, which is what this gate guards. Exempt
+ * only a file that IS started as a worker somewhere in the repo AND touches no `document.` / `window.` — not a file
+ * that merely carries `/// <reference lib="webworker" />` (a directive anyone can add to a page module).
+ */
+function isWorkerOnlyRaf(file: string, strippedSrc: string, targets: Set<string>): boolean {
+  return targets.has(file) && !/\b(?:document|window)\./.test(strippedSrc);
+}
+
+let targetsCache: Set<string> | null = null;
+function repoWorkerTargets(): Set<string> {
+  if (!targetsCache) {
+    targetsCache = workerTargets(
+      SCAN_DIRS.flatMap((d) => collect(d)).map((file) => ({
+        file,
+        src: readFileSync(join(ROOT, file), 'utf8'),
+      })),
+    );
+  }
+  return targetsCache;
+}
+
+function usesRaf(file: string): boolean {
+  const src = stripComments(readFileSync(join(ROOT, file), 'utf8'));
+  if (!src.includes('requestAnimationFrame')) return false;
+  return !isWorkerOnlyRaf(file, src, repoWorkerTargets());
+}
+
+describe('the worker exemption bites (fixtures)', () => {
+  const host = {
+    file: 'components/radial/globe-worker-host.ts',
+    src: "const w = new Worker(new URL('./globe-worker.ts', import.meta.url), { type: 'module' });",
+  };
+  const targets = workerTargets([
+    host,
+    {
+      file: 'fixture/a/b/client.ts',
+      src: "new Worker(new URL('../c/tick.worker.ts', import.meta.url))",
+    },
+    // A comment quoting the pattern is not a worker.
+    { file: 'fixture/doc.ts', src: "/** new Worker(new URL('./ghost.ts', import.meta.url)) */" },
+  ]);
+
+  it('resolves worker URLs relative to the file that starts them', () => {
+    expect([...targets].sort()).toEqual([
+      'components/radial/globe-worker.ts',
+      'fixture/a/c/tick.worker.ts',
+    ]);
+  });
+
+  it('exempts a real worker that touches no DOM', () => {
+    const src = stripComments(
+      '/// <reference lib="webworker" />\nscope.requestAnimationFrame(onFrame);',
+    );
+    expect(isWorkerOnlyRaf('components/radial/globe-worker.ts', src, targets)).toBe(true);
+  });
+
+  it('does NOT exempt a page module that only carries the webworker directive', () => {
+    const src = stripComments('/// <reference lib="webworker" />\nrequestAnimationFrame(loop);');
+    expect(isWorkerOnlyRaf('fixture/Spinner.tsx', src, targets)).toBe(false);
+  });
+
+  it('does NOT exempt a worker target that reaches for the page (document. / window.)', () => {
+    expect(
+      isWorkerOnlyRaf(
+        'components/radial/globe-worker.ts',
+        'window.requestAnimationFrame(f);',
+        targets,
+      ),
+    ).toBe(false);
+    expect(
+      isWorkerOnlyRaf(
+        'fixture/a/c/tick.worker.ts',
+        'document.title = "x"; requestAnimationFrame(f);',
+        targets,
+      ),
+    ).toBe(false);
+  });
+
+  it('does NOT exempt a file only a comment points at', () => {
+    expect(isWorkerOnlyRaf('fixture/ghost.ts', 'requestAnimationFrame(f);', targets)).toBe(false);
+  });
+
+  it("the repo's worker rAF loops are the exempt ones", () => {
+    const real = repoWorkerTargets();
+    expect(real.has('components/radial/globe-worker.ts')).toBe(true);
+    expect(real.has('lib/globe-cursor/cursor.worker.ts')).toBe(true);
+    expect(usesRaf('components/radial/globe-worker.ts')).toBe(false);
+    expect(usesRaf('lib/globe-cursor/cursor.worker.ts')).toBe(false);
+    expect(usesRaf('components/radial/LiquidGlobe.tsx')).toBe(true);
+  });
+});
 
 describe('§17.3 requestAnimationFrame loop allowlist', () => {
   const found = SCAN_DIRS.flatMap((d) => collect(d)).filter(usesRaf);

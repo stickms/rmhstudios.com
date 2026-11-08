@@ -120,6 +120,7 @@
 .rmhtype-progress-bar {
   background: var(--app-accent-dim);
   border-radius: 999px;
+  corner-shape: round;
   overflow: hidden;
   height: 8px;
 }
@@ -128,6 +129,7 @@
   background: var(--app-accent);
   height: 100%;
   border-radius: 999px;
+  corner-shape: round;
   transition: width var(--app-duration-slow) var(--app-ease);
 }
 

@@ -13,6 +13,11 @@
  * crisp at any size.
  *
  * Owns no loop: the engine calls `render` from its own frame.
+ *
+ * Canvas-agnostic: on the page (`create`, for the trail/sparkle modes that composite the sprite onto a 2D canvas) or,
+ * in the default direct mode, inside the cursor's worker on a transferred `OffscreenCanvas` (`createOn`, driven by
+ * `./remote-gl.ts` and `./cursor.worker.ts`), so the cursor's GPU work and its frame hand-off never wait on the page's
+ * thread.
  */
 
 import { EVERSION_GLSL, GLSL_HEADER } from '@/lib/eversion/gl/shaders';
@@ -202,8 +207,19 @@ function colMajor(m: Float64Array, out: Float32Array): Float32Array {
   return out;
 }
 
-export class GlobeGl {
+/** What the cursor engine needs from a GPU surface (this class on the page, or `RemoteGlobeGl` in a worker). */
+export interface GlobeSurface {
+  /** False once the context is lost (or the worker is gone); the engine falls back to the CPU path for good. */
+  readonly ok: boolean;
+  /** The canvas that shows the globe (in direct mode it is put on screen as is). */
   readonly canvas: HTMLCanvasElement;
+  /** True when the canvas can ONLY be shown, never drawn onto another canvas (a worker owns its pixels). */
+  readonly directOnly?: boolean;
+  render(f: GlFrame): CanvasImageSource;
+}
+
+export class GlobeGl<C extends HTMLCanvasElement | OffscreenCanvas = HTMLCanvasElement> {
+  readonly canvas: C;
   private gl: WebGL2RenderingContext;
   private program: WebGLProgram;
   private vao: WebGLVertexArrayObject | null = null;
@@ -234,14 +250,25 @@ export class GlobeGl {
    */
   static async create(): Promise<GlobeGl | null> {
     try {
-      const canvas = document.createElement('canvas');
+      return await GlobeGl.createOn(document.createElement('canvas'), probeGpu().gpuTier === 0);
+    } catch {
+      return null;
+    }
+  }
+
+  /** The same surface on any canvas, an `OffscreenCanvas` in a worker included. `software` caps the mesh. */
+  static async createOn<C extends HTMLCanvasElement | OffscreenCanvas>(
+    canvas: C,
+    software: boolean,
+  ): Promise<GlobeGl<C> | null> {
+    try {
       const gl = canvas.getContext('webgl2', {
         alpha: true,
         antialias: true,
         premultipliedAlpha: true,
         depth: true,
         powerPreference: 'low-power',
-      });
+      }) as WebGL2RenderingContext | null;
       if (!gl) return null;
       const build = startProgram(gl, { vert: VERT, frag: FRAG, attribs: { a_tp: 0 } });
       if (!build) return null;
@@ -251,7 +278,7 @@ export class GlobeGl {
         gl.getExtension('WEBGL_lose_context')?.loseContext();
         return null;
       }
-      return new GlobeGl(probeGpu().gpuTier === 0, canvas, gl, program);
+      return new GlobeGl<C>(software, canvas, gl, program);
     } catch {
       return null;
     }
@@ -259,7 +286,7 @@ export class GlobeGl {
 
   private constructor(
     private readonly software: boolean,
-    canvas: HTMLCanvasElement,
+    canvas: C,
     gl: WebGL2RenderingContext,
     program: WebGLProgram,
   ) {
@@ -287,10 +314,13 @@ export class GlobeGl {
     ]) {
       this.loc[name] = gl.getUniformLocation(program, name);
     }
-    this.canvas.addEventListener('webglcontextlost', (e) => {
+    const onLost = (e: Event) => {
       e.preventDefault();
       this.lost = true;
-    });
+    };
+    // `contextlost` on an OffscreenCanvas, `webglcontextlost` on a canvas element.
+    (this.canvas as EventTarget).addEventListener('webglcontextlost', onLost);
+    (this.canvas as EventTarget).addEventListener('contextlost', onLost);
   }
 
   /** False once the context is lost; the engine falls back to the CPU path for good. */
@@ -352,7 +382,7 @@ export class GlobeGl {
     this.detail = detail;
   }
 
-  render(f: GlFrame): HTMLCanvasElement {
+  render(f: GlFrame): C {
     const gl = this.gl;
     if (this.canvas.width !== f.px) {
       this.canvas.width = f.px;

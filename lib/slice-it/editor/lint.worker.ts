@@ -9,11 +9,11 @@
  * that reimplemented even one rule would be a second linter, and the editor
  * exists to stop exactly that class of divergence.
  *
- * Typed through a hand-written view of the worker global rather than
- * `/// <reference lib="webworker" />`: the DOM and WebWorker libs both declare
- * `self` with incompatible types, and pulling the worker lib into a project
- * compiled against the DOM one produces a wall of duplicate-identifier errors
- * for a file that needs exactly two globals.
+ * Typed through a hand-written view of the worker global — the two globals it
+ * needs — rather than `/// <reference lib="webworker" />`. The directive does
+ * work in this project (the globe's and the glass engine's workers use it,
+ * reaching the scope as `self as unknown as DedicatedWorkerGlobalScope`); this
+ * file simply has no use for the rest of the worker lib.
  */
 
 import { runLint, type LintRequest, type LintResult } from './lint';

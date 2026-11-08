@@ -153,6 +153,7 @@
   gap: 6px;
   padding: 6px;
   border-radius: 9999px;
+  corner-shape: round;
   background: var(--site-surface);
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
@@ -170,6 +171,7 @@
   height: 36px;
   border: 0;
   border-radius: 50%;
+  corner-shape: round;
   background: transparent;
   color: var(--site-text);
   cursor: pointer;
@@ -192,6 +194,7 @@
   padding: 0 16px;
   border: 0;
   border-radius: 9999px;
+  corner-shape: round;
   background: var(--site-text);
   color: var(--site-bg);
   font: inherit;
@@ -239,6 +242,7 @@
   height: 28px;
   border: 0;
   border-radius: 50%;
+  corner-shape: round;
   background: transparent;
   color: var(--site-text-muted);
   cursor: pointer;
@@ -411,6 +415,7 @@
 .vibe-progress__dep {
   padding: 2px 9px;
   border-radius: 9999px;
+  corner-shape: round;
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
   color: var(--site-text);
@@ -499,6 +504,7 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
+  corner-shape: round;
   background: conic-gradient(from 0deg, #f5f5f7, transparent 70%);
   animation: vibe-spin 0.85s linear infinite;
   -webkit-mask: radial-gradient(circle 17px at center, transparent 98%, #000 100%);
@@ -583,6 +589,7 @@
   width: 38px;
   height: 38px;
   border-radius: 9999px;
+  corner-shape: round;
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
   color: var(--site-text-muted);
@@ -764,6 +771,7 @@
   height: 36px;
   padding: 0 8px 0 16px;
   border-radius: 9999px;
+  corner-shape: round;
   background: var(--site-surface);
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
@@ -785,6 +793,7 @@
   padding: 0 12px;
   border: 0;
   border-radius: 9999px;
+  corner-shape: round;
   background: var(--site-text);
   color: var(--site-bg);
   font: inherit;
@@ -892,6 +901,7 @@
 .vibe-history__badge {
   padding: 1px 7px;
   border-radius: 9999px;
+  corner-shape: round;
   background: var(--site-surface-hover);
   color: var(--site-text);
   font-size: 0.62rem;

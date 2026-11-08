@@ -35,6 +35,7 @@ import {
   flareArc,
   type ArcEmitKind,
   type ArcEnd,
+  type ArcOrigin,
   type ArcRenderer,
   type LiveArc,
 } from './renderer';
@@ -110,6 +111,8 @@ export interface StrikeOptions {
   /** Renderer-clock start (staggered click bolts); default now. */
   start?: number;
   modal?: boolean;
+  /** The press point this bolt carries the impact of (the first admitted bolt of a press). */
+  origin?: ArcOrigin;
 }
 
 export interface DischargeOptions {
@@ -134,12 +137,14 @@ const end = (
   p: { x: number; y: number },
   n: { x: number; y: number },
   el?: Element | null,
+  rect?: RoundedRect | null,
 ): ArcEnd => ({
   x: p.x,
   y: p.y,
   nx: n.x,
   ny: n.y,
   el,
+  rect,
 });
 
 export function createArcActions(ctx: ArcContext): ArcActions {
@@ -158,12 +163,13 @@ export function createArcActions(ctx: ArcContext): ArcActions {
     const arc = boltArc({
       kind,
       emitKind: kind,
-      a: end(contact.a, contact.na, a),
-      b: end(contact.b, contact.nb, b),
+      a: end(contact.a, contact.na, a, ra),
+      b: end(contact.b, contact.nb, b, rb),
       seed: seed(),
       start: opts.start ?? ctx.renderer.now(),
       energy: opts.energy,
       modal: opts.modal ?? !!modalRoot(a),
+      origin: opts.origin,
     });
     if (!admitArc(arc, ctx.ledger)) return null;
     ctx.renderer.add(arc);
@@ -230,15 +236,19 @@ export function createArcActions(ctx: ArcContext): ArcActions {
       );
       if (n === 0) return fizz(el, src, { x, y }, 'click', undefined, !!modal);
       let any = false;
+      // The press point's impact rides the first bolt the ledger admits (none admitted: only the flare shows).
+      let origin: ArcOrigin | undefined = { x, y, rect: src };
       chooseClickTargets(targets, n, ctx.rand).forEach((t, i) => {
         const target = cands[t.index].el;
         const ok = strike(el, target, {
           kind: 'click',
           start: now + i * ARC_BUDGET.clickStaggerMs,
           modal: !!modal,
+          origin,
         });
         if (ok) {
           any = true;
+          origin = undefined;
           ctx.charge.drain(target, ARC_BUDGET.chargeDrain, now);
         }
       });
@@ -259,10 +269,11 @@ export function createArcActions(ctx: ArcContext): ArcActions {
       const arc = boltArc({
         kind: 'discharge',
         emitKind: 'click',
-        a: end(hit.rim.point, hit.rim.normal, el),
+        a: end(hit.rim.point, hit.rim.normal, el, cands[hit.index].rect),
         b: end({ x, y }, toCursor),
         seed: mixSeed(seed(), 0xd15c),
         start: now,
+        origin: { x, y },
       });
       ctx.renderer.add(flareArc(x, y, now));
       if (!admitArc(arc, ctx.ledger)) return false;

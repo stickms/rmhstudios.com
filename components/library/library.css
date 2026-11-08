@@ -231,6 +231,7 @@
   background: rgba(0, 0, 0, 0.55);
   padding: 2px 7px;
   border-radius: 9999px;
+  corner-shape: round;
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -610,6 +611,7 @@
   gap: 5px;
   padding: 6px 12px;
   border-radius: 999px;
+  corner-shape: round;
   border: 0.5px solid var(--site-border);
   background: var(--site-surface);
   color: var(--site-text);
@@ -644,6 +646,7 @@
   width: min(620px, 84vw);
   padding: 9px 16px;
   border-radius: 9999px;
+  corner-shape: round;
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
   -webkit-backdrop-filter: saturate(180%) blur(18px);
@@ -688,6 +691,7 @@
   width: 100%;
   height: 4px;
   border-radius: 9999px;
+  corner-shape: round;
   background: var(--site-surface-hover);
   outline: none;
   cursor: pointer;
@@ -698,6 +702,7 @@
   width: 15px;
   height: 15px;
   border-radius: 50%;
+  corner-shape: round;
   background: var(--site-text);
   border: 0;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
@@ -710,6 +715,7 @@
   width: 15px;
   height: 15px;
   border-radius: 50%;
+  corner-shape: round;
   background: var(--site-text);
   border: 0;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
@@ -744,6 +750,7 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
+  corner-shape: round;
   cursor: pointer;
   border: 1.5px solid var(--site-border-bright);
   transition:
@@ -879,6 +886,7 @@
   gap: 3px;
   padding: 2px 7px;
   border-radius: 999px;
+  corner-shape: round;
   font-size: 11px;
   font-weight: 600;
   color: #fff;
@@ -895,6 +903,7 @@
   background: rgba(8, 8, 8, 0.55);
   color: #fff;
   border-radius: inherit;
+  corner-shape: inherit;
 }
 /* Collection view modal — wider so the book shelf breathes. */
 .lib-coll-modal {
@@ -943,6 +952,7 @@
   gap: 5px;
   padding: 6px 12px;
   border-radius: 999px;
+  corner-shape: round;
   border: 1px solid var(--site-border);
   background: var(--site-surface);
   color: var(--site-text);
@@ -1026,6 +1036,7 @@
   width: 44px;
   height: 44px;
   border-radius: 9999px;
+  corner-shape: round;
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
   color: var(--site-text);
@@ -1083,6 +1094,7 @@
   background: var(--site-surface);
   border: 1px solid var(--site-border);
   border-radius: 999px;
+  corner-shape: round;
   cursor: pointer;
   transition:
     background 0.18s,
@@ -1440,6 +1452,7 @@
   font-size: 13px;
   font-weight: 500;
   border-radius: 999px;
+  corner-shape: round;
   border: 1px solid var(--site-border);
   background: transparent;
   color: var(--site-text);
@@ -1545,6 +1558,7 @@
   text-transform: uppercase;
   padding: 2px 7px;
   border-radius: 999px;
+  corner-shape: round;
   border: 1px solid var(--site-border);
   color: var(--site-text-muted);
 }
@@ -1609,6 +1623,7 @@
   justify-content: center;
   border: 1px solid var(--site-glass-rim-soft, var(--site-border));
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-glass-tint-strong, var(--site-surface));
   color: var(--site-text);
   cursor: pointer;
@@ -1647,6 +1662,7 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
+  corner-shape: round;
   font-size: 12px;
   font-weight: 700;
   color: var(--site-accent-fg);
@@ -1857,6 +1873,7 @@
   gap: 6px;
   padding: 6px 12px;
   border-radius: 999px;
+  corner-shape: round;
   font-size: 12px;
   font-weight: 600;
   border: 1px solid var(--site-border);
@@ -1896,6 +1913,7 @@
   gap: 7px;
   padding: 8px 16px;
   border-radius: 999px;
+  corner-shape: round;
   font-size: 13px;
   font-weight: 600;
   border: 1px solid var(--site-border, rgba(245, 245, 247, 0.18));
@@ -1950,6 +1968,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
+  corner-shape: inherit;
   z-index: -1;
   background: var(--site-surface, rgba(255, 255, 255, 0.05));
   border: 1px solid var(--site-border, rgba(255, 255, 255, 0.1));
@@ -1977,6 +1996,7 @@
   gap: 5px;
   padding: 4px 9px;
   border-radius: 999px;
+  corner-shape: round;
   font-size: 11px;
   font-weight: 600;
   color: #fff;
@@ -1995,6 +2015,7 @@
   width: 26px;
   height: 26px;
   border-radius: 999px;
+  corner-shape: round;
   color: #fff;
   background: rgba(0, 0, 0, 0.6);
   -webkit-backdrop-filter: blur(6px);
@@ -2358,6 +2379,7 @@
   height: 40px;
   border: 0;
   border-radius: 50%;
+  corner-shape: round;
   background: var(--site-surface);
   color: var(--site-text);
   cursor: pointer;
@@ -2658,6 +2680,7 @@
 .lib--glass-playground .lib__section-count {
   padding: 5px 9px;
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-surface);
   color: var(--site-text-muted);
 }

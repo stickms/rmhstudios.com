@@ -9,9 +9,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { drive } from '../../frame';
 import { createFlashLedger } from '../ledger';
+import { CALM } from '../../tiers';
+import { IMPACT } from '../impact';
 import {
   ARC_FRAME_ORDER,
+  FLARE,
+  IMPACT_PAD,
   admitArc,
+  arcLife,
   boltArc,
   clampRed,
   createArcRenderer,
@@ -183,6 +188,117 @@ describe('arc renderer', () => {
     r.dispose();
   });
 
+  const RA = { x: 20, y: 84, w: 80, h: 40, r: 20 };
+  const RB = { x: 180, y: 84, w: 80, h: 40, r: 20 };
+  const struckA = { ...A, y: 104, rect: RA };
+  const struckB = { ...B, y: 104, rect: RB };
+
+  it('a bolt between two hosts draws its impacts: the ring clipped to the host, the flash and the lit rim', () => {
+    const ledger = createFlashLedger();
+    const r = createArcRenderer(env.doc, { ledger });
+    const arc = boltArc({
+      kind: 'click',
+      emitKind: 'click',
+      a: struckA,
+      b: struckB,
+      seed: 9,
+      start: r.now(),
+      origin: { x: 60, y: 104, rect: RA },
+    });
+    expect(arc.fx!.stubs).toHaveLength(2);
+    expect(arc.fx!.rims).toHaveLength(2);
+    expect(admitArc(arc, ledger)).toBe(true);
+    r.add(arc);
+    const calls = env.canvas()!.ctx.calls;
+    runFrames(env);
+    expect(calls).toContain('clip');
+    expect(calls).toContain('roundRect');
+    expect(calls).toContain('fill');
+    // The arc lived through its impact and then let the frame sleep.
+    expect(r.live()).toBe(0);
+    expect(env.rafQueue.size).toBe(0);
+    // Its dirty rect covers the impact reach round each struck point.
+    expect(arc.bounds.x0).toBeLessThanOrEqual(struckA.x - IMPACT_PAD);
+    expect(arc.bounds.x1).toBeGreaterThanOrEqual(struckB.x + IMPACT_PAD);
+    r.dispose();
+  });
+
+  it('the impact keeps an arc alive only until it has played out, never past the click life bound', () => {
+    for (let seed = 1; seed < 40; seed++) {
+      const arc = boltArc({
+        kind: 'click',
+        emitKind: 'click',
+        a: struckA,
+        b: struckB,
+        seed,
+        start: 0,
+      });
+      expect(arcLife(arc)).toBeLessThanOrEqual(410);
+      expect(arcLife(arc)).toBeGreaterThanOrEqual(arc.timeline.strikes[0].at + IMPACT.lifeMs);
+    }
+    // A discharge (short life) is extended by its impact, by at most the impact's own length.
+    const d = boltArc({
+      kind: 'discharge',
+      emitKind: 'click',
+      a: struckA,
+      b: B,
+      seed: 2,
+      start: 0,
+    });
+    expect(arcLife(d)).toBeLessThanOrEqual(d.timeline.strikes[0].at + IMPACT.lifeMs);
+    expect(arcLife(flareArc(0, 0, 0))).toBe(FLARE.lifeMs);
+  });
+
+  it('a refused bolt draws nothing new: the ledger decides, the flare is all that shows', () => {
+    const ledger = createFlashLedger();
+    for (let i = 0; i < 3; i++) expect(ledger.tryOnset(0)).toBe(true);
+    const r = createArcRenderer(env.doc, { ledger });
+    const arc = boltArc({
+      kind: 'click',
+      emitKind: 'click',
+      a: struckA,
+      b: struckB,
+      seed: 9,
+      start: 0,
+      origin: { x: 60, y: 104, rect: RA },
+    });
+    // A 4th onset inside the second: refused.
+    expect(admitArc(arc, ledger)).toBe(false);
+    r.add(flareArc(60, 104, r.now()));
+    const calls = env.canvas()!.ctx.calls;
+    runFrames(env);
+    expect(calls).not.toContain('clip');
+    expect(calls).not.toContain('roundRect');
+    expect(calls).not.toContain('stroke');
+    r.dispose();
+  });
+
+  it('calm draws every arc at the calm intensity; lively at full', () => {
+    const r = createArcRenderer(env.doc);
+    const lively = boltArc({
+      kind: 'click',
+      emitKind: 'click',
+      a: struckA,
+      b: struckB,
+      seed: 4,
+      start: r.now(),
+    });
+    r.add(lively);
+    expect(lively.scale).toBe(1);
+    env.root.setAttribute('data-jelly-motion', 'calm');
+    const calm = boltArc({
+      kind: 'click',
+      emitKind: 'click',
+      a: struckA,
+      b: struckB,
+      seed: 4,
+      start: r.now(),
+    });
+    r.add(calm);
+    expect(calm.scale).toBe(CALM.arcIntensity);
+    r.dispose();
+  });
+
   it('no arc source file calls requestAnimationFrame (the frame driver owns the one loop)', () => {
     const dir = join(process.cwd(), 'lib/jelly/arcs');
     const files = readdirSync(dir).filter((f) => f.endsWith('.ts'));
@@ -192,6 +308,59 @@ describe('arc renderer', () => {
         .replace(/\/\*[\s\S]*?\*\//g, ' ')
         .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
       expect(src, f).not.toMatch(/requestAnimationFrame|cancelAnimationFrame/);
+    }
+  });
+
+  it('every drawn alpha passes through the flash budget (a new layer must be added to flash-budget.ts first)', () => {
+    const src = readFileSync(join(process.cwd(), 'lib/jelly/arcs/renderer.ts'), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+    // The frame sizes everything it draws by the budget's two caps.
+    expect(src).toMatch(/fitFrame\(plan\.scaled, plan\.lines, pal\.dark\)/);
+    expect(src).toMatch(/centreScales\(plan\.items, pal\.dark\)/);
+    expect(src).toMatch(/drawPoint\(c, p, Math\.min\(fit\.scale, caps\[i\]\)\)/);
+    // Every alpha sink: a reset to 1, the stroke/contact helpers' (already scaled) argument, or a point layer × f.
+    const sinks = [...src.matchAll(/globalAlpha = ([^;]+);/g)].map((m) => m[1].trim());
+    expect(sinks.sort()).toEqual(
+      [
+        '1',
+        '1',
+        '1',
+        '1',
+        'Math.min(1, a.ring * f)',
+        'Math.min(1, alpha)',
+        'Math.min(1, alpha)',
+      ].sort(),
+    );
+    // Each addColorStop call's argument list (balanced parentheses), then its second argument.
+    const stops: string[] = [];
+    for (let i = src.indexOf('addColorStop('); i >= 0; i = src.indexOf('addColorStop(', i + 1)) {
+      let depth = 0;
+      let j = i + 'addColorStop'.length;
+      for (; j < src.length; j++) {
+        if (src[j] === '(') depth++;
+        else if (src[j] === ')' && --depth === 0) break;
+      }
+      const args = src.slice(i + 'addColorStop('.length, j);
+      stops.push(args.slice(args.indexOf(',') + 1));
+    }
+    expect(stops).toHaveLength(6);
+    for (const stop of stops) {
+      // Transparent ends, the contact glow's colour (its alpha is the helper's), or an alpha built from the budget's
+      // own figures (`fillStops`' `alpha · stop`, called with `a.* × f`; the disc's `disc`, already × f).
+      expect(stop, stop).toMatch(
+        /\/ 0\)|^\s*pal\.glow\s*$|\$\{(alpha \* v|disc \* IMPACT_STOPS\[\d\]\[1\])\}/,
+      );
+    }
+    // The point layers' alphas come only from the budget's impactItem; the bolt's from glowPasses/HALO/GEL_LIGHT × f.
+    expect(src).toMatch(/alphas: it\.alphas/);
+    expect(src).not.toMatch(
+      /IMPACT\.peak|IMPACT\.streakAlpha|RIM_LIGHT\.alpha|CONTACT_GLOW\.alpha/,
+    );
+    // fillStops is only fed the budget's stop lists and alphas.
+    for (const m of src.matchAll(/fillStops\((\w+), (\w+), ([^,]+), ([^)]+)\)/g)) {
+      expect(m[2], m[0]).toMatch(/^(RIM_STOPS|STREAK_STOPS|stops)$/);
+      expect(m[4], m[0]).toMatch(/^(alpha|a\.rim \* f|a\.rimWhite \* f)$/);
     }
   });
 

@@ -200,6 +200,16 @@
   transition-duration: calc(var(--site-transition-speed, 200ms) * 1.5);
 }
 
+/* A full radius is a circle or a capsule, never a squircle: it keeps the circular corner next to Tailwind's own
+   `border-radius` (Tailwind merges both declarations, and every variant such as `md:rounded-full`). The universal
+   squircle default is in `@layer base` (see "Corner shape" there). */
+@utility rounded-full {
+  corner-shape: round;
+}
+@utility rounded-t-full {
+  corner-shape: round;
+}
+
 /* ── The defaults behind ~1,650 bare `transition` / `transition-colors` /
    `transition-transform` / `transition-opacity` call sites ─────────────────
    Tailwind's own defaults are 150ms on `cubic-bezier(0.4, 0, 0.2, 1)` —
@@ -3175,6 +3185,52 @@ html:not(.app-route) body {
    button, a bespoke background) still wins. Unlayered, they out-specified every
    utility — `color: inherit` alone repainted accent-filled buttons in body ink. */
 @layer base {
+  /* Corner shape: every rounded SURFACE corner on the site is a continuous-curvature squircle where the browser
+     supports `corner-shape` (Chromium and recent WebKit; Firefox ignores it and keeps the circular arc). A circular
+     corner jumps from straight to curved with a visible kink, most obvious on a thin high-contrast border; a squircle
+     eases in. Three things stay circular:
+       - CIRCLES AND PILLS: `corner-shape: round` goes beside every `border-radius: 50%` / ≥ 99px / pill-token
+         declaration (lib/__tests__/corner-shape.test.ts enforces it) and on Tailwind's `rounded-full` (`@utility`).
+       - CONTROLS: a control's 24px radius clamps to a capsule up to 48px tall, and a squircle would turn the capsule
+         into a rounded rectangle, so the control primitives below are `round` (surfaces are squircles, controls are
+         capsules, as on Apple platforms).
+       - Anything with `border-radius: inherit` also says `corner-shape: inherit` (the test enforces that too),
+         and pseudo-elements inherit their host's shape, because the property is not inherited by itself. */
+  @supports (corner-shape: squircle) {
+    *,
+    ::before,
+    ::after {
+      corner-shape: squircle;
+    }
+    ::before,
+    ::after {
+      corner-shape: inherit;
+    }
+    :is(
+        [data-slot='button'],
+        [data-slot='input'],
+        [data-slot='search-field'],
+        [data-slot='select-control'],
+        [data-slot='switch'],
+        [data-slot='menu-item'],
+        [data-slot='select-item'],
+        [data-slot='jelly-group'],
+        [data-slot='jelly-group-item'],
+        [role='tab'],
+        [role='tablist'],
+        [role='switch'],
+        [class*='site-control-radius'],
+        input,
+        select,
+        .glass-interactive,
+        .page-heading__back
+      ),
+    /* The toast library injects `border-radius: 50%` on its close button with no corner-shape. */
+    [data-sonner-toast] [data-close-button] {
+      corner-shape: round;
+    }
+  }
+
   :where(.vibe-app) :is(input, textarea, select, button) {
     font: inherit;
   }
@@ -3470,8 +3526,13 @@ textarea,
    opacity flicker fights the squish. Links and legacy buttons keep the cue — except where the CSS soft body
    (app/jelly-material.css §8) springs them: every selector carries that rule's own scope and host list as a
    `:not(:where(…))` guard (zero specificity; one copy for the whole list), so a control that squashes never also
-   flashes, and one the soft body leaves alone (an opted-out member, a plain link, a native-material route, a game in
-   play) keeps this cue. lib/__tests__/jelly-soft-body.test.ts holds the guard equal to the host rule. */
+   flashes. Two more clauses cover a press that squashes something AROUND the pressed element (Task 8): a plain link
+   inside a host (the card it fills squashes as the card) and anything inside a press body (`data-jelly-press-body`: the
+   group, bar or pill squashes as one body), except a `:focus-visible` member: a keyboard Space/Enter sets `:active` on
+   the member alone, the body does not squash, and this cue is its only press feedback. (A member focused from the
+   keyboard and then clicked can still match `:focus-visible` in Chromium, so that one press shows both.) One that the soft body leaves alone (an opted-out member outside a body, a
+   plain link outside any host, a tab in a LiquidTabs strip, a native-material route, a game in play) keeps this cue.
+   lib/__tests__/jelly-soft-body.test.ts holds the guard equal to the host rule. */
 :is(
     a:not(.glass-interactive),
     button:not(:disabled):not([aria-disabled='true']):not([data-slot='button']):not(
@@ -3502,10 +3563,78 @@ textarea,
           [role='switch'],
           [role='option'],
           summary,
-          [data-slot='button']
+          [data-slot='button'],
+          [data-jelly-press-body]
         ):not(
-          .glass-pane,
-          .glass-chrome,
+          .glass-pane:not([data-jelly-press-body]),
+          .glass-chrome:not([data-jelly-press-body]),
+          .glass-overlay,
+          .glass-inset,
+          .app-glass,
+          [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+          [data-jelly='off'],
+          [data-jelly='none'],
+          [data-jelly='pane'],
+          [data-jelly='drag'],
+          [data-liquid-material='off'],
+          [data-liquid-motion='off'],
+          [data-fluid-press='off'],
+          [data-fluid-press='none'],
+          :disabled,
+          [aria-disabled='true'],
+          [data-evert-delegate],
+          [data-gesture]:not([data-gesture='hold']),
+          [draggable='true'],
+          input,
+          textarea,
+          select,
+          [contenteditable='true'],
+          [contenteditable=''],
+          canvas,
+          video,
+          iframe,
+          .radial-globe,
+          .radial-globe__stage,
+          .radial-globe__glass,
+          .radial-globe__jelly,
+          .radial-globe__cage,
+          .radial-globe__skin,
+          .rad-globe-dock,
+          .eversion-overlay,
+          .evert-ghost,
+          :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+          :is(
+              [data-jelly-scope='off'],
+              [data-jelly-zone='playfield'],
+              [data-liquid-motion='off'],
+              [inert]
+            )
+            *
+        ),
+      html:not(.native-material, [data-game-state='playing'])
+        :is(
+          .glass-fill,
+          .glass-interactive,
+          [data-evert],
+          [data-liquid-surface],
+          [data-fluid-press],
+          [data-jelly='card'],
+          [data-jelly='lift'],
+          [data-jelly='control'],
+          [data-jelly='sink'],
+          [data-jelly='firm'],
+          button,
+          [role='button'],
+          [role='tab'],
+          [role='menuitem'],
+          [role='switch'],
+          [role='option'],
+          summary,
+          [data-slot='button'],
+          [data-jelly-press-body]
+        ):not(
+          .glass-pane:not([data-jelly-press-body]),
+          .glass-chrome:not([data-jelly-press-body]),
           .glass-overlay,
           .glass-inset,
           .app-glass,
@@ -3549,6 +3678,10 @@ textarea,
             )
             *
         )
+        a:not([data-slot], [role], [data-fluid-press], .glass-interactive),
+      html:not(.native-material, [data-game-state='playing'])
+        [data-jelly-press-body]
+        *:not(:focus-visible)
     )
   ):active {
   opacity: 0.6;
@@ -4835,6 +4968,7 @@ html.nav-pop .page-root > * {
     inset: 0;
     z-index: -1;
     border-radius: inherit;
+    corner-shape: inherit;
     background: var(--site-surface-hover);
     opacity: 0;
     pointer-events: none;
@@ -4986,6 +5120,7 @@ html.nav-pop .page-root > * {
     position: absolute;
     inset: 0;
     border-radius: inherit;
+    corner-shape: inherit;
     background: var(--site-accent);
     opacity: 0;
     transition: opacity var(--site-transition-speed) var(--ease-glass);
@@ -5028,12 +5163,14 @@ html.nav-pop .page-root > * {
     }
     :where(input[type='radio']) {
       border-radius: 50%;
+      corner-shape: round;
     }
     :where(input[type='checkbox'], input[type='radio'])::before {
       content: '';
       position: absolute;
       inset: -1.5px;
       border-radius: inherit;
+      corner-shape: inherit;
       background: var(--site-accent);
       opacity: 0;
       transition: opacity var(--site-transition-speed) var(--ease-glass);
@@ -5074,6 +5211,7 @@ html.nav-pop .page-root > * {
       width: 0.375rem;
       height: 0.375rem;
       border-radius: 50%;
+      corner-shape: round;
       background: currentColor;
       transform: scale(0);
       transition: transform 0.12s var(--ease-smooth);
@@ -5276,6 +5414,7 @@ html.nav-restoring .feed-card-cv {
   position: absolute;
   inset: -40%;
   border-radius: 50%;
+  corner-shape: round;
   background: radial-gradient(
     circle at 50% 50%,
     color-mix(in oklab, var(--site-text) 12%, transparent),
@@ -5550,6 +5689,7 @@ body {
   z-index: 1;
   inset: 32% 34% 0 0;
   border-radius: inherit;
+  corner-shape: inherit;
   background: linear-gradient(135deg, var(--site-surface) 36%, transparent 86%);
   pointer-events: none;
 }
@@ -6006,6 +6146,7 @@ body {
   position: absolute;
   z-index: 0;
   border-radius: 50%;
+  corner-shape: round;
   pointer-events: none;
   filter: blur(46px);
 }
@@ -6054,6 +6195,7 @@ body {
 .rad-loader__blob {
   position: absolute;
   border-radius: 50%;
+  corner-shape: round;
   background: currentColor;
 }
 /* The core pulses at the centre — the RMH orb in miniature. */

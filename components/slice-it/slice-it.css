@@ -483,6 +483,7 @@ html .slice-theme [data-slot='textarea'] {
 .neumorphic-inset.rounded-full,
 .neumorphic-sm.rounded-full {
   border-radius: 9999px;
+  corner-shape: round;
 }
 
 /* Selected tool / active tab / the open mode: cyan ink. */

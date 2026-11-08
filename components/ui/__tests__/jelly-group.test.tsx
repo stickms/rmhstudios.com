@@ -69,13 +69,13 @@ describe('JellyGroup', () => {
     expect(html).toContain('disabled=""');
   });
 
-  it('the group asks to be pressed through its flat members', () => {
+  it('the group is the press body: pressing any flat member squashes it', () => {
     const html = renderToStaticMarkup(
       <JellyGroup>
         <JellyGroup.Item>A</JellyGroup.Item>
       </JellyGroup>,
     );
-    expect(html).toContain('data-jelly-press-through=""');
+    expect(html).toContain('data-jelly-press-body=""');
   });
 
   it('lets a link be a member and leaves selection to its own aria-current', () => {

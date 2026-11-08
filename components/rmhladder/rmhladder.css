@@ -68,12 +68,14 @@
   width: 14px;
   height: 3px;
   border-radius: 9999px;
+  corner-shape: round;
 }
 
 .rl-rung-meter--lg .rl-rung-meter__rung {
   width: 20px;
   height: 4px;
   border-radius: 9999px;
+  corner-shape: round;
 }
 
 .rl-rung-meter__rung {

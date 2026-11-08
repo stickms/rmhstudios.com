@@ -140,6 +140,7 @@
   position: absolute;
   z-index: -1;
   border-radius: 50%;
+  corner-shape: round;
   pointer-events: none;
   filter: blur(28px);
 }
@@ -210,6 +211,7 @@
   gap: 0.4rem;
   padding: 0.4rem 0.7rem;
   border-radius: 999px;
+  corner-shape: round;
   color: var(--site-text-muted);
   font-size: 0.66rem;
   font-weight: 600;
@@ -219,6 +221,7 @@
   width: 0.45rem;
   height: 0.45rem;
   border-radius: 50%;
+  corner-shape: round;
   background: var(--site-success);
   box-shadow: 0 0 0 0 color-mix(in srgb, var(--site-success) 45%, transparent);
   animation: feed-live-pulse 2.4s ease-out infinite;
@@ -481,6 +484,7 @@
   aspect-ratio: 1;
   border: 2.5rem solid color-mix(in srgb, var(--site-accent-fg) 12%, transparent);
   border-radius: 50%;
+  corner-shape: round;
 }
 
 .spatial-whats-new__art span {

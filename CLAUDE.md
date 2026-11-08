@@ -166,6 +166,10 @@ _why_.
    properties — components take jelly through role classes and `data-jelly*`
    attributes only. **Layout never changes**: hosts squash within 4px/3% and
    neighbours nudge ≤1.5px. The globe stays a dough simulation (`lib/dough.ts`).
+   **Corner shape:** every rounded corner is a continuous-curvature squircle where the browser supports `corner-shape`
+   (`app/globals.css` `@layer base`); circles and pills stay circular, so any `border-radius: 50%` / ≥ 99px / pill
+   token needs `corner-shape: round` beside it (Tailwind's `rounded-full` already has it) —
+   `lib/__tests__/corner-shape.test.ts` fails the build otherwise.
    Its full rules are
    [Design system: Plasmatic Jelly](#design-system-plasmatic-jelly) below; the
    contract is `docs/plasmatic-jelly-system.md`. The statement of the language is

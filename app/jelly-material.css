@@ -11,15 +11,15 @@
       `--jelly-plasma-gain`, `--jelly-flow-gain` — are UNSET on the site tier (every consumer falls back to the
       `--site-jelly-*` theme token) and set by `.app-glass` (components/shared/app-theme.css) to the `--app-jelly-*`
       palette, so one contract serves both tiers.
-   2. The static haze floor — a soft milky gradient plus a 192 px neutral grain tile
+   2. The static haze floor — a 192 px neutral grain tile
       (`public/jelly/haze-tile.webp`, scripts/generate-jelly-haze-tile.mjs) in every role's background stack, so a
       surface reads as jelly before, and without, any JavaScript or WebGL. It steps aside when something better
       draws the haze: a haze canvas (`[data-jelly-haze='on']`) or a CSS carrier (`[data-jelly-flow='on']`).
    3. The CSS flow carrier `.jelly-flow` — injected by `lib/jelly/flow-carriers.ts` (W2-D) as the host's FIRST
       child; 1–2 spans whose only animated property is `transform` (compositor-only). Per-element phase via
       `--jelly-phase` (a negative delay) so neighbours never pulse in sync.
-   4. The static CSS rim — one inset light line + a faint plasma subsurface glow on every surface the shader does
-      not draw (`:not([data-liquid-canvas='on'])`).
+   4. The static CSS rim — one soft inset glow (`--gel-glow`) under a lit top hairline on every surface the shader
+      does not draw (`:not([data-liquid-canvas='on'])`); fields add the well.
    5. The degradation block — high contrast, reduced transparency, forced colours and print hide every jelly layer;
       `perf-lite` keeps the static haze and the CSS rim but nothing moves.
 
@@ -219,9 +219,11 @@
   }
 
   /* ── 2. Static haze floor (01 §3.6) ─────────────────────────────────────────────────────────────────────────────
-     Declared per role so `--jelly-haze-a` resolves on the role itself. The gradient never falls below half density,
-     matching the legibility test's min/max composites (α × 0.5 … α × 1.0). Two layers, always: `--jelly-floor-size`
-     must stay in step with them. */
+     The grain tile alone, one image layer (`--jelly-floor-size` stays in step with it). Task 11 (cross-engine
+     profiling, 2026-11-08) dropped the milky radial gradient that sat over it on every role: at the roles' haze
+     alphas (≈ 1–2 %) it moved no pixel by more than 4/255 in any theme, yet it was one more gradient for a software
+     rasteriser to paint on every host, every frame of a scroll. The grain is what reads as haze (up to 15/255 on the
+     dark themes), so it stays. The woken floors (§8: veil + plasma wake) are unchanged. */
   :is(
     .glass-fill,
     .glass-pane,
@@ -231,22 +233,8 @@
     [data-slot='input'],
     [data-slot='textarea']
   ) {
-    --jelly-static-haze: radial-gradient(
-      120% 90% at 25% 15%,
-      color-mix(
-        in srgb,
-        var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 100%),
-        transparent
-      ),
-      color-mix(
-          in srgb,
-          var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 50%),
-          transparent
-        )
-        70%
-    );
-    --jelly-floor: var(--jelly-static-haze), var(--jelly-tile);
-    --jelly-floor-size: auto, var(--jelly-tile-size);
+    --jelly-floor: var(--jelly-tile);
+    --jelly-floor-size: var(--jelly-tile-size);
   }
 
   /* ── 2b. Gel layers (#989 layers 1 and 4, the non-shader tier; docs/plasmatic-jelly-system.md §1.1) ─────────────
@@ -296,6 +284,18 @@
         var(--jelly-edge-blur) 0 var(--gel-edge-b, transparent),
       inset 0 0 var(--gel-feather, 0px) calc(1px - min(var(--gel-feather, 0px), 1px))
         var(--gel-fresnel, transparent);
+    /* `--gel-glow` is the static rim's ONE shadow (§4, Task 11): the soft lip that `--gel-edge` and the Fresnel line
+       paint together, folded into a single zero-offset inset glow — the Fresnel colour carrying the red/blue edge
+       tint, `--gel-bevel` wide. Each inset shadow on a rounded box is a full clip-and-paint pass on a software
+       rasteriser (WebKitGTK, Firefox's WebRender on llvmpipe), so seven of them on every host cost a theme switch
+       1.6 s instead of 0.6 s; one costs about what none did. What it gives up: the red-toward-the-light /
+       blue-away offset split, which at the tokens' 3–10 % alphas moved no pixel by more than 14/255. */
+    --gel-glow: inset 0 0 calc(var(--gel-bevel, 4px) * var(--gel-shoulder, 1) + 1px) 1px
+      color-mix(
+        in srgb,
+        var(--gel-fresnel, transparent) 80%,
+        color-mix(in srgb, var(--gel-edge-r, transparent), var(--gel-edge-b, transparent))
+      );
   }
   /* Something better draws the haze: a haze canvas (engine) or a CSS carrier. Under perf-lite neither may run, so
      the floor stays whatever the attributes say. */
@@ -335,6 +335,7 @@
     z-index: -3;
     overflow: hidden;
     border-radius: inherit;
+    corner-shape: inherit;
     contain: strict;
     pointer-events: none;
     user-select: none;
@@ -489,6 +490,10 @@
      of cards would hold one backing store per host (measured on /jelly at rest: 107 compositor layers with a paused
      drift on every host plus a scroll-driven current on every card, 9 with neither). Nothing moves, and nothing is
      promoted, on an idle page. (A scroll-tied variant was dropped for the same reason.)
+     Nor is anything painted (Task 11): the layer has no box at all at rest (`display: none`) and gets one only under
+     the wake selectors, fading in from 0 (`@starting-style`) and out through a discrete `display` transition. A
+     resting layer of five gradients on every host was re-rasterised on every scroll frame by Firefox's WebRender on a
+     software rasteriser (cross-engine profiling, 2026-11-08: /jelly scroll 58 → 5 fps at p95) although it never moved.
 
      Why `::after`: `[data-evert]::before` is the eversion state layer and lib/evert-auto.ts adopts every control whose
      `::before` is free, so `::before` is taken on every interactive host. On a role host `::after` is used only by
@@ -504,8 +509,9 @@
 
      The layer is the host's box (inset 0, its radius), not an oversized span: nothing clips it, so every gradient on
      it fades to nothing inside the box and the drift's few percent of travel carries only that falloff (≤ 1% α) past
-     the edge. While the layer is on, the floor flattens to the veil at half density (the old carrier's veil), so veil +
-     streak (≤ 0.45 α) stays inside the α/2 … α range jelly-legibility.test.ts bounds. The grain tile stays on the floor.
+     the edge. Under it the floor is the grain alone (§2) at rest, and the woken floor (§8) adds the veil at half
+     density on a fine-pointer hover, so veil + streak (≤ 0.45 α) stays inside the α range jelly-legibility.test.ts
+     bounds.
      The negative z-index needs an isolated host, so the host rule isolates it (liquid-glass.css isolates only while an
      engine attribute is set, and none is now); the roles are positioned already (liquid-glass.css, the button's
      `relative`). Wake starts at the identity frame (no phase delay): only the hovered host runs, so there is nothing
@@ -542,17 +548,6 @@
         *
     ) {
     isolation: isolate;
-    --jelly-floor:
-      linear-gradient(
-        color-mix(
-            in srgb,
-            var(--jelly-haze-color, var(--site-jelly-haze)) calc(var(--jelly-haze-a, 0) * 50%),
-            transparent
-          )
-          0 0
-      ),
-      var(--jelly-tile);
-    --jelly-floor-size: auto, var(--jelly-tile-size);
   }
   html:not(.native-material, .perf-lite)
     :is(
@@ -586,10 +581,13 @@
         *
     )::after {
     content: '';
+    /* No box at rest (Task 11): the wake rule below gives it one. */
+    display: none;
     position: absolute;
     inset: 0;
     z-index: -3;
     border-radius: inherit;
+    corner-shape: inherit;
     pointer-events: none;
     user-select: none;
     --jelly-streak: color-mix(
@@ -653,8 +651,12 @@
         transparent 100%
       );
     background-repeat: no-repeat;
-    opacity: calc(0.75 * var(--jelly-amp, 1));
-    transition: opacity calc(var(--site-transition-speed, 200ms) * 1.5) var(--ease-smooth);
+    opacity: 0;
+    /* The discrete `display` step keeps the box through the fade-out; an engine without discrete transitions just
+       drops it at once (a ≤ 1% α layer: nothing visible snaps). */
+    transition:
+      opacity calc(var(--site-transition-speed, 200ms) * 1.5) var(--ease-smooth),
+      display calc(var(--site-transition-speed, 200ms) * 1.5) allow-discrete;
     /* 22 s per leg, alternate, scaled by the role's speed, the app palette's gain and the motion level (calm: 0.4). */
     --jelly-drift-dur: calc(
       22s /
@@ -733,16 +735,89 @@
         )
         *
     ):has(:focus-visible)::after {
+    display: block;
     opacity: var(--jelly-amp, 1);
     animation: jelly-drift var(--jelly-drift-dur) var(--ease-in-out, ease-in-out) infinite alternate;
   }
+  /* The box is born on wake, so it fades in from 0 rather than popping (Task 11). Same selectors as the wake rule. */
+  @starting-style {
+    html:not(.native-material, .perf-lite)
+      :is(
+        .glass-fill,
+        .glass-pane,
+        .glass-chrome,
+        .glass-overlay,
+        [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+      ):not(
+        [data-jelly='off'],
+        [data-jelly='none'],
+        [data-jelly='lite'],
+        [data-jelly-flow='off'],
+        [data-liquid-material='off'],
+        [data-liquid-glass='off'],
+        [data-liquid-motion='off'],
+        [data-fluid-press='off'],
+        [data-fluid-press='none'],
+        [contenteditable='true'],
+        [contenteditable=''],
+        [data-evert~='select'],
+        .touch-target,
+        :is(
+            [data-jelly-scope='off'],
+            [data-jelly-zone='playfield'],
+            [data-liquid-motion='off'],
+            .slice-theme,
+            .slice-tokens,
+            .stm-legacy
+          )
+          *
+      ):hover::after,
+    html:not(.native-material, .perf-lite)
+      :is(
+        .glass-fill,
+        .glass-pane,
+        .glass-chrome,
+        .glass-overlay,
+        [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
+      ):not(
+        [data-jelly='off'],
+        [data-jelly='none'],
+        [data-jelly='lite'],
+        [data-jelly-flow='off'],
+        [data-liquid-material='off'],
+        [data-liquid-glass='off'],
+        [data-liquid-motion='off'],
+        [data-fluid-press='off'],
+        [data-fluid-press='none'],
+        [contenteditable='true'],
+        [contenteditable=''],
+        [data-evert~='select'],
+        .touch-target,
+        :is(
+            [data-jelly-scope='off'],
+            [data-jelly-zone='playfield'],
+            [data-liquid-motion='off'],
+            .slice-theme,
+            .slice-tokens,
+            .stm-legacy
+          )
+          *
+      ):has(:focus-visible)::after {
+      opacity: 0;
+    }
+  }
 
   /* ── 4. Static CSS rim (01 §3.4) ────────────────────────────────────────────────────────────────────────────────
-     Every surface the shader does NOT draw gets one lit top line, a faint plasma subsurface glow, and the gel edge
-     (§2b: the RGB-led band and the Fresnel line — a hard 1px line only where `--gel-feather` is 0, otherwise a soft
-     glow that far in, the molded rim's CSS twin). A field adds the well: a soft shade inside its top lip and a fainter
-     border (`--gel-well-shade`, `--gel-field-line`), so it reads as pressed into the ground. Static: never in a
-     transition list (hover-css.ts forbids shadow transitions), so it costs nothing at rest. */
+     Every surface the shader does NOT draw gets the gel's soft lip as ONE inset shadow, `--gel-glow` (§2b); the lit top
+     edge is the hairline's `border-top-color` (below). A field adds the well: a soft shade inside its top lip and a
+     fainter border (`--gel-well-shade`, `--gel-field-line`), so it reads as pressed into the ground; it is the only
+     list with two shadows. Static: never in a transition list (hover-css.ts forbids shadow transitions).
+     Task 11 (cross-engine profiling, 2026-11-08): this was seven insets (a lit top line, a 14px plasma subsurface glow,
+     a transparent well, the three RGB bands and the Fresnel line) on every host. A software rasteriser paints each one
+     as its own rounded clip pass, on every host, on every frame of a scroll or a theme switch: WebKitGTK's feed theme
+     switch went from 0.57 s to 1.6 s, Firefox's feed scroll to 3 fps. Folded into one, the lip looks the same to the
+     eye (≤ 15/255 anywhere on /jelly, light and graphite); what is gone at rest is the plasma subsurface tint (the
+     hover wake still lights the plasma) and the R/B offset split. */
   :is(
       .glass-fill,
       .glass-pane,
@@ -751,21 +826,16 @@
       .glass-inset,
       [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])
     ):not([data-liquid-canvas='on']):not([data-liquid-material='off']) {
+    box-shadow: var(--gel-glow, 0 0 0 0 transparent);
+  }
+  /* The field's well joins the glow. Its own rule, not an inherited variable: a variable set on a track would reach
+     every control inside it. `:not([data-slot='button'])` only lifts it over the rule above (a field is no button). */
+  .glass-inset:not([data-liquid-canvas='on']):not([data-liquid-material='off']):not(
+      [data-slot='button']
+    ) {
     box-shadow:
-      inset 0 1px calc(var(--gel-feather, 0px) + 1px) -0.5px
-        color-mix(in srgb, var(--site-glass-light) 60%, transparent),
-      inset 0 0 14px -4px
-        color-mix(
-          in srgb,
-          var(--jelly-plasma-a, var(--site-jelly-plasma-a))
-            calc(
-              var(--jelly-plasma-k, 0) * var(--jelly-plasma-gain, var(--site-jelly-plasma, 1)) *
-                220%
-            ),
-          transparent
-        ),
-      inset 0 1.5px 4px -1px var(--jelly-well, transparent),
-      var(--gel-edge, 0 0 0 0 transparent);
+      var(--gel-glow, 0 0 0 0 transparent),
+      inset 0 1.5px 4px -1px var(--gel-well-shade, transparent);
   }
   /* A role's hairline where the shader draws no rim keeps only `--gel-edge-line` of its colour (a lit top edge keeps its
      ratio), so a slab outside the budget is molded out of the ground like its neighbours, not outlined. The degraded
@@ -785,7 +855,6 @@
   :is(.glass-inset, [data-slot='input'], [data-slot='textarea']):not([data-liquid-canvas='on']):not(
       [data-liquid-material='off']
     ) {
-    --jelly-well: var(--gel-well-shade, transparent);
     border-color: color-mix(in srgb, var(--site-border) var(--gel-field-line, 100%), transparent);
   }
 
@@ -799,6 +868,7 @@
     height: 100%;
     z-index: -3;
     border-radius: inherit;
+    corner-shape: inherit;
     pointer-events: none;
     user-select: none;
     image-rendering: auto;
@@ -1180,9 +1250,17 @@ html[data-game-state='playing']
    are not hosts. A control press is the full bound; a card sinks gently (cards are wide, and the bound is in pixels too).
 
    Press-through: CSS `:active` matches every ancestor of the pressed element, so a card would squash with the button
-   inside it. A host does not squash while an interactive descendant is the thing pressed (`:has(… :active)`), and a
-   host marked `data-jelly-press-through` (a JellyGroup, the top bar, the selection bar) never squashes from a
-   descendant's press at all. lib/__tests__/jelly-soft-body.test.ts pins both.
+   inside it. A host does not squash while a REAL control inside it is the thing pressed (`:has(… :active)`: a button,
+   a tab, a menu item, a switch, an option, a field, `summary`, the Button, a `.glass-interactive` row, a link that is a
+   slotted or pressable control, or a press body): the control presses, the host does not. A plain `<a>` is not a real
+   control, so a card whose content is a link squashes as the card (the link adds no cue: globals.css). A press body
+   (`data-jelly-press-body`, owner "squash everything", Task 8: a JellyGroup, the top bar, the selection bar, a
+   scroller's pill) is the other way round: it squashes as ONE body on the card pose when any member is pressed, real
+   controls included, and its members add no squash, dent or opacity cue of their own (except a keyboard-activated,
+   `:focus-visible` member, which keeps the opacity cue: Chromium does not mark the body active for a keyboard press, so
+   the body does not squash then). A pane or chrome slab is a host
+   only as a press body, and never plumps on hover (it is always under the pointer). LiquidTabs strips are not bodies:
+   the track is a field, which never moves. lib/__tests__/jelly-soft-body.test.ts pins all of it.
 
    Scope: off native-material routes (`html.native-material`: /tf2, /games keep their own scheme) and while a game is in
    play. `perf-lite` and the app tier's high contrast keep the press, plain: critically damped both ways, no hover. Touch
@@ -1215,7 +1293,8 @@ html[data-game-state='playing']
     [role='switch'],
     [role='option'],
     summary,
-    [data-slot='button']
+    [data-slot='button'],
+    [data-jelly-press-body]
   ) {
     transition: var(--jelly-spring-t);
   }
@@ -1241,10 +1320,11 @@ html[data-game-state='playing']
       [role='switch'],
       [role='option'],
       summary,
-      [data-slot='button']
+      [data-slot='button'],
+      [data-jelly-press-body]
     ):not(
-      .glass-pane,
-      .glass-chrome,
+      .glass-pane:not([data-jelly-press-body]),
+      .glass-chrome:not([data-jelly-press-body]),
       .glass-overlay,
       .glass-inset,
       .app-glass,
@@ -1312,10 +1392,11 @@ html[data-game-state='playing']
       [role='switch'],
       [role='option'],
       summary,
-      [data-slot='button']
+      [data-slot='button'],
+      [data-jelly-press-body]
     ):not(
-      .glass-pane,
-      .glass-chrome,
+      .glass-pane:not([data-jelly-press-body]),
+      .glass-chrome:not([data-jelly-press-body]),
       .glass-overlay,
       .glass-inset,
       .app-glass,
@@ -1379,10 +1460,11 @@ html[data-game-state='playing']
       [role='switch'],
       [role='option'],
       summary,
-      [data-slot='button']
+      [data-slot='button'],
+      [data-jelly-press-body]
     ):not(
-      .glass-pane,
-      .glass-chrome,
+      .glass-pane:not([data-jelly-press-body]),
+      .glass-chrome:not([data-jelly-press-body]),
       .glass-overlay,
       .glass-inset,
       .app-glass,
@@ -1450,10 +1532,11 @@ html[data-game-state='playing']
         [role='switch'],
         [role='option'],
         summary,
-        [data-slot='button']
+        [data-slot='button'],
+        [data-jelly-press-body]
       ):not(
-        .glass-pane,
-        .glass-chrome,
+        .glass-pane:not([data-jelly-press-body]),
+        .glass-chrome:not([data-jelly-press-body]),
         .glass-overlay,
         .glass-inset,
         .app-glass,
@@ -1496,7 +1579,7 @@ html[data-game-state='playing']
             [inert]
           )
           *
-      ):not(.app-high-contrast *):hover {
+      ):not(.app-high-contrast *):not(.glass-chrome, .glass-pane):hover {
       scale: min(
         var(--jelly-hover-plump),
         calc(1 + var(--jelly-edge-reach) / var(--jelly-s, 1000))
@@ -1521,10 +1604,11 @@ html[data-game-state='playing']
         [role='switch'],
         [role='option'],
         summary,
-        [data-slot='button']
+        [data-slot='button'],
+        [data-jelly-press-body]
       ):not(
-        .glass-pane,
-        .glass-chrome,
+        .glass-pane:not([data-jelly-press-body]),
+        .glass-chrome:not([data-jelly-press-body]),
         .glass-overlay,
         .glass-inset,
         .app-glass,
@@ -1611,10 +1695,11 @@ html[data-game-state='playing']
       [role='switch'],
       [role='option'],
       summary,
-      [data-slot='button']
+      [data-slot='button'],
+      [data-jelly-press-body]
     ):not(
-      .glass-pane,
-      .glass-chrome,
+      .glass-pane:not([data-jelly-press-body]),
+      .glass-chrome:not([data-jelly-press-body]),
       .glass-overlay,
       .glass-inset,
       .app-glass,
@@ -1657,24 +1742,29 @@ html[data-game-state='playing']
           [inert]
         )
         *
-    ):active:not(
-      :has(
-        :is(
-          a:not([data-evert-delegate]),
-          button,
-          [role='button'],
-          [role='tab'],
-          [role='menuitem'],
-          [role='switch'],
-          [role='option'],
-          [data-slot='button'],
-          input,
-          textarea,
-          select,
-          summary
-        ):active
+    ):active:not([data-jelly-press-body] *):is(
+      [data-jelly-press-body],
+      :not(
+        :has(
+          :is(
+            a:is([data-slot], [role], [data-fluid-press]):not([data-evert-delegate]),
+            button,
+            [role='button'],
+            [role='tab'],
+            [role='menuitem'],
+            [role='switch'],
+            [role='option'],
+            [data-slot='button'],
+            .glass-interactive,
+            input,
+            textarea,
+            select,
+            summary,
+            [data-jelly-press-body]
+          ):active
+        )
       )
-    ):not([data-jelly-press-through]:has(:active)) {
+    ) {
     scale: max(var(--jelly-press-card), calc(1 - var(--jelly-edge-reach) / var(--jelly-s, 1000)));
     --jelly-spring-t: scale var(--spring-press-dur) var(--spring-press);
     --jelly-spring-dur: var(--spring-press-dur);
@@ -1699,10 +1789,11 @@ html[data-game-state='playing']
       [role='switch'],
       [role='option'],
       summary,
-      [data-slot='button']
+      [data-slot='button'],
+      [data-jelly-press-body]
     ):not(
-      .glass-pane,
-      .glass-chrome,
+      .glass-pane:not([data-jelly-press-body]),
+      .glass-chrome:not([data-jelly-press-body]),
       .glass-overlay,
       .glass-inset,
       .app-glass,
@@ -1765,10 +1856,10 @@ html[data-game-state='playing']
       [data-jelly='firm'],
       [data-fluid-press='lift'],
       [data-fluid-press='firm']
-    ):active:not(
+    ):active:not([data-jelly-press-body] *):not(
       :has(
         :is(
-          a:not([data-evert-delegate]),
+          a:is([data-slot], [role], [data-fluid-press]):not([data-evert-delegate]),
           button,
           [role='button'],
           [role='tab'],
@@ -1776,17 +1867,52 @@ html[data-game-state='playing']
           [role='switch'],
           [role='option'],
           [data-slot='button'],
+          .glass-interactive,
           input,
           textarea,
           select,
-          summary
+          summary,
+          [data-jelly-press-body]
         ):active
       )
-    ):not([data-jelly-press-through]:has(:active)) {
+    ) {
     scale: max(
       var(--jelly-press-control),
       calc(1 - var(--jelly-edge-reach) / var(--jelly-s, 1000))
     );
+  }
+  /* A press body's members add no press of their own: the body is the thing pressing. The press rules above already
+     skip them; this also outranks the Button's plain 0.98 press (globals.css), which would otherwise take over. */
+  html:not(.native-material, [data-game-state='playing'])
+    [data-jelly-press-body]
+    :is(
+      .glass-fill,
+      .glass-interactive,
+      [data-evert],
+      [data-liquid-surface],
+      [data-fluid-press],
+      [data-jelly='card'],
+      [data-jelly='lift'],
+      [data-jelly='control'],
+      [data-jelly='sink'],
+      [data-jelly='firm'],
+      button,
+      [role='button'],
+      [role='tab'],
+      [role='menuitem'],
+      [role='switch'],
+      [role='option'],
+      summary,
+      [data-slot='button'],
+      [data-jelly-press-body]
+    ):active {
+    scale: none;
+  }
+  /* An unsized press body (a keyboard press, before lib/jelly/pointer-vars.ts writes `--jelly-s`) assumes the widest
+     body, `CSS_BODY_SIZE_FALLBACK_PX` (lib/jelly/soft-policy.ts): a bar can span the viewport, and the 1000px fallback
+     would let its edge pass the 4 px bound. The pointer variable's inline value wins whenever it is written. */
+  :where([data-jelly-press-body]) {
+    --jelly-s: 3840;
   }
 
   /* The plasma wake and the dent's light dot (spec §3): radial gradients at the pointer, `--px` / `--py`, written on the
@@ -1881,24 +2007,29 @@ html[data-game-state='playing']
             .stm-legacy
           )
           *
-      ):active:not(
-        :has(
-          :is(
-            a:not([data-evert-delegate]),
-            button,
-            [role='button'],
-            [role='tab'],
-            [role='menuitem'],
-            [role='switch'],
-            [role='option'],
-            [data-slot='button'],
-            input,
-            textarea,
-            select,
-            summary
-          ):active
+      ):active:not([data-jelly-press-body] *):is(
+        [data-jelly-press-body],
+        :not(
+          :has(
+            :is(
+              a:is([data-slot], [role], [data-fluid-press]):not([data-evert-delegate]),
+              button,
+              [role='button'],
+              [role='tab'],
+              [role='menuitem'],
+              [role='switch'],
+              [role='option'],
+              [data-slot='button'],
+              .glass-interactive,
+              input,
+              textarea,
+              select,
+              summary,
+              [data-jelly-press-body]
+            ):active
+          )
         )
-      ):not([data-jelly-press-through]:has(:active)) {
+      ) {
       --jelly-floor:
         radial-gradient(
           circle 14px at var(--px, -100vmax) var(--py, -100vmax),
@@ -1959,10 +2090,11 @@ html:not(.native-material, [data-game-state='playing'])
     [role='switch'],
     [role='option'],
     summary,
-    [data-slot='button']
+    [data-slot='button'],
+    [data-jelly-press-body]
   ):not(
-    .glass-pane,
-    .glass-chrome,
+    .glass-pane:not([data-jelly-press-body]),
+    .glass-chrome:not([data-jelly-press-body]),
     .glass-overlay,
     .glass-inset,
     .app-glass,
@@ -2084,10 +2216,11 @@ html:not(.native-material, [data-game-state='playing'])
     [role='switch'],
     [role='option'],
     summary,
-    [data-slot='button']
+    [data-slot='button'],
+    [data-jelly-press-body]
   ):not(
-    .glass-pane,
-    .glass-chrome,
+    .glass-pane:not([data-jelly-press-body]),
+    .glass-chrome:not([data-jelly-press-body]),
     .glass-overlay,
     .glass-inset,
     .app-glass,
@@ -2173,10 +2306,11 @@ html:not(.native-material, [data-game-state='playing'])
     [role='switch'],
     [role='option'],
     summary,
-    [data-slot='button']
+    [data-slot='button'],
+    [data-jelly-press-body]
   ):not(
-    .glass-pane,
-    .glass-chrome,
+    .glass-pane:not([data-jelly-press-body]),
+    .glass-chrome:not([data-jelly-press-body]),
     .glass-overlay,
     .glass-inset,
     .app-glass,
@@ -2246,10 +2380,11 @@ html:not(.native-material, [data-game-state='playing'])
     [role='switch'],
     [role='option'],
     summary,
-    [data-slot='button']
+    [data-slot='button'],
+    [data-jelly-press-body]
   ):not(
-    .glass-pane,
-    .glass-chrome,
+    .glass-pane:not([data-jelly-press-body]),
+    .glass-chrome:not([data-jelly-press-body]),
     .glass-overlay,
     .glass-inset,
     .app-glass,
@@ -2321,7 +2456,8 @@ html:not(.native-material, [data-game-state='playing'])
     [role='switch'],
     [role='option'],
     summary,
-    [data-slot='button']
+    [data-slot='button'],
+    [data-jelly-press-body]
   ):is(:hover, :active) {
     translate: none !important;
     scale: none !important;

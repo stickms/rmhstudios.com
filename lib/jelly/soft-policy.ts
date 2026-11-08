@@ -141,6 +141,15 @@ export const CSS_SOFT_BODY = {
 export const CSS_SIZE_FALLBACK_PX = 1000;
 
 /**
+ * The size a press body (`data-jelly-press-body`: a JellyGroup, the top bar, the selection bar, a scroller's pill)
+ * assumes before `--jelly-s` is written (app/jelly-material.css §8 sets it as the body's default). A body can be as
+ * wide as the viewport, so 1000px would let a keyboard press on a wide bar move its edge past the 4 px bound; the
+ * widest desktop viewport in CSS px (a 4K screen at 1×) keeps every body inside it, at the cost of a fainter squash
+ * until the pointer variable sizes the body (it does on every pointer press).
+ */
+export const CSS_BODY_SIZE_FALLBACK_PX = 3840;
+
+/**
  * The size cap's numerator (the `--jelly-edge-reach` token). A host whose larger side is `S` px moves its edge by
  * `S · |scale − 1| / 2`, so `MOTION_BOUNDS.maxEdgeTravelPx` allows a scale delta of `2 · maxEdgeTravelPx / S`. The
  * worst CSS move is the release from a press on one side of rest to the hover pose on the other (0.99 → 1.008): it

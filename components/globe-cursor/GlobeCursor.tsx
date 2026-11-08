@@ -10,7 +10,9 @@ import {
   HOTSPOT_SIZE_PX,
   type HoverKind,
 } from '@/lib/globe-cursor/engine';
-import { acquireGlobeGl, type GlobeGl } from '@/lib/globe-cursor/gl';
+import { acquireGlobeGl, type GlobeSurface } from '@/lib/globe-cursor/gl';
+import { acquireRemoteGlobeGl, releaseRemoteGlobeGl } from '@/lib/globe-cursor/remote-gl';
+import { probeGpu } from '@/lib/render/probe';
 import { IDLE_AFTER_MS, jellyBudget, jellyMode, onJellyEnvChange } from '@/lib/jelly/tiers';
 import type { GlobeCursorSettings } from '@/lib/globe-cursor/settings';
 import { useGlobeCursorStore } from '@/stores/globeCursorStore';
@@ -25,6 +27,11 @@ import { useGlobeCursorStore } from '@/stores/globeCursorStore';
  *
  * ## Latency and paint
  *
+ * - **Drawn in a worker** (2026-11-08). In direct mode the globe is rendered in
+ *   `lib/globe-cursor/cursor.worker.ts` on the transferred canvas
+ *   (`acquireRemoteGlobeGl`), so its GPU work and frame hand-off never wait on
+ *   the page's thread; the page posts each frame's parameters. Where a worker
+ *   cannot own a WebGL 2 context it is the page-side surface, as before.
  * - **The GPU canvas itself, moved by the compositor.** With no trail and no
  *   sparkles (the defaults) and a WebGL 2 globe, the canvas the globe is
  *   rendered into IS what is on screen (`engine.directCanvas()`): a
@@ -126,20 +133,34 @@ export default function GlobeCursor() {
   /** Re-lay the canvas out for the current settings (small moving box vs full viewport). */
   const layoutRef = useRef<() => void>(() => {});
   /**
-   * The GPU surface, built in the background (`acquireGlobeGl`): `undefined` while it builds, then the surface or null
-   * (the CPU path). The cursor boots only once it is known, so a page never stalls a frame on the shader compile, and
-   * until then the system cursor is the cursor. A later mount gets the same, already-built context back at once.
+   * The GPU surface, built in the background: `undefined` while it builds, then the surface or null (the CPU path). The
+   * cursor boots only once it is known, so a page never stalls a frame on the shader compile, and until then the system
+   * cursor is the cursor. A later mount gets the same, already-built context back at once.
+   *
+   * In direct mode (no trail, no sparkles: the defaults) the surface is drawn in the cursor's worker
+   * (`acquireRemoteGlobeGl`), so the cursor's GPU work and frame hand-off never wait on the page's thread; where a
+   * worker cannot own a WebGL 2 context, and for the trail/sparkle modes (which composite the sprite onto a 2D canvas
+   * on the page), it is the page-side surface (`acquireGlobeGl`).
    */
-  const [gpu, setGpu] = useState<GlobeGl | null | undefined>(undefined);
+  const local = isLocal(settings);
+  const [gpu, setGpu] = useState<GlobeSurface | null | undefined>(undefined);
   useEffect(() => {
     let live = true;
-    void acquireGlobeGl().then((g) => {
+    const pick: Promise<GlobeSurface | null> = local
+      ? acquireRemoteGlobeGl(probeGpu().gpuTier === 0).then<GlobeSurface | null>(
+          (g) => g ?? acquireGlobeGl(),
+        )
+      : acquireGlobeGl();
+    void pick.then((g) => {
       if (live) setGpu(g);
     });
+    // The trail and sparkle modes draw on the page-side surface: let the cursor's worker (and its GL context) go
+    // rather than keep a second GPU context alive for nothing. Switching back starts a fresh one.
+    if (!local) releaseRemoteGlobeGl();
     return () => {
       live = false;
     };
-  }, []);
+  }, [local]);
 
   // Settings → engine + stylesheet.
   useEffect(() => {

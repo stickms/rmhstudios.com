@@ -19,6 +19,9 @@
  *
  * One WebGL2 context, created on the first self-eversion and kept. `null` from {@link SelfEvertSkin.create} (no
  * WebGL2, or the program will not build) leaves the run as it was: the wireframe over the resting glass.
+ *
+ * It runs in the globe's worker (`globe-worker.ts`) on a transferred `OffscreenCanvas`, mesh evaluation included, so
+ * neither the GPU work nor the per-frame CPU eversion of the mesh touches the page's thread. No DOM here.
  */
 
 import { startProgram, whenLinked } from '@/lib/render/gl-program';
@@ -106,7 +109,7 @@ export interface SkinPalette {
 }
 
 export class SelfEvertSkin {
-  readonly canvas: HTMLCanvasElement;
+  readonly canvas: OffscreenCanvas;
   private gl: GL | null = null;
   private lost = false;
   private px = 0;
@@ -134,15 +137,13 @@ export class SelfEvertSkin {
   /** The program will not build on this driver: runs stay wireframe-only. */
   failed = false;
 
-  private constructor(canvas: HTMLCanvasElement) {
+  private constructor(canvas: OffscreenCanvas) {
     this.canvas = canvas;
     this.mesh = buildMesh(N_THETA, N_PHI);
     this.positions = new Float32Array(this.mesh.vertexCount * 3);
     this.positions64 = new Float64Array(this.mesh.vertexCount * 3);
     this.normals = new Float32Array(this.mesh.vertexCount * 3);
-    canvas.className = 'radial-globe__skin';
-    canvas.setAttribute('aria-hidden', 'true');
-    canvas.addEventListener('webglcontextlost', (e) => {
+    const onLost = (e: Event) => {
       e.preventDefault();
       this.lost = true;
       this.builds++;
@@ -150,18 +151,22 @@ export class SelfEvertSkin {
       this.u = null;
       this.posBuf = null;
       this.nrmBuf = null;
-    });
-    canvas.addEventListener('webglcontextrestored', () => {
-      this.lost = false;
-      this.px = 0;
-      this.init();
-    });
+      this.onLost?.();
+    };
+    canvas.addEventListener('contextlost', onLost);
+    canvas.addEventListener('webglcontextlost', onLost);
   }
 
-  static create(): SelfEvertSkin | null {
-    const s = new SelfEvertSkin(document.createElement('canvas'));
+  /** A skin on `canvas`, or null where WebGL 2 will not start. */
+  static create(canvas: OffscreenCanvas): SelfEvertSkin | null {
+    const s = new SelfEvertSkin(canvas);
     return s.init() ? s : null;
   }
+
+  /** Called once the program has linked (`ready`) or failed (`failed`). */
+  onSettled: (() => void) | null = null;
+  /** Called when the context is lost: frames drawn from now on show nothing (`ready` is false). */
+  onLost: (() => void) | null = null;
 
   /** Whether frames drawn now will show. */
   get ready(): boolean {
@@ -177,7 +182,7 @@ export class SelfEvertSkin {
       stencil: false,
       preserveDrawingBuffer: false,
       powerPreference: 'low-power',
-    }) as GL | null;
+    }) as unknown as GL | null;
     if (!gl) return false;
     // Built in the background (`lib/render/gl-program.ts`), so warming the skin never stalls a frame; `ready` stays
     // false (the run goes wireframe-only) until it links.
@@ -189,6 +194,7 @@ export class SelfEvertSkin {
       if (this.lost || generation !== this.builds) return;
       if (prog) this.finish(gl, prog);
       else this.failed = true;
+      this.onSettled?.();
     });
     return true;
   }

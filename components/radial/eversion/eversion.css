@@ -272,6 +272,7 @@ html[data-eversion-settle] *:not(.radial-hub, .radial-hub *, .evert-popup, .ever
   width: var(--popup-size);
   height: var(--popup-size);
   border-radius: 50%;
+  corner-shape: round;
   overflow: hidden;
   pointer-events: none;
   contain: layout paint style;
@@ -295,6 +296,7 @@ html[data-eversion-settle] *:not(.radial-hub, .radial-hub *, .evert-popup, .ever
   position: absolute;
   inset: 6%;
   border-radius: 50%;
+  corner-shape: round;
   border: 1.5px solid color-mix(in oklab, var(--site-accent) 32%, transparent);
 }
 .evert-popup__meridian {
