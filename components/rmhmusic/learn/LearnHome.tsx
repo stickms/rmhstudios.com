@@ -28,6 +28,8 @@ function HomeSkeleton() {
   return (
     <div aria-hidden="true" className="space-y-4">
       <div className="app-skeleton h-12 w-full pointer-coarse:h-13" />
+      {/* The "Playing with … / Set up input" row: 44px, the height of its button. */}
+      <div className="app-skeleton h-11 w-full" />
       {PATH.map((unit) => (
         <PathUnit key={unit.id} unit={unit} progress={new Map()} placeholder />
       ))}
