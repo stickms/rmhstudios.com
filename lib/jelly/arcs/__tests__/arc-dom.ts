@@ -66,7 +66,19 @@ export class FakeEl extends Listeners {
   attrs = new Map<string, string>();
   children: FakeEl[] = [];
   parent: FakeEl | null = null;
-  style: Record<string, string> = {};
+  /** Inline style: plain keys plus `setProperty` / `removeProperty` (custom properties land as keys). */
+  style: Record<string, string> = Object.defineProperties({} as Record<string, string>, {
+    setProperty: {
+      value(this: Record<string, string>, k: string, v: string) {
+        this[k] = v;
+      },
+    },
+    removeProperty: {
+      value(this: Record<string, string>, k: string) {
+        delete this[k];
+      },
+    },
+  });
   className = '';
   width = 0;
   height = 0;

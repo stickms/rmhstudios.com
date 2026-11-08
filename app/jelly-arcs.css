@@ -36,3 +36,27 @@ html:is([data-electric-arcs='off'], [data-jelly-motion='still'], [data-game-stat
     display: none !important;
   }
 }
+
+/* The strike's nudge (CSS-first jelly Task 9; lib/jelly/arcs/nudge.ts). A struck host jolts a hair along the strike
+   and springs back: `translate` only (≤ MOTION_BOUNDS.nudgePx, 1.5px, inside the 4px edge bound; layout and hit
+   areas never move). nudge.ts writes `--jelly-arc-nudge-x/-y` and the state on at most the struck hosts, never on a
+   hovered or pressed one, and removes both after the settle. The motion rides the soft body's own generated springs
+   through its hook (`--jelly-spring-t`, app/jelly-material.css §8): out on the press spring, back on the release
+   spring (N13). These rules are unlayered, so they outrank the layered §8 state rules for the nudge's ~1.2s. */
+[data-jelly-arc-nudge] {
+  translate: var(--jelly-arc-nudge-x, 0px) var(--jelly-arc-nudge-y, 0px);
+}
+[data-jelly-arc-nudge='kick'] {
+  --jelly-spring-t:
+    scale var(--spring-press-dur) var(--spring-press),
+    translate var(--spring-press-dur) var(--spring-press);
+  --jelly-spring-dur: var(--spring-press-dur);
+  --jelly-spring-ease: var(--spring-press);
+}
+[data-jelly-arc-nudge='settle'] {
+  --jelly-spring-t:
+    scale var(--spring-release-dur) var(--spring-release),
+    translate var(--spring-release-dur) var(--spring-release);
+  --jelly-spring-dur: var(--spring-release-dur);
+  --jelly-spring-ease: var(--spring-release);
+}

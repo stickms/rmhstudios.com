@@ -43,6 +43,7 @@ import {
   HUB_OR_EVERSION_SELECTOR,
   jellyBudget,
   jellyMode,
+  jellyMotionLevel,
   jellyOptedOut,
   onJellyEnvChange,
   type JellyBudget,
@@ -61,6 +62,8 @@ import { createFlashLedger, type FlashLedger } from './ledger';
 import { selectCandidates } from './pairs';
 import { ARC_BUDGET } from './rate';
 import { createElectricField, type ElectricField } from './field';
+import { arcIntensityScale } from './glow';
+import { NUDGE, createArcNudge, shouldVibrate, type ArcNudge } from './nudge';
 import { createArcRenderer, type ArcRenderer, type LiveArc } from './renderer';
 import { mulberry32 } from './rng';
 import {
@@ -153,6 +156,8 @@ interface Live {
   quiet: QuietTracker;
   scheduler: AmbientScheduler;
   field: ElectricField;
+  /** The struck hosts' felt kick (cleared on disable). */
+  nudge: ArcNudge;
   teardown: (() => void)[];
 }
 
@@ -244,7 +249,36 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
   const hubOrEversion = () => !!doc.querySelector(HUB_OR_EVERSION_SELECTOR);
 
   // ── Emission ───────────────────────────────────────────────────────────────
+  let lastVibrate = -Infinity;
+  /** The strike's feel: the struck hosts jolt (nudge.ts) and a touch-only device ticks once per burst. */
+  const feel = (arc: LiveArc) => {
+    const l = live;
+    if (!l) return;
+    const motion = jellyMotionLevel(doc);
+    const scale = arcIntensityScale(motion);
+    for (const c of arc.contacts) if (c.el) l.nudge.kick(c.el, c.nx, c.ny, arc.energy, scale);
+    const nav = win.navigator as (Navigator & { vibrate?: (ms: number) => boolean }) | undefined;
+    const now = clock();
+    if (
+      shouldVibrate({
+        fine: fineQuery?.matches ?? true,
+        motion,
+        arcsOn: true,
+        canVibrate: typeof nav?.vibrate === 'function',
+        now,
+        last: lastVibrate,
+      })
+    ) {
+      lastVibrate = now;
+      try {
+        nav!.vibrate!(NUDGE.vibrateMs);
+      } catch {
+        /* a browser that refuses (no user activation): nothing to do */
+      }
+    }
+  };
   const onStrike = (arc: LiveArc) => {
+    feel(arc);
     if (bus.listenerCount('arc:strike') === 0) return;
     for (const c of arc.contacts) {
       if (!c.el) continue;
@@ -329,7 +363,15 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
         }),
       );
     }
-    return { renderer, actions, quiet, scheduler: sched, field: fld, teardown };
+    return {
+      renderer,
+      actions,
+      quiet,
+      scheduler: sched,
+      field: fld,
+      nudge: createArcNudge(doc),
+      teardown,
+    };
   };
 
   const disable = () => {
@@ -339,6 +381,7 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
     l.scheduler.stop();
     l.field.stop();
     l.quiet.dispose();
+    l.nudge.clear();
     for (const fn of l.teardown) fn();
     l.renderer.dispose();
   };
