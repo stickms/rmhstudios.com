@@ -157,7 +157,7 @@ export function createGameLoop(
   canvas.parentElement?.appendChild(overlayCanvas);
   const overlayCtx = overlayCanvas.getContext('2d')!;
 
-  const renderer: WebGLRenderer = { gl, spriteBatch, shapeBatch, overlayCtx };
+  const renderer: WebGLRenderer = { gl, spriteBatch, shapeBatch, overlayCtx, overlayDirty: false };
 
   // Per-run state (shared with the multiplayer host via sim-runtime/sim-step)
   const rt = createSimRuntime(world);
