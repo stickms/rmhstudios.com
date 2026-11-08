@@ -64,33 +64,33 @@ export class RenderInterpolator {
   private savedX: number[] = [];
   private savedY: number[] = [];
 
-  private forEachEntity(world: InterpolatedWorld, fn: (e: Positioned) => void): void {
-    fn(world.player);
-    for (const list of [
-      world.enemies,
-      world.projectiles,
-      world.pickups,
-      world.particles,
-      world.meleeHitboxes,
-      world.auras,
-      world.summons,
-      world.pools,
-    ]) {
-      for (let i = 0; i < list.length; i++) fn(list[i]);
+  /** Call at the top of every fixed step, before anything moves. */
+  capture(world: InterpolatedWorld): void {
+    this.captureOne(world.player);
+    this.captureList(world.enemies);
+    this.captureList(world.projectiles);
+    this.captureList(world.pickups);
+    this.captureList(world.particles);
+    this.captureList(world.meleeHitboxes);
+    this.captureList(world.auras);
+    this.captureList(world.summons);
+    this.captureList(world.pools);
+  }
+
+  // The walk over the world used to be one `forEachEntity(world, fn)` that built an array of the eight lists and a
+  // closure on every call (twice a step plus once a frame). Plain loops keep the same order and allocate nothing.
+  private captureOne(e: Positioned): void {
+    const p = this.prev.get(e);
+    if (p) {
+      p.x = e.x;
+      p.y = e.y;
+    } else {
+      this.prev.set(e, { x: e.x, y: e.y });
     }
   }
 
-  /** Call at the top of every fixed step, before anything moves. */
-  capture(world: InterpolatedWorld): void {
-    this.forEachEntity(world, (e) => {
-      const p = this.prev.get(e);
-      if (p) {
-        p.x = e.x;
-        p.y = e.y;
-      } else {
-        this.prev.set(e, { x: e.x, y: e.y });
-      }
-    });
+  private captureList(list: readonly Positioned[]): void {
+    for (let i = 0; i < list.length; i++) this.captureOne(list[i]);
   }
 
   /**
@@ -100,19 +100,33 @@ export class RenderInterpolator {
    */
   apply(world: InterpolatedWorld, alpha: number): void {
     const a = alpha < 0 ? 0 : alpha > 1 ? 1 : alpha;
-    this.forEachEntity(world, (e) => {
-      const p = this.prev.get(e);
-      if (!p) return;
-      const dx = e.x - p.x;
-      const dy = e.y - p.y;
-      if (dx === 0 && dy === 0) return;
-      if (dx * dx + dy * dy > TELEPORT_PX * TELEPORT_PX) return;
-      this.saved.push(e);
-      this.savedX.push(e.x);
-      this.savedY.push(e.y);
-      e.x = p.x + dx * a;
-      e.y = p.y + dy * a;
-    });
+    this.blendOne(world.player, a);
+    this.blendList(world.enemies, a);
+    this.blendList(world.projectiles, a);
+    this.blendList(world.pickups, a);
+    this.blendList(world.particles, a);
+    this.blendList(world.meleeHitboxes, a);
+    this.blendList(world.auras, a);
+    this.blendList(world.summons, a);
+    this.blendList(world.pools, a);
+  }
+
+  private blendOne(e: Positioned, a: number): void {
+    const p = this.prev.get(e);
+    if (!p) return;
+    const dx = e.x - p.x;
+    const dy = e.y - p.y;
+    if (dx === 0 && dy === 0) return;
+    if (dx * dx + dy * dy > TELEPORT_PX * TELEPORT_PX) return;
+    this.saved.push(e);
+    this.savedX.push(e.x);
+    this.savedY.push(e.y);
+    e.x = p.x + dx * a;
+    e.y = p.y + dy * a;
+  }
+
+  private blendList(list: readonly Positioned[], a: number): void {
+    for (let i = 0; i < list.length; i++) this.blendOne(list[i], a);
   }
 
   /** Put every blended entity back at its simulated position. */
