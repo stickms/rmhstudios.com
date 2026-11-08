@@ -19,7 +19,7 @@
  *  - the legacy opacity press cue (globals.css) stands down exactly where the soft body springs (D-B1);
  *  - the hub's compose pill presses as one body (D-C6); the hook mounts the pointer variable, not physics.
  */
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -356,4 +356,189 @@ describe('the soft body elsewhere', () => {
       /installJellyPhysics|installJellyRegistry|installLiquidInteractions|jelly\/physics|jelly\/registry|liquid\/runtime/,
     );
   });
+});
+
+describe('the spring reaches every host', () => {
+  /** The selector's last compound (after its final top-level combinator). */
+  const lastCompound = (sel: string) => {
+    let depth = 0;
+    let cur = '';
+    const parts: string[] = [];
+    for (const c of sel) {
+      if (c === '(' || c === '[') depth++;
+      if (c === ')' || c === ']') depth--;
+      if (' >+~'.includes(c) && depth === 0) {
+        if (cur) parts.push(cur);
+        cur = '';
+      } else cur += c;
+    }
+    if (cur) parts.push(cur);
+    return parts.at(-1) ?? '';
+  };
+  const HOST_WORD =
+    /(?:^|[\s>+~(,])(?:button|summary|a)(?=$|[\s.:[#,)])|\.glass-fill|\.glass-interactive|\[data-evert|\[data-slot='button'\]|\[role='(?:button|tab|menuitem|switch|option)'\]|\[data-fluid-press/;
+  /** The sheets whose layered rules can state a host's transition, with the layer an `@import … layer()` gives them. */
+  const SHEETS: [string, string | null][] = [
+    ['app/globals.css', null],
+    ['app/liquid-glass.css', null],
+    ['app/jelly-material.css', null],
+    ['app/jelly-coverage.css', null],
+    ['app/jelly-arcs.css', null],
+    ['components/ui/jelly-group.css', '@layer components'],
+  ];
+
+  it('no base- or components-layer rule transitions a host without the spring hook', () => {
+    const offenders: string[] = [];
+    let scanned = 0;
+    for (const [file, imported] of SHEETS) {
+      for (const r of rules(read(file))) {
+        const t = decl(r.body, 'transition') ?? decl(r.body, 'transition-property');
+        if (!t || t === 'none') continue;
+        const layer =
+          [imported, ...r.at].filter((a): a is string => !!a && a.startsWith('@layer')).at(-1) ??
+          '';
+        if (!/\b(?:base|components)\b/.test(layer)) continue;
+        for (const sel of r.selectors) {
+          const last = lastCompound(sel);
+          if (/::|:(?:before|after)\b/.test(last) || !HOST_WORD.test(` ${last}`)) continue;
+          scanned++;
+          if (!/var\(--jelly-spring-t\)/.test(r.body))
+            offenders.push(`${file}: ${sel.slice(0, 120)}`);
+        }
+      }
+    }
+    expect(scanned, 'the scan found the host transition rules').toBeGreaterThan(10);
+    expect(
+      offenders,
+      "A layered rule that states a transition on a soft-body host outranks the hook's zero-specificity default, so " +
+        "the host's press and release would snap. Append `var(--jelly-spring-t)` to its list (app/jelly-material.css §8).",
+    ).toEqual([]);
+  });
+
+  /** Tailwind v4's compiled property lists (node_modules/tailwindcss, `transition*` utilities). */
+  const COLORS = [
+    'color',
+    'background-color',
+    'border-color',
+    'outline-color',
+    'text-decoration-color',
+    'fill',
+    'stroke',
+    '--tw-gradient-from',
+    '--tw-gradient-via',
+    '--tw-gradient-to',
+  ];
+  const ALL = [
+    ...COLORS,
+    'opacity',
+    'box-shadow',
+    'transform',
+    'translate',
+    'scale',
+    'rotate',
+    'filter',
+    '-webkit-backdrop-filter',
+    'backdrop-filter',
+    'display',
+    'content-visibility',
+    'overlay',
+    'pointer-events',
+  ];
+  const UTILITIES: [string, string[]][] = [
+    ['transition', ALL],
+    ['transition-colors', COLORS],
+    ['transition-opacity', ['opacity']],
+    ['transition-shadow', ['box-shadow']],
+  ];
+  const D = 'var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75))';
+  const E = 'var(--tw-ease, var(--ease-smooth))';
+
+  it('the property lists are the installed Tailwind’s own', () => {
+    const tw = read('node_modules/tailwindcss/dist/lib.mjs');
+    expect(tw).toContain(`"${ALL.join(', ')}"`);
+    expect(tw).toContain(`"${COLORS.join(', ')}"`);
+    // …and the site's inline transition defaults (app/globals.css @theme inline) are what the restatement uses.
+    const theme = read('app/globals.css');
+    expect(theme).toMatch(
+      /--default-transition-duration: calc\(var\(--site-transition-speed, 200ms\) \* 0\.75\);/,
+    );
+    expect(theme).toMatch(/--default-transition-timing-function: var\(--ease-smooth\);/);
+  });
+
+  it.each(UTILITIES)(
+    'a host carrying `%s` keeps its colours and springs its pose (unlayered restatement)',
+    (cls, list) => {
+      const r = MATERIAL.filter(
+        (x) => x.at.length === 0 && x.selectors.includes(`${SCOPE}${HOST}[class~='${cls}']`),
+      );
+      expect(r).toHaveLength(1);
+      const props = splitTop(decl(r[0].body, 'transition-property') ?? '');
+      const expected = list.includes('scale') ? list : [...list, 'translate', 'scale'];
+      expect(props).toEqual(expected);
+      const dur = splitTop(decl(r[0].body, 'transition-duration') ?? '');
+      const ease = splitTop(decl(r[0].body, 'transition-timing-function') ?? '');
+      expect(dur).toHaveLength(props.length);
+      expect(ease).toHaveLength(props.length);
+      props.forEach((p, i) => {
+        const pose = p === 'scale' || p === 'translate';
+        expect(dur[i], `${cls} ${p} duration`).toBe(pose ? 'var(--jelly-spring-dur)' : D);
+        expect(ease[i], `${cls} ${p} easing`).toBe(pose ? 'var(--jelly-spring-ease)' : E);
+      });
+    },
+  );
+
+  it('every state that sets the hook sets its duration and easing to the same spring', () => {
+    const states = MATERIAL.filter((r) => decl(r.body, '--jelly-spring-t'));
+    const radial = RADIAL.filter((r) => decl(r.body, '--jelly-spring-t'));
+    expect(states.length).toBeGreaterThanOrEqual(3);
+    for (const r of [...states, ...radial]) {
+      const t = decl(r.body, '--jelly-spring-t')!;
+      if (!t.startsWith('scale ')) continue; // the :root no-op
+      const curve = t === RELEASE ? 'release' : 'press';
+      expect(decl(r.body, '--jelly-spring-dur'), r.selectors[0]).toBe(`var(--spring-${curve}-dur)`);
+      expect(decl(r.body, '--jelly-spring-ease'), r.selectors[0]).toBe(`var(--spring-${curve})`);
+    }
+  });
+
+  /**
+   * An arbitrary `transition-[…]` utility on a host cannot be restated in CSS: that host's pose snaps. Frozen
+   * 2026-11-08, one-directional — a new one fails, and a listed one that no longer matches must come out. Found by
+   * a source scan: a `transition-[` on a line whose own text or the three lines above open a host (a button, a
+   * summary, a control role, a glass card, an eversion or press mark).
+   */
+  const ARBITRARY_TRANSITION_DEBT: Record<string, number> = {
+    'components/feed/CommunitiesColumn.tsx': 1,
+    'components/feed/FeedList.tsx': 1,
+    'components/feed/SocialListModal.tsx': 1,
+    'components/feed/StreakColumn.tsx': 1,
+    'components/groupcall/GroupCallInviteDialog.tsx': 1,
+  };
+
+  it('arbitrary transition-[…] utilities on hosts only go down (ratchet)', () => {
+    const HOST_SRC =
+      /<(?:button|summary)\b|role="(?:button|tab|menuitem|switch|option)"|glass-fill|glass-interactive|data-evert|data-fluid-press|data-slot="button"/;
+    const walk = (dir: string, out: string[] = []): string[] => {
+      for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
+        const p = `${dir}/${e.name}`;
+        if (e.isDirectory()) walk(p, out);
+        else if (p.endsWith('.tsx')) out.push(p);
+      }
+      return out;
+    };
+    const found: Record<string, number> = {};
+    for (const f of [...walk('components'), ...walk('app')]) {
+      const lines = read(f).split('\n');
+      lines.forEach((line, i) => {
+        if (!line.includes('transition-[')) return;
+        if (HOST_SRC.test(lines.slice(Math.max(0, i - 3), i + 1).join('\n')))
+          found[f] = (found[f] ?? 0) + 1;
+      });
+    }
+    expect(
+      found,
+      'A host with an arbitrary transition-[…] utility keeps that list, so its press and release snap. Use ' +
+        '`transition-colors` (restated with the spring in app/jelly-material.css §8b) or add `scale` to the list on ' +
+        'the spring; when one goes away, remove its entry here.',
+    ).toEqual(ARBITRARY_TRANSITION_DEBT);
+  }, 30_000);
 });

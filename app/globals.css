@@ -3187,9 +3187,14 @@ html:not(.app-route) body {
   /* Legacy controls and ordinary links get the same finite state transitions
      as the shared primitives. Utilities can still specialize the properties. */
   :where(.vibe-app) :is(a[href], button, summary, [role='button'], input, textarea, select) {
-    transition-property: color, background-color, border-color, opacity;
-    transition-duration: calc(var(--site-transition-speed) * 0.75);
-    transition-timing-function: var(--ease-out);
+    /* The shorthand, so the CSS soft body's spring hook (`--jelly-spring-t`, app/jelly-material.css §8) can join the
+       list: this rule outranks the hook's zero-specificity default on every shell control. */
+    transition:
+      color calc(var(--site-transition-speed) * 0.75) var(--ease-out),
+      background-color calc(var(--site-transition-speed) * 0.75) var(--ease-out),
+      border-color calc(var(--site-transition-speed) * 0.75) var(--ease-out),
+      opacity calc(var(--site-transition-speed) * 0.75) var(--ease-out),
+      var(--jelly-spring-t);
   }
 
   :where(.vibe-app) :is(input, textarea, select, button):not([data-slot]):focus-visible {
@@ -3778,8 +3783,11 @@ summary {
    focus / active state changes are never janky. Lives in @layer base so any
    component's own transition utility (e.g. transition-transform, duration-*)
    still wins — this only fills the gap where none was set. Colour/box-shadow/
-   opacity only: never transform or layout, so nothing shifts unexpectedly.
-   The prefers-reduced-motion guard further down neutralises it. */
+   opacity only: never transform or layout, so nothing shifts unexpectedly —
+   plus the CSS soft body's spring hook (`--jelly-spring-t`, app/jelly-material.css
+   §8: the press/release spring on `scale` inside the jelly scope, a no-op outside
+   it), because this rule outranks the hook's zero-specificity default on every
+   native control. The prefers-reduced-motion guard further down neutralises it. */
 @layer base {
   a,
   button,
@@ -3798,7 +3806,8 @@ summary {
       background-color 0.15s ease,
       border-color 0.15s ease,
       box-shadow 0.15s ease,
-      opacity 0.15s ease;
+      opacity 0.15s ease,
+      var(--jelly-spring-t);
   }
 }
 

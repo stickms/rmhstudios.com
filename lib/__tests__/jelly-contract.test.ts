@@ -600,19 +600,36 @@ describe('N13 — never fake a law', () => {
       decls(f)
         .filter(
           (d) =>
-            (d.prop === 'transition' ||
-              d.prop === 'transition-property' ||
-              d.prop === '--jelly-spring-t') &&
+            (d.prop === 'transition' || d.prop === '--jelly-spring-t') &&
             segments(d.value).some((seg) => MOVING.test(seg) && !SPRUNG.test(seg)),
         )
         .map((d) => `${f}:${d.line} ${d.prop}: ${d.value}`),
     );
-    expect(
-      offenders,
-      'A transition on transform/translate/scale/rotate with its own ease is a fake spring. Hover plump, press ' +
-        'squash and the release wobble are the CSS soft body (app/jelly-material.css §8): `scale` on a generated ' +
-        '`--spring-*` curve and its `-dur`, through the `--jelly-spring-t` hook (docs/plasmatic-jelly-system.md §10).',
-    ).toEqual([]);
+    // Longhands (§8b restates Tailwind's transition utilities on a host): `scale` / `translate` must sit on the soft
+    // body's spring hooks at the same list position, and `transform` / `rotate` may appear only where a rule restates
+    // the bare `transition` utility for a host carrying it, with that utility's own timing (not a jelly spring).
+    for (const f of SHEETS) {
+      const src = css(f);
+      for (const m of src.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const [sel, body] = [m[1].replace(/\s+/g, ' ').trim(), m[2]];
+        const get = (prop: string) =>
+          new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`).exec(body)?.[1];
+        const props = get('transition-property');
+        if (!props) continue;
+        const list = segments(props.replace(/\s+/g, ' '));
+        const dur = segments((get('transition-duration') ?? '').replace(/\s+/g, ' '));
+        const ease = segments((get('transition-timing-function') ?? '').replace(/\s+/g, ' '));
+        list.forEach((prop, i) => {
+          if (!MOVING.test(prop)) return;
+          const at = `${f}: ${sel.slice(0, 80)} … ${prop}`;
+          if (prop === 'scale' || prop === 'translate') {
+            if (dur[i] !== 'var(--jelly-spring-dur)' || ease[i] !== 'var(--jelly-spring-ease)')
+              offenders.push(`${at} (not on the spring hooks)`);
+          } else if (!(sel.includes("[class~='transition']") && !/spring/.test(`${dur[i]} ${ease[i]}`)))
+            offenders.push(`${at} (only the bare transition utility's own restatement may list it)`);
+        });
+      }
+    }
     // The soft body does transition: the scan is not vacuous.
     expect(
       SHEETS.flatMap((f) => decls(f)).some(

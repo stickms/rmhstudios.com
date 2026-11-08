@@ -1285,6 +1285,8 @@ html[data-game-state='playing']
         *
     ) {
     --jelly-spring-t: scale var(--spring-release-dur) var(--spring-release);
+    --jelly-spring-dur: var(--spring-release-dur);
+    --jelly-spring-ease: var(--spring-release);
   }
   /* No wobble where the material is off: perf-lite and the app tier's high contrast press, then settle critically. */
   html.perf-lite:not(.native-material, [data-game-state='playing'])
@@ -1421,6 +1423,8 @@ html[data-game-state='playing']
         *
     ) {
     --jelly-spring-t: scale var(--spring-press-dur) var(--spring-press);
+    --jelly-spring-dur: var(--spring-press-dur);
+    --jelly-spring-ease: var(--spring-press);
   }
   @media (hover: hover) and (pointer: fine) {
     html:not(.native-material, [data-game-state='playing'], .perf-lite)
@@ -1669,6 +1673,8 @@ html[data-game-state='playing']
     ):not([data-jelly-press-through]:has(:active)) {
     scale: max(var(--jelly-press-card), calc(1 - var(--jelly-edge-reach) / var(--jelly-s, 1000)));
     --jelly-spring-t: scale var(--spring-press-dur) var(--spring-press);
+    --jelly-spring-dur: var(--spring-press-dur);
+    --jelly-spring-ease: var(--spring-press);
   }
   html:not(.native-material, [data-game-state='playing'])
     :is(
@@ -1921,6 +1927,376 @@ html[data-game-state='playing']
     }
   }
 }
+/* ── 8b. Tailwind transition utilities on a soft-body host ────────────────────────────────────────────────────────────
+   A host that carries `transition`, `transition-colors`, `transition-opacity` or `transition-shadow` keeps that
+   utility's own transition (utilities outrank the §8 hook), so its pose would snap. Unlayered, so these outrank the
+   utility: each restates the utility's exact property list (Tailwind v4's compiled output, with this site's inline
+   `--default-transition-duration` / `--default-transition-timing-function` from globals.css @theme) and its timing, so
+   `duration-*` / `ease-*` still apply to the colours, and puts `scale` and `translate` on the soft body's spring
+   (`--jelly-spring-dur` / `--jelly-spring-ease`, set beside `--jelly-spring-t` by the §8 state rules). Same scope and
+   hosts as §8. An arbitrary `transition-[…]` utility on a host cannot be restated here; those are a one-directional
+   ratchet in lib/__tests__/jelly-soft-body.test.ts. */
+html:not(.native-material, [data-game-state='playing'])
+  :is(
+    .glass-fill,
+    .glass-interactive,
+    [data-evert],
+    [data-liquid-surface],
+    [data-fluid-press],
+    [data-jelly='card'],
+    [data-jelly='lift'],
+    [data-jelly='control'],
+    [data-jelly='sink'],
+    [data-jelly='firm'],
+    button,
+    [role='button'],
+    [role='tab'],
+    [role='menuitem'],
+    [role='switch'],
+    [role='option'],
+    summary,
+    [data-slot='button']
+  ):not(
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    .glass-inset,
+    .app-glass,
+    [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='pane'],
+    [data-jelly='drag'],
+    [data-liquid-material='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    :disabled,
+    [aria-disabled='true'],
+    [data-evert-delegate],
+    [data-gesture]:not([data-gesture='hold']),
+    [draggable='true'],
+    input,
+    textarea,
+    select,
+    [contenteditable='true'],
+    [contenteditable=''],
+    canvas,
+    video,
+    iframe,
+    .radial-globe,
+    .radial-globe__stage,
+    .radial-globe__glass,
+    .radial-globe__jelly,
+    .radial-globe__cage,
+    .radial-globe__skin,
+    .rad-globe-dock,
+    .eversion-overlay,
+    .evert-ghost,
+    :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        [inert]
+      )
+      *
+  )[class~='transition'] {
+  transition-property:
+    color,
+    background-color,
+    border-color,
+    outline-color,
+    text-decoration-color,
+    fill,
+    stroke,
+    --tw-gradient-from,
+    --tw-gradient-via,
+    --tw-gradient-to,
+    opacity,
+    box-shadow,
+    transform,
+    translate,
+    scale,
+    rotate,
+    filter,
+    -webkit-backdrop-filter,
+    backdrop-filter,
+    display,
+    content-visibility,
+    overlay,
+    pointer-events;
+  transition-duration:
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)), var(--jelly-spring-dur),
+    var(--jelly-spring-dur), var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75));
+  transition-timing-function:
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--jelly-spring-ease), var(--jelly-spring-ease),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth));
+}
+html:not(.native-material, [data-game-state='playing'])
+  :is(
+    .glass-fill,
+    .glass-interactive,
+    [data-evert],
+    [data-liquid-surface],
+    [data-fluid-press],
+    [data-jelly='card'],
+    [data-jelly='lift'],
+    [data-jelly='control'],
+    [data-jelly='sink'],
+    [data-jelly='firm'],
+    button,
+    [role='button'],
+    [role='tab'],
+    [role='menuitem'],
+    [role='switch'],
+    [role='option'],
+    summary,
+    [data-slot='button']
+  ):not(
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    .glass-inset,
+    .app-glass,
+    [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='pane'],
+    [data-jelly='drag'],
+    [data-liquid-material='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    :disabled,
+    [aria-disabled='true'],
+    [data-evert-delegate],
+    [data-gesture]:not([data-gesture='hold']),
+    [draggable='true'],
+    input,
+    textarea,
+    select,
+    [contenteditable='true'],
+    [contenteditable=''],
+    canvas,
+    video,
+    iframe,
+    .radial-globe,
+    .radial-globe__stage,
+    .radial-globe__glass,
+    .radial-globe__jelly,
+    .radial-globe__cage,
+    .radial-globe__skin,
+    .rad-globe-dock,
+    .eversion-overlay,
+    .evert-ghost,
+    :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        [inert]
+      )
+      *
+  )[class~='transition-colors'] {
+  transition-property:
+    color, background-color, border-color, outline-color, text-decoration-color, fill, stroke,
+    --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, translate, scale;
+  transition-duration:
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)),
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)), var(--jelly-spring-dur),
+    var(--jelly-spring-dur);
+  transition-timing-function:
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--tw-ease, var(--ease-smooth)), var(--tw-ease, var(--ease-smooth)),
+    var(--jelly-spring-ease), var(--jelly-spring-ease);
+}
+html:not(.native-material, [data-game-state='playing'])
+  :is(
+    .glass-fill,
+    .glass-interactive,
+    [data-evert],
+    [data-liquid-surface],
+    [data-fluid-press],
+    [data-jelly='card'],
+    [data-jelly='lift'],
+    [data-jelly='control'],
+    [data-jelly='sink'],
+    [data-jelly='firm'],
+    button,
+    [role='button'],
+    [role='tab'],
+    [role='menuitem'],
+    [role='switch'],
+    [role='option'],
+    summary,
+    [data-slot='button']
+  ):not(
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    .glass-inset,
+    .app-glass,
+    [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='pane'],
+    [data-jelly='drag'],
+    [data-liquid-material='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    :disabled,
+    [aria-disabled='true'],
+    [data-evert-delegate],
+    [data-gesture]:not([data-gesture='hold']),
+    [draggable='true'],
+    input,
+    textarea,
+    select,
+    [contenteditable='true'],
+    [contenteditable=''],
+    canvas,
+    video,
+    iframe,
+    .radial-globe,
+    .radial-globe__stage,
+    .radial-globe__glass,
+    .radial-globe__jelly,
+    .radial-globe__cage,
+    .radial-globe__skin,
+    .rad-globe-dock,
+    .eversion-overlay,
+    .evert-ghost,
+    :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        [inert]
+      )
+      *
+  )[class~='transition-opacity'] {
+  transition-property: opacity, translate, scale;
+  transition-duration:
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)), var(--jelly-spring-dur),
+    var(--jelly-spring-dur);
+  transition-timing-function:
+    var(--tw-ease, var(--ease-smooth)), var(--jelly-spring-ease), var(--jelly-spring-ease);
+}
+html:not(.native-material, [data-game-state='playing'])
+  :is(
+    .glass-fill,
+    .glass-interactive,
+    [data-evert],
+    [data-liquid-surface],
+    [data-fluid-press],
+    [data-jelly='card'],
+    [data-jelly='lift'],
+    [data-jelly='control'],
+    [data-jelly='sink'],
+    [data-jelly='firm'],
+    button,
+    [role='button'],
+    [role='tab'],
+    [role='menuitem'],
+    [role='switch'],
+    [role='option'],
+    summary,
+    [data-slot='button']
+  ):not(
+    .glass-pane,
+    .glass-chrome,
+    .glass-overlay,
+    .glass-inset,
+    .app-glass,
+    [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+    [data-jelly='off'],
+    [data-jelly='none'],
+    [data-jelly='pane'],
+    [data-jelly='drag'],
+    [data-liquid-material='off'],
+    [data-liquid-motion='off'],
+    [data-fluid-press='off'],
+    [data-fluid-press='none'],
+    :disabled,
+    [aria-disabled='true'],
+    [data-evert-delegate],
+    [data-gesture]:not([data-gesture='hold']),
+    [draggable='true'],
+    input,
+    textarea,
+    select,
+    [contenteditable='true'],
+    [contenteditable=''],
+    canvas,
+    video,
+    iframe,
+    .radial-globe,
+    .radial-globe__stage,
+    .radial-globe__glass,
+    .radial-globe__jelly,
+    .radial-globe__cage,
+    .radial-globe__skin,
+    .rad-globe-dock,
+    .eversion-overlay,
+    .evert-ghost,
+    :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+    :is(
+        [data-jelly-scope='off'],
+        [data-jelly-zone='playfield'],
+        [data-liquid-motion='off'],
+        [inert]
+      )
+      *
+  )[class~='transition-shadow'] {
+  transition-property: box-shadow, translate, scale;
+  transition-duration:
+    var(--tw-duration, calc(var(--site-transition-speed, 200ms) * 0.75)), var(--jelly-spring-dur),
+    var(--jelly-spring-dur);
+  transition-timing-function:
+    var(--tw-ease, var(--ease-smooth)), var(--jelly-spring-ease), var(--jelly-spring-ease);
+}
+
 @media print {
   /* The soft body never applies on paper (it replaces the physics service's `[data-jelly-body]` reset). */
   :is(
