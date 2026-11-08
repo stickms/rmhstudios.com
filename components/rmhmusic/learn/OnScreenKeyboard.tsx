@@ -1,59 +1,45 @@
 'use client';
 
 /**
- * OnScreenKeyboard — a two-octave piano (C4–B5) played by touch, mouse or
- * keyboard focus. Each pointer is tracked on its own, so several fingers can
- * hold a chord, and sliding a finger along the keys plays each one it reaches.
- * Who holds which key is the pure machine in `machines/key-holds.ts`; this
- * component turns its press/release effects into `screen.press/release`.
- * Notes go through the store's on-screen-keys input (`screen.press/release`),
- * so the lesson hears them exactly as it hears MIDI or the mic; keys light up
- * for a note from ANY source.
+ * OnScreenKeyboard — a piano played by touch, mouse or keyboard focus. Each pointer is tracked on
+ * its own, so several fingers can hold a chord, and sliding a finger along the keys plays each one
+ * it reaches. Who holds which key is the pure machine in `machines/key-holds.ts`; this component
+ * turns its press/release effects into `screen.press/release`, so the lesson hears the keys
+ * exactly as it hears MIDI or the mic; keys light up for a note from ANY source.
  *
- * The keys are a play-field (`data-jelly-zone="playfield"`): no jelly body or
- * arcs on them, and `touch-action: none` so a press is never taken for a
- * scroll. On a narrow phone the keyboard scrolls sideways inside its own box
- * (each white key stays at least 44px wide); the page never does.
+ * It fits its width: as many whole white keys of 44px or more as fit (7 on a small phone, two
+ * octaves from 616px), counted by CSS container queries so nothing moves after mount
+ * (`lib/rmhmusic/learn/keyboard-layout.ts`). On a phone the octave buttons — or a swipe along the
+ * thin strip above the keys, never on the keys themselves — move the window an octave at a time;
+ * no key is reachable only by scrolling. Keys out of view are taken out of the tab order.
+ *
+ * The keys are a play-field (`data-jelly-zone="playfield"`): no jelly body or arcs on them, and
+ * `touch-action: none` so a press is never taken for a scroll.
  */
 
-import { memo, useEffect, useState } from 'react';
-import type { KeyboardEvent, PointerEvent } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
+import type { CSSProperties, KeyboardEvent, PointerEvent } from 'react';
+import { Minus, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import {
+  BLACK_SHARE,
+  DEFAULT_OCTAVE,
+  MAX_OCTAVE,
+  MIN_OCTAVE,
+  clampOctave,
+  inView,
+  swipeShift,
+  whiteKeysFor,
+  windowKeys,
+  type PianoKey,
+} from '@/lib/rmhmusic/learn/keyboard-layout';
 import { keyHoldsMachine, type Event as HoldEvent } from '@/lib/rmhmusic/learn/machines/key-holds';
 import { createRunner } from '@/lib/rmhmusic/learn/machines/runner';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { cn } from '@/lib/utils';
+import { SECONDARY_BUTTON } from './buttons';
 import { useSoundingNotes } from './useLearnInput';
-
-const FIRST = 60; // C4
-const LAST = 83; // B5
-const WHITE_SEMITONES = new Set([0, 2, 4, 5, 7, 9, 11]);
-/** Smallest white-key width, so every key is a comfortable tap target. */
-const MIN_WHITE_PX = 44;
-/** A black key's width as a share of a white key's. */
-const BLACK_SHARE = 0.62;
-
-interface PianoKey {
-  midi: number;
-  name: string;
-  black: boolean;
-  /** White keys to the left of this key. */
-  whiteBefore: number;
-}
-
-const KEYS: PianoKey[] = (() => {
-  const out: PianoKey[] = [];
-  let whites = 0;
-  for (let midi = FIRST; midi <= LAST; midi++) {
-    const black = !WHITE_SEMITONES.has(midi % 12);
-    out.push({ midi, name: midiToName(midi), black, whiteBefore: whites });
-    if (!black) whites++;
-  }
-  return out;
-})();
-const WHITE_COUNT = KEYS.filter((k) => !k.black).length;
-const WHITE_PCT = 100 / WHITE_COUNT;
 
 /** Memoised: it re-renders for its own lit keys, not for every render of the lesson around it. */
 export const OnScreenKeyboard = memo(function OnScreenKeyboard({
@@ -65,6 +51,13 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
   const screen = useLearnStore((s) => s.screen);
   const hub = useLearnStore((s) => s.hub);
   const sounding = useSoundingNotes();
+  const [octave, setOctave] = useState(DEFAULT_OCTAVE);
+  // Until measured (server render, first client render) every key counts as in view; measuring
+  // changes only the tab order, never the layout.
+  const [whites, setWhites] = useState(14);
+  const bedRef = useRef<HTMLDivElement>(null);
+  const swipe = useRef<{ id: number; x: number; y: number } | null>(null);
+  const keys = windowKeys(octave);
 
   // Who holds which key (pointers, keyboard focus) is the pure machine in `machines/key-holds.ts`.
   // Nothing renders from it (keys light from the hub's notes), so it is held, not subscribed to.
@@ -75,6 +68,11 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
       else screen?.release(fx.midi);
     }
   };
+  const releaseAll = () => {
+    for (const fx of holds.send({ type: 'release-all' })) {
+      if (fx.type === 'release') screen?.release(fx.midi);
+    }
+  };
 
   // The hub forwards only started sources; the on-screen keys start with nothing to open.
   useEffect(() => {
@@ -82,14 +80,25 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
   }, [hub]);
 
   // Let go of everything still down when the keyboard goes away.
-  useEffect(
-    () => () => {
-      for (const fx of holds.send({ type: 'release-all' })) {
-        if (fx.type === 'release') screen?.release(fx.midi);
-      }
-    },
-    [holds, screen],
-  );
+  useEffect(() => () => releaseAll(), [holds, screen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const bed = bedRef.current;
+    if (!bed || typeof ResizeObserver === 'undefined') return;
+    const measure = () => setWhites(whiteKeysFor(bed.clientWidth));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(bed);
+    return () => observer.disconnect();
+  }, []);
+
+  const shift = (by: number) => {
+    const next = clampOctave(octave + by);
+    if (next === octave) return;
+    // The keys under any finger are about to change: let go first so nothing sticks.
+    releaseAll();
+    setOctave(next);
+  };
 
   const onPointerDown = (e: PointerEvent<HTMLButtonElement>, midi: number) => {
     const primary = e.pointerType !== 'mouse' || e.button === 0;
@@ -117,47 +126,98 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
   const keyClass = (key: PianoKey, lit: boolean) =>
     key.black
       ? cn(
-          'absolute top-0 z-10 h-[60%] border border-(--app-border) transition-colors',
-          lit ? 'bg-(--app-accent) text-(--app-accent-fg)' : 'bg-(--app-bg) text-(--app-text-dim)',
+          'rmm-keys__black absolute top-0 z-10 h-[60%] border border-(--rmm-key-black) transition-colors',
+          lit ? 'bg-(--rmm-key-lit)' : 'bg-(--rmm-key-black)',
         )
       : cn(
-          'relative flex h-full flex-1 items-end justify-center border border-(--app-border) pb-2 text-xs font-medium transition-colors',
+          'rmm-keys__white relative flex h-full items-end justify-center border border-(--app-border-bright) pb-2 text-xs font-medium transition-colors',
           lit
-            ? 'bg-(--app-accent) text-(--app-accent-fg)'
-            : 'bg-(--app-surface) text-(--app-text-muted)',
+            ? 'bg-(--rmm-key-lit) text-(--rmm-key-lit-ink)'
+            : 'bg-(--rmm-key-white) text-(--rmm-key-white-ink)',
         );
 
+  const from = midiToName(12 * (octave + 1));
+
   return (
-    <div
-      className={cn('w-full overflow-x-auto rounded-(--app-radius-sm)', className)}
-      data-jelly-zone="playfield"
-      role="group"
-      aria-label={t('keyboard-label', { defaultValue: 'Piano keyboard, C4 to B5' })}
-    >
+    <div className={cn('rmm-keys', className)} data-jelly-zone="playfield">
+      <div className="mb-2 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => shift(-1)}
+          disabled={octave <= MIN_OCTAVE}
+          aria-label={t('keyboard-octave-down', { defaultValue: 'Lower octave' })}
+          className={`${SECONDARY_BUTTON} w-11 shrink-0 px-0`}
+        >
+          <Minus className="h-4 w-4" aria-hidden="true" />
+        </button>
+        {/* A pointer-only shortcut for the two buttons beside it, so it is hidden from assistive tech. */}
+        <div
+          aria-hidden="true"
+          className="rmm-keys__strip flex h-11 min-w-0 flex-1 items-center justify-center select-none"
+          onPointerDown={(e) => {
+            swipe.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+          }}
+          onPointerUp={(e) => {
+            const start = swipe.current;
+            swipe.current = null;
+            if (start && start.id === e.pointerId) {
+              shift(swipeShift(e.clientX - start.x, e.clientY - start.y));
+            }
+          }}
+          onPointerCancel={() => {
+            swipe.current = null;
+          }}
+        >
+          <span className="rmm-display rounded-(--app-radius-sm) bg-(--app-bg) px-2 text-sm text-(--app-text-muted) italic">
+            {from}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => shift(1)}
+          disabled={octave >= MAX_OCTAVE}
+          aria-label={t('keyboard-octave-up', { defaultValue: 'Higher octave' })}
+          className={`${SECONDARY_BUTTON} w-11 shrink-0 px-0`}
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </div>
+      <p className="sr-only" aria-live="polite">
+        {t('keyboard-from', { note: from, defaultValue: 'Keyboard from {{note}}' })}
+      </p>
       <div
-        className="relative flex h-40 w-full select-none sm:h-48"
-        style={{ minWidth: WHITE_COUNT * MIN_WHITE_PX }}
+        ref={bedRef}
+        role="group"
+        aria-label={t('keyboard-label-from', {
+          note: from,
+          defaultValue: 'Piano keyboard from {{note}}',
+        })}
+        className="rmm-keys__bed relative flex h-40 rounded-(--app-radius-sm) select-none sm:h-48"
         onPointerUp={(e) => send({ type: 'pointer-lift', pointer: e.pointerId })}
         onPointerCancel={(e) => send({ type: 'pointer-lift', pointer: e.pointerId })}
         onPointerLeave={(e) => send({ type: 'pointer-exit', pointer: e.pointerId })}
       >
-        {KEYS.map((key) => {
+        {keys.map((key) => {
           const lit = sounding.has(key.midi);
-          const letter = key.name.replace(/-?\d+$/, '');
+          const name = midiToName(key.midi);
+          const letter = name.replace(/-?\d+$/, '');
+          const shown = inView(key, whites);
           return (
             <button
               key={key.midi}
               type="button"
-              aria-label={key.name}
+              aria-label={name}
               aria-pressed={lit}
+              aria-hidden={shown ? undefined : true}
+              tabIndex={shown ? undefined : -1}
               className={keyClass(key, lit)}
               style={{
                 touchAction: 'none',
                 ...(key.black
-                  ? {
-                      left: `${(key.whiteBefore - BLACK_SHARE / 2) * WHITE_PCT}%`,
-                      width: `${BLACK_SHARE * WHITE_PCT}%`,
-                    }
+                  ? ({
+                      '--rmm-at': key.whiteBefore - BLACK_SHARE / 2,
+                      '--rmm-share': BLACK_SHARE,
+                    } as CSSProperties)
                   : null),
               }}
               onPointerDown={(e) => onPointerDown(e, key.midi)}
@@ -170,9 +230,7 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
               onBlur={() => send({ type: 'blur', midi: key.midi })}
               onContextMenu={(e) => e.preventDefault()}
             >
-              {!key.black && (
-                <span aria-hidden="true">{key.midi % 12 === 0 ? key.name : letter}</span>
-              )}
+              {!key.black && <span aria-hidden="true">{key.midi % 12 === 0 ? name : letter}</span>}
             </button>
           );
         })}

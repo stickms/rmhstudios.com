@@ -75,6 +75,12 @@
   /* The backdrop's ambient notes and the note a learner just played. */
   --rmm-note: #a3aec6;
   --rmm-pop: var(--app-accent);
+  /* The on-screen piano: ivory and ink keys; a played key fills with the accent. */
+  --rmm-key-white: #fcf8ee;
+  --rmm-key-white-ink: #3f4d70;
+  --rmm-key-black: #1a2747;
+  --rmm-key-lit: #4338ca;
+  --rmm-key-lit-ink: #fcf8ee;
 
   color-scheme: light;
 }
@@ -110,6 +116,11 @@
     --rmm-staff: #1f2d4d;
     --rmm-grain: rgb(242 235 217 / 0.03);
     --rmm-note: #3d5080;
+    --rmm-key-white: #e4dcc8;
+    --rmm-key-white-ink: #1a2747;
+    --rmm-key-black: #070d1a;
+    --rmm-key-lit: #4f5ad6;
+    --rmm-key-lit-ink: #ffffff;
     color-scheme: dark;
   }
 }
@@ -141,6 +152,11 @@
   --rmm-staff: #1f2d4d;
   --rmm-grain: rgb(242 235 217 / 0.03);
   --rmm-note: #3d5080;
+  --rmm-key-white: #e4dcc8;
+  --rmm-key-white-ink: #1a2747;
+  --rmm-key-black: #070d1a;
+  --rmm-key-lit: #4f5ad6;
+  --rmm-key-lit-ink: #ffffff;
   color-scheme: dark;
 }
 
@@ -315,22 +331,72 @@
 }
 
 /* ── The on-screen keyboard (OnScreenKeyboard.tsx) ───────────────────────────
-   The white-key count is decided by CSS, from the container's own width, so the server render
-   and the first client render are the same and nothing moves after mount: 7 keys under 392px
-   (each ≥ 44px down to a 320px screen's 308px), 8 from 392px up to a phone's widest portrait
-   column, and the full two octaves (14) from 616px. The component renders every key and hides
-   the ones beyond the visible window. */
+   How many white keys show is decided here, from the keyboard's own width, so the server render
+   and the first client render are the same and nothing moves after mount: one more key per 44px,
+   from 7 (a 320–360px phone) to 14 (two octaves, from 616px). `whiteKeysFor` in
+   lib/rmhmusic/learn/keyboard-layout.ts is the same rule, and its test reads these steps. The bed
+   always holds two octaves; the keys past the count sit beyond its clipped right edge. */
 .rmm-keys {
   container-type: inline-size;
-  --rmm-white-count: 7;
 }
-@container (min-width: 392px) {
+.rmm-keys__bed {
+  --rmm-white-count: 7;
+  overflow: hidden;
+}
+@container (min-width: 352px) {
   .rmm-keys__bed {
     --rmm-white-count: 8;
+  }
+}
+@container (min-width: 396px) {
+  .rmm-keys__bed {
+    --rmm-white-count: 9;
+  }
+}
+@container (min-width: 440px) {
+  .rmm-keys__bed {
+    --rmm-white-count: 10;
+  }
+}
+@container (min-width: 484px) {
+  .rmm-keys__bed {
+    --rmm-white-count: 11;
+  }
+}
+@container (min-width: 528px) {
+  .rmm-keys__bed {
+    --rmm-white-count: 12;
+  }
+}
+@container (min-width: 572px) {
+  .rmm-keys__bed {
+    --rmm-white-count: 13;
   }
 }
 @container (min-width: 616px) {
   .rmm-keys__bed {
     --rmm-white-count: 14;
   }
+}
+.rmm-keys__white {
+  flex: none;
+  width: calc(100% / var(--rmm-white-count));
+}
+/* Black keys are placed in white-key units (`--rmm-at`, `--rmm-share`) of the same width. */
+.rmm-keys__black {
+  left: calc(100% / var(--rmm-white-count) * var(--rmm-at));
+  width: calc(100% / var(--rmm-white-count) * var(--rmm-share));
+}
+/* The swipe strip: a pencilled track the learner drags sideways to change octave. Vertical drags
+   still scroll the page (`pan-y`); the keys themselves keep every touch for playing. */
+.rmm-keys__strip {
+  touch-action: pan-y;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--rmm-staff) 0 1px,
+    transparent 1px 12px
+  );
+  background-size: 100% 9px;
+  background-repeat: repeat-x;
+  background-position: 0 50%;
 }

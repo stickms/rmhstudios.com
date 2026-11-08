@@ -216,7 +216,7 @@ export function FirstNoteLesson({
           <InputChooser />
         </section>
       ) : (
-        (input === 'screen' || input === 'keys') && <OnScreenKeyboard />
+        (input === 'screen' || input === 'keys') && <OnScreenKeyboard className="-mx-2 sm:mx-0" />
       )}
     </div>
   );
