@@ -401,10 +401,23 @@ describe('the soft body elsewhere', () => {
     );
     expect(cue).toHaveLength(1);
     // It also stands down where the press squashes something AROUND the pressed element (Task 8): a plain link inside a
-    // host (the card squashes), and anything inside a press body (the body squashes). One cue per press.
-    const guard = `:not(:where(${SCOPE}${HOST}, ${SCOPE}${HOST} ${PLAIN_A}, ${SCOPE}${BODY} *))`;
+    // host (the card squashes), and a pointer-pressed member of a press body (the body squashes). One cue per press.
+    const guard = `:not(:where(${SCOPE}${HOST}, ${SCOPE}${HOST} ${PLAIN_A}, ${SCOPE}${BODY} *:not(:focus-visible)))`;
     for (const s of cue[0].selectors) expect(s.endsWith(`${guard}:active`), s).toBe(true);
     expect(cue[0].selectors.join(' ')).not.toContain('data-jelly-active');
+  });
+
+  it('a keyboard-activated member of a press body keeps the legacy cue; a pointer-pressed one adds none (Task 8 fix)', () => {
+    // Chromium sets :active on the member alone for a keyboard Space/Enter, so the body never squashes then: the
+    // member's own opacity cue is the only press feedback. A pointer press squashes the body and the member stays quiet.
+    const cue = GLOBALS.filter(
+      (r) => r.selectors.some((s) => s.includes(':active')) && /opacity\s*:\s*0?\.\d/.test(r.body),
+    );
+    const sel = cue[0]?.selectors[0] ?? '';
+    const clause = `${SCOPE}${BODY} *`;
+    expect(sel).toContain(`${clause}:not(:focus-visible)`);
+    // No other, unconditional copy of the body clause that would still drop the cue for a focus-visible member.
+    expect(sel.split(clause).length - 1).toBe(1);
   });
 
   it('the Button keeps a plain press and its transition list carries the spring hook', () => {

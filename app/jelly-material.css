@@ -1186,7 +1186,9 @@ html[data-game-state='playing']
    control, so a card whose content is a link squashes as the card (the link adds no cue: globals.css). A press body
    (`data-jelly-press-body`, owner "squash everything", Task 8: a JellyGroup, the top bar, the selection bar, a
    scroller's pill) is the other way round: it squashes as ONE body on the card pose when any member is pressed, real
-   controls included, and its members add no squash, dent or opacity cue of their own. A pane or chrome slab is a host
+   controls included, and its members add no squash, dent or opacity cue of their own (except a keyboard-activated,
+   `:focus-visible` member, which keeps the opacity cue: Chromium does not mark the body active for a keyboard press, so
+   the body does not squash then). A pane or chrome slab is a host
    only as a press body, and never plumps on hover (it is always under the pointer). LiquidTabs strips are not bodies:
    the track is a field, which never moves. lib/__tests__/jelly-soft-body.test.ts pins all of it.
 

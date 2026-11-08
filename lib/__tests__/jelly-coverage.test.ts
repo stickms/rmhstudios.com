@@ -396,7 +396,7 @@ describe('jelly coverage — the primitives adapter (app/jelly-coverage.css) and
     // down where the press squashes something AROUND the pressed element: inside a press body
     // (`data-jelly-press-body`, the body squashes) and on a plain link inside a host (the card squashes).
     const GUARD =
-      /:not\(\s*:where\(\s*html:not\(\.native-material, \[data-game-state='playing'\]\)\s[\s\S]*\[data-jelly-press-body\]\s*\*\s*\)/;
+      /:not\(\s*:where\(\s*html:not\(\.native-material, \[data-game-state='playing'\]\)\s[\s\S]*\[data-jelly-press-body\]\s*\*:not\(:focus-visible\)\s*\)/;
     const missing = cue.flatMap((r) =>
       splitSelectors(r.sel).filter((s) => s.includes(':active') && !GUARD.test(s)),
     );
@@ -404,7 +404,8 @@ describe('jelly coverage — the primitives adapter (app/jelly-coverage.css) and
       missing,
       'An opacity flicker on a press that the CSS soft body is squashing is two press cues fighting; every ' +
         "selector of the cue must carry the soft body's :not(:where(html:not(.native-material, …) …)) guard, " +
-        'including its `[data-jelly-press-body] *` clause (a press body squashes for its members).',
+        'including its `[data-jelly-press-body] *:not(:focus-visible)` clause (a press body squashes for a pointer press ' +
+        'on its members; a keyboard-activated member keeps the cue, since the body does not squash then).',
     ).toEqual([]);
   });
 });

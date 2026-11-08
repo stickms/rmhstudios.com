@@ -3472,7 +3472,9 @@ textarea,
    `:not(:where(…))` guard (zero specificity; one copy for the whole list), so a control that squashes never also
    flashes. Two more clauses cover a press that squashes something AROUND the pressed element (Task 8): a plain link
    inside a host (the card it fills squashes as the card) and anything inside a press body (`data-jelly-press-body`: the
-   group, bar or pill squashes as one body). One that the soft body leaves alone (an opted-out member outside a body, a
+   group, bar or pill squashes as one body), except a `:focus-visible` member: a keyboard Space/Enter sets `:active` on
+   the member alone, the body does not squash, and this cue is its only press feedback. (A member focused from the
+   keyboard and then clicked can still match `:focus-visible` in Chromium, so that one press shows both.) One that the soft body leaves alone (an opted-out member outside a body, a
    plain link outside any host, a tab in a LiquidTabs strip, a native-material route, a game in play) keeps this cue.
    lib/__tests__/jelly-soft-body.test.ts holds the guard equal to the host rule. */
 :is(
@@ -3623,7 +3625,7 @@ textarea,
         a:not([data-slot], [role], [data-fluid-press], .glass-interactive),
       html:not(.native-material, [data-game-state='playing'])
         [data-jelly-press-body]
-        *
+        *:not(:focus-visible)
     )
   ):active {
   opacity: 0.6;
