@@ -55,6 +55,8 @@ export function LearnHome() {
   const progress = useLearnStore((s) => s.progress);
   const status = useLearnStore((s) => s.status);
   const error = useLearnStore((s) => s.error);
+  // Only the home's own action (the instrument toggle) reports a failed save here.
+  const instrumentFailed = useLearnStore((s) => s.saveFailed.includes('instrument'));
 
   // The store is empty until `load()` runs in the browser, never during SSR.
   useEffect(() => {
@@ -135,7 +137,7 @@ export function LearnHome() {
             {t('setup-input', { defaultValue: 'Set up input' })}
           </button>
         </div>
-        {error === 'save_failed' && (
+        {instrumentFailed && (
           <p role="status" className="text-sm text-(--app-danger)">
             {t('error-save', { defaultValue: "Couldn't save that change. Try again." })}
           </p>

@@ -21,7 +21,8 @@ vi.mock('./input/screen', () => ({
   createScreenInput: vi.fn(() => (created.screen++, { source: 'screen' })),
 }));
 
-import { useLearnStore, type LessonProgressRow, type Profile } from './store';
+import { initial, type State } from './machines/learn-data';
+import { project, useLearnStore, type LessonProgressRow, type Profile } from './store';
 
 const PROFILE: Profile = { instrument: 'piano', input: 'screen', latencyMs: 0, dailyGoal: 1 };
 const ROW: LessonProgressRow = {
@@ -41,14 +42,13 @@ function json(body: unknown, status = 200): Response {
 const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>();
 
 function reset() {
-  useLearnStore.setState({
-    profile: null,
-    progress: [],
-    hub: null,
-    screen: null,
-    status: 'idle',
-    error: null,
-  });
+  useLearnStore.setState({ sync: initial, ...project(initial), hub: null, screen: null });
+}
+
+/** Start a test from a loaded store (what a successful `load()` leaves). */
+function seedReady(profile: Profile, progress: LessonProgressRow[] = []) {
+  const sync: State = { ...initial, load: { kind: 'ready' }, confirmed: profile, progress };
+  useLearnStore.setState({ sync, ...project(sync) });
 }
 
 beforeEach(() => {
@@ -142,7 +142,7 @@ describe('learn store', () => {
   });
 
   it('setInstrument updates at once, PUTs the whole profile, and keeps it on success', async () => {
-    useLearnStore.setState({ profile: PROFILE, status: 'ready' });
+    seedReady(PROFILE);
     fetchMock.mockResolvedValue(json({ profile: { ...PROFILE, instrument: 'guitar' } }));
     const done = useLearnStore.getState().setInstrument('guitar');
     expect(useLearnStore.getState().profile?.instrument).toBe('guitar');
@@ -155,7 +155,7 @@ describe('learn store', () => {
   });
 
   it('setInstrument rolls back and records an error when the PUT fails', async () => {
-    useLearnStore.setState({ profile: PROFILE, status: 'ready' });
+    seedReady(PROFILE);
     fetchMock.mockResolvedValue(json({ error: 'x' }, 500));
     const done = useLearnStore.getState().setInstrument('guitar');
     expect(useLearnStore.getState().profile?.instrument).toBe('guitar');
@@ -166,7 +166,7 @@ describe('learn store', () => {
   });
 
   it('setLatency rounds and clamps to the schema range before sending', async () => {
-    useLearnStore.setState({ profile: PROFILE, status: 'ready' });
+    seedReady(PROFILE);
     fetchMock.mockImplementation(async (_url, init) =>
       json({ profile: JSON.parse(String(init?.body)) }),
     );
@@ -178,7 +178,7 @@ describe('learn store', () => {
   });
 
   it('completeLesson merges optimistically, then the server progress replaces it', async () => {
-    useLearnStore.setState({ profile: PROFILE, progress: [ROW], status: 'ready' });
+    seedReady(PROFILE, [ROW]);
     const serverProgress: LessonProgressRow[] = [{ ...ROW, stars: 3, bestScore: 95 }];
     fetchMock.mockResolvedValue(json({ stars: 3, xpAwarded: 20, progress: serverProgress }));
 
@@ -198,27 +198,28 @@ describe('learn store', () => {
   });
 
   it('completeLesson adds a row for a first completion and rolls it back on failure', async () => {
-    useLearnStore.setState({ profile: PROFILE, progress: [ROW], status: 'ready' });
+    seedReady(PROFILE, [ROW]);
     fetchMock.mockResolvedValue(json({ error: 'x' }, 500));
     const done = useLearnStore.getState().completeLesson('staff-treble-notes', 2, 80);
     const optimistic = useLearnStore
       .getState()
       .progress.find((r) => r.lessonId === 'staff-treble-notes');
     expect(optimistic).toMatchObject({ stars: 2, bestScore: 80 });
-    await done;
+    // The failure is the lesson's to show: it is returned, not left in the shared `error`.
+    expect(await done).toBe('failed');
     expect(useLearnStore.getState().progress).toEqual([ROW]);
-    expect(useLearnStore.getState().error).toBe('save_failed');
+    expect(useLearnStore.getState().error).toBeNull();
   });
 
   it('completeLesson rolls an improved row back to what it was', async () => {
-    useLearnStore.setState({ profile: PROFILE, progress: [ROW], status: 'ready' });
+    seedReady(PROFILE, [ROW]);
     fetchMock.mockRejectedValue(new TypeError('offline'));
     await useLearnStore.getState().completeLesson('staff-what-is-a-staff', 3, 99);
     expect(useLearnStore.getState().progress).toEqual([ROW]);
   });
 
   it('completeLesson ignores an unknown lesson without a request', async () => {
-    useLearnStore.setState({ profile: PROFILE, progress: [ROW], status: 'ready' });
+    seedReady(PROFILE, [ROW]);
     await useLearnStore.getState().completeLesson('nope', 3, 100);
     expect(fetchMock).not.toHaveBeenCalled();
     expect(useLearnStore.getState().progress).toEqual([ROW]);
@@ -242,7 +243,7 @@ function manualFetch() {
 const sent = (n: number) => vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(n));
 
 describe('learn store profile writes are serialised', () => {
-  beforeEach(() => useLearnStore.setState({ profile: PROFILE, status: 'ready' }));
+  beforeEach(() => seedReady(PROFILE));
 
   it('a failed first write does not leave the client ahead of the server', async () => {
     const calls = manualFetch();
@@ -317,6 +318,150 @@ describe('learn store profile writes are serialised', () => {
     expect(useLearnStore.getState().error).toBe('unauthorized');
     expect(useLearnStore.getState().status).toBe('error');
     expect(useLearnStore.getState().profile?.instrument).toBe('piano');
+  });
+});
+
+describe('learn store regressions (state-machine review findings)', () => {
+  beforeEach(() => seedReady(PROFILE, [ROW]));
+
+  it('(a) a failure superseded by a newer change to the same field is not reported', async () => {
+    const calls = manualFetch();
+    const a = useLearnStore.getState().setLatency(10);
+    await sent(1);
+    const b = useLearnStore.getState().setLatency(20);
+    calls[0].settle(json({ error: 'x' }, 500));
+    await sent(2);
+    expect(useLearnStore.getState().error).toBeNull();
+    calls[1].settle(json({ profile: calls[1].body }));
+    await Promise.all([a, b]);
+    expect(useLearnStore.getState().profile?.latencyMs).toBe(20);
+    expect(useLearnStore.getState().error).toBeNull();
+    expect(useLearnStore.getState().saveFailed).toEqual([]);
+  });
+
+  it('(a) changing a failed field again clears its failure', async () => {
+    fetchMock.mockResolvedValueOnce(json({ error: 'x' }, 500));
+    await useLearnStore.getState().setLatency(10);
+    expect(useLearnStore.getState().error).toBe('save_failed');
+    expect(useLearnStore.getState().saveFailed).toEqual(['latencyMs']);
+    fetchMock.mockImplementation(async (_url, init) =>
+      json({ profile: JSON.parse(String(init?.body)) }),
+    );
+    const again = useLearnStore.getState().setLatency(30);
+    expect(useLearnStore.getState().error).toBeNull();
+    await again;
+    expect(useLearnStore.getState().error).toBeNull();
+  });
+
+  it('(b) overlapping writes: the last intent wins when an earlier one fails (10, 20, 10)', async () => {
+    const calls = manualFetch();
+    const w1 = useLearnStore.getState().setLatency(10);
+    await sent(1);
+    const w2 = useLearnStore.getState().setLatency(20);
+    const w3 = useLearnStore.getState().setLatency(10);
+    calls[0].settle(new TypeError('offline'));
+    await sent(2);
+    // Not rolled back to 0: the newest intent (10) still stands.
+    expect(useLearnStore.getState().profile?.latencyMs).toBe(10);
+    expect(calls[1].body.latencyMs).toBe(10);
+    calls[1].settle(json({ profile: calls[1].body }));
+    await sent(3);
+    calls[2].settle(json({ profile: calls[2].body }));
+    await Promise.all([w1, w2, w3]);
+    expect(useLearnStore.getState().profile?.latencyMs).toBe(10);
+    expect(useLearnStore.getState().error).toBeNull();
+  });
+
+  it('(c) a later successful write clears the error a 401 left', async () => {
+    fetchMock.mockResolvedValueOnce(json({ error: 'Unauthorized' }, 401));
+    await useLearnStore.getState().setInstrument('guitar');
+    expect(useLearnStore.getState().status).toBe('error');
+    fetchMock.mockImplementation(async (_url, init) =>
+      json({ profile: JSON.parse(String(init?.body)) }),
+    );
+    await useLearnStore.getState().setInput('keys');
+    expect(useLearnStore.getState().status).toBe('ready');
+    // The instrument change itself still failed, and says so.
+    expect(useLearnStore.getState().error).toBe('save_failed');
+    expect(useLearnStore.getState().saveFailed).toEqual(['instrument']);
+  });
+
+  it('(d) a load landing while a write is queued keeps the optimistic field', async () => {
+    // A 401 since loading lets load() fetch again while a write is still out.
+    const sync: State = {
+      ...initial,
+      load: { kind: 'ready' },
+      confirmed: PROFILE,
+      progress: [ROW],
+      expired: true,
+    };
+    useLearnStore.setState({ sync, ...project(sync) });
+    let releasePut!: (r: Response) => void;
+    fetchMock.mockImplementation((_url, init) =>
+      init?.method === 'PUT'
+        ? new Promise<Response>((r) => (releasePut = r))
+        : Promise.resolve(json({ profile: PROFILE, progress: [ROW] })),
+    );
+    const write = useLearnStore.getState().setLatency(50);
+    await sent(1);
+    await useLearnStore.getState().load();
+    expect(useLearnStore.getState().status).toBe('ready');
+    expect(useLearnStore.getState().profile?.latencyMs).toBe(50);
+    releasePut(json({ profile: { ...PROFILE, latencyMs: 50 } }));
+    await write;
+    expect(useLearnStore.getState().profile?.latencyMs).toBe(50);
+  });
+
+  it('a ready store never refetches, however often it is asked', async () => {
+    await Promise.all([1, 2, 3].map(() => useLearnStore.getState().load()));
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('overlapping completions of two lessons: one answer does not drop the other row', async () => {
+    let answerFirst!: (r: Response) => void;
+    let answerSecond!: (r: Response) => void;
+    fetchMock
+      .mockImplementationOnce(() => new Promise<Response>((r) => (answerFirst = r)))
+      .mockImplementationOnce(() => new Promise<Response>((r) => (answerSecond = r)));
+    const a = useLearnStore.getState().completeLesson('play-first-note', 3, 100);
+    const b = useLearnStore.getState().completeLesson('staff-treble-notes', 2, 80);
+    const first: LessonProgressRow = {
+      lessonId: 'play-first-note',
+      stars: 3,
+      bestScore: 100,
+      completedAt: 'x',
+    };
+    // The server answers the first with its whole progress, which does not know the second yet.
+    answerFirst(json({ progress: [ROW, first] }));
+    expect(await a).toBe('saved');
+    const ids = () =>
+      useLearnStore
+        .getState()
+        .progress.map((r) => r.lessonId)
+        .sort();
+    expect(ids()).toEqual(['play-first-note', 'staff-treble-notes', 'staff-what-is-a-staff']);
+    answerSecond(json({ error: 'x' }, 500));
+    expect(await b).toBe('failed');
+    expect(ids()).toEqual(['play-first-note', 'staff-what-is-a-staff']);
+  });
+
+  it('a completion 401 returns unauthorized and ends the session view', async () => {
+    fetchMock.mockResolvedValue(json({ error: 'Unauthorized' }, 401));
+    expect(await useLearnStore.getState().completeLesson('play-first-note', 3, 100)).toBe(
+      'unauthorized',
+    );
+    expect(useLearnStore.getState().status).toBe('error');
+    expect(useLearnStore.getState().error).toBe('unauthorized');
+  });
+
+  it('an unrelated transition keeps profile and progress referentially stable', async () => {
+    const before = useLearnStore.getState();
+    fetchMock.mockResolvedValue(json({ error: 'x' }, 500));
+    await useLearnStore.getState().completeLesson('nope', 3, 100);
+    useLearnStore.setState({}); // no-op publish
+    const s = useLearnStore.getState();
+    expect(s.profile).toBe(before.profile);
+    expect(s.progress).toBe(before.progress);
   });
 });
 

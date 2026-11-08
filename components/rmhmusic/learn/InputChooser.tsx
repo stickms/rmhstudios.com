@@ -62,6 +62,10 @@ export function InputChooser({ onCalibrate, onChosen }: InputChooserProps) {
   const selected = useLearnStore((s) => s.profile?.input ?? 'screen');
   const latency = useLearnStore((s) => s.profile?.latencyMs ?? 0);
   const storeError = useLearnStore((s) => s.error);
+  // Errors are scoped to this dialog's own actions (choosing an input, saving the timing offset).
+  const saveFailed = useLearnStore(
+    (s) => s.saveFailed.includes('input') || s.saveFailed.includes('latencyMs'),
+  );
   const [busy, setBusy] = useState<LearnInput | null>(null);
   const [failed, setFailed] = useState<LearnInput | null>(null);
   const midiSupported = isMidiSupported();
@@ -181,7 +185,7 @@ export function InputChooser({ onCalibrate, onChosen }: InputChooserProps) {
         </Row>
       </ul>
 
-      {(storeError === 'save_failed' || storeError === 'unauthorized') && (
+      {(saveFailed || storeError === 'unauthorized') && (
         <p role="status" className="text-sm text-(--app-danger)">
           {storeError === 'unauthorized'
             ? t('error-signed-out', {

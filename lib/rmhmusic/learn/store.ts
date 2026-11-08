@@ -7,30 +7,34 @@
  * hub and the on-screen-keys handle are built lazily, once, in the browser
  * (`ensureInput`, called from `load()`), never at import or during SSR.
  *
- * Writes are optimistic. A failed request restores only what that request
- * changed and leaves a short machine-ish code in `error` (`load_failed`,
- * `save_failed`, `unauthorized`); the store holds no user-facing copy, the UI
- * translates or replaces it.
+ * Loading, optimistic writes and completions are the pure machine in
+ * `machines/learn-data.ts`; this file performs its requests and publishes its
+ * state as the fields below. Writes are optimistic. A failed request undoes
+ * only what it asked for (the field falls back to the newest change still on
+ * its way, or the server's value) and leaves a short code in `error`
+ * (`load_failed`, `save_failed`, `unauthorized`) with the failed fields in
+ * `saveFailed`; the store holds no user-facing copy, the UI translates it.
  */
 import { create } from 'zustand';
-import { getLesson } from './content/path';
 import { createInputHub, type InputHub } from './input/hub';
 import { createKeyboardInput } from './input/keyboard';
 import { createMicInput } from './input/mic';
 import { createMidiInput, type MidiInputAdapter } from './input/midi';
 import { createScreenInput } from './input/screen';
 import type { LessonProgressRow, Profile } from './progress.server';
-import { INPUTS, INSTRUMENTS, lessonCompleteSchema, profileSchema } from './schemas';
-import type { Instrument, LearnInput } from './schemas';
-import { mergeLessonResult } from './xp';
+import * as data from './machines/learn-data';
+import type { CompleteOutcome, ProfileKey } from './machines/learn-data';
+import { INPUTS, INSTRUMENTS, profileSchema } from './schemas';
+import type { Instrument, LearnInput, LessonCompleteInput } from './schemas';
 
 export type { LessonProgressRow, Profile };
 
-export type LearnStatus = 'idle' | 'loading' | 'ready' | 'error';
+export type LearnStatus = data.Status;
+export type { CompleteOutcome, ProfileKey };
 export type ScreenInput = ReturnType<typeof createScreenInput>;
 
 /** Stable codes for `error`; the UI decides what to say. */
-export type LearnError = 'load_failed' | 'save_failed' | 'unauthorized' | 'not_loaded' | 'invalid';
+export type LearnError = data.ErrorCode;
 
 export interface LearnState {
   profile: Profile | null;
@@ -42,13 +46,23 @@ export interface LearnState {
   /** The MIDI adapter, for its device list (`devices`, `onDevicesChange`); same lifetime as `hub`. */
   midi: MidiInputAdapter | null;
   status: LearnStatus;
+  /**
+   * The screen-level problem, if any: the load failed, the session ended, the
+   * last call was refused, or some field's newest change failed to save. Which
+   * field is in `saveFailed`, so a screen shows only its own action's failure.
+   */
   error: LearnError | null;
+  /** Profile fields whose newest change failed to save (cleared when the field is changed again). */
+  saveFailed: readonly ProfileKey[];
+  /** The machine behind every field above (`machines/learn-data.ts`); read the projected fields instead. */
+  sync: data.State;
 
   load(): Promise<void>;
   setInstrument(instrument: Instrument): Promise<void>;
   setInput(input: LearnInput): Promise<void>;
   setLatency(ms: number): Promise<void>;
-  completeLesson(lessonId: string, stars: number, score: number): Promise<void>;
+  /** Resolves with how the save went, so the lesson can say so without reading the shared `error`. */
+  completeLesson(lessonId: string, stars: number, score: number): Promise<CompleteOutcome>;
 }
 
 const PROFILE_URL = '/api/rmhmusic/learn/profile';
@@ -121,153 +135,157 @@ const isProfile = (v: unknown): v is Profile => profileSchema.safeParse(v).succe
 
 // ─── Store ───────────────────────────────────────────────────────
 
-let loading: Promise<void> | null = null;
+/** The machine's state projected onto the store's public fields. */
+type Projection = Pick<LearnState, 'profile' | 'progress' | 'status' | 'error' | 'saveFailed'>;
+
+const sameProfile = (a: Profile | null, b: Profile | null) =>
+  a === b ||
+  (!!a &&
+    !!b &&
+    a.instrument === b.instrument &&
+    a.input === b.input &&
+    a.latencyMs === b.latencyMs &&
+    a.dailyGoal === b.dailyGoal);
+
+const sameList = <T>(a: readonly T[], b: readonly T[]) =>
+  a === b || (a.length === b.length && a.every((v, i) => v === b[i]));
+
+/**
+ * The public fields for `sync`, reusing the previous objects when nothing in
+ * them changed, so a selector over `profile` or `progress` does not re-render
+ * on an unrelated transition.
+ */
+export function project(sync: data.State, prev?: Projection): Projection {
+  const profile = data.viewProfile(sync);
+  const progress = data.viewProgress(sync);
+  return {
+    profile: prev && sameProfile(prev.profile, profile) ? prev.profile : profile,
+    progress:
+      prev && sameList(prev.progress, progress) ? prev.progress : (progress as LessonProgressRow[]),
+    status: data.status(sync),
+    error: data.errorCode(sync),
+    saveFailed: prev && sameList(prev.saveFailed, sync.failed) ? prev.saveFailed : sync.failed,
+  };
+}
 
 export const useLearnStore = create<LearnState>()((set, get) => {
-  /** Failure of a write: keep the screen usable unless the session is gone. */
-  const failSave = (r: Extract<Reply, { ok: false }>) =>
-    set(r.unauthorized ? { status: 'error', error: 'unauthorized' } : { error: 'save_failed' });
+  /** Callers waiting on an id (a load token, a write, a completion). */
+  const waiters = new Map<number, ((outcome?: CompleteOutcome) => void)[]>();
 
-  // Profile writes go out one at a time, each carrying the latest state when it
-  // is sent, so the server always ends on the newest write and a later body
-  // never builds on an earlier one that failed.
-  let queue: Promise<void> = Promise.resolve();
-  /** Writes queued or in flight. */
-  let writes = 0;
-  /** The profile the server last accepted; the client rolls a failed field back to it. */
-  let confirmed: Profile | null = null;
+  /** Feed one event to the machine, publish the result, then carry out its effects. */
+  function send(event: data.Event, waiter?: (outcome?: CompleteOutcome) => void): void {
+    const current = get();
+    const { state, effects } = data.step(current.sync, event);
+    if (state !== current.sync) set({ sync: state, ...project(state, current) });
+    for (const fx of effects) {
+      switch (fx.type) {
+        case 'fetch':
+          void fetchProfile(fx.token);
+          break;
+        case 'put':
+          void put(fx.id, fx.body);
+          break;
+        case 'post':
+          void post(fx.id, fx.body);
+          break;
+        case 'schedule-flush':
+          queueMicrotask(() => send({ type: 'flush' }));
+          break;
+        case 'join':
+          if (waiter) waiters.set(fx.id, [...(waiters.get(fx.id) ?? []), waiter]);
+          break;
+        case 'answer-now':
+          waiter?.(fx.outcome);
+          break;
+        case 'settle': {
+          const list = waiters.get(fx.id) ?? [];
+          waiters.delete(fx.id);
+          for (const w of list) w(fx.outcome);
+          break;
+        }
+        default: {
+          const never: never = fx;
+          throw new Error(`learn store: unhandled effect ${JSON.stringify(never)}`);
+        }
+      }
+    }
+  }
 
-  async function sendProfile<K extends keyof Profile>(key: K, value: Profile[K]) {
-    const body = get().profile;
-    if (!body) return;
-    const reply = await request(PROFILE_URL, 'PUT', body);
-    if (reply.ok) {
-      const returned = (reply.data as { profile?: unknown } | null)?.profile;
-      confirmed = isProfile(returned) ? returned : body;
-      // Take the server's answer only when no newer change is waiting behind this one.
-      if (writes === 1 && isProfile(returned)) set({ profile: returned });
+  const ask = <T = void>(event: data.Event) =>
+    new Promise<T>((resolve) => send(event, (outcome) => resolve(outcome as T)));
+
+  async function fetchProfile(token: number) {
+    const reply = await request(PROFILE_URL, 'GET');
+    if (!reply.ok) {
+      send({ type: 'load-failed', token, unauthorized: reply.unauthorized });
       return;
     }
-    // Undo this field, but only if nothing newer has replaced it meanwhile.
-    const base = confirmed;
-    set((s) => ({
-      profile:
-        s.profile && base && s.profile[key] === value
-          ? { ...s.profile, [key]: base[key] }
-          : s.profile,
-    }));
-    failSave(reply);
+    const body = reply.data as { profile?: unknown; progress?: unknown } | null;
+    if (!body || !isProfile(body.profile) || !Array.isArray(body.progress)) {
+      send({ type: 'load-failed', token, unauthorized: false });
+      return;
+    }
+    send({ type: 'loaded', token, profile: body.profile, progress: body.progress.filter(isRow) });
   }
 
-  /** Optimistically change one profile field, then queue a PUT of the whole profile. */
-  function saveProfile<K extends keyof Profile>(key: K, value: Profile[K]): Promise<void> {
-    const current = get().profile;
-    if (!current) {
-      set({ error: 'not_loaded' });
-      return Promise.resolve();
+  async function put(id: number, body: Profile) {
+    const reply = await request(PROFILE_URL, 'PUT', body);
+    if (!reply.ok) {
+      send({ type: 'put-failed', id, unauthorized: reply.unauthorized });
+      return;
     }
-    const next = { ...current, [key]: value };
-    if (!profileSchema.safeParse(next).success) {
-      set({ error: 'invalid' });
-      return Promise.resolve();
-    }
-    // With nothing outstanding, what the client shows is what the server holds.
-    if (writes === 0) confirmed = current;
-    writes += 1;
-    set({ profile: next, error: null });
-    const run = queue.then(() => sendProfile(key, value)).finally(() => (writes -= 1));
-    // A failed write must not stop the ones queued behind it.
-    queue = run.catch(() => {});
-    return run;
+    const returned = (reply.data as { profile?: unknown } | null)?.profile;
+    send({ type: 'put-ok', id, profile: isProfile(returned) ? returned : body });
   }
+
+  async function post(id: number, body: LessonCompleteInput) {
+    const reply = await request(COMPLETE_URL, 'POST', body);
+    if (!reply.ok) {
+      send({ type: 'post-failed', id, unauthorized: reply.unauthorized });
+      return;
+    }
+    const rows = (reply.data as { progress?: unknown } | null)?.progress;
+    send({ type: 'post-ok', id, progress: Array.isArray(rows) ? rows.filter(isRow) : null });
+  }
+
+  const change = (c: data.Change) => ask({ type: 'change', change: c });
 
   return {
-    profile: null,
-    progress: [],
+    ...project(data.initial),
+    sync: data.initial,
     hub: null,
     screen: null,
     midi: null,
-    status: 'idle',
-    error: null,
 
     load() {
-      if (loading) return loading;
-      // Already loaded this session (a remount, e.g. returning from a lesson): keep what is on
-      // screen. A refetch would blank the page and could overwrite a profile write still in flight.
-      // `idle` and `error` still fetch, so Retry works.
-      if (get().status === 'ready') return Promise.resolve();
-      const run = (async () => {
-        const built = ensureInput();
-        set({ status: 'loading', error: null, ...(built ?? {}) });
-        const reply = await request(PROFILE_URL, 'GET');
-        if (!reply.ok) {
-          set({ status: 'error', error: reply.unauthorized ? 'unauthorized' : 'load_failed' });
-          return;
-        }
-        const data = reply.data as { profile?: unknown; progress?: unknown } | null;
-        if (!data || !isProfile(data.profile) || !Array.isArray(data.progress)) {
-          set({ status: 'error', error: 'load_failed' });
-          return;
-        }
-        set({ profile: data.profile, progress: data.progress.filter(isRow), status: 'ready' });
-      })().finally(() => {
-        loading = null;
-      });
-      loading = run;
-      return run;
+      const built = ensureInput();
+      if (built && get().hub !== built.hub) set(built);
+      return ask({ type: 'load' });
     },
 
     setInstrument(instrument) {
       if (!INSTRUMENTS.includes(instrument)) return Promise.resolve();
-      return saveProfile('instrument', instrument);
+      return change({ key: 'instrument', value: instrument });
     },
 
     setInput(next) {
       if (!INPUTS.includes(next)) return Promise.resolve();
-      return saveProfile('input', next);
+      return change({ key: 'input', value: next });
     },
 
     setLatency(ms) {
       if (!Number.isFinite(ms)) return Promise.resolve();
-      return saveProfile('latencyMs', Math.max(-500, Math.min(500, Math.round(ms))));
+      return change({ key: 'latencyMs', value: Math.max(-500, Math.min(500, Math.round(ms))) });
     },
 
-    async completeLesson(lessonId, stars, score) {
-      if (!getLesson(lessonId)) return;
-      const body = lessonCompleteSchema.safeParse({
+    completeLesson(lessonId, stars, score) {
+      return ask<CompleteOutcome>({
+        type: 'complete',
         lessonId,
-        stars: Math.max(0, Math.min(3, Math.round(stars))),
-        score: Math.max(0, Math.min(100, Math.round(score))),
+        stars,
+        score,
+        at: new Date().toISOString(),
       });
-      if (!body.success) {
-        set({ error: 'invalid' });
-        return;
-      }
-
-      const before = get().progress.find((r) => r.lessonId === lessonId) ?? null;
-      // The same merge the server applies, so the optimistic row matches its answer.
-      const merged = mergeLessonResult(before, body.data);
-      const optimistic: LessonProgressRow = {
-        lessonId,
-        stars: merged.stars,
-        bestScore: merged.bestScore,
-        completedAt: before?.completedAt ?? (merged.stars >= 1 ? new Date().toISOString() : null),
-      };
-      const withRow = (rows: LessonProgressRow[], row: LessonProgressRow | null) => {
-        const rest = rows.filter((r) => r.lessonId !== lessonId);
-        return row ? [...rest, row] : rest;
-      };
-      set((s) => ({ progress: withRow(s.progress, optimistic), error: null }));
-
-      const reply = await request(COMPLETE_URL, 'POST', body.data);
-      const server = reply.ok ? (reply.data as { progress?: unknown } | null)?.progress : null;
-      if (reply.ok && Array.isArray(server)) {
-        set({ progress: server.filter(isRow) });
-        return;
-      }
-      // Restore just this lesson's row; other completions in flight keep theirs.
-      set((s) => ({ progress: withRow(s.progress, before) }));
-      failSave(reply.ok ? { ok: false, unauthorized: false } : reply);
     },
   };
 });

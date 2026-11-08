@@ -71,9 +71,8 @@ export function FirstNoteLesson({ paused = false }: { paused?: boolean }) {
 
   const complete = async () => {
     setSave('saving');
-    await useLearnStore.getState().completeLesson(LESSON_ID, 3, 100);
-    const { error } = useLearnStore.getState();
-    setSave(error === 'unauthorized' ? 'signed-out' : error ? 'failed' : 'saved');
+    const outcome = await useLearnStore.getState().completeLesson(LESSON_ID, 3, 100);
+    setSave(outcome === 'saved' ? 'saved' : outcome === 'unauthorized' ? 'signed-out' : 'failed');
   };
 
   useNoteEvents((e) => {
