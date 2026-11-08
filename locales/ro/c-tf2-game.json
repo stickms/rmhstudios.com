@@ -902,6 +902,5 @@
   "win_points": "{{n}} points",
   "win_red": "RED Team Wins!",
   "win_stalemate": "Stalemate!",
-  "win_time_limit": "{{team}} had the most points when time ran out",
-  "main_menu": "Main menu"
+  "win_time_limit": "{{team}} had the most points when time ran out"
 }

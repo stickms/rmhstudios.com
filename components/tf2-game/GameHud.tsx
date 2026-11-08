@@ -86,8 +86,6 @@ export interface GameHudProps {
   settings: GameSettings;
   onSettingsChange: (next: GameSettings) => void;
   onDisconnect: () => void;
-  /** Leaves the game for the games list (adds a Quit entry to the pause menu). */
-  onQuit?: () => void;
   /** A custom HUD's layout (defaults to the game's own). */
   layout?: HudLayout;
   /** Page controls the touch controls carry in their top row (full screen, the invite link). */
@@ -117,7 +115,6 @@ function HudBody({
   settings,
   onSettingsChange,
   onDisconnect,
-  onQuit,
   initialMenu,
   forceScores,
   touch,
@@ -535,7 +532,6 @@ function HudBody({
         onChangeTeam={tf2 ? () => setMenu({ kind: 'team' }) : undefined}
         onChangeClass={tf2 && local && local.team >= 2 ? () => setMenu({ kind: 'class' }) : undefined}
         onDisconnect={onDisconnect}
-        onQuit={onQuit}
         onBackToMenu={tf2 ? toEscMenu : undefined}
         views={
           devConsole.enabled

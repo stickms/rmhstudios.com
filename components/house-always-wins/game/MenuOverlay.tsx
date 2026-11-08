@@ -8,7 +8,6 @@ import { useHouseAlwaysWinsStore } from "@/lib/store/houseAlwaysWinsStore";
 import { NgPlusSlot } from "./NgPlus";
 import { OBJECTIVES } from "@/lib/house-always-wins/quests";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { useQuitGame } from "@/hooks/useQuitGame";
 import { Check, Volume2, VolumeX, Music, Music2 } from "lucide-react";
 
 interface MenuOverlayProps {
@@ -29,7 +28,6 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
   const flags = useHouseAlwaysWinsStore((s) => s.flags);
   const resetRun = useHouseAlwaysWinsStore((s) => s.resetRun);
   const confirm = useConfirm();
-  const quit = useQuitGame();
 
   const qs = { debt, chips, keys, abilities, flags };
 
@@ -212,12 +210,6 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
             className="rounded-lg border border-[#c0392b]/30 bg-[#c0392b]/10 px-3 py-2 pointer-coarse:min-h-11 font-mono text-xs text-[#c0392b]/80 transition-colors hover:bg-[#c0392b]/20"
           >
             {t("menu-abandon", { defaultValue: "Abandon Run" })}
-          </button>
-          <button
-            onClick={quit}
-            className="rounded-lg border border-[#2a2520] bg-white/5 px-3 py-2 pointer-coarse:min-h-11 font-mono text-xs text-[#cabba0] transition-colors hover:bg-white/10"
-          >
-            {t("menu-quit", { defaultValue: "Quit" })}
           </button>
         </div>
       </div>

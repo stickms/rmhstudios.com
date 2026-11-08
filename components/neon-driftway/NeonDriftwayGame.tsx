@@ -45,7 +45,6 @@ import {
 import type { InputState, LevelId, RunStats } from '@/lib/neon-driftway/types';
 import { isFullscreen, isLowPowerDevice, supportsWebGL, toggleFullscreen } from '@/lib/shared/platform';
 import { useGameSession } from '@/hooks/useGameSession';
-import { useQuitGame } from '@/hooks/useQuitGame';
 
 // U14 — loaded only when a player opens photo mode.
 const PhotoMode = lazy(() => import('@/components/games/PhotoMode'));
@@ -164,10 +163,6 @@ export function NeonDriftwayGame() {
   const [photoMode, setPhotoMode] = useState(false);
   const photoModeRef = useRef(false);
   photoModeRef.current = photoMode;
-  // Mirrors the engine's solo pause so the Quit entry can render in React; the
-  // HUD's own "PAUSED" panel is imperative and aria-hidden.
-  const [soloPaused, setSoloPaused] = useState(false);
-  const quit = useQuitGame();
   const openPhotoMode = useCallback(() => {
     const game = gameRef.current;
     if (!game || game.isMultiplayer || stereoRef.current) return;
@@ -601,7 +596,6 @@ export function NeonDriftwayGame() {
         }
 
         const newState = game.state as string;
-        setSoloPaused(newState === 'paused' && !game.isMultiplayer);
         if (newState === 'gameOver' || newState === 'levelComplete') {
           const stats = game.getRunStats();
           setRunStats(stats);
@@ -828,18 +822,6 @@ export function NeonDriftwayGame() {
       )}
 
       <NeonDriftwayHud ref={hudRef} stereo={viewMode === 'vr'} visible={playing && !photoMode} />
-
-      {soloPaused && playing && !photoMode && viewMode !== 'vr' && (
-        <div className="pointer-events-none absolute inset-x-0 top-1/2 z-40 mt-[4.5rem] [@media(max-height:500px)]:mt-[3.25rem] flex justify-center">
-          <button
-            type="button"
-            onClick={quit}
-            className="pointer-events-auto min-h-11 rounded border border-zinc-600 bg-black/70 px-5 py-2 text-sm font-bold text-white hover:bg-zinc-800"
-          >
-            {t('quit', { defaultValue: 'Quit' })}
-          </button>
-        </div>
-      )}
 
       {photoMode && rendererRef.current && (
         <Suspense fallback={null}>

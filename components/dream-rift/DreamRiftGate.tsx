@@ -170,7 +170,7 @@ function ScreenRouter() {
     let body: React.ReactNode;
     switch (screen) {
         case 'playing':
-            body = startInfo ? <GameStage start={startInfo} onExit={exitToMenu} onQuitGame={fullExit} /> : <Loading />;
+            body = startInfo ? <GameStage start={startInfo} onExit={exitToMenu} /> : <Loading />;
             break;
         case 'char-select':
             body = <CharacterSelect onStart={startSingle} onBack={() => setScreen('title')} />;

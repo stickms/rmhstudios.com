@@ -6,7 +6,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
-import { useQuitGame } from '@/hooks/useQuitGame';
 
 interface PauseOverlayProps {
   onResume: () => void;
@@ -16,10 +15,9 @@ interface PauseOverlayProps {
 
 export default function PauseOverlay({ onResume, onSettings, onQuit }: PauseOverlayProps) {
   const { t } = useTranslation("c-altair");
-  const quitGame = useQuitGame();
-  const actions = useMemo(() => [onResume, onSettings, onQuit, quitGame], [onResume, onSettings, onQuit, quitGame]);
+  const actions = useMemo(() => [onResume, onSettings, onQuit], [onResume, onSettings, onQuit]);
   const { focusedIndex } = useKeyboardNav({
-    itemCount: 4,
+    itemCount: 3,
     onSelect: (i) => actions[i](),
     orientation: 'vertical',
   });
@@ -55,13 +53,6 @@ export default function PauseOverlay({ onResume, onSettings, onQuit }: PauseOver
             className={`py-3 bg-(--altair-surface-hover) hover:bg-(--altair-surface) border border-(--altair-border) text-(--altair-text-muted) hover:text-(--altair-text) font-bold rounded-(--altair-radius) tracking-widest uppercase transition-colors text-sm ${focusClass(2)}`}
           >
             {t("quit-to-menu", { defaultValue: "Quit to Menu" })}
-          </button>
-          <button
-            onClick={quitGame}
-            data-altair-sfx="menu_back"
-            className={`py-3 bg-(--altair-surface-hover) hover:bg-(--altair-surface) border border-(--altair-border) text-(--altair-text-muted) hover:text-(--altair-text) font-bold rounded-(--altair-radius) tracking-widest uppercase transition-colors text-sm ${focusClass(3)}`}
-          >
-            {t("quit", { defaultValue: "Quit" })}
           </button>
         </div>
         <div className="text-(--altair-text-dim) text-xs font-mono mt-6">{t("keyboard-hint", { defaultValue: "[Esc] resume · [W/S] navigate · [Space] select" })}</div>
