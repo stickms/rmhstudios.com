@@ -10,7 +10,7 @@
      z-50 dialogs and sheets so a modal covers it. A click arc INSIDE an open modal sets `data-layer="modal"` on the
      canvas for its lifetime → `--z-arcs-modal` (55). Tooltips, the toaster and the cursor stay above both.
    - Decoration, not floating UI: no role class, no Tailwind classes, no L4 exemption needed.
-   - Off wherever jelly is off: high contrast (site + app), reduced transparency, forced colours, `perf-lite`, print.
+   - Off wherever jelly is off: high contrast (site + app), reduced transparency, forced colours, print.
      The runtime does not start there either; this is the second line. Colours come from `--site-arc-core` /
      `--site-arc-glow` (globals.css, per theme), read by the renderer, never from this sheet. */
 .jelly-arc-layer {
@@ -26,7 +26,7 @@
 .jelly-arc-layer[data-layer='modal'] {
   z-index: var(--z-arcs-modal);
 }
-:is(.perf-lite, .app-high-contrast) .jelly-arc-layer,
+.app-high-contrast .jelly-arc-layer,
 html:is([data-electric-arcs='off'], [data-jelly-motion='still'], [data-game-state='playing'])
   .jelly-arc-layer {
   display: none !important;

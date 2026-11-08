@@ -332,7 +332,7 @@ html [data-sonner-toaster] [data-sonner-toast] {
    High contrast (site + app), reduced transparency (OS + setting), forced colours and print: none of this file's
    material. The floor goes, the droplet caps go, and every rim goes back to what the element had before jelly: nothing,
    or — on the three controls that used to carry `shadow-site-sm` — the theme's own `--site-shadow-sm` (high contrast
-   draws its 1px ring with it). `perf-lite` keeps all of it: it is static. `!important` because these are
+   draws its 1px ring with it). `!important` because these are
    accessibility contracts, not looks; only custom properties and images are forced, never `box-shadow` itself, so a
    `ring-*` focus utility is untouched. */
 :is(.app-high-contrast)

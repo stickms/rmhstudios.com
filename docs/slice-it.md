@@ -312,7 +312,7 @@ a decoration — and dim and desaturate as the health gauge falls
    away.
 2. **Three switches turn it off, and any one of them wins**
    (`backdropVisible`): the player's own setting, `canvasGlowEnabled()` (which
-   folds in `prefers-reduced-motion` and `perf-lite`), and `A2`'s Reduced Flash.
+   folds in `prefers-reduced-motion` and a low-end device), and `A2`'s Reduced Flash.
    `A7`'s Effect Intensity scales what is left. On a light theme the wash is
    inverted to *shading* rather than glow, so it cannot flatten the pale
    `--slice-rail`.

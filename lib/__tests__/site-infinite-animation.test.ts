@@ -155,11 +155,11 @@ const MATERIAL = 'app/jelly-material.css';
 const flat = (s: string) =>
   s.replace(/\s+/g, ' ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').trim();
 /**
- * The woken-haze layer (jelly-material.css §3b): the glass roles' own `::after`, off native-material routes and
- * perf-lite. Exactly this selector head, nothing broader.
+ * The woken-haze layer (jelly-material.css §3b): the glass roles' own `::after`, off native-material routes.
+ * Exactly this selector head, nothing broader.
  */
 const HAZE_LAYER_HEAD =
-  "html:not(.native-material, .perf-lite) :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])):not(";
+  "html:not(.native-material) :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])):not(";
 const isHazeLayer = (selector: string) => {
   const s = flat(selector);
   return s.endsWith('::after') && s.startsWith(HAZE_LAYER_HEAD);

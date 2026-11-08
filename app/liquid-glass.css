@@ -134,12 +134,8 @@
   }
 }
 
-/* A flat control has no body at rest, so where the material is off (perf-lite, print) it needs its own
-   affordance: an opaque slab with a solid edge, like every other degraded surface. */
-html.perf-lite [data-jelly-rest='flat'] {
-  background-color: var(--site-surface-opaque);
-  border-color: var(--site-border);
-}
+/* A flat control has no body at rest, so where the material is off (print) it needs its own
+   affordance: a solid edge, like every other degraded surface. */
 @media print {
   [data-jelly-rest='flat'] {
     border-color: var(--site-border);

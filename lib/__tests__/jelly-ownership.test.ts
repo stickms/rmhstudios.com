@@ -19,7 +19,7 @@
  *      `lib/jelly/__tests__/pointer.test.ts`). Hooks that moved onto both services (`SHARED_FRAME_CLIENTS`, today
  *      `hooks/useFluidDrag.ts` with its settle spring `hooks/fluid-drag-settle.ts`) are held to the same two rules;
  *      that list only grows.
- *  (c) The material-off root predicate (the app tier's `.app-high-contrast`; the `.perf-lite` tier is gone) is
+ *  (c) The material-off root predicate (the app tier's `.app-high-contrast`; the low-end tier is gone) is
  *      declared once, as `APP_HIGH_CONTRAST_SELECTOR` in `lib/jelly/tiers.ts`. It used to be hand-copied into the
  *      engine and the runtime, and a theme added to one copy left the other drawing.
  *  (d) No site-tier file writes `style.transform` / `style.scale` / `style.translate` in a file that handles

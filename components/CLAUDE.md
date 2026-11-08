@@ -38,7 +38,7 @@ feature lives in that feature's directory; genuinely shared primitives live in
   `.glass-inset` for fields. `bg-site-surface border border-site-border
 rounded-site shadow-site-sm` renders the same _box_ and none of the
   _material_ — no haze, no rim, no soft body, and nothing for
-  `perf-lite` to switch off. **No box-shadow on any UI surface** — shadow tokens are
+  print or the app tier's high contrast to switch off. **No box-shadow on any UI surface** — shadow tokens are
   zero; the soft molded rim is the depth.
 - **Plasmatic Jelly material.** Every role is a hazy translucent slab with a static
   molded rim, a haze that drifts when woken, a soft body made of CSS springs, and an

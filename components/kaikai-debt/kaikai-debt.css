@@ -388,18 +388,17 @@ html.ios-webkit .kd-atmos {
    to remove it — unlike the charts below, which are data and only ever lose
    motion. */
 
-/* Low-end tier: one static wash and nothing that moves. A full-bleed animated
-   layer is the single most expensive thing on this page, and `perf-lite` exists
-   precisely to not pay for it. */
-html.perf-lite .kd-atmos {
+/* Low-end device (`DebtBackdrop` stamps `data-low-end` from `lib/low-end.ts`): one static wash and nothing that moves.
+   A full-bleed animated layer is the single most expensive thing on this page. */
+.kd-atmos[data-low-end] {
   --kd-atmos-strength: 0.5;
 }
-html.perf-lite .kd-atmos__aura,
-html.perf-lite .kd-atmos__globe {
+.kd-atmos[data-low-end] .kd-atmos__aura,
+.kd-atmos[data-low-end] .kd-atmos__globe {
   animation: none;
 }
-html.perf-lite .kd-atmos__aura--reverse,
-html.perf-lite .kd-atmos__sweep {
+.kd-atmos[data-low-end] .kd-atmos__aura--reverse,
+.kd-atmos[data-low-end] .kd-atmos__sweep {
   display: none;
 }
 

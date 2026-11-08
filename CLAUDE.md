@@ -341,12 +341,16 @@ its speed into the new target. Enters and exits are CSS **transitions** with
 keyframe pairs: a menu, dialog or sheet closed while it is still opening turns
 around from the frame it is on.
 
-**Accessibility and degradation stay central** (`lib/jelly/tiers.ts`): `perf-lite`
-(and print, and the app tier's own high-contrast mode) keep only the static floor
-and rim — nothing wakes, and print and the app's high contrast render opaque
-`--site-surface-opaque` with a solid edge (press feedback stays); components
-never branch on them. `perf-lite` is stamped on a software renderer
-(`lib/perf-tier.ts`); a later planned change owns its future. The site has no high-contrast theme and no
+**Accessibility and degradation stay central** (`lib/jelly/tiers.ts`): print and
+the app tier's own high-contrast mode render opaque `--site-surface-opaque` with a
+solid edge (press feedback stays); components never branch on them. **There is no
+low-end material tier** (the `perf-lite` class was removed 2026-11-08): a
+software-rendering browser, Data Saver or a weak device gets the full material, and
+`jellyTier()` is `full | coarse | handheld | off`. What remains of "can this machine
+hold it" is a capability read, `lib/low-end.ts`, which is never stamped on `<html>` and
+never read by the material: games, the app tier, RUM and the eversion's mesh tier ask
+it, and the liquid globe keeps its CSS fallback for a remembered software renderer
+(`softRenderDetected()`). The site has no high-contrast theme and no
 forced-colors / reduced-transparency fallback: they were removed (2026-10-27). Users control the material with
 `jellyMotion` (Lively / Calm / Still — Still stops all ambient motion, WCAG
 2.2.2; configured in Appearance) and `electricArcs` (Full / Clicks / Off).

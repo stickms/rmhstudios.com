@@ -172,7 +172,7 @@ on unmount. At most two models load at once (each is two downloads), the player'
 skin costs 0.1-0.7 MB of mesh and textures plus 0.6-2.3 MB of anim pack on the wire (brotli; immutable, so the
 browser's HTTP cache serves a second visit).
 
-Models are **not** used (procedural everywhere) when the site is in its low-performance tier (`html.perf-lite`), when
+Models are **not** used (procedural everywhere) when the device is low-end (`isLowEndCapability()`, `lib/low-end.ts`), when
 `navigator.deviceMemory` ≤ 2, when `localStorage['hw-models'] === 'off'`, after a lost WebGL context, for a skin whose
 model threw while rendering (an error boundary marks it bad for the visit), for a skin the index does not list, when the
 asset route has no index (local dev without R2), and for anyone past the budget.

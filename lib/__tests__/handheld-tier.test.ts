@@ -3,12 +3,10 @@
  *
  * ## What this tier is, and why it needed to exist
  *
- * The site had two device axes and neither covered phones:
+ * The site had a device axis that did not cover phones (the old low-end class,
+ * since removed: no iPhone ever reached it, and its Android thresholds were also
+ * cleared by any current mid-range Android):
  *
- *   `html.perf-lite`   "this machine is weak". `lib/perf-tier.ts` documents
- *                      that NO iPhone ever reaches it, and its Android
- *                      thresholds (`deviceMemory < 4`, `cores <= 2`) are also
- *                      cleared by any current mid-range Android.
  *   `html.ios-webkit`  "this compositor behaves differently". Froze the aurora
  *                      — but only on iOS. Android Chrome ran the full animated
  *                      backdrop with no equivalent.
@@ -140,10 +138,9 @@ describe('the CSS half actually stops the motion', () => {
 
   it('caps blur through the viewport cap, not by overwriting the factor', () => {
     const block = handheldBlock(GLOBALS);
-    // Writing --glass-blur-factor here would collide with html.perf-lite, which
-    // has higher specificity AND a weaker cap — a weak phone would have ended
-    // up with more blur than a strong one. The caps are disjoint properties
-    // combined by min() at :root precisely so they compose.
+    // Writing --glass-blur-factor here would overwrite the device budget's cap.
+    // The caps are disjoint properties combined by min() at :root precisely so
+    // they compose.
     expect(block).toContain('--glass-blur-cap-viewport');
     expect(block).not.toContain('--glass-blur-factor');
   });
@@ -156,13 +153,6 @@ describe('the CSS half actually stops the motion', () => {
     expect(inputs).toMatch(/^\s*1,/);
     expect(inputs).toContain('--glass-blur-cap-tier');
     expect(inputs).toContain('--glass-blur-cap-viewport');
-  });
-
-  it('perf-lite declares a cap rather than the derived factor', () => {
-    // If this regresses to `--glass-blur-factor`, the viewport cap above stops
-    // applying to every device that is BOTH weak and handheld.
-    const perfLite = GLOBALS.slice(GLOBALS.indexOf('html.perf-lite {'));
-    expect(perfLite.slice(0, 600)).toContain('--glass-blur-cap-tier');
   });
 
   it('the radial rings and blob field need no handheld override — they never move', () => {

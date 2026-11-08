@@ -117,10 +117,8 @@ describe('§7.3 — the layer costs what the design language allows', () => {
     for (const rule of hoverRules) expect(SECTION.indexOf(rule)).toBeGreaterThan(fine);
   });
 
-  it('perf-lite swaps the springs for a tween', () => {
-    expect(SECTION).toMatch(
-      /html\.perf-lite\s*\{[^}]*--evert-ease:\s*(cubic-bezier|var\(--ease-smooth\))/,
-    );
+  it('has no low-end tween override (the old low-end class is gone)', () => {
+    expect(SECTION).not.toMatch(/html\.[\w-]*lite\s*\{/);
     // The forced-colours fallback was removed with the contrast theme.
     expect(SECTION).not.toMatch(/forced-colors/);
   });

@@ -67,7 +67,7 @@ What draws what:
   level), only while the host is hovered or holds **keyboard** focus (`:hover`,
   `:has(:focus-visible)`), fading in from `@starting-style`. A page at rest therefore has no running
   animation and no extra compositor layer. It pauses while scrolling and while a game is in play,
-  and is absent under `still`, print, `perf-lite`, the app high-contrast theme, native-material routes
+  and is absent under `still`, print, the app high-contrast theme, native-material routes
   (`/games*`, `/tf2*`), fields, ghost / link buttons and every opt-out. Streaks, plasma blob and
   current are tokens (`--jelly-haze-a`, `--jelly-plasma-k`, `--site-jelly-*`), so a theme re-tints it.
 - **Dormant plasma** — invisible at rest; the hover wake is a radial gradient at the pointer
@@ -179,8 +179,8 @@ literal equal to its generator; retune the TypeScript, then paste what the test 
   so a host's edge never travels more than `MOTION_BOUNDS.maxEdgeTravelPx` (4 px) including the release
   overshoot, and the scale never changes more than `maxScaleDelta` (3 %). Until `--jelly-s` is written, hosts
   assume 1000 px (bodies 3840 px). `spring-curves.test.ts` sweeps the bound for sizes 100 to 3840.
-- **Scope.** Off native-material routes and while a game is in play; `perf-lite` and the app tier's high
-  contrast keep the press, plain (critically damped both ways, no hover). A CSS transition does not carry
+- **Scope.** Off native-material routes and while a game is in play; the app tier's high
+  contrast keeps the press, plain (critically damped both ways, no hover). A CSS transition does not carry
   velocity across an interruption; the design accepts that.
 
 `MOTION_BOUNDS` (`tiers.ts`): an edge moves ≤ 4 px, a scale changes ≤ 3 %, a click arc nudges the struck
@@ -198,8 +198,8 @@ sets a `filter:` on a jelly body, and nothing under `lib/jelly` or `lib/liquid` 
 ### 3.2 Flat controls and room (2026-11-03)
 
 **Flat controls** (`data-jelly-rest="flat"`, set by `<Button>` for every variant except `signal`, `destructive`,
-`danger` and `warning`): at rest a flat control is its label on the ground (no fill, no border). Under `perf-lite`
-and print it gets an opaque fill and a solid edge instead (`app/liquid-glass.css`).
+`danger` and `warning`): at rest a flat control is its label on the ground (no fill, no border). In print
+it gets a solid edge instead (`app/liquid-glass.css`).
 
 **Room.** The silhouette that needed 16 px of unclipped room round every body is gone; the 16 px (`--jelly-margin`)
 stays a layout rule (§10) so the squash, the arc nudge and the focus ring are never cut off.
@@ -255,21 +255,22 @@ carries only what something reads: the globe's clock, and the click arcs.
 | `full` (fine pointer)                  | 60 / 15 Hz   | ≥ 2 s apart                                      | 3           |
 | `coarse`                               | 60 / 15 Hz   | ≥ 2 s apart                                      | 2           |
 | `handheld` (coarse, ≤ 1024 px)         | 30 / 7 Hz    | ≥ 4 s apart                                      | 1           |
-| `lite` (`perf-lite`)                   | 0            | off                                              | 0           |
 | `off` (degraded)                       | 0            | off                                              | 0           |
 | game playing (`html[data-game-state]`) | 0            | off                                              | 0           |
 
 (The rim, haze-slot, carrier, animated-area, body and lattice budgets went with the glass engine, the CSS carriers
-and the soft-body physics.) The scene feed has its own per-tier policy, `SCENE_POLICY` (`scene.ts`): handheld, `lite`
-and `off` take no picture.
+and the soft-body physics.) The scene feed has its own per-tier policy, `SCENE_POLICY` (`scene.ts`): handheld and
+`off` take no picture.
 
-**Software rendering is the `lite` tier (2026-10-29).** A browser with hardware acceleration off, a blocklisted GPU
-or a VM rasterises and composites on the CPU. `reconcileSoftRender()` (`lib/perf-tier.ts`) runs once at idle and
-stamps `html.perf-lite` when it reads a software WebGL renderer string (SwiftShader, llvmpipe, Basic Render,
-"software") or no WebGL at all, through the same throwaway-context probe the games use (`lib/render/probe.ts`),
-caching the finding in `localStorage` (`rmh-soft-render`, 12 h) so the next load gets the class from the pre-paint
-script. `perf-lite` keeps the static floor, the CSS rim and the plain press; nothing wakes. (A separate planned change
-owns the future of `perf-lite`.)
+**There is no software-rendering tier (2026-11-08).** The `lite` tier and the `perf-lite` class it was stamped with
+(2026-10-29) are gone: a browser with hardware acceleration off, a blocklisted GPU or a VM gets the same material as any
+other (woken haze, soft body, click arcs). `jellyTier()` never returns `'lite'` and nothing sets a class on `<html>` for
+device weakness; `lib/__tests__/no-perf-lite.test.ts` fails if the name comes back. What survives is a capability read
+that the material never consults (`lib/low-end.ts`): games, the app tier, RUM and the eversion's mesh tier ask
+`isLowEndCapability()`, and the liquid globe keeps its CSS glass (no second GL context) for a remembered software
+renderer. The radial shell settles that finding once at idle (`settleSoftRender()`: the throwaway-context probe the
+games use, `lib/render/probe.ts`, cached in `localStorage` as `rmh-soft-render` for 12 h), and does not start the page
+snapshot feed for it, since the CSS globe refracts nothing.
 
 Ambient bounds (`AMBIENT_BOUNDS`): drift ≤ 12 px/s, feature size ≥ 120 px, luminance period ≥ 6 s, no luminance
 modulation above 3 Hz; ambient motion never moves a host's position.
@@ -284,7 +285,6 @@ modulation above 3 Hz; ambient motion never moves a host's position.
 | `lively` (default)                                                  | on hover / focus      | full            | per `electricArcs` | 60 / 15 Hz  | floor + rim     |
 | `calm`                                                              | 0.4× speed, 0.55× amp | full            | clicks (or off)    | ≤ 12 Hz     | floor + rim     |
 | `still`                                                             | no                    | reactive        | off (forced)       | 0           | floor + rim     |
-| `perf-lite`                                                         | no                    | plain press     | off                | 0           | floor + rim     |
 | app tier high contrast                                              | no                    | plain press     | off                | 0           | opaque surfaces |
 | print                                                               | no                    | none            | off                | 0           | flat            |
 | hidden tab                                                          | —                     | —               | off, layer cleared | 0           | —               |
