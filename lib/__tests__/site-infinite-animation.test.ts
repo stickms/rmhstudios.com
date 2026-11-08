@@ -14,7 +14,7 @@
  *    elements), or
  *  - it is one of the two SANCTIONED haze keyframes, `jelly-drift` / `jelly-current`, declared only on the woken-haze
  *    layer (the glass roles' own `::after`, app/jelly-material.css §3b, CSS-first jelly PR 2) — attached ONLY under
- *    `:hover` / `:focus-within`, with no animation at all at rest (lib/__tests__/jelly-woken-haze.test.ts pins it) — or on the
+ *    `:hover` / `:has(:focus-visible)`, with no animation at all at rest (lib/__tests__/jelly-woken-haze.test.ts pins it) — or on the
  *    retired `.jelly-flow` carrier spans, whose rules stay until PR 5 deletes them (nothing injects a carrier any more);
  *  - the layer is killed (`display: none`) under every degraded root class (read from `DEGRADED_ROOT_SELECTOR` —
  *    not restated) plus the app high-contrast theme and print, PAUSED (`animation-play-state: paused`) while
@@ -169,12 +169,12 @@ const isHazeLayer = (selector: string) => {
   const s = flat(selector);
   return s.endsWith('::after') && s.startsWith(HAZE_LAYER_HEAD);
 };
-/** The one rule that may run the drift: the haze layer's wake, `…:hover::after, …:focus-within::after`. */
+/** The one rule that may run the drift: the haze layer's wake, `…:hover::after, …:has(:focus-visible)::after`. */
 const isHazeWake = (selector: string) => {
   const s = flat(selector);
   return (
     isHazeLayer(selector) &&
-    s.endsWith('):focus-within::after') &&
+    s.endsWith('):has(:focus-visible)::after') &&
     s.includes(`):hover::after, ${HAZE_LAYER_HEAD}`)
   );
 };
@@ -224,7 +224,7 @@ describe('N3 — no perpetual CSS animation on the site tier without an owner', 
         `${p.name} is declared outside the haze layer: ${flat(p.selector)}`,
       ).toBe(true);
     }
-    // One wake rule (hover / focus-within): nothing at rest, nothing scroll-driven, nothing broader.
+    // One wake rule (hover / keyboard focus inside): nothing at rest, nothing scroll-driven, nothing broader.
     expect(carriers.filter((p) => isHazeLayer(p.selector))).toHaveLength(1);
   });
 

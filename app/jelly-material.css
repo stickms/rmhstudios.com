@@ -665,8 +665,12 @@
         )
     );
   }
-  /* Woken: hover or focus inside the host. The drift is attached here and only here, so it exists only while woken.
-     A little more of the same material, never a colour change. */
+  /* Woken: hover, or keyboard focus inside the host. The drift is attached here and only here, so it exists only while
+     woken. A little more of the same material, never a colour change. Not `:focus-within`: a mouse click leaves focus
+     on the clicked control, and the drift then ran on every role around it until focus moved (measured on /jelly: 25
+     compositor layers instead of 10). `:has(:focus-visible)` is keyboard focus only. The host's own keyboard focus
+     does not wake it: §6 pauses the haze there (a ring over a moving ground), and a paused animation would only
+     promote the layer. */
   html:not(.native-material, .perf-lite)
     :is(
       .glass-fill,
@@ -728,7 +732,7 @@
           .stm-legacy
         )
         *
-    ):focus-within::after {
+    ):has(:focus-visible)::after {
     opacity: var(--jelly-amp, 1);
     animation: jelly-drift var(--jelly-drift-dur) var(--ease-in-out, ease-in-out) infinite alternate;
   }
