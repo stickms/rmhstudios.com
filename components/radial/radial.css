@@ -2936,7 +2936,9 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
      so the hover doesn't end at a second rounded box above the actions. */
   margin: calc(var(--rad-card-pad) * -1) calc(var(--rad-card-pad) * -1) 0;
   padding: var(--rad-card-pad) var(--rad-card-pad) 0;
-  border-radius: inherit;
+  /* The link's box is the card's PADDING box, inside its border, so its corner is the card's radius minus the border
+     width (concentric). `inherit` gave it the full radius, a slightly tighter curve than the border it sits in. */
+  border-radius: calc(var(--site-radius, 22px) - var(--site-border-width, 1px));
   overflow: clip;
   text-decoration: none;
   color: inherit;
