@@ -29,8 +29,8 @@
    - Every jelly paint layer sits at a NEGATIVE z-index inside an isolated host (the woken-haze host isolates itself,
      §3b; liquid-glass.css isolates the engine's hosts). Nothing jelly paints at z ≥ 0.
    - Colours come only from tokens (`--site-jelly-*`, `--site-glass-*`); raw values live in globals.css theme blocks.
-   - The only `infinite` animations are `jelly-drift` / `jelly-current`, only on the woken-haze `::after` (§3b, paused
-     until hover or focus) and on the retired `.jelly-flow` spans (nothing injects a carrier any more; PR 5 deletes
+   - The only `infinite` animations are `jelly-drift` / `jelly-current`, only on the woken-haze `::after` (§3b, attached
+     only under hover or focus) and on the retired `.jelly-flow` spans (nothing injects a carrier any more; PR 5 deletes
      those rules and lib/jelly/flow-carriers.ts). */
 
 @layer components {
@@ -380,8 +380,11 @@
 
   /* ── 3b. Woken haze (CSS-first jelly, PR 2; docs/superpowers/specs/2026-11-07-css-first-jelly-design.md §2) ──────
      The haze's motion, with no node injected by JavaScript: one transform-only layer on the host's own `::after`,
-     PAUSED at rest and running only while the host is hovered or holds focus (and, under Lively where
-     `animation-timeline: view()` exists, drifting with scroll — below). Nothing moves on an idle page.
+     which carries NO animation at rest and gets one only while the host is hovered or holds focus. Not even a paused
+     one: Blink counts a paused transform animation as current and gives the box its own compositor layer, so a page
+     of cards would hold one backing store per host (measured on /jelly at rest: 107 compositor layers with a paused
+     drift on every host plus a scroll-driven current on every card, 9 with neither). Nothing moves, and nothing is
+     promoted, on an idle page. (A scroll-tied variant was dropped for the same reason.)
 
      Why `::after`: `[data-evert]::before` is the eversion state layer and lib/evert-auto.ts adopts every control whose
      `::before` is free, so `::before` is taken on every interactive host. On a role host `::after` is used only by
@@ -401,7 +404,8 @@
      streak (≤ 0.45 α) stays inside the α/2 … α range jelly-legibility.test.ts bounds. The grain tile stays on the floor.
      The negative z-index needs an isolated host, so the host rule isolates it (liquid-glass.css isolates only while an
      engine attribute is set, and none is now); the roles are positioned already (liquid-glass.css, the button's
-     `relative`). Phase varies by sibling position, so a hovered row does not wake in lockstep. */
+     `relative`). Wake starts at the identity frame (no phase delay): only the hovered host runs, so there is nothing
+     to fall into lockstep with, and a delay would snap the streaks to a later frame on wake. */
   html:not(.native-material, .perf-lite)
     :is(
       .glass-fill,
@@ -445,14 +449,6 @@
       ),
       var(--jelly-tile);
     --jelly-floor-size: auto, var(--jelly-tile-size);
-  }
-  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, [data-slot='button']):nth-child(
-    3n + 2
-  ) {
-    --jelly-phase: -9.3s;
-  }
-  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, [data-slot='button']):nth-child(3n) {
-    --jelly-phase: -17.1s;
   }
   html:not(.native-material, .perf-lite)
     :is(
@@ -564,11 +560,9 @@
             var(--jelly-tempo, 1)
         )
     );
-    animation: jelly-drift var(--jelly-drift-dur) var(--ease-in-out, ease-in-out) infinite alternate;
-    animation-delay: var(--jelly-phase, 0s);
-    animation-play-state: paused;
   }
-  /* Woken: hover or focus inside the host. A little more of the same material, never a colour change. */
+  /* Woken: hover or focus inside the host. The drift is attached here and only here, so it exists only while woken.
+     A little more of the same material, never a colour change. */
   html:not(.native-material, .perf-lite)
     :is(
       .glass-fill,
@@ -632,102 +626,7 @@
         *
     ):focus-within::after {
     opacity: var(--jelly-amp, 1);
-    animation-play-state: running;
-  }
-
-  /* Scroll-tied (Lively only, where `animation-timeline: view()` exists): fills and panes also carry a current that
-     follows their own trip through the viewport — a scroll-driven animation, so it costs nothing while the page is
-     still and is never `infinite`. It is ADDED to the drift (`animation-composition`), so hover still wakes the drift
-     on top. Reach is a fifth of the carrier's ±24% (the layer is the host's box, not a 160% span). Calm and still never
-     get it; touch loses it with the drift (§6). */
-  @supports (animation-timeline: view()) {
-    html:not([data-jelly-motion]):not(.native-material, .perf-lite)
-      :is(.glass-fill, .glass-pane):not(
-        [data-jelly='off'],
-        [data-jelly='none'],
-        [data-jelly='lite'],
-        [data-jelly-flow='off'],
-        [data-liquid-material='off'],
-        [data-liquid-glass='off'],
-        [data-liquid-motion='off'],
-        [data-fluid-press='off'],
-        [data-fluid-press='none'],
-        [contenteditable='true'],
-        [contenteditable=''],
-        [data-evert~='select'],
-        .touch-target,
-        :is(
-            [data-jelly-scope='off'],
-            [data-jelly-zone='playfield'],
-            [data-liquid-motion='off'],
-            .slice-theme,
-            .slice-tokens,
-            .stm-legacy
-          )
-          *
-      )::after {
-      --jelly-current-reach: 0.2;
-      animation:
-        jelly-drift var(--jelly-drift-dur) var(--ease-in-out, ease-in-out) infinite alternate,
-        jelly-current linear both;
-      animation-duration: var(--jelly-drift-dur), auto;
-      animation-delay: var(--jelly-phase, 0s), 0s;
-      animation-timeline: auto, view();
-      animation-composition: replace, add;
-      animation-play-state: paused, running;
-    }
-    html:not([data-jelly-motion]):not(.native-material, .perf-lite)
-      :is(.glass-fill, .glass-pane):not(
-        [data-jelly='off'],
-        [data-jelly='none'],
-        [data-jelly='lite'],
-        [data-jelly-flow='off'],
-        [data-liquid-material='off'],
-        [data-liquid-glass='off'],
-        [data-liquid-motion='off'],
-        [data-fluid-press='off'],
-        [data-fluid-press='none'],
-        [contenteditable='true'],
-        [contenteditable=''],
-        [data-evert~='select'],
-        .touch-target,
-        :is(
-            [data-jelly-scope='off'],
-            [data-jelly-zone='playfield'],
-            [data-liquid-motion='off'],
-            .slice-theme,
-            .slice-tokens,
-            .stm-legacy
-          )
-          *
-      ):hover::after,
-    html:not([data-jelly-motion]):not(.native-material, .perf-lite)
-      :is(.glass-fill, .glass-pane):not(
-        [data-jelly='off'],
-        [data-jelly='none'],
-        [data-jelly='lite'],
-        [data-jelly-flow='off'],
-        [data-liquid-material='off'],
-        [data-liquid-glass='off'],
-        [data-liquid-motion='off'],
-        [data-fluid-press='off'],
-        [data-fluid-press='none'],
-        [contenteditable='true'],
-        [contenteditable=''],
-        [data-evert~='select'],
-        .touch-target,
-        :is(
-            [data-jelly-scope='off'],
-            [data-jelly-zone='playfield'],
-            [data-liquid-motion='off'],
-            .slice-theme,
-            .slice-tokens,
-            .stm-legacy
-          )
-          *
-      ):focus-within::after {
-      animation-play-state: running, running;
-    }
+    animation: jelly-drift var(--jelly-drift-dur) var(--ease-in-out, ease-in-out) infinite alternate;
   }
 
   /* ── 4. Static CSS rim (01 §3.4) ────────────────────────────────────────────────────────────────────────────────
@@ -814,8 +713,7 @@ html[data-game-state='playing'] .jelly-flow > span,
   animation-play-state: paused;
 }
 /* The woken haze (§3b) pauses the same way: while scrolling, while a game is in play, and on a host that itself holds
-   keyboard focus (04 §4.5: a ring over a moving ground is harder to track; focus INSIDE a card still wakes it). Under
-   Lively where view() exists the scroll-driven current keeps following the scroll; only the drift pauses. */
+   keyboard focus (04 §4.5: a ring over a moving ground is harder to track; focus INSIDE a card still wakes it). */
 html[data-scrolling]
   :is(
     .glass-fill,
@@ -910,37 +808,8 @@ html[data-game-state='playing']
   ):focus-visible::after {
   animation-play-state: paused;
 }
-@supports (animation-timeline: view()) {
-  html:not([data-jelly-motion], [data-game-state='playing'])[data-scrolling]
-    :is(.glass-fill, .glass-pane):not(
-      [data-jelly='off'],
-      [data-jelly='none'],
-      [data-jelly='lite'],
-      [data-jelly-flow='off'],
-      [data-liquid-material='off'],
-      [data-liquid-glass='off'],
-      [data-liquid-motion='off'],
-      [data-fluid-press='off'],
-      [data-fluid-press='none'],
-      [contenteditable='true'],
-      [contenteditable=''],
-      [data-evert~='select'],
-      .touch-target,
-      :is(
-          [data-jelly-scope='off'],
-          [data-jelly-zone='playfield'],
-          [data-liquid-motion='off'],
-          .slice-theme,
-          .slice-tokens,
-          .stm-legacy
-        )
-        *
-    )::after {
-    animation-play-state: paused, running;
-  }
-}
 /* Still (WCAG 2.2.2) and every device that cannot hover — touch, and the handheld tier (the exact query from
-   handheld-tier.test.ts) — get no haze motion at all, time- or scroll-driven: the layer holds its resting frame over
+   handheld-tier.test.ts) — get no haze motion at all, even when hovered: the layer holds its resting frame over
    the static floor. Hover and press still respond on their own. */
 html[data-jelly-motion='still']
   :is(
@@ -1189,9 +1058,11 @@ html[data-game-state='playing']
   }
 }
 
+/* jelly-drift starts at the identity: the woken-haze layer (§3b) rests untransformed and gets this animation only on
+   hover or focus, so its first frame must be that resting frame or the haze would snap on wake. */
 @keyframes jelly-drift {
   0% {
-    transform: translate3d(-8%, -6%, 0) rotate(-8deg) scale(1.04);
+    transform: none;
   }
   50% {
     transform: translate3d(7%, 4%, 0) rotate(6deg) scale(0.98);
@@ -1202,9 +1073,9 @@ html[data-game-state='playing']
 }
 @keyframes jelly-current {
   from {
-    transform: translate3d(calc(-24% * var(--jelly-current-reach, 1)), 0, 0);
+    transform: translate3d(-24%, 0, 0);
   }
   to {
-    transform: translate3d(calc(24% * var(--jelly-current-reach, 1)), 0, 0);
+    transform: translate3d(24%, 0, 0);
   }
 }

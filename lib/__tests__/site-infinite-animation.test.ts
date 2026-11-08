@@ -13,8 +13,8 @@
  *    is either on the frozen, justified {@link BASELINE} (loaders, skeletons, live dots — all on transient or tiny
  *    elements), or
  *  - it is one of the two SANCTIONED haze keyframes, `jelly-drift` / `jelly-current`, declared only on the woken-haze
- *    layer (the glass roles' own `::after`, app/jelly-material.css §3b, CSS-first jelly PR 2) — paused at rest, running
- *    only under `:hover` / `:focus-within` (lib/__tests__/jelly-woken-haze.test.ts pins those states) — or on the
+ *    layer (the glass roles' own `::after`, app/jelly-material.css §3b, CSS-first jelly PR 2) — attached ONLY under
+ *    `:hover` / `:focus-within`, with no animation at all at rest (lib/__tests__/jelly-woken-haze.test.ts pins it) — or on the
  *    retired `.jelly-flow` carrier spans, whose rules stay until PR 5 deletes them (nothing injects a carrier any more);
  *  - the layer is killed (`display: none`) under every degraded root class (read from `DEGRADED_ROOT_SELECTOR` —
  *    not restated) plus the app high-contrast theme and print, PAUSED (`animation-play-state: paused`) while
@@ -161,16 +161,22 @@ const flat = (s: string) =>
   s.replace(/\s+/g, ' ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').trim();
 /**
  * The woken-haze layer (jelly-material.css §3b): the glass roles' own `::after`, off native-material routes and
- * perf-lite — the time-driven drift on all five hosts, and the Lively scroll-tied variant on fills and panes. Exactly
- * these two selector heads, nothing broader.
+ * perf-lite. Exactly this selector head, nothing broader.
  */
-const HAZE_LAYER_HEADS = [
-  "html:not(.native-material, .perf-lite) :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])):not(",
-  'html:not([data-jelly-motion]):not(.native-material, .perf-lite) :is(.glass-fill, .glass-pane):not(',
-];
+const HAZE_LAYER_HEAD =
+  "html:not(.native-material, .perf-lite) :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])):not(";
 const isHazeLayer = (selector: string) => {
   const s = flat(selector);
-  return s.endsWith('::after') && HAZE_LAYER_HEADS.some((h) => s.startsWith(h));
+  return s.endsWith('::after') && s.startsWith(HAZE_LAYER_HEAD);
+};
+/** The one rule that may run the drift: the haze layer's wake, `…:hover::after, …:focus-within::after`. */
+const isHazeWake = (selector: string) => {
+  const s = flat(selector);
+  return (
+    isHazeLayer(selector) &&
+    s.endsWith('):focus-within::after') &&
+    s.includes(`):hover::after, ${HAZE_LAYER_HEAD}`)
+  );
 };
 /** A rule that targets the haze layer (any state of it): a role host's `::after` in the material sheet. */
 const onHazeLayer = (selector: string) =>
@@ -209,17 +215,17 @@ describe('N3 — no perpetual CSS animation on the site tier without an owner', 
   it('the haze keyframes run only on the woken-haze layer (or the retired carrier spans)', () => {
     const carriers = found.filter((p) => SANCTIONED.has(p.name));
     expect(carriers.map((p) => p.name).sort()).toEqual(
-      ['jelly-current', 'jelly-drift', 'jelly-drift', 'jelly-drift'].sort(),
+      ['jelly-current', 'jelly-drift', 'jelly-drift'].sort(),
     );
     for (const p of carriers) {
       expect(p.file).toBe(MATERIAL);
       expect(
-        /^\.jelly-flow\s*>/.test(p.selector) || isHazeLayer(p.selector),
+        /^\.jelly-flow\s*>/.test(p.selector) || isHazeWake(p.selector),
         `${p.name} is declared outside the haze layer: ${flat(p.selector)}`,
       ).toBe(true);
     }
-    // One time-driven layer and one Lively scroll-tied variant: nothing broader.
-    expect(carriers.filter((p) => isHazeLayer(p.selector))).toHaveLength(2);
+    // One wake rule (hover / focus-within): nothing at rest, nothing scroll-driven, nothing broader.
+    expect(carriers.filter((p) => isHazeLayer(p.selector))).toHaveLength(1);
   });
 
   it('the baseline stays honest (it only shrinks)', () => {
@@ -323,7 +329,7 @@ describe('N12 — nothing jelly paints at z ≥ 0 inside a host', () => {
     }
     // The woken-haze host isolates itself: no engine attribute is set any more (CSS-first jelly PR 2).
     expect(
-      iso.some((s) => !s.includes('::') && flat(s).startsWith(HAZE_LAYER_HEADS[0])),
+      iso.some((s) => !s.includes('::') && flat(s).startsWith(HAZE_LAYER_HEAD)),
       'the woken-haze host must be isolated',
     ).toBe(true);
   });

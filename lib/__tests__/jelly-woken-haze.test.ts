@@ -2,10 +2,11 @@
  * Woken haze (CSS-first jelly, PR 2; spec docs/superpowers/specs/2026-11-07-css-first-jelly-design.md §2).
  *
  * The haze no longer moves on its own. A transform-only layer on each glass role's own `::after` (no node injected by
- * JavaScript) is PAUSED at rest and runs only while its host is hovered or holds focus. Where the browser supports
- * `animation-timeline: view()`, and only under Lively (`html` carries no `data-jelly-motion`), fills and panes also
- * drift with scroll. `still` and no-hover devices get no motion; `calm` is slower (`--jelly-tempo`) and fainter
- * (`--jelly-amp`). These are CSS-text assertions, like the N3 gate in site-infinite-animation.test.ts.
+ * JavaScript) carries NO animation at rest — not even a paused one, which Blink still counts as a current transform
+ * animation and promotes to its own compositor layer — and gets `animation` only while its host is hovered or holds
+ * focus, starting from the identity frame (no phase delay). `still` and no-hover devices get no motion; `calm` is
+ * slower (`--jelly-tempo`) and fainter (`--jelly-amp`). These are CSS-text assertions, like the N3 gate in
+ * site-infinite-animation.test.ts.
  *
  * Pseudo-element survey (why `::after`): `[data-evert]::before` is the eversion state layer, and `lib/evert-auto.ts`
  * adopts any control whose `::before` is free, so `::before` is taken on every interactive host. `::after` is used on
@@ -74,21 +75,36 @@ const ALL = rules(CSS);
 const decl = (body: string, prop: string) =>
   new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`).exec(body)?.[1]?.trim().replace(/\s+/g, ' ');
 
-/** The base layer rule: the one `::after` rule that declares the drift. */
+/** The host compound's prefix: off native-material routes and perf-lite. */
+const PREFIX = 'html:not(.native-material, .perf-lite) ';
+/** The base layer rule: the one single-selector `::after` rule under the prefix that generates the box. */
 const BASE = ALL.find(
   (r) =>
-    r.at.every((a) => !a.startsWith('@supports')) &&
-    r.selectors.every((s) => s.endsWith('::after')) &&
-    /animation\s*:[^;]*jelly-drift/.test(r.body),
+    r.selectors.length === 1 &&
+    r.selectors[0].startsWith(PREFIX) &&
+    r.selectors[0].endsWith('::after') &&
+    decl(r.body, 'content') === "''",
 );
 const LAYER = BASE?.selectors[0] ?? '';
 /** The host compound the layer hangs on (the base selector without its prefix and pseudo-element). */
-const PREFIX = 'html:not(.native-material, .perf-lite) ';
 const HOST = LAYER.startsWith(PREFIX) ? LAYER.slice(PREFIX.length, -'::after'.length) : '';
+const WAKE = [`${PREFIX}${HOST}:hover::after`, `${PREFIX}${HOST}:focus-within::after`];
+/** Every rule, in any layer or at-rule, that targets the haze layer in some state. */
+const HAZE_RULES = ALL.filter((r) =>
+  r.selectors.some((s) => HOST !== '' && s.includes(HOST) && s.endsWith('::after')),
+);
+/** The animation this rule attaches, if any (`animation: none` attaches nothing). */
+const attaches = (body: string) => {
+  const a = decl(body, 'animation');
+  return (a !== undefined && a !== 'none') || decl(body, 'animation-name') !== undefined;
+};
 
 describe('the woken haze layer', () => {
   it('is one ::after rule, scoped off native-material routes and perf-lite', () => {
-    expect(BASE, 'a ::after rule animating jelly-drift in app/jelly-material.css').toBeDefined();
+    expect(
+      BASE,
+      'a ::after rule generating the haze layer in app/jelly-material.css',
+    ).toBeDefined();
     expect(BASE!.selectors).toHaveLength(1);
     expect(LAYER.startsWith(PREFIX)).toBe(true);
     expect(HOST).not.toBe('');
@@ -120,28 +136,45 @@ describe('the woken haze layer', () => {
     expect(Number(decl(body, 'z-index'))).toBeLessThan(0);
   });
 
-  it('is paused by default', () => {
-    expect(decl(BASE!.body, 'animation-play-state')).toBe('paused');
+  it('carries no animation at rest, in any layer or at-rule (not even a paused one)', () => {
+    expect(HAZE_RULES.length).toBeGreaterThan(5);
+    const resting = HAZE_RULES.filter(
+      (r) => attaches(r.body) && !r.selectors.every((s) => WAKE.includes(s)),
+    );
+    expect(
+      resting.map((r) => r.selectors.join(', ')),
+      'A paused transform animation still promotes the layer in Blink: attach animation only on wake.',
+    ).toEqual([]);
+    expect(decl(BASE!.body, 'animation')).toBeUndefined();
+    expect(decl(BASE!.body, 'animation-play-state')).toBeUndefined();
   });
 
-  it('runs only under :hover and :focus-within', () => {
-    const running = ALL.filter(
-      (r) =>
-        r.at.length === 1 &&
-        r.at[0] === '@layer components' &&
-        r.selectors.some((s) => s.endsWith('::after')) &&
-        /animation-play-state\s*:\s*running\s*(?:;|$)/.test(r.body),
-    );
-    expect(running).toHaveLength(1);
-    expect(running[0].selectors.sort()).toEqual(
-      [`${PREFIX}${HOST}:focus-within::after`, `${PREFIX}${HOST}:hover::after`].sort(),
-    );
+  it('attaches the drift only under :hover and :focus-within', () => {
+    const woken = HAZE_RULES.filter((r) => attaches(r.body));
+    expect(woken).toHaveLength(1);
+    expect([...woken[0].selectors].sort()).toEqual([...WAKE].sort());
+    expect(decl(woken[0].body, 'animation')).toMatch(/^jelly-drift\b.*\binfinite\b/);
+  });
+
+  it('wakes from the identity frame: no phase delay anywhere', () => {
+    const wake = HAZE_RULES.find((r) => attaches(r.body))!;
+    expect(decl(wake.body, 'animation-delay')).toBeUndefined();
+    expect(wake.body).not.toMatch(/--jelly-phase/);
+    expect(CSS, 'nothing sets a per-host phase').not.toMatch(/--jelly-phase\s*:/);
+    // The resting box has no transform, so the drift's first frame must be that same identity: no snap on wake.
+    expect(CSS).toMatch(/@keyframes\s+jelly-drift\s*\{\s*0%\s*\{\s*transform:\s*none;\s*\}/);
   });
 
   it('calm is slower and fainter: duration over --jelly-tempo, opacity over --jelly-amp', () => {
+    const wake = HAZE_RULES.find((r) => attaches(r.body))!;
     expect(decl(BASE!.body, '--jelly-drift-dur')).toMatch(/var\(--jelly-tempo, 1\)/);
-    expect(decl(BASE!.body, 'animation')).toMatch(/var\(--jelly-drift-dur\)/);
+    expect(decl(wake.body, 'animation')).toMatch(/var\(--jelly-drift-dur\)/);
     expect(decl(BASE!.body, 'opacity')).toMatch(/var\(--jelly-amp, 1\)/);
+  });
+
+  it('has no scroll-driven variant (it would hold a running animation on every card)', () => {
+    expect(CSS).not.toMatch(/animation-timeline/);
+    expect(CSS).not.toMatch(/@supports\s*\(\s*animation-timeline/);
   });
 
   it('the host is isolated, so the negative layer resolves inside it', () => {
@@ -240,34 +273,5 @@ describe('the keyframes it reuses', () => {
     const props = [...block![1].matchAll(/([a-z-]+)\s*:/g)].map((m) => m[1]);
     expect(props.length).toBeGreaterThan(0);
     expect(new Set(props)).toEqual(new Set(['transform']));
-  });
-});
-
-describe('the scroll-tied variant (Lively only, where view() exists)', () => {
-  const scroll = ALL.filter((r) => r.at.includes('@supports (animation-timeline: view())'));
-
-  it('exists, and every rule in it is scoped to Lively', () => {
-    expect(scroll.length).toBeGreaterThan(0);
-    for (const r of scroll)
-      for (const s of r.selectors) expect(s, s).toMatch(/^html:not\(\[data-jelly-motion\][,)]/);
-  });
-
-  it('adds a scroll-driven current to the paused drift, never an infinite one', () => {
-    const base = scroll.find((r) => /animation-timeline/.test(r.body));
-    expect(base).toBeDefined();
-    expect(decl(base!.body, 'animation-timeline')).toBe('auto, view()');
-    expect(decl(base!.body, 'animation-composition')).toBe('replace, add');
-    expect(decl(base!.body, 'animation-play-state')).toBe('paused, running');
-    const anim = decl(base!.body, 'animation') ?? '';
-    const [, current] = splitTop(anim);
-    expect(current).toMatch(/jelly-current/);
-    expect(current).not.toMatch(/infinite/);
-  });
-
-  it('wakes the drift on hover and focus, as the time-based layer does', () => {
-    const woken = scroll.find((r) => /animation-play-state\s*:\s*running, running/.test(r.body));
-    expect(woken).toBeDefined();
-    expect(woken!.selectors.some((s) => s.endsWith(':hover::after'))).toBe(true);
-    expect(woken!.selectors.some((s) => s.endsWith(':focus-within::after'))).toBe(true);
   });
 });
