@@ -33,6 +33,8 @@ import { visibilityAlpha } from '@/lib/slice-it/modifiers';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import { longestHoldSeconds, visibleSliceRange } from '@/lib/slice-it/visible-window';
 import { HUD } from './HUD';
+import { MarginHud } from './MarginHud';
+import { TOP_BAR_MIN, useMarginRoom } from './useMarginRoom';
 import { GameOver } from './GameOver';
 import { MainMenu } from './MainMenu';
 import { Button } from '@/components/ui/button';
@@ -1327,6 +1329,8 @@ const GAMEPAD_PAUSE_BUTTON = 9; // Start/Menu
 export function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  /** The whole screen, so the room the field leaves around itself can be measured. */
+  const rootRef = useRef<HTMLDivElement>(null);
   /** Device-pixel ratio the drawing buffer was last sized with. */
   const dprRef = useRef(1);
   const [engine, setEngine] = useState<GameEngine | null>(null);
@@ -3568,16 +3572,22 @@ export function GameCanvas() {
    * moment the player is reading their score off it.
    */
   const lockAspect = status === 'PLAYING' || status === 'FINISHED';
+  const marginRoom = useMarginRoom(rootRef, wrapperRef, lockAspect && !isPortrait);
+  const marginHud = status === 'PLAYING' && marginRoom !== null && marginRoom.top >= TOP_BAR_MIN;
 
   return (
     // Column below `lg` so the opponent board can sit as a strip ABOVE the
     // playfield; a row above it so the board is the familiar right-hand column.
     // As a row at every width, that 288px column was most of a 360px phone.
-    <div className="relative flex flex-col lg:flex-row w-full h-full bg-slice-bg">
+    <div ref={rootRef} className="relative flex flex-col lg:flex-row w-full h-full bg-slice-bg">
       {/* The margins either side of the 16:9 field, filled with the music. Behind
           everything, and only while the field is locked to its ratio in landscape —
           anywhere else there is no margin to fill. */}
       <SideWaves stageRef={wrapperRef} enabled={lockAspect && !isPortrait} />
+      {/* The readouts, in the band a taller-than-16:9 window leaves above the field
+          (and the tally in the one below it, if that is tall enough too). A short or
+          narrow window has no such band and keeps the HUD on the field. */}
+      {marginHud && marginRoom && <MarginHud engine={engine} room={marginRoom} />}
       {/* Game Area Container - Flex Grow.
           Landscape used `aspect-video` capped at `min(1400px, (100vh - 6rem) * 16/9)`
           — a hand-derived fit with two problems. `100vh` on a phone is the
@@ -4088,7 +4098,7 @@ export function GameCanvas() {
             </div>
           )}
 
-          {status === 'PLAYING' && <HUD engine={engine} />}
+          {status === 'PLAYING' && <HUD engine={engine} margins={marginHud} />}
 
           {/* Synchronized Loading Overlay */}
           {status === 'PLAYING' && isLoadingSong && (
