@@ -16,7 +16,7 @@
  * (each white key stays at least 44px wide); the page never does.
  */
 
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import type { KeyboardEvent, PointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { keyHoldsMachine, type Event as HoldEvent } from '@/lib/rmhmusic/learn/machines/key-holds';
@@ -55,7 +55,12 @@ const KEYS: PianoKey[] = (() => {
 const WHITE_COUNT = KEYS.filter((k) => !k.black).length;
 const WHITE_PCT = 100 / WHITE_COUNT;
 
-export function OnScreenKeyboard({ className }: { className?: string }) {
+/** Memoised: it re-renders for its own lit keys, not for every render of the lesson around it. */
+export const OnScreenKeyboard = memo(function OnScreenKeyboard({
+  className,
+}: {
+  className?: string;
+}) {
   const { t } = useTranslation('c-rmhmusic');
   const screen = useLearnStore((s) => s.screen);
   const hub = useLearnStore((s) => s.hub);
@@ -174,4 +179,4 @@ export function OnScreenKeyboard({ className }: { className?: string }) {
       </div>
     </div>
   );
-}
+});

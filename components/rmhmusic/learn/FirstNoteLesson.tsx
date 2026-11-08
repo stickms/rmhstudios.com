@@ -37,6 +37,23 @@ import {
 } from './useLearnInput';
 import { useMachine } from './useMachine';
 
+/**
+ * The latest note in large type. Its own component so a note re-renders this
+ * line only, not the lesson around it.
+ */
+function LastNoteReadout() {
+  const last = useLastNote();
+  return (
+    <p
+      className="min-h-16 text-5xl font-bold text-(--app-accent)"
+      style={{ fontFamily: 'var(--app-font-mono)' }}
+      aria-live="polite"
+    >
+      {last ? midiToName(last.midi) : null}
+    </p>
+  );
+}
+
 /** `lessonId` is the lesson being completed; `paused` (a dialog is open over the lesson) stops notes counting. */
 export function FirstNoteLesson({
   lessonId,
@@ -50,7 +67,6 @@ export function FirstNoteLesson({
   const input = useLearnStore((s) => s.profile?.input ?? 'screen');
   const [lesson, send] = useMachine(firstNoteMachine);
   const phases = useInputPhases();
-  const last = useLastNote();
   useNoteSound(!paused);
 
   const needsDevice = input === 'mic' || input === 'midi';
@@ -195,13 +211,7 @@ export function FirstNoteLesson({
                   })
                 : t('first-note-hint-screen', { defaultValue: 'Tap any key on the piano below.' })}
         </p>
-        <p
-          className="min-h-16 text-5xl font-bold text-(--app-accent)"
-          style={{ fontFamily: 'var(--app-font-mono)' }}
-          aria-live="polite"
-        >
-          {last ? midiToName(last.midi) : null}
-        </p>
+        <LastNoteReadout />
       </section>
 
       {needsDevice && !inputOn ? (
