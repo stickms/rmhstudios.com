@@ -410,6 +410,11 @@ export interface BootOptions {
   /** The audio pack failed to load (the game keeps running, silent). */
   onAudioError?: (err: unknown) => void;
   /**
+   * The player pressed Options → QUIT (main menu only; `lua/rmh_quit.lua` drops
+   * `/rmh/quit`). Called after the saves are flushed locally and queued to the account.
+   */
+  onQuit?: () => void;
+  /**
    * Start multiplayer at boot. `files` is the MP pack, fetched in parallel with
    * the core (`lib/balatro/mp/pack-loader.ts`); when it arrives in time it is in
    * the filesystem before the game's first line, else the MP chunk mounts it
@@ -493,7 +498,7 @@ export function saveImportPath(name: string): string | null {
 }
 
 export async function bootBalatro(options: BootOptions): Promise<BalatroSession> {
-  const { canvas, frame, cloud, onPhase, onLog, onAudioError, mp } = options;
+  const { canvas, frame, cloud, onPhase, onLog, onAudioError, onQuit, mp } = options;
   trackAudioContexts();
 
   // Everything the boot waits on starts at once.
@@ -700,8 +705,20 @@ export async function bootBalatro(options: BootOptions): Promise<BalatroSession>
 
   const saveFiles = () => (fs ? readSaveFiles(fs) : []);
   // The shim marks writes; flush them promptly, and anyway every 30 s.
+  let quitting = false;
   const poll = window.setInterval(() => {
-    if (!fs || !fs.analyzePath('/rmh/dirty').exists) return;
+    if (!fs) return;
+    // Options → QUIT: save everything now, then hand over to the page.
+    if (!quitting && fs.analyzePath('/rmh/quit').exists) {
+      quitting = true;
+      fs.unlink('/rmh/quit');
+      void flushSaves().then(() => {
+        cloud?.flush(saveFiles);
+        onQuit?.();
+      });
+      return;
+    }
+    if (!fs.analyzePath('/rmh/dirty').exists) return;
     fs.unlink('/rmh/dirty');
     void flushSaves();
     cloud?.schedule(saveFiles);

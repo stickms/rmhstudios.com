@@ -14,6 +14,8 @@
 --                            the drawing-buffer pixel ratio
 --   /rmh/dirty  Lua → page   exists when the save directory changed and should be
 --                            flushed to IndexedDB
+--   /rmh/quit   Lua → page   written by Options → QUIT (rmh_quit.lua, main menu only); the
+--                            page flushes the saves and leaves for the games list
 --   /rmh/text   Lua → page   "<hooked 0|1>\n<x> <y> <w> <h>": whether a text field has
 --                            the keyboard and where the open menu's field is (fractions
 --                            of the window, so it holds at any render scale), so a tap
@@ -558,6 +560,10 @@ function require(name, ...)
     local ok, err = pcall(original_require, 'rmh_mp_entry')
     if not ok then
       log('multiplayer entry failed: ' .. tostring(err))
+    end
+    local quit_ok, quit_err = pcall(original_require, 'rmh_quit')
+    if not quit_ok then
+      log('quit row failed: ' .. tostring(quit_err))
     end
   end
   if name == 'globals' and Game and Game.set_globals and not RMH.flags_hooked then

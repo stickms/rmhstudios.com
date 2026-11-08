@@ -139,6 +139,7 @@ PLATFORM_LUA: list[tuple[str, str]] = [
     ('rmh/json.lua', 'rmh/json.lua'),  # the MP mailbox (docs/balatro-mp.md §8)
     ('rmh/net.lua', 'rmh/net.lua'),
     ('rmh_mp_entry.lua', 'rmh_mp_entry.lua'),  # the MULTIPLAYER menu entry
+    ('rmh_quit.lua', 'rmh_quit.lua'),  # Options -> QUIT (main menu only)
 ]
 
 GLYPHS_MAGIC = b'RMHG'

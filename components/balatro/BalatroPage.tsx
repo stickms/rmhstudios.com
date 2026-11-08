@@ -175,6 +175,8 @@ function attach(
     messages: Record<'webgl' | 'signedOut' | 'boot' | 'tooLarge' | 'audio', string>;
     /** Multiplayer must start at boot: preload its pack with the core. */
     mpAutoload: MpAutoload | null;
+    /** The game's Options → QUIT (main menu only); the saves are already flushed. */
+    onQuit: () => void;
   },
 ): BootRun {
   if (current && !current.stopped) {
@@ -221,6 +223,7 @@ function attach(
       if (isError || import.meta.env.VITE_BALATRO_MP_TEST === '1') console.warn('[balatro]', line);
     },
     onAudioError: () => toast.error(opts.messages.audio),
+    onQuit: opts.onQuit,
     mp: opts.mpAutoload
       ? { autoload: opts.mpAutoload, files: loadMp().then((mod) => mod.fetchMpPack()) }
       : undefined,
@@ -282,6 +285,10 @@ export default function BalatroPage() {
         audio: t('audio_failed', { defaultValue: 'The sound could not load. Reload the page to try again.' }),
       },
       mpAutoload: inviteRef.current ? 'invite' : readRejoinHint() ? 'rejoin' : null,
+      onQuit: () => {
+        sessionRef.current?.stop();
+        window.location.assign('/games');
+      },
     });
     runRef.current = run;
     run.mp.listener = setMp;
