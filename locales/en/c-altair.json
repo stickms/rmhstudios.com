@@ -216,5 +216,6 @@
   "coop-dropin-title": "Join the run",
   "coop-dropin-body": "The match is already under way. Pick a class and you appear next to the team.",
   "coop-lobby-reopens": "Back to the lobby in {{seconds}}s, ready for another run.",
-  "coop-no-coins": "Co-op runs do not earn coins yet."
+  "coop-no-coins": "Co-op runs do not earn coins yet.",
+  "quit": "Quit"
 }

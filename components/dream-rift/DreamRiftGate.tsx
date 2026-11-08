@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSession } from '@/components/Providers';
 import { useLobbyInvite } from '@/hooks/useLobbyLink';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import { useDreamRift } from '@/lib/dream-rift/store';
 import { LocalTransport, SocketTransport } from '@/lib/dream-rift/net/transport';
 import { disconnectDreamRift, leaveLobby, setStartHandler } from '@/lib/dream-rift/net/connection';
@@ -48,6 +49,7 @@ function ScreenRouter() {
     const setMode = useDreamRift((s) => s.setMode);
     const setResult = useDreamRift((s) => s.setResult);
     const session = useSession();
+    const quitGame = useQuitGame();
 
     const [startInfo, setStartInfo] = useState<StartInfo | null>(null);
     const [lastPractice, setLastPractice] = useState<PracticeOutcome | null>(null);
@@ -162,13 +164,13 @@ function ScreenRouter() {
 
     const fullExit = () => {
         disconnectDreamRift();
-        window.location.href = '/games';
+        quitGame();
     };
 
     let body: React.ReactNode;
     switch (screen) {
         case 'playing':
-            body = startInfo ? <GameStage start={startInfo} onExit={exitToMenu} /> : <Loading />;
+            body = startInfo ? <GameStage start={startInfo} onExit={exitToMenu} onQuitGame={fullExit} /> : <Loading />;
             break;
         case 'char-select':
             body = <CharacterSelect onStart={startSingle} onBack={() => setScreen('title')} />;
@@ -199,22 +201,16 @@ function ScreenRouter() {
                     onMulti={() => { setMode('multi'); setScreen('lobby-browser'); }}
                     onLeaderboard={() => setScreen('leaderboard')}
                     onSettings={() => setScreen('settings')}
+                    onQuit={fullExit}
                     extra={<PracticeEntry onOpen={() => setScreen('practice')} />}
                 />
             );
     }
 
-    const showExit = screen !== 'playing';
-
     return (
         <div className="fixed inset-0 overflow-hidden bg-black text-white">
             <ChallengeNotice />
             <div className="h-full w-full overflow-auto">{body}</div>
-            {showExit && (
-                <button type="button" onClick={fullExit} className="dr-serif absolute right-[calc(0.75rem+var(--safe-right))] top-[calc(0.75rem+var(--safe-top))] z-50 rounded-sm pointer-coarse:min-h-11 border border-[rgba(231,205,140,0.3)] bg-black/40 px-3 py-1.5 text-xs tracking-wider text-[color:var(--dr-cream-dim)] backdrop-blur transition hover:border-[rgba(231,205,140,0.6)] hover:text-[color:var(--dr-cream)]">
-                    ✕ Exit
-                </button>
-            )}
         </div>
     );
 }

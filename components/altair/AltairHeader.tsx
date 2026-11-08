@@ -2,7 +2,7 @@
  * AltairHeader — Shared header across all Altair screens.
  *
  * Adapts its content based on the current context:
- * - Menu: "← Builds" back link, "ALTAIR" title
+ * - Menu: "ALTAIR" title (plus a "← Back" button when a parent screen passes `onBack`)
  * - Game: game timer, "ALTAIR" title, settings gear
  * - Meta shop: "← Back" link, "Meta Shop" title, coin balance
  */
@@ -10,11 +10,9 @@
 
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Settings, Circle } from 'lucide-react';
 import { useAltairGameStore } from '@/lib/altair/stores/game-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
-import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 
 interface AltairHeaderProps {
   context?: 'menu' | 'game' | 'meta_shop' | 'class_select' | 'settings';
@@ -38,14 +36,13 @@ export default function AltairHeader({
   connectionStatus,
 }: AltairHeaderProps) {
   const { t } = useTranslation("c-altair");
-  const goBack = useBackOrFallback();
   const timeSurvived = useAltairGameStore((s) => s.timeSurvived);
   const coins = useAltairMetaStore((s) => s.coins);
 
   const isMenu = context === 'menu';
   const isGame = context === 'game';
   const isShop = context === 'meta_shop';
-  const hasBack = isMenu || isShop || context === 'class_select' || context === 'settings';
+  const hasBack = (isMenu && !!onBack) || isShop || context === 'class_select' || context === 'settings';
 
   const displayTitle = title ?? 'ALTAIR';
 
@@ -58,32 +55,18 @@ export default function AltairHeader({
       {/* Left side */}
       <div className="flex min-w-0 items-center gap-2">
         {hasBack && (
-          isMenu && !onBack ? (
-            <Link
-              to="/games"
-              onClick={goBack}
-              className="inline-flex min-h-11 min-w-11 items-center -ml-2 pl-2 text-sm font-medium text-(--altair-text-muted) hover:text-(--altair-accent) transition-colors"
-            >
-              <span className="flex items-center gap-1.5">
-                <ArrowLeft size={16} className="shrink-0 rtl-flip" aria-hidden />
-                <span className="hidden xs:inline">{t("builds", { defaultValue: "Builds" })}</span>
-                <span className="sr-only xs:hidden">{t("builds", { defaultValue: "Builds" })}</span>
-              </span>
-            </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={handleBack}
-              data-altair-sfx="menu_back"
-              className="inline-flex min-h-11 min-w-11 items-center -ml-2 pl-2 text-sm font-medium text-(--altair-text-muted) hover:text-(--altair-accent) transition-colors"
-            >
-              <span className="flex items-center gap-1.5">
-                <ArrowLeft size={16} className="shrink-0 rtl-flip" aria-hidden />
-                <span className="hidden xs:inline">{t("back", { defaultValue: "Back" })}</span>
-                <span className="sr-only xs:hidden">{t("back", { defaultValue: "Back" })}</span>
-              </span>
-            </button>
-          )
+          <button
+            type="button"
+            onClick={handleBack}
+            data-altair-sfx="menu_back"
+            className="inline-flex min-h-11 min-w-11 items-center -ml-2 pl-2 text-sm font-medium text-(--altair-text-muted) hover:text-(--altair-accent) transition-colors"
+          >
+            <span className="flex items-center gap-1.5">
+              <ArrowLeft size={16} className="shrink-0 rtl-flip" aria-hidden />
+              <span className="hidden xs:inline">{t("back", { defaultValue: "Back" })}</span>
+              <span className="sr-only xs:hidden">{t("back", { defaultValue: "Back" })}</span>
+            </span>
+          </button>
         )}
         {isGame && (
           <span

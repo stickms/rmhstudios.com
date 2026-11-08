@@ -5,6 +5,7 @@
  * procedurally-drawn portraits), the pause menu and the end-of-run results.
  */
 
+import { useTranslation } from 'react-i18next';
 import { useDreamRift } from '@/lib/dream-rift/store';
 import { CHARACTERS } from '@/lib/dream-rift/render/sprites';
 import type { PlayerId } from '@/lib/dream-rift/types';
@@ -73,7 +74,8 @@ export function StageBanner() {
     );
 }
 
-export function PauseOverlay({ onResume, onQuit }: { onResume: () => void; onQuit: () => void }) {
+export function PauseOverlay({ onResume, onQuit, onQuitGame }: { onResume: () => void; onQuit: () => void; onQuitGame: () => void }) {
+    const { t } = useTranslation('c-dream-rift');
     const { musicOn, sfxOn, setMusicOn, setSfxOn, musicVol, sfxVol, setMusicVol, setSfxVol, showHitbox, setShowHitbox } = useDreamRift();
     return (
         <div className="app-safe-pad absolute inset-0 z-40 flex items-center-safe justify-center-safe overflow-y-auto bg-black/70 backdrop-blur-sm">
@@ -102,6 +104,9 @@ export function PauseOverlay({ onResume, onQuit }: { onResume: () => void; onQui
                     </button>
                     <button type="button" onClick={onQuit} className="dr-plaque rounded-sm py-2 text-sm font-semibold">
                         Quit to Menu
+                    </button>
+                    <button type="button" onClick={onQuitGame} className="dr-plaque rounded-sm py-2 text-sm font-semibold">
+                        {t('menu-quit', { defaultValue: 'Quit' })}
                     </button>
                 </div>
             </div>

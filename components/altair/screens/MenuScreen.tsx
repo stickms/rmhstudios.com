@@ -6,12 +6,13 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Play, ShoppingBag, Settings, Trophy, Zap, Users, Clock, Crosshair, Sparkles, Coins, RefreshCw, X, ScrollText, Book } from 'lucide-react';
+import { Play, ShoppingBag, Settings, Trophy, Zap, Users, Clock, Crosshair, Sparkles, Coins, RefreshCw, X, ScrollText, Book, LogOut } from 'lucide-react';
 import PatchnotesModal from './PatchnotesModal';
 import MenuBackdrop from '../menu/MenuBackdrop';
 import { CodexBadge } from '../CodexPanel';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
+import { useQuitGame } from '@/hooks/useQuitGame';
 
 interface MenuScreenProps {
   onPlay: () => void;
@@ -23,6 +24,7 @@ interface MenuScreenProps {
 
 export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettings, onBestiary }: MenuScreenProps) {
   const { t } = useTranslation("c-altair");
+  const quit = useQuitGame();
   const coins = useAltairMetaStore((s) => s.coins);
   const doubleTimeUnlocked = useAltairMetaStore((s) => s.doubleTimeUnlocked);
   const totalRuns = useAltairMetaStore((s) => s.totalRunsPlayed);
@@ -46,11 +48,11 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
   }, []);
 
   const menuActions = useMemo(
-    () => [onPlay, onMultiplayer, onMetaShop, onSettings, handleToggleLeaderboard, onBestiary, handleOpenPatchnotes],
-    [onPlay, onMultiplayer, onMetaShop, onSettings, handleToggleLeaderboard, onBestiary, handleOpenPatchnotes],
+    () => [onPlay, onMultiplayer, onMetaShop, onSettings, handleToggleLeaderboard, onBestiary, handleOpenPatchnotes, quit],
+    [onPlay, onMultiplayer, onMetaShop, onSettings, handleToggleLeaderboard, onBestiary, handleOpenPatchnotes, quit],
   );
   const { focusedIndex } = useKeyboardNav({
-    itemCount: 7,
+    itemCount: 8,
     onSelect: (i) => menuActions[i](),
     orientation: 'vertical',
     enabled: !showLeaderboard && !showPatchnotes,
@@ -151,6 +153,15 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
         >
           <ScrollText size={16} />
           {t("patch-notes", { defaultValue: "Patch Notes" })}
+        </button>
+
+        <button
+          onClick={quit}
+          data-focused={focused(7)}
+          className="altair-btn altair-btn--ghost py-3"
+        >
+          <LogOut size={16} />
+          {t("quit", { defaultValue: "Quit" })}
         </button>
       </div>
 

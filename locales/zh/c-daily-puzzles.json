@@ -260,5 +260,6 @@
   "impostor-title": "Impostor",
   "link-word-label": "第 {{n}} 环",
   "outcast-title": "Outcast",
-  "spectrum-title": "Spectrum"
+  "spectrum-title": "Spectrum",
+  "quit": "Quit"
 }

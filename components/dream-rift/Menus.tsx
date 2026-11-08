@@ -100,7 +100,7 @@ function CharCard({ id, selected, onClick }: { id: PlayerId; selected: boolean; 
 
 // ─── Title ───
 
-export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings, extra }: { onSingle: () => void; onMulti: () => void; onLeaderboard: () => void; onSettings: () => void; extra?: React.ReactNode }) {
+export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings, onQuit, extra }: { onSingle: () => void; onMulti: () => void; onLeaderboard: () => void; onSettings: () => void; onQuit: () => void; extra?: React.ReactNode }) {
     const { t } = useTranslation('c-dream-rift');
     const { music, sfx } = useRuntime();
     const selectedChar = useDreamRift((s) => s.selectedChar);
@@ -160,6 +160,9 @@ export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings, extr
                 <div className="drm-rise drm-menu__row" style={stagger(5)}>
                     <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); onSettings(); }} className="flex-1">{t('menu-settings', { defaultValue: 'Settings' })}</Btn>
                     <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); setShowHelp(true); }} className="flex-1">{t('menu-how-to-play', { defaultValue: 'How to Play' })}</Btn>
+                </div>
+                <div className="drm-rise" style={stagger(6)}>
+                    <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); onQuit(); }} className="w-full">{t('menu-quit', { defaultValue: 'Quit' })}</Btn>
                 </div>
             </div>
 
