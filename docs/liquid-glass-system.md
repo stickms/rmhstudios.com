@@ -6,6 +6,10 @@
 > the "no continuous resting loop", "taps never emit waves" and "clicks never push
 > neighbours" rules in this file no longer hold. Retained for the optics, snapshot
 > lifecycle and globe history; where the two disagree, the jelly contract wins.
+>
+> **Update 2026-11-08 (CSS-first jelly):** the glass engine this file describes (`lib/liquid/glass/engine.ts`, the
+> rim and haze shaders, the glass worker) was deleted. Only the optics, the snapshot (`scene.ts`, now fed by
+> `scene-feed.ts` for the liquid globe) and the globe history below still describe live code.
 
 Current as of 2026-10-22. This contract supersedes the earlier blur, accent-tinted coat,
 control eversion and tap-wave implementations.

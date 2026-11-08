@@ -57,7 +57,6 @@ import {
   onJellyEnvChange,
 } from '@/lib/jelly/tiers';
 import { evert } from '@/lib/eversion/thurston';
-import { governedDprCap } from '@/lib/jelly/governor';
 import { ambientTickDue, msToAmbientTick } from '@/lib/jelly/ambient-tick';
 import {
   copyQuat,
@@ -433,13 +432,9 @@ for (let s = 0; s <= RING_SAMPLES; s++) {
 const CAGE_MAX_DPR = 2;
 /**
  * The device pixel ratio a globe backing store is sized at: the display's, under
- * the store's own ceiling and under the jelly governor's (`governedDprCap`, which
- * drops to 1 once the page is struggling). Read when a store is sized, never per
- * frame; the globe is mounted afresh each time the menu opens, so it picks up the
- * governor's current step then.
+ * the store's own ceiling. Read when a store is sized, never per frame.
  */
-const storeDpr = (ceiling = Infinity) =>
-  Math.min(window.devicePixelRatio || 1, ceiling, governedDprCap());
+const storeDpr = (ceiling = Infinity) => Math.min(window.devicePixelRatio || 1, ceiling);
 /**
  * How far the cage canvas is grown BEYOND the stage box, on every side, as a
  * fraction of the stage.

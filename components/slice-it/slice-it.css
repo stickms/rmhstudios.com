@@ -430,11 +430,6 @@ html .slice-theme [data-slot='textarea'] {
   color: var(--slice-text);
 }
 
-.slice-theme :is(.jelly-flow, .jelly-haze-canvas, canvas[data-liquid-glass]),
-.slice-tokens :is(.jelly-flow, .jelly-haze-canvas, canvas[data-liquid-glass]) {
-  display: none;
-}
-
 /* ─── Material ─────────────────────────────────────────────────────────────
  *
  * Every raised, inset and chrome surface in the game still carries one of the

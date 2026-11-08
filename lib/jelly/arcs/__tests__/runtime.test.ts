@@ -330,12 +330,6 @@ describe('electric arcs runtime', () => {
     expect(pulses).toHaveLength(0);
   });
 
-  it('a soft-body release adds charge (body:release is consumed)', () => {
-    const bus = createJellyBus();
-    install({ bus });
-    expect(bus.listenerCount('body:release')).toBe(1);
-  });
-
   /** Run the shared frame until the arcs are done (16ms steps). */
   const settle = () => {
     for (let i = 0; i < 100 && env.rafQueue.size > 0; i++) {
@@ -421,15 +415,13 @@ describe('electric arcs runtime', () => {
   });
 
   it('teardown removes the layer, listeners and the active runtime', () => {
-    const bus = createJellyBus();
-    install({ bus });
+    install();
     teardown!();
     teardown = null;
     expect(env.canvas()).toBeUndefined();
     expect(env.winListeners.count('pointerdown')).toBe(0);
     expect(env.docListeners.count('click')).toBe(0);
     expect(env.docListeners.count('scroll')).toBe(0);
-    expect(bus.listenerCount('body:release')).toBe(0);
     expect(activeElectricArcs()).toBeNull();
     expect(env.observers.every((o) => !o.on)).toBe(true);
     expect(vi.getTimerCount()).toBe(0);

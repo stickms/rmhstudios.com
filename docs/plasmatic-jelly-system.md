@@ -1,34 +1,38 @@
 # Plasmatic jelly: implementation contract
 
-Current as of 2026-10-23. This contract **supersedes**
-[`liquid-glass-system.md`](liquid-glass-system.md) as the implementation authority for
-the site's material, and supersedes `design-language.md` §5.1.1 ("cursor reactivity is
-retired") and the "idle at rest" wording of its §7 for the jelly services. The decisions
-behind it are R1–R16 in
-[`plans/plasmatic-jelly/00-master-plan.md`](plans/plasmatic-jelly/00-master-plan.md);
-the five section plans beside it hold the derivations. Where this file and the code
-disagree, the code (and its tests) win and this file is the bug.
+Current as of 2026-11-08 (CSS-first jelly, PR 5). This contract **supersedes**
+[`liquid-glass-system.md`](liquid-glass-system.md) as the implementation authority for the
+site's material, and supersedes `design-language.md` §5.1.1 ("cursor reactivity is
+retired") for the jelly services. The design that produced it is
+[`superpowers/specs/2026-11-07-css-first-jelly-design.md`](superpowers/specs/2026-11-07-css-first-jelly-design.md);
+the decisions behind the older shape are R1–R16 in
+[`plans/plasmatic-jelly/00-master-plan.md`](plans/plasmatic-jelly/00-master-plan.md). Where
+this file and the code disagree, the code (and its tests) win and this file is the bug.
 
-**Unified design.** The material is the overhaul above **plus** the owner's #989 spec
-layered on top of it: dormant plasma that wakes on hover, a molded RGB-led refracting edge
-(a lit shoulder rising from the ground, no hairline) and no gloss band, a liquid-glass **lens dent** with a light dot that
-slides with the pointer, and electric **charge** that hops on a click, breaks down small
-gaps and attracts neighbours by Coulomb's law. The short statement every agent reads is
-the "Design system: Plasmatic Jelly" section of [`CLAUDE.md`](../CLAUDE.md); this file is
-the implementation detail behind it. Every number below is a named constant in
-`lib/jelly/tiers.ts` (`JELLY_BUDGETS`, `MOTION_BOUNDS`, `AMBIENT_BOUNDS`, `FLASH_LEDGER`,
-`DENT`, `PLASMA`, `CHARGE`, `JELLY_LAYOUT`), mirrored as a CSS token where CSS needs it
+**The shape of it.** The material is **static CSS plus effects that wake on an event**.
+A page at rest runs no `requestAnimationFrame` loop, no canvas, no worker and no snapshot
+capture for site surfaces. Four things are not CSS:
+
+- the **click arc** (`lib/jelly/arcs/`), imported on the first press and removed 10 s after
+  the last click;
+- the **pointer variable** (`lib/jelly/pointer-vars.ts`), one delegated listener that writes
+  `--px` / `--py` / `--jelly-s` on the hovered host;
+- the **scene feed** (`lib/liquid/glass/scene-feed.ts`), the page picture the liquid globe
+  refracts, taken a few times per page (load, route change, theme change, resize);
+- the **liquid globe and the globe cursor**, which are their own WebGL scenes and draw in
+  workers (`components/radial/globe-worker.ts`, `lib/globe-cursor/cursor.worker.ts`).
+
+The short statement every agent reads is the "Design system: Plasmatic Jelly" section of
+[`CLAUDE.md`](../CLAUDE.md); this file is the detail behind it. Every number is a named
+constant in `lib/jelly/tiers.ts` (`JELLY_BUDGETS`, `MOTION_BOUNDS`, `AMBIENT_BOUNDS`,
+`FLASH_LEDGER`, `PLASMA`, `CHARGE`, `JELLY_LAYOUT`) or `lib/jelly/soft-policy.ts`
+(`SOFT_BODY`, `CSS_SPRINGS`, `CSS_SOFT_BODY`), mirrored as a CSS token where CSS needs it
 (§10) — never restated in a component.
 
-Every surface is a slab of slightly hazy, translucent plasma-jelly. The 3D refracting,
-lit, rounded rim of liquid glass stays, its light split into red, green and blue at the
-edge. Inside, a low-contrast haze is always drifting, calm behind text and livelier at
-the rim, and a dormant plasma core waits to wake under the hand. The jelly is soft: hover
-plumps and leans it, press sinks a lens-like dent under the pointer and squashes it toward
-the contact, drag slides the dent along, release wobbles it back. It is charged: nearby
-surfaces occasionally throw an electric arc across the gap, a click deposits charge that
-rings through the gel and hops to a neighbour, and charged neighbours lean toward each
-other. **Text, hit areas and layout never move beyond the bounded squash.**
+Every surface is a slab of slightly hazy, translucent plasma-jelly with a soft molded rim.
+Under the hand it wakes: hover lights a dormant plasma and drifts the haze, press squashes
+the slab on a spring and sinks a lit dot under the pointer, release wobbles it back. A click
+throws an electric arc. **Text, hit areas and layout never move beyond the bounded squash.**
 
 ## 1. Material and roles
 
@@ -36,607 +40,391 @@ The `glass-*` classes keep their names (R1): "glass" names the **elevation role*
 "jelly" names the **material** that renders every role. There are no `jelly-*` alias
 classes and no `data-material` flag (R5).
 
-| Role                                 | Rim (shader slab)                         | Haze                                      | Soft body                           | Arcs                                 |
-| ------------------------------------ | ----------------------------------------- | ----------------------------------------- | ----------------------------------- | ------------------------------------ |
-| `glass-overlay` (L4)                 | admitted first; refracts settled snapshot | canvas slot or carrier; quietest interior | lattice rim only, host never moves  | endpoints yes; never across its text |
-| `glass-chrome` (L3)                  | admitted second; refracts snapshot        | canvas slot or carrier                    | lattice rim only                    | yes                                  |
-| `glass-pane` (L2), `app-glass`       | admitted third; lit, refract by opt-in    | canvas slot or carrier                    | lattice rim only                    | yes                                  |
-| `glass-fill` (L1), cards             | within budget                             | carrier, else static haze floor           | envelope + lattice when admitted    | yes                                  |
-| `glass-inset`, fields                | within budget                             | rim-only carrier on the wrapper           | rim only; never moves while focused | **never** an endpoint                |
-| solid buttons (`[data-slot=button]`) | admitted last                             | carrier (never a canvas slot)             | envelope (press / hover dent)       | yes                                  |
-| toasts (`[data-sonner-toast]`)       | —                                         | static haze floor                         | envelope                            | **never** struck                     |
+| Role                                 | Rim and body                      | Woken haze                     | Soft body                          | Click arcs                  |
+| ------------------------------------ | --------------------------------- | ------------------------------ | ---------------------------------- | --------------------------- |
+| `glass-overlay` (L4)                 | static CSS rim, quietest interior | yes, on hover / keyboard focus | only as a press body               | endpoints no (text-bearing) |
+| `glass-chrome` (L3)                  | static CSS rim                    | yes                            | only as a press body               | yes                         |
+| `glass-pane` (L2), `app-glass`       | static CSS rim                    | yes                            | only as a press body; never plumps | yes                         |
+| `glass-fill` (L1), cards             | static CSS rim                    | yes                            | plump / squash                     | yes                         |
+| `glass-inset`, fields                | rim plus a well                   | **none** (no pseudo layer)     | never moves                        | **never** an endpoint       |
+| solid buttons (`[data-slot=button]`) | static CSS rim                    | yes (ghost / link: none)       | dent / squash                      | yes                         |
+| toasts (`[data-sonner-toast]`)       | coverage-tier rim                 | —                              | —                                  | **never** struck            |
 
 What draws what:
 
-- **Rim** — `lib/liquid/glass/engine.ts` + `shader.ts` + `jelly-glsl.ts`: the existing
-  refracting, Fresnel-lit slab, with a haze veil, a plasma inner edge line, a plasma
-  cursor bloom and the `uJelly[8]` lattice warp of the SDF edge. One shared WebGL2
-  context (`renderer.ts`) copies into a canvas that is the host's **last** child at a
-  negative z-index inside an isolated stacking context.
-- **Haze (shader tier)** — `haze-shader.ts`: a low-resolution `.jelly-haze-canvas`
-  (≤ 256 px long side) with a flow-map current (role axis + curl noise), three
-  counter-rotating Gaussian eddies per surface, a warped fbm body plus soft ridged current
-  filaments with crisp fronts (`HAZE_LOOK`), and plasma only at the crests. The interior is
-  damped by `--site-jelly-quiet` (0.75; 0.9 in Daylight) inside the α/2…α range the
-  legibility gate bounds; only the bevel may swing further (`--site-jelly-haze-edge`), so
-  the currents visibly run along every edge. The host gets `data-jelly-haze="on"` after the
-  first draw and the bus hears `haze:change`.
-- **Haze (CSS tier)** — `lib/jelly/flow-carriers.ts` injects a clipped, `aria-hidden`
-  `.jelly-flow` span as the host's **first** child; its two inner spans animate
-  `transform` only (`jelly-drift` / `jelly-current` in `app/jelly-material.css`): a half-density
-  veil with three slanted current streaks that turn and travel past each other. Speed is
-  per host: wide hosts are capped at 12 px/s, small ones (buttons) lifted to 6 px/s
-  (`cappedFlowSpeed`). Hosts with text-only children never get one (React's `textContent`
-  path would delete it), so `<Button>` wraps a plain-text label in a `display: contents`
-  span. After `IDLE_AFTER_MS` without input the service stamps `html[data-jelly-idle]`: the
-  CSS pauses the carriers and the service steps their `currentTime` on the engine's ambient
-  tick (`ambient:tick`), or its own idle-clock timer when no haze is ticking — the haze keeps
-  moving at the same speed, the page at rest draws ≤ the idle clock's frames, not vsync's.
-- **Static haze floor** — every role's background stack in `app/jelly-material.css`
-  (milky gradient + `public/jelly/haze-tile.webp` grain), so a surface reads as jelly
-  with no JavaScript or WebGL. It is the complete fallback tier.
-- **Charge** — `pulse(el, k, x?, y?)` queues a charge **ring** at (x, y): it travels at
-  `CHARGE.pulseSpeedPxS` and decays with `CHARGE.pulseTauMs` (lifetime ≤ ~1 s), at most 3
-  rings per surface, and rings within 60 ms / 32 px merge, so an `arc:strike` and its
-  `charge:pulse` show as one. Ring alpha stays ≤ the plasma peak (0.14), below the 0.1 ΔL
-  flash threshold, so rings are not ledgered.
-- **No gloss in the shader** — no sheen band and no cursor bloom on the face; every
-  specular term is edge-only. The gel's body → depth gradient is CSS (`--liquid-coat`),
-  not the shader.
-- **Dormant plasma** — one shared `jPlasma` core + filaments in `--site-accent`, clipped
-  3–14 px inside the edge and exactly 0 at level 0. It moves in the haze slots (× 0.5
-  under `calm`) and is static in the rim program elsewhere (including under `still`).
+- **Gel and rim** — `app/liquid-glass.css` (tint, vertical `--gel-body` → `--gel-depth`
+  coat) and `app/jelly-material.css` §2b / §4: ONE soft inset glow, `--gel-glow`
+  (the Fresnel colour carrying a red / blue tint, `--gel-bevel` × `--gel-shoulder` wide), a lit
+  top hairline (`border-top-color`) and, on a field, a second shadow for the well. No hairline
+  outline, no per-host canvas. Hosts the coverage tier owns (tab thumb, switch, slider,
+  skeleton, toasts, bare `[data-jelly]`) still use the multi-inset `--gel-edge`.
+- **Static haze floor** — every role's background stack carries the 192 px grain tile
+  (`public/jelly/haze-tile.webp`, `--jelly-floor`): the surface reads as jelly with no JavaScript.
+- **Woken haze** — `app/jelly-material.css` §3b. One transform-only layer on the host's own
+  `::after`, with **no box at all at rest** (`display: none`). It gets a box, and the drift
+  animation (`jelly-drift`, 22 s per leg, scaled by the role's `--jelly-flow-speed` and the motion
+  level), only while the host is hovered or holds **keyboard** focus (`:hover`,
+  `:has(:focus-visible)`), fading in from `@starting-style`. A page at rest therefore has no running
+  animation and no extra compositor layer. It pauses while scrolling and while a game is in play,
+  and is absent under `still`, print, `perf-lite`, the app high-contrast theme, native-material routes
+  (`/games*`, `/tf2*`), fields, ghost / link buttons and every opt-out. Streaks, plasma blob and
+  current are tokens (`--jelly-haze-a`, `--jelly-plasma-k`, `--site-jelly-*`), so a theme re-tints it.
+- **Dormant plasma** — invisible at rest; the hover wake is a radial gradient at the pointer
+  (`--px` / `--py`) at `--plasma-wake` strength, brighter on press and focus. It is the accent
+  colour and is never an outline.
+- **No gloss** — no broad gloss band or glint across a face. Shine lives at the edge and in the
+  press dot (§3.1).
 
-Tokens: `--site-jelly-*` (haze per role, plasma A/B, strength, flow speed, quiet, bevel
-haze swing `-haze-edge`),
-`--site-arc-core` / `--site-arc-glow`, `--z-arcs` (45) / `--z-arcs-modal` (55), mirrored
-for the app tier as `--app-jelly-*`. High contrast zeroes them all. Role knobs
-(`--jelly-haze-a`, `--jelly-plasma-k`, `--jelly-flow-speed`, `--jelly-flow-axis-deg`) are
-set on the host per role and read by both tiers, so the engine holds no role table.
+Tokens: `--site-jelly-*` (haze per role, plasma A/B, strength, flow speed, quiet),
+`--site-arc-core` / `--site-arc-glow`, `--z-arcs` (45) / `--z-arcs-modal` (55), mirrored for the
+app tier as `--app-jelly-*`. Role knobs (`--jelly-haze-a`, `--jelly-plasma-k`,
+`--jelly-flow-speed`) are set on the host per role and read by the woken haze.
 
-**No `backdrop-filter` in any role, ever.** "Hazy" is drawn by the shader or by
-transform-only CSS layers; frosted blur is the path back to the cost and engine
-disagreement liquid glass removed. Every jelly paint layer sits at a **negative**
-z-index inside its host; the arc layer is the one body-level exception and is
-`pointer-events: none`. No jelly layer paints more than 2 px outside its host's border
-box (`AMBIENT_BOUNDS.maxOverdrawPx`, the focus ring's offset).
+**No `backdrop-filter` in any role, ever.** "Hazy" is drawn by transform-only CSS layers;
+frosted blur is the path back to the cost and engine disagreement liquid glass removed. Every
+jelly paint layer sits at a **negative** z-index inside an isolated host (the woken-haze host
+isolates itself); the arc layer is the one body-level exception and is `pointer-events: none`.
 
-### 1.0 Calibration to Apple's Liquid Glass (2026-10-29)
+### 1.0 What the migration gave up
 
-The material was read as heavy and toy-like (a thick lit bevel, a rainbow edge, smoky haze inside every card) and
-as unfinished on load (the CSS first paint differed from the shader's, so surfaces visibly changed 0.3–2.5 s later).
-One pass retuned it by the tokens, not by new code paths, toward what Apple's Liquid Glass does: a thin specular rim, a
-clear body, refraction only at the edge, restrained dispersion.
+The CSS-first migration (PRs 1 to 5, 2026-11-07 / 08) traded the following for a page that costs
+nothing at rest. They are not coming back without a new design:
 
-| Token | Was | Now | Why |
-| ----- | --- | --- | --- |
-| `--gel-bevel` | 6px | 4px | a thinner lit band; the CSS twin (`--jelly-edge-blur`) is 5px, was 10px |
-| `--gel-shoulder` / `--gel-mold` / `--gel-feather` | 1.2 / 1.15 / 3px | 1 / 0.8 / 2px | a flatter shoulder that still dissolves into the ground |
-| `--gel-dispersion`, `--gel-disperse-r/-b` | 8, ±1.5px | 3, ±0.75px | the R/G/B split is a hint, not a rainbow |
-| `--gel-edge-r/-g/-b` alpha | ×1 | ×0.4 | same |
-| `--site-jelly-haze-*` alpha, `--site-jelly-plasma`, `--site-jelly-quiet` | ×1 | ×0.25, ×0.5, ×0.5 | the body reads clear, not smoky; the currents that remain run along the rim |
-| `--liquid-enter` = `ENTER_MS` | 300ms | 450ms | the hand-over from CSS to shader is a longer, softer cross-fade |
-| `--gel-fresnel` (light themes) | 0.55 / 0.6 | 0.3 | the CSS-only rim (what a low-tier or not-yet-admitted surface shows) read as a heavy white ring on a light ground |
-| `--site-glass-overlay-tint` | bg 86% | bg 94% | dialog bodies let the page behind show through at ~14%, which hurt legibility |
-
-Because the CSS tier reads the same tokens, the first paint now looks like the loaded state and the hand-over is
-not a visible change. The engine still starts after the window `load` event (a node inserted into a subtree React has
-not hydrated is a #418), but its idle timeout is 400 ms, not 2.5 s (`hooks/useLiquidInteractions.ts`). Other changes in the same pass: the selected tab on the main site is a flat neutral capsule with a
-hairline inset ring (`app/jelly-coverage.css` §6b), and the globe cursor defaults to a small translucent graphite
-sphere (`lib/globe-cursor/settings.ts`). Electric arcs still default to `full`; moving that default is a product
-decision (it is stored per account), not a styling one.
+- **Live refraction of page content at the rim**, the lens-refracted press dent, and the shader's
+  wavelength dispersion on site surfaces. The rim is a baked CSS glow. (The liquid globe still
+  refracts the page behind it, from the scene feed.)
+- **The silhouette**: the gel no longer bulges up to 16 px past its host or sags under a press (the
+  24-node lattice, `lib/jelly/lattice.ts`, is gone). Hosts move only within `MOTION_BOUNDS`.
+- **Ambient arcs** between nearby surfaces, **Coulomb attraction** and **neighbour nudges**. The
+  click arc stays; its runtime is installed with `ambient: false`.
+- **Haze that moves at rest.** It moves under the hand.
+- At rest, the **red-toward-the-light / blue-away offset split** of the rim, the plasma subsurface
+  tint and the faint resting haze streaks (each at most 14 to 19 / 255 by pixel diff). The rim keeps
+  its red / blue tint; the wake lights the plasma on hover.
+- The hand-over cross-fades (`data-liquid-canvas`, `data-jelly-haze`, `data-jelly-gel`) and the CSS
+  flow carriers (`.jelly-flow`). Nothing injects a node into a host any more.
 
 ### 1.1 The physical layers (#989)
 
-Read a surface from the inside out. Each layer is drawn by a shared service and tuned
-by tokens; no component paints one.
+Read a surface from the inside out. Each layer is CSS (or, for the globe, its own shader); no
+component paints one.
 
-| #   | Layer               | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Drawn by                                                        | Tokens                                                                                                                                                       |
-| --- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | **Gel**             | Hazy, translucent body that darkens slightly toward its base. The primary action is ink gel.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | CSS gel layers (`app/jelly-material.css`), rim shader           | `--gel-body` → `--gel-depth`; `--gel-ink`, `--on-ink`                                                                                                        |
-| 2   | **Haze**            | Always-moving, low-contrast flow: currents, eddies, faint plasma at the crests. Interior damped behind text (≤ 12 px/s, features ≥ 120 px).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `haze-shader.ts` (slots) or `.jelly-flow` carriers              | `--site-jelly-*`, `--site-jelly-quiet`                                                                                                                       |
-| 3   | **Plasma**          | A core and filaments clipped **inside** the gel, invisible at rest (`PLASMA.rest` = 0). Hover wakes it to `PLASMA.wake`; press, focus and a click take it to 1; a click's charge rings through it. Plasma never draws an outline.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | engine (`jelly-glsl.ts`), level from physics via `plasma:level` | `--plasma-wake`, `--pulse-speed`, `--pulse-tau`                                                                                                              |
-| 4   | **Edge refraction** | The refracting, lit rim with a soft bevel band just inside it carrying a distinct R/G/B split — red toward the top-left light, blue away. The RGB split leads; white is secondary. **Molded:** the slab rises from the ground over a widened shoulder, lit toward the light and shadowed away from it, with a feathered silhouette and no hairline; the 1 px Fresnel edge returns only where the mold is off. **The lens:** each of the three scene samples uses its own wavelength's index (N-BK7), spread by `--gel-dispersion` × crown glass; the refracted picture is shown, not buried under tint, haze or shadow; Fresnel-weighted environment reflection (`--gel-reflect`) mirrors a soft studio off the bevel normal. | engine (`shader.ts`, `jelly-glsl.ts`), CSS rim in the fallback  | `--gel-bevel`, `--gel-disperse-r/-g/-b`, `--gel-fresnel`, `--gel-mold`, `--gel-feather`, `--gel-shoulder`, `--gel-dispersion`, `--gel-lens`, `--gel-reflect` |
-| 5   | **No gloss**        | No broad gloss band or glint across the face. Shine lives at the edges and in the dent (§3.1).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | —                                                               | —                                                                                                                                                            |
+| #   | Layer        | What it is                                                                                                                                                                                                                                | Drawn by                                                          | Tokens                                                                                  |
+| --- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| 1   | **Gel**      | Hazy, translucent body that darkens slightly toward its base. The primary action is ink gel.                                                                                                                                              | CSS gel layers (`app/liquid-glass.css`, `jelly-material.css` §2b) | `--gel-body` → `--gel-depth`; `--gel-ink`, `--on-ink`                                   |
+| 2   | **Haze**     | Low-contrast flow: currents, eddies, faint plasma at the crests, calm behind text (≤ 12 px/s, features ≥ 120 px). Moves while the host is woken.                                                                                          | woken-haze `::after` (§3b)                                        | `--site-jelly-*`, `--jelly-haze-a`, `--jelly-flow-speed`                                |
+| 3   | **Plasma**   | A core and filaments **inside** the gel, invisible at rest. Hover wakes it to `--plasma-wake` (`PLASMA.wake`); press, focus and a click brighten it. Plasma never draws an outline.                                                       | radial gradient at `--px` / `--py`                                | `--plasma-wake`, `--jelly-plasma-k`                                                     |
+| 4   | **Edge**     | A molded rim: the slab rises out of the ground over a widened shoulder (`--gel-shoulder`) with a feathered silhouette (`--gel-feather`), lit on the light side, no hairline. The 1 px Fresnel edge returns only where the feather is off. | `--gel-glow` (static)                                             | `--gel-bevel`, `--gel-shoulder`, `--gel-feather`, `--gel-fresnel`, `--gel-edge-r/-g/-b` |
+| 5   | **No gloss** | No broad gloss band or glint across the face. Shine lives at the edges and in the press dot (§3.1).                                                                                                                                       | —                                                                 | —                                                                                       |
 
-The plasma level is an event, not a style: physics emits `plasma:level { el, level }` on
-the bus as the pointer wakes, presses and leaves a body; the engine eases the drawn level
-toward it over `PLASMA.easeMs`, and the arcs read it as charge. The plasma colour **is**
-the accent (`--site-accent`); the haze's second plasma hue only appears inside the gel,
-never as UI colour.
-
-### 1.2 The lens: what it costs, and why it is safe on every engine (2026-10-26)
-
-The rim shader's refraction, wavelength dispersion and reflection add **no texture read and no bandwidth**: the refracted
-band still reads the page snapshot exactly three times per pixel (one per wavelength), and the reflection is arithmetic.
-What the lens _removes_ pays for what it adds:
-
-- **The deep interior is skipped** (nothing is drawn there) in a nested `if`/`else` block. It must stay nested: a SIMD
-  rasteriser (SwiftShader, llvmpipe) keeps executing straight-line code after a masked `return` for the whole pixel
-  group, but skips a block no lane enters.
-- **The edge gradient is analytic** (`sdGrad` in `jelly-glsl.ts`), not a four-evaluation central difference — cheaper,
-  and exact where a corner arc meets a straight edge.
-- **Constant-exponent `pow()` is repeated squaring** (`pw70/pw80/pw120`), the dearest instruction on a CPU rasteriser.
-
-Measured on the identical draw (the real `GlassRenderer`, same inputs, `readPixels`-synchronised), old → new, ms per
-draw, software GL: llvmpipe/Firefox — lit-only 900×340 card 1.96 → 0.79, refracting card 2.25 → 1.63, pane 1.04 → 0.79,
-bar 3.42 → 2.83; WebKitGTK — card 2.25 → 0.96 (lit-only 2.04 → 0.83), button 0.38 → 0.25; SwiftShader/Chromium — 5–20%
-faster, never slower. `lib/liquid/glass/__tests__/jelly-policy.test.ts` pins the three-sample budget and the nested
-interior block, so a change that adds a texture read or flattens the skip fails the build.
-
-The smoothness comes from the geometry, not from filtering: a quartic squircle bevel (C3 against the flat interior) with
-a smoothly saturating slope instead of a clamp, C2 `sstep` fades, and ±½ LSB interleaved-gradient-noise dither so the
-shoulder cannot band on an 8-bit canvas.
+The plasma colour **is** the accent (`--site-accent`); the haze's second plasma hue only appears
+inside the gel, never as UI colour. The liquid globe draws the same layers itself, round, in its
+shader (`components/radial/jelly-glass.ts`): see §8.
 
 ## 2. The ambient clock and the idle policy (R7)
 
-The owner's brief is that jelly **always** has underlying motion. The engine's ambient
-clock therefore never freezes while someone could be looking:
+Site surfaces have no clock. The only ambient clock left belongs to the **liquid globe and the
+globe cursor**, which draw in workers and keep the page's tick grid
+(`lib/jelly/ambient-tick.ts`) so two clocks at the same rate draw in the same frame:
 
-| State                                                                                                              | Clock                                         |
-| ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
-| engaged (input within the last 20 s)                                                                               | tier clock: 60 Hz (30 Hz handheld)            |
-| idle (`IDLE_AFTER_MS` = 20 s without input)                                                                        | floor: 30 Hz (15 Hz handheld) — **no freeze** |
-| `jellyMotion = calm`                                                                                               | ≤ 12 Hz, amplitude × 0.4, slots halved        |
-| hidden tab · unfocused window · scroll in flight · nothing hazy on screen · degraded tier · `still` · game playing | **0** — no loop at all                        |
+| State                                                                                           | Globe clock                                   |
+| ----------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| engaged (pointer over or near the globe or its dock, a hold on the ball, focus inside the dock) | tier clock: 60 Hz (30 Hz handheld)            |
+| settle after the last engagement (`GLOBE_SETTLE_MS`, 1.5 s)                                     | engaged rate, so a release finishes           |
+| anything else, visible                                                                          | floor: 30 Hz (15 Hz handheld) — **no freeze** |
+| `jellyMotion = calm`                                                                            | ≤ 12 Hz, amplitude × 0.4                      |
+| hidden tab · unfocused window · off screen · degraded tier · `still` · game playing             | **0**                                         |
 
-Between ticks the engine sleeps on a timer, not on a spinning rAF: the timer wakes the
-engine's driver on the shared frame loop (§8.1), which draws at most six due surfaces with
-one shared `uTime` and then lets the driver sleep again.
+"Engaged" is decided by `components/radial/globe-engagement.ts` (`GLOBE_NEAR_MARGIN_PX` = 24): input
+elsewhere on the page does not raise the globe's rate. `IDLE_AFTER_MS` (20 s) remains the budget's
+idle threshold for callers that ask. Between ticks the page-side loops sleep on a timer, not on a
+spinning `requestAnimationFrame`.
 
-`uTime` is the haze's own clock (`advanceHazeClock`, `policy.ts`), **not** `performance.now()`:
-it advances only on a tick, by the time since the previous one, and a gap of more than three
-periods counts as one. The clock is 0 for the whole of a scroll, so a wall-clock `uTime` made the
-field resume after every scroll with everything it would have flowed meanwhile — a visible jump the
-moment scrolling stopped. Haze slots have hysteresis for the same reason (`reconcileHaze`): a
-surface that holds one keeps it while it stays within `HAZE_SLOT_SLACK` (4) places of the cut,
-and none is handed out mid-scroll (the scroll-end reconcile does it), so the ranking — which
-moves under a stationary cursor as the page scrolls — never swaps a slot between two cards.
+**Audit reversal, recorded deliberately.** The 2026-10-08 audit set the "page at rest" frame limit to
+2 fps. R7 reversed that for the globe's idle floor: the rest limit in `frame-budget.mjs` is the floor
+**+ 1** frame (31 fps at 30 Hz). The CPU target at rest stays **≤ 250 ms/s** on `/`. What did **not**
+change: the backdrop (aurora, ring field) stays completely still (`static-backdrop.test.ts`), and no
+site CSS may add a free-standing `infinite` animation outside the woken haze (N3).
 
-**2026-10-25: the clock doubled (30/12 → 60/30 Hz, 15/8 → 30/15 handheld).** The owner asked
-for "zero lag and as much fps as possible". What made it affordable: rims and haze draw in a
-worker (`lib/liquid/glass/glass.worker.ts`; the engine still makes every decision — which
-surfaces, when, light, dent, lattice, plasma — and posts each frame's draws, which the worker
-coalesces per canvas so a slow GPU drops stale frames instead of queueing them), and there each
-frame reaches its canvas by `transferToImageBitmap()` → `bitmaprenderer` instead of a
-`drawImage` that made the main thread wait for the GPU. That wait was worst in Firefox, where
-WebGL runs in a separate GPU process: hovering across eight cards cost 26 ms of main thread a
-frame (37 fps, governor at its last step) and costs 0.7 ms (59 fps) from the worker. Engines
-without a worker-capable `OffscreenCanvas` keep the main-thread copy path
-(`renderer.ts` "Handing a frame over").
-
-**2026-10-27: coming up without a stutter.** The cursor, the globe's coat and skin and the
-rims used to build their WebGL programs on mount with a blocking status query, so the page
-hitched in the frames where they arrived, and each swapped in at once. Now:
-
-- **No program blocks the main thread.** `lib/render/gl-program.ts` queues compile + link and
-  reads `LINK_STATUS` only once the driver is done (`KHR_parallel_shader_compile`; without it a
-  WebGL 2 fence plus a minimum wait). Shader logs are read only on failure.
-- **Worker first.** Where a worker can draw, the engine admits no slab until it is ready
-  (bounded by `WORKER_WAIT_MS`) and builds no page renderer, so the rims compile only there;
-  where it cannot, the page renderer builds in the background. Admission is spread over
-  passes (`ACTIVATE_PER_PASS`) instead of the whole rim budget in one frame.
-- **Cross-fades, not swaps.** A rim or haze canvas is transparent until its first frame lands,
-  then fades in (`--liquid-enter` = `ENTER_MS`) over the CSS material, which stays until the
-  fade is done: only then is the host marked `data-liquid-canvas="on"` / `data-jelly-haze="on"`
-  (`data-liquid-layer` carries the stacking context meanwhile). The globe's coat does the same
-  (`data-globe-coat`: `entering` → `on`, `--globe-coat-fade`), the docked globe grows in from
-  `@starting-style` (`--globe-enter`), and the cursor swells out of the pointer on the hover
-  spring, with the system cursor kept until the globe covers it (`coversPointer`).
-- **Built once.** The cursor's context and program are shared per page (`acquireGlobeGl`) and
-  survive remounts, like the coat's; across visits the browser's own program cache answers,
-  which is why GLSL sources never carry per-session values.
-  The governor walks the clock back to 30 Hz at its first step, so a
-  machine that cannot hold 60 — software GL, Safari Low Power Mode, Chrome Energy Saver (both
-  cap rendering at 30 fps) — settles where it can instead of missing every other tick.
-
-**Audit reversal, recorded deliberately.** The 2026-10-08 performance audit set the
-"page at rest" frame limit to 2 fps and the backdrop went fully still because of it.
-R7 reverses that limit for the jelly material: the rest limit in `frame-budget.mjs`
-becomes **31 fps** (the 30 Hz floor + 1; it was 13 fps over the original 12 Hz floor). The CPU target at rest stays **≤ 250 ms/s** on
-`/` (desktop; ≤ 200 ms/s handheld; the 2026-10-08 failure was 1020 ms/s). What did
-**not** change: the backdrop (aurora, ring field) stays completely still
-(`static-backdrop.test.ts`) — jelly moves, the room does not — and no site CSS may add a
-free-standing `infinite` animation outside `.jelly-flow`.
-
-**The governor** (`lib/jelly/governor.ts`) is the battery and thermal answer. The engine
-feeds it each tick's cost, interval and the clock that tick ran at; after a 30-tick warm-up,
-a 2 s window whose p90 cost exceeds 4 ms (8 ms handheld) or whose p90 interval exceeds 1.5×
-the period of the clock actually running (the 30 Hz idle floor is on time at 33 ms) takes one
-step down: clock 60 → 30 Hz · slots halved · carriers halved · ambient arcs off · haze at
-0.125 scale · floor clock 6 Hz (the ladder never freezes the haze). Downscale only, one step per window, reset on route change. The
-tier itself never flips on a frame-rate reading.
+**Program compiles never block.** `lib/render/gl-program.ts` queues compile + link and reads
+`LINK_STATUS` once the driver is done (`KHR_parallel_shader_compile`).
 
 ## 3. Soft body (R11, R12)
 
-`lib/jelly/physics.ts` is the one soft-body service. It subscribes to the pointer hub
-(`lib/jelly/pointer.ts`) instead of owning listeners, and runs as a frame driver
-(`lib/jelly/frame.ts`, order 10, before the engine draws) that is awake **only while a
-body is moving**. It absorbed the old press layer; `hooks/useFluidPress.ts` is deleted and the
-`data-fluid-press*` attributes remain accepted aliases (`soft-policy.ts`). A centre press
-still lands exactly on the legacy 0.96 / 0.985 / 1.028 scales.
+The soft body is **CSS**: `app/jelly-material.css` §8, with the numbers from
+`lib/jelly/soft-policy.ts`. A host plumps under a hovering fine pointer (cards to
+`--jelly-hover-plump`, controls dent to `--jelly-hover-dent`), squashes while pressed
+(`--jelly-press-card` / `--jelly-press-control`) and springs back on release, by a transition on
+**`scale` only**, eased by `linear(...)` curves sampled once from the soft body's own springs
+(`CSS_SPRINGS`: `jellyPress`, critically damped and quick; `jellyRelease`, ζ 0.42, the let-go wobble)
+and authored as the `--spring-*` tokens. `lib/__tests__/jelly-spring-tokens.test.ts` keeps every
+literal equal to its generator; retune the TypeScript, then paste what the test expects.
 
-- **Tier E (envelope, `envelope.ts`)** — four analytic springs (`sx`, `sy`, `tx`, `ty`)
-  written to the independent CSS `translate` and `scale` properties, composed on the
-  element's own Tailwind base (`compose.ts`); framer-owned elements are left alone while
-  framer animates them. Hover plumps/leans cards and dents controls (fine pointers
-  only), press squashes toward the contact, release wobbles back with its velocity, drag
-  stretches along the motion.
-- **Tier L (lattice, `lattice.ts`)** — an 8-node perimeter spring lattice for admitted
-  slabs, driven through `lattice-inputs.ts` and stepped **inside the engine's frame**, so
-  the rim is never a frame behind the draw. Panes, chrome, overlays and fields get Tier L
-  only: their hosts never move.
+- **One spring source, no per-component curves.** A host's `transition` list ends with the
+  `--jelly-spring-t` hook (`scale <dur> <curve>`); the hook is set by the §8 state rules, defaulted
+  to nothing, and restated for Tailwind transition utilities in §8b. A component never writes its own
+  ease on a moving property (`jelly-contract.test.ts` N13).
+- **Press-through.** `:active` matches every ancestor, so a card would squash with the button inside it.
+  A host does not squash while a real control inside it is what is pressed; a plain `<a>` is not one, so a
+  card wrapped in a link squashes as the card. A **press body** (`data-jelly-press-body`: `JellyGroup`,
+  the top bar, the selection bar, a scroller's pill) squashes as ONE body when any member is pressed
+  and its members add no cue of their own (a keyboard-activated member keeps its opacity cue).
+  `LiquidTabs` strips are not bodies: the track is a field, which never moves.
+- **The pointer variable.** `lib/jelly/pointer-vars.ts` writes `--px` / `--py` (pointer position as a
+  percentage of the host) on the one hovered host, and `--jelly-s` (its larger side in px) on it and the
+  soft-body hosts around it. On `(hover: none)` it attaches `pointerdown` only and takes one rect read for
+  the pressed host. It runs on the shared frame driver and the shared pointer hub; it never writes `<html>`.
+- **The bound is in CSS.** Each pose's delta is capped at `min(configured pose, edge reach / --jelly-s)`,
+  so a host's edge never travels more than `MOTION_BOUNDS.maxEdgeTravelPx` (4 px) including the release
+  overshoot, and the scale never changes more than `maxScaleDelta` (3 %). Until `--jelly-s` is written, hosts
+  assume 1000 px (bodies 3840 px). `spring-curves.test.ts` sweeps the bound for sizes 100 to 3840.
+- **Scope.** Off native-material routes and while a game is in play; `perf-lite` and the app tier's high
+  contrast keep the press, plain (critically damped both ways, no hover). A CSS transition does not carry
+  velocity across an interruption; the design accepts that.
 
-Bounds (`MOTION_BOUNDS`, `tiers.ts`): an edge moves ≤ 4 px and a scale changes ≤ 3 %,
-saturated with `cap·tanh(x/cap)` so a violent flick never shows a clamp edge; the
-lattice's drawn rim stays within 2 px outward. A strong release **nudges** at most 4
-siblings within 24 px by ≤ 1.5 px, `translate` only, never chaining, never right after a
-scroll. An arc strike gives the struck element a ≤ 1.5 px impulse. Surfaces over
-250,000 px² get no host affine and half lattice amplitude. **Layout — box sizes and
-document flow — never changes.** Bodies are capped (12 / 8 / 6 by tier; pressed and
-dragged bodies are never evicted) and cleared at sleep (inline values restored,
-`will-change` and `data-jelly-body` removed). No tier simulates more than
-`JELLY_LAYOUT.bodyBudget` (24, `--jelly-body-budget`) bodies, and the springs step at a
-fixed `JELLY_LAYOUT.simHz` (120 Hz, `--sim-hz`) inside the frame. Content follows the gel
-by at most `DENT.contentStrain` (4 %, `--jelly-content-strain`).
+`MOTION_BOUNDS` (`tiers.ts`): an edge moves ≤ 4 px, a scale changes ≤ 3 %, a click arc nudges the struck
+hosts ≤ `nudgePx` (1.5 px, `translate`, `lib/jelly/arcs/nudge.ts`). **Layout — box sizes and document flow —
+never changes.** Hit areas never move.
 
-### 3.1 Press is a liquid-glass dent (#989)
+### 3.1 Press is a lit dot (#989)
 
-A press sinks a smooth, creaseless **Gaussian bowl** under the pointer:
+A press squashes the host on the press spring and shows a **light dot** (`--gel-specular`) and a plasma
+brightening under the pointer, both radial gradients at `--px` / `--py`. This replaced the shader lens: there
+is no displacement map, no SVG filter on the host and no refraction of content beneath the pointer. No stylesheet
+sets a `filter:` on a jelly body, and nothing under `lib/jelly` or `lib/liquid` writes `style.filter`
+(`jelly-contract.test.ts`).
 
-- **Shape.** A Gaussian centred at the contact. Depth `DENT.depthPx` (6 px,
-  `--jelly-dent-depth`) at full press, σ = clamp(`DENT.radiusFrac` (0.22) × the host's
-  short side, 12, 48) px. The depth rides `DENT_SPRING`, a `lib/fluid.ts` spring damped at
-  `DENT.damping` (0.9, `--jelly-dent-damping`): it sinks and eases back without ringing.
-  The lattice outline indents by up to min(0.6 × bevel, 10 px, `DENT.indentPx` = 5 px)
-  under the dent and the far side bulges, so area is conserved.
-- **State.** Physics writes it with `setDent(el, dent)` in `lib/jelly/lattice-inputs.ts`
-  (centre, depth, radius and the rubber-band stretch, host-local CSS px); the engine and
-  the lens read it with `dentOf(el)` on the frame they draw. It is `null` once eased out.
-  While a body is dented it carries `data-jelly-active`.
-- **Lens.** The dent is a lens. `lib/jelly/lens.ts` keeps one per-document SVG filter (a
-  data-URL displacement map and three displacement passes, one per colour channel) and
-  applies it to **at most one** pressed host: content beneath refracts through the bowl
-  (`DENT.lensStrength`, `--jelly-lens-strength`) and splits into R/G/B
-  (`DENT.lensDispersionPx`, `--jelly-lens-dispersion`). Only in full deform mode, never on
-  a host that has a filter of its own, and **only while the dent exists**; release
-  restores the host's inline `filter` exactly. No stylesheet ever sets a `filter:` on a
-  jelly body. On WebKit (and wherever SVG filters on HTML are unsupported) the lens is a
-  no-op; the rim indent, glow and light dot remain.
-- **Light.** A soft glow ring (about 1.15σ) follows the dent's rim and a specular **light
-  dot** (`--gel-specular`) sits 0.6σ from the centre, away from the scene light: the only
-  gloss on the face (§1.1, layer 5).
-- **Drag.** The dent slides with the pointer: mouse and pen presses no longer cancel on
-  the 10 px slop (touch still scrolls). Dragging off the element stretches the gel toward
-  the pointer with `rubberBand` from `lib/fluid.ts`, capped at `DENT.rubberMaxPx` and, as
-  drawn, at the overdraw margin (2 px on fills and controls, 0 on panes, chrome and
-  overlays). Release eases depth, stretch and squash back together.
-- **Plasma level.** Physics emits `plasma:level`: `PLASMA.wake` on fine-pointer hover,
-  1 on press, focus-visible and click, eased with `PLASMA.easeMs`, in steps ≥ 0.02.
-- **Coulomb pull.** `charge:attract` moves only awake bodies, by ≤ `nudgePx`, at most once
-  per 400 ms; a resting body passes it to its support.
-- **Bounds.** The dent is drawn, not laid out: hit areas never move, layout never
-  changes, and the host affine stays inside `MOTION_BOUNDS`.
+### 3.2 Flat controls and room (2026-11-03)
 
-### 3.2 The silhouette, flat controls and room (2026-11-03)
+**Flat controls** (`data-jelly-rest="flat"`, set by `<Button>` for every variant except `signal`, `destructive`,
+`danger` and `warning`): at rest a flat control is its label on the ground (no fill, no border). Under `perf-lite`
+and print it gets an opaque fill and a solid edge instead (`app/liquid-glass.css`).
 
-Design: `docs/superpowers/specs/2026-11-03-globe-jelly-overhaul-design.md`. The soft body moves two things at different
-scales, and the bounds in §3 apply to the first only:
-
-- **The host** (CSS `translate`/`scale`, `MOTION_BOUNDS`: ≤ 4px / 3%, neighbours ≤ 1.5px). Text and hit areas follow it by
-  `--jelly-content-strain`. Unchanged.
-- **The silhouette** — the gel the rim shader draws. A 24-node perimeter lattice (`lib/jelly/lattice.ts`, six nodes per edge,
-  periodic Catmull-Rom in `LATTICE_GLSL`, the two nearest edges blended across corner diagonals so there is no seam)
-  bulges up to `JELLY_BODY.bulgePx` (10) toward the pointer, sags up to `sagPx` (18) under a press, and wobbles back on the
-  same spring as before. Amplitude scales with the short side (`refShortSidePx` 120, floor `minScale` 0.45) and halves on
-  large surfaces. The shader warps the **whole** distance field (`uBodyOn`) and paints the gel body itself: the role tint
-  under `--gel-body` → `--gel-depth`. The engine arms this only after the rim has faded in, and a few frames later stamps
-  `data-jelly-gel="on"`, which makes the host's own fill transparent (`app/liquid-glass.css`). Hosts with their own
-  background art (`bg-[…]`/gradient classes, an inline `background-image`) or `data-jelly-nogel` keep their CSS fill and a
-  rim-only warp. (`data-jelly-body` is physics' "awake soft body" marker — a different thing.)
-
-**Room.** The rim canvas overdraws its host by `JELLY_BODY.overdrawPx` (16, `--jelly-margin`) for cards and controls, narrowed at
-activation so it never passes the viewport's side edges. Outward travel on each side is capped to the room measured by
-`lib/jelly/room.ts` (`roomFromRects`): the gap to every clipping ancestor, the viewport's left/right edges and **half** the gap
-to a neighbouring body, read with the rect refresh (never per frame). A side with no room is flat, so a bulge is never cut
-off, whatever the layout. `pnpm audit:jelly-clip` (`scripts/audit-jelly-clip.mjs`, against `pnpm dev`) lists the surfaces that
-sit within 8px of a clip — give those their 16px: padding on the clipping container, or move the clip to an inner wrapper.
-Chrome and overlays (margin 0) draw inside their box and are not subject to it.
-
-**Flat controls** (`data-jelly-rest="flat"`, set by `<Button>` for every variant except `signal`, `destructive`, `danger` and
-`warning`). At rest a flat control is its label on the ground: no fill, no border, no canvas, no budget cost. The plasma wake
-level (hover, press, focus) admits it as a slab through the normal budget; the slab fades in over 90ms, lingers 420ms once calm and
-fades out over 200ms before it is released. Under `perf-lite` and print it gets an opaque fill and a solid edge instead.
+**Room.** The silhouette that needed 16 px of unclipped room round every body is gone; the 16 px (`--jelly-margin`)
+stays a layout rule (§10) so the squash, the arc nudge and the focus ring are never cut off.
 
 ## 4. Arcs and the photosensitivity ledger (R9, R10, R13)
 
-`lib/jelly/arcs/` draws arcs on one Canvas2D `.jelly-arc-layer` appended to `<body>`
-(never React-rendered, not the WebGL context): seeded midpoint-displacement bolts with
-≤ 3 branches, a wide low-alpha glow stroke under the core (no blur filters, no shadows),
-1–3 re-strikes and an afterglow. Its frame driver (`ARC_FRAME_ORDER` = 30, drawn last) is awake only
-while an arc or afterglow is alive (≤ ~410 ms).
+`lib/jelly/arcs/` draws arcs on one Canvas2D `.jelly-arc-layer` appended to `<body>` (never React-rendered, not
+WebGL): seeded midpoint-displacement bolts with ≤ 3 branches, a glow stroke under the core, an impact (a flash disc,
+specular streaks, a clipped shock ring and rim light on each struck host), the bolt refracted a few px into each
+gel with an R/G/B split (`dispersion.ts`, `refraction.ts`), 1–3 re-strikes and an afterglow. Its frame driver
+(`ARC_FRAME_ORDER` = 30) is awake only while an arc or afterglow is alive (≤ ~420 ms).
 
-- **Ambient** (`scheduler.ts`) — one `setTimeout`, never a frame. Pair rate
-  `λ = 0.05·e^(−gap/48px)` s⁻¹ up to a 240 px gap; viewport cap 0.5 s⁻¹ (≤ 1 arc / 2 s;
-  handheld ≤ 1 / 4 s, R10); ≥ 1.2 s between arcs; per-element charge drains on an arc and
-  recharges over ~4 s. Paused while scrolling, typing, dragging, selecting text, with a
-  modal or menu open, over a large playing video, or in fullscreen.
-- **Click** (`clicks.ts`) — `pointerdown` from the pointer hub plus one capture `click`
-  on the document (keyboard activation has no pointer event). A press discharges 1–3 bolts (3 fine / 2 coarse / 1 handheld) to the nearest
-  neighbours within 180 px, or a rim fizz when nothing is in range; a keyboard activation
-  strikes one dim arc; focus moves never arc. Disabled, editable and opted-out targets
-  arc nothing.
-- **Never**: an endpoint inside a field (`.glass-inset`, inputs), a strike on a toast, a
-  field with focus or the element under the caret; arcs while the radial hub is open or an
-  eversion is running.
-- **Flash ledger** (`ledger.ts`, WCAG 2.3.1) — **one site-wide ledger**, ≤ 3 onsets in any
-  1000 ms window (`FLASH_LEDGER`), shared by ambient, click, fizz, discharge and API arcs
-  and any rim pulse above 0.1 ΔL. A 20-clicks-per-second storm still produces at most 3
-  flashes per second; callers degrade by dropping re-strikes, then extra bolts, then the
-  bolt, and keep the press and contact flare. Light themes composite with `source-over`
-  (no white flash); a saturated red core is rotated to violet.
-- **Public API** (`@/lib/jelly/arcs`) — `dischargeAt(x, y)` and `strike(a, b)`; both pass
-  every gate and the ledger and return `false` while arcs are off.
+- **Installed on a press.** `lib/jelly/arc-lazy.ts` adds one `pointerdown` subscription through the shared hub.
+  The first press that passes the gates dynamically imports `@/lib/jelly/arcs`, installs the click-only runtime
+  (`installElectricArcs(document, { ambient: false })`) and replays that press; the runtime and its registry are
+  disposed `IDLE_MS` (10 s) after the last click. Nothing exists at rest and the chunk is not fetched until a press.
+- **Click** (`clicks.ts`) — `pointerdown` from the pointer hub plus one capture `click` on the document (keyboard
+  activation has no pointer event). A press discharges 1–3 bolts (3 fine / 2 coarse / 1 handheld, `clickBolts`) to the
+  nearest neighbours within 180 px, or a rim fizz when nothing is in range; a keyboard activation strikes one dim arc;
+  focus moves never arc. Disabled, editable and opted-out targets arc nothing.
+- **Never**: an endpoint inside a field (`.glass-inset`, inputs), an overlay or a toast, a field with focus or the
+  element under the caret; arcs while the radial hub is open or an eversion is running; on native-material routes.
+- **Flash ledger** (`ledger.ts`, WCAG 2.3.1) — **one site-wide ledger**, ≤ 3 onsets in any 1000 ms window
+  (`FLASH_LEDGER`), shared by click, fizz, discharge and API arcs. A 20-clicks-per-second storm still produces at
+  most 3 flashes per second; callers degrade by dropping re-strikes, then extra bolts, then the bolt, and keep the
+  press flare. On top of the ledger, `flash-budget.ts` caps the **combined** additive coverage at any pixel (the impact
+  disc, streaks, ring, rim light, contact glow) and the per-frame lit area, so no stack of layers can exceed the
+  `FLASH_LUMINANCE` bound. Light themes composite with `source-over` (no white flash).
+- **Public API** (`@/lib/jelly/arcs`) — `dischargeAt(x, y)` and `strike(a, b)`; both pass every gate and the ledger
+  and return `false` while arcs are off or not installed. `ensureClickArcs()` (`arc-lazy.ts`) installs the runtime
+  for a caller with no press (the `/jelly` lab's button).
 
-### 4.1 Charge, breakdown and Coulomb (#989)
+### 4.1 Charge and hops (#989)
 
-Every body carries a charge `q` in 0..1 that decays with `CHARGE.decayMs` (1.5 s).
+Every body carries a charge `q` in 0..1 that decays with `CHARGE.decayMs` (1.5 s). A click deposits
+`CHARGE.clickCharge` on its body (`charge:pulse` on the bus) and the charge **hops** to the nearest neighbour in reach
+with `CHARGE.hopFraction` (half) of it, and on from there while the hop charge is at least `CHARGE.minHopCharge`. A hop
+waits `ringDelayMs` (distance / `CHARGE.pulseSpeedPxS`) and then strikes through the ledger, so the number of hop arcs
+drawn is never more than the ledger admitted. The laws are pure functions in `lib/jelly/arcs/charge.ts`; the controller
+is `field.ts`, on `setTimeout`, never a frame.
 
-- **Click charge.** A click deposits `CHARGE.clickCharge` on its body. The charge rings
-  through the gel as a pulse (`charge:pulse { el, x, y, q }` on the bus → the engine draws
-  a ring travelling at `CHARGE.pulseSpeedPxS`, `--pulse-speed`, decaying with
-  `CHARGE.pulseTauMs`, `--pulse-tau`) and **hops** to the nearest neighbour in reach with
-  `CHARGE.hopFraction` (half) of it, and on from there while the hop charge is at least
-  `CHARGE.minHopCharge`. Each hop is an arc, so hops pass the flash ledger like every other
-  arc: the number of hop arcs drawn is never more than the ledger admitted.
-- **Breakdown.** A gap between two bodies smaller than `CHARGE.breakdownGapPx` × (1 +
-  `CHARGE.breakdownChargeGain` · q) — 12 px × (1 + 1.5q), `--arc-breakdown-gap` — breaks
-  down: after the formative lag (`CHARGE.formativeLagMs`, 120 ms, `--arc-formative-lag`)
-  with the condition still holding, it strikes. A charged body therefore reaches further.
-  The 16 px layout gap (§10) keeps uncharged bodies below breakdown.
-- **Coulomb attraction.** Charged neighbours within `CHARGE.attractReachPx` attract,
-  force ∝ q₁q₂/r² scaled by `CHARGE.attractGain`, equal and opposite on the pair
-  (`charge:attract { el, nx, ny, force }` → physics). Physics turns it into a translate
-  that never exceeds the nudge bound (`MOTION_BOUNDS`, ≤ 1.5 px); a body at rest passes it
-  to its support rather than drifting.
-- **Where it lives.** The laws are pure functions in `lib/jelly/arcs/charge.ts` (decay,
-  breakdown gap, hop carry, Coulomb force; its `ELECTRIC` table holds the field's cadence:
-  a 100 ms re-read of charged pairs, Coulomb impulses at most 10 Hz per pair, a 400 ms
-  refractory after a pair breaks down, a ledger-refused hop waiting ≤ 1 s). The field
-  controller `lib/jelly/arcs/field.ts` runs them on `setTimeout`, never a frame: a hop
-  waits for the ring to reach the departure rim, then strikes through the ledger; a
-  breakdown strikes after the formative lag; attraction is emitted to physics.
-- **Ambient arcs** still strike more often the closer two surfaces are (the pair rate
-  above); charge raises the rate only through the breakdown gap, never past the viewport
-  cap or the ledger.
+The runtime and these modules still carry **breakdown strikes**, **Coulomb attraction** and an **ambient scheduler**
+(`scheduler.ts`, the `breakdown` / `attract` paths of `field.ts`), switched on by `ambient: true`. Nothing installs
+it that way; they are unreachable in production and are the next thing to cut, with `runtime.ts` and its tests.
 
 ## 5. Budgets per tier (R6)
 
-From `JELLY_BUDGETS` in `lib/jelly/tiers.ts` (the tests read the constants, never this
-table):
+From `JELLY_BUDGETS` in `lib/jelly/tiers.ts` (the tests read the constants, never this table). A budget now
+carries only what something reads: the globe's and the cursor's clock, and the click arcs.
 
-| Tier                                   | Rims | Haze slots | Carriers | Clock / idle | Bodies    | Lattices | Ambient arcs | Click bolts |
-| -------------------------------------- | ---- | ---------- | -------- | ------------ | --------- | -------- | ------------ | ----------- |
-| `full` (fine pointer)                  | 24   | 8          | 24       | 60 / 30 Hz   | 12        | 8        | ≥ 2 s apart  | 3           |
-| `coarse`                               | 16   | 6          | 16       | 60 / 30 Hz   | 8         | 6        | ≥ 2 s apart  | 2           |
-| `handheld` (coarse, ≤ 1024 px)         | 10   | 4          | 8        | 30 / 15 Hz   | 6         | 4        | ≥ 4 s apart  | 1           |
-| `lite` (`perf-lite`)                   | 0    | 0          | 0        | 0            | 3 (press) | 0        | off          | 0           |
-| `off` (degraded)                       | 0    | 0          | 0        | 0            | 3 (press) | 0        | off          | 0           |
-| game playing (`html[data-game-state]`) | 2    | 0          | 0        | 0            | 0         | 0        | off          | 0           |
+| Tier                                   | Clock / idle | Ambient arcs (installer passes `ambient: false`) | Click bolts |
+| -------------------------------------- | ------------ | ------------------------------------------------ | ----------- |
+| `full` (fine pointer)                  | 60 / 30 Hz   | ≥ 2 s apart                                      | 3           |
+| `coarse`                               | 60 / 30 Hz   | ≥ 2 s apart                                      | 2           |
+| `handheld` (coarse, ≤ 1024 px)         | 30 / 15 Hz   | ≥ 4 s apart                                      | 1           |
+| `lite` (`perf-lite`)                   | 0            | off                                              | 0           |
+| `off` (degraded)                       | 0            | off                                              | 0           |
+| game playing (`html[data-game-state]`) | 0            | off                                              | 0           |
 
-**Software rendering is the `lite` tier (2026-10-29).** A browser with hardware acceleration off, a blocklisted
-GPU or a VM rasterises and composites on the CPU, where animated haze carriers and shader rims cost tens of
-milliseconds a frame. Measured on `/games` (a shared 4-core box, software raster): Firefox 2 → 49 fps, Chromium
-8 → 57 (acceleration off) and 11 → 44 (no WebGL), WebKit 1.4 → 14, with the same page, from putting the page on
-`lite` (`perf-lite`). `reconcileSoftRender()` (`lib/perf-tier.ts`) therefore runs once at idle **before any jelly
-service starts**: a software WebGL renderer string (SwiftShader, llvmpipe, Basic Render, "software") or no WebGL at
-all, read through the same throwaway-context probe the games use (`lib/render/probe.ts`), stamps `html.perf-lite`,
-skips loading the carrier, arc and shader chunks, and caches the finding in `localStorage` (`rmh-soft-render`, 12 h)
-so the next page load gets the class from the pre-paint script on its first frame. A real GPU on a later visit clears
-it. WebKit reports "Apple GPU" whatever it draws with, so it cannot be detected this way (and Safari cannot turn
-acceleration off); nothing frame-rate-driven was added, on purpose (`lib/perf-tier.ts` §Why capability reads).
+(The rim, haze-slot, carrier, animated-area, body and lattice budgets went with the glass engine, the CSS carriers
+and the soft-body physics.) The scene feed has its own per-tier policy, `SCENE_POLICY` (`scene.ts`): handheld, `lite`
+and `off` take no picture.
 
-Animated area (haze + carriers) is also capped at 1.5 / 1.25 / 1 viewports. Ambient
-bounds (`AMBIENT_BOUNDS`): drift ≤ 12 px/s, feature size ≥ 120 px, luminance period ≥ 6 s,
-no luminance modulation above 3 Hz; ambient motion never moves a host's position.
+**Software rendering is the `lite` tier (2026-10-29).** A browser with hardware acceleration off, a blocklisted GPU
+or a VM rasterises and composites on the CPU. `reconcileSoftRender()` (`lib/perf-tier.ts`) runs once at idle and
+stamps `html.perf-lite` when it reads a software WebGL renderer string (SwiftShader, llvmpipe, Basic Render,
+"software") or no WebGL at all, through the same throwaway-context probe the games use (`lib/render/probe.ts`),
+caching the finding in `localStorage` (`rmh-soft-render`, 12 h) so the next load gets the class from the pre-paint
+script. `perf-lite` keeps the static floor, the CSS rim and the plain press; nothing wakes. (A separate planned change
+owns the future of `perf-lite`.)
+
+Ambient bounds (`AMBIENT_BOUNDS`): drift ≤ 12 px/s, feature size ≥ 120 px, luminance period ≥ 6 s, no luminance
+modulation above 3 Hz; ambient motion never moves a host's position.
 
 ## 6. Degradation matrix
 
-`jellyMode()` in `tiers.ts` folds the tier, the off predicate, both preferences and game
-state into `{ambient, arcs, deform}` so the four services cannot disagree.
+`jellyMode()` in `tiers.ts` folds the tier, the off predicate, both preferences and game state into
+`{ambient, arcs}` for the globe, its cursor and the arcs. The CSS material reads the same signals through selectors.
 
-| Condition                                                           | Ambient haze   | Soft body  | Arcs               | Rim slabs   | CSS                  |
-| ------------------------------------------------------------------- | -------------- | ---------- | ------------------ | ----------- | -------------------- |
-| `lively` (default)                                                  | yes            | full       | per `electricArcs` | yes         | haze floor           |
-| `calm`                                                              | × 0.4, ≤ 12 Hz | full       | clicks (or off)    | yes         | haze floor           |
-| `still`                                                             | no             | reactive   | off (forced)       | yes         | haze floor           |
-| `perf-lite`                                                         | no             | press only | off                | no          | haze floor + CSS rim |
-| high contrast (app tier only)                                       | no             | press only | off                | no          | opaque surfaces      |
-| print                                                               | no             | none       | off                | no          | flat                 |
-| hidden tab                                                          | clock 0        | none       | off, layer cleared | frames stop | —                    |
-| game playing                                                        | no             | none       | off                | ≤ 2         | —                    |
-| `[data-jelly-zone="playfield"]`, `[data-jelly-scope="off"]` subtree | no             | none       | none               | no          | —                    |
-| no WebGL2 / context loss / past the rim budget                      | carrier        | unchanged  | unchanged          | no          | haze floor           |
+| Condition                                                           | Woken haze            | Soft body (CSS) | Click arcs         | Globe clock | CSS             |
+| ------------------------------------------------------------------- | --------------------- | --------------- | ------------------ | ----------- | --------------- |
+| `lively` (default)                                                  | on hover / focus      | full            | per `electricArcs` | 60 / 30 Hz  | floor + rim     |
+| `calm`                                                              | 0.4× speed, 0.55× amp | full            | clicks (or off)    | ≤ 12 Hz     | floor + rim     |
+| `still`                                                             | no                    | reactive        | off (forced)       | 0           | floor + rim     |
+| `perf-lite`                                                         | no                    | plain press     | off                | 0           | floor + rim     |
+| app tier high contrast                                              | no                    | plain press     | off                | 0           | opaque surfaces |
+| print                                                               | no                    | none            | off                | 0           | flat            |
+| hidden tab                                                          | —                     | —               | off, layer cleared | 0           | —               |
+| game playing                                                        | paused                | none            | off                | 0           | —               |
+| `[data-jelly-zone="playfield"]`, `[data-jelly-scope="off"]` subtree | no                    | none            | none               | —           | —               |
+| native-material route (`/games*`, `/tf2*`)                          | no                    | none            | none               | —           | own scheme      |
 
-Per-element opt-outs (`OPT_OUT_SELECTOR`): `data-jelly="off"` and the accepted aliases
-`data-liquid-material="off"`, `data-liquid-glass="off"`, `data-liquid-motion="off"`,
-`data-fluid-press="off|none"`. Do not branch on any of these conditions in a component.
+Per-element opt-outs (`OPT_OUT_SELECTOR`): `data-jelly="off"` and the accepted aliases `data-liquid-material="off"`,
+`data-liquid-glass="off"`, `data-liquid-motion="off"`, `data-fluid-press="off|none"`; `data-jelly-flow="off"` also
+removes the woken haze from one host. Do not branch on any of these conditions in a component.
 
 ## 7. Preferences and WCAG 2.2.2 (R8, R9)
 
 Ambient animation is controlled separately from direct interaction:
 
-- **`jellyMotion`: `lively` | `calm` | `still`** (default `lively`) in Settings →
-  Appearance, stamped pre-paint as `html[data-jelly-motion]` (absent = `lively`).
-- The top-bar "Pause ambient motion" shortcut and its signed-out Display panel
-  were removed at the owner's request. Direct hover, press, lens and scroll reactions
-  remain active even under `still`; coarse pointers never acquire hover during a flick.
-- **`electricArcs`: `full` | `clicks` | `off`** (default `full`), stamped as
-  `html[data-electric-arcs]`. `still` forces arcs off whatever this says.
+- **`jellyMotion`: `lively` | `calm` | `still`** (default `lively`) in Settings → Appearance, stamped pre-paint as
+  `html[data-jelly-motion]` (absent = `lively`). `still` removes the woken haze and the globe's clock; direct hover,
+  press and scroll reactions stay (they are CSS springs).
+- **`electricArcs`: `full` | `clicks` | `off`** (default `full`), stamped as `html[data-electric-arcs]`. `full` and
+  `clicks` are the same thing now (ambient arcs no longer exist); `still` forces arcs off whatever this says.
 
-Both are account fields (one Prisma migration) with a localStorage cache for signed-out
-visitors. Neither reads the OS `prefers-reduced-motion`: the retired site-wide motion
-setting stays retired (CLAUDE.md §7); these are **material** controls. Every jelly layer is `aria-hidden`,
-`pointer-events: none`, never focusable and never announced. Tab order and hit areas
-never change, and the focus ring is drawn by the host, so the envelope carries it along.
-The ring is `--focus-ring`: solid, 2 px, never the plasma glow (a focused body's plasma
-brightens, but that is decoration, not the focus signal). Plasma, haze, arcs and the lens
-are decoration and never the only carrier of state; text holds 4.5:1 on gel, over haze
-and over woken plasma in every theme (`jelly-legibility.test.ts`).
+Both are account fields with a localStorage cache for signed-out visitors. Neither reads the OS
+`prefers-reduced-motion`: the retired site-wide motion setting stays retired (CLAUDE.md §7); these are **material**
+controls. Every jelly layer is `aria-hidden`, `pointer-events: none`, never focusable and never announced. Tab order
+and hit areas never change. The focus ring is `--focus-ring`: solid, 2 px, never the plasma glow. Plasma, haze, arcs
+are decoration and never the only carrier of state; text holds 4.5:1 on gel, over haze and over woken plasma in every
+theme (`jelly-legibility.test.ts`).
 
 ## 8. Ownership
 
-| File                                                                                                 | Owns                                                                                                                                                                                                  |
-| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `lib/jelly/tiers.ts`                                                                                 | the single shared policy: tiers, budgets, `jellyMode`, off predicate, selectors, bounds, flash ledger, `DENT`, `PLASMA`, `CHARGE`, `JELLY_LAYOUT`                                                     |
-| `lib/jelly/frame.ts`                                                                                 | **the one `requestAnimationFrame`**: every service registers a driver with `drive(fn, { order })`                                                                                                     |
-| `lib/jelly/pointer.ts`                                                                               | **the one window pointer listener set**, fanned out with `onJellyPointer(type, fn)`                                                                                                                   |
-| `lib/jelly/lens.ts`                                                                                  | the press lens: the only code that sets a filter on a jelly body, only while it is dented                                                                                                             |
-| `lib/jelly/bus.ts`                                                                                   | the typed event bus (`arc:strike`, `body:release`, `drag:*`, `haze:change`, `plasma:level`, `charge:pulse`, `charge:attract`)                                                                         |
-| `lib/jelly/registry.ts`                                                                              | one IntersectionObserver + ResizeObserver + MutationObserver over every jelly host; cached rects; no rAF                                                                                              |
-| `lib/jelly/governor.ts`                                                                              | downscale-only frame-cost governor (pure)                                                                                                                                                             |
-| `lib/jelly/flow-carriers.ts`                                                                         | which hosts carry a CSS `.jelly-flow`; no rAF                                                                                                                                                         |
-| `lib/jelly/{physics,compose,envelope,lattice,lattice-inputs,soft-policy}.ts`                         | the soft body and the dent (`setDent` / `dentOf`); `physics.ts` is a frame driver (order 10)                                                                                                          |
-| `lib/jelly/arcs/*`                                                                                   | arcs, charge, hops, breakdown, Coulomb; `renderer.ts` is a frame driver (order 30)                                                                                                                    |
-| `lib/liquid/glass/{engine,shader,jelly-glsl,haze-shader,renderer,policy,scene,scene-store,color}.ts` | rims, RGB edge, plasma, dent glow and light dot, pulse rings, haze canvases, the ambient clock, lattice stepping, snapshots; `engine.ts` is a frame driver (order 20) with pointer input from the hub |
-| `lib/liquid/runtime.ts`                                                                              | fallback cursor light on hosts the engine does not draw; a frame driver (order 25)                                                                                                                    |
-| `hooks/useLiquidInteractions.ts`                                                                     | mounts the registry and physics at once (press feedback never waits), then carriers, arcs and the engine after `load` + idle; one teardown                                                            |
-| `app/jelly-material.css` · `app/jelly-arcs.css` · `app/jelly-coverage.css`                           | CSS tier, arc layer, coverage adapters; `app/liquid-glass.css` keeps the role base                                                                                                                    |
-| `components/shared/app-theme.css`                                                                    | the `--app-jelly-*` adapter for `.app-glass`                                                                                                                                                          |
-| `app/routes/jelly.tsx`                                                                               | the `/jelly` material lab (`/liquid-glass` redirects there)                                                                                                                                           |
+| File                                                                                               | Owns                                                                                                                                                    |
+| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/jelly-material.css` · `app/liquid-glass.css`                                                  | the material: tint, gel coat, static rim, haze floor, woken haze (§3b), degradation, the CSS soft body (§8, §8b)                                        |
+| `app/jelly-coverage.css` · `app/jelly-arcs.css`                                                    | coverage adapters (tab thumb, switch, slider, skeleton, toasts, bare `[data-jelly]`), the arc layer                                                     |
+| `components/shared/app-theme.css`                                                                  | the `--app-jelly-*` adapter for `.app-glass` and the app tier's cards                                                                                   |
+| `lib/jelly/tiers.ts`                                                                               | the single shared policy: tiers, budgets, `jellyMode`, off predicate, selectors, bounds, flash ledger, `PLASMA`, `CHARGE`, `JELLY_LAYOUT`               |
+| `lib/jelly/soft-policy.ts` · `spring-curves.ts`                                                    | the soft body's numbers (`SOFT_BODY`, `CSS_SPRINGS`, `CSS_SOFT_BODY`, the size cap) and the `linear()` sampler for the `--spring-*` tokens              |
+| `lib/jelly/pointer-vars.ts`                                                                        | the pointer variable: `--px`, `--py`, `--jelly-s`                                                                                                       |
+| `lib/jelly/frame.ts`                                                                               | **the one `requestAnimationFrame`** under `lib/jelly/`: every service registers a driver with `drive(fn, { order })`                                    |
+| `lib/jelly/pointer.ts`                                                                             | **the one window pointer listener set**, fanned out with `onJellyPointer(type, fn)`                                                                     |
+| `lib/jelly/arc-lazy.ts` · `lib/jelly/arcs/*`                                                       | the lazy installer; arcs, charge, hops, impact, the ledger and flash caps; `renderer.ts` is a frame driver (order 30)                                   |
+| `lib/jelly/registry.ts` · `bus.ts`                                                                 | the observers over every jelly host (installed by the arcs, with them) · the typed event bus (`arc:strike`, `drag:*`, `charge:pulse`, `charge:attract`) |
+| `lib/jelly/drag-report.ts` · `hooks/useFluidDrag.ts`                                               | the drag owners' report on the bus; the hook owns the drag position and its settle spring                                                               |
+| `lib/jelly/ambient-tick.ts`                                                                        | the tick grid the globe, its worker and the cursor share                                                                                                |
+| `lib/liquid/glass/scene.ts` · `scene-feed.ts` · `scene-store.ts`                                   | the page picture for the globe: capture, the refcounted feed, the store; `RadialShell` holds the feed for the shell's life                              |
+| `lib/liquid/glass/{policy,color,jelly-glsl}.ts` · `lib/liquid/optics.ts`                           | what the globe still imports: `innerRadius`, `PLASMA_LOOK`; the colour parser; the noise GLSL; the N-BK7 optics                                         |
+| `components/radial/{LiquidGlobe,globe-worker,jelly-glass,globe-engagement}` · `lib/globe-cursor/*` | the liquid globe (its dough simulation `lib/dough.ts`, its own coat and shader, its worker) and the globe cursor (its own worker)                       |
+| `hooks/useLiquidInteractions.ts`                                                                   | mounts the pointer variable at once, then `installLazyClickArcs` after `load` + idle; one teardown                                                      |
+| `app/routes/jelly.tsx`                                                                             | the `/jelly` material lab (`/liquid-glass` redirects there)                                                                                             |
 
-Exactly **one** jelly frame owner exists, `lib/jelly/frame.ts`; the engine, physics,
-arcs and the fallback light are drivers on it (§8.1). **Components never import the physics or arc services** (the lab is
-the one exception) and never add their own pointer loop, deformation or arc code; they
-take jelly through role classes and `data-jelly*` attributes. The globe keeps its name,
-its dough simulation (`lib/dough.ts`) and its own coat (`components/radial/jelly-glass.ts`,
-"the globe's jelly coat" — unrelated to `lib/jelly/`; drawn in the globe's worker, `components/radial/globe-worker.ts`,
-on a transferred `OffscreenCanvas`, with the CSS glass as the fallback); it shares the plasma palette only
-through tokens (R15). That coat draws the material's layers itself — haze, dormant plasma, the RGB-led rim and
-Fresnel edge — clipped to the sphere, so no globe element may ever be a rectangular host: `GLOBE_SELECTOR` in
-`lib/jelly/tiers.ts` is part of `OPT_OUT_SELECTOR` and of the engine's and registry's excludes, and click arcs never
-take a press on the globe (`lib/jelly/__tests__/globe-exclusion.test.ts`). The coat's private "drawn" flag is
-`data-globe-coat` (`entering` while it fades in over the CSS glass, `on` once it has), never `data-jelly` (a
-`data-jelly` stage was the square plasma outline of 2026-10-23).
+Exactly **one** jelly frame owner exists, `lib/jelly/frame.ts`; the pointer variable, the arc renderer and the
+drag-settle spring are drivers on it (§8.1). **Components never import the arc service** (the lab is the one
+exception) and never add their own pointer loop, deformation or arc code; they take jelly through role classes and
+`data-jelly*` attributes. The globe keeps its name, its dough simulation (`lib/dough.ts`) and its own coat
+(`components/radial/jelly-glass.ts`, "the globe's jelly coat" — unrelated to `lib/jelly/`; drawn in the globe's worker
+on a transferred `OffscreenCanvas`, with the CSS glass as the fallback); it shares the plasma palette only through
+tokens (R15). That coat draws the material's layers itself — haze, dormant plasma, the RGB-led rim and Fresnel edge —
+clipped to the sphere, so no globe element may ever be a rectangular host: `GLOBE_SELECTOR` in `lib/jelly/tiers.ts` is
+part of `OPT_OUT_SELECTOR` and of the registry's excludes, and click arcs never take a press on the globe
+(`lib/jelly/__tests__/globe-exclusion.test.ts`). The coat's private "drawn" flag is `data-globe-coat` (`entering` while
+it fades in over the CSS glass, `on` once it has), never `data-jelly` (a `data-jelly` stage was the square plasma
+outline of 2026-10-23).
 
-Retained from the liquid-glass contract, unchanged: the snapshot lifecycle
-(`scene.ts`: 260 ms coalescing, ≥ 1.5 s spacing, idle-time capture, 1.6 s mutation
-settle, no capture while scrolling/hidden/under the open globe, three failures stop
-until the next route), the N-BK7 optics in `lib/liquid/optics.ts`, the rim admission
-order overlay → chrome → pane → fill → control, the 16 px / 640,000 px² size limits and
-the bevel geometry. See [`liquid-glass-system.md`](liquid-glass-system.md) for that
-history.
+Retained from the liquid-glass contract, unchanged: the snapshot lifecycle (`scene.ts`: 260 ms coalescing, ≥ 1.5 s
+spacing, idle-time capture, no capture while scrolling / hidden / under the open globe), and the N-BK7 optics. See
+[`liquid-glass-system.md`](liquid-glass-system.md) for that history.
 
 ### 8.1 One frame driver, one pointer hub
 
-**`lib/jelly/frame.ts`** owns the only `requestAnimationFrame` under `lib/jelly/` and
-`lib/liquid/`. A service registers once — `const d = drive((now, dt) => …, { order })` —
-and calls `d.wake()` when something starts to move. A driver runs on the next frame only
-while it is awake; returning `true` keeps it awake, anything else lets it sleep. **When no
-driver is awake no frame is requested at all**, so the page at rest pays nothing beyond
-what the ambient clock asks for, and the clock asks by waking from a timer, never by
-spinning. Drivers run in ascending `order` (`useFluidDrag` 5 → physics 10 → engine 20 → fallback light 25 → arcs 30), so a
-producer's state (the dent, the lattice drive, the charge) is drawn the same frame it is
-written. `stop()` unregisters and cancels a pending frame nobody else needs; one driver
-throwing is reported asynchronously and never stops the others.
+**`lib/jelly/frame.ts`** owns the only `requestAnimationFrame` under `lib/jelly/` and `lib/liquid/`. A service
+registers once — `const d = drive((now, dt) => …, { order })` — and calls `d.wake()` when something starts to move. A
+driver runs on the next frame only while it is awake; returning `true` keeps it awake, anything else lets it sleep.
+**When no driver is awake no frame is requested at all**, so the page at rest pays nothing. Drivers run in ascending
+`order` (`useFluidDrag` 5 → pointer variable 25 → arcs 30). `stop()` unregisters and cancels a pending frame nobody else
+needs; one driver throwing is reported asynchronously and never stops the others.
 
-**`lib/jelly/pointer.ts`** owns the only window/document `pointer*` listeners under
-`lib/jelly/` and `lib/liquid/`: one capture-phase, passive listener per type, installed
-with the first subscriber (`onJellyPointer(type, fn)`) and removed with the last
-(refcounted). A throwing handler is isolated from the rest. Handlers never read layout
-(rects come from the registry, refreshed on scroll/resize/activation) and never call
-`preventDefault`.
+**`lib/jelly/pointer.ts`** owns the only window/document `pointer*` listeners under `lib/jelly/` and `lib/liquid/`: one
+capture-phase, passive listener per type, installed with the first subscriber (`onJellyPointer(type, fn)`) and removed
+with the last (refcounted). A throwing handler is isolated from the rest. Handlers never read layout per event and never
+call `preventDefault`.
 
-Both are gated by `jelly-ownership.test.ts` (N2 b) and `raf-loop-allowlist.test.ts`, and
+Both are gated by `jelly-ownership.test.ts` (N2 b), `frame-owners.test.ts` and `raf-loop-allowlist.test.ts`, and
 unit-tested in `lib/jelly/__tests__/{frame,pointer}.test.ts`.
 
 ## 9. Validation
 
-| Proves                                   | Where                                                                                                                                                                                            |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| tiers, budgets, `jellyMode`, bounds      | `lib/jelly/__tests__/tiers.test.ts`, `governor.test.ts`                                                                                                                                          |
-| tokens mirror the constants (§10)        | `lib/__tests__/jelly-tokens.test.ts`                                                                                                                                                             |
-| one frame, one pointer hub (§8.1)        | `lib/jelly/__tests__/{frame,pointer}.test.ts`, `lib/liquid/__tests__/frame-owners.test.ts`, `lib/__tests__/jelly-ownership.test.ts` (N2 b); the press lens in `lib/jelly/__tests__/lens.test.ts` |
-| never fake a law (§10)                   | `lib/__tests__/jelly-contract.test.ts` (no transform transitions, no keyframes but `.jelly-flow`, no `filter:` in jelly CSS)                                                                     |
-| dent, lens, plasma level, click charge   | `testing/e2e/jelly-interaction.mjs`                                                                                                                                                              |
-| soft body                                | `lib/jelly/__tests__/{envelope,lattice,lattice-inputs,soft-policy,physics}.test.ts`, `testing/e2e/jelly-soft-body.mjs`                                                                           |
-| arcs and the ledger                      | `lib/jelly/arcs/__tests__/*` (`ledger`, `rate`, `scheduler`, `renderer` scans for blur)                                                                                                          |
-| carriers and registry                    | `lib/jelly/__tests__/{flow-carriers,registry,bus}.test.ts`                                                                                                                                       |
-| rims, haze, clock                        | `lib/liquid/glass/__tests__/*`, `testing/e2e/glass-slab.mjs`, `liquid-glass-engine.mjs`                                                                                                          |
-| legibility over haze                     | `lib/__tests__/jelly-legibility.test.ts`                                                                                                                                                         |
-| preferences pipeline                     | `lib/__tests__/appearance-jelly-motion.test.ts`, `appearance-electric-arcs.test.ts`, `fouc-contract.test.ts`                                                                                     |
-| frame loops, filters, stacking, backdrop | `lib/__tests__/{raf-loop-allowlist,filter-cost-budget,stacking-consistency,static-backdrop,handheld-tier}.test.ts` and the jelly gates listed in `scripts/check-consistency.sh`                  |
-| rest and engaged frame rates             | `testing/e2e/frame-budget.mjs` (clock ≤ 13 fps after the idle threshold, ambient arcs isolated)                                                                                                  |
+| Proves                                   | Where                                                                                                                                                                           |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| tiers, budgets, `jellyMode`, bounds      | `lib/jelly/__tests__/tiers.test.ts`, `lib/__tests__/jelly-contract.test.ts`                                                                                                     |
+| tokens mirror the constants (§10)        | `lib/__tests__/jelly-tokens.test.ts`; the spring literals in `jelly-spring-tokens.test.ts`                                                                                      |
+| one frame, one pointer hub (§8.1)        | `lib/jelly/__tests__/{frame,pointer}.test.ts`, `lib/liquid/__tests__/frame-owners.test.ts`, `lib/__tests__/jelly-ownership.test.ts` (N2 b)                                      |
+| never fake a law (§10)                   | `lib/__tests__/jelly-contract.test.ts` (springs only on `--spring-*`, no keyframes but the haze drift, no `filter:` in jelly CSS)                                               |
+| the CSS soft body                        | `lib/__tests__/jelly-soft-body.test.ts`, `lib/jelly/__tests__/{spring-curves,pointer-vars}.test.ts`                                                                             |
+| the woken haze                           | `lib/__tests__/jelly-woken-haze.test.ts`, `site-infinite-animation.test.ts` (N3, N12)                                                                                           |
+| arcs, the ledger and the lazy installer  | `lib/jelly/arcs/__tests__/*`, `lib/jelly/__tests__/arc-lazy.test.ts`; in a browser, `testing/e2e/jelly-interaction.mjs` (the blocking `jelly-e2e` CI job)                       |
+| the scene feed                           | `lib/liquid/glass/__tests__/{scene,scene-feed}.test.ts`                                                                                                                         |
+| legibility over haze                     | `lib/__tests__/jelly-legibility.test.ts`                                                                                                                                        |
+| preferences pipeline                     | `lib/__tests__/appearance-jelly-motion.test.ts`, `appearance-electric-arcs.test.ts`, `fouc-contract.test.ts`                                                                    |
+| frame loops, filters, stacking, backdrop | `lib/__tests__/{raf-loop-allowlist,filter-cost-budget,stacking-consistency,static-backdrop,handheld-tier}.test.ts` and the jelly gates listed in `scripts/check-consistency.sh` |
+| rest and engaged frame rates             | `testing/e2e/frame-budget.mjs` (rest ≤ the idle floor + 1 fps, no unsanctioned perpetual animation)                                                                             |
 
-Browser review (the part no script checks): `/`, a feed page, settings, an app and a
-game; Daylight and Midnight; phone and desktop width; `jellyMotion`
-lively, calm and still; `electricArcs` off. Confirm nothing changed **layout**, nothing
-moved more than the nudge bound, and the page drops to the idle floor after 20 s.
+Browser review (the part no script checks): `/`, a feed page, settings, an app and a game; Daylight and Midnight; phone and
+desktop width; `jellyMotion` lively, calm and still; `electricArcs` off. Confirm nothing changed **layout**, nothing moved
+more than the bound, and the page at rest runs no animation.
 
 ## 10. Layout, identity and tokens (#989)
 
-**Layout.** Bodies sit at least `--space-4` (16 px, `JELLY_LAYOUT.minGapPx`) apart, which
-keeps uncharged neighbours outside the breakdown gap. Leave `--jelly-margin` (16 px,
-`JELLY_LAYOUT.marginPx`) **unclipped** round every body — the squash, the bulge opposite a
-dent and the rubber band need it — so there is no `overflow: hidden` directly around one.
-Cards use `--site-radius`, controls `--site-radius-sm`. Game play-fields are
-`data-jelly-zone="playfield"` (excluded); ambient motion and arcs stop while a game is
-playing.
+**Layout.** Bodies sit at least `--space-4` (16 px, `JELLY_LAYOUT.minGapPx`) apart. Leave `--jelly-margin` (16 px,
+`JELLY_LAYOUT.marginPx`) **unclipped** round every body — the squash, the arc nudge and the focus ring need it — so
+there is no `overflow: hidden` directly around one. Cards use `--site-radius`, controls `--site-radius-sm`. Game
+play-fields are `data-jelly-zone="playfield"` (excluded); the woken haze and arcs stop while a game is playing.
 
-**Nested bodies.** A body's molded shoulder may reach only as far as `roomFor(padding,
-childInset)` allows (`lib/liquid/glass/policy.ts`): inside the host's own padding when it
-has any (a full-bleed media card keeps its whole shoulder over the media), and
-`NEST_GAP` (2 px) short of the nearest nested body, never thinner than `BEVEL_MIN`
-(3 px). The engine measures the insets with the rect read it already does
-(`fitNested`), with `ROOM_HYSTERESIS_PX` so a breathing card does not re-size its
-shoulder. Two rims therefore never stack on one line: a button in a card or a capsule in
-its track molds out of its parent instead of overlapping its edge.
+**Identity.** Silent, sleek, frontier AI: calm, never busy. One electric accent (`--site-accent`), which is also the
+plasma colour; no gradients on the ground, no neon or glowing type, no sci-fi illustration. Text is Geist, data Geist
+Mono, through the `--site-font-*` tokens. **One signal action per view:** the primary action is
+`<Button variant="signal">`, ink gel (`--gel-ink` with `--on-ink` text); everything else on that view is a quieter
+variant.
 
-**Identity.** Silent, sleek, frontier AI: calm, never busy. One electric accent
-(`--site-accent`), which is also the plasma colour; no gradients on the ground, no neon or
-glowing type, no sci-fi illustration. Text is Geist, eyebrows and data Geist Mono, through
-the `--site-font-*` tokens (status 2026-10-23: Geist and Geist Mono are live, self-hosted, and
-lead the default stacks; the system face, Inter and JetBrains Mono stay after them as the
-non-Latin and fallback faces). **One signal action per view:** the primary action is
-`<Button variant="signal">`, ink gel (`--gel-ink` with `--on-ink` text); everything else
-on that view is a quieter variant.
+**Never fake a law.** No keyframe wobble, `@keyframes` glow, ripple, untriggered flicker or second spring formula; a
+moving property may transition only on a generated `--spring-*` curve (through the `--jelly-spring-*` hooks); the only
+sanctioned keyframes in the jelly sheets is the haze drift (`jelly-drift`), run by the woken haze;
+no stylesheet sets a `filter:` on a jelly body. `jelly-contract.test.ts` scans the jelly sheets for all of it.
 
-**Never fake a law.** No keyframe wobble, `@keyframes` glow, `transition: transform` on a
-body, untriggered flicker, ripple, or a second spring formula. The only sanctioned
-keyframes in the jelly sheets are the `.jelly-flow` haze drift; the only filter on a body
-is the lens, set from `lib/jelly/lens.ts` while it is dented. A new behaviour is a new
-force in the services with a constant for every number. `jelly-contract.test.ts` scans
-the jelly sheets for all three.
+**Tokens.** The CSS tokens mirror the constants; `lib/__tests__/jelly-tokens.test.ts` keeps each pair equal. Change the
+constant and the token together.
 
-**Tokens.** The CSS tokens mirror the constants in `lib/jelly/tiers.ts`;
-`lib/__tests__/jelly-tokens.test.ts` keeps each pair equal. Change the constant and the
-token together.
+| Token            | Constant (`lib/jelly/tiers.ts`) | Value | Used by                                     |
+| ---------------- | ------------------------------- | ----- | ------------------------------------------- |
+| `--plasma-wake`  | `PLASMA.wake`                   | 0.35  | the plasma wake on hover                    |
+| `--space-4`      | `JELLY_LAYOUT.minGapPx`         | 16 px | minimum gap between bodies                  |
+| `--jelly-margin` | `JELLY_LAYOUT.marginPx`         | 16 px | unclipped margin round a body (layout rule) |
 
-| Token                     | Constant (`lib/jelly/tiers.ts`) | Value                       | Used by                       |
-| ------------------------- | ------------------------------- | --------------------------- | ----------------------------- |
-| `--jelly-dent-depth`      | `DENT.depthPx`                  | 6 px                        | dent bowl depth               |
-| `--jelly-dent-damping`    | `DENT.damping`                  | 0.9                         | dent depth spring             |
-| `--jelly-lens-strength`   | `DENT.lensStrength`             | 0.6                         | lens refraction               |
-| `--jelly-lens-dispersion` | `DENT.lensDispersionPx`         | 1.5 px                      | lens R/G/B split              |
-| `--jelly-content-strain`  | `DENT.contentStrain`            | 0.04                        | content following the gel     |
-| `--plasma-wake`           | `PLASMA.wake`                   | 0.35                        | plasma level on hover         |
-| `--arc-breakdown-gap`     | `CHARGE.breakdownGapPx`         | 12 px                       | breakdown gap at q = 0        |
-| `--arc-formative-lag`     | `CHARGE.formativeLagMs`         | 120 ms                      | breakdown delay               |
-| `--pulse-speed`           | `CHARGE.pulseSpeedPxS`          | 900 (px/s; unitless in CSS) | charge ring speed             |
-| `--pulse-tau`             | `CHARGE.pulseTauMs`             | 260 ms                      | charge ring decay             |
-| `--space-4`               | `JELLY_LAYOUT.minGapPx`         | 16 px                       | minimum gap between bodies    |
-| `--jelly-margin`          | `JELLY_LAYOUT.marginPx`         | 16 px                       | unclipped margin round a body |
-| `--jelly-body-budget`     | `JELLY_LAYOUT.bodyBudget`       | 24                          | absolute body cap, every tier |
-| `--sim-hz`                | `JELLY_LAYOUT.simHz`            | 120                         | fixed physics step            |
+The soft body's poses and springs are mirrored from `lib/jelly/soft-policy.ts` (`--jelly-hover-plump`,
+`--jelly-hover-dent`, `--jelly-press-card`, `--jelly-press-control`, `--jelly-edge-reach`, the `--spring-*` curves and
+durations) and pinned by `jelly-soft-body.test.ts` and `jelly-spring-tokens.test.ts`.
 
-Colour and material tokens with no numeric constant are per theme in `app/globals.css`
-and zeroed or made opaque by high contrast: `--gel-body`, `--gel-depth`, `--gel-ink`,
-`--on-ink`, `--gel-bevel`, `--gel-disperse-r`, `--gel-disperse-g`, `--gel-disperse-b`,
-`--gel-fresnel`, `--gel-specular` and `--focus-ring`. The RGB split colours are
-`--gel-edge-r/-g/-b` (CSS may not use raw colours), composed with the Fresnel line into
-`--gel-edge` (three inset shadows plus the 1 px Fresnel). Tailwind exposes
-`--color-gel-ink`, `--color-on-ink` and `--color-focus-ring` (`bg-gel-ink`,
-`text-on-ink`, …). Inside `.app-theme` the app tier maps `--gel-*` and `--focus-ring` to
-`--app-gel-*` / `--app-focus-ring`. The gel body is a vertical `--gel-body` →
-`--gel-depth` gradient (the old broad diagonal coats are gone), and the fallback
-`.liquid-light` is masked to an edge band, so no gloss crosses the face.
+Colour and material tokens with no numeric constant are per theme in `app/globals.css` and zeroed or made opaque by the
+app tier's high contrast: `--gel-body`, `--gel-depth`, `--gel-ink`, `--on-ink`, `--gel-bevel`, `--gel-disperse-r`,
+`--gel-disperse-g`, `--gel-disperse-b`, `--gel-fresnel`, `--gel-specular` and `--focus-ring`. The RGB split colours are
+`--gel-edge-r/-g/-b` (CSS may not use raw colours), composed with the Fresnel line into `--gel-edge` (three inset shadows
+plus the 1 px Fresnel) for the coverage tier and into the single `--gel-glow` for the role classes. Tailwind exposes
+`--color-gel-ink`, `--color-on-ink` and `--color-focus-ring` (`bg-gel-ink`, `text-on-ink`, …). Inside `.app-theme` the app
+tier maps `--gel-*` and `--focus-ring` to `--app-gel-*` / `--app-focus-ring`. The gel body is a vertical `--gel-body` →
+`--gel-depth` gradient, so no gloss crosses the face.

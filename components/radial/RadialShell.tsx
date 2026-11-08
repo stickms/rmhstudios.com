@@ -450,7 +450,7 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
     <div
       ref={shellRef}
       className="vibe-app site-shell radial-shell"
-      // A no-op alias now: the jelly soft-body service (lib/jelly/physics.ts) presses every control by default.
+      // A no-op alias now: the CSS soft body (app/jelly-material.css §8) presses every control by default.
       data-fluid-press-scope=""
       data-layout={layout}
       data-home={isHome || undefined}

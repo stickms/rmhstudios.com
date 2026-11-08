@@ -19,7 +19,7 @@ interface GlassPaneProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
    * Refract the page behind the pane's rim. A pane is lit by default but does not bend the page: its own text is in the
    * page snapshot and would be drawn twice. Opt in for a pane that sits over imagery with nothing near its edge.
-   * Sets `data-liquid-glass="refract"` (see `lib/liquid/glass/engine.ts`).
+   * Sets `data-liquid-glass="refract"` (an attribute only; the rim-refraction shader that read it is gone).
    */
   refract?: boolean;
   /** Retained alias: every pane is a shader slab; this has no effect of its own. */

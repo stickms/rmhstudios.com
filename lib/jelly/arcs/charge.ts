@@ -1,6 +1,6 @@
 /**
  * The #989 charge laws, pure (CLAUDE.md "Design system: Plasmatic Jelly" → Electricity; constants `CHARGE` in
- * `lib/jelly/tiers.ts`, mirrored by `--arc-breakdown-gap` / `--arc-formative-lag` / `--pulse-*` in CSS).
+ * `lib/jelly/tiers.ts`).
  *
  * ```
  * q(t)          = q0 · e^(−dt / decayMs)                                  decay

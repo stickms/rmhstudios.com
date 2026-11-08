@@ -74,24 +74,13 @@ describe('budgets (R6, R10, 04 §3.1)', () => {
   it('match the final table', () => {
     const row = (t: JellyTier) => {
       const b = JELLY_BUDGETS[t];
-      return [
-        b.rims,
-        b.hazeSlots,
-        b.carriers,
-        b.bodies,
-        b.lattices,
-        b.clockHz,
-        b.idleClockHz,
-        b.clickBolts,
-      ];
+      return [b.clockHz, b.idleClockHz, b.clickBolts];
     };
-    expect(row('full')).toEqual([24, 8, 24, 12, 8, 60, 30, 3]);
-    expect(row('coarse')).toEqual([16, 6, 16, 8, 6, 60, 30, 2]);
-    expect(row('handheld')).toEqual([10, 4, 8, 6, 4, 30, 15, 1]);
-    expect(row('lite')).toEqual([0, 0, 0, 3, 0, 0, 0, 0]);
-    expect(JELLY_BUDGETS.full.animatedViewports).toBe(1.5);
-    expect(JELLY_BUDGETS.coarse.animatedViewports).toBe(1.25);
-    expect(JELLY_BUDGETS.handheld.animatedViewports).toBe(1);
+    expect(row('full')).toEqual([60, 30, 3]);
+    expect(row('coarse')).toEqual([60, 30, 2]);
+    expect(row('handheld')).toEqual([30, 15, 1]);
+    expect(row('lite')).toEqual([0, 0, 0]);
+    expect(row('off')).toEqual([0, 0, 0]);
   });
 
   it('ambient arcs: ≤ 1 per 2 s on desktop, half that on handheld (R10), none under perf-lite', () => {
@@ -115,28 +104,22 @@ describe('budgets (R6, R10, 04 §3.1)', () => {
     }
   });
 
-  it('keep lattices to the ambient slots, the idle floor under the clock, and nothing ambient when off', () => {
+  it('keep the idle floor under the clock, and nothing ambient when off', () => {
     for (const b of Object.values(JELLY_BUDGETS)) {
-      expect(b.lattices).toBe(b.hazeSlots);
-      expect(b.hazeSlots).toBeLessThanOrEqual(b.rims);
       expect(b.idleClockHz).toBeLessThanOrEqual(b.clockHz);
     }
     // R7: always moving while someone is there — a 30 Hz floor, never a freeze, on the desktop tiers.
     expect(JELLY_BUDGETS.full.idleClockHz).toBe(30);
     expect(JELLY_BUDGETS.coarse.idleClockHz).toBe(30);
     const off = JELLY_BUDGETS.off;
-    expect([off.rims, off.hazeSlots, off.carriers, off.clockHz, off.clickBolts]).toEqual([
-      0, 0, 0, 0, 0,
-    ]);
+    expect([off.clockHz, off.clickBolts]).toEqual([0, 0]);
   });
 
-  it('a playing game keeps two rims for the pause UI and nothing else', () => {
-    expect(GAME_PLAYING_BUDGET.rims).toBe(2);
-    expect(
-      GAME_PLAYING_BUDGET.hazeSlots + GAME_PLAYING_BUDGET.carriers + GAME_PLAYING_BUDGET.bodies,
-    ).toBe(0);
+  it('a playing game keeps nothing that moves on its own', () => {
     expect(GAME_PLAYING_BUDGET.clockHz).toBe(0);
+    expect(GAME_PLAYING_BUDGET.idleClockHz).toBe(0);
     expect(GAME_PLAYING_BUDGET.clickBolts).toBe(0);
+    expect(GAME_PLAYING_BUDGET.ambientArcMinIntervalMs).toBe(Infinity);
   });
 });
 
@@ -155,35 +138,21 @@ describe('safety bounds (04 §4.3–4.5, R12, R13)', () => {
     expect(FLASH_LEDGER).toEqual({ maxOnsets: 3, windowMs: 1000 });
   });
 
-  it('pin the ambient bounds, and keep overdraw inside the 2px focus-ring offset', () => {
+  it('pin the ambient bounds', () => {
     expect(AMBIENT_BOUNDS.maxDriftPxPerSecond).toBeLessThanOrEqual(12);
     expect(AMBIENT_BOUNDS.minFeatureSizePx).toBeGreaterThanOrEqual(120);
     expect(AMBIENT_BOUNDS.minLuminancePeriodSeconds).toBeGreaterThanOrEqual(6);
     expect(AMBIENT_BOUNDS.maxLuminanceModulationHz).toBeLessThanOrEqual(3);
-    expect(AMBIENT_BOUNDS.largeSurfaceAreaPx2).toBe(250_000);
-    expect(AMBIENT_BOUNDS.largeLatticeScale).toBeLessThanOrEqual(0.5);
-    expect(AMBIENT_BOUNDS.maxOverdrawPx).toBeLessThanOrEqual(2);
   });
 });
 
 describe('selectors', () => {
-  it('the degraded root is spelled exactly as the engine and the cursor runtime match it', () => {
+  it('the degraded root is spelled exactly as the scene feed matches it', () => {
     expect(DEGRADED_ROOT_SELECTOR).toBe('.perf-lite');
-    for (const file of ['lib/liquid/glass/engine.ts', 'lib/liquid/runtime.ts']) {
-      const src = read(file);
-      // Either the literal (today) or the shared import (after W2-A/W2-D adopt it).
-      expect(
-        src.includes(`'${DEGRADED_ROOT_SELECTOR}'`) || src.includes('DEGRADED_ROOT_SELECTOR'),
-      ).toBe(true);
-    }
-  });
-
-  it('every surface the glass engine can draw as a slab is a jelly host', () => {
-    const engine = read('lib/liquid/glass/engine.ts');
-    const m = engine.match(/const SELECTOR\s*=\s*'([^']+)'/);
-    if (!m) return; // the engine imports JELLY_SELECTOR instead: nothing to compare.
-    const jelly = JELLY_SELECTOR.split(',');
-    for (const part of m[1]!.split(',')) expect(jelly).toContain(part.trim());
+    const src = read('lib/liquid/glass/scene-feed.ts');
+    expect(
+      src.includes(`'${DEGRADED_ROOT_SELECTOR}'`) || src.includes('DEGRADED_ROOT_SELECTOR'),
+    ).toBe(true);
   });
 
   it('covers toasts and explicit opt-ins, and accepts every legacy opt-out alias', () => {
@@ -285,7 +254,7 @@ describe('jellyMode', () => {
   const mode = (o: FakeOpts) => jellyMode({ doc: fineDoc(o) });
 
   it('is everything on a healthy page', () => {
-    expect(mode({})).toEqual({ ambient: true, arcs: 'full', deform: 'full' });
+    expect(mode({})).toEqual({ ambient: true, arcs: 'full' });
   });
 
   it('honours the electric arcs preference', () => {
@@ -297,27 +266,25 @@ describe('jellyMode', () => {
     expect(mode({ attrs: { 'data-jelly-motion': 'calm' } })).toEqual({
       ambient: true,
       arcs: 'clicks',
-      deform: 'full',
     });
     expect(mode({ attrs: { 'data-jelly-motion': 'calm', 'data-electric-arcs': 'off' } }).arcs).toBe(
       'off',
     );
   });
 
-  it('still pauses ambient motion and arcs while keeping direct reactions', () => {
+  it('still pauses ambient motion and arcs (direct reactions are CSS and stay)', () => {
     expect(mode({ attrs: { 'data-jelly-motion': 'still', 'data-electric-arcs': 'full' } })).toEqual(
       {
         ambient: false,
         arcs: 'off',
-        deform: 'full',
       },
     );
   });
 
   it.each([[{ classes: ['perf-lite'] }], [{ appContrast: true }]] as [FakeOpts][])(
-    'keeps press but drops the material for %j',
+    'drops ambient motion and arcs for %j',
     (o) => {
-      expect(mode(o)).toEqual({ ambient: false, arcs: 'off', deform: 'press' });
+      expect(mode(o)).toEqual({ ambient: false, arcs: 'off' });
     },
   );
 
@@ -326,11 +293,11 @@ describe('jellyMode', () => {
     [{ hidden: true }],
     [{ attrs: { 'data-game-state': 'playing' } }],
   ] as [FakeOpts][])('turns everything off for %j', (o) => {
-    expect(mode(o)).toEqual({ ambient: false, arcs: 'off', deform: 'off' });
+    expect(mode(o)).toEqual({ ambient: false, arcs: 'off' });
   });
 
   it('is all off without a document', () => {
-    expect(jellyMode()).toEqual({ ambient: false, arcs: 'off', deform: 'off' });
+    expect(jellyMode()).toEqual({ ambient: false, arcs: 'off' });
   });
 });
 
@@ -341,29 +308,18 @@ describe('jellyBudget', () => {
     expect(budget({})).toEqual(JELLY_BUDGETS.full);
   });
 
-  it('calm halves slots and carriers and caps the clock at 12 Hz', () => {
+  it('calm caps the clock at 12 Hz', () => {
     const b = budget({ attrs: { 'data-jelly-motion': 'calm' } });
-    expect(b.hazeSlots).toBe(4);
-    expect(b.carriers).toBe(12);
     expect(b.clockHz).toBe(12);
     expect(b.idleClockHz).toBeLessThanOrEqual(12);
     expect(b.ambientArcMinIntervalMs).toBe(Infinity);
     expect(b.clickBolts).toBe(3);
   });
 
-  it('still zeroes ambient work and arcs but keeps interactive lattices and bodies', () => {
+  it('still zeroes ambient work and arcs', () => {
     const b = budget({ attrs: { 'data-jelly-motion': 'still' } });
-    expect([b.hazeSlots, b.carriers, b.clockHz, b.idleClockHz, b.lattices, b.clickBolts]).toEqual([
-      0,
-      0,
-      0,
-      0,
-      JELLY_BUDGETS.full.lattices,
-      0,
-    ]);
+    expect([b.clockHz, b.idleClockHz, b.clickBolts]).toEqual([0, 0, 0]);
     expect(b.ambientArcMinIntervalMs).toBe(Infinity);
-    expect(b.rims).toBe(24);
-    expect(b.bodies).toBe(12);
   });
 
   it('a playing game gets the game budget', () => {

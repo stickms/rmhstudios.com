@@ -22,7 +22,7 @@ import { useGlobeCursorStore } from '@/stores/globeCursorStore';
  * one set of document-level pointer listeners, one frame.
  *
  * The cursor is input, not decoration — it is the pointer — so it owns its own
- * listeners rather than riding `lib/liquid/runtime.ts`, and it is mounted once
+ * listeners rather than riding the jelly pointer hub, and it is mounted once
  * per document (by `GlobeCursorRoot`), never per element.
  *
  * ## Latency and paint

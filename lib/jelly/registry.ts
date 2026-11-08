@@ -1,7 +1,8 @@
 /**
  * The jelly registry: the one place that knows which jelly hosts exist, which are on screen, and where they are
- * (master plan §4.3). The shader engine, the CSS carriers, the soft-body physics and the arcs all read it, so four
- * services cost one IntersectionObserver, one ResizeObserver and one MutationObserver instead of four of each.
+ * (master plan §4.3). The click arcs read it (and, once more, any caller that wants the same answer), so they cost one
+ * IntersectionObserver, one ResizeObserver and one MutationObserver. The glass engine, the CSS carriers and the
+ * soft-body physics that used to share it are gone (CSS-first jelly); the arcs install it lazily, on the first press.
  *
  * ## What it never does
  *
@@ -18,22 +19,14 @@
  *
  * ## Lost layers
  *
- * The services inject nodes React does not know about (`JELLY_LAYER_SELECTOR`: the `.jelly-flow` carrier, the rim
- * canvas, the `.jelly-haze-canvas`). React never removes them on its own paths — except `setTextContent`, which wipes
- * every child of a host whose children become a lone string (a `<Button>` going "Save" → "Saved" or icon → text). The
- * host keeps its membership, so nothing else would tell the services their node is gone and their `data-jelly-flow` /
- * `data-liquid-canvas` attribute is now a lie. A removed node that matches the layer selector, from a host that is
- * still connected, therefore counts as a change: consumers are notified in the same batched mutation pass, and
- * re-check their own nodes there (a `parentNode` comparison — no layout read). A service removing its own node costs
- * one extra no-op pass.
+ * The services inject nodes React does not know about (`JELLY_LAYER_SELECTOR`: today only the arc layer). React never
+ * removes them on its own paths — except `setTextContent`, which wipes every child of a host whose children become a
+ * lone string (a `<Button>` going "Save" → "Saved" or icon → text). A removed node that matches the layer selector,
+ * from a host that is still connected, therefore counts as a change: consumers are notified in the same batched
+ * mutation pass, and re-check their own nodes there (a `parentNode` comparison — no layout read). A service removing
+ * its own node costs one extra no-op pass.
  */
-import {
-  GLOBE_SELECTOR,
-  JELLY_LAYER_SELECTOR,
-  JELLY_SELECTOR,
-  jellyOptedOut,
-  type JellyBudget,
-} from './tiers';
+import { GLOBE_SELECTOR, JELLY_LAYER_SELECTOR, JELLY_SELECTOR, jellyOptedOut } from './tiers';
 
 /** Elements that match a role but are never jelly hosts (they draw themselves, or are the globe / eversion layers). */
 export const REGISTRY_EXCLUDE = `${GLOBE_SELECTOR},.radial-hub__orb,.eversion-overlay,.evert-ghost,canvas,video,iframe`;
@@ -58,18 +51,6 @@ export const SCROLL_END_MS = 150;
 /** Coalescing delay for size-driven rect refreshes and mutation batches. */
 const SETTLE_MS = 32;
 
-export type JellyRole = 'overlay' | 'chrome' | 'pane' | 'fill' | 'control' | 'other';
-
-/** Ambient-slot priority (04 §3.1): overlay → chrome → pane → fill → control. Lower is first. */
-export const ROLE_PRIORITY: Readonly<Record<JellyRole, number>> = {
-  overlay: 0,
-  chrome: 1,
-  pane: 2,
-  fill: 3,
-  control: 4,
-  other: 5,
-};
-
 export interface JellyRect {
   left: number;
   top: number;
@@ -79,7 +60,6 @@ export interface JellyRect {
 
 export interface JellyEntry {
   readonly el: Element;
-  readonly role: JellyRole;
   /** Discovery order: a stable tie-break. */
   readonly order: number;
   /** Intersecting the viewport (rootMargin 0). */
@@ -88,28 +68,13 @@ export interface JellyEntry {
   rect: JellyRect;
 }
 
-export interface JellyPoint {
-  x: number;
-  y: number;
-}
-
 export interface JellyRegistry {
   /** Visible entries with cached rects. The array is rebuilt on change, so holding it is safe. */
   visible(): readonly JellyEntry[];
-  /**
-   * The entries that get an ambient haze canvas: visible, ranked by role then distance to `focus` (the pointer on a
-   * fine pointer; omitted = viewport centre), capped by `hazeSlots` and — when given a budget — by its animated area.
-   */
-  ambientSlots(
-    budget: Pick<JellyBudget, 'hazeSlots'> | number,
-    focus?: JellyPoint | null,
-  ): JellyEntry[];
-  /** Same ranking, capped by `carriers` (or a plain count — physics passes `budget.bodies`). */
-  liveSet(budget: Pick<JellyBudget, 'carriers'> | number, focus?: JellyPoint | null): JellyEntry[];
   entryFor(el: Element): JellyEntry | undefined;
   /** Called after membership, visibility or the rect cache changes. Returns the unsubscribe. */
   onChange(cb: () => void): () => void;
-  /** True between the first `scroll` and scroll end: rects are stale and ambient work should hold. */
+  /** True between the first `scroll` and scroll end: rects are stale and arcs hold their charge hops. */
   readonly scrolling: boolean;
   /** Bumped on every rect refresh, so consumers can cache derived geometry by epoch. */
   readonly epoch: number;
@@ -127,24 +92,6 @@ export function isJellyHost(el: Element): boolean {
   return el.matches(JELLY_SELECTOR) && !el.matches(REGISTRY_EXCLUDE) && !jellyOptedOut(el);
 }
 
-const roleOf = (el: Element): JellyRole =>
-  el.matches('.glass-overlay,[data-sonner-toast]')
-    ? 'overlay'
-    : el.matches('.glass-chrome')
-      ? 'chrome'
-      : el.matches('.glass-pane,.app-glass')
-        ? 'pane'
-        : el.matches(
-              // The app tier's adapter surfaces (components/shared/app-theme.css) are cards.
-              '.glass-fill,.glass-interactive,[data-jelly="card"],[data-liquid-surface],.app-theme [class~="bg-(--app-surface)"]',
-            )
-          ? 'fill'
-          : el.matches(
-                '.glass-inset,[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"],[data-jelly="control"]',
-              )
-            ? 'control'
-            : 'other';
-
 const EMPTY_RECT: JellyRect = { left: 0, top: 0, width: 0, height: 0 };
 
 const toRect = (r: { left: number; top: number; width: number; height: number }): JellyRect => ({
@@ -153,43 +100,6 @@ const toRect = (r: { left: number; top: number; width: number; height: number })
   width: r.width,
   height: r.height,
 });
-
-/**
- * Rank `entries` for slot assignment: role priority first, then squared distance from the rect centre to `focus`,
- * then discovery order. Pure; exported for the tests and for consumers that rank a subset.
- */
-export function rankEntries(entries: readonly JellyEntry[], focus: JellyPoint): JellyEntry[] {
-  const dist = (e: JellyEntry) => {
-    const dx = e.rect.left + e.rect.width / 2 - focus.x;
-    const dy = e.rect.top + e.rect.height / 2 - focus.y;
-    return dx * dx + dy * dy;
-  };
-  return [...entries].sort(
-    (a, b) =>
-      ROLE_PRIORITY[a.role] - ROLE_PRIORITY[b.role] || dist(a) - dist(b) || a.order - b.order,
-  );
-}
-
-/**
- * Take ranked entries up to `count`, and — when `maxArea` is finite — skip any entry that would push the summed area
- * past it (a smaller one further down may still fit). Pure.
- */
-export function takeWithin(
-  ranked: readonly JellyEntry[],
-  count: number,
-  maxArea = Infinity,
-): JellyEntry[] {
-  const out: JellyEntry[] = [];
-  let area = 0;
-  for (const e of ranked) {
-    if (out.length >= count) break;
-    const a = e.rect.width * e.rect.height;
-    if (area + a > maxArea) continue;
-    area += a;
-    out.push(e);
-  }
-  return out;
-}
 
 const isElement = (n: Node | null | undefined): n is Element => !!n && n.nodeType === 1;
 
@@ -202,8 +112,6 @@ export function createJellyRegistry(doc: Document = document): JellyRegistry {
   let scrolling = false;
   let disposed = false;
   let visibleCache: JellyEntry[] | null = null;
-  let viewportW = win?.innerWidth ?? 0;
-  let viewportH = win?.innerHeight ?? 0;
 
   let scrollTimer: ReturnType<typeof setTimeout> | undefined;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
@@ -241,7 +149,7 @@ export function createJellyRegistry(doc: Document = document): JellyRegistry {
   const track = (el: Element): boolean => {
     if (!eligible(el)) return untrack(el);
     if (entries.has(el)) return false;
-    entries.set(el, { el, role: roleOf(el), order: order++, visible: false, rect: EMPTY_RECT });
+    entries.set(el, { el, order: order++, visible: false, rect: EMPTY_RECT });
     visibility?.observe(el);
     sizes?.observe(el);
     return true;
@@ -304,10 +212,6 @@ export function createJellyRegistry(doc: Document = document): JellyRegistry {
 
   const refresh = () => {
     if (disposed) return;
-    if (win) {
-      viewportW = win.innerWidth;
-      viewportH = win.innerHeight;
-    }
     // One read pass, no writes in between: a single layout at most.
     for (const e of entries.values()) if (e.visible) e.rect = toRect(e.el.getBoundingClientRect());
     epoch++;
@@ -351,32 +255,13 @@ export function createJellyRegistry(doc: Document = document): JellyRegistry {
     win.addEventListener('resize', onResize, { passive: true });
   }
 
-  const centre = (): JellyPoint => ({ x: viewportW / 2, y: viewportH / 2 });
   const visibleEntries = (): JellyEntry[] => {
     if (!visibleCache) visibleCache = [...entries.values()].filter((e) => e.visible);
     return visibleCache;
   };
-  const pick = (
-    count: number,
-    viewports: number | undefined,
-    focus: JellyPoint | null | undefined,
-  ): JellyEntry[] => {
-    if (count <= 0) return [];
-    const maxArea =
-      viewports === undefined ? Infinity : viewports * Math.max(1, viewportW * viewportH);
-    return takeWithin(rankEntries(visibleEntries(), focus ?? centre()), count, maxArea);
-  };
 
   return {
     visible: visibleEntries,
-    ambientSlots: (budget, focus) =>
-      typeof budget === 'number'
-        ? pick(budget, undefined, focus)
-        : pick(budget.hazeSlots, (budget as Partial<JellyBudget>).animatedViewports, focus),
-    liveSet: (budget, focus) =>
-      typeof budget === 'number'
-        ? pick(budget, undefined, focus)
-        : pick(budget.carriers, (budget as Partial<JellyBudget>).animatedViewports, focus),
     entryFor: (el) => entries.get(el),
     onChange(cb) {
       listeners.add(cb);

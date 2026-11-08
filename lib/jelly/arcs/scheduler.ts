@@ -16,9 +16,8 @@
  * ## Charge
  *
  * Each element holds `q ∈ [0, 1]`, recharging as `q += (1 − q)(1 − e^{−dt/4s})`, evaluated lazily from timestamps (no
- * timer per element). An arc drains both ends by 0.6; a click drains the clicked element to 0; a soft-body release
- * (`body:release`) adds charge. The same two buttons therefore do not arc twice in a row, and a cluster that has just
- * discharged goes quiet for a few seconds.
+ * timer per element). An arc drains both ends by 0.6; a click drains the clicked element to 0. The same two buttons
+ * therefore do not arc twice in a row, and a cluster that has just discharged goes quiet for a few seconds.
  *
  * ## Quiet states (§2.3)
  *

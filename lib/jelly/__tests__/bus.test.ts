@@ -34,22 +34,22 @@ describe('jelly bus', () => {
     const bus = createJellyBus();
     const later = vi.fn();
     let off = () => {};
-    bus.on('haze:change', () => off());
-    off = bus.on('haze:change', later);
-    bus.emit('haze:change', { el, on: true });
+    bus.on('drag:start', () => off());
+    off = bus.on('drag:start', later);
+    bus.emit('drag:start', { el });
     expect(later).toHaveBeenCalledTimes(1);
-    bus.emit('haze:change', { el, on: false });
+    bus.emit('drag:start', { el });
     expect(later).toHaveBeenCalledTimes(1);
-    expect(bus.listenerCount('haze:change')).toBe(1);
+    expect(bus.listenerCount('drag:start')).toBe(1);
   });
 
   it('counts a function subscribed twice once', () => {
     const bus = createJellyBus();
     const fn = vi.fn();
-    bus.on('body:release', fn);
-    bus.on('body:release', fn);
-    expect(bus.listenerCount('body:release')).toBe(1);
-    bus.emit('body:release', { el, x: 0, y: 0, energy: 1 });
+    bus.on('drag:end', fn);
+    bus.on('drag:end', fn);
+    expect(bus.listenerCount('drag:end')).toBe(1);
+    bus.emit('drag:end', { el });
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
