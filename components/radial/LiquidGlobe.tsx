@@ -143,11 +143,19 @@ const SKIN_WARM_IN_PLACE_MS = 300;
 /**
  * Idle drift (deg/s) — only until the visitor first takes hold. It advances on the jelly ambient tick (step 2b), not
  * per vsync: the engaged rate (60 Hz desktop) only while someone is engaged WITH THE GLOBE and for a short settle after
- * (`./globe-engagement.ts`), the 30 Hz idle floor otherwise — input elsewhere on the page does not raise it — and not
+ * (`./globe-engagement.ts`), the 15 Hz idle floor otherwise — input elsewhere on the page does not raise it — and not
  * at all under `still`, the degraded tiers, a hidden or unfocused tab, or off screen (CLAUDE.md "Plasmatic Jelly" →
  * Performance, R7).
  */
 const IDLE_SPIN = 5.5;
+/**
+ * The change below which a calm frame (the idle drift's own tick, nothing else moving a pin) does not rewrite a pin's
+ * inline style, measured from the value last WRITTEN so the error never accumulates past it. A quarter pixel of
+ * translate, and 0.005 of scale, opacity or label fade, cannot be seen on a ~120 px globe; at the 15 Hz floor a pin
+ * turns ≤ 0.4 px a tick, so the quiet ones (near the poles, near the limb) skip most ticks. The engaged rate and every
+ * moving frame compare exactly.
+ */
+const CALM_PAINT = { translatePx: 0.25, scale: 0.005, unit: 0.005 } as const;
 /**
  * An `ambient` globe (docked in the desktop shell, always on screen) goes back to
  * drifting this long after the last hand on it — a pause long enough that it
@@ -737,7 +745,19 @@ export function LiquidGlobe({
    * instead of twelve times a frame.
    */
   const painted = useRef<
-    Array<{ transform: string; opacity: string; near: string; z: number; hit: boolean }>
+    Array<{
+      transform: string;
+      opacity: string;
+      near: string;
+      z: number;
+      hit: boolean;
+      /** The numbers behind the strings last written, for the idle-rate tolerance (`CALM_PAINT`). */
+      tx: number;
+      ty: number;
+      k: number;
+      o: number;
+      n: number;
+    }>
   >([]);
 
   // Everything the frame loop touches lives in refs: a 60Hz React render for a
@@ -1669,6 +1689,11 @@ export function LiquidGlobe({
       near: '',
       z: -1,
       hit: true,
+      tx: 0,
+      ty: 0,
+      k: 0,
+      o: 0,
+      n: 0,
     }));
 
     /* ── Sampling the ripples ─────────────────────────────────────────────
@@ -2237,16 +2262,27 @@ export function LiquidGlobe({
       return true;
     };
 
+    const byDepth = (a: number, b: number) => pz[a]! - pz[b]!;
+    /**
+     * Whether this frame is a calm one: the drift's own tick at the idle floor with nothing else moving the pins (no
+     * hand, settle, ripple, rock, soft body, eversion, nor an engaged / settling globe). Set by the frame before it
+     * paints. Only then may a pin skip a write whose change is below `CALM_PAINT` — a value written 0.25 px short of
+     * the truth cannot be seen, and at 15 Hz most pins move less than that between ticks. Every other frame (engaged,
+     * or anything else moving) compares exactly, as it always did, and so catches a skipped pin up at once.
+     */
+    let calmPaint = false;
+
     const paint = (now: number) => {
       const R = sizeRef.current / 2;
       // Depth rank, so `z-index` expresses the ORDER rather than the depth.
       for (let i = 0; i < count; i++) order[i] = i;
-      order.sort((a, b) => pz[a] - pz[b]);
+      order.sort(byDepth);
       // ONE snapshot of the ripples for the whole frame — the pins below and the
       // cage after them must sample the same instant, or the wave that lifts a
       // pin is not the wave drawn under it.
       primeWaves(now);
       const soft = jelly.active();
+      const calmFrame = calmPaint && !soft && waveCount === 0;
 
       // The glass disc stays put for the dough: the coat shader draws the deformed silhouette itself, from the same
       // field the cage and pins are displaced by, so there is no whole-disc transform to disagree with the local
@@ -2301,20 +2337,38 @@ export function LiquidGlobe({
           sx = DEFORM_OUT[0]!;
           sy = DEFORM_OUT[1]!;
         }
-        const transform =
-          `translate3d(${(sx * R).toFixed(2)}px, ${(sy * R).toFixed(2)}px, 0)` +
-          ` scale(${k.toFixed(3)})`;
-        if (transform !== last.transform) {
-          last.transform = transform;
-          el.style.transform = transform;
+        // A pin that has never been written (the first paint) has nothing to be close to.
+        const calm = calmFrame && last.transform !== '' && last.opacity !== '' && last.near !== '';
+        const tx = sx * R;
+        const ty = sy * R;
+        // Calm frames compare the numbers first and format a string only for a pin that will be written.
+        if (
+          !calm ||
+          Math.abs(tx - last.tx) >= CALM_PAINT.translatePx ||
+          Math.abs(ty - last.ty) >= CALM_PAINT.translatePx ||
+          Math.abs(k - last.k) >= CALM_PAINT.scale
+        ) {
+          const transform =
+            `translate3d(${tx.toFixed(2)}px, ${ty.toFixed(2)}px, 0)` + ` scale(${k.toFixed(3)})`;
+          if (transform !== last.transform) {
+            last.transform = transform;
+            last.tx = tx;
+            last.ty = ty;
+            last.k = k;
+            el.style.transform = transform;
+          }
         }
 
         // The far hemisphere stays faintly visible — it is what tells you there is
         // more globe to turn to — but it never takes a click.
-        const opacity = (0.12 + 0.88 * smoothstep(-0.5, 0.45, z)).toFixed(3);
-        if (opacity !== last.opacity) {
-          last.opacity = opacity;
-          el.style.opacity = opacity;
+        const o = 0.12 + 0.88 * smoothstep(-0.5, 0.45, z);
+        if (!calm || Math.abs(o - last.o) >= CALM_PAINT.unit) {
+          const opacity = o.toFixed(3);
+          if (opacity !== last.opacity) {
+            last.opacity = opacity;
+            last.o = o;
+            el.style.opacity = opacity;
+          }
         }
 
         if (rank !== last.z) {
@@ -2332,10 +2386,14 @@ export function LiquidGlobe({
         // dozen names never pile up in the middle of the sphere. Quantised to
         // two places: the extra precision was invisible and it made the value
         // differ — and therefore get written — on nearly every frame.
-        const near = smoothstep(0.34, 0.78, z).toFixed(2);
-        if (near !== last.near) {
-          last.near = near;
-          labelRefs.current[i]?.style.setProperty('--near', near);
+        const nearN = smoothstep(0.34, 0.78, z);
+        if (!calm || Math.abs(nearN - last.n) >= CALM_PAINT.unit) {
+          const near = nearN.toFixed(2);
+          if (near !== last.near) {
+            last.near = near;
+            last.n = nearN;
+            labelRefs.current[i]?.style.setProperty('--near', near);
+          }
         }
       }
 
@@ -2392,6 +2450,12 @@ export function LiquidGlobe({
     };
     wakeLoop.current = wake;
 
+    // One callback for every sleep (a fresh closure per tick was ~15–30 allocations a second at rest).
+    const onTimer = () => {
+      timer = 0;
+      if (!raf) raf = requestAnimationFrame(step);
+    };
+
     const step = (now: number) => {
       raf = 0;
       running = true;
@@ -2419,6 +2483,8 @@ export function LiquidGlobe({
       const clock = coatClock.current;
       syncEngagement.current(now);
       const tickHz = engagedRate(coatClockState(), now);
+      // `coatClockState()` fills and returns `clockScratch`, so the engaged / settling test reads what it just set.
+      const clockEngaged = clockScratch.engaged || now < clockScratch.engagedUntil;
       let tick = 0;
       if (tickHz <= 0) {
         clock.last = 0;
@@ -2647,6 +2713,16 @@ export function LiquidGlobe({
         }
         matrixOf(drawQ, DM);
         if (wob) project(DM);
+        calmPaint =
+          tick > 0 &&
+          !clockEngaged &&
+          !wob &&
+          !drag.current.active &&
+          !drag.current.held &&
+          settle.current === null &&
+          ripples.current.length === 0 &&
+          selfEvert.current === 0 &&
+          !everting.current;
         paint(now);
         dirty.current = false;
       }
@@ -2754,13 +2830,7 @@ export function LiquidGlobe({
       // A sleep restarts `dt` from one nominal frame, so whatever wakes the loop starts from where it was.
       last = 0;
       if (wait === Infinity) return;
-      timer = setTimeout(
-        () => {
-          timer = 0;
-          if (!raf) raf = requestAnimationFrame(step);
-        },
-        Math.max(0, wait),
-      );
+      timer = setTimeout(onTimer, Math.max(0, wait));
     };
 
     raf = requestAnimationFrame(step);
@@ -2771,7 +2841,7 @@ export function LiquidGlobe({
       timer = 0;
       wakeLoop.current = () => {};
     };
-  }, [nodes, jelly, ambient, coatClockState]);
+  }, [nodes, jelly, ambient, coatClockState, clockScratch]);
 
   // An ambient globe holds its drift while the pointer is over it: a pin you are
   // reading or about to click should not slide out from under the cursor. Every

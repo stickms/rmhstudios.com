@@ -263,8 +263,8 @@ and scrolling.
 
 "At rest" means the Plasmatic Jelly idle floor, not zero: once the page has gone
 `IDLE_AFTER_MS` (20 s) without input, the material's ambient clock keeps ticking
-at `idleClockHz` (30 Hz desktop) and never freezes while someone could be
-looking (master plan R7). The `--gate` limit is that floor + 1 (31 fps) — a
+at `idleClockHz` (15 Hz desktop) and never freezes while someone could be
+looking (master plan R7). The `--gate` limit is that floor + 1 (16 fps) — a
 deliberate reversal of the 2026-10-08 audit's 2 fps rest limit, recorded in
 [`plasmatic-jelly-system.md`](./plasmatic-jelly-system.md) §2. `--engaged` sweeps
 a pointer for the whole window and holds pages to the engaged clock (60 Hz) + 5.

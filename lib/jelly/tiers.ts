@@ -44,16 +44,16 @@ export interface JellyBudget {
 
 /**
  * The budgets, final per R6/R10 and 04 §3.1, kept to the fields something still reads: the globe's
- * ambient clock (`clockHz` while someone is there, `idleClockHz` after {@link IDLE_AFTER_MS}; 60/30 Hz on the desktop
- * tiers, 30/15 on handhelds) and the click arcs (`clickBolts`, `ambientArcMinIntervalMs`). The rim, haze-slot, carrier,
+ * ambient clock (`clockHz` while someone is there, `idleClockHz` after {@link IDLE_AFTER_MS}; 60/15 Hz on the desktop
+ * tiers, 30/7 on handhelds) and the click arcs (`clickBolts`, `ambientArcMinIntervalMs`). The rim, haze-slot, carrier,
  * animated-area, body and lattice budgets belonged to the glass engine, the CSS carriers and the soft-body physics,
  * which are gone (CSS-first jelly); the CSS material needs no budget, it costs nothing at rest.
  */
 export const JELLY_BUDGETS: Readonly<Record<JellyTier, Readonly<JellyBudget>>> = {
-  full: { clockHz: 60, idleClockHz: 30, ambientArcMinIntervalMs: 2000, clickBolts: 3 },
-  coarse: { clockHz: 60, idleClockHz: 30, ambientArcMinIntervalMs: 2000, clickBolts: 2 },
+  full: { clockHz: 60, idleClockHz: 15, ambientArcMinIntervalMs: 2000, clickBolts: 3 },
+  coarse: { clockHz: 60, idleClockHz: 15, ambientArcMinIntervalMs: 2000, clickBolts: 2 },
   // R10: half the desktop ambient-arc rate, not 04's zero — the owner wants phones charged too.
-  handheld: { clockHz: 30, idleClockHz: 15, ambientArcMinIntervalMs: 4000, clickBolts: 1 },
+  handheld: { clockHz: 30, idleClockHz: 7, ambientArcMinIntervalMs: 4000, clickBolts: 1 },
   lite: { clockHz: 0, idleClockHz: 0, ambientArcMinIntervalMs: Infinity, clickBolts: 0 },
   off: { clockHz: 0, idleClockHz: 0, ambientArcMinIntervalMs: Infinity, clickBolts: 0 },
 };

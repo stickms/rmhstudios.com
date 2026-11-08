@@ -128,13 +128,13 @@ Site surfaces have no clock. The only ambient clock left belongs to the **liquid
 worker and keeps the page's tick grid
 (`lib/jelly/ambient-tick.ts`) so its main-thread and worker clocks at the same rate draw in the same frame:
 
-| State                                                                                           | Globe clock                                   |
-| ----------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| engaged (pointer over or near the globe or its dock, a hold on the ball, focus inside the dock) | tier clock: 60 Hz (30 Hz handheld)            |
-| settle after the last engagement (`GLOBE_SETTLE_MS`, 1.5 s)                                     | engaged rate, so a release finishes           |
-| anything else, visible                                                                          | floor: 30 Hz (15 Hz handheld) — **no freeze** |
-| `jellyMotion = calm`                                                                            | ≤ 12 Hz, amplitude × 0.4                      |
-| hidden tab · unfocused window · off screen · degraded tier · `still` · game playing             | **0**                                         |
+| State                                                                                           | Globe clock                                  |
+| ----------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| engaged (pointer over or near the globe or its dock, a hold on the ball, focus inside the dock) | tier clock: 60 Hz (30 Hz handheld)           |
+| settle after the last engagement (`GLOBE_SETTLE_MS`, 1.5 s)                                     | engaged rate, so a release finishes          |
+| anything else, visible                                                                          | floor: 15 Hz (7 Hz handheld) — **no freeze** |
+| `jellyMotion = calm`                                                                            | ≤ 12 Hz, amplitude × 0.4                     |
+| hidden tab · unfocused window · off screen · degraded tier · `still` · game playing             | **0**                                        |
 
 "Engaged" is decided by `components/radial/globe-engagement.ts` (`GLOBE_NEAR_MARGIN_PX` = 24): input
 elsewhere on the page does not raise the globe's rate. `IDLE_AFTER_MS` (20 s) remains the budget's
@@ -143,7 +143,7 @@ spinning `requestAnimationFrame`.
 
 **Audit reversal, recorded deliberately.** The 2026-10-08 audit set the "page at rest" frame limit to
 2 fps. R7 reversed that for the globe's idle floor: the rest limit in `frame-budget.mjs` is the floor
-**+ 1** frame (31 fps at 30 Hz). The CPU target at rest stays **≤ 250 ms/s** on `/`. What did **not**
+**+ 1** frame (16 fps at 15 Hz). The CPU target at rest stays **≤ 250 ms/s** on `/`. What did **not**
 change: the backdrop (aurora, ring field) stays completely still (`static-backdrop.test.ts`), and no
 site CSS may add a free-standing `infinite` animation outside the woken haze (N3).
 
@@ -252,9 +252,9 @@ carries only what something reads: the globe's clock, and the click arcs.
 
 | Tier                                   | Clock / idle | Ambient arcs (installer passes `ambient: false`) | Click bolts |
 | -------------------------------------- | ------------ | ------------------------------------------------ | ----------- |
-| `full` (fine pointer)                  | 60 / 30 Hz   | ≥ 2 s apart                                      | 3           |
-| `coarse`                               | 60 / 30 Hz   | ≥ 2 s apart                                      | 2           |
-| `handheld` (coarse, ≤ 1024 px)         | 30 / 15 Hz   | ≥ 4 s apart                                      | 1           |
+| `full` (fine pointer)                  | 60 / 15 Hz   | ≥ 2 s apart                                      | 3           |
+| `coarse`                               | 60 / 15 Hz   | ≥ 2 s apart                                      | 2           |
+| `handheld` (coarse, ≤ 1024 px)         | 30 / 7 Hz    | ≥ 4 s apart                                      | 1           |
 | `lite` (`perf-lite`)                   | 0            | off                                              | 0           |
 | `off` (degraded)                       | 0            | off                                              | 0           |
 | game playing (`html[data-game-state]`) | 0            | off                                              | 0           |
@@ -281,7 +281,7 @@ modulation above 3 Hz; ambient motion never moves a host's position.
 
 | Condition                                                           | Woken haze            | Soft body (CSS) | Click arcs         | Globe clock | CSS             |
 | ------------------------------------------------------------------- | --------------------- | --------------- | ------------------ | ----------- | --------------- |
-| `lively` (default)                                                  | on hover / focus      | full            | per `electricArcs` | 60 / 30 Hz  | floor + rim     |
+| `lively` (default)                                                  | on hover / focus      | full            | per `electricArcs` | 60 / 15 Hz  | floor + rim     |
 | `calm`                                                              | 0.4× speed, 0.55× amp | full            | clicks (or off)    | ≤ 12 Hz     | floor + rim     |
 | `still`                                                             | no                    | reactive        | off (forced)       | 0           | floor + rim     |
 | `perf-lite`                                                         | no                    | plain press     | off                | 0           | floor + rim     |
