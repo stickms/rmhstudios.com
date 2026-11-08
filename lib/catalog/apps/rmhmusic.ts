@@ -5,7 +5,7 @@ const entry: AppInfo = {
   order: 40,
   title: 'RMHMusic',
   description:
-    'Learn to read music and play piano and guitar with your microphone or a MIDI keyboard.',
+    'Learn piano and guitar with your microphone or a MIDI keyboard.',
   longDescription:
     'RMHMusic is a beginner-friendly app for learning piano and guitar. Pick your instrument, connect a microphone or MIDI keyboard (or use the on-screen keys), calibrate its delay and start with a first note lesson, with your progress saved to your account. It is a Beta: reading notes on a staff, pitch and chord ear training, rhythm and time signatures, a tuner and play-along with sheet music are being added in stages.',
   href: '/rmhmusic',

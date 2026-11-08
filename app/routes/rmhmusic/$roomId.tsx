@@ -6,8 +6,9 @@
  * learning app, so old bookmarks and shared room links land on its home
  * instead of a 404. The redirect is temporary (307), not permanent: this single
  * segment catch-all may be shadowed by real routes in later phases (e.g.
- * `/rmhmusic/practice`) and browsers must not cache the bounce. The lesson route (`/rmhmusic/lesson/$lessonId`) is a more
- * specific static-prefix route and is matched before this one.
+ * `/rmhmusic/practice`) and browsers must not cache the bounce. The lesson
+ * route (`/rmhmusic/lesson/$lessonId`) is a more specific static-prefix route
+ * and is matched before this one.
  */
 
 import { createFileRoute, redirect } from '@tanstack/react-router';

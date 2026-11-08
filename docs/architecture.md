@@ -33,11 +33,11 @@
 **Production is a hybrid runtime.** Node is authoritative for the web SSR and
 every user-facing realtime hub; Go is authoritative for the background-worker
 tier, the status dashboard, and asset streaming. All container ports bind to
-`127.0.0.1`; Apache is the only front door. rmhmusic runs _inside_ the Node
-socket-server (port 7001), not as its own service.
+`127.0.0.1`; Apache is the only front door. RMHMusic (the piano & guitar
+learning app) has no hub or socket handler: it is web tier only, over HTTP routes.
 
 The former **full-Go topology** — a `gateway` fronting Go hubs
-(gamehub/rmhbox/rmhtube/rmhmusic) with a Redis backplane, plus its Helm chart
+(gamehub/rmhbox/rmhtube and the old listening-party rmhmusic hub) with a Redis backplane, plus its Helm chart
 and k8s manifests — was **removed in the rewrite** (design §5.2): it never
 served a production request and duplicated the Node hubs. Go now runs only what
 production uses — the `supervisor` (background workers), `status`, and
@@ -71,7 +71,7 @@ flowchart LR
 
     subgraph Node["Node tier"]
       WEB["web — Nitro SSR<br/>pages + API routes<br/>Better Auth · defineHandler<br/>:7005 ⇄ :7015 blue/green"]
-      SOCK["socket :7001<br/>games + RMHMusic"]
+      SOCK["socket :7001<br/>games"]
       BOX["rmhbox :7676<br/>party games"]
       TUBE["rmhtube :7003<br/>watch-together"]
       JOBS["jobs<br/>pg-boss queues"]
@@ -280,7 +280,7 @@ runs the changed-file subset of all three. Test suites and what gates them:
 | --------- | -------------------------------- | ------------------ | --------------------------- |
 | 7005      | web (Nitro SSR) — blue           | Node               | Apache `/`                  |
 | 7015      | web — green (hotswap spare)      | Node               | Apache flip target          |
-| 7001      | socket-server (games + rmhmusic) | Node               | Apache `/socket/`           |
+| 7001      | socket-server (games)            | Node               | Apache `/socket/`           |
 | 7676      | rmhbox                           | Node               | Apache `/rmhbox-ws/`        |
 | 7003      | rmhtube                          | Node               | Apache `/rmhtube-ws/`       |
 | 7004      | recap health                     | Go (in supervisor) | internal                    |
@@ -301,7 +301,7 @@ realtime topology.)
   OAuth + passkeys + Stripe customer creation. `/api/auth/$` splat route.
 - **Node hubs:** validate the session token against the shared `session`
   table (each hub has its own `auth.ts`; socket-server is soft-auth,
-  rmhbox/rmhtube/rmhmusic hard-auth).
+  rmhbox/rmhtube hard-auth).
 - **Go services:** `pkg/auth` runs the same SQL lookup where a service needs
   identity. They are internal-only (workers + `status` + `assets`) and never
   terminate user-facing traffic — the old identity-injecting `gateway` was
