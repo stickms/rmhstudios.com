@@ -145,8 +145,11 @@ export const GAME_PLAYING_BUDGET: Readonly<JellyBudget> = {
   clickBolts: 0,
 };
 
-/** `calm` (04 §4.2): haze amplitude × 0.4, clock ≤ 12 Hz, slots and carriers halved, no ambient arcs. */
-export const CALM = { amplitude: 0.4, maxClockHz: 12, slotShare: 0.5 } as const;
+/**
+ * `calm` (04 §4.2): haze amplitude × 0.4, clock ≤ 12 Hz, slots and carriers halved, no ambient arcs; a click arc's
+ * light (glow, impact, rim light) and its nudge draw at `arcIntensity` (lib/jelly/arcs/glow.ts `arcIntensityScale`).
+ */
+export const CALM = { amplitude: 0.4, maxClockHz: 12, slotShare: 0.5, arcIntensity: 0.6 } as const;
 
 /** Input-free time after which the clock drops to `idleClockHz` (R7). There is deliberately no freeze after it. */
 export const IDLE_AFTER_MS = 20_000;
