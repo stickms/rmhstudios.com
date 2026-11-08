@@ -542,3 +542,23 @@ describe('the spring reaches every host', () => {
     ).toEqual(ARBITRARY_TRANSITION_DEBT);
   }, 30_000);
 });
+
+describe('jellyMotion = still (Review Focus 2): hover and press keep responding', () => {
+  it('no soft-body rule is gated on the motion level', () => {
+    const own = MATERIAL.filter((r) =>
+      r.selectors.some((s) => s.includes(HOST) || s.includes(`:is(${HOST_IS})`)),
+    );
+    expect(own.length).toBeGreaterThanOrEqual(10);
+    for (const r of own)
+      for (const s of r.selectors)
+        expect(s, 'a §8 rule names the motion level').not.toMatch(/jelly-motion/);
+    // The wake and the light dot (the woken-host floor rules that read --px / --py) are not gated on it either.
+    for (const r of MATERIAL.filter((x) => /var\(--px/.test(x.body)))
+      for (const s of r.selectors) expect(s).not.toMatch(/jelly-motion/);
+  });
+
+  it('the pointer variable never checks the motion level', () => {
+    const src = read('lib/jelly/pointer-vars.ts').replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
+    expect(src).not.toMatch(/jelly-motion|jellyMotion|jellyMotionLevel/);
+  });
+});
