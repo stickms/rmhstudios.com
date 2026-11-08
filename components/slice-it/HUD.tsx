@@ -6,7 +6,7 @@ import { useSliceItStore } from '@/lib/slice-it/store';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import type { GameEngine } from '@/lib/slice-it/engine';
 import { HEALTH_MAX } from '@/lib/slice-it/constants';
-import { gradeFor, missesAllowedFor, nextGradeAbove } from '@/lib/slice-it/scoring';
+import { gradeFor } from '@/lib/slice-it/scoring';
 import type { BeatMap } from '@/lib/slice-it/types';
 import type { Section } from '@/lib/slice-it/beatmap/sections';
 
@@ -143,10 +143,6 @@ export function useHudReadout(engine: GameEngine | null | undefined, enabled = t
   const sections = useMemo(() => activeMap?.artefacts?.sections ?? NO_SECTIONS, [activeMap]);
 
   const grade = gradeFor(sample.accuracy);
-  const next = nextGradeAbove(sample.accuracy);
-  const missesLeft = next
-    ? missesAllowedFor(sample.hitPoints, sample.notesResolved, sample.totalNotes, next.min)
-    : null;
 
   // Only news once the run has produced something to be full-combo *about*.
   const showChain = sample.notesResolved >= 8 && sample.isFullCombo;
@@ -162,8 +158,6 @@ export function useHudReadout(engine: GameEngine | null | undefined, enabled = t
     sections,
     sample,
     grade,
-    next,
-    missesLeft,
     showChain,
     healthRatio,
   };
@@ -183,8 +177,6 @@ export function HUD({ engine, margins = false }: HUDProps) {
     sections,
     sample,
     grade,
-    next,
-    missesLeft,
     showChain,
     healthRatio,
   } = useHudReadout(engine, !margins);
@@ -251,8 +243,7 @@ export function HUD({ engine, margins = false }: HUDProps) {
       <div className="flex justify-between items-start relative">
         <div className="flex flex-col gap-1.5 items-start">
           <div>
-            <div className="slice-label">{t('score-hud', { defaultValue: 'Score' })}</div>
-            <div className="mt-1 flex items-center gap-3 sm:gap-5">
+            <div className="flex items-center gap-3 sm:gap-5">
               <span className="slice-hud-score">{score.toLocaleString()}</span>
               {/* The grade rides with the score: it is the headline the player
                   glances at, stamped beside the number it summarises. */}
@@ -260,31 +251,17 @@ export function HUD({ engine, margins = false }: HUDProps) {
             </div>
           </div>
 
-          {/* Live accuracy and what it costs to keep the next grade. Wraps below
-              `sm` so a 320px phone never has to choose between the number and
-              the hint. */}
+          {/* Live accuracy. */}
           {engine && (
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 max-w-[60vw]">
-              <span className="slice-figure text-[13px] text-slice-text">
-                {(sample.accuracy * 100).toFixed(2)}%
-              </span>
-              {next && missesLeft !== null && (
-                <span className="slice-label normal-case tracking-normal">
-                  {ts('misses-for-grade', {
-                    defaultValue: '{{n}} misses left for {{grade}}',
-                    n: missesLeft,
-                    grade: next.grade,
-                  })}
-                </span>
-              )}
-            </div>
+            <span className="slice-figure text-[13px] text-slice-text">
+              {(sample.accuracy * 100).toFixed(2)}%
+            </span>
           )}
         </div>
 
         {/* Speed — shifted left to avoid the settings gear */}
         <div className="text-right mr-10 sm:mr-12">
-          <div className="slice-label">{t('speed', { defaultValue: 'Speed' })}</div>
-          <div className="slice-figure mt-1 text-xl sm:text-3xl font-medium text-slice-text leading-none">
+          <div className="slice-figure text-xl sm:text-3xl font-medium text-slice-text leading-none">
             {modifiers.speed.toFixed(1)}×
           </div>
         </div>
