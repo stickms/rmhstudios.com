@@ -253,11 +253,6 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'Not-found branch; RMHLadder keeps the site theme.',
   },
-  '/rmhmusic/$roomId': {
-    path: null,
-    fidelity: 'shell',
-    why: 'Legacy redirect: old listening-room links are sent to /rmhmusic in beforeLoad, so the route never paints.',
-  },
   '/rmhmusic/lesson/$lessonId': {
     path: '/rmhmusic/lesson/play-first-note',
     fidelity: 'shell',

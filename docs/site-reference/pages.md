@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 365 routes. 198 render inside the standard site shell (sidebar, nav, context rail); 167 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 363 routes. 197 render inside the standard site shell (sidebar, nav, context rail); 166 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -119,7 +119,6 @@ Standard pages, rendered inside the sidebar shell.
 | `/messages/:conversationId` | Conversation | public | `app/routes/_site/messages/$conversationId.tsx` |
 | `/moments/:id` | — | public | `app/routes/_site/moments.$id.tsx` |
 | `/museum` | Site museum | public | `app/routes/_site/museum.tsx` |
-| `/music-trivia` | redirects to `/rmhmusic` | public | `app/routes/_site/music-trivia.tsx` |
 | `/news` | News | public | `app/routes/_site/news/index.tsx` |
 | `/news/stories/:slug` | — | public | `app/routes/_site/news/stories/$slug.tsx` |
 | `/notifications` | redirects to `/messages?tab=notifications` | public | `app/routes/_site/notifications.tsx` |
@@ -325,7 +324,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmhcode` | — | public | `app/routes/rmhcode/index.tsx` |
 | `/rmhcode/auth` | — | public | `app/routes/rmhcode/auth.tsx` |
 | `/rmhmusic` | — | sign-in | `app/routes/rmhmusic/index.tsx` |
-| `/rmhmusic/:roomId` | redirects to `/rmhmusic` | sign-in | `app/routes/rmhmusic/$roomId.tsx` |
 | `/rmhmusic/lesson/:lessonId` | — | sign-in | `app/routes/rmhmusic/lesson.$lessonId.tsx` |
 | `/rmhstudy` | — | sign-in | `app/routes/rmhstudy/index.tsx` |
 | `/rmhstudy/:roomId` | — | sign-in | `app/routes/rmhstudy/$roomId.tsx` |

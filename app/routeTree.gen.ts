@@ -99,7 +99,6 @@ import { Route as SiteHuntRouteImport } from './routes/_site/hunt'
 import { Route as SiteLeaderboardRouteImport } from './routes/_site/leaderboard'
 import { Route as SiteMarketRouteImport } from './routes/_site/market'
 import { Route as SiteMuseumRouteImport } from './routes/_site/museum'
-import { Route as SiteMusicTriviaRouteImport } from './routes/_site/music-trivia'
 import { Route as SiteNotificationsRouteImport } from './routes/_site/notifications'
 import { Route as SiteOutRouteImport } from './routes/_site/out'
 import { Route as SitePhotoOfTheDayRouteImport } from './routes/_site/photo-of-the-day'
@@ -203,7 +202,6 @@ import { Route as RmhboxLobbyIdRouteImport } from './routes/rmhbox/$lobbyId'
 import { Route as RmhcodeIndexRouteImport } from './routes/rmhcode/index'
 import { Route as RmhcodeAuthRouteImport } from './routes/rmhcode/auth'
 import { Route as RmhmusicIndexRouteImport } from './routes/rmhmusic/index'
-import { Route as RmhmusicRoomIdRouteImport } from './routes/rmhmusic/$roomId'
 import { Route as RmhstudyIndexRouteImport } from './routes/rmhstudy/index'
 import { Route as RmhstudyRoomIdRouteImport } from './routes/rmhstudy/$roomId'
 import { Route as RmhstudyPlannerRouteImport } from './routes/rmhstudy/planner'
@@ -1843,11 +1841,6 @@ const SiteMuseumRoute = SiteMuseumRouteImport.update({
   path: '/museum',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteMusicTriviaRoute = SiteMusicTriviaRouteImport.update({
-  id: '/music-trivia',
-  path: '/music-trivia',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteNotificationsRoute = SiteNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -2360,11 +2353,6 @@ const RmhcodeAuthRoute = RmhcodeAuthRouteImport.update({
 const RmhmusicIndexRoute = RmhmusicIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => RmhmusicRoute,
-} as any)
-const RmhmusicRoomIdRoute = RmhmusicRoomIdRouteImport.update({
-  id: '/$roomId',
-  path: '/$roomId',
   getParentRoute: () => RmhmusicRoute,
 } as any)
 const RmhstudyIndexRoute = RmhstudyIndexRouteImport.update({
@@ -8639,7 +8627,6 @@ export interface FileRoutesByFullPath {
   '/leaderboard': typeof SiteLeaderboardRoute
   '/market': typeof SiteMarketRoute
   '/museum': typeof SiteMuseumRoute
-  '/music-trivia': typeof SiteMusicTriviaRoute
   '/notifications': typeof SiteNotificationsRoute
   '/out': typeof SiteOutRoute
   '/photo-of-the-day': typeof SitePhotoOfTheDayRoute
@@ -8733,7 +8720,6 @@ export interface FileRoutesByFullPath {
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
-  '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
@@ -9999,7 +9985,6 @@ export interface FileRoutesByTo {
   '/leaderboard': typeof SiteLeaderboardRoute
   '/market': typeof SiteMarketRoute
   '/museum': typeof SiteMuseumRoute
-  '/music-trivia': typeof SiteMusicTriviaRoute
   '/notifications': typeof SiteNotificationsRoute
   '/out': typeof SiteOutRoute
   '/photo-of-the-day': typeof SitePhotoOfTheDayRoute
@@ -10090,7 +10075,6 @@ export interface FileRoutesByTo {
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
-  '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
@@ -11378,7 +11362,6 @@ export interface FileRoutesById {
   '/_site/leaderboard': typeof SiteLeaderboardRoute
   '/_site/market': typeof SiteMarketRoute
   '/_site/museum': typeof SiteMuseumRoute
-  '/_site/music-trivia': typeof SiteMusicTriviaRoute
   '/_site/notifications': typeof SiteNotificationsRoute
   '/_site/out': typeof SiteOutRoute
   '/_site/photo-of-the-day': typeof SitePhotoOfTheDayRoute
@@ -11473,7 +11456,6 @@ export interface FileRoutesById {
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
-  '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
@@ -12764,7 +12746,6 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/market'
     | '/museum'
-    | '/music-trivia'
     | '/notifications'
     | '/out'
     | '/photo-of-the-day'
@@ -12858,7 +12839,6 @@ export interface FileRouteTypes {
     | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
-    | '/rmhmusic/$roomId'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
@@ -14124,7 +14104,6 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/market'
     | '/museum'
-    | '/music-trivia'
     | '/notifications'
     | '/out'
     | '/photo-of-the-day'
@@ -14215,7 +14194,6 @@ export interface FileRouteTypes {
     | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
-    | '/rmhmusic/$roomId'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
@@ -15502,7 +15480,6 @@ export interface FileRouteTypes {
     | '/_site/leaderboard'
     | '/_site/market'
     | '/_site/museum'
-    | '/_site/music-trivia'
     | '/_site/notifications'
     | '/_site/out'
     | '/_site/photo-of-the-day'
@@ -15597,7 +15574,6 @@ export interface FileRouteTypes {
     | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
-    | '/rmhmusic/$roomId'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
@@ -18290,13 +18266,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteMuseumRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/music-trivia': {
-      id: '/_site/music-trivia'
-      path: '/music-trivia'
-      fullPath: '/music-trivia'
-      preLoaderRoute: typeof SiteMusicTriviaRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/notifications': {
       id: '/_site/notifications'
       path: '/notifications'
@@ -19016,13 +18985,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/rmhmusic/'
       preLoaderRoute: typeof RmhmusicIndexRouteImport
-      parentRoute: typeof RmhmusicRoute
-    }
-    '/rmhmusic/$roomId': {
-      id: '/rmhmusic/$roomId'
-      path: '/$roomId'
-      fullPath: '/rmhmusic/$roomId'
-      preLoaderRoute: typeof RmhmusicRoomIdRouteImport
       parentRoute: typeof RmhmusicRoute
     }
     '/rmhstudy/': {
@@ -27539,7 +27501,6 @@ interface SiteRouteChildren {
   SiteLeaderboardRoute: typeof SiteLeaderboardRoute
   SiteMarketRoute: typeof SiteMarketRoute
   SiteMuseumRoute: typeof SiteMuseumRoute
-  SiteMusicTriviaRoute: typeof SiteMusicTriviaRoute
   SiteNotificationsRoute: typeof SiteNotificationsRoute
   SiteOutRoute: typeof SiteOutRoute
   SitePhotoOfTheDayRoute: typeof SitePhotoOfTheDayRoute
@@ -27687,7 +27648,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteLeaderboardRoute: SiteLeaderboardRoute,
   SiteMarketRoute: SiteMarketRoute,
   SiteMuseumRoute: SiteMuseumRoute,
-  SiteMusicTriviaRoute: SiteMusicTriviaRoute,
   SiteNotificationsRoute: SiteNotificationsRoute,
   SiteOutRoute: SiteOutRoute,
   SitePhotoOfTheDayRoute: SitePhotoOfTheDayRoute,
@@ -28030,13 +27990,11 @@ const RmhcodeRouteWithChildren =
   RmhcodeRoute._addFileChildren(RmhcodeRouteChildren)
 
 interface RmhmusicRouteChildren {
-  RmhmusicRoomIdRoute: typeof RmhmusicRoomIdRoute
   RmhmusicIndexRoute: typeof RmhmusicIndexRoute
   RmhmusicLessonLessonIdRoute: typeof RmhmusicLessonLessonIdRoute
 }
 
 const RmhmusicRouteChildren: RmhmusicRouteChildren = {
-  RmhmusicRoomIdRoute: RmhmusicRoomIdRoute,
   RmhmusicIndexRoute: RmhmusicIndexRoute,
   RmhmusicLessonLessonIdRoute: RmhmusicLessonLessonIdRoute,
 }

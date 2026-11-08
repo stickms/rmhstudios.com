@@ -381,7 +381,6 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/pricing': 'redirect', // → /store?tab=membership
   '/personas': 'redirect', // → /create/personas
   '/playlists': 'redirect', // → /library?view=music
-  '/music-trivia': 'redirect', // → /rmhmusic (Guess the Song retired with the listening-party app)
   '/spaces': 'redirect', // → /communities?tab=spaces
   '/v': 'redirect', // → /create
   '/search': 'redirect', // → /explore (the two pages were merged)
@@ -570,7 +569,6 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/altair/multiplayer/$lobbyId': null, // ephemeral lobby
   '/rmhbox/$lobbyId': null,
   '/rmhbox/minigames/$minigameId/history': null,
-  '/rmhmusic/$roomId': null, // redirects to /rmhmusic (the retired listening rooms)
   '/rmhmusic/lesson/$lessonId': null, // personal learning progress, behind auth
   '/rmhstudy/$roomId': null,
   '/rmhtube/$roomId': null,
