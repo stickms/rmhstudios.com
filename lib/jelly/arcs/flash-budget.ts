@@ -13,12 +13,11 @@
  * - "Coverage" is alpha × the colour's value: on dark themes (`lighter`, additive) the colour's largest channel, so
  *   the summed per-channel addition is at most the coverage; on light themes (`source-over`, which can only cover) one
  *   minus its smallest channel, the most any channel can be pulled toward black.
- * - Dark themes: the ground under an arc is at most {@link FLASH_GROUND.darkMaxValue} (encoded): the void is black
- *   and the gel surfaces are ≈ 0.10–0.18. On that ground a coverage of `gam(lin(0.2) + 0.6) − 0.2` ≈ 0.617 adds
- *   exactly 0.6 luminance; less on any darker pixel. (White text cannot brighten; an antialiased mid-grey text edge
- *   could change more, but it is a hairline, not an area.)
- * - Light themes: the worst ground is white, and pulling it down by a coverage of `1 − gam(0.4)` ≈ 0.335 removes
- *   exactly 0.6 luminance.
+ * - Both themes use the same, ground-independent figure: the worst ground for a coverage c is the one it can still lift
+ *   fully (g = 1 − c; on light themes, white), where it changes luminance by `1 − lin(1 − c)`. A coverage of
+ *   `1 − gam(0.4)` ≈ 0.335 changes it by exactly 0.6 on ANY ground, images and light fills in dark themes included.
+ *   (An earlier version assumed a dark ground ≤ 0.2 for dark themes; additive light changes MORE on brighter grounds,
+ *   so that cap was not a bound — the round 2 re-review.)
  * - Method ({@link centreBound}): every item's layers are radial profiles round its point (the streaks' and the rim's
  *   isotropic envelopes, which over-cover them). Let E be the non-increasing envelope of an item's summed profile.
  *   Take any pixel p and let i be the item whose point is nearest p. Every other item j is then at least d_ij / 2
@@ -56,26 +55,27 @@ import { glowPasses } from './glow';
 import { IMPACT, IMPACT_STOPS, FLASH_LUMINANCE, type ImpactSample } from './impact';
 import { RIM_LIGHT } from './reflection';
 
-const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 const gam = (c: number) => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
 
-export const FLASH_GROUND = {
-  /** The brightest encoded ground an arc draws over on a dark theme (void 0, gel surfaces ≈ 0.10–0.18). */
-  darkMaxValue: 0.2,
-} as const;
+/**
+ * The coverage `c` that changes relative luminance by `delta` on the WORST ground, whatever the ground is. Adding
+ * coverage `c` (or, on light themes, pulling toward black by `c`) moves a pixel of encoded value g by lin(min(1, g + c))
+ * − lin(g) (resp. lin(g) − lin(max(0, g − c))). lin is convex, so the change is largest on the brightest ground the
+ * coverage can still lift fully (g = 1 − c) and, for source-over, on white; both give `1 − lin(1 − c)`. Ground-independent
+ * on purpose: an arc draws over images, thumbnails and light fills in dark themes too (review, Task 9 round 2).
+ */
+function coverageFor(delta: number): number {
+  return 1 - gam(1 - delta);
+}
 
-/** The most summed coverage one pixel may take from the impact layers: luminance changes by ≤ `maxPeak`. */
-export function centreBudget(dark: boolean): number {
-  const g = FLASH_GROUND.darkMaxValue;
-  return dark ? gam(lin(g) + FLASH_LUMINANCE.maxPeak) - g : 1 - gam(1 - FLASH_LUMINANCE.maxPeak);
+/** The most summed coverage one pixel may take from the impact layers: luminance changes by ≤ `maxPeak`, on any ground. */
+export function centreBudget(_dark?: boolean): number {
+  return coverageFor(FLASH_LUMINANCE.maxPeak);
 }
 
 /** The coverage at which a layer changes luminance by `flashDelta` (0.1) on the worst ground. */
-export function flashThreshold(dark: boolean): number {
-  const g = FLASH_GROUND.darkMaxValue;
-  return dark
-    ? gam(lin(g) + FLASH_LUMINANCE.flashDelta) - g
-    : 1 - gam(1 - FLASH_LUMINANCE.flashDelta);
+export function flashThreshold(_dark?: boolean): number {
+  return coverageFor(FLASH_LUMINANCE.flashDelta);
 }
 
 /** A colour's coverage per unit alpha (sRGB 0..1): dark, its largest channel; light, 1 − its smallest. */

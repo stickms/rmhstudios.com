@@ -49,6 +49,8 @@ describe('impact timeline', () => {
     expect(IMPACT.ringEndPx).toBeLessThan(FLASH_LUMINANCE.maxFlashRadiusPx);
     expect(IMPACT.clickFlashRadiusPx).toBeLessThan(FLASH_LUMINANCE.maxFlashRadiusPx);
     expect(FLASH_LUMINANCE.maxFlashRadiusPx).toBeLessThanOrEqual(160);
+    // The frame area budget is a quarter of WCAG 2.3.1's small-area threshold (341 × 256 px at 1024 × 768).
+    expect(FLASH_LUMINANCE.areaBudgetPx2 * 4).toBeLessThanOrEqual(341 * 256);
   });
 });
 

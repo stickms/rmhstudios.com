@@ -9,7 +9,6 @@ import { describe, expect, it } from 'vitest';
 
 import { FLASH_LUMINANCE, IMPACT, impactSample } from '../impact';
 import {
-  FLASH_GROUND,
   boltLayers,
   centreBound,
   centreBudget,
@@ -84,11 +83,20 @@ function worstItems(dark: boolean, spread: number): CentreItem[] {
 
 describe('the per-pixel cap: every impact layer, combined', () => {
   it('the budgets are the coverage that changes luminance by exactly maxPeak on the worst ground', () => {
-    const g = FLASH_GROUND.darkMaxValue;
-    expect(lin(g + centreBudget(true)) - lin(g)).toBeCloseTo(FLASH_LUMINANCE.maxPeak, 3);
+    // Ground-independent: for every encoded ground g, the capped coverage changes luminance by at most maxPeak
+    // (additive, dark themes) and the threshold by at most flashDelta; the worst ground reaches them exactly.
+    for (const dark of [true, false]) {
+      let worst = 0;
+      let worstThr = 0;
+      for (let g = 0; g <= 1; g += 0.005) {
+        worst = Math.max(worst, lin(Math.min(1, g + centreBudget(dark))) - lin(g));
+        worstThr = Math.max(worstThr, lin(Math.min(1, g + flashThreshold(dark))) - lin(g));
+      }
+      expect(worst).toBeLessThanOrEqual(FLASH_LUMINANCE.maxPeak + 1e-3);
+      expect(worst).toBeGreaterThan(FLASH_LUMINANCE.maxPeak - 0.01);
+      expect(worstThr).toBeLessThanOrEqual(FLASH_LUMINANCE.flashDelta + 1e-3);
+    }
     expect(1 - lin(1 - centreBudget(false))).toBeCloseTo(FLASH_LUMINANCE.maxPeak, 3);
-    expect(lin(g + flashThreshold(true)) - lin(g)).toBeCloseTo(FLASH_LUMINANCE.flashDelta, 3);
-    expect(1 - lin(1 - flashThreshold(false))).toBeCloseTo(FLASH_LUMINANCE.flashDelta, 3);
   });
 
   it('the reviewer’s case: one impact’s disc, both streaks, ring, lit rim and contact, combined, at every pixel', () => {
