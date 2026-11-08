@@ -7,7 +7,11 @@
 
 /**
  * `music_room` is legacy: it pinned a retired RMHMusic listening room. New pins of
- * that kind are refused; stored ones render their label with no link.
+ * that kind are refused. A stored one is still returned by the HTTP read path (so
+ * the page's first paint shows a "Listening room" label with no link), but the
+ * live-space hub drops it when it rehydrates the space (`isPinned` in
+ * `server/socket-server/handlers/spaces.ts`), so it disappears once the socket
+ * state arrives.
  */
 export type SpacePinnedKind = 'post' | 'url' | 'music_room' | 'tube_room';
 

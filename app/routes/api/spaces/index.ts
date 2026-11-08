@@ -12,7 +12,8 @@ import { createSpace, listLiveSpaces, SpaceError } from '@/lib/spaces.server';
 
 const pinnedSchema = z
   .object({
-    // `music_room` (the retired RMHMusic rooms) is no longer accepted; stored pins still render.
+    // `music_room` (the retired RMHMusic rooms) is no longer accepted on create. Stored pins are
+    // only returned by reads; the live-space hub drops them on rehydrate (see lib/spaces/types.ts).
     kind: z.enum(['post', 'url', 'tube_room']),
     ref: z.string().min(1).max(500),
   })

@@ -75,8 +75,11 @@ function Avatar({
 
 function PinnedPanel({ pinned }: { pinned: SpacePinned }) {
   const { t } = useTranslation('site');
-  // `music_room` pins point at the retired RMHMusic listening rooms. Stored pins
-  // keep their label but get no link: there is no room to open any more.
+  // `music_room` pins point at the retired RMHMusic listening rooms, so they get a
+  // label and no link (there is no room to open). Only the initial server render can
+  // reach this branch: the live-space hub drops stored `music_room` pins when it
+  // rehydrates, so the first socket state replaces the pin with null (see
+  // `lib/spaces/types.ts`).
   const href =
     pinned.kind === 'url'
       ? pinned.ref
