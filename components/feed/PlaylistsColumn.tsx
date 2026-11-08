@@ -94,7 +94,7 @@ export function PlaylistsColumn({
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, kind: 'video' }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -313,8 +313,8 @@ export function PlaylistsColumn({
               }
               description={
                 normalizedQuery
-                  ? t('playlists-search-empty-desc', {
-                      defaultValue: 'Try a different title or music source.',
+                  ? t('playlists-search-empty-desc-name', {
+                      defaultValue: 'Try a different playlist name.',
                     })
                   : t('playlists-empty-desc-rmhtube', {
                       defaultValue: 'Save videos from an RMHTube room to start a playlist.',

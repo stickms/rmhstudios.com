@@ -886,6 +886,7 @@
   "playlists-empty-desc-rmhtube": "Save videos from an RMHTube room to start a playlist.",
   "playlists-empty-title": "아직 재생목록이 없습니다",
   "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-desc-name": "Try a different playlist name.",
   "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "트랙과 동영상을 나만의 재생목록에 저장하세요.",
   "playlists-signin-title": "재생목록을 만들려면 로그인하세요",

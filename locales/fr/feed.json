@@ -932,6 +932,7 @@
   "playlists-empty-desc-rmhtube": "Save videos from an RMHTube room to start a playlist.",
   "playlists-empty-title": "Aucune playlist pour le moment",
   "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-desc-name": "Try a different playlist name.",
   "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "Enregistrez des morceaux et des vidéos dans vos propres playlists persistantes.",
   "playlists-signin-title": "Connectez-vous pour créer des playlists",

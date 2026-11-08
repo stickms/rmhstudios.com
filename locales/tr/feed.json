@@ -909,6 +909,7 @@
   "playlists-empty-desc-rmhtube": "Save videos from an RMHTube room to start a playlist.",
   "playlists-empty-title": "Henüz çalma listesi yok",
   "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-desc-name": "Try a different playlist name.",
   "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "Parçaları ve videoları kendi kalıcı çalma listelerinize kaydedin.",
   "playlists-signin-title": "Çalma listeleri oluşturmak için giriş yapın",

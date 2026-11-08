@@ -886,6 +886,7 @@
   "playlists-empty-desc-rmhtube": "Save videos from an RMHTube room to start a playlist.",
   "playlists-empty-title": "还没有播放列表",
   "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-desc-name": "Try a different playlist name.",
   "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "将曲目和视频保存到您自己的永久播放列表中。",
   "playlists-signin-title": "登录以创建播放列表",

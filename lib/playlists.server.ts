@@ -1,12 +1,15 @@
 /**
- * Persistent media playlists (music/video) — the durable personal library
- * behind the apps' ephemeral room queues. The owner can do everything; invited
+ * Persistent media playlists — the durable personal library behind RMHTube's
+ * ephemeral room queues. New playlists are always `video`: `music` playlists were
+ * filled only by the retired RMHMusic listening-party app, so existing ones are
+ * still listed and readable but no new ones are made. The owner can do everything; invited
  * collaborators can read a playlist and add/remove its items. Every "may this
  * user edit this playlist" decision goes through `canEditPlaylist` below.
  */
 
 import { prisma } from '@/lib/prisma.server';
 
+/** Every kind a stored playlist can have (`music` only on legacy rows). */
 export type PlaylistKind = 'music' | 'video';
 
 export const MAX_PLAYLISTS = 100;
@@ -123,15 +126,11 @@ export async function getPlaylist(id: string, userId: string): Promise<PlaylistD
 
 export type CreateResult = { ok: true; id: string } | { ok: false; error: string; status: number };
 
-export async function createPlaylist(
-  userId: string,
-  name: string,
-  kind: PlaylistKind,
-): Promise<CreateResult> {
+export async function createPlaylist(userId: string, name: string): Promise<CreateResult> {
   const count = await prisma.playlist.count({ where: { userId } });
   if (count >= MAX_PLAYLISTS) return { ok: false, error: 'Too many playlists', status: 400 };
   const pl = await prisma.playlist.create({
-    data: { userId, name: name.trim().slice(0, 100) || 'Untitled', kind },
+    data: { userId, name: name.trim().slice(0, 100) || 'Untitled', kind: 'video' },
     select: { id: true },
   });
   return { ok: true, id: pl.id };

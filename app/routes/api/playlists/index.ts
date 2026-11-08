@@ -5,12 +5,14 @@ import { listPlaylists, createPlaylist, type PlaylistKind } from '@/lib/playlist
 
 const createSchema = z.object({
   name: z.string().min(1).max(100),
-  kind: z.enum(['music', 'video']).optional(),
+  // Only video playlists can be created; `music` ones belonged to the retired
+  // RMHMusic listening-party app and are read-only legacy rows.
+  kind: z.literal('video').optional(),
 });
 
 /**
  * GET  /api/playlists?kind= — the caller's playlists.
- * POST /api/playlists — create a playlist.
+ * POST /api/playlists — create a (video) playlist.
  */
 export const Route = createFileRoute('/api/playlists/')({
   server: {
@@ -29,7 +31,7 @@ export const Route = createFileRoute('/api/playlists/')({
           allowEmptyBody: true,
         },
         async ({ session, body }) => {
-          const result = await createPlaylist(session.user.id, body.name, body.kind ?? 'music');
+          const result = await createPlaylist(session.user.id, body.name);
           if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
           return Response.json({ success: true, id: result.id }, { status: 201 });
         },
