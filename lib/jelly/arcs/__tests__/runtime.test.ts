@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createJellyBus } from '../../bus';
 import { activeElectricArcs, dischargeAt, installElectricArcs, strike } from '../index';
 import { createFlashLedger } from '../ledger';
+import { NUDGE } from '../nudge';
 import { fakeButtons, fakeRegistry, fakeEnv, type FakeEl, type FakeEnv } from './arc-dom';
 
 describe('electric arcs runtime', () => {
@@ -333,6 +334,90 @@ describe('electric arcs runtime', () => {
     const bus = createJellyBus();
     install({ bus });
     expect(bus.listenerCount('body:release')).toBe(1);
+  });
+
+  /** Run the shared frame until the arcs are done (16ms steps). */
+  const settle = () => {
+    for (let i = 0; i < 100 && env.rafQueue.size > 0; i++) {
+      vi.advanceTimersByTime(16);
+      env.frame();
+    }
+  };
+
+  it('a strike nudges the struck hosts (≤ 1.5px, inward) and the nudge clears after the settle', () => {
+    install({ ambient: false });
+    expect(strike(els[0] as unknown as Element, els[1] as unknown as Element)).toBe(true);
+    settle();
+    // Both struck hosts were kicked at the first strike and have been let go onto the release spring by now.
+    const kicked = [els[0], els[1]].filter((el) => el.getAttribute(NUDGE.attr) !== null);
+    expect(kicked).toHaveLength(2);
+    vi.advanceTimersByTime(NUDGE.kickMs + NUDGE.settleMs);
+    for (const el of els) {
+      expect(el.getAttribute(NUDGE.attr)).toBeNull();
+      expect(el.style[NUDGE.propX]).toBeUndefined();
+    }
+  });
+
+  it('teardown mid-nudge removes the nudge properties at once', () => {
+    install({ ambient: false });
+    expect(strike(els[0] as unknown as Element, els[1] as unknown as Element)).toBe(true);
+    // Run just past the first strike (pre-glow 40ms), while the hosts are still kicked.
+    for (let i = 0; i < 4; i++) {
+      vi.advanceTimersByTime(16);
+      env.frame();
+    }
+    expect(els[1].getAttribute(NUDGE.attr)).toBe('kick');
+    expect(els[1].style[NUDGE.propX]).toMatch(/px$/);
+    teardown!();
+    teardown = null;
+    for (const el of els) {
+      expect(el.getAttribute(NUDGE.attr)).toBeNull();
+      expect(el.style[NUDGE.propX]).toBeUndefined();
+      expect(el.style[NUDGE.propY]).toBeUndefined();
+    }
+    expect(env.canvas()).toBeUndefined();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('still, off and perf-lite: a strike draws nothing and nudges nothing', () => {
+    for (const set of [
+      () => env.root.setAttribute('data-jelly-motion', 'still'),
+      () => env.root.setAttribute('data-electric-arcs', 'off'),
+      () => env.root.classes.add('perf-lite'),
+    ]) {
+      set();
+      install({ ambient: false });
+      expect(strike(els[0] as unknown as Element, els[1] as unknown as Element)).toBe(false);
+      expect(dischargeAt(140, 116)).toBe(false);
+      expect(env.canvas()).toBeUndefined();
+      expect(env.rafCalls).toBe(0);
+      expect(els.every((el) => el.getAttribute(NUDGE.attr) === null)).toBe(true);
+      teardown!();
+      teardown = null;
+      env.root.removeAttribute('data-jelly-motion');
+      env.root.removeAttribute('data-electric-arcs');
+      env.root.classes.delete('perf-lite');
+    }
+  });
+
+  it('a touch-only device ticks once per burst; a fine pointer never does', () => {
+    const vibrate = vi.fn(() => true);
+    (env.win.navigator as unknown as { vibrate: typeof vibrate }).vibrate = vibrate;
+    env.state.fine = false;
+    install({ ambient: false });
+    expect(strike(els[0] as unknown as Element, els[1] as unknown as Element)).toBe(true);
+    settle();
+    expect(vibrate).toHaveBeenCalledTimes(1);
+    expect(vibrate).toHaveBeenCalledWith(NUDGE.vibrateMs);
+    teardown!();
+    teardown = null;
+    vibrate.mockClear();
+    env.state.fine = true;
+    vi.advanceTimersByTime(2000);
+    install({ ambient: false });
+    expect(strike(els[0] as unknown as Element, els[1] as unknown as Element)).toBe(true);
+    settle();
+    expect(vibrate).not.toHaveBeenCalled();
   });
 
   it('teardown removes the layer, listeners and the active runtime', () => {
