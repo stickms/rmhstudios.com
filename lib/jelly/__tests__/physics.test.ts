@@ -426,12 +426,12 @@ describe('installJellyPhysics', () => {
     expect(inlineClean(btn)).toBe(true);
   });
 
-  it('a press on a flat member presses the parent that marks itself press-through, not the member', () => {
+  it('a press on a flat member presses the parent that marks itself a press body, not the member', () => {
     // A JellyGroup (or a bar of flat members): the members opt out of being bodies, the parent is the one body.
     install();
     const group = make('div', {
       cls: ['glass-fill'],
-      attrs: { 'data-jelly-press-through': '' },
+      attrs: { 'data-jelly-press-body': '' },
       box: { left: 0, top: 0, width: 260, height: 56 },
     });
     const member = make('button', { attrs: { 'data-jelly': 'off' } });
@@ -443,10 +443,10 @@ describe('installJellyPhysics', () => {
     expect(member.hasAttribute('data-jelly-active')).toBe(false);
   });
 
-  it('a press-through container with no glass body around it falls back to the member rules (opted out: nothing presses)', () => {
+  it('a press-body container with no glass body around it falls back to the member rules (opted out: nothing presses)', () => {
     install();
     const strip = make('div', {
-      attrs: { 'data-jelly-press-through': '', 'data-jelly-scope': 'off' },
+      attrs: { 'data-jelly-press-body': '', 'data-jelly-scope': 'off' },
     });
     const tab = make('button');
     strip.children.push(tab);
