@@ -64,13 +64,22 @@ export function HideReplyMenuItem({
   );
 }
 
-export function HiddenRepliesGroup({ count, children }: { count: number; children: ReactNode }) {
+export function HiddenRepliesGroup({
+  count,
+  children,
+  card,
+}: {
+  count: number;
+  children: ReactNode;
+  /** Top level of the post page: the disclosure is its own `.glass-fill` card in the column. */
+  card?: boolean;
+}) {
   const { t } = useTranslation('f-feed-plus');
   const [open, setOpen] = useState(false);
   const panelId = useId();
   if (count === 0) return null;
   return (
-    <div className="py-2">
+    <div className={card ? 'glass-fill rounded-site px-2 py-2' : 'py-2'}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -88,7 +97,7 @@ export function HiddenRepliesGroup({ count, children }: { count: number; childre
         />
       </button>
       {open && (
-        <div id={panelId} className="mt-1 divide-y divide-site-border">
+        <div id={panelId} className="mt-1 flex flex-col px-2">
           {children}
         </div>
       )}

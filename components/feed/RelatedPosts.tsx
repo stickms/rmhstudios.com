@@ -24,22 +24,20 @@ export function RelatedPosts({ postId }: { postId: string }) {
 
   if (items.length === 0) return null;
 
-  // Section-level reveal:"more like this"fades up once when it scrolls into
+  // The section is a sibling of the post and its replies in `.post-page`, so the
+  // cards here sit on the same column and gutter as they do: no wrapper padding,
+  // and `.post-page .social-post` drops the feed's own side margin (feed.css).
+  // Section-level reveal: "more like this" fades up once when it scrolls into
   // view (below the fold on the detail page). The cards inside are NOT each
-  // wrapped — that would violate the feed perf rules; only the section settles.
-  // §16.3.3: the cards use the feed's floating-card grammar — `space-y-3`gaps +
-  // `px-3`side gutters (matching FeedList) — instead of the old flush
-  // `divide-y`stack, so"more like this"reads like the feed, not a table.
+  // wrapped, which would violate the feed perf rules; only the section settles.
   return (
-    <Reveal as="section" className="border-t border-site-border pt-3">
-      <h2 className="site-section-label px-4 pb-1">
+    <Reveal as="section" className="post-page__related">
+      <h2 className="site-section-label">
         {t('related-posts', { defaultValue: 'Related posts' })}
       </h2>
-      <div className="space-y-3 px-3 pb-3">
-        {items.map((item) => (
-          <RMHarkCard key={item.id} item={item} />
-        ))}
-      </div>
+      {items.map((item) => (
+        <RMHarkCard key={item.id} item={item} />
+      ))}
     </Reveal>
   );
 }

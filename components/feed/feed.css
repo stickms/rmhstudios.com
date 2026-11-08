@@ -125,6 +125,50 @@
   gap: 0.75rem;
 }
 
+/* Post page (`PostDetail`). ONE column: the post, the reply surface, every reply
+   thread and the related posts are direct children of `.post-page` (or of a
+   section that is), so they share the shell's gutter and width, and sit
+   --space-4 apart (the jelly's minimum gap between bodies). Nothing here is a
+   rule or a border: surfaces are `.glass-pane` / `.glass-fill` by role, and the
+   space between them is the only separator. */
+.post-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.post-page__back {
+  display: flex;
+  /* The back control is quiet text; the column's gap already clears it. */
+  margin-block-end: calc(var(--space-4) * -0.5);
+}
+
+.post-page__post {
+  padding: var(--rad-card-pad, 1.25rem);
+}
+
+.post-page__compose {
+  padding: var(--space-4);
+}
+
+.post-page__replies,
+.post-page__related {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* A section label sits with the cards it names, not a full gap above them. */
+.post-page__related > .site-section-label {
+  margin-block-end: calc(var(--space-4) * -0.5);
+}
+
+/* The feed card keeps a side margin of its own on phones (the feed column has no
+   gutter); inside the post page the column already supplies it. */
+.post-page .social-post {
+  margin-inline: 0;
+}
+
 /* Homepage hero — an Apple-style editorial header: big SF display type, a lead
    line, a live pulse, and two drifting monochrome auras for parallax depth. */
 .feed-hero {

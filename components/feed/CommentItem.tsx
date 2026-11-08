@@ -88,6 +88,14 @@ interface SessionUser {
 //"Show more replies"button. Keeps deep chains from running off-screen.
 const MAX_NESTED_DEPTH = 4;
 
+// A reply's thread hangs under its parent's text column, 44px (avatar + gap) in
+// from the parent's left edge; the thread container pulls that back (`-ml-11`) and
+// indents by one step (`pl-4`) instead, so a nested reply costs 16px, not 60.
+// Replies indent for the first levels only, then continue at the same left edge:
+// at 390px every further indent step takes a column of text away from the reply,
+// and four steps used to leave one character per line.
+const INDENT_DEPTH = 3;
+
 function countDescendants(replies: Comment[] | undefined): number {
   if (!replies?.length) return 0;
   return replies.reduce((total, r) => total + 1 + countDescendants(r.replies), 0);
@@ -295,7 +303,7 @@ export function CommentItem({
       onHiddenChange={onHiddenChange}
       // Reset depth after an expanded thread so indentation
       // restarts shallow instead of running off-screen.
-      depth={threadExpanded ? 0 : depth + 1}
+      depth={threadExpanded ? 1 : depth + 1}
     />
   );
 
@@ -330,7 +338,13 @@ export function CommentItem({
   };
 
   return (
-    <div className="py-3" {...(comment.deletedAt || comment.pending ? {} : reactionTrigger)}>
+    <div
+      // A top-level reply is a card of the same material as the feed's posts
+      // (`.glass-fill`, L1) with its whole thread inside it; a nested reply is a
+      // row on that card, so the column never gets a second card width.
+      className={depth === 0 ? 'glass-fill rounded-site p-4' : 'pt-3'}
+      {...(comment.deletedAt || comment.pending ? {} : reactionTrigger)}
+    >
       <div className="flex gap-3">
         {/* Avatar */}
         <UserAvatar user={freshCommentUser} size="sm" />
@@ -644,7 +658,7 @@ export function CommentItem({
                 })}
               </button>
             ) : (
-              <div className="mt-2 ml-2 border-l-2 border-site-border pl-3 space-y-1">
+              <div className={`mt-1 -ml-11 space-y-1 ${depth < INDENT_DEPTH ? 'pl-4' : ''}`}>
                 {comment.replies!.filter((reply) => !reply.hidden).map(renderReply)}
                 <HiddenRepliesGroup count={hiddenReplies.length}>
                   {hiddenReplies.map(renderReply)}

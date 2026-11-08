@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Spinner } from '@/components/ui/spinner';
 import { useReconsider } from '@/components/safety/use-reconsider';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { RMHarkOverflowMenu } from './RMHarkOverflowMenu';
 import { useLocaleStore } from '@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from '@/lib/i18n/config';
@@ -20,7 +21,7 @@ import { AIGenerateButton } from './AIGenerateButton';
 import { MentionTextarea } from './MentionTextarea';
 import type { Comment } from './CommentItem';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-limits';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import type { FeedItem } from '@/lib/feed-types';
 import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
@@ -49,6 +50,7 @@ interface PostDetailProps {
 export function PostDetail({ postId }: PostDetailProps) {
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
+  const pathname = useLocation({ select: (l) => l.pathname });
   const locale = useLocaleStore((s) => s.locale);
   // §17.2: seed the detail from the feed card's already-known data so the hero (the
   // liquid-open morph target) renders INSTANTLY — no skeleton flash, no second
@@ -313,40 +315,43 @@ export function PostDetail({ postId }: PostDetailProps) {
     );
   }
 
-  return (
-    <div className="flex flex-col">
-      {/* Header: the same flat big-type page-heading PageLayout renders, with
- a history-back control in the meta row. */}
-      <header data-slot="page-header" className="page-heading">
-        <div className="page-heading__meta">
-          <button
-            type="button"
-            onClick={() => window.history.back()}
-            className="page-heading__back"
-          >
-            <ArrowLeft aria-hidden />
-            <span>{t('back', { defaultValue: 'Back' })}</span>
-          </button>
-        </div>
-        <div className="page-heading__content">
-          <div className="min-w-0">
-            <h1 className="site-display-3">
-              <span className="min-w-0 truncate">{t('post-header', { defaultValue: 'Post' })}</span>
-            </h1>
-          </div>
-        </div>
-      </header>
+  const sessionUserForReplies = session?.user
+    ? {
+        ...session.user,
+        image: resolvedUser?.image || session.user.image,
+        name: resolvedUser?.name || session.user.name,
+      }
+    : undefined;
 
-      {/* Post content (expanded) — the liquid-open hero the feed card morphs into
- (§5.48). The name is static here (one post per detail page → unique).
- The page-heading above owns the gap to this block. */}
-      <div
-        className="relative px-4 pt-4 pb-3 border-b border-site-border"
+  const authorName = freshPostUser?.name || t('unknown-user', { defaultValue: 'Unknown' });
+
+  // One column, one rhythm: the post, the reply surface, every reply thread and
+  // the related posts are siblings of `.post-page` (feed.css), so they share the
+  // same width, the same gutter and the same --space-4 gap. The page title is
+  // the author's name, visually hidden: the card below already says who wrote it.
+  return (
+    <div className="post-page">
+      <h1 className="sr-only">
+        {t('post-by', { defaultValue: 'Post by {{name}}', name: authorName })}
+      </h1>
+      <div className="post-page__back">
+        <button type="button" onClick={() => window.history.back()} className="page-heading__back">
+          <ArrowLeft aria-hidden />
+          <span>{t('back', { defaultValue: 'Back' })}</span>
+        </button>
+      </div>
+
+      {/* The post: a singular panel, so `.glass-pane` (L2). It is the liquid-open
+          hero the feed card morphs into (§5.48); the name is static because there
+          is one post per detail page. Author, body, media, timestamp and the
+          action row all live inside it. */}
+      <article
+        className="glass-pane post-page__post relative"
         style={{ viewTransitionName: liquidVTName('post', postId) }}
       >
         {/* More menu — top right (shared with the feed card so features match) */}
         {!post.deletedAt && (
-          <div className="absolute top-4 right-4 z-20">
+          <div className="absolute top-3 right-3 z-20">
             <RMHarkOverflowMenu
               item={post}
               isAuthor={isAuthor}
@@ -366,19 +371,19 @@ export function PostDetail({ postId }: PostDetailProps) {
         )}
 
         {/* User header */}
-        <div className="flex items-center gap-3 mb-3 pr-8">
+        <div className="flex items-center gap-3 mb-4 pr-10">
           <UserAvatar user={freshPostUser} size="lg" />
-          <div>
+          <div className="min-w-0">
             <Link
               to={`/u/${freshPostUser?.handle || freshPostUser?.id}` as string}
               className="hover:underline"
             >
-              <span className="font-bold text-site-text">
-                {freshPostUser?.name || t('unknown-user', { defaultValue: 'Unknown' })}
+              <span className="block truncate text-base font-bold text-site-text">
+                {authorName}
               </span>
             </Link>
             {freshPostUser?.handle && (
-              <p className="text-sm text-site-text-dim">@{freshPostUser.handle}</p>
+              <p className="truncate text-sm text-site-text-muted">@{freshPostUser.handle}</p>
             )}
           </div>
         </div>
@@ -387,7 +392,7 @@ export function PostDetail({ postId }: PostDetailProps) {
         {post.content && (
           <RMHarkContent
             text={post.content}
-            className="text-site-text text-[17px] leading-relaxed whitespace-pre-wrap break-words mb-3"
+            className="mb-4 text-lg leading-relaxed whitespace-pre-wrap break-words text-site-text sm:text-xl"
           />
         )}
 
@@ -442,7 +447,7 @@ export function PostDetail({ postId }: PostDetailProps) {
  edge is a hard rectangle, so the gap that reads as a paragraph break under
  text reads as the timestamp sitting ON the image. */}
         {(post.gifUrl || (post.imageUrls && post.imageUrls.length > 0)) && (
-          <SensitiveMedia sensitive={post.isSensitive} className="mb-5">
+          <SensitiveMedia sensitive={post.isSensitive} className="mb-4">
             {post.gifUrl && <GifEmbed url={post.gifUrl} className="mb-1" />}
             {post.imageUrls && post.imageUrls.length > 0 && (
               <PostImageGrid
@@ -492,7 +497,7 @@ export function PostDetail({ postId }: PostDetailProps) {
         )}
 
         {/* Full timestamp */}
-        <p className="text-sm text-site-text-dim mb-3">
+        <p className="mb-1 text-sm text-site-text-muted">
           {formatFullDate(post.createdAt)}
           {post.edited && !post.deletedAt ? (
             <EditHistoryButton postId={postId} className="text-sm" />
@@ -500,30 +505,28 @@ export function PostDetail({ postId }: PostDetailProps) {
         </p>
 
         {/* The passive "N reRMHarks · N Likes · N Views" bar that used to sit here
- is gone. `RMHarkActions` directly below already renders every one of those
- counts against the same icons the rest of the site uses — so the page
- showed each figure twice, once as text that looked clickable and did
- nothing, and once on the control that actually performs the action. The
- toolbar is the one that stays, because it is the one you can press. */}
-
-        {/* Actions */}
+            is gone. `RMHarkActions` directly below already renders every one of
+            those counts against the same icons the rest of the site uses, so the
+            page showed each figure twice: once as text that looked clickable and
+            did nothing, and once on the control that performs the action. The
+            toolbar stays because it is the one you can press. It closes the card
+            with space, not a rule. */}
         {!post.deletedAt && (
-          <div className="border-t border-site-border pt-3">
-            <RMHarkActions
-              item={post}
-              onUpdate={(_, updates) => {
-                setPost((prev) => (prev ? { ...prev, ...updates } : prev));
-                syncToFeed(updates);
-              }}
-            />
-          </div>
+          <RMHarkActions
+            item={post}
+            className="mt-2 -mb-2"
+            onUpdate={(_, updates) => {
+              setPost((prev) => (prev ? { ...prev, ...updates } : prev));
+              syncToFeed(updates);
+            }}
+          />
         )}
-      </div>
+      </article>
 
-      {/* Deleted notice */}
+      {/* Deleted notice: a quiet card in the column, not a ruled strip. */}
       {post.deletedAt && (
-        <div className="px-4 py-3 border-b border-site-border">
-          <p className="text-sm text-site-text-dim text-center">
+        <div className="glass-fill rounded-site px-5 py-4">
+          <p className="text-center text-sm text-site-text-muted">
             {post.deletedByAdmin
               ? t('deleted-by-admin', { defaultValue: 'This RMHark was deleted by an admin.' })
               : t('deleted-by-user', { defaultValue: 'This RMHark was deleted by the user.' })}
@@ -531,11 +534,16 @@ export function PostDetail({ postId }: PostDetailProps) {
         </div>
       )}
 
-      {/* Comment compose */}
+      {/* Reply surface. Signed in: the composer, a singular panel (`.glass-pane`)
+          around a `.glass-inset` field, the same grammar as the feed's composer.
+          Signed out: a quiet `.glass-fill` card with the one way forward. */}
       {!post.deletedAt && session ? (
-        <div className="px-4 py-3 border-b border-site-border">
+        <section
+          className="glass-pane post-page__compose"
+          aria-label={t('reply', { defaultValue: 'Reply' })}
+        >
           {post.replyControl && post.replyControl !== 'EVERYONE' && (
-            <p className="mb-2 flex items-center gap-2 text-xs text-site-text-muted">
+            <p className="mb-3 flex items-center gap-2 text-xs text-site-text-muted">
               <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               {post.replyControl === 'FOLLOWING'
                 ? t('reply-limited-following', {
@@ -557,7 +565,7 @@ export function PostDetail({ postId }: PostDetailProps) {
               size="sm"
               linkToProfile={false}
             />
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               <MentionTextarea
                 id="post-comment-input"
                 value={commentContent}
@@ -565,16 +573,16 @@ export function PostDetail({ postId }: PostDetailProps) {
                 placeholder={t('reply-placeholder', { defaultValue: 'Post your reply...' })}
                 rows={2}
                 maxLength={MAX_COMMENT_LENGTH}
-                className="glass-inset w-full text-site-text placeholder:text-site-text-dim text-sm rounded-site px-3 py-2 resize-none outline-none focus:border-site-accent transition-colors"
+                className="glass-inset w-full resize-none rounded-site px-4 py-3 text-sm text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                     handleSubmit();
                   }
                 }}
               />
-              <div className="flex items-center justify-between mt-2">
+              <div className="mt-3 flex items-center justify-between">
                 <span
-                  className={`text-xs font-mono ${remaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}
+                  className={`font-mono text-xs ${remaining <= 20 ? 'text-site-warning' : 'text-site-text-muted'}`}
                 >
                   {remaining}
                 </span>
@@ -599,39 +607,52 @@ export function PostDetail({ postId }: PostDetailProps) {
               </div>
             </div>
           </div>
-        </div>
+        </section>
       ) : !post.deletedAt ? (
-        <div className="px-4 py-3 border-b border-site-border text-center text-sm text-site-text-dim">
-          {t('sign-in-to-reply', { defaultValue: 'Sign in to reply' })}
+        <div className="glass-fill flex flex-wrap items-center justify-between gap-3 rounded-site px-5 py-4">
+          <p className="text-sm text-site-text-muted">
+            {t('sign-in-to-reply', { defaultValue: 'Sign in to reply' })}
+          </p>
+          <Link to="/login" search={{ callbackURL: pathname }}>
+            <Button variant="accent" size="sm" tabIndex={-1}>
+              {t('sign-in', { defaultValue: 'Sign in' })}
+            </Button>
+          </Link>
         </div>
       ) : null}
 
-      {/* Comments list */}
+      {/* Replies: each top-level reply is its own card (CommentItem draws it), and
+          nested replies indent inside their parent's card, so the column keeps one
+          width all the way down. */}
       {!post.deletedAt && (
-        <div className="px-4">
+        <>
           {!loadingComments && comments.length > 0 && (
             <ThreadSummary postId={postId} commentCount={comments.length} />
           )}
           {loadingComments ? (
-            <div className="flex justify-center py-12">
+            <div className="flex justify-center py-8">
               <Spinner />
             </div>
           ) : comments.length === 0 ? (
-            <p className="text-center text-sm text-site-text-dim py-12">
-              {t('no-replies', { defaultValue: 'No replies yet. Be the first!' })}
-            </p>
+            <div className="glass-fill rounded-site">
+              <EmptyState
+                icon={MessageCircle}
+                title={t('no-replies-title', { defaultValue: 'No replies yet' })}
+                description={t('no-replies-hint', { defaultValue: 'Be the first to reply.' })}
+                className="py-8"
+              />
+            </div>
           ) : (
             // §16.3.5 — one entrance per navigation. The post body is fetched
             // CLIENT-side (the route loader only has meta+sidebar), so the column
             // enters ONCE via `page-enter`/the liquid-open morph while a spinner
             // shows, THEN the replies arrive a beat later. Re-staggering them here
             // was a second, jarring entrance wave on the SAME navigation (the
-            // owner's"double load animation"). `initial={false}`mounts the
-            // replies already-settled — the page/morph is the single entrance;
-            // reduced motion collapsed this anyway.
+            // owner's "double load animation"). `initial={false}` mounts the
+            // replies already-settled — the page/morph is the single entrance.
             <>
               <motion.div
-                className="divide-y divide-site-border"
+                className="post-page__replies"
                 variants={staggerContainer(0.03)}
                 initial={false}
                 animate="animate"
@@ -645,15 +666,7 @@ export function PostDetail({ postId }: PostDetailProps) {
                         postId={postId}
                         postAuthorId={post.user?.id}
                         onHiddenChange={handleHiddenChange}
-                        sessionUser={
-                          session?.user
-                            ? {
-                                ...session.user,
-                                image: resolvedUser?.image || session.user.image,
-                                name: resolvedUser?.name || session.user.name,
-                              }
-                            : undefined
-                        }
+                        sessionUser={sessionUserForReplies}
                         onReplyAdded={handleReplyAdded}
                         onCommentRemoved={handleCommentRemoved}
                       />
@@ -667,7 +680,7 @@ export function PostDetail({ postId }: PostDetailProps) {
                     );
                   })}
               </motion.div>
-              <HiddenRepliesGroup count={comments.filter((c) => c.hidden).length}>
+              <HiddenRepliesGroup card count={comments.filter((c) => c.hidden).length}>
                 {comments
                   .filter((c) => c.hidden)
                   .map((comment) => (
@@ -675,17 +688,10 @@ export function PostDetail({ postId }: PostDetailProps) {
                       key={comment.id}
                       comment={comment}
                       postId={postId}
+                      depth={1}
                       postAuthorId={post.user?.id}
                       onHiddenChange={handleHiddenChange}
-                      sessionUser={
-                        session?.user
-                          ? {
-                              ...session.user,
-                              image: resolvedUser?.image || session.user.image,
-                              name: resolvedUser?.name || session.user.name,
-                            }
-                          : undefined
-                      }
+                      sessionUser={sessionUserForReplies}
                       onReplyAdded={handleReplyAdded}
                       onCommentRemoved={handleCommentRemoved}
                     />
@@ -693,7 +699,7 @@ export function PostDetail({ postId }: PostDetailProps) {
               </HiddenRepliesGroup>
             </>
           )}
-        </div>
+        </>
       )}
 
       {!post.deletedAt && <RelatedPosts postId={postId} />}
