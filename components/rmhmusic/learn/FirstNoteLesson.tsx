@@ -226,7 +226,9 @@ export function FirstNoteLesson({
       </div>
     );
   } else {
-    region = <OnScreenKeyboard className="-mx-2 sm:mx-0" />;
+    // The keys bleed into the page gutter so seven white keys stay ≥ 44px wide: 8px a side, and
+    // 14px below 332px (a 320px phone: 280px column + 28px = 308px = 7 × 44px).
+    region = <OnScreenKeyboard className="-mx-2 max-[332px]:-mx-3.5 sm:mx-0" />;
   }
 
   return (
