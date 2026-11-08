@@ -5,7 +5,7 @@
  * and how much the visitor wants us to spend of it.
  *
  * Before this module, five files read `navigator.connection` on their own
- * (`perf-tier`, `performance-tier`, `useDataSaver`, `viewport-prefetch`, `rum`),
+ * (`low-end`, `useDataSaver`, `viewport-prefetch`, `rum`),
  * each with its own idea of "slow" — and the speculative prefetchers ignored the
  * site's own Data Saver setting entirely: a visitor who switched it ON in
  * Settings still had routes warmed on hover and on scroll, because only the

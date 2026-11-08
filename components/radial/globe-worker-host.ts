@@ -16,7 +16,7 @@
  * - **the page snapshot**: the scene store's bitmap is cloned (`createImageBitmap`), the clone transferred and closed
  *   here, so no bitmap is ever shared between two contexts.
  *
- * Failure policy (`globe-protocol.ts`): no `OffscreenCanvas`/transfer/`Worker`, `perf-lite`, a worker that cannot
+ * Failure policy (`globe-protocol.ts`): no `OffscreenCanvas`/transfer/`Worker`, a software-rendering browser, a worker that cannot
  * make a WebGL 2 context or build the program, or one that never answers → the CSS globe for the rest of the page. A
  * crashed worker or a lost context → a fresh worker with fresh canvases (a transferred canvas can never be taken back),
  * a bounded number of times, then the CSS globe. Never GL on the page's thread. The decision is logged to the console
@@ -27,6 +27,7 @@
  */
 import type { SharedScene } from '@/lib/liquid/glass/scene-store';
 import { RIPPLE } from '@/lib/fluid';
+import { softRenderDetected } from '@/lib/low-end';
 import {
   FrameCoalescer,
   GLOBE_PROTOCOL_VERSION,
@@ -493,7 +494,7 @@ function browserDeps(): GlobeHostDeps {
   }
   return {
     env: {
-      perfLite: win.document.documentElement.classList.contains('perf-lite'),
+      softRender: softRenderDetected(),
       hasWorker: typeof win.Worker === 'function',
       hasOffscreenCanvas: typeof win.OffscreenCanvas === 'function',
       canTransfer:

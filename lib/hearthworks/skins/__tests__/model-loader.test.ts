@@ -17,6 +17,7 @@ import {
   VectorKeyframeTrack,
 } from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { resetLowEndCapability } from '@/lib/low-end';
 import { CharacterAnimator, newDrive } from '../animator';
 import { figureWorldHeight } from '../figure-scale';
 import {
@@ -405,6 +406,7 @@ describe('model cache and the channel', () => {
   });
   afterEach(() => {
     vi.unstubAllGlobals();
+    resetLowEndCapability();
     resetModelCacheForTests();
     resetModelIndexForTests();
   });
@@ -537,10 +539,12 @@ describe('model cache and the channel', () => {
   it('is switched off by the low-performance tier, low memory, the debug flag, and a skin that failed to render', async () => {
     vi.stubGlobal('fetch', await goodChannel());
     expect(modelsEnabled()).toBe(true);
-    vi.stubGlobal('document', { documentElement: { classList: { contains: (c: string) => c === 'perf-lite' } } });
+    vi.stubGlobal('navigator', { hardwareConcurrency: 2 });
+    resetLowEndCapability();
     expect(modelsEnabled()).toBe(false);
     await expect(loadSkinModel('citizen', FIXTURE_ENTRY)).resolves.toBeNull();
-    vi.stubGlobal('document', { documentElement: { classList: { contains: () => false } } });
+    vi.stubGlobal('navigator', {});
+    resetLowEndCapability();
     vi.stubGlobal('window', { localStorage: { getItem: () => 'off' } });
     expect(modelsEnabled()).toBe(false);
     vi.stubGlobal('window', { localStorage: { getItem: () => null } });

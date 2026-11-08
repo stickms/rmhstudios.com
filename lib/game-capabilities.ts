@@ -105,8 +105,8 @@ export interface GameCapabilities {
   sessionMinutes: readonly [number, number];
   engine: '2d-canvas' | 'webgl' | 'dom';
   /**
-   * Needs more than a `perf-lite` device to hold a playable frame rate.
-   * `lib/perf-tier.ts` is a binary low-end switch, so this is binary too.
+   * Needs more than a low-end device to hold a playable frame rate.
+   * `lib/low-end.ts` is a binary capability signal, so this is binary too.
    */
   demanding: boolean;
   save: SaveScope;
@@ -400,13 +400,13 @@ export function capabilitiesFor(gameId: string): GameCapabilities | undefined {
 
 /**
  * Whether a game is playable on the device asking, from the capability data
- * alone. `coarsePointer` is a touch device; `perfLite` is the low-end tier from
- * `lib/perf-tier.ts`. Returns a reason so the UI can say *why* rather than just
+ * alone. `coarsePointer` is a touch device; `lowEnd` is the low-end capability signal from
+ * `lib/low-end.ts`. Returns a reason so the UI can say *why* rather than just
  * greying a card out.
  */
 export function playabilityFor(
   caps: GameCapabilities,
-  device: { coarsePointer: boolean; perfLite: boolean },
+  device: { coarsePointer: boolean; lowEnd: boolean },
 ): { playable: boolean; reason?: 'needs-keyboard' | 'needs-pointer' | 'too-demanding' } {
   const { required, supported } = caps.input;
 
@@ -421,7 +421,7 @@ export function playabilityFor(
     }
   }
 
-  if (device.perfLite && caps.demanding) return { playable: false, reason: 'too-demanding' };
+  if (device.lowEnd && caps.demanding) return { playable: false, reason: 'too-demanding' };
   return { playable: true };
 }
 

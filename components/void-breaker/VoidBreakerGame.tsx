@@ -143,10 +143,9 @@ export function VoidBreakerGame() {
     if (safeStore.getItem('vb-render-3d') === 'false') setUse3D(false);
     const storedFx = safeStore.getItem('vb-reduced-fx');
     // Default to the cheap path under reduced motion OR on a low-end device.
-    // `canvasGlowEnabled` folds in `html.perf-lite` — the same class that already
-    // disables the glass blur, the aurora parallax and the liquid layer — so this
-    // renderer's blurred shadows and per-frame gradients are gated on the same
-    // signal as the rest of the site instead of on reduced motion alone. An
+    // `canvasGlowEnabled` folds in the low-end capability signal
+    // (`lib/low-end.ts`), so this renderer's blurred shadows and per-frame
+    // gradients are gated on it instead of on reduced motion alone. An
     // explicit user choice still wins.
     setReducedFx(storedFx !== null ? storedFx === 'true' : !canvasGlowEnabled());
     const storedChar = safeStore.getItem('vb-character');

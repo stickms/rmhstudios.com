@@ -115,7 +115,7 @@ function rig(over: Partial<GlobeHostDeps> = {}) {
   const logs: string[] = [];
   let resolveClone: Array<() => void> = [];
   const deps: GlobeHostDeps = {
-    env: { perfLite: false, hasWorker: true, hasOffscreenCanvas: true, canTransfer: true },
+    env: { softRender: false, hasWorker: true, hasOffscreenCanvas: true, canTransfer: true },
     createWorker: () => {
       const w = new FakeWorker();
       workers.push(w);
@@ -177,7 +177,7 @@ describe('start-up and the fallback decision', () => {
   });
 
   it.each([
-    [{ perfLite: true }, 'perf-lite'],
+    [{ softRender: true }, 'software-render'],
     [{ hasOffscreenCanvas: false }, 'no-offscreen'],
     [{ canTransfer: false }, 'no-offscreen'],
     [{ hasWorker: false }, 'no-worker'],
@@ -521,7 +521,7 @@ describe('the self-eversion skin', () => {
 
   it('has no skin in the CSS fallback', () => {
     const r = rig();
-    const host = createGlobeHost({ ...r.deps, env: { ...r.deps.env, perfLite: true } });
+    const host = createGlobeHost({ ...r.deps, env: { ...r.deps.env, softRender: true } });
     expect(host.skinCanvas(PROJ)).toBeNull();
   });
 });

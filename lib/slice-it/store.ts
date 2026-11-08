@@ -103,7 +103,7 @@ interface SliceItState {
    * the effect is bounded well under what already ships: `pulse` swings ~10% of
    * alpha on a mid-tone bloom UNDER the playfield, against V13's vignette at
    * 0.6. It is also already behind three switches that existed before it —
-   * reduced motion and `perf-lite` (via `canvasGlowEnabled`), A2's
+   * reduced motion and a low-end device (via `canvasGlowEnabled`), A2's
    * `reducedFlash`, and A7's `effectIntensity` — so the players most likely to
    * be harmed by it never receive it in the first place.
    */
@@ -551,7 +551,7 @@ export const useSliceItStore = create<SliceItState>()(
        *   what an existing player SEES, deliberately and only here: it lands on
        *   `pulse` rather than `none` for the reasons on the field itself. A
        *   returning player who wants the flat playfield back sets it to "None"
-       *   in settings, and anyone on reduced motion, `perf-lite` or Reduced
+       *   in settings, and anyone on reduced motion, a low-end device or Reduced
        *   Flash keeps it whatever this says.
        */
       migrate: (persisted, version) => {
