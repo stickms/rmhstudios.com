@@ -826,7 +826,7 @@
 /* ─── The picked record on a phone ──────────────────────────────────────────── */
 .slice-prec {
   flex-shrink: 0;
-  padding: 14px 14px 12px;
+  padding: 10px 14px 10px;
   border-bottom: 1px solid var(--slice-border);
   background: var(--slice-label);
 }
@@ -839,8 +839,8 @@
 .slice-prec__cover {
   position: relative;
   flex-shrink: 0;
-  width: 92px;
-  height: 92px;
+  width: 72px;
+  height: 72px;
   border: 1px solid var(--slice-border);
 }
 
@@ -850,6 +850,7 @@
   flex: 1;
   flex-direction: column;
   justify-content: space-between;
+  gap: 4px;
 }
 
 .slice-prec__title {
@@ -886,28 +887,65 @@
 }
 
 .slice-prec .slice-press {
-  height: 50px;
+  height: 38px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 0 8px;
 }
 
 .slice-prec .slice-press__big {
-  font-size: 16px;
+  font-size: 13px;
 }
 
 .slice-prec__go {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .slice-prec__go .slice-btn-primary {
   flex: 1;
-  height: 50px;
+  height: 44px;
   gap: 10px;
 }
 
 .slice-prec__go .slice-sq {
-  height: 50px;
+  height: 44px;
   min-width: 72px;
+}
+
+/* The phone's options button: a square beside the search field, with a dot when a
+   non-default sort, view or artist is in force. */
+.slice-opt {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--slice-border);
+  background: var(--slice-label);
+  color: var(--slice-paper);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.slice-opt:hover,
+.slice-opt[aria-expanded='true'] {
+  background: var(--slice-paper);
+  color: var(--slice-label);
+}
+
+.slice-opt__dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  background: var(--slice-accent);
 }
 
 /* ── The details sheet (narrow) ───────────────────────────── */
@@ -944,11 +982,11 @@
 
 @media (max-width: 639px) {
   .slice-bar {
-    min-height: calc(48px + var(--safe-top, 0px));
+    min-height: calc(44px + var(--safe-top, 0px));
   }
 
   .slice-bar__logo {
-    height: 34px;
+    height: 30px;
   }
 
   /* The nav is the last thing in the column, under the library: in the flow, not
@@ -970,7 +1008,7 @@
     align-items: flex-start;
     justify-content: center;
     gap: 6px;
-    height: 60px;
+    height: 52px;
     padding: 0 12px;
     border-right: 1px solid var(--slice-border);
     font-size: 11px;
