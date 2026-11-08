@@ -3435,20 +3435,117 @@ textarea,
   -webkit-tap-highlight-color: transparent;
 }
 
+/* The shared Button's own transition and plain press (components/ui/button.tsx), stated here rather than as
+   utilities so the CSS soft body's spring hook can join the list: `--jelly-spring-t` (app/jelly-material.css §8) is the
+   release / press spring on `scale` inside the jelly scope and a no-op outside it. The plain `0.98` press is the
+   press everywhere the soft body is off (native-material routes, a game in play); inside it the soft body's own press
+   outranks it. Components layer, so a caller's `transition-*` / `active:scale-*` utility still wins. */
+@layer components {
+  [data-slot='button'] {
+    transition:
+      color calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out),
+      background-color calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out),
+      border-color calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out),
+      opacity calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out),
+      var(--jelly-spring-t);
+  }
+  [data-slot='button']:not(:disabled, [aria-disabled='true']):active {
+    scale: 0.98;
+  }
+  /* Off the jelly scope the plain press eases as the button's utilities did before the soft body was CSS. */
+  html:is(.native-material, [data-game-state='playing']) [data-slot='button'] {
+    --jelly-spring-t: scale calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out);
+  }
+}
+
 /* Press feedback on tap/click — opacity only, so there's never a layout
    shift, and it reads on both touch and mouse. Disabled controls stay inert.
    Material-press elements opt OUT (§5.3): the springy scale on Button
    ([data-slot='button']) and .glass-interactive is the press cue there — an
-   opacity flicker fights the squish. Links and legacy buttons keep the cue — except while the jelly soft body
-   (lib/jelly/physics.ts) holds them: it stamps `data-jelly-active` for the press, and its squish is the cue. */
-a:not(.glass-interactive):not([data-jelly-active]):active,
-button:not(:disabled):not([aria-disabled='true']):not([data-slot='button']):not(
-    .glass-interactive
-  ):not([data-jelly-active]):active,
-[role='button']:not([aria-disabled='true']):not(.glass-interactive):not([data-jelly-active]):active,
-[role='tab']:not(.glass-interactive):not([data-jelly-active]):active,
-[role='menuitem']:not(.glass-interactive):not([data-jelly-active]):active,
-summary:not([data-jelly-active]):active {
+   opacity flicker fights the squish. Links and legacy buttons keep the cue — except where the CSS soft body
+   (app/jelly-material.css §8) springs them: every selector carries that rule's own scope and host list as a
+   `:not(:where(…))` guard (zero specificity; one copy for the whole list), so a control that squashes never also
+   flashes, and one the soft body leaves alone (an opted-out member, a plain link, a native-material route, a game in
+   play) keeps this cue. lib/__tests__/jelly-soft-body.test.ts holds the guard equal to the host rule. */
+:is(
+    a:not(.glass-interactive),
+    button:not(:disabled):not([aria-disabled='true']):not([data-slot='button']):not(
+        .glass-interactive
+      ),
+    [role='button']:not([aria-disabled='true']):not(.glass-interactive),
+    [role='tab']:not(.glass-interactive),
+    [role='menuitem']:not(.glass-interactive),
+    summary
+  ):not(
+    :where(
+      html:not(.native-material, [data-game-state='playing'])
+        :is(
+          .glass-fill,
+          .glass-interactive,
+          [data-evert],
+          [data-liquid-surface],
+          [data-fluid-press],
+          [data-jelly='card'],
+          [data-jelly='lift'],
+          [data-jelly='control'],
+          [data-jelly='sink'],
+          [data-jelly='firm'],
+          button,
+          [role='button'],
+          [role='tab'],
+          [role='menuitem'],
+          [role='switch'],
+          [role='option'],
+          summary,
+          [data-slot='button']
+        ):not(
+          .glass-pane,
+          .glass-chrome,
+          .glass-overlay,
+          .glass-inset,
+          .app-glass,
+          [data-liquid-glass]:not(.glass-fill, .glass-interactive),
+          [data-jelly='off'],
+          [data-jelly='none'],
+          [data-jelly='pane'],
+          [data-jelly='drag'],
+          [data-liquid-material='off'],
+          [data-liquid-motion='off'],
+          [data-fluid-press='off'],
+          [data-fluid-press='none'],
+          :disabled,
+          [aria-disabled='true'],
+          [data-evert-delegate],
+          [data-gesture]:not([data-gesture='hold']),
+          [draggable='true'],
+          input,
+          textarea,
+          select,
+          [contenteditable='true'],
+          [contenteditable=''],
+          canvas,
+          video,
+          iframe,
+          .radial-globe,
+          .radial-globe__stage,
+          .radial-globe__glass,
+          .radial-globe__jelly,
+          .radial-globe__cage,
+          .radial-globe__skin,
+          .rad-globe-dock,
+          .eversion-overlay,
+          .evert-ghost,
+          :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
+          :is(
+              [data-jelly-scope='off'],
+              [data-jelly-zone='playfield'],
+              [data-liquid-motion='off'],
+              [inert]
+            )
+            *
+        )
+    )
+  ):active {
   opacity: 0.6;
   transition: opacity 60ms ease;
 }

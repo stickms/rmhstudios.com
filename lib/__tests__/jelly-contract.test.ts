@@ -534,8 +534,10 @@ describe('N7 — arcs reach only admitted surfaces, never past their range', () 
  *
  * Wobble, glow, ripple, flicker and the press lens are forces in the services, never stylesheet animation. So in the
  * jelly sheets (`app/jelly*.css` and the role base `app/liquid-glass.css`):
- *  - no transition of `transform` / `translate` / `scale` / `rotate` / `all` — a body's motion is the soft body's
- *    spring, and a CSS transition on top of it is a second, unphysical spring that also fights the envelope writes;
+ *  - no transition of `transform` / `translate` / `scale` / `rotate` / `all` except on the soft body's own spring: the
+ *    soft body is CSS now (app/jelly-material.css §8, CSS-first jelly PR 3), so a moving property may transition only
+ *    on a generated `--spring-*` curve (jelly-spring-tokens.test.ts holds those equal to the springs). An ease or a
+ *    duration of its own on a moving property is a fake spring; this covers the `--jelly-spring-t` hook too;
  *  - no `@keyframes` except the sanctioned haze drift (`jelly-drift`, `jelly-current`), run by the woken-haze layer
  *    (the glass roles' own `::after`, CSS-first jelly PR 2) and the retired `.jelly-flow` rules until PR 5; N3 in
  *    `site-infinite-animation.test.ts` pins where they may be used;
@@ -575,21 +577,48 @@ describe('N13 — never fake a law', () => {
     expect(SHEETS.every((f) => fs.existsSync(path.join(ROOT, f)))).toBe(true);
   });
 
-  it('no transform transition on a jelly body (the spring is the soft body’s, not CSS’s)', () => {
+  it('no transform transition on a jelly body but the soft body’s own --spring-* curves', () => {
     const MOVING = /(^|[\s,])(transform|translate|scale|rotate|all)(?=[\s,]|$)/;
+    /** Top-level comma segments of a transition list (commas nest inside calc()/var()). */
+    const segments = (v: string) => {
+      const out: string[] = [];
+      let depth = 0;
+      let cur = '';
+      for (const ch of v) {
+        if (ch === '(') depth++;
+        if (ch === ')') depth--;
+        if (ch === ',' && depth === 0) {
+          out.push(cur.trim());
+          cur = '';
+        } else cur += ch;
+      }
+      out.push(cur.trim());
+      return out;
+    };
+    const SPRUNG = /^(?:translate|scale) var\(--spring-[\w-]+-dur\) var\(--spring-[\w-]+\)$/;
     const offenders = SHEETS.flatMap((f) =>
       decls(f)
         .filter(
           (d) =>
-            (d.prop === 'transition' || d.prop === 'transition-property') && MOVING.test(d.value),
+            (d.prop === 'transition' ||
+              d.prop === 'transition-property' ||
+              d.prop === '--jelly-spring-t') &&
+            segments(d.value).some((seg) => MOVING.test(seg) && !SPRUNG.test(seg)),
         )
         .map((d) => `${f}:${d.line} ${d.prop}: ${d.value}`),
     );
     expect(
       offenders,
-      'A transition on transform/translate/scale/rotate is a fake spring. Hover lean, press squash, the dent and ' +
-        'release wobble come from lib/jelly/physics.ts (docs/plasmatic-jelly-system.md §10).',
+      'A transition on transform/translate/scale/rotate with its own ease is a fake spring. Hover plump, press ' +
+        'squash and the release wobble are the CSS soft body (app/jelly-material.css §8): `scale` on a generated ' +
+        '`--spring-*` curve and its `-dur`, through the `--jelly-spring-t` hook (docs/plasmatic-jelly-system.md §10).',
     ).toEqual([]);
+    // The soft body does transition: the scan is not vacuous.
+    expect(
+      SHEETS.flatMap((f) => decls(f)).some(
+        (d) => d.prop === '--jelly-spring-t' && SPRUNG.test(d.value),
+      ),
+    ).toBe(true);
   });
 
   it('no @keyframes but the sanctioned haze drift', () => {

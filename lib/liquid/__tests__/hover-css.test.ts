@@ -29,6 +29,24 @@ describe('material hover CSS policy', () => {
     expect(css).toContain('opacity: .4');
   });
 
+  it("lets the CSS soft body's hover pose through, and only that", async () => {
+    // app/jelly-material.css §8: the soft body is CSS now, and its hover plump/dent is the one sanctioned writer.
+    const css =
+      await compile(`html:not(.native-material) .glass-fill:hover { scale: var(--jelly-hover-plump) }
+      html:not(.native-material) button:hover { scale: var(--jelly-hover-dent); color: red }`);
+    expect(css).toContain('.glass-fill:hover { scale: var(--jelly-hover-plump) }');
+    expect(css).toMatch(/button:hover \{ scale: var\(--jelly-hover-dent\); color: red \}/);
+    // A hand-written lift, a pose computed from the token, or a raw value is still a second writer.
+    const lifts = await compile(`.card:hover { scale: 1.02 }
+      .tile:hover { scale: calc(var(--jelly-hover-plump) * 1.01) }
+      .chip:hover { translate: var(--my-lift) }`);
+    const root = postcss.parse(lifts);
+    root.walkRules((rule) => {
+      if (rule.selector.includes(':hover'))
+        expect(rule.toString()).not.toMatch(/scale:|translate:/);
+    });
+  });
+
   it('handles nested Tailwind variants and escaped class names', async () => {
     const css = await compile(
       String.raw`.hover\:bg-site-accent { &:hover { @media (hover:hover) { background-color: red; --tw-shadow-color: blue } } }`,
