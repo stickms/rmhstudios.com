@@ -12,7 +12,7 @@
  *  - every `infinite` animation in the site-tier stylesheets (`app/*.css`, `components/{ui,radial,feed,site}/**`)
  *    is either on the frozen, justified {@link BASELINE} (loaders, skeletons, live dots — all on transient or tiny
  *    elements), or
- *  - it is one of the two SANCTIONED haze keyframes, `jelly-drift` / `jelly-current`, declared only on the woken-haze
+ *  - it is the SANCTIONED haze keyframe, `jelly-drift`, declared only on the woken-haze
  *    layer (the glass roles' own `::after`, app/jelly-material.css §3b, CSS-first jelly PR 2) — attached ONLY under
  *    `:hover` / `:has(:focus-visible)`, with no animation at all at rest (lib/__tests__/jelly-woken-haze.test.ts pins it);
  *  - the layer is killed (`display: none`) under every degraded root class (read from `DEGRADED_ROOT_SELECTOR` —
@@ -153,7 +153,7 @@ const BASELINE = new Map<string, string>([
 ]);
 
 /** The two haze keyframes the jelly material owns (01 §3.2), and the only selectors they may run under. */
-const SANCTIONED = new Set(['jelly-drift', 'jelly-current']);
+const SANCTIONED = new Set(['jelly-drift']);
 const MATERIAL = 'app/jelly-material.css';
 const flat = (s: string) =>
   s.replace(/\s+/g, ' ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').trim();

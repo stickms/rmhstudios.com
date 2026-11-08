@@ -404,7 +404,7 @@ variant.
 
 **Never fake a law.** No keyframe wobble, `@keyframes` glow, ripple, untriggered flicker or second spring formula; a
 moving property may transition only on a generated `--spring-*` curve (through the `--jelly-spring-*` hooks); the only
-sanctioned keyframes in the jelly sheets are the haze drift (`jelly-drift`, `jelly-current`), run by the woken haze;
+sanctioned keyframes in the jelly sheets is the haze drift (`jelly-drift`), run by the woken haze;
 no stylesheet sets a `filter:` on a jelly body. `jelly-contract.test.ts` scans the jelly sheets for all of it.
 
 **Tokens.** The CSS tokens mirror the constants; `lib/__tests__/jelly-tokens.test.ts` keeps each pair equal. Change the

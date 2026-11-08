@@ -109,7 +109,7 @@ const REST_CPU_TARGET_MS = 250;
  * it is hovered or holds keyboard focus (site-infinite-animation.test.ts N3 sanctions exactly these; a page at rest has
  * none).
  */
-const SANCTIONED_INFINITE = new Set(['jelly-drift', 'jelly-current']);
+const SANCTIONED_INFINITE = new Set(['jelly-drift']);
 
 /**
  * How long a page sits after `load` before anything is measured. `--gate` waits

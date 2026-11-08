@@ -307,7 +307,7 @@ carries the weight. One ink-gel primary action (`<Button variant="signal">`) per
 - **Never fake a law:** no keyframe wobble, `@keyframes` glow, `transition:
 transform` with an ease of its own on a body, untriggered flicker, ripple, or a
   second spring formula. The only sanctioned keyframes are the woken-haze drift
-  (`jelly-drift`, `jelly-current`). A new behaviour is a new rule in the material
+  (`jelly-drift`). A new behaviour is a new rule in the material
   or a new force in the arc service, with a constant for every number.
 
 **What the migration gave up** (accepted, owner 2026-11-07): live refraction of

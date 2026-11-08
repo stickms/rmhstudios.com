@@ -416,7 +416,7 @@ describe('N7 — arcs reach only admitted surfaces, never past their range', () 
  *    soft body is CSS now (app/jelly-material.css §8, CSS-first jelly PR 3), so a moving property may transition only
  *    on a generated `--spring-*` curve (jelly-spring-tokens.test.ts holds those equal to the springs). An ease or a
  *    duration of its own on a moving property is a fake spring; this covers the `--jelly-spring-t` hook too;
- *  - no `@keyframes` except the sanctioned haze drift (`jelly-drift`, `jelly-current`), run by the woken-haze layer
+ *  - no `@keyframes` except the sanctioned haze drift (`jelly-drift`), run by the woken-haze layer
  *    (the glass roles' own `::after`, CSS-first jelly PR 2); N3 in
  *    `site-infinite-animation.test.ts` pins where they may be used;
  *  - no `filter` (or `backdrop-filter`) declaration other than `none`; the press lens that used to be the one filter on
@@ -424,7 +424,7 @@ describe('N7 — arcs reach only admitted surfaces, never past their range', () 
  */
 describe('N13 — never fake a law', () => {
   const ROOT = process.cwd();
-  const SANCTIONED_KEYFRAMES = new Set(['jelly-drift', 'jelly-current']);
+  const SANCTIONED_KEYFRAMES = new Set(['jelly-drift']);
   const SHEETS = [
     ...fs
       .readdirSync(path.join(ROOT, 'app'))

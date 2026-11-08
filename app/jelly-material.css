@@ -28,7 +28,7 @@
    - Every jelly paint layer sits at a NEGATIVE z-index inside an isolated host (the woken-haze host isolates itself,
      §3b). Nothing jelly paints at z ≥ 0.
    - Colours come only from tokens (`--site-jelly-*`, `--site-glass-*`); raw values live in globals.css theme blocks.
-   - The only `infinite` animations are `jelly-drift` / `jelly-current`, only on the woken-haze `::after` (§3b, attached
+   - The only `infinite` animation is `jelly-drift`, only on the woken-haze `::after` (§3b, attached
      only under hover or focus). */
 
 @layer components {
@@ -2259,13 +2259,5 @@ html:not(.native-material, [data-game-state='playing'])
   }
   100% {
     transform: translate3d(-3%, 8%, 0) rotate(10deg) scale(1.05);
-  }
-}
-@keyframes jelly-current {
-  from {
-    transform: translate3d(-24%, 0, 0);
-  }
-  to {
-    transform: translate3d(24%, 0, 0);
   }
 }
