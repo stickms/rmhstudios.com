@@ -115,7 +115,6 @@
     --app-gel-depth: rgb(0 0 0 / 0.14);
     /* The haze stays in the night-paper family (blue ink in the paper), not milky white. */
     --app-jelly-haze: color-mix(in srgb, var(--app-accent) 30%, var(--app-surface));
-    --jelly-tile: none;
     /* …and without the material's white cloud tile, which reads as milk on night paper. */
     --jelly-tile: none;
     --rmm-rule: #2a3b5e;
@@ -156,6 +155,8 @@
   --app-gel-body: rgb(255 255 255 / 0.015);
   --app-gel-depth: rgb(0 0 0 / 0.14);
   --app-jelly-haze: color-mix(in srgb, var(--app-accent) 30%, var(--app-surface));
+  /* Kept identical to the block above by lib/rmhmusic/learn/theme-parity.test.ts. */
+  --jelly-tile: none;
   --rmm-rule: #2a3b5e;
   --rmm-margin: #6a3a48;
   --rmm-staff: #1f2d4d;
