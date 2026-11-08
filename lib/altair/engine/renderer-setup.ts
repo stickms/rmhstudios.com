@@ -38,7 +38,7 @@ export function createWebGLRenderer(canvas: HTMLCanvasElement): RendererHandle {
   const overlayCtx = overlay.getContext('2d')!;
 
   return {
-    renderer: { gl, spriteBatch, shapeBatch, overlayCtx },
+    renderer: { gl, spriteBatch, shapeBatch, overlayCtx, overlayDirty: false },
     syncOverlay() {
       if (overlay.width !== canvas.width || overlay.height !== canvas.height) {
         overlay.width = canvas.width;

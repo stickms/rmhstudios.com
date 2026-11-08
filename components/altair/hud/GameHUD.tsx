@@ -60,7 +60,9 @@ export default function GameHUD() {
   const xp = useAltairGameStore((s) => s.xp);
   const level = useAltairGameStore((s) => s.level);
   const kills = useAltairGameStore((s) => s.kills);
-  const timeSurvived = useAltairGameStore((s) => s.timeSurvived);
+  // The run syncs the clock into the store every 100 ms, but the HUD shows whole seconds: select the second, so the
+  // HUD re-renders once a second instead of ten times (each pass rebuilds a dozen slots and their handlers).
+  const timeSurvived = useAltairGameStore((s) => Math.floor(s.timeSurvived));
   const coins = useAltairGameStore((s) => s.coins);
   const weapons = useAltairGameStore((s) => s.weapons);
   const passives = useAltairGameStore((s) => s.passives);
