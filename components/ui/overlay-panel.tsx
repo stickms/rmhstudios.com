@@ -36,8 +36,8 @@
  * **3. The scrim was not operable.** Three of the six used a bare `<div>` with
  * an `onClick`: no role, no keyboard, invisible to a screen reader.
  *
- * The reason none of this was caught by eye: `html.reduce-transparency`,
- * `html.style-high-contrast` and `html.perf-lite` all force
+ * The reason none of this was caught by eye: `html.reduce-transparency` and
+ * `html.style-high-contrast` both force
  * `backdrop-filter: none`, which removes both the containing block *and* the
  * stacking context. **The same markup renders correctly for those visitors.**
  * Check this component's callers in the DEFAULT theme with transparency on.

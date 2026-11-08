@@ -9,7 +9,7 @@
  * click arcs) reads from that one module:
  *
  *  - **N1 — the degradation matrix.** Under every accessibility or weak-device signal (the app high-contrast theme,
- *    `perf-lite`, print, a hidden tab, a playing game, `jellyMotion = still`) there is NO ambient motion and NO arc.
+ *    print, a hidden tab, a playing game, `jellyMotion = still`) there is NO ambient motion and NO arc.
  *    (The soft body is CSS now and answers to the same signals through selectors, pinned by `jelly-soft-body.test.ts`
  *    and `jelly-woken-haze.test.ts`.)
  *  - **N1 — the budgets.** Upper bounds stated as RELATIONS between the owning modules' constants (no tier outdoes
@@ -89,7 +89,6 @@ function fakeDoc(o: DocOpts = {}): Document {
 const DEGRADED: Array<[string, DocOpts]> = [
   ['print', { media: [FINE, 'print'] }],
   ['the app high-contrast theme', { appHighContrast: true }],
-  ['perf-lite', { classes: ['perf-lite'] }],
   ['a hidden tab', { hidden: true }],
   ['a game in play (R16)', { attrs: { 'data-game-state': 'playing' } }],
 ];
@@ -164,7 +163,7 @@ describe('N1 — budgets: upper bounds the services cannot exceed', () => {
         }
       }
     }
-    for (const t of ['lite', 'off'] as const) {
+    for (const t of ['off'] as const) {
       expect(JELLY_BUDGETS[t]).toMatchObject({ clockHz: 0, clickBolts: 0 });
     }
   });

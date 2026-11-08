@@ -1,7 +1,7 @@
 /**
  * The low-end CAPABILITY signal — "can this machine hold what a game or the globe's GL shader asks of it".
  *
- * This replaces the old `html.perf-lite` tier (removed 2026-11-08, docs/superpowers/specs/2026-11-08-refractive-glass-design.md,
+ * This replaces the old low-end class on `<html>` (removed 2026-11-08, docs/superpowers/specs/2026-11-08-refractive-glass-design.md,
  * "Calls made" 1 and 2). It is deliberately NOT a material tier:
  *
  * - It is never stamped on `<html>`, never a CSS class, and the site's glass material (`app/jelly-material.css`,

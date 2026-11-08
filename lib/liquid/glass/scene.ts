@@ -93,7 +93,6 @@ export const SCENE_POLICY: Readonly<Record<JellyTier, ScenePolicy | null>> = {
   full: { minIntervalMs: MIN_INTERVAL_MS, scaleCap: 1.25 },
   coarse: { minIntervalMs: 2 * MIN_INTERVAL_MS, scaleCap: 1 },
   handheld: null,
-  lite: null,
   off: null,
 };
 /** A request waits this long for more requests before it runs (a scroll or a burst of mutations settles first). */

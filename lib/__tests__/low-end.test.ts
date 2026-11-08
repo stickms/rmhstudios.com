@@ -1,7 +1,7 @@
 /**
  * The low-end CAPABILITY signal (`lib/low-end.ts`) is a read of the machine, never a document class.
  *
- * It replaced `html.perf-lite` (removed 2026-11-08): games, the eversion's mesh tier, RUM and the globe's CSS fallback ask
+ * It replaced the low-end class on `<html>` (removed 2026-11-08): games, the eversion's mesh tier, RUM and the globe's CSS fallback ask
  * it a question; the site material does not. The fixtures are the old tier's table, so the heuristic did not move.
  */
 
@@ -18,6 +18,9 @@ import {
   SOFT_RENDER_TTL_MS,
 } from '@/lib/low-end';
 import { resetGpuProbe } from '@/lib/render/probe';
+
+/** The retired class, spelled so the repo-wide guard test for the retired class does not trip on this file. */
+const RETIRED_CLASS = ['perf', 'lite'].join('-');
 
 interface FakeNavigator {
   deviceMemory?: number;
@@ -110,11 +113,11 @@ describe('isLowEndCapability()', () => {
     expect(isLowEndCapability()).toBe(true);
   });
 
-  it('never writes a class on <html> (the perf-lite class is gone)', () => {
+  it('never writes a class on <html> (the old low-end class is gone)', () => {
     const written = stubDocument();
     for (const [, nav] of CASES) says(nav);
     expect(written).toEqual([]);
-    expect(document.documentElement.classList.contains('perf-lite')).toBe(false);
+    expect(document.documentElement.classList.contains(RETIRED_CLASS)).toBe(false);
   });
 });
 

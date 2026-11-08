@@ -15,8 +15,7 @@
  *  - it is the SANCTIONED haze keyframe, `jelly-drift`, declared only on the woken-haze
  *    layer (the glass roles' own `::after`, app/jelly-material.css §3b, CSS-first jelly PR 2) — attached ONLY under
  *    `:hover` / `:has(:focus-visible)`, with no animation at all at rest (lib/__tests__/jelly-woken-haze.test.ts pins it);
- *  - the layer is killed (`display: none`) under every degraded root class (read from `DEGRADED_ROOT_SELECTOR` —
- *    not restated) plus the app high-contrast theme and print, PAUSED (`animation-play-state: paused`) while
+ *  - the layer is killed (`display: none`) under the app high-contrast theme and print (there is no low-end root class any more), PAUSED (`animation-play-state: paused`) while
  *    scrolling and while a game is in play, and has no animation at all under `still`.
  *
  * The baseline only shrinks: an entry that no longer matches fails "the baseline stays honest".
@@ -31,8 +30,6 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-
-import { DEGRADED_ROOT_SELECTOR } from '@/lib/jelly/tiers';
 
 const ROOT = process.cwd();
 const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -239,7 +236,7 @@ describe('N3 — no perpetual CSS animation on the site tier without an owner', 
           root.test(selector) && onHazeLayer(selector) && /display\s*:\s*none/.test(body),
       );
 
-    it.each([...DEGRADED_ROOT_SELECTOR.split(',').map((s) => s.trim()), '.app-high-contrast'])(
+    it.each(['.app-high-contrast'])(
       'killed under %s',
       (root) => {
         expect(hides(new RegExp(root.replace(/[.[\]]/g, '\\$&')))).toBe(true);

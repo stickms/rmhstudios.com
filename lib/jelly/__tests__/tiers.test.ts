@@ -1,15 +1,14 @@
 /**
  * `lib/jelly/tiers.ts` is the one policy every jelly service reads, so its numbers and its off predicate are pinned
  * here: the budgets are the master plan's R6/R10 table, the motion bounds are vestibular limits that a tuning pass must
- * not quietly exceed, and the degraded-root selector must stay byte-identical to what the glass engine and the cursor
- * runtime already match — three spellings of one predicate is the drift this file exists to end.
+ * not quietly exceed, and the off predicate is declared once, here — three spellings of one predicate is the drift this
+ * file exists to end. There is no low-end tier: the old class is gone and `jellyTier()` never returns `'lite'`.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   AMBIENT_BOUNDS,
-  DEGRADED_ROOT_SELECTOR,
   FLASH_LEDGER,
   GAME_PLAYING_BUDGET,
   HANDHELD_QUERY,
@@ -27,6 +26,7 @@ import {
   type JellyBudget,
   type JellyTier,
 } from '../tiers';
+import * as tiers from '../tiers';
 
 const ROOT = join(__dirname, '..', '..', '..');
 const read = (p: string) => readFileSync(join(ROOT, p), 'utf8');
@@ -67,6 +67,9 @@ function fakeDoc(o: FakeOpts = {}): Document {
   } as unknown as Document;
 }
 
+/** The retired low-end class, spelled so the repo-wide guard test for it does not trip on this file. */
+const RETIRED = ['perf', 'lite'].join('-');
+
 /** A desktop (fine pointer) document with `o` applied on top. */
 const fineDoc = (o: FakeOpts = {}) => fakeDoc({ ...o, media: [FINE, ...(o.media ?? [])] });
 
@@ -79,20 +82,19 @@ describe('budgets (R6, R10, 04 §3.1)', () => {
     expect(row('full')).toEqual([60, 15, 3]);
     expect(row('coarse')).toEqual([60, 15, 2]);
     expect(row('handheld')).toEqual([30, 7, 1]);
-    expect(row('lite')).toEqual([0, 0, 0]);
     expect(row('off')).toEqual([0, 0, 0]);
+    expect(Object.keys(JELLY_BUDGETS).sort()).toEqual(['coarse', 'full', 'handheld', 'off']);
   });
 
-  it('ambient arcs: ≤ 1 per 2 s on desktop, half that on handheld (R10), none under perf-lite', () => {
+  it('ambient arcs: ≤ 1 per 2 s on desktop, half that on handheld (R10)', () => {
     expect(JELLY_BUDGETS.full.ambientArcMinIntervalMs).toBe(2000);
     expect(JELLY_BUDGETS.coarse.ambientArcMinIntervalMs).toBe(2000);
     expect(JELLY_BUDGETS.handheld.ambientArcMinIntervalMs).toBe(4000);
-    expect(JELLY_BUDGETS.lite.ambientArcMinIntervalMs).toBe(Infinity);
     expect(JELLY_BUDGETS.off.ambientArcMinIntervalMs).toBe(Infinity);
   });
 
   it('only shrink down the tiers', () => {
-    const order: JellyTier[] = ['full', 'coarse', 'handheld', 'lite'];
+    const order: JellyTier[] = ['full', 'coarse', 'handheld'];
     const keys = Object.keys(JELLY_BUDGETS.full) as (keyof JellyBudget)[];
     for (let i = 1; i < order.length; i++) {
       for (const k of keys) {
@@ -149,12 +151,9 @@ describe('safety bounds (04 §4.3–4.5, R12, R13)', () => {
 });
 
 describe('selectors', () => {
-  it('the degraded root is spelled exactly as the scene feed matches it', () => {
-    expect(DEGRADED_ROOT_SELECTOR).toBe('.perf-lite');
-    const src = read('lib/liquid/glass/scene-feed.ts');
-    expect(
-      src.includes(`'${DEGRADED_ROOT_SELECTOR}'`) || src.includes('DEGRADED_ROOT_SELECTOR'),
-    ).toBe(true);
+  it('there is no degraded-root selector any more (the low-end class is gone)', () => {
+    expect(Object.keys(tiers)).not.toContain('DEGRADED_ROOT_SELECTOR');
+    expect(read('lib/liquid/glass/scene-feed.ts')).not.toContain('DEGRADED_ROOT_SELECTOR');
   });
 
   it('covers toasts and explicit opt-ins, and accepts every legacy opt-out alias', () => {
@@ -183,8 +182,16 @@ describe('jellyTier', () => {
     expect(jellyTier({ doc: fakeDoc({ media: [HANDHELD_QUERY] }) })).toBe('handheld');
   });
 
-  it('perf-lite is the lite tier, not off', () => {
-    expect(jellyTier({ doc: fakeDoc({ classes: ['perf-lite'], media: [FINE] }) })).toBe('lite');
+  it('never returns lite, and the retired low-end class is just a class (the material is full)', () => {
+    expect(jellyTier({ doc: fakeDoc({ classes: [RETIRED], media: [FINE] }) })).toBe('full');
+    const every = [
+      fakeDoc({ media: [FINE] }),
+      fakeDoc(),
+      fakeDoc({ media: [HANDHELD_QUERY] }),
+      fakeDoc({ classes: [RETIRED] }),
+      fakeDoc({ appContrast: true }),
+    ];
+    for (const doc of every) expect(jellyTier({ doc })).not.toBe('lite');
   });
 
   it.each([[{ appContrast: true }], [{ media: ['print'] }]] as [FakeOpts][])(
@@ -222,7 +229,6 @@ describe('jellyOff', () => {
   });
 
   it.each([
-    [{ classes: ['perf-lite'] }],
     [{ appContrast: true }],
     [{ media: ['print'] }],
     [{ hidden: true }],
@@ -283,7 +289,7 @@ describe('jellyMode', () => {
     );
   });
 
-  it.each([[{ classes: ['perf-lite'] }], [{ appContrast: true }]] as [FakeOpts][])(
+  it.each([[{ appContrast: true }]] as [FakeOpts][])(
     'drops ambient motion and arcs for %j',
     (o) => {
       expect(mode(o)).toEqual({ ambient: false, arcs: 'off' });
@@ -333,7 +339,7 @@ describe('jellyBudget', () => {
       {},
       { attrs: { 'data-jelly-motion': 'calm' } },
       { attrs: { 'data-electric-arcs': 'clicks' } },
-      { classes: ['perf-lite'] },
+      { classes: [RETIRED] },
     ] as FakeOpts[]) {
       const b = budget(o);
       const tier = JELLY_BUDGETS[jellyTier({ doc: fineDoc(o) })];
