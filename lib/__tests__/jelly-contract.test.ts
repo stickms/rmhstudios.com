@@ -558,8 +558,8 @@ describe('N13 — never fake a law', () => {
   const css = (f: string) =>
     fs.readFileSync(path.join(ROOT, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
   /** Every `prop: value` declaration (values may span lines), with its line number. */
-  const decls = (f: string) => {
-    const src = css(f);
+  const decls = (f: string) => declsOf(css(f));
+  const declsOf = (src: string) => {
     const out: { prop: string; value: string; line: number }[] = [];
     for (const m of src.matchAll(/(?<=[{;\s])(-?[a-z-]+)\s*:\s*([^;{}]+)(?=[;}])/g)) {
       out.push({
@@ -577,65 +577,107 @@ describe('N13 — never fake a law', () => {
     expect(SHEETS.every((f) => fs.existsSync(path.join(ROOT, f)))).toBe(true);
   });
 
-  it('no transform transition on a jelly body but the soft body’s own --spring-* curves', () => {
-    const MOVING = /(^|[\s,])(transform|translate|scale|rotate|all)(?=[\s,]|$)/;
-    /** Top-level comma segments of a transition list (commas nest inside calc()/var()). */
-    const segments = (v: string) => {
-      const out: string[] = [];
-      let depth = 0;
-      let cur = '';
-      for (const ch of v) {
-        if (ch === '(') depth++;
-        if (ch === ')') depth--;
-        if (ch === ',' && depth === 0) {
-          out.push(cur.trim());
-          cur = '';
-        } else cur += ch;
-      }
-      out.push(cur.trim());
-      return out;
-    };
-    const SPRUNG = /^(?:translate|scale) var\(--spring-[\w-]+-dur\) var\(--spring-[\w-]+\)$/;
-    const offenders = SHEETS.flatMap((f) =>
-      decls(f)
-        .filter(
-          (d) =>
-            (d.prop === 'transition' || d.prop === '--jelly-spring-t') &&
-            segments(d.value).some((seg) => MOVING.test(seg) && !SPRUNG.test(seg)),
-        )
-        .map((d) => `${f}:${d.line} ${d.prop}: ${d.value}`),
-    );
-    // Longhands (§8b restates Tailwind's transition utilities on a host): `scale` / `translate` must sit on the soft
-    // body's spring hooks at the same list position, and `transform` / `rotate` may appear only where a rule restates
-    // the bare `transition` utility for a host carrying it, with that utility's own timing (not a jelly spring).
-    for (const f of SHEETS) {
-      const src = css(f);
-      for (const m of src.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-        const [sel, body] = [m[1].replace(/\s+/g, ' ').trim(), m[2]];
-        const get = (prop: string) =>
-          new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`).exec(body)?.[1];
-        const props = get('transition-property');
-        if (!props) continue;
-        const list = segments(props.replace(/\s+/g, ' '));
-        const dur = segments((get('transition-duration') ?? '').replace(/\s+/g, ' '));
-        const ease = segments((get('transition-timing-function') ?? '').replace(/\s+/g, ' '));
-        list.forEach((prop, i) => {
-          if (!MOVING.test(prop)) return;
-          const at = `${f}: ${sel.slice(0, 80)} … ${prop}`;
-          if (prop === 'scale' || prop === 'translate') {
-            if (dur[i] !== 'var(--jelly-spring-dur)' || ease[i] !== 'var(--jelly-spring-ease)')
-              offenders.push(`${at} (not on the spring hooks)`);
-          } else if (!(sel.includes("[class~='transition']") && !/spring/.test(`${dur[i]} ${ease[i]}`)))
-            offenders.push(`${at} (only the bare transition utility's own restatement may list it)`);
-        });
-      }
+  const MOVING = /(^|[\s,])(transform|translate|scale|rotate|all)(?=[\s,]|$)/;
+  /** Top-level comma segments of a transition list (commas nest inside calc()/var()). */
+  const segments = (v: string) => {
+    const out: string[] = [];
+    let depth = 0;
+    let cur = '';
+    for (const ch of v) {
+      if (ch === '(') depth++;
+      if (ch === ')') depth--;
+      if (ch === ',' && depth === 0) {
+        out.push(cur.trim());
+        cur = '';
+      } else cur += ch;
     }
+    out.push(cur.trim());
+    return out;
+  };
+  const SPRUNG = /^(?:translate|scale) var\(--spring-[\w-]+-dur\) var\(--spring-[\w-]+\)$/;
+  /**
+   * The fake springs in one sheet's (comment-stripped) source. Shorthands (`transition`, the `--jelly-spring-t` hook):
+   * every moving segment is `scale|translate` on a generated `--spring-*` curve and its `-dur`. Longhands (§8b restates
+   * Tailwind's transition utilities on a host): `scale` / `translate` sit on the spring hooks at the same list
+   * position, and `transform` / `rotate` / `all` appear only where a rule restates the bare `transition` utility for a
+   * host carrying it, with that utility's own timing (not a jelly spring).
+   */
+  const fakeSprings = (file: string, src: string): string[] => {
+    const offenders = declsOf(src)
+      .filter(
+        (d) =>
+          (d.prop === 'transition' || d.prop === '--jelly-spring-t') &&
+          segments(d.value).some((seg) => MOVING.test(seg) && !SPRUNG.test(seg)),
+      )
+      .map((d) => `${file}:${d.line} ${d.prop}: ${d.value}`);
+    for (const m of src.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const [sel, body] = [m[1].replace(/\s+/g, ' ').trim(), m[2]];
+      const get = (prop: string) =>
+        new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`).exec(body)?.[1];
+      const props = get('transition-property');
+      if (!props) continue;
+      const list = segments(props.replace(/\s+/g, ' '));
+      const dur = segments((get('transition-duration') ?? '').replace(/\s+/g, ' '));
+      const ease = segments((get('transition-timing-function') ?? '').replace(/\s+/g, ' '));
+      list.forEach((prop, i) => {
+        if (!MOVING.test(prop)) return;
+        const at = `${file}: ${sel.slice(0, 80)} … ${prop}`;
+        if (prop === 'scale' || prop === 'translate') {
+          if (dur[i] !== 'var(--jelly-spring-dur)' || ease[i] !== 'var(--jelly-spring-ease)')
+            offenders.push(`${at} (not on the spring hooks)`);
+        } else if (!(sel.includes("[class~='transition']") && !/spring/.test(`${dur[i]} ${ease[i]}`)))
+          offenders.push(`${at} (only the bare transition utility's own restatement may list it)`);
+      });
+    }
+    return offenders;
+  };
+
+  it('no transform transition on a jelly body but the soft body’s own --spring-* curves', () => {
+    const offenders = SHEETS.flatMap((f) => fakeSprings(f, css(f)));
+    expect(
+      offenders,
+      'A transition on transform/translate/scale/rotate with its own ease is a fake spring. Hover plump, press ' +
+        'squash and the release wobble are the CSS soft body (app/jelly-material.css §8): `scale` on a generated ' +
+        '`--spring-*` curve and its `-dur`, through the `--jelly-spring-*` hooks (docs/plasmatic-jelly-system.md §10).',
+    ).toEqual([]);
     // The soft body does transition: the scan is not vacuous.
     expect(
       SHEETS.flatMap((f) => decls(f)).some(
         (d) => d.prop === '--jelly-spring-t' && SPRUNG.test(d.value),
       ),
     ).toBe(true);
+  });
+
+  it('the fake-spring scan bites (fixtures)', () => {
+    const one = (src: string) => fakeSprings('fixture.css', src);
+    // Fake springs: a body's own ease on a moving property, in every form the scan reads.
+    expect(one('.glass-fill { transition: transform 200ms ease-out; }')).toHaveLength(1);
+    expect(one('.glass-fill { transition: color 150ms ease, scale 300ms ease-out; }')).toHaveLength(1);
+    expect(one('.glass-fill { transition: all 150ms; }')).toHaveLength(1);
+    expect(one('.glass-fill { --jelly-spring-t: scale 300ms ease; }')).toHaveLength(1);
+    expect(
+      one(
+        ".x[class~='transition-colors'] { transition-property: color, scale; transition-duration: 150ms, 300ms; transition-timing-function: ease, ease; }",
+      ),
+    ).toHaveLength(1);
+    expect(
+      one(
+        ".x[class~='transition-colors'] { transition-property: color, transform; transition-duration: 150ms, 150ms; transition-timing-function: ease, ease; }",
+      ),
+    ).toHaveLength(1);
+    // The sanctioned forms pass.
+    expect(one('.glass-fill { --jelly-spring-t: scale var(--spring-release-dur) var(--spring-release); }')).toEqual([]);
+    expect(one('.glass-fill { transition: opacity 450ms ease, var(--jelly-spring-t); }')).toEqual([]);
+    expect(
+      one(
+        ".x[class~='transition-colors'] { transition-property: color, scale; transition-duration: 150ms, var(--jelly-spring-dur); transition-timing-function: ease, var(--jelly-spring-ease); }",
+      ),
+    ).toEqual([]);
+    expect(
+      one(
+        ".x[class~='transition'] { transition-property: transform, scale; transition-duration: 150ms, var(--jelly-spring-dur); transition-timing-function: ease, var(--jelly-spring-ease); }",
+      ),
+    ).toEqual([]);
   });
 
   it('no @keyframes but the sanctioned haze drift', () => {
