@@ -17,6 +17,7 @@ import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from './buttons';
 import { FirstNoteLesson } from './FirstNoteLesson';
 import { InputSetup } from './InputSetup';
+import { ModeToggle } from './ModeToggle';
 import { useInputRelease } from './useLearnInput';
 
 function Shell({
@@ -40,7 +41,10 @@ function Shell({
             <ArrowLeft className="h-4 w-4 shrink-0 rtl-flip" aria-hidden="true" />
             {t('back-to-lessons', { defaultValue: 'Back to lessons' })}
           </Link>
-          {action}
+          <div className="flex items-center gap-2">
+            <ModeToggle />
+            {action}
+          </div>
         </header>
         <main className="flex-1 space-y-4 pt-4 pb-[calc(2rem+var(--safe-bottom))]">
           <h1

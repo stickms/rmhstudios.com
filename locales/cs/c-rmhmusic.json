@@ -85,6 +85,7 @@
   "midi-try": "Play a key: it lights up here.",
   "midi-unsupported": "Not supported in this browser",
   "midi-unsupported-hint": "iPhone and iPad browsers cannot use MIDI. Use the on-screen keys or the microphone, or open this page in Chrome or Edge on a computer.",
+  "mode-dark-toggle": "Dark mode",
   "retry": "Try again",
   "setup-input": "Set up input",
   "setup-title": "How will you play?",

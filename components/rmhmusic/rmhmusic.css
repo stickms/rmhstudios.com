@@ -1,58 +1,336 @@
 /**
- * RMHMusic — palette.
+ * RMHMusic — the notebook-paper scheme, in light and dark.
  *
- * Structure comes from the shared app chrome (see
- * `components/shared/app-theme.css`). RMHMusic contributes a violet accent on
- * a near-black ramp, because the app paints a full-bleed visualiser behind its
- * chrome and any lift in the ground washes it out.
+ * Structure comes from the shared app chrome (`components/shared/app-theme.css`); this file is
+ * the palette and the paper. Scheme: docs/game-design-schemes/rmhmusic.json.
  *
- * `/rmhmusic` is a THEME_EXCLUDED_ROUTE (see `components/Providers.tsx`), so
- * the site theme class is never applied here and `--site-*` would otherwise
- * resolve against the *light* base palette — black-on-black on the landing
- * hero. The `--site-*` aliases at the bottom repoint the components that still
- * read site tokens at this palette. They are a compatibility shim for existing
- * markup, not a pattern to extend: new markup reads `--app-*`.
+ *   Light ("paper", the base): cream notebook paper, navy fountain-pen ink, blue ruled lines,
+ *   a faint red-pencil margin rule, and one pen-ink accent — indigo #4338ca. Indigo keeps the
+ *   violet-blue identity the app always had while reading as INK on paper (7.0:1 on the ground),
+ *   which a light violet could not.
+ *   Dark ("night manuscript"): deep ink-navy paper, pale cream ink, the same indigo lightened to
+ *   #a8b4ff, ruled lines a step lighter than the paper.
+ *
+ * Every text/background pair is ≥ 4.5:1 and the focus ring (the accent) ≥ 3:1 against the ground
+ * and the sheets in both modes; the table is in the Task 13 report and the ratios are noted
+ * beside the tokens that are closest to the line.
+ *
+ * ## How the mode is chosen (no flash, no mismatch)
+ *
+ * Light is the base. Dark applies under `@media (prefers-color-scheme: dark)` unless `<html>`
+ * says `data-app-dark="0"`, and under `<html data-app-dark="1">`. The server-rendered page is
+ * therefore right for the system preference with no script; the site's pre-paint script stamps
+ * `data-app-dark` from a stored choice before first paint (`/rmhmusic` in `APP_ROUTE_THEME_BG`,
+ * `stores/themeStore.ts`, whose two grounds are `--app-bg` below). See
+ * `components/rmhmusic/useRmhMusicMode.ts`.
+ *
+ * `/rmhmusic` is a THEME_EXCLUDED_ROUTE, so no site theme class is ever applied here. Nothing in
+ * the app reads `--site-*` tokens any more (the shared primitives it uses are re-pointed at
+ * `--app-*` by app-theme.css), so the old compatibility aliases are gone.
  */
 
 @import '../shared/app-theme.css';
 
+/* ── Light: paper ─────────────────────────────────────────────────────────── */
 .rmhmusic-theme {
-  --app-bg: #0b0b0b;
-  --app-bg-subtle: #111113;
-  --app-surface: #17171a;
-  --app-surface-hover: #202024;
-  --app-surface-active: #2a2a2f;
-  --app-border: #2c2c31;
-  --app-border-bright: #3d3d44;
-  --app-text: #f2f2f5;
-  --app-text-muted: #a8a8b3;
-  --app-text-dim: #7c7c88;
+  --app-bg: #f6f0e1;
+  --app-bg-subtle: #efe7d4;
+  /* A sheet: a slightly whiter page lying on the cream ground. */
+  --app-surface: #fcf8ee;
+  --app-surface-hover: #f0e8d5;
+  --app-surface-active: #e6dcc4;
+  /* Ruled-line blue: dividers. `-bright` outlines controls (3.0:1 on the ground). */
+  --app-border: #c3cfe4;
+  --app-border-bright: #6f82a8;
+  --app-text: #1a2747;
+  --app-text-muted: #3f4d70;
+  /* 5.0:1 on the hover fill, its lowest pairing. */
+  --app-text-dim: #56627f;
 
-  --app-accent: #a78bfa;
-  /* Near-black ink on the light violet accent (≈9:1); white would be 2.4:1. */
-  --app-accent-fg: #16101f;
-  --app-accent-hover: #8b6df0;
-  --app-success: #34d399;
-  --app-danger: #f87171;
-  --app-warning: #fbbf24;
+  --app-accent: #4338ca;
+  --app-accent-fg: #fcf8ee;
+  --app-accent-hover: #3730a3;
+  --app-success: #1d6b40;
+  --app-danger: #b02331;
+  --app-warning: #835400;
+  --app-info: #2c5aa0;
 
-  /* ── Compatibility aliases (see header) ── */
-  --site-bg: var(--app-bg);
-  --site-bg-subtle: var(--app-bg-subtle);
-  --site-surface: var(--app-surface);
-  --site-surface-opaque: var(--app-surface);
-  --site-surface-hover: var(--app-surface-hover);
-  --site-surface-active: var(--app-surface-active);
-  --site-border: var(--app-border);
-  --site-border-bright: var(--app-border-bright);
-  --site-text: var(--app-text);
-  --site-text-muted: var(--app-text-muted);
-  --site-text-dim: var(--app-text-dim);
-  --site-accent: var(--app-accent);
-  --site-accent-hover: var(--app-accent-hover);
-  --site-accent-dim: var(--app-accent-dim);
-  --site-accent-fg: var(--app-accent-fg);
-  --site-success: var(--app-success);
-  --site-danger: var(--app-danger);
-  --site-warning: var(--app-warning);
+  --app-accent-dim: rgb(67 56 202 / 0.1);
+  --app-glass-bg: var(--app-surface);
+  --app-toast-bg: var(--app-surface);
+  --app-scrim: rgb(26 39 71 / 0.45);
+  --app-gel-body: rgb(255 255 255 / 0.2);
+  --app-gel-depth: rgb(26 39 71 / 0.05);
+  --app-jelly-haze: color-mix(in srgb, var(--app-accent) 10%, white);
+
+  /* Type: a book serif for headings, all system faces (nothing to download, nothing to swap). */
+  --app-font-display:
+    'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, ui-serif, serif;
+
+  /* Paper decoration — never text, so no contrast floor; kept faint on purpose. */
+  --rmm-rule: #c3cfe4;
+  --rmm-margin: #e3a7a2;
+  --rmm-staff: #c9d2e3;
+  --rmm-grain: rgb(26 39 71 / 0.035);
+  /* The backdrop's ambient notes and the note a learner just played. */
+  --rmm-note: #a3aec6;
+  --rmm-pop: var(--app-accent);
+
+  color-scheme: light;
+}
+
+/* ── Dark: night manuscript ───────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-app-dark='0']) .rmhmusic-theme {
+    --app-bg: #0f182b;
+    --app-bg-subtle: #0b1324;
+    --app-surface: #162238;
+    --app-surface-hover: #1d2b46;
+    --app-surface-active: #243554;
+    --app-border: #2a3b5e;
+    /* 3.2:1 on the sheets. */
+    --app-border-bright: #5a6f9c;
+    --app-text: #f2ebd9;
+    --app-text-muted: #c9c1ad;
+    --app-text-dim: #a8a18f;
+    --app-accent: #a8b4ff;
+    --app-accent-fg: #0f182b;
+    --app-accent-hover: #c9d0ff;
+    --app-success: #86d6a6;
+    --app-danger: #f4a3a3;
+    --app-warning: #e9c46f;
+    --app-info: #9cc2f2;
+    --app-accent-dim: rgb(168 180 255 / 0.14);
+    --app-scrim: rgb(5 9 18 / 0.6);
+    --app-gel-body: rgb(255 255 255 / 0.015);
+    --app-gel-depth: rgb(0 0 0 / 0.14);
+    --app-jelly-haze: color-mix(in srgb, var(--app-text) 18%, white);
+    --rmm-rule: #2a3b5e;
+    --rmm-margin: #6a3a48;
+    --rmm-staff: #24345a;
+    --rmm-grain: rgb(242 235 217 / 0.03);
+    --rmm-note: #3d5080;
+    color-scheme: dark;
+  }
+}
+:root[data-app-dark='1'] .rmhmusic-theme {
+  --app-bg: #0f182b;
+  --app-bg-subtle: #0b1324;
+  --app-surface: #162238;
+  --app-surface-hover: #1d2b46;
+  --app-surface-active: #243554;
+  --app-border: #2a3b5e;
+  --app-border-bright: #5a6f9c;
+  --app-text: #f2ebd9;
+  --app-text-muted: #c9c1ad;
+  --app-text-dim: #a8a18f;
+  --app-accent: #a8b4ff;
+  --app-accent-fg: #0f182b;
+  --app-accent-hover: #c9d0ff;
+  --app-success: #86d6a6;
+  --app-danger: #f4a3a3;
+  --app-warning: #e9c46f;
+  --app-info: #9cc2f2;
+  --app-accent-dim: rgb(168 180 255 / 0.14);
+  --app-scrim: rgb(5 9 18 / 0.6);
+  --app-gel-body: rgb(255 255 255 / 0.015);
+  --app-gel-depth: rgb(0 0 0 / 0.14);
+  --app-jelly-haze: color-mix(in srgb, var(--app-text) 18%, white);
+  --rmm-rule: #2a3b5e;
+  --rmm-margin: #6a3a48;
+  --rmm-staff: #24345a;
+  --rmm-grain: rgb(242 235 217 / 0.03);
+  --rmm-note: #3d5080;
+  color-scheme: dark;
+}
+
+/* ── The paper ground ─────────────────────────────────────────────────────────
+   The app's root paints it, before any script: the paper colour and a faint grain made of two
+   dot lattices at co-prime pitches (so no regular pattern shows). No raster texture. */
+.rmhmusic-theme {
+  position: relative;
+  background-color: var(--app-bg);
+  background-image:
+    radial-gradient(var(--rmm-grain) 0.6px, transparent 0.9px),
+    radial-gradient(var(--rmm-grain) 0.6px, transparent 0.9px);
+  background-size:
+    7px 7px,
+    11px 13px;
+  background-position:
+    0 0,
+    3px 5px;
+}
+
+/* Every screen is a document (`.app-page`) laid over the backdrop. */
+.rmhmusic-theme .app-page {
+  position: relative;
+  z-index: 1;
+}
+
+/* The page column carries the red-pencil margin rule, in its own gutter. */
+.rmm-column {
+  position: relative;
+}
+.rmm-column::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0.375rem;
+  width: 3px;
+  border-inline: 1px solid var(--rmm-margin);
+  pointer-events: none;
+}
+@media (min-width: 768px) {
+  .rmm-column::before {
+    inset-inline-start: -1.5rem;
+  }
+}
+
+/* ── The animated backdrop (PaperBackdrop.tsx) ────────────────────────────────
+   A band of staff paper across the top of the app. The staves are CSS — they are there before
+   any script and stay put; the canvas over them only draws the drifting notes, bar lines and
+   the note a learner plays, so its first frame adds marks and changes no colour. The staff
+   geometry here (first staff at 64px, lines 10px apart, a staff every 128px) is
+   `STAFF_FIRST` / `STAFF_GAP` / `STAFF_PERIOD` in `lib/rmhmusic/learn/backdrop/scene.ts`;
+   change both together. */
+.rmm-backdrop {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: min(100svh, 56rem);
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--rmm-staff) 0 1px,
+    transparent 1px 10px,
+    var(--rmm-staff) 10px 11px,
+    transparent 11px 20px,
+    var(--rmm-staff) 20px 21px,
+    transparent 21px 30px,
+    var(--rmm-staff) 30px 31px,
+    transparent 31px 40px,
+    var(--rmm-staff) 40px 41px,
+    transparent 41px 128px
+  );
+  background-position: 0 64px;
+  /* The band dissolves into plain paper rather than ending on a line. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 14rem), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 14rem), transparent);
+}
+.rmm-backdrop__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  transition: opacity var(--app-duration-slow) var(--ease-smooth, ease);
+}
+.rmm-backdrop__canvas[data-ready='true'] {
+  opacity: 1;
+}
+
+/* ── The hero: the catalog card's banner and wordmark ────────────────────────
+   The art is replaced later at the same paths and aspect ratios, so nothing here depends on
+   what it shows: the frame reserves 3:1, the image covers it, and the frame's own paper tone
+   is what shows until (or if never) it loads. */
+.rmm-hero {
+  position: relative;
+  padding-bottom: 1.25rem;
+}
+.rmm-hero__frame {
+  position: relative;
+  aspect-ratio: 3 / 1;
+  overflow: hidden;
+  border-radius: var(--app-radius-lg);
+  background-color: var(--app-bg-subtle);
+  border: 1px solid var(--app-border);
+}
+.rmm-hero__frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* The wordmark sits on the frame's lower edge, half on the art and half on the paper, like a
+   label stuck to a notebook cover. Its box is reserved by its aspect ratio. */
+.rmm-hero__logo {
+  position: absolute;
+  inset-inline-start: 0.75rem;
+  bottom: 0;
+  width: min(56%, 20rem);
+  aspect-ratio: 1024 / 270;
+}
+.rmm-hero__logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ── Notebook pages (PathUnit) ────────────────────────────────────────────── */
+.rmm-sheet {
+  background-color: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+}
+/* A unit's header: the title written above a five-line staff. */
+.rmm-sheet__head {
+  padding: 1rem 1rem 1.25rem;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--rmm-staff) 0 1px,
+    transparent 1px 6px
+  );
+  background-size: 100% 25px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-origin: content-box;
+}
+/* Lesson rows are the page's ruled lines. */
+.rmm-ruled > li + li {
+  border-top: 1px solid var(--rmm-rule);
+}
+
+/* A handwritten-feeling tag: the book serif in italic, on a pencilled outline. */
+.rmm-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 1.75rem;
+  padding-inline: 0.625rem;
+  border: 1px dashed var(--app-border-bright);
+  border-radius: var(--app-radius-sm);
+  font-family: var(--app-font-display);
+  font-style: italic;
+  font-size: 0.875rem;
+  color: var(--app-text-muted);
+}
+
+/* Headings in the book serif. */
+.rmm-display {
+  font-family: var(--app-font-display);
+}
+
+/* ── The on-screen keyboard (OnScreenKeyboard.tsx) ───────────────────────────
+   The white-key count is decided by CSS, from the container's own width, so the server render
+   and the first client render are the same and nothing moves after mount: 7 keys under 392px
+   (each ≥ 44px down to a 320px screen's 308px), 8 from 392px up to a phone's widest portrait
+   column, and the full two octaves (14) from 616px. The component renders every key and hides
+   the ones beyond the visible window. */
+.rmm-keys {
+  container-type: inline-size;
+  --rmm-white-count: 7;
+}
+@container (min-width: 392px) {
+  .rmm-keys__bed {
+    --rmm-white-count: 8;
+  }
+}
+@container (min-width: 616px) {
+  .rmm-keys__bed {
+    --rmm-white-count: 14;
+  }
 }

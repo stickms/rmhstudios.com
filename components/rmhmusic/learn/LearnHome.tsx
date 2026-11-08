@@ -19,6 +19,7 @@ import type { LessonProgressRow } from '@/lib/rmhmusic/learn/store';
 import type { Instrument } from '@/lib/rmhmusic/learn/schemas';
 import { SECONDARY_BUTTON } from './buttons';
 import { InputSetup } from './InputSetup';
+import { ModeToggle } from './ModeToggle';
 import { PathUnit } from './PathUnit';
 import { StreakChip } from './StreakChip';
 import { useInputRelease } from './useLearnInput';
@@ -164,7 +165,10 @@ export function LearnHome() {
             <ArrowLeft className="h-4 w-4 shrink-0 rtl-flip" aria-hidden="true" />
             {t('back-to-builds', { defaultValue: 'Back to Builds' })}
           </Link>
-          <StreakChip />
+          <div className="flex items-center gap-2">
+            <ModeToggle />
+            <StreakChip />
+          </div>
         </header>
 
         <main className="flex-1 space-y-4 pt-4 pb-8">

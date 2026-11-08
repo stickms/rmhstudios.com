@@ -192,6 +192,18 @@ export const APP_ROUTE_THEME_BG: Record<
   // Δluma 0.945 by `testing/e2e/fouc.mjs`. The effect stays: it is the
   // client-navigation path and it restores what it found on the way out. It is
   // now a no-op on a hard load, which is where the flash was.
+  // RMH Music. Grounds mirror `--app-bg` in `components/rmhmusic/rmhmusic.css` —
+  // cream notebook paper by day, the deep ink-navy "night manuscript" by night.
+  // `system: true`: a first visit follows `prefers-color-scheme`; the header
+  // toggle stores `{"dark":true|false}` under this key
+  // (`lib/rmhmusic/learn/mode.ts`), and the boolean wins once it is there.
+  '/rmhmusic': {
+    key: 'rmhmusic-mode',
+    darkFlag: 'dark',
+    dark: '#0f182b',
+    light: '#f6f0e1',
+    system: true,
+  },
   '/temple-of-joy': {
     key: 'temple_of_joy_save_v2',
     darkFlag: 'theme',
