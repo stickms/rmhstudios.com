@@ -2,7 +2,17 @@ import { describe, expect, it } from 'vitest';
 import type { InputAdapter, InputSource, NoteEvent, NoteListener } from './events';
 import { createInputHub } from './hub';
 
-function fakeAdapter(source: InputSource, opts: { failWith?: Error } = {}) {
+function deferred() {
+  let resolve!: () => void;
+  let reject!: (e: Error) => void;
+  const promise = new Promise<void>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+function fakeAdapter(source: InputSource, opts: { failWith?: Error; gate?: Promise<void> } = {}) {
   const listeners = new Set<NoteListener>();
   const state = {
     started: false,
@@ -15,6 +25,7 @@ function fakeAdapter(source: InputSource, opts: { failWith?: Error } = {}) {
     source,
     async start() {
       state.starts++;
+      await opts.gate;
       if (state.failWith) throw state.failWith;
       state.started = true;
     },
@@ -155,5 +166,66 @@ describe('createInputHub', () => {
   it('start for an unknown source rejects', async () => {
     const hub = createInputHub([]);
     await expect(hub.start('mic')).rejects.toThrow();
+  });
+
+  describe('stop during a pending start', () => {
+    it('releases the adapter once the start resolves and never reports it active', async () => {
+      const gate = deferred();
+      const mic = fakeAdapter('mic', { gate: gate.promise });
+      const hub = createInputHub([mic.adapter]);
+      const got: NoteEvent[] = [];
+      hub.subscribe((e) => got.push(e));
+      const started = hub.start('mic');
+      hub.stop('mic');
+      expect(mic.state.stops).toBe(0);
+      gate.resolve();
+      await expect(started).resolves.toBeUndefined();
+      expect(mic.state.stops).toBe(1);
+      expect(hub.active()).toEqual([]);
+      expect(hub.lastError('mic')).toBeNull();
+      expect(mic.listenerCount()).toBe(0);
+      mic.emit(60);
+      expect(got).toEqual([]);
+    });
+
+    it('a fresh start after the cancelled one has settled works normally', async () => {
+      const gate = deferred();
+      const mic = fakeAdapter('mic', { gate: gate.promise });
+      const hub = createInputHub([mic.adapter]);
+      const first = hub.start('mic');
+      hub.stop('mic');
+      gate.resolve();
+      await first;
+      await hub.start('mic');
+      expect(hub.active()).toEqual(['mic']);
+      expect(mic.listenerCount()).toBe(1);
+    });
+
+    it('a fresh start issued while the cancelled one is still pending waits, then starts', async () => {
+      const gate = deferred();
+      const mic = fakeAdapter('mic', { gate: gate.promise });
+      const hub = createInputHub([mic.adapter]);
+      void hub.start('mic');
+      hub.stop('mic');
+      const second = hub.start('mic');
+      gate.resolve();
+      await second;
+      expect(mic.state.stops).toBe(1);
+      expect(mic.state.starts).toBe(2);
+      expect(hub.active()).toEqual(['mic']);
+    });
+
+    it('records no error when the cancelled start rejects', async () => {
+      const gate = deferred();
+      const mic = fakeAdapter('mic', { failWith: new Error('late'), gate: gate.promise });
+      const hub = createInputHub([mic.adapter]);
+      const started = hub.start('mic');
+      hub.stop('mic');
+      gate.resolve();
+      await expect(started).resolves.toBeUndefined();
+      expect(hub.lastError('mic')).toBeNull();
+      expect(hub.active()).toEqual([]);
+      expect(mic.listenerCount()).toBe(0);
+    });
   });
 });

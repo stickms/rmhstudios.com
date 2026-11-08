@@ -28,6 +28,9 @@ export function createMidiInput(): InputAdapter & {
   };
 
   let access: MIDIAccess | null = null;
+  /** Bumped by every stop(); a start that finds it changed has been cancelled. */
+  let generation = 0;
+  let pending: { promise: Promise<void>; generation: number } | null = null;
   let bound = new Set<MIDIInput>();
   /** Notes currently down, so stop() can release them. */
   const held = new Set<number>();
@@ -60,20 +63,38 @@ export function createMidiInput(): InputAdapter & {
     for (const l of [...deviceListeners]) l();
   };
 
-  return {
-    source: 'midi',
+  const open = async (gen: number): Promise<void> => {
+    if (!isMidiSupported()) throw new Error('Web MIDI is not supported in this browser.');
+    const granted = await navigator.requestMIDIAccess({ sysex: false });
+    // stop() arrived while the permission prompt was open: bind nothing.
+    if (gen !== generation) return;
+    access = granted;
+    granted.addEventListener('statechange', onStateChange);
+    bindInputs();
+    for (const l of [...deviceListeners]) l();
+  };
 
-    async start() {
-      if (access) return;
-      if (!isMidiSupported()) throw new Error('Web MIDI is not supported in this browser.');
-      const granted = await navigator.requestMIDIAccess({ sysex: false });
-      access = granted;
-      granted.addEventListener('statechange', onStateChange);
-      bindInputs();
-      for (const l of [...deviceListeners]) l();
+  const adapter = {
+    source: 'midi' as const,
+
+    start(): Promise<void> {
+      if (access) return Promise.resolve();
+      if (pending) {
+        if (pending.generation === generation) return pending.promise;
+        // The in-flight start was cancelled; begin afresh once it has let go.
+        const again = () => adapter.start();
+        return pending.promise.then(again, again);
+      }
+      const gen = generation;
+      const promise = open(gen).finally(() => {
+        pending = null;
+      });
+      pending = { promise, generation: gen };
+      return promise;
     },
 
     stop() {
+      generation++;
       if (!access) return;
       access.removeEventListener('statechange', onStateChange);
       bound.forEach((input) => {
@@ -110,4 +131,5 @@ export function createMidiInput(): InputAdapter & {
       };
     },
   };
+  return adapter;
 }

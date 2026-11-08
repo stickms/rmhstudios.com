@@ -25,6 +25,8 @@ export function createInputHub(adapters: InputAdapter[]): InputHub {
   /** Started sources, each with the function that unsubscribes the hub from it. */
   const started = new Map<InputSource, () => void>();
   const starting = new Map<InputSource, Promise<void>>();
+  /** Sources whose in-flight start was stopped before it settled. */
+  const cancelled = new Set<InputSource>();
   const errors = new Map<InputSource, Error>();
 
   const forward = (e: NoteEvent) => {
@@ -38,14 +40,23 @@ export function createInputHub(adapters: InputAdapter[]): InputHub {
       await adapter.start();
     } catch (err) {
       unsubscribe();
+      // A start that was stopped meanwhile is not an error to report.
+      if (cancelled.delete(source)) return;
       errors.set(source, err instanceof Error ? err : new Error(String(err)));
       throw err;
+    }
+    if (cancelled.delete(source)) {
+      // stop() came while the start was pending (e.g. a permission prompt):
+      // the adapter has now acquired its device, so release it.
+      adapter.stop();
+      unsubscribe();
+      return;
     }
     errors.delete(source);
     started.set(source, unsubscribe);
   };
 
-  return {
+  const hub: InputHub = {
     subscribe(l) {
       listeners.add(l);
       return () => {
@@ -58,13 +69,19 @@ export function createInputHub(adapters: InputAdapter[]): InputHub {
       if (!adapter) return Promise.reject(new Error(`No input adapter for "${source}"`));
       if (started.has(source)) return Promise.resolve();
       const pending = starting.get(source);
-      if (pending) return pending;
+      if (pending) {
+        if (!cancelled.has(source)) return pending;
+        // Stopped while starting: wait for that start to unwind, then start afresh.
+        const again = () => hub.start(source);
+        return pending.then(again, again);
+      }
       const run = startAdapter(source, adapter).finally(() => starting.delete(source));
       starting.set(source, run);
       return run;
     },
 
     stop(source) {
+      if (starting.has(source)) cancelled.add(source);
       const unsubscribe = started.get(source);
       if (!unsubscribe) return;
       // Stop before unsubscribing: stopping releases held notes, and those
@@ -82,4 +99,5 @@ export function createInputHub(adapters: InputAdapter[]): InputHub {
       return errors.get(source) ?? null;
     },
   };
+  return hub;
 }
