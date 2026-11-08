@@ -570,7 +570,7 @@ export function NightrailGame() {
       <NightrailHud ref={hudRef} visible={uiState === 'playing' && !photoMode} />
 
       {paused && uiState === 'playing' && !photoMode && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(2rem+var(--safe-bottom))] z-40 flex justify-center">
+        <div className="pointer-events-none absolute inset-x-0 top-1/2 z-40 mt-14 flex justify-center">
           <button
             type="button"
             onClick={quit}

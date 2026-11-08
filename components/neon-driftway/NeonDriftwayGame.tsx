@@ -830,7 +830,7 @@ export function NeonDriftwayGame() {
       <NeonDriftwayHud ref={hudRef} stereo={viewMode === 'vr'} visible={playing && !photoMode} />
 
       {soloPaused && playing && !photoMode && viewMode !== 'vr' && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-[calc(2rem+var(--safe-bottom))] z-40 flex justify-center">
+        <div className="pointer-events-none absolute inset-x-0 top-1/2 z-40 mt-[4.5rem] [@media(max-height:500px)]:mt-[3.25rem] flex justify-center">
           <button
             type="button"
             onClick={quit}

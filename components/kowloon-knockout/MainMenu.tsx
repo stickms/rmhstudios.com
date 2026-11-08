@@ -105,7 +105,7 @@ export default function MainMenu() {
                         </motion.button>
 
                         <motion.button
-                            className="neon-button neon-button-controls kk-util"
+                            className="neon-button neon-button-controls kk-util kk-quit"
                             onClick={quit}
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.97 }}
