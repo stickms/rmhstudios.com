@@ -51,5 +51,6 @@
   "loading": "Loading…",
   "room-code": "Room code",
   "player-count-of-max_one": "Oyuncu: {{count}}/{{max}}",
-  "player-count-of-max_other": "Oyuncu: {{count}}/{{max}}"
+  "player-count-of-max_other": "Oyuncu: {{count}}/{{max}}",
+  "quit": "Quit"
 }

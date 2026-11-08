@@ -49,5 +49,6 @@
   "winner-none": "없음",
   "loading": "Loading…",
   "room-code": "Room code",
-  "player-count-of-max_other": "플레이어: {{count}}/{{max}}"
+  "player-count-of-max_other": "플레이어: {{count}}/{{max}}",
+  "quit": "Quit"
 }

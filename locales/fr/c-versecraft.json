@@ -78,5 +78,6 @@
   "tutorial-step2-tip": "Les bonus s'appliquent au score de chaque personnage, donc ils valent toujours la peine d'être recherchés.",
   "tutorial-step2-title": "Techniques Bonus",
   "words-selected-count": "{{selected}}/{{total}} sélectionnés",
-  "your-journey": "Votre Voyage"
+  "your-journey": "Votre Voyage",
+  "quit": "Quit"
 }

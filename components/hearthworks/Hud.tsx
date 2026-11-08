@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import {
   CookingPot,
   Cog,
@@ -12,6 +13,7 @@ import {
   Factory,
   Handshake,
   Landmark,
+  LogOut,
   Shirt,
   Users,
   Coins,
@@ -122,6 +124,7 @@ function ToolButton({
 
 export function Hud() {
   const { t } = useTranslation('c-hearthworks');
+  const quit = useQuitGame();
   const money = useHearthworks((s) => s.world.players[s.playerId]?.money ?? 0);
   const inventory = useHearthworks((s) => s.world.players[s.playerId]?.inventory);
   const lastEvents = useHearthworks((s) => s.lastEvents);
@@ -274,6 +277,10 @@ export function Hud() {
         >
           <Wheat aria-hidden size={18} />
           <span>{t('pantry-title', { defaultValue: 'Pantry' })}</span>
+        </button>
+        <button type="button" className="hw-chip hw-chip--button" onClick={quit}>
+          <LogOut aria-hidden size={18} />
+          <span>{t('quit', { defaultValue: 'Quit' })}</span>
         </button>
       </header>
 

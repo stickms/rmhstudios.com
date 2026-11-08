@@ -301,5 +301,8 @@
   "vigil-sinners_one": "{{count}} पापी, थामे हुए",
   "vigil-sinners_other": "{{count}} पापी, थामे हुए",
   "vigil-title": "रात्रि प्रार्थना",
-  "vigil-window": "गिने जाने वाले घंटे"
+  "vigil-window": "गिने जाने वाले घंटे",
+  "quit": "Quit",
+  "setting-quit": "Leave the temple",
+  "setting-quit-note": "Saves, then returns to the games list. Your temple is waiting when you come back."
 }

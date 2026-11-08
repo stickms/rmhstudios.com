@@ -51,5 +51,6 @@
   "loading": "Loading…",
   "room-code": "Room code",
   "player-count-of-max_one": "Spieler: {{count}}/{{max}}",
-  "player-count-of-max_other": "Spieler: {{count}}/{{max}}"
+  "player-count-of-max_other": "Spieler: {{count}}/{{max}}",
+  "quit": "Quit"
 }

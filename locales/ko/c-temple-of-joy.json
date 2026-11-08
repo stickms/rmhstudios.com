@@ -297,5 +297,8 @@
   "vigil-sinner-note": "죄인이 쥐고 있는 모든 것은 그들을 치는 순간 몇 배가 되어 돌아옵니다.",
   "vigil-sinners_other": "죄인 {{count}}명이 쥐고 있음",
   "vigil-title": "밤의 기도",
-  "vigil-window": "반영되는 시간"
+  "vigil-window": "반영되는 시간",
+  "quit": "Quit",
+  "setting-quit": "Leave the temple",
+  "setting-quit-note": "Saves, then returns to the games list. Your temple is waiting when you come back."
 }

@@ -76,5 +76,6 @@
   "tutorial-step2-tip": "Bonuses apply to every character's score, so they're always worth pursuing.",
   "tutorial-step2-title": "Bonus Techniques",
   "words-selected-count": "{{selected}}/{{total}} selected",
-  "your-journey": "Your Journey"
+  "your-journey": "Your Journey",
+  "quit": "Quit"
 }

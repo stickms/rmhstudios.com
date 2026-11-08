@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useCallback, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useGameStore } from '@/lib/versecraft/store';
 import { loadGame } from '@/lib/versecraft/persistence';
 import { MainMenu } from './MainMenu';
@@ -21,7 +20,6 @@ import { PoemJournal } from './PoemJournal';
 import { SaveLoadMenu } from './SaveLoadMenu';
 import { ProgressScreen } from './ProgressScreen';
 import type { GameScreen } from '@/lib/versecraft/types';
-import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 
 // Screens that are safe to restore on refresh (not mid-puzzle or transient)
 const RESTORABLE_SCREENS = new Set<GameScreen>([
@@ -29,8 +27,6 @@ const RESTORABLE_SCREENS = new Set<GameScreen>([
 ]);
 
 export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
-  const { t } = useTranslation("c-versecraft");
-  const goBack = useBackOrFallback();
   const screen = useGameStore(s => s.screen);
   const mode = useGameStore(s => s.mode);
   const gameStarted = useGameStore(s => s.gameStarted);
@@ -154,24 +150,6 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
         fontFamily: 'var(--font-nunito, var(--font-inter, sans-serif))',
       }}
     >
-      {/* Back to builds — only on the menu, so it never collides with in-screen
-          back buttons or the dialogue HUD on mobile. */}
-      {screen === 'menu' && (
-        <Link
-          to="/games"
-          onClick={goBack}
-          className="absolute top-[calc(1rem+var(--safe-top))] left-[calc(1rem+var(--safe-left))] z-50 flex items-center gap-1.5 px-3 py-2 min-h-11 rounded text-xs transition hover:brightness-125"
-          style={{
-            backgroundColor: 'rgba(26, 21, 32, 0.8)',
-            border: '1px solid rgba(196, 163, 90, 0.15)',
-            color: '#a89888',
-            backdropFilter: 'blur(4px)',
-          }}
-        >
-          <span style={{ color: '#c4a35a' }}>&larr;</span>
-          {t("back-to-builds", { defaultValue: "Back to Builds" })}
-        </Link>
-      )}
       {renderScreen()}
     </div>
   );

@@ -49,5 +49,6 @@
   "winner-none": "无",
   "loading": "Loading…",
   "room-code": "Room code",
-  "player-count-of-max_other": "玩家：{{count}}/{{max}}"
+  "player-count-of-max_other": "玩家：{{count}}/{{max}}",
+  "quit": "Quit"
 }

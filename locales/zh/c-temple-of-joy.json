@@ -297,5 +297,8 @@
   "vigil-sinner-note": "罪人所持有的一切，会在你击中他们的那一刻成倍归还。",
   "vigil-sinners_other": "{{count}} 名罪人，持有中",
   "vigil-title": "夜间祷告",
-  "vigil-window": "计入的时辰"
+  "vigil-window": "计入的时辰",
+  "quit": "Quit",
+  "setting-quit": "Leave the temple",
+  "setting-quit-note": "Saves, then returns to the games list. Your temple is waiting when you come back."
 }

@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { ArrowLeft, Settings } from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { GameEngine } from '@/lib/slice-it/engine';
 import { hitSoundPath, hitSoundPreloadList } from '@/lib/slice-it/hit-sound-pool';
@@ -21,8 +21,8 @@ import { addMatchListener, spectatingLobbyCode } from '@/lib/slice-it/net/client
 import { useStartRun } from '@/lib/slice-it/useStartRun';
 import type { SliceSong } from '@/lib/slice-it/types';
 import { useStableSession } from '@/hooks/useStableSession';
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { useBackOrFallback } from '@/hooks/useBackOrFallback';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { SongLibrary } from '@/components/slice-it/SongLibrary';
 import { CalibrationScreen } from '@/components/slice-it/CalibrationScreen';
@@ -64,7 +64,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
   // which threw the sign-in takeover over a live session. See the hook.
   const session = useStableSession();
   const navigate = useNavigate();
-  const goBack = useBackOrFallback();
+  const quit = useQuitGame();
   // The details panel is a column beside the library on a wide screen and a sheet
   // over it on a narrow one; the primary nav is in the bar on a tablet and up and
   // at the foot of the screen (where a thumb is) on a phone.
@@ -316,15 +316,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
           {isWide ? (
             <header className="slice-line">
               <div className="slice-line__l">
-                <Link
-                  to="/games"
-                  onClick={goBack}
-                  className="slice-chip"
-                  aria-label={ts('back-to-builds', { defaultValue: 'Back to Builds' })}
-                >
-                  <ArrowLeft className="size-3.5" aria-hidden />
-                  RMH-050
-                </Link>
+                <span className="slice-chip">RMH-050</span>
                 <span className="slice-label">
                   {t('menu-rpm', { defaultValue: '33 1/3 RPM' })} <i>/</i>{' '}
                   {t('side-a', { defaultValue: 'Side A' })}
@@ -343,18 +335,19 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 >
                   <Settings className="size-[18px]" aria-hidden />
                 </button>
+                <button
+                  type="button"
+                  className="slice-bar__icon"
+                  onClick={quit}
+                  aria-label={t('quit', { defaultValue: 'QUIT' })}
+                  title={t('quit', { defaultValue: 'QUIT' })}
+                >
+                  <LogOut className="size-[18px]" aria-hidden />
+                </button>
               </div>
             </header>
           ) : (
             <header className="slice-bar">
-            <Link
-              to="/games"
-              onClick={goBack}
-              className="slice-bar__icon"
-              aria-label={ts('back-to-builds', { defaultValue: 'Back to Builds' })}
-            >
-              <ArrowLeft className="size-[18px]" aria-hidden />
-            </Link>
             <h1 className="slice-bar__title">
               <img
                 className="slice-bar__logo"
@@ -383,6 +376,15 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 aria-label={t('settings', { defaultValue: 'Settings' })}
               >
                 <Settings className="size-[18px]" aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="slice-bar__icon"
+                onClick={quit}
+                aria-label={t('quit', { defaultValue: 'QUIT' })}
+                title={t('quit', { defaultValue: 'QUIT' })}
+              >
+                <LogOut className="size-[18px]" aria-hidden />
               </button>
             </div>
           </header>

@@ -130,8 +130,10 @@ class _ScrollText {
 }
 
 export class App {
-    constructor(container) {
+    constructor(container, opts = {}) {
         this._container = container;
+        // Leave the game for the catalog. Supplied by the React host, which owns the router.
+        this._onQuit = opts.onQuit || (() => {});
         this.terminalEl = container.querySelector('#terminal-screen');
         this.canvasEl = container.querySelector('#game-canvas');
 
@@ -197,6 +199,9 @@ export class App {
                 break;
             case 'settings':
                 this.terminal.enterSettingsMode(this.settings);
+                break;
+            case 'quit':
+                this._onQuit();
                 break;
         }
     }

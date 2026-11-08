@@ -53,5 +53,6 @@
   "room-code": "Room code",
   "player-count-of-max_many": "{{count}}/{{max}} players",
   "player-count-of-max_one": "Giocatori: {{count}}/{{max}}",
-  "player-count-of-max_other": "Giocatori: {{count}}/{{max}}"
+  "player-count-of-max_other": "Giocatori: {{count}}/{{max}}",
+  "quit": "Quit"
 }

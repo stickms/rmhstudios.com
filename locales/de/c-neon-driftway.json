@@ -92,5 +92,6 @@
   "webgl-required-title": "3D not available",
   "you-label": "(Du)",
   "you-label-short": "You",
-  "your-score": "Deine Punktzahl"
+  "your-score": "Deine Punktzahl",
+  "quit": "Quit"
 }

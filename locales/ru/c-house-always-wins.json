@@ -31,5 +31,6 @@
   "touch-menu-aria": "Открыть меню",
   "touch-right": "Вправо",
   "touch-use": "Использовать",
-  "touch-use-aria": "Взаимодействовать"
+  "touch-use-aria": "Взаимодействовать",
+  "menu-quit": "Quit"
 }

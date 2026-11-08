@@ -161,9 +161,8 @@ export default function RMHboxHeader({
   }, [theme, updateSettings]);
 
   const isGame = context === 'game';
-  const isLanding = context === 'landing';
-  const hasBackLink =
-    isLanding || context === 'minigames' || context === 'history' || context === 'lobby';
+  // The landing has no back link: leaving RMHbox for the games list is the page's Quit button.
+  const hasBackLink = context === 'minigames' || context === 'history' || context === 'lobby';
   const showConnection = context !== 'minigames' && context !== 'history';
   const showTimer = timerInfo !== null;
   const isHost = !!(lobby && lobby.hostUserId === lobby.myUserId);

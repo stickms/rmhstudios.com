@@ -126,5 +126,6 @@
   "wins": "MENANG",
   "you-lose": "KAMU KALAH",
   "you-win": "KAMU MENANG!",
-  "your-fighter": "Your fighter"
+  "your-fighter": "Your fighter",
+  "quit": "QUIT"
 }

@@ -3,6 +3,7 @@
 import { useGameSession } from '@/hooks/useGameSession';
 import { useRef, useEffect, useCallback, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import { asset } from '@/lib/storage/asset';
 import { VoidBreakerEngine } from '@/lib/void-breaker/game';
 import { VoidBreakerRenderer } from '@/lib/void-breaker/renderer';
@@ -79,6 +80,7 @@ const EMPTY_HUD: HUDState = {
 
 export function VoidBreakerGame() {
   const { t, i18n } = useTranslation('c-void-breaker');
+  const quitGame = useQuitGame();
   const cloud = useCloudSave(voidBreakerSave, {
     gameName: 'Void Breaker',
     summarize: (save) => summarizeVoidBreakerSave(save, t, i18n.language),
@@ -548,6 +550,15 @@ export function VoidBreakerGame() {
     fadeMusic(true);
     setSaveInfo(getSaveInfo());
   }, [fadeMusic]);
+
+  /** Save the run (if resumable) and leave the game for the catalog. */
+  const handleQuitGame = useCallback(() => {
+    const game = gameRef.current;
+    if (game && !game.bossRush) {
+      saveGame(game.serializeGameState() as Record<string, unknown>);
+    }
+    quitGame();
+  }, [quitGame]);
 
   const handleResume = useCallback(() => {
     setShowPauseMenu(false);
@@ -1266,6 +1277,12 @@ export function VoidBreakerGame() {
                 className="w-full py-3 px-6 rounded-lg bg-[#ff00cc]/10 hover:bg-[#ff00cc]/20 border border-[#ff00cc]/40 text-[#ff00cc] font-bold font-mono tracking-wider transition-colors duration-200 hover:shadow-[0_0_20px_rgba(255,0,204,0.3)]"
               >
                 {t('save-and-quit', { defaultValue: '💾 SAVE & QUIT' })}
+              </button>
+              <button
+                onClick={handleQuitGame}
+                className="w-full py-3 px-6 rounded-lg bg-white/5 hover:bg-white/10 border border-white/20 text-zinc-300 font-bold font-mono tracking-wider uppercase transition-colors duration-200"
+              >
+                {t('quit', { defaultValue: 'Quit' })}
               </button>
             </div>
 

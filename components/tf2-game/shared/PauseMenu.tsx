@@ -53,6 +53,7 @@ export default function PauseMenu({
   onChangeTeam,
   onChangeClass,
   onDisconnect,
+  onQuit,
   views: extraViews = [],
   initialView = PAUSE_MENU,
   onBackToMenu,
@@ -65,6 +66,8 @@ export default function PauseMenu({
   onChangeTeam?: () => void;
   onChangeClass?: () => void;
   onDisconnect: () => void;
+  /** Leaves the game for the games list; when given, the disconnect entry reads "Main menu" and this one "Quit". */
+  onQuit?: () => void;
   /** Views the game adds after Options, in order. */
   views?: readonly PauseView[];
   /** `menu`, `settings`, `advanced` (Options → Multiplayer → Advanced), or the id of one of `views`. */
@@ -142,9 +145,20 @@ export default function PauseMenu({
               {t('change_class', { defaultValue: 'Change class' })}
             </Btn>
           ) : null}
-          <Btn size="md" variant="danger" onClick={onDisconnect}>
-            {game === 'tf2' ? t('disconnect', { defaultValue: 'Disconnect' }) : t('quit_game', { defaultValue: 'Quit game' })}
-          </Btn>
+          {onQuit ? (
+            <>
+              <Btn size="md" onClick={onDisconnect}>
+                {t('main_menu', { defaultValue: 'Main menu' })}
+              </Btn>
+              <Btn size="md" variant="danger" onClick={onQuit}>
+                {t('menu_quit', { defaultValue: 'Quit' })}
+              </Btn>
+            </>
+          ) : (
+            <Btn size="md" variant="danger" onClick={onDisconnect}>
+              {game === 'tf2' ? t('disconnect', { defaultValue: 'Disconnect' }) : t('quit_game', { defaultValue: 'Quit game' })}
+            </Btn>
+          )}
         </div>
       )}
     </Modal>

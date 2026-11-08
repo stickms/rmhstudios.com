@@ -17,7 +17,7 @@
  */
 'use client';
 
-import { ArrowLeft, Download, Maximize, Minimize, RotateCw, Upload, X } from 'lucide-react';
+import { Download, LogOut, Maximize, Minimize, RotateCw, Upload, X } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -410,8 +410,8 @@ export default function BalatroPage() {
           <div className="balatro-boot" role="alert">
             <p className="max-w-sm px-4 text-center text-sm">{stage.message}</p>
             <a href="/games" className="balatro-action">
-              <ArrowLeft className="size-4 rtl-flip" aria-hidden />
-              {t('back', { defaultValue: 'Games' })}
+              <LogOut className="size-4 rtl-flip" aria-hidden />
+              {t('quit', { defaultValue: 'Quit' })}
             </a>
           </div>
         )}
@@ -426,9 +426,9 @@ export default function BalatroPage() {
         )}
         {stage.kind === 'running' && (
           <div className="balatro-toolbar" role="toolbar" aria-label={t('toolbar', { defaultValue: 'Game controls' })}>
-            <Tooltip content={t('leave_hint', { defaultValue: 'Leave the game. Your progress is saved.' })}>
-              <button type="button" onClick={leave} aria-label={t('leave', { defaultValue: 'Leave' })}>
-                <ArrowLeft className="size-4 rtl-flip" aria-hidden />
+            <Tooltip content={t('quit_hint', { defaultValue: 'Quit the game. Your progress is saved.' })}>
+              <button type="button" onClick={leave} aria-label={t('quit', { defaultValue: 'Quit' })}>
+                <LogOut className="size-4 rtl-flip" aria-hidden />
               </button>
             </Tooltip>
             <Tooltip

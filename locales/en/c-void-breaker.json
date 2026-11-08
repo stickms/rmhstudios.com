@@ -114,5 +114,6 @@
   "wave-number": "Wave {{wave}}",
   "weapon": "Weapon",
   "your-build": "Your Build",
-  "zone-advance": "ZONE ADVANCE"
+  "zone-advance": "ZONE ADVANCE",
+  "quit": "Quit"
 }

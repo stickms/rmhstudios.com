@@ -44,5 +44,7 @@
   "phase_unpacking": "Unpacking",
   "rotate_hint": "Turn your phone sideways for a bigger table.",
   "rotate_hint_dismiss": "Dismiss",
-  "toolbar": "Game controls"
+  "toolbar": "Game controls",
+  "quit": "Quit",
+  "quit_hint": "Quit the game. Your progress is saved."
 }
