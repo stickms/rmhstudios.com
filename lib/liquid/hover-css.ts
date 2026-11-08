@@ -3,11 +3,13 @@
  * are stripped; content reveals and focus states remain intact.
  *
  * A host's own `:hover` transform (`transform`, `translate`, `rotate`, `scale`) is still
- * stripped, but no longer because hosts never move: under Plasmatic Jelly the soft-body
- * service (`lib/jelly/physics.ts`) OWNS hover motion — it plumps, leans and dents hosts
- * through the inline `translate`/`scale` properties. A CSS hover `scale` would be a second
- * writer on the same property, fighting the spring and snapping when the inline value is
- * cleared at sleep. One writer per property is the invariant this plugin enforces.
+ * stripped, but no longer because hosts never move: under Plasmatic Jelly the soft body
+ * OWNS hover motion. It is CSS now (app/jelly-material.css §8, CSS-first jelly PR 3): the
+ * hover plump and dent are `scale: var(--jelly-hover-*)` on the jelly hosts, sprung by the
+ * generated `--spring-*` curves. A hand-written hover `scale` would be a second writer on
+ * the same property, fighting that spring. One writer per property is the invariant this
+ * plugin enforces, so the one sanctioned writer is let through: a `scale` / `translate`
+ * whose whole value is a `--jelly-hover-*` pose token, bare or size-capped (see {@link jellyPose}).
  */
 import type { Declaration, Plugin, Rule } from 'postcss';
 import selectorParser from 'postcss-selector-parser';
@@ -59,6 +61,23 @@ function hoverSelector(selector: string): { quiet: string; hover: boolean; own: 
   return { quiet, hover, own };
 }
 
+/**
+ * The soft body's own hover pose (app/jelly-material.css §8): `scale: var(--jelly-hover-plump)` and its kin, bare or in
+ * the size-capped form the sheet ships, `min|max(var(--jelly-hover-*), calc(1 ± var(--jelly-edge-reach) /
+ * var(--jelly-s, N)))`.
+ */
+const POSE = /^var\(--jelly-hover-[a-z-]+\)$/;
+const CAPPED_POSE =
+  /^(?:min|max)\(var\(--jelly-hover-[a-z-]+\), calc\(1 [+-] var\(--jelly-edge-reach\) \/ var\(--jelly-s, \d+\)\)\)$/;
+export function jellyPose(decl: Declaration): boolean {
+  const value = decl.value
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/\(\s+/g, '(')
+    .replace(/\s+\)/g, ')');
+  return /^(?:scale|translate)$/.test(decl.prop) && (POSE.test(value) || CAPPED_POSE.test(value));
+}
+
 function expensivePaint(decl: Declaration): boolean {
   return /^(?:box-shadow|text-shadow|filter)$/.test(decl.prop);
 }
@@ -87,7 +106,7 @@ export function materialHover(): Plugin {
           const own = owner?.type === 'rule' && hoverSelector(owner.selector).own;
           if (
             expensivePaint(decl) ||
-            (own && /^(?:transform|translate|rotate|scale)$/.test(decl.prop))
+            (own && /^(?:transform|translate|rotate|scale)$/.test(decl.prop) && !jellyPose(decl))
           )
             removed.push(decl);
         });

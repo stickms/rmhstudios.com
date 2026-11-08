@@ -382,7 +382,7 @@ describe('jelly coverage — the primitives adapter (app/jelly-coverage.css) and
     ).toEqual([]);
   });
 
-  it("globals.css's legacy :active opacity cue stands down while the soft body holds a press", () => {
+  it("globals.css's legacy :active opacity cue stands down where the CSS soft body springs", () => {
     const cue = cssRules(read('app/globals.css')).filter(
       (r) => r.sel.includes(':active') && /(?:^|[;\s])opacity\s*:\s*0?\.\d/.test(r.body),
     );
@@ -390,15 +390,18 @@ describe('jelly coverage — the primitives adapter (app/jelly-coverage.css) and
       cue.length,
       'the legacy press cue rule was not found — update this probe',
     ).toBeGreaterThan(0);
+    // The soft body is CSS (app/jelly-material.css §8), so nothing stamps the old `data-jelly-active` suppressor any
+    // more; the cue carries the soft body's own scope and host list as a zero-specificity guard instead
+    // (jelly-soft-body.test.ts holds the guard equal to the host rule).
+    const GUARD =
+      /:not\(\s*:where\(\s*html:not\(\.native-material, \[data-game-state='playing'\]\)\s/;
     const missing = cue.flatMap((r) =>
-      splitSelectors(r.sel).filter(
-        (s) => s.includes(':active') && !s.includes(':not([data-jelly-active])'),
-      ),
+      splitSelectors(r.sel).filter((s) => s.includes(':active') && !GUARD.test(s)),
     );
     expect(
       missing,
-      'An opacity flicker on a press that lib/jelly/physics.ts is squashing is two press cues fighting; every ' +
-        'selector of the cue must carry :not([data-jelly-active]).',
+      'An opacity flicker on a press that the CSS soft body is squashing is two press cues fighting; every ' +
+        "selector of the cue must carry the soft body's :not(:where(html:not(.native-material, …) …)) guard.",
     ).toEqual([]);
   });
 });

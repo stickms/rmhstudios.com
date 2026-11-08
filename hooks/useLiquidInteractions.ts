@@ -1,56 +1,34 @@
 'use client';
 
 import { useEffect } from 'react';
-import { installLiquidInteractions } from '@/lib/liquid/runtime';
+import { installPointerVars } from '@/lib/jelly/pointer-vars';
 import { reconcileSoftRender } from '@/lib/perf-tier';
 
 /**
  * Mount the Plasmatic Jelly document services once at the provider boundary, including full-screen app routes. One
- * effect, one teardown, in two steps. Only the fallback light is a static import: every other service is a dynamic
- * import, because this hook is in the client entry and the entry has a byte budget (OPT-01,
- * `scripts/check-bundle-budget.ts`).
+ * effect, one teardown, in two steps.
  *
- * **At once** (press feedback must never wait for the browser to go idle):
- * 1. the fallback cursor light (`lib/liquid/runtime.ts`);
- * 2. the jelly registry (`lib/jelly/registry.ts`) — observers only, no DOM writes. Requested together with physics,
- *    its consumer, and installed before it;
- * 3. the soft-body physics (`lib/jelly/physics.ts`, a lazy chunk requested immediately, not at idle). Hosts DO move
- *    now, but only within the bounded squash/wobble and the ≤ 1.5 px neighbour nudge (`MOTION_BOUNDS`): hover plumps,
- *    press squashes, release wobbles. Text, hit areas and layout never move. Until the chunk lands, the CSS `:active`
- *    states are the press feedback.
+ * **At once:** the pointer variable (`lib/jelly/pointer-vars.ts`): `--px` / `--py` on the one jelly host under a fine
+ * pointer, for the plasma wake and the dent's light dot. A static import: it is small, and the frame driver and
+ * pointer hub it rides were already in the entry (OPT-01, `scripts/check-bundle-budget.ts`). On a `(hover: none)`
+ * device it attaches nothing.
  *
  * **After the window `load` event, at idle:** settle whether this browser draws in software (`reconcileSoftRender`,
  * which puts the page on `perf-lite`), and otherwise stamp `html[data-jelly-ready]` so glass that mounts from then on
  * fades in (app/jelly-material.css §7).
  *
- * The static CSS tier (`app/liquid-glass.css`, `app/jelly-material.css`) is the material: the glass engine, the CSS
- * flow carriers, the governor and the electric arcs are no longer installed here (CSS-first jelly, PR 1). The page
- * snapshot the liquid globe refracts comes from the globe's own scene feed (`lib/liquid/glass/scene-feed.ts`).
- *
- * Every optional chunk fails soft: the CSS material is the fallback for each.
+ * The static CSS tier (`app/liquid-glass.css`, `app/jelly-material.css`) is the material. The soft body is CSS too
+ * (CSS-first jelly, PR 3: §8, springs on `scale`), so the soft-body physics, the jelly registry (whose observers had
+ * no consumer left) and the fallback cursor light (`lib/liquid/runtime.ts`, replaced by the `--px` / `--py` wake) are
+ * no longer installed; neither are the glass engine, the CSS flow carriers, the governor or the electric arcs (PR 1).
+ * The page snapshot the liquid globe refracts comes from the globe's own scene feed (`lib/liquid/glass/scene-feed.ts`).
  */
 export function useLiquidInteractions(enabled = true): void {
   useEffect(() => {
     // Some full-screen apps (the TF2 HUD Editor) carry their own material and install none of the jelly.
     if (!enabled) return;
-    const stops: (() => void)[] = [];
     let cancelled = false;
-    const keep = (stop: () => void) => {
-      if (cancelled) stop();
-      else stops.push(stop);
-    };
-    const failSoft = () => {
-      /* The CSS material is the complete fallback if an optional chunk fails. */
-    };
-
-    keep(installLiquidInteractions());
-    // The registry is installed the moment its chunk lands, before physics reads it.
-    const registry = import('@/lib/jelly/registry').then((m) =>
-      keep(m.installJellyRegistry(document)),
-    );
-    void Promise.all([registry, import('@/lib/jelly/physics')])
-      .then(([, m]) => keep(m.installJellyPhysics(document)))
-      .catch(failSoft);
+    const stopPointerVars = installPointerVars(document);
 
     const start = () => {
       if (cancelled) return;
@@ -84,9 +62,7 @@ export function useLiquidInteractions(enabled = true): void {
         if (idle) w.cancelIdleCallback?.(handle);
         else window.clearTimeout(handle);
       }
-      // Reverse order: consumers before the registry they read.
-      for (const stop of stops.reverse()) stop();
-      stops.length = 0;
+      stopPointerVars();
       // The material is gone (a native-material route, or unmount): glass that mounts now must not fade in as if
       // the jelly were running.
       document.documentElement.removeAttribute('data-jelly-ready');

@@ -88,7 +88,12 @@ const BASE = ALL.find(
 const LAYER = BASE?.selectors[0] ?? '';
 /** The host compound the layer hangs on (the base selector without its prefix and pseudo-element). */
 const HOST = LAYER.startsWith(PREFIX) ? LAYER.slice(PREFIX.length, -'::after'.length) : '';
-const WAKE = [`${PREFIX}${HOST}:hover::after`, `${PREFIX}${HOST}:focus-within::after`];
+/**
+ * Hover, or keyboard focus inside the host (`:has(:focus-visible)`), never a mouse click's leftover focus: with
+ * `:focus-within`, a clicked button kept the drift running on every role around it until focus moved (25 compositor
+ * layers on /jelly instead of 10). The host's own keyboard focus pauses the haze (§6), so it does not wake it either.
+ */
+const WAKE = [`${PREFIX}${HOST}:hover::after`, `${PREFIX}${HOST}:has(:focus-visible)::after`];
 /** Every rule, in any layer or at-rule, that targets the haze layer in some state. */
 const HAZE_RULES = ALL.filter((r) =>
   r.selectors.some((s) => HOST !== '' && s.includes(HOST) && s.endsWith('::after')),
@@ -149,7 +154,7 @@ describe('the woken haze layer', () => {
     expect(decl(BASE!.body, 'animation-play-state')).toBeUndefined();
   });
 
-  it('attaches the drift only under :hover and :focus-within', () => {
+  it('attaches the drift only under :hover and keyboard focus inside the host', () => {
     const woken = HAZE_RULES.filter((r) => attaches(r.body));
     expect(woken).toHaveLength(1);
     expect([...woken[0].selectors].sort()).toEqual([...WAKE].sort());

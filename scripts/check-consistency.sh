@@ -288,7 +288,7 @@ n2_hits=$(scan '^(components|app/routes)/.*\.tsx?$' "from ['\"]@/lib/jelly/(phys
 if [ -n "$n2_hits" ]; then
   fail "Component imports the jelly physics/arc service (N2)"
   printf '%s\n' "$n2_hits"
-  printf '%s    → %s%s\n' "$dim" 'Components take jelly through role classes and data-jelly* attributes; the services mount once from hooks/useLiquidInteractions.ts (docs/plasmatic-jelly-system.md).' "$off"
+  printf '%s    → %s%s\n' "$dim" 'Components take jelly through role classes and data-jelly* attributes: the soft body is CSS (app/jelly-material.css §8) and the services mount once from hooks/useLiquidInteractions.ts (docs/plasmatic-jelly-system.md).' "$off"
 fi
 
 # The two sanctioned haze keyframes (jelly-drift / jelly-current) in app/jelly-material.css are filtered out: the
@@ -305,7 +305,7 @@ fi
 
 review_site "Framer gesture transform on a site surface (N11)" \
   'while(Hover|Tap)[[:space:]]*=[[:space:]]*\{[^}]*(scale|[^a-z]x|[^a-z]y)[[:space:]]*:' \
-  'A second writer on scale/translate fights the jelly soft body (lib/jelly/physics.ts). The role class or data-jelly="card|control" gives hover/press/release already.'
+  'A second writer on scale/translate fights the jelly soft body (CSS springs, app/jelly-material.css §8). The role class or data-jelly="card|control" gives hover/press/release already.'
 
 # jelly-coverage ratchet preview: bg + border + rounded with no role class.
 HANDROLLED=$(scan_site 'class.*(bg-site-(surface|surface-opaque|bg|elevated).*(border.*rounded|rounded.*border)|border.*(bg-site-(surface|surface-opaque|bg|elevated).*rounded|rounded.*bg-site-(surface|surface-opaque|bg|elevated))|rounded.*(bg-site-(surface|surface-opaque|bg|elevated).*border|border.*bg-site-(surface|surface-opaque|bg|elevated)))' | grep -vE 'glass-|app-glass|data-liquid' || true)
