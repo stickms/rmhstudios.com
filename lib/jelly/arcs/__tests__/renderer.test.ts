@@ -9,9 +9,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { drive } from '../../frame';
 import { createFlashLedger } from '../ledger';
+import { CALM } from '../../tiers';
+import { IMPACT } from '../impact';
 import {
   ARC_FRAME_ORDER,
+  FLARE,
+  IMPACT_PAD,
   admitArc,
+  arcLife,
   boltArc,
   clampRed,
   createArcRenderer,
@@ -180,6 +185,117 @@ describe('arc renderer', () => {
     vi.advanceTimersByTime(5000);
     expect(env.rafCalls).toBe(calls);
     engine.stop();
+    r.dispose();
+  });
+
+  const RA = { x: 20, y: 84, w: 80, h: 40, r: 20 };
+  const RB = { x: 180, y: 84, w: 80, h: 40, r: 20 };
+  const struckA = { ...A, y: 104, rect: RA };
+  const struckB = { ...B, y: 104, rect: RB };
+
+  it('a bolt between two hosts draws its impacts: the ring clipped to the host, the flash and the lit rim', () => {
+    const ledger = createFlashLedger();
+    const r = createArcRenderer(env.doc, { ledger });
+    const arc = boltArc({
+      kind: 'click',
+      emitKind: 'click',
+      a: struckA,
+      b: struckB,
+      seed: 9,
+      start: r.now(),
+      origin: { x: 60, y: 104, rect: RA },
+    });
+    expect(arc.fx!.stubs).toHaveLength(2);
+    expect(arc.fx!.rims).toHaveLength(2);
+    expect(admitArc(arc, ledger)).toBe(true);
+    r.add(arc);
+    const calls = env.canvas()!.ctx.calls;
+    runFrames(env);
+    expect(calls).toContain('clip');
+    expect(calls).toContain('roundRect');
+    expect(calls).toContain('fill');
+    // The arc lived through its impact and then let the frame sleep.
+    expect(r.live()).toBe(0);
+    expect(env.rafQueue.size).toBe(0);
+    // Its dirty rect covers the impact reach round each struck point.
+    expect(arc.bounds.x0).toBeLessThanOrEqual(struckA.x - IMPACT_PAD);
+    expect(arc.bounds.x1).toBeGreaterThanOrEqual(struckB.x + IMPACT_PAD);
+    r.dispose();
+  });
+
+  it('the impact keeps an arc alive only until it has played out, never past the click life bound', () => {
+    for (let seed = 1; seed < 40; seed++) {
+      const arc = boltArc({
+        kind: 'click',
+        emitKind: 'click',
+        a: struckA,
+        b: struckB,
+        seed,
+        start: 0,
+      });
+      expect(arcLife(arc)).toBeLessThanOrEqual(410);
+      expect(arcLife(arc)).toBeGreaterThanOrEqual(arc.timeline.strikes[0].at + IMPACT.lifeMs);
+    }
+    // A discharge (short life) is extended by its impact, by at most the impact's own length.
+    const d = boltArc({
+      kind: 'discharge',
+      emitKind: 'click',
+      a: struckA,
+      b: B,
+      seed: 2,
+      start: 0,
+    });
+    expect(arcLife(d)).toBeLessThanOrEqual(d.timeline.strikes[0].at + IMPACT.lifeMs);
+    expect(arcLife(flareArc(0, 0, 0))).toBe(FLARE.lifeMs);
+  });
+
+  it('a refused bolt draws nothing new: the ledger decides, the flare is all that shows', () => {
+    const ledger = createFlashLedger();
+    for (let i = 0; i < 3; i++) expect(ledger.tryOnset(0)).toBe(true);
+    const r = createArcRenderer(env.doc, { ledger });
+    const arc = boltArc({
+      kind: 'click',
+      emitKind: 'click',
+      a: struckA,
+      b: struckB,
+      seed: 9,
+      start: 0,
+      origin: { x: 60, y: 104, rect: RA },
+    });
+    // A 4th onset inside the second: refused.
+    expect(admitArc(arc, ledger)).toBe(false);
+    r.add(flareArc(60, 104, r.now()));
+    const calls = env.canvas()!.ctx.calls;
+    runFrames(env);
+    expect(calls).not.toContain('clip');
+    expect(calls).not.toContain('roundRect');
+    expect(calls).not.toContain('stroke');
+    r.dispose();
+  });
+
+  it('calm draws every arc at the calm intensity; lively at full', () => {
+    const r = createArcRenderer(env.doc);
+    const lively = boltArc({
+      kind: 'click',
+      emitKind: 'click',
+      a: struckA,
+      b: struckB,
+      seed: 4,
+      start: r.now(),
+    });
+    r.add(lively);
+    expect(lively.scale).toBe(1);
+    env.root.setAttribute('data-jelly-motion', 'calm');
+    const calm = boltArc({
+      kind: 'click',
+      emitKind: 'click',
+      a: struckA,
+      b: struckB,
+      seed: 4,
+      start: r.now(),
+    });
+    r.add(calm);
+    expect(calm.scale).toBe(CALM.arcIntensity);
     r.dispose();
   });
 
