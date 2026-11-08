@@ -79,4 +79,10 @@ describe('wiring', () => {
     expect(src).toContain('var NM=${JSON.stringify(NATIVE_MATERIAL_BASES)}');
     expect(src).toMatch(/classList\.add\("native-material"\)/);
   });
+
+  it('the woken haze is scoped off it', () => {
+    expect(read('app/jelly-material.css')).toContain(
+      `html:not(.${NATIVE_MATERIAL_CLASS}, .perf-lite)`,
+    );
+  });
 });
