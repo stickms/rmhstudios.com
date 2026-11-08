@@ -26,6 +26,8 @@ import { chooseInput, useInputPhases } from './useLearnInput';
 import { useMachine } from './useMachine';
 
 interface RowProps {
+  /** The input this row is for (`data-input`, so a host can scroll the learner's own row into view). */
+  id: LearnInput;
   icon: LucideIcon;
   title: string;
   description: string;
@@ -34,9 +36,9 @@ interface RowProps {
   children?: ReactNode;
 }
 
-function Row({ icon: Icon, title, description, action, children }: RowProps) {
+function Row({ id, icon: Icon, title, description, action, children }: RowProps) {
   return (
-    <li className="space-y-1 py-3">
+    <li data-input={id} className="space-y-1 py-3">
       <div className="flex min-h-11 items-center gap-3">
         <Icon className="h-5 w-5 shrink-0 text-(--app-accent)" aria-hidden="true" />
         <p className="min-w-0 flex-1 font-medium text-(--app-text)">{title}</p>
@@ -130,6 +132,7 @@ export function InputChooser({ onCalibrate }: InputChooserProps) {
     <div className="space-y-3">
       <ul className="divide-y divide-(--app-border)">
         <Row
+          id="screen"
           icon={Piano}
           title={names.screen}
           description={t('input-screen-desc', {
@@ -138,6 +141,7 @@ export function InputChooser({ onCalibrate }: InputChooserProps) {
           action={action('screen', names.screen)}
         />
         <Row
+          id="keys"
           icon={Keyboard}
           title={names.keys}
           description={t('input-keys-desc', {
@@ -146,6 +150,7 @@ export function InputChooser({ onCalibrate }: InputChooserProps) {
           action={action('keys', names.keys)}
         />
         <Row
+          id="midi"
           icon={Usb}
           title={names.midi}
           description={t('input-midi-desc', {
@@ -174,6 +179,7 @@ export function InputChooser({ onCalibrate }: InputChooserProps) {
           )}
         </Row>
         <Row
+          id="mic"
           icon={Mic}
           title={names.mic}
           description={t('input-mic-desc', {

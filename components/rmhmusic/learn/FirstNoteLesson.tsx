@@ -16,7 +16,7 @@
  * input chooser shows inline, and its click starts them.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { CheckCircle2 } from 'lucide-react';
@@ -51,6 +51,22 @@ export function FirstNoteLesson({
 
   const needsDevice = input === 'mic' || input === 'midi';
   const inputOn = !needsDevice || phases[input] === 'active';
+  const chooserShown = lesson.kind === 'listening' && needsDevice && !inputOn;
+
+  // The chooser scrolls inside the lesson's fixed input region. On a phone the learner's own input
+  // (the mic or MIDI row, whose "Use" iOS needs tapped) would sit below that small box's fold, so
+  // the box is scrolled — itself only, never the page (no scrollIntoView) — to show that row,
+  // before paint. The DOM order, and so the Tab order, stays as it is.
+  const chooserBox = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const box = chooserBox.current;
+    if (!chooserShown || !box) return;
+    const row = box.querySelector<HTMLElement>(`[data-input="${input}"]`);
+    if (!row) return;
+    const top = row.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+    const max = box.scrollHeight - box.clientHeight;
+    box.scrollTop = Math.max(0, Math.min(max, top - 8));
+  }, [chooserShown, input]);
 
   // Start the chosen input (switching inputs mid-lesson goes through `chooseInput`, which stops the old one).
   useEffect(() => {
@@ -187,10 +203,13 @@ export function FirstNoteLesson({
         {back}
       </div>
     );
-  } else if (needsDevice && !inputOn) {
+  } else if (chooserShown) {
     // Taller than the region: it scrolls inside it rather than growing the page.
     region = (
-      <section className="rmm-sheet h-full overflow-y-auto overscroll-contain px-4 py-2">
+      <section
+        ref={chooserBox}
+        className="rmm-sheet h-full overflow-y-auto overscroll-contain px-4 py-2"
+      >
         <InputChooser />
       </section>
     );
