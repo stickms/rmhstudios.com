@@ -17,7 +17,7 @@
  *  - perf-lite / app high contrast keep the press, plain (critically damped both ways);
  *  - nothing at rest: no will-change, no animation, no transition but `scale` on a spring; print resets it;
  *  - the legacy opacity press cue (globals.css) stands down exactly where the soft body springs (D-B1);
- *  - the hub's compose pill presses as one body (D-C6).
+ *  - the hub's compose pill presses as one body (D-C6); the hook mounts the pointer variable, not physics.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -341,5 +341,13 @@ describe('the soft body elsewhere', () => {
     const inner = ruleFor(RADIAL, `${SCOPE}.radial-feed__compose > button`);
     expect(inner).toHaveLength(1);
     expect(decl(inner[0].body, 'scale')).toBe('none');
+  });
+
+  it('the hook mounts the pointer variable, not the physics, registry or fallback light', () => {
+    const hook = read('hooks/useLiquidInteractions.ts').replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
+    expect(hook).toMatch(/installPointerVars\(document\)/);
+    expect(hook).not.toMatch(
+      /installJellyPhysics|installJellyRegistry|installLiquidInteractions|jelly\/physics|jelly\/registry|liquid\/runtime/,
+    );
   });
 });
