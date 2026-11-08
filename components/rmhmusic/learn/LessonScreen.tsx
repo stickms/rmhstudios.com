@@ -17,6 +17,7 @@ import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from './buttons';
 import { FirstNoteLesson } from './FirstNoteLesson';
 import { InputSetup } from './InputSetup';
+import { useInputRelease } from './useLearnInput';
 
 function Shell({
   title,
@@ -60,6 +61,9 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
   const status = useLearnStore((s) => s.status);
   const error = useLearnStore((s) => s.error);
   const [setupOpen, setSetupOpen] = useState(false);
+  // Re-render after an automatic mic stop (tab hidden) so the lesson offers to restart it.
+  const [, setReleased] = useState(0);
+  useInputRelease(() => setReleased((n) => n + 1));
   const lesson = getLesson(lessonId);
   const playable = lesson?.available === true && lesson.mode === 'play-note';
 

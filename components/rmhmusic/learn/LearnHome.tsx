@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 import { PATH } from '@/lib/rmhmusic/learn/content/path';
+import { releaseMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import type { LessonProgressRow } from '@/lib/rmhmusic/learn/store';
 import type { Instrument } from '@/lib/rmhmusic/learn/schemas';
@@ -20,6 +21,7 @@ import { SECONDARY_BUTTON } from './buttons';
 import { InputSetup } from './InputSetup';
 import { PathUnit } from './PathUnit';
 import { StreakChip } from './StreakChip';
+import { useInputRelease } from './useLearnInput';
 
 /** Loading placeholder, built from the static path so it is as tall as the loaded page. */
 function HomeSkeleton() {
@@ -40,10 +42,14 @@ export function LearnHome() {
   const [setupOpen, setSetupOpen] = useState(false);
   const onOpenLesson = (lessonId: string) =>
     void navigate({ to: '/rmhmusic/lesson/$lessonId', params: { lessonId } });
+  // Leaving home (back button, any route change) or hiding the tab stops the mic; see useInputRelease.
+  const [, setReleased] = useState(0);
+  useInputRelease(() => setReleased((n) => n + 1));
   const onSetupChange = (open: boolean) => {
     setSetupOpen(open);
     // The microphone listens only while it is being set up or used in a lesson.
-    if (!open) useLearnStore.getState().hub?.stop('mic');
+    const { hub } = useLearnStore.getState();
+    if (!open && hub) releaseMic(hub);
   };
   const profile = useLearnStore((s) => s.profile);
   const progress = useLearnStore((s) => s.progress);

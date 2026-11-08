@@ -12,10 +12,12 @@
  * input chooser shows inline, and its click starts them.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { CheckCircle2, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { releaseMic, startMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
+import { createOnceGuard } from '@/lib/rmhmusic/learn/once';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { getAudioContext } from '@/lib/shared/platform';
@@ -53,7 +55,7 @@ export function FirstNoteLesson({ paused = false }: { paused?: boolean }) {
         if (hub.active().includes(input) || !(await permissionGranted(input))) return;
         if (input === 'mic' && getAudioContext()?.state !== 'running') return;
         if (cancelled) return;
-        await hub.start(input).catch(() => {});
+        await (input === 'mic' ? startMic(hub) : hub.start(input)).catch(() => {});
         if (!cancelled) setChosen((n) => n + 1);
       })();
     }
@@ -62,14 +64,10 @@ export function FirstNoteLesson({ paused = false }: { paused?: boolean }) {
     };
   }, [hub, input]);
 
-  // Leaving the lesson: the computer keys stop playing and the microphone stops listening.
-  useEffect(() => {
-    if (!hub) return;
-    return () => {
-      hub.stop('keys');
-      hub.stop('mic');
-    };
-  }, [hub]);
+  // Leaving the lesson (keys and mic stop) is LessonScreen's `useInputRelease`.
+
+  /** The first note claims completion synchronously; state is too late for a chord in one tick. */
+  const once = useRef(createOnceGuard());
 
   const complete = async () => {
     setSave('saving');
@@ -79,10 +77,20 @@ export function FirstNoteLesson({ paused = false }: { paused?: boolean }) {
   };
 
   useNoteEvents((e) => {
-    if (paused || played !== null || e.type !== 'on') return;
+    if (paused || e.type !== 'on' || !once.current.claim()) return;
+    // The first event wins: its note is the one shown.
     setPlayed(e.midi);
+    // The lesson is done listening; the success screen needs no microphone.
+    if (hub) releaseMic(hub);
     void complete();
   });
+
+  /** Retry only after a failed save: re-arm the guard on purpose and complete again. */
+  const retry = () => {
+    if (save !== 'failed') return;
+    once.current.reset();
+    if (once.current.claim()) void complete();
+  };
 
   if (played !== null) {
     const name = midiToName(played);
@@ -142,7 +150,7 @@ export function FirstNoteLesson({ paused = false }: { paused?: boolean }) {
                 {t('sign-in', { defaultValue: 'Sign in' })}
               </Link>
             ) : (
-              <button type="button" onClick={() => void complete()} className={PRIMARY_BUTTON}>
+              <button type="button" onClick={retry} className={PRIMARY_BUTTON}>
                 {t('retry', { defaultValue: 'Try again' })}
               </button>
             )}

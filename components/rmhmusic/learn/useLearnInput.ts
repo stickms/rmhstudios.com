@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { playNote, MAX_VOICES } from '@/lib/rmhmusic/learn/audio/voice';
 import type { InputSource, NoteEvent } from '@/lib/rmhmusic/learn/input/events';
+import { bindMicRelease, startMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import type { MidiDevice } from '@/lib/rmhmusic/learn/input/midi';
 import type { LearnInput } from '@/lib/rmhmusic/learn/schemas';
 import { subscribeMicLevel, useLearnStore } from '@/lib/rmhmusic/learn/store';
@@ -145,7 +146,8 @@ export async function chooseInput(next: LearnInput): Promise<boolean> {
     }
   }
   try {
-    await hub.start(next);
+    // The mic goes through `startMic` so a screen leaving mid-prompt can still stop it.
+    await (next === 'mic' ? startMic(hub) : hub.start(next));
   } catch {
     return false;
   }
@@ -168,4 +170,33 @@ export async function permissionGranted(source: 'mic' | 'midi'): Promise<boolean
   } catch {
     return false;
   }
+}
+
+/**
+ * For a screen that can start inputs (the home's setup dialog, a lesson): the
+ * microphone stops when the page is hidden, on `pagehide` and when the screen
+ * unmounts, and on unmount the computer keys stop listening too. Only the
+ * devices stop; the saved input preference is untouched, and nothing restarts
+ * by itself. `onRelease` runs after an automatic mic stop, so the screen can
+ * re-render what `hub.active()` says.
+ */
+export function useInputRelease(onRelease?: () => void): void {
+  const hub = useLearnStore((s) => s.hub);
+  const ref = useRef(onRelease);
+  useEffect(() => {
+    ref.current = onRelease;
+  });
+  useEffect(() => {
+    if (!hub) return;
+    const unbind = bindMicRelease({
+      hub,
+      doc: document,
+      win: window,
+      onRelease: () => ref.current?.(),
+    });
+    return () => {
+      unbind();
+      hub.stop('keys');
+    };
+  }, [hub]);
 }
