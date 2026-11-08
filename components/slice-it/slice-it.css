@@ -919,3 +919,152 @@ a.neumorphic-sm:hover,
 .slice-duotone > :not(img) {
   z-index: 2;
 }
+
+/* ─── The readouts in the margins ───────────────────────────────────────────
+ *
+ * When a window is taller than 16:9 the room above and below the field carries the
+ * song, the score and the tally, so the field is left to the notes. Aligned to the
+ * field's edges (the inline left/width come from its measured box) and hugging it.
+ */
+.slice-mh {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 12px;
+  pointer-events: none;
+  font-family: var(--slice-body);
+  color: var(--slice-text);
+}
+
+.slice-mh--top {
+  top: 0;
+  gap: 10px;
+}
+
+.slice-mh--bottom {
+  bottom: 0;
+  top: auto;
+  flex-direction: row;
+  /* Hugs the field's lower edge, as the top bar hugs its upper one. */
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 4px 0;
+}
+
+.slice-mh__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) auto minmax(0, 0.7fr);
+  align-items: end;
+  gap: 28px;
+}
+
+.slice-mh__song {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
+}
+
+.slice-mh__cover {
+  position: relative;
+  flex-shrink: 0;
+  width: 68px;
+  height: 68px;
+  border: 1px solid var(--slice-border);
+}
+
+.slice-mh__title {
+  margin-top: 6px;
+  overflow: hidden;
+  font-family: var(--slice-display);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slice-mh__artist {
+  margin-top: 4px;
+  overflow: hidden;
+  font-family: var(--slice-serif);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slice-mh__score {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.slice-mh__figure {
+  font-family: var(--slice-mono);
+  font-weight: 600;
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.slice-mh .slice-hud-stamp {
+  font-size: 30px;
+}
+
+.slice-mh__aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.slice-mh__speed {
+  font-family: var(--slice-mono);
+  font-weight: 500;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.slice-mh__progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.slice-mh__tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 26px;
+  margin: 0;
+}
+
+.slice-mh__tally > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slice-mh__tally dd {
+  margin: 0;
+  font-family: var(--slice-mono);
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.slice-mh__lamp {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}

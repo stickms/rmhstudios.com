@@ -82,18 +82,29 @@ interface HUDProps {
    * pace readout) if it is mounted before one exists.
    */
   engine?: GameEngine | null;
+  /**
+   * The readouts live in the margins of the screen (`MarginHud`), so this renders
+   * only what belongs on the field itself: the combo counter. It also stops sampling
+   * the engine — the margin HUD does that — so nothing is read twice.
+   */
+  margins?: boolean;
 }
 
-export function HUD({ engine }: HUDProps) {
-  const { t } = useTranslation('c-game');
-  const { t: ts } = useTranslation('r-slice-it');
+/**
+ * What the readouts show, sampled from the engine once a frame.
+ *
+ * One hook for both homes of the readouts — the in-field {@link HUD} and the
+ * margin HUD — so they cannot disagree about what a grade or a progress fraction is.
+ * `enabled: false` stops the per-frame sampling (it is the only cost).
+ */
+export function useHudReadout(engine: GameEngine | null | undefined, enabled = true) {
   const { score, combo, modifiers } = useSliceItStore();
-  const comboPosition = useSliceItStore((s) => s.comboPosition);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [sample, setSample] = useState<EngineSample>(EMPTY_SAMPLE);
 
   useEffect(() => {
+    if (!enabled) return;
     let raf: number;
     const tick = () => {
       const audio = AudioManager.getInstance();
@@ -116,7 +127,7 @@ export function HUD({ engine }: HUDProps) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [engine]);
+  }, [engine, enabled]);
 
   // Clamped at both ends. The clock is NEGATIVE through the lead-in
   // (`LEAD_IN_SECONDS`), which would otherwise render a negative-width fill and
@@ -140,6 +151,67 @@ export function HUD({ engine }: HUDProps) {
   // Only news once the run has produced something to be full-combo *about*.
   const showChain = sample.notesResolved >= 8 && sample.isFullCombo;
   const healthRatio = Math.max(0, Math.min(1, sample.health / HEALTH_MAX));
+
+  return {
+    score,
+    combo,
+    modifiers,
+    elapsed,
+    duration,
+    progress,
+    sections,
+    sample,
+    grade,
+    next,
+    missesLeft,
+    showChain,
+    healthRatio,
+  };
+}
+
+export function HUD({ engine, margins = false }: HUDProps) {
+  const { t } = useTranslation('c-game');
+  const { t: ts } = useTranslation('r-slice-it');
+  const comboPosition = useSliceItStore((s) => s.comboPosition);
+  const {
+    score,
+    combo,
+    modifiers,
+    elapsed,
+    duration,
+    progress,
+    sections,
+    sample,
+    grade,
+    next,
+    missesLeft,
+    showChain,
+    healthRatio,
+  } = useHudReadout(engine, !margins);
+
+  // The readouts are in the margins: the field keeps only the combo, where the eye
+  // is, and nothing else to read.
+  if (margins) {
+    if (combo <= 5 || comboPosition === 'hidden') return null;
+    return (
+      <div
+        className="absolute top-0 left-0 right-0 pointer-events-none z-40 px-3 pt-2 sm:px-6 sm:pt-3"
+        data-jelly-zone="hud"
+      >
+        <div className="relative">
+          <div className={`absolute top-0 text-center ${COMBO_ANCHOR[comboPosition]}`}>
+            <div className="slice-hud-combo">
+              <span>×</span>
+              {combo}
+            </div>
+            <div className="slice-label mt-0.5 hidden sm:block">
+              {t('combo-label', { defaultValue: 'Combo' })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -178,6 +178,12 @@ interface SliceItState {
   status: GameStatus;
   songId: string;
   /**
+   * What the current run is playing, for the margins of the screen (cover, title,
+   * artist). Set by `startRun` from the song read it already makes, cleared with the
+   * rest of the run; purely presentational.
+   */
+  nowPlaying: NowPlaying | null;
+  /**
    * The current run's signed receipt, from the song read. Handed back with the
    * score so the server can tell how long the run took by its own clock.
    */
@@ -262,6 +268,7 @@ interface SliceItState {
 
   setStatus: (status: GameStatus) => void;
   setSongId: (songId: string) => void;
+  setNowPlaying: (nowPlaying: NowPlaying | null) => void;
   setRunToken: (token: string | null) => void;
   setSelectedChartId: (chartId: string | null) => void;
   setScore: (score: number, combo: number, multiplier?: number) => void;
@@ -292,6 +299,13 @@ interface SliceItState {
   resetMultiplayer: () => void;
 }
 
+/** The track on the deck, as the margins show it. */
+export interface NowPlaying {
+  title: string;
+  artist: string;
+  coverUrl: string | null;
+}
+
 export interface PublicLobbyRow {
   code: string;
   hostName: string;
@@ -305,6 +319,7 @@ const CHAT_KEEP = 50;
 const runDefaults = {
   status: 'MENU' as GameStatus,
   songId: '',
+  nowPlaying: null as NowPlaying | null,
   runToken: null,
   selectedChartId: null,
   score: 0,
@@ -434,6 +449,7 @@ export const useSliceItStore = create<SliceItState>()(
 
       setStatus: (status) => set({ status }),
       setSongId: (songId) => set({ songId }),
+      setNowPlaying: (nowPlaying) => set({ nowPlaying }),
       setRunToken: (runToken) => set({ runToken }),
       setSelectedChartId: (selectedChartId) => set({ selectedChartId }),
       setScore: (score, combo, multiplier) =>
