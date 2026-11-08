@@ -3,8 +3,8 @@
 // registry merged behind one /metrics endpoint, and launches each worker's Run
 // under an errgroup. Any worker's unrecoverable error cancels the group and
 // exits the process non-zero so the orchestrator restarts the whole supervisor.
-// The WS hubs (gamehub/rmhmusic/rmhtube/rmhbox), gateway, and status run as
-// their own processes — only the background workers are consolidated here.
+// The Node realtime hubs, status and assets run as their own processes — only
+// the background workers are consolidated here.
 package main
 
 import (

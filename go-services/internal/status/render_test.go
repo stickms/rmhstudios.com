@@ -19,7 +19,7 @@ func fixtureProber(t *testing.T) (*Prober, Snapshot) {
 		{Name: "Website", Description: "Main rmhstudios.com web app (server-rendered)", Group: "Core"},
 		{Name: "App readiness", Description: "Web tier's dependencies: database connectivity and client/schema agreement", Group: "Core"},
 		{Name: "Database", Description: "PostgreSQL (direct connection, SELECT 1)", Group: "Core"},
-		{Name: "Realtime / Games", Description: "Socket server: multiplayer games, presence, RMHmusic", Group: "Realtime"},
+		{Name: "Realtime / Games", Description: "Socket server: multiplayer games, presence", Group: "Realtime"},
 		{Name: "RMHbox", Description: "Party-game WebSocket server", Group: "Realtime"},
 		{Name: "RMHtube", Description: "Watch-together WebSocket server", Group: "Realtime"},
 		{Name: "Content feed", Description: "Public blog RSS — proves the database-backed render path", Group: "Content"},

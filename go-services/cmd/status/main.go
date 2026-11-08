@@ -57,9 +57,9 @@ func main() {
 	//
 	// The Gateway and standalone-RMHmusic probes are GONE. They described the
 	// k3s/Helm Go realtime topology, which was deleted in the rewrite (design
-	// §5.2): there is no Go gateway, and RMHmusic is a namespace inside the Node
-	// socket-server rather than its own service, so both are covered by the
-	// Website and Realtime probes respectively. Probing them was either dead
+	// §5.2): there is no Go gateway, and the RMHmusic listening-party hub is
+	// retired too (RMHMusic is now a learning app served by the web tier alone,
+	// which the Website probe covers). Probing them was either dead
 	// configuration or — worse — a green tile for a service that does not exist.
 	// The Go `assets` origin left for the same reason: heavy media moved to
 	// Cloudflare R2 behind cdn.rmhstudios.com (lib/storage/asset.ts), so under
@@ -264,7 +264,7 @@ func buildTargets(u probeURLs, probeTimeout time.Duration) []status.Target {
 	targets = append(targets,
 		status.Target{
 			Name:          "Realtime / Games",
-			Description:   "Socket server: multiplayer games, presence, RMHmusic",
+			Description:   "Socket server: multiplayer games, presence",
 			Group:         "Realtime",
 			URL:           u.Socket,
 			DegradedAfter: hubBudget,

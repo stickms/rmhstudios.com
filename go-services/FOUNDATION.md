@@ -48,8 +48,8 @@ db.WaitForReachable(ctx, dsn string, poolSize int32, attempts int, interval time
 Typed models live in package `db` (use or ignore as convenient): `db.User`,
 `db.Session`, `db.Account`, `db.DoctrinePuzzle`, `db.DoctrineReputation`,
 `db.DoctrineSahurSession`, `db.VibePage`, `db.DiscordActivityChannel`,
-`db.DiscordDailyParticipant`, `db.RMHboxProfile`, `db.RmhTubeRoom`,
-`db.RmhMusicRoom`. Run raw pgx SQL for anything else.
+`db.DiscordDailyParticipant`, `db.RMHboxProfile`, `db.RmhTubeRoom`.
+Run raw pgx SQL for anything else.
 
 pgx usage reminder:
 ```go
