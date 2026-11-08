@@ -30,11 +30,13 @@ import { StreakChip } from './StreakChip';
 import { useInputRelease } from './useLearnInput';
 
 /**
- * The "Playing with … / Set up input" row, the same box loaded or not: one line that never
- * wraps, its text clamped to two lines (40px) beside a 44px button, so a long translation cannot
- * change its height.
+ * The "Playing with … / Set up input" row, the same box loaded or not: the text, clamped to two
+ * lines, sits in a box two lines tall (`INPUT_ROW_TEXT`) beside a 44px button, so a long
+ * translation cannot change its height. With large text (200%) the two no longer fit side by side,
+ * and the button wraps below the text instead of crushing it; the skeleton wraps the same way.
  */
-const INPUT_ROW = 'flex min-h-11 items-center justify-between gap-3';
+const INPUT_ROW = 'flex min-h-11 flex-wrap items-center justify-between gap-3';
+const INPUT_ROW_TEXT = 'flex min-h-10 min-w-0 flex-[1_1_7rem] items-center';
 
 /** Loading placeholder, built from the static path so it is as tall as the loaded page. */
 function HomeSkeleton() {
@@ -42,8 +44,10 @@ function HomeSkeleton() {
     <div aria-hidden="true" className="space-y-4">
       <div className="app-skeleton h-12 w-full pointer-coarse:h-13" />
       <div className={INPUT_ROW}>
-        <span className="app-skeleton h-5 w-40" />
-        <span className="app-skeleton h-11 w-36 shrink-0" />
+        <span className={INPUT_ROW_TEXT}>
+          <span className="app-skeleton h-5 w-40 max-w-full" />
+        </span>
+        <span className="app-skeleton h-11 w-36 max-w-full shrink-0" />
       </div>
       {PATH.map((unit) => (
         <PathUnit key={unit.id} unit={unit} progress={new Map()} placeholder />
@@ -142,12 +146,14 @@ export function LearnHome() {
           aria-label={t('instrument-label', { defaultValue: 'Instrument' })}
         />
         <div className={INPUT_ROW}>
-          <p className="line-clamp-2 min-w-0 text-sm leading-5 text-(--app-text-muted)">
-            {t('input-playing-with', {
-              input: inputName,
-              defaultValue: 'Playing with: {{input}}',
-            })}
-          </p>
+          <div className={INPUT_ROW_TEXT}>
+            <p className="line-clamp-2 min-w-0 text-sm leading-5 text-(--app-text-muted)">
+              {t('input-playing-with', {
+                input: inputName,
+                defaultValue: 'Playing with: {{input}}',
+              })}
+            </p>
+          </div>
           <button
             ref={setupButton}
             type="button"
@@ -173,8 +179,9 @@ export function LearnHome() {
   return (
     <div className="app-page">
       <div className="rmm-column mx-auto flex w-full max-w-3xl flex-1 flex-col pr-[max(1.25rem,var(--safe-right))] pl-[max(1.25rem,var(--safe-left))] min-[1800px]:max-w-4xl">
-        {/* Every full-screen app ships a labelled way out. */}
-        <header className="flex items-center justify-between gap-2 pt-[calc(0.5rem+var(--safe-top))]">
+        {/* Every full-screen app ships a labelled way out. With large text on a narrow phone the
+            toggle and streak chip wrap below it (kept at the end) rather than widen the page. */}
+        <header className="flex flex-wrap items-center justify-between gap-2 pt-[calc(0.5rem+var(--safe-top))]">
           <Link
             to="/apps"
             onClick={goBack}
@@ -185,7 +192,7 @@ export function LearnHome() {
               {t('back-to-builds', { defaultValue: 'Back to Builds' })}
             </span>
           </Link>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="ms-auto flex shrink-0 items-center gap-2">
             <ModeToggle />
             <StreakChip />
           </div>

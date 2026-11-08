@@ -99,7 +99,7 @@ export function PathUnit({ unit, progress, onOpenLesson, placeholder = false }: 
                   <p className="text-sm text-(--app-text-muted)">{lesson.summary}</p>
                 </div>
               </div>
-              <div className="flex items-center justify-between gap-3 ps-7 sm:justify-end sm:ps-0">
+              <div className="flex flex-wrap items-center justify-between gap-3 ps-7 sm:justify-end sm:ps-0">
                 <span className="rmm-tag">
                   <LessonState lesson={lesson} row={row} />
                 </span>
