@@ -109,28 +109,57 @@ export const useLearnStore = create<LearnState>()((set, get) => {
   const failSave = (r: Extract<Reply, { ok: false }>) =>
     set(r.unauthorized ? { status: 'error', error: 'unauthorized' } : { error: 'save_failed' });
 
-  /** Optimistically change one profile field, PUT the whole profile, undo on failure. */
-  async function saveProfile<K extends keyof Profile>(key: K, value: Profile[K]) {
+  // Profile writes go out one at a time, each carrying the latest state when it
+  // is sent, so the server always ends on the newest write and a later body
+  // never builds on an earlier one that failed.
+  let queue: Promise<void> = Promise.resolve();
+  /** Writes queued or in flight. */
+  let writes = 0;
+  /** The profile the server last accepted; the client rolls a failed field back to it. */
+  let confirmed: Profile | null = null;
+
+  async function sendProfile<K extends keyof Profile>(key: K, value: Profile[K]) {
+    const body = get().profile;
+    if (!body) return;
+    const reply = await request(PROFILE_URL, 'PUT', body);
+    if (reply.ok) {
+      const returned = (reply.data as { profile?: unknown } | null)?.profile;
+      confirmed = isProfile(returned) ? returned : body;
+      // Take the server's answer only when no newer change is waiting behind this one.
+      if (writes === 1 && isProfile(returned)) set({ profile: returned });
+      return;
+    }
+    // Undo this field, but only if nothing newer has replaced it meanwhile.
+    const base = confirmed;
+    set((s) => ({
+      profile:
+        s.profile && base && s.profile[key] === value
+          ? { ...s.profile, [key]: base[key] }
+          : s.profile,
+    }));
+    failSave(reply);
+  }
+
+  /** Optimistically change one profile field, then queue a PUT of the whole profile. */
+  function saveProfile<K extends keyof Profile>(key: K, value: Profile[K]): Promise<void> {
     const current = get().profile;
     if (!current) {
       set({ error: 'not_loaded' });
-      return;
+      return Promise.resolve();
     }
     const next = { ...current, [key]: value };
     if (!profileSchema.safeParse(next).success) {
       set({ error: 'invalid' });
-      return;
+      return Promise.resolve();
     }
-    const previous = current[key];
+    // With nothing outstanding, what the client shows is what the server holds.
+    if (writes === 0) confirmed = current;
+    writes += 1;
     set({ profile: next, error: null });
-    const reply = await request(PROFILE_URL, 'PUT', next);
-    if (reply.ok) return;
-    // Undo only this field, and only if nothing newer has replaced it meanwhile.
-    set((s) => ({
-      profile:
-        s.profile && s.profile[key] === value ? { ...s.profile, [key]: previous } : s.profile,
-    }));
-    failSave(reply);
+    const run = queue.then(() => sendProfile(key, value)).finally(() => (writes -= 1));
+    // A failed write must not stop the ones queued behind it.
+    queue = run.catch(() => {});
+    return run;
   }
 
   return {

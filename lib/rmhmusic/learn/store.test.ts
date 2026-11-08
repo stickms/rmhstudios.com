@@ -143,7 +143,9 @@ describe('learn store', () => {
 
   it('setLatency rounds and clamps to the schema range before sending', async () => {
     useLearnStore.setState({ profile: PROFILE, status: 'ready' });
-    fetchMock.mockImplementation(async () => json({ profile: PROFILE }));
+    fetchMock.mockImplementation(async (_url, init) =>
+      json({ profile: JSON.parse(String(init?.body)) }),
+    );
     await useLearnStore.getState().setLatency(812.6);
     expect(useLearnStore.getState().profile?.latencyMs).toBe(500);
     await useLearnStore.getState().setLatency(-41.4);
@@ -196,5 +198,112 @@ describe('learn store', () => {
     await useLearnStore.getState().completeLesson('nope', 3, 100);
     expect(fetchMock).not.toHaveBeenCalled();
     expect(useLearnStore.getState().progress).toEqual([ROW]);
+  });
+});
+
+/** A fetch whose responses the test settles by hand, in whatever order it likes. */
+function manualFetch() {
+  const calls: { body: Profile; settle: (r: Response | Error) => void }[] = [];
+  fetchMock.mockImplementation(
+    (_url, init) =>
+      new Promise<Response>((resolve, reject) => {
+        calls.push({
+          body: JSON.parse(String(init?.body)),
+          settle: (r) => (r instanceof Error ? reject(r) : resolve(r)),
+        });
+      }),
+  );
+  return calls;
+}
+const sent = (n: number) => vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(n));
+
+describe('learn store profile writes are serialised', () => {
+  beforeEach(() => useLearnStore.setState({ profile: PROFILE, status: 'ready' }));
+
+  it('a failed first write does not leave the client ahead of the server', async () => {
+    const calls = manualFetch();
+    const a = useLearnStore.getState().setInstrument('guitar');
+    const b = useLearnStore.getState().setInput('mic');
+    await sent(1);
+    // The second PUT waits for the first to settle.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    calls[0].settle(json({ error: 'x' }, 500));
+    await sent(2);
+    // The instrument change never reached the server, so the next body must not claim it.
+    expect(calls[1].body).toEqual({ ...PROFILE, input: 'mic' });
+    calls[1].settle(json({ profile: calls[1].body }));
+    await Promise.all([a, b]);
+    expect(useLearnStore.getState().profile).toEqual(calls[1].body);
+    expect(useLearnStore.getState().error).toBe('save_failed');
+  });
+
+  it('sends rapid writes one at a time, in order, and keeps the newest state', async () => {
+    const calls = manualFetch();
+    const a = useLearnStore.getState().setLatency(10);
+    const b = useLearnStore.getState().setLatency(20);
+    await sent(1);
+    // Bodies are built from the latest state when sent, so the first already carries 20.
+    expect(calls[0].body.latencyMs).toBe(20);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // A stale-looking answer must not overwrite the newer optimistic value.
+    calls[0].settle(json({ profile: { ...calls[0].body, latencyMs: 10 } }));
+    await sent(2);
+    // The first answer did not overwrite the newer optimistic value while the second was pending.
+    expect(useLearnStore.getState().profile?.latencyMs).toBe(20);
+    expect(calls[1].body.latencyMs).toBe(20);
+    calls[1].settle(json({ profile: calls[1].body }));
+    await Promise.all([a, b]);
+    expect(useLearnStore.getState().profile?.latencyMs).toBe(20);
+  });
+
+  it('rolls back to what the server last accepted when every write fails', async () => {
+    const calls = manualFetch();
+    const a = useLearnStore.getState().setLatency(10);
+    const b = useLearnStore.getState().setLatency(20);
+    await sent(1);
+    calls[0].settle(new TypeError('offline'));
+    await sent(2);
+    calls[1].settle(new TypeError('offline'));
+    await Promise.all([a, b]);
+    expect(useLearnStore.getState().profile?.latencyMs).toBe(0);
+  });
+
+  it('adopts the profile the server returns', async () => {
+    fetchMock.mockImplementation(async () => json({ profile: { ...PROFILE, dailyGoal: 4 } }));
+    await useLearnStore.getState().setInput('keys');
+    expect(useLearnStore.getState().profile).toEqual({ ...PROFILE, dailyGoal: 4 });
+  });
+
+  it('a failed write does not wedge the queue', async () => {
+    const calls = manualFetch();
+    const a = useLearnStore.getState().setInstrument('guitar');
+    await sent(1);
+    calls[0].settle(json({ error: 'x' }, 500));
+    await a;
+    const b = useLearnStore.getState().setInput('keys');
+    await sent(2);
+    calls[1].settle(json({ profile: calls[1].body }));
+    await b;
+    expect(useLearnStore.getState().profile).toEqual({ ...PROFILE, input: 'keys' });
+  });
+
+  it('a 401 on a write reports unauthorized', async () => {
+    fetchMock.mockImplementation(async () => json({ error: 'Unauthorized' }, 401));
+    await useLearnStore.getState().setInstrument('guitar');
+    expect(useLearnStore.getState().error).toBe('unauthorized');
+    expect(useLearnStore.getState().status).toBe('error');
+    expect(useLearnStore.getState().profile?.instrument).toBe('piano');
+  });
+});
+
+describe('learn store on the server', () => {
+  it('load() without a window leaves hub and screen null and does not throw', async () => {
+    vi.stubGlobal('window', undefined);
+    fetchMock.mockImplementation(async () => json({ profile: PROFILE, progress: [] }));
+    await expect(useLearnStore.getState().load()).resolves.toBeUndefined();
+    const s = useLearnStore.getState();
+    expect(s.hub).toBeNull();
+    expect(s.screen).toBeNull();
+    expect(s.status).toBe('ready');
   });
 });
