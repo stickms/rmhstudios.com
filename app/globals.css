@@ -3219,7 +3219,11 @@ html:not(.app-route) body {
         [role='tab'],
         [role='tablist'],
         [role='switch'],
-        [class*='site-control-radius']
+        [class*='site-control-radius'],
+        input,
+        select,
+        .glass-interactive,
+        .page-heading__back
       ),
     /* The toast library injects `border-radius: 50%` on its close button with no corner-shape. */
     [data-sonner-toast] [data-close-button] {
