@@ -17,7 +17,7 @@ import { getLesson } from './content/path';
 import { createInputHub, type InputHub } from './input/hub';
 import { createKeyboardInput } from './input/keyboard';
 import { createMicInput } from './input/mic';
-import { createMidiInput } from './input/midi';
+import { createMidiInput, type MidiInputAdapter } from './input/midi';
 import { createScreenInput } from './input/screen';
 import type { LessonProgressRow, Profile } from './progress.server';
 import { INPUTS, INSTRUMENTS, lessonCompleteSchema, profileSchema } from './schemas';
@@ -39,6 +39,8 @@ export interface LearnState {
   hub: InputHub | null;
   /** The on-screen keys' `press`/`release` handle; same lifetime as `hub`. */
   screen: ScreenInput | null;
+  /** The MIDI adapter, for its device list (`devices`, `onDevicesChange`); same lifetime as `hub`. */
+  midi: MidiInputAdapter | null;
   status: LearnStatus;
   error: LearnError | null;
 
@@ -54,20 +56,37 @@ const COMPLETE_URL = '/api/rmhmusic/learn/lesson-complete';
 
 // ─── Input (client only) ─────────────────────────────────────────
 
-let input: { hub: InputHub; screen: ScreenInput } | null = null;
+type BuiltInput = { hub: InputHub; screen: ScreenInput; midi: MidiInputAdapter };
 
-function ensureInput(): { hub: InputHub; screen: ScreenInput } | null {
+let input: BuiltInput | null = null;
+
+/** Listeners for the microphone's input level (RMS, 0..1), fed while the mic runs. */
+const micLevelListeners = new Set<(rms: number) => void>();
+
+/**
+ * Hear the microphone's level (about 40 times a second while it is on), for a
+ * level meter. Returns a function that removes the listener.
+ */
+export function subscribeMicLevel(l: (rms: number) => void): () => void {
+  micLevelListeners.add(l);
+  return () => {
+    micLevelListeners.delete(l);
+  };
+}
+
+function ensureInput(): BuiltInput | null {
   // The adapters read browser APIs; on the server there is nothing to build.
   if (typeof window === 'undefined') return null;
   if (!input) {
     const screen = createScreenInput();
-    const hub = createInputHub([
-      createMicInput(),
-      createMidiInput(),
-      createKeyboardInput(),
-      screen,
-    ]);
-    input = { hub, screen };
+    const midi = createMidiInput();
+    const mic = createMicInput({
+      onLevel: (rms) => {
+        for (const l of [...micLevelListeners]) l(rms);
+      },
+    });
+    const hub = createInputHub([mic, midi, createKeyboardInput(), screen]);
+    input = { hub, screen, midi };
   }
   return input;
 }
@@ -167,6 +186,7 @@ export const useLearnStore = create<LearnState>()((set, get) => {
     progress: [],
     hub: null,
     screen: null,
+    midi: null,
     status: 'idle',
     error: null,
 
