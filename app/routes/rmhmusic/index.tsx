@@ -11,7 +11,7 @@ import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 // chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
 // hydration, and an update reaching the boundary then swaps the server-rendered
 // page for the fallback (docs/fouc-audit-2026-10-06.md §13).
-import RmhMusicPage from '@/components/rmhmusic/RmhMusicLanding';
+import { LearnHome } from '@/components/rmhmusic/learn/LearnHome';
 
 export const Route = createFileRoute('/rmhmusic/')({
   component: RmhMusicRoute,
@@ -21,7 +21,7 @@ function RmhMusicRoute() {
   return (
     <GameErrorBoundary gameName="RMH Music">
       <Suspense fallback={<GameLoadingFallback />}>
-        <RmhMusicPage />
+        <LearnHome />
       </Suspense>
     </GameErrorBoundary>
   );
