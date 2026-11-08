@@ -56,12 +56,12 @@ export const IMPACT = {
   peak: 0.45,
   /** Shock ring: radius from → to, px, ease-out. */
   ringStartPx: 4,
-  ringEndPx: 96,
+  ringEndPx: 120,
   /** Ring stroke width from → to, px. */
   ringWidthStartPx: 4,
   ringWidthEndPx: 1,
   /** Ring alpha at its peak. */
-  ringAlpha: 0.45,
+  ringAlpha: 0.56,
   /** Specular streak along the rim tangent (full length), and across it (a short cross streak), px. */
   streakLenPx: 72,
   crossStreakShare: 0.38,

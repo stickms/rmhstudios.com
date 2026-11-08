@@ -23,9 +23,9 @@
 
 export const DISPERSION = {
   /** Offset per px of half-width near the core (the curve's initial slope). */
-  slope: 0.35,
+  slope: 0.7,
   /** The asymptote of the plain (no rim, no gel) curve, px. */
-  maxPx: 2.6,
+  maxPx: 4.0,
   /** At the rim the split is × (1 + rimBoost). */
   rimBoost: 1.2,
   /** Gaussian width of the rim boost, px of signed distance. */
