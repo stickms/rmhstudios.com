@@ -51,6 +51,9 @@ export interface SimRuntime {
   bossState: BossState | null;
   propHash: SpatialHash;
   damageablePropHash: SpatialHash;
+  /** Which tile generator, at which prop revision, the two hashes above were last built from (sim-step.ts). */
+  propHashSource: object | null;
+  propHashRevision: number;
 }
 
 export function createSimRuntime(world: GameWorld): SimRuntime {
@@ -65,6 +68,8 @@ export function createSimRuntime(world: GameWorld): SimRuntime {
     bossState: null,
     propHash: new SpatialHash(100),
     damageablePropHash: new SpatialHash(100),
+    propHashSource: null,
+    propHashRevision: -1,
   };
 }
 

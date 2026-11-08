@@ -114,16 +114,22 @@ export function stepWorldPrep(world: GameWorld, rt: SimRuntime, tileGen: TileGen
     }
   }
 
-  // 1b. Build prop spatial hash for collision queries
-  rt.propHash.clear();
-  rt.damageablePropHash.clear();
-  const activeProps = tileGen.getProps();
-  for (const prop of activeProps) {
-    rt.propHash.insert(prop as unknown as Entity);
-  }
-  const damageableProps = tileGen.getDamageableProps();
-  for (const prop of damageableProps) {
-    rt.damageablePropHash.insert(prop as unknown as Entity);
+  // 1b. Build prop spatial hash for collision queries. Props never move: the hashes only differ when a prop is
+  // generated, pruned or destroyed, so they are rebuilt on a new prop revision rather than every step (the
+  // rebuild re-inserted every prop in range, 60 times a second, for the same answer).
+  if (rt.propHashSource !== tileGen || rt.propHashRevision !== tileGen.propsRevision) {
+    rt.propHash.clear();
+    rt.damageablePropHash.clear();
+    const activeProps = tileGen.getProps();
+    for (const prop of activeProps) {
+      rt.propHash.insert(prop as unknown as Entity);
+    }
+    const damageableProps = tileGen.getDamageableProps();
+    for (const prop of damageableProps) {
+      rt.damageablePropHash.insert(prop as unknown as Entity);
+    }
+    rt.propHashSource = tileGen;
+    rt.propHashRevision = tileGen.propsRevision;
   }
 }
 
