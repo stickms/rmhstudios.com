@@ -572,6 +572,7 @@ export const DYNAMIC_ROUTES: Record<string, SitemapSectionName | null> = {
   '/rmhbox/$lobbyId': null,
   '/rmhbox/minigames/$minigameId/history': null,
   '/rmhmusic/$roomId': null,
+  '/rmhmusic/lesson/$lessonId': null, // personal learning progress, behind auth
   '/rmhstudy/$roomId': null,
   '/rmhtube/$roomId': null,
   '/rmhtype/$roomId': null,

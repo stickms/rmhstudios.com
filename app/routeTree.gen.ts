@@ -819,6 +819,7 @@ import { Route as GamesProfileIdRouteImport } from './routes/games/profile.$id'
 import { Route as GamesTradesIndexRouteImport } from './routes/games/trades.index'
 import { Route as LibraryAlbumsAlbumIdRouteImport } from './routes/library.albums.$albumId'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
+import { Route as RmhmusicLessonLessonIdRouteImport } from './routes/rmhmusic/lesson.$lessonId'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as SliceItArtistKeyRouteImport } from './routes/slice-it/artist.$key'
 import { Route as SliceItEditSongIdRouteImport } from './routes/slice-it/edit.$songId'
@@ -5483,6 +5484,11 @@ const RmhboxMinigamesIndexRoute = RmhboxMinigamesIndexRouteImport.update({
   path: '/minigames/',
   getParentRoute: () => RmhboxRoute,
 } as any)
+const RmhmusicLessonLessonIdRoute = RmhmusicLessonLessonIdRouteImport.update({
+  id: '/lesson/$lessonId',
+  path: '/lesson/$lessonId',
+  getParentRoute: () => RmhmusicRoute,
+} as any)
 const SecretCursedLogicIndexRoute = SecretCursedLogicIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -9279,6 +9285,7 @@ export interface FileRoutesByFullPath {
   '/games/groups/$slug': typeof GamesGroupsSlugRoute
   '/games/profile/$id': typeof GamesProfileIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
+  '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
@@ -10641,6 +10648,7 @@ export interface FileRoutesByTo {
   '/games/groups/$slug': typeof GamesGroupsSlugRoute
   '/games/profile/$id': typeof GamesProfileIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
+  '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
@@ -12030,6 +12038,7 @@ export interface FileRoutesById {
   '/games/groups/$slug': typeof GamesGroupsSlugRoute
   '/games/profile/$id': typeof GamesProfileIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
+  '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
@@ -13419,6 +13428,7 @@ export interface FileRouteTypes {
     | '/games/groups/$slug'
     | '/games/profile/$id'
     | '/library/albums/$albumId'
+    | '/rmhmusic/lesson/$lessonId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
@@ -14781,6 +14791,7 @@ export interface FileRouteTypes {
     | '/games/groups/$slug'
     | '/games/profile/$id'
     | '/library/albums/$albumId'
+    | '/rmhmusic/lesson/$lessonId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
@@ -16169,6 +16180,7 @@ export interface FileRouteTypes {
     | '/games/groups/$slug'
     | '/games/profile/$id'
     | '/library/albums/$albumId'
+    | '/rmhmusic/lesson/$lessonId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
@@ -23398,6 +23410,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhboxMinigamesIndexRouteImport
       parentRoute: typeof RmhboxRoute
     }
+    '/rmhmusic/lesson/$lessonId': {
+      id: '/rmhmusic/lesson/$lessonId'
+      path: '/lesson/$lessonId'
+      fullPath: '/rmhmusic/lesson/$lessonId'
+      preLoaderRoute: typeof RmhmusicLessonLessonIdRouteImport
+      parentRoute: typeof RmhmusicRoute
+    }
     '/secret/cursed-logic/': {
       id: '/secret/cursed-logic/'
       path: '/'
@@ -28136,12 +28155,14 @@ interface RmhmusicRouteChildren {
   RmhmusicRoomIdRoute: typeof RmhmusicRoomIdRoute
   RmhmusicPlayerRoute: typeof RmhmusicPlayerRoute
   RmhmusicIndexRoute: typeof RmhmusicIndexRoute
+  RmhmusicLessonLessonIdRoute: typeof RmhmusicLessonLessonIdRoute
 }
 
 const RmhmusicRouteChildren: RmhmusicRouteChildren = {
   RmhmusicRoomIdRoute: RmhmusicRoomIdRoute,
   RmhmusicPlayerRoute: RmhmusicPlayerRoute,
   RmhmusicIndexRoute: RmhmusicIndexRoute,
+  RmhmusicLessonLessonIdRoute: RmhmusicLessonLessonIdRoute,
 }
 
 const RmhmusicRouteWithChildren = RmhmusicRoute._addFileChildren(
@@ -30604,6 +30625,7 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
 
 import type { getRouter } from './router.tsx'
 import type { createStart } from '@tanstack/react-start'

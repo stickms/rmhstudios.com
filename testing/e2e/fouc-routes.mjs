@@ -258,6 +258,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'A non-existent room; the app shell paints before any socket work.',
   },
+  '/rmhmusic/lesson/$lessonId': {
+    path: '/rmhmusic/lesson/play-first-note',
+    fidelity: 'shell',
+    why: 'The first lesson; the app shell and lesson skeleton paint before the profile loads.',
+  },
   '/rmhstudy/$roomId': {
     path: '/rmhstudy/fouc-audit',
     fidelity: 'shell',

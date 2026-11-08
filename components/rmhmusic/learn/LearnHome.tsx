@@ -6,9 +6,9 @@
  * mobile Safari's bars collapse.
  */
 
-import { useEffect, useMemo } from 'react';
-import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Guitar, Piano } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { ArrowLeft, Guitar, Piano, SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
@@ -16,13 +16,10 @@ import { PATH } from '@/lib/rmhmusic/learn/content/path';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import type { LessonProgressRow } from '@/lib/rmhmusic/learn/store';
 import type { Instrument } from '@/lib/rmhmusic/learn/schemas';
+import { SECONDARY_BUTTON } from './buttons';
+import { InputSetup } from './InputSetup';
 import { PathUnit } from './PathUnit';
 import { StreakChip } from './StreakChip';
-
-interface LearnHomeProps {
-  /** Opens a lesson. Optional until the lesson route exists (wired in the lesson task). */
-  onOpenLesson?: (lessonId: string) => void;
-}
 
 /** Loading placeholder, built from the static path so it is as tall as the loaded page. */
 function HomeSkeleton() {
@@ -36,9 +33,18 @@ function HomeSkeleton() {
   );
 }
 
-export function LearnHome({ onOpenLesson }: LearnHomeProps) {
+export function LearnHome() {
   const { t } = useTranslation('c-rmhmusic');
   const goBack = useBackOrFallback();
+  const navigate = useNavigate();
+  const [setupOpen, setSetupOpen] = useState(false);
+  const onOpenLesson = (lessonId: string) =>
+    void navigate({ to: '/rmhmusic/lesson/$lessonId', params: { lessonId } });
+  const onSetupChange = (open: boolean) => {
+    setSetupOpen(open);
+    // The microphone listens only while it is being set up or used in a lesson.
+    if (!open) useLearnStore.getState().hub?.stop('mic');
+  };
   const profile = useLearnStore((s) => s.profile);
   const progress = useLearnStore((s) => s.progress);
   const status = useLearnStore((s) => s.status);
@@ -61,6 +67,14 @@ export function LearnHome({ onOpenLesson }: LearnHomeProps) {
     { id: 'piano', label: t('instrument-piano', { defaultValue: 'Piano' }), icon: Piano },
     { id: 'guitar', label: t('instrument-guitar', { defaultValue: 'Guitar' }), icon: Guitar },
   ];
+
+  const inputNames = {
+    screen: t('input-screen', { defaultValue: 'On-screen keys' }),
+    keys: t('input-keys', { defaultValue: 'Computer keyboard' }),
+    midi: t('input-midi', { defaultValue: 'MIDI controller' }),
+    mic: t('input-mic', { defaultValue: 'Microphone' }),
+  };
+  const inputName = inputNames[profile?.input ?? 'screen'];
 
   let body;
   if (status === 'error') {
@@ -103,6 +117,18 @@ export function LearnHome({ onOpenLesson }: LearnHomeProps) {
           onChange={(id) => void useLearnStore.getState().setInstrument(id as Instrument)}
           aria-label={t('instrument-label', { defaultValue: 'Instrument' })}
         />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-(--app-text-muted)">
+            {t('input-playing-with', {
+              input: inputName,
+              defaultValue: 'Playing with: {{input}}',
+            })}
+          </p>
+          <button type="button" onClick={() => onSetupChange(true)} className={SECONDARY_BUTTON}>
+            <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
+            {t('setup-input', { defaultValue: 'Set up input' })}
+          </button>
+        </div>
         {error === 'save_failed' && (
           <p role="status" className="text-sm text-(--app-danger)">
             {t('error-save', { defaultValue: "Couldn't save that change. Try again." })}
@@ -159,6 +185,7 @@ export function LearnHome({ onOpenLesson }: LearnHomeProps) {
           </div>
           {body}
         </main>
+        <InputSetup open={setupOpen} onOpenChange={onSetupChange} />
       </div>
     </div>
   );
