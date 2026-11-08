@@ -179,7 +179,10 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
   const from = midiToName(12 * (octave + 1));
 
   return (
-    <div className={cn('rmm-keys', className)} data-jelly-zone="playfield">
+    // A piano runs low to high, left to right, in every language: under `dir="rtl"` the white keys
+    // would flow from the right while the black keys keep their `left` offsets, so the black keys
+    // would sit over the wrong gaps.
+    <div dir="ltr" className={cn('rmm-keys', className)} data-jelly-zone="playfield">
       <div className="mb-2 flex items-center gap-2">
         <button
           type="button"
