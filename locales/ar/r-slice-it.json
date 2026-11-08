@@ -649,5 +649,8 @@
   "visibility-mode-label": "Effect",
   "visibility-mode-lanecover": "Lane Cover",
   "skin-record": "Record",
-  "note-skin-hint-record": "Record draws each tap as a 45 with a stem and a flag per subdivision, so the rhythm reads from the shape and not only from the colour. Every skin keeps the same hit target."
+  "note-skin-hint-record": "Record draws each tap as a 45 with a stem and a flag per subdivision, so the rhythm reads from the shape and not only from the colour. Every skin keeps the same hit target.",
+  "skin-circle": "Circle",
+  "skin-pixel": "Pixel",
+  "note-skin-hint-circle": "Circle draws each tap as a plain disc in its lane’s ink; Pixel builds it from squares. Record is a 45 with a stem and a flag per subdivision, and Notation an engraved notehead, so the rhythm reads from the shape and not only from the colour. Every skin keeps the same hit target."
 }

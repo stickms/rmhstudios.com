@@ -981,13 +981,15 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
           <Well>
             <ChoiceRow
               label={t('note-skin-label', { defaultValue: 'Note style' })}
-              description={t('note-skin-hint-record', {
+              description={t('note-skin-hint-circle', {
                 defaultValue:
-                  'Record draws each tap as a 45 with a stem and a flag per subdivision, so the rhythm reads from the shape and not only from the colour. Every skin keeps the same hit target.',
+                  'Circle draws each tap as a plain disc in its lane’s ink; Pixel builds it from squares. Record is a 45 with a stem and a flag per subdivision, and Notation an engraved notehead, so the rhythm reads from the shape and not only from the colour. Every skin keeps the same hit target.',
               })}
               value={noteSkin}
               options={[
-                { id: 'default', label: t('skin-record', { defaultValue: 'Record' }) },
+                { id: 'default', label: t('skin-circle', { defaultValue: 'Circle' }) },
+                { id: 'pixel', label: t('skin-pixel', { defaultValue: 'Pixel' }) },
+                { id: 'record', label: t('skin-record', { defaultValue: 'Record' }) },
                 { id: 'notation', label: t('skin-notation', { defaultValue: 'Notation' }) },
                 { id: 'keys', label: t('skin-keys', { defaultValue: 'Keys' }) },
                 { id: 'orbs', label: t('skin-orbs', { defaultValue: 'Orbs' }) },

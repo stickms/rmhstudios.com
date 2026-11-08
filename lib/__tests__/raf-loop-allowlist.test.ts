@@ -277,6 +277,13 @@ const ALLOW = new Set<string>([
   'hooks/useCanvasStage.ts',
   'components/slice-it/GameCanvas.tsx',
   'components/slice-it/HUD.tsx',
+  // The music in the margins of a wide screen. Idle at rest: it only exists while
+  // the playfield is locked to its ratio in landscape, it advances motion only while
+  // there is sound, and once every bar, the thump and the sparks have settled it
+  // stops asking for frames and polls on a 4 Hz TIMER for the music to return — a
+  // paused run schedules no animation frames. Hidden tabs poll the same way. The
+  // effect cancels the frame and the timer on unmount.
+  'components/slice-it/SideWaves.tsx',
   // Replay playback (R4). Idle at rest: the loop only exists while the replay
   // is *playing* — a paused or finished one paints once and schedules nothing —
   // and it stops itself at the end of the track. `cancelAnimationFrame` on

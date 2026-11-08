@@ -24,7 +24,7 @@ import { LANE_PALETTES, type LanePalette, contrastRatio } from './palettes';
  * subdivision used to be carried by hue alone, which is the thing `palettes.ts`
  * exists to stop being the only channel.
  */
-export type NoteShape = 'disc' | 'notation' | 'pill' | 'circle' | 'bar' | 'arrow';
+export type NoteShape = 'dot' | 'pixel' | 'disc' | 'notation' | 'pill' | 'circle' | 'bar' | 'arrow';
 
 export interface Skin {
   id: string;
@@ -63,12 +63,37 @@ export interface Skin {
 
 export const SKINS: Record<string, Skin> = {
   /**
-   * The record: each tap is a 45 — a groove-ringed disc with a paper label — and
-   * keeps the notation's stem and a flag per subdivision, so the rhythm still
-   * reads from the shape. A struck disc is cut in two on the slice (no particles).
+   * The default: each tap is a plain disc in its lane's ink with a paper pip in the
+   * middle. Nothing to read but where it is. A struck disc is cut in two on the slice
+   * (no particles).
    */
   default: {
     id: 'default',
+    palette: 'default',
+    noteShape: 'dot',
+    judgementLine: 'solid',
+    hitBurst: 'none',
+    neumorphic: false,
+    groove: true,
+    unlock: null,
+  },
+  /** The same disc built from square pixels on a 4px-ish grid. */
+  pixel: {
+    id: 'pixel',
+    palette: 'default',
+    noteShape: 'pixel',
+    judgementLine: 'solid',
+    hitBurst: 'none',
+    neumorphic: false,
+    groove: true,
+    unlock: null,
+  },
+  /**
+   * The record: a groove-ringed 45 with a paper label that keeps the notation's stem
+   * and a flag per subdivision, so the rhythm reads from the shape.
+   */
+  record: {
+    id: 'record',
     palette: 'default',
     noteShape: 'disc',
     judgementLine: 'solid',
