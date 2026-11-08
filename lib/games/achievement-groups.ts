@@ -10,7 +10,6 @@ export const ACHIEVEMENT_GROUP_BY_GAME_ID: Record<string, string> = {
   altair: 'Altair',
   'daily-puzzles': 'Daily Puzzles',
   rmhbox: 'RMHBox',
-  rmhmusic: 'RMHMusic',
   rmhstudy: 'RMHStudy',
   rmhtube: 'RMHTube',
   rmhtype: 'RMHType',
