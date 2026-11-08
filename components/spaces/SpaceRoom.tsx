@@ -75,46 +75,33 @@ function Avatar({
 
 function PinnedPanel({ pinned }: { pinned: SpacePinned }) {
   const { t } = useTranslation('site');
-  // `music_room` pins point at the retired RMHMusic listening rooms, so they get a
-  // label and no link (there is no room to open). Only the initial server render can
-  // reach this branch: the live-space hub drops stored `music_room` pins when it
-  // rehydrates, so the first socket state replaces the pin with null (see
-  // `lib/spaces/types.ts`).
   const href =
     pinned.kind === 'url'
       ? pinned.ref
       : pinned.kind === 'post'
         ? `/post/${pinned.ref}`
-        : pinned.kind === 'tube_room'
-          ? `/rmhtube/${pinned.ref}`
-          : null;
+        : `/rmhtube/${pinned.ref}`;
   const label =
     pinned.kind === 'url'
       ? t('space-pinned-link', { defaultValue: 'Pinned link' })
       : pinned.kind === 'post'
         ? t('space-pinned-post', { defaultValue: 'Pinned post' })
-        : pinned.kind === 'music_room'
-          ? t('space-pinned-music', { defaultValue: 'Listening room' })
-          : t('space-pinned-tube', { defaultValue: 'Watch party' });
+        : t('space-pinned-tube', { defaultValue: 'Watch party' });
   return (
     <div className="glass-fill mx-4 mt-3 rounded-site px-4 py-3">
       <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-site-accent">
         <Pin className="size-3.5" aria-hidden />
         {label}
       </div>
-      {href ? (
-        <a
-          href={href}
-          className="break-words text-sm text-site-text underline-offset-2 hover:underline"
-          {...(pinned.kind === 'url'
-            ? { target: '_blank', rel: 'noopener noreferrer nofollow' }
-            : {})}
-        >
-          {pinned.ref}
-        </a>
-      ) : (
-        <span className="break-words text-sm text-site-text-muted">{pinned.ref}</span>
-      )}
+      <a
+        href={href}
+        className="break-words text-sm text-site-text underline-offset-2 hover:underline"
+        {...(pinned.kind === 'url'
+          ? { target: '_blank', rel: 'noopener noreferrer nofollow' }
+          : {})}
+      >
+        {pinned.ref}
+      </a>
     </div>
   );
 }
