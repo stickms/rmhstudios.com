@@ -453,6 +453,7 @@ button.pf2e-row:active {
   min-height: 44px;
   padding: 0 18px;
   border-radius: 980px; /* a capsule — a shape, not a radius token */
+  corner-shape: round;
   border: none;
   font-family: inherit;
   font-size: 1.0625rem;
@@ -530,6 +531,7 @@ button.pf2e-row:active {
   width: 44px;
   padding: 0;
   border-radius: 50%;
+  corner-shape: round;
 }
 
 .pf2e-btn-sm.pf2e-btn-icon {
@@ -795,6 +797,7 @@ html[data-app-dark='1'] .pf2e-segmented-thumb {
   min-height: 44px;
   padding: 0.375rem 0.875rem;
   border-radius: 980px;
+  corner-shape: round;
   border: 1px solid var(--pf2e-line);
   background-color: transparent;
   color: var(--pf2e-text-secondary);
@@ -897,6 +900,7 @@ html[data-app-dark='1'] .pf2e-segmented-thumb {
   background-color: var(--pf2e-ink);
   color: var(--pf2e-text-inverse);
   border-radius: 50%;
+  corner-shape: round;
 }
 
 .pf2e-daycell[data-selected='true'] {
@@ -910,6 +914,7 @@ html[data-app-dark='1'] .pf2e-segmented-thumb {
   width: 1.75rem;
   height: 1.75rem;
   border-radius: 50%;
+  corner-shape: round;
   font-variant-numeric: tabular-nums;
 }
 
@@ -926,6 +931,7 @@ html[data-app-dark='1'] .pf2e-segmented-thumb {
   width: 5px;
   height: 5px;
   border-radius: 50%;
+  corner-shape: round;
   background-color: var(--pf2e-ink);
 }
 
@@ -1009,6 +1015,7 @@ html[data-app-dark='1'] .pf2e-segmented-thumb {
   width: 32px;
   padding: 0;
   border-radius: 50%;
+  corner-shape: round;
 }
 
 .pf2e-month-nav::after {
@@ -1110,6 +1117,7 @@ html[data-app-dark='1'] .pf2e-scrim {
   width: 2.25rem;
   height: 0.3125rem;
   border-radius: 980px;
+  corner-shape: round;
   background-color: var(--pf2e-line-strong);
   margin: 0.5rem auto 0;
 }
@@ -1217,6 +1225,7 @@ html[data-app-dark='1'] .pf2e-scrim {
   height: 3.25rem;
   border: none;
   border-radius: 50%;
+  corner-shape: round;
   background-color: var(--pf2e-ink);
   color: var(--pf2e-text-inverse);
   box-shadow: var(--pf2e-shadow-md);
@@ -1382,6 +1391,7 @@ textarea.pf2e-ask {
   width: 5px;
   height: 5px;
   border-radius: 50%;
+  corner-shape: round;
   background-color: var(--pf2e-text-tertiary);
   animation: pf2e-blink 1.2s ease-in-out infinite;
 }

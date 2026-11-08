@@ -54,6 +54,7 @@
   justify-content: center;
   border: 1px solid var(--site-border);
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-surface);
   color: var(--site-text);
   cursor: pointer;
@@ -282,6 +283,7 @@
   align-self: end;
   margin-bottom: clamp(24px, 7vh, 64px);
   border-radius: 50%;
+  corner-shape: round;
   background: radial-gradient(ellipse at center, rgba(2, 10, 28, 0.5), transparent 70%);
   pointer-events: none;
 }
@@ -319,6 +321,7 @@
   padding: 8px 15px;
   border: 1px solid var(--site-border);
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-surface);
   color: var(--site-text);
   font-size: 13px;

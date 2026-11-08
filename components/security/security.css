@@ -96,6 +96,7 @@ nav.glass-chrome.sec-nav {
   gap: 6px;
   padding: 7px 14px;
   border-radius: 980px;
+  corner-shape: round;
   border: 1px solid var(--site-border);
   color: var(--site-text);
   font-size: 0.78rem;
@@ -130,6 +131,7 @@ nav.glass-chrome.sec-nav {
   gap: 8px;
   padding: 13px 24px;
   border-radius: 980px;
+  corner-shape: round;
   font-size: 0.92rem;
   font-weight: 600;
   text-decoration: none;
@@ -663,6 +665,7 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
   width: 34px;
   height: 34px;
   border-radius: 50%;
+  corner-shape: round;
   border: 1px solid var(--site-border);
   background: var(--site-accent-dim);
   font-size: 0.9rem;

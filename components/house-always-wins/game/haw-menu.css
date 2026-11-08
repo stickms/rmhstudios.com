@@ -393,6 +393,7 @@
   width: var(--s);
   height: var(--s);
   border-radius: 50%;
+  corner-shape: round;
   background: var(--haw-gold);
   opacity: 0;
   animation: haw-mote var(--dur) linear infinite;
@@ -679,6 +680,7 @@
   inset: 0;
   z-index: -1;
   border-radius: inherit;
+  corner-shape: inherit;
   background: radial-gradient(120% 150% at 50% 130%, rgba(244, 200, 78, 0.5), transparent 62%);
   opacity: 0;
   transition: opacity 0.35s var(--ease-smooth, ease);
@@ -831,6 +833,7 @@
   height: 2.75rem;
   padding: 0;
   border-radius: 50%;
+  corner-shape: round;
 }
 
 .haw-sound .haw-btn[data-muted='true'] {

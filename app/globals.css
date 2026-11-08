@@ -200,6 +200,16 @@
   transition-duration: calc(var(--site-transition-speed, 200ms) * 1.5);
 }
 
+/* A full radius is a circle or a capsule, never a squircle: it keeps the circular corner next to Tailwind's own
+   `border-radius` (Tailwind merges both declarations, and every variant such as `md:rounded-full`). The universal
+   squircle default is in `@layer base` (see "Corner shape" there). */
+@utility rounded-full {
+  corner-shape: round;
+}
+@utility rounded-t-full {
+  corner-shape: round;
+}
+
 /* ── The defaults behind ~1,650 bare `transition` / `transition-colors` /
    `transition-transform` / `transition-opacity` call sites ─────────────────
    Tailwind's own defaults are 150ms on `cubic-bezier(0.4, 0, 0.2, 1)` —
@@ -3175,6 +3185,52 @@ html:not(.app-route) body {
    button, a bespoke background) still wins. Unlayered, they out-specified every
    utility — `color: inherit` alone repainted accent-filled buttons in body ink. */
 @layer base {
+  /* Corner shape: every rounded SURFACE corner on the site is a continuous-curvature squircle where the browser
+     supports `corner-shape` (Chromium and recent WebKit; Firefox ignores it and keeps the circular arc). A circular
+     corner jumps from straight to curved with a visible kink, most obvious on a thin high-contrast border; a squircle
+     eases in. Three things stay circular:
+       - CIRCLES AND PILLS: `corner-shape: round` goes beside every `border-radius: 50%` / ≥ 99px / pill-token
+         declaration (lib/__tests__/corner-shape.test.ts enforces it) and on Tailwind's `rounded-full` (`@utility`).
+       - CONTROLS: a control's 24px radius clamps to a capsule up to 48px tall, and a squircle would turn the capsule
+         into a rounded rectangle, so the control primitives below are `round` (surfaces are squircles, controls are
+         capsules, as on Apple platforms).
+       - Anything with `border-radius: inherit` also says `corner-shape: inherit` (the test enforces that too),
+         and pseudo-elements inherit their host's shape, because the property is not inherited by itself. */
+  @supports (corner-shape: squircle) {
+    *,
+    ::before,
+    ::after {
+      corner-shape: squircle;
+    }
+    ::before,
+    ::after {
+      corner-shape: inherit;
+    }
+    :is(
+        [data-slot='button'],
+        [data-slot='input'],
+        [data-slot='search-field'],
+        [data-slot='select-control'],
+        [data-slot='switch'],
+        [data-slot='menu-item'],
+        [data-slot='select-item'],
+        [data-slot='jelly-group'],
+        [data-slot='jelly-group-item'],
+        [role='tab'],
+        [role='tablist'],
+        [role='switch'],
+        [class*='site-control-radius'],
+        input,
+        select,
+        .glass-interactive,
+        .page-heading__back
+      ),
+    /* The toast library injects `border-radius: 50%` on its close button with no corner-shape. */
+    [data-sonner-toast] [data-close-button] {
+      corner-shape: round;
+    }
+  }
+
   :where(.vibe-app) :is(input, textarea, select, button) {
     font: inherit;
   }
@@ -4912,6 +4968,7 @@ html.nav-pop .page-root > * {
     inset: 0;
     z-index: -1;
     border-radius: inherit;
+    corner-shape: inherit;
     background: var(--site-surface-hover);
     opacity: 0;
     pointer-events: none;
@@ -5063,6 +5120,7 @@ html.nav-pop .page-root > * {
     position: absolute;
     inset: 0;
     border-radius: inherit;
+    corner-shape: inherit;
     background: var(--site-accent);
     opacity: 0;
     transition: opacity var(--site-transition-speed) var(--ease-glass);
@@ -5105,12 +5163,14 @@ html.nav-pop .page-root > * {
     }
     :where(input[type='radio']) {
       border-radius: 50%;
+      corner-shape: round;
     }
     :where(input[type='checkbox'], input[type='radio'])::before {
       content: '';
       position: absolute;
       inset: -1.5px;
       border-radius: inherit;
+      corner-shape: inherit;
       background: var(--site-accent);
       opacity: 0;
       transition: opacity var(--site-transition-speed) var(--ease-glass);
@@ -5151,6 +5211,7 @@ html.nav-pop .page-root > * {
       width: 0.375rem;
       height: 0.375rem;
       border-radius: 50%;
+      corner-shape: round;
       background: currentColor;
       transform: scale(0);
       transition: transform 0.12s var(--ease-smooth);
@@ -5353,6 +5414,7 @@ html.nav-restoring .feed-card-cv {
   position: absolute;
   inset: -40%;
   border-radius: 50%;
+  corner-shape: round;
   background: radial-gradient(
     circle at 50% 50%,
     color-mix(in oklab, var(--site-text) 12%, transparent),
@@ -5627,6 +5689,7 @@ body {
   z-index: 1;
   inset: 32% 34% 0 0;
   border-radius: inherit;
+  corner-shape: inherit;
   background: linear-gradient(135deg, var(--site-surface) 36%, transparent 86%);
   pointer-events: none;
 }
@@ -6083,6 +6146,7 @@ body {
   position: absolute;
   z-index: 0;
   border-radius: 50%;
+  corner-shape: round;
   pointer-events: none;
   filter: blur(46px);
 }
@@ -6131,6 +6195,7 @@ body {
 .rad-loader__blob {
   position: absolute;
   border-radius: 50%;
+  corner-shape: round;
   background: currentColor;
 }
 /* The core pulses at the centre — the RMH orb in miniature. */

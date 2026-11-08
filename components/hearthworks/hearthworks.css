@@ -279,6 +279,7 @@
     height: 128px;
     border: 1px solid var(--hw-rule);
     border-radius: 50%;
+    corner-shape: round;
     background: var(--hw-panel);
     touch-action: none;
   }
@@ -286,6 +287,7 @@
     position: absolute;
     inset: 36px;
     border-radius: 50%;
+    corner-shape: round;
     background: var(--hw-teal);
     transition: transform 90ms var(--hw-ease);
   }
@@ -299,6 +301,7 @@
     height: 64px;
     border: 1px solid var(--hw-rule);
     border-radius: 50%;
+    corner-shape: round;
     background: var(--hw-aqua);
     color: var(--hw-ink);
     cursor: pointer;
@@ -418,6 +421,7 @@
     height: 64px;
     border: 1px solid var(--hw-rule);
     border-radius: 50%;
+    corner-shape: round;
     background: var(--hw-blush);
     color: var(--hw-ink);
     cursor: pointer;

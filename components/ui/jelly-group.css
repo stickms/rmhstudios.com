@@ -76,6 +76,7 @@
 /* The feathered glow: fades to nothing at the member's own edge, so it never draws a rectangle on the parent. */
 [data-slot='jelly-group-item'][data-evert]::before {
   border-radius: inherit;
+  corner-shape: inherit;
   background: radial-gradient(
     ellipse closest-side at 50% 50%,
     color-mix(in srgb, var(--site-accent) var(--glow-strength), transparent),

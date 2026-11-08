@@ -106,6 +106,7 @@
   width: min(220vmax, 3000px);
   height: min(220vmax, 3000px);
   border-radius: 50%;
+  corner-shape: round;
   background: repeating-conic-gradient(
     from 0deg,
     rgb(245 184 46 / 0.13) 0 3deg,
