@@ -15,6 +15,7 @@
   "heading-default": "Learn music",
   "heading-guitar": "Learn guitar",
   "heading-piano": "Learn piano",
+  "hero-logo-alt": "RMH Music",
   "input-in-use": "In use",
   "input-keys": "Computer keyboard",
   "input-keys-desc": "Keys A to K play C4 to C5. W, E, T, Y and U are the black keys.",
@@ -77,6 +78,8 @@
   "lessons-started_few": "{{started}} of {{count}} lessons started",
   "lessons-started_many": "{{started}} of {{count}} lessons started",
   "lessons-started_other": "{{started}} of {{count}} lessons started",
+  "loading-lesson": "Loading the lesson…",
+  "loading-lessons": "Loading your lessons…",
   "mic-blocked": "Microphone access was blocked. To allow it, tap the lock or settings icon next to the address bar, turn on the microphone for this site, then try again.",
   "mic-failed": "The microphone couldn't start. Another app may be using it. Close it and try again.",
   "mic-heard": "Hearing {{note}} ({{cents}} cents)",
@@ -103,5 +106,6 @@
   "streak-days_many": "{{count}} day streak",
   "streak-days_other": "{{count}} day streak",
   "streak-none": "No streak yet",
+  "streak-unavailable": "Streak unavailable",
   "use-screen-keys": "Use on-screen keys instead"
 }

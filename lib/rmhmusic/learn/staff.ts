@@ -9,7 +9,20 @@
 
 /** Letter index (C=0 … B=6) of each pitch class, sharps spelled on the letter below. */
 const LETTER = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6] as const;
-const SHARP = [false, true, false, true, false, false, true, false, true, false, true, false] as const;
+const SHARP = [
+  false,
+  true,
+  false,
+  true,
+  false,
+  false,
+  true,
+  false,
+  true,
+  false,
+  true,
+  false,
+] as const;
 /** E4's diatonic number (octave 4 × 7 + E). */
 const BOTTOM_LINE = 4 * 7 + 2;
 /** The top line's step (F5). */

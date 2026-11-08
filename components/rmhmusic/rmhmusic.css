@@ -107,7 +107,7 @@
     --app-jelly-haze: color-mix(in srgb, var(--app-text) 18%, white);
     --rmm-rule: #2a3b5e;
     --rmm-margin: #6a3a48;
-    --rmm-staff: #24345a;
+    --rmm-staff: #1f2d4d;
     --rmm-grain: rgb(242 235 217 / 0.03);
     --rmm-note: #3d5080;
     color-scheme: dark;
@@ -138,7 +138,7 @@
   --app-jelly-haze: color-mix(in srgb, var(--app-text) 18%, white);
   --rmm-rule: #2a3b5e;
   --rmm-margin: #6a3a48;
-  --rmm-staff: #24345a;
+  --rmm-staff: #1f2d4d;
   --rmm-grain: rgb(242 235 217 / 0.03);
   --rmm-note: #3d5080;
   color-scheme: dark;
@@ -278,16 +278,16 @@
 }
 /* A unit's header: the title written above a five-line staff. */
 .rmm-sheet__head {
-  padding: 1rem 1rem 1.25rem;
+  /* 25px of staff under the title, 12px above the page's first ruled line. */
+  padding: 1rem 1rem calc(25px + 1.25rem);
   background-image: repeating-linear-gradient(
     to bottom,
     var(--rmm-staff) 0 1px,
     transparent 1px 6px
   );
-  background-size: 100% 25px;
+  background-size: calc(100% - 2rem) 25px;
   background-repeat: no-repeat;
-  background-position: 0 100%;
-  background-origin: content-box;
+  background-position: 1rem calc(100% - 0.75rem);
 }
 /* Lesson rows are the page's ruled lines. */
 .rmm-ruled > li + li {

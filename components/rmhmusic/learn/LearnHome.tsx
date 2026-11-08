@@ -1,12 +1,16 @@
 'use client';
 
 /**
- * LearnHome — RMH Music's landing: streak, instrument toggle and the learning
- * path (units → lessons). A document (`.app-page`), so the page scrolls and
- * mobile Safari's bars collapse.
+ * LearnHome — RMH Music's landing: the catalog card's art as a hero, the instrument toggle, the
+ * input in use, and the learning path as notebook pages (units → lessons). A document
+ * (`.app-page`), so the page scrolls and mobile Safari's bars collapse.
+ *
+ * No layout shift between loading and loaded: the header, hero, heading and every row keep the
+ * same boxes in both states (the skeleton is built from the same rows, `HomeSkeleton`), and the
+ * lines whose text arrives later reserve their height.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Guitar, Piano, SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -17,20 +21,30 @@ import { releaseMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import type { LessonProgressRow } from '@/lib/rmhmusic/learn/store';
 import type { Instrument } from '@/lib/rmhmusic/learn/schemas';
-import { SECONDARY_BUTTON } from './buttons';
+import { PRIMARY_BUTTON, SECONDARY_BUTTON } from './buttons';
+import { HomeHero } from './HomeHero';
 import { InputSetup } from './InputSetup';
 import { ModeToggle } from './ModeToggle';
 import { PathUnit } from './PathUnit';
 import { StreakChip } from './StreakChip';
 import { useInputRelease } from './useLearnInput';
 
+/**
+ * The "Playing with … / Set up input" row, the same box loaded or not: one line that never
+ * wraps, its text clamped to two lines (40px) beside a 44px button, so a long translation cannot
+ * change its height.
+ */
+const INPUT_ROW = 'flex min-h-11 items-center justify-between gap-3';
+
 /** Loading placeholder, built from the static path so it is as tall as the loaded page. */
 function HomeSkeleton() {
   return (
     <div aria-hidden="true" className="space-y-4">
       <div className="app-skeleton h-12 w-full pointer-coarse:h-13" />
-      {/* The "Playing with … / Set up input" row: 44px, the height of its button. */}
-      <div className="app-skeleton h-11 w-full" />
+      <div className={INPUT_ROW}>
+        <span className="app-skeleton h-5 w-40" />
+        <span className="app-skeleton h-11 w-36 shrink-0" />
+      </div>
       {PATH.map((unit) => (
         <PathUnit key={unit.id} unit={unit} progress={new Map()} placeholder />
       ))}
@@ -43,6 +57,7 @@ export function LearnHome() {
   const goBack = useBackOrFallback();
   const navigate = useNavigate();
   const [setupOpen, setSetupOpen] = useState(false);
+  const setupButton = useRef<HTMLButtonElement>(null);
   const onOpenLesson = (lessonId: string) =>
     void navigate({ to: '/rmhmusic/lesson/$lessonId', params: { lessonId } });
   // Leaving the screen (any route change) or hiding the tab stops the mic; the screen sees it
@@ -72,6 +87,8 @@ export function LearnHome() {
   );
   const available = PATH.flatMap((u) => u.lessons).filter((l) => l.available);
   const started = available.filter((l) => rows.has(l.id)).length;
+  const ready = status === 'ready' && !!profile;
+  const loading = !ready && status !== 'error';
 
   const instrument = profile?.instrument ?? 'piano';
   const tabs = [
@@ -90,7 +107,7 @@ export function LearnHome() {
   let body;
   if (status === 'error') {
     body = (
-      <div role="alert" className="app-glass space-y-3 rounded-(--app-radius) p-4">
+      <div role="alert" className="rmm-sheet space-y-3 p-4">
         <p className="text-(--app-text)">
           {error === 'unauthorized'
             ? t('error-signed-out', {
@@ -99,25 +116,21 @@ export function LearnHome() {
             : t('error-load', { defaultValue: "Couldn't load your lessons." })}
         </p>
         {error === 'unauthorized' ? (
-          <Link
-            to="/login"
-            search={{ callbackURL: '/rmhmusic' }}
-            className="inline-flex min-h-11 items-center rounded-(--app-radius-sm) bg-(--app-accent) px-5 text-sm font-semibold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover)"
-          >
+          <Link to="/login" search={{ callbackURL: '/rmhmusic' }} className={PRIMARY_BUTTON}>
             {t('sign-in', { defaultValue: 'Sign in' })}
           </Link>
         ) : (
           <button
             type="button"
             onClick={() => void useLearnStore.getState().load()}
-            className="min-h-11 rounded-(--app-radius-sm) bg-(--app-accent) px-5 text-sm font-semibold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover)"
+            className={PRIMARY_BUTTON}
           >
             {t('retry', { defaultValue: 'Try again' })}
           </button>
         )}
       </div>
     );
-  } else if (status !== 'ready' || !profile) {
+  } else if (!ready) {
     body = <HomeSkeleton />;
   } else {
     body = (
@@ -128,14 +141,19 @@ export function LearnHome() {
           onChange={(id) => void useLearnStore.getState().setInstrument(id as Instrument)}
           aria-label={t('instrument-label', { defaultValue: 'Instrument' })}
         />
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-(--app-text-muted)">
+        <div className={INPUT_ROW}>
+          <p className="line-clamp-2 min-w-0 text-sm leading-5 text-(--app-text-muted)">
             {t('input-playing-with', {
               input: inputName,
               defaultValue: 'Playing with: {{input}}',
             })}
           </p>
-          <button type="button" onClick={() => onSetupChange(true)} className={SECONDARY_BUTTON}>
+          <button
+            ref={setupButton}
+            type="button"
+            onClick={() => onSetupChange(true)}
+            className={`${SECONDARY_BUTTON} shrink-0`}
+          >
             <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
             {t('setup-input', { defaultValue: 'Set up input' })}
           </button>
@@ -154,38 +172,43 @@ export function LearnHome() {
 
   return (
     <div className="app-page">
-      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col pr-[max(1rem,var(--safe-right))] pl-[max(1rem,var(--safe-left))]">
+      <div className="rmm-column mx-auto flex w-full max-w-3xl flex-1 flex-col pr-[max(1.25rem,var(--safe-right))] pl-[max(1.25rem,var(--safe-left))] min-[1800px]:max-w-4xl">
         {/* Every full-screen app ships a labelled way out. */}
-        <header className="flex items-center justify-between gap-3 pt-[calc(0.5rem+var(--safe-top))]">
+        <header className="flex items-center justify-between gap-2 pt-[calc(0.5rem+var(--safe-top))]">
           <Link
             to="/apps"
             onClick={goBack}
-            className="-ms-3 flex min-h-11 items-center gap-1.5 rounded-(--app-radius-sm) px-3 text-sm font-medium text-(--app-text-muted) transition-colors hover:text-(--app-text)"
+            className="-ms-3 flex min-h-11 min-w-0 items-center gap-1.5 rounded-(--app-radius-sm) px-3 text-sm font-medium text-(--app-text-muted) transition-colors hover:text-(--app-text)"
           >
             <ArrowLeft className="h-4 w-4 shrink-0 rtl-flip" aria-hidden="true" />
-            {t('back-to-builds', { defaultValue: 'Back to Builds' })}
+            <span className="truncate">
+              {t('back-to-builds', { defaultValue: 'Back to Builds' })}
+            </span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <ModeToggle />
             <StreakChip />
           </div>
         </header>
 
-        <main className="flex-1 space-y-4 pt-4 pb-8">
+        <main aria-busy={loading || undefined} className="flex-1 space-y-4 pt-3 pb-8">
+          {loading && (
+            <p role="status" className="sr-only">
+              {t('loading-lessons', { defaultValue: 'Loading your lessons…' })}
+            </p>
+          )}
+          <HomeHero />
           <div>
-            <h1
-              className="text-3xl font-bold tracking-tight text-(--app-text)"
-              style={{ fontFamily: 'var(--app-font-display)' }}
-            >
-              {status === 'ready' && profile
+            <h1 className="rmm-display text-3xl font-bold tracking-tight text-(--app-text)">
+              {ready
                 ? instrument === 'guitar'
                   ? t('heading-guitar', { defaultValue: 'Learn guitar' })
                   : t('heading-piano', { defaultValue: 'Learn piano' })
                 : t('heading-default', { defaultValue: 'Learn music' })}
             </h1>
-            {/* The line is reserved in every state so the toggle and units do not move when data arrives. */}
-            <p className="mt-1 min-h-6 text-(--app-text-muted)">
-              {status === 'ready' && profile ? (
+            {/* Reserved in every state: two lines on a phone (a long translation wraps), one above 400px. */}
+            <p className="mt-1 line-clamp-2 min-h-12 text-(--app-text-muted) min-[401px]:line-clamp-1 min-[401px]:min-h-6">
+              {ready ? (
                 t('lessons-started', {
                   count: available.length,
                   started,
@@ -199,7 +222,7 @@ export function LearnHome() {
           </div>
           {body}
         </main>
-        <InputSetup open={setupOpen} onOpenChange={onSetupChange} />
+        <InputSetup open={setupOpen} onOpenChange={onSetupChange} returnFocus={setupButton} />
       </div>
     </div>
   );

@@ -7,7 +7,7 @@
  * page with a link home — never a crash or a blank. A document (`.app-page`).
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, SlidersHorizontal } from 'lucide-react';
@@ -23,34 +23,44 @@ import { useInputRelease } from './useLearnInput';
 function Shell({
   title,
   action,
+  busy = false,
   children,
 }: {
   title: string;
   action?: ReactNode;
+  /** The lesson is still loading: the main region says so to screen readers. */
+  busy?: boolean;
   children: ReactNode;
 }) {
   const { t } = useTranslation('c-rmhmusic');
   return (
     <div className="app-page">
-      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col pr-[max(1rem,var(--safe-right))] pl-[max(1rem,var(--safe-left))]">
-        <header className="flex items-center justify-between gap-3 pt-[calc(0.5rem+var(--safe-top))]">
+      <div className="rmm-column mx-auto flex w-full max-w-3xl flex-1 flex-col pr-[max(1.25rem,var(--safe-right))] pl-[max(1.25rem,var(--safe-left))]">
+        <header className="flex items-center justify-between gap-2 pt-[calc(0.5rem+var(--safe-top))]">
           <Link
             to="/rmhmusic"
-            className="-ms-3 flex min-h-11 items-center gap-1.5 rounded-(--app-radius-sm) px-3 text-sm font-medium text-(--app-text-muted) transition-colors hover:text-(--app-text)"
+            className="-ms-3 flex min-h-11 min-w-0 items-center gap-1.5 rounded-(--app-radius-sm) px-3 text-sm font-medium text-(--app-text-muted) transition-colors hover:text-(--app-text)"
           >
             <ArrowLeft className="h-4 w-4 shrink-0 rtl-flip" aria-hidden="true" />
-            {t('back-to-lessons', { defaultValue: 'Back to lessons' })}
+            <span className="truncate">
+              {t('back-to-lessons', { defaultValue: 'Back to lessons' })}
+            </span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <ModeToggle />
             {action}
           </div>
         </header>
-        <main className="flex-1 space-y-4 pt-4 pb-[calc(2rem+var(--safe-bottom))]">
-          <h1
-            className="text-3xl font-bold tracking-tight text-(--app-text)"
-            style={{ fontFamily: 'var(--app-font-display)' }}
-          >
+        <main
+          aria-busy={busy || undefined}
+          className="flex-1 space-y-4 pt-4 pb-[calc(2rem+var(--safe-bottom))]"
+        >
+          {busy && (
+            <p role="status" className="sr-only">
+              {t('loading-lesson', { defaultValue: 'Loading the lesson…' })}
+            </p>
+          )}
+          <h1 className="rmm-display text-3xl font-bold tracking-tight text-(--app-text)">
             {title}
           </h1>
           {children}
@@ -65,6 +75,7 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
   const status = useLearnStore((s) => s.status);
   const error = useLearnStore((s) => s.error);
   const [setupOpen, setSetupOpen] = useState(false);
+  const setupButton = useRef<HTMLButtonElement>(null);
   // Leaving the screen (any route change) or hiding the tab stops the mic; the screen sees it
   // through the hub's phases (useInputPhases), so nothing here needs to re-render.
   useInputRelease();
@@ -79,7 +90,7 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
   if (!lesson || !playable) {
     return (
       <Shell title={t('lesson-unavailable-title', { defaultValue: 'Not available yet' })}>
-        <div className="app-glass space-y-3 rounded-(--app-radius) p-5">
+        <div className="rmm-sheet space-y-3 p-5">
           <p className="text-(--app-text-muted)">
             {t('lesson-unavailable-body', {
               defaultValue:
@@ -97,7 +108,7 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
   let body: ReactNode;
   if (status === 'error' && error === 'unauthorized') {
     body = (
-      <div role="alert" className="app-glass space-y-3 rounded-(--app-radius) p-5">
+      <div role="alert" className="rmm-sheet space-y-3 p-5">
         <p className="text-(--app-text)">
           {t('error-signed-out', {
             defaultValue: 'Your session ended. Sign in again to continue.',
@@ -114,7 +125,7 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
     );
   } else if (status === 'error') {
     body = (
-      <div role="alert" className="app-glass space-y-3 rounded-(--app-radius) p-5">
+      <div role="alert" className="rmm-sheet space-y-3 p-5">
         <p className="text-(--app-text)">
           {t('error-lesson-load', { defaultValue: "Couldn't load this lesson." })}
         </p>
@@ -138,21 +149,33 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
     body = <FirstNoteLesson lessonId={lesson.id} paused={setupOpen} />;
   }
 
+  const ready = status === 'ready';
   return (
     <Shell
       title={lesson.title}
+      busy={status !== 'ready' && status !== 'error'}
       action={
-        status === 'ready' ? (
-          <button type="button" onClick={() => setSetupOpen(true)} className={SECONDARY_BUTTON}>
+        // Always in the header so nothing moves when the lesson loads; hidden (and inert) until
+        // then. Icon-only under 400px, where the label would crowd the header.
+        <div className={ready ? undefined : 'invisible'} inert={!ready || undefined}>
+          <button
+            ref={setupButton}
+            type="button"
+            onClick={() => setSetupOpen(true)}
+            aria-label={t('change-input', { defaultValue: 'Change input' })}
+            className={`${SECONDARY_BUTTON} min-w-11 max-[399px]:px-0`}
+          >
             <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
-            {t('change-input', { defaultValue: 'Change input' })}
+            <span aria-hidden="true" className="max-[399px]:hidden">
+              {t('change-input', { defaultValue: 'Change input' })}
+            </span>
           </button>
-        ) : null
+        </div>
       }
     >
       {/* The lesson title is an English catalogue string for now, localised in a later phase. */}
       {body}
-      <InputSetup open={setupOpen} onOpenChange={setSetupOpen} />
+      <InputSetup open={setupOpen} onOpenChange={setSetupOpen} returnFocus={setupButton} />
     </Shell>
   );
 }

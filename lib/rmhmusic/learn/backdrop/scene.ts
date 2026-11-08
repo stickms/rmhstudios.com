@@ -136,7 +136,18 @@ function blankMark(): Mark {
 /** A fresh ambient mark: mostly notes on or near the staff, some rests, a few bar lines. */
 function reroll(scene: Scene, m: Mark): void {
   const r = next(scene);
-  m.kind = r < 0.38 ? QUARTER : r < 0.58 ? HALF : r < 0.68 ? WHOLE : r < 0.84 ? EIGHTH : r < 0.93 ? REST : BAR;
+  m.kind =
+    r < 0.38
+      ? QUARTER
+      : r < 0.58
+        ? HALF
+        : r < 0.68
+          ? WHOLE
+          : r < 0.84
+            ? EIGHTH
+            : r < 0.93
+              ? REST
+              : BAR;
   m.step = Math.floor(next(scene) * 11) - 1; // -1 … 9: on the staff, no ledger lines
   m.speed = DRIFT_MIN + next(scene) * (DRIFT_MAX - DRIFT_MIN);
 }

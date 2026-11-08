@@ -13,7 +13,16 @@ describe('resolveMode', () => {
   });
 
   it('anything that is not a stored boolean falls back to the system', () => {
-    for (const junk of ['', 'dark', '"dark"', '{', 'null', '[]', '{"dark":"yes"}', '{"mode":"dark"}']) {
+    for (const junk of [
+      '',
+      'dark',
+      '"dark"',
+      '{',
+      'null',
+      '[]',
+      '{"dark":"yes"}',
+      '{"mode":"dark"}',
+    ]) {
       expect(resolveMode(junk, true)).toBe('dark');
       expect(resolveMode(junk, false)).toBe('light');
     }

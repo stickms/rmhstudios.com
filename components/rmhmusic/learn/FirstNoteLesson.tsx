@@ -18,7 +18,7 @@
 
 import { useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
-import { CheckCircle2, Star } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { releaseMic, startMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import { firstNoteMachine, type Effect } from '@/lib/rmhmusic/learn/machines/first-note';
@@ -27,6 +27,7 @@ import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { getAudioContext } from '@/lib/shared/platform';
 import { PRIMARY_BUTTON } from './buttons';
 import { InputChooser } from './InputChooser';
+import { Notehead } from './Notehead';
 import { OnScreenKeyboard } from './OnScreenKeyboard';
 import {
   permissionGranted,
@@ -118,11 +119,11 @@ export function FirstNoteLesson({
     const save = lesson.kind;
     const name = midiToName(played);
     return (
-      <section className="app-glass space-y-4 rounded-(--app-radius) p-5 text-center sm:p-6">
+      <section className="rmm-sheet space-y-4 p-5 text-center sm:p-6">
         {save === 'saved' || save === 'saving' ? (
           <>
             <CheckCircle2 className="mx-auto h-10 w-10 text-(--app-success)" aria-hidden="true" />
-            <h2 className="text-2xl font-bold text-(--app-text)">
+            <h2 className="rmm-display text-2xl font-bold text-(--app-text)">
               {t('lesson-complete', { defaultValue: 'Lesson complete' })}
             </h2>
             <p className="text-(--app-text-muted)">
@@ -138,11 +139,7 @@ export function FirstNoteLesson({
               role="img"
             >
               {[0, 1, 2].map((i) => (
-                <Star
-                  key={i}
-                  className="h-6 w-6 fill-current text-(--app-accent)"
-                  aria-hidden="true"
-                />
+                <Notehead key={i} kind="filled" className="h-5 w-7 text-(--app-accent)" />
               ))}
             </p>
             <p role="status" className="min-h-5 text-sm text-(--app-text-dim)">
@@ -191,8 +188,8 @@ export function FirstNoteLesson({
 
   return (
     <div className="space-y-4">
-      <section className="app-glass space-y-2 rounded-(--app-radius) p-5 text-center sm:p-6">
-        <h2 className="text-xl font-semibold text-(--app-text)">
+      <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
+        <h2 className="rmm-display text-xl font-semibold text-(--app-text)">
           {t('first-note-instruction', { defaultValue: 'Play any note' })}
         </h2>
         <p className="text-sm text-(--app-text-muted)">
@@ -215,7 +212,7 @@ export function FirstNoteLesson({
       </section>
 
       {needsDevice && !inputOn ? (
-        <section className="app-glass rounded-(--app-radius) px-4 py-2">
+        <section className="rmm-sheet px-4 py-2">
           <InputChooser />
         </section>
       ) : (
