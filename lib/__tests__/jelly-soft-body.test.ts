@@ -12,8 +12,10 @@
  *    are not hosts);
  *  - hover plumps cards and dents controls, fine pointers only, never under perf-lite or the app high-contrast mode;
  *  - press squashes on the press spring and releases on the release spring; every Button variant presses (D-C3);
- *  - press-through (D-C2): a host never squashes while an interactive descendant is the thing pressed, and a
- *    `data-jelly-press-through` host never squashes from any descendant's press;
+ *  - press-through (D-C2, revised by Task 8): a host never squashes while a real control inside it is the thing
+ *    pressed (a plain `<a>` is not one, so a card wrapped in a link squashes), and a `data-jelly-press-body` host (a
+ *    JellyGroup, the top bar, the selection bar, a scroller's pill) squashes as one body when any member is pressed,
+ *    while the member adds no squash, dent or opacity cue of its own;
  *  - perf-lite / app high contrast keep the press, plain (critically damped both ways);
  *  - nothing at rest: no will-change, no animation, no transition but `scale` on a spring; print resets it;
  *  - the legacy opacity press cue (globals.css) stands down exactly where the soft body springs (D-B1);
@@ -23,7 +25,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { CSS_SIZE_FALLBACK_PX } from '@/lib/jelly/soft-policy';
+import { CSS_BODY_SIZE_FALLBACK_PX, CSS_SIZE_FALLBACK_PX } from '@/lib/jelly/soft-policy';
 import { GLOBE_SELECTOR } from '@/lib/jelly/tiers';
 
 const ROOT = process.cwd();
@@ -107,19 +109,34 @@ const HOST_NOT = HOST.slice(`:is(${HOST_IS}):not(`.length, -1);
 const ruleFor = (rs: Rule[], sel: string, at?: string) =>
   rs.filter((r) => r.selectors.includes(sel) && (!at || r.at.some((a) => a.includes(at))));
 
-/** Press-through guard: every press rule ends with it. */
-const INTERACTIVE = [
-  'a:not([data-evert-delegate])',
+/** The press body (Task 8, owner: "squash everything"): a cluster host that squashes as ONE body. */
+const BODY = '[data-jelly-press-body]';
+/**
+ * A real control: pressing one inside a host presses the control, not the host. A plain `<a>` (no slot, no role, not a
+ * pressable) is not one: a card whose content is a plain link squashes as the card. A press body is one, from outside.
+ */
+const REAL = [
+  'a:is([data-slot], [role], [data-fluid-press]):not([data-evert-delegate])',
   'button',
   "[role='button']",
   "[role='tab']",
   "[role='menuitem']",
+  "[role='switch']",
+  "[role='option']",
   "[data-slot='button']",
+  '.glass-interactive',
   'input',
   'textarea',
   'select',
   'summary',
+  BODY,
 ];
+const REAL_IS = `:is(${REAL.join(', ')})`;
+/** The plain link: the `a` REAL leaves out. */
+const PLAIN_A = 'a:not([data-slot], [role], [data-fluid-press], .glass-interactive)';
+/** The guard every press rule carries: never inside a press body (the body presses), never while a real control is. */
+const IN_BODY = `:not(${BODY} *)`;
+const NO_REAL = `:not(:has(${REAL_IS}:active))`;
 
 describe('the CSS soft body (app/jelly-material.css §8)', () => {
   it('has one host rule, scoped off native-material routes and a game in play, carrying the release spring', () => {
@@ -142,6 +159,7 @@ describe('the CSS soft body (app/jelly-material.css §8)', () => {
       "[role='menuitem']",
       'summary',
       "[data-slot='button']",
+      BODY,
     ])
       expect(hosts, h).toContain(h);
   });
@@ -149,8 +167,9 @@ describe('the CSS soft body (app/jelly-material.css §8)', () => {
   it('never moves a pane, an opted-out or disabled element, a gesture surface, the globe, a prose link or a play-field', () => {
     const not = splitTop(HOST_NOT);
     for (const h of [
-      '.glass-pane',
-      '.glass-chrome',
+      // A pane or chrome slab never moves, unless it is a press body (the top bar, the selection bar).
+      `.glass-pane:not(${BODY})`,
+      `.glass-chrome:not(${BODY})`,
       '.glass-overlay',
       '.glass-inset',
       '.app-glass',
@@ -198,7 +217,13 @@ describe('the CSS soft body (app/jelly-material.css §8)', () => {
   });
 
   it('plumps cards and dents controls on hover, fine pointers only, never under perf-lite or app high contrast', () => {
-    const card = ruleFor(MATERIAL, `${SCOPE_HOVER}${HOST}:not(.app-high-contrast *):hover`, FINE);
+    // A pane or chrome press body (the top bar, the selection bar) never plumps: it is always under the pointer, and
+    // the old physics never moved chrome on hover. It only squashes (below).
+    const card = ruleFor(
+      MATERIAL,
+      `${SCOPE_HOVER}${HOST}:not(.app-high-contrast *):not(.glass-chrome, .glass-pane):hover`,
+      FINE,
+    );
     expect(card).toHaveLength(1);
     expect(decl(card[0].body, 'scale')).toBe(capped('--jelly-hover-plump', true));
     const dent = MATERIAL.filter(
@@ -226,7 +251,7 @@ describe('the CSS soft body (app/jelly-material.css §8)', () => {
   it('squashes on the press spring and releases on the release spring; a control by the full bound', () => {
     expect(pressRules).toHaveLength(2);
     const [card, control] = pressRules;
-    expect(card.selectors[0].startsWith(`${SCOPE}${HOST}:active:not(:has(`)).toBe(true);
+    expect(card.selectors[0].startsWith(`${SCOPE}${HOST}:active${IN_BODY}`)).toBe(true);
     expect(decl(card.body, 'scale')).toBe(capped('--jelly-press-card', false));
     expect(decl(card.body, '--jelly-spring-t')).toBe(PRESS);
     expect(control.selectors[0].startsWith(`${SCOPE}${HOST}:is(button`)).toBe(true);
@@ -242,18 +267,70 @@ describe('the CSS soft body (app/jelly-material.css §8)', () => {
     expect(button).not.toMatch(/active:scale-|transition-\[/);
   });
 
-  it('press-through (D-C2): no squash while an inner control is pressed, none at all on a press-through host', () => {
-    for (const r of pressRules) {
-      const sel = r.selectors[0];
-      expect(sel.endsWith(':not([data-jelly-press-through]:has(:active))'), sel).toBe(true);
-      const has = /:not\(:has\(:is\((.*?)\):active\)\)/.exec(sel)?.[1];
-      expect(has, 'an inner-control :has() guard').toBeDefined();
-      expect(splitTop(has!)).toEqual(expect.arrayContaining(INTERACTIVE));
-    }
-    // The attribute stays the documented opt-in on the containers that carry it.
-    expect(read('components/ui/jelly-group.tsx')).toContain('data-jelly-press-through');
-    expect(read('components/ui/selection-bar.tsx')).toContain('data-jelly-press-through');
-    expect(read('components/radial/RadialShell.tsx')).toContain('data-jelly-press-through');
+  it('a real control inside a host presses, the host does not; a plain link does not stop the card (Task 8)', () => {
+    expect(pressRules).toHaveLength(2);
+    const [card, control] = pressRules;
+    // A card squashes when it is a press body, or when no real control inside it is the thing pressed.
+    expect(card.selectors).toEqual([`${SCOPE}${HOST}:active${IN_BODY}:is(${BODY}, ${NO_REAL})`]);
+    // A control is never a press body; it keeps the plain guard.
+    expect(control.selectors).toHaveLength(1);
+    expect(control.selectors[0].endsWith(`:active${IN_BODY}${NO_REAL}`), control.selectors[0]).toBe(
+      true,
+    );
+    // The guard names a button, a tab, a menu item, a field, the Button and a `.glass-interactive` row; a bare `a` (a
+    // card's content link, a delegate link) is not in it, so pressing one squashes the card around it.
+    const real = splitTop(REAL_IS.slice(':is('.length, -1));
+    expect(real).not.toContain('a');
+    expect(real).not.toContain('a:not([data-evert-delegate])');
+    for (const s of [
+      'button',
+      "[role='tab']",
+      "[role='menuitem']",
+      'input',
+      "[data-slot='button']",
+    ])
+      expect(real).toContain(s);
+    expect(real).toContain('.glass-interactive');
+  });
+
+  it('a press body squashes as one body when any member is pressed, and the member adds no cue of its own', () => {
+    // The body is a host (cards and controls), and a pane/chrome slab becomes one only by opting in.
+    expect(splitTop(HOST_IS)).toContain(BODY);
+    // It takes the card pose (bodies are containers, often wide), capped by size like every card.
+    const [card] = pressRules;
+    expect(decl(card.body, 'scale')).toBe(capped('--jelly-press-card', false));
+    // A member never squashes or dents on its own while the body is the thing pressing: the press rules exclude it
+    // (IN_BODY above) and this rule outranks the Button's plain 0.98 press (globals.css).
+    const member = ruleFor(MATERIAL, `${SCOPE}${BODY} :is(${HOST_IS}):active`);
+    expect(member).toHaveLength(1);
+    expect(decl(member[0].body, 'scale')).toBe('none');
+    // An unsized body (a keyboard press) assumes the widest body, so the fallback pose never breaks the edge bound.
+    const size = ruleFor(MATERIAL, `:where(${BODY})`);
+    expect(size).toHaveLength(1);
+    expect(decl(size[0].body, '--jelly-s')).toBe(String(CSS_BODY_SIZE_FALLBACK_PX));
+  });
+
+  it('the opt-in is data-jelly-press-body, on every cluster host; data-jelly-press-through is retired', () => {
+    expect(read('components/ui/jelly-group.tsx')).toContain('data-jelly-press-body=""');
+    expect(read('components/ui/selection-bar.tsx')).toContain('data-jelly-press-body=""');
+    expect(read('components/radial/RadialShell.tsx')).toMatch(
+      /<header className="radial-topbar glass-chrome" data-jelly-press-body="">/,
+    );
+    // The scroller's pill holds flat members (news categories): it is their body. Its card tray is not.
+    expect(read('components/ui/horizontal-scroller.tsx')).toMatch(
+      /data-jelly-press-body=\{surface === 'pill' \? '' : undefined\}/,
+    );
+    const retired = 'data-jelly-press-through';
+    for (const f of [
+      'app/jelly-material.css',
+      'app/globals.css',
+      'components/radial/radial.css',
+      'components/ui/jelly-group.tsx',
+      'components/ui/selection-bar.tsx',
+      'components/radial/RadialShell.tsx',
+      'components/ui/liquid-tabs.tsx',
+    ])
+      expect(read(f), f).not.toContain(retired);
   });
 
   it('keeps the press, plain, under perf-lite and the app high-contrast mode', () => {
@@ -307,7 +384,9 @@ describe('the CSS soft body (app/jelly-material.css §8)', () => {
     }
     expect(wake[0].selectors[0].endsWith(':hover')).toBe(true);
     expect(decl(wake[0].body, '--jelly-floor-size')).toBe('auto, auto, var(--jelly-tile-size)');
-    expect(wake[1].selectors[0]).toContain(':active:not(:has(');
+    // The dot sits where the squash does: on a press body for any member, never on a member, never under a real control.
+    expect(wake[1].selectors).toHaveLength(1);
+    expect(wake[1].selectors[0].endsWith(`:active${IN_BODY}:is(${BODY}, ${NO_REAL})`)).toBe(true);
     expect(wake[1].body).toContain('var(--gel-specular');
     expect(decl(wake[1].body, '--jelly-floor-size')).toBe(
       'auto, auto, auto, var(--jelly-tile-size)',
@@ -321,9 +400,24 @@ describe('the soft body elsewhere', () => {
       (r) => r.selectors.some((s) => s.includes(':active')) && /opacity\s*:\s*0?\.\d/.test(r.body),
     );
     expect(cue).toHaveLength(1);
-    const guard = `:not(:where(${SCOPE}${HOST}))`;
+    // It also stands down where the press squashes something AROUND the pressed element (Task 8): a plain link inside a
+    // host (the card squashes), and a pointer-pressed member of a press body (the body squashes). One cue per press.
+    const guard = `:not(:where(${SCOPE}${HOST}, ${SCOPE}${HOST} ${PLAIN_A}, ${SCOPE}${BODY} *:not(:focus-visible)))`;
     for (const s of cue[0].selectors) expect(s.endsWith(`${guard}:active`), s).toBe(true);
     expect(cue[0].selectors.join(' ')).not.toContain('data-jelly-active');
+  });
+
+  it('a keyboard-activated member of a press body keeps the legacy cue; a pointer-pressed one adds none (Task 8 fix)', () => {
+    // Chromium sets :active on the member alone for a keyboard Space/Enter, so the body never squashes then: the
+    // member's own opacity cue is the only press feedback. A pointer press squashes the body and the member stays quiet.
+    const cue = GLOBALS.filter(
+      (r) => r.selectors.some((s) => s.includes(':active')) && /opacity\s*:\s*0?\.\d/.test(r.body),
+    );
+    const sel = cue[0]?.selectors[0] ?? '';
+    const clause = `${SCOPE}${BODY} *`;
+    expect(sel).toContain(`${clause}:not(:focus-visible)`);
+    // No other, unconditional copy of the body clause that would still drop the cue for a focus-visible member.
+    expect(sel.split(clause).length - 1).toBe(1);
   });
 
   it('the Button keeps a plain press and its transition list carries the spring hook', () => {

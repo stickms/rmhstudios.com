@@ -653,10 +653,10 @@ export function installJellyPhysics(
   const bodyElFrom = (target: EventTarget | null): HTMLElement | null => {
     const t = target as Element | null;
     if (!t || typeof t.closest !== 'function') return null;
-    // A container that marks itself `data-jelly-press-through` (a JellyGroup, a flat-member bar, a LiquidTabs strip)
-    // is pressed by anything inside it: its members are flat, opted out of being bodies, so the press goes to the
-    // container's own body, or to the glass body around it when the container is not one.
-    const through = t.closest<HTMLElement>('[data-jelly-press-through]');
+    // A container that marks itself `data-jelly-press-body` (a JellyGroup, the top bar, the selection bar, a
+    // scroller's pill) is pressed by anything inside it: its members are flat, opted out of being bodies, so the press
+    // goes to the container's own body, or to the glass body around it when the container is not one.
+    const through = t.closest<HTMLElement>('[data-jelly-press-body]');
     if (through) {
       const host = through.matches(SOFT_BODY_SELECTOR)
         ? through

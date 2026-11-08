@@ -41,8 +41,8 @@ function JellyGroupRoot({
       data-slot="jelly-group"
       data-size={size}
       data-orientation={orientation}
-      // Pressing any flat member presses this body (lib/jelly/physics.ts `bodyElFrom`).
-      data-jelly-press-through=""
+      // The press body: pressing any flat member squashes the group as one (app/jelly-material.css §8).
+      data-jelly-press-body=""
       className={cn(`glass-${surface}`, className)}
       {...props}
     />
@@ -73,7 +73,7 @@ const Item = React.forwardRef<HTMLButtonElement, JellyGroupItemProps>(function J
             'aria-pressed': selected === undefined ? undefined : on,
           })}
       data-slot="jelly-group-item"
-      // The group is the body; a member must not be pressed as a second one (lib/jelly/physics.ts).
+      // The group is the body; a member must not be pressed as a second one (app/jelly-material.css §8).
       data-jelly="off"
       // The alias too: it keeps the site's control-radius rule (globals.css) off this member, whose radius is concentric.
       data-liquid-material="off"

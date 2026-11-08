@@ -76,7 +76,8 @@ export function SelectionBar({
       {count > 0 && (
         <motion.div
           data-slot="selection-bar"
-          data-jelly-press-through=""
+          // The bar is the press body: pressing any action squashes the bar as one (app/jelly-material.css §8).
+          data-jelly-press-body=""
           role="toolbar"
           aria-label={t('selection-actions', { defaultValue: 'Selection actions' })}
           variants={variants}

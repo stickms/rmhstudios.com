@@ -1180,9 +1180,17 @@ html[data-game-state='playing']
    are not hosts. A control press is the full bound; a card sinks gently (cards are wide, and the bound is in pixels too).
 
    Press-through: CSS `:active` matches every ancestor of the pressed element, so a card would squash with the button
-   inside it. A host does not squash while an interactive descendant is the thing pressed (`:has(… :active)`), and a
-   host marked `data-jelly-press-through` (a JellyGroup, the top bar, the selection bar) never squashes from a
-   descendant's press at all. lib/__tests__/jelly-soft-body.test.ts pins both.
+   inside it. A host does not squash while a REAL control inside it is the thing pressed (`:has(… :active)`: a button,
+   a tab, a menu item, a switch, an option, a field, `summary`, the Button, a `.glass-interactive` row, a link that is a
+   slotted or pressable control, or a press body): the control presses, the host does not. A plain `<a>` is not a real
+   control, so a card whose content is a link squashes as the card (the link adds no cue: globals.css). A press body
+   (`data-jelly-press-body`, owner "squash everything", Task 8: a JellyGroup, the top bar, the selection bar, a
+   scroller's pill) is the other way round: it squashes as ONE body on the card pose when any member is pressed, real
+   controls included, and its members add no squash, dent or opacity cue of their own (except a keyboard-activated,
+   `:focus-visible` member, which keeps the opacity cue: Chromium does not mark the body active for a keyboard press, so
+   the body does not squash then). A pane or chrome slab is a host
+   only as a press body, and never plumps on hover (it is always under the pointer). LiquidTabs strips are not bodies:
+   the track is a field, which never moves. lib/__tests__/jelly-soft-body.test.ts pins all of it.
 
    Scope: off native-material routes (`html.native-material`: /tf2, /games keep their own scheme) and while a game is in
    play. `perf-lite` and the app tier's high contrast keep the press, plain: critically damped both ways, no hover. Touch
@@ -1215,7 +1223,8 @@ html[data-game-state='playing']
     [role='switch'],
     [role='option'],
     summary,
-    [data-slot='button']
+    [data-slot='button'],
+    [data-jelly-press-body]
   ) {
     transition: var(--jelly-spring-t);
   }
@@ -1241,10 +1250,11 @@ html[data-game-state='playing']
       [role='switch'],
       [role='option'],
       summary,
-      [data-slot='button']
+      [data-slot='button'],
+      [data-jelly-press-body]
     ):not(
-      .glass-pane,
-      .glass-chrome,
+      .glass-pane:not([data-jelly-press-body]),
+      .glass-chrome:not([data-jelly-press-body]),
       .glass-overlay,
       .glass-inset,
       .app-glass,
@@ -1312,10 +1322,11 @@ html[data-game-state='playing']
       [role='switch'],
       [role='option'],
       summary,
-      [data-slot='button']
+      [data-slot='button'],
+      [data-jelly-press-body]
     ):not(
-      .glass-pane,
-      .glass-chrome,
+      .glass-pane:not([data-jelly-press-body]),
+      .glass-chrome:not([data-jelly-press-body]),
       .glass-overlay,
       .glass-inset,
       .app-glass,
@@ -1379,10 +1390,11 @@ html[data-game-state='playing']
       [role='switch'],
       [role='option'],
       summary,
-      [data-slot='button']
+      [data-slot='button'],
+      [data-jelly-press-body]
     ):not(
-      .glass-pane,
-      .glass-chrome,
+      .glass-pane:not([data-jelly-press-body]),
+      .glass-chrome:not([data-jelly-press-body]),
       .glass-overlay,
       .glass-inset,
       .app-glass,
@@ -1450,10 +1462,11 @@ html[data-game-state='playing']
         [role='switch'],
         [role='option'],
         summary,
-        [data-slot='button']
+        [data-slot='button'],
+        [data-jelly-press-body]
       ):not(
-        .glass-pane,
-        .glass-chrome,
+        .glass-pane:not([data-jelly-press-body]),
+        .glass-chrome:not([data-jelly-press-body]),
         .glass-overlay,
         .glass-inset,
         .app-glass,
@@ -1496,7 +1509,7 @@ html[data-game-state='playing']
             [inert]
           )
           *
-      ):not(.app-high-contrast *):hover {
+      ):not(.app-high-contrast *):not(.glass-chrome, .glass-pane):hover {
       scale: min(
         var(--jelly-hover-plump),
         calc(1 + var(--jelly-edge-reach) / var(--jelly-s, 1000))
@@ -1521,10 +1534,11 @@ html[data-game-state='playing']
         [role='switch'],
         [role='option'],
         summary,
-        [data-slot='button']
+        [data-slot='button'],
+        [data-jelly-press-body]
       ):not(
-        .glass-pane,
-        .glass-chrome,
+        .glass-pane:not([data-jelly-press-body]),
+        .glass-chrome:not([data-jelly-press-body]),
         .glass-overlay,
         .glass-inset,
         .app-glass,
@@ -1611,10 +1625,11 @@ html[data-game-state='playing']
       [role='switch'],
       [role='option'],
       summary,
-      [data-slot='button']
+      [data-slot='button'],
+      [data-jelly-press-body]
     ):not(
-      .glass-pane,
-      .glass-chrome,
+      .glass-pane:not([data-jelly-press-body]),
+      .glass-chrome:not([data-jelly-press-body]),
       .glass-overlay,
       .glass-inset,
       .app-glass,
@@ -1657,24 +1672,29 @@ html[data-game-state='playing']
           [inert]
         )
         *
-    ):active:not(
-      :has(
-        :is(
-          a:not([data-evert-delegate]),
-          button,
-          [role='button'],
-          [role='tab'],
-          [role='menuitem'],
-          [role='switch'],
-          [role='option'],
-          [data-slot='button'],
-          input,
-          textarea,
-          select,
-          summary
-        ):active
+    ):active:not([data-jelly-press-body] *):is(
+      [data-jelly-press-body],
+      :not(
+        :has(
+          :is(
+            a:is([data-slot], [role], [data-fluid-press]):not([data-evert-delegate]),
+            button,
+            [role='button'],
+            [role='tab'],
+            [role='menuitem'],
+            [role='switch'],
+            [role='option'],
+            [data-slot='button'],
+            .glass-interactive,
+            input,
+            textarea,
+            select,
+            summary,
+            [data-jelly-press-body]
+          ):active
+        )
       )
-    ):not([data-jelly-press-through]:has(:active)) {
+    ) {
     scale: max(var(--jelly-press-card), calc(1 - var(--jelly-edge-reach) / var(--jelly-s, 1000)));
     --jelly-spring-t: scale var(--spring-press-dur) var(--spring-press);
     --jelly-spring-dur: var(--spring-press-dur);
@@ -1699,10 +1719,11 @@ html[data-game-state='playing']
       [role='switch'],
       [role='option'],
       summary,
-      [data-slot='button']
+      [data-slot='button'],
+      [data-jelly-press-body]
     ):not(
-      .glass-pane,
-      .glass-chrome,
+      .glass-pane:not([data-jelly-press-body]),
+      .glass-chrome:not([data-jelly-press-body]),
       .glass-overlay,
       .glass-inset,
       .app-glass,
@@ -1765,10 +1786,10 @@ html[data-game-state='playing']
       [data-jelly='firm'],
       [data-fluid-press='lift'],
       [data-fluid-press='firm']
-    ):active:not(
+    ):active:not([data-jelly-press-body] *):not(
       :has(
         :is(
-          a:not([data-evert-delegate]),
+          a:is([data-slot], [role], [data-fluid-press]):not([data-evert-delegate]),
           button,
           [role='button'],
           [role='tab'],
@@ -1776,17 +1797,52 @@ html[data-game-state='playing']
           [role='switch'],
           [role='option'],
           [data-slot='button'],
+          .glass-interactive,
           input,
           textarea,
           select,
-          summary
+          summary,
+          [data-jelly-press-body]
         ):active
       )
-    ):not([data-jelly-press-through]:has(:active)) {
+    ) {
     scale: max(
       var(--jelly-press-control),
       calc(1 - var(--jelly-edge-reach) / var(--jelly-s, 1000))
     );
+  }
+  /* A press body's members add no press of their own: the body is the thing pressing. The press rules above already
+     skip them; this also outranks the Button's plain 0.98 press (globals.css), which would otherwise take over. */
+  html:not(.native-material, [data-game-state='playing'])
+    [data-jelly-press-body]
+    :is(
+      .glass-fill,
+      .glass-interactive,
+      [data-evert],
+      [data-liquid-surface],
+      [data-fluid-press],
+      [data-jelly='card'],
+      [data-jelly='lift'],
+      [data-jelly='control'],
+      [data-jelly='sink'],
+      [data-jelly='firm'],
+      button,
+      [role='button'],
+      [role='tab'],
+      [role='menuitem'],
+      [role='switch'],
+      [role='option'],
+      summary,
+      [data-slot='button'],
+      [data-jelly-press-body]
+    ):active {
+    scale: none;
+  }
+  /* An unsized press body (a keyboard press, before lib/jelly/pointer-vars.ts writes `--jelly-s`) assumes the widest
+     body, `CSS_BODY_SIZE_FALLBACK_PX` (lib/jelly/soft-policy.ts): a bar can span the viewport, and the 1000px fallback
+     would let its edge pass the 4 px bound. The pointer variable's inline value wins whenever it is written. */
+  :where([data-jelly-press-body]) {
+    --jelly-s: 3840;
   }
 
   /* The plasma wake and the dent's light dot (spec §3): radial gradients at the pointer, `--px` / `--py`, written on the
@@ -1881,24 +1937,29 @@ html[data-game-state='playing']
             .stm-legacy
           )
           *
-      ):active:not(
-        :has(
-          :is(
-            a:not([data-evert-delegate]),
-            button,
-            [role='button'],
-            [role='tab'],
-            [role='menuitem'],
-            [role='switch'],
-            [role='option'],
-            [data-slot='button'],
-            input,
-            textarea,
-            select,
-            summary
-          ):active
+      ):active:not([data-jelly-press-body] *):is(
+        [data-jelly-press-body],
+        :not(
+          :has(
+            :is(
+              a:is([data-slot], [role], [data-fluid-press]):not([data-evert-delegate]),
+              button,
+              [role='button'],
+              [role='tab'],
+              [role='menuitem'],
+              [role='switch'],
+              [role='option'],
+              [data-slot='button'],
+              .glass-interactive,
+              input,
+              textarea,
+              select,
+              summary,
+              [data-jelly-press-body]
+            ):active
+          )
         )
-      ):not([data-jelly-press-through]:has(:active)) {
+      ) {
       --jelly-floor:
         radial-gradient(
           circle 14px at var(--px, -100vmax) var(--py, -100vmax),
@@ -1959,10 +2020,11 @@ html:not(.native-material, [data-game-state='playing'])
     [role='switch'],
     [role='option'],
     summary,
-    [data-slot='button']
+    [data-slot='button'],
+    [data-jelly-press-body]
   ):not(
-    .glass-pane,
-    .glass-chrome,
+    .glass-pane:not([data-jelly-press-body]),
+    .glass-chrome:not([data-jelly-press-body]),
     .glass-overlay,
     .glass-inset,
     .app-glass,
@@ -2084,10 +2146,11 @@ html:not(.native-material, [data-game-state='playing'])
     [role='switch'],
     [role='option'],
     summary,
-    [data-slot='button']
+    [data-slot='button'],
+    [data-jelly-press-body]
   ):not(
-    .glass-pane,
-    .glass-chrome,
+    .glass-pane:not([data-jelly-press-body]),
+    .glass-chrome:not([data-jelly-press-body]),
     .glass-overlay,
     .glass-inset,
     .app-glass,
@@ -2173,10 +2236,11 @@ html:not(.native-material, [data-game-state='playing'])
     [role='switch'],
     [role='option'],
     summary,
-    [data-slot='button']
+    [data-slot='button'],
+    [data-jelly-press-body]
   ):not(
-    .glass-pane,
-    .glass-chrome,
+    .glass-pane:not([data-jelly-press-body]),
+    .glass-chrome:not([data-jelly-press-body]),
     .glass-overlay,
     .glass-inset,
     .app-glass,
@@ -2246,10 +2310,11 @@ html:not(.native-material, [data-game-state='playing'])
     [role='switch'],
     [role='option'],
     summary,
-    [data-slot='button']
+    [data-slot='button'],
+    [data-jelly-press-body]
   ):not(
-    .glass-pane,
-    .glass-chrome,
+    .glass-pane:not([data-jelly-press-body]),
+    .glass-chrome:not([data-jelly-press-body]),
     .glass-overlay,
     .glass-inset,
     .app-glass,
@@ -2321,7 +2386,8 @@ html:not(.native-material, [data-game-state='playing'])
     [role='switch'],
     [role='option'],
     summary,
-    [data-slot='button']
+    [data-slot='button'],
+    [data-jelly-press-body]
   ):is(:hover, :active) {
     translate: none !important;
     scale: none !important;
