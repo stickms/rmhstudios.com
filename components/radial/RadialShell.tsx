@@ -23,6 +23,7 @@ import { RadialNavRail } from './RadialNavRail';
 import { RadialGlobeDock } from './RadialGlobeDock';
 import { RadialLiveRail } from './RadialLiveRail';
 import { RailSlotContext } from './rail-slot';
+import type { SceneFeed } from '@/lib/liquid/glass/scene-feed';
 import { TabBadge } from '@/components/site/TabBadge';
 import { openCommandPalette } from '@/components/site/command-palette-bus';
 import {
@@ -365,6 +366,45 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
   const isHome = renderedPathname === '/';
   const layout = shellLayoutFor(renderedPathname);
   const shellRef = useRef<HTMLDivElement | null>(null);
+
+  // The page snapshot the liquid globe refracts (lib/liquid/glass/scene-feed.ts). The shell holds a share for its whole
+  // lifetime because a picture can only be taken while the hub is CLOSED, and the hub's globe mounts only once it is
+  // open: a feed owned by the globe would never have one for it. Acquired after the window `load` event (a capture is
+  // main-thread work and must not compete with hydration), through a dynamic import so the capture code stays off the
+  // entry. Tiers without a capture budget (handheld, perf-lite) take no pictures (`SCENE_POLICY`).
+  const sceneFeed = useRef<SceneFeed | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    let feed: SceneFeed | null = null;
+    const acquire = () => {
+      void import('@/lib/liquid/glass/scene-feed')
+        .then((m) => {
+          if (cancelled) return;
+          feed = m.acquireSceneFeed();
+          sceneFeed.current = feed;
+        })
+        .catch(() => {
+          /* No picture: the globe simply does not refract the page. */
+        });
+    };
+    if (document.readyState === 'complete') acquire();
+    else window.addEventListener('load', acquire, { once: true });
+    return () => {
+      cancelled = true;
+      window.removeEventListener('load', acquire);
+      if (sceneFeed.current === feed) sceneFeed.current = null;
+      feed?.release();
+    };
+  }, []);
+  // A committed page is a new page behind the globe: ask for a fresh picture of it. The first render needs none
+  // (acquiring the feed already asked).
+  const scenePath = useRef(renderedPathname);
+  useEffect(() => {
+    if (scenePath.current === renderedPathname) return;
+    scenePath.current = renderedPathname;
+    sceneFeed.current?.request('route');
+  }, [renderedPathname]);
+
   const [railSlot, setRailSlot] = useState<HTMLElement | null>(null);
   const railSlotRef = useRef<HTMLDivElement | null>(null);
 
