@@ -81,6 +81,9 @@
   --rmm-key-black: #1a2747;
   --rmm-key-lit: #4338ca;
   --rmm-key-lit-ink: #fcf8ee;
+  /* A key's focus ring is two-tone, so one of its rings contrasts with every key colour. */
+  --rmm-key-ring: #1a2747;
+  --rmm-key-ring-inner: #fcf8ee;
 
   color-scheme: light;
 }
@@ -121,6 +124,8 @@
     --rmm-key-black: #070d1a;
     --rmm-key-lit: #4f5ad6;
     --rmm-key-lit-ink: #ffffff;
+    --rmm-key-ring: #070d1a;
+    --rmm-key-ring-inner: #e4dcc8;
     color-scheme: dark;
   }
 }
@@ -157,6 +162,8 @@
   --rmm-key-black: #070d1a;
   --rmm-key-lit: #4f5ad6;
   --rmm-key-lit-ink: #ffffff;
+  --rmm-key-ring: #070d1a;
+  --rmm-key-ring-inner: #e4dcc8;
   color-scheme: dark;
 }
 
@@ -386,6 +393,14 @@
 .rmm-keys__black {
   left: calc(100% / var(--rmm-white-count) * var(--rmm-at));
   width: calc(100% / var(--rmm-white-count) * var(--rmm-share));
+}
+/* Focus on a key: the app's accent ring would vanish against the pale keys in dark mode (1.4:1),
+   so keys take a two-tone ring inside their own box — a dark ring with a light one within it —
+   and whichever key colour is underneath, one of the two contrasts with it by 4:1 or more. */
+.rmhmusic-theme .rmm-keys__bed button:focus-visible {
+  outline: 2px solid var(--rmm-key-ring);
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 4px var(--rmm-key-ring-inner);
 }
 /* The swipe strip: a pencilled track the learner drags sideways to change octave. Vertical drags
    still scroll the page (`pan-y`); the keys themselves keep every touch for playing. */
