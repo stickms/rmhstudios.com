@@ -49,6 +49,106 @@
     --jelly-amp: 0.55;
   }
 
+  /* ── 0b. Spring tokens (CSS-first jelly, PR 3; the soft body, §8) ─────────────────────────────────────────────────
+     GENERATED — do not hand-edit. Each curve is `dampedSpringLinear` (lib/jelly/spring-curves.ts) of a spring in
+     `CSS_SPRINGS` (lib/jelly/soft-policy.ts: the soft body's own `jellyPress` / `jellyRelease`), with its settle time
+     as the duration; the poses are `CSS_SOFT_BODY`. lib/__tests__/jelly-spring-tokens.test.ts holds every literal equal
+     to its generator: retune the TypeScript, then paste what the test expects. */
+  :root {
+    --spring-press: linear(
+      0,
+      0.023,
+      0.0791,
+      0.1536,
+      0.2367,
+      0.3215,
+      0.4039,
+      0.4811,
+      0.5519,
+      0.6156,
+      0.672,
+      0.7216,
+      0.7646,
+      0.8018,
+      0.8336,
+      0.8608,
+      0.8838,
+      0.9033,
+      0.9196,
+      0.9334,
+      0.9449,
+      0.9544,
+      0.9624,
+      0.969,
+      0.9745,
+      0.9791,
+      0.9828,
+      0.9859,
+      0.9885,
+      0.9906,
+      0.9923,
+      0.9937,
+      0.9949,
+      0.9958,
+      0.9966,
+      0.9972,
+      0.9977,
+      0.9982,
+      0.9985,
+      0.9988,
+      1
+    );
+    --spring-press-dur: 265ms;
+    --spring-release: linear(
+      0,
+      0.0658,
+      0.23,
+      0.4449,
+      0.6698,
+      0.8739,
+      1.0373,
+      1.151,
+      1.2145,
+      1.2337,
+      1.2184,
+      1.1801,
+      1.1299,
+      1.0773,
+      1.0296,
+      0.9914,
+      0.9648,
+      0.9499,
+      0.9454,
+      0.949,
+      0.9579,
+      0.9696,
+      0.9819,
+      0.993,
+      1.002,
+      1.0082,
+      1.0117,
+      1.0128,
+      1.0119,
+      1.0098,
+      1.0071,
+      1.0042,
+      1.0016,
+      0.9995,
+      0.9981,
+      0.9973,
+      0.997,
+      0.9972,
+      0.9977,
+      0.9983,
+      1
+    );
+    --spring-release-dur: 1077ms;
+    --jelly-hover-plump: 1.008;
+    --jelly-hover-dent: 0.996;
+    --jelly-press-control: 0.97;
+    --jelly-press-card: 0.99;
+  }
+
   /* ── 1. Role knobs (01 §1 table, §3.3) ──────────────────────────────────────────────────────────────────────────
      Set on every role explicitly (never left to inheritance) so a control nested in a pane never shows the pane's
      haze. `--jelly-flow-axis-deg` is the current's gradient angle: 90deg = a band sliding along a horizontal axis. */

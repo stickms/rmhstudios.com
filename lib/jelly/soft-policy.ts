@@ -11,6 +11,8 @@
  * there rather than restated.
  */
 
+import { SPRINGS, type Spring } from '@/lib/fluid';
+
 import {
   AMBIENT_BOUNDS,
   JELLY_BODY,
@@ -96,6 +98,38 @@ export const SOFT_BODY = {
   /** Tier L dent (rim-only slabs, which have no body fill to sag): `−min(dentBevelShare · bevel, dentMaxPx)`. */
   dentBevelShare: 0.6,
   dentMaxPx: 10,
+  /** CSS soft body: a card's press sinks this share (≤ 4px of edge travel up to an 800px card, `MOTION_BOUNDS`). */
+  pressCardSquash: 0.01,
+} as const;
+
+/**
+ * The CSS soft body (CSS-first jelly, PR 3; docs/superpowers/specs/2026-11-07-css-first-jelly-design.md §3). Hover,
+ * press and release are CSS transitions on `scale`, eased by `linear(...)` curves sampled from these springs with
+ * `dampedSpringLinear` (`lib/jelly/spring-curves.ts`) and authored once as the `--spring-*` tokens in
+ * `app/jelly-material.css`; `lib/__tests__/jelly-spring-tokens.test.ts` keeps each literal equal to its generator.
+ * They are the soft body's own springs: the press is `jellyPress` (critically damped, quick), the release and the
+ * hover `jellyRelease` (ζ 0.42: the let-go wobble). A CSS transition does not carry velocity across an interruption;
+ * the spec accepts that.
+ */
+export const CSS_SPRINGS = {
+  press: SPRINGS.jellyPress,
+  release: SPRINGS.jellyRelease,
+} as const satisfies Record<string, Spring>;
+
+/**
+ * The scale poses the CSS soft body moves between (mirrored as `--jelly-hover-*` / `--jelly-press-*` tokens in
+ * `app/jelly-material.css`, held equal by the same parity gate). Every pose, and every frame of the springs between
+ * them, stays inside `MOTION_BOUNDS.maxScaleDelta` (spring-curves.test.ts).
+ */
+export const CSS_SOFT_BODY = {
+  /** Cards plump under a hovering fine pointer. */
+  hoverPlump: 1 + SOFT_BODY.hoverPlump,
+  /** Controls dent slightly under a hovering fine pointer. */
+  hoverDent: 1 - SOFT_BODY.hoverDent,
+  /** A control is pushed into the surface by the full scale bound. */
+  pressControl: 1 - MOTION_BOUNDS.maxScaleDelta,
+  /** A card sinks gently: cards are wide, and the bound is in pixels too. */
+  pressCard: 1 - SOFT_BODY.pressCardSquash,
 } as const;
 
 /* ── Element traits → policy ──────────────────────────────────────────────── */
