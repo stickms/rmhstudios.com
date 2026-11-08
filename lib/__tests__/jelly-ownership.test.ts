@@ -98,10 +98,6 @@ describe('N2 — the jelly services have one owner each', () => {
    */
   const SERVICE_IMPORT_ALLOW = new Map<string, string>([
     [
-      'hooks/useFluidDrag.ts',
-      'reports drags to the physics service (`reportJellyDrag`) so a dragged surface stretches through the ONE soft body instead of its own (02 §3.4)',
-    ],
-    [
       'hooks/useCelebration.ts',
       'lazy `dischargeAt` hook-in for celebrations, through the arc runtime and its flash ledger (master plan W2-C)',
     ],

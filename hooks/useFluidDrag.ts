@@ -10,7 +10,7 @@ import {
 } from '@/lib/fluid';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 import { onJellyPointer } from '@/lib/jelly/pointer';
-import { reportJellyDrag } from '@/lib/jelly/physics';
+import { reportJellyDrag } from '@/lib/jelly/drag-report';
 import { createSettle, type Settle } from '@/hooks/fluid-drag-settle';
 
 export { FLUID_DRAG_FRAME_ORDER } from '@/hooks/fluid-drag-settle';
@@ -26,12 +26,11 @@ export { FLUID_DRAG_FRAME_ORDER } from '@/hooks/fluid-drag-settle';
  * so the caller decides what it means — a sheet translating, a drawer opening, a
  * card being swiped away. The hook never touches the DOM's layout.
  *
- * Jelly (docs/plans/plasmatic-jelly/02-soft-body.md §3.3): pass `jellyTarget` and
- * the hook reports the surface's velocity to the soft-body service
- * (`reportJellyDrag` in `lib/jelly/physics.ts`) on every move and at release, so
- * the surface stretches along the motion and wobbles out of it, and `drag:start` /
- * `drag:end` reach the jelly bus. The hook still owns the drag position; jelly only
- * adds the deformation (scale or the slab's rim — never `translate`).
+ * Jelly: pass `jellyTarget` and the hook reports the surface's drag on every move
+ * and at release (`reportJellyDrag` in `lib/jelly/drag-report.ts`), so `drag:start` /
+ * `drag:end` reach the jelly bus (the arcs hold their ambient strikes while a drag is
+ * under way). The hook owns the drag position; since the soft body became CSS
+ * (CSS-first jelly, PR 3) nothing adds a stretch on top of it.
  *
  * Frames and pointers (CLAUDE.md "Design system: Plasmatic Jelly" → Performance): the settle spring
  * (`createSettle` in `hooks/fluid-drag-settle.ts`) is a driver on the ONE jelly frame
