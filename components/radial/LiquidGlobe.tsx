@@ -2410,9 +2410,9 @@ export function LiquidGlobe({
       const stationary = now - lastMoveAt.current > 110;
 
       // 0′. The ambient tick (lib/jelly/ambient-tick.ts): what the jelly policy lets the globe do on its own
-      //     right now — the idle drift (3) and the coat's haze (4b) — on the shared grid, so this globe and the
-      //     globe cursor draw in the SAME frame. The engaged rate only while someone is engaged with the globe
-      //     (pointer at it, a press, keyboard focus in its zone) and for the short settle after
+      //     right now — the idle drift (3) and the coat's haze (4b) — on the shared grid, so the main-thread
+      //     globe and the worker's coat clock draw in the SAME frame. The engaged rate only while someone is engaged
+      //     with the globe (pointer at it, a press, keyboard focus in its zone) and for the short settle after
       //     (`./globe-engagement.ts`, the rule the worker's coat clock shares); the idle floor otherwise; nothing
       //     under `still`, a degraded tier, a hidden or unfocused tab, off screen, or in the rehearsal. `tick` is the
       //     seconds since the last one, 0 on a frame that is not a tick.

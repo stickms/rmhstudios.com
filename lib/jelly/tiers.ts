@@ -6,7 +6,7 @@
  *
  * Under Liquid Glass the engine's `off()`, `runtime.ts`'s `disabled()` and the arcs plan's global-off list each wrote
  * the same predicate by hand, and three copies of a predicate drift. Every jelly service that still runs JavaScript —
- * the click arcs, the globe and its cursor, the scene feed, the pointer variable — reads its tier, budget and off state
+ * the click arcs, the globe, the scene feed, the pointer variable — reads its tier, budget and off state
  * from here, so a theme or preference that switches the material off switches all of it off together. (The CSS
  * material answers to the same signals through selectors: `.perf-lite`, `html[data-jelly-motion]`.)
  *
@@ -19,7 +19,7 @@
  *
  * ## Off versus tier
  *
- * {@link jellyOff} answers "may the MATERIAL layers draw" (the globe, its cursor, arcs) and is true under `perf-lite`
+ * {@link jellyOff} answers "may the MATERIAL layers draw" (the globe, arcs) and is true under `perf-lite`
  * too, because the site stamps `perf-lite` in {@link DEGRADED_ROOT_SELECTOR}. {@link jellyTier} keeps `perf-lite` apart
  * as `'lite'` because press still works on a weak device (04 §3.4). {@link jellyMode} folds both, plus the preferences
  * and game state, into what each service may do now.
@@ -32,7 +32,7 @@ export type JellyMotion = 'lively' | 'calm' | 'still';
 export type ElectricArcsMode = 'full' | 'clicks' | 'off';
 
 export interface JellyBudget {
-  /** The globe's and the cursor's ambient clock while someone is there. */
+  /** The globe's ambient clock while someone is there. */
   clockHz: number;
   /** Ambient clock floor after {@link IDLE_AFTER_MS} without input (R7: never 0 while visible). */
   idleClockHz: number;
@@ -43,7 +43,7 @@ export interface JellyBudget {
 }
 
 /**
- * The budgets, final per R6/R10 and 04 §3.1, kept to the fields something still reads: the globe's and the cursor's
+ * The budgets, final per R6/R10 and 04 §3.1, kept to the fields something still reads: the globe's
  * ambient clock (`clockHz` while someone is there, `idleClockHz` after {@link IDLE_AFTER_MS}; 60/30 Hz on the desktop
  * tiers, 30/15 on handhelds) and the click arcs (`clickBolts`, `ambientArcMinIntervalMs`). The rim, haze-slot, carrier,
  * animated-area, body and lattice budgets belonged to the glass engine, the CSS carriers and the soft-body physics,
@@ -273,7 +273,7 @@ export function gamePlaying(doc: Document | undefined = defaultDoc()): boolean {
 }
 
 /**
- * May the material layers draw at all: false for the globe, its cursor and the arcs under a degraded root
+ * May the material layers draw at all: false for the globe and the arcs under a degraded root
  * ({@link DEGRADED_ROOT_SELECTOR}, so `perf-lite` included), the app high-contrast theme, print, or a hidden tab. No
  * document (SSR) → true.
  */
@@ -284,7 +284,7 @@ export function jellyOff(doc: Document | undefined = defaultDoc()): boolean {
 }
 
 export interface JellyModeState {
-  /** The globe and its cursor may run on the ambient clock. */
+  /** The globe may run on the ambient clock. */
   ambient: boolean;
   /** Which arcs may fire. Ambient arcs additionally need the tier's `ambientArcMinIntervalMs` to be finite. */
   arcs: ElectricArcsMode;
@@ -292,7 +292,7 @@ export interface JellyModeState {
 
 /**
  * What each service may do right now: the tier, the off predicate, `jellyMotion`, `electricArcs` and the game state
- * folded into one answer so the globe, its cursor and the arcs cannot disagree.
+ * folded into one answer so the globe and the arcs cannot disagree.
  *
  * - Hidden tab and print: nothing.
  * - Other material-off states and `perf-lite`: no ambient, no arcs.

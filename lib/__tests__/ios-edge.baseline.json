@@ -7,7 +7,6 @@
   "components/feed/feed.css": 1,
   "components/feed/PostImageGrid.tsx": 1,
   "components/feed/ProfileEditModal.tsx": 2,
-  "components/globe-cursor/GlobeCursor.tsx": 1,
   "components/library/album-viewer.css": 1,
   "components/library/book-3d.css": 1,
   "components/library/library.css": 3,

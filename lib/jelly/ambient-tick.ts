@@ -1,11 +1,11 @@
 /**
- * The ambient tick grid every ambient clock shares: the
- * docked navigation globe (`components/radial/LiquidGlobe.tsx`, its idle drift and its coat's haze) and the globe
- * cursor (`components/globe-cursor/GlobeCursor.tsx`, its eversion while the pointer rests).
+ * The ambient tick grid every ambient clock shares: the docked navigation globe's idle drift and coat haze, which run
+ * in the globe worker (`components/radial/globe-worker.ts`) and, when there is no worker, on the main thread
+ * (`components/radial/LiquidGlobe.tsx`).
  *
  * Each runs its own loop, and each ticks at the jelly ambient rate (`lib/jelly/tiers.ts` — `clockHz` while someone is
  * there, `idleClockHz` after `IDLE_AFTER_MS`, 0 under `still` and the degraded tiers). Two free-running 12 Hz clocks
- * land on different vsyncs and cost the page 24 frames a second where the R7 budget allows 12 (+1). So neither keeps
+ * land on different vsyncs and cost the page 24 frames a second where the R7 budget allows 12 (+1). So none keeps
  * its own phase: a tick is due on the first frame past a multiple of `1000 / hz` ms of `performance.now()`, and a
  * sleeping loop wakes for exactly that boundary. Clocks at the same rate then always draw in the same frame.
  *

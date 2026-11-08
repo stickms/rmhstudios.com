@@ -610,6 +610,13 @@ export function Providers({
     if (isJellyMotion(jm)) st.setJellyMotion(jm);
     const ea = localStorage.getItem(ELECTRIC_ARCS_KEY);
     if (isElectricArcs(ea)) st.setElectricArcs(ea);
+    // The globe cursor and its per-device settings were removed (2026-11-08): drop the stale key so devices do not keep
+    // dead data. Nothing reads it any more. Safe to delete once every device that ever stored it has loaded the site.
+    try {
+      localStorage.removeItem('rmh-globe-cursor');
+    } catch {
+      /* storage blocked — nothing to clean */
+    }
     // Marketplace user theme (§14): the no-flash script already painted it; hydrate
     // the store so the runtime effect keeps it applied and can clear it on removal.
     try {
