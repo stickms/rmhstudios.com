@@ -59,15 +59,21 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.frequency.value = 800;
-        gain.gain.setValueAtTime(0.5, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.1);
+        const when = ctx.currentTime;
+        gain.gain.setValueAtTime(0.5, when);
+        gain.gain.exponentialRampToValueAtTime(0.01, when + 0.1);
+        osc.start(when);
+        osc.stop(when + 0.1);
+        // The click is HEARD an output-latency after it is scheduled, and the game's
+        // clock already follows what is heard. Measure the tap against that moment,
+        // so the offset saved here is the player's own bias and not their headphones'.
+        lastBeatTime.current = AudioManager.getInstance().heardPerfTime(when);
+      } else {
+        lastBeatTime.current = performance.now();
       }
       // Visual beat flash
       setBeatFlash(true);
       setTimeout(() => setBeatFlash(false), 80);
-      lastBeatTime.current = performance.now();
     };
 
     playClick(); // First beat

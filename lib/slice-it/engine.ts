@@ -643,7 +643,11 @@ export class GameEngine {
     const store = useSliceItStore.getState();
     const rate = this.speedMultiplier || 1;
     const volume = (store.sfxVolume / 100) * TICK_VOLUME_SCALE;
-    const atContext = (trackTime: number) => context.currentTime + (trackTime - currentTime) / rate;
+    // Sounds are scheduled on the render clock, which is ahead of the heard position
+    // `currentTime` carries by the output latency: scheduling from the heard
+    // position would put every guide tick that much late against the music.
+    const renderTime = currentTime + (this.audioManager.getRenderPosition() - this.audioManager.getCurrentTime());
+    const atContext = (trackTime: number) => context.currentTime + (trackTime - renderTime) / rate;
 
     if (store.metronome) {
       const bpm = this.beatMap?.bpm && this.beatMap.bpm > 0 ? this.beatMap.bpm : 120;

@@ -472,7 +472,7 @@ export const useSliceItStore = create<SliceItState>()(
     }),
     {
       name: 'slice-it-storage',
-      version: 8,
+      version: 9,
       // Settings only. Run and lobby state are per-session by definition, and
       // persisting a lobby snapshot would restore a room that no longer exists.
       partialize: (state) => ({
@@ -595,6 +595,14 @@ export const useSliceItStore = create<SliceItState>()(
         }
         if (version < 8) {
           state = { ...state, backdrop: 'pulse' };
+        }
+        if (version < 9) {
+          // The game clock now follows the audio the player HEARS, so the output
+          // latency is compensated automatically. Every offset saved before this was
+          // calibrated against the old render-time clock and has that latency baked
+          // in; keeping it would apply it twice. Start from zero and re-calibrate if
+          // it still feels off.
+          state = { ...state, audioOffset: 0, inputOffset: 0 };
         }
         return state;
       },

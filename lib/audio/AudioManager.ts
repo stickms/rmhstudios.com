@@ -1,5 +1,5 @@
 import { getAudioContext } from '@/lib/shared/platform';
-import { SmoothedClock } from './smooth-clock';
+import { OutputClock } from './output-clock';
 export class AudioManager {
   private static instance: AudioManager;
   private audioContext: AudioContext | null = null;
@@ -16,11 +16,15 @@ export class AudioManager {
   private offsetAtLastRateChange: number = 0;
   private timeAtLastRateChange: number = 0;
   /**
-   * `audioContext.currentTime` advances in steps — coarse ones in Firefox — so reading it
-   * raw once per frame makes the notes freeze and jump. Everything that positions
-   * the playfield reads this smoothed view instead (see `smooth-clock.ts`).
+   * The HEARD position of the audio, continuous and latency-aware (see
+   * `output-clock.ts`). `audioContext.currentTime` is neither: it is the render
+   * position — ahead of what the speaker is playing by the output latency — and it
+   * advances in steps, coarse ones in Firefox. Everything that positions or judges
+   * the playfield reads this instead.
    */
-  private readonly clock = new SmoothedClock();
+  private readonly clock = new OutputClock();
+  private lastObservedAt = Number.NEGATIVE_INFINITY;
+  private analyser: AnalyserNode | null = null;
   /** The latest `loadTrack`/`loadFromBuffer`: an older load that resolves later must not replace it. */
   private loadToken = 0;
 
@@ -43,6 +47,83 @@ export class AudioManager {
     this.gainNode = this.audioContext.createGain();
     this.gainNode.connect(this.audioContext.destination);
     this.gainNode.gain.value = this.volume;
+    // A tap for visualisers: a pass-through that costs nothing when nothing reads it.
+    try {
+      this.analyser = this.audioContext.createAnalyser();
+      this.analyser.fftSize = 2048;
+      this.analyser.smoothingTimeConstant = 0;
+      this.gainNode.connect(this.analyser);
+    } catch {
+      this.analyser = null;
+    }
+  }
+
+  /** The visualiser tap, or null where Web Audio cannot make one. */
+  public getAnalyser(): AnalyserNode | null {
+    return this.analyser;
+  }
+
+  /**
+   * Feed the clock a reading, at most every 8 ms: it is called from several places a
+   * frame, and `getOutputTimestamp()` is not free.
+   */
+  private observeClock(perfMs: number): void {
+    const ctx = this.audioContext;
+    if (!ctx) return;
+    if (perfMs - this.lastObservedAt < 8 && this.clock.ready) return;
+    this.lastObservedAt = perfMs;
+    let timestamp: { contextTime: number; performanceTime: number } | null = null;
+    try {
+      const ts = ctx.getOutputTimestamp?.();
+      if (ts && typeof ts.contextTime === 'number' && typeof ts.performanceTime === 'number') {
+        timestamp = { contextTime: ts.contextTime, performanceTime: ts.performanceTime };
+      }
+    } catch {
+      timestamp = null;
+    }
+    this.clock.observe({
+      timestamp,
+      contextTime: ctx.currentTime,
+      perfMs,
+      latencySeconds: ctx.outputLatency || ctx.baseLatency || 0,
+    });
+  }
+
+  /** The context time of the sound being heard at page time `perfMs`. */
+  private heardContextTime(perfMs: number): number {
+    this.observeClock(perfMs);
+    const heard = this.clock.contextTimeAt(perfMs);
+    // Before the first reading there is nothing to apply: fall back to the render time.
+    return Number.isFinite(heard) ? heard : (this.audioContext?.currentTime ?? 0);
+  }
+
+  /**
+   * The page time (`performance.now()` domain) at which the sound the context was
+   * asked to play at `contextTime` actually reaches the listener. A calibration tap
+   * is measured against this, not against when the click was scheduled.
+   */
+  public heardPerfTime(contextTime: number): number {
+    this.observeClock(performance.now());
+    const t = this.clock.perfTimeHeard(contextTime);
+    return Number.isFinite(t) ? t : performance.now();
+  }
+
+  /**
+   * The song position at the render head — what has been handed to the output, and
+   * so the axis anything SCHEDULED on the context clock (a guide tick) lives on.
+   * It runs ahead of {@link getCurrentTime} by the output latency.
+   */
+  public getRenderPosition(): number {
+    if (!this.isPlaying) return this.pauseTime;
+    return this.renderPosition();
+  }
+
+  private renderPosition(): number {
+    if (!this.audioContext) return this.pauseTime;
+    return (
+      this.offsetAtLastRateChange +
+      (this.audioContext.currentTime - this.timeAtLastRateChange) * this.playbackRate
+    );
   }
 
   public getContext(): AudioContext | null {
@@ -147,7 +228,8 @@ export class AudioManager {
     const startAt = now + leadIn;
 
     this.source.start(startAt, offset);
-    this.clock.reset();
+    // The clock's estimate (output latency + context offset) belongs to the output
+    // device, not to this track, so starting, pausing or seeking does not reset it.
 
     // Anchored to `startAt`, not `now`. `getCurrentTime()` is
     // `offsetAtLastRateChange + (now - timeAtLastRateChange) * rate`, so
@@ -177,12 +259,14 @@ export class AudioManager {
   public pause() {
     if (!this.source || !this.isPlaying || !this.audioContext) return;
     
+    // Resume from where the source was actually stopped (the render head), not from
+    // the heard position, which trails it by the output latency and would replay
+    // that much audio.
+    const stoppedAt = this.renderPosition();
     this.source.stop();
-    // Calculate and store exact pause time
-    this.pauseTime = this.getCurrentTime();
+    this.pauseTime = stoppedAt;
     this.isPlaying = false;
     this.source = null;
-    this.clock.reset();
   }
   
   public resume() {
@@ -227,26 +311,23 @@ export class AudioManager {
     this.startTime = 0;
     this.offsetAtLastRateChange = 0;
     this.timeAtLastRateChange = 0;
-    this.clock.reset();
   }
 
   public setPlaybackRate(rate: number) {
     if (rate === this.playbackRate) return;
 
     if (this.isPlaying && this.audioContext) {
-        // Capture current position before changing rate
-        const currentPos = this.getCurrentTime();
+        // The rate change is scheduled on the render clock, so the new segment is
+        // anchored there: its position is where the source IS at that instant.
         const now = this.audioContext.currentTime;
-        
+        const positionAtChange = this.renderPosition();
+
         if (this.source) {
             this.source.playbackRate.setValueAtTime(rate, now);
         }
-        
-        // Update tracking for getCurrentTime. Anchored on the smoothed clock
-        // `getCurrentTime` just read, or the position would step by however far
-        // that clock is ahead of the raw one.
-        this.offsetAtLastRateChange = currentPos;
-        this.timeAtLastRateChange = this.clock.read(now, performance.now());
+
+        this.offsetAtLastRateChange = positionAtChange;
+        this.timeAtLastRateChange = now;
     }
     
     this.playbackRate = rate;
@@ -277,9 +358,12 @@ export class AudioManager {
     if (!this.audioContext) return 0;
     if (!this.isPlaying) return this.pauseTime;
     
-    const now = this.clock.read(this.audioContext.currentTime, performance.now());
+    // The song position the player is HEARING now. Position is a function of the
+    // context time, and the context time of the sound reaching the speaker is the
+    // render time minus the output latency — which the clock measures.
+    const heard = this.heardContextTime(performance.now());
     // Time passed since last rate change * rate + offset at that time
-    return this.offsetAtLastRateChange + (now - this.timeAtLastRateChange) * this.playbackRate;
+    return this.offsetAtLastRateChange + (heard - this.timeAtLastRateChange) * this.playbackRate;
   }
   
   public playSfX(freq: number, type: OscillatorType = 'sine', duration: number = 0.1, volume: number = 0.5) {

@@ -69,10 +69,15 @@ keeps the tracked beats.
 
 ### Charting
 
-An onset within ~30 ms (or 10% of a beat) of a grid position is snapped to it; one
-further out but within 55 ms (18%) keeps its **own time** and is marked off-grid
-(`quant: 16`); anything beyond that is dropped — reverb tails and vocal consonants.
-A note is never moved far from the sound the player hears.
+The grid LABELS a note and the audio PLACES it. An onset within ~30 ms (or 10% of a
+beat) of a grid position takes that position's subdivision (its flags and beam
+group), but its **time stays where the attack is heard**; it is moved onto the grid
+line only when that move is under 6 ms, inside the detector's own noise. One further
+out but within 55 ms (18%) is marked off-grid (`quant: 16`); anything beyond that is
+dropped — reverb tails and vocal consonants. Hold tails follow the real release the
+same way (snapped only within 12 ms of a quarter-beat). Moving notes up to 30 ms onto
+the grid, as version 3 did, put 22–26% of a swung, drifting live drummer's notes
+outside the 15 ms MARVELOUS window (90th-percentile error 25 ms; now ~4 ms).
 
 **Holds** come from the audio, once per note (`beatmap/sustain.ts`): the bands an
 attack raised are followed forward, restricted to the ones that persist (a pad that
@@ -103,9 +108,27 @@ Everything arbitrary is seeded, so re-analysing a song produces the same chart.
 
 `BEATMAP_VERSION` is stamped on every generated chart. Version 1 is the legacy
 generator, which wrote no version field at all — hence `analysisVersion ?? 1`.
-Version 3 is the timing, hold, lane and nesting rewrite described above; the hourly
-regeneration sweep brings stale generated charts forward (hand-edited ones are
-never touched).
+Version 3 is the timing, hold, lane and nesting rewrite described above; version 4
+places notes at the heard attack instead of on the grid. The hourly regeneration
+sweep brings stale generated charts forward — and, since most songs have no `Chart`
+row, any ready song whose stored `analysisData` is older than the current version
+(hand-edited charts are never touched).
+
+### The game clock
+
+The playfield draws and judges against `AudioManager.getCurrentTime()`, which is the
+position of the sound the player is **hearing**, not the one the browser has just
+rendered. `AudioContext.currentTime` runs ahead of the speaker by the output latency
+(≈35–45 ms wired, 150–300 ms on Bluetooth), so it used to judge every press that much
+late against a 15 ms window unless the player had calibrated by hand.
+`lib/audio/output-clock.ts` estimates the constant `contextTime − performanceTime`
+from `getOutputTimestamp()` (median over a window; `currentTime − outputLatency` with
+a max-filter where the timestamp is unavailable) and reads the heard position as that
+constant plus `performance.now()`. It is continuous, so it also removes Firefox's
+stepped-clock stutter, and a key press's own `event.timeStamp` maps onto the song
+timeline exactly. Anything *scheduled* on the context (guide ticks) lives on the render
+axis and uses `getRenderPosition()`. The manual audio/input offsets are applied on top
+and were reset when this landed, because every saved value had the latency baked in.
 Songs predating the server-side analyser get charted in the browser by the first
 player to open them and the result is posted back to
 `/api/slice-it/songs/:id/patch-analysis`, which refuses anything that is not
