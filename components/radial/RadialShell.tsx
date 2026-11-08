@@ -207,7 +207,8 @@ function RadialTopBar() {
   const close = () => setPanel(null);
 
   return (
-    <header className="radial-topbar glass-chrome" data-jelly-press-through="">
+    // The press body: pressing any item squashes the whole bar as one, within the edge bound (app/jelly-material.css §8).
+    <header className="radial-topbar glass-chrome" data-jelly-press-body="">
       <TabBadge count={unread + notifications} />
       <Link
         to="/"

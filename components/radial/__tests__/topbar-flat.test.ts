@@ -12,8 +12,8 @@ describe('top bar members are flat', () => {
     expect(bar).toMatch(/<header className="radial-topbar glass-chrome"/);
   });
 
-  it('the bar takes the press for its members', () => {
-    expect(bar).toMatch(/<header[^>]*data-jelly-press-through/);
+  it('the bar is the press body for its members', () => {
+    expect(bar).toMatch(/<header[^>]*data-jelly-press-body/);
   });
 
   it('presses no member as a body of its own', () => {

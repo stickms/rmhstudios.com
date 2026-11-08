@@ -12,6 +12,7 @@
 import { describe, expect, it } from 'vitest';
 import { SPRINGS } from '@/lib/fluid';
 import {
+  CSS_BODY_SIZE_FALLBACK_PX,
   CSS_SIZE_FALLBACK_PX,
   CSS_SOFT_BODY,
   CSS_SPRINGS,
@@ -193,6 +194,25 @@ describe('size-capped poses (the 4 px edge bound)', () => {
               `release ${from}→${to} @${size}px`,
             ).toBeLessThanOrEqual(bound);
         }
+      }
+    }
+  });
+
+  it('keeps a press body (a group, the top bar, a tab strip) within the edge bound up to the widest body', () => {
+    // A press body squashes on the card pose (app/jelly-material.css §8), sized like any host, and assumes
+    // CSS_BODY_SIZE_FALLBACK_PX until the pointer variable sizes it (a keyboard press on a 1400 px top bar).
+    const bound = MOTION_BOUNDS.maxEdgeTravelPx + 1e-9;
+    expect(CSS_BODY_SIZE_FALLBACK_PX).toBeGreaterThanOrEqual(CSS_SIZE_FALLBACK_PX);
+    for (let size = 100; size <= CSS_BODY_SIZE_FALLBACK_PX; size += 20) {
+      for (const assumed of [size, CSS_BODY_SIZE_FALLBACK_PX]) {
+        const pressed = cssCappedPose(CSS_SOFT_BODY.pressCard, assumed);
+        const hover = cssCappedPose(CSS_SOFT_BODY.hoverPlump, assumed);
+        for (const from of [1, hover])
+          expect(travel(size, from, pressed, press), `press @${size}px`).toBeLessThanOrEqual(bound);
+        for (const to of [1, hover])
+          expect(travel(size, pressed, to, release), `release @${size}px`).toBeLessThanOrEqual(
+            bound,
+          );
       }
     }
   });
