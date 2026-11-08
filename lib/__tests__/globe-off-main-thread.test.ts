@@ -33,6 +33,16 @@ const MAIN_THREAD = [
 const WORKER_ONLY = ['components/radial/jelly-glass.ts', 'components/radial/self-evert-skin.ts'];
 const WORKER_ENTRY = 'components/radial/globe-worker.ts';
 
+/**
+ * Imports of the worker-only render modules, static (`from './jelly-glass'`) or dynamic (`import('./jelly-glass')`), from
+ * any path. A dynamic import would pull the GL modules into a page chunk just as surely as a static one.
+ */
+const RENDER_IMPORT =
+  /(?:from\s+['"][^'"]*(?:jelly-glass|self-evert-skin)|import\(\s*['"][^'"]*(?:jelly-glass|self-evert-skin))/;
+/** The pre-2026-11-08 pattern, kept only to prove the fixtures below would have slipped past it. */
+const OLD_RENDER_IMPORT =
+  /from\s+['"](?:\.\/|@\/components\/radial\/)(?:jelly-glass|self-evert-skin)['"]/;
+
 const READBACK = /\b(?:getImageData|readPixels|toDataURL|toBlob|drawImage)\s*\(/;
 const GL_CONTEXT = /getContext\(\s*['"`](?:webgl2?|experimental-webgl)['"`]/;
 
@@ -66,17 +76,35 @@ describe('the globe draws off the main thread', () => {
   it('only the worker entry imports the render modules', () => {
     const importers = ['components', 'app', 'hooks', 'lib', 'stores']
       .flatMap((d) => collect(d))
-      .filter((f) =>
-        /from\s+['"](?:\.\/|@\/components\/radial\/)(?:jelly-glass|self-evert-skin)['"]/.test(
-          code(f),
-        ),
-      )
+      .filter((f) => RENDER_IMPORT.test(code(f)))
       .map((f) => relative(ROOT, join(ROOT, f)))
       .sort();
     expect(importers).toEqual([WORKER_ENTRY]);
     expect(code('components/radial/globe-worker-host.ts')).toMatch(
       /new Worker\(new URL\('\.\/globe-worker\.ts', import\.meta\.url\)/,
     );
+  });
+
+  describe('the import guard bites (fixtures)', () => {
+    const strip = (src: string) =>
+      src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+    it.each([
+      ["import { JellyGlass } from './jelly-glass';", true],
+      ["import { SelfEvertSkin } from '@/components/radial/self-evert-skin';", true],
+      ["import { JellyGlass } from '../radial/jelly-glass';", false],
+      ["const { JellyGlass } = await import('./jelly-glass');", false],
+      ["void import( '@/components/radial/self-evert-skin.ts' ).then(start);", false],
+      ['const m = import("../radial/jelly-glass");', false],
+    ])('catches %s', (src, oldCaught) => {
+      expect(RENDER_IMPORT.test(strip(src))).toBe(true);
+      // The dynamic forms (and relative paths from elsewhere) are what the old pattern missed.
+      expect(OLD_RENDER_IMPORT.test(strip(src))).toBe(oldCaught);
+    });
+    it('ignores a comment that names the module', () => {
+      expect(RENDER_IMPORT.test(strip("// moved out of import('./jelly-glass') in Task 7"))).toBe(
+        false,
+      );
+    });
   });
 
   it.each(WORKER_ONLY)('%s touches no DOM and reads nothing back', (file) => {
@@ -92,6 +120,18 @@ describe('the globe draws off the main thread', () => {
     expect(src.match(/getImageData\(/g) ?? []).toHaveLength(1);
     expect(src).toMatch(/new OffscreenCanvas\(1, 1\)\.getContext\('2d'/);
     expect(src).not.toMatch(/readPixels|toDataURL|drawImage/);
+  });
+
+  it('the worker entry narrows inbound messages, reports a lost skin, and drops the scene bitmap once uploaded', () => {
+    const src = code(WORKER_ENTRY);
+    expect(src).toMatch(/if \(!isGlobeIn\(m\)\) return;/);
+    expect(src).toMatch(/s\.onLost = \(\) => \{[^}]*post\(\{ type: 'skin', ok: false \}\)/);
+    expect(src).toMatch(/if \(g\.setScene\(scene\) && scene\) scene\.bitmap\.close\(\);/);
+    // Its ambient rate is the page loop's own rule, not window-wide input.
+    expect(src).toMatch(/engagedRate\(c, pageNow\)/);
+    expect(code('components/radial/LiquidGlobe.tsx')).toMatch(
+      /engagedRate\(coatClockState\(\), now\)/,
+    );
   });
 
   it('the page snapshot is cloned, transferred and closed — never shared between contexts', () => {
