@@ -22,6 +22,7 @@ import { parseColor, type RGBA } from '@/lib/liquid/glass/color';
 import { ambientTickDue, msToAmbientTick } from '@/lib/jelly/ambient-tick';
 import { JellyGlass, type JellyFrame, type JellyRGBA } from './jelly-glass';
 import { SelfEvertSkin } from './self-evert-skin';
+import { engagedRate, msToSettleEnd } from './globe-engagement';
 import {
   GLOBE_PROTOCOL_VERSION,
   type CoatClock,
@@ -131,11 +132,11 @@ const sleepUntil = (ms: number) => {
   );
 };
 
-/** The ambient tick rate right now, in the page's time. */
+/** The ambient tick rate right now, in the page's time: the page loop's own rule (`engagedRate`), held at the hand-off. */
 function tickHz(pageNow: number): number {
   const c = clock;
-  if (!c || !c.active || c.frozen || c.hz <= 0) return 0;
-  return c.held || pageNow < c.engagedUntil ? c.hz : c.idleHz;
+  if (!c || c.frozen) return 0;
+  return engagedRate(c, pageNow);
 }
 
 function applyCoatState(g: JellyGlass): void {
@@ -248,11 +249,12 @@ function onFrame(now: number): void {
     requestFrame();
     return;
   }
-  const wait = msToAmbientTick(pageNow, tickHz(pageNow));
-  if (clock && clock.active && !clock.held && pageNow < clock.engagedUntil) {
-    // The engaged window ends between ticks: wake for the idle rate's grid after it.
-    sleepUntil(Math.min(wait, clock.engagedUntil - pageNow + 1));
-  } else if (wait !== Infinity) sleepUntil(wait);
+  // The settle can end between ticks: wake for the idle rate's grid after it.
+  const wait = Math.min(
+    msToAmbientTick(pageNow, tickHz(pageNow)),
+    clock && !clock.frozen ? msToSettleEnd(clock, pageNow) : Infinity,
+  );
+  if (wait !== Infinity) sleepUntil(wait);
 }
 
 /* ── Messages ─────────────────────────────────────────────────────────────────────────────────────────────────────── */

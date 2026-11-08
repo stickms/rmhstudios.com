@@ -101,7 +101,7 @@ const CLOCK: CoatClock = {
   idleHz: 30,
   amp: 1,
   active: true,
-  held: false,
+  engaged: false,
   engagedUntil: 0,
   plasma: 0,
   plasmaEaseMs: 180,

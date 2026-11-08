@@ -12,8 +12,12 @@
  * Pure: no DOM, no worker globals. Unit-tested (`__tests__/globe-protocol.test.ts`).
  */
 
-/** Bumped whenever a message changes shape. The worker refuses an `init` from a different version. */
-export const GLOBE_PROTOCOL_VERSION = 1;
+/**
+ * Bumped whenever a message changes shape. The worker refuses an `init` from a different version. 2 (2026-11-08): the
+ * clock's `held` became `engaged` (engaged WITH THE GLOBE, `globe-engagement.ts`) and `engagedUntil` the end of its
+ * short settle.
+ */
+export const GLOBE_PROTOCOL_VERSION = 2;
 
 /** The ripple's shape, as `lib/fluid` §RIPPLE gives it. */
 export interface GlobeRippleShape {
@@ -68,7 +72,9 @@ export interface SkinFrame {
 
 /**
  * What the coat's own clock may do (the jelly ambient clock, `lib/jelly/tiers.ts`), sent only when it changes. The
- * worker runs the haze and eases the plasma itself, so a globe at rest posts nothing at all.
+ * worker runs the haze and eases the plasma itself, so a globe at rest posts nothing at all. The rate follows
+ * `engagedRate` (`globe-engagement.ts`), the same rule the page's frame loop uses: the page posts the engaged EDGES
+ * (pointer arriving at or leaving the globe, a press, keyboard focus), never window-wide input timestamps.
  */
 export interface CoatClock {
   /** Engaged and idle-floor tick rates; 0 = no ambient motion (Still, degraded, rehearsal). */
@@ -78,9 +84,12 @@ export interface CoatClock {
   amp: number;
   /** On screen, tab visible and focused: the clock may tick. */
   active: boolean;
-  /** A fine pointer is over the ball or a hand is on it: engaged regardless of time. */
-  held: boolean;
-  /** Page `performance.now()` until which the clock runs at the engaged rate (the last input + `IDLE_AFTER_MS`). */
+  /** Engaged with the globe right now (a pointer over or near it, a press/drag/hold, keyboard focus in the dock or hub). */
+  engaged: boolean;
+  /**
+   * Page `performance.now()` until which the clock keeps the engaged rate after `engaged` went false (the settle,
+   * `GLOBE_SETTLE_MS`); 0 while engaged. It changes only on an edge.
+   */
   engagedUntil: number;
   /** The plasma level the worker eases toward (`PLASMA.rest` / `wake` / `press`). */
   plasma: number;
@@ -207,7 +216,7 @@ export function clockChanged(a: CoatClock | null, b: CoatClock, slackMs = 500): 
     a.idleHz !== b.idleHz ||
     a.amp !== b.amp ||
     a.active !== b.active ||
-    a.held !== b.held ||
+    a.engaged !== b.engaged ||
     a.plasma !== b.plasma ||
     a.plasmaEaseMs !== b.plasmaEaseMs ||
     a.frozen !== b.frozen ||

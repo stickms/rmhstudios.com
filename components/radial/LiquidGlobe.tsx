@@ -38,12 +38,18 @@ import type { EntryPoint } from '@/lib/eversion/marks';
 import { GLOBE_EVERT_EVENT, SELF_EVERT_MS } from './self-evert-timing';
 import { acquireGlobeHost, type GlobeWorkerHost } from './globe-worker-host';
 import type { CoatClock, GlobeThemeCss } from './globe-protocol';
+import {
+  GlobeEngagement,
+  engagedRate,
+  isDirectlyEngaged,
+  pointerNear,
+  type GlobeBox,
+} from './globe-engagement';
 import { currentScene, onSceneChange } from '@/lib/liquid/glass/scene-store';
 import { PLASMA_LOOK } from '@/lib/liquid/glass/policy';
 import {
   CALM,
   FINE_POINTER_QUERY,
-  IDLE_AFTER_MS,
   PLASMA,
   jellyBudget,
   jellyMode,
@@ -137,8 +143,10 @@ const SCROLL_SPIN_MAX = 220;
 const SKIN_WARM_IN_PLACE_MS = 300;
 /**
  * Idle drift (deg/s) — only until the visitor first takes hold. It advances on the jelly ambient tick (step 2b), not
- * per vsync: 60 Hz while someone is there, the 30 Hz idle floor after `IDLE_AFTER_MS`, and not at all under `still`,
- * the degraded tiers, a hidden or unfocused tab, or off screen (CLAUDE.md "Plasmatic Jelly" → Performance, R7).
+ * per vsync: the engaged rate (60 Hz desktop) only while someone is engaged WITH THE GLOBE and for a short settle after
+ * (`./globe-engagement.ts`), the 30 Hz idle floor otherwise — input elsewhere on the page does not raise it — and not
+ * at all under `still`, the degraded tiers, a hidden or unfocused tab, or off screen (CLAUDE.md "Plasmatic Jelly" →
+ * Performance, R7).
  */
 const IDLE_SPIN = 5.5;
 /**
@@ -793,11 +801,21 @@ export function LiquidGlobe({
   /** Something needs a repaint. Raising it wakes the loop (`wakeOnRaise`, below). */
   const dirty = useRef(true);
   /**
-   * The last input anywhere in the window (pointer, key, wheel) or the mount, whichever is later: the globe's
-   * ambient tick runs at the engaged rate for `IDLE_AFTER_MS` after it, then at the idle floor — the same rule the
-   * glass engine's clock follows (`lib/liquid/glass/policy.ts` `ambientHz`).
+   * Whether someone is engaged WITH THE GLOBE (`./globe-engagement.ts`): a fine pointer over or near it or its dock
+   * (`pointerAtGlobe`), a press / drag / hold (`drag`), or keyboard focus inside the dock or open hub (`keyFocus`), plus
+   * a short settle. The ambient tick runs at the engaged rate only then (step 0′), and the worker's coat clock follows
+   * the same edges; input elsewhere on the page no longer raises it.
    */
-  const lastInputAt = useRef(0);
+  const [engagement] = useState(() => new GlobeEngagement());
+  /** A fine pointer is over or within `GLOBE_NEAR_MARGIN_PX` of the globe's zone (the dock, or the open hub). */
+  const pointerAtGlobe = useRef(false);
+  /** Keyboard focus is inside the zone (focus-visible, or a key pressed there) — a mouse click's focus does not count. */
+  const keyFocus = useRef(false);
+  /**
+   * The window has focus. Kept from `focus`/`blur` (seeded once from `document.hasFocus()`), so the frame loop and the
+   * clock state never call `document.hasFocus()` per frame.
+   */
+  const windowFocused = useRef(true);
   /**
    * Whether the visitor has taken hold of the globe yet (a press, or a keyboard
    * focus). It switches the loop between its two moods, and they are mutually
@@ -864,22 +882,51 @@ export function LiquidGlobe({
     last: 0,
     over: false,
   });
-  /** What the worker's coat clock should be doing, from the refs above (`CoatClock`). */
+  /**
+   * What the worker's coat clock should be doing, from the refs above (`CoatClock`). Written into one object kept for
+   * the component's life — the frame loop asks every busy frame, and the host copies it only when it changed.
+   */
+  const [clockScratch] = useState((): CoatClock => ({
+    hz: 0,
+    idleHz: 0,
+    amp: 0,
+    active: false,
+    engaged: false,
+    engagedUntil: 0,
+    plasma: 0,
+    plasmaEaseMs: PLASMA.easeMs,
+    frozen: false,
+  }));
   const coatClockState = useCallback((): CoatClock => {
     const c = coatClock.current;
     const d = drag.current;
-    return {
-      hz: c.hz,
-      idleHz: c.idleHz,
-      amp: c.amp,
-      active: c.hz > 0 && c.onScreen && !quiet.current && document.hasFocus(),
-      held: c.over || d.active,
-      engagedUntil: Math.max(lastMoveAt.current, lastInputAt.current) + IDLE_AFTER_MS,
-      plasma: d.held || d.active ? PLASMA.press : c.over ? PLASMA.wake : PLASMA.rest,
-      plasmaEaseMs: PLASMA.easeMs,
-      frozen: everting.current,
-    };
-  }, []);
+    const out = clockScratch;
+    out.hz = c.hz;
+    out.idleHz = c.idleHz;
+    out.amp = c.amp;
+    out.active = c.hz > 0 && c.onScreen && !quiet.current && windowFocused.current;
+    out.engaged = engagement.engaged;
+    out.engagedUntil = engagement.settleUntil;
+    out.plasma = d.held || d.active ? PLASMA.press : c.over ? PLASMA.wake : PLASMA.rest;
+    out.plasmaEaseMs = PLASMA.easeMs;
+    out.frozen = everting.current;
+    return out;
+  }, [clockScratch, engagement]);
+  /**
+   * Re-read the direct engagement and, on an edge, tell the worker and wake the loop. Called from the engagement
+   * listeners (below) and once per frame (step 0′), which is where a press or release lands. A ref so both see one.
+   */
+  const syncEngagement = useRef((now: number) => {
+    const d = drag.current;
+    const direct = isDirectlyEngaged({
+      near: pointerAtGlobe.current,
+      pressed: d.active || d.held,
+      focused: keyFocus.current,
+    });
+    if (!engagement.update(now, direct)) return;
+    postClock.current();
+    wakeLoop.current();
+  });
 
   // Only these three reach the render: the caption, the ring's state classes.
   const [lock, setLock] = useState(-1);
@@ -1270,40 +1317,98 @@ export function LiquidGlobe({
     };
   }, []);
 
-  /* ── Someone is there ─────────────────────────────────────────────────────
-     Input anywhere in the window keeps the ambient tick at its engaged rate (step 2b); a window regaining focus
-     resumes a tick that `document.hasFocus()` had stopped. Only the idle → engaged edge wakes the loop: inside the
-     engaged window it is already ticking. */
+  /* ── Someone is at the globe ─────────────────────────────────────────────
+     Engaged means engaged WITH THE GLOBE (`./globe-engagement.ts`): a fine pointer over or within
+     `GLOBE_NEAR_MARGIN_PX` of its zone — the dock in the desktop shell, the overlay of the open hub — a press on it
+     (step 0′ reads `drag`), or keyboard focus inside the zone. Moving over the page's cards, scrolling it or typing in
+     one of its fields does not raise the globe's rate any more (it used to hold the engaged rate for 20 s after any input
+     in the window, so an active visitor kept the docked globe at 60 Hz almost all the time).
+
+     The zone's box is read where layout is clean and already being read — mount, resize, scroll (the dock is sticky,
+     so its box moves with the page until it sticks) — never per pointer event; the pointer handler compares numbers
+     against the cached box and tests containment, nothing more. A window regaining focus resumes a tick that a blur
+     had stopped. */
   useEffect(() => {
-    lastInputAt.current = performance.now();
-    const onInput = () => {
-      const now = performance.now();
-      const idle = now - lastInputAt.current >= IDLE_AFTER_MS;
-      lastInputAt.current = now;
-      // The coat's clock in the worker keeps its engaged rate for as long as someone is there; the host only posts
-      // when the engaged window moves by more than its slack, so this is not a message per pointer move.
-      postClock.current();
-      if (idle) wakeLoop.current();
+    const stage = stageRef.current;
+    if (!stage) return;
+    const zone: HTMLElement =
+      (stage.closest('.rad-globe-dock, .radial-hub__overlay') as HTMLElement | null) ??
+      (stage.closest('.radial-globe') as HTMLElement | null) ??
+      stage;
+    let box: GlobeBox | null = null;
+    const measure = () => {
+      const r = zone.getBoundingClientRect();
+      box =
+        r.width > 0 && r.height > 0
+          ? { left: r.left, top: r.top, right: r.right, bottom: r.bottom }
+          : null;
     };
+    measure();
+    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(measure) : null;
+    ro?.observe(zone);
+    const setNear = (near: boolean) => {
+      if (near === pointerAtGlobe.current) return;
+      pointerAtGlobe.current = near;
+      syncEngagement.current(performance.now());
+    };
+    const onPointer = (e: PointerEvent) => {
+      // A touch has no hover: on a touch screen only a press on the ball (`drag`) engages it.
+      if (e.pointerType === 'touch') return;
+      const t = e.target;
+      setNear((t instanceof Node && zone.contains(t)) || pointerNear(e.clientX, e.clientY, box));
+    };
+    const onLeaveDoc = () => setNear(false);
+    const setKeyFocus = (on: boolean) => {
+      if (on === keyFocus.current) return;
+      keyFocus.current = on;
+      syncEngagement.current(performance.now());
+    };
+    // Keyboard focus only: a click focuses the stage too (`tabIndex`), and that must not hold the rate up after the
+    // pointer has gone back to the page.
+    const onFocusIn = (e: FocusEvent) => {
+      const t = e.target;
+      setKeyFocus(t instanceof Element && t.matches(':focus-visible'));
+    };
+    const onFocusOut = (e: FocusEvent) => {
+      const next = e.relatedTarget;
+      if (!(next instanceof Node) || !zone.contains(next)) setKeyFocus(false);
+    };
+    const onKey = () => setKeyFocus(true);
+    windowFocused.current = document.hasFocus();
     const onFocus = () => {
+      windowFocused.current = true;
       postClock.current();
       wakeLoop.current();
     };
-    const onBlur = () => postClock.current();
+    const onBlur = () => {
+      windowFocused.current = false;
+      postClock.current();
+    };
     const opts = { passive: true, capture: true } as const;
-    window.addEventListener('pointermove', onInput, opts);
-    window.addEventListener('pointerdown', onInput, opts);
-    window.addEventListener('keydown', onInput, opts);
-    window.addEventListener('wheel', onInput, opts);
+    window.addEventListener('pointermove', onPointer, opts);
+    window.addEventListener('pointerdown', onPointer, opts);
+    window.addEventListener('scroll', measure, { passive: true });
+    window.addEventListener('resize', measure);
+    document.documentElement.addEventListener('pointerleave', onLeaveDoc);
+    zone.addEventListener('focusin', onFocusIn);
+    zone.addEventListener('focusout', onFocusOut);
+    zone.addEventListener('keydown', onKey);
     window.addEventListener('focus', onFocus);
     window.addEventListener('blur', onBlur);
     return () => {
-      window.removeEventListener('pointermove', onInput, opts);
-      window.removeEventListener('pointerdown', onInput, opts);
-      window.removeEventListener('keydown', onInput, opts);
-      window.removeEventListener('wheel', onInput, opts);
+      ro?.disconnect();
+      window.removeEventListener('pointermove', onPointer, opts);
+      window.removeEventListener('pointerdown', onPointer, opts);
+      window.removeEventListener('scroll', measure);
+      window.removeEventListener('resize', measure);
+      document.documentElement.removeEventListener('pointerleave', onLeaveDoc);
+      zone.removeEventListener('focusin', onFocusIn);
+      zone.removeEventListener('focusout', onFocusOut);
+      zone.removeEventListener('keydown', onKey);
       window.removeEventListener('focus', onFocus);
       window.removeEventListener('blur', onBlur);
+      pointerAtGlobe.current = false;
+      keyFocus.current = false;
     };
   }, []);
 
@@ -2301,21 +2406,14 @@ export function LiquidGlobe({
 
       // 0′. The ambient tick (lib/jelly/ambient-tick.ts): what the jelly policy lets the globe do on its own
       //     right now — the idle drift (3) and the coat's haze (4b) — on the shared grid, so this globe and the
-      //     globe cursor draw in the SAME frame. Engaged rate while the ball is pointed at, held, or anyone has
-      //     touched anything in the last IDLE_AFTER_MS; the idle floor after; nothing under `still`, a degraded tier,
-      //     a hidden or unfocused tab, off screen, or in the rehearsal. `tick` is the seconds since the last one, 0
-      //     on a frame that is not a tick.
+      //     globe cursor draw in the SAME frame. The engaged rate only while someone is engaged with the globe
+      //     (pointer at it, a press, keyboard focus in its zone) and for the short settle after
+      //     (`./globe-engagement.ts`, the rule the worker's coat clock shares); the idle floor otherwise; nothing
+      //     under `still`, a degraded tier, a hidden or unfocused tab, off screen, or in the rehearsal. `tick` is the
+      //     seconds since the last one, 0 on a frame that is not a tick.
       const clock = coatClock.current;
-      const engaged =
-        clock.over ||
-        drag.current.active ||
-        now - Math.max(lastMoveAt.current, lastInputAt.current) < IDLE_AFTER_MS;
-      const tickHz =
-        clock.hz > 0 && clock.onScreen && !quiet.current && document.hasFocus()
-          ? engaged
-            ? clock.hz
-            : clock.idleHz
-          : 0;
+      syncEngagement.current(now);
+      const tickHz = engagedRate(coatClockState(), now);
       let tick = 0;
       if (tickHz <= 0) {
         clock.last = 0;
@@ -2662,7 +2760,7 @@ export function LiquidGlobe({
       timer = 0;
       wakeLoop.current = () => {};
     };
-  }, [nodes, jelly, ambient]);
+  }, [nodes, jelly, ambient, coatClockState]);
 
   // An ambient globe holds its drift while the pointer is over it: a pin you are
   // reading or about to click should not slide out from under the cursor. Every
