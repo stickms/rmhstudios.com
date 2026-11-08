@@ -13,6 +13,7 @@ import AppShell from '@/components/shared/AppShell';
 import GameCanvas from '@/components/tf2-game/GameCanvas';
 import { useSession } from '@/components/Providers';
 import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import { CSGO_MAPS } from '@/lib/tf2-game/assets/game-maps';
 import { loadMenuChannel, type MenuChannel } from '@/lib/tf2-game/client/menus/source-gameui';
 import { createTf2Client, type Tf2Session } from '@/lib/tf2-game/client/tf2-client';
@@ -30,6 +31,7 @@ const ROOM_PLAYERS = 10;
 
 export default function CsPlayPage() {
   const { t } = useTranslation('c-tf2-game');
+  const quit = useQuitGame();
   const { data: auth } = useSession();
   const user = (auth as { user?: { id?: string | null; name?: string | null } } | null)?.user;
   const signedIn = !!user?.id;
@@ -100,6 +102,7 @@ export default function CsPlayPage() {
             title={t('csgo_title', { defaultValue: 'Counter-Strike: Global Offensive' })}
             create={(mount) => createTf2Client({ ...mount, session })}
             onExit={leave}
+            onQuit={quit}
             loadingScreen={(view) => (
               <CsLoadingScreen
                 channel={channel}

@@ -137,23 +137,6 @@
 
 /* ═══ Layout ════════════════════════════════════════════════════════════ */
 
-.ghm-back {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--ghm-muted);
-  text-decoration: none;
-  transition: color 150ms ease;
-}
-.ghm-back:hover {
-  color: var(--ghm-gold-hi);
-}
-
 .ghm-main {
   display: grid;
   width: 100%;
@@ -162,7 +145,8 @@
   align-content: start;
   gap: 22px;
   margin-inline: auto;
-  padding: 8px 16px 32px;
+  /* The top inset clears the status bar / notch now that no header sits above. */
+  padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px 32px;
 }
 @media (min-width: 1024px) {
   .ghm-main {

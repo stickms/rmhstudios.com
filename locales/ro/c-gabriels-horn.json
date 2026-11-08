@@ -208,5 +208,6 @@
   "was-lie": "lie",
   "was-truth": "true",
   "you-suffix": "(you)",
-  "your-hand": "Your hand — {{n}}"
+  "your-hand": "Your hand — {{n}}",
+  "quit": "Quit"
 }
