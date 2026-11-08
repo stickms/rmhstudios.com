@@ -11,7 +11,7 @@ import {
   type HoverKind,
 } from '@/lib/globe-cursor/engine';
 import { acquireGlobeGl, type GlobeSurface } from '@/lib/globe-cursor/gl';
-import { acquireRemoteGlobeGl } from '@/lib/globe-cursor/remote-gl';
+import { acquireRemoteGlobeGl, releaseRemoteGlobeGl } from '@/lib/globe-cursor/remote-gl';
 import { probeGpu } from '@/lib/render/probe';
 import { IDLE_AFTER_MS, jellyBudget, jellyMode, onJellyEnvChange } from '@/lib/jelly/tiers';
 import type { GlobeCursorSettings } from '@/lib/globe-cursor/settings';
@@ -154,6 +154,9 @@ export default function GlobeCursor() {
     void pick.then((g) => {
       if (live) setGpu(g);
     });
+    // The trail and sparkle modes draw on the page-side surface: let the cursor's worker (and its GL context) go
+    // rather than keep a second GPU context alive for nothing. Switching back starts a fresh one.
+    if (!local) releaseRemoteGlobeGl();
     return () => {
       live = false;
     };

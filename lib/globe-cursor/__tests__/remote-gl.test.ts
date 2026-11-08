@@ -8,8 +8,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GlFrame } from '../gl';
 import {
+  CURSOR_PROTOCOL_VERSION,
   CURSOR_READY_TIMEOUT_MS,
   CURSOR_FRAMES_IN_FLIGHT,
+  acquireRemoteGlobeGl,
+  releaseRemoteGlobeGl,
   startRemoteGlobeGl,
   type RemoteGlDeps,
 } from '../remote-gl';
@@ -170,5 +173,48 @@ describe('RemoteGlobeGl', () => {
     expect(workers[0]!.onerror).toBeNull();
     expect(canvases[0]!.removed).toBe(true);
     expect(g.ok).toBe(false);
+  });
+});
+
+describe('the shared cursor worker', () => {
+  afterEach(() => releaseRemoteGlobeGl());
+
+  it('the init carries the protocol version', () => {
+    const { deps, workers } = rig();
+    void startRemoteGlobeGl(deps);
+    expect(CURSOR_PROTOCOL_VERSION).toBeGreaterThanOrEqual(1);
+    expect((workers[0]!.sent[0]!.msg as { version?: number }).version).toBe(
+      CURSOR_PROTOCOL_VERSION,
+    );
+  });
+
+  it('is shared by later acquires, and released (worker terminated) when the cursor leaves direct mode', async () => {
+    const { deps, workers, canvases } = rig();
+    const start = () => startRemoteGlobeGl(deps);
+    const a = acquireRemoteGlobeGl(false, start);
+    workers[0]!.reply({ type: 'ready', ok: true });
+    const g = await a;
+    expect(await acquireRemoteGlobeGl(false, start)).toBe(g);
+    expect(workers).toHaveLength(1);
+    releaseRemoteGlobeGl();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(workers[0]!.terminated).toBe(true);
+    expect(canvases[0]!.removed).toBe(true);
+    expect(g?.ok).toBe(false);
+    // A later direct mode starts a fresh worker.
+    void acquireRemoteGlobeGl(false, start);
+    expect(workers).toHaveLength(2);
+  });
+
+  it('releasing before the worker answers still terminates it', async () => {
+    const { deps, workers } = rig();
+    const start = () => startRemoteGlobeGl(deps);
+    const a = acquireRemoteGlobeGl(false, start);
+    releaseRemoteGlobeGl();
+    workers[0]!.reply({ type: 'ready', ok: true });
+    await a;
+    await Promise.resolve();
+    expect(workers[0]!.terminated).toBe(true);
   });
 });

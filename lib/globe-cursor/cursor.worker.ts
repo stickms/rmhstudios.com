@@ -7,7 +7,11 @@
  * No DOM access.
  */
 import { GlobeGl, type GlFrame } from './gl';
-import type { CursorWorkerIn, CursorWorkerOut } from './remote-gl';
+import {
+  CURSOR_PROTOCOL_VERSION,
+  type CursorWorkerIn,
+  type CursorWorkerOut,
+} from './cursor-protocol';
 
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 const post = (m: CursorWorkerOut) => scope.postMessage(m);
@@ -41,10 +45,17 @@ const schedule = () => {
   else setTimeout(draw, 16);
 };
 
-scope.onmessage = (e: MessageEvent<CursorWorkerIn>) => {
-  const m = e.data;
+scope.onmessage = (e: MessageEvent<unknown>) => {
+  const raw = e.data;
+  // Defensive: ignore anything that is not one of the page's messages.
+  if (!raw || typeof raw !== 'object') return;
+  const m = raw as CursorWorkerIn;
   if (m.type === 'init') {
     if (gl) return;
+    if (m.version !== CURSOR_PROTOCOL_VERSION) {
+      post({ type: 'ready', ok: false });
+      return;
+    }
     void GlobeGl.createOn(m.canvas, m.software).then((g) => {
       gl = g;
       post({ type: 'ready', ok: !!g });
