@@ -91,6 +91,8 @@
   "setup-input": "Set up input",
   "setup-title": "How will you play?",
   "sign-in": "Sign in",
+  "staff-empty": "Staff: no note played yet",
+  "staff-last-note": "Last note: {{note}}",
   "streak-days_one": "{{count}} day streak",
   "streak-days_other": "{{count}} day streak",
   "streak-none": "No streak yet",

@@ -58,3 +58,31 @@ export function staffStep(midi: number): number {
 export function isSharp(midi: number): boolean {
   return SHARP[((Math.round(midi) % 12) + 12) % 12];
 }
+
+/**
+ * The lowest and highest steps the live staff draws: four ledger lines below (down to the
+ * guitar's low E written an octave up, E3) and three above.
+ */
+export const STAFF_MIN_STEP = -8;
+export const STAFF_MAX_STEP = 14;
+
+/**
+ * A note brought onto the drawable staff by whole octaves, the way notation does with an
+ * ottava sign: a guitar's low E (E2) is drawn as E3 under "8vb" (`ottava: -1`), which is
+ * also how guitar music is written, so it is never
+ * pinned to the edge at a wrong pitch. `ottava` is how many octaves the drawn note is ABOVE
+ * (negative) or BELOW (positive) the drawing: −1 → "8vb", 1 → "8va".
+ */
+export function fitToStaff(midi: number): { position: StaffPosition; ottava: number } {
+  let m = Math.round(midi);
+  let ottava = 0;
+  while (staffStep(m) < STAFF_MIN_STEP) {
+    m += 12;
+    ottava -= 1;
+  }
+  while (staffStep(m) > STAFF_MAX_STEP) {
+    m -= 12;
+    ottava += 1;
+  }
+  return { position: staffPosition(m), ottava };
+}

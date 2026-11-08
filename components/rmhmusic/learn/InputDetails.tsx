@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import type { InputSource } from '@/lib/rmhmusic/learn/input/events';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import { SECONDARY_BUTTON } from './buttons';
+import { LiveStaff } from './LiveStaff';
 import { useLastNote, useMicLevel, useMidiDevices, useNoteEvents } from './useLearnInput';
 
 /** Live level bar plus the note the microphone hears, with how far off it is in cents. */
@@ -46,6 +47,7 @@ export function MicDetails() {
             })
           : t('mic-listening', { defaultValue: 'Listening… play or sing a note.' })}
       </p>
+      <LiveStaff source="mic" announce={false} className="max-w-48" />
     </div>
   );
 }
@@ -112,6 +114,7 @@ export function MidiDetails() {
             : t('midi-try', { defaultValue: 'Play a key: it lights up here.' })}
         </p>
       )}
+      {devices.length > 0 && <LiveStaff source="midi" announce={false} className="max-w-48" />}
     </div>
   );
 }

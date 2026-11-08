@@ -70,6 +70,34 @@ function Shell({
   );
 }
 
+/**
+ * The loading placeholder: the same boxes as the "play any note" lesson with the on-screen keys
+ * (the default input) — instruction page, staff, octave bar and keys — so loading → loaded moves
+ * nothing for the default input. (A mic or MIDI learner gets the input chooser instead of the
+ * keys once loaded; which input it is is not known until the profile arrives.) The lesson's hint
+ * reserves two lines (`min-h-10`) for the same reason: it differs per input.
+ */
+function LessonSkeleton() {
+  return (
+    <div aria-hidden="true" className="space-y-4">
+      <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
+        <div className="app-skeleton mx-auto h-7 w-40" />
+        <div className="min-h-10">
+          <div className="app-skeleton mx-auto h-5 w-56 max-w-full" />
+        </div>
+        <div className="mx-auto w-full max-w-64 pt-2">
+          <div className="app-skeleton aspect-[200/132] w-full" />
+          <div className="min-h-9" />
+        </div>
+      </section>
+      <div className="-mx-2 sm:mx-0">
+        <div className="app-skeleton mb-2 h-11" />
+        <div className="app-skeleton h-40 sm:h-48" />
+      </div>
+    </div>
+  );
+}
+
 export function LessonScreen({ lessonId }: { lessonId: string }) {
   const { t } = useTranslation('c-rmhmusic');
   const status = useLearnStore((s) => s.status);
@@ -139,12 +167,7 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
       </div>
     );
   } else if (status !== 'ready') {
-    body = (
-      <div aria-hidden="true" className="space-y-4">
-        <div className="app-skeleton h-44 w-full" />
-        <div className="app-skeleton h-40 w-full sm:h-48" />
-      </div>
-    );
+    body = <LessonSkeleton />;
   } else {
     body = <FirstNoteLesson lessonId={lesson.id} paused={setupOpen} />;
   }

@@ -41,6 +41,25 @@ import { cn } from '@/lib/utils';
 import { SECONDARY_BUTTON } from './buttons';
 import { useSoundingNotes } from './useLearnInput';
 
+/** How long after the keyboard goes away a stray click is still the lifted finger's. */
+const GHOST_CLICK_MS = 700;
+
+/** Cancel the next click anywhere in the document (within {@link GHOST_CLICK_MS}). */
+function swallowNextClick() {
+  if (typeof document === 'undefined') return;
+  const swallow = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    done();
+  };
+  const timer = window.setTimeout(() => done(), GHOST_CLICK_MS);
+  function done() {
+    window.clearTimeout(timer);
+    document.removeEventListener('click', swallow, true);
+  }
+  document.addEventListener('click', swallow, true);
+}
+
 /** Memoised: it re-renders for its own lit keys, not for every render of the lesson around it. */
 export const OnScreenKeyboard = memo(function OnScreenKeyboard({
   className,
@@ -79,8 +98,20 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
     void hub?.start('screen').catch(() => {});
   }, [hub]);
 
+  // A finger is on a key. If a note makes the screen replace the keyboard (the first lesson
+  // completes on its first note), the browser still sends that touch's click when the finger
+  // lifts — to whatever now sits under it, such as the result card's link. So a keyboard that
+  // goes away under a finger swallows the one click that follows.
+  const touching = useRef(false);
+
   // Let go of everything still down when the keyboard goes away.
-  useEffect(() => () => releaseAll(), [holds, screen]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(
+    () => () => {
+      releaseAll();
+      if (touching.current) swallowNextClick();
+    },
+    [holds, screen], // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   useEffect(() => {
     const bed = bedRef.current;
@@ -104,6 +135,7 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
     const primary = e.pointerType !== 'mouse' || e.button === 0;
     if (!primary) return;
     e.preventDefault();
+    if (e.pointerType === 'touch') touching.current = true;
     // Touch pointers are captured to the first key implicitly; let go so that
     // sliding onto the next key fires its enter (and this key's leave).
     const el = e.currentTarget;
@@ -193,8 +225,14 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
           defaultValue: 'Piano keyboard from {{note}}',
         })}
         className="rmm-keys__bed relative flex h-40 rounded-(--app-radius-sm) select-none sm:h-48"
-        onPointerUp={(e) => send({ type: 'pointer-lift', pointer: e.pointerId })}
-        onPointerCancel={(e) => send({ type: 'pointer-lift', pointer: e.pointerId })}
+        onPointerUp={(e) => {
+          touching.current = false;
+          send({ type: 'pointer-lift', pointer: e.pointerId });
+        }}
+        onPointerCancel={(e) => {
+          touching.current = false;
+          send({ type: 'pointer-lift', pointer: e.pointerId });
+        }}
         onPointerLeave={(e) => send({ type: 'pointer-exit', pointer: e.pointerId })}
       >
         {keys.map((key) => {

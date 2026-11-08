@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isSharp, staffPosition, staffStep } from './staff';
+import { fitToStaff, isSharp, staffPosition, staffStep } from './staff';
 
 describe('staffPosition (treble clef)', () => {
   it.each([
@@ -31,5 +31,25 @@ describe('staffPosition (treble clef)', () => {
       expect(staffStep(m + 12) - staffStep(m)).toBe(7);
       expect(staffStep(m)).toBe(staffPosition(m).step);
     }
+  });
+});
+
+describe('fitToStaff', () => {
+  it('leaves notes that fit alone', () => {
+    expect(fitToStaff(60)).toEqual({ position: staffPosition(60), ottava: 0 });
+    expect(fitToStaff(88)).toEqual({ position: staffPosition(88), ottava: 0 }); // E6, step 14
+  });
+
+  it('moves low and high notes by octaves under an ottava sign', () => {
+    // E2, a guitar's low string: drawn as E3 (step -7, four ledger lines) under 8vb.
+    const low = fitToStaff(40);
+    expect(low.ottava).toBe(-1);
+    expect(low.position).toEqual({ step: -7, accidental: null, ledgerLines: [-2, -4, -6] });
+    expect(fitToStaff(28).ottava).toBe(-2); // E1: still too low after one octave
+    const g3 = fitToStaff(55); // G3, step -5: fits
+    expect(g3.ottava).toBe(0);
+    const high = fitToStaff(96); // C7, step 19
+    expect(high.ottava).toBe(1);
+    expect(high.position.step).toBe(12);
   });
 });

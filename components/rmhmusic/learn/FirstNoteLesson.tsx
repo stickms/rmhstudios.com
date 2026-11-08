@@ -27,33 +27,11 @@ import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { getAudioContext } from '@/lib/shared/platform';
 import { PRIMARY_BUTTON } from './buttons';
 import { InputChooser } from './InputChooser';
+import { LiveStaff } from './LiveStaff';
 import { Notehead } from './Notehead';
 import { OnScreenKeyboard } from './OnScreenKeyboard';
-import {
-  permissionGranted,
-  useInputPhases,
-  useLastNote,
-  useNoteEvents,
-  useNoteSound,
-} from './useLearnInput';
+import { permissionGranted, useInputPhases, useNoteEvents, useNoteSound } from './useLearnInput';
 import { useMachine } from './useMachine';
-
-/**
- * The latest note in large type. Its own component so a note re-renders this
- * line only, not the lesson around it.
- */
-function LastNoteReadout() {
-  const last = useLastNote();
-  return (
-    <p
-      className="min-h-16 text-5xl font-bold text-(--app-accent)"
-      style={{ fontFamily: 'var(--app-font-mono)' }}
-      aria-live="polite"
-    >
-      {last ? midiToName(last.midi) : null}
-    </p>
-  );
-}
 
 /** `lessonId` is the lesson being completed; `paused` (a dialog is open over the lesson) stops notes counting. */
 export function FirstNoteLesson({
@@ -129,6 +107,7 @@ export function FirstNoteLesson({
             <p className="text-(--app-text-muted)">
               {t('first-note-played', { note: name, defaultValue: 'You played {{note}}.' })}
             </p>
+            <LiveStaff note={played} announce={false} className="max-w-56" />
             <p
               className="flex justify-center gap-1"
               aria-label={t('lesson-stars', {
@@ -192,7 +171,7 @@ export function FirstNoteLesson({
         <h2 className="rmm-display text-xl font-semibold text-(--app-text)">
           {t('first-note-instruction', { defaultValue: 'Play any note' })}
         </h2>
-        <p className="text-sm text-(--app-text-muted)">
+        <p className="min-h-10 text-sm text-(--app-text-muted)">
           {input === 'keys'
             ? t('first-note-hint-keys', {
                 defaultValue: 'Press A, S, D, F, G, H, J or K on your computer keyboard. A is C4.',
@@ -208,7 +187,7 @@ export function FirstNoteLesson({
                   })
                 : t('first-note-hint-screen', { defaultValue: 'Tap any key on the piano below.' })}
         </p>
-        <LastNoteReadout />
+        <LiveStaff className="pt-2" />
       </section>
 
       {needsDevice && !inputOn ? (
