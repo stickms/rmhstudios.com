@@ -100,6 +100,7 @@
   z-index: var(--z-skip);
   transform: translateY(-160%);
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-accent);
   color: var(--site-accent-fg);
   padding: 0.6rem 1.1rem;
@@ -143,6 +144,7 @@
   transform: translate(-50%, -50%);
   border: 1px solid var(--site-border);
   border-radius: 50%;
+  corner-shape: round;
   opacity: calc(0.22 - var(--i) * 0.025);
 }
 /* Phones draw the inner three rings only: the outer three extend far past a
@@ -410,6 +412,7 @@ body:has(.radial-shell) .call-banner {
   min-height: 0;
   padding: 0;
   border-radius: 999px;
+  corner-shape: round;
   color: var(--site-text);
 }
 /* Unread marker — a dot rather than a count, so the bar's rhythm never shifts. */
@@ -420,6 +423,7 @@ body:has(.radial-shell) .call-banner {
   width: 0.45rem;
   height: 0.45rem;
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-accent);
   box-shadow: 0 0 0 2px var(--site-bg);
 }
@@ -434,6 +438,7 @@ body:has(.radial-shell) .call-banner {
   width: 2rem;
   height: 2rem;
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-surface-hover);
 }
 .radial-topbar__avatar-placeholder {
@@ -450,6 +455,7 @@ body:has(.radial-shell) .call-banner {
   height: var(--site-touch-target);
   background: transparent;
   border-radius: 999px;
+  corner-shape: round;
   cursor: pointer;
   outline: 2px solid transparent;
   transition: outline-color 0.18s ease;
@@ -682,6 +688,7 @@ body:has(.radial-shell) .call-banner {
   min-width: 1.35rem;
   padding: 0.1rem 0.4rem;
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-accent);
   color: var(--site-accent-fg);
   font-size: 0.68rem;
@@ -901,6 +908,7 @@ body:has(.radial-shell) .call-banner {
   width: var(--dock-globe);
   height: var(--dock-globe);
   border-radius: 50%;
+  corner-shape: round;
   overflow: hidden;
   pointer-events: none;
   transform: translate(-50%, -50%);
@@ -927,6 +935,7 @@ body:has(.radial-shell) .call-banner {
   position: absolute;
   inset: 0;
   border-radius: 50%;
+  corner-shape: round;
   border: 1px solid color-mix(in srgb, var(--site-accent) 30%, transparent);
   opacity: 0.35;
 }
@@ -970,6 +979,7 @@ html[data-jelly-motion='still'] .rad-globe-dock__shimmer::after,
   gap: var(--rad-2);
   padding: var(--rad-2) var(--rad-3);
   border-radius: 999px;
+  corner-shape: round;
   border: var(--site-border-width, 1px) solid var(--site-border);
   background: var(--site-glass-tint, var(--site-surface));
   font-size: 0.875rem;
@@ -1018,6 +1028,7 @@ html[data-jelly-motion='still'] .rad-globe-dock__shimmer::after,
   height: 0.5rem;
   flex: none;
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-success);
 }
 .rad-live__dot::after {
@@ -1025,6 +1036,7 @@ html[data-jelly-motion='still'] .rad-globe-dock__shimmer::after,
     position: absolute;
     inset: 0;
     border-radius: 999px;
+    corner-shape: round;
     background: inherit;
     animation: radial-pulse-soft 1.8s ease-in-out infinite;
   }
@@ -1184,6 +1196,7 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
   width: var(--site-hub-orb-size);
   height: var(--site-hub-orb-size);
   border-radius: 999px;
+  corner-shape: round;
   border: none;
   cursor: pointer;
   color: var(--site-accent-fg);
@@ -1936,6 +1949,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
   position: absolute;
   inset: 0;
   border-radius: 50%;
+  corner-shape: round;
   pointer-events: none;
   overflow: hidden;
   /* Liquid Glass, held still: a specular bloom up-left, a thickening toward the
@@ -1959,6 +1973,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
   width: 36%;
   height: 36%;
   border-radius: 50%;
+  corner-shape: round;
   opacity: 0;
   background:
     radial-gradient(
@@ -1984,6 +1999,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
   width: 44%;
   height: 30%;
   border-radius: 50%;
+  corner-shape: round;
   background: radial-gradient(
     closest-side,
     color-mix(in srgb, var(--site-text) 12%, transparent),
@@ -2040,6 +2056,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
   position: absolute;
   inset: 0;
   border-radius: 50%;
+  corner-shape: round;
   box-shadow: 0 30px 70px -34px rgba(0, 0, 0, 0.5);
 }
 .radial-globe__stage[data-globe-coat='on'] .radial-globe__contact {
@@ -2113,6 +2130,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
   width: 2.15rem;
   height: 2.15rem;
   border-radius: 999px;
+  corner-shape: round;
   /* `--site-surface` is itself a translucent tint, so a tint of it would vanish
      over a light page. Built on the solid companion and mixed a few percent
      toward the ink, which separates the pin from the globe on every theme. */
@@ -2274,6 +2292,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   height: var(--reticle-d, 31%);
   transform: translate(-50%, -50%);
   border-radius: 50%;
+  corner-shape: round;
   pointer-events: none;
   z-index: 400;
   --fill: 0;
@@ -2284,6 +2303,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   position: absolute;
   inset: 0;
   border-radius: 50%;
+  corner-shape: round;
   border: var(--site-border-width, 1px) dashed color-mix(in srgb, var(--site-text) 34%, transparent);
   transition:
     border-color 0.2s ease,
@@ -2303,6 +2323,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   position: absolute;
   inset: -9%;
   border-radius: 50%;
+  corner-shape: round;
   background: conic-gradient(
     from -90deg,
     var(--site-accent) 0deg calc(var(--fill) * 360deg),
@@ -2380,6 +2401,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   gap: var(--rad-1);
   padding: 0.4rem 0.5rem;
   border-radius: 999px;
+  corner-shape: round;
   max-width: calc(100vw - 2rem);
   /* One jelly pill, the compose button's material: the same lit sphere shading, and the jelly soft body
      (`data-fluid-press` on the parent in RadialHub). Everything inside is plain ink on it, with no body of its
@@ -2510,6 +2532,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   aspect-ratio: 1;
   translate: -50% -50%;
   border-radius: 50%;
+  corner-shape: round;
   pointer-events: none;
   /* The light's colour: the theme's haze, lifted toward white where the theme's glass light is white (Daylight), so
      the rays still show on a pale page. */
@@ -2669,6 +2692,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   gap: 0.5rem;
   padding: 0.25rem 0.6rem 0.25rem 0.3rem;
   border-radius: 999px;
+  corner-shape: round;
   color: inherit;
   text-decoration: none;
   font-size: 0.82rem;
@@ -2708,6 +2732,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 999px;
+  corner-shape: round;
   border: none;
   background: transparent;
   color: inherit;
@@ -2721,6 +2746,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
 .radial-hub__signin {
   padding: 0.5rem 1rem;
   border-radius: 999px;
+  corner-shape: round;
   color: inherit;
   font-weight: 700;
   font-size: 0.82rem;
@@ -2777,6 +2803,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   align-items: stretch;
   border: none;
   border-radius: 999px;
+  corner-shape: round;
   /* The same jelly sphere as the hub orb's shading (lit upper left, deepening to the far limb). Its softness is
      the CSS soft body's (`data-fluid-press` in RadialFeed, app/jelly-material.css §8): the release spring at rest,
      the press below. */
@@ -2817,6 +2844,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   gap: var(--rad-2);
   padding: var(--rad-3) var(--rad-4);
   border-radius: 999px;
+  corner-shape: round;
 }
 /* The back-to-top arrow grows out of the pill's left end and folds back into it. Width carries the open
    and close (the pill is anchored on the right, so it extends leftwards), opacity follows on the same
@@ -2828,6 +2856,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   padding: 0;
   overflow: hidden;
   border-radius: 999px;
+  corner-shape: round;
   opacity: 0;
   visibility: hidden;
   transition:
@@ -2862,6 +2891,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   padding: var(--rad-2) var(--rad-4);
   border: none;
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-accent);
   color: var(--site-accent-fg);
   font-size: 0.875rem;
@@ -2919,6 +2949,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   width: clamp(4.5rem, 20vw, 6rem);
   height: clamp(4.5rem, 20vw, 6rem);
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-accent);
   color: var(--site-accent-fg);
   box-shadow: none;
@@ -3131,6 +3162,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   align-items: center;
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
+  corner-shape: round;
   background: color-mix(in srgb, var(--site-accent) 14%, transparent);
   color: var(--site-accent);
   font-size: 0.75rem;
@@ -3338,6 +3370,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   width: 26px;
   height: 26px;
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-accent);
   color: var(--site-accent-fg);
   font-size: 0.5rem;
@@ -3471,6 +3504,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   margin-bottom: var(--panel-gap);
   padding: 0.5rem 0.75rem;
   border-radius: 999px;
+  corner-shape: round;
   border: 1px solid var(--site-border);
   background: var(--site-surface);
 }

@@ -385,6 +385,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
+  corner-shape: round;
   background: var(--altair-amber);
   box-shadow: 0 0 22px 8px rgba(255, 180, 77, 0.45);
   animation: altair-lamp 5s ease-in-out infinite alternate;

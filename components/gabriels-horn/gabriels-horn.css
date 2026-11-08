@@ -389,6 +389,7 @@ button.gh-card[data-selected='true']:not(:disabled):hover {
   inline-size: 0.55rem;
   block-size: 0.55rem;
   border-radius: 999px;
+  corner-shape: round;
   background: var(--gh-card, var(--app-text-dim));
   box-shadow: inset 0 1px 0 0 color-mix(in srgb, var(--gh-rim) 45%, transparent);
 }
@@ -446,6 +447,7 @@ button.gh-card[data-selected='true']:not(:disabled):hover {
 /* One pip. Recessed: a dark well with a lit lower lip. */
 .gh-pip-dot {
   border-radius: 999px;
+  corner-shape: round;
   background: radial-gradient(circle at 40% 35%, #2b2440, #0d0b14);
   box-shadow:
     inset 0 1px 1px rgb(0 0 0 / 0.6),
@@ -513,6 +515,7 @@ button.gh-card[data-selected='true']:not(:disabled):hover {
   block-size: 15rem;
   translate: -50% 0;
   border-radius: 999px;
+  corner-shape: round;
   pointer-events: none;
   background:
     radial-gradient(

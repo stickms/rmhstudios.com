@@ -776,6 +776,7 @@
     width: 28px;
     height: 28px;
     border-radius: 50%;
+    corner-shape: round;
     background: radial-gradient(circle, var(--accent-red), #d32f2f);
     border: 2px solid rgba(255, 255, 255, 0.3);
     cursor: pointer;
@@ -843,6 +844,7 @@
     height: 48px;
     transform: translate(-50%, -50%);
     border-radius: 50%;
+    corner-shape: round;
     background: radial-gradient(circle, #ff4081, #c2185b);
     border: 2px solid rgba(255, 255, 255, 0.5);
     cursor: pointer;
@@ -1062,6 +1064,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
+    corner-shape: round;
 }
 
 .ss-mp-status-connected {

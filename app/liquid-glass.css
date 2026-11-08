@@ -260,6 +260,7 @@
     width: 180px;
     height: 180px;
     border-radius: 50%;
+    corner-shape: round;
     background: radial-gradient(
       closest-side,
       color-mix(in srgb, var(--site-glass-light, white) 36%, transparent),

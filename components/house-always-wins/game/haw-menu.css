@@ -393,6 +393,7 @@
   width: var(--s);
   height: var(--s);
   border-radius: 50%;
+  corner-shape: round;
   background: var(--haw-gold);
   opacity: 0;
   animation: haw-mote var(--dur) linear infinite;
@@ -831,6 +832,7 @@
   height: 2.75rem;
   padding: 0;
   border-radius: 50%;
+  corner-shape: round;
 }
 
 .haw-sound .haw-btn[data-muted='true'] {

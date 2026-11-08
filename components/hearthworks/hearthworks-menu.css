@@ -78,6 +78,7 @@
   width: 80vmin;
   height: 80vmin;
   border-radius: 50%;
+  corner-shape: round;
   background: radial-gradient(
     circle,
     rgb(255 244 204 / 90%) 0%,
@@ -764,6 +765,7 @@
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
+  corner-shape: round;
   background: rgb(255 255 255 / 70%);
   border: 1px solid var(--hw-rule);
 }

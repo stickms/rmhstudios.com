@@ -149,6 +149,7 @@
 
 .slice-bar__avatar {
   border-radius: 9999px;
+  corner-shape: round;
   box-shadow: 0 0 0 1.5px var(--slice-primary);
 }
 
