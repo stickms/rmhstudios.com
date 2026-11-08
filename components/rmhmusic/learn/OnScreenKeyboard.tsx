@@ -4,6 +4,8 @@
  * OnScreenKeyboard — a two-octave piano (C4–B5) played by touch, mouse or
  * keyboard focus. Each pointer is tracked on its own, so several fingers can
  * hold a chord, and sliding a finger along the keys plays each one it reaches.
+ * Who holds which key is the pure machine in `machines/key-holds.ts`; this
+ * component turns its press/release effects into `screen.press/release`.
  * Notes go through the store's on-screen-keys input (`screen.press/release`),
  * so the lesson hears them exactly as it hears MIDI or the mic; keys light up
  * for a note from ANY source.
@@ -14,9 +16,11 @@
  * (each white key stays at least 44px wide); the page never does.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import type { KeyboardEvent, PointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { keyHoldsMachine, type Event as HoldEvent } from '@/lib/rmhmusic/learn/machines/key-holds';
+import { createRunner } from '@/lib/rmhmusic/learn/machines/runner';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { cn } from '@/lib/utils';
@@ -57,79 +61,52 @@ export function OnScreenKeyboard({ className }: { className?: string }) {
   const hub = useLearnStore((s) => s.hub);
   const sounding = useSoundingNotes();
 
-  /** pointerId → the note that pointer is holding. */
-  const pointers = useRef(new Map<number, number>());
-  /** Pointers pressed down on the keyboard and not yet lifted, for sliding across keys. */
-  const down = useRef(new Set<number>());
-  /** Notes held by keyboard focus (Space / Enter). */
-  const focusHeld = useRef(new Set<number>());
+  // Who holds which key (pointers, keyboard focus) is the pure machine in `machines/key-holds.ts`.
+  // Nothing renders from it (keys light from the hub's notes), so it is held, not subscribed to.
+  const [holds] = useState(() => createRunner(keyHoldsMachine));
+  const send = (e: HoldEvent) => {
+    for (const fx of holds.send(e)) {
+      if (fx.type === 'press') screen?.press(fx.midi);
+      else screen?.release(fx.midi);
+    }
+  };
 
   // The hub forwards only started sources; the on-screen keys start with nothing to open.
   useEffect(() => {
     void hub?.start('screen').catch(() => {});
   }, [hub]);
 
-  const holders = (midi: number) =>
-    [...pointers.current.values()].filter((m) => m === midi).length +
-    (focusHeld.current.has(midi) ? 1 : 0);
-
-  const release = (midi: number) => {
-    if (holders(midi) === 0) screen?.release(midi);
-  };
-
   // Let go of everything still down when the keyboard goes away.
-  useEffect(() => {
-    const ptrs = pointers.current;
-    const held = focusHeld.current;
-    return () => {
-      const notes = new Set([...ptrs.values(), ...held]);
-      ptrs.clear();
-      held.clear();
-      for (const midi of notes) screen?.release(midi);
-    };
-  }, [screen]);
-
-  const pointerOn = (e: PointerEvent<HTMLButtonElement>, midi: number) => {
-    const prev = pointers.current.get(e.pointerId);
-    if (prev === midi) return;
-    pointers.current.set(e.pointerId, midi);
-    if (prev !== undefined) release(prev);
-    screen?.press(midi);
-  };
-
-  const pointerOff = (e: PointerEvent<HTMLButtonElement>, midi: number) => {
-    if (pointers.current.get(e.pointerId) !== midi) return;
-    pointers.current.delete(e.pointerId);
-    release(midi);
-  };
+  useEffect(
+    () => () => {
+      for (const fx of holds.send({ type: 'release-all' })) {
+        if (fx.type === 'release') screen?.release(fx.midi);
+      }
+    },
+    [holds, screen],
+  );
 
   const onPointerDown = (e: PointerEvent<HTMLButtonElement>, midi: number) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const primary = e.pointerType !== 'mouse' || e.button === 0;
+    if (!primary) return;
     e.preventDefault();
     // Touch pointers are captured to the first key implicitly; let go so that
     // sliding onto the next key fires its enter (and this key's leave).
     const el = e.currentTarget;
     if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
-    down.current.add(e.pointerId);
-    pointerOn(e, midi);
+    send({ type: 'pointer-down', pointer: e.pointerId, midi, primary });
   };
 
-  const onPointerEnter = (e: PointerEvent<HTMLButtonElement>, midi: number) => {
-    // A glissando: only a pointer pressed on the keyboard, and still pressed, plays.
-    if (down.current.has(e.pointerId) && (e.buttons & 1) === 1) pointerOn(e, midi);
-  };
+  const onPointerEnter = (e: PointerEvent<HTMLButtonElement>, midi: number) =>
+    send({ type: 'pointer-enter', pointer: e.pointerId, midi, pressed: (e.buttons & 1) === 1 });
+
+  const pointerOff = (e: PointerEvent<HTMLButtonElement>, midi: number) =>
+    send({ type: 'pointer-off', pointer: e.pointerId, midi });
 
   const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, midi: number) => {
     if (e.key !== ' ' && e.key !== 'Enter') return;
     e.preventDefault();
-    if (e.repeat || focusHeld.current.has(midi)) return;
-    focusHeld.current.add(midi);
-    screen?.press(midi);
-  };
-
-  const keyOff = (midi: number) => {
-    if (!focusHeld.current.delete(midi)) return;
-    release(midi);
+    send({ type: 'key-down', midi, key: e.key, repeat: e.repeat });
   };
 
   const keyClass = (key: PianoKey, lit: boolean) =>
@@ -155,8 +132,9 @@ export function OnScreenKeyboard({ className }: { className?: string }) {
       <div
         className="relative flex h-40 w-full select-none sm:h-48"
         style={{ minWidth: WHITE_COUNT * MIN_WHITE_PX }}
-        onPointerUp={(e) => down.current.delete(e.pointerId)}
-        onPointerCancel={(e) => down.current.delete(e.pointerId)}
+        onPointerUp={(e) => send({ type: 'pointer-lift', pointer: e.pointerId })}
+        onPointerCancel={(e) => send({ type: 'pointer-lift', pointer: e.pointerId })}
+        onPointerLeave={(e) => send({ type: 'pointer-exit', pointer: e.pointerId })}
       >
         {KEYS.map((key) => {
           const lit = sounding.has(key.midi);
@@ -183,8 +161,8 @@ export function OnScreenKeyboard({ className }: { className?: string }) {
               onPointerCancel={(e) => pointerOff(e, key.midi)}
               onPointerLeave={(e) => pointerOff(e, key.midi)}
               onKeyDown={(e) => onKeyDown(e, key.midi)}
-              onKeyUp={() => keyOff(key.midi)}
-              onBlur={() => keyOff(key.midi)}
+              onKeyUp={(e) => send({ type: 'key-up', midi: key.midi, key: e.key })}
+              onBlur={() => send({ type: 'blur', midi: key.midi })}
               onContextMenu={(e) => e.preventDefault()}
             >
               {!key.black && (
