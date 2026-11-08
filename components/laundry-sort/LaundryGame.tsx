@@ -16,11 +16,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRouterState } from '@tanstack/react-router';
 import { toast } from 'sonner';
-import { Link } from '@tanstack/react-router';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useSession } from '@/components/Providers';
 import { ConnectionBanner } from '@/components/shared/ConnectionStatus';
+import { Button } from '@/components/ui/button';
 import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 import { SCORE_PUBLISH_MS, type Difficulty, type MatchDuration } from '@/lib/laundry-sort/constants';
 import { LaundryMatch, type MatchEvent } from '@/lib/laundry-sort/match';
@@ -46,12 +44,10 @@ import { ScorePopups, popupsFromEvents, type Popup } from './hud/ScorePopups';
 import { VersusTicker } from './hud/VersusTicker';
 import { WashLegend } from './hud/WashLegend';
 import './laundry.css';
-import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 import { useGameSession } from '@/hooks/useGameSession';
 
 export function LaundryGame() {
   const { t } = useTranslation('c-laundry-sort');
-  const goBack = useBackOrFallback();
   const { data: session } = useSession();
   const signedIn = Boolean(session?.user?.id);
 
@@ -443,29 +439,6 @@ export function LaundryGame() {
             <ResultsPanel onPlayAgain={playAgain} onMenu={backToMenu} />
           ) : null}
         </>
-      )}
-
-      {/* The exit. Hidden while a round is running: it lives in the same
-          top-left corner as the score readout, and on a phone in landscape the
-          stage reaches the screen edge, so the two sat on top of each other. */}
-      {running ? null : (
-        <div
-          className="absolute z-[60]"
-          style={{
-            left: 'calc(env(safe-area-inset-left, 0px) + 0.75rem)',
-            top: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
-          }}
-        >
-          <Button asChild variant="ghost" size="sm" className="border border-white/10 bg-black/50">
-            <Link to="/games" onClick={goBack}>
-              <ArrowLeft className="size-3.5" aria-hidden="true" />
-              <span className="hidden sm:inline">RMH Studios</span>
-              <span className="sr-only sm:hidden">
-                {t('back-to-studios', { defaultValue: 'Back to RMH Studios' })}
-              </span>
-            </Link>
-          </Button>
-        </div>
       )}
 
       <RotateHint active={running} />

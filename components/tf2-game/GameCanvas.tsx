@@ -62,6 +62,8 @@ export interface GameCanvasProps {
   sessionId: string;
   /** What "the end" screen offers (Half-Life 2 / Portal demos end at the last published map). */
   onEnded?: () => void;
+  /** Leaves for the games list; adds a Quit entry to the pause menu. */
+  onQuit?: () => void;
   /** The game's own loading screen (its menu art and type); the plain one when absent. */
   loadingScreen?: (view: LoadingView) => ReactNode;
 }
@@ -144,6 +146,7 @@ export default function GameCanvas({
   onExit,
   title,
   onEnded,
+  onQuit,
   sessionId,
   loadingScreen,
 }: GameCanvasProps) {
@@ -332,6 +335,7 @@ export default function GameCanvas({
           settings={settings}
           onSettingsChange={onSettingsChange}
           onDisconnect={onExit}
+          onQuit={onQuit}
           touchActions={touchActions}
           onCapture={play}
         />

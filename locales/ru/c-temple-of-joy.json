@@ -309,5 +309,8 @@
   "vigil-title": "Ночная служба",
   "vigil-window": "Часы, которые считаются",
   "save-load-failed": "Не удалось загрузить сохранение.",
-  "save-load-retry": "Повторить"
+  "save-load-retry": "Повторить",
+  "quit": "Quit",
+  "setting-quit": "Leave the temple",
+  "setting-quit-note": "Saves, then returns to the games list. Your temple is waiting when you come back."
 }

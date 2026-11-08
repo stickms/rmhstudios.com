@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/versecraft/store';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import { loadGame } from '@/lib/versecraft/persistence';
 import { spriteUrl } from '@/lib/versecraft/sprites/registry';
 import { ShareSeed } from './ShareSeed';
@@ -29,6 +30,7 @@ function BookQuill() {
 
 export function MainMenu() {
   const { t } = useTranslation('c-versecraft');
+  const quit = useQuitGame();
   const continueGame = useGameStore(s => s.continueGame);
   const setScreen = useGameStore(s => s.setScreen);
   const isLoggedIn = useGameStore(s => s.isLoggedIn);
@@ -179,6 +181,10 @@ export function MainMenu() {
               <span className="vc-btn__mark" aria-hidden="true">⚙</span>{t('settings', { defaultValue: 'Settings' })}
             </button>
           </div>
+
+          <button type="button" className="vc-btn" onClick={quit}>
+            <span className="vc-btn__mark" aria-hidden="true">✕</span>{t('quit', { defaultValue: 'Quit' })}
+          </button>
         </div>
 
         {!isLoggedIn && !checking && (

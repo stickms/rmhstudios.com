@@ -305,5 +305,8 @@
   "vigil-title": "El oficio nocturno",
   "vigil-window": "Horas que cuentan",
   "save-load-failed": "No se pudo cargar tu partida guardada.",
-  "save-load-retry": "Reintentar"
+  "save-load-retry": "Reintentar",
+  "quit": "Quit",
+  "setting-quit": "Leave the temple",
+  "setting-quit-note": "Saves, then returns to the games list. Your temple is waiting when you come back."
 }

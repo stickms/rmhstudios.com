@@ -6,9 +6,10 @@ import { parseScoreMoment, ResultMomentSlot, useScoreMoment } from '@/components
 import { GHOST_MODES, type GhostMode, type GhostTrace } from '@/lib/neon-driftway/ghost';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users, Glasses, Compass, Eye, Ghost } from 'lucide-react';
+import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users, Glasses, Compass, Eye, Ghost, LogOut } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { useNavigate } from '@tanstack/react-router';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import { LEVELS } from '@/lib/neon-driftway/constants';
 import type { LevelId, RunStats } from '@/lib/neon-driftway/types';
 import type { GyroStatus } from '@/lib/neon-driftway/gyro';
@@ -69,6 +70,7 @@ export function NeonDriftwayUI({
   const [scoreMoment, takeScoreMoment, clearScoreMoment] = useScoreMoment();
   const session = useSession();
   const navigate = useNavigate();
+  const quit = useQuitGame();
 
   const fetchLeaderboard = useCallback(async () => {
     try {
@@ -256,6 +258,13 @@ export function NeonDriftwayUI({
                 )}
               </>
             )}
+            <Button
+              onClick={quit}
+              className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3"
+            >
+              <LogOut className="w-5 h-5 mr-2" aria-hidden="true" />
+              {t("quit", { defaultValue: "Quit" })}
+            </Button>
           </div>
 
           {viewPanel}

@@ -305,5 +305,8 @@
   "vigil-title": "L'office de nuit",
   "vigil-window": "Heures comptées",
   "save-load-failed": "Impossible de charger votre sauvegarde.",
-  "save-load-retry": "Réessayer"
+  "save-load-retry": "Réessayer",
+  "quit": "Quit",
+  "setting-quit": "Leave the temple",
+  "setting-quit-note": "Saves, then returns to the games list. Your temple is waiting when you come back."
 }

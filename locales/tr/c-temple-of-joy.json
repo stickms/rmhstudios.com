@@ -301,5 +301,8 @@
   "vigil-sinners_one": "{{count}} Günahkâr, elinde tutuyor",
   "vigil-sinners_other": "{{count}} Günahkâr, elinde tutuyor",
   "vigil-title": "Gece ayini",
-  "vigil-window": "Sayılan saatler"
+  "vigil-window": "Sayılan saatler",
+  "quit": "Quit",
+  "setting-quit": "Leave the temple",
+  "setting-quit-note": "Saves, then returns to the games list. Your temple is waiting when you come back."
 }

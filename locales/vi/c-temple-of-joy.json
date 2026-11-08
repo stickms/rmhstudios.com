@@ -297,5 +297,8 @@
   "vigil-sinner-note": "Mọi thứ các Tội nhân đang giữ sẽ trở lại, nhân lên, ngay khi bạn đập họ.",
   "vigil-sinners_other": "{{count}} Tội nhân, đang giữ",
   "vigil-title": "Kinh đêm",
-  "vigil-window": "Những giờ được tính"
+  "vigil-window": "Những giờ được tính",
+  "quit": "Quit",
+  "setting-quit": "Leave the temple",
+  "setting-quit-note": "Saves, then returns to the games list. Your temple is waiting when you come back."
 }

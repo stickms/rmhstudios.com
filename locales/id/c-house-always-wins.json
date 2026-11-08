@@ -31,5 +31,6 @@
   "touch-menu-aria": "Buka menu",
   "touch-right": "Gerak ke kanan",
   "touch-use": "Pakai",
-  "touch-use-aria": "Berinteraksi"
+  "touch-use-aria": "Berinteraksi",
+  "menu-quit": "Quit"
 }

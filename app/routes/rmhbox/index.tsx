@@ -14,9 +14,10 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Gamepad2 } from 'lucide-react';
+import { Gamepad2, LogOut } from 'lucide-react';
 import { connectToRMHbox, getSocket, disconnectFromRMHbox, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import { S2C, C2S } from '@/lib/rmhbox/events';
 import { toast } from '@/lib/rmhbox/toast-store';
 import LeaderboardPanel from '@/components/rmhbox/LeaderboardPanel';
@@ -26,6 +27,7 @@ import type { PublicLobbyInfo } from '@/lib/rmhbox/types';
 function RMHboxLanding() {
   const { t } = useTranslation("r-rmhbox");
   const navigate = useNavigate();
+  const quit = useQuitGame();
   const connectionStatus = useRMHboxStore((s) => s.connectionStatus);
   const [joinCode, setJoinCode] = useState('');
   const [publicLobbies, setPublicLobbies] = useState<PublicLobbyInfo[]>([]);
@@ -129,7 +131,7 @@ function RMHboxLanding() {
     // page scrolls and mobile Safari can collapse its toolbars. It used to be a
     // viewport-height shell with a `flex-1 overflow-y-auto` box inside it.
     <div className="app-page">
-      <RMHboxHeader backLabel='Games' backHref='/games' />
+      <RMHboxHeader />
 
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 pt-4 pb-12 md:gap-6 md:px-8 md:pt-8">
         {/* Create & Join */}
@@ -242,6 +244,17 @@ function RMHboxLanding() {
 
         {/* Leaderboard */}
         <LeaderboardPanel />
+
+        {/* Quit */}
+        <button
+          type="button"
+          onClick={quit}
+          className="glass-fill flex w-full items-center justify-center gap-2 rounded-(--app-radius) px-4 py-3 font-semibold text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-text)"
+          data-testid="quit-btn"
+        >
+          <LogOut className="h-5 w-5" aria-hidden />
+          {t("quit", { defaultValue: "Quit" })}
+        </button>
       </main>
     </div>
   );

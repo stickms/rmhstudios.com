@@ -31,5 +31,6 @@
   "touch-menu-aria": "Open menu",
   "touch-right": "Move right",
   "touch-use": "Use",
-  "touch-use-aria": "Interact"
+  "touch-use-aria": "Interact",
+  "menu-quit": "Quit"
 }

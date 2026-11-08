@@ -15,11 +15,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { Play, Users, Search, LogIn, Swords, WashingMachine } from 'lucide-react';
+import { Play, Users, Search, LogIn, LogOut, Swords, WashingMachine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { useLobbyInvite } from '@/hooks/useLobbyLink';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import { lobbyReturnPath } from '@/lib/lobby-link';
 import {
   DIFFICULTIES,
@@ -57,6 +58,7 @@ export function MainMenu({
   const { t } = useTranslation('c-laundry-sort');
   // Signing in is a detour, not a change of plan: come back to the invite.
   const invite = useLobbyInvite();
+  const quit = useQuitGame();
   const durationSec = useLaundryStore((s) => s.durationSec);
   const difficulty = useLaundryStore((s) => s.difficulty);
   const setDuration = useLaundryStore((s) => s.setDuration);
@@ -192,6 +194,11 @@ export function MainMenu({
               </Button>
             </div>
           )}
+
+          <Button onClick={quit} variant="ghost" className="w-full sm:w-auto sm:self-start">
+            <LogOut className="size-4" aria-hidden="true" />
+            {t('quit', { defaultValue: 'Quit' })}
+          </Button>
 
           {/* Scoring reference, deliberately last. On a phone in landscape the
               panel is taller than the screen, and whatever sits above the fold

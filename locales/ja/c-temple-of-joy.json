@@ -297,5 +297,8 @@
   "vigil-sinner-note": "罪人が抱えているものはすべて、叩いた瞬間に何倍にもなって戻ってきます。",
   "vigil-sinners_other": "罪人{{count}}人が保持中",
   "vigil-title": "夜の祈り",
-  "vigil-window": "対象となる時間"
+  "vigil-window": "対象となる時間",
+  "quit": "Quit",
+  "setting-quit": "Leave the temple",
+  "setting-quit-note": "Saves, then returns to the games list. Your temple is waiting when you come back."
 }

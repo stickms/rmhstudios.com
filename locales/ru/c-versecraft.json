@@ -79,5 +79,6 @@
   "tutorial-step2-tip": "Бонусы применяются к счёту каждого персонажа, поэтому их всегда стоит добиваться.",
   "tutorial-step2-title": "Бонусные приёмы",
   "words-selected-count": "Выбрано {{selected}}/{{total}}",
-  "your-journey": "Ваше путешествие"
+  "your-journey": "Ваше путешествие",
+  "quit": "Quit"
 }

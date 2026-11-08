@@ -317,5 +317,8 @@
   "vigil-title": "صلاة الليل",
   "vigil-window": "الساعات المحتسبة",
   "save-load-failed": "تعذّر تحميل حفظك.",
-  "save-load-retry": "حاول مرة أخرى"
+  "save-load-retry": "حاول مرة أخرى",
+  "quit": "Quit",
+  "setting-quit": "Leave the temple",
+  "setting-quit-note": "Saves, then returns to the games list. Your temple is waiting when you come back."
 }

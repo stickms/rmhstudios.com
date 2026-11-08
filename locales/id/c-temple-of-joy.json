@@ -297,5 +297,8 @@
   "vigil-sinner-note": "Semua yang dipegang para Pendosa kembali, berlipat ganda, begitu kamu memukul mereka.",
   "vigil-sinners_other": "{{count}} Pendosa, memegang",
   "vigil-title": "Ibadat malam",
-  "vigil-window": "Jam yang dihitung"
+  "vigil-window": "Jam yang dihitung",
+  "quit": "Quit",
+  "setting-quit": "Leave the temple",
+  "setting-quit-note": "Saves, then returns to the games list. Your temple is waiting when you come back."
 }

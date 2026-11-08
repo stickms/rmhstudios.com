@@ -10,8 +10,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Play, RotateCcw } from 'lucide-react';
-import { Link } from '@tanstack/react-router';
+import { LogOut, Play, RotateCcw } from 'lucide-react';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import AppShell from '@/components/shared/AppShell';
 import GameCanvas from '@/components/tf2-game/GameCanvas';
 import { GAME_MAPS } from '@/lib/tf2-game/assets/game-maps';
@@ -43,6 +43,7 @@ interface Running {
 
 export default function SpPlayPage({ game, title, subtitle, chapters }: SpPlayPageProps) {
   const { t } = useTranslation('c-tf2-game');
+  const quit = useQuitGame();
   const maps = GAME_MAPS[game];
   const names = useMemo(() => maps.map((m) => m.name), [maps]);
   const [save, setSave] = useState<SpSave | null>(null);
@@ -107,6 +108,7 @@ export default function SpPlayPage({ game, title, subtitle, chapters }: SpPlayPa
               title={chapters[running.map] ?? running.map}
               create={(mount) => createSpClient({ ...mount, game, map: running.map, transition: running.transition })}
               onExit={leave}
+              onQuit={quit}
               loadingScreen={(view) => (
                 <SourceLoadingScreen
                   game={game}
@@ -126,13 +128,6 @@ export default function SpPlayPage({ game, title, subtitle, chapters }: SpPlayPa
     <AppShell appClassName={theme}>
       <main className={cn('spg-menu app-page min-h-dvh bg-(--app-bg) text-(--app-text)', `spg-${game}`)}>
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 pr-[calc(1rem_+_var(--safe-right,0px))] pb-16 pl-[calc(1rem_+_var(--safe-left,0px))] pt-[calc(var(--safe-top,0px)+1rem)]">
-          <Link
-            to="/games"
-            className="inline-flex min-h-11 w-fit items-center gap-1.5 text-sm font-medium text-(--app-text-muted) hover:text-(--app-text)"
-          >
-            <ArrowLeft className="size-4 rtl-flip" aria-hidden />
-            {t('play_back_games', { defaultValue: 'Games' })}
-          </Link>
           <header>
             <h1 className="spg-title text-5xl sm:text-6xl">{title}</h1>
             <p className="mt-2 text-sm text-(--app-text-muted)">{subtitle}</p>
@@ -159,6 +154,10 @@ export default function SpPlayPage({ game, title, subtitle, chapters }: SpPlayPa
             >
               <RotateCcw className="size-4" aria-hidden />
               <span>{t('play_new_game', { defaultValue: 'New game' })}</span>
+            </button>
+            <button type="button" className="spg-item" onClick={quit}>
+              <LogOut className="size-4" aria-hidden />
+              <span>{t('menu_quit', { defaultValue: 'Quit' })}</span>
             </button>
           </nav>
 
@@ -210,6 +209,7 @@ export default function SpPlayPage({ game, title, subtitle, chapters }: SpPlayPa
             title={chapters[running.map] ?? running.map}
             create={(mount) => createSpClient({ ...mount, game, map: running.map, transition: running.transition })}
             onExit={leave}
+            onQuit={quit}
           />
         </div>
       ) : null}

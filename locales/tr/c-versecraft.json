@@ -77,5 +77,6 @@
   "tutorial-step2-tip": "Bonuslar her karakterin puanına uygulanır, bu yüzden her zaman peşinde koşmaya değerdir.",
   "tutorial-step2-title": "Bonus Teknikler",
   "words-selected-count": "{{selected}}/{{total}} seçildi",
-  "your-journey": "Yolculuğunuz"
+  "your-journey": "Yolculuğunuz",
+  "quit": "Quit"
 }

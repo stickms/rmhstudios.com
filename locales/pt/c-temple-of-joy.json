@@ -305,5 +305,8 @@
   "vigil-title": "O ofício da noite",
   "vigil-window": "Horas que contam",
   "save-load-failed": "Não foi possível carregar o seu jogo salvo.",
-  "save-load-retry": "Tentar novamente"
+  "save-load-retry": "Tentar novamente",
+  "quit": "Quit",
+  "setting-quit": "Leave the temple",
+  "setting-quit-note": "Saves, then returns to the games list. Your temple is waiting when you come back."
 }

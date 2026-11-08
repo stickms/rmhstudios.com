@@ -1,6 +1,5 @@
 import { lazy, Suspense } from 'react';
 import { ClientOnly, createFileRoute } from '@tanstack/react-router';
-import { GameBackLink } from '@/components/shared/GameBackLink';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
@@ -16,7 +15,6 @@ function HearthworksPage() {
       className="fixed inset-0 flex flex-col overflow-hidden"
       style={{ background: SKY, touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
-      <GameBackLink to="/games" z="z-[60]" />
       <div className="relative grow overflow-hidden">
         <GameErrorBoundary gameName="Hearthworks">
           {/* <Canvas> cannot render on the server, so SSR emits the fallback and the world mounts after hydration. */}

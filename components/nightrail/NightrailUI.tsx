@@ -19,6 +19,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import {
   ArrowDown,
   ArrowDownLeft,
@@ -32,6 +33,7 @@ import {
   Boxes,
   Gauge,
   Lock,
+  LogOut,
   Play,
   RotateCcw,
   Timer,
@@ -131,6 +133,7 @@ export function NightrailUI({
 }: Props) {
   const { t } = useTranslation('c-nightrail');
   const navigate = useNavigate();
+  const quit = useQuitGame();
   const session = useSession();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
@@ -276,6 +279,15 @@ export function NightrailUI({
             >
               <BookOpen className="mr-2 h-4 w-4" aria-hidden="true" />
               {t('tricktionary', { defaultValue: 'Tricktionary' })}
+            </Button>
+
+            <Button
+              onClick={quit}
+              variant="outline"
+              className="w-full border-slate-600 text-slate-200 hover:bg-slate-800"
+            >
+              <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
+              {t('quit', { defaultValue: 'Quit' })}
             </Button>
           </div>
 

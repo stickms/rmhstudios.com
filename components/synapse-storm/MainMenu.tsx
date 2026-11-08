@@ -1,7 +1,8 @@
 'use client';
 import React, { useState, useEffect, useId } from 'react';
-import { Zap, Brain, Activity, Target, Layers, Timer, Settings2, Users } from 'lucide-react';
+import { Zap, Brain, Activity, Target, Layers, Timer, Settings2, Users, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import { GlobalLeaderboard } from './GlobalLeaderboard';
 import { MenuBackdrop } from './MenuBackdrop';
 import './SynapseStormMenu.css';
@@ -30,6 +31,7 @@ const FEATURE_KEYS = [
 export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, onCustom, currentUserId }) => {
     const { t } = useTranslation("c-synapse-storm");
     const uid = useId();
+    const quit = useQuitGame();
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [musicVol, setMusicVol] = useState(0.25);
     const [sfxVol, setSfxVol] = useState(0.3);
@@ -95,6 +97,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, onCu
                                 </button>
                             )}
                             {onCustom && <CustomStormPicker onStart={onCustom} />}
+                            <button type="button" className="ssm-btn ssm-btn--ghost" onClick={quit}>
+                                <LogOut className="ssm-btn__icon" size={20} aria-hidden="true" />
+                                {t("quit", { defaultValue: "Quit" })}
+                            </button>
                         </div>
 
                         <div className="ssm-settings">

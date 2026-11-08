@@ -31,5 +31,6 @@
   "touch-menu-aria": "메뉴 열기",
   "touch-right": "오른쪽으로 이동",
   "touch-use": "사용",
-  "touch-use-aria": "상호작용"
+  "touch-use-aria": "상호작용",
+  "menu-quit": "Quit"
 }

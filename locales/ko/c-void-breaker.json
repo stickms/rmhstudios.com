@@ -114,5 +114,6 @@
   "move-left": "Move left",
   "move-right": "Move right",
   "move-up": "Move up",
-  "pause": "Pause"
+  "pause": "Pause",
+  "quit": "Quit"
 }

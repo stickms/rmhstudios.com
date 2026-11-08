@@ -5,7 +5,7 @@ import { ResultMomentSlot, useScoreMoment } from '@/components/games/result-mome
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Play, RotateCcw, Trophy, Volume2, VolumeX, BookOpen, ArrowLeft, Settings, Gamepad2, Hexagon } from 'lucide-react';
+import { Play, RotateCcw, Trophy, Volume2, VolumeX, BookOpen, ArrowLeft, Settings, Gamepad2, Hexagon, LogOut } from 'lucide-react';
 import {
   META_NODES, nodeCost, nodeLevel, canBuy, isCharUnlocked, isWeaponUnlocked,
   type MetaState, type MetaNodeId,
@@ -16,6 +16,7 @@ import { MODIFIERS, combineModifiers, type ModifierId } from '@/lib/void-breaker
 import { parseHandicap } from '@/lib/ranked/handicap';
 import { useSession } from '@/components/Providers';
 import { useNavigate } from '@tanstack/react-router';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import type { RunStats } from '@/lib/void-breaker/types';
 import { BossRushMenu, BossRushResult } from './BossRush';
 
@@ -70,6 +71,7 @@ export function VoidBreakerUI({
   const [showForge, setShowForge] = useState(false);
   const session = useSession();
   const navigate = useNavigate();
+  const quit = useQuitGame();
 
   const fetchLb = useCallback(async () => {
     try {
@@ -622,6 +624,10 @@ export function VoidBreakerUI({
                 <BookOpen className="w-4 h-4 mr-2" /> {t("story", { defaultValue: "Story" })}
               </Button>
             </div>
+            <Button onClick={quit} variant="outline"
+              className="w-full py-2 border-[#2a2a3a] text-zinc-500 hover:text-[#d4af37] hover:border-[#c9a227]/40">
+              <LogOut className="w-4 h-4 mr-2" aria-hidden /> {t("quit", { defaultValue: "Quit" })}
+            </Button>
             {lb.length > 0 && (
               <div className="bg-[#1a1a24] border border-[#c9a227]/20 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-2">

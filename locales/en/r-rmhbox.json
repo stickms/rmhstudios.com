@@ -51,5 +51,6 @@
   "starting-game": "Starting game...",
   "view-minigames": "View Minigames",
   "winner-label": "Winner:",
-  "winner-none": "None"
+  "winner-none": "None",
+  "quit": "Quit"
 }

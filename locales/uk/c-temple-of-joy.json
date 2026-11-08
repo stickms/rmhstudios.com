@@ -309,5 +309,8 @@
   "vigil-title": "The night office",
   "vigil-window": "Hours that count",
   "save-load-failed": "Не вдалося завантажити збереження.",
-  "save-load-retry": "Спробувати ще раз"
+  "save-load-retry": "Спробувати ще раз",
+  "quit": "Quit",
+  "setting-quit": "Leave the temple",
+  "setting-quit-note": "Saves, then returns to the games list. Your temple is waiting when you come back."
 }

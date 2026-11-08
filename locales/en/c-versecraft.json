@@ -98,5 +98,6 @@
   "verse-poem-for-you": "a poem for you",
   "verse-the-page-remembers": "the page remembers",
   "words-selected-count": "{{selected}}/{{total}} selected",
-  "your-journey": "Your Journey"
+  "your-journey": "Your Journey",
+  "quit": "Quit"
 }

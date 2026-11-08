@@ -91,5 +91,6 @@
   "wash-reds": "Reds",
   "wins-count_other": "{{count}}W",
   "wrong-bin": "Wrong bin",
-  "you-suffix": "(you)"
+  "you-suffix": "(you)",
+  "quit": "Quit"
 }

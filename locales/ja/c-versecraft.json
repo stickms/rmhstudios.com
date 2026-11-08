@@ -76,5 +76,6 @@
   "tutorial-step2-tip": "ボーナスはすべてのキャラクターのスコアに適用されるため、常に追求する価値があります。",
   "tutorial-step2-title": "ボーナス技法",
   "words-selected-count": "{{selected}}/{{total}} 選択済み",
-  "your-journey": "あなたの旅"
+  "your-journey": "あなたの旅",
+  "quit": "Quit"
 }

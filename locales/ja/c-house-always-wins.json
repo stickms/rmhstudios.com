@@ -31,5 +31,6 @@
   "touch-menu-aria": "メニューを開く",
   "touch-right": "右へ移動",
   "touch-use": "使う",
-  "touch-use-aria": "操作する"
+  "touch-use-aria": "操作する",
+  "menu-quit": "Quit"
 }

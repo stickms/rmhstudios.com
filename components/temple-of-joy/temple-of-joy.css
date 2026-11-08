@@ -773,7 +773,7 @@
  */
 .toj-hud {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   column-gap: var(--toj-gap-between);
   row-gap: var(--toj-2);
@@ -803,13 +803,6 @@
 .toj-chips {
   grid-column: 1 / -1;
   grid-row: 3;
-}
-
-/* Pinned to the corner. A "leave this game" link has exactly one right place
-   and it does not depend on how wide the screen is. */
-.toj-hud-actions {
-  grid-column: 2;
-  grid-row: 1;
 }
 
 .toj-joy {
@@ -904,12 +897,6 @@
   color: var(--toj-ink-soft);
 }
 
-.toj-hud-actions {
-  display: flex;
-  gap: var(--toj-2);
-  align-items: center;
-}
-
 /**
  * The head, once there is room for the chips beside the counter.
  *
@@ -947,7 +934,7 @@
 
 @media (min-width: 48rem) {
   .toj-hud {
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .toj-chips {
@@ -957,10 +944,6 @@
     /* Optically on the counter's line rather than on its box's top edge: the
        counter is a 3rem serif with most of its mass low in the line. */
     align-self: center;
-  }
-
-  .toj-hud-actions {
-    grid-column: 3;
   }
 }
 
@@ -998,7 +981,7 @@
        5rem pushes the pressure onto the chips instead, which is where it
        belongs — they are short, and the one that is purely decorative gets out
        of the way below. */
-    grid-template-columns: auto minmax(5rem, max-content) minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(5rem, max-content) minmax(0, 1fr);
     align-items: center;
     column-gap: var(--toj-gap-between);
   }
@@ -1025,11 +1008,6 @@
 
   .toj-chips::-webkit-scrollbar {
     display: none;
-  }
-
-  .toj-hud-actions {
-    grid-column: 4;
-    grid-row: 1;
   }
 
   /* The one chip that is neither a number you own nor a button that goes

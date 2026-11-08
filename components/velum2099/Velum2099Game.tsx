@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supportsWebGL } from '@/lib/shared/platform';
 import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
+import { useQuitGame } from '@/hooks/useQuitGame';
 import { ContractDock } from './ContractDock';
 import './velum2099-global.css';
 import './velum2099-terminal.css';
@@ -19,6 +20,12 @@ export function Velum2099Game() {
   const [appReady, setAppReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const { t } = useTranslation('c-game');
+  // The engine is plain DOM and outlives renders; it calls the latest quit handler through a ref.
+  const quit = useQuitGame();
+  const quitRef = useRef(quit);
+  useEffect(() => {
+    quitRef.current = quit;
+  }, [quit]);
 
   // An invite link. The game is plain DOM below this line, so the code is
   // handed to it once it exists and the overlay does the joining.
@@ -42,7 +49,7 @@ export function Velum2099Game() {
       const { App } = await import('./game/main');
       if (destroyed) return;
 
-      const app = new App(container) as unknown as VelumApp;
+      const app = new App(container, { onQuit: () => quitRef.current() }) as unknown as VelumApp;
       appRef.current = app;
       setAppReady(true);
     };

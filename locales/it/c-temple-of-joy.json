@@ -305,5 +305,8 @@
   "vigil-title": "L'ufficio notturno",
   "vigil-window": "Ore che contano",
   "save-load-failed": "Impossibile caricare il tuo salvataggio.",
-  "save-load-retry": "Riprova"
+  "save-load-retry": "Riprova",
+  "quit": "Quit",
+  "setting-quit": "Leave the temple",
+  "setting-quit-note": "Saves, then returns to the games list. Your temple is waiting when you come back."
 }

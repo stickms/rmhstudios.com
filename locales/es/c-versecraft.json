@@ -78,5 +78,6 @@
   "tutorial-step2-tip": "Los bonos se aplican a la puntuación de cada personaje, por lo que siempre vale la pena buscarlos.",
   "tutorial-step2-title": "Técnicas de Bonificación",
   "words-selected-count": "{{selected}}/{{total}} seleccionadas",
-  "your-journey": "Tu Viaje"
+  "your-journey": "Tu Viaje",
+  "quit": "Quit"
 }
