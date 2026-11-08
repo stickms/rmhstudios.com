@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Waves, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buildMeta, buildCanonical } from '@/lib/seo';
-import { strike } from '@/lib/jelly/arcs';
+import { ensureClickArcs } from '@/lib/jelly/arc-lazy';
 import {
   ELECTRIC_ARC_MODES,
   JELLY_MOTION_LEVELS,
@@ -318,9 +318,12 @@ function ArcsSection() {
   const cathode = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<'idle' | 'struck' | 'blocked'>('idle');
 
-  const onStrike = () => {
+  const onStrike = async () => {
     const a = anode.current;
     const b = cathode.current;
+    // The arcs runtime exists only after a press (and ten seconds past the last one): wake it for this button.
+    await ensureClickArcs();
+    const { strike } = await import('@/lib/jelly/arcs');
     setStatus(a && b && strike(a, b) ? 'struck' : 'blocked');
   };
 

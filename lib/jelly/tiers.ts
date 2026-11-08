@@ -328,6 +328,12 @@ export const JELLY_SELECTOR =
 export const JELLY_LAYER_SELECTOR =
   'canvas[data-liquid-glass],.jelly-haze-canvas,.jelly-flow,.jelly-arc-layer';
 
+/**
+ * The radial hub open or an eversion in progress: arcs are off. `tiers` does not otherwise know about these, so the
+ * arc runtime checks this selector, and so does the lazy installer (`arc-lazy.ts`) before it loads anything.
+ */
+export const HUB_OR_EVERSION_SELECTOR = '.radial-hub:not([data-phase="closed"]),.eversion-overlay';
+
 /** The handheld tier's query, copied exactly from `handheld-tier.test.ts` (which pins it here). */
 export const HANDHELD_QUERY = '(pointer: coarse) and (max-width: 1024px)';
 export const FINE_POINTER_QUERY = '(hover: hover) and (pointer: fine)';

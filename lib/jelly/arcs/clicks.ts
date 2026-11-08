@@ -286,6 +286,34 @@ export function createArcActions(ctx: ArcContext): ArcActions {
 
 // ── Delegated input ──────────────────────────────────────────────────────────
 
+/**
+ * A primary `pointerdown` as a click arc: a press on a jelly host discharges from it; a press on bare page near a rim
+ * draws the charge out to the cursor; anything blocked, editable, opted out or in the globe arcs nothing. The caller
+ * has already checked that arcs are allowed. A target that has left the document (a replayed press) is skipped.
+ */
+export function pressFromEvent(
+  e: PointerEvent,
+  actions: Pick<ArcActions, 'press' | 'background'>,
+): boolean {
+  if (e.isPrimary === false) return false;
+  const touch = e.pointerType === 'touch';
+  if (!touch && e.button !== 0) return false;
+  const target = e.target as Element | null;
+  if (!target || typeof target.closest !== 'function') return false;
+  if ((target as { isConnected?: boolean }).isConnected === false) return false;
+  const host = pressHost(target);
+  if (host) return actions.press(host, e.clientX, e.clientY, !touch);
+  // Only a press on bare page (no jelly ancestor, nothing blocked or editable) draws charge to the cursor.
+  if (
+    target.closest(JELLY_SELECTOR) ||
+    target.closest(GLOBE_SELECTOR) ||
+    target.closest(CLICK_BLOCK_SELECTOR) ||
+    isEditable(target)
+  )
+    return false;
+  return actions.background(e.clientX, e.clientY);
+}
+
 export interface ClickInputOptions {
   /** May click arcs fire right now (global gates + tier). */
   allowed(): boolean;
@@ -306,26 +334,8 @@ const focusVisible = (el: Element): boolean => {
  */
 export function installClickArcs(doc: Document, opts: ClickInputOptions): () => void {
   const onPointerDown = (e: PointerEvent) => {
-    if (e.isPrimary === false) return;
-    const touch = e.pointerType === 'touch';
-    if (!touch && e.button !== 0) return;
     if (!opts.allowed()) return;
-    const target = e.target as Element | null;
-    if (!target || typeof target.closest !== 'function') return;
-    const host = pressHost(target);
-    if (host) {
-      opts.actions.press(host, e.clientX, e.clientY, !touch);
-      return;
-    }
-    // Only a press on bare page (no jelly ancestor, nothing blocked or editable) draws charge to the cursor.
-    if (
-      target.closest(JELLY_SELECTOR) ||
-      target.closest(GLOBE_SELECTOR) ||
-      target.closest(CLICK_BLOCK_SELECTOR) ||
-      isEditable(target)
-    )
-      return;
-    opts.actions.background(e.clientX, e.clientY);
+    pressFromEvent(e, opts.actions);
   };
   const onClick = (e: MouseEvent) => {
     // detail 0: a keyboard- or AT-synthesised activation. Pointer clicks already arced on pointerdown.
