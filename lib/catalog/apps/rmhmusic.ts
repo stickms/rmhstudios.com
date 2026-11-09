@@ -3,11 +3,11 @@ import type { AppInfo } from '../types';
 const entry: AppInfo = {
   id: 'rmhmusic',
   order: 40,
-  title: 'RMHMusic',
+  title: 'RMH Music',
   description:
-    'Learn piano and guitar with your microphone or a MIDI keyboard.',
+    'Learn piano and guitar by playing into a microphone, MIDI keyboard, computer keyboard or on-screen keys. Lessons are being added in stages.',
   longDescription:
-    'RMHMusic is a beginner-friendly app for learning piano and guitar. Pick your instrument, connect a microphone or MIDI keyboard (or use the on-screen keys), calibrate its delay and start with a first note lesson, with your progress saved to your account. It is a Beta: reading notes on a staff, pitch and chord ear training, rhythm and time signatures, a tuner and play-along with sheet music are being added in stages.',
+    'RMH Music teaches piano and guitar from the first note. Pick an instrument and play into a microphone, a MIDI keyboard, your computer keyboard or the on-screen keys; the app calibrates the delay of your input and hears what you play. The path of lessons starts with playing your first note, and your progress is saved to your account. It is a Beta and the path is being added in stages: note-reading flashcards, a fretboard and keyboard trainer, ear training for pitch, intervals and chords, and rhythm are planned next.',
   href: '/rmhmusic',
   status: 'Beta',
   cta: 'Start Learning',
@@ -15,7 +15,7 @@ const entry: AppInfo = {
   gradient: 'from-purple-500 via-violet-500 to-indigo-600',
   iconName: 'Music',
   color: 'from-purple-500/20 to-indigo-600/20 hover:border-purple-500/50',
-  tags: ['Music', 'Learning', 'Piano', 'Guitar', 'Beta'],
+  tags: ['Music', 'Learning', 'Piano', 'Guitar', 'MIDI', 'Beta'],
   imagePath: '/images/games/rmhmusic.webp',
   bannerPath: '/images/games/banners/rmhmusic.webp',
   logoPath: '/images/games/logos/rmhmusic.webp',

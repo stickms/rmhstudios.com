@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-09T04:16:56.444Z",
+  "generatedAt": "2026-11-09T05:36:05.424Z",
   "entries": [
     {
       "id": "help:coins",
@@ -735,17 +735,18 @@
     {
       "id": "app:rmhmusic",
       "kind": "app",
-      "title": "RMHMusic",
+      "title": "RMH Music",
       "tags": [
         "Music",
         "Learning",
         "Piano",
         "Guitar",
+        "MIDI",
         "Beta"
       ],
       "route": "/rmhmusic",
       "players": "single-player",
-      "text": "Learn piano and guitar with your microphone or a MIDI keyboard. RMHMusic is a beginner-friendly app for learning piano and guitar. Pick your instrument, connect a microphone or MIDI keyboard (or use the on-screen keys), calibrate its delay and start with a first note lesson, with your progress saved to your account. It is a Beta: reading notes on a staff, p…"
+      "text": "Learn piano and guitar by playing into a microphone, MIDI keyboard, computer keyboard or on-screen keys. Lessons are being added in stages. RMH Music teaches piano and guitar from the first note. Pick an instrument and play into a microphone, a MIDI keyboard, your computer keyboard or the on-screen keys; the app calibrates the delay of your input and hears …"
     },
     {
       "id": "app:rmhstudy",
