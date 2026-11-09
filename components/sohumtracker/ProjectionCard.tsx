@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * What the current rate comes to by January 1st, 2030.
  *

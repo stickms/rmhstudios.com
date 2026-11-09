@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Eye, Heart, MessageCircle, Repeat2, Users, FileText, TrendingUp } from 'lucide-react';

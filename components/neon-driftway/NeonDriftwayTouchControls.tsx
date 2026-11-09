@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Touch controls for the first-person cockpit.
  *

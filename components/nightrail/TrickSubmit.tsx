@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Nightrail trick of the week (R21): put this run's biggest combo up for the
  * weekly vote. Nightrail records no replay, so what is submitted is the chain of

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Public edit history (F23).
  *

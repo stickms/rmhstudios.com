@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Live standings during a race.
  *

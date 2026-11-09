@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Slice It chart editor — scheduling for the linter.
  *

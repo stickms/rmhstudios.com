@@ -17,7 +17,6 @@
  * §12.1); rows are buttons, so keyboards work, and a gamepad moves through
  * them (use-lobby-gamepad.ts).
  */
-'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

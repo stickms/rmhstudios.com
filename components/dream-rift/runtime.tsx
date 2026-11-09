@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Shared client runtime for Dream Rift — a single MusicController, Sfx and
  * InputManager provided to every screen via context, plus the loaded external

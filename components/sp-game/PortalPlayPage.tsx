@@ -2,7 +2,6 @@
  * /portal — Portal (test chambers 00–10) on the browser engine,
  * with the portal gun and recursive portal views.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import SpPlayPage from './SpPlayPage';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * AspectStage — the locked 16:9 frame the whole game is played inside.
  *

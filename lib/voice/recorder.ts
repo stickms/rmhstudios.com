@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * `MediaRecorder` wrapper for DM voice notes.
  *

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Shareable stat cards (§13) — the reusable share sheet.
  *

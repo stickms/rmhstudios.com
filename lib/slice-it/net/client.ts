@@ -26,8 +26,6 @@
  *   "reconnecting" instead of freezing.
  */
 
-'use client';
-
 import { singleFlight } from '@/lib/shared/realtime/single-flight';
 import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';

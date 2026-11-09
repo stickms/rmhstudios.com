@@ -3,7 +3,6 @@
  * shuffle (Phase 3.6), loop toggle (Phase 3.7), history (Phase 3.9),
  * total duration display, and voting props.
  */
-'use client';
 
 import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

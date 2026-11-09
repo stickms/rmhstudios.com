@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Library storage health, formerly the whole of `/admin/library-storage`.
  * Now the second tab of `/admin/library` — see that route's docblock.

@@ -7,7 +7,6 @@
  * something, so the panel shows the whole effect — gift and price — rather
  * than only the good half.
  */
-'use client';
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

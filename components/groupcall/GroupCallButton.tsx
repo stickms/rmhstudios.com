@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * "Group call" — the ad-hoc entry point, sitting beside the 1:1 `CallButton` in a
  * DM header and on a profile.

@@ -1,5 +1,3 @@
-'use client';
-
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { COMMAND_PALETTE_EVENT } from './command-palette-bus';
 

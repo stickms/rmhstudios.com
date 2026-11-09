@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Account recovery (I3) — recovery codes, requests opened against this account,
  * and the redemption form the emailed link lands on.

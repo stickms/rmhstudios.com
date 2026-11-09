@@ -10,7 +10,6 @@
  *   endsAt: number — Timestamp (ms) when voting ends
  *   onVote: (minigameId: string) => void — Callback when user votes
  */
-'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { Timer, Gamepad2 } from 'lucide-react';

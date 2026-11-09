@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Map, { Marker, Source, Layer, type MapRef } from 'react-map-gl/maplibre';

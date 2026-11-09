@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Renders one `GarmentCloth` per live soft body.
  *

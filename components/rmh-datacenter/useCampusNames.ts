@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The six campuses' human names, in one place.
  *

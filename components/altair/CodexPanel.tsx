@@ -1,5 +1,3 @@
-'use client';
-
 import { Lock, Share2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CODEX, codexProgress, codexUnlocked, type CodexEntry } from '@/lib/altair/data/codex';

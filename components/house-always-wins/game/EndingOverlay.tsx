@@ -1,5 +1,3 @@
-"use client";
-
 import { useHouseAlwaysWinsStore } from "@/lib/store/houseAlwaysWinsStore";
 import { NgPlusOffer } from "./NgPlus";
 

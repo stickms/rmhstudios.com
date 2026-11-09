@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * A tiny anchored, non-modal popover for footnotes (narrow screens) and
  * glossary terms. Deliberately dependency-free: it ships inside the article

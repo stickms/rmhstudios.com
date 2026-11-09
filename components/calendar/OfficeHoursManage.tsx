@@ -1,5 +1,3 @@
-'use client';
-
 /** K2 — `/office-hours`: publish weekly windows and manage bookings. */
 
 import { useEffect, useMemo, useState } from 'react';

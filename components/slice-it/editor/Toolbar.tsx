@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The editor's transport bar: tools, snap, zoom, history, save.
  *

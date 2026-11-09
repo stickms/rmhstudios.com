@@ -3,7 +3,6 @@
  * visibility, spot hidden ones. It is also the keyboard/screen-reader route to
  * everything the canvas shows.
  */
-'use client';
 
 import { Eye, EyeOff } from 'lucide-react';
 import { useMemo } from 'react';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The per-key heatmap: which letters you are slow on, and which you miss.
  *

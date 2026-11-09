@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Everyone who is not the player: customers walking to and from their stalls and farmhands going about their day.
  * The simulation moves them in 50 ms ticks along routes that hop up ledges and drop down cliffs; here each one is

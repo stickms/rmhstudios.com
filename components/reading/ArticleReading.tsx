@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The lazy half of the article enhancements: highlights, notes, popular-passage
  * underlines and the highlights list. Mounted by ArticleBody after hydration on

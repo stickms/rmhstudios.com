@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * LearnHome — RMH Music's landing: the catalog card's art as a hero, the heading, the instrument
  * toggle, the input in use, and the learning path on one sheet of manuscript paper (units →

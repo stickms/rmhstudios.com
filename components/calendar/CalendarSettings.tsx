@@ -1,5 +1,3 @@
-'use client';
-
 /** K3 — `/settings/calendar`: the private calendar feed, plus shortcuts to polls and office hours. */
 
 import { useEffect, useState } from 'react';

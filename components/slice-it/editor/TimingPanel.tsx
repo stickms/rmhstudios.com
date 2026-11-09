@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Timing points and scroll velocity — §4.2, ideas `C6` / `G10`, phase 8.
  *

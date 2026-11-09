@@ -13,7 +13,6 @@
  * The menu owns a HUD store of its own (no match is running): the console (`gameConsoleFor`) and the
  * views written for the game (the HUD picker, the loadout's AI bar) find their context through it.
  */
-'use client';
 
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { useNavigate } from '@tanstack/react-router';

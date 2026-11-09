@@ -9,7 +9,6 @@
  * The row with the shortest payback is marked. Experienced players compute
  * that in their heads; there is no reason to make them.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';

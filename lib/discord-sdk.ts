@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect, useRef } from 'react';
 import { DiscordSDK, patchUrlMappings } from '@discord/embedded-app-sdk';
 

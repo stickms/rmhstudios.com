@@ -15,7 +15,6 @@
  *   spymasterName: string — Spymaster's display name
  *   onEndTurn: (() => void) | undefined — Callback to voluntarily end the turn
  */
-'use client';
 
 import { m as motion } from 'framer-motion';
 import { Infinity as InfinityIcon, MessageSquare } from 'lucide-react';

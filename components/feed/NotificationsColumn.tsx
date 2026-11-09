@@ -1,5 +1,3 @@
-'use client';
-
 import { lazy, Suspense, useEffect, useState, useCallback, useMemo, useRef } from'react';
 import { useNavigate } from'@tanstack/react-router';
 import { useTranslation } from'react-i18next';

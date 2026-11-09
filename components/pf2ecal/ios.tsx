@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The iOS control set for `/pf2ecal`, hand-rolled.
  *

@@ -12,7 +12,6 @@
  *   status: 'pending' | 'valid' | 'invalid' | 'not_in_dict' — Current validation state
  *   invalidReason?: string — Reason shown on hover when invalid
  */
-'use client';
 
 import { useState } from 'react';
 import { m as motion } from 'framer-motion';

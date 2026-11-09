@@ -1,4 +1,3 @@
-'use client';
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useMultiplayer } from '../../lib/synapse-storm/MultiplayerProvider';
 import { useGameEngine } from '../../lib/synapse-storm/engine';

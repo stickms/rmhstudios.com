@@ -3,7 +3,6 @@
  * This is the core component that hosts the Canvas element and manages
  * the game loop lifecycle, level-up flow, and boss info syncing.
  */
-'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';

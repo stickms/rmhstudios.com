@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect } from 'react';
 import { installLazyClickArcs } from '@/lib/jelly/arc-lazy';
 import { installPointerVars } from '@/lib/jelly/pointer-vars';

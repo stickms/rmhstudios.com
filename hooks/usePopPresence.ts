@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState } from 'react';
 import { POP_COLLAPSE_MS } from '@/lib/motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';

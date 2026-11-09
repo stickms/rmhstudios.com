@@ -1,5 +1,3 @@
-'use client';
-
 import { Wallet, Building2, ShieldCheck, Gift, CircleDollarSign } from 'lucide-react';
 import { payoutBreakdown, formatUsd } from '@/lib/rideshare/geo';
 

@@ -9,8 +9,6 @@
  * lives in dedicated modules — this file is purely orchestration.
  */
 
-'use client';
-
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { SignalForgeUI } from '@/components/signal-forge/SignalForgeUI';
 import { createEnemies } from '@/lib/signal-forge';

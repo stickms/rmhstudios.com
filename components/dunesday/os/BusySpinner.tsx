@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The Windows 7 busy indicator: a ring of glowing blue dots chasing each other.
  * Pure CSS animation (no frame loop); under reduced motion it holds still and

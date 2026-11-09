@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The one frame loop for every person in the scene. Figures register with the registry in context; this component
  * calls `registry.frame` once per rendered frame, which updates every animator that is due (nearest get a full-rate

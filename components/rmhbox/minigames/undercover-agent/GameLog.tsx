@@ -9,7 +9,6 @@
  *   teams: { red: TeamInfo; blue: TeamInfo } | null
  *   logEntries: GameLogEntry[] — Chronological log entries
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import { MessageSquare, Target, RotateCcw, Skull, Users } from 'lucide-react';

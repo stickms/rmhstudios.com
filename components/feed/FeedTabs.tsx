@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import type { FeedFilter } from '@/lib/feed-types';
 import { useFeedStore } from '@/stores/feedStore';

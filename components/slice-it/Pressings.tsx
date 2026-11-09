@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import type { Difficulty } from '@/lib/slice-it/types';

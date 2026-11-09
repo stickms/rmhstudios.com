@@ -8,7 +8,6 @@
  * is what goes fullscreen and carries the page's `--app-*` palette, so a dialog
  * on <body> would be invisible in fullscreen.
  */
-'use client';
 
 import { Check, Copy } from 'lucide-react';
 import { type ReactNode } from 'react';

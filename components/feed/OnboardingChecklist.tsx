@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * First-run onboarding checklist, shown at the top of the home feed for
  * young accounts until the reward is claimed (or the card is dismissed).

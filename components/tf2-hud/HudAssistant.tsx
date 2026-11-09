@@ -5,7 +5,6 @@
  * is unavailable or cannot do the request, the panel says so and points at the editor's own tools.
  * A phone gets a full-height sheet, a desktop a dialog.
  */
-'use client';
 
 import { Check, Send, Sparkles, Undo2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';

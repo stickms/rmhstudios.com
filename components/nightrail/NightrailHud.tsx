@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Nightrail — the in-run HUD.
  *

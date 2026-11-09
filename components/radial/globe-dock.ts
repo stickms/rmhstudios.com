@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useSession } from '@/components/Providers';
 import { SIDEBAR_NAV, isNavGroup, type NavLeaf } from '@/lib/sidebar-nav';

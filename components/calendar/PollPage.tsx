@@ -1,5 +1,3 @@
-'use client';
-
 /** K1 — `/when/$id`: respond to a poll, see the heat map, and (organiser) lock in a time. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

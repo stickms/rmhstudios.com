@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * LessonScreen — the page around one lesson (`/rmhmusic/lesson/<id>`): a way back to the path,
  * "Change input", and the activity for the lesson's mode (see `isPlayable`), each behind a

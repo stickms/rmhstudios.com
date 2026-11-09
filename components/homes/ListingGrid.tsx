@@ -1,5 +1,3 @@
-'use client';
-
 import type { ReactNode } from 'react';
 import { m as motion } from 'framer-motion';
 import { Home, SearchX } from 'lucide-react';

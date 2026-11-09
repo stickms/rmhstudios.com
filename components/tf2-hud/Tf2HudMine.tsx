@@ -1,7 +1,6 @@
 /**
  * Your HUDs: the ones saved to your account, plus drafts on this device.
  */
-'use client';
 
 import { Link } from '@tanstack/react-router';
 import { Search, Trash2 } from 'lucide-react';

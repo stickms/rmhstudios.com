@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The menu's fighters: two real Source-engine characters (the same SourceFighter /
  * SkeletalFighter and authored boxing clips a match uses) sparring on a loop in a transparent

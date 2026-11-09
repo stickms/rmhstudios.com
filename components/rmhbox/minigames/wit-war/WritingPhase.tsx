@@ -5,7 +5,6 @@
  * button. Answers are submitted individually; the player can lock in
  * all answers when done.
  */
-'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';

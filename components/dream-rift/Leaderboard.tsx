@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Dream Rift leaderboard.
  *

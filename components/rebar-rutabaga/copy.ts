@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Every word on the Rebar & Rutabaga page, with its key spelled out.
  *

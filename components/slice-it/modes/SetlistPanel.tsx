@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * S8 — setlists, and S2 — courses, in one panel.
  *

@@ -13,7 +13,6 @@
  *
  *   <PauseMenu views={[{ id: 'hud', label: 'HUD', wide: true, render: ({ back }) => <HudPauseView … /> }]} … />
  */
-'use client';
 
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

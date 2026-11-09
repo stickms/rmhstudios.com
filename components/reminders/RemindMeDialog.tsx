@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * "Remind me about this" (plan U7). Lazy-loaded by the menus that offer it, so
  * it costs nothing until someone picks the item.

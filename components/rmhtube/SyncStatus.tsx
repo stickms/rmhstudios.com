@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The "am I in sync?" chip in the control bar, with the numbers behind it.
  *

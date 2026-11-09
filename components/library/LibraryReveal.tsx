@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * LibraryReveal — coordinated, document-order entrance animation for the library.
  *

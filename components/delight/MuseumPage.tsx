@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Landmark } from 'lucide-react';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Tiny, dependency-free bus for opening the ⌘K command palette.
  *

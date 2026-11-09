@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * **The RMH family of cars** — the fleet behind RMH Rideshare, drawn rather than
  * listed.

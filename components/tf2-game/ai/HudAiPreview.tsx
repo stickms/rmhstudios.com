@@ -4,7 +4,6 @@
  * 1280×720, scaled into a small 16:9 box. Prepared after a short pause (a burst of proposals prepares
  * once) and drawn once per proposal: no frame loop.
  */
-'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

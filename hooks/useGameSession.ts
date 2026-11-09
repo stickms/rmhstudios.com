@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef } from 'react';
 import { markGamePlaying } from '@/lib/game-capabilities';
 import { requestScreenWakeLock } from '@/lib/shared/platform';

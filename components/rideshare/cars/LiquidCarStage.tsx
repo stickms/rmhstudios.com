@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The stage — the React side of the liquid car.
  *

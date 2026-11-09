@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Everything below a community's header: the composer (flair picker, posting
  * rules), the Related rail, and the tabs — Posts (with flair filter), Hall of

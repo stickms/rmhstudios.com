@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The store's "Daily" tab (C2 daily shop, C3 bundles, C6 loadouts). Lazy-loaded
  * when the tab opens, so none of it is in the store route's entry chunk.

@@ -1,5 +1,3 @@
-'use client';
-
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Footprints, Hand, Map as MapIcon } from 'lucide-react';

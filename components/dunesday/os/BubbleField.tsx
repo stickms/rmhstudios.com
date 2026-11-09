@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Soap bubbles on the desktop wallpaper. Grab one and drag it, fling it and
  * watch it bounce off the others, tap it to pop it; move the cursor (or a

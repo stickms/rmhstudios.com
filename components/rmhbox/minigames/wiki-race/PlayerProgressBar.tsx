@@ -10,7 +10,6 @@
  *   hasFinished: boolean
  *   finishRank: number — Finish position (1 = first)
  */
-'use client';
 
 import { Trophy } from 'lucide-react';
 

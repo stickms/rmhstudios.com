@@ -1,5 +1,3 @@
-'use client';
-
 /** N2 — the community hall of fame: posts at or above the ⭐ threshold. */
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

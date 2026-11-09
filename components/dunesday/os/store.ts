@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The desktop's state: open windows, the sandboxed file system, icon
  * positions and personalization. A Zustand store so any window, the taskbar

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Settings: audio, gameplay options (show hitbox), and a full control-rebinding
  * panel. Bindings persist to localStorage via the store and are applied live to

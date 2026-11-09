@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The shared highlight machinery (L1 + L8) behind article pages and the library
  * reader's text view. Given the element that holds the text, the member's

@@ -8,7 +8,6 @@
  *
  * Reference: docs/rmhbox/design-spec/minigames-1.md §1.16
  */
-'use client';
 
 import { Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

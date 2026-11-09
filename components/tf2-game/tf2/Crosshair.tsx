@@ -3,7 +3,6 @@
  * settings), floating damage numbers (hud_combattext), and the Sniper's scope
  * — black outside the lens, the reticle, and the charge meter beside it.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import type { CrosshairStyle } from '@/lib/tf2-game/client/settings';

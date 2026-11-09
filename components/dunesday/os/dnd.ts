@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Drag and drop across the whole desktop — icons to folders, files between
  * Explorer windows and the desktop, anything to the Recycle Bin, a watch-list

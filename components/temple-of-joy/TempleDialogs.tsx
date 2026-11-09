@@ -6,7 +6,6 @@
  * itemises — joy earned, what the Sinners are holding, what ripened, what grew
  * — rather than showing one number that could have come from anywhere.
  */
-'use client';
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useEffect, useRef, useState } from 'react';

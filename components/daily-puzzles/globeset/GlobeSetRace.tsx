@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * GlobeSet head-to-head.
  *

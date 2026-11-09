@@ -1,7 +1,6 @@
 /**
  * Which items have a 3D model. One fetch per page load, shared by every viewer.
  */
-'use client';
 
 import { useEffect, useState } from 'react';
 import { request } from '@/lib/tf2-hud/api';

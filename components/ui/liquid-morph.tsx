@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * useLiquidMorph — the §5.47 "true liquid morphing" polish shared by every glass
  * control whose active capsule FLOWS between slots (LiquidTabs, the sidebar nav

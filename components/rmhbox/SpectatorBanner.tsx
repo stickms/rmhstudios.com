@@ -15,7 +15,6 @@
  *   spectatorMode: SpectatorMode | null — Current game's spectator mode
  *   onSelectPlayer: (targetPlayerId: string) => void — Callback to switch player
  */
-'use client';
 
 import { Eye, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';

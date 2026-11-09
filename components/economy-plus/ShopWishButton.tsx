@@ -1,5 +1,3 @@
-'use client';
-
 import { useQuery } from '@tanstack/react-query';
 import { WishButton } from '@/components/wishlist/WishButton';
 import { useIdleReady } from '@/hooks/useIdleReady';

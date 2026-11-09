@@ -1,5 +1,3 @@
-'use client';
-
 /** Spell practice: replay any boss card a real run has reached, alone, with attempt/capture stats. */
 
 import { useEffect, useState } from 'react';

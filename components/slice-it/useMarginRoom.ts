@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState, type RefObject } from 'react';
 
 /** Room the playfield leaves around itself inside its container, in px. */

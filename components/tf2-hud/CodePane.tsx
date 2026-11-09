@@ -2,7 +2,6 @@
  * The code tab: open-file strip, then a code editor for text files or a
  * viewer for binary ones.
  */
-'use client';
 
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

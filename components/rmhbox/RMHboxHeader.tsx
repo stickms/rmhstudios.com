@@ -16,7 +16,6 @@
  *
  * The title is absolutely centered to the screen width regardless of side content.
  */
-'use client';
 
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

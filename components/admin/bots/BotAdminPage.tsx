@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bot, FileText, MessageCircle, Mail, Users, Gauge, AlertTriangle } from 'lucide-react';

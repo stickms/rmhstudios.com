@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The storm layer: a full-viewport canvas that draws a lightning bolt every few
  * seconds, over a flash overlay that fires with it.

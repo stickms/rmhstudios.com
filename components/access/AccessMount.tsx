@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Global runtime for the access & comfort additions. Mounted by `Providers`
  * inside the silent boundary; renders nothing until a shake opens the feedback

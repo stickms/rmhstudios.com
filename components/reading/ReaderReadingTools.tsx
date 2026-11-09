@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Reading tools in the library reader's toolbar (one mount point for both the
  * PDF and EPUB readers):

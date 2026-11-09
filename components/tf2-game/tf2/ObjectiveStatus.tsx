@@ -9,7 +9,6 @@
  * accessible description (owner, capping team, progress, locked), flags say
  * their status in words, and the timer's state is a text tag.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import {

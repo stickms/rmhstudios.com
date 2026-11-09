@@ -14,7 +14,6 @@
  *
  * Weapon names are the published short names (`ak47`); no game artwork is drawn here.
  */
-'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

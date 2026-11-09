@@ -6,7 +6,6 @@
  * the app tokens instead. They are deliberately few — every one is used across
  * several panels — and tab strips are NOT here: those are `TfTabs`.
  */
-'use client';
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { ArrowLeft, Check, ChevronDown, Search, X, type LucideIcon } from 'lucide-react';

@@ -6,7 +6,6 @@
  * blessing. The list is windowed anyway, because "on offer" grows past a
  * hundred in the deep game and a hundred DOM rows is a hundred DOM rows.
  */
-'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

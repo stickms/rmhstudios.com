@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The desktop surface: wallpaper, soap bubbles, icons and gadgets.
  *

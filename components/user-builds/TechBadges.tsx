@@ -1,5 +1,3 @@
-'use client';
-
 interface TechBadgesProps {
   technologies: string[];
   size?: 'sm' | 'md';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * PlayChordLesson — playing a chord (`play-chord`: Play a C major chord): three major chords, each
  * asked by name, played on the on-screen keys, the computer keys or a MIDI controller. The notes

@@ -11,7 +11,6 @@
  * centred, it truncates rather than overlapping, and it steps aside entirely
  * on the narrowest screens where the controls need the room.
  */
-'use client';
 
 import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';

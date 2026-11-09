@@ -6,8 +6,6 @@
  * their collection. One-time use per combat.
  */
 
-'use client';
-
 import React from 'react';
 import { useTranslation } from "react-i18next";
 import type { Card } from '@/lib/signal-forge';

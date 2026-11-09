@@ -6,7 +6,6 @@
  *
  * Subscribes to EC_* and TIMER_TICK events via socket GAME_ACTION.
  */
-'use client';
 
 import { useState, useCallback } from 'react';
 // `m as motion`, not `motion`: `Providers` wraps the app in `LazyMotion`, and `m`

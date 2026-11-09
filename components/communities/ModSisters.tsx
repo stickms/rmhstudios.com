@@ -1,5 +1,3 @@
-'use client';
-
 /** N8 — link up to five related communities. */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

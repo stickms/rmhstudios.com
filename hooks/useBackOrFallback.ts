@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { previousEntryHref } from '@/lib/router/history-trail';

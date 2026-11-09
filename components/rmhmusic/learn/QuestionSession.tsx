@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The parts every ten-question lesson shares — the flashcards (FlashcardSession: name the note on
  * the staff) and the note finder (FindNoteLesson: find it on the keys or the fretboard) — so both

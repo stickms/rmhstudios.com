@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * InputChooser — the four ways to play (on-screen keys, computer keyboard, a
  * MIDI controller, the microphone) as a list of rows. Choosing one stops the

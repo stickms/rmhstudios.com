@@ -1,5 +1,4 @@
 /** The strip above the preview in Play mode: the keys, a way back through the screens, and a way out. */
-'use client';
 
 import { ArrowLeft, Square } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

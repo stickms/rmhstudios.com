@@ -11,7 +11,6 @@
  *
  * Reference: docs/rmhbox/design-spec/minigames-1.md §4.17
  */
-'use client';
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Board settings: the Discord webhook and when the morning-of reminder fires.
  *

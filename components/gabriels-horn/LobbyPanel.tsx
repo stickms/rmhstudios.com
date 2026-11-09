@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Gabriel's Horn — the table before it starts, and the list of tables to join.
  *

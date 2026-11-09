@@ -17,7 +17,6 @@
  *   onGuessChange    — Fires when a guess dropdown changes
  *   onLockIn         — Fires when the "Lock In" button is pressed
  */
-'use client';
 
 import { useMemo } from 'react';
 import { m as motion } from 'framer-motion';

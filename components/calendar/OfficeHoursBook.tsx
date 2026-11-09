@@ -1,5 +1,3 @@
-'use client';
-
 /** K2 — `/office-hours/$userId`: a host's open slots, and the booking flow. */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';

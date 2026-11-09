@@ -4,7 +4,6 @@
  * loop of its own) from the first time a quick bar mounts until the page goes; until then the bars use
  * what the feed still shows.
  */
-'use client';
 
 import { noteDeaths, type DeathRecord } from '@/lib/tf2-game/client/ai/match-context';
 import type { HudStore } from '@/lib/tf2-game/client/hud-store';

@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { getCategoryColor, ALL_CATEGORIES } from '@/lib/news-categories';
 import { JellyGroup } from '@/components/ui/jelly-group';

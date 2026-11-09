@@ -1,5 +1,4 @@
 // components/daily-puzzles/three/DeskGameFrame.tsx
-'use client';
 
 import { Html } from '@react-three/drei';
 import { useTranslation } from 'react-i18next';

@@ -4,7 +4,6 @@
  * Shows all available keyboard shortcuts for the video player and room.
  * Toggled via Shift+? or the shortcuts button.
  */
-'use client';
 
 import { X } from 'lucide-react';
 import { useTranslation } from "react-i18next";

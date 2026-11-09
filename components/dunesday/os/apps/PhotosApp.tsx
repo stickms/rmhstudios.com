@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Windows Photo Viewer for the Dunesday 7 sandbox.
  *

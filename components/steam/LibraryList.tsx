@@ -1,5 +1,3 @@
-'use client';
-
 import { useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { House, Search, Star } from 'lucide-react';

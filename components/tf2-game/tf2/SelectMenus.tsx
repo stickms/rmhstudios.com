@@ -5,7 +5,6 @@
  * your team play each class). Both are real buttons: mouse, touch, keyboard
  * (Tab / arrows / Enter) and gamepad (d-pad, A, B) all work.
  */
-'use client';
 
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

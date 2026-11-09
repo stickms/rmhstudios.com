@@ -5,7 +5,6 @@
  * HUD), crits on a red plate, kills involving you on a light plate, and the
  * domination / revenge notes.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import type { HudKillEntry } from '@/lib/tf2-game/client/hud-state';

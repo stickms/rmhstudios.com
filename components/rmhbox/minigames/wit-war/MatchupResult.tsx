@@ -5,7 +5,6 @@
  * reveals author names, and triggers a special animation for
  * unanimous "Wit-Wham!" victories.
  */
-'use client';
 
 import { m as motion } from 'framer-motion';
 import { Zap, Trophy } from 'lucide-react';

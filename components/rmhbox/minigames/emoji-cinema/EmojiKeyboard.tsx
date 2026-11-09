@@ -5,7 +5,6 @@
  * Uses the React component import (not web component) as recommended.
  * Respects RMHbox theming (light/dark mode).
  */
-'use client';
 
 import { useCallback } from 'react';
 import EmojiPicker, { EmojiClickData, Theme, EmojiStyle } from 'emoji-picker-react';

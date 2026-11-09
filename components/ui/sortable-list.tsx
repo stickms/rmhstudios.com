@@ -1,5 +1,3 @@
-'use client';
-
 import * as React from 'react';
 import { Reorder, useDragControls } from 'framer-motion';
 import { GripVertical, ChevronUp, ChevronDown } from 'lucide-react';

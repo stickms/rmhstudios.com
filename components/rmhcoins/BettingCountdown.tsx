@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The shared "betting closes in Ns" countdown used by every live-table casino
  * game (baccarat, blackjack, roulette).

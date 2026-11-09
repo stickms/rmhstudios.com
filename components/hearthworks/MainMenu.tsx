@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronRight, Hammer, House, LogOut, UsersRound } from 'lucide-react';

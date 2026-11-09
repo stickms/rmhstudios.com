@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * A category's runs, bucketed by game version.
  *

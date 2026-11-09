@@ -4,7 +4,6 @@
  * colour, with its paint as a dot. A tiered item sits on its tier's colour (the HUD's own), and one that
  * can only be equipped around Halloween carries the Halloween mark in its corner.
  */
-'use client';
 
 import { useState } from 'react';
 import { Ghost } from 'lucide-react';

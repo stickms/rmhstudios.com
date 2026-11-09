@@ -7,7 +7,6 @@
  * A kicked account is refused for the rest of the room's life, by the host
  * and by the hub. Renders nothing unless this client hosts a P2P match.
  */
-'use client';
 
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';

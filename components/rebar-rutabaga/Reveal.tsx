@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The restaurant's motion vocabulary — three pieces, and deliberately no more.
  *

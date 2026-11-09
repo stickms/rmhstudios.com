@@ -13,7 +13,6 @@
  *   isGameOver: boolean — Whether the game has ended
  *   awards?: AwardEntry[] — Awards shown at game over
  */
-'use client';
 
 import { m as motion } from 'framer-motion';
 import { Trophy, ArrowUp, Award as AwardIcon } from 'lucide-react';

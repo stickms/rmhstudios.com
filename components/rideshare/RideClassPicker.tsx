@@ -1,5 +1,3 @@
-'use client';
-
 import { Car, Users, Sparkles, Leaf, Crown, Bike, Helicopter, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { RIDE_CLASSES, type RideClassId } from '@/lib/rideshare/classes';

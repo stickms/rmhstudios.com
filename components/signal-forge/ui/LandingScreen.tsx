@@ -5,8 +5,6 @@
  * resume/new-game flow, leaderboard display, and the how-to-play button.
  */
 
-'use client';
-
 import React, { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from "react-i18next";

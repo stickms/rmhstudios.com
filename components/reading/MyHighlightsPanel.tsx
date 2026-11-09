@@ -1,5 +1,3 @@
-'use client';
-
 /** L1 — "My highlights": every highlight and note, newest first, across all documents. */
 
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';

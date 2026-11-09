@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Savings goals (C1) — the wallet's "Goals" tab. Lazy-loaded when the tab opens.
  *

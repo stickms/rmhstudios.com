@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The status of one run, and how much that status is worth.
  *

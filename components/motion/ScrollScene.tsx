@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * ScrollScene — the pinned scroll-narrative primitive (the design's signature
  * element for pricing / wrapped-style pages). A tall outer wrapper scrolls

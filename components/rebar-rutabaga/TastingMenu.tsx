@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The tasting menu — the globe, the course it is holding, and the carte.
  *

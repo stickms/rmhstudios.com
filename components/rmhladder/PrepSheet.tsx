@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * RMHLadder — the interview prep sheet.
  *

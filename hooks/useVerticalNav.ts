@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The behaviour every microsite nav shares (K1).
  *

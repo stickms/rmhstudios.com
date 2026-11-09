@@ -16,7 +16,6 @@
  * sync anchor — several times a minute, forever, in a room where chat had not
  * changed.
  */
-'use client';
 
 import { useState, useCallback, useRef, useEffect, useMemo, memo } from 'react';
 import { useTranslation } from 'react-i18next';

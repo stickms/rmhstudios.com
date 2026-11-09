@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Tiny synthesized UI sounds in the spirit of the era: a soft gel "bloop" for
  * toggles, a watery pop for bubbles, a rising glassy chime when a title is

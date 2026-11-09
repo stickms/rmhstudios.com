@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The shared playing-card kit behind Solitaire and Spider: the card model and
  * deck utilities, the CSS/SVG card face and Aero card back, table sizing (a

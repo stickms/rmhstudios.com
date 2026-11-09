@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * When he sleeps — inferred, and labelled as inferred.
  *

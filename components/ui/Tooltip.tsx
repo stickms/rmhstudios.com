@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { createPortal } from 'react-dom';

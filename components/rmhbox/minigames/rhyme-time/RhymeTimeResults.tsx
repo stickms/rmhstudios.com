@@ -15,7 +15,6 @@
  *   playerBreakdowns: PlayerBreakdown[] — Per-player summary stats
  *   roundNumber: number — Current round number
  */
-'use client';
 
 import { m as motion } from 'framer-motion';
 import { Sparkles, Zap, Star } from 'lucide-react';

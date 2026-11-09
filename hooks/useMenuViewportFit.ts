@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useLayoutEffect, type RefObject } from 'react';
 import { viewportFitTranslation, type ViewportBounds } from '@/lib/viewport-fit';
 

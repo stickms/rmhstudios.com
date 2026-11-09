@@ -1,7 +1,6 @@
 /**
  * RmhTypeShell — RMHType's root wrapper. Palette only; the rest is `AppShell`.
  */
-'use client';
 
 import AppShell from '@/components/shared/AppShell';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';

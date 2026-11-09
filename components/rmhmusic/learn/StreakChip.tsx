@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * StreakChip — the learner's daily streak, from the site-wide streak (`useStreak`; the same
  * count the feed shows): a flame and the number, with the full sentence for screen readers, and

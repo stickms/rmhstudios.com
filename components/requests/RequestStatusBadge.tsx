@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import type { RequestStatus } from '@/lib/requests/status';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The open-room affordance for a community or a party.
  *

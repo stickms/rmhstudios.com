@@ -5,7 +5,6 @@
  * - Market value of a painting = second highest bid on it (0 if ≤1 bidder)
  * - Player score = sum of market values of paintings they painted + market values of paintings they won
  */
-'use client';
 
 import { useTranslation } from "react-i18next";
 import DrawingCard from './DrawingCard';

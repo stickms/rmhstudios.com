@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * PinnedHero — Track D's signature pinned scroll-narrative hero.
  *

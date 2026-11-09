@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Announcements you have read, hidden on this device only.
  *

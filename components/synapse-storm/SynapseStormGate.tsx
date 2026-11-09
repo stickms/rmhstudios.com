@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Synapse Storm — the front door.
  *

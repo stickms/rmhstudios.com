@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The in-run HUD.
  *

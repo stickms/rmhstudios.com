@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The crime route in the scene: the police (drawn with the same SkinFigure as everyone, at their live mover position,
  * shooting, flinching and dying with their model's clips), tracers and muzzle flashes, and the F / R keys. The player's

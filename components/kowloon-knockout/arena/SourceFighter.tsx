@@ -1,5 +1,3 @@
-'use client';
-
 import { use, useRef, useLayoutEffect, type MutableRefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';

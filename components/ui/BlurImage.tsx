@@ -1,5 +1,3 @@
-'use client';
-
 import { ImgHTMLAttributes, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { buildOptimizedUrl, generateSrcSet, isOptimizable } from './OptimizedImage';

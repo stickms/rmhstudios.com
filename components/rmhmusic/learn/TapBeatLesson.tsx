@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * TapBeatLesson — `rhythm-tap-the-beat`: Start, a count-in of four clicks at 80 bpm, then sixteen
  * beats the learner taps along with, on the pad, a computer key, or a MIDI controller. The

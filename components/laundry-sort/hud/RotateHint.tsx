@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * "Turn your phone sideways" — shown during play on a portrait handset.
  *

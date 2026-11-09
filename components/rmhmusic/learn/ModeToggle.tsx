@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * ModeToggle — the header's light / dark switch: one labelled button, pressed while the app is
  * dark. Until the app's root has resolved the mode (the server render and the hydrating render)

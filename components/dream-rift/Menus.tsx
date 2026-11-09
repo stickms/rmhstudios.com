@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Dream Rift menus: Title, Character Select (singleplayer launch), the public/
  * private Lobby Browser, the Lobby Room, and the end-of-run Result screen.

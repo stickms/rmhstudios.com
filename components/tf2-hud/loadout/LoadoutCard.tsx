@@ -2,7 +2,6 @@
  * A loadout in a list: title, class, author, a strip of its items, counts, and
  * whatever actions the list wants beside them.
  */
-'use client';
 
 import { Link } from '@tanstack/react-router';
 import { GitFork, Heart } from 'lucide-react';

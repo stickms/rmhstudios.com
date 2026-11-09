@@ -1,5 +1,3 @@
-'use client';
-
 /**
  *"Jump back in"— a horizontal rail of the games/apps this device recently
  * opened, shown at the top of the home feed so returning users have a resume

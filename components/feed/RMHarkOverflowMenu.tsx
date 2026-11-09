@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Shared"three-dots"overflow menu for a RMHark. Used by both the feed card
  * (RMHarkCard) and the post-detail page (PostDetail) so the two can't drift

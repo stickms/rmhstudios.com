@@ -1,5 +1,3 @@
-'use client';
-
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useRailSlot } from '@/components/radial/rail-slot';

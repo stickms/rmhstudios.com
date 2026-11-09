@@ -2,7 +2,6 @@
  * Validation of the files the author has touched (plus any they ask for),
  * recomputed off the render path so typing never waits on it.
  */
-'use client';
 
 import { useDeferredValue, useMemo } from 'react';
 import { COND_ENVS } from './scheme/cond';

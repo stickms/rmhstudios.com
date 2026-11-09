@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LocalInputSource } from '@/lib/kowloon-knockout/game/input';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The room's timeline, in the site's own controls.
  *

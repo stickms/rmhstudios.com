@@ -1,5 +1,3 @@
-'use client';
-
 /** N7 — per-community helpfulness leaderboard (a daily snapshot). */
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';

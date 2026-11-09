@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState } from 'react';
 import { Loader2, MapPin, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';

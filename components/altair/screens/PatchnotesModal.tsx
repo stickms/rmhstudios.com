@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, ScrollText, Sword, Shield, Skull, TrendingUp, TrendingDown, Sparkles, ShoppingBag, Zap, FlaskConical, Target, Wrench, Book, Eye } from 'lucide-react';

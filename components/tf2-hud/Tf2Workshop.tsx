@@ -1,7 +1,6 @@
 /**
  * The TF2 Hub workshop: community HUDs and loadouts in one place.
  */
-'use client';
 
 import { useNavigate } from '@tanstack/react-router';
 import { LayoutDashboard, Shirt } from 'lucide-react';

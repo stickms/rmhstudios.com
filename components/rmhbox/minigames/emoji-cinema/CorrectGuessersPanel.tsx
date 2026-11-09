@@ -4,7 +4,6 @@
  *
  * Displayed below the guessing area in the AudienceView.
  */
-'use client';
 
 import { useTranslation } from "react-i18next";
 import type { CorrectGuesserInfo } from './EmojiCinemaGame';

@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { FlaskConical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

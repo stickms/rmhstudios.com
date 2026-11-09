@@ -10,7 +10,6 @@
  *
  * Only renders when the current user is the host.
  */
-'use client';
 
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

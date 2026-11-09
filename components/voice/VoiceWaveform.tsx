@@ -1,5 +1,3 @@
-'use client';
-
 import { cn } from '@/lib/utils';
 import { normalizeForDisplay, VOICE_PEAK_BUCKETS } from '@/lib/voice/peaks';
 

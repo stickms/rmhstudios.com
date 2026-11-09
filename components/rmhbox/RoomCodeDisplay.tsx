@@ -11,7 +11,6 @@
  *   code: string — The room code to display
  *   onLeave?: () => void — Callback when leave button is clicked
  */
-'use client';
 
 import { useState, useCallback } from 'react';
 import { Copy, Check, Link2, LogOut } from 'lucide-react';

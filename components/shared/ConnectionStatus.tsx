@@ -16,7 +16,6 @@
  * work inside an `.app-theme` app and equally inside a game that has its own
  * palette and no app chrome.
  */
-'use client';
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

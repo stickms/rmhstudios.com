@@ -1,5 +1,3 @@
-'use client';
-
 /** Curate up to 10 tracks for a mixtape exchange (F2), using the site's Spotify track search. */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

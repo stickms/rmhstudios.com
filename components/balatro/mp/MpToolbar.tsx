@@ -4,7 +4,6 @@
  * lobby, the Invite button and popover. State comes from the MP controller
  * (lib/balatro/mp/pack-loader.ts), which reads it off the mailbox.
  */
-'use client';
 
 import { UserPlus } from 'lucide-react';
 import { useCallback, useSyncExternalStore } from 'react';

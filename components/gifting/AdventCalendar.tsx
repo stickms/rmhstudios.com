@@ -1,5 +1,3 @@
-'use client';
-
 /** Advent calendar (G2): 24 doors, today's opens once for a small coin grant. */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';

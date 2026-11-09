@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Keyed draft autosave (plan B3) — the generalisation of `useComposeDraft`.
  *

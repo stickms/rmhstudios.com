@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Pieces shared by the menu's 3D layers (MenuFighters3D behind the menus, FighterPreview3D on
  * character select): the neon lighting rig and the demand-mode frame driver.

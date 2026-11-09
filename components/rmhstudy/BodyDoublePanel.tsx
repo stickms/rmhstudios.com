@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * F5 — body-doubling match, on the RMH Study landing. Pick a subject, 25 or 50
  * minutes and a time (now, or a half-hour slot); the server pairs you with

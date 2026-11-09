@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Spider Solitaire for the Dunesday desktop, after the Windows 7 game: two
  * decks, ten columns, one / two / four suits. Build down regardless of suit,

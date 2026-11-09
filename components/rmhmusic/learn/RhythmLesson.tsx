@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * RhythmLesson — the rhythm unit's lessons, picked by lesson id (`machines/rhythm.ts`):
  *

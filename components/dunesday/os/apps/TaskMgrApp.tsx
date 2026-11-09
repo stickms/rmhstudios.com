@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Windows Task Manager for the Dunesday 7 sandbox.
  *

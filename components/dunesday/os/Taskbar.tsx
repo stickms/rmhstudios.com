@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The Windows 7 superbar: Start orb, pinned and running programs, the
  * notification area, the clock and Show desktop.

@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { IconButton } from '@/components/ui/icon-button';

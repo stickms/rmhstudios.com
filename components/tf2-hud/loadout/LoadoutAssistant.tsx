@@ -4,7 +4,6 @@
  * checked against the catalog on the server; if the model cannot be reached the same panel answers
  * from item names (and says so). A phone gets a full-height sheet, a desktop a dialog.
  */
-'use client';
 
 import { Send, Sparkles, Undo2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';

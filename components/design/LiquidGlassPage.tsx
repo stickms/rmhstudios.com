@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, type CSSProperties } from 'react';
 import { ArrowRight, ChevronLeft, Circle, Grid2X2, Move3D } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

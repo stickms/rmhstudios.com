@@ -3,7 +3,6 @@
  * selected custom HUD's own copies where it ships them (TF2), else the game's from the HUD base. Loaded
  * once per HUD and game and shared by every menu on the page; null while loading.
  */
-'use client';
 
 import { useEffect, useState } from 'react';
 import type { HudGame } from '@/lib/tf2-game/client/hud-state';

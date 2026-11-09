@@ -6,7 +6,6 @@
  *
  * Reference: docs/rmhbox/design-spec/core.md §14A.3
  */
-'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

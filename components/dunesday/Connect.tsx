@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * "Take it with you": the live calendar subscription, the RSS feed and Discord
  * updates. All three read a synced copy of the plan, so the panel opens with a

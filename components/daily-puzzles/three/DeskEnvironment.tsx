@@ -1,5 +1,4 @@
 // components/daily-puzzles/three/DeskEnvironment.tsx
-'use client';
 
 import { ContactShadows, Environment, Lightformer } from '@react-three/drei';
 

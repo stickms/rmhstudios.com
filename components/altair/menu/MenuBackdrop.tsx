@@ -13,7 +13,6 @@
  * pre-hydration / no-canvas fallback and is removed once the first frame is painted so
  * its keyframes stop running behind the canvas.
  */
-'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { createCorridorScene, renderCorridor, type CorridorScene } from '@/lib/altair/menu/corridor-scene';

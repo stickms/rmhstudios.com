@@ -1,5 +1,3 @@
-'use client';
-
 /** winver: the About Dunesday 7 box. */
 
 import { useTranslation } from 'react-i18next';

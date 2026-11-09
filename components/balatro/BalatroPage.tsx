@@ -15,7 +15,6 @@
  * and hands the mailbox over. An invite link (`?lobby=`) or a match to rejoin
  * starts that at boot, fetching the MP pack alongside the core.
  */
-'use client';
 
 import { Download, LogOut, Maximize, Minimize, RotateCw, Upload, X } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState, type ChangeEvent } from 'react';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Danger-zone account deletion (GDPR right to erasure). Requires the user to
  * type their own handle/username to confirm, then calls /api/account/delete,

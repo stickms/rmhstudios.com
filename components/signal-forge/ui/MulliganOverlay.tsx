@@ -5,8 +5,6 @@
  * to select up to 2 cards to redraw before their first turn.
  */
 
-'use client';
-
 import React from 'react';
 import { useTranslation } from "react-i18next";
 

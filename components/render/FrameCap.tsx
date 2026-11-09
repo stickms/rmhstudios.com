@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { FrameCap as FrameCapClock, markFrameCapped } from '@/lib/render/frame-cap';

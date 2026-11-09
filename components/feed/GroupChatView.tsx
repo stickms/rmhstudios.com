@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useMemo, useRef, useState, useCallback } from'react';
 import { m as motion } from'framer-motion';
 import { useTranslation } from'react-i18next';

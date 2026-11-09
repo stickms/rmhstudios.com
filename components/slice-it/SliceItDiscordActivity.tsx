@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Slice It! as a Discord Activity (X9), including the guest identity split
  * (X10, client half).

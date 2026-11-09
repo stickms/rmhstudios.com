@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The "add a session" sheet, as its own module so it can be code-split.
  *

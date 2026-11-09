@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useReconsider } from '@/components/safety/use-reconsider';

@@ -1,5 +1,3 @@
-'use client';
-
 import { lazy, Suspense, useRef, useState } from 'react';
 import { Smile } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The menu globe — Rebar & Rutabaga's nine courses as nine pearls on the site's
  * sphere.

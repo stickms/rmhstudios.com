@@ -1,5 +1,3 @@
-'use client';
-
 import { Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Tier } from '@/lib/entitlements/tiers';

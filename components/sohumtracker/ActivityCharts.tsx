@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The charts on `/sohumtracker`, drawn as plain SVG.
  *

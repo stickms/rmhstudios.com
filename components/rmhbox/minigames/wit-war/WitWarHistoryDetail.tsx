@@ -4,7 +4,6 @@
  * Shows per-round matchup breakdowns with prompts, answers, vote splits,
  * author names, and Wit-Wham! badges.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import { Zap } from 'lucide-react';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * What Slice It shows while its own chunk is still downloading.
  *

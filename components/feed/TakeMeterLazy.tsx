@@ -1,5 +1,3 @@
-'use client';
-
 import { lazy, Suspense } from 'react';
 
 // The meter, its fetch and its vote handling load only for posts that ARE takes

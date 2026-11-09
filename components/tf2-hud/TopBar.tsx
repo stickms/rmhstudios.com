@@ -4,7 +4,6 @@
  * HUD applied in /tf2/play). Inside the game (pause menu → HUD → Edit) the
  * back link returns to the match instead.
  */
-'use client';
 
 import { Link } from '@tanstack/react-router';
 import {

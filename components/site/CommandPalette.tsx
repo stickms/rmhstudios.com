@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Global ⌘K / Ctrl+K command palette.
  *

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The front screen: pick a mode, set the rules, read the board.
  *

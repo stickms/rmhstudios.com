@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * When he does it — a 7 × 24 heatmap of every line on the books, by UTC weekday
  * and hour.

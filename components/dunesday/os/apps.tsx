@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Every program on the Dunesday desktop: its icon, title, default window size,
  * where it appears in the Start menu, and the component that draws it.

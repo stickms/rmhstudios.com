@@ -1,5 +1,3 @@
-'use client';
-
 /** Pending join requests for a private community: approve or deny. */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';

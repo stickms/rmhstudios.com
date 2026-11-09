@@ -20,8 +20,6 @@
  *     server run the countdown for everyone at once.
  */
 
-'use client';
-
 import { useCallback, useRef, useState } from 'react';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import { BEATMAP_VERSION, generateBeatmap, isStaleAnalysis } from './beatmap';

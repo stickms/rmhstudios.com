@@ -1,5 +1,3 @@
-'use client';
-
 /** N5 — the weekly challenge tab: prompt, entries, voting, winner. */
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';

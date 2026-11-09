@@ -1,5 +1,3 @@
-'use client';
-
 /** L5 — admin news stories: create a story, link articles, see suggestions. */
 
 import { useState } from 'react';

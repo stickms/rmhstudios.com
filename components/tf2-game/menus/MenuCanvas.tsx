@@ -3,7 +3,6 @@
  * CSS size, and again when a texture it names arrives — no frame loop. Decoration only: the menus lay
  * real buttons over it.
  */
-'use client';
 
 import { useEffect, useLayoutEffect, useReducer, useRef, type CSSProperties } from 'react';
 import { gameSurfaceDpr } from '@/lib/display-scale';

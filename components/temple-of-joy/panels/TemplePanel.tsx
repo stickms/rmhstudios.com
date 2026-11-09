@@ -6,7 +6,6 @@
  * of thing with different contents. Each panel samples the store on its own
  * heartbeat rather than subscribing to a game that ticks sixty times a second.
  */
-'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

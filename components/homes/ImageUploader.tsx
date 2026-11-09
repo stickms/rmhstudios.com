@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Loader2, Sparkles, Star, Wand2, X } from 'lucide-react';
 import { toast } from 'sonner';

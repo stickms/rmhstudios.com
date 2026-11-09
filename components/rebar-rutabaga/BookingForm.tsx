@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The book — the form that replaced an email address (W1).
  *

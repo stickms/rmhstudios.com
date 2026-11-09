@@ -26,7 +26,6 @@
  * its hudlayout.res, and the full HUD editor can be opened over the match
  * (custom-hud/HudEditorOverlay; it has the keys, and offline play pauses).
  */
-'use client';
 
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';

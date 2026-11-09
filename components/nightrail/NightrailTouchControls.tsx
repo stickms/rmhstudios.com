@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Nightrail — the touch pad.
  *

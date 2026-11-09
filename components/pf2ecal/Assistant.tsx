@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The bottom-right assistant: a floating button that opens a message centre for
  * asking questions about the schedule.

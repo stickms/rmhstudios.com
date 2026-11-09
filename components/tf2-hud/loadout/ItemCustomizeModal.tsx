@@ -4,7 +4,6 @@
  * the game). Every change goes straight to the loadout (the
  * preview is the same model the builder shows), so closing the modal is just closing it.
  */
-'use client';
 
 import { RotateCcw, Shuffle } from 'lucide-react';
 import { useMemo } from 'react';

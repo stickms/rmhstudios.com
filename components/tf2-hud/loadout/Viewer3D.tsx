@@ -7,7 +7,6 @@
  * colour multiplied by the paint colour (the converter writes those materials
  * with a white base colour and the tint mask baked into their texture).
  */
-'use client';
 
 import { classVariant } from '@/lib/tf2-loadout/bodygroups';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';

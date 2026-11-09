@@ -8,7 +8,6 @@
  *
  * Loaded on first open (three.js and the catalog are not part of the game bundle's first load).
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import { useCatalog } from '@/lib/tf2-loadout/use-catalog';

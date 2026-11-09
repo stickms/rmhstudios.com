@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Hover profile card: wrap any username/avatar with <ProfileHoverCard userId>
  * and a rich preview (avatar, bio, follower counts, online dot, follow button)

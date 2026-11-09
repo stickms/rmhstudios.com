@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Every animation frame the Dunesday desktop schedules lives in this file —
  * on purpose, so the rAF allowlist (`lib/__tests__/raf-loop-allowlist.test.ts`)

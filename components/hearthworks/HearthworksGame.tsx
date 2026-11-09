@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useState } from 'react';
 import { useGameSession } from '@/hooks/useGameSession';
 import { useLobbyInvite } from '@/hooks/useLobbyLink';

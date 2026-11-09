@@ -1,5 +1,3 @@
-'use client';
-
 import type { MutableRefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { InputState } from '@/lib/void-breaker/types';

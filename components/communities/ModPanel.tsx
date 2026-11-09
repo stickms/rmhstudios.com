@@ -1,5 +1,3 @@
-'use client';
-
 /** The mod tools tab: queue, AutoMod, flairs, settings, onboarding, related, and (private communities) requests and invites. */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

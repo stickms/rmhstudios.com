@@ -4,7 +4,6 @@
  * Pure presentation; MultiplayerGameScreen feeds it ~7 times a second from the
  * newest snapshot, so it never re-renders per frame.
  */
-'use client';
 
 import { Skull, Swords } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

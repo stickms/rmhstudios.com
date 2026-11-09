@@ -11,7 +11,6 @@
  *
  * Props: none (reads from Zustand store)
  */
-'use client';
 
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';

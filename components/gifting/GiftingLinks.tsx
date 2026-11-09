@@ -1,5 +1,3 @@
-'use client';
-
 /** Entry points to the seasonal gifting pages, shown under the scheduled-gift form. */
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';

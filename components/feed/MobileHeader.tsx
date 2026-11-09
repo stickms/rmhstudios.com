@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Mobile-only "RMH |" brand prefix shown before a page's title. Place it inside
  * the flex container that holds the title text so the divider lines up. Hidden

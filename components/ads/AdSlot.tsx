@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * One Google AdSense unit.
  *

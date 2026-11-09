@@ -1,7 +1,6 @@
 /**
  * VoteSkipIndicator — Shows vote-to-skip progress and button.
  */
-'use client';
 
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

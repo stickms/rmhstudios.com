@@ -5,7 +5,6 @@
  * (see `components/studio/studio.css`). Toasts go through sonner's site toaster,
  * so the app toaster is not mounted.
  */
-'use client';
 
 import AppShell from '@/components/shared/AppShell';
 

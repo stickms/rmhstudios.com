@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Pencil, Sparkles } from 'lucide-react';

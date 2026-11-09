@@ -7,8 +7,6 @@
  * accepts calls from you — this is only about whether the control makes sense.
  */
 
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { Phone } from 'lucide-react';
 import { useSession } from '@/components/Providers';

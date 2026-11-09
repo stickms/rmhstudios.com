@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * OverlayPanel — a centred modal panel that actually covers the viewport.
  *

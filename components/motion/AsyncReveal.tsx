@@ -1,5 +1,3 @@
-'use client';
-
 import type { ElementType, ReactNode } from 'react';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';

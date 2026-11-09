@@ -15,7 +15,6 @@
  *   isHost: boolean — Whether the current user is the host
  *   lobbyId: string — Lobby ID for emitting force-skip
  */
-'use client';
 
 import { useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

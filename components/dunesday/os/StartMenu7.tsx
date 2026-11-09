@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The Windows 7 Start menu.
  *

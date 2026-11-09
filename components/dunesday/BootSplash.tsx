@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * "Starting Dunesday…" — a Windows 7 boot-screen homage: four coloured lights
  * swirl in and bloom into a glowing orb, then the desktop fades up.

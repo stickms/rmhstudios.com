@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Slice It — the settings drawer.
  *

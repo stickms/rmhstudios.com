@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * StaffCard — one flashcard: a hand-ruled five-line staff with its clef, the ledger lines the
  * note needs, and one note (head and stem), drawn as if copied out with a pen. Geometry is the

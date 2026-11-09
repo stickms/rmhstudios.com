@@ -1,5 +1,3 @@
-'use client';
-
 import { Suspense, lazy, useEffect, useRef, useSyncExternalStore } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { Globe } from 'lucide-react';

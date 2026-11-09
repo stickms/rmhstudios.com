@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * `useResource` — the thin `useQuery` wrapper for ordinary JSON reads (plan D6).
  *

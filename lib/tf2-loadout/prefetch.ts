@@ -8,7 +8,6 @@
  * the queue is short (a newer intent replaces the oldest unstarted one). The files are the ones the viewer
  * requests anyway, at the same URLs, so a prefetched file is never a second copy.
  */
-'use client';
 
 const MAX_PARALLEL = 2;
 const MAX_QUEUED = 6;

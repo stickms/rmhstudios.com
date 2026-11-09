@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * "Where am I?" — the progress ring, the four numbers that matter, and a
  * verdict with one-tap fixes when the plan runs past the deadline.

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * One-shot visual feedback: soap-bubble bursts and water ripples.
  *

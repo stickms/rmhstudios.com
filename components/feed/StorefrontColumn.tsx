@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState, useCallback, useRef } from'react';
 import { useTranslation } from'react-i18next';
 import { Loader2, Plus, Trash2, Check, ShoppingBag, X, EyeOff, Eye } from'lucide-react';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Recently-played games/apps, tracked per device in localStorage. Powers the
  * home feed's "Jump back in" rail so returning users have a resume path across

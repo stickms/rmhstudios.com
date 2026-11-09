@@ -1,5 +1,3 @@
-'use client';
-
 import { lazy, Suspense } from 'react';
 import type { ProfileModule, PlusModuleKind } from '@/lib/profile/modules';
 

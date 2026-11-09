@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useRef } from 'react';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 

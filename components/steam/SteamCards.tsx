@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { Link, useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';

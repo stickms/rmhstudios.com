@@ -1,7 +1,6 @@
 /**
  * MobileControls — Pause button for mobile.
  */
-'use client';
 
 import { Pause } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

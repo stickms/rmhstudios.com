@@ -2,7 +2,6 @@
  * The camera controls both 3D viewers share: drag to rotate, right-drag (or two fingers) to move the
  * model, wheel or pinch to zoom, and a button that returns to the framed view.
  */
-'use client';
 
 import { useCallback, useEffect, useRef, type ComponentProps, type RefObject } from 'react';
 import { useThree } from '@react-three/fiber';

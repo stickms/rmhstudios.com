@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Where a control turns inside out from — the input half of the eversion state layer (globals.css §7.3).
  *

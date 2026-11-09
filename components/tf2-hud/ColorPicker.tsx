@@ -7,7 +7,6 @@
  * whole chain — `TanDark → Tan → 235 227 203 255` — stays visible so it is
  * obvious what a value really is and what will change if the scheme is edited.
  */
-'use client';
 
 import { Pipette, Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

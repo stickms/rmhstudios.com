@@ -2,7 +2,6 @@
  * Landing: start a HUD (TF2 Default, a zip, a workshop HUD), reopen a local
  * draft, or head to your saved HUDs.
  */
-'use client';
 
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Boxes, FileArchive, FolderOpen, Globe, Layers, Trash2 } from 'lucide-react';

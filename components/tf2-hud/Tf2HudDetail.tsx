@@ -3,7 +3,6 @@
  * flip through every page of, what changed from the default, and the actions —
  * download, edit a copy, like.
  */
-'use client';
 
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Download, GitFork, Heart, Pencil } from 'lucide-react';

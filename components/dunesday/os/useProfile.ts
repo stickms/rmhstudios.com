@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Who is "logged in" to Dunesday 7: the visitor's real RMH Studios profile
  * when they are signed in to the site (display name and avatar, including a

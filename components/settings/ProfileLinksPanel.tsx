@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Profile links with domain verification (J1).
  *

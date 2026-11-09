@@ -1,7 +1,6 @@
 /**
  * The HUD half of the workshop: public HUDs to browse, open, or fork into the editor.
  */
-'use client';
 
 import { Link } from '@tanstack/react-router';
 import { Search } from 'lucide-react';

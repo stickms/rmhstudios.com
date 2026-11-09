@@ -1,7 +1,6 @@
 /**
  * Diff — every changed file against the TF2 Default base, line by line.
  */
-'use client';
 
 import { Undo2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';

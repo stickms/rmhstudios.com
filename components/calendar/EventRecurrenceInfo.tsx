@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * K4 — what a repeating event adds to its card: the rule, who hosts THIS
  * occurrence, and the "every time" RSVP that carries over to the next one.

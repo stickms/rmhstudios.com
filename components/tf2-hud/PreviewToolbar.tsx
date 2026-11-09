@@ -2,7 +2,6 @@
  * The bar above the preview: which page, what resolution and zoom, and the
  * switches that change what is drawn (hidden panels, bounds, minmode, platform).
  */
-'use client';
 
 import {
   ArrowLeftRight,

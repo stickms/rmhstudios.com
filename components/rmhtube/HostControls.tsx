@@ -6,7 +6,6 @@
  * regular members get a toast and are snapped back to the live state.
  * Volume, captions, and PiP are local-only (always available).
  */
-'use client';
 
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -4,7 +4,6 @@
  * a Cancel button — in the same look as the main menu (SourceMainMenu.tsx; the `<game>-menu` channel,
  * source-gameui.ts), under the game's logo.
  */
-'use client';
 
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';

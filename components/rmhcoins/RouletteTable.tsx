@@ -1,5 +1,3 @@
-'use client';
-
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRouletteStore } from '@/lib/roulette/store';

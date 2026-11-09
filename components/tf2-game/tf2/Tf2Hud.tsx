@@ -9,7 +9,6 @@
  * the game makes at run time (timer, points, flags, cart, kill feed,
  * messages, crosshair) stays here, placed by the HUD's hudlayout.res.
  */
-'use client';
 
 import type { ReactNode } from 'react';
 import type { HudState } from '@/lib/tf2-game/client/hud-state';

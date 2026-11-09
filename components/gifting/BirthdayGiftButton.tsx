@@ -1,5 +1,3 @@
-'use client';
-
 /** "Use their birthday" for the scheduled-gift form (G1 × C7). Fills the date field. */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

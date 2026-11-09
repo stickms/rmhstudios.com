@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The public request board (F22).
  *

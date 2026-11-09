@@ -1,5 +1,3 @@
-'use client';
-
 /** T3: a thin "most replayed" heat strip under the seek bar. Fetched when idle; absent until there is data. */
 import { useEffect, useState } from 'react';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';

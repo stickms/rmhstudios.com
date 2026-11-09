@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Records a "recent" whenever the user lands on a game or app route. Mounted
  * once globally (in Providers) so it captures visits no matter how the user got

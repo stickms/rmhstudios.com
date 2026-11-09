@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * A character built from a skin's look (lib/hearthworks/skins/looks.ts): torso, head, hat, prop, and limbs that pivot
  * at the shoulders and hips so a caller can swing them. Shared by the player's avatar and by everyone else.

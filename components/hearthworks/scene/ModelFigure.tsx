@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * A person drawn from a loaded skinned model: a per-person clone of the skin's template (own skeleton, shared
  * geometry and materials), scaled to the figure size contract, animated by a `CharacterAnimator`. It reads what the

@@ -1,5 +1,3 @@
-'use client';
-
 import { lazy, Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/kowloon-knockout/store';

@@ -10,7 +10,6 @@
  * The background movie is decoration: muted, hidden from assistive technology, paused by the browser in
  * a hidden tab. Every control is a real button.
  */
-'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

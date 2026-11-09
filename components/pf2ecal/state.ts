@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Data and mutations for `/pf2ecal`.
  *

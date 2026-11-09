@@ -97,9 +97,11 @@ logger.warn = (msg, options) => {
   originalWarn(msg, options);
 };
 
-// `"use client"` (on ~1,200 modules, a holdover from the Next.js era) means
-// nothing to TanStack Start, which has no React Server Components, so Rolldown's
-// "module level directive may not be preserved" check is pure noise here. It is
+// `"use client"` means nothing to TanStack Start, which has no React Server
+// Components. Our own source no longer carries it (redesign audit A8;
+// `local/no-use-client-directive` keeps it out), but many dependencies still do
+// (Radix, sonner, react-player…), so Rolldown's "module level directive may not
+// be preserved" check is pure noise here. It is
 // switched OFF at the source rather than filtered in `onwarn`: filtering still
 // builds every diagnostic (a code frame per file, ~2,500 of them across the client
 // and Nitro builds — 90% of the build's log volume) only to throw it away, and in

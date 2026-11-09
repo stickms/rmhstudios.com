@@ -11,7 +11,6 @@
  * the same tabs, instead of a row that needs scrolling. The strip stays mounted (invisible, out of
  * flow) while collapsed, so its natural width is always known and the tabs come back as soon as they fit.
  */
-'use client';
 
 import { Check, ChevronDown, type LucideIcon } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';

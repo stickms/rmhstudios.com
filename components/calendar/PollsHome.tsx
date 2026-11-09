@@ -1,5 +1,3 @@
-'use client';
-
 /** K1 — `/when`: your polls, plus the form to start one. */
 
 import { useEffect, useMemo, useState } from 'react';

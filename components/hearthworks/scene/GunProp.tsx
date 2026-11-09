@@ -1,5 +1,3 @@
-'use client';
-
 /** The small sidearm every shooter in the scene holds: the player, the police, and anyone else with a gun out. */
 
 export function GunProp({ color }: { color: string }) {

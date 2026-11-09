@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PartyPopper, Trophy, Gamepad2 } from 'lucide-react';

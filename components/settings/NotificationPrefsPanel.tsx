@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Per-type notification toggles backed by /api/notifications/preferences.
  * Toggles save optimistically and roll back (with a toast) on failure.

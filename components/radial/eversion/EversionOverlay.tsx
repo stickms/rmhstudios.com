@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useSyncExternalStore } from 'react';
 import { holdLayerAttached, overlayAttached, overlayStore } from './overlay-store';
 

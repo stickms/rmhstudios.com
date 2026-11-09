@@ -5,8 +5,6 @@
  * from the card pool. The player can pick one or skip (+20 currency).
  */
 
-'use client';
-
 import React from 'react';
 import { useTranslation } from "react-i18next";
 import type { Card } from '@/lib/signal-forge';

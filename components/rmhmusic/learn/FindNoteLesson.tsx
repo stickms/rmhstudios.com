@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * FindNoteLesson — the note finder (`keyboard-map`: Keyboard layout & open strings, `fretboard`:
  * First frets & two octaves): ten target notes, each shown as a name and on the staff, found on

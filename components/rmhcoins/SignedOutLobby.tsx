@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The casino lobby as a signed-out visitor sees it: the real rooms, read-only,
  * over a sign-in prompt.

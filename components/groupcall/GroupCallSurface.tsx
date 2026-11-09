@@ -13,8 +13,6 @@
  * hydration for signed-in viewers and nothing at all for anonymous ones.
  */
 
-'use client';
-
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { initGroupCalls, inviteToGroupCall, useGroupCallStore } from '@/lib/groupcall/store';

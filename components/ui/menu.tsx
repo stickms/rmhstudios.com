@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Menu rows — the contents of a floating menu, as primitives.
  *

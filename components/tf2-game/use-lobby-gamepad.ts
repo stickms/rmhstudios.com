@@ -8,7 +8,6 @@
  * admits a pad after its first button press), never on an animation frame:
  * the lobby has no game loop, and the site's frame budget stays its own.
  */
-'use client';
 
 import { useEffect, type RefObject } from 'react';
 import { moveFocus } from './menu-nav';

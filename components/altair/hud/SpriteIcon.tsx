@@ -3,7 +3,6 @@
  * Used in React/HTML UI (HUD, level-up, class select) where the main
  * game canvas drawSprite() helpers are not available.
  */
-'use client';
 
 import { useRef, useEffect, memo } from 'react';
 import { loadCorsImage } from '@/lib/altair/engine/sprites/cors-image';

@@ -1,5 +1,3 @@
-'use client';
-
 import { Link, useLocation, useMatch } from '@tanstack/react-router';
 import { PendingBadge } from './SteamShell';
 import { useTranslation } from 'react-i18next';

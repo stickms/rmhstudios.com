@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * V12 — the public Slice It! hub.
  *

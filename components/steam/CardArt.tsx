@@ -1,5 +1,3 @@
-'use client';
-
 import { useId } from 'react';
 import { cardName } from '@/lib/cards/cards';
 

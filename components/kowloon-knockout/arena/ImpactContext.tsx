@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The ImpactBus (lib/kowloon-knockout/render/impact.ts) for the part of the tree that draws fighters:
  * the arena, the menu duel and the character preview each provide one. Fighters read it for hit-stop

@@ -11,8 +11,6 @@
  * Reference: docs/rmhbox/implementation/phase-4.md §9
  */
 
-'use client';
-
 import { Howl } from 'howler';
 import { useRMHboxStore } from './store';
 import { asset } from '@/lib/storage/asset';

@@ -1,5 +1,3 @@
-'use client';
-
 import { forwardRef, useRef, type TextareaHTMLAttributes } from'react';
 
 interface GhostTextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {

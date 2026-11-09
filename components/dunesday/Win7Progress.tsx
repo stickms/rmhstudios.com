@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The Windows 7 progress bar from 7.css — green gel with the travelling shine.
  * Wrapped in its own `.win7` scope so 7.css reaches nothing else.

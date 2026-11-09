@@ -1,5 +1,3 @@
-'use client';
-
 import { useMemo } from 'react';
 import { splitEmotes } from '@/lib/games/customize';
 import { Emote } from './Emote';

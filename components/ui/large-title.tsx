@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * LargeTitle — the iOS large-title navigation bar.
  *

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Solo and versus boards.
  *

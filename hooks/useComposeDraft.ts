@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Composer draft autosave. Losing a written-but-unsent post to a refresh or a
  * stray navigation is the worst kind of feed UX failure, so the composer's

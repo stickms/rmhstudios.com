@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Versecraft seed gallery (R13): publish a seed you have played, browse and rate
  * other people's, and "continue this story" to fork one into your own run — your

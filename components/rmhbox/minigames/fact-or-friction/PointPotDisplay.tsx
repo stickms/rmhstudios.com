@@ -4,7 +4,6 @@
  * Shows the current pot value with a color gradient (green→yellow→red)
  * based on how much value remains. Pulses when at minimum.
  */
-'use client';
 
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Flame } from 'lucide-react';

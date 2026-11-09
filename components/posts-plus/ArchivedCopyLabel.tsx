@@ -1,5 +1,3 @@
-'use client';
-
 import { Archive } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { waybackTimestampToIso } from '@/lib/posts-plus/wayback';

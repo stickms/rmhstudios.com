@@ -4,7 +4,6 @@
  * tab open" (a background tab keeps hosting; a closed one hands the match on),
  * and the room becoming yours. Each stays a few seconds (the client drops it).
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import type { HudNotice } from '@/lib/tf2-game/client/hud-state';

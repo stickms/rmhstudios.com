@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Nightrail trick of the week (R21) on the game hub: last week's winner, and this
  * week's entries to vote on (loaded when the list is opened).

@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, HelpCircle } from 'lucide-react';

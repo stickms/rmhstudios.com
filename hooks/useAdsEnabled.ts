@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The client-side half of the ad gate: resolves the live inputs
  * (`lib/ads/adsense.ts` owns the decision itself) — publisher id, current path,

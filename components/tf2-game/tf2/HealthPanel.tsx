@@ -6,7 +6,6 @@
  * below 49% (HealthDeathWarning). Condition chips sit beside it (fire, bleed,
  * Jarate, Mad Milk, marked for death, über, crits).
  */
-'use client';
 
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';

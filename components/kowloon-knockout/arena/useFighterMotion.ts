@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * One fighter's per-frame motion, shared by the Y-Bot and Source renderers: smoothed ground position and
  * facing, the clip driver (smooth blends, restarts, hit-stop), and the ImpactBus reaction (knock-back,

@@ -4,7 +4,6 @@
  * just this element or the colour itself, with a count of what else uses it, so recolouring a HUD does not
  * need a trip to the Scheme tab.
  */
-'use client';
 
 import { Plus, Sparkles } from 'lucide-react';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';

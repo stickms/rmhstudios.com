@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Credits playtime for the catalog title the user has open. Mounted once next
  * to RecentsTracker (in Providers) and driven by the same path matcher, so the

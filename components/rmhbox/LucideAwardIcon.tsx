@@ -7,7 +7,6 @@
  * Usage:
  *   <LucideAwardIcon name="trophy" className="h-5 w-5" />
  */
-'use client';
 
 import {
   PencilLine,

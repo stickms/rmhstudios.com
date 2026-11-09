@@ -1,7 +1,6 @@
 /**
  * StrokeCounter — Visual indicator showing strokes used / max strokes.
  */
-'use client';
 
 interface StrokeCounterProps {
   current: number;

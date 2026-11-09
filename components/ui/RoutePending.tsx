@@ -1,5 +1,3 @@
-'use client';
-
 import { useContext, useEffect, useLayoutEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Skeleton } from '@/components/ui/skeleton';

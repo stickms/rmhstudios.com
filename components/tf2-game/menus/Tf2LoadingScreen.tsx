@@ -4,7 +4,6 @@
  * colours and type — the map, the progress bar, the stage under way, and one of the game's tips
  * (`#Tip_<class>_<n>` from its localisation).
  */
-'use client';
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

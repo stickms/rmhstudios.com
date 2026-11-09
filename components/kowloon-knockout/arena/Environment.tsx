@@ -1,5 +1,3 @@
-'use client';
-
 import * as THREE from 'three/webgpu';
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';

@@ -3,7 +3,6 @@
  * action slots from the live item catalog, paint and add effects, then keep it
  * as a per-class draft in this browser or save and share it from your account.
  */
-'use client';
 
 import { Link, useNavigate } from '@tanstack/react-router';
 import {

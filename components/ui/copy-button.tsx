@@ -1,5 +1,3 @@
-'use client';
-
 import * as React from 'react';
 import { Check, Copy, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

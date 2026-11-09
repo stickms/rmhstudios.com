@@ -4,7 +4,6 @@
  * Includes a panel showing players who have guessed correctly so far,
  * and fuzzy match suggestions while typing.
  */
-'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

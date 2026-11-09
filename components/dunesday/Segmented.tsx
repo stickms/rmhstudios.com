@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The glossy Aero segmented control.
  *

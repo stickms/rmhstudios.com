@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Solitaire (Klondike) for the Dunesday desktop, after the Windows 7 game:
  * draw one or three, Standard scoring, unlimited passes through the stock,

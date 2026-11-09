@@ -5,7 +5,6 @@
  * The logo already says Team Fortress 2, so it sits inside the heading and the heading
  * adds only "Hub" beneath it; together they read "Team Fortress 2 Hub".
  */
-'use client';
 
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, Crosshair, Globe, LayoutDashboard, Shirt } from 'lucide-react';

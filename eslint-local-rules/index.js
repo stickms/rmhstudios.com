@@ -8,6 +8,7 @@
 
 import noAdhocUserSelect from './no-adhoc-user-select.js';
 import noLucideNamespaceImport from './no-lucide-namespace-import.js';
+import noUseClientDirective from './no-use-client-directive.js';
 
 /** @type {import('eslint').ESLint.Plugin} */
 const plugin = {
@@ -15,6 +16,7 @@ const plugin = {
   rules: {
     'no-adhoc-user-select': noAdhocUserSelect,
     'no-lucide-namespace-import': noLucideNamespaceImport,
+    'no-use-client-directive': noUseClientDirective,
   },
 };
 

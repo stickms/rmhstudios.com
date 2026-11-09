@@ -1,5 +1,3 @@
-'use client';
-
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FolderCog } from 'lucide-react';

@@ -1,5 +1,4 @@
 // components/daily-puzzles/three/FrontPage.tsx
-'use client';
 
 import { useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';

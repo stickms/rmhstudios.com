@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * RMHHomes — listing detail view.
  *

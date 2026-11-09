@@ -2,7 +2,6 @@
  * The file tree — the HUD's real TF2 folder structure, with change status,
  * a "changed only" filter, search, and per-file actions.
  */
-'use client';
 
 import {
   ChevronDown,

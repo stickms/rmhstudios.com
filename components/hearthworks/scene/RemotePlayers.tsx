@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The other people in a shared world. Their position, heading and speed come from the pose buffer the session keeps
  * (lib/hearthworks/net/poses.ts): they are drawn a hundred milliseconds in the past, interpolated between the two

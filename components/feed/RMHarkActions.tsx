@@ -1,5 +1,3 @@
-'use client';
-
 import { MessageCircle, Repeat2, Heart, Eye, Repeat, PenSquare } from'lucide-react';
 import { useNavigate } from'@tanstack/react-router';
 import { lazy, Suspense, useState, useRef } from'react';

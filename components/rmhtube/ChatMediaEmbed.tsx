@@ -16,7 +16,6 @@
  * `useStickToBottom`'s ResizeObserver covers whatever the reservation gets
  * wrong.
  */
-'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { ImageOff } from 'lucide-react';

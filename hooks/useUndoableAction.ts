@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Undoable destructive actions (plan B1).
  *

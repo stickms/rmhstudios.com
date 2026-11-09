@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The shared canvas host for the three spatial views (3D terrain, 4D projection,
  * the globe).

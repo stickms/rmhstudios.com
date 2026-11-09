@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Onboarding v2 (§12) — the "First Week" card.
  *

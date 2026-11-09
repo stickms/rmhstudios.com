@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { fmt, formatDuration } from '@/lib/temple-of-joy/numbers';
 import { useTempleSnapshot } from './hooks';

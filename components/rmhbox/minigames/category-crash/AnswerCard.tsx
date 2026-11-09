@@ -14,7 +14,6 @@
  *   points: number
  *   status: 'unique' | 'shared' | 'crashed' | 'invalid' | 'empty'
  */
-'use client';
 
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

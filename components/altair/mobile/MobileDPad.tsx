@@ -1,7 +1,6 @@
 /**
  * MobileDPad — Virtual joystick for mobile movement.
  */
-'use client';
 
 import { useRef, useCallback, useEffect } from 'react';
 

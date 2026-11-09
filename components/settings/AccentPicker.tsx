@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Accent-color picker: recolor the highlight (`--site-accent`) on top of whatever
  * theme is active, or fall back to the theme's own accent. Curated swatches only,

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * FlashcardLesson — a staff-reading lesson (`staff-flashcards`): ten cards dealt from the
  * lesson's deck, each one note on a staff, named with a letter button or by playing it. A wrong

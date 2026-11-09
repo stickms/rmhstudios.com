@@ -1,5 +1,3 @@
-'use client';
-
 import { Smile } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { listCuratedBuilds } from '@/lib/builds/curated';

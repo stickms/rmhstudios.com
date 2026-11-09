@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Dunesday Buddy — the chat assistant, as a Windows Live Messenger-style
  * conversation window (the desktop's Messenger app).

@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState, useRef, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { Loader2, MessageCircle, CheckCheck, Plus, Search } from'lucide-react';

@@ -25,7 +25,6 @@
  * into state at the human pace they are actually operated at, and the readouts
  * during a swipe are written straight to their own DOM nodes.
  */
-'use client';
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {

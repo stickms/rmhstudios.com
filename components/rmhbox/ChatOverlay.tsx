@@ -9,7 +9,6 @@
  *   messages: ChatMessage[] — Array of chat messages
  *   onSend: (content: string) => void — Callback to send a message
  */
-'use client';
 
 import { useRef, useEffect, useState, useCallback, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';

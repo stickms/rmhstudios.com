@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The weave glyph, in the DOM.
  *

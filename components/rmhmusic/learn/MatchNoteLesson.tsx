@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * MatchNoteLesson — the pitch match (`match-note`: Match middle C, Match white keys): ten target
  * notes on the staff, each played back on whatever the learner plays with — the on-screen piano

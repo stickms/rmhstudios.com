@@ -1,5 +1,3 @@
-'use client';
-
 /** Training room UI: menu entry, DOM panel (frame data, inputs, dummy), and the 3D hitbox overlay. */
 
 import { useEffect, useMemo, useRef, useState } from 'react';

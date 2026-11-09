@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from'react';
 import { useTranslation } from'react-i18next';
 import { Link2, Check, Code2, QrCode as QrIcon, ImageDown } from'lucide-react';

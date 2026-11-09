@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useState, type ReactNode, type RefObject } from 'react';
 import { loadShortcodes, getShortcodesSync } from './shortcodes';
 import {

@@ -12,7 +12,6 @@
  * in a polite live region, so a screen reader hears health and ammo as it
  * does with the default HUD.
  */
-'use client';
 
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { TFunction } from 'i18next';

@@ -11,7 +11,6 @@
  * The player wears its team's skin: the body and every item with team colours switch to BLU's
  * textures (decoded on first use, lib/tf2-loadout/team-skins.ts) when `team` is `blu`.
  */
-'use client';
 
 import { classVariant, selectionKey } from '@/lib/tf2-loadout/bodygroups';
 import type { Bodygroups } from '@/lib/tf2-loadout/catalog-types';

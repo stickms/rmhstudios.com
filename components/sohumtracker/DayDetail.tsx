@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * One day, in full: the write-up plus every figure the tracker recorded.
  *

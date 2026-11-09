@@ -4,7 +4,6 @@
  * environment (generated here, no download) for even fill, a sky/ground hemisphere, and a key light that
  * travels with the camera so the side you are looking at is always lit.
  */
-'use client';
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';

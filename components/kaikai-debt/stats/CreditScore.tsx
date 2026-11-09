@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The live credit score viewer.
  *

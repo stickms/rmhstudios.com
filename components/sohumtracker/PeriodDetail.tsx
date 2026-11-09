@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * A week or a month, in full — what `/sohumtracker/week/<key>` renders.
  *

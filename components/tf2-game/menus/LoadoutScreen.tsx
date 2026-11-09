@@ -11,7 +11,6 @@
  * held upright, a narrow window), or before the file is published, the slots are a plain grid in the
  * same order.
  */
-'use client';
 
 import { AlertTriangle, ExternalLink, Info, RotateCcw, Shirt, X } from 'lucide-react';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';

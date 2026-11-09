@@ -6,7 +6,6 @@
  * - Game: game timer, "ALTAIR" title, settings gear
  * - Meta shop: "← Back" link, "Meta Shop" title, coin balance
  */
-'use client';
 
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

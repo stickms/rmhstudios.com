@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Light / dark for `/rmhmusic` — the browser half (`lib/rmhmusic/learn/mode.ts` is the pure half).
  *

@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useLayoutEffect, useRef, useState, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { useWindowVirtualizer, type VirtualItem } from'@tanstack/react-virtual';

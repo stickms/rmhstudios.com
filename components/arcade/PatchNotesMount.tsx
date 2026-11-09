@@ -1,5 +1,3 @@
-'use client';
-
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useLocation } from '@tanstack/react-router';
 import { games } from '@/lib/games';

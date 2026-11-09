@@ -3,7 +3,6 @@
  * writes the underlying `.res` text (so the code view and preview stay in step),
  * editing the copy of a repeated key that is live for the previewed platform.
  */
-'use client';
 
 import { Code2, Eye, EyeOff, Plus, RotateCcw, Sparkles, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';

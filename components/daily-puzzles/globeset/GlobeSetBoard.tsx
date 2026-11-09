@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The seven face-up cards, plus the parity ledger under them.
  *

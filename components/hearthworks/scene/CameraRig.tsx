@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * One perspective camera, two ways of seeing the world. Each frame this advances the view transition,
  * steps the avatar, and writes the camera: the isometric pose (a very long, very narrow lens that reads as

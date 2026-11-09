@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The live rail's ambient content — everything inside the rail except its own
  * frame and the page's portal slot.

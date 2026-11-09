@@ -7,8 +7,6 @@
  * concurrent HTTP/1.1 connection limit.
  */
 
-"use client";
-
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useFeedStore } from "@/stores/feedStore";

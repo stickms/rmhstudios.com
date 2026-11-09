@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { Award } from 'lucide-react';
 import { CopyButton } from '@/components/ui/copy-button';

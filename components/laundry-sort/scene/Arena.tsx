@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The laundry room: floor, walls, the chute garments fall from, and the four
  * bins. Static geometry, so it renders once and never re-renders — everything

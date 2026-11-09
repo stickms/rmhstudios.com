@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * A static SVG progress ring. No animation loop and no per-frame state — the
  * arc is a single `stroke-dashoffset`, so a wallet full of goals costs nothing

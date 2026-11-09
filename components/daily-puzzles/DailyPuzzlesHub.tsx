@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * DailyPuzzlesHub — the (non-3D) landing page for Daily Puzzles.
  *

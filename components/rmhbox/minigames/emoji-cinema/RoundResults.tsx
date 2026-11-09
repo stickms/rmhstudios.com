@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from "react-i18next";
 import MovieReveal from './MovieReveal';
 import { getEmojiUrl } from '@/lib/rmhbox/emoji-cinema/twemoji-url';

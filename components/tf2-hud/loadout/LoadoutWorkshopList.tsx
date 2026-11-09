@@ -2,7 +2,6 @@
  * The loadout half of the workshop: public loadouts to browse, filter by class,
  * open, or copy into the builder.
  */
-'use client';
 
 import { Link } from '@tanstack/react-router';
 import { Search } from 'lucide-react';

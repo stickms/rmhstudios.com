@@ -1,5 +1,3 @@
-"use client";
-
 export interface ToastItem {
   id: number;
   text: string;

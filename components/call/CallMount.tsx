@@ -16,8 +16,6 @@
  * an import is paid at load time, not at call time.
  */
 
-'use client';
-
 import { Suspense, lazy, useEffect } from 'react';
 import { useSession } from '@/components/Providers';
 

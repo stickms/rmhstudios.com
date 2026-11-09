@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { Clock, Coins, Palette, Pin } from 'lucide-react';
 import type { SystemAction } from '@/lib/chat-plus/types';

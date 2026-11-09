@@ -1,5 +1,3 @@
-'use client';
-
 import { Globe } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { aspectBucket, getBakedLut } from '@/lib/eversion/projection-lut';

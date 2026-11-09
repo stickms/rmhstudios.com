@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Backdrop for the Dream Rift menus.
  *

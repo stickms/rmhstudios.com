@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { useCookieConsentAnswered } from '@/components/site/CookieConsent';
 import { ArrowUpRight } from 'lucide-react';

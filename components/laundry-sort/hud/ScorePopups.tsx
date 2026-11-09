@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The "+240" that rises out of a bin when a garment lands.
  *

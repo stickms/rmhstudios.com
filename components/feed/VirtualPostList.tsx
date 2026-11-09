@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useLayoutEffect, useRef, useState, memo } from'react';
 import { useWindowVirtualizer } from'@tanstack/react-virtual';
 import type { FeedItem } from'@/lib/feed-types';

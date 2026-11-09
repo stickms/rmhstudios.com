@@ -1,5 +1,3 @@
-'use client';
-
 import { useSyncExternalStore } from 'react';
 
 // The `xl` breakpoint — where the context rail switches from `display:none` to

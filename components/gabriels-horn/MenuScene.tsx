@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Gabriel's Horn — the menu scene.
  *

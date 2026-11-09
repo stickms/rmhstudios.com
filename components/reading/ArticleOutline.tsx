@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * "Contents" for a long article: a collapsed list of its `##`/`###` headings.
  *

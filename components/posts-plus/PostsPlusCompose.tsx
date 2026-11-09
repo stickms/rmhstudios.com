@@ -1,5 +1,3 @@
-'use client';
-
 import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BookOpen, Check, Hourglass, MessageCircleQuestion, Package, X } from 'lucide-react';

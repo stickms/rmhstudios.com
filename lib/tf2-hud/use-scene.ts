@@ -3,7 +3,6 @@
  * page's base files are loaded, and rebuilds the scene whenever a file, a test
  * value or a view setting changes.
  */
-'use client';
 
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

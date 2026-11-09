@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * RMHHomes — distance from a saved place.
  *

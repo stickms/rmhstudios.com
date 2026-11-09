@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Laundry Sort — game root.
  *

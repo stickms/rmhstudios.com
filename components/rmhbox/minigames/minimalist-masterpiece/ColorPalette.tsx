@@ -5,7 +5,6 @@
  * Used for both stroke color and background color selection
  * in Minimalist Masterpiece.
  */
-'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { HexColorPicker } from 'react-colorful';

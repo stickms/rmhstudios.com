@@ -21,7 +21,6 @@
  * number that turns a wall of figures into a decision, because it is the only
  * one that says where the next purchase should go.
  */
-'use client';
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * L3 — the yearly reading challenge. Progress is derived from the member's
  * `read` shelf (finished-this-year books and their pages), so there is nothing

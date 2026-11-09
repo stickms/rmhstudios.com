@@ -20,7 +20,6 @@
  *   onTileClick: (position: number) => void — Click handler (submits guess)
  *   onHighlightChange: (position: number, highlighted: boolean) => void — Toggle highlight
  */
-'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

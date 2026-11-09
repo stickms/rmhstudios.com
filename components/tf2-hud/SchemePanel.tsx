@@ -5,7 +5,6 @@
  * whole HUD: edit a colour or a font here and every panel that names it updates
  * live in the preview. Entries used by the selected panel are called out.
  */
-'use client';
 
 import { Plus, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';

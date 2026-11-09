@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { Shuffle } from 'lucide-react';
 import { Button } from '@/components/ui/button';

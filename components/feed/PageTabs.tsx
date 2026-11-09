@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * PageTabs — where a page's tab strip sits, and what sits under it.
  *

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * GameStage — mounts the canvas, spins up a GameSession for the run, wires
  * resize/letterbox and DPR, and renders the in-run overlays (stage banner,

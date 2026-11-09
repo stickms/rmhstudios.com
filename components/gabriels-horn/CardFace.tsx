@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Gabriel's Horn — a card, and the strip of them you are holding.
  *

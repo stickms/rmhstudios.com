@@ -1,5 +1,3 @@
-"use client";
-
 import { useTranslation } from "react-i18next";
 import { PinnedHero } from "@/components/feed/PinnedHero";
 import { Reveal, RevealGroup, RevealItem } from "@/components/motion";

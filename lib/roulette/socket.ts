@@ -1,5 +1,3 @@
-'use client';
-
 import { singleFlight } from '@/lib/shared/realtime/single-flight';
 import { io, Socket } from 'socket.io-client';
 import { ensureTrailingSlash } from '@/lib/url';

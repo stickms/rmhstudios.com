@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The WebGL stage.
  *

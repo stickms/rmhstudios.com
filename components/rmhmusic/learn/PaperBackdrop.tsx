@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * PaperBackdrop — the band of staff paper behind RMH Music, with notes drifting along it and the
  * note a learner plays popping onto a staff at its pitch.

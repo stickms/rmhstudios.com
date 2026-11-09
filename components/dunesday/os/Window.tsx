@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * One desktop window: the Windows 7 glass frame (7.css), a title bar you can
  * drag, eight resize handles, Aero Snap, and minimise / maximise / close.

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The liquid globe, dealt.
  *

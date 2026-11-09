@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Hold a pure machine (`lib/rmhmusic/learn/machines/*`) for one mounted
  * screen. The state is read with `useSyncExternalStore`, so it is never

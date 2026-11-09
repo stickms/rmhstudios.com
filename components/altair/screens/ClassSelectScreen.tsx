@@ -1,7 +1,6 @@
 /**
  * ClassSelectScreen — 8-class selector with ability previews.
  */
-'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

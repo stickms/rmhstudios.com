@@ -17,8 +17,6 @@
  *   - **ended** → the bar, briefly, with the reason. Auto-dismisses.
  */
 
-'use client';
-
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Ban, MoreHorizontal, Phone, PhoneOff, Mic, MicOff, PhoneIncoming } from 'lucide-react';

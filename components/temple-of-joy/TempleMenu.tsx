@@ -18,7 +18,6 @@
  * Arrow keys move between the two, Enter selects, Escape jumps to Quit (it does
  * not leave — a stray Escape should never be a goodbye).
  */
-'use client';
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';

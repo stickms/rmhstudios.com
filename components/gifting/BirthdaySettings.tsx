@@ -1,5 +1,3 @@
-'use client';
-
 /** Opt-in birthday (G1) for Settings → Profile. Month and day only. */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

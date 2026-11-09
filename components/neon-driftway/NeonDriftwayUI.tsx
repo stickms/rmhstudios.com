@@ -1,5 +1,3 @@
-'use client';
-
 import { LiveryEditorButton } from './LiveryEditor';
 import { useCallback, useEffect, useState } from 'react';
 import { parseScoreMoment, ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';

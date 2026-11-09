@@ -20,7 +20,6 @@
  *    and the local copy stays where it is, claimable by the next sign-in on this
  *    device — see `readLocal` in the store.
  */
-'use client';
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useSession } from '@/components/Providers';

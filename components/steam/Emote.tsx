@@ -1,5 +1,3 @@
-'use client';
-
 import { hueFromString } from '@/lib/builds/curated';
 import type { EmoteMotif } from '@/lib/games/customize';
 

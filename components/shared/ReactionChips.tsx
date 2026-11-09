@@ -1,5 +1,3 @@
-'use client';
-
 import type { ReactionSummary } from '@/lib/social/reactions';
 
 interface ReactionChipsProps {

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * What a hit, a block and a knockout look like: a ground shockwave, a camera-facing ring and a bright
  * contact flash at the point of impact, and sparks that streak along their velocity.

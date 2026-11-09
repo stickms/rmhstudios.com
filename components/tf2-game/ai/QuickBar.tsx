@@ -5,7 +5,6 @@
  * touch-first device) and carry `data-menu-item`, so the pause menu's arrow keys and the gamepad's
  * d-pad reach them (components/tf2-game/menu-nav.ts).
  */
-'use client';
 
 import { LoaderCircle, Lock, Send, Sparkles, X } from 'lucide-react';
 import { useId, type ReactNode } from 'react';

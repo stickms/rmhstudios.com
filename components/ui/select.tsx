@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Select — a themed dropdown, popup included.
  *

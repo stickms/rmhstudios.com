@@ -4,7 +4,6 @@
  * not label it (no `.res`, or nothing published yet); the game's `#Token`s win where they exist.
  * Literal `t()` calls so the extractor and the default-drift gate see each one.
  */
-'use client';
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

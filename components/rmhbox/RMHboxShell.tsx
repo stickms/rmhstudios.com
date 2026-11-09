@@ -5,7 +5,6 @@
  * palette class and the persisted appearance. Settings and host-control modals
  * render inline within `RMHboxHeader`, not as floating overlays here.
  */
-'use client';
 
 import AppShell from '@/components/shared/AppShell';
 import { useRMHboxStore } from '@/lib/rmhbox/store';

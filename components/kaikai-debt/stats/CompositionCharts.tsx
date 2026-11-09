@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * What the pile is made of: three views of the same eight categories, plus the
  * shape of the individual line items underneath them.

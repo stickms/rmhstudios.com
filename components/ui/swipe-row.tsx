@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Swipe actions on a list row (plan U11) — swipe-to-reply in iMessage,
  * swipe-to-archive in Mail. Touch only; on a mouse the same actions are the

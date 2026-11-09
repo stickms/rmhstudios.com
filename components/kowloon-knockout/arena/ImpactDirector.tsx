@@ -1,5 +1,3 @@
-'use client';
-
 import type { MutableRefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { GameSession, RenderFighter } from '@/lib/kowloon-knockout/net/session';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The table's notice board — "no game next week", "we're starting an hour late",
  * "read the recap before Wednesday".

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Trusted contacts (I3 §3) — nominate three people, and vouch for the people
  * who nominated you.

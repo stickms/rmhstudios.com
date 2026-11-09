@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The chart editor shell: layout, the keyboard bus, and the autosave loop.
  *

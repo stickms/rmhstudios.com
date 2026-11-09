@@ -1,5 +1,3 @@
-'use client';
-
 import { useThree } from '@react-three/fiber';
 import { Environment as DreiEnvironment, Lightformer } from '@react-three/drei';
 import { useRenderTier } from './RenderTierContext';

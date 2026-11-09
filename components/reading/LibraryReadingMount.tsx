@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Mounts the library's reading strip (L3 challenge, L7 shelves, L1 highlights)
  * for signed-in members, after idle. A wrapper rather than a `lazy()` in the

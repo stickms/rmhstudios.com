@@ -4,7 +4,6 @@
  * do; this adds the arrow keys and the gamepad's d-pad / A / B, which arrive
  * as `menu_*` impulses from the input layer through the HUD store.
  */
-'use client';
 
 import { useEffect, type RefObject } from 'react';
 import type { ImpulseAction } from '@/lib/tf2-game/client/input/actions';

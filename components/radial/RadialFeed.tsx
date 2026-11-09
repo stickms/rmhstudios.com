@@ -1,5 +1,3 @@
-'use client';
-
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Await } from '@tanstack/react-router';
 import { ArrowUp, PenLine } from 'lucide-react';

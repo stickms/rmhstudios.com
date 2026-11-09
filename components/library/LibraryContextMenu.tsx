@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * LibraryContextMenu — a small, dependency-free right-click menu used by the
  * library to manage books and collections. It replaces the old always-visible

@@ -4,7 +4,6 @@
  * Shows the round number and the prompts the player will answer,
  * with a staggered entrance animation.
  */
-'use client';
 
 import { m as motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';

@@ -2,7 +2,6 @@
  * This game's own names for its actions (c-tf2-game): the key list's labels where the game's
  * kb_act.lst does not name a row (or is not published yet), and the rebinding notices.
  */
-'use client';
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -18,7 +18,6 @@
  * Minigame tabs appear only once their source has been raised with Manna —
  * a rail of four locked buttons teaches nothing.
  */
-'use client';
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useRef } from 'react';

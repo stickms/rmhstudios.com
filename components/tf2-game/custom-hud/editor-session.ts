@@ -4,7 +4,6 @@
  * opens. Kept apart from the editor overlay so the pause menu does not load
  * the whole editor.
  */
-'use client';
 
 import { api } from '@/lib/tf2-hud/api';
 import { loadOverlay } from '@/lib/tf2-hud/cloud';

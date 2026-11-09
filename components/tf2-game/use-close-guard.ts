@@ -10,7 +10,6 @@
  * - Everywhere else no page can cancel those shortcuts, so while a match runs
  *   the browser asks "Leave site?" before closing or reloading the tab.
  */
-'use client';
 
 import { useEffect } from 'react';
 

@@ -14,7 +14,6 @@
  *
  * The parent positions it (a full-viewport layer); it fills its parent.
  */
-'use client';
 
 import {
   useCallback,

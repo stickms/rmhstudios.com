@@ -15,8 +15,6 @@
  * server is the only thing that knows who is in a lobby.
  */
 
-'use client';
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { RealtimeStatus } from '@/lib/shared/realtime/types';

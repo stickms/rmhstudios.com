@@ -7,7 +7,6 @@
  * handles writes the new numbers straight back into the `.res` source, so the
  * preview and the code never disagree.
  */
-'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

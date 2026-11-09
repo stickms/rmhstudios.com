@@ -1,5 +1,3 @@
-'use client';
-
 import { useMemo } from 'react';
 import { Link, getRouteApi } from '@tanstack/react-router';
 import { ChevronDown } from 'lucide-react';

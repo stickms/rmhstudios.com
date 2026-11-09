@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState, useCallback, type KeyboardEvent } from'react';
 import { useTranslation } from'react-i18next';
 import { BadgeCheck } from'lucide-react';

@@ -12,7 +12,6 @@
  * standing actions. They are things you do *in the room* rather than entries in
  * a list, which is why they live beside the globes rather than in a panel.
  */
-'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

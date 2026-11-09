@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * One universal-search result.
  *

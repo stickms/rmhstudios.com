@@ -1,5 +1,4 @@
 /** The reasons a loadout could not be done in the game, as a short list (builder and saved view). */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import type { CatalogIndex } from '@/lib/tf2-loadout/use-catalog';

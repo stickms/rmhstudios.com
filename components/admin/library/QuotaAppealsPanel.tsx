@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The upload-appeal queue, formerly the whole of `/admin/library-quota`.
  *

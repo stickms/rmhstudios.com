@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * RMHType analytics: the summary, the heatmap, your worst keys, and the two
  * tests built out of them (design G1).

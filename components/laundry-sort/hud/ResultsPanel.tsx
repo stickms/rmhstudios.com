@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * End of round. Two shapes, one screen:
  *

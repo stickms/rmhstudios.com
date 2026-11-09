@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { AnimatePresence, m as motion } from 'framer-motion';

@@ -2,7 +2,6 @@
  * Translated names the HUD looks up by number (classes, teams, voice lines,
  * win reasons, buildings). Every key is a literal so `pnpm i18n:extract` finds it.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 

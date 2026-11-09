@@ -13,7 +13,6 @@
  * - `<LiveValue>` (in `ui.tsx`) — the headline figures, written straight into a
  *   DOM node every frame with no React render at all.
  */
-'use client';
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The desktop's icon set — glossy, Aero-era, drawn as SVG so it is crisp at
  * every size and needs no image assets. Each icon gets its own gradient ids

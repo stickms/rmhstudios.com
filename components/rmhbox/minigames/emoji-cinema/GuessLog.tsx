@@ -5,7 +5,6 @@
  *   - Wrong/close guesses: "Player guessed Shrek"
  *   - Correct guesses: "Player guessed the movie!" (answer not revealed)
  */
-'use client';
 
 import { useTranslation } from "react-i18next";
 import { useStickToBottom } from '@/hooks/useStickToBottom';

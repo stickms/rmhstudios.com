@@ -6,8 +6,6 @@
  * (kick, transfer host, start game).
  */
 
-'use client';
-
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLobbyLink } from '@/hooks/useLobbyLink';

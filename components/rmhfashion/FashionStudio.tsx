@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * **RMH Fashion** — a wardrobe built around the person wearing it.
  *

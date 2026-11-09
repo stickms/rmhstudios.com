@@ -1,5 +1,3 @@
-'use client';
-
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useRef } from 'react';
 import { Heart, MessageCircle, Eye, ExternalLink, GitBranch, Award } from 'lucide-react';

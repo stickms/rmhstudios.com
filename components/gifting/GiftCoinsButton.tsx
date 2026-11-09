@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Gifting v2 (§9) — "Gift coins" action: a token-styled button that opens a
  * small dialog (amount, optional note, "make it public" toggle) and POSTs to

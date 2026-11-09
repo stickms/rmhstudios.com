@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Neon Driftway — first-person 3D racer with device-gyro head look.
  *

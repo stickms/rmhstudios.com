@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The AUTO panel — regenerate at four scopes, preview before apply.
  *

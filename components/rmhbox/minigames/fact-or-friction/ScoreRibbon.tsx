@@ -4,7 +4,6 @@
  * Shows the player's running score, animated score delta,
  * players-answered count, a pass button, and timer.
  */
-'use client';
 
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { SkipForward, Users } from 'lucide-react';

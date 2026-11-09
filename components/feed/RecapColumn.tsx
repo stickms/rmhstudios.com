@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState, useRef } from'react';
 import { Link } from'@tanstack/react-router';
 import { Sparkles, Heart, MessageCircle, UserPlus, Trophy, Flame, PenSquare } from'lucide-react';
