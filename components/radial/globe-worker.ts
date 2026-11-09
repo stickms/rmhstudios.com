@@ -390,6 +390,13 @@ scope.onmessage = (e: MessageEvent<unknown>) => {
     case 'place':
       place = { cx: m.cx, cy: m.cy, r: m.r, dx: m.dx, dy: m.dy };
       dirty.place = true;
+      // A placement is the page asking for the picture to follow the scroll *now*: it is drawn in this task rather than
+      // after the worker's next animation frame, which would leave it up to a frame behind the scroll it describes.
+      // (Nothing else is drawn early; any other pending change still waits for its frame.)
+      if (coatReady) {
+        onFrame(performance.now());
+        return;
+      }
       break;
     case 'clock':
       clock = m.clock;
