@@ -239,7 +239,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
         aria-pressed={soloMode === 'library'}
         onClick={() => setSoloMode('library')}
       >
-        <span className="slice-nav__idx">A1</span>
         <span>{t('menu-nav-library', { defaultValue: 'Library' })}</span>
       </button>
       <button
@@ -249,7 +248,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
         aria-label={ts('daily-challenge', { defaultValue: 'Daily Challenge' })}
         onClick={() => setSoloMode(soloMode === 'daily' ? 'library' : 'daily')}
       >
-        <span className="slice-nav__idx">A2</span>
         <span>{t('menu-nav-daily', { defaultValue: 'Daily' })}</span>
       </button>
       <button
@@ -259,7 +257,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
         aria-label={ts('setlists', { defaultValue: 'Setlists' })}
         onClick={() => setSoloMode(soloMode === 'setlists' ? 'library' : 'setlists')}
       >
-        <span className="slice-nav__idx">B1</span>
         <span>{t('menu-nav-setlists', { defaultValue: 'Setlists' })}</span>
       </button>
       <button
@@ -268,7 +265,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
         aria-label={t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
         onClick={() => setShowMultiplayer(true)}
       >
-        <span className="slice-nav__idx">B2</span>
         <span>{t('menu-nav-versus', { defaultValue: 'Versus' })}</span>
       </button>
     </nav>

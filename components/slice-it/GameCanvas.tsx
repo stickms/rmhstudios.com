@@ -3712,7 +3712,7 @@ export function GameCanvas() {
             >
               <button
                 data-mobile-btn
-                className="pointer-events-auto touch-none select-none flex-1 h-full flex items-end justify-center pb-4 opacity-0 active:opacity-30 transition-opacity"
+                className="pointer-events-auto touch-none select-none flex-1 h-full"
                 // Inline, because `touch-none` is a layered utility and the unlayered global
                 // `button { touch-action: manipulation }` in globals.css beats it: the lane
                 // pads kept pinch-zoom, so a two-finger pinch zoomed the page mid-song.
@@ -3741,13 +3741,10 @@ export function GameCanvas() {
                   handleInputRelease(0);
                 }}
               >
-                <div className="w-12 h-12 rounded-full bg-blue-500/20 border-2 border-blue-500 flex items-center justify-center text-blue-500 text-lg font-black">
-                  L
-                </div>
               </button>
               <button
                 data-mobile-btn
-                className="pointer-events-auto touch-none select-none flex-1 h-full flex items-end justify-center pb-4 opacity-0 active:opacity-30 transition-opacity"
+                className="pointer-events-auto touch-none select-none flex-1 h-full"
                 // Inline, because `touch-none` is a layered utility and the unlayered global
                 // `button { touch-action: manipulation }` in globals.css beats it: the lane
                 // pads kept pinch-zoom, so a two-finger pinch zoomed the page mid-song.
@@ -3776,9 +3773,6 @@ export function GameCanvas() {
                   handleInputRelease(1);
                 }}
               >
-                <div className="w-12 h-12 rounded-full bg-pink-500/20 border-2 border-pink-500 flex items-center justify-center text-pink-500 text-lg font-black">
-                  R
-                </div>
               </button>
             </div>
           )}

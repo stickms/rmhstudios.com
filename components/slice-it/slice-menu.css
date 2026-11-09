@@ -199,27 +199,13 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* The track number, as the key art prints it ("A1 DOWNBEAT"). */
-.slice-nav__idx {
-  font-weight: 600;
-  color: var(--slice-accent);
-}
-
 .slice-nav__item:hover {
   background: var(--slice-paper);
   color: var(--slice-label);
 }
 
-.slice-nav__item:hover .slice-nav__idx {
-  color: var(--slice-label);
-}
-
 .slice-nav__item[aria-pressed='true'] {
   background: var(--slice-paper);
-  color: var(--slice-label);
-}
-
-.slice-nav__item[aria-pressed='true'] .slice-nav__idx {
   color: var(--slice-label);
 }
 
@@ -245,10 +231,6 @@
 
 .slice-nav--box .slice-nav__item:last-child {
   border-bottom: 0;
-}
-
-.slice-nav--box .slice-nav__idx {
-  width: 22px;
 }
 
 /* ── The sleeve (wide) ────────────────────────────────────── */
@@ -1009,10 +991,6 @@
 
   .slice-nav__item:last-child {
     border-right: 0;
-  }
-
-  .slice-nav__idx {
-    font-size: 10.5px;
   }
 
   .slice-sheet {
