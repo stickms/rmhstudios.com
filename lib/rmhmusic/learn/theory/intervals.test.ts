@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { INTERVALS, INTERVAL_NAMES, intervalOf, type IntervalName } from './intervals';
+import { INTERVALS, INTERVAL_NAMES, intervalOf } from './intervals';
 
 describe('intervalOf', () => {
   it('names the interval between two pitches', () => {
@@ -39,11 +39,5 @@ describe('INTERVALS', () => {
   });
   it('gives a third its minor and major sizes', () => {
     expect(INTERVALS.third.semitones).toEqual([3, 4]);
-  });
-  it('has a plain English label for every interval', () => {
-    for (const name of INTERVAL_NAMES) {
-      const label: string = INTERVALS[name as IntervalName].label;
-      expect(label).toMatch(/^[a-z]+$/);
-    }
   });
 });

@@ -18,6 +18,7 @@
  * learner has moved on) and answers `played` for the question it sounded.
  */
 import { shuffle } from '../content/decks';
+import type { Lesson } from '../content/path';
 import { CHORDS, chordNotes, type ChordQuality } from '../theory/chords';
 import { INTERVALS, type IntervalName } from '../theory/intervals';
 import type { Machine } from './runner';
@@ -126,25 +127,35 @@ export function dealQuestions(
   rand: () => number,
 ): Question[] {
   if (!Number.isFinite(count) || count < 1 || pool.length === 0) return [];
-  const names = Array.from({ length: Math.floor(count) }, (_, i) => pool[i % pool.length]);
+  // The names go round the pool starting at a random one, so the questions left over when the
+  // count is not a multiple of the pool go to random names, not always the first.
+  const offset = pick(pool.length, rand);
+  const names = Array.from(
+    { length: Math.floor(count) },
+    (_, i) => pool[(i + offset) % pool.length],
+  );
   return shuffle(names, rand).map((name) => makeQuestion(kind, [name], rand));
 }
 
-/** What a lesson asks about. */
-export function earKind(lessonId: string): EarKind {
-  return lessonId === 'ear-major-minor' ? 'chord' : 'interval';
+/** What a lesson asks about, from its mode (a missing lesson reads as intervals). */
+export function earKind(lesson: Pick<Lesson, 'mode'> | undefined): EarKind {
+  return lesson?.mode === 'ear-chord' ? 'chord' : 'interval';
 }
 
-/** The names a lesson's answer buttons offer (and its questions are drawn from). */
-export function earPool(lessonId: string): EarName[] {
-  switch (lessonId) {
-    case 'ear-fifth-octave':
-      return ['third', 'fifth', 'octave'];
-    case 'ear-major-minor':
-      return ['major', 'minor'];
-    default:
-      return ['second', 'third'];
-  }
+/** The pool a lesson gets when its path entry has none (or none that fits its kind). */
+const DEFAULT_POOL: Record<EarKind, EarName[]> = {
+  interval: ['second', 'third'],
+  chord: ['major', 'minor'],
+};
+
+/**
+ * The names a lesson's answer buttons offer and its questions are drawn from: the `pool` field of
+ * its path entry, keeping only names of the lesson's kind, or a default when nothing is left.
+ */
+export function earPool(lesson: Pick<Lesson, 'mode' | 'pool'> | undefined): EarName[] {
+  const kind = earKind(lesson);
+  const names = (lesson?.pool ?? []).filter((name): name is EarName => isName(kind, name));
+  return names.length > 0 ? names : [...DEFAULT_POOL[kind]];
 }
 
 const base = sessionStep<Question, Answer>((q, a) => q.answer === a.name);

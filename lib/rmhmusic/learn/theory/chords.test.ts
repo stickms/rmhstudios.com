@@ -3,7 +3,9 @@ import {
   CHORDS,
   CHORD_QUALITIES,
   chordNotes,
+  MIN_CHORD_PITCH_CLASSES,
   chordQuality,
+  isChordAttempt,
   matchesChord,
   pitchClasses,
 } from './chords';
@@ -64,8 +66,12 @@ describe('matchesChord', () => {
     expect(matchesChord([62, 66, 69], 60, 'major')).toBe(false);
     expect(matchesChord([], 60, 'major')).toBe(false);
   });
-  it('ignores a note that is not a number', () => {
-    expect(matchesChord([60, 64, 67, Number.NaN], 60, 'major')).toBe(true);
+  it('is false when a played note, or the root, is not a number', () => {
+    expect(matchesChord([60, 64, 67, Number.NaN], 60, 'major')).toBe(false);
+    expect(matchesChord([60, 64, 67, Infinity], 60, 'major')).toBe(false);
+    expect(matchesChord([60, 64, 67], Number.NaN, 'major')).toBe(false);
+    expect(matchesChord([], Number.NaN, 'major')).toBe(false);
+    expect(matchesChord([Number.NaN], Number.NaN, 'major')).toBe(false);
   });
 });
 
@@ -73,5 +79,26 @@ describe('pitchClasses', () => {
   it('is the sorted set of notes within an octave, negatives included', () => {
     expect(pitchClasses([67, 60, 64, 72])).toEqual([0, 4, 7]);
     expect(pitchClasses([-1])).toEqual([11]);
+  });
+  it('agrees with chordQuality about a non-note: a list holding one has no pitch classes', () => {
+    expect(pitchClasses([60, 64, Number.NaN])).toEqual([]);
+    expect(chordQuality([60, 64, 67, Number.NaN])).toBeNull();
+    expect(pitchClasses([Infinity])).toEqual([]);
+  });
+});
+
+describe('isChordAttempt', () => {
+  it('needs three distinct pitch classes: fewer is a tap, not an answer', () => {
+    expect(MIN_CHORD_PITCH_CLASSES).toBe(3);
+    expect(isChordAttempt([])).toBe(false);
+    expect(isChordAttempt([60])).toBe(false);
+    expect(isChordAttempt([60, 72])).toBe(false); // an octave is one pitch class
+    expect(isChordAttempt([60, 64])).toBe(false);
+    expect(isChordAttempt([60, 64, 67])).toBe(true);
+  });
+  it('counts a wrong or a bigger chord as an attempt, and a non-note as none', () => {
+    expect(isChordAttempt([60, 62, 63])).toBe(true);
+    expect(isChordAttempt([60, 64, 67, 70, 74])).toBe(true);
+    expect(isChordAttempt([60, 64, 67, Number.NaN])).toBe(false);
   });
 });

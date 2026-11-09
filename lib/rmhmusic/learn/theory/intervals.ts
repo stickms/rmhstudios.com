@@ -22,16 +22,16 @@ export const INTERVAL_NAMES: readonly IntervalName[] = [
   'octave',
 ];
 
-/** `semitones`: every size the name covers; `label`: the English word, in lower case so it reads inside a sentence. */
-export const INTERVALS: Record<IntervalName, { semitones: number[]; label: string }> = {
-  unison: { semitones: [0], label: 'unison' },
-  second: { semitones: [2], label: 'second' },
-  third: { semitones: [3, 4], label: 'third' },
-  fourth: { semitones: [5], label: 'fourth' },
-  fifth: { semitones: [7], label: 'fifth' },
-  sixth: { semitones: [8, 9], label: 'sixth' },
-  seventh: { semitones: [10, 11], label: 'seventh' },
-  octave: { semitones: [12], label: 'octave' },
+/** `semitones`: every size the name covers. The words the learner reads are `t()` keys in EarLesson. */
+export const INTERVALS: Record<IntervalName, { semitones: number[] }> = {
+  unison: { semitones: [0] },
+  second: { semitones: [2] },
+  third: { semitones: [3, 4] },
+  fourth: { semitones: [5] },
+  fifth: { semitones: [7] },
+  sixth: { semitones: [8, 9] },
+  seventh: { semitones: [10, 11] },
+  octave: { semitones: [12] },
 };
 
 /**

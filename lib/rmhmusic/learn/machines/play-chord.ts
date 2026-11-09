@@ -2,12 +2,13 @@
  * Playing a chord as a machine: a few chords to play, each asked by name; the learner plays it on
  * the on-screen keys, the computer keys or a MIDI controller (the screen collects the notes of
  * one chord in a window, `input/chord-window.ts`, and answers with them). Right when the notes
- * are exactly the chord's pitch classes, in any octave, order or inversion.
+ * are exactly the chord's pitch classes, in any octave, order or inversion. Fewer than three
+ * distinct pitch classes is not graded at all.
  *
  * The lifecycle — one answer per chord, `next` only after it, one `complete` per attempt, a
  * stale save answer ignored — is the shared session machine in `session.ts`. Pure.
  */
-import { matchesChord, type ChordQuality } from '../theory/chords';
+import { isChordAttempt, matchesChord, type ChordQuality } from '../theory/chords';
 import type { Machine } from './runner';
 import {
   createSessionMachine,
@@ -41,7 +42,19 @@ export function isRight(q: ChordQuestion, a: ChordAnswer): boolean {
   return matchesChord(a.midis, q.root, q.quality);
 }
 
-export const step = sessionStep<ChordQuestion, ChordAnswer>(isRight);
+const gradedStep = sessionStep<ChordQuestion, ChordAnswer>(isRight);
+
+/**
+ * Only an attempt is graded: fewer than three distinct pitch classes is a lone tap or a dyad (the
+ * learner finding the keys), so the question stays asked and nothing is scored. The screen says so
+ * (`input/chord-window.ts` reports it); the machine holds the rule too, whatever the screen sends.
+ */
+export const step: typeof gradedStep = (s, e) => {
+  if (e.type === 'answer' && s.kind === 'asking' && !isChordAttempt(e.answer.midis)) {
+    return { state: s, effects: [] };
+  }
+  return gradedStep(s, e);
+};
 
 export const playChordMachine = { initial, step };
 

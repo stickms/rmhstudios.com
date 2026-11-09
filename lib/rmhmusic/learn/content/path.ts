@@ -30,6 +30,12 @@ export interface Lesson {
   available: boolean;
   /** A `staff-flashcards` lesson's deck: a key of `DECKS` in `decks.ts` (path.test.ts checks it). */
   deck?: string;
+  /**
+   * An `ear-interval` / `ear-chord` lesson's answer names, narrowest first: its questions are
+   * drawn from them and its buttons offer them. Interval names for `ear-interval`, chord
+   * qualities for `ear-chord` (path.test.ts checks both).
+   */
+  pool?: string[];
 }
 
 export interface Unit {
@@ -129,6 +135,7 @@ export const PATH: Unit[] = [
         summary: 'Hear two notes and tell a step from a skip: a second from a third.',
         mode: 'ear-interval',
         available: true,
+        pool: ['second', 'third'],
       },
       {
         id: 'ear-fifth-octave',
@@ -137,6 +144,7 @@ export const PATH: Unit[] = [
         summary: 'Tell a fifth and an octave from a third, by ear alone.',
         mode: 'ear-interval',
         available: true,
+        pool: ['third', 'fifth', 'octave'],
       },
       {
         id: 'ear-major-minor',
@@ -145,6 +153,7 @@ export const PATH: Unit[] = [
         summary: 'Hear three notes together and tell a bright major chord from a darker minor one.',
         mode: 'ear-chord',
         available: true,
+        pool: ['major', 'minor'],
       },
       {
         id: 'chord-play-c-major',

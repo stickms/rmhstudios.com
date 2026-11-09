@@ -33,7 +33,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RELEASE_MS, playNote } from '@/lib/rmhmusic/learn/audio/voice';
+import { playNote, soundReleaseMs } from '@/lib/rmhmusic/learn/audio/voice';
 import { resumeAudio } from '@/lib/rmhmusic/learn/audio/resume';
 import {
   createEchoGuard,
@@ -97,7 +97,7 @@ export function MatchNoteLesson({
   const [sound, setSound] = useState<{ kind: Sound; at: string }>({ kind: 'ok', at: '' });
   // When the microphone may not be believed (the hint, the keys' sounds), and the note it may still
   // owe the learner (`input/echo-window.ts`).
-  const [guard] = useState(() => createEchoGuard({ releaseMs: RELEASE_MS }));
+  const [guard] = useState(() => createEchoGuard({ releaseMs: soundReleaseMs() }));
   const replayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deliverRef = useRef<(e: GuardNote) => void>(() => {});
   const mounted = useRef(false);

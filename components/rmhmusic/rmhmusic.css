@@ -663,15 +663,13 @@
   margin-inline: auto;
 }
 /* A tile of the sheet's paper, so the backdrop's staves never show through; while the question is
-   being heard, dim until it has played (the buttons stay focusable and say nothing is wrong). */
+   being heard they read as waiting by their ink and edge (EarLesson), never by opacity, so their
+   words keep 4.5:1 in every theme; the buttons stay focusable and `aria-describedby` says why. */
 .rmm-ear__choices > button {
   background-color: var(--app-surface);
 }
 .rmm-ear__choices > button:hover:not([aria-disabled='true']) {
   background-color: var(--app-surface-hover);
-}
-.rmm-ear__choices > button[aria-disabled='true'] {
-  opacity: 0.6;
 }
 
 /* The octave bar (2.75rem) and its gap (0.5rem) above the keys. */

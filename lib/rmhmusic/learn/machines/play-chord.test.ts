@@ -50,12 +50,27 @@ describe('play-chord machine', () => {
     }
   });
 
-  it('a missing, wrong or extra note is wrong, and keeps what was played', () => {
-    for (const midis of [[60, 64], [60, 63, 67], [60, 64, 67, 70], [60]]) {
+  it('a wrong or extra note is wrong, and keeps what was played', () => {
+    for (const midis of [
+      [60, 63, 67],
+      [60, 64, 67, 70],
+      [60, 62, 65],
+    ]) {
       const r = step(playChordMachine.initial(three), play(...midis));
       expect(r.state, midis.join()).toMatchObject({ kind: 'feedback', right: false, correct: 0 });
       if (r.state.kind === 'feedback') expect(r.state.answer.midis).toEqual(midis);
     }
+  });
+
+  it('a lone tap or two notes is not an answer: nothing is graded and the chord stays asked', () => {
+    const start = playChordMachine.initial(three);
+    for (const midis of [[], [60], [60, 72], [60, 64], [60, 64, 76]]) {
+      const r = step(start, play(...midis));
+      expect(r.state, midis.join()).toBe(start);
+      expect(r.effects).toEqual([]);
+    }
+    // ...and the chord can still be answered afterwards.
+    expect(step(start, play(60, 64, 67)).state).toMatchObject({ kind: 'feedback', right: true });
   });
 
   it('two answers in a row count once', () => {

@@ -12,7 +12,13 @@
  *
  * Sound:
  * - Every sound goes through `audio/voice.ts` and `audio/sequence.ts`; this file says what to play
- *   (the question's notes, in turn or together), never how it sounds.
+ *   (the question's notes, in turn or together), never how it sounds. `sound` (a prop) is the
+ *   `PlayOptions` the notes are voiced with; nothing passes one until instruments exist.
+ * - A question counts as heard when its LAST note has started (`audio/ear-playback.ts`): an
+ *   interval's second note sounds 750 ms after its first, so the answers stay off until then, and
+ *   a sound that was cancelled (Next, a dialog, leaving) never opens them. The decisions (what a
+ *   tap does, when a question plays by itself, which sentence the sound row shows) are pure and
+ *   tested in `ear-playback.ts`; the row itself is `EarSoundRow.tsx`.
  * - A question sounds by itself when sound is ready (after Next, or on entry when the browser has
  *   already allowed sound). "Hear it again" plays it again as often as wanted; it changes no state
  *   and no score (the machine's `replay`).
@@ -24,17 +30,32 @@
  *   again; the answers stay off until the question has been heard. With no Web Audio at all the
  *   line says the browser can't play sound.
  *
- * Every box — the title line, the listening box, the sentence line, the answers — has a fixed
- * height, the same as LessonScreen's EarSkeleton, so nothing moves from loading to the result.
+ * Every box — the title line, the listening box, the sentence line, the answers — has the same
+ * height as LessonScreen's EarSkeleton, so nothing moves from loading to the result (the sound row
+ * is a minimum height, so a long translation that wraps grows its own box and never spills out).
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
+import {
+  autoPlay,
+  createEarPlayback,
+  hearAction,
+  soundRowOf,
+  type Waking,
+} from '@/lib/rmhmusic/learn/audio/ear-playback';
 import { hearStillWanted } from '@/lib/rmhmusic/learn/input/echo-window';
-import { playChord, playSequence, type PlayingSequence } from '@/lib/rmhmusic/learn/audio/sequence';
-import { onSoundChange, soundStatus, wakeSound } from '@/lib/rmhmusic/learn/audio/voice';
+import { INTERVAL_GAP_MS, playChord, playSequence } from '@/lib/rmhmusic/learn/audio/sequence';
+import {
+  onSoundChange,
+  soundStatus,
+  wakeSound,
+  type PlayOptions,
+  type SoundStatus,
+} from '@/lib/rmhmusic/learn/audio/voice';
+import { getLesson } from '@/lib/rmhmusic/learn/content/path';
 import {
   EAR_QUESTIONS,
   createEarMachine,
@@ -52,40 +73,50 @@ import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { CHORD_QUALITIES, type ChordQuality } from '@/lib/rmhmusic/learn/theory/chords';
 import { INTERVAL_NAMES, type IntervalName } from '@/lib/rmhmusic/learn/theory/intervals';
 import { cn } from '@/lib/utils';
-import { TEXT_BUTTON } from './buttons';
+import { EarSoundRow, soundProblem } from './EarSoundRow';
 import { LessonResult } from './LessonParts';
 import { qualityName } from './PlayChordLesson';
 import { SessionFrame, SessionSheet, sessionTitle, useQuestionSession } from './QuestionSession';
 
-/** Between the two notes of an interval (ms). */
-const INTERVAL_GAP_MS = 750;
-
 type Extra = { type: 'replay' } | { type: 'played'; index: number };
-
-/** What the sound row shows: ready, asleep (tap to wake), waking, failed to wake, or no Web Audio. */
-type Sound = 'ready' | 'asleep' | 'waking' | 'failed' | 'none';
 
 export function EarLesson({
   lessonId,
   paused = false,
+  sound: voice,
 }: {
   lessonId: string;
-  /** A dialog is open over the lesson: nothing answers. */
+  /** A dialog is open over the lesson: nothing answers, and what is playing stops. */
   paused?: boolean;
+  /** How the notes are voiced (the instrument, once there are instruments); none yet. */
+  sound?: PlayOptions;
 }) {
   const { t } = useTranslation('c-rmhmusic');
-  const kind = earKind(lessonId);
-  const pool = earPool(lessonId);
+  const lessonDef = getLesson(lessonId);
+  const kind = earKind(lessonDef);
+  const pool = earPool(lessonDef);
   const [questions] = useState(() => dealQuestions(kind, pool, EAR_QUESTIONS, Math.random));
   // The lesson is rendered only once the store has loaded in the browser (never on the server), so
   // the audio state can be read at once: the sound row is right from its first paint.
-  const [status, setStatus] = useState<Exclude<Sound, 'waking' | 'failed'>>(readStatus);
-  const [waking, setWaking] = useState<'idle' | 'waking' | 'failed'>('idle');
+  const [status, setStatus] = useState<SoundStatus>(soundStatus);
+  const [waking, setWaking] = useState<Waking>('idle');
   const mounted = useRef(false);
   const waiting = useRef(false);
   const indexRef = useRef(-1);
-  const playing = useRef<PlayingSequence | null>(null);
+  const sentFor = useRef<number | null>(null);
   const sendRef = useRef<(e: Extra) => void>(() => {});
+  const voiceRef = useRef(voice);
+  const listenFirstId = useId();
+  // Carries a question's sound out and says when it has been heard in full.
+  const [playback] = useState(() =>
+    createEarPlayback({
+      play: (playKind, notes, hooks) =>
+        playKind === 'chord'
+          ? playChord(notes, { ...voiceRef.current, ...hooks })
+          : playSequence(notes, INTERVAL_GAP_MS, { ...voiceRef.current, ...hooks }),
+      onHeard: (index) => sendRef.current({ type: 'played', index }),
+    }),
+  );
 
   const session = useQuestionSession<Question, Answer, State, Extra, Effect>({
     machine: () => createEarMachine(questions),
@@ -94,12 +125,8 @@ export function EarLesson({
     focusFirst: 'button',
     onEffect: (fx) => {
       if (fx.type !== 'play') return;
-      playing.current?.cancel();
-      const seq =
-        fx.kind === 'chord' ? playChord(fx.notes) : playSequence(fx.notes, INTERVAL_GAP_MS);
-      playing.current = seq;
-      if (seq.started) sendRef.current({ type: 'played', index: fx.index });
-      else refresh();
+      // `played` follows from the playback once the last note has started, not before.
+      if (!playback.start(fx.index, fx.kind, fx.notes)) refresh();
     },
   });
   const { lesson, total, answer, answerGroup } = session;
@@ -107,10 +134,11 @@ export function EarLesson({
   const index = inSession ? lesson.index : -1;
   useEffect(() => {
     sendRef.current = session.send;
+    voiceRef.current = voice;
   });
 
   function refresh() {
-    const s = readStatus();
+    const s = soundStatus();
     setStatus(s);
     if (s === 'ready') setWaking('idle');
   }
@@ -122,60 +150,84 @@ export function EarLesson({
     return () => {
       mounted.current = false;
       off();
-      playing.current?.cancel();
-      playing.current = null;
+      playback.cancel();
     };
-  }, []);
+  }, [playback]);
 
-  // A new question (or the end): the last one's sound stops, and a new one sounds by itself when
-  // sound is ready. Otherwise the row asks for a tap.
+  // A dialog opened over the lesson: what is playing stops, and never opens the answers.
+  useEffect(() => {
+    if (paused) playback.cancel();
+  }, [paused, playback]);
+
+  // A new question (or the end): the last one's sound stops.
   useEffect(() => {
     indexRef.current = index;
-    playing.current?.cancel();
-    playing.current = null;
-  }, [index]);
+    playback.cancel();
+  }, [index, playback]);
+  // A new question sounds by itself when sound is ready, once. It starts from a timer so that
+  // React's StrictMode (mount, cleanup, mount) starts it once and not once-then-cancelled: the
+  // cleanup clears the timer before it fires, and `sentFor` is noted only when it does. Otherwise
+  // the row asks for a tap.
   const askingUnheard = lesson.kind === 'asking' && !lesson.heard;
   useEffect(() => {
-    if (!askingUnheard || paused || status !== 'ready') return;
-    if (soundStatus() === 'ready') sendRef.current({ type: 'replay' });
+    const next = autoPlay({
+      askingUnheard,
+      paused,
+      shown: status,
+      live: soundStatus(),
+      index,
+      sentFor: sentFor.current,
+    });
+    if (!next.play) {
+      sentFor.current = next.sentFor;
+      return;
+    }
+    const timer = setTimeout(() => {
+      sentFor.current = next.sentFor;
+      sendRef.current({ type: 'replay' });
+    }, 0);
+    return () => clearTimeout(timer);
   }, [askingUnheard, index, paused, status]);
 
   // Hear it again, or turn sound on. One tap waits at a time, and a sound that waited plays only
   // for the question it was asked on.
   const hear = () => {
-    if (waiting.current || paused) return;
-    const now = soundStatus();
-    if (now === 'none') {
-      setStatus('none');
-      return;
-    }
-    if (now === 'ready') {
-      setStatus('ready');
-      session.send({ type: 'replay' });
-      return;
-    }
-    const askedIndex = indexRef.current;
-    waiting.current = true;
-    setWaking('waking');
-    void wakeSound().then((ok) => {
-      waiting.current = false;
-      if (!mounted.current) return;
-      setWaking(ok ? 'idle' : 'failed');
-      refresh();
-      if (ok && hearStillWanted({ askedIndex, currentIndex: indexRef.current, mounted: true })) {
-        sendRef.current({ type: 'replay' });
+    const action = hearAction({ status: soundStatus(), waiting: waiting.current, paused });
+    switch (action) {
+      case 'stop':
+        playback.cancel();
+        return;
+      case 'ignore':
+      case 'wait':
+        return;
+      case 'none':
+        setStatus('none');
+        return;
+      case 'replay':
+        setStatus('ready');
+        session.send({ type: 'replay' });
+        return;
+      case 'wake': {
+        const askedIndex = indexRef.current;
+        waiting.current = true;
+        setWaking('waking');
+        void wakeSound().then((ok) => {
+          waiting.current = false;
+          if (!mounted.current) return;
+          setWaking(ok ? 'idle' : 'failed');
+          refresh();
+          if (
+            ok &&
+            hearStillWanted({ askedIndex, currentIndex: indexRef.current, mounted: true })
+          ) {
+            sendRef.current({ type: 'replay' });
+          }
+        });
       }
-    });
+    }
   };
 
-  const sound: Sound =
-    status === 'ready'
-      ? 'ready'
-      : status === 'none'
-        ? 'none'
-        : waking === 'idle'
-          ? 'asleep'
-          : waking;
+  const sound = soundRowOf(status, waking);
 
   const title = sessionTitle(
     session,
@@ -265,6 +317,10 @@ export function EarLesson({
         }
         className="rmm-ear__choices"
       >
+        {/* Why the answers are not open yet, read after each one's name until the sound has played. */}
+        <span id={listenFirstId} className="sr-only">
+          {t('ear-listen-first', { defaultValue: 'Listen first.' })}
+        </span>
         {choices.map((name) => {
           const isCorrect = name === correctName;
           const isGiven = name === givenName;
@@ -273,19 +329,21 @@ export function EarLesson({
               key={name}
               type="button"
               aria-disabled={!open || undefined}
+              aria-describedby={lesson.kind === 'asking' && !open ? listenFirstId : undefined}
               onClick={() => answer({ name })}
               className={cn(
                 'rmm-display flex h-11 w-full items-center justify-center rounded-(--app-radius-sm) border text-[1.375rem] leading-none transition-colors',
+                // Waiting and finished answers read by ink and edge, never by opacity or the dim
+                // ink (2.8:1): the muted ink holds 4.5:1 on the tile in every theme.
                 lesson.kind === 'asking'
-                  ? cn(
-                      'border-(--app-border-bright) text-(--app-text)',
-                      !open && 'text-(--app-text-dim)',
-                    )
+                  ? open
+                    ? 'border-(--app-border-bright) text-(--app-text)'
+                    : 'border-(--app-border) text-(--app-text-muted)'
                   : isCorrect
                     ? 'border-(--app-accent) text-(--app-accent)'
                     : isGiven
-                      ? 'rmm-flash__struck border-(--app-border) text-(--app-text-dim)'
-                      : 'border-(--app-border) text-(--app-text-dim)',
+                      ? 'rmm-flash__struck border-(--app-border) text-(--app-text-muted)'
+                      : 'border-(--app-border) text-(--app-text-muted)',
               )}
             >
               {nameOf(name)}
@@ -303,25 +361,7 @@ export function EarLesson({
         title={title}
         question={
           <EarListenBox>
-            {sound === 'none' ? (
-              <p className="px-2 text-sm leading-5 text-(--app-text-muted)">{problem}</p>
-            ) : (
-              <button
-                type="button"
-                onClick={hear}
-                aria-busy={sound === 'waking' || undefined}
-                className={cn(
-                  TEXT_BUTTON,
-                  'w-full justify-center text-center leading-5',
-                  !inSession && 'invisible',
-                )}
-                inert={!inSession || undefined}
-              >
-                {sound === 'ready'
-                  ? t('ear-hear-again', { defaultValue: 'Hear it again' })
-                  : problem}
-              </button>
-            )}
+            <EarSoundRow sound={sound} inSession={inSession} onHear={hear} />
           </EarListenBox>
         }
         line={line}
@@ -337,7 +377,8 @@ export function EarLesson({
 
 /**
  * The listening box: a ruled staff with nothing on it, then one row for "Hear it again" (or the
- * sound problem). Fixed heights, the same in the placeholder.
+ * sound problem). The row is at least 3.5rem and the same in the placeholder; a sentence that
+ * wraps in a longer language grows the row rather than spilling out of it.
  */
 export function EarListenBox({
   children,
@@ -349,37 +390,14 @@ export function EarListenBox({
   return (
     <div className="pt-1">
       <div aria-hidden="true" className="rmm-unit__staff mx-auto max-w-64" />
-      <div className="flex h-14 items-center justify-center">
+      <div className="flex min-h-14 items-center justify-center">
         {skeleton ? <div className="app-skeleton h-5 w-40" /> : children}
       </div>
     </div>
   );
 }
 
-function readStatus(): 'ready' | 'asleep' | 'none' {
-  const s = soundStatus();
-  return s === 'ready' ? 'ready' : s === 'none' ? 'none' : 'asleep';
-}
-
 type T = TFunction<'c-rmhmusic'>;
-
-/** What the sound row says when it is not "Hear it again". */
-function soundProblem(t: T, sound: Sound): string {
-  switch (sound) {
-    case 'asleep':
-      return t('ear-sound-asleep', { defaultValue: "Sound isn't playing. Tap to turn it on." });
-    case 'waking':
-      return t('ear-sound-waking', { defaultValue: 'Turning sound on…' });
-    case 'failed':
-      return t('ear-sound-failed', {
-        defaultValue: "Sound still isn't playing. Tap to try again.",
-      });
-    case 'none':
-      return t('ear-sound-none', { defaultValue: "This browser can't play sound." });
-    default:
-      return '';
-  }
-}
 
 /** An interval's word, one key each (never joined to other words). */
 function intervalName(t: T, name: IntervalName): string {

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DECKS } from './decks';
+import { CHORDS } from '../theory/chords';
+import { INTERVALS } from '../theory/intervals';
 import { PATH, getLesson, isKnownLesson } from './path';
 
 const lessons = PATH.flatMap((unit) => unit.lessons);
@@ -79,5 +81,23 @@ describe('learning path', () => {
     expect(getLesson('staff-what-is-a-staff')?.deck).toBe('treble-lines');
     expect(getLesson('staff-treble-notes')?.deck).toBe('treble-all');
     expect(getLesson('staff-find-middle-c')?.deck).toBe('middle-c');
+  });
+  it('gives every ear lesson a pool of answer names of its own kind', () => {
+    const ear = lessons.filter((l) => l.mode === 'ear-interval' || l.mode === 'ear-chord');
+    expect(ear.length).toBeGreaterThan(0);
+    for (const l of ear) {
+      expect(l.pool?.length, l.id).toBeGreaterThan(0);
+      expect(new Set(l.pool).size, `${l.id} repeats a name`).toBe(l.pool?.length);
+      const names = l.mode === 'ear-interval' ? INTERVALS : CHORDS;
+      for (const name of l.pool ?? []) expect(name in names, `${l.id}: ${name}`).toBe(true);
+    }
+    expect(getLesson('ear-second-third')?.pool).toEqual(['second', 'third']);
+    expect(getLesson('ear-fifth-octave')?.pool).toEqual(['third', 'fifth', 'octave']);
+    expect(getLesson('ear-major-minor')?.pool).toEqual(['major', 'minor']);
+  });
+  it('gives a pool to ear lessons only', () => {
+    for (const l of lessons.filter((x) => x.mode !== 'ear-interval' && x.mode !== 'ear-chord')) {
+      expect(l.pool, l.id).toBeUndefined();
+    }
   });
 });

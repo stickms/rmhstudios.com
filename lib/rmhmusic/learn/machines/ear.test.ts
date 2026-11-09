@@ -16,6 +16,7 @@ import {
   type Question,
   type State,
 } from './ear';
+import { getLesson } from '../content/path';
 import { createRunner } from './runner';
 
 /** A small deterministic generator (mulberry32). */
@@ -143,17 +144,61 @@ describe('dealQuestions', () => {
   });
 });
 
-describe('earPool', () => {
-  it('gives each lesson its intervals, and a safe default for an unknown one', () => {
-    expect(earPool('ear-second-third')).toEqual(['second', 'third']);
-    expect(earPool('ear-fifth-octave')).toEqual(['third', 'fifth', 'octave']);
-    expect(earPool('nope').length).toBeGreaterThan(0);
-    expect(earPool('ear-major-minor')).toEqual(['major', 'minor']);
+describe('earPool and earKind', () => {
+  it("take a lesson's pool field and mode, from the path", () => {
+    expect(earPool(getLesson('ear-second-third'))).toEqual(['second', 'third']);
+    expect(earPool(getLesson('ear-fifth-octave'))).toEqual(['third', 'fifth', 'octave']);
+    expect(earPool(getLesson('ear-major-minor'))).toEqual(['major', 'minor']);
+    expect(earKind(getLesson('ear-second-third'))).toBe('interval');
+    expect(earKind(getLesson('ear-fifth-octave'))).toBe('interval');
+    expect(earKind(getLesson('ear-major-minor'))).toBe('chord');
   });
-  it('says whether a lesson asks about intervals or chords', () => {
-    expect(earKind('ear-second-third')).toBe('interval');
-    expect(earKind('ear-fifth-octave')).toBe('interval');
-    expect(earKind('ear-major-minor')).toBe('chord');
+  it('fall back safely for a lesson that is missing or has no pool', () => {
+    expect(earKind(undefined)).toBe('interval');
+    expect(earPool(undefined)).toEqual(['second', 'third']);
+    expect(earPool({ mode: 'ear-chord' })).toEqual(['major', 'minor']);
+    expect(earPool({ mode: 'ear-interval', pool: [] })).toEqual(['second', 'third']);
+  });
+  it('drops a name that is not one of its kind', () => {
+    expect(earPool({ mode: 'ear-chord', pool: ['major', 'fifth'] })).toEqual(['major']);
+    expect(earPool({ mode: 'ear-interval', pool: ['fifth', 'minor'] })).toEqual(['fifth']);
+  });
+});
+
+describe('dealQuestions: the remainder', () => {
+  const NAMES: IntervalName[] = ['second', 'third', 'fifth'];
+  const counts = (seed: number, count = 10) => {
+    const c = { second: 0, third: 0, fifth: 0 };
+    for (const q of dealQuestions('interval', NAMES, count, seeded(seed))) {
+      c[q.answer as keyof typeof c]++;
+    }
+    return c;
+  };
+  it('keeps a three-name pool even to within one over many seeds', () => {
+    for (let seed = 1; seed <= 300; seed++) {
+      const c = Object.values(counts(seed));
+      expect(Math.max(...c) - Math.min(...c), `seed ${seed}`).toBeLessThanOrEqual(1);
+      expect(c.reduce((a, b) => a + b, 0)).toBe(10);
+    }
+  });
+  it('does not always give the extra question to the first name', () => {
+    const extra = new Set<string>();
+    for (let seed = 1; seed <= 300; seed++) {
+      const c = counts(seed);
+      for (const name of NAMES) if (c[name as keyof typeof c] === 4) extra.add(name);
+    }
+    expect([...extra].sort()).toEqual(['fifth', 'second', 'third']);
+  });
+  it('shares two extras between two names of a four-name pool', () => {
+    const names: ChordQuality[] = ['major', 'minor', 'diminished', 'augmented'];
+    const got = new Set<string>();
+    for (let seed = 1; seed <= 200; seed++) {
+      const qs = dealQuestions('chord', names, 10, seeded(seed));
+      const c = names.map((n) => qs.filter((q) => q.answer === n).length);
+      expect(Math.max(...c) - Math.min(...c)).toBeLessThanOrEqual(1);
+      got.add(c.join());
+    }
+    expect(got.size).toBeGreaterThan(2);
   });
 });
 
@@ -300,6 +345,30 @@ describe('ear machine: replay', () => {
   it('does nothing once the session is over', () => {
     const { state } = play(10);
     expect(step(state, replay)).toEqual({ state, effects: [] });
+  });
+});
+
+describe('ear machine: a stale played', () => {
+  it('is ignored for another question, a later one, and once the question is answered or the session over', () => {
+    const start = earMachine.initial(ten);
+    expect(step(start, played(1)).state).toBe(start);
+    expect(step(start, played(-1)).state).toBe(start);
+    const heard = step(start, played(0)).state;
+    const answered1 = step(heard, answer(ten[0].answer)).state;
+    expect(step(answered1, played(0)).state).toBe(answered1);
+    const { state: over } = play(10);
+    expect(step(over, played(0)).state).toBe(over);
+    const failed = step(over, answered('failed')).state;
+    const retried = step(failed, { type: 'retry' }).state;
+    expect(step(retried, played(9)).state).toBe(retried);
+  });
+  it('a question reached by Next starts unheard, so an old played cannot open it', () => {
+    let s = step(earMachine.initial(ten), played(0)).state;
+    s = step(s, answer(ten[0].answer)).state;
+    s = step(s, next).state;
+    expect(s).toMatchObject({ kind: 'asking', index: 1, heard: false });
+    expect(step(s, played(0)).state).toBe(s);
+    expect(step(s, answer(ten[1].answer)).state).toBe(s);
   });
 });
 

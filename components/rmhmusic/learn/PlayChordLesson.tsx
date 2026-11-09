@@ -7,6 +7,12 @@
  * inside it are the answer (`input/chord-window.ts`); right means exactly the chord's pitch
  * classes, in any octave, order or inversion (`theory/chords.ts`, `machines/play-chord.ts`).
  *
+ * Two rules about what the window collects. Keys already down count (a learner who keeps C down
+ * from the last chord and presses F and A has played F major; one who keeps a note that does not
+ * belong must let go of it). And a window that closes with fewer than three distinct pitch classes
+ * is not an answer: a lone tap is the learner finding the keys, so the chord stays asked, one
+ * quiet sentence says to play all the notes together, and the next note starts afresh.
+ *
  * The microphone hears one note at a time, so it can never play a chord. With the microphone as
  * the input the lesson says so in one plain sentence and offers to switch input (the same setup
  * dialog as "Change input"); the microphone is not started and its notes are ignored, so a
@@ -21,13 +27,15 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { CHORD_WINDOW_MS, createChordWindow } from '@/lib/rmhmusic/learn/input/chord-window';
+import type { PlayOptions } from '@/lib/rmhmusic/learn/audio/voice';
+import { createChordCollector } from '@/lib/rmhmusic/learn/input/chord-window';
 import {
   createPlayChordMachine,
   playChordQuestions,
   type ChordAnswer,
   type ChordQuestion,
 } from '@/lib/rmhmusic/learn/machines/play-chord';
+import { noteList } from '@/lib/rmhmusic/learn/note-list';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import { scoreFrom, starsFor } from '@/lib/rmhmusic/learn/scoring/stars';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
@@ -43,10 +51,13 @@ export function PlayChordLesson({
   lessonId,
   paused = false,
   onChangeInput,
+  sound,
 }: {
   lessonId: string;
   /** A dialog is open over the lesson: nothing answers. */
   paused?: boolean;
+  /** How the learner's own notes are voiced (the instrument, once there are instruments). */
+  sound?: PlayOptions;
   /** Open the input setup dialog (the lesson's "Change input"). */
   onChangeInput?: () => void;
 }) {
@@ -64,36 +75,40 @@ export function PlayChordLesson({
   const index = inSession ? lesson.index : -1;
   const asking = lesson.kind === 'asking';
   const phases = useInputPhases();
-  useNoteSound(!paused);
+  useNoteSound(!paused, sound);
   // The microphone cannot play a chord: this lesson never starts it.
   useLessonInputStart({ mic: false });
 
-  // The chord window: the first note of a chord opens it, the timer closes it and answers.
-  const [chordWindow] = useState(() => createChordWindow());
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The chord window: the first note of a chord opens it, its timer closes it. Three or more
+  // pitch classes are answered; fewer are a lone tap (`few`: which chord, and how many times).
   const answerRef = useRef(answer);
+  const indexRef = useRef(index);
   useEffect(() => {
     answerRef.current = answer;
+    indexRef.current = index;
   });
-  useNoteEvents((e) => {
-    if (paused || !asking || input === 'mic') return;
-    if (chordWindow.push(e) !== 'opened') return;
-    timer.current = setTimeout(() => {
-      timer.current = null;
-      answerRef.current({ midis: chordWindow.take() });
-    }, CHORD_WINDOW_MS);
-  });
-  // A new chord, a dialog, or leaving: whatever was being collected is dropped.
-  useEffect(() => {
-    return () => {
-      if (timer.current !== null) clearTimeout(timer.current);
-      timer.current = null;
-      chordWindow.reset();
-    };
-  }, [index, paused, chordWindow]);
+  const [few, setFew] = useState<{ index: number; n: number } | null>(null);
+  const [collector] = useState(() =>
+    createChordCollector({
+      onAttempt: (midis) => answerRef.current({ midis }),
+      onTooFew: () =>
+        setFew((f) => {
+          const at = indexRef.current;
+          return { index: at, n: f?.index === at ? f.n + 1 : 1 };
+        }),
+    }),
+  );
+  // Every note event goes in (held keys must be known even while nothing is listening); only an
+  // asking, unpaused, non-microphone lesson collects them.
+  useNoteEvents((e) => collector.feed(e, !paused && asking && input !== 'mic'));
+  // A new chord, a dialog, or leaving: whatever was being collected is dropped (keys still held
+  // stay held). A different input, or leaving, forgets the held keys too: their release may never
+  // be seen.
+  useEffect(() => () => collector.cancel(), [index, paused, collector]);
+  useEffect(() => () => collector.releaseAll(), [input, collector]);
 
   const question = session.card;
-  const names = (midis: readonly number[]) => listOf(i18n.language, midis.map(noteLetter));
+  const names = (midis: readonly number[]) => noteList(i18n.language, midis.map(noteLetter));
   const chordName = question ? chordLabel(t, question) : '';
   const notes = question ? names(chordNotes(question.root, question.quality)) : '';
 
@@ -108,7 +123,15 @@ export function PlayChordLesson({
 
   let line = '';
   let lineKey = 'hint';
-  if (lesson.kind === 'asking') {
+  const tooFew = lesson.kind === 'asking' && few?.index === index ? few.n : 0;
+  if (lesson.kind === 'asking' && tooFew > 0) {
+    // A lone tap was not answered: the chord is still asked.
+    lineKey = `few-${tooFew}`;
+    line = t('chord-too-few', {
+      notes,
+      defaultValue: 'That was only part of it. Play {{notes}} together.',
+    });
+  } else if (lesson.kind === 'asking') {
     line =
       input === 'screen'
         ? t('chord-hint-screen', {
@@ -120,7 +143,7 @@ export function PlayChordLesson({
     lineKey = `fb-${lesson.index}`;
     if (!lesson.right) {
       line = t('chord-not-quite', {
-        played: listOf(
+        played: noteList(
           i18n.language,
           lesson.answer.midis.map((m) => midiToName(m)),
         ),
@@ -141,9 +164,11 @@ export function PlayChordLesson({
         ? t('chord-right-sr', { name: chordName, defaultValue: 'Right: {{name}}.' })
         : line
       : lesson.kind === 'asking'
-        ? session.announce
-          ? `${title}. ${chordName}.`
-          : ''
+        ? tooFew > 0
+          ? line
+          : session.announce
+            ? `${title}. ${chordName}.`
+            : ''
         : inSession
           ? ''
           : line;
@@ -246,15 +271,6 @@ export function ChordNameBox({ name, skeleton = false }: { name?: string; skelet
       )}
     </div>
   );
-}
-
-/** Words joined as the language joins a list ("C, E and G"). */
-function listOf(language: string, items: readonly string[]): string {
-  try {
-    return new Intl.ListFormat(language, { style: 'long', type: 'conjunction' }).format(items);
-  } catch {
-    return items.join(', ');
-  }
 }
 
 /** "C major": the root's letter and the quality's word, set in one key so languages can reorder. */

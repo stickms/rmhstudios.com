@@ -27,12 +27,15 @@ export function chordNotes(root: number, quality: ChordQuality): number[] {
   return CHORDS[quality].map((s) => root + s);
 }
 
-/** The distinct pitch classes (0..11) of the notes, ascending; anything not a number is left out. */
+/**
+ * The distinct pitch classes (0..11) of the notes, ascending. A list holding anything that is not
+ * a note (NaN, Infinity) has none: it is not a chord, and `chordQuality` and `matchesChord` say
+ * the same, so a bad value is never quietly dropped and the rest judged.
+ */
 export function pitchClasses(midis: readonly number[]): number[] {
+  if (midis.some((m) => !Number.isFinite(m))) return [];
   const set = new Set<number>();
-  for (const m of midis) {
-    if (Number.isFinite(m)) set.add((((Math.round(m) % 12) + 12) % 12) as number);
-  }
+  for (const m of midis) set.add(((Math.round(m) % 12) + 12) % 12);
   return [...set].sort((a, b) => a - b);
 }
 
@@ -41,7 +44,6 @@ export function pitchClasses(midis: readonly number[]): number[] {
  * when they are not exactly one of the four triads.
  */
 export function chordQuality(midis: readonly number[]): ChordQuality | null {
-  if (midis.some((m) => !Number.isFinite(m))) return null;
   const pcs = pitchClasses(midis);
   if (pcs.length !== 3) return null;
   for (const root of pcs) {
@@ -53,7 +55,10 @@ export function chordQuality(midis: readonly number[]): ChordQuality | null {
   return null;
 }
 
-/** Whether the played notes are exactly the pitch classes of `quality` on `root`. */
+/**
+ * Whether the played notes are exactly the pitch classes of `quality` on `root`. False when the
+ * root or any played note is not a number.
+ */
 export function matchesChord(
   played: readonly number[],
   root: number,
@@ -61,5 +66,17 @@ export function matchesChord(
 ): boolean {
   const want = pitchClasses(chordNotes(root, quality));
   const got = pitchClasses(played);
-  return want.length === got.length && want.every((p, i) => p === got[i]);
+  return want.length > 0 && want.length === got.length && want.every((p, i) => p === got[i]);
+}
+
+/** The fewest distinct pitch classes that make an attempt at a chord. */
+export const MIN_CHORD_PITCH_CLASSES = 3;
+
+/**
+ * Whether these notes are a try at a chord rather than a lone tap or a dyad: at least
+ * {@link MIN_CHORD_PITCH_CLASSES} distinct pitch classes. Only an attempt is graded; fewer notes
+ * are the learner finding the keys.
+ */
+export function isChordAttempt(midis: readonly number[]): boolean {
+  return pitchClasses(midis).length >= MIN_CHORD_PITCH_CLASSES;
 }
