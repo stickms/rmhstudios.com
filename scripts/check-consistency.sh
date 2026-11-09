@@ -371,7 +371,7 @@ if list '^app/routes/api/.*\.ts$' | grep -q .; then
     [ -f "$f" ] || continue
     case "$f" in app/routes/api/v1/*) continue ;; esac
     grep -qxF "$f" "$HANDLER_BACKLOG" && continue
-    if grep -q 'handlers' "$f" && ! grep -q 'defineHandler' "$f"; then
+    if grep -q 'handlers' "$f" && ! grep -qE 'defineHandler|implement\.server' "$f"; then
       fail "API route without defineHandler: $f"
       printf '%s    → Wrap every handler in defineHandler from @/lib/api/handler.server (session → rate limit → zod → try/catch). /api/v1/** uses withDeveloperApi.%s\n' "$dim" "$off"
     fi

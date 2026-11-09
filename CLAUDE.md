@@ -145,6 +145,13 @@ _why_.
    opt out. Admin routes get `auth: 'admin'` instead of a hand-rolled
    `isAdmin` check. The `/api/v1/**` developer API keeps its own richer wrapper
    (`withDeveloperApi`) because it speaks a different error envelope.
+   **Typed contracts (redesign C1):** declare an endpoint once with `endpoint<{ body; res }>()({ method, path })`
+   in a client-safe `*.contract.ts` (types via `import type` from the zod schemas, so no zod ships), bind it
+   on the server with `implement(contract, options, handler)` from `@/lib/api/implement.server` (it IS
+   `defineHandler`, plus compile-time checks that the schemas and return match the contract), and call it from
+   the client with `api(contract, input)` from `@/lib/contract/client`. New code does not add raw
+   `fetch('/api/…')` strings — `lib/__tests__/raw-api-fetch-ratchet.test.ts` only lets that count fall.
+   Worked example: `lib/playtime/playtime.contract.ts`.
 4. **Design language:** every color/radius/shadow/font via `--site-*` token
    utilities (`bg-site-surface`, `rounded-site`, …) so every theme works;
    full-screen apps use the parallel `--app-*` contract in

@@ -3,9 +3,15 @@ import { Link } from '@tanstack/react-router';
 import { Eye } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
-import { isPlaytimePrivacy, shouldShowNotice, type PlaytimePrivacy } from '@/lib/playtime/privacy';
+import { shouldShowNotice } from '@/lib/playtime/privacy';
+import { api } from '@/lib/contract/client';
+import {
+  dismissPlaytimeNoticeApi,
+  getPlaytimeSettingsApi,
+} from '@/lib/playtime/playtime.contract';
+import type { ResOf } from '@/lib/contract/endpoint';
 
-type Settings = { playtimePrivacy: PlaytimePrivacy; noticeDismissed: boolean };
+type Settings = ResOf<typeof getPlaytimeSettingsApi>;
 
 /**
  * The one-time notice that playtime is visible, as Steam's blue banner. Playtime is
@@ -21,11 +27,9 @@ export function PlaytimeNotice() {
   useEffect(() => {
     if (!signedIn) return;
     let cancelled = false;
-    fetch('/api/settings/playtime-privacy', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { playtimePrivacy?: unknown; noticeDismissed?: unknown } | null) => {
-        if (cancelled || !d || !isPlaytimePrivacy(d.playtimePrivacy)) return;
-        setSettings({ playtimePrivacy: d.playtimePrivacy, noticeDismissed: d.noticeDismissed === true });
+    api(getPlaytimeSettingsApi)
+      .then((d) => {
+        if (!cancelled) setSettings(d);
       })
       .catch(() => {});
     return () => {
@@ -39,12 +43,7 @@ export function PlaytimeNotice() {
 
   function dismiss() {
     setSettings((s) => (s ? { ...s, noticeDismissed: true } : s));
-    fetch('/api/settings/playtime-privacy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ dismissNotice: true }),
-    }).catch(() => {});
+    api(dismissPlaytimeNoticeApi, { body: { dismissNotice: true } }).catch(() => {});
   }
 
   return (
