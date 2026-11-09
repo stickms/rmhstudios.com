@@ -46,7 +46,13 @@ import {
   pointerNear,
   type GlobeBox,
 } from './globe-engagement';
-import { ballCentreY, predictScrollY } from './globe-scroll-track';
+import {
+  SCROLL_TRACK_HOLD_MS,
+  VIEWPORT_TRACK_HOLD_MS,
+  ballCentreY,
+  trackStep,
+  type TrackState,
+} from './globe-scroll-track';
 import { currentScene, onSceneChange } from '@/lib/liquid/glass/scene-store';
 import { PLASMA_LOOK } from '@/lib/liquid/glass/policy';
 import {
@@ -1194,10 +1200,34 @@ export function LiquidGlobe({
     let scrollIdle = 0;
     let placeSettle = 0;
     let lastScrollY = window.scrollY;
-    let lastScrollAt = performance.now();
     const settlePlacement = () => {
       window.clearTimeout(placeSettle);
       placeSettle = window.setTimeout(refreshScene, PLACE_SETTLE_MS);
+    };
+    /* The picture is placed once per DISPLAY FRAME while the page or Safari's toolbar is moving, from a read of the
+       scroll offset and the visual viewport's height in that frame (neither forces layout), not once per event:
+       Safari delivers scroll events unevenly and the toolbar's animation with one resize event and none after, so
+       placing from events stepped the picture. The loop starts on an event, extends itself while anything still
+       moves, and stops; at rest nothing runs. */
+    const track: TrackState = {
+      lastY: window.scrollY,
+      lastT: performance.now(),
+      lastVv: window.visualViewport?.height ?? window.innerHeight,
+      until: 0,
+    };
+    let trackRaf = 0;
+    const trackTick = (now: number) => {
+      trackRaf = 0;
+      const vvH = window.visualViewport?.height ?? window.innerHeight;
+      const { ahead, keep } = trackStep(track, window.scrollY, vvH, now);
+      // Not docked on the phone orb (or no picture yet): the measured path owns placement.
+      if (!placeFast(ahead)) return;
+      if (keep) trackRaf = requestAnimationFrame(trackTick);
+      else settlePlacement();
+    };
+    const startTracking = (holdMs: number) => {
+      track.until = Math.max(track.until, performance.now() + holdMs);
+      if (!trackRaf) trackRaf = requestAnimationFrame(trackTick);
     };
     const endScrolling = () => {
       scrollIdle = 0;
@@ -1209,10 +1239,7 @@ export function LiquidGlobe({
       // carries it on and slows it. Read in the scroll event, where layout is clean.
       const y = window.scrollY;
       const dy = y - lastScrollY;
-      const at = performance.now();
-      const ahead = predictScrollY(y, lastScrollY, at - lastScrollAt);
       lastScrollY = y;
-      lastScrollAt = at;
       if (dy !== 0 && !drag.current.active && !settle.current) {
         const w = rot.current.w;
         w[1] = Math.max(-SCROLL_SPIN_MAX, Math.min(SCROLL_SPIN_MAX, w[1]! + dy * SCROLL_SPIN));
@@ -1226,10 +1253,10 @@ export function LiquidGlobe({
           syncEngagement.current(performance.now());
         }
       }
-      // The picture is placed from the event itself, a little ahead of the page, with no layout read; a real read
-      // follows once the scroll has rested. Where that is not possible, the measured path below.
-      if (placeFast(ahead)) {
-        settlePlacement();
+      // On the phone dock the picture is placed every frame while this lasts (the tracker above); a real measured
+      // placement follows once it has rested. Anywhere else, the measured path below.
+      if (fastDocked()) {
+        startTracking(SCROLL_TRACK_HOLD_MS);
         return;
       }
       if (scrollRaf) return;
@@ -1242,7 +1269,7 @@ export function LiquidGlobe({
     // Safari's toolbar growing and shrinking moves the bottom-anchored ball against the page with no scroll: the same
     // synchronous placement, from the visual viewport's height.
     const onViewport = () => {
-      if (placeFast(window.scrollY)) settlePlacement();
+      if (fastDocked()) startTracking(VIEWPORT_TRACK_HOLD_MS);
     };
     const visual = ambient ? window.visualViewport : null;
     visual?.addEventListener('resize', onViewport);
@@ -1367,6 +1394,7 @@ export function LiquidGlobe({
       window.removeEventListener('scroll', onScroll);
       visual?.removeEventListener('resize', onViewport);
       window.clearTimeout(placeSettle);
+      cancelAnimationFrame(trackRaf);
       cancelAnimationFrame(scrollRaf);
       if (scrollIdle) clearTimeout(scrollIdle);
       scrolling.current = false;
