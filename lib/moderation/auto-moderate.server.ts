@@ -20,18 +20,28 @@
  *   admin reports page exactly like a human report.
  */
 
-import OpenAI from 'openai';
+import type OpenAI from 'openai';
 import { prisma } from '@/lib/prisma.server';
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
 import { redisRateLimit } from '@/lib/redis.server';
 import type { ReportReason } from '@prisma/client';
 import { timedAiFetch } from '../ai/timed-fetch.server';
 
-const deepseek = new OpenAI({ fetch: timedAiFetch,
-  apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
-  baseURL: 'https://api.deepseek.com/v1',
-  maxRetries: 1,
-});
+// Built on the first screening, not at import: the OpenAI SDK is ~230 modules and ~12 MB RSS, and
+// processes that import this file (the `jobs` worker, through the engagement effects) mostly never screen.
+let deepseekClient: OpenAI | null = null;
+async function getDeepseek(): Promise<OpenAI> {
+  if (!deepseekClient) {
+    const { default: OpenAIClient } = await import('openai');
+    deepseekClient ??= new OpenAIClient({
+      fetch: timedAiFetch,
+      apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
+      baseURL: 'https://api.deepseek.com/v1',
+      maxRetries: 1,
+    });
+  }
+  return deepseekClient;
+}
 const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
 
 /** Per-request timeout on the classifier call (ms) — a stalled provider must not
@@ -153,7 +163,7 @@ interface Classification {
 async function classify(text: string): Promise<Classification | null> {
   let raw: string;
   try {
-    const res = await deepseek.chat.completions.create(
+    const res = await (await getDeepseek()).chat.completions.create(
       {
         model: MODEL,
         messages: [
