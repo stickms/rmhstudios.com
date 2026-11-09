@@ -41,6 +41,7 @@ import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { cn } from '@/lib/utils';
 import { SECONDARY_BUTTON } from './buttons';
+import { Notehead } from './Notehead';
 import { useSoundingNotes } from './useLearnInput';
 
 /**
@@ -73,14 +74,29 @@ function swallowNextClick() {
 /** Memoised: it re-renders for its own lit keys, not for every render of the lesson around it. */
 export const OnScreenKeyboard = memo(function OnScreenKeyboard({
   className,
+  tall = false,
+  startOctave = DEFAULT_OCTAVE,
+  rightKey = null,
+  wrongKey = null,
 }: {
   className?: string;
+  /** Taller keys, filling the note finder's board box (see `.rmm-find__board`). */
+  tall?: boolean;
+  /** The C the window opens on (octave number; C4 by default). Read once, on mount. */
+  startOctave?: number;
+  /**
+   * Marks drawn on keys once a question is answered (the note finder): the right key gets a filled
+   * notehead, a wrong key pressed an open one. Decoration: the lesson says the same in words.
+   * Plain numbers, so the memo holds while nothing is marked.
+   */
+  rightKey?: number | null;
+  wrongKey?: number | null;
 }) {
   const { t } = useTranslation('c-rmhmusic');
   const screen = useLearnStore((s) => s.screen);
   const hub = useLearnStore((s) => s.hub);
   const sounding = useSoundingNotes();
-  const [octave, setOctave] = useState(DEFAULT_OCTAVE);
+  const [octave, setOctave] = useState(() => clampOctave(startOctave));
   // Until measured (server render, first client render) every key counts as in view; measuring
   // changes only the tab order, never the layout.
   const [whites, setWhites] = useState(14);
@@ -240,7 +256,10 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
           note: from,
           defaultValue: 'Piano keyboard from {{note}}',
         })}
-        className="rmm-keys__bed relative flex h-40 rounded-(--app-radius-sm) select-none sm:h-48"
+        className={cn(
+          'rmm-keys__bed relative flex rounded-(--app-radius-sm) select-none',
+          tall ? 'rmm-keys__bed--tall' : 'h-40 sm:h-48',
+        )}
         onPointerUp={(e) => {
           touching.current = false;
           send({ type: 'pointer-lift', pointer: e.pointerId });
@@ -285,6 +304,20 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
               onBlur={() => send({ type: 'blur', midi: key.midi })}
               onContextMenu={(e) => e.preventDefault()}
             >
+              {(rightKey === key.midi || wrongKey === key.midi) && (
+                <Notehead
+                  kind={rightKey === key.midi ? 'filled' : 'open'}
+                  className={cn(
+                    'absolute left-1/2 h-4 w-5 -translate-x-1/2',
+                    key.black ? 'bottom-3' : 'bottom-8',
+                    rightKey === key.midi
+                      ? 'text-(--app-accent)'
+                      : key.black
+                        ? 'text-(--rmm-key-white)'
+                        : 'text-(--app-danger)',
+                  )}
+                />
+              )}
               {!key.black && <span aria-hidden="true">{key.midi % 12 === 0 ? name : letter}</span>}
             </button>
           );

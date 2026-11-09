@@ -68,7 +68,15 @@ export const PATH: Unit[] = [
         title: 'Keyboard layout & open strings',
         summary: 'Learn the pattern of black and white keys, and the six open guitar strings.',
         mode: 'keyboard-map',
-        available: false,
+        available: true,
+      },
+      {
+        id: 'fretboard-first-frets',
+        unit: 'meet-staff-and-keys',
+        title: 'First frets & two octaves',
+        summary: 'Find natural notes on the first five frets, or across two octaves of keys.',
+        mode: 'fretboard',
+        available: true,
       },
       {
         id: 'play-first-note',

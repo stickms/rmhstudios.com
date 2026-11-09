@@ -27,6 +27,14 @@ export const CARD_NOTE_X = 122;
 /** The lowest and highest steps a card can draw (two ledger lines each way). */
 export const CARD_MIN_STEP = -4;
 export const CARD_MAX_STEP = 12;
+/**
+ * The note finder's taller card (`range="low"`): three ledger lines below the treble staff, down to
+ * step −7, where guitar music writes the open low E (it sounds E2 and is written E3). Every
+ * note-finder card uses it, on either instrument, so the card is one height before the learner's
+ * instrument is known (the loading placeholder) and after.
+ */
+export const CARD_LOW_MIN_STEP = -7;
+export const CARD_LOW_H = 117;
 /** A stem is three and a half spaces long. */
 const STEM = 3.5 * CARD_GAP;
 /** The notehead's half-width and half-height (before its −20° tilt). */
@@ -44,12 +52,13 @@ export interface CardLayout {
 }
 
 /**
- * A card's marks. A note outside the drawable steps is clamped to the edge (the decks never ask
- * for one; `staff-card-layout.test.ts` checks every deck card fits without clamping).
+ * A card's marks. A note outside the drawable steps (`minStep`…{@link CARD_MAX_STEP}) is clamped to
+ * the edge (the decks and the note finder never ask for one; `staff-card-layout.test.ts` checks
+ * every card fits without clamping).
  */
-export function cardLayout(clef: Clef, midi: number): CardLayout {
+export function cardLayout(clef: Clef, midi: number, minStep = CARD_MIN_STEP): CardLayout {
   const raw = clefStep(clef, midi);
-  const step = Math.min(CARD_MAX_STEP, Math.max(CARD_MIN_STEP, raw));
+  const step = Math.min(CARD_MAX_STEP, Math.max(minStep, raw));
   const noteY = cardY(step);
   const up = step < 4;
   return {

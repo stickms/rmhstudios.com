@@ -3,8 +3,9 @@
 /**
  * LessonScreen — the page around one lesson (`/rmhmusic/lesson/<id>`): a way
  * back to the path, "Change input", and the lesson's activity, chosen by its mode
- * (`play-note` → FirstNoteLesson, `staff-flashcards` → FlashcardLesson with the lesson's deck),
- * each behind a placeholder of exactly its own boxes. An unknown id,
+ * (`play-note` → FirstNoteLesson, `staff-flashcards` → FlashcardLesson with the lesson's deck,
+ * `keyboard-map` and `fretboard` → FindNoteLesson), each behind a placeholder of exactly its own
+ * boxes. An unknown id,
  * or a lesson that has not shipped yet, gets a friendly "not available yet"
  * page with a link home — never a crash or a blank. A document (`.app-page`).
  */
@@ -19,6 +20,7 @@ import { getLesson, type Lesson } from '@/lib/rmhmusic/learn/content/path';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from './buttons';
 import { FirstNoteLesson } from './FirstNoteLesson';
+import { FindNoteLesson, FindNoteStaffBox } from './FindNoteLesson';
 import { FlashcardLesson } from './FlashcardLesson';
 import { InputSetup } from './InputSetup';
 import { ModeToggle } from './ModeToggle';
@@ -29,6 +31,7 @@ import { useInputRelease } from './useLearnInput';
 function isPlayable(lesson: Lesson | undefined): lesson is Lesson {
   if (!lesson?.available) return false;
   if (lesson.mode === 'play-note') return true;
+  if (lesson.mode === 'keyboard-map' || lesson.mode === 'fretboard') return true;
   return lesson.mode === 'staff-flashcards' && !!lesson.deck && lesson.deck in DECKS;
 }
 
@@ -74,7 +77,7 @@ export function Shell({
               {t('loading-lesson', { defaultValue: 'Loading the lesson…' })}
             </p>
           )}
-          <h1 className="rmm-display text-[2.25rem] leading-[2.75rem] text-(--app-text) sm:text-[2.75rem] sm:leading-[3.25rem]">
+          <h1 className="rmm-display text-[2.25rem] leading-[2.75rem] break-words text-(--app-text) sm:text-[2.75rem] sm:leading-[3.25rem]">
             {title}
           </h1>
           {children}
@@ -145,6 +148,33 @@ export function FlashcardSkeleton() {
   );
 }
 
+/**
+ * The note finder's placeholder: its boxes exactly — the target's sheet (title line, the low staff
+ * card and its name line, the sentence line), then the board and the input line
+ * (`.rmm-find__answers`, one height on piano and guitar, so the placeholder needs no instrument).
+ */
+function FindNoteSkeleton() {
+  return (
+    <div aria-hidden="true" className="rmm-find space-y-4">
+      <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
+        <div className="h-8">
+          <div className="app-skeleton mx-auto h-8 w-40" />
+        </div>
+        <FindNoteStaffBox skeleton />
+        <div className="flex h-11 items-center">
+          <div className="app-skeleton h-5 w-56 max-w-full" />
+        </div>
+      </section>
+      <div className="rmm-find__answers">
+        <div className="rmm-find__board max-[359px]:-mx-2 max-[332px]:-mx-3.5">
+          <div className="app-skeleton h-full w-full" />
+        </div>
+        <div className="rmm-find__device" />
+      </div>
+    </div>
+  );
+}
+
 export function LessonScreen({ lessonId }: { lessonId: string }) {
   const { t } = useTranslation('c-rmhmusic');
   const status = useLearnStore((s) => s.status);
@@ -190,6 +220,8 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
     body =
       lesson.mode === 'staff-flashcards' ? (
         <FlashcardLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
+      ) : lesson.mode === 'keyboard-map' || lesson.mode === 'fretboard' ? (
+        <FindNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : (
         <FirstNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       );
@@ -228,7 +260,14 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
   } else {
     // Not started yet: the placeholder of exactly the lesson's boxes (the first render after
     // `ready` takes the branch above).
-    body = lesson.mode === 'staff-flashcards' ? <FlashcardSkeleton /> : <LessonSkeleton />;
+    body =
+      lesson.mode === 'staff-flashcards' ? (
+        <FlashcardSkeleton />
+      ) : lesson.mode === 'keyboard-map' || lesson.mode === 'fretboard' ? (
+        <FindNoteSkeleton />
+      ) : (
+        <LessonSkeleton />
+      );
   }
 
   const ready = status === 'ready';

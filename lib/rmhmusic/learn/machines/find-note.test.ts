@@ -9,6 +9,7 @@ import {
   findNotePool,
   isRight,
   step,
+  targetStaff,
   type Effect,
   type Event,
   type State,
@@ -248,5 +249,18 @@ describe('target pools and dealing', () => {
   it('deals nothing from an empty pool or a non-finite count', () => {
     expect(dealTargets([], 10, Math.random)).toEqual([]);
     expect(dealTargets([40], Number.NaN, Math.random)).toEqual([]);
+  });
+});
+
+describe('targetStaff (Review Focus 6: the guitar is written an octave up)', () => {
+  it('draws the guitar an octave above it sounds, on the treble staff', () => {
+    expect(targetStaff(40, 'guitar')).toEqual({ clef: 'treble', midi: 52 }); // open low E: E3
+    expect(targetStaff(64, 'guitar')).toEqual({ clef: 'treble', midi: 76 }); // open high E: E5
+  });
+
+  it('draws the piano at pitch: middle C up on the treble staff, below it on the bass', () => {
+    expect(targetStaff(60, 'piano')).toEqual({ clef: 'treble', midi: 60 });
+    expect(targetStaff(59, 'piano')).toEqual({ clef: 'bass', midi: 59 });
+    expect(targetStaff(48, 'piano')).toEqual({ clef: 'bass', midi: 48 });
   });
 });

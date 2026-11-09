@@ -26,7 +26,15 @@
  */
 import { dealRounds } from '../content/decks';
 import type { Instrument } from '../schemas';
-import { FIRST_FRETS, STANDARD_TUNING, fretMidi, isPosition, naturalsInFrets } from '../theory/fretboard';
+import type { Clef } from '../theory/clef';
+import {
+  FIRST_FRETS,
+  STANDARD_TUNING,
+  fretMidi,
+  isPosition,
+  naturalsInFrets,
+  writtenMidi,
+} from '../theory/fretboard';
 import type { Machine } from './runner';
 import {
   createSessionMachine,
@@ -47,7 +55,8 @@ export interface Target {
 
 export type Answer =
   | { kind: 'position'; string: number; fret: number }
-  | { kind: 'midi'; midi: number };
+  /** `tapped`: from the on-screen piano rather than played (only the wording differs). */
+  | { kind: 'midi'; midi: number; tapped?: boolean };
 
 export type State = SessionState<Target, Answer>;
 export type Event = SessionEvent<Answer>;
@@ -92,6 +101,16 @@ export function findNotePool(mode: FindNoteMode, instrument: Instrument): number
     return mode === 'keyboard-map' ? [...STANDARD_TUNING] : naturalsInFrets(FIRST_FRETS);
   }
   return mode === 'keyboard-map' ? naturalsBetween(60, 71) : naturalsBetween(48, 71);
+}
+
+/**
+ * Where a target is drawn: guitar music on the treble staff an octave above the sounding pitch
+ * (the open low E, sounding E2, sits on E3 under three ledger lines); piano at pitch, on the treble
+ * staff from middle C up and on the bass staff below it.
+ */
+export function targetStaff(midi: number, instrument: Instrument): { clef: Clef; midi: number } {
+  if (instrument === 'guitar') return { clef: 'treble', midi: writtenMidi(midi) };
+  return { clef: midi < 60 ? 'bass' : 'treble', midi };
 }
 
 /** Deal `count` targets from `pool`: the whole pool before any repeat, never one twice in a row. */

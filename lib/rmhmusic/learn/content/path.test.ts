@@ -26,14 +26,19 @@ describe('learning path', () => {
     expect(getLesson('play-first-note')?.mode).toBe('play-note');
     expect(getLesson('nope')).toBeUndefined();
   });
-  it('ships the first-note lesson and the three staff-reading lessons', () => {
+  it('ships the first-note lesson, the three staff-reading lessons and the two note finders', () => {
     const available = lessons.filter((l) => l.available);
     expect(available.map((l) => l.id)).toEqual([
       'staff-what-is-a-staff',
       'staff-treble-notes',
       'staff-find-middle-c',
+      'keys-layout-and-strings',
+      'fretboard-first-frets',
       'play-first-note',
     ]);
+    expect(getLesson('keys-layout-and-strings')?.mode).toBe('keyboard-map');
+    expect(getLesson('fretboard-first-frets')?.mode).toBe('fretboard');
+    expect(getLesson('fretboard-first-frets')?.unit).toBe('meet-staff-and-keys');
   });
   it('names an existing deck for every staff-flashcards lesson', () => {
     const flash = lessons.filter((l) => l.mode === 'staff-flashcards');

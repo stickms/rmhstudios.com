@@ -32,13 +32,11 @@
  * result. The lesson needs no instrument: the letter buttons always answer.
  */
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DECKS, buildSession, type Card } from '@/lib/rmhmusic/learn/content/decks';
 import { getLesson } from '@/lib/rmhmusic/learn/content/path';
-import { isHeldActivation } from '@/lib/rmhmusic/learn/input/key-repeat';
-import { releaseMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import {
   createFlashcardsMachine,
   type Answer,
@@ -51,12 +49,18 @@ import { isSharp } from '@/lib/rmhmusic/learn/staff';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { noteLetter, type NoteLetter } from '@/lib/rmhmusic/learn/theory/clef';
 import { cn } from '@/lib/utils';
-import { PRIMARY_BUTTON } from './buttons';
 import { DeviceRegion, LessonResult } from './LessonParts';
 import { OnScreenKeyboard } from './OnScreenKeyboard';
+import {
+  SessionFrame,
+  SessionSheet,
+  cardStateOf,
+  sessionTitle,
+  useQuestionSession,
+  type AnsweredQuestion,
+} from './QuestionSession';
 import { STAFF_BOX, StaffCard, type StaffCardState } from './StaffCard';
 import { useInputPhases, useLessonInputStart, useNoteEvents, useNoteSound } from './useLearnInput';
-import { useMachine } from './useMachine';
 
 /** Cards in one lesson. */
 export const SESSION_CARDS = 10;
@@ -77,10 +81,7 @@ function answerName(answer: Answer): string {
 }
 
 /** One card of a finished session and whether it was named right. */
-export interface Answered {
-  card: Card;
-  right: boolean;
-}
+export type Answered = AnsweredQuestion<Card>;
 
 /** A staff-reading lesson: ten cards from the lesson's deck, saved as a lesson completion. */
 export function FlashcardLesson({
@@ -132,65 +133,21 @@ export function FlashcardSession({
   stars?: boolean;
 }) {
   const { t } = useTranslation('c-rmhmusic');
-  const hub = useLearnStore((s) => s.hub);
   const input = useLearnStore((s) => s.profile?.input ?? 'screen');
-  const [machine] = useState(() => createFlashcardsMachine(cards));
-  // Every card's result by its index, written on Next (once per card: the machine leaves
-  // `feedback` on the first Next, and a repeat rewrites the same slot).
-  const answered = useRef<Answered[]>([]);
-  const [lesson, send] = useMachine(machine);
+  const session = useQuestionSession<Card, Answer>({
+    machine: () => createFlashcardsMachine(cards),
+    save,
+    paused,
+  });
+  const { lesson, total, answer, answerGroup } = session;
+  const inSession = lesson.kind === 'asking' || lesson.kind === 'feedback';
   const phases = useInputPhases();
   useNoteSound(!paused);
   useLessonInputStart();
 
-  // The card and how it went, kept for the result screen (the machine's result states hold only
-  // the score), so the sheet still shows the last card once the session ends.
-  const [last, setLast] = useState<{ card: Card; right: boolean } | null>(null);
-
   const needsDevice = input === 'mic' || input === 'midi';
   const inputOn = !needsDevice || phases[input] === 'active';
   const keysPlayNotes = input === 'keys' || phases.keys === 'active';
-
-  const perform = (effects: Effect[]) => {
-    for (const fx of effects) {
-      // The session is over: the result needs no microphone.
-      if (hub) releaseMic(hub);
-      void save(fx, answered.current.filter(Boolean)).then((outcome) =>
-        perform(send({ type: 'answered', attempt: fx.attempt, outcome })),
-      );
-    }
-  };
-
-  const answer = (a: Answer) => {
-    if (paused) return;
-    perform(send({ type: 'answer', answer: a }));
-  };
-
-  const nextButton = useRef<HTMLButtonElement>(null);
-  const letterGroup = useRef<HTMLDivElement>(null);
-  const movedOn = useRef(false);
-  // True once the learner has moved to a card by Next or Retry: only then is a new card announced
-  // (the first one is the page the learner just opened, already named by its heading).
-  const [announceCards, setAnnounceCards] = useState(false);
-
-  // A held Enter repeats a click on whatever holds focus; focus hops letters → Next → letters as
-  // cards go by, so a repeat must not activate anything (see key-repeat.ts).
-  const onKeyDown = (e: ReactKeyboardEvent) => {
-    if (isHeldActivation(e.nativeEvent) && (e.target as HTMLElement).closest('button')) {
-      e.preventDefault();
-    }
-  };
-
-  const next = () => {
-    if (lesson.kind === 'feedback') {
-      const result = { card: lesson.cards[lesson.index], right: lesson.right };
-      answered.current[lesson.index] = result;
-      setLast(result);
-    }
-    movedOn.current = true;
-    setAnnounceCards(true);
-    perform(send({ type: 'next' }));
-  };
 
   useNoteEvents((e) => {
     if (e.type !== 'on') return;
@@ -224,57 +181,21 @@ export function FlashcardSession({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [keysPlayNotes]);
 
-  // Focus follows the learner: after an answer given from the letters (or with nothing focused),
-  // to Next; after Next, back to the letters — so a keyboard user never lands on <body>. Next is
-  // inert and hidden in the same commit that leaves `feedback`, but the browser has not yet moved
-  // focus off it when this runs, so focus on Next (or inside any inert subtree) counts as nowhere.
-  const index = lesson.kind === 'asking' || lesson.kind === 'feedback' ? lesson.index : -1;
-  useLayoutEffect(() => {
-    const active = document.activeElement;
-    const nowhere =
-      !active ||
-      active === document.body ||
-      (lesson.kind === 'asking' &&
-        (active === nextButton.current || active.closest('[inert]') !== null));
-    if (lesson.kind === 'feedback') {
-      if (nowhere || letterGroup.current?.contains(active)) {
-        nextButton.current?.focus({ preventScroll: true });
-      }
-    } else if (lesson.kind === 'asking' && movedOn.current) {
-      movedOn.current = false;
-      if (nowhere) letterGroup.current?.querySelector('button')?.focus({ preventScroll: true });
-    }
-  }, [lesson.kind, index]);
+  const card = session.card;
+  const cardState: StaffCardState = cardStateOf(session);
 
-  const retry = () => {
-    setAnnounceCards(true);
-    perform(send({ type: 'retry' }));
-  };
-
-  const inSession = lesson.kind === 'asking' || lesson.kind === 'feedback';
-  const total = inSession ? lesson.cards.length : lesson.total;
-  const card: Card | null = inSession ? (lesson.cards[lesson.index] ?? null) : (last?.card ?? null);
-  const cardState: StaffCardState =
-    lesson.kind === 'asking'
-      ? 'ask'
-      : lesson.kind === 'feedback'
-        ? lesson.right
-          ? 'right'
-          : 'wrong'
-        : last?.right
-          ? 'right'
-          : 'wrong';
-
-  const title = inSession
-    ? t('flash-card-count', {
-        n: lesson.index + 1,
-        total,
-        defaultValue: 'Card {{n}} of {{total}}',
-      })
-    : lesson.kind === 'saved' || lesson.kind === 'saving'
-      ? doneTitle
-      : t('lesson-not-saved', { defaultValue: 'Not saved yet' });
-
+  const title = sessionTitle(
+    session,
+    inSession
+      ? t('flash-card-count', {
+          n: lesson.index + 1,
+          total,
+          defaultValue: 'Card {{n}} of {{total}}',
+        })
+      : '',
+    doneTitle,
+    t('lesson-not-saved', { defaultValue: 'Not saved yet' }),
+  );
   const hint =
     input === 'keys'
       ? t('flash-hint-keys', {
@@ -325,7 +246,7 @@ export function FlashcardSession({
           })
         : line
       : lesson.kind === 'asking'
-        ? announceCards
+        ? session.announce
           ? title
           : ''
         : inSession
@@ -346,7 +267,7 @@ export function FlashcardSession({
         kind={lesson.kind}
         stars={showStars ? stars : null}
         returnTo={returnTo}
-        onRetry={retry}
+        onRetry={session.retry}
         className="flex-1"
       />
     );
@@ -373,7 +294,7 @@ export function FlashcardSession({
     answers = (
       <>
         <div
-          ref={letterGroup}
+          ref={answerGroup}
           role="group"
           aria-label={t('flash-letters', { defaultValue: 'Note names' })}
           className="rmm-flash__letters"
@@ -411,51 +332,27 @@ export function FlashcardSession({
   }
 
   return (
-    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- cancels a repeating Enter that bubbled up from a button; the wrapper is not itself interactive
-    <div className="rmm-flash space-y-4" onKeyDown={onKeyDown}>
-      <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
-        <h2
-          title={title}
-          className="rmm-display line-clamp-1 h-8 text-2xl leading-8 text-(--app-text)"
-        >
-          <span key={inSession ? `card-${lesson.index}` : lesson.kind}>{title}</span>
-        </h2>
-        {card ? (
-          <StaffCard card={card} state={cardState} />
-        ) : (
-          <div aria-hidden="true" className={STAFF_BOX}>
-            <div className="aspect-[200/102] w-full" />
-            <div className="h-9" />
-          </div>
-        )}
-        <div className="flex h-11 items-center gap-3">
-          <div className="flex h-10 min-w-0 flex-1 items-center justify-center">
-            <p
-              key={lineKey}
-              title={line || undefined}
-              className="line-clamp-2 text-sm leading-5 text-(--app-text-muted)"
-            >
-              {line}
-            </p>
-          </div>
-          {/* Always here so the line never reflows; hidden (and inert) until a card is answered. */}
-          <button
-            ref={nextButton}
-            type="button"
-            onClick={next}
-            inert={lesson.kind !== 'feedback' || undefined}
-            className={cn(PRIMARY_BUTTON, lesson.kind !== 'feedback' && 'invisible')}
-          >
-            {t('flash-next', { defaultValue: 'Next' })}
-          </button>
-          {/* Inside this row, not after it: as the section's last child it would take the
-              row's place in the section's spacing (space-y spaces all but the last child). */}
-          <p className="sr-only" aria-live="polite">
-            {said}
-          </p>
-        </div>
-      </section>
-      <div className="rmm-flash__answers">{answers}</div>
-    </div>
+    <SessionFrame className="rmm-flash space-y-4">
+      <SessionSheet
+        session={session}
+        title={title}
+        question={
+          card ? (
+            <StaffCard card={card} state={cardState} />
+          ) : (
+            <div aria-hidden="true" className={STAFF_BOX}>
+              <div className="aspect-[200/102] w-full" />
+              <div className="h-9" />
+            </div>
+          )
+        }
+        line={line}
+        lineKey={lineKey}
+        said={said}
+      />
+      <div ref={session.answersBox} className="rmm-flash__answers">
+        {answers}
+      </div>
+    </SessionFrame>
   );
 }
