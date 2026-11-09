@@ -49,7 +49,7 @@ export function Shell({
         <header className="flex flex-wrap items-center justify-between gap-2 pt-[calc(0.5rem+var(--safe-top))]">
           <Link
             to="/rmhmusic"
-            className="-ms-3 flex min-h-11 min-w-0 items-center gap-1.5 rounded-(--app-radius-sm) px-3 text-sm font-medium text-(--app-text-muted) transition-colors hover:text-(--app-text)"
+            className="-ms-3 flex min-h-11 min-w-0 items-center gap-1.5 rounded-(--app-radius-sm) px-3 py-2 text-sm font-medium text-(--app-text-muted) transition-colors hover:text-(--app-text)"
           >
             <ArrowLeft className="h-4 w-4 shrink-0 rtl-flip" aria-hidden="true" />
             <span>{t('back-to-lessons', { defaultValue: 'Back to lessons' })}</span>
