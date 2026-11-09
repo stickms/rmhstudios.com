@@ -239,7 +239,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
         aria-pressed={soloMode === 'library'}
         onClick={() => setSoloMode('library')}
       >
-        <span className="slice-nav__idx">A1</span>
         <span>{t('menu-nav-library', { defaultValue: 'Library' })}</span>
       </button>
       <button
@@ -249,7 +248,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
         aria-label={ts('daily-challenge', { defaultValue: 'Daily Challenge' })}
         onClick={() => setSoloMode(soloMode === 'daily' ? 'library' : 'daily')}
       >
-        <span className="slice-nav__idx">A2</span>
         <span>{t('menu-nav-daily', { defaultValue: 'Daily' })}</span>
       </button>
       <button
@@ -259,7 +257,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
         aria-label={ts('setlists', { defaultValue: 'Setlists' })}
         onClick={() => setSoloMode(soloMode === 'setlists' ? 'library' : 'setlists')}
       >
-        <span className="slice-nav__idx">B1</span>
         <span>{t('menu-nav-setlists', { defaultValue: 'Setlists' })}</span>
       </button>
       <button
@@ -268,7 +265,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
         aria-label={t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
         onClick={() => setShowMultiplayer(true)}
       >
-        <span className="slice-nav__idx">B2</span>
         <span>{t('menu-nav-versus', { defaultValue: 'Versus' })}</span>
       </button>
     </nav>
@@ -302,7 +298,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
               track is different: it replaces the stage, so it is allowed to
               cover it. */}
           {isLoading && (
-            <div className="absolute inset-0 z-70 bg-slice-bg/85 flex items-center justify-center flex-col gap-4">
+            <div className="slice-loading absolute inset-0 z-70 bg-slice-bg/85 flex items-center justify-center flex-col gap-4">
               <div className="w-9 h-9 border-[3px] border-slice-primary border-t-transparent rounded-full animate-spin" />
               <div className="slice-label text-slice-primary animate-pulse">
                 {t('initializing-track', { defaultValue: 'Initializing Track' })}
@@ -442,13 +438,17 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
           </header>
           )}
 
-          <div className="flex-1 min-h-0 flex relative">
+          {/* A phone: the four places, one short row under the bar. At the top, so the
+              bottom edge stays free for Safari's own bar. */}
+          {isPhone && renderNav(false)}
+
+          <div className="slice-menu__stage flex-1 min-h-0 flex relative">
             {/* Auth overlay. `items-center-safe` + `overflow-y-auto`: plain
                 `items-center` clips the card at both ends once it is taller than
                 the box (a landscape phone), putting the Log In button out of
                 reach. */}
             {session.signedOut && (
-              <div className="absolute inset-0 z-60 bg-slice-bg/92 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain p-6">
+              <div className="slice-auth absolute inset-0 z-60 bg-slice-bg/92 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain p-6">
                 <motion.div
                   className="slice-panel w-full max-w-sm space-y-5 p-7 text-center"
                   variants={scaleIn}
@@ -542,7 +542,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
               </aside>
             )}
 
-            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+            <div className="slice-menu__col flex min-w-0 flex-1 flex-col overflow-hidden">
               {/* A phone: the picked record, compact, above the list. */}
               {isPhone && soloMode === 'library' && selectedSong && (
                 <PhoneRecord
@@ -554,7 +554,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={soloMode}
-                  className="flex min-h-0 flex-1 flex-col"
+                  className="slice-menu__mode flex min-h-0 flex-1 flex-col"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -659,7 +659,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             </AnimatePresence>
           </div>
 
-          {isPhone && renderNav(false)}
         </>
       )}
 

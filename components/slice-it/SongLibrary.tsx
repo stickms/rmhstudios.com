@@ -638,7 +638,7 @@ export function SongLibrary({
   const phoneToolbar = (
     <div
       className={`flex items-center gap-2 shrink-0 px-3 py-2 border-b border-slice-shadow-dark/50 bg-slice-bg ${
-        scrollsAsOneColumn ? 'sticky top-0 z-20' : ''
+        scrollsAsOneColumn ? 'sm:sticky sm:top-0 sm:z-20' : ''
       }`}
     >
       <div className="relative min-w-0 flex-1">
@@ -755,7 +755,7 @@ export function SongLibrary({
 
   return (
     <div
-      className={`w-full h-full bg-slice-bg flex flex-col ${
+      className={`slice-lib w-full h-full bg-slice-bg flex flex-col ${
         scrollsAsOneColumn ? 'overflow-y-auto overscroll-contain' : 'overflow-hidden'
       }`}
     >
@@ -768,7 +768,7 @@ export function SongLibrary({
       ) : (
       <div
         className={`flex flex-wrap gap-2 items-center shrink-0 p-3 border-b border-slice-shadow-dark/50 bg-slice-bg ${
-          scrollsAsOneColumn ? 'sticky top-0 z-20' : ''
+          scrollsAsOneColumn ? 'sm:sticky sm:top-0 sm:z-20' : ''
         }`}
       >
         <div className="relative flex-1 min-w-[10rem]">
