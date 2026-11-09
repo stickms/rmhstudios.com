@@ -39,7 +39,10 @@ const lines = (text: string): number =>
   text.length === 0 ? 0 : text.split('\n').length - (text.endsWith('\n') ? 1 : 0);
 const read = (rel: string): string => readFileSync(join(ROOT, rel), 'utf8');
 
-const schema = read('prisma/schema.prisma');
+// The schema is a folder of per-domain files (redesign audit C3).
+const schemaFiles = tracked('prisma/schema/**').filter((f) => f.endsWith('.prisma'));
+const schemaTexts = schemaFiles.map(read);
+const schema = schemaTexts.join('\n');
 const routes = tracked('app/routes/**');
 const apiRoutes = routes.filter((f) => f.startsWith('app/routes/api/'));
 const css = tracked('*.css');
@@ -51,10 +54,10 @@ const migrations = new Set(
 
 const facts = {
   generatedFrom:
-    'scripts/gen-repo-facts.ts (tracked files, prisma/schema.prisma, lib/i18n/config.ts); regenerate with `pnpm facts:generate`, gated by `pnpm facts:check`',
+    'scripts/gen-repo-facts.ts (tracked files, prisma/schema/**, lib/i18n/config.ts); regenerate with `pnpm facts:generate`, gated by `pnpm facts:check`',
   prismaModels: (schema.match(/^model /gm) ?? []).length,
   prismaEnums: (schema.match(/^enum /gm) ?? []).length,
-  prismaSchemaLines: lines(schema),
+  prismaSchemaLines: schemaTexts.reduce((n, s) => n + lines(s), 0),
   prismaMigrations: migrations.size,
   routeFiles: routes.length,
   apiRouteFiles: apiRoutes.length,
