@@ -10,7 +10,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { FunctionSquare, LineChart, Sigma } from 'lucide-react';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { CALC_MODELS, type CalcModel } from '@/lib/rmhcalculator/types';
 import { ModelToggle } from '@/components/rmhcalculator/ModelToggle';
 import { ScientificCalculator } from '@/components/rmhcalculator/ScientificCalculator';
@@ -93,7 +93,7 @@ export function RmhCalculatorApp() {
       </header>
 
       <div className="rmhcalc__tabs">
-        <LiquidTabs
+        <Tabs
           aria-label={t('mode', { defaultValue: 'Calculator mode' })}
           value={mode}
           onChange={(id) => setMode(id as Mode)}

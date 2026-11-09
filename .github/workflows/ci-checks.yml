@@ -51,6 +51,8 @@ jobs:
         run: |
           mkdir -p .cache/eslint
           pnpm exec eslint --cache --cache-location .cache/eslint/eslintcache --cache-strategy content
+      - name: Architecture ratchet (import cycles + layer boundaries)
+        run: pnpm run lint:ratchet
       - name: Docs freshness
         run: |
           pnpm run docs:api:check

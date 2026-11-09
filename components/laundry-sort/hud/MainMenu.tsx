@@ -6,7 +6,7 @@
  * the whole screen, because someone who only wants a solo run should never wait
  * for a websocket.
  *
- * Duration and difficulty ride `LiquidTabs`: they are segmented controls, and
+ * Duration and difficulty ride `Tabs`: they are segmented controls, and
  * hand-rolled ones fail `lib/__tests__/design-consistency.test.ts`.
  */
 
@@ -16,7 +16,7 @@ import { Link } from '@tanstack/react-router';
 import { Play, Users, Search, LogIn, LogOut, Swords, WashingMachine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import { useQuitGame } from '@/hooks/useQuitGame';
 import { lobbyReturnPath } from '@/lib/lobby-link';
@@ -94,7 +94,7 @@ export function MainMenu({
                 <p className="ls-muted text-[11px] font-semibold uppercase tracking-widest">
                   {t('round-length', { defaultValue: 'Round length' })}
                 </p>
-                <LiquidTabs
+                <Tabs
                   tabs={MATCH_DURATIONS.map((d) => ({
                     id: String(d),
                     label: t('seconds-short', { defaultValue: '{{count}}s', count: d }),
@@ -109,7 +109,7 @@ export function MainMenu({
                 <p className="ls-muted text-[11px] font-semibold uppercase tracking-widest">
                   {t('difficulty', { defaultValue: 'Difficulty' })}
                 </p>
-                <LiquidTabs
+                <Tabs
                   tabs={DIFFICULTIES.map((d) => ({ id: d, label: difficultyLabel[d] }))}
                   value={difficulty}
                   onChange={(id) => setDifficulty(id as Difficulty)}

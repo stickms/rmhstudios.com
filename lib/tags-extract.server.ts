@@ -3,7 +3,7 @@
  *
  * Replaces the old "scan rmheet.content with ILIKE '%#tag%'" approach: hashtags
  * are parsed once at write time and stored in the normalized hashtag /
- * post_hashtag tables (see prisma/schema.prisma), which trending and tag feeds
+ * post_hashtag tables (see prisma/schema/), which trending and tag feeds
  * read via indexed lookups.
  *
  * Call `linkPostHashtags(tx, postId, content)` inside the post-create

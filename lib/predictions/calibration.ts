@@ -24,6 +24,7 @@
  * because three lucky calls is not a calibration profile.
  */
 
+import { clamp01 } from '@/lib/core/math';
 export interface Forecast {
   /** Probability assigned to YES, 0–1. */
   p: number;
@@ -51,8 +52,6 @@ export interface Calibration {
 
 export const MIN_FOR_PROFILE = 20;
 const BINS = 10;
-
-const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
 export function calibrate(forecasts: readonly Forecast[]): Calibration {
   const valid = forecasts.filter((f) => Number.isFinite(f.p));

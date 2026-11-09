@@ -10,7 +10,7 @@
  * the server refuses on — rather than a second, drifting copy of the rule.
  */
 
-/** Mirrors `enum RequestStatus` in `prisma/schema.prisma`. */
+/** Mirrors `enum RequestStatus` in `prisma/schema/`. */
 export const REQUEST_STATUSES = ['OPEN', 'PLANNED', 'IN_PROGRESS', 'SHIPPED', 'DECLINED'] as const;
 
 export type RequestStatus = (typeof REQUEST_STATUSES)[number];

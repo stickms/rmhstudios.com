@@ -49,7 +49,7 @@ const SHEETS = [
   // Plasmatic Jelly: the material, its carriers and the arc layer must stay
   // filter-free too — "hazy" is the most likely road back to an SVG turbulence
   // or a blur (docs/plans/plasmatic-jelly/01-material.md §3.1).
-  join('app', 'liquid-glass.css'),
+  join('app', 'glass-roles.css'),
   join('app', 'jelly-material.css'),
   join('app', 'jelly-arcs.css'),
   join('app', 'jelly-coverage.css'),

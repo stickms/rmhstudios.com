@@ -19,7 +19,7 @@ const ROOT = process.cwd();
 const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 const GLOBALS = strip(readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8'));
 const MATERIAL = strip(readFileSync(join(ROOT, 'app', 'jelly-material.css'), 'utf8'));
-const LIQUID = strip(readFileSync(join(ROOT, 'app', 'liquid-glass.css'), 'utf8'));
+const LIQUID = strip(readFileSync(join(ROOT, 'app', 'glass-roles.css'), 'utf8'));
 const APP = strip(readFileSync(join(ROOT, 'components', 'shared', 'app-theme.css'), 'utf8'));
 
 type Tokens = Record<string, string>;
@@ -168,7 +168,7 @@ describe('#989 CSS gel layers (the non-shader tier)', () => {
 
   it('no diagonal gloss band crosses a face', () => {
     for (const [name, css] of [
-      ['liquid-glass.css', LIQUID],
+      ['glass-roles.css', LIQUID],
       ['jelly-material.css', MATERIAL],
       ['app-theme.css', APP],
     ] as const) {

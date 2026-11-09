@@ -44,6 +44,7 @@ import { ChartCard, ChartToggle, Readout, ReadoutRow, Swatch } from './chart-kit
 import { pointerOnStage, useCanvasStage, type StageFrame } from '@/hooks/useCanvasStage';
 import { DEBT_PAINT } from './debt-paint';
 import { categoryLabel } from './CompositionCharts';
+import { clamp } from '@/lib/core/math';
 
 /** Camera distance in world units. Far enough that the far row is not a smear. */
 const CAMERA_DISTANCE = 3.6;
@@ -53,8 +54,6 @@ const FIELD = 1.9;
 const MAX_HEIGHT = 1.15;
 /** How far the whole field is dropped so the base sits below the middle. */
 const BASE_Y = -0.42;
-
-const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 
 /** One column, resolved for this frame. Reused across frames — never allocated in the loop. */
 interface Column {

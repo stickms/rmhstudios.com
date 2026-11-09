@@ -5,7 +5,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
 import { Users, CalendarDays, Radio } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { CommunitiesColumn } from '@/components/feed/CommunitiesColumn';
 import { CommunitiesSkeleton } from '@/components/feed/CommunitiesSkeleton';
@@ -69,7 +69,7 @@ function CommunitiesShell({ children }: { children: React.ReactNode }) {
 
 /**
  * Top-of-page section switcher between the three surfaces. §16.2: this is the
- * shared `LiquidTabs` sheet+capsule grammar (was a bare tab row buried in a
+ * shared `Tabs` sheet+capsule grammar (was a bare tab row buried in a
  * `glass-chrome border-b` header — the §5.45 "never in header chrome" violation
  * the owner flagged). It sits BELOW the page title, on its own floating pill,
  * exactly like /store and /services. The title itself comes from `PageLayout`
@@ -81,7 +81,7 @@ function CommunitiesTabs({ active }: { active: CommunitiesTab }) {
   const { t } = useTranslation('site');
   const navigate = useNavigate();
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     {
       id: 'communities',
       label: t('communities-tab-communities', { defaultValue: 'Communities' }),

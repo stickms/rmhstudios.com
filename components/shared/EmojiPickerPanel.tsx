@@ -17,7 +17,7 @@
  *   list items — per the material budget those carry no glass at all, just a
  *   hover tint.
  * - The category rail is a plain button row with `aria-pressed`, deliberately
- *   NOT a tablist: that ARIA grammar is reserved for `LiquidTabs` and CI
+ *   NOT a tablist: that ARIA grammar is reserved for `Tabs` and CI
  *   enforces the reservation. (These are filter toggles, not tabs — the panel
  *   below is one scroller, not a set of swapped panels.)
  * - Cells are 44px on touch (the minimum target) and tighter with a mouse, so a
@@ -363,7 +363,7 @@ export default function EmojiPickerPanel({
         )}
       </div>
 
-      {/* Category rail — toggles, not tabs; the tablist grammar is LiquidTabs'. */}
+      {/* Category rail — toggles, not tabs; the tablist grammar is Tabs'. */}
       <nav
         className="flex shrink-0 items-center gap-0.5 overflow-x-auto border-t border-site-border px-1 py-1"
         aria-label={t('emoji-picker-categories', { defaultValue: 'Emoji categories' })}

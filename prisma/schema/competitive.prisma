@@ -1,0 +1,460 @@
+/// Per-game ELO rating for ranked play (#5). Updated when a challenge resolves.
+model EloRating {
+  id        String   @id @default(cuid())
+  userId    String
+  game      String   @db.VarChar(40)
+  rating    Int      @default(1000)
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  draws     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, game])
+  @@index([game, rating(sort: Desc)])
+  @@map("elo_rating")
+}
+
+/// An async ranked challenge between two players. The result is trust-reported
+/// by either participant; resolving it updates both ELO ratings.
+model RankedChallenge {
+  id           String    @id @default(cuid())
+  game         String    @db.VarChar(40)
+  challengerId String
+  opponentId   String
+  status       String    @default("pending") @db.VarChar(12) // pending|accepted|declined|done
+  winnerId     String? // null winner on a done challenge = draw
+  createdAt    DateTime  @default(now())
+  resolvedAt   DateTime?
+
+  challenger User @relation("ChallengeChallenger", fields: [challengerId], references: [id], onDelete: Cascade)
+  opponent   User @relation("ChallengeOpponent", fields: [opponentId], references: [id], onDelete: Cascade)
+
+  @@index([opponentId, status])
+  @@index([challengerId, status])
+  @@map("ranked_challenge")
+}
+
+// ─── Wager Matches (§2) ───────────────────────────────────────────────────
+// Coin-staked 1v1 challenges on any wager-eligible skill game. Both players'
+// stakes are escrowed in the match row (potCoins) on acceptance and paid to the
+// winner (minus rake) on settlement. Settlement is authoritative for
+// server-validated games (the hub reports via /api/internal/match-result), and
+// falls back to dual-confirmation (both players agree) or admin adjudication.
+// Every coin movement is mirrored to CoinTransaction (type WAGER).
+
+enum WagerMatchStatus {
+  OPEN // created; awaiting acceptance (open challenge or a named opponent)
+  ACCEPTED // both players in, stakes escrowed, awaiting play + result
+  LIVE // gameplay in progress
+  SETTLED // resolved, pot paid out
+  DISPUTED // conflicting self-reports; awaiting admin adjudication
+  CANCELLED // declined / cancelled before acceptance — stakes refunded
+  EXPIRED // no acceptance before expiresAt — stakes refunded
+}
+
+model WagerMatch {
+  id           String           @id @default(cuid())
+  gameId       String           @db.VarChar(64) // GameInfo.id / app id; must be wager-eligible
+  challengerId String
+  opponentId   String? // null = open challenge anyone may accept
+  stakeCoins   Int // per-player stake
+  potCoins     Int              @default(0) // escrowed total (2 × stake once accepted)
+  rakeBps      Int              @default(0) // rake in basis points, taken from the pot on settle
+  status       WagerMatchStatus @default(OPEN)
+
+  // Result reporting
+  winnerId                   String?
+  challengerReportedWinnerId String?
+  opponentReportedWinnerId   String?
+  resultSource               String? @db.VarChar(24) // "authoritative" | "agreement" | "admin" | "forfeit"
+  gameSessionRef             String? @db.VarChar(96) // hub room/match id, for authoritative settle
+  adminNote                  String? @db.VarChar(500)
+
+  acceptedAt DateTime?
+  settledAt  DateTime?
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  challenger User  @relation("WagerChallenger", fields: [challengerId], references: [id], onDelete: Cascade)
+  opponent   User? @relation("WagerOpponent", fields: [opponentId], references: [id], onDelete: SetNull)
+  winner     User? @relation("WagerWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([challengerId, status])
+  @@index([opponentId, status])
+  @@index([gameId, status])
+  @@index([gameSessionRef])
+  @@map("wager_match")
+}
+
+// ─── Tournaments (§1) ─────────────────────────────────────────────────────
+// A bracket/round-robin over any wager-eligible game. Entry fees are escrowed
+// into prizePoolCoins on registration; the pool (plus any creator seed, minus
+// rake) is paid out to finishers on completion. Matches advance event-driven
+// as results arrive; no background worker is required.
+
+enum TournamentFormat {
+  SINGLE_ELIM
+  ROUND_ROBIN
+  SWISS
+  DOUBLE_ELIM // reserved — not yet implemented by the bracket engine
+}
+
+enum TournamentStatus {
+  REGISTRATION
+  LIVE
+  COMPLETE
+  CANCELLED
+}
+
+enum TournamentMatchState {
+  PENDING // waiting on entrants from prior rounds
+  READY // both slots filled, awaiting play + result
+  LIVE
+  COMPLETE
+  BYE // auto-advanced (odd bracket)
+  CANCELLED // closed unplayed because its tournament was cancelled
+}
+
+model Tournament {
+  id             String           @id @default(cuid())
+  name           String           @db.VarChar(120)
+  gameId         String           @db.VarChar(64)
+  format         TournamentFormat @default(SINGLE_ELIM)
+  status         TournamentStatus @default(REGISTRATION)
+  entryFeeCoins  Int              @default(0)
+  prizePoolCoins Int              @default(0) // escrowed pool (entry fees + seed)
+  seedPoolCoins  Int              @default(0) // creator/house guaranteed prize added up front
+  rakeBps        Int              @default(0)
+  maxPlayers     Int              @default(8)
+  minPlayers     Int              @default(2)
+  visibility     String           @default("public") @db.VarChar(16)
+  createdById    String
+  seasonId       String?          @db.VarChar(64) // optional live-ops season link
+  swissRounds    Int? // SWISS only: total rounds, fixed at start
+  startsAt       DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  createdBy User                @relation("TournamentCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  entrants  TournamentEntrant[]
+  matches   TournamentMatch[]
+  payouts   TournamentPayout[]
+  picks     BracketPick[]
+
+  @@index([status, startsAt])
+  @@index([gameId, status])
+  @@map("tournament")
+}
+
+model TournamentEntrant {
+  id           String    @id @default(cuid())
+  tournamentId String
+  userId       String
+  seed         Int?
+  placement    Int? // final placement (1 = champion)
+  wins         Int       @default(0)
+  losses       Int       @default(0)
+  eliminatedAt DateTime?
+  joinedAt     DateTime  @default(now())
+
+  tournament Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchesAsA TournamentMatch[] @relation("MatchEntrantA")
+  matchesAsB TournamentMatch[] @relation("MatchEntrantB")
+  matchesWon TournamentMatch[] @relation("MatchWinner")
+  picks      BracketPick[]
+
+  @@unique([tournamentId, userId])
+  @@index([tournamentId, seed])
+  @@map("tournament_entrant")
+}
+
+model TournamentMatch {
+  id              String               @id @default(cuid())
+  tournamentId    String
+  round           Int
+  slot            Int // position within the round
+  entrantAId      String?
+  entrantBId      String?
+  winnerEntrantId String?
+  state           TournamentMatchState @default(PENDING)
+  // Where the winner of THIS match flows (single-elim). Plain refs, not a
+  // Prisma self-relation, to keep the bracket-linking simple.
+  nextMatchId     String?
+  nextSlot        Int?
+  gameSessionRef  String?              @db.VarChar(96)
+  resultSource    String?              @db.VarChar(24)
+  scheduledAt     DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  tournament Tournament         @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  entrantA   TournamentEntrant? @relation("MatchEntrantA", fields: [entrantAId], references: [id], onDelete: SetNull)
+  entrantB   TournamentEntrant? @relation("MatchEntrantB", fields: [entrantBId], references: [id], onDelete: SetNull)
+  winner     TournamentEntrant? @relation("MatchWinner", fields: [winnerEntrantId], references: [id], onDelete: SetNull)
+
+  @@unique([tournamentId, round, slot])
+  @@index([tournamentId, state])
+  @@index([gameSessionRef])
+  @@map("tournament_match")
+}
+
+model TournamentPayout {
+  id           String   @id @default(cuid())
+  tournamentId String
+  userId       String // plain ref — historical record, no cascade needed
+  placement    Int
+  amountCoins  Int
+  createdAt    DateTime @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, userId])
+  @@index([userId])
+  @@map("tournament_payout")
+}
+
+/// A speedrun category — "any%", "no-shards" — per game.
+model SpeedrunCategory {
+  id      String  @id @default(cuid())
+  game    String  @db.VarChar(32)
+  slug    String  @db.VarChar(32)
+  name    String  @db.VarChar(60)
+  rules   String  @db.VarChar(2000)
+  /// 'time' | 'score'
+  metric  String  @default("time") @db.VarChar(12)
+  /// Leaderboards are per game version: an update invalidates old replays, and
+  /// silently mixing versions is how a speedrun board loses its meaning.
+  version String  @db.VarChar(16)
+  active  Boolean @default(true)
+
+  entries SpeedrunEntry[]
+
+  @@unique([game, slug, version])
+  @@index([game, active])
+  @@map("speedrun_category")
+}
+
+/// A submitted run. Verified by re-simulating the stored replay's inputs —
+/// which is why the run must reference a replay rather than a claimed time.
+model SpeedrunEntry {
+  id           String    @id @default(cuid())
+  categoryId   String
+  userId       String
+  replayId     String    @unique
+  timeMs       Int
+  score        Int?
+  /// pending | verified | rejected
+  status       String    @default("pending") @db.VarChar(10)
+  rejectReason String?   @db.VarChar(200)
+  verifiedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  category SpeedrunCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId, status, timeMs])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("speedrun_entry")
+}
+
+// ─── Ranked seasons (P5, 2026-09-19) ──────────────────────────────────────
+// `EloRating` stays exactly as it is: one lifetime number per (user, game),
+// never reset, which is a genuinely useful thing to have and is what every
+// existing consumer reads.
+//
+// This is the seasonal ladder beside it. A separate table rather than a
+// `season` column on `EloRating` for one specific reason: adding a column is
+// safe during a blue/green swap, and CHANGING that table's unique constraint
+// from (userId, game) to (userId, game, season) is not — old code would be
+// writing through the old key against the new index for the length of the
+// flip. A new table has no old readers at all.
+
+/// A player's standing in one game for one season.
+model RankedSeasonRating {
+  id     String @id @default(cuid())
+  userId String
+  game   String @db.VarChar(40)
+
+  /// Derived from the date by `lib/ranked/season.ts`, never allocated by a
+  /// table — so no row has to be created for a season to begin, and two
+  /// services cannot disagree about which season it is.
+  season Int
+
+  rating Int @default(1000)
+  wins   Int @default(0)
+  losses Int @default(0)
+  draws  Int @default(0)
+
+  /// Counts DOWN from PLACEMENT_MATCHES. While above zero the rating is
+  /// provisional: hidden from the ladder, moved by a wider K-factor, and
+  /// exempt from decay.
+  placementsLeft Int @default(5)
+
+  /// Drives decay, which is computed on READ rather than by a nightly sweep —
+  /// so there is no job to fall behind, and no window where two players were
+  /// decayed as of different days.
+  lastPlayedAt DateTime?
+
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, game, season])
+  /// The ladder read: one game, one season, best first.
+  @@index([game, season, rating(sort: Desc)])
+  @@map("ranked_season_rating")
+}
+
+// ── P08 competitive: E5 E7 E8 E9 ──
+
+/// A bracket pick'em pick (E5): one predicted finish for one entrant, made while
+/// the tournament is still in REGISTRATION. role is CHAMPION | FINALIST | SEMI;
+/// points are derived from TournamentEntrant.placement, never stored.
+model BracketPick {
+  id           String   @id @default(cuid())
+  tournamentId String
+  userId       String
+  entrantId    String
+  role         String   @db.VarChar(10)
+  createdAt    DateTime @default(now())
+
+  tournament Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entrant    TournamentEntrant @relation(fields: [entrantId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, userId, entrantId])
+  @@index([tournamentId, userId])
+  @@map("bracket_pick")
+}
+
+/// A game jam (E7). `theme` is only ever sent to clients once startsAt passes;
+/// submissions close at submitEndsAt, rating at ratingEndsAt.
+model GameJam {
+  id           String   @id @default(cuid())
+  slug         String   @unique @db.VarChar(60)
+  title        String   @db.VarChar(100)
+  description  String   @db.VarChar(1000)
+  theme        String   @db.VarChar(120)
+  startsAt     DateTime
+  submitEndsAt DateTime
+  ratingEndsAt DateTime
+  createdById  String
+  createdAt    DateTime @default(now())
+
+  createdBy User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  entries   GameJamEntry[]
+
+  @@index([startsAt])
+  @@map("game_jam")
+}
+
+model GameJamEntry {
+  id        String   @id @default(cuid())
+  jamId     String
+  userId    String
+  buildId   String
+  createdAt DateTime @default(now())
+
+  jam     GameJam         @relation(fields: [jamId], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  build   UserBuild       @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  ratings GameJamRating[]
+
+  @@unique([jamId, userId])
+  @@unique([jamId, buildId])
+  @@index([userId])
+  @@map("game_jam_entry")
+}
+
+/// One member's 1-5 scores for one entry in four categories.
+model GameJamRating {
+  id         String   @id @default(cuid())
+  entryId    String
+  raterId    String
+  fun        Int
+  creativity Int
+  theme      Int
+  polish     Int
+  createdAt  DateTime @default(now())
+
+  entry GameJamEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  rater User         @relation(fields: [raterId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, raterId])
+  @@index([raterId])
+  @@map("game_jam_rating")
+}
+
+/// A weekly game-night rotation (E8). weekday 0=Sunday..6 and startMinute are
+/// UTC. `games` is an ordered list of catalog game ids; each gets
+/// `minutesPerGame` and the list loops until `durationMinutes` is up.
+/// `lobbyCodes` maps gameId -> the live join code the host posts on the night.
+model GameNight {
+  id              String   @id @default(cuid())
+  title           String   @db.VarChar(80)
+  weekday         Int
+  startMinute     Int
+  durationMinutes Int
+  minutesPerGame  Int
+  games           Json     @default("[]")
+  lobbyCodes      Json     @default("{}")
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  @@index([enabled])
+  @@map("game_night")
+}
+
+/// An unranked friendly challenge (E9), optionally with an Elo-gap handicap.
+/// Entirely separate from RankedChallenge: resolving one never touches EloRating.
+model FriendlyChallenge {
+  id             String    @id @default(cuid())
+  game           String    @db.VarChar(40)
+  challengerId   String
+  opponentId     String
+  status         String    @default("pending") @db.VarChar(12) // pending|accepted|declined|done
+  /// Handicap kind (e.g. "hp") + amount, granted to handicapUserId. Null = even match.
+  handicapKind   String?   @db.VarChar(16)
+  handicapAmount Int       @default(0)
+  handicapUserId String?
+  ratingGap      Int       @default(0)
+  winnerId       String?
+  createdAt      DateTime  @default(now())
+  resolvedAt     DateTime?
+
+  challenger User @relation("FriendlyChallenger", fields: [challengerId], references: [id], onDelete: Cascade)
+  opponent   User @relation("FriendlyOpponent", fields: [opponentId], references: [id], onDelete: Cascade)
+
+  @@index([opponentId, status])
+  @@index([challengerId, status])
+  @@map("friendly_challenge")
+}
+
+// The entry just above a player on a game board when first looked up. state
+// 'ahead' = rival is above; 'behind' = the player has since passed them, so a
+// later overtake by the rival is worth one (batched) notification.
+model ArcadeRival {
+  id             String    @id @default(cuid())
+  userId         String
+  gameId         String    @db.VarChar(48)
+  rivalUserId    String
+  state          String    @default("ahead") @db.VarChar(8)
+  lastNotifiedAt DateTime?
+  updatedAt      DateTime  @updatedAt
+
+  user  User @relation("ArcadeRivalOwner", fields: [userId], references: [id], onDelete: Cascade)
+  rival User @relation("ArcadeRivalTarget", fields: [rivalUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@index([rivalUserId])
+  @@index([updatedAt])
+  @@map("arcade_rival")
+}

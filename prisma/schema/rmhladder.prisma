@@ -1,0 +1,788 @@
+// ─── rmhladder ──────────────────────────────────────────────────────────────
+
+enum LadderPlatform {
+  greenhouse
+  lever
+  ashby
+  smartrecruiters
+  workday
+  manual
+  generic
+}
+
+enum LadderSourceStatus {
+  active
+  unconfigured
+  blocked
+  error
+  disabled
+}
+
+enum LadderJobStatus {
+  active
+  expired
+  unknown
+}
+
+enum LadderRemoteStatus {
+  onsite
+  hybrid
+  remote_us
+}
+
+enum LadderEmploymentType {
+  internship
+  full_time
+}
+
+enum LadderProgramType {
+  internship
+  summer_analyst
+  summer_associate
+  analyst_program
+  rotational_program
+  new_grad
+  leadership_development
+  entry_level
+  mba
+  other
+}
+
+enum LadderEarlyCareer {
+  yes
+  probable
+  no
+  unclear
+}
+
+enum LadderVerificationStatus {
+  verified_active
+  verified_probable
+  unverified
+  expired
+  broken_link
+  duplicate
+  non_us_role
+  blocked_or_inaccessible
+  needs_manual_review
+}
+
+enum LadderReviewReason {
+  broken_link
+  blocked
+  js_required
+  possible_duplicate
+  ambiguous_early_career
+  ambiguous_us_location
+  low_confidence
+  aggregator_unconfirmed
+  mass_expiry_suspected
+}
+
+enum LadderReviewStatus {
+  open
+  resolved
+  dismissed
+}
+
+enum LadderRunTrigger {
+  cron
+  manual
+}
+
+model LadderCompany {
+  id               String   @id @default(cuid())
+  name             String
+  normalizedName   String   @unique
+  industry         String
+  firmType         String
+  priorityLevel    Int      @default(3) // 1 high .. 5 low
+  careerUrl        String?
+  usEarlyCareerUrl String?
+  campusUrl        String?
+  notes            String?
+  enabled          Boolean  @default(true)
+  createdAt        DateTime @default(now())
+
+  sources          LadderSource[]
+  jobs             LadderJob[]
+  watchlistEntries LadderWatchlistEntry[]
+  interviewReports LadderInterviewReport[]
+
+  @@map("ladder_company")
+}
+
+model LadderSource {
+  id                  String             @id @default(cuid())
+  companyId           String
+  company             LadderCompany      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  platform            LadderPlatform
+  slug                String?
+  url                 String?
+  status              LadderSourceStatus @default(unconfigured)
+  config              Json?
+  lastAttemptAt       DateTime?
+  lastSuccessAt       DateTime?
+  lastProbedAt        DateTime?
+  nextProbeAt         DateTime?
+  consecutiveFailures Int                @default(0)
+  createdAt           DateTime           @default(now())
+
+  errors      LadderSourceError[]
+  reviewTasks LadderReviewTask[]
+  jobs        LadderJob[]
+
+  @@unique([companyId, platform, slug])
+  @@map("ladder_source")
+}
+
+model LadderJob {
+  id                        String               @id @default(cuid())
+  companyId                 String
+  company                   LadderCompany        @relation(fields: [companyId], references: [id])
+  sourceId                  String?
+  source                    LadderSource?        @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  title                     String
+  normalizedTitle           String
+  roleCategory              String?
+  programType               LadderProgramType    @default(other)
+  industry                  String?
+  locationRaw               String?
+  city                      String?
+  state                     String?
+  country                   String?
+  remoteStatus              LadderRemoteStatus   @default(onsite)
+  employmentType            LadderEmploymentType @default(internship)
+  postingDate               DateTime?
+  applicationDeadline       DateTime?
+  startSeason               String?
+  graduationYearTarget      Int?
+  schoolYearTarget          String?
+  sourcePlatform            LadderPlatform
+  sourceUrl                 String
+  originalPostingUrl        String
+  canonicalApplyUrl         String?
+  externalRequisitionId     String?
+  externalId                String?
+  descriptionSummary        String?
+  descriptionText           String?
+  fullDescription           String?
+  contentHash               String?
+  skills                    String[]             @default([])
+  compensationMin           Int?
+  compensationMax           Int?
+  compensationCurrency      String?
+  compensationInterval      String?
+  payMinAnnual              Int?
+  payMaxAnnual              Int?
+  payCurrency               String?              @db.VarChar(3)
+  payPeriod                 String?              @db.VarChar(8)
+  sponsorshipStatus         String?
+  dedupeHash                String
+  alternateUrls             String[]             @default([])
+  matchingKeywords          String[]             @default([])
+  status                    LadderJobStatus      @default(unknown)
+  failedCheckCount          Int                  @default(0)
+  earlyCareerScore          Int                  @default(0)
+  earlyCareerClassification LadderEarlyCareer    @default(unclear)
+  usLocationConfidence      Int                  @default(0)
+  relevanceScoreBase        Int                  @default(0)
+  urgencyFlag               Boolean              @default(false)
+  discoveredAt              DateTime             @default(now())
+  lastSeenAt                DateTime?
+  lastCheckedAt             DateTime?
+  lastVerifiedAt            DateTime?
+
+  verifications LadderVerification[]
+  reviewTasks   LadderReviewTask[]
+  actions       LadderJobAction[]
+  applications  LadderApplication[]
+  alerts        LadderAlert[]
+  profile       LadderJobProfile?
+  matches       LadderJobMatch[]
+  aiTasks       LadderAiTask[]
+  alertEvents   LadderAlertEvent[]
+  productEvents LadderProductEvent[]
+
+  @@unique([sourceId, externalId])
+  @@index([status, earlyCareerClassification])
+  @@index([companyId, status])
+  @@index([dedupeHash])
+  @@index([status, payMaxAnnual])
+  @@map("ladder_job")
+}
+
+model LadderVerification {
+  id         String                   @id @default(cuid())
+  jobId      String
+  job        LadderJob                @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  status     LadderVerificationStatus
+  confidence Int // 0-100
+  evidence   String
+  checkedAt  DateTime                 @default(now())
+
+  @@index([jobId, checkedAt])
+  @@map("ladder_verification")
+}
+
+model LadderScrapeRun {
+  id              String           @id @default(cuid())
+  trigger         LadderRunTrigger
+  startedAt       DateTime         @default(now())
+  finishedAt      DateTime?
+  discoveredCount Int              @default(0)
+  newCount        Int              @default(0)
+  verifiedCount   Int              @default(0)
+  expiredCount    Int              @default(0)
+  errorCount      Int              @default(0)
+  stats           Json?
+
+  errors LadderSourceError[]
+
+  @@map("ladder_scrape_run")
+}
+
+model LadderSourceError {
+  id         String          @id @default(cuid())
+  runId      String
+  run        LadderScrapeRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  sourceId   String
+  source     LadderSource    @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  errorClass String
+  message    String
+  httpStatus Int?
+  createdAt  DateTime        @default(now())
+
+  @@map("ladder_source_error")
+}
+
+model LadderReviewTask {
+  id           String             @id @default(cuid())
+  jobId        String?
+  job          LadderJob?         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  sourceId     String?
+  source       LadderSource?      @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  reason       LadderReviewReason
+  status       LadderReviewStatus @default(open)
+  resolution   String?
+  resolvedById String?
+  createdAt    DateTime           @default(now())
+  resolvedAt   DateTime?
+
+  @@map("ladder_review_task")
+}
+
+model LadderRelevanceRule {
+  id      String  @id @default(cuid())
+  key     String  @unique
+  label   String
+  weight  Int
+  enabled Boolean @default(true)
+
+  @@map("ladder_relevance_rule")
+}
+
+// ─── RMH Ladder Per-User Models ──────────────────────────────────────
+
+enum LadderKeywordType {
+  boost
+  block
+}
+
+enum LadderJobActionType {
+  saved
+  applied
+  ignored
+}
+
+enum LadderApplicationStatus {
+  not_applied
+  planning
+  applied
+  networking
+  interviewing
+  final_round
+  rejected
+  offer
+  withdrawn
+}
+
+enum LadderAlertChannel {
+  in_app
+  email
+  discord
+  web_push
+}
+
+enum LadderAlertType {
+  immediate
+  daily_digest
+  weekly_digest
+  deadline
+  changed
+  expired
+  review_needed
+  saved_search
+  follow_up
+  interview
+}
+
+enum LadderDigestFrequency {
+  immediate
+  daily
+  weekly
+}
+
+model LadderUserPrefs {
+  id                    String                @id @default(cuid())
+  userId                String                @unique
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relevanceThreshold    Int                   @default(60)
+  preferredCities       String[]              @default([])
+  preferredProgramTypes LadderProgramType[]   @default([])
+  digestFrequency       LadderDigestFrequency @default(daily)
+  channelInApp          Boolean               @default(true)
+  channelEmail          Boolean               @default(false)
+  channelDiscord        Boolean               @default(false)
+  discordUserId         String?
+  timezone              String                @default("America/New_York")
+  quietHoursStart       Int?
+  quietHoursEnd         Int?
+  resumeMatchThreshold  Int?
+
+  @@map("ladder_user_prefs")
+}
+
+model LadderKeyword {
+  id      String            @id @default(cuid())
+  userId  String
+  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  keyword String
+  weight  Int               @default(10)
+  type    LadderKeywordType @default(boost)
+
+  @@unique([userId, keyword, type])
+  @@map("ladder_keyword")
+}
+
+model LadderWatchlistEntry {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String
+  company   LadderCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  priority  Int           @default(3)
+
+  @@unique([userId, companyId])
+  @@map("ladder_watchlist_entry")
+}
+
+model LadderJobAction {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId     String
+  job       LadderJob           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  action    LadderJobActionType
+  createdAt DateTime            @default(now())
+
+  @@unique([userId, jobId])
+  @@map("ladder_job_action")
+}
+
+model LadderApplication {
+  id                    String                  @id @default(cuid())
+  userId                String
+  user                  User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId                 String
+  job                   LadderJob               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  status                LadderApplicationStatus @default(not_applied)
+  appliedDate           DateTime?
+  resumeVersion         String?
+  resumeVersionId       String?
+  selectedResumeVersion LadderResumeVersion?    @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
+  coverLetter           String?
+  referralName          String?
+  contactEmail          String?
+  notes                 String?
+  followUpDate          DateTime?
+  interviewDates        DateTime[]              @default([])
+  outcome               String?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  events LadderApplicationEvent[]
+
+  @@unique([userId, jobId])
+  @@map("ladder_application")
+}
+
+model LadderAlert {
+  id      String             @id @default(cuid())
+  userId  String
+  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId   String
+  job     LadderJob          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  channel LadderAlertChannel
+  type    LadderAlertType
+  sentAt  DateTime           @default(now())
+  readAt  DateTime?
+
+  @@unique([userId, jobId, type])
+  @@map("ladder_alert")
+}
+
+enum LadderResumeParseStatus {
+  pending
+  processing
+  ready
+  needs_correction
+  failed
+}
+
+enum LadderResumeReviewStatus {
+  pending
+  processing
+  complete
+  failed
+}
+
+enum LadderAiTaskKind {
+  resume_parse
+  resume_review
+  job_profile
+  match_refresh
+}
+
+enum LadderAiTaskStatus {
+  queued
+  processing
+  complete
+  failed
+}
+
+enum LadderAlertDeliveryStatus {
+  pending
+  sent
+  skipped
+  failed
+}
+
+model LadderResume {
+  id              String               @id @default(cuid())
+  userId          String
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  activeVersionId String?              @unique
+  activeVersion   LadderResumeVersion? @relation("LadderActiveResumeVersion", fields: [activeVersionId], references: [id], onDelete: SetNull)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  versions LadderResumeVersion[] @relation("LadderResumeVersions")
+
+  @@index([userId, updatedAt])
+  @@map("ladder_resume")
+}
+
+model LadderResumeVersion {
+  id                     String                  @id @default(cuid())
+  resumeId               String
+  resume                 LadderResume            @relation("LadderResumeVersions", fields: [resumeId], references: [id], onDelete: Cascade)
+  userId                 String
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versionNumber          Int
+  storageKey             String
+  filename               String
+  mimeType               String
+  sizeBytes              Int
+  sha256                 String
+  parseStatus            LadderResumeParseStatus @default(pending)
+  parseConfidence        Int?
+  extractedTextEncrypted String?
+  redactedTextEncrypted  String?
+  confirmedProfile       Json?
+  confirmedAt            DateTime?
+  matchesRefreshedAt     DateTime?
+  createdAt              DateTime                @default(now())
+
+  activeFor    LadderResume?        @relation("LadderActiveResumeVersion")
+  reviews      LadderResumeReview[]
+  matches      LadderJobMatch[]
+  aiTasks      LadderAiTask[]
+  applications LadderApplication[]
+
+  @@unique([resumeId, versionNumber])
+  @@index([userId, createdAt])
+  @@index([sha256])
+  @@map("ladder_resume_version")
+}
+
+model LadderResumeReview {
+  id              String                   @id @default(cuid())
+  userId          String
+  user            User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumeVersionId String
+  resumeVersion   LadderResumeVersion      @relation(fields: [resumeVersionId], references: [id], onDelete: Cascade)
+  provider        String
+  model           String
+  status          LadderResumeReviewStatus @default(pending)
+  profile         Json?
+  review          Json?
+  promptVersion   String                   @default("1")
+  schemaVersion   String                   @default("1")
+  error           String?
+  createdAt       DateTime                 @default(now())
+  completedAt     DateTime?
+
+  @@index([userId, createdAt])
+  @@index([resumeVersionId, createdAt])
+  @@map("ladder_resume_review")
+}
+
+model LadderJobProfile {
+  id             String    @id @default(cuid())
+  jobId          String    @unique
+  job            LadderJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  profile        Json
+  profileVersion String    @default("1")
+  sourceHash     String
+  provider       String?
+  model          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([sourceHash])
+  @@map("ladder_job_profile")
+}
+
+model LadderJobMatch {
+  id              String              @id @default(cuid())
+  userId          String
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId           String
+  job             LadderJob           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resumeVersionId String
+  resumeVersion   LadderResumeVersion @relation(fields: [resumeVersionId], references: [id], onDelete: Cascade)
+  score           Int
+  confidence      Int
+  breakdown       Json
+  matchedSkills   String[]            @default([])
+  missingSkills   String[]            @default([])
+  explanation     String?
+  scoreVersion    String              @default("1")
+  feedback        String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@unique([resumeVersionId, jobId])
+  @@index([userId, score])
+  @@index([jobId, score])
+  @@map("ladder_job_match")
+}
+
+model LadderAiTask {
+  id              String               @id @default(cuid())
+  userId          String?
+  user            User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind            LadderAiTaskKind
+  status          LadderAiTaskStatus   @default(queued)
+  provider        String?
+  resumeVersionId String?
+  resumeVersion   LadderResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: Cascade)
+  jobId           String?
+  job             LadderJob?           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  inputRef        String?
+  outputRef       String?
+  dedupeKey       String?              @unique
+  attempts        Int                  @default(0)
+  error           String?
+  createdAt       DateTime             @default(now())
+  startedAt       DateTime?
+  finishedAt      DateTime?
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+  @@map("ladder_ai_task")
+}
+
+model LadderApplicationEvent {
+  id            String                   @id @default(cuid())
+  applicationId String
+  application   LadderApplication        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          String
+  fromStatus    LadderApplicationStatus?
+  toStatus      LadderApplicationStatus?
+  data          Json?
+  createdAt     DateTime                 @default(now())
+
+  @@index([applicationId, createdAt])
+  @@index([userId, createdAt])
+  @@map("ladder_application_event")
+}
+
+model LadderSavedSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  filters   Json
+  alertsOn  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, updatedAt])
+  @@map("ladder_saved_search")
+}
+
+model LadderAlertEvent {
+  id          String          @id @default(cuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId       String?
+  job         LadderJob?      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  type        LadderAlertType
+  fingerprint String
+  payload     Json?
+  readAt      DateTime?
+  createdAt   DateTime        @default(now())
+
+  deliveries LadderAlertDelivery[]
+
+  @@unique([userId, type, fingerprint])
+  @@index([userId, createdAt])
+  @@map("ladder_alert_event")
+}
+
+model LadderAlertDelivery {
+  id        String                    @id @default(cuid())
+  alertId   String
+  alert     LadderAlertEvent          @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  channel   LadderAlertChannel
+  status    LadderAlertDeliveryStatus @default(pending)
+  attempts  Int                       @default(0)
+  lastError String?
+  sentAt    DateTime?
+  createdAt DateTime                  @default(now())
+  updatedAt DateTime                  @updatedAt
+
+  @@unique([alertId, channel])
+  @@index([status, createdAt])
+  @@map("ladder_alert_delivery")
+}
+
+model LadderProductEvent {
+  id        String     @id @default(cuid())
+  userId    String?
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  jobId     String?
+  job       LadderJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  type      String
+  metadata  Json?
+  createdAt DateTime   @default(now())
+
+  @@index([type, createdAt])
+  @@index([userId, createdAt])
+  @@map("ladder_product_event")
+}
+
+model LadderWorkerLease {
+  name        String   @id
+  ownerId     String
+  expiresAt   DateTime
+  heartbeatAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("ladder_worker_lease")
+}
+
+/// The answers every ATS asks, stored once.
+///
+/// This is sensitive personal data — salary expectations and EEO answers above
+/// all — so it belongs in the account export and delete flows from day one.
+model LadderAnswerBank {
+  userId             String   @id
+  workAuthorization  String?  @db.VarChar(120)
+  needsSponsorship   Boolean?
+  noticePeriod       String?  @db.VarChar(60)
+  salaryExpectation  String?  @db.VarChar(60)
+  locationPreference String?  @db.VarChar(120)
+  linkedinUrl        String?  @db.VarChar(300)
+  portfolioUrl       String?  @db.VarChar(300)
+  /// [{ question, answer }] — the essays that repeat across applications.
+  essays             Json     @default("[]")
+  /// [{ title, situation, task, action, result }] — matched to a posting by
+  /// the prep sheet.
+  stories            Json     @default("[]")
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ladder_answer_bank")
+}
+
+// ── P22 ladder-homes: F6, F8, F9 ──
+// F6: a member at a company offers up to `capacity` referrals; applicants send
+// one short pitch each. `normalizedCompany` is the match key (free-text company
+// names, attested by the member), so offers group by company without a catalogue.
+model LadderReferralOffer {
+  id                String   @id @default(cuid())
+  userId            String
+  companyName       String   @db.VarChar(120)
+  normalizedCompany String   @db.VarChar(120)
+  roles             String   @db.VarChar(200)
+  note              String?  @db.VarChar(500)
+  capacity          Int      @default(3)
+  status            String   @default("open") @db.VarChar(8) // open | closed
+  createdAt         DateTime @default(now())
+
+  user     User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requests LadderReferralRequest[]
+
+  @@index([status, normalizedCompany, createdAt])
+  @@index([userId, status])
+  @@map("ladder_referral_offer")
+}
+
+model LadderReferralRequest {
+  id          String    @id @default(cuid())
+  offerId     String
+  applicantId String
+  pitch       String    @db.VarChar(600)
+  status      String    @default("pending") @db.VarChar(10) // pending | accepted | passed | withdrawn
+  respondedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  offer     LadderReferralOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  applicant User                @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  @@unique([offerId, applicantId])
+  @@index([offerId, status, createdAt])
+  @@index([applicantId, status, createdAt])
+  @@map("ladder_referral_request")
+}
+
+// F8: structured community interview reports, listed on the company's jobs and
+// reportable through ContentReport (entityType "ladder-interview"); a takedown
+// sets status to "hidden".
+model LadderInterviewReport {
+  id            String   @id @default(cuid())
+  userId        String
+  companyId     String
+  roleTitle     String   @db.VarChar(120)
+  rounds        Int
+  questionTypes String[] @default([])
+  outcome       String   @db.VarChar(10) // offer | rejected | withdrew | pending
+  difficulty    Int
+  body          String?  @db.VarChar(2000)
+  status        String   @default("visible") @db.VarChar(8) // visible | hidden
+  createdAt     DateTime @default(now())
+
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company LadderCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, status, createdAt(sort: Desc)])
+  @@index([userId, createdAt])
+  @@map("ladder_interview_report")
+}

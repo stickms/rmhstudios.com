@@ -4,7 +4,7 @@ import { TrendingUp, Gamepad2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { CoinIcon } from './CoinIcon';
@@ -82,7 +82,7 @@ export function RMHCoinsPage() {
     );
   }
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     { id: 'markets', label: t("tab-markets", { defaultValue: "Markets" }), icon: TrendingUp },
     { id: 'games', label: t("tab-games", { defaultValue: "Games" }), icon: Gamepad2 },
     forecastingTab,
@@ -130,11 +130,11 @@ export function RMHCoinsPage() {
         )}
       </div>
 
-      {/* Markets / Games switch — §5.45 tab sheet on the shared LiquidTabs renderer
+      {/* Markets / Games switch — §5.45 tab sheet on the shared Tabs renderer
           (§17.5: this strip was hand-rolled with no tab semantics, so the §16.2
           design-lint gate never saw it). Sits below the balance header. */}
       <div className="px-4">
-        <LiquidTabs
+        <Tabs
           tabs={tabs}
           value={tab}
           onChange={(id) => setTab(id as 'markets' | 'games' | 'forecasting')}

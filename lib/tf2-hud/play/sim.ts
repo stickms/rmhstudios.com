@@ -7,6 +7,7 @@
 import { currentWeapon, weaponsFor } from '../game-state';
 import { CLIP_SIZE, RESERVE_MAX } from './ammo';
 import type { TestState, Tf2Class } from '../fixtures';
+import { clamp } from '@/lib/core/math';
 
 /** A full clip and reserve for a class, as after spawning. */
 export const freshAmmo = (cls: Tf2Class): Pick<TestState, 'ammoClip' | 'ammoReserve'> => ({
@@ -32,8 +33,6 @@ export const PLAY_KEYS: readonly { key: string; label: string }[] = [
   { key: 'T', label: 'Target ID' },
   { key: 'A', label: 'Alert' },
 ];
-
-const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
 /** A key or click. Returns `null` when it does nothing in this state. */
 export function press(s: TestState, rawKey: string): SimResult | null {

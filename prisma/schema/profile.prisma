@@ -1,0 +1,625 @@
+// Per-type notification opt-outs. A missing row means "everything on"
+// (the default) — rows are created on first save from the preferences panel.
+// Moderation notices (SYSTEM/strike) are always delivered regardless.
+model NotificationPreference {
+  userId      String  @id
+  likes       Boolean @default(true)
+  comments    Boolean @default(true) // includes replies
+  follows     Boolean @default(true)
+  mentions    Boolean @default(true)
+  reposts     Boolean @default(true)
+  system      Boolean @default(true) // achievements, levels, coins, …
+  // Weekly digest email (opt-in). Missing row / unset = off; users turn it on
+  // in settings. Kept opt-in for deliverability + consent hygiene.
+  emailDigest Boolean @default(false)
+
+  // Notification center v2 (§16): per-category × per-channel matrix
+  // ({ [category]: { inapp, push, email } }; missing = category default) plus
+  // quiet hours. The booleans above stay until every notifier is migrated onto
+  // lib/notify/dispatch.server.ts.
+  matrix     Json    @default("{}")
+  quietStart Int? // minutes from midnight, user tz
+  quietEnd   Int?
+  tz         String? @db.VarChar(40)
+
+  /// Who may start a voice call with this user: 'everyone' | 'mutuals'
+  /// (people who follow each other) | 'nobody'. Enforced server-side in the call
+  /// signaling handler, never by the caller's client.
+  callPrivacy String @default("mutuals") @db.VarChar(10)
+
+  /// How this user wants calls answered: 'ring' (ring normally, no reply) |
+  /// 'ring_reply' (ring; if busy or unanswered, send a short automatic DM) |
+  /// 'reply_only' (do not ring; send the automatic DM instead). Enforced by the
+  /// call hub, and the DM is sent by the web tier (lib/call/auto-reply.server.ts).
+  callAnswerMode String  @default("ring") @db.VarChar(12)
+  /// What the automatic reply may say about why the user is unavailable. Free
+  /// text from the user, treated as data (never instructions) by the writer.
+  callBusyNote   String? @db.VarChar(200)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preference")
+}
+
+// Per-user appearance preferences, synced across devices (localStorage is the
+// no-flash cache; this row is the source of truth once signed in). Every field is
+// nullable and means "use the built-in default" when unset, so new preference
+// knobs (density, font scale, …) can be added later as additional nullable
+// columns without a data backfill. A missing row = all defaults.
+model AppearancePreference {
+  userId             String  @id
+  style              String? // site theme id (see SITE_STYLES); null → DEFAULT_STYLE (Glass Dark)
+  accent             String? // accent preset id (see ACCENT_PRESETS); null → theme's own accent
+  reduceTransparency Boolean @default(false) // retired; ignored by the API and renderer
+  // Appearance & accessibility suite (§13). Null = built-in default.
+  fontScale          Int? // 875 | 1000 | 1125 | 1250 (per-mille; avoids floats)
+  density            String? @db.VarChar(8) // 'cozy' | 'compact'
+  readableFont       Boolean @default(false)
+  customAccent       String? @db.VarChar(7) // '#rrggbb'; wins over `accent` preset
+  reduceMotion       Boolean @default(false)
+  glassLevel         Int? // retired; retained for database compatibility, never applied
+  /// Colour-vision deficiency mode: 'deuteranopia' | 'protanopia' |
+  /// 'tritanopia'; null/'none' → the untouched palette. Retints the semantic
+  /// success/danger/warning tokens only.
+  colorVision        String? @db.VarChar(16)
+  /// Globe-eversion navigation transition (spec §9.3): 'random' | one
+  /// projection id (see NAV_TRANSITIONS in lib/eversion/types.ts); null →
+  /// 'random'. Nullable with no backfill so the old image never names it.
+  navTransition      String? @db.VarChar(16)
+  /// "Always evert globe" (spec amendment 2026-10-18): run the eversion even
+  /// where it is skipped for performance. Never overrides reduced motion.
+  alwaysEvertGlobe   Boolean @default(false)
+  /// Eversion level (spec amendment 2026-10-21): 'all' | 'globe' (see
+  /// EVERSION_LEVELS in lib/appearance/prefs.ts); null -> 'all'. Nullable with
+  /// no backfill so the old image never names it.
+  eversionLevel      String? @db.VarChar(8)
+  /// Jelly motion (Plasmatic Jelly R8): 'lively' | 'calm' | 'still' (see
+  /// JELLY_MOTION_LEVELS in lib/appearance/prefs.ts); null -> 'lively'. A new
+  /// column on purpose: the retired `reduceMotion` holds stale values with
+  /// different semantics. Nullable with no backfill.
+  jellyMotion        String? @db.VarChar(8)
+  /// Electric arcs (Plasmatic Jelly R9): 'full' | 'clicks' | 'off' (see
+  /// ELECTRIC_ARC_MODES); null -> 'full'. Nullable with no backfill.
+  electricArcs       String? @db.VarChar(8)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("appearance_preference")
+}
+
+// Home dashboard & sidebar customization (§15) — "your daily surfaces, your
+// order". Deliberately separate from AppearancePreference (looks vs where;
+// different churn). `sidebar` holds { pinned: string[], hidden: string[] } of
+// nav item ids; `homeStack` is an ordered list of widget config
+// ({ kind, collapsed? }); [] / {} both mean "use the defaults". Unknown ids are
+// dropped at read time by parseLayoutPref (forward-safe across removed apps).
+model LayoutPreference {
+  userId    String   @id
+  sidebar   Json     @default("{}")
+  homeStack Json     @default("[]")
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("layout_preference")
+}
+
+// ─── User Profile (Social) ──────────────────────────────────────
+
+model UserProfile {
+  id                    String    @id @default(cuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName           String?   @db.VarChar(50)
+  customImage           String?
+  customImageSizeBytes  Int?
+  bio                   String?   @db.VarChar(160)
+  location              String?   @db.VarChar(100)
+  website               String?   @db.VarChar(200)
+  // Link-in-bio: an ordered list of { label, url } (max 5), stored as JSON.
+  links                 Json?
+  // Profile banner/cover image (WebP in object storage). Size tracked for quota.
+  bannerUrl             String?   @db.VarChar(300)
+  bannerSizeBytes       Int?
+  showLikes             Boolean   @default(false)
+  dmPrivacy             DmPrivacy @default(EVERYONE)
+  // Rich presence & Friends rail (§9). Who may see this user in the rail /
+  // activity line: 'mutuals' (default, Discord-like), 'followers', or 'nobody'.
+  // presenceDetail=false → online/offline only, activity hidden. Presence
+  // activity itself is ephemeral (expires with the heartbeat) — no column.
+  presenceVisibility    String    @default("mutuals") @db.VarChar(12)
+  presenceDetail        Boolean   @default(true)
+  // Profile guestbook (plan U15): who may sign — 'off' (default), 'following'
+  // (people this user follows) or 'everyone'. Opt-in by design.
+  guestbookMode         String    @default("off") @db.VarChar(12)
+  // Reader content control: feed posts whose text contains any of these words
+  // are hidden from this user (case-insensitive substring match). Opt-in.
+  mutedWords            String[]  @default([])
+  // Optional deadlines for muted words: { [word]: epochMs }. A word with no entry is
+  // muted until removed (lib/feed/muted-expiry.ts).
+  mutedWordExpiries     Json      @default("{}")
+  profileSongSpotifyId  String?   @db.VarChar(50)
+  profileSongTitle      String?   @db.VarChar(200)
+  profileSongArtist     String?   @db.VarChar(200)
+  profileSongPreviewUrl String?   @db.VarChar(500)
+  profileSongAlbumArt   String?   @db.VarChar(500)
+
+  // Custom status (parity/QOL spec §10): a short emoji + text presence line
+  // shown on the profile, hover cards, DMs, and (later) the friends rail.
+  // `statusExpires` is enforced at read time (past = no status); `statusAuto`
+  // mirrors rich presence as a now-playing line when no manual status is set.
+  statusEmoji   String?   @db.VarChar(16)
+  statusText    String?   @db.VarChar(80)
+  statusExpires DateTime?
+  statusAuto    Boolean   @default(false)
+
+  // History & resume (§5): when true, no new HistoryEntry rows are recorded.
+  historyPaused Boolean @default(false)
+
+  // Wishlists (§8): public-by-default so friends can see what you want (gifting).
+  wishlistPublic Boolean @default(true)
+
+  // RMH Coins
+  coins          BigInt  @default(10)
+  hasProfilePet  Boolean @default(false)
+  showProfilePet Boolean @default(true)
+
+  // Progression: lifetime platform XP (level is derived from this)
+  xp Int @default(0)
+
+  // Creator tip goal (monthly coins target shown on the profile)
+  tipGoal      Int?
+  tipGoalLabel String? @db.VarChar(80)
+
+  // Per-creator memberships: monthly price in coins to become a member of this
+  // creator (null/0 = memberships disabled). Paid from the supporter's coins.
+  membershipPriceCoins Int?
+
+  // First-run onboarding checklist: when the completion reward was claimed
+  // (null = not claimed; also acts as the atomic double-claim guard)
+  onboardingRewardedAt DateTime?
+
+  // Onboarding v2 "First Week" arc: when the graduation reward was claimed
+  // (null = not graduated; atomic double-claim guard, like onboardingRewardedAt)
+  firstWeekRewardedAt DateTime?
+
+  // Gifting v2: whether this user accepts peer coin gifts (opt-out). When false,
+  // /api/coins/gift rejects gifts to them.
+  receiveGifts Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Leaderboard scans (global by xp / by coins) — without these the leaderboard
+  // is a full-table sort of user_profile on every load.
+  @@index([xp(sort: Desc)])
+  @@index([coins(sort: Desc)])
+  @@map("user_profile")
+}
+
+// ─── DM Privacy ───────────────────────────────────────────────────
+
+enum DmPrivacy {
+  EVERYONE
+  FOLLOWERS
+  NONE
+}
+
+// ─── Trading cards ────────────────────────────────────────────────────────
+// Rules: lib/cards/cards.ts; design: docs/superpowers/specs/2026-10-30-trading-cards-design.md.
+// Cards drop from playtime (one per 30 min, 3 per title). Composite keys, no
+// surrogate ids: a card is (gameId, cardIndex), and a stack is one row with a count.
+
+model UserCard {
+  userId    String
+  gameId    String   @db.VarChar(64)
+  cardIndex Int      @db.SmallInt
+  foil      Boolean  @default(false)
+  /// Stack size; the migration adds CHECK (count > 0) and a row is deleted at zero.
+  count     Int
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, gameId, cardIndex, foil])
+  @@map("user_card")
+}
+
+/// Profile guestbook (plan U15) — short notes visitors leave on a profile.
+/// Owner-controlled (`UserProfile.guestbookMode`); the owner can hide any entry
+/// (soft, `hiddenAt`), the author can delete their own. One entry per author
+/// per owner per day is enforced on `(authorId, ownerId, createdAt)`.
+model GuestbookEntry {
+  id        String    @id @default(cuid())
+  ownerId   String
+  authorId  String
+  body      String    @db.VarChar(280)
+  hiddenAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  owner  User @relation("GuestbookOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  author User @relation("GuestbookAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([authorId, ownerId, createdAt])
+  @@map("guestbook_entry")
+}
+
+// Close Friends circle (§11): one private circle per owner. Membership is
+// silent (no notifications) and never publicly visible. CIRCLE-audience posts
+// are visible only to the owner and their circle members.
+model CloseFriend {
+  ownerId  String
+  memberId String
+  addedAt  DateTime @default(now())
+
+  owner  User @relation("CircleOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  member User @relation("CircleMember", fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([ownerId, memberId])
+  @@index([memberId]) // viewer-side feed predicate: circles I'm in
+  @@map("close_friend")
+}
+
+// Theme Studio (§14): user-authored site themes as a marketplace cosmetic.
+// `tokens` is a closed, versioned token map (lib/themes/tokens.ts) — never CSS
+// strings — so publishing a theme can't inject styles. Ownership rides
+// UserInventory (kind THEME, itemId "user:<themeId>").
+enum UserThemeStatus {
+  DRAFT
+  PUBLISHED
+  DELISTED
+}
+
+model UserTheme {
+  id         String          @id @default(cuid())
+  authorId   String
+  name       String          @db.VarChar(40)
+  tokens     Json // { v: 1, ...closed key set }
+  status     UserThemeStatus @default(DRAFT)
+  priceCoins Int? // null while draft; 200–5000 published
+  sales      Int             @default(0)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([status, sales(sort: Desc)])
+  @@index([authorId])
+  @@map("user_theme")
+}
+
+// Profile v2 (§12): a composable profile showcase. `modules` is an ordered,
+// zod-validated list of { kind, config } blocks (lib/profile/modules.ts).
+// Empty = the classic profile (unedited profiles are unchanged).
+model ProfileLayout {
+  userId    String   @id
+  modules   Json     @default("[]")
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profile_layout")
+}
+
+/// A profile link, promoted out of the JSON blob it used to live in so it can
+/// carry verification state and be indexed by.
+model ProfileLink {
+  id            String    @id @default(cuid())
+  userId        String
+  url           String    @db.VarChar(300)
+  label         String?   @db.VarChar(60)
+  position      Int       @default(0)
+  /// Set when the target page links back with rel="me" to this profile.
+  verifiedAt    DateTime?
+  lastCheckedAt DateTime?
+  /// Normalised host, so "which accounts claim this domain?" is one query —
+  /// which is what an impersonation investigation actually runs.
+  host          String?   @db.VarChar(200)
+  createdAt     DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, position])
+  @@index([host])
+  @@map("profile_link")
+}
+
+/// Ordered blocks for the link-in-bio page (F8).
+///
+/// `ProfileLink` stays the source of truth for links (it carries the `rel=me`
+/// verification). This is the *layout* around them, which is why a block can
+/// reference a link, embed a platform object, or render a live "now playing"
+/// pulled from the Activity stream — the one thing no link-in-bio service can
+/// offer.
+model ProfileBlock {
+  id        String   @id @default(cuid())
+  userId    String
+  /// 'link' | 'heading' | 'embed' | 'now'
+  kind      String   @db.VarChar(12)
+  position  Int      @default(0)
+  /// Shape depends on kind; validated by lib/profile-links/blocks.ts.
+  config    Json     @default("{}")
+  clicks    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, position])
+  @@map("profile_block")
+}
+
+// ─── The cross-game assist layer (P7, 2026-09-19) ─────────────────────────
+// `lib/game-capabilities.ts` named this as a known absence in its own header:
+// "accessibility is empty for almost every game, and that is not an oversight;
+// the cross-game assist layer has not been built."
+//
+// Separate from `AppearancePreference` rather than folded into it, because
+// these are not the same kind of setting. That one changes how the SITE looks
+// and costs nothing; these change how a GAME plays and cost leaderboard
+// eligibility. Putting a switch with that consequence next to a font-size
+// slider would misrepresent what it does.
+
+/// One row per member who has ever changed a game assist. Absent = defaults.
+model GameAssistPreference {
+  userId String @id
+
+  /// A held input stands in for repeated mashing.
+  holdToPress Boolean @default(false)
+
+  /// Slowest the game may run its clock, per mille (500–1000). Stored as an
+  /// integer for the same reason `AppearancePreference.fontScale` is: a float
+  /// that round-trips through JSON and a form is a float that eventually is
+  /// not the number anybody typed.
+  speedFloorPerMille Int @default(1000)
+
+  /// Suppress flashing, strobing and screen shake. The in-game counterpart to
+  /// the site-wide `AppearancePreference.reduceMotion`, which a canvas cannot
+  /// honour on its own.
+  calmVisuals Boolean @default(false)
+
+  /// Do not encode state in hue alone. The in-game counterpart to
+  /// `AppearancePreference.colorVision`, which retints semantic tokens and so
+  /// reaches the chrome around a game but never the game's own renderer.
+  colorSafe Boolean @default(false)
+
+  /// Remove or extend reaction-time windows.
+  noTimedInput Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("game_assist_preference")
+}
+
+// ─── Member memory (M3, 2026-09-19) ───────────────────────────────────────
+// `lib/ai/` has coach, recap, catch-up and summarize, plus persona-chat —
+// five surfaces that each rebuild their idea of a member from scratch on every
+// call. The assistant does not know you just finished a season, the coach does
+// not know what you asked the assistant, and the recap re-derives what the
+// coach already computed.
+//
+// Member-editable and member-DELETABLE is not a nice-to-have on this table. A
+// memory somebody cannot see is a liability, and `lib/account-lifecycle.ts`
+// already establishes that everything about a member is exportable and
+// erasable. A row here is a claim the site is making about a person; they get
+// to read it and strike it out.
+
+/// One durable fact about a member, as the AI surfaces see them.
+model MemberMemory {
+  id     String @id @default(cuid())
+  userId String
+
+  /// Namespaced key: 'prefers.game' | 'goal.active' | 'milestone.recent' | …
+  /// Namespaced so a surface can read a family without knowing every key, and
+  /// so a key can be retired without a migration.
+  key String @db.VarChar(64)
+
+  /// The fact, in plain language. Never a blob: this is shown to the member
+  /// verbatim on the memory page, so anything they cannot read has no business
+  /// being here.
+  value String @db.VarChar(400)
+
+  /// Which surface wrote it — 'coach' | 'recap' | 'assistant' | 'member'.
+  /// A member-written row is authoritative and is never overwritten by a
+  /// surface; somebody correcting the site about themselves should not have to
+  /// do it twice.
+  source String @db.VarChar(16)
+
+  /// Set when the member has explicitly confirmed or edited the row. Used to
+  /// protect it from being rewritten, and to show which facts they have
+  /// actually looked at.
+  confirmedAt DateTime?
+
+  /// Memories decay: a goal from March is not a goal. A surface writing a row
+  /// sets this, and reads filter on it, so nothing has to sweep.
+  expiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// One value per key per member — a memory is a fact, not a log.
+  @@unique([userId, key])
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("member_memory")
+}
+
+/// A named set of equipped cosmetics (C6). `itemIds` are catalog ids, at most
+/// one per kind; applying a preset equips the ones the member still owns.
+model LoadoutPreset {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   @db.VarChar(40)
+  itemIds   String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+  @@map("loadout_preset")
+}
+
+// ── P05: P1-P10 (profiles & identity) ──
+
+/// The small per-member scalars the profile features need (pronouns, timezone,
+/// /now, pronunciation clip, visitor counter). One optional row per member, kept
+/// off `user_profile` so the hottest table on the site is not widened and so a
+/// member who never touches these features costs nothing.
+model ProfilePlus {
+  userId           String    @id
+  /// "she/her", "they/them" - free text, validated to letters and separators.
+  pronouns         String?   @db.VarChar(40)
+  /// Opt-in IANA zone ("America/New_York"). Null = the member does not share it.
+  timezone         String?   @db.VarChar(64)
+  /// The /now block: plain text, links allowed, at most 500 characters.
+  nowText          String?   @db.VarChar(500)
+  nowUpdatedAt     DateTime?
+  /// Object-storage key of the <=5 s name-pronunciation clip, and its length.
+  pronunciationKey String?   @db.VarChar(200)
+  pronunciationMs  Int?
+  /// Opt-in retro hit counter. `visitCount` only ever moves through
+  /// `recordProfileVisit`, which dedupes per visitor per day.
+  counterEnabled   Boolean   @default(false)
+  visitCount       Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  visits ProfileVisitDay[]
+
+  @@map("profile_plus")
+}
+
+/// Dedupe ledger for the visitor counter: one row per (profile, day, visitor
+/// hash). The hash is salted with the profile id and the day, so it cannot be
+/// joined across profiles or days. Rows older than two days are swept.
+model ProfileVisitDay {
+  profileId String
+  day       DateTime @db.Date
+  visitor   String   @db.VarChar(40)
+
+  profile ProfilePlus @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+
+  @@id([profileId, day, visitor])
+  @@index([day])
+  @@map("profile_visit_day")
+}
+
+/// A member-made stamp (a tiny image badge). Image limits are enforced at upload
+/// (`lib/profile/stamps.ts`). `removedAt` is the moderation takedown.
+model Stamp {
+  id        String    @id @default(cuid())
+  creatorId String
+  name      String    @db.VarChar(40)
+  imageKey  String    @db.VarChar(200)
+  imageUrl  String    @db.VarChar(300)
+  width     Int
+  height    Int
+  bytes     Int
+  /// Denormalised count of profile walls carrying it (for "popular").
+  addCount  Int       @default(0)
+  removedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  creator    User           @relation("StampCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  placements ProfileStamp[]
+
+  @@index([creatorId, createdAt(sort: Desc)])
+  @@index([removedAt, createdAt(sort: Desc)])
+  @@index([removedAt, addCount(sort: Desc)])
+  @@map("stamp")
+}
+
+/// A stamp on a member's profile wall (cap enforced in `addStampToWall`).
+model ProfileStamp {
+  userId    String
+  stampId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stamp Stamp @relation(fields: [stampId], references: [id], onDelete: Cascade)
+
+  @@id([userId, stampId])
+  @@index([stampId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("profile_stamp")
+}
+
+/// A member-run webring. Order is join order (`lib/profile/webring.ts`).
+model Webring {
+  id          String    @id @default(cuid())
+  slug        String    @unique @db.VarChar(64)
+  name        String    @db.VarChar(60)
+  description String?   @db.VarChar(280)
+  ownerId     String
+  memberCount Int       @default(0)
+  removedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  owner   User            @relation("WebringOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members WebringMember[]
+
+  @@index([ownerId])
+  @@index([removedAt, memberCount(sort: Desc)])
+  @@map("webring")
+}
+
+model WebringMember {
+  ringId   String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  ring Webring @relation(fields: [ringId], references: [id], onDelete: Cascade)
+  user User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([ringId, userId])
+  @@index([userId])
+  @@index([ringId, joinedAt])
+  @@map("webring_member")
+}
+
+/// "I vouch for this member's <skill>". `skill` is one of the fixed ids in
+/// `lib/profile/skills.ts`; one endorsement per endorser per skill per member.
+model SkillEndorsement {
+  endorserId String
+  targetId   String
+  skill      String   @db.VarChar(32)
+  createdAt  DateTime @default(now())
+
+  endorser User @relation("EndorsementGiven", fields: [endorserId], references: [id], onDelete: Cascade)
+  target   User @relation("EndorsementReceived", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@id([endorserId, targetId, skill])
+  @@index([targetId, skill])
+  @@map("skill_endorsement")
+}
+
+// ── P18: delight (Z2 hunt, Z3 museum, Z4 fortune, Z6 photo of the day, Z8 flag, Y4 translations) ──
+
+/// Z8: tiny admin key/value switches (e.g. `aprilfools` = "1"). Off when absent.
+model DelightSetting {
+  key       String   @id @db.VarChar(40)
+  value     String   @db.VarChar(200)
+  updatedAt DateTime @updatedAt
+
+  @@map("delight_setting")
+}
+
+/// Z3: admin-edited timeline of site eras.
+model SiteEra {
+  id        String   @id @default(cuid())
+  eraDate   DateTime @db.Date
+  title     String   @db.VarChar(120)
+  body      String   @db.VarChar(2000)
+  imageUrl  String?  @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  @@index([eraDate])
+  @@map("site_era")
+}

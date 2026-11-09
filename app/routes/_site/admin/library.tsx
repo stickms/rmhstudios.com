@@ -26,7 +26,7 @@ import { useTranslation } from 'react-i18next';
 import { Inbox, RefreshCw, HardDrive } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { PageTabs } from '@/components/feed/PageTabs';
-import { type LiquidTab } from '@/components/ui/liquid-tabs';
+import { type TabItem } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { QuotaAppealsPanel } from '@/components/admin/library/QuotaAppealsPanel';
 import { StorageHealthPanel } from '@/components/admin/library/StorageHealthPanel';
@@ -55,7 +55,7 @@ function AdminLibraryPage() {
     [navigate],
   );
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     {
       id: 'appeals',
       label: t('library-quota-tab', { defaultValue: 'Upload appeals' }),

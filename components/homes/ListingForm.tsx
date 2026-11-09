@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select';
 import { AMENITY_OPTIONS, propertyTypeLabel } from '@/lib/homes/format';
 import {
@@ -148,7 +148,7 @@ export function ListingForm({ listing }: ListingFormProps) {
 
       {/* Type + property */}
       <div className="flex flex-wrap items-center gap-3">
-        <LiquidTabs
+        <Tabs
           size="sm"
           tabs={[
             { id: 'RENT', label: 'For rent' },

@@ -2,7 +2,7 @@
    Spec: docs/superpowers/specs/2026-11-07-css-first-jelly-design.md (CSS-first jelly); the older material notes are
    docs/plans/plasmatic-jelly/01-material.md §3 (CSS tier), §4 (tokens), §5 (legibility) and 00-master-plan.md R5 (no
    flag: jelly applies unconditionally), R6, §4.4–4.5 (attributes, tokens).
-   Imported by globals.css right AFTER liquid-glass.css: some role rules below restate liquid-glass.css rules at the
+   Imported by globals.css right AFTER glass-roles.css: some role rules below restate glass-roles.css rules at the
    same specificity and win on source order.
 
    What lives here
@@ -230,7 +230,7 @@
 
   /* ── 2b. Gel layers (#989 layers 1 and 4; docs/plasmatic-jelly-system.md §1.1) ─────────────
      `--liquid-coat` is the gel body → depth gradient: vertical and subtle, darker toward the base, from the theme's
-     `--gel-body` / `--gel-depth`. Restated on the host (liquid-glass.css declares it on :root) so it resolves against
+     `--gel-body` / `--gel-depth`. Restated on the host (glass-roles.css declares it on :root) so it resolves against
      the host's own theme block, as `--jelly-static-haze` does above.
      `--gel-edge` is the RGB-led rim (the multi-inset form the coverage tier still uses): three thin, low-alpha inset shadows `--gel-bevel`
      soft, each offset by its `--gel-disperse-*` token (negated, because an inset shadow shows on the side OPPOSITE its
@@ -289,8 +289,8 @@
       );
   }
   /* The floor joins each role's background stack, under the clear coat. Same selectors (and specificity) as the
-     liquid-glass.css rules they extend, so these win on source order; Tailwind utilities still win on layer, and the
-     unlayered degradation rules (globals.css, liquid-glass.css) still strip everything. */
+     glass-roles.css rules they extend, so these win on source order; Tailwind utilities still win on layer, and the
+     unlayered degradation rules (globals.css, glass-roles.css) still strip everything. */
   :is(.glass-pane, .glass-chrome, .glass-overlay):not([data-liquid-material='off']) {
     background-image: var(--liquid-coat), var(--jelly-floor);
     background-size: auto, var(--jelly-floor-size);
@@ -336,7 +336,7 @@
      density on a fine-pointer hover, so veil + streak (≤ 0.45 α) stays inside the α range jelly-legibility.test.ts
      bounds.
      The negative z-index needs an isolated host, so the host rule isolates it (nothing else does: the engine attributes that
-     liquid-glass.css used to isolate on are gone); the roles are positioned already (liquid-glass.css, the button's
+     glass-roles.css used to isolate on are gone); the roles are positioned already (glass-roles.css, the button's
      `relative`). Wake starts at the identity frame (no phase delay): only the hovered host runs, so there is nothing
      to fall into lockstep with, and a delay would snap the streaks to a later frame on wake. */
   html:not(.native-material)
@@ -994,7 +994,7 @@ html[data-game-state='playing']
    both ends, so a surface re-mounted mid-fade turns around from the frame it is on). The fade is on `opacity`; the list also
    carries the soft body's spring hook (`--jelly-spring-t`, §8), which this rule would otherwise override on a card.
 
-   Gated on `html[data-jelly-ready]`, stamped by `useLiquidInteractions` once the material has started, so the document's
+   Gated on `html[data-jelly-ready]`, stamped by `useJellyPointer` once the material has started, so the document's
    own first paint is never faded: an element at opacity 0 is not an LCP candidate and the server-rendered page must be
    there at first contentful paint (the same reason `.page-root > *` skips its enter until `data-navigated`).
    Fills and panes only: floating roles (`overlay`, `chrome`) already have their own enter (dialog.css, sheet.css,
@@ -1043,7 +1043,7 @@ html[data-game-state='playing']
    controls included, and its members add no squash, dent or opacity cue of their own (except a keyboard-activated,
    `:focus-visible` member, which keeps the opacity cue: Chromium does not mark the body active for a keyboard press, so
    the body does not squash then). A pane or chrome slab is a host
-   only as a press body, and never plumps on hover (it is always under the pointer). LiquidTabs strips are not bodies:
+   only as a press body, and never plumps on hover (it is always under the pointer). Tabs strips are not bodies:
    the track is a field, which never moves. lib/__tests__/jelly-soft-body.test.ts pins all of it.
 
    Scope: off native-material routes (`html.native-material`: /tf2, /games keep their own scheme) and while a game is in
@@ -1053,7 +1053,7 @@ html[data-game-state='playing']
 
    The transition: a host whose own sheet or utility states a `transition` keeps it (the hook is zero-specificity, in
    `@layer base`), so its scale change applies without the spring; the shared ones that matter append the hook
-   (`--jelly-spring-t`: the Button in globals.css, `.glass-interactive` in liquid-glass.css, the entrance fade in §7). */
+   (`--jelly-spring-t`: the Button in globals.css, `.glass-interactive` in glass-roles.css, the entrance fade in §7). */
 :root {
   /* The no-op the hook falls back to off the jelly scope: a custom property cannot transition, so this does nothing. */
   --jelly-spring-t: --jelly-spring-none 0s;

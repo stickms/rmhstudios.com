@@ -32,7 +32,6 @@ import { Button } from '@/components/ui/button';
 import { CallButton } from '@/components/call/CallButton';
 import { GroupCallButton } from '@/components/groupcall/GroupCallButton';
 import { CopyButton } from '@/components/ui/copy-button';
-import { GlassPane } from '@/components/ui/liquid-glass';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { safeHref } from '@/lib/url-safety';
@@ -191,7 +190,7 @@ export function ProfileHero({
 
   return (
     <div className="space-y-3 px-2 pt-3 sm:px-3">
-      <GlassPane refract liquid className="relative overflow-hidden p-0">
+      <div data-slot="glass-pane" data-liquid-glass="refract" className="glass-pane relative overflow-hidden p-0">
         <div className="relative h-36 overflow-hidden sm:h-44">
           {profile.bannerUrl ? (
             <div
@@ -541,7 +540,7 @@ export function ProfileHero({
             </div>
           ) : null}
         </div>
-      </GlassPane>
+      </div>
 
       {profile.membershipPriceCoins || profile.tipGoal ? (
         <div className="grid gap-3 sm:grid-cols-2">

@@ -19,10 +19,10 @@
    painted in Georgia and re-shaped in front of the reader. A declaration costs
    only its text; a file downloads only when a page actually uses the face. */
 @import './fonts/site-display.css';
-@import './liquid-glass.css';
+@import './glass-roles.css';
 /* Plasmatic Jelly (docs/plans/plasmatic-jelly/00-master-plan.md): the material
    (role knobs, woken haze, static haze floor, CSS rim, degradation), the
-   electric-arc layer, and the coverage adapters. After liquid-glass.css on
+   electric-arc layer, and the coverage adapters. After glass-roles.css on
    purpose — jelly-material.css restates some of its role rules at the same
    specificity and must win on source order. */
 @import './jelly-material.css';
@@ -456,7 +456,7 @@
      a full pill up to 48px tall (every button, field and tab), and a softly rounded rectangle above that, so a tall
      box never turns into a lozenge. Controls ARE the small radius: one number, so a field beside a button matches.
      Panels and popups take the card radius, never the control's. A control's inline padding is about half its height
-     (button.tsx, input.tsx, badge.tsx, liquid-tabs.tsx), which keeps the text optically centred in its rounded ends. */
+     (button.tsx, input.tsx, badge.tsx, tabs.tsx), which keeps the text optically centred in its rounded ends. */
   --site-radius: 32px;
   --site-radius-sm: 24px;
   --site-control-radius: var(--site-radius-sm);
@@ -1349,7 +1349,7 @@ html.app-route {
   initial-value: 1;
 }
 
-/* Liquid material is implemented independently in liquid-glass.css.
+/* Liquid material is implemented independently in glass-roles.css.
    The former frost/lens/sheen implementation has been removed. */
 
 /* Touch / coarse pointers (§4.35): use a simpler linear top-edge sun. All input
@@ -1446,7 +1446,7 @@ html.app-route {
 /* §5.47 true liquid morphing — the goo underlay. An absolutely-positioned,
    capsule-only layer behind a control's active capsule that carries the
    #glass-goo metaball filter so the moving capsule and its trailing droplet fuse
-   into a stretching teardrop (see components/ui/liquid-morph.tsx).
+   into a stretching teardrop.
    Constraints (hard):
      - `contain: layout paint` isolates the filter region and clips the droplet.
      - It hosts ONLY plain accent-tint blobs — never a backdrop-filter element
@@ -2944,7 +2944,7 @@ textarea,
    group, bar or pill squashes as one body), except a `:focus-visible` member: a keyboard Space/Enter sets `:active` on
    the member alone, the body does not squash, and this cue is its only press feedback. (A member focused from the
    keyboard and then clicked can still match `:focus-visible` in Chromium, so that one press shows both.) One that the soft body leaves alone (an opted-out member outside a body, a
-   plain link outside any host, a tab in a LiquidTabs strip, a native-material route, a game in play) keeps this cue.
+   plain link outside any host, a tab in a Tabs strip, a native-material route, a game in play) keeps this cue.
    lib/__tests__/jelly-soft-body.test.ts holds the guard equal to the host rule. */
 :is(
     a:not(.glass-interactive),
@@ -4432,7 +4432,7 @@ html.nav-pop .page-root > * {
    laid over the control in its own shape. `lib/evert-auto.ts` places it with an inline `translate` and size (re-placed
    only on scroll and resize while it is up) and copies the control's radius; the hover ghost carries
    `data-liquid-glass="lit"`, so the glass engine draws the shared optical response (tilt, light, rim) on it exactly
-   as on a control that holds its own slab (app/liquid-glass.css drops the static coat once that canvas is on).
+   as on a control that holds its own slab (app/glass-roles.css drops the static coat once that canvas is on).
    Restored after a39a095e deleted these base rules with the old scale eversion while the script still creates the
    ghost — without them it fell to the end of <body> as a static block and added page height (F2, 2026-10-23).
    Adapted to the current layer and the jelly contract: it is fixed and out of flow, never takes the pointer, is an
@@ -5643,10 +5643,10 @@ body {
 }
 
 /* ==========================================================================
-   LiquidTabs — the segmented control (2026-10-09)
+   Tabs — the segmented control (2026-10-09)
    ------------------------------------------------------------------------
    A neutral raised THUMB on a flush TRACK, one row, labels never truncated.
-   The reasoning is in the `liquid-tabs.tsx` docblock; the short version:
+   The reasoning is in the `tabs.tsx` docblock; the short version:
 
      - the active tab used to be a solid accent pill — on the default theme the
        exact black pill every primary BUTTON is, so "where you are" and "what you
@@ -5700,7 +5700,7 @@ body {
 }
 
 /* The edge fade — only on a side that actually has more tabs past it. Set by
-   `liquid-tabs.tsx` on the strip's own scroll; the mask is on the scroller, so
+   `tabs.tsx` on the strip's own scroll; the mask is on the scroller, so
    it fades the viewport edge, not a particular tab. */
 [data-slot='liquid-tabs'][data-fade-start='true'] {
   mask-image: linear-gradient(to right, transparent, #000 2rem);

@@ -45,6 +45,7 @@ import {
   STEER_MAX_LATERAL, roadHalf, CAR_BODY_COLOR,
 } from './constants';
 import { drawLivery, type Livery } from './livery';
+import { clamp } from '@/lib/core/math';
 
 // ── Framing ─────────────────────────────────────────────────────────────────
 
@@ -104,10 +105,6 @@ const eyeRight = new THREE.Vector3();
 function hash01(n: number): number {
   const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
   return x - Math.floor(x);
-}
-
-function clamp(v: number, min: number, max: number): number {
-  return v < min ? min : v > max ? max : v;
 }
 
 export interface RendererOptions {

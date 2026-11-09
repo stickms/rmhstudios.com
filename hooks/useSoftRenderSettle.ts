@@ -10,7 +10,7 @@ import { settleSoftRender } from '@/lib/low-end';
  * of a second GL context, and the games' canvas glow (`canvasGlowEnabled`) stays off. Both read the remembered finding,
  * so a direct visit to a game page still records it for the next load. It runs after the window `load` event, at idle
  * (400 ms at most), because the throwaway GL context it creates must not compete with hydration. It is a separate hook
- * from `useLiquidInteractions` on purpose: the jelly mount hook never probes the GPU.
+ * from `useJellyPointer` on purpose: the jelly mount hook never probes the GPU.
  */
 export function useSoftRenderSettle(): void {
   useEffect(() => {

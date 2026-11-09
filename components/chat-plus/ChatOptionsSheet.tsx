@@ -10,7 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
@@ -42,7 +42,7 @@ export default function ChatOptionsSheet({
 }) {
   const { t } = useTranslation('f-messaging');
   const [tab, setTab] = useState<Tab>('settings');
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     { id: 'settings', label: t('tab-settings', { defaultValue: 'Settings' }), icon: Settings2 },
     { id: 'media', label: t('tab-media', { defaultValue: 'Media' }), icon: ImageIcon },
     { id: 'links', label: t('tab-links', { defaultValue: 'Links' }), icon: Link2 },
@@ -59,7 +59,7 @@ export default function ChatOptionsSheet({
             })}
           </SheetDescription>
         </SheetHeader>
-        <LiquidTabs
+        <Tabs
           tabs={tabs}
           value={tab}
           onChange={(id) => setTab(id as Tab)}

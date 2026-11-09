@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiJson, errorCode } from '@/components/economy-plus/api';
 import type { ExchangeKind, ExchangeSummary } from '@/lib/gifting/exchange';
@@ -62,7 +62,7 @@ function CreateForm() {
       <h2 className="site-section-label">
         {t('create-title', { defaultValue: 'Start an exchange' })}
       </h2>
-      <LiquidTabs
+      <Tabs
         tabs={[
           { id: 'GIFT', label: t('kind-gift', { defaultValue: 'Gift exchange' }), icon: Gift },
           {

@@ -77,6 +77,7 @@ import {
   type HudTimer,
   type HudWeaponSlot,
 } from './hud-state';
+import { clamp01 } from '@/lib/core/math';
 
 // ─── The source ────────────────────────────────────────────────────────────
 
@@ -976,10 +977,6 @@ export function captionStyle(raw: string): { color: string | null; sfx: boolean 
 }
 
 // ─── Utilities ─────────────────────────────────────────────────────────────
-
-function clamp01(v: number): number {
-  return v <= 0 ? 0 : v >= 1 ? 1 : v;
-}
 
 function dropWhile<T>(arr: T[], pred: (v: T) => boolean): void {
   let i = 0;

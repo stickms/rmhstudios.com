@@ -1,0 +1,231 @@
+model VibePage {
+  id                  String   @id @default(cuid())
+  slug                String   @unique // short URL-safe identifier, e.g. "neon-city-3k"
+  prompt              String // original user prompt
+  title               String? // model-generated page title (tab + OG)
+  description         String? // model-generated description (OG/social)
+  html                String // full generated HTML — always mirrors the latest version
+  // Generation lifecycle: a brand-new page is created up front as "generating" (with
+  // a reserved slug) so the client can navigate to it immediately and the generation
+  // survives a dropped streaming connection; it flips to "ready" once the build is
+  // persisted, or "error" if generation failed. Existing/legacy rows default "ready".
+  status              String   @default("ready") // "generating" | "ready" | "error"
+  thumbnailUrl        String? // "/api/vibe/thumb/<slug>?v=<ts>" once the screenshot is captured
+  thumbnailStale      Boolean  @default(true) // true → the vibe-worker (re)renders the screenshot
+  conversationHistory Json // array of { role, content } turns for "customize" follow-ups
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  versions VibePageVersion[]
+
+  @@index([slug])
+  @@map("vibe_page")
+}
+
+// One immutable snapshot per generation step (the initial build and every
+// "customize" follow-up). Lets people browse the page's history — each version is
+// dated/timestamped — and branch a new customization off any earlier variant.
+model VibePageVersion {
+  id                  String   @id @default(cuid())
+  pageId              String
+  page                VibePage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  prompt              String // the prompt that produced this version
+  title               String? // page title at this version
+  description         String? // description at this version
+  html                String // full generated HTML for this version
+  conversationHistory Json // cumulative { role, content } history up to & including this version
+  createdAt           DateTime @default(now())
+
+  @@index([pageId, createdAt])
+  @@map("vibe_page_version")
+}
+
+// ─── LEDGER (Co-Scientist reproducibility substrate) ─────────────────────────
+
+model LedgerArtifact {
+  id          String   @id // "sha256:<hex64>"
+  contentType String // "fastq" | "bam" | "count_matrix" | "umap_png" | ...
+  sizeBytes   BigInt // raw byte count
+  storagePath String // relative path inside artifact root: "<hex[:2]>/<hex64>"
+  createdAt   DateTime @default(now())
+
+  stepOutputs LedgerPlanStep[]  @relation("StepOutput")
+  stepInputs  LedgerStepInput[]
+
+  @@map("ledger_artifact")
+}
+
+model LedgerPlanRun {
+  id          String    @id @default(cuid())
+  bundleId    String    @unique // "run-YYYYMMDD-HHMMSS-xxxxxx"
+  description String?
+  status      String    @default("pending") // pending | running | completed | failed
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  steps LedgerPlanStep[]
+
+  @@map("ledger_plan_run")
+}
+
+model LedgerPlanStep {
+  id               String    @id @default(cuid())
+  runId            String
+  stepIndex        Int
+  tool             String // "fastqc" | "star" | "deseq2" | ...
+  toolVersion      String // "0.11.9" | "2.7.11b" | "1.44.0"
+  imageDigest      String? // "sha256:<container digest>"
+  params           Json // {"--runThreadN": 8, ...}
+  status           String    @default("pending") // pending | running | completed | failed | cached
+  startedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  outputArtifactId String?
+
+  run    LedgerPlanRun     @relation(fields: [runId], references: [id], onDelete: Cascade)
+  output LedgerArtifact?   @relation("StepOutput", fields: [outputArtifactId], references: [id])
+  inputs LedgerStepInput[]
+
+  @@index([runId, stepIndex])
+  @@map("ledger_plan_step")
+}
+
+model LedgerStepInput {
+  stepId     String
+  artifactId String
+  role       String // semantic label: "fastq" | "genome_index" | "count_matrix"
+
+  step     LedgerPlanStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  artifact LedgerArtifact @relation(fields: [artifactId], references: [id])
+
+  @@id([stepId, artifactId])
+  @@map("ledger_step_input")
+}
+
+// ─── RMH Datacenter: compute a member actually bought (W2, 2026-09-19) ────
+// The datacenter microsite draws capacity meters from a static file while the
+// platform genuinely sells compute: `lib/ai/budget.server.ts` meters AI spend
+// per tier, `ImageGenBudget` caps generation, RMHVibe bills builds against
+// Kimi and DeepSeek, and `AiUsage` records all of it. The fiction and the
+// infrastructure were describing the same thing and not talking.
+//
+// This is also the coin sink W7's inventory said the economy needs. It is the
+// one sink whose price can be set honestly rather than arbitrarily, because
+// providing it costs the platform real money.
+
+/// Extra compute a member bought with coins, for one calendar month.
+model ComputeGrant {
+  id     String @id @default(cuid())
+  userId String
+
+  /// 'YYYY-MM'. Grants are monthly because the budget they extend is monthly —
+  /// a grant with its own rolling window would need its own accounting, and
+  /// two windows that nearly agree is worse than one.
+  month String @db.VarChar(7)
+
+  /// Extra AI allowance bought, in micro-dollars, added on top of the tier's
+  /// `MONTHLY_BUDGET_MICROS`. Same unit as `AiUsage.costMicros` so the two can
+  /// be compared without a conversion anybody could get wrong.
+  aiMicros Int @default(0)
+
+  /// Extra image generations.
+  imageGens Int @default(0)
+
+  /// Extra library upload slots.
+  librarySlots Int @default(0)
+
+  /// What was paid, so the grant reconciles against the ledger. The ledger is
+  /// authoritative for the coins; this is the receipt's own copy.
+  coinsPaid Int
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The budget read: everything this member bought this month.
+  @@index([userId, month])
+  @@map("compute_grant")
+}
+
+// ─── Build manifests and consent (B1, 2026-09-19) ─────────────────────────
+// A User Build is a hosted page today. What makes it a page rather than an app
+// is that it cannot use the platform — no storage, no leaderboard, no presence
+// — because there is no way for it to ASK, and so no way for a member to
+// decide. These two tables are that way.
+
+/// The manifest a build version declared. One per version, because a build
+/// asking for more than it used to is a new version by definition — otherwise
+/// yesterday's consent silently covers today's request.
+model BuildManifestRecord {
+  id        String @id @default(cuid())
+  versionId String @unique
+
+  /// The validated manifest, exactly as published. Stored whole rather than
+  /// exploded into columns so a member's consent can be shown against what
+  /// they actually agreed to, not a reconstruction of it.
+  manifest Json
+
+  /// Denormalised for the query that matters: "does this need a human?"
+  needsReview Boolean @default(false)
+
+  /// Set when a human cleared it. Null while queued; a build requesting
+  /// `coins:spend` does not run until this is set.
+  reviewedAt DateTime?
+  reviewedBy String?
+
+  createdAt DateTime @default(now())
+
+  version BuildVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([needsReview, reviewedAt])
+  @@map("build_manifest")
+}
+
+/// What one member agreed to give one build.
+///
+/// Keyed by VERSION, not by build. A build that adds a capability publishes a
+/// new version, and the member is asked again — consent that carried forward
+/// across a manifest change would be consent to something nobody showed them.
+model BuildGrant {
+  id        String @id @default(cuid())
+  userId    String
+  buildId   String
+  versionId String
+
+  /// The capability strings granted, as an array. A subset of what the
+  /// manifest asked for: a member may decline one and keep the rest.
+  capabilities Json
+
+  /// Member-set ceiling for `coins:spend`, per session. The author's
+  /// `suggestedCoinCap` is a suggestion; this is the number that binds.
+  coinCap Int @default(0)
+
+  grantedAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  build UserBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  /// The check on every capability call: what has this member given this
+  /// version of this build?
+  @@unique([userId, versionId])
+  @@index([buildId, revokedAt])
+  @@map("build_grant")
+}
+
+/// Admin-tunable bot-worker knobs (/admin/bots). A singleton: the only row is
+/// id = "default". The Go bot-worker re-reads it every tick, so a save applies
+/// within a minute; until a row exists the worker uses its BOT_* env defaults.
+/// Bounds are enforced in the admin API (zod) and again in the worker's clamp.
+model BotWorkerSettings {
+  id                 String   @id @default("default") @db.VarChar(20)
+  targetBotCount     Int      @default(20) // pool size the worker tops up to
+  createBatch        Int      @default(6) // bots minted per top-up pass
+  createIntervalMin  Int      @default(120) // minutes between top-up passes
+  postRateMultiplier Float    @default(1) // scales every bot's posts/day; 0 pauses posting
+  maxPostsPerTick    Int      @default(5) // cap on posts per 5-minute tick
+  updatedById        String?
+  updatedAt          DateTime @updatedAt
+
+  @@map("bot_worker_settings")
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
 import type { ChartSeries, DeployMarker, RangeId } from '@/lib/ops/series';
 import { MetricChart } from './MetricChart';
@@ -48,7 +48,7 @@ export function MetricsSection() {
             })}
           </p>
         </div>
-        <LiquidTabs
+        <Tabs
           aria-label={t('metrics-range', { defaultValue: 'Time range' })}
           value={range}
           onChange={(id) => setRange(id as RangeId)}

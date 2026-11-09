@@ -74,7 +74,7 @@ import { useCelebration } from '@/hooks/useCelebration';
 import { useDeviceAttitude } from '@/hooks/useDeviceAttitude';
 import type { Quat } from '@/lib/device-attitude';
 import { useSession } from '@/components/Providers';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { PuzzlePage, PuzzleHeader } from '@/components/daily-puzzles/PuzzleShell';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -647,11 +647,11 @@ export function GlobeSetGame() {
       </PuzzleHeader>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Boxed rather than left to fill the row: LiquidTabs' sheet is `w-full`,
+        {/* Boxed rather than left to fill the row: Tabs' sheet is `w-full`,
             so on a desktop width two tabs stretch into a pair of half-page
             slabs and push the controls beside them onto their own line. */}
         <div className="w-full max-w-[16rem]">
-          <LiquidTabs
+          <Tabs
             tabs={[
               { id: 'daily', label: t('globeset-tab-daily', { defaultValue: 'Daily' }) },
               { id: 'race', label: t('globeset-tab-race', { defaultValue: 'Race' }), icon: Swords },

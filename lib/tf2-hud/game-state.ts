@@ -11,6 +11,7 @@
 
 import { type TestState, type Tf2Class, TF2_CLASSES } from './fixtures';
 import { lowAmmo } from './play/ammo';
+import { clamp01 } from '@/lib/core/math';
 
 export interface WeaponDef {
   id: string;
@@ -128,8 +129,6 @@ const baseOf = (file: string): string =>
     .slice(file.lastIndexOf('/') + 1)
     .replace(/\.res$/i, '')
     .toLowerCase();
-
-const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
 export function currentWeapon(s: TestState): WeaponDef | undefined {
   const id = s.weapon && s.weapon !== 'auto' ? s.weapon : DEFAULT_WEAPON[s.playerClass];

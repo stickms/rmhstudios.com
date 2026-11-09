@@ -8,7 +8,7 @@
  * button inside `FlashcardsColumn`) and `/study` had none from the marketplace
  * side, so the deck you cloned dropped you somewhere with no way back.
  *
- * LiquidTabs LINK mode (§16.2), like the RMHLadder sub-nav: real `<Link>` tabs,
+ * Tabs LINK mode (§16.2), like the RMHLadder sub-nav: real `<Link>` tabs,
  * so they are crawlable and prefetched and the active one is
  * `aria-current="page"` — a strip that switches routes is navigation, not a
  * radiogroup, so it must not claim `role="tab"`/`aria-selected`.
@@ -18,12 +18,12 @@ import { Link } from '@tanstack/react-router';
 import { Compass, Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageTabs } from '@/components/feed/PageTabs';
-import type { LiquidTab } from '@/components/ui/liquid-tabs';
+import type { TabItem } from '@/components/ui/tabs';
 
 export function StudyTabs({ active }: { active: '/study' | '/study/browse' }) {
   const { t } = useTranslation('site');
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     { id: '/study', label: t('study-tab-decks', { defaultValue: 'My decks' }), icon: Layers },
     {
       id: '/study/browse',

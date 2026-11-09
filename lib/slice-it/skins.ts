@@ -8,6 +8,7 @@
  */
 
 import { LANE_PALETTES, type LanePalette, contrastRatio } from './palettes';
+import { clamp } from '@/lib/core/math';
 
 /**
  * What a tap note is drawn as.
@@ -273,10 +274,6 @@ export function coverPalette(dominant: Hsl): LanePalette {
     // object whose meaning must not change with the album art.
     bomb: LANE_PALETTES.default.bomb,
   };
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }
 
 export function hslToHex({ h, s, l }: Hsl): string {

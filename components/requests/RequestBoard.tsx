@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Inbox, Plus } from 'lucide-react';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/search-field';
 import { Select } from '@/components/ui/select';
@@ -85,7 +85,7 @@ export function RequestBoard({ initial, signedIn, isAdmin }: RequestBoardProps) 
     }));
   }, []);
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     {
       id: ALL,
       label: t('request-filter-all', { defaultValue: 'All' }),
@@ -118,7 +118,7 @@ export function RequestBoard({ initial, signedIn, isAdmin }: RequestBoardProps) 
         </Button>
       </div>
 
-      <LiquidTabs
+      <Tabs
         tabs={tabs}
         value={filter}
         onChange={(id) => setFilter(id as RequestStatus | typeof ALL)}

@@ -68,6 +68,7 @@ import {
   type ArcSample,
   type ArcTimeline,
 } from './timeline';
+import { clamp01 } from '@/lib/core/math';
 
 /** What `arc:strike` reports as the arc's origin. */
 export type ArcEmitKind = 'ambient' | 'click' | 'key';
@@ -361,7 +362,6 @@ type RGB = [number, number, number];
 
 const toLinear = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 const toGamma = (c: number) => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
-const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
 /** sRGB (0..1) → OKLCH `[L, C, h°]`. */
 export function srgbToOklch(rgb: readonly number[]): RGB {

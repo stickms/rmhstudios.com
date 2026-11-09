@@ -25,6 +25,7 @@ import {
     encodeSnapshot, decodeSnapshot, encodeInput, decodeInput, heldChanged,
     type DecodedSnapshot, type WireInput,
 } from './protocol';
+import { lerp } from '@/lib/core/math';
 
 const STEP_MS = 1000 / 60;
 const INTERP_DELAY_MS = 100;
@@ -111,7 +112,6 @@ function buildSeatInfo(seat: number, className: FighterClass, team: number, name
     };
 }
 
-function lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
 function lerpAngle(a: number, b: number, t: number): number {
     let d = b - a;
     while (d > Math.PI) d -= Math.PI * 2;

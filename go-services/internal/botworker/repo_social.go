@@ -2,7 +2,7 @@ package botworker
 
 // repo_social.go — pgx queries for the reply tick, DM tick, and image budget.
 //
-// Additional Prisma → SQL mappings (verified against prisma/schema.prisma):
+// Additional Prisma → SQL mappings (verified against prisma/schema/):
 //
 //	Prisma model     @@map                  SQL table          Columns used
 //	RMHarkComment    @@map("rmheet_comment") "rmheet_comment"  id, "rmheetId", "userId", content, "parentId", "deletedAt", "createdAt"

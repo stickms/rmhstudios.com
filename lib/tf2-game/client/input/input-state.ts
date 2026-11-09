@@ -33,6 +33,7 @@ import type { UserCmd } from '../../core/types';
 import type { QAngle } from '../../core/vec';
 import { CL_FORWARDSPEED, CL_SIDESPEED, PITCH_LIMIT, mouseToDegrees, type GameSettings, type MouseSettings } from '../settings';
 import { slotOf, type HeldAction, type ImpulseAction } from './actions';
+import { clamp } from '@/lib/core/math';
 
 /** in_buttons.h bits the core constants do not name yet. */
 export const IN_WALK = 1 << 18;
@@ -175,8 +176,6 @@ export function keyMove(held: ReadonlySet<HeldAction>): Vec2 {
     y: (held.has('forward') ? 1 : 0) - (held.has('back') ? 1 : 0),
   };
 }
-
-const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
 
 /** Yaw into (−180, 180] (anglemod as the engine sends it). */
 export function normalizeYaw(yaw: number): number {

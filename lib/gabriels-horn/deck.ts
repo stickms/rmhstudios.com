@@ -30,6 +30,7 @@ export function buildDeck(): Card[] {
  * `random` must return `[0, 1)` — `Math.random` on the server, a seeded source
  * in tests.
  */
+// eslint-disable-next-line no-restricted-syntax -- shuffles IN PLACE and returns the same array; the server handler relies on it
 export function shuffle(cards: Card[], random: () => number = Math.random): Card[] {
   for (let i = cards.length - 1; i > 0; i--) {
     const j = Math.floor(random() * (i + 1));

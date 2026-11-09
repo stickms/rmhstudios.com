@@ -5,6 +5,8 @@
  * the same. Hot paths take an `out` argument so a tick allocates nothing.
  */
 
+import { clamp } from '@/lib/core/math';
+
 export interface Vec3 {
   x: number;
   y: number;
@@ -58,6 +60,7 @@ export function ma(out: Vec3, a: Vec3, s: number, b: Vec3): Vec3 {
 }
 
 /** out = a + (b - a) * t */
+// eslint-disable-next-line no-restricted-syntax -- lerp on Vec3 with an out parameter
 export function lerp(out: Vec3, a: Vec3, b: Vec3, t: number): Vec3 {
   out.x = a.x + (b.x - a.x) * t;
   out.y = a.y + (b.y - a.y) * t;
@@ -174,7 +177,7 @@ export const angleDiff = (b: number, a: number): number => angleNormalize(b - a)
 export const deg2rad = (d: number): number => d * DEG2RAD;
 export const rad2deg = (r: number): number => r * RAD2DEG;
 
-export const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
+export { clamp };
 
 /** The SDK's RemapValClamped. */
 export function remapClamped(val: number, a: number, b: number, c: number, d: number): number {

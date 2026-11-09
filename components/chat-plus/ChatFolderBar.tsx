@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FolderCog } from 'lucide-react';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useChatFolders } from './folders-hooks';
 
@@ -36,7 +36,7 @@ export function ChatFolderBar({
     }
   }, [folders, value, onChange]);
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     { id: 'all', label: t('folder-all', { defaultValue: 'All' }) },
     { id: 'unread', label: t('folder-unread', { defaultValue: 'Unread' }) },
     ...(folders ?? []).map((f) => ({ id: f.id, label: f.name })),
@@ -45,7 +45,7 @@ export function ChatFolderBar({
   return (
     <div className="flex items-center gap-1 px-4 pb-3">
       <div className="min-w-0 flex-1">
-        <LiquidTabs
+        <Tabs
           tabs={tabs}
           value={value}
           onChange={onChange}

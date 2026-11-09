@@ -14,7 +14,7 @@ import { contrastRatio, relativeLuminance, toHex } from '@/lib/appearance/contra
  * app tier's dark and light ramps in `components/shared/app-theme.css`) and every
  * jelly role it composites the worst cases:
  *
- *   ground (`--site-bg`) → role tint (the liquid-glass.css mixes) → the gel coat at either end of its
+ *   ground (`--site-bg`) → role tint (the glass-roles.css mixes) → the gel coat at either end of its
  *   vertical gradient (`--gel-body` at the top, `--gel-depth` at the base, #989) → haze at min
  *   (α × 0.5) and max (α × 1.0) density → the grain tile (0 or its 0.06 cap) →
  *   plasma at the role's peak (`k × gain`, colour A or B, or none)
@@ -34,7 +34,7 @@ import { contrastRatio, relativeLuminance, toHex } from '@/lib/appearance/contra
 const ROOT = process.cwd();
 const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 const GLOBALS = strip(readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8'));
-const LIQUID = strip(readFileSync(join(ROOT, 'app', 'liquid-glass.css'), 'utf8'));
+const LIQUID = strip(readFileSync(join(ROOT, 'app', 'glass-roles.css'), 'utf8'));
 const MATERIAL = strip(readFileSync(join(ROOT, 'app', 'jelly-material.css'), 'utf8'));
 const APP = strip(readFileSync(join(ROOT, 'components', 'shared', 'app-theme.css'), 'utf8'));
 
@@ -191,7 +191,7 @@ function siteTheme(name: string): Tokens {
   return { ...ROOT_TOKENS, ...own };
 }
 
-/** Role → its tint over the ground, exactly as liquid-glass.css writes it (asserted to still be there below). */
+/** Role → its tint over the ground, exactly as glass-roles.css writes it (asserted to still be there below). */
 const ROLE_TINT: Record<string, string> = {
   fill: 'var(--site-glass-tint)',
   pane: 'var(--site-glass-pane-tint)',
@@ -310,7 +310,7 @@ describe('Plasmatic Jelly tokens exist in every theme', () => {
 });
 
 describe('Plasmatic Jelly legibility — site themes (01 §5.2)', () => {
-  it('the role tints this test composites are still the ones liquid-glass.css paints', () => {
+  it('the role tints this test composites are still the ones glass-roles.css paints', () => {
     for (const [role, tint] of Object.entries(ROLE_TINT)) {
       expect(LIQUID.replace(/\s+/g, ' '), `${role} tint`).toContain(tint);
     }

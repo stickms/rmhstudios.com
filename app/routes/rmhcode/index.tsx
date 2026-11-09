@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { CopyButton } from '@/components/ui/copy-button';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
@@ -149,7 +149,7 @@ function RmhCodePage() {
                   {t("view-on-github", { defaultValue: "View on GitHub" })} <ExternalLink className="w-3 h-3" />
                 </a>
               </p>
-              <LiquidTabs
+              <Tabs
                 className="mb-4"
                 aria-label={t("install-method", { defaultValue: "Install method" })}
                 size="sm"

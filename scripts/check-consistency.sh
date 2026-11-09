@@ -250,15 +250,15 @@ TABLISTS=$(scan '\.tsx$' 'role=("|.)tablist' | grep -v 'components/tf2-hud/TfTab
 if [ -n "$TABLISTS" ]; then
   fail "Hand-rolled tab strip (§13 rule 1)"
   printf '%s\n' "$TABLISTS"
-  printf '%s    → Tab strips are <LiquidTabs> (components/ui/liquid-tabs.tsx). The allowlist is closed.%s\n' "$dim" "$off"
+  printf '%s    → Tab strips are <Tabs> (components/ui/tabs.tsx). The allowlist is closed.%s\n' "$dim" "$off"
 fi
 
 CAPSULES=$(scan '^(components|app/routes)/.*\.tsx$' 'layoutId[ ]*=[ ]*[{"]' |
-  grep -v 'components/ui/liquid-tabs.tsx' || true)
+  grep -v 'components/ui/tabs.tsx' || true)
 if [ -n "$CAPSULES" ]; then
   fail "Hand-rolled tab capsule (§13 rule 3)"
   printf '%s\n' "$CAPSULES"
-  printf '%s    → The flowing capsule belongs to LiquidTabs; do not re-roll a layoutId capsule.%s\n' "$dim" "$off"
+  printf '%s    → The flowing capsule belongs to Tabs; do not re-roll a layoutId capsule.%s\n' "$dim" "$off"
 fi
 
 review_site "Duration literal instead of a motion token" \
@@ -288,7 +288,7 @@ n2_hits=$(scan '^(components|app/routes)/.*\.tsx?$' "from ['\"]@/lib/jelly/(phys
 if [ -n "$n2_hits" ]; then
   fail "Component imports the jelly physics/arc service (N2)"
   printf '%s\n' "$n2_hits"
-  printf '%s    → %s%s\n' "$dim" 'Components take jelly through role classes and data-jelly* attributes: the soft body is CSS (app/jelly-material.css §8) and the services mount once from hooks/useLiquidInteractions.ts (docs/plasmatic-jelly-system.md).' "$off"
+  printf '%s    → %s%s\n' "$dim" 'Components take jelly through role classes and data-jelly* attributes: the soft body is CSS (app/jelly-material.css §8) and the services mount once from hooks/useJellyPointer.ts (docs/plasmatic-jelly-system.md).' "$off"
 fi
 
 # The two sanctioned haze keyframes (jelly-drift / jelly-current) in app/jelly-material.css are filtered out: the
@@ -320,7 +320,7 @@ fi
 review "Old Liquid Glass vocabulary (N9)" \
   '^(components|app|hooks|lib)/.*\.(tsx?|css)$' \
   '(data-liquid-[a-z]+|@/lib/liquid/(runtime|glass/engine))' \
-  'New opt-outs are data-jelly="off" / data-jelly-scope="off" (lib/jelly/tiers.ts OPT_OUT_SELECTOR); the jelly services mount from hooks/useLiquidInteractions.ts only. The old spelling is still read, never newly written.'
+  'New opt-outs are data-jelly="off" / data-jelly-scope="off" (lib/jelly/tiers.ts OPT_OUT_SELECTOR); the jelly services mount from hooks/useJellyPointer.ts only. The old spelling is still read, never newly written.'
 if git "${DIFF[@]}" --name-only --diff-filter=A 2>/dev/null | grep -qE '(^|/)(liquid-[^/]*|useLiquid[^/]*)$'; then
   warn "New file named liquid-* / useLiquid* (N9)"
   git "${DIFF[@]}" --name-only --diff-filter=A 2>/dev/null | grep -E '(^|/)(liquid-[^/]*|useLiquid[^/]*)$' | sed 's/^/  /'
@@ -371,7 +371,7 @@ if list '^app/routes/api/.*\.ts$' | grep -q .; then
     [ -f "$f" ] || continue
     case "$f" in app/routes/api/v1/*) continue ;; esac
     grep -qxF "$f" "$HANDLER_BACKLOG" && continue
-    if grep -q 'handlers' "$f" && ! grep -q 'defineHandler' "$f"; then
+    if grep -q 'handlers' "$f" && ! grep -qE 'defineHandler|implement\.server' "$f"; then
       fail "API route without defineHandler: $f"
       printf '%s    → Wrap every handler in defineHandler from @/lib/api/handler.server (session → rate limit → zod → try/catch). /api/v1/** uses withDeveloperApi.%s\n' "$dim" "$off"
     fi
@@ -389,8 +389,8 @@ if list '^app/routes/(_site/)?[^/]*\.tsx$' | grep -q .; then
   done
 fi
 
-if has '^prisma/schema\.prisma$' && ! has '^prisma/migrations/'; then
-  warn "schema.prisma changed with no migration in this commit."
+if has '^prisma/schema/.*\.prisma$' && ! has '^prisma/migrations/'; then
+  warn "prisma/schema/ changed with no migration in this commit."
   printf '%s    → `pnpm db:push` is dev-only; production runs `prisma migrate deploy`.%s\n' "$dim" "$off"
 fi
 
@@ -577,7 +577,7 @@ if has '\.(tsx|css)$'; then
     document flow never move.
   ● A role-less switcher that marks its active slot some other way (an accent
     pill, a segmented control, a flex-1 button row with an active tint) is
-    still a tab strip and still belongs on <LiquidTabs>. The gate cannot see
+    still a tab strip and still belongs on <Tabs>. The gate cannot see
     those; you can.
   ● Reused a primitive rather than a second copy of one? (§0.3)
   ● Keyboard path + focus ring visible on the surface it lands on, in

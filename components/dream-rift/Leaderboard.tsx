@@ -12,6 +12,7 @@ import { DIFFICULTIES } from '@/lib/dream-rift/constants';
 import type { Difficulty } from '@/lib/dream-rift/types';
 import { CHARACTERS } from '@/lib/dream-rift/render/sprites';
 import type { PlayerId } from '@/lib/dream-rift/types';
+import { formatClockSeconds } from '@/lib/core/format';
 
 interface Account {
     id: string;
@@ -55,12 +56,6 @@ const FIELD: Record<Difficulty, string> = {
     lunatic: 'highScoreLunatic',
 };
 const DIFF_COLOR: Record<Difficulty, string> = { easy: '#5fe0b0', normal: '#7fdcff', hard: '#ffb14d', lunatic: '#ff5ccd' };
-
-function formatTime(seconds: number): string {
-    const s = Math.max(0, Math.floor(seconds));
-    const m = Math.floor(s / 60);
-    return `${m}:${String(s % 60).padStart(2, '0')}`;
-}
 
 function charName(id: string): string {
     return (CHARACTERS as Record<string, { name: string; accent: string }>)[id]?.name ?? id;
@@ -277,10 +272,10 @@ export function Leaderboard({ onBack }: { onBack: () => void }) {
                                         </div>
                                     </td>
                                     <td className="px-3 py-2 text-right font-mono text-[color:var(--dr-gold)]">
-                                        {metric === 'combined' ? e.combinedScore.toLocaleString() : formatTime(e.timeSurvived)}
+                                        {metric === 'combined' ? e.combinedScore.toLocaleString() : formatClockSeconds(e.timeSurvived)}
                                     </td>
                                     <td className="px-3 py-2 text-right font-mono text-[color:var(--dr-cream-dim)]">
-                                        {metric === 'combined' ? formatTime(e.timeSurvived) : e.combinedScore.toLocaleString()}
+                                        {metric === 'combined' ? formatClockSeconds(e.timeSurvived) : e.combinedScore.toLocaleString()}
                                     </td>
                                     <td className="px-3 py-2 text-right font-mono text-[color:var(--dr-cream-dim)]">{e.stageReached}</td>
                                 </tr>

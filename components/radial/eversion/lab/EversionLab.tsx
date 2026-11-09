@@ -23,7 +23,7 @@ import { Select } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { PLAN_MS, STRETCH_CAP_MS } from '@/lib/eversion/constants';
 import { isEversionDebugEnabled } from '@/lib/eversion/flags';
 import { defaultDeps } from '@/lib/eversion/gl/core';
@@ -514,7 +514,7 @@ export function EversionLab() {
           <p className="text-site-text-muted -mt-2 text-xs">drew: {projection}</p>
         )}
 
-        <LiquidTabs
+        <Tabs
           tabs={THEMES}
           value={style}
           onChange={(id) => void chooseTheme(id)}

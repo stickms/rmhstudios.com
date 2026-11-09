@@ -61,7 +61,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharin
 # (~3s) instead of invalidating the entire pnpm install layer (~70s).
 FROM deps AS prisma-generate
 
-COPY prisma/schema.prisma ./prisma/schema.prisma
+COPY prisma/schema ./prisma/schema
 COPY prisma.config.ts ./
 
 RUN pnpm exec prisma generate

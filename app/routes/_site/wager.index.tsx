@@ -7,7 +7,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { useSession } from '@/components/Providers';
 import { WagerCard } from '@/components/wager/WagerCard';
 import { CreateWagerDialog } from '@/components/wager/CreateWagerDialog';
@@ -71,7 +71,7 @@ function WagerPage() {
       {/* §15.1: unified sheet + flowing-capsule tab strip below the page title.
           The "My matches" tab stays disabled (roving-nav-skipped) for guests. */}
       <div>
-        <LiquidTabs
+        <Tabs
           aria-label={t('title', { defaultValue: 'Wager Matches' })}
           value={tab}
           onChange={(id) => setTab(id as 'open' | 'mine')}

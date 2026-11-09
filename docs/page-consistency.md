@@ -160,7 +160,7 @@ Work through this for every new or edited page:
       soft body) — reach for the role.
 - [ ] Buttons via `<Button variant size>`; pills via `<Badge>`; icons from
       `lucide-react`.
-- [ ] Tab strips via `<LiquidTabs>` (`components/ui/liquid-tabs.tsx`), placed
+- [ ] Tab strips via `<Tabs>` (`components/ui/tabs.tsx`), placed
       by `<PageTabs>` **below** the page title — never inside the sticky
       header (§5.45). The active tab is a neutral raised thumb, not an accent
       pill; the strip stays on one row and scrolls (edge fade) rather than
@@ -418,7 +418,7 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
    radial shell owns the chrome (ring backdrop, top bar, central hub nav), and
    PageLayout's header is a flat big-type block floating on the backdrop, not a
    bordered capsule.
-10. Hand-rolling a `layoutId` tab capsule instead of `LiquidTabs`, or stacking
+10. Hand-rolling a `layoutId` tab capsule instead of `Tabs`, or stacking
     `.glass-refract` onto a `.glass-chrome--aside` element (its `::before` is the
     blur carrier, so the lens band has nowhere to live — see design-language.md
     §5.1). The aside's glint rides its own border-box background layer now (§4.35),

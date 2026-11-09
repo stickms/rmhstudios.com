@@ -27,7 +27,7 @@ import {
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { FareBreakdown } from '@/components/rideshare/FareBreakdown';
 import { RIDE_CLASSES, type RideClassId } from '@/lib/rideshare/classes';
 
@@ -280,7 +280,7 @@ function PriceEstimator() {
             <span>60 km</span>
           </div>
 
-          <LiquidTabs
+          <Tabs
             size="sm"
             tabs={RIDE_CLASSES.map((cls) => ({ id: cls.id, label: cls.name }))}
             value={classId}

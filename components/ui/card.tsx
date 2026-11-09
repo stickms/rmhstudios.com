@@ -41,7 +41,7 @@ function Card({
       // that reads as a crisp press on a button reads as a wobble on something
       // the width of the column. `.glass-interactive:active` remains the
       // reduced-motion fallback (both drive the same `scale` property, so the
-      // spring simply wins while it is running — see app/liquid-glass.css).
+      // spring simply wins while it is running — see app/glass-roles.css).
       data-fluid-press={interactive ? 'firm' : undefined}
       className={cn(
         'flex flex-col gap-5 py-5 text-site-text',

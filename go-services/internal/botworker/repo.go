@@ -2,7 +2,7 @@ package botworker
 
 // repo.go — raw pgx queries for the bot-worker.
 //
-// Prisma → SQL table/column mapping (verified against prisma/schema.prisma):
+// Prisma → SQL table/column mapping (verified against prisma/schema/):
 //
 //	Prisma model   Prisma @@map        SQL table         Notes
 //	User           @@map("user")       "user"            camelCase cols preserved

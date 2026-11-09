@@ -471,7 +471,7 @@ export function ChartCard({
  * A compact toggle for a chart option (log scale, cumulative, labels).
  *
  * Deliberately NOT a two-option pill row: a segmented control with two segments
- * is a tab strip, and tab strips on this site are `<LiquidTabs>` and nothing
+ * is a tab strip, and tab strips on this site are `<Tabs>` and nothing
  * else. This is a single button with a pressed state, which is a different
  * control expressing a different thing — "this option is on" rather than "you
  * are looking at this one of several panels".

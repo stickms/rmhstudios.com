@@ -20,7 +20,7 @@ app/
     <game>.tsx       full-screen games/apps (top level, no shell)
     sitemap[.]xml.ts /sitemap.xml ([.]= escaped literal dot)
   globals.css        theme tokens: base + curated themes as .style-* classes (see design-language.md)
-  liquid-glass.css   the glass role base (.glass-*) the jelly material builds on
+  glass-roles.css   the glass role base (.glass-*) the jelly material builds on
   jelly-material.css Plasmatic Jelly CSS material: role knobs, static haze floor and rim, woken haze, CSS-spring soft body, degradation
   jelly-arcs.css     the electric-arc overlay layer (.jelly-arc-layer)
   jelly-coverage.css selector-level adapters that bring Radix/sonner/[data-slot] surfaces onto the material

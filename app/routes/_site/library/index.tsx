@@ -29,7 +29,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { type LiquidTab } from '@/components/ui/liquid-tabs';
+import { type TabItem } from '@/components/ui/tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { SearchField } from '@/components/ui/search-field';
 import { Button } from '@/components/ui/button';
@@ -504,7 +504,7 @@ function Library() {
                   label: t('cat-reads', { defaultValue: 'Reads' }),
                   icon: Newspaper,
                 },
-              ] as LiquidTab[]
+              ] as TabItem[]
             }
             value={view}
             onChange={(next) => setView(next as LibraryView)}

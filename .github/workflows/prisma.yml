@@ -29,7 +29,7 @@ permissions:
 
 jobs:
   # ── validate ─────────────────────────────────────────────────────────────
-  # `prisma validate` parses schema.prisma + prisma.config and checks relations,
+  # `prisma validate` parses prisma/schema/ + prisma.config and checks relations,
   # attributes and datasource config are well-formed. No live database is
   # contacted (a dummy DATABASE_URL satisfies the datasource block).
   validate:
@@ -57,10 +57,10 @@ jobs:
 
   # ── migrate-status ───────────────────────────────────────────────────────
   # Replays the committed migrations (`prisma migrate deploy`) against a fresh
-  # PostgreSQL, then diffs the resulting database against `schema.prisma`. A hard
+  # PostgreSQL, then diffs the resulting database against `prisma/schema/`. A hard
   # gate: `deploy.sh` runs `prisma migrate deploy` against production, so a
   # history that does not replay is a broken deploy. It also watches
-  # `prisma/schema.prisma`: a model added without a migration leaves the file and
+  # `prisma/schema/`: a model added without a migration leaves the file and
   # the history disagreeing.
   migrate-status:
     if: github.event_name != 'push'
@@ -121,7 +121,7 @@ jobs:
           set -euo pipefail
           pnpm exec prisma migrate status
           pnpm exec prisma migrate diff \
-            --from-config-datasource --to-schema prisma/schema.prisma --script > drift.sql
+            --from-config-datasource --to-schema prisma/schema --script > drift.sql
           # Raw-SQL search infrastructure Prisma's schema language cannot
           # express, so `migrate diff` proposes dropping it on every run. Each
           # entry below is an index or column created by a migration that says
@@ -156,15 +156,15 @@ jobs:
             {
               echo '### Schema drift'
               echo ''
-              echo '`prisma/schema.prisma` does not match the migration history.'
+              echo '`prisma/schema/` does not match the migration history.'
               echo 'Add a migration (`pnpm db:migrate`) for the models below and commit it.'
               echo ''
               echo '```sql'
               cat unexpected.sql
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
-            echo '::error::Schema drift — schema.prisma has changes with no migration behind them.'
+            echo '::error::Schema drift — prisma/schema/ has changes with no migration behind them.'
             cat unexpected.sql
             exit 1
           fi
-          echo 'Migration history replays cleanly and matches schema.prisma.'
+          echo 'Migration history replays cleanly and matches prisma/schema/.'

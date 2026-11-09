@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { useSession } from '@/components/Providers';
 import {
   decodeLivery,
@@ -127,7 +127,7 @@ export function LiveryEditorButton() {
           {color(t('ndw-livery-base', { defaultValue: 'Base colour' }), 'base')}
           {color(t('ndw-livery-accent1', { defaultValue: 'Accent 1' }), 'accent1')}
           {color(t('ndw-livery-accent2', { defaultValue: 'Accent 2' }), 'accent2')}
-          <LiquidTabs
+          <Tabs
             aria-label={t('ndw-livery-stripe', { defaultValue: 'Stripe' })}
             value={l.stripe}
             onChange={(id) => update({ stripe: id as Stripe })}

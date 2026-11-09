@@ -1,0 +1,875 @@
+// ─── Direct Messages ──────────────────────────────────────────────
+
+model Conversation {
+  id               String   @id @default(cuid())
+  participantOneId String
+  participantTwoId String
+  lastMessageAt    DateTime @default(now())
+  createdAt        DateTime @default(now())
+
+  participantOne    User            @relation("ConversationParticipantOne", fields: [participantOneId], references: [id], onDelete: Cascade)
+  participantTwo    User            @relation("ConversationParticipantTwo", fields: [participantTwoId], references: [id], onDelete: Cascade)
+  messages          DirectMessage[]
+  /// M3 — disappearing-messages timer in seconds (3600 | 86400 | 604800). Null = off.
+  disappearAfterSec Int?
+  /// M9 — chat theme preset (lib/chat-plus/themes.ts), "<accent>.<wallpaper>". Null = default.
+  themeKey          String?         @db.VarChar(24)
+
+  @@unique([participantOneId, participantTwoId])
+  @@index([participantOneId, lastMessageAt(sort: Desc)])
+  @@index([participantTwoId, lastMessageAt(sort: Desc)])
+  @@map("conversation")
+}
+
+model DirectMessage {
+  id              String    @id @default(cuid())
+  conversationId  String
+  senderId        String
+  content         String    @db.VarChar(2000)
+  // Optional rich media — mirrors RMHark posts. A message can be text, media,
+  // or both. gifUrl is a single GIF (KLIPY/Tenor/Giphy/direct); imageUrls are
+  // up to 4 feed-image URLs owned by the sender.
+  gifUrl          String?   @db.Text
+  imageUrls       String[]  @default([])
+  read            Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  /// Edited within a short window; renders an "edited" marker.
+  editedAt        DateTime?
+  /// Unsent. The row is tombstoned rather than removed so the thread still
+  /// shows that something was there — otherwise unsend becomes a gaslighting
+  /// tool — and so a report survives the deletion.
+  deletedAt       DateTime?
+  deletedBy       String?   @db.VarChar(12)
+  /// Voice note. Peaks are a downsampled waveform so the bubble can render
+  /// without fetching the audio.
+  audioUrl        String?   @db.VarChar(500)
+  audioDurationMs Int?
+  audioPeaks      Float[]   @default([])
+  /// P04 — message kind: text | system | tip | dice | coin | checklist | poll.
+  /// Non-text kinds keep a readable fallback in `content` for previews and search.
+  kind            String    @default("text") @db.VarChar(16)
+  /// P04 — kind-specific payload (checklist items, dice rolls, system action…).
+  meta            Json?
+  /// M3 — set at send time from the chat's timer; hidden at read time once past.
+  expiresAt       DateTime?
+  /// M6 — bit 1 = has image/GIF/voice, bit 2 = has a link. One column, one index.
+  attachFlags     Int       @default(0)
+  /// M10 — how many times this message has been forwarded to reach here.
+  forwardCount    Int       @default(0)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  reactions DirectMessageReaction[]
+  pollVotes DirectPollVote[]
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@index([conversationId, attachFlags, createdAt])
+  @@index([expiresAt])
+  // Unread-badge counts: conversationId IN (...) AND read = false AND senderId <> me.
+  @@index([conversationId, read, senderId])
+  @@map("direct_message")
+}
+
+model DirectMessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String   @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  message DirectMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@map("direct_message_reaction")
+}
+
+/// A group direct-message thread (#15). Distinct from 1-on-1 Conversations.
+model GroupChat {
+  id            String   @id @default(cuid())
+  name          String   @db.VarChar(60)
+  ownerId       String
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  owner             User              @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members           GroupChatMember[]
+  messages          GroupMessage[]
+  /// M3 — disappearing-messages timer in seconds (3600 | 86400 | 604800). Null = off.
+  disappearAfterSec Int?
+  /// M9 — chat theme preset (lib/chat-plus/themes.ts), "<accent>.<wallpaper>". Null = default.
+  themeKey          String?           @db.VarChar(24)
+
+  @@map("group_chat")
+}
+
+model GroupChatMember {
+  id         String   @id @default(cuid())
+  groupId    String
+  userId     String
+  lastReadAt DateTime @default(now())
+  joinedAt   DateTime @default(now())
+
+  group GroupChat @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
+  @@map("group_chat_member")
+}
+
+model GroupMessage {
+  id              String    @id @default(cuid())
+  groupId         String
+  senderId        String
+  content         String    @db.VarChar(2000)
+  // Optional rich media (mirrors DMs): a single GIF and/or up to 4 images.
+  gifUrl          String?   @db.Text
+  imageUrls       String[]  @default([])
+  // Optional inline poll: a question + 2–6 option labels (votes in GroupPollVote).
+  pollQuestion    String?   @db.VarChar(300)
+  pollOptions     String[]  @default([])
+  createdAt       DateTime  @default(now())
+  /// Edited within a short window; renders an "edited" marker.
+  editedAt        DateTime?
+  /// Unsent. The row is tombstoned rather than removed so the thread still
+  /// shows that something was there — otherwise unsend becomes a gaslighting
+  /// tool — and so a report survives the deletion.
+  deletedAt       DateTime?
+  deletedBy       String?   @db.VarChar(12)
+  /// Voice note. Peaks are a downsampled waveform so the bubble can render
+  /// without fetching the audio.
+  audioUrl        String?   @db.VarChar(500)
+  audioDurationMs Int?
+  audioPeaks      Float[]   @default([])
+  /// P04 — message kind: text | system | tip | dice | coin | checklist | poll.
+  /// Non-text kinds keep a readable fallback in `content` for previews and search.
+  kind            String    @default("text") @db.VarChar(16)
+  /// P04 — kind-specific payload (checklist items, dice rolls, system action…).
+  meta            Json?
+  /// M3 — set at send time from the chat's timer; hidden at read time once past.
+  expiresAt       DateTime?
+  /// M6 — bit 1 = has image/GIF/voice, bit 2 = has a link. One column, one index.
+  attachFlags     Int       @default(0)
+  /// M10 — how many times this message has been forwarded to reach here.
+  forwardCount    Int       @default(0)
+  /// M7 — set on a reply posted in a side thread; null on top-level messages.
+  threadParentId  String?
+  /// M7 — denormalised reply count on the parent, so the list needs no extra query.
+  replyCount      Int       @default(0)
+
+  group     GroupChat       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender    User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  pollVotes GroupPollVote[]
+
+  reactions     GroupMessageReaction[]
+  threadParent  GroupMessage?          @relation("GroupMessageThread", fields: [threadParentId], references: [id], onDelete: Cascade)
+  threadReplies GroupMessage[]         @relation("GroupMessageThread")
+
+  @@index([groupId, createdAt])
+  @@index([groupId, attachFlags, createdAt])
+  @@index([threadParentId, createdAt])
+  @@index([expiresAt])
+  @@map("group_message")
+}
+
+model GroupMessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String   @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  message GroupMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@map("group_message_reaction")
+}
+
+model GroupPollVote {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  optionIdx Int
+  createdAt DateTime @default(now())
+
+  message GroupMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@map("group_poll_vote")
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────
+// In-app notifications for social events (likes, comments, replies, follows,
+// mentions, reposts). Recipient is `userId`; `actorId` is who triggered it.
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  REPLY
+  FOLLOW
+  MENTION
+  REPOST
+  SYSTEM
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String // recipient
+  actorId    String? // who triggered it (null for system notifications)
+  type       NotificationType
+  entityType String?          @db.VarChar(32) // e.g. "rmhark", "comment", "user"
+  entityId   String?          @db.VarChar(64)
+  preview    String?          @db.VarChar(280) // short snapshot of the content
+  link       String?          @db.VarChar(500) // where clicking should take the user
+  read       Boolean          @default(false)
+  // §16 batching: rows sharing a groupKey collapse in the list/badge ("12 people
+  // liked your post"). Null = ungrouped (rendered individually, as today).
+  groupKey   String?          @db.VarChar(80)
+  createdAt  DateTime         @default(now())
+
+  user  User  @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("UserNotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, read, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, groupKey])
+  // Unread-dedupe lookup + the retraction deleteMany (createNotification /
+  // removeNotification), which run on every like, comment, follow and unlike.
+  // Without this they fell back to (userId, read, createdAt) and scanned every
+  // unread row the recipient has.
+  @@index([userId, read, type, entityId])
+  @@map("notification")
+}
+
+/// "Don't let this person ring me until `until`." Written from the incoming-call
+/// banner. Enforced server-side in the call and group-call handlers exactly like
+/// a privacy refusal (the caller sees the same generic "can't call" a block or
+/// the privacy setting gives, never a distinct "muted"). A row past `until` is
+/// inert and is overwritten the next time the same person is muted.
+model CallMute {
+  id          String   @id @default(cuid())
+  userId      String
+  mutedUserId String
+  until       DateTime
+  createdAt   DateTime @default(now())
+
+  user  User @relation("CallMuteOwner", fields: [userId], references: [id], onDelete: Cascade)
+  muted User @relation("CallMuteTarget", fields: [mutedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mutedUserId])
+  @@index([userId, until])
+  @@map("call_mute")
+}
+
+// ─── Live Spaces (§4) ──────────────────────────────────────────────────────
+enum SpaceStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+}
+
+model Space {
+  id          String      @id @default(cuid())
+  hostId      String
+  communityId String? // null = profile-hosted
+  title       String      @db.VarChar(120)
+  status      SpaceStatus @default(SCHEDULED)
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  endedAt     DateTime?
+  pinned      Json? // { kind: 'post'|'url'|'music_room'|'tube_room', ref }
+  recordChat  Boolean     @default(true) // transcript visible after end
+  createdAt   DateTime    @default(now())
+
+  host      User           @relation("SpaceHost", fields: [hostId], references: [id], onDelete: Cascade)
+  community Community?     @relation(fields: [communityId], references: [id], onDelete: SetNull)
+  messages  SpaceMessage[]
+
+  @@index([status, startedAt(sort: Desc)])
+  @@index([communityId, status])
+  @@map("space")
+}
+
+model SpaceMessage {
+  id        String   @id @default(cuid())
+  spaceId   String
+  userId    String
+  body      String   @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([spaceId, createdAt])
+  @@map("space_message")
+}
+
+/// "Remind me about this" / snooze (plan U7). One pending reminder per
+/// (user, kind, target): setting it again moves it. The jobs worker fires due
+/// rows every minute as an ordinary notification, then stamps `firedAt`.
+/// `url` + `label` are snapshotted at creation so firing needs no per-kind
+/// lookup; `url` is always a same-site path (validated at the route).
+model Reminder {
+  id        String    @id @default(cuid())
+  userId    String
+  kind      String    @db.VarChar(24) // 'post' | 'notification' | 'event' | 'listing' | 'page'
+  targetId  String    @db.VarChar(128)
+  label     String    @db.VarChar(140)
+  url       String    @db.VarChar(512)
+  note      String?   @db.VarChar(140)
+  remindAt  DateTime
+  firedAt   DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind, targetId])
+  @@index([remindAt, firedAt])
+  @@index([userId, firedAt, remindAt])
+  @@map("reminder")
+}
+
+/// A 1:1 voice call.
+///
+/// Media never touches our servers: two participants means plain peer-to-peer
+/// WebRTC, so there is no SFU and no media relay to run (the group-audio design
+/// in docs/plans/2026-07-19 needed one; this does not). What is persisted here
+/// is only the call *record* — who called whom, when, and how it ended — so a
+/// conversation can show "Missed voice call" the way every messenger does.
+///
+/// No audio is recorded, and there is nowhere for it to be recorded to.
+model Call {
+  id             String  @id @default(cuid())
+  callerId       String
+  calleeId       String
+  /// The DM thread this call belongs to, when it started from one. Null for a
+  /// call started from a profile.
+  conversationId String?
+
+  /// ringing → connected → ended, or ringing → (missed | declined | cancelled | failed).
+  status CallStatus @default(RINGING)
+
+  createdAt   DateTime  @default(now())
+  /// When ICE actually connected — the difference between "they picked up" and
+  /// "it rang". Null for every terminal status except ENDED.
+  connectedAt DateTime?
+  endedAt     DateTime?
+  /// Denormalised talk time in seconds, for the history row. 0 unless connected.
+  durationSec Int       @default(0)
+
+  caller User @relation("CallCaller", fields: [callerId], references: [id], onDelete: Cascade)
+  callee User @relation("CallCallee", fields: [calleeId], references: [id], onDelete: Cascade)
+
+  @@index([calleeId, createdAt(sort: Desc)])
+  @@index([callerId, createdAt(sort: Desc)])
+  @@index([conversationId, createdAt(sort: Desc)])
+  @@map("call")
+}
+
+enum CallStatus {
+  /// Invite sent, waiting for the callee.
+  RINGING
+  /// Accepted and media flowing.
+  CONNECTED
+  /// Hung up by either side after connecting.
+  ENDED
+  /// Rang out without an answer.
+  MISSED
+  /// Callee actively declined.
+  DECLINED
+  /// Caller hung up before it was answered.
+  CANCELLED
+  /// Callee was already in a call.
+  BUSY
+  /// Signalling or ICE never completed — the honest outcome when TURN is
+  /// unavailable and both peers are behind symmetric NAT.
+  FAILED
+}
+
+/// "Delete for me" — hides one message for one side of a conversation.
+model DirectMessageHide {
+  messageId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId])
+  @@index([userId])
+  @@map("direct_message_hide")
+}
+
+/// Held deliveries awaiting a quiet-hours window close (B13).
+///
+/// `lib/notify/dispatch.server.ts` already suppresses push during quiet hours —
+/// but it DROPS the notification rather than holding it, so a user with quiet
+/// hours on simply never learns about anything that happened overnight. These
+/// rows are flushed as one grouped delivery when the window ends.
+model HeldNotification {
+  id        BigInt    @id @default(autoincrement())
+  userId    String
+  category  String    @db.VarChar(40)
+  channel   String    @db.VarChar(10)
+  payload   Json
+  /// Collapses duplicates inside a window — same key, one delivery.
+  dedupeKey String?   @db.VarChar(160)
+  heldAt    DateTime  @default(now())
+  flushedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, flushedAt, heldAt])
+  @@map("held_notification")
+}
+
+/// Per-conversation notification control (B14).
+///
+/// `mentionsOnly` is the setting people actually want out of a busy group and
+/// almost no product offers; it is deliberately the middle option of three
+/// rather than something buried under a mute submenu.
+model ConversationPref {
+  userId       String
+  /// Discriminated: 'dm:<id>' | 'group:<id>' | 'space:<id>'
+  scopeKey     String    @db.VarChar(80)
+  /// Null = not muted. A far-future date = muted indefinitely.
+  muteUntil    DateTime?
+  mentionsOnly Boolean   @default(false)
+  pinned       Boolean   @default(false)
+  /// M8 — don't send read receipts here (and don't see theirs). DM only.
+  hideReceipts Boolean   @default(false)
+  /// M8 — don't send typing indicators here (and don't see theirs). DM only.
+  hideTyping   Boolean   @default(false)
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, scopeKey])
+  @@index([userId, pinned])
+  @@map("conversation_pref")
+}
+
+// ─── Group voice calls ─────────────────────────────────────────────────────
+/// Where a group call came from — which is also the only thing that decides how
+/// people get into it.
+enum GroupCallOrigin {
+  /// Started from a DM or a profile. Invitees are RUNG: they get an incoming
+  /// call and accept or decline. The starter is the host.
+  ADHOC
+  /// An open voice room scoped to a community. Nobody is rung; eligible members
+  /// walk in, and the roster is whoever has joined.
+  COMMUNITY
+  /// An open voice room scoped to a party. Same admission rule as COMMUNITY.
+  PARTY
+}
+
+enum GroupCallStatus {
+  /// Ad-hoc only: rung, and nobody but the host has joined yet.
+  RINGING
+  /// The room is live. Named ACTIVE rather than CONNECTED (the 1:1 `CallStatus`
+  /// word) on purpose: in a mesh "connected" is N-1 separate facts, not one, so
+  /// a room is not something that can be connected.
+  ACTIVE
+  /// Finished normally — the host ended it, or the last person left.
+  ENDED
+  /// Ad-hoc: rang out and nobody joined.
+  MISSED
+  /// Ad-hoc: everyone who was rung declined.
+  DECLINED
+  /// Signalling or ICE never completed for anyone — the honest outcome when
+  /// TURN is unavailable and the peers are behind symmetric NAT.
+  FAILED
+}
+
+/// A group voice call: one room, up to MAX_GROUP_CALL_PARTICIPANTS (8) people.
+///
+/// Media never touches our servers. This is a full WebRTC mesh — every
+/// participant holds a direct connection to every other participant — so there
+/// is no SFU and no media relay to run, which is also why the cap is eight and
+/// not eighty (each client uploads N-1 copies of its own microphone; see
+/// `lib/groupcall/events.ts`). What is persisted here is only the call *record*
+/// — who was in it, when, and how it ended — so a DM thread can show "Missed
+/// group call" and a community can show its voice history.
+///
+/// No audio is recorded, and there is nowhere for it to be recorded to.
+///
+/// Separate from `Call` rather than a nullable extension of it: the two have
+/// different admission rules, different lifecycles (a 1:1 call cannot be joined
+/// mid-flight), and a different cardinality of participant. Sharing the table
+/// would mean every 1:1 query carrying a roster join it never needs.
+model GroupCall {
+  /// Time-sortable rather than `cuid()`, per the new-table policy (R0-T7): rows
+  /// are only ever appended, and the id is public only to the handful of people
+  /// in the room, so the creation time it encodes leaks nothing that `createdAt`
+  /// on the same row does not.
+  id     String          @id @default(uuid(7))
+  hostId String
+  origin GroupCallOrigin
+
+  /// Set when `origin` is COMMUNITY. A real relation — communities are rows.
+  communityId    String?
+  /// Set when `origin` is PARTY. Deliberately NOT a relation: parties are
+  /// ephemeral and have no schema at all (in-memory Maps in
+  /// `server/socket-server/handlers/party.ts` — a hub restart dissolves them),
+  /// so there is no table to point a foreign key at. Indexed so the live room
+  /// for a party is still one lookup, and left dangling once the party is gone,
+  /// which is correct: the call record outlives the party it happened in.
+  partyId        String? @db.VarChar(64)
+  /// The DM thread this started from, when it did. Null for a call started from
+  /// a profile or scoped to a community/party. Matches `Call.conversationId` —
+  /// a plain indexed column rather than a relation, for the same reason.
+  conversationId String?
+
+  status GroupCallStatus @default(RINGING)
+
+  createdAt        DateTime  @default(now())
+  /// When the room actually opened (the host's own join). Null only for a room
+  /// that was refused before it ever ran.
+  startedAt        DateTime?
+  endedAt          DateTime?
+  /// The most people in the room at once. Denormalised on each join so the
+  /// history row can say "5 people" without replaying the participant rows, and
+  /// so the mesh cap can be audited after the fact.
+  peakParticipants Int       @default(0)
+
+  host         User                   @relation("GroupCallHost", fields: [hostId], references: [id], onDelete: Cascade)
+  community    Community?             @relation(fields: [communityId], references: [id], onDelete: SetNull)
+  participants GroupCallParticipant[]
+
+  @@index([hostId, createdAt(sort: Desc)])
+  @@index([conversationId, createdAt(sort: Desc)])
+  /// "Is there a live room for this community/party?" — the LOOKUP query.
+  @@index([communityId, status])
+  @@index([partyId, status])
+  /// Backs the janitor sweep that closes rooms orphaned by a hub restart
+  /// (WHERE status IN (RINGING, ACTIVE)).
+  @@index([status, createdAt(sort: Desc)])
+  @@map("group_call")
+}
+
+enum GroupCallParticipantStatus {
+  /// Ad-hoc: rung, still deciding. Never used for an open room.
+  INVITED
+  /// In the room right now.
+  JOINED
+  /// Was in the room and left.
+  LEFT
+  /// Ad-hoc: actively refused the ring.
+  DECLINED
+  /// Ad-hoc: the ring timed out without an answer.
+  MISSED
+  /// Joined, but their media never came up — the per-person record of the
+  /// symmetric-NAT case, and the only way to see that one participant could
+  /// never be heard.
+  FAILED
+}
+
+/// One person's membership of one group call.
+///
+/// Append-only and higher-volume than `GroupCall` — up to eight rows per call,
+/// written once and then updated in place — so per the R0-T7 new-table policy it
+/// takes a `BigInt` identity rather than a `cuid()`: insert locality without a
+/// second index, and the same shape as the other high-volume child tables here
+/// (`PoolContribution`, `CommunityPageRevision`). The id is never exposed to a
+/// client; every read addresses a row by `(callId, userId)` or scans by user, so
+/// nothing needs an opaque public handle and `BigInt`'s awkward JSON
+/// serialisation never reaches the wire.
+model GroupCallParticipant {
+  id     BigInt @id @default(autoincrement())
+  callId String
+  userId String
+
+  status GroupCallParticipantStatus @default(INVITED)
+
+  /// When they were rung (ad-hoc) or when the row was created on join (open
+  /// room). Always set, so a user's call history has one column to sort on.
+  invitedAt   DateTime  @default(now())
+  joinedAt    DateTime?
+  leftAt      DateTime?
+  /// Denormalised time in the room, in seconds. 0 unless they joined.
+  durationSec Int       @default(0)
+
+  call GroupCall @relation(fields: [callId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// One row per person per call. Also serves as the `callId` prefix index that
+  /// loads a roster, so no separate `@@index([callId])` is needed.
+  @@unique([callId, userId])
+  @@index([userId, invitedAt(sort: Desc)])
+  @@map("group_call_participant")
+}
+
+// ─── The programming grid (L1, 2026-09-19) ────────────────────────────────
+// Everything on this platform is on-demand. Nothing happens AT a time, which
+// is why there is no reason to open the site at 8pm rather than never. The
+// pieces were all here and scattered — a daily puzzle, a wheel reset, a
+// tournament start, an event RSVP, a scheduled post — and appeared nowhere
+// together, so nothing could answer "what is on today".
+//
+// A schedule is editorial, so this is rows: somebody decides that Thursday's
+// featured build is this one. The opposite call from ranked seasons, which are
+// derived precisely because nobody decides them.
+
+/// One thing on the grid. Recurrence is expanded at read time by
+/// `lib/schedule/slots.ts` — a daily drop does not need 365 rows a year.
+model ScheduledSlot {
+  id String @id @default(cuid())
+
+  /// 'daily-puzzle' | 'tournament' | 'premiere' | … — see SLOT_KINDS. A string
+  /// rather than an enum because adding a kind should be a deploy, not a
+  /// migration, and the grid degrades gracefully on one it does not know.
+  kind String @db.VarChar(24)
+
+  title String  @db.VarChar(120)
+  href  String? @db.VarChar(200)
+
+  /// First (or only) occurrence, UTC.
+  startsAt DateTime
+
+  /// Zero means a moment rather than a window — a puzzle dropping.
+  durationMinutes Int @default(0)
+
+  /// 'once' | 'daily' | 'weekly'.
+  recurrence String @default("once") @db.VarChar(8)
+
+  /// When a recurring slot stops. Null runs indefinitely.
+  until DateTime?
+
+  /// Off the grid without being deleted, so a recurring slot can be paused for
+  /// a week and put back rather than re-created from memory.
+  published Boolean @default(true)
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  /// The window query: published slots that could overlap a range.
+  @@index([published, startsAt])
+  @@map("scheduled_slot")
+}
+
+// ── P04: M1 M3 M5 M6 M7 M8 M9 M10 (messaging) ──
+// Columns added to existing models (kind/meta/expiresAt/attachFlags/forwardCount
+// on direct_message + group_message, thread columns on group_message, timer and
+// theme on conversation + group_chat, receipt/typing toggles on conversation_pref)
+// live next to those models. New tables follow.
+
+/// M1 — a user-defined folder over their DM + group-chat lists.
+model ChatFolder {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   @db.VarChar(40)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items ChatFolderItem[]
+
+  @@index([userId, position])
+  @@map("chat_folder")
+}
+
+/// M1 — one chat inside a folder. `scopeKey` is `dm:<conversationId>` or
+/// `group:<groupId>` (same namespace as ConversationPref).
+model ChatFolderItem {
+  folderId  String
+  scopeKey  String   @db.VarChar(80)
+  createdAt DateTime @default(now())
+
+  folder ChatFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@id([folderId, scopeKey])
+  @@map("chat_folder_item")
+}
+
+/// M6 — a pinned message in a DM or group chat. No FK to the message (it can be
+/// either table); the expiry sweep and the read path drop pins whose message is gone.
+model ChatPin {
+  id         String   @id @default(cuid())
+  scopeKey   String   @db.VarChar(80)
+  messageId  String   @db.VarChar(40)
+  pinnedById String
+  createdAt  DateTime @default(now())
+
+  pinnedBy User @relation(fields: [pinnedById], references: [id], onDelete: Cascade)
+
+  @@unique([scopeKey, messageId])
+  @@index([scopeKey, createdAt(sort: Desc)])
+  @@index([messageId])
+  @@map("chat_pin")
+}
+
+/// P04 (/poll in a DM) — a vote on a `kind = "poll"` direct message. Group chats
+/// keep using GroupPollVote.
+model DirectPollVote {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  optionIdx Int
+  createdAt DateTime @default(now())
+
+  message DirectMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@map("direct_poll_vote")
+}
+
+// ── P09 calendar: K1 K2 K3 K4 F5 ──
+
+/// K1 — an availability poll ("when can everyone make it?"). The slot grid is
+/// not stored: it is derived from (tz, firstDay, days, dayStartHour, dayEndHour,
+/// slotMin) by lib/calendar/poll-slots.ts, so a respondent's answers are one
+/// character per slot, in slot order.
+model AvailabilityPoll {
+  id             String    @id @default(cuid())
+  creatorId      String
+  title          String    @db.VarChar(120)
+  description    String    @default("") @db.VarChar(500)
+  /// IANA timezone the organiser picked the daily hour window in.
+  tz             String    @db.VarChar(64)
+  /// First day of the range, YYYY-MM-DD in `tz`.
+  firstDay       String    @db.VarChar(10)
+  days           Int
+  dayStartHour   Int
+  dayEndHour     Int
+  slotMin        Int
+  /// Optional attachment: a community (lock-in creates its event) or a group chat (lock-in notifies it).
+  communityId    String?   @db.VarChar(40)
+  groupChatId    String?   @db.VarChar(40)
+  lockedStartMin Int?
+  lockedEndMin   Int?
+  lockedAt       DateTime?
+  lockedEventId  String?   @db.VarChar(40)
+  createdAt      DateTime  @default(now())
+
+  creator   User                       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  responses AvailabilityPollResponse[]
+  invitees  AvailabilityPollInvitee[]
+
+  @@index([creatorId, createdAt(sort: Desc)])
+  @@index([communityId])
+  @@index([groupChatId])
+  @@map("availability_poll")
+}
+
+/// One member's answers: a string, one char per slot — '0' no, '1' yes, '2' if need be.
+model AvailabilityPollResponse {
+  id        String   @id @default(cuid())
+  pollId    String
+  userId    String
+  answers   String   @db.VarChar(720)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  poll AvailabilityPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("availability_poll_response")
+}
+
+/// A REQUIRED invitee: a slot only makes the shortlist when every invitee can make it.
+model AvailabilityPollInvitee {
+  id     String @id @default(cuid())
+  pollId String
+  userId String
+
+  poll AvailabilityPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+  @@index([userId])
+  @@map("availability_poll_invitee")
+}
+
+/// K2 — a member's office-hours settings. Bookable slots are derived from the
+/// weekly windows, never stored.
+model OfficeHoursConfig {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  title      String   @default("") @db.VarChar(80)
+  blurb      String   @default("") @db.VarChar(300)
+  tz         String   @db.VarChar(64)
+  slotMin    Int      @default(30)
+  /// Cap on bookings per calendar week (host timezone). Null = unlimited.
+  maxPerWeek Int?
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  windows OfficeHoursWindow[]
+
+  @@map("office_hours_config")
+}
+
+/// A recurring weekly window, in the config's timezone. weekday 0 = Sunday.
+model OfficeHoursWindow {
+  id          String @id @default(cuid())
+  configId    String
+  weekday     Int
+  startMinute Int
+  endMinute   Int
+
+  config OfficeHoursConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId])
+  @@map("office_hours_window")
+}
+
+/// One booked slot. The unique (hostId, startsAt) is what makes booking race-safe;
+/// cancelling deletes the row so the slot frees up.
+model OfficeHoursBooking {
+  id        String   @id @default(cuid())
+  hostId    String
+  guestId   String
+  startsAt  DateTime
+  endsAt    DateTime
+  note      String   @default("") @db.VarChar(300)
+  createdAt DateTime @default(now())
+
+  host  User @relation("OfficeHoursHost", fields: [hostId], references: [id], onDelete: Cascade)
+  guest User @relation("OfficeHoursGuest", fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@unique([hostId, startsAt])
+  @@index([guestId, startsAt])
+  @@map("office_hours_booking")
+}
+
+/// K3 — the private tokenised calendar feed. The token is the credential
+/// (calendar apps poll with no cookies); rotating replaces it.
+model CalendarFeed {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  token     String    @unique @db.VarChar(64)
+  enabled   Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  rotatedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("calendar_feed")
+}
+
+/// K3 — a programming-grid slot the member opted into.
+model CalendarFeedSlot {
+  id        String   @id @default(cuid())
+  userId    String
+  slotId    String   @db.VarChar(40)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, slotId])
+  @@map("calendar_feed_slot")
+}

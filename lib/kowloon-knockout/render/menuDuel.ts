@@ -8,6 +8,7 @@
 // t is always the same frame, the loop repeats every DUEL_PERIOD seconds.
 // ============================================================
 import type { PunchType } from '@/lib/kowloon-knockout/game/fighters/types';
+import { clamp01 } from '@/lib/core/math';
 
 export type DuelState = 'idle' | 'walking' | 'punching' | 'blocking' | 'hit' | 'knockedOut';
 
@@ -49,7 +50,6 @@ const HIT_TIME = 0.5;
 const KO_TIME = 1.0;
 const FLASH_TIME = 0.25;
 
-const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 const smooth = (v: number) => { const c = clamp01(v); return c * c * (3 - 2 * c); };
 
 function side(i: 0 | 1): { home: number; yaw: number; dir: 1 | -1 } {

@@ -24,7 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { LocationSearch, type HomesPlace } from '@/components/homes/LocationSearch';
 import { FiltersBar } from '@/components/homes/FiltersBar';
 import { ListingGrid } from '@/components/homes/ListingGrid';
@@ -289,7 +289,7 @@ function HomesBrowsePage() {
                 ? t('homes-view-list', { defaultValue: 'List' })
                 : t('homes-view-map', { defaultValue: 'Map' })}
             </Button>
-            <LiquidTabs
+            <Tabs
               size="sm"
               iconOnly
               className="hidden w-auto lg:inline-flex"

@@ -75,13 +75,13 @@ without a single component change.
 > "taps never emit ripples" or "nothing reacts to the pointer", read it through
 > that contract. The role-by-purpose rules are unchanged.
 >
-> Material CSS is `app/liquid-glass.css` (role base) + `app/jelly-material.css`
+> Material CSS is `app/glass-roles.css` (role base) + `app/jelly-material.css`
 > (haze, carriers, CSS rim, degradation) + `app/jelly-arcs.css` (the arc layer),
 > with an app-token adapter in `components/shared/app-theme.css`. The radial
 > shell and navigator live in [`components/radial/`](../components/radial/README.md).
 > The old SVG lens filters, `lib/glass-lens.ts` and the unused `lib/liquid-gl/`
 > tier remain deleted; historical modifier names are compatibility aliases;
-> `liquid-morph` is the SVG-metaball path. Historical performance findings below
+> the SVG-metaball path (`liquid-morph`) was deleted. Historical performance findings below
 > still explain why viewport blur, root writes and blanket capture loops must not
 > return.
 
@@ -119,7 +119,7 @@ tile 24px — 8px steps, so anything inset 8px inside a card follows its curve).
 full pill up to 48px tall, so a lone button or field is a pill and a taller box is a
 softly rounded rectangle, never a lozenge. **Related controls are not a row of pills:** a
 cluster (toolbar, segmented choice, pagination, tabs) is ONE jelly body — `JellyGroup`, or
-`LiquidTabs` for tabs — whose members are flat on it, the selected one marked by a feathered
+`Tabs` for tabs — whose members are flat on it, the selected one marked by a feathered
 accent glow rather than a raised capsule or a filled accent pill. Games and apps keep their
 own scheme. A control's inline padding is about half its
 height. A dropdown is **one rounded slab, not a stack of pills or bands**: its rows are
@@ -155,7 +155,7 @@ per-page checklist with code.)
    — the commit uses it rather than a local copy. A second copy of something
    shared is the single most common defect in this repo's UI history, and the
    reason §5.2 and §12 exist at all. (§5)
-4. **One tab-strip grammar.** Tab strips are `<LiquidTabs>`. No hand-rolled
+4. **One tab-strip grammar.** Tab strips are `<Tabs>`. No hand-rolled
    `role="tablist"`, no `layoutId` capsule of your own, no active-state
    underline. This one is **CI-enforced** — see §13. (§7)
 5. **Motion comes from the token set.** `lib/motion.ts` (`DURATION`, `EASE`,
@@ -418,8 +418,8 @@ parchment, amber accent), `nocturne` (deep-navy nightscape, sky-blue aurora),
 Persisted-but-unknown ids (a retired decorative theme, or the old `liquid-glass`
 id) self-heal to `graphite` during hydration.
 
-The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassPane` and
-`GlassFilter` — the tab-capsule merge host, with no optical lenses) with a
+The glass roles are plain classes (`.glass-pane` …, `app/glass-roles.css`); the only glass component is
+`GlassFilter` in `components/ui/glass-filter.tsx` — the tab-capsule merge host, with no optical lenses — with a
 material lab at `/jelly` (`/liquid-glass` redirects there). Everyone uses the
 shared default jelly material. The Glass clarity slider is retired: saved device and account values
 cannot make the site opaque or change its tint. Old device keys are cleared
@@ -553,7 +553,7 @@ mode list, the CSS blocks, the pre-paint script) is CI-enforced — §13.
 ### 5.1 The glass elevation classes (use these for surfaces)
 
 Glass is opt-in per element via these role classes (base in
-`app/liquid-glass.css`, the jelly material in `app/jelly-material.css`). Pick by
+`app/glass-roles.css`, the jelly material in `app/jelly-material.css`). Pick by
 role, not by looks — the tier decides cost (budget: ≤24 visible rim slabs per
 viewport on a desktop, fewer on phones; admission order overlay → chrome → pane →
 fill → control; `JELLY_BUDGETS` in `lib/jelly/tiers.ts` is the authority).
@@ -577,9 +577,9 @@ and `.glass-opaque`:
 | `.glass-interactive`                      | unlimited | Hover tint-raise, springy press flex (`--ease-glass`), and — **paired with `.glass-fill`** — the specular rim glint raised from ambient to full on hover. The glint selector is `.glass-fill.glass-interactive`: on its own, `.glass-interactive` still gives the press, but there is no rim to light. It used to add a **pointer-tracked** diffuse hotspot on `::after`; that is retired (§5.1.1) and `::after` now carries the travelling sheen (§5.1.2). |
 | `.glass-refract` (+ `data-glass-lens`)    | —         | **Retired — compatibility alias, no-op.** The SVG lens it drove (and `lib/glass-lens.ts`) is deleted; refraction is the jelly rim slab for every role (`plasmatic-jelly-system.md` §1). Do not add it to new code.                                                                                                                                                                                                                                          |
 | `.glass-refract--prism`                   | —         | **Retired — compatibility alias, no-op.** Dispersion is part of every rim slab now.                                                                                                                                                                                                                                                                                                                                                                         |
-| `.glass-liquid` (or `<GlassPane liquid>`) | —         | **Retired — compatibility alias, no-op** (`app/liquid-glass.css` sets its `::after` to `content: none`). The jelly haze is the ambient motion on every role.                                                                                                                                                                                                                                                                                                |
+| `.glass-liquid` | —         | **Retired — compatibility alias, no-op** (`app/glass-roles.css` sets its `::after` to `content: none`). The jelly haze is the ambient motion on every role.                                                                                                                                                                                                                                                                                                |
 | `.glass-sheen-hover`                      | unlimited | One-shot sheen sweep on hover — primary CTAs (`Button` `default`/`accent` have it built in).                                                                                                                                                                                                                                                                                                                                                                |
-| `.glass-bevel-sm`                         | unlimited | Narrow 6px optics ring for small capsules — the `LiquidTabs` sheet pill (§5.45), plus discs like BackToTop.                                                                                                                                                                                                                                                                                                                                                 |
+| `.glass-bevel-sm`                         | unlimited | Narrow 6px optics ring for small capsules — the `Tabs` sheet pill (§5.45), plus discs like BackToTop.                                                                                                                                                                                                                                                                                                                                                 |
 | `.glass-opaque`                           | —         | Escape hatch for full-screen fixed takeovers that must hide the page.                                                                                                                                                                                                                                                                                                                                                                                       |
 
 Sticky glass uses the shared layout contract rather than local `top-*` values:
@@ -751,7 +751,7 @@ Always reach for these before writing new markup. Helper: `cn()` from
 | `Breadcrumbs`                                                               | `components/ui/breadcrumbs.tsx`                          | "Where am I" trail for nested pages; also a `breadcrumbs?` prop on `PageLayout`. Last item is the current page (`aria-current`).                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `BackToTop`                                                                 | `components/ui/back-to-top.tsx`                          | Floating scroll-to-top button, mounted once in the `_site` shell (targets the window **and** the mobile `[data-scroll-root]` scroller).                                                                                                                                                                                                                                                                                                                                                                                                |
 | `NotificationBadge`                                                         | `components/ui/notification-badge.tsx`                   | Count pill (`bg-site-danger`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `JellyGroup`                                                                | `components/ui/jelly-group.tsx`                          | One jelly parent for a cluster of related controls; members (`JellyGroup.Item`, `.Divider`) are flat, selection is a feathered glow. Prop `surface`: `chrome`, `pane`, `fill`. A lone control stays a pill; tab strips stay `LiquidTabs`.                                                                                                                                                                                                                                                                                              |
+| `JellyGroup`                                                                | `components/ui/jelly-group.tsx`                          | One jelly parent for a cluster of related controls; members (`JellyGroup.Item`, `.Divider`) are flat, selection is a feathered glow. Prop `surface`: `chrome`, `pane`, `fill`. A lone control stays a pill; tab strips stay `Tabs`.                                                                                                                                                                                                                                                                                              |
 | `UserAvatar`                                                                | `components/ui/UserAvatar.tsx`                           | Default fallback `/images/social/default_avatar.png`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `OptimizedImage`, `BlurImage`                                               | `components/ui/`                                         | Image loading.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `AnimatedCount`, `ViewTransitionLink`, `NavigationProgress`, `RoutePending` | `components/ui/`                                         | Motion/navigation helpers. `RoutePending` is the router-wide pending fallback.                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -1067,10 +1067,10 @@ gated off there too, via `html.app-route`).
   owner moves under them. Bodies unregister in layout-effect cleanup and
   re-sample before paint on route/tab commits; scroll, nested scroll, elastic
   touch movement, `visualViewport` changes, page resume and layout-shift events
-  wake the normally-idle sampler. (Comments in `liquid-morph.tsx` still say
+  wake the normally-idle sampler. (Comments in the deleted `liquid-morph.tsx` said
   "shader body" in places — that is the deleted GL tier, and the SVG/CSS path
   they describe is the one that always ran.)
-- **Liquid tabs:** tab strips use `components/ui/liquid-tabs.tsx`, placed
+- **Liquid tabs:** tab strips use `components/ui/tabs.tsx`, placed
   **below** the page title, never inside header chrome (§5.45; see
   `page-consistency.md`). Since the 2026-10-09 minimalism audit the strip is a
   **segmented control**: a neutral raised **thumb** (`[data-tab-thumb]`, opaque
@@ -1261,7 +1261,7 @@ gated off there too, via `html.app-route`).
     in `--evert-tint`, behind the label: the control's own shape scaled 0 → 1
     about the point. Nothing else on the control moves, so a label never
     rotates or scales. `Button` (every variant but `link`, in its own hover
-    colour), `LiquidTabs` tabs, `MenuItem` rows, `Select` (trigger and items),
+    colour), `Tabs` tabs, `MenuItem` rows, `Select` (trigger and items),
     the nav rail, the top bar's buttons and sign-in, the compose button, the
     feed's post cards and the store's cards carry it; their hover background
     rules are gone, because the hover colour arrives by eversion now. The layer
@@ -1683,7 +1683,7 @@ remain the authority:
 
 - **`lib/__tests__/design-consistency.test.ts` — one tab-strip grammar.** A
   static source scan over `components/` + `app/routes/` that fails on:
-  (1) `role="tablist"` outside `components/ui/liquid-tabs.tsx` and its
+  (1) `role="tablist"` outside `components/ui/tabs.tsx` and its
   documented allowlist; (2) an `aria-selected` element that also carries a
   `border-b`/`underline` marker; (3) an inline tab-capsule `layoutId` outside
   the sanctioned renderer; (4) the conditional accent-underline bar shape
@@ -1694,7 +1694,7 @@ remain the authority:
   Its own docstring records the one rule it _can't_ automate: a role-less
   switcher that marks its active slot some other way (an accent pill, a
   segmented control, a `flex-1` button row with an active tint) still belongs
-  on `LiquidTabs`. Reviewers catch those by eye.
+  on `Tabs`. Reviewers catch those by eye.
 
   The same file carries four **site-tier** rules added 2026-08-01 (games and
   the `--app-*` apps are exempt, by design — Temple of Joy is supposed to be

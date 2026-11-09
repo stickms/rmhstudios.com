@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
 import { DataTable, type Column } from '@/components/admin/perf/DataTable';
 import { Kpi } from '@/components/admin/perf/Kpi';
@@ -59,7 +59,7 @@ export function DeepseekPanel() {
   };
 
   const windowTabs = (
-    <LiquidTabs
+    <Tabs
       aria-label={t('window-label', { defaultValue: 'History window' })}
       value={win}
       onChange={(id) => setWin(id as WindowId)}
@@ -186,7 +186,7 @@ export function DeepseekPanel() {
       <div className="flex flex-wrap items-center gap-3">
         {windowTabs}
         {options.length > 1 && (
-          <LiquidTabs
+          <Tabs
             aria-label={t('currency-label', { defaultValue: 'Currency' })}
             value={currency}
             onChange={setPicked}

@@ -14,7 +14,7 @@ the repo or the image anymore.
 
 ## What changed
 
-- `prisma/schema.prisma` — `Album` + `AlbumSlide` models (migration
+- `prisma/schema/` (per-domain files) — `Album` + `AlbumSlide` models (migration
   `20260629000000_add_albums`).
 - `lib/albums.ts` — now just the shared client-safe types.
 - `lib/albums.server.ts` — reads the DB, resolves storage keys → URLs.

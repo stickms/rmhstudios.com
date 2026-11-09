@@ -3,7 +3,7 @@
  * fused to its capsule in BOTH render tiers.
  *
  * The droplet trails the capsule centre on a soft spring (`TRAIL_SPRING` in
- * liquid-morph). Nothing about that spring bounds the lag, so a fast, wide tab
+ * the since-deleted liquid-morph). Nothing about that spring bounds the lag, so a fast, wide tab
  * jump (100–300 px) throws the droplet far outside what either fusion primitive
  * can bridge — the CSS `#glass-goo` (blur stdDev 9 → alpha 16/−6) only fuses
  * blobs whose edge gap is ≲ 2× the blur radius (~18 px), and the GL shader's

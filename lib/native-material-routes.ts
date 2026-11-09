@@ -17,7 +17,7 @@ export function isNativeMaterialRoute(pathname: string | undefined | null): bool
 
 /**
  * The class `<html>` carries on a native-material route. The JS services are simply not installed there
- * (`useLiquidInteractions(false)`), but the CSS-only material (the woken haze in app/jelly-material.css §3b) would
+ * (`useJellyPointer(false)`), but the CSS-only material (the woken haze in app/jelly-material.css §3b) would
  * still match, so its rules are scoped with `html:not(.native-material)`. Stamped pre-paint by the theme script in
  * app/routes/__root.tsx on a hard load and kept in step on client navigation by {@link syncNativeMaterialClass}.
  */

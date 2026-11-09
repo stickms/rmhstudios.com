@@ -13,7 +13,7 @@ feature lives in that feature's directory; genuinely shared primitives live in
 
 | Directory       | Contents                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ui/`           | **Shared primitives** — Button, Badge, Card, Dialog, Input, Textarea, Select, Label, EmptyState, Skeleton, Spinner/RadialLoader, Tooltip, IconButton, CopyButton, ConfirmDialog, Breadcrumbs, BackToTop, NotificationBadge, UserAvatar, OptimizedImage/BlurImage, AnimatedCount, ViewTransitionLink, NavigationProgress, RoutePending, pagination, slider, resizable, skeletons/. Also the glass layer: `liquid-glass` (GlassPane + the global GlassFilter host), `liquid-tabs` (the **only** sanctioned tab strip), `liquid-morph`. Always check here before writing new UI. Full API notes in `docs/design-language.md` §5. |
+| `ui/`           | **Shared primitives** — Button, Badge, Card, Dialog, Input, Textarea, Select, Label, EmptyState, Skeleton, Spinner/RadialLoader, Tooltip, IconButton, CopyButton, ConfirmDialog, Breadcrumbs, BackToTop, NotificationBadge, UserAvatar, OptimizedImage/BlurImage, AnimatedCount, ViewTransitionLink, NavigationProgress, RoutePending, pagination, slider, resizable, skeletons/. Also `tabs` (`<Tabs>`, the **only** sanctioned tab strip) and `glass-filter` (the global `GlassFilter` SVG host). Always check here before writing new UI. Full API notes in `docs/design-language.md` §5. |
 | `feed/`         | Feed/timeline plus the **layout system**: `SiteShell.tsx` (site-wide chrome, delegates to `radial/RadialShell`), `PageLayout.tsx` (canonical page wrapper), `ContextRail.tsx` (portals a page's `rightSidebar` into the shell's desktop live rail), `AnimatedMain.tsx`, `ColumnHeader.tsx`, post cards, composer. Also `feed.css`. Navigation lives in `radial/RadialHub` plus the desktop `radial/RadialNavRail`; the old left rail and mobile push-drawer are gone.                                                                                                                                                         |
 | `site/`         | Site-level chrome: `CommandPalette` (mounted globally), `LanguageSwitcher`, `PasskeyManager`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `shared/`       | Cross-feature building blocks. **The full-screen app tier lives here**: `app-theme.css` (the `--app-*` token contract + chrome shared by RMHbox/RMHType/RMHStudy/RMHTube/RMHMusic), `AppShell`, `AppHeader`, `AppToaster`, `ConnectionStatus` (reconnect banner + peer-wait overlay), `useQuitGame` (hooks/) is the shared "leave this game" handler games wire to their menu Quit button. Also `GameLoadingFallback`, `GameErrorBoundary`, ChatPanel, EmojiPicker, ReactionMenu.                                                                                                                                                                                           |
@@ -53,15 +53,14 @@ rounded-site shadow-site-sm` renders the same _box_ and none of the
   role, and you must not add one.** Floating glass reads the page behind it plainly; there
   is no live refraction on site surfaces (the liquid globe has its own shader and refracts
   a page snapshot).
-  Opt an element out with `data-jelly="off"` (aliases `data-liquid-material="off"`,
-  `data-fluid-press="none"`); opt a gesture subtree out with
-  `data-jelly-scope="off"` (alias `data-liquid-motion="off"`) and a game
+  Opt an element out with `data-jelly="off"`; opt a gesture subtree out with
+  `data-jelly-scope="off"` and a game
   play-field with `data-jelly-zone="playfield"`. **Nothing `position: fixed` inside a jelly
   host** — a host that can carry a transform is its containing block; portal it. Never add
   per-card pointer listeners, CSS hover lifts, framer `whileHover`/`whileTap` scale, your
   own `transition` on `scale`/`translate`/`transform` of a host, `infinite` keyframes, arc
   drawing, gradient-position animation, or inherited root variable writes in frames.
-  `app/liquid-glass.css` + `app/jelly-material.css` are the whole material. Layout never
+  `app/glass-roles.css` + `app/jelly-material.css` are the whole material. Layout never
   changes: hosts squash within 4px/3% and an arc nudges the struck hosts ≤1.5px. Keep 16px
   (`--jelly-margin`) of free room round a slab inside any `overflow` container so the squash
   and the focus ring are not cut. Buttons are flat until touched (`data-jelly-rest="flat"`);
@@ -147,7 +146,7 @@ cannot see, and it is the half that decides whether the change looks native:
       never `text-white`/`text-black` on a themed surface.
 - [ ] **A switcher is a tab strip** even without `role="tablist"` — an accent
       pill, a segmented control, a `flex-1` button row with an active tint all
-      belong on `<LiquidTabs>`. The gate only catches the obvious shapes; this
+      belong on `<Tabs>`. The gate only catches the obvious shapes; this
       one is on you.
 - [ ] **Motion from `lib/motion.ts`** (`DURATION`/`EASE`/`SPRING`/
       `APPLE_SPRING`, the named variants), not ad-hoc numbers; anything the

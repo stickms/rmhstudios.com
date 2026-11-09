@@ -10,6 +10,8 @@
 // where `onBeforeCompile` does nothing — it never calls this.
 // ============================================================
 
+import { clamp01 } from '@/lib/core/math';
+
 /** The neon rig's colours: as designed (the card art's hot pink and cyan), or softened for set-dressing. */
 export interface RigColors { sky: string; ground: string; key: string; pink: string; cyan: string; violet: string }
 export const RIG_COLORS: RigColors = {
@@ -42,8 +44,6 @@ export const MENU_MUTE: MuteOptions = { saturation: 0.5, brightness: 0.9 };
 
 /** Rec. 709 luma, the weights the shader uses too. */
 export const LUMA = [0.2126, 0.7152, 0.0722] as const;
-
-const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 export const luma = (r: number, g: number, b: number): number => LUMA[0] * r + LUMA[1] * g + LUMA[2] * b;
 

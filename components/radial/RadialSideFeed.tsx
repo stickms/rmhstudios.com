@@ -18,7 +18,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -170,7 +170,7 @@ export function RadialSideFeed() {
     <aside className="rad-deck" aria-label={t('more-feeds', { defaultValue: 'More feeds' })}>
       {/* §16.2: one tab-strip grammar site-wide — the shared renderer owns the
           tablist semantics, roving arrow keys and the morphing capsule. */}
-      <LiquidTabs
+      <Tabs
         className="rad-deck__tabs"
         size="sm"
         fullWidth

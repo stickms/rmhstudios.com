@@ -29,6 +29,7 @@
  */
 
 import { angleVectors, vectorAngles, type QAngle, type Vec3 } from '../core/vec';
+import { clamp } from '@/lib/core/math';
 
 // ─── Constants (SDK names, SDK values) ──────────────────────────────────────
 
@@ -71,8 +72,6 @@ export function simpleSpline(x: number): number {
   const s = x * x;
   return 3 * s - 2 * s * x;
 }
-
-const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
 
 /** SimpleSplineRemapValClamped. */
 export function simpleSplineRemapClamped(v: number, a: number, b: number, c: number, d: number): number {

@@ -1,0 +1,55 @@
+// ─── RMH Music learning programme ─────────────────────────────────────────
+/// One row per learner: the instrument and input they chose in setup, the
+/// latency offset they calibrated, and their daily goal. Created on first save.
+model MusicLearnProfile {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  instrument String   @default("piano")
+  input      String   @default("screen")
+  latencyMs  Int      @default(0)
+  dailyGoal  Int      @default(1)
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("music_learn_profile")
+}
+
+/// Best result per learner per lesson. `lessonId` is validated against the
+/// static catalogue in `lib/rmhmusic/learn/content/path.ts`, not a FK.
+model MusicLearnLessonProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  lessonId    String
+  stars       Int       @default(0)
+  bestScore   Int       @default(0)
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("music_learn_lesson_progress")
+}
+
+/// One remembered staff-reading card per learner: its spaced-repetition state
+/// (`lib/rmhmusic/learn/srs/schedule.ts`). `cardId` (`treble:64`) is validated
+/// against the decks in `lib/rmhmusic/learn/content/decks.ts`, not a FK. A row
+/// is written only by a review (Practice), always with the server's clock.
+model MusicLearnCard {
+  id           String    @id @default(cuid())
+  userId       String
+  cardId       String    @db.VarChar(64)
+  due          DateTime
+  stability    Float     @default(0)
+  difficulty   Float     @default(5)
+  reps         Int       @default(0)
+  lapses       Int       @default(0)
+  lastReviewAt DateTime?
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cardId])
+  @@map("music_learn_card")
+}

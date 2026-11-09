@@ -25,7 +25,7 @@ import { EmojiPickerButton } from'@/components/shared/EmojiPickerButton';
 import { Button } from'@/components/ui/button';
 import { Input } from'@/components/ui/input';
 import { Label } from'@/components/ui/label';
-import { LiquidTabs } from'@/components/ui/liquid-tabs';
+import { Tabs } from'@/components/ui/tabs';
 import { Select } from'@/components/ui/select';
 import {
  Sheet,
@@ -591,7 +591,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
  })}
  </SheetDescription>
  </SheetHeader>
- <LiquidTabs
+ <Tabs
  tabs={sectionTabs}
  value={section}
  onChange={(value) => {

@@ -10,7 +10,7 @@
 
 import { prisma } from '@/lib/prisma.server';
 
-/** The fixed primary key. See `Pf2eSettings` in `prisma/schema.prisma`. */
+/** The fixed primary key. See `Pf2eSettings` in `prisma/schema/`. */
 export const SETTINGS_ID = 'singleton';
 
 export interface BoardSettings {

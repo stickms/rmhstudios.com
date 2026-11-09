@@ -21,7 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 
 const PATH = '/jelly';
 const TITLE = 'Plasmatic Jelly — Design Lab | RMH Studios';
@@ -402,7 +402,7 @@ function MotionSection() {
           <span className="site-section-label">
             {t('jelly-motion-label', { defaultValue: 'Jelly motion' })}
           </span>
-          <LiquidTabs
+          <Tabs
             aria-label={t('jelly-motion-label', { defaultValue: 'Jelly motion' })}
             tabs={JELLY_MOTION_LEVELS.map((id) => ({ id, label: motionLabels[id] }))}
             value={jellyMotion}
@@ -417,7 +417,7 @@ function MotionSection() {
           <span className="site-section-label">
             {t('jelly-arcs-title', { defaultValue: 'Electric arcs' })}
           </span>
-          <LiquidTabs
+          <Tabs
             aria-label={t('jelly-arcs-title', { defaultValue: 'Electric arcs' })}
             tabs={ELECTRIC_ARC_MODES.map((id) => ({ id, label: arcLabels[id] }))}
             value={electricArcs}

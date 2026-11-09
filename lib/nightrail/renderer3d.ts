@@ -48,6 +48,7 @@ import type { RunState } from './game';
 import { bakeLevel, railOffset, railPosition, samplePoint } from './track';
 import type { TrackPoint } from './track';
 import type { LevelConfig, TrackFeature } from './types';
+import { clamp } from '@/lib/core/math';
 
 // ── Framing ─────────────────────────────────────────────────────────────────
 
@@ -210,10 +211,6 @@ const quatRoll = new THREE.Quaternion();
 function hash01(n: number): number {
   const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
   return x - Math.floor(x);
-}
-
-function clamp(v: number, min: number, max: number): number {
-  return v < min ? min : v > max ? max : v;
 }
 
 /** Frame-rate independent approach factor for an exponential ease. */

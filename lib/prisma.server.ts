@@ -251,7 +251,7 @@ const queryBudgetExtension = Prisma.defineExtension({
 
 /* ─── Unbounded-read guard (OPT-50) ─────────────────────────────────────────
  *
- * `schema.prisma` is 252 models. A `findMany` with no `select` returns every
+ * the Prisma schema (`prisma/schema/`) is 252 models. A `findMany` with no `select` returns every
  * scalar column — on wide models (posts with bodies, users with settings blobs)
  * that is the dominant cost of the query — and one with no `take` returns every
  * row that matches. Both are invisible at the call site, and today a deliberate

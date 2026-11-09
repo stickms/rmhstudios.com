@@ -3,7 +3,7 @@
  * rail with an orange underline on the active tab, like the game's own menus.
  *
  * This app is deliberately outside the site's Plasmatic Jelly material (no glass,
- * haze, arcs or soft body), so it cannot use `LiquidTabs`, whose capsule and
+ * haze, arcs or soft body), so it cannot use `Tabs`, whose capsule and
  * thumb are jelly. Same contract otherwise: the caller owns `value`/`onChange`,
  * roving arrow-key navigation, `role="tablist"`.
  *

@@ -16,6 +16,7 @@
  */
 
 import { CHARGE } from '../tiers';
+import { clamp01 } from '@/lib/core/math';
 
 export const ELECTRIC = {
   /** Field re-evaluation period while anything is charged (ms) — also the attraction cadence. */
@@ -31,8 +32,6 @@ export const ELECTRIC = {
   /** A hop refused by the flash ledger waits for the ledger to free, but never longer than this (ms). */
   hopWaitMaxMs: 1000,
 } as const;
-
-const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
 
 /** Electric charge after `dtMs` of decay. */
 export function decayCharge(q: number, dtMs: number): number {

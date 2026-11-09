@@ -1,12 +1,20 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import {
   dismissPlaytimeNotice,
   getPlaytimeSettings,
   setPlaytimePrivacy,
 } from '@/lib/playtime/playtime.server';
-import { PLAYTIME_PRIVACY_VALUES } from '@/lib/playtime/privacy';
+import {
+  dismissPlaytimeNoticeBody,
+  playtimeSettings,
+  setPlaytimePrivacyBody,
+} from '@/lib/playtime/playtime-schema';
+import {
+  dismissPlaytimeNoticeApi,
+  getPlaytimeSettingsApi,
+  setPlaytimePrivacyApi,
+} from '@/lib/playtime/playtime.contract';
 
 /**
  * /api/settings/playtime-privacy — who may see this account's per-title playtime.
@@ -18,24 +26,25 @@ import { PLAYTIME_PRIVACY_VALUES } from '@/lib/playtime/privacy';
 export const Route = createFileRoute('/api/settings/playtime-privacy')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) =>
-        Response.json(await getPlaytimeSettings(userId)),
+      GET: implement(
+        getPlaytimeSettingsApi,
+        { rateLimit: 'read', response: playtimeSettings },
+        async ({ userId }) => getPlaytimeSettings(userId),
       ),
-      PUT: defineHandler(
-        {
-          rateLimit: 'write',
-          body: z.object({ playtimePrivacy: z.enum(PLAYTIME_PRIVACY_VALUES) }),
-        },
+      PUT: implement(
+        setPlaytimePrivacyApi,
+        { rateLimit: 'write', body: setPlaytimePrivacyBody, response: playtimeSettings },
         async ({ userId, body }) => {
           await setPlaytimePrivacy(userId, body.playtimePrivacy);
-          return Response.json(await getPlaytimeSettings(userId));
+          return getPlaytimeSettings(userId);
         },
       ),
-      POST: defineHandler(
-        { rateLimit: 'write', body: z.object({ dismissNotice: z.literal(true) }) },
+      POST: implement(
+        dismissPlaytimeNoticeApi,
+        { rateLimit: 'write', body: dismissPlaytimeNoticeBody, response: playtimeSettings },
         async ({ userId }) => {
           await dismissPlaytimeNotice(userId);
-          return Response.json(await getPlaytimeSettings(userId));
+          return getPlaytimeSettings(userId);
         },
       ),
     },

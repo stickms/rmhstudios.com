@@ -15,7 +15,7 @@ import { installPointerVars } from '@/lib/jelly/pointer-vars';
  * mounts from then on fades in (app/jelly-material.css §7). Every browser gets the same material: there is no low-end
  * tier, and nothing here probes the GPU.
  *
- * The static CSS tier (`app/liquid-glass.css`, `app/jelly-material.css`) is the material. The soft body is CSS too
+ * The static CSS tier (`app/glass-roles.css`, `app/jelly-material.css`) is the material. The soft body is CSS too
  * (CSS-first jelly, PR 3: §8, springs on `scale`); the soft-body physics, the glass engine, the CSS flow carriers, the
  * governor and the fallback cursor light are deleted (their `--px` / `--py` wake is `lib/jelly/pointer-vars.ts`). The electric arc is
  * the one event-woken effect: **after the same idle step**, `installLazyClickArcs` (`lib/jelly/arc-lazy.ts`) subscribes
@@ -23,7 +23,7 @@ import { installPointerVars } from '@/lib/jelly/pointer-vars';
  * on that press, and removed again 10 s after the last click. Ambient arcs no longer exist.
  * The page snapshot the liquid globe refracts comes from the globe's own scene feed (`lib/liquid/glass/scene-feed.ts`).
  */
-export function useLiquidInteractions(enabled = true): void {
+export function useJellyPointer(enabled = true): void {
   useEffect(() => {
     // Some full-screen apps (the TF2 HUD Editor) carry their own material and install none of the jelly.
     if (!enabled) return;

@@ -32,7 +32,7 @@
  *   (`data-jelly-scope="off"`, a game's `data-jelly-zone="playfield"`) nothing is written, nor on a native-material
  *   route (`html.native-material`) or while a game is in play (`html[data-game-state='playing']`).
  *
- * Client-only; nothing runs at import. Mounted once per document by `hooks/useLiquidInteractions.ts`.
+ * Client-only; nothing runs at import. Mounted once per document by `hooks/useJellyPointer.ts`.
  */
 import { drive } from './frame';
 import { onJellyPointer } from './pointer';

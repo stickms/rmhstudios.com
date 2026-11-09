@@ -13,7 +13,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Guitar, Piano } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 import { PATH } from '@/lib/rmhmusic/learn/content/path';
 import { practiceAvailable } from '@/lib/rmhmusic/learn/content/practice';
@@ -161,7 +161,7 @@ export function LearnHome() {
   } else {
     body = (
       <div className="space-y-4">
-        <LiquidTabs
+        <Tabs
           tabs={tabs}
           value={instrument}
           onChange={(id) => void useLearnStore.getState().setInstrument(id as Instrument)}

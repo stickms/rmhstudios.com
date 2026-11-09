@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem, MenuLabel, MenuSeparator } from '@/components/ui/menu';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -521,7 +521,7 @@ export function SongLibrary({
   // search onto these results.
   const visibleSongs = songs;
 
-  const viewTabs: LiquidTab[] = [
+  const viewTabs: TabItem[] = [
     { id: 'grid', label: ts('view-grid', { defaultValue: 'Grid' }), icon: LayoutGrid },
     { id: 'table', label: ts('view-table', { defaultValue: 'Table' }), icon: Table2 },
   ];
@@ -812,13 +812,13 @@ export function SongLibrary({
           </Select>
         )}
 
-        {/* L13 — grid/table view toggle. `LiquidTabs` (not a hand-rolled
+        {/* L13 — grid/table view toggle. `Tabs` (not a hand-rolled
             toggle group) sitting in a `.neumorphic-inset` well, the same
             neumorphic-treatment-around-a-sanctioned-primitive pattern
             `editor/DifficultyTabs.tsx` uses for its difficulty strip.
 
             The width has to be DEFINITE and it has to fit two segments.
-            `LiquidTabs` is a grid of `repeat(auto-fit, minmax(min(--tab-seg-min,
+            `Tabs` is a grid of `repeat(auto-fit, minmax(min(--tab-seg-min,
             100%), 1fr))`, which at `size="sm"` floors each segment at 5.5rem:
             2 × 5.5rem + 0.25rem grid gap + 2 × 0.25rem well padding = 11.75rem.
             The 9.5rem that used to be here left room for exactly ONE column and
@@ -828,7 +828,7 @@ export function SongLibrary({
             from the well and the well from its content, and that circularity
             collapses the track to a single 53px column. */}
         <div className="neumorphic-inset shrink-0 w-[11.75rem] p-1">
-          <LiquidTabs
+          <Tabs
             tabs={viewTabs}
             value={filters.view}
             onChange={handleViewChange}

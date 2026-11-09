@@ -29,6 +29,8 @@ import { buildArena, type ArenaLayout } from './arena';
 import { createRng } from './rng';
 import { GARMENT_KINDS, PATTERNS, type GarmentKind } from './patterns';
 import { ClothWorld, REST_SPEED, type Garment, type Ray, type SpawnDesc } from './solver';
+import { lerp } from '@/lib/core/math';
+import { shuffle } from '@/lib/core/rng';
 
 // ─── Drop schedule ──────────────────────────────────────────────────────────
 
@@ -52,10 +54,6 @@ function pickKind(roll: number): GarmentKind {
     if (roll < acc) return kind;
   }
   return 'shirt';
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
 }
 
 /**
@@ -123,15 +121,6 @@ export function buildDropSchedule(
 }
 
 /** Fisher-Yates against a supplied uniform source, so it stays seeded. */
-function shuffle<T>(items: T[], next: () => number): T[] {
-  for (let i = items.length - 1; i > 0; i--) {
-    const j = Math.floor(next() * (i + 1));
-    const tmp = items[i];
-    items[i] = items[j];
-    items[j] = tmp;
-  }
-  return items;
-}
 
 // ─── Scoring policy ─────────────────────────────────────────────────────────
 

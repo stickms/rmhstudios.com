@@ -1,5 +1,6 @@
 import type { PunchType } from '../fighters/types';
 import { PUNCH_COMMIT_FRAMES } from './punches';
+import { clamp01 } from '@/lib/core/math';
 
 /** Hit-reaction state duration in frames (matches updateFighter's `hit` case). */
 export const HIT_FRAMES = 12;
@@ -11,10 +12,6 @@ export interface ActionProgressInput {
     punch: PunchType | null;
     punchFrame: number;
     stateFrame: number;
-}
-
-function clamp01(v: number): number {
-    return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
 /** How far through the current one-shot action (punch/hit/KO) a fighter is, in

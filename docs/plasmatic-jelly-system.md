@@ -53,7 +53,7 @@ classes and no `data-material` flag (R5).
 
 What draws what:
 
-- **Gel and rim** — `app/liquid-glass.css` (tint, vertical `--gel-body` → `--gel-depth`
+- **Gel and rim** — `app/glass-roles.css` (tint, vertical `--gel-body` → `--gel-depth`
   coat) and `app/jelly-material.css` §2b / §4: ONE soft inset glow, `--gel-glow`
   (the Fresnel colour carrying a red / blue tint, `--gel-bevel` × `--gel-shoulder` wide), a lit
   top hairline (`border-top-color`) and, on a field, a second shadow for the well. No hairline
@@ -112,7 +112,7 @@ component paints one.
 
 | #   | Layer        | What it is                                                                                                                                                                                                                                | Drawn by                                                          | Tokens                                                                                  |
 | --- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| 1   | **Gel**      | Hazy, translucent body that darkens slightly toward its base. The primary action is ink gel.                                                                                                                                              | CSS gel layers (`app/liquid-glass.css`, `jelly-material.css` §2b) | `--gel-body` → `--gel-depth`; `--gel-ink`, `--on-ink`                                   |
+| 1   | **Gel**      | Hazy, translucent body that darkens slightly toward its base. The primary action is ink gel.                                                                                                                                              | CSS gel layers (`app/glass-roles.css`, `jelly-material.css` §2b) | `--gel-body` → `--gel-depth`; `--gel-ink`, `--on-ink`                                   |
 | 2   | **Haze**     | Low-contrast flow: currents, eddies, faint plasma at the crests, calm behind text (≤ 12 px/s, features ≥ 120 px). Moves while the host is woken.                                                                                          | woken-haze `::after` (§3b)                                        | `--site-jelly-*`, `--jelly-haze-a`, `--jelly-flow-speed`                                |
 | 3   | **Plasma**   | A core and filaments **inside** the gel, invisible at rest. Hover wakes it to `--plasma-wake` (`PLASMA.wake`); press, focus and a click brighten it. Plasma never draws an outline.                                                       | radial gradient at `--px` / `--py`                                | `--plasma-wake`, `--jelly-plasma-k`                                                     |
 | 4   | **Edge**     | A molded rim: the slab rises out of the ground over a widened shoulder (`--gel-shoulder`) with a feathered silhouette (`--gel-feather`), lit on the light side, no hairline. The 1 px Fresnel edge returns only where the feather is off. | `--gel-glow` (static)                                             | `--gel-bevel`, `--gel-shoulder`, `--gel-feather`, `--gel-fresnel`, `--gel-edge-r/-g/-b` |
@@ -170,7 +170,7 @@ literal equal to its generator; retune the TypeScript, then paste what the test 
   card wrapped in a link squashes as the card. A **press body** (`data-jelly-press-body`: `JellyGroup`,
   the top bar, the selection bar, a scroller's pill) squashes as ONE body when any member is pressed
   and its members add no cue of their own (a keyboard-activated member keeps its opacity cue).
-  `LiquidTabs` strips are not bodies: the track is a field, which never moves.
+  `Tabs` strips are not bodies: the track is a field, which never moves.
 - **The pointer variable.** `lib/jelly/pointer-vars.ts` writes `--px` / `--py` (pointer position as a
   percentage of the host) on the one hovered host, and `--jelly-s` (its larger side in px) on it and the
   soft-body hosts around it. On `(hover: none)` it attaches `pointerdown` only and takes one rect read for
@@ -199,7 +199,7 @@ sets a `filter:` on a jelly body, and nothing under `lib/jelly` or `lib/liquid` 
 
 **Flat controls** (`data-jelly-rest="flat"`, set by `<Button>` for every variant except `signal`, `destructive`,
 `danger` and `warning`): at rest a flat control is its label on the ground (no fill, no border). In print
-it gets a solid edge instead (`app/liquid-glass.css`).
+it gets a solid edge instead (`app/glass-roles.css`).
 
 **Room.** The silhouette that needed 16 px of unclipped room round every body is gone; the 16 px (`--jelly-margin`)
 stays a layout rule (§10) so the squash, the arc nudge and the focus ring are never cut off.
@@ -293,7 +293,7 @@ modulation above 3 Hz; ambient motion never moves a host's position.
 | `[data-jelly-zone="playfield"]`, `[data-jelly-scope="off"]` subtree | no                    | none            | none               | —           | —               |
 | native-material route (`/games*`, `/tf2*`, `/rmhmusic*`)            | no                    | none            | none               | —           | own scheme      |
 
-The native-material routes are listed once, in `lib/native-material-routes.ts`. RMH Music (`/rmhmusic*`, a notebook of manuscript paper) joined them in 2026-11: no arcs, soft body or woken haze. The floor, coat and rim of the shared roles it still wears (Button, Dialog, LiquidTabs) are not scoped to `html.native-material`, so `components/rmhmusic/rmhmusic.css` sets their knobs (`--app-gel-*`, `--liquid-coat`, `--jelly-tile`, `--gel-well-shade`) to nothing.
+The native-material routes are listed once, in `lib/native-material-routes.ts`. RMH Music (`/rmhmusic*`, a notebook of manuscript paper) joined them in 2026-11: no arcs, soft body or woken haze. The floor, coat and rim of the shared roles it still wears (Button, Dialog, Tabs) are not scoped to `html.native-material`, so `components/rmhmusic/rmhmusic.css` sets their knobs (`--app-gel-*`, `--liquid-coat`, `--jelly-tile`, `--gel-well-shade`) to nothing.
 
 Per-element opt-outs (`OPT_OUT_SELECTOR`): `data-jelly="off"` and the accepted aliases `data-liquid-material="off"`,
 `data-liquid-glass="off"`, `data-liquid-motion="off"`, `data-fluid-press="off|none"`; `data-jelly-flow="off"` also
@@ -320,7 +320,7 @@ theme (`jelly-legibility.test.ts`).
 
 | File                                                                        | Owns                                                                                                                                                    |
 | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `app/jelly-material.css` · `app/liquid-glass.css`                           | the material: tint, gel coat, static rim, haze floor, woken haze (§3b), degradation, the CSS soft body (§8, §8b)                                        |
+| `app/jelly-material.css` · `app/glass-roles.css`                           | the material: tint, gel coat, static rim, haze floor, woken haze (§3b), degradation, the CSS soft body (§8, §8b)                                        |
 | `app/jelly-coverage.css` · `app/jelly-arcs.css`                             | coverage adapters (tab thumb, switch, slider, skeleton, toasts, bare `[data-jelly]`), the arc layer                                                     |
 | `components/shared/app-theme.css`                                           | the `--app-jelly-*` adapter for `.app-glass` and the app tier's cards                                                                                   |
 | `lib/jelly/tiers.ts`                                                        | the single shared policy: tiers, budgets, `jellyMode`, off predicate, selectors, bounds, flash ledger, `PLASMA`, `CHARGE`, `JELLY_LAYOUT`               |
@@ -335,7 +335,7 @@ theme (`jelly-legibility.test.ts`).
 | `lib/liquid/glass/scene.ts` · `scene-feed.ts` · `scene-store.ts`            | the page picture for the globe: capture, the refcounted feed, the store; `RadialShell` holds the feed for the shell's life                              |
 | `lib/liquid/glass/{policy,color,jelly-glsl}.ts` · `lib/liquid/optics.ts`    | what the globe still imports: `innerRadius`, `PLASMA_LOOK`; the colour parser; the noise GLSL; the N-BK7 optics                                         |
 | `components/radial/{LiquidGlobe,globe-worker,jelly-glass,globe-engagement}` | the liquid globe (its dough simulation `lib/dough.ts`, its own coat and shader, its worker)                                                             |
-| `hooks/useLiquidInteractions.ts`                                            | mounts the pointer variable at once, then `installLazyClickArcs` after `load` + idle; one teardown                                                      |
+| `hooks/useJellyPointer.ts`                                            | mounts the pointer variable at once, then `installLazyClickArcs` after `load` + idle; one teardown                                                      |
 | `app/routes/jelly.tsx`                                                      | the `/jelly` material lab (`/liquid-glass` redirects there)                                                                                             |
 
 Exactly **one** jelly frame owner exists, `lib/jelly/frame.ts`; the pointer variable, the arc renderer and the

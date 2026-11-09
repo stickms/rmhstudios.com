@@ -19,10 +19,10 @@ import { weaponScript } from '../sim/items/scripts';
 import { weaponSpecFor } from '../sim/loadout';
 import type { NetRecord } from '../sim/net-schema';
 import type { HudItemMeter } from './hud-state';
+import { clamp01 } from '@/lib/core/math';
 
 const n = (r: NetRecord, k: string, d = 0): number =>
   typeof r[k] === 'number' ? (r[k] as number) : d;
-const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /** The effect bar recharge times by script (InternalGetEffectBarRechargeTime). */
 const EFFECT_BAR: Readonly<Record<string, { time: number; kind: string; label: string }>> = {

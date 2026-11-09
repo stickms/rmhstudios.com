@@ -1,0 +1,177 @@
+// ─── RMH Study Models ──────────────────────────────────────
+
+model RmhStudyProfile {
+  id                String            @id @default(cuid())
+  userId            String            @unique
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalFocusTimeMs  BigInt            @default(0)
+  sessionsCompleted Int               @default(0)
+  currentStreak     Int               @default(0)
+  longestStreak     Int               @default(0)
+  lastStudyDate     DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  sessions          RmhStudySession[]
+
+  @@index([totalFocusTimeMs(sort: Desc)])
+  @@index([sessionsCompleted(sort: Desc)])
+  @@index([currentStreak(sort: Desc)])
+  @@map("rmhstudy_profile")
+}
+
+model RmhStudySession {
+  id            String          @id @default(cuid())
+  profileId     String
+  profile       RmhStudyProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId        String
+  roomId        String?
+  focusTimeMs   Int
+  breakTimeMs   Int
+  sessionsInRun Int
+  startedAt     DateTime        @default(now())
+  endedAt       DateTime?
+
+  @@index([profileId])
+  @@index([userId])
+  @@index([startedAt(sort: Desc)])
+  @@map("rmhstudy_session")
+}
+
+/// RMHStudy flashcard deck (#31). Decks are personal but can be shared publicly.
+model FlashcardDeck {
+  id           String   @id @default(cuid())
+  userId       String
+  title        String   @db.VarChar(100)
+  description  String?  @db.VarChar(500)
+  isPublic     Boolean  @default(false)
+  cardCount    Int      @default(0)
+  // Set when this deck was cloned from a public deck (marketplace). Provenance +
+  // the "you already added this deck" guard. Not a relation (the source may be
+  // deleted); it just records the source deck id.
+  clonedFromId String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards Flashcard[]
+
+  @@index([userId])
+  @@index([isPublic, updatedAt(sort: Desc)])
+  @@index([userId, clonedFromId])
+  @@map("flashcard_deck")
+}
+
+model Flashcard {
+  id        String   @id @default(cuid())
+  deckId    String
+  front     String   @db.Text
+  back      String   @db.Text
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  deck    FlashcardDeck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  reviews FlashcardReview[]
+
+  @@index([deckId])
+  @@map("flashcard")
+}
+
+/// Per-user spaced-repetition state for a card (SM-2). Lets several users study
+/// the same (public) deck with independent schedules.
+model FlashcardReview {
+  id           String   @id @default(cuid())
+  userId       String
+  cardId       String
+  easeFactor   Float    @default(2.5)
+  intervalDays Int      @default(0)
+  repetitions  Int      @default(0)
+  dueAt        DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cardId])
+  @@index([userId, dueAt])
+  @@map("flashcard_review")
+}
+
+/// F5 — a request to body-double. 'now' requests queue for ten minutes; 'slot'
+/// requests are matched against others for the same subject, length and slot.
+model StudyBuddyRequest {
+  id         String   @id @default(cuid())
+  userId     String
+  subjectKey String   @db.VarChar(48)
+  subject    String   @db.VarChar(60)
+  lengthMin  Int
+  mode       String   @db.VarChar(4) // 'now' | 'slot'
+  startsAt   DateTime
+  expiresAt  DateTime
+  status     String   @default("waiting") @db.VarChar(10) // waiting | matched | expired | canceled
+  matchId    String?  @db.VarChar(40)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, subjectKey, lengthMin, startsAt])
+  @@index([userId, status])
+  @@index([status, expiresAt])
+  @@map("study_buddy_request")
+}
+
+/// F5 — two members paired for a session. The room is created lazily by the
+/// socket hub when the first of them joins `roomCode`, and only inside the
+/// session window, so a no-show costs nothing.
+model StudyBuddyMatch {
+  id        String   @id @default(cuid())
+  roomCode  String   @unique @db.VarChar(8)
+  subject   String   @db.VarChar(60)
+  lengthMin Int
+  startsAt  DateTime
+  endsAt    DateTime
+  userAId   String
+  userBId   String
+  createdAt DateTime @default(now())
+
+  userA User @relation("StudyBuddyA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("StudyBuddyB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@index([userAId, startsAt])
+  @@index([userBId, startsAt])
+  @@map("study_buddy_match")
+}
+
+// ── P21: tools — F4 exam planner, F11 calculator notebooks, F15 marathon lists ──
+
+// A saved RMHStudy exam plan. The day-by-day view is recomputed from these
+// inputs (lib/rmhstudy/exam-planner.ts), so edits never leave a stale plan.
+model StudyPlan {
+  id             String   @id @default(cuid())
+  userId         String
+  title          String   @db.VarChar(120)
+  examDate       String   @db.VarChar(10)
+  topics         Json
+  hoursByWeekday Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@map("study_plan")
+}
+
+// A plain-text RMHCalculator notebook; every line is evaluated on the client.
+model CalcNotebook {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @db.VarChar(120)
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@map("calc_notebook")
+}

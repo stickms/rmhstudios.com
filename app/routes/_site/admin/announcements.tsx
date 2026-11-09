@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { IconButton } from '@/components/ui/icon-button';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
@@ -538,7 +538,7 @@ function AdminAnnouncementsPage() {
           </div>
 
           {/* Variant is a one-of-four switch, so it is a tab strip like every other. */}
-          <LiquidTabs
+          <Tabs
             aria-label={t('variant-label', { defaultValue: 'Banner style' })}
             value={variant}
             onChange={(id) => setVariant(id as (typeof VARIANTS)[number])}

@@ -319,6 +319,7 @@ function frequencyFor(degree: number): number {
   return SCALE[degree % SCALE.length]! * Math.pow(2, octave);
 }
 
+// eslint-disable-next-line no-restricted-syntax -- one-argument clamp to [0, 1] that maps non-finite to 0
 function clamp(v: number): number {
   return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0;
 }

@@ -1,0 +1,604 @@
+/// A developer API key for the subscriber-gated REST API. Only a SHA-256 hash
+/// of the key is stored — the plaintext is shown to the user exactly once at
+/// creation. `prefix` is a short, non-secret label for the UI.
+model DeveloperApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  name       String    @db.VarChar(100)
+  prefix     String    @db.VarChar(16)
+  hashedKey  String    @unique
+  /// Last 4 chars of the plaintext secret, kept for display so a user can tell
+  /// keys apart in the dashboard without the secret ever being recoverable.
+  lastFour   String?   @db.VarChar(8)
+  /// Granular permission grants (e.g. "read:profile", "write:posts"). An empty
+  /// array means the key has no permissions and every scoped endpoint rejects
+  /// it. Enforced per-request against the endpoint's required scope.
+  scopes     String[]  @default([])
+  /// Optional hard expiry. Once past, the key is rejected exactly like a
+  /// revoked key (re-checked on every request, never trusted from a cache).
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  /// P16 D1: `rmh_test_` sandbox key. Reads return fixtures, writes are no-ops.
+  testMode   Boolean   @default(false)
+
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idempotencyKeys ApiIdempotencyKey[]
+  usage           ApiUsageDaily[]
+
+  @@index([userId])
+  @@map("developer_api_key")
+}
+
+/// Per-key, per-UTC-day API usage rollup.
+///
+/// The rate limiter's counters live in Redis with a 26-hour TTL, which is right
+/// for enforcement and useless for everything else: a developer could not see
+/// how much of their quota they had consumed, there was no history behind a
+/// spike, and support had nothing to look at. This is a ROLLUP, not a request
+/// log — one row per key per day, written from an in-process buffer so a busy
+/// key costs one write per flush interval rather than one per request.
+model ApiUsageDaily {
+  id           String   @id @default(cuid())
+  keyId        String
+  /// UTC day as "YYYYMMDD" — the same bucket the rate limiter uses, so the two
+  /// can never disagree about which day a request belongs to.
+  day          String   @db.VarChar(8)
+  /// Requests served.
+  requests     Int      @default(0)
+  /// Cost-weighted units drawn against the daily quota (heavy endpoints > 1).
+  units        Int      @default(0)
+  /// 4xx and 5xx kept apart: a client integrating badly and a server failing
+  /// are different problems and must not sum into one number.
+  clientErrors Int      @default(0)
+  serverErrors Int      @default(0)
+  updatedAt    DateTime @updatedAt
+
+  key DeveloperApiKey @relation(fields: [keyId], references: [id], onDelete: Cascade)
+
+  @@unique([keyId, day])
+  @@index([keyId, day(sort: Desc)])
+  @@map("api_usage_daily")
+}
+
+/// Stores the first response produced for a given (key, Idempotency-Key) so a
+/// retried write replays the original result instead of acting twice. Rows are
+/// short-lived; a periodic sweep removes entries older than the replay window.
+model ApiIdempotencyKey {
+  id           String   @id @default(cuid())
+  keyId        String
+  idempotency  String   @db.VarChar(255)
+  method       String   @db.VarChar(8)
+  path         String   @db.VarChar(255)
+  /// SHA-256 of the request body, so the same Idempotency-Key sent with a
+  /// different payload is flagged as a conflict rather than silently replayed.
+  requestHash  String   @db.VarChar(64)
+  statusCode   Int
+  responseBody String   @db.Text
+  createdAt    DateTime @default(now())
+
+  key DeveloperApiKey @relation(fields: [keyId], references: [id], onDelete: Cascade)
+
+  @@unique([keyId, idempotency])
+  @@index([createdAt])
+  @@map("api_idempotency_key")
+}
+
+/// A user-registered webhook subscription. Events the owner produces (posts,
+/// follows, likes, …) are delivered to `url` as HMAC-signed POSTs. The `secret`
+/// is shown once at creation and used to sign every delivery so receivers can
+/// verify authenticity.
+model WebhookEndpoint {
+  id             String    @id @default(cuid())
+  userId         String
+  url            String    @db.VarChar(2048)
+  /// Signing secret (whsec_…). Stored to compute the HMAC on each delivery.
+  secret         String    @db.VarChar(128)
+  /// Subscribed event names. "*" matches every event.
+  events         String[]  @default([])
+  description    String?   @db.VarChar(200)
+  enabled        Boolean   @default(true)
+  /// Consecutive delivery failures; the endpoint auto-disables past a threshold.
+  failureCount   Int       @default(0)
+  lastDeliveryAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user       User              @relation("UserWebhookEndpoints", fields: [userId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([userId])
+  @@map("webhook_endpoint")
+}
+
+/// One delivery attempt record for a webhook event. Pending rows are drained by
+/// a retry sweep with exponential backoff; terminal rows are kept for the
+/// recent-deliveries view in the dashboard.
+model WebhookDelivery {
+  id             String                @id @default(cuid())
+  endpointId     String
+  event          String                @db.VarChar(64)
+  payload        Json
+  status         WebhookDeliveryStatus @default(PENDING)
+  attempts       Int                   @default(0)
+  responseStatus Int?
+  error          String?               @db.VarChar(500)
+  nextAttemptAt  DateTime              @default(now())
+  createdAt      DateTime              @default(now())
+  deliveredAt    DateTime?
+
+  endpoint WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+  @@index([endpointId, createdAt(sort: Desc)])
+  @@map("webhook_delivery")
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
+}
+
+// ─── Admin Audit Log ──────────────────────────────────────────────────────
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  action     String   @db.VarChar(64) // e.g. "report.resolve", "user.ban"
+  targetType String?  @db.VarChar(32)
+  targetId   String?  @db.VarChar(64)
+  detail     String?  @db.VarChar(500)
+  createdAt  DateTime @default(now())
+
+  admin User @relation("AuditAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([targetType, targetId])
+  @@map("admin_audit_log")
+}
+
+/// A long-running content operation the user asked for in bulk.
+///
+/// Job-backed because a 4,000-row delete must not run inside a request, and
+/// because the preview count the UI showed has to be the count that actually
+/// runs. Deletes go through the same soft delete as a single one, so a bulk
+/// delete is undoable from the recycle bin for its retention window.
+model BulkOperation {
+  id         String    @id @default(cuid())
+  userId     String
+  /// 'delete-posts' | 'delete-comments' | 'unfollow' | 'clear-history' | 'clear-bookmarks'
+  kind       String    @db.VarChar(24)
+  /// { olderThanDays?, before?, maxLikes?, onlyReplies?, tag? }
+  filter     Json
+  /// PENDING | RUNNING | DONE | CANCELLED | FAILED
+  status     String    @default("PENDING") @db.VarChar(12)
+  total      Int       @default(0)
+  processed  Int       @default(0)
+  error      String?   @db.VarChar(300)
+  createdAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status, createdAt])
+  @@map("bulk_operation")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// The Next 100 — 2026-08-05
+// (docs/plans/2026-08-05-next-100-feature-ideas.md)
+//
+// All new tables here follow the R0-T7 PK policy: append-only / high-volume
+// tables take a BigInt identity rather than a cuid(), so inserts stay local and
+// a scan does not need a second (fk, createdAt) index.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Site-route idempotency replay (E5).
+///
+/// The developer API's `ApiIdempotencyKey` is keyed to a `DeveloperApiKey`, so
+/// it cannot serve the site's own mutations. This is the user-scoped twin, with
+/// the same request-hash conflict rule: the same key sent with a different body
+/// is a 409, not a silent replay of the wrong response.
+model SiteIdempotencyKey {
+  id           String   @id @default(cuid())
+  userId       String
+  idempotency  String   @db.VarChar(255)
+  method       String   @db.VarChar(8)
+  path         String   @db.VarChar(255)
+  requestHash  String   @db.VarChar(64)
+  /// Null while the first request is still in flight — the row is claimed
+  /// BEFORE the handler runs so a concurrent duplicate loses the race rather
+  /// than executing twice.
+  statusCode   Int?
+  responseBody String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, idempotency])
+  @@index([createdAt])
+  @@map("site_idempotency_key")
+}
+
+/// Transactional outbox (E4).
+///
+/// Webhook and notification delivery ran inside the request that caused the
+/// event, so a crash between the commit and the send lost it with no trace.
+/// Writing the intent in the same transaction as the state change makes
+/// delivery at-least-once — which is why E5's idempotency keys are a
+/// prerequisite and not a nicety.
+model OutboxEvent {
+  id          BigInt    @id @default(autoincrement())
+  /// 'webhook.post.created' | 'notify.mention' | 'delivery.email' | …
+  topic       String    @db.VarChar(80)
+  payload     Json
+  attempts    Int       @default(0)
+  nextAttempt DateTime  @default(now())
+  deliveredAt DateTime?
+  /// Set when attempts are exhausted; the row stays for inspection.
+  deadAt      DateTime?
+  lastError   String?   @db.VarChar(500)
+  createdAt   DateTime  @default(now())
+
+  @@index([deliveredAt, deadAt, nextAttempt])
+  @@index([topic, createdAt(sort: Desc)])
+  @@map("outbox_event")
+}
+
+/// Resumable backfill checkpoints (E9).
+model BackfillCheckpoint {
+  name      String    @id @db.VarChar(80)
+  cursor    String?
+  processed Int       @default(0)
+  startedAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  doneAt    DateTime?
+
+  @@map("backfill_checkpoint")
+}
+
+// ─── Embeddings (M1, 2026-09-19) ──────────────────────────────────────────
+// Search has always been lexical: a generated `tsvector` with a GIN index plus
+// trigram for typos (`lib/search/posts.server.ts`). That is a good lexical
+// search and it was the only one — nothing on the site could find a document
+// that means the same thing in different words.
+//
+// Four later ideas want this and none of them should build their own: one
+// recommender (M2), a member memory the AI surfaces share (M3), discovery
+// shelves for a build store (B3), and duplicate detection on FeatureRequest.
+
+/// One embedding of one thing.
+model Embedding {
+  id String @id @default(cuid())
+
+  /// What was embedded: 'rmhark' | 'library' | 'news' | 'blog' | 'game' |
+  /// 'app' | 'build'. A string rather than an enum because adding a kind is a
+  /// backfill, and an enum would make it a migration as well.
+  kind String @db.VarChar(24)
+
+  /// The row this describes, in that kind's own table.
+  entityId String @db.VarChar(64)
+
+  /// The model that produced it, and the dimension it produced.
+  ///
+  /// Recorded rather than assumed: changing models means every stored vector
+  /// is in a different space and comparing across them returns confident
+  /// nonsense. With this here, a model change is a backfill that can run
+  /// alongside the old vectors and cut over when it finishes.
+  model String @db.VarChar(64)
+  dim   Int
+
+  /// The vector itself. `Unsupported` because Prisma has no vector type; every
+  /// read and write goes through raw SQL in `embeddings.server.ts`, which is
+  /// the only file allowed to touch this column.
+  vector Unsupported("vector(1536)")
+
+  /// Hash of the text that produced it, so a re-index can skip anything whose
+  /// source has not changed. Without it, a backfill re-embeds the whole corpus
+  /// every run and the bill is the corpus size rather than the diff.
+  contentHash String @db.VarChar(64)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([kind, entityId])
+  @@index([kind, updatedAt])
+  @@map("embedding")
+}
+
+/// X11 — check state for a link shown on a card. `urlKey` is sha256(url) so the
+/// primary key stays short. Rows are created lazily the first time a card's link is
+/// previewed and pruned when nobody has looked at the link for 90 days.
+model LinkCheck {
+  urlKey           String    @id @db.VarChar(64)
+  url              String    @db.Text
+  title            String?   @db.VarChar(300)
+  description      String?   @db.VarChar(500)
+  siteName         String?   @db.VarChar(120)
+  /// 'ok' | 'failing' | 'dead' | 'archived' | 'blocked'
+  status           String    @default("ok") @db.VarChar(10)
+  failCount        Int       @default(0)
+  lastStatusCode   Int?
+  lastCheckedAt    DateTime?
+  nextCheckAt      DateTime
+  archiveUrl       String?   @db.Text
+  archiveTimestamp String?   @db.VarChar(14)
+  lastSeenAt       DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+
+  @@index([nextCheckAt])
+  @@index([lastSeenAt])
+  @@map("link_check")
+}
+
+// ── P14 safety: S4 mod macros, S6 link warnings, S7 pile-on guard ──
+// Canned moderator responses with {{user}}/{{reason}} variables. `communityId`
+// null = a site-wide admin macro; set = that community's mods' macro. Plain
+// columns (no FK) so a departing mod never deletes a team's macros.
+model ModMacro {
+  id          String   @id @default(cuid())
+  communityId String?
+  createdById String
+  title       String   @db.VarChar(80)
+  body        String   @db.VarChar(1000)
+  createdAt   DateTime @default(now())
+
+  @@index([communityId, createdAt])
+  @@map("mod_macro")
+}
+
+// Admin-editable domain rules for the /out interstitial: DENY always warns,
+// ALLOW exempts a domain from the first-seen warning.
+model LinkDomainRule {
+  domain    String   @id @db.VarChar(255)
+  kind      String   @db.VarChar(8)
+  note      String?  @db.VarChar(200)
+  addedById String
+  createdAt DateTime @default(now())
+
+  @@map("link_domain_rule")
+}
+
+// The first time any link to a domain was shown on the site. A domain first
+// seen in the last few days is "new" and gets the interstitial.
+model SeenLinkDomain {
+  domain      String   @id @db.VarChar(255)
+  firstSeenAt DateTime @default(now())
+
+  @@map("seen_link_domain")
+}
+
+// One row per post that tripped the pile-on guard. status: OFFERED (author was
+// notified), ACTIVE (reply control limited until expiresAt), REVERTED, DISMISSED.
+model PileOnGuard {
+  postId          String             @id
+  authorId        String
+  previousControl RMHarkReplyControl @default(EVERYONE)
+  status          String             @db.VarChar(12)
+  offeredAt       DateTime           @default(now())
+  expiresAt       DateTime?
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([status, expiresAt])
+  @@map("pile_on_guard")
+}
+
+// ── P15 ops: O1 O2 O3 O4 O5 ──
+// O1: one row per (signup-week cohort, weeks since signup), rewritten by a daily job.
+model CohortRetention {
+  cohortWeek DateTime @db.Date
+  weeksLater Int
+  cohortSize Int
+  active     Int
+  computedAt DateTime @default(now())
+
+  @@id([cohortWeek, weeksLater])
+  @@map("cohort_retention")
+}
+
+// O2: an admin-authored notice for a segment. segment: all | new | game | locale.
+model TargetedNotice {
+  id           String    @id @default(cuid())
+  title        String    @db.VarChar(120)
+  body         String    @db.VarChar(500)
+  linkUrl      String?   @db.VarChar(300)
+  segment      String    @db.VarChar(12)
+  segmentValue String?   @db.VarChar(64)
+  startsAt     DateTime  @default(now())
+  endsAt       DateTime?
+  archivedAt   DateTime?
+  createdById  String?
+  createdAt    DateTime  @default(now())
+
+  dismissals TargetedNoticeDismissal[]
+
+  @@index([archivedAt, startsAt])
+  @@map("targeted_notice")
+}
+
+model TargetedNoticeDismissal {
+  noticeId    String
+  userId      String
+  dismissedAt DateTime @default(now())
+
+  notice TargetedNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([noticeId, userId])
+  @@index([userId])
+  @@map("targeted_notice_dismissal")
+}
+
+// O3: page views per route per UTC day (route = low-cardinality label from /api/rum).
+model RouteViewDay {
+  route String   @db.VarChar(120)
+  day   DateTime @db.Date
+  views Int      @default(0)
+
+  @@id([route, day])
+  @@index([day])
+  @@map("route_view_day")
+}
+
+// O4: client error beacons grouped by fingerprint (message + top frame).
+model ClientErrorGroup {
+  id           String    @id @default(cuid())
+  fingerprint  String    @unique @db.VarChar(40)
+  message      String    @db.VarChar(500)
+  topFrame     String    @db.VarChar(300)
+  source       String    @db.VarChar(64)
+  sampleUrl    String    @db.VarChar(500)
+  count        Int       @default(1)
+  firstSeenAt  DateTime  @default(now())
+  lastSeenAt   DateTime  @default(now())
+  firstRelease String    @db.VarChar(40)
+  lastRelease  String    @db.VarChar(40)
+  resolvedAt   DateTime?
+  regressedAt  DateTime?
+
+  @@index([lastSeenAt])
+  @@map("client_error_group")
+}
+
+// O5: a flag/experiment. testPct = share of members in the "test" arm (sticky hash).
+model Experiment {
+  id        String    @id @default(cuid())
+  key       String    @unique @db.VarChar(64)
+  name      String    @db.VarChar(120)
+  status    String    @default("DRAFT") @db.VarChar(10)
+  testPct   Int       @default(50)
+  createdAt DateTime  @default(now())
+  startedAt DateTime?
+
+  exposures ExperimentExposure[]
+
+  @@map("experiment")
+}
+
+model ExperimentExposure {
+  experimentId String
+  userId       String
+  variant      String    @db.VarChar(8)
+  exposedAt    DateTime  @default(now())
+  convertedAt  DateTime?
+
+  experiment Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([experimentId, userId])
+  @@index([experimentId, variant])
+  @@index([userId])
+  @@map("experiment_exposure")
+}
+
+// Admin-authored changelog entries (drafted with AI, edited by a human).
+model ReleaseNote {
+  id          String    @id @default(cuid())
+  version     String    @db.VarChar(40)
+  title       String    @db.VarChar(160)
+  body        String    @db.Text
+  authorId    String?
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([publishedAt])
+  @@map("release_note")
+}
+
+/// Hourly samples of the DeepSeek account balance (/admin/deepseek). The jobs
+/// worker upserts one 'cron' row per currency per UTC hour (idempotent under
+/// pg-boss at-least-once delivery); a manual "Refresh now" upserts the 'manual'
+/// row for its hour, so the two sources never overwrite each other. Rows older
+/// than 400 days are pruned by the same job.
+model DeepseekBalanceSnapshot {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  hourBucket      DateTime // createdAt truncated to the UTC hour
+  currency        String // "CNY" | "USD"
+  isAvailable     Boolean
+  totalBalance    Decimal  @db.Decimal(14, 4)
+  grantedBalance  Decimal  @db.Decimal(14, 4)
+  toppedUpBalance Decimal  @db.Decimal(14, 4)
+  source          String // "cron" | "manual"
+
+  @@unique([currency, hourBucket, source])
+  @@index([currency, createdAt])
+  @@index([createdAt])
+  @@map("deepseek_balance_snapshot")
+}
+
+/// One-minute rollups of the app's own telemetry, for /admin/alarms graphs and
+/// threshold alarms (lib/ops/metrics-rollup.ts, written by the jobs worker).
+/// Append-only, ~30 rows a minute, pruned after 30 days — hence the identity key.
+model OpsMetricMinute {
+  id     BigInt   @id @default(autoincrement())
+  /// Start of the minute (UTC) the row covers.
+  at     DateTime
+  /// e.g. "http.latency", "http.5xx_pct", "llm.latency", "rum.lcp".
+  metric String   @db.VarChar(60)
+  /// The dimension: route group, provider:kind, service, route class; "" when none.
+  dim    String   @default("") @db.VarChar(80)
+  /// Samples behind the row (requests, calls, beacons); 0 for gauges.
+  count  Int      @default(0)
+  p50    Float?
+  p95    Float?
+  p99    Float?
+  max    Float?
+  /// Gauges and rates (percent, waiting count): the single value for the minute.
+  value  Float?
+
+  @@unique([metric, dim, at])
+  @@index([at])
+  @@map("ops_metric_minute")
+}
+
+/// Admin overrides of metric alarm rules (lib/ops/alarm-rules.ts) from
+/// /admin/alarms. A row only exists while a rule differs from the code: its
+/// threshold, or muted. "Reset to code" deletes it.
+model OpsAlarmOverride {
+  /// `ruleKey()` of the rule: id|metric|dim|stat|<n>m.
+  key       String   @id @db.VarChar(160)
+  threshold Float?
+  muted     Boolean  @default(false)
+  /// Admin user id of the last change (also in admin_audit_log).
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+
+  @@map("ops_alarm_override")
+}
+
+/// One row per production deploy result, written by deploy.sh through
+/// /api/internal/ops/deploy-event. Drawn as markers on the /admin/alarms graphs
+/// so on-call can see whether a metric moved right after a deploy.
+model OpsDeployEvent {
+  id     BigInt   @id @default(autoincrement())
+  at     DateTime @default(now())
+  /// Short commit hash that was deployed (or attempted).
+  sha    String   @db.VarChar(40)
+  /// "success" | "rolledback" | "fail"
+  status String   @db.VarChar(20)
+  detail String?  @db.VarChar(300)
+
+  @@index([at])
+  @@map("ops_deploy_event")
+}
+
+/// Runtime feature flags: code ships dark, an admin releases it (optionally to a
+/// percentage of users), and turning it off is a row update rather than a rollback.
+/// Evaluated by lib/flags/evaluate.ts; managed through /api/admin/flags.
+model FeatureFlag {
+  key            String   @id @db.VarChar(64)
+  enabled        Boolean  @default(false)
+  /// 0-100, consulted only while enabled. Bucketed per (key, userId).
+  rolloutPercent Int      @default(100)
+  description    String   @default("") @db.VarChar(280)
+  updatedBy      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("feature_flag")
+}

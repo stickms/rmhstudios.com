@@ -1,0 +1,212 @@
+// ─── rmhcode CLI Authentication ─────────────────────────────────────
+
+model RmhCodeToken {
+  id         String    @id @default(cuid())
+  userId     String
+  token      String    @unique
+  name       String?   @db.VarChar(100)
+  lastUsedAt DateTime?
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("rmhcode_token")
+}
+
+// ─── User Builds ────────────────────────────────────────────────────
+
+enum BuildVisibility {
+  PUBLIC
+  UNLISTED
+  PRIVATE
+}
+
+model UserBuild {
+  id           String          @id @default(cuid())
+  userId       String
+  slug         String          @unique
+  title        String          @db.VarChar(100)
+  description  String          @db.VarChar(500)
+  readme       String?         @db.Text
+  repoUrl      String?         @db.VarChar(500)
+  demoUrl      String?         @db.VarChar(500)
+  thumbnailUrl String?         @db.VarChar(500)
+  visibility   BuildVisibility @default(PUBLIC)
+  featured     Boolean         @default(false)
+  isCurated    Boolean         @default(false) // Added for "Official Build" status
+  position     Int             @default(0) // Added for manual sorting by admins
+  technologies Json            @default("[]")
+  // Marketplace: coins to unlock the readme/repo/demo (null/0 = free).
+  price        Int?
+  /// Catalog id of the game this build was made for (shown in that title's Workshop).
+  gameId       String?         @db.VarChar(64)
+  likeCount    Int             @default(0)
+  commentCount Int             @default(0)
+  viewCount    Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  publishedAt  DateTime?
+
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   BuildCategory? @relation(fields: [categoryId], references: [id])
+  categoryId String?
+  versions   BuildVersion[]
+  grants     BuildGrant[]
+  tags       BuildTag[]
+  likes      BuildLike[]
+  jamEntries GameJamEntry[]
+  comments   BuildComment[]
+  views      BuildView[]
+  unlocks    BuildUnlock[]
+
+  @@index([userId])
+  @@index([visibility, publishedAt(sort: Desc)])
+  @@index([gameId, visibility, publishedAt(sort: Desc)])
+  @@index([slug])
+  @@map("user_build")
+}
+
+/// A paid unlock of a build's gated content (#16). Mirrors PostUnlock.
+model BuildUnlock {
+  id        String   @id @default(cuid())
+  userId    String
+  buildId   String
+  pricePaid Int
+  createdAt DateTime @default(now())
+
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  build UserBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, buildId])
+  @@index([buildId])
+  @@map("build_unlock")
+}
+
+/// DEAD (rewrite R0-T7): zero code references (marketplace versioning unshipped). Drop scheduled R1-T3.
+model BuildVersion {
+  id         String   @id @default(cuid())
+  buildId    String
+  version    String   @db.VarChar(20)
+  changelog  String?  @db.Text
+  commitHash String?  @db.VarChar(40)
+  createdAt  DateTime @default(now())
+
+  build    UserBuild            @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  manifest BuildManifestRecord?
+
+  @@unique([buildId, version])
+  @@map("build_version")
+}
+
+model BuildCategory {
+  id          String  @id @default(cuid())
+  name        String  @unique @db.VarChar(50)
+  slug        String  @unique @db.VarChar(50)
+  description String? @db.VarChar(200)
+  iconName    String? @db.VarChar(50)
+  color       String? @db.VarChar(50)
+  position    Int     @default(0)
+
+  builds UserBuild[]
+
+  @@map("build_category")
+}
+
+model BuildTag {
+  id      String @id @default(cuid())
+  buildId String
+  name    String @db.VarChar(30)
+
+  build UserBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@unique([buildId, name])
+  @@index([name])
+  @@map("build_tag")
+}
+
+model BuildLike {
+  id        String   @id @default(cuid())
+  buildId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  build UserBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([buildId, userId])
+  @@map("build_like")
+}
+
+model BuildComment {
+  id        String   @id @default(cuid())
+  buildId   String
+  userId    String
+  content   String   @db.VarChar(2000)
+  parentId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parent  BuildComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies BuildComment[] @relation("CommentReplies")
+  build   UserBuild      @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([buildId, createdAt(sort: Desc)])
+  @@map("build_comment")
+}
+
+model BuildView {
+  id        String   @id @default(cuid())
+  buildId   String
+  userId    String?
+  ipHash    String?
+  createdAt DateTime @default(now())
+
+  build UserBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  user  User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([buildId, userId])
+  @@unique([buildId, ipHash])
+  @@map("build_view")
+}
+
+// ── P16 devplatform: D5 recipes, I2 release notes ──
+// "When X then Y" automations. Max 10 per member (enforced in the API). Polled
+// triggers use lastCheckedAt as their cursor so a recipe never fires twice
+// for the same follower / listing.
+model DevRecipe {
+  id            String    @id @default(cuid())
+  userId        String
+  name          String    @db.VarChar(80)
+  trigger       String    @db.VarChar(24) // new_pb | new_follower | price_below
+  triggerConfig Json      @default("{}")
+  action        String    @db.VarChar(24) // discord_webhook | dm_self
+  actionConfig  Json      @default("{}")
+  enabled       Boolean   @default(true)
+  lastCheckedAt DateTime  @default(now())
+  lastFiredAt   DateTime?
+  fireCount     Int       @default(0)
+  lastError     String?   @db.VarChar(200)
+  createdAt     DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, trigger])
+  @@index([enabled, trigger, lastCheckedAt])
+  @@map("dev_recipe")
+}
+
+model PostCodeEmbed {
+  postId String @id
+  html   String @db.VarChar(10000)
+  css    String @db.VarChar(10000)
+  js     String @db.VarChar(10000)
+
+  post RMHark @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("post_code_embed")
+}
