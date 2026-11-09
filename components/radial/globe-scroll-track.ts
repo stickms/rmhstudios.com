@@ -39,3 +39,43 @@ export function predictScrollY(y: number, prevY: number | null, dtMs: number): n
   const lead = ((y - prevY) / dtMs) * PLACE_LEAD_MS;
   return y + Math.max(-PLACE_LEAD_MAX_PX, Math.min(PLACE_LEAD_MAX_PX, lead));
 }
+
+/** How long the per-frame tracker keeps going after the page last moved, ms. A scroll's frames are its own evidence. */
+export const SCROLL_TRACK_HOLD_MS = 120;
+/**
+ * The same after a visual-viewport resize. Safari's toolbar animates for a few hundred ms after its one resize event
+ * with no event per frame, so this is long enough to see it land; every frame that still moves extends it.
+ */
+export const VIEWPORT_TRACK_HOLD_MS = 700;
+
+/** What the tracker remembers between frames. */
+export interface TrackState {
+  lastY: number;
+  lastT: number;
+  lastVv: number;
+  /** The frame time after which it stops unless something moves again. */
+  until: number;
+}
+
+/**
+ * One tracker frame: read `y` (scrollY) and `vvH` (visual viewport height) NOW, compare with the last frame, and say
+ * where to place the picture (`ahead`: `y` advanced by the speed of the last frame, see {@link predictScrollY}) and
+ * whether to keep going (`keep`). Moving frames extend the tracker by `holdMs`. Mutates `s`. Driven once per display
+ * frame, so the picture is placed at the page's own rate instead of the rate Safari happens to deliver scroll and
+ * viewport events at (which was the jagged stepping).
+ */
+export function trackStep(
+  s: TrackState,
+  y: number,
+  vvH: number,
+  now: number,
+  holdMs: number = SCROLL_TRACK_HOLD_MS,
+): { ahead: number; keep: boolean } {
+  const moved = y !== s.lastY || vvH !== s.lastVv;
+  const ahead = predictScrollY(y, s.lastY, now - s.lastT);
+  if (moved) s.until = Math.max(s.until, now + holdMs);
+  s.lastY = y;
+  s.lastVv = vvH;
+  s.lastT = now;
+  return { ahead, keep: now < s.until };
+}
