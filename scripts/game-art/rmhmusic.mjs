@@ -62,14 +62,13 @@ const C = {
 const fontUrl = (p, dir = FONTS) => pathToFileURL(join(dir, p)).href;
 const FONT_CSS = `
 @font-face{font-family:'IM Fell English';src:url('${fontUrl('IMFellEnglish/IMFellEnglish-Regular.woff2')}') format('woff2');font-weight:400;font-style:normal}
-@font-face{font-family:'IM Fell English';src:url('${fontUrl('IMFellEnglish/IMFellEnglish-Italic.woff2')}') format('woff2');font-weight:400;font-style:italic}
 @font-face{font-family:'Bodoni Moda';src:url('${fontUrl('BodoniModa/BodoniModa-Italic-wght.woff2', GAME_FONTS)}') format('woff2');font-weight:400 900;font-style:italic}
 `;
 const FELL = "'IM Fell English'";
 // Fell's figures are old-style (a 0 like an o, a 1 like a small-cap I), wrong for fret numbers and
 // fingerings; Bodoni Moda's italic has lining figures and a pen-like slant.
 const DIGITS = "'Bodoni Moda'";
-const FONT_CHECKS = [`400 40px ${FELL}`, `italic 400 40px ${FELL}`, `italic 600 40px ${DIGITS}`];
+const FONT_CHECKS = [`400 40px ${FELL}`, `italic 600 40px ${DIGITS}`];
 
 // ── Geometry helpers ───────────────────────────────────────────────────────────
 const f = (n) => Number(n.toFixed(2));
