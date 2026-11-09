@@ -83,6 +83,14 @@ export const appEntrySchema = z.strictObject({
   /** Keep the global RMH Studios theme/shell enabled for integrated site apps. */
   usesSiteTheme: z.boolean().optional(),
   hidden: z.boolean().optional(),
+  /**
+   * A static 1200×630 link-preview image (PNG/JPEG under `public/images/og/`) drawn for this app,
+   * used as `og:image` instead of the generic rendered card (`/api/og/app/<id>`), which then
+   * redirects to it. Only for an app with art made for the unfurl; see docs/open-graph.md §4.
+   */
+  ogImagePath: z.string().min(1).optional(),
+  /** What `ogImagePath` shows, in words (its `og:image:alt`). Required with it (og-cards.test.ts). */
+  ogImageAlt: z.string().min(1).optional(),
 });
 
 export type GameInfo = z.infer<typeof gameEntrySchema>;

@@ -250,6 +250,7 @@ model User {
   // RMH Music learning programme
   musicLearnProfile MusicLearnProfile?
   musicLearnLessons MusicLearnLessonProgress[]
+  musicLearnCards   MusicLearnCard[]
 
   // Direct Messages
   conversationsAsOne     Conversation[]          @relation("ConversationParticipantOne")
@@ -5618,6 +5619,28 @@ model MusicLearnLessonProgress {
 
   @@unique([userId, lessonId])
   @@map("music_learn_lesson_progress")
+}
+
+/// One remembered staff-reading card per learner: its spaced-repetition state
+/// (`lib/rmhmusic/learn/srs/schedule.ts`). `cardId` (`treble:64`) is validated
+/// against the decks in `lib/rmhmusic/learn/content/decks.ts`, not a FK. A row
+/// is written only by a review (Practice), always with the server's clock.
+model MusicLearnCard {
+  id           String    @id @default(cuid())
+  userId       String
+  cardId       String    @db.VarChar(64)
+  due          DateTime
+  stability    Float     @default(0)
+  difficulty   Float     @default(5)
+  reps         Int       @default(0)
+  lapses       Int       @default(0)
+  lastReviewAt DateTime?
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cardId])
+  @@map("music_learn_card")
 }
 
 // ─── Bookmarks ────────────────────────────────────────────────────────────

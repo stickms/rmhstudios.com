@@ -13,7 +13,9 @@
  *
  * Loop bounds (lib/__tests__/raf-loop-allowlist.test.ts), as Kowloon's MenuBackdrop: a frame is
  * requested only while the component is mounted AND the tab is visible AND the band is on
- * screen AND Jelly motion is not Still. Unmount cancels it; a hidden tab cancels it and
+ * screen AND Jelly motion is not Still (the site's ambient-motion setting, WCAG 2.2.2: the one site
+ * control this route still honours; the route itself is native-material, with none of the jelly
+ * material). Unmount cancels it; a hidden tab cancels it and
  * `visibilitychange` restarts it; scrolling the band out of view stops it (IntersectionObserver)
  * and back in restarts it; `data-jelly-motion="still"` draws one frame and stops, and switching
  * back restarts the loop. It runs at 30 fps, 15 fps on handhelds and low-end devices.

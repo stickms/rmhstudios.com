@@ -259,6 +259,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/out': 'noindex', // link-warning interstitial; the destination rides in ?url=
   '/safety/pile-on': 'personal', // the author's one-tap notice from a notification
   '/history': 'personal',
+  '/rmhmusic/practice': 'personal', // the learner's own card reviews, behind sign-in
   '/alexdebtcounter': 'redirect', // → /kaikaidebtcounter (the counter's subject is Kaikai)
   '/sohumbum2': 'redirect', // → /sohumtracker (renamed; the old link was already shared)
   '/lists': 'redirect', // → /saves?tab=lists

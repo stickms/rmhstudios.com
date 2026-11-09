@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DECKS } from './decks';
 import { PATH, getLesson, isKnownLesson } from './path';
 
 const lessons = PATH.flatMap((unit) => unit.lessons);
@@ -25,8 +26,24 @@ describe('learning path', () => {
     expect(getLesson('play-first-note')?.mode).toBe('play-note');
     expect(getLesson('nope')).toBeUndefined();
   });
-  it('ships exactly the play-note lesson as available in Phase 1', () => {
+  it('ships the first-note lesson and the three staff-reading lessons', () => {
     const available = lessons.filter((l) => l.available);
-    expect(available.map((l) => l.id)).toEqual(['play-first-note']);
+    expect(available.map((l) => l.id)).toEqual([
+      'staff-what-is-a-staff',
+      'staff-treble-notes',
+      'staff-find-middle-c',
+      'play-first-note',
+    ]);
+  });
+  it('names an existing deck for every staff-flashcards lesson', () => {
+    const flash = lessons.filter((l) => l.mode === 'staff-flashcards');
+    expect(flash.length).toBeGreaterThan(0);
+    for (const l of flash) {
+      expect(l.deck, l.id).toBeDefined();
+      expect(DECKS[l.deck ?? ''], `${l.id} -> ${l.deck}`).toBeDefined();
+    }
+    expect(getLesson('staff-what-is-a-staff')?.deck).toBe('treble-lines');
+    expect(getLesson('staff-treble-notes')?.deck).toBe('treble-all');
+    expect(getLesson('staff-find-middle-c')?.deck).toBe('middle-c');
   });
 });

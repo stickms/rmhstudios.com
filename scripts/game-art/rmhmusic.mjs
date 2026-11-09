@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
- * Generates RMH Music's catalog art: the card, banner, logo and icon.
+ * Generates RMH Music's catalog art: the card, banner, logo and icon, and its link-preview image.
  *
  *   public/images/games/rmhmusic.webp          card    1600×2400 (2:3), opaque
  *   public/images/games/banners/rmhmusic.webp  banner  3840×1280 (3:1), opaque, text-free
  *   public/images/games/logos/rmhmusic.webp    logo    1024×270, transparent (the wordmark)
  *   public/images/games/icons/rmhmusic.webp    icon    1024×1024, opaque
+ *   public/images/og/rmhmusic.png              og      1200×630 (1.91:1), opaque PNG: the link preview
  *
  * The art is a page of hand-copied manuscript paper, the way a teacher would write out a first
  * tune for a student: the app's notebook paper (cream, navy ink, ruled blue staves, a red-pencil
@@ -25,7 +26,7 @@
  * "hand" is a seeded PRNG and the paper and ink noise are seeded feTurbulence, so a re-run
  * reproduces the same art.
  *
- *   node scripts/game-art/rmhmusic.mjs                      # all four, into public/
+ *   node scripts/game-art/rmhmusic.mjs                      # all five, into public/
  *   node scripts/game-art/rmhmusic.mjs --only card,icon     # a subset
  *   node scripts/game-art/rmhmusic.mjs --preview <dir>      # also write PNG previews there
  *   PW_CHROMIUM=/path/to/chrome node scripts/game-art/rmhmusic.mjs   # (or --chromium <path>) when
@@ -45,6 +46,7 @@ const ROOT = resolve(HERE, '..', '..');
 const FONTS = join(HERE, 'fonts');
 const GAME_FONTS = join(ROOT, 'components', 'shared', 'game-fonts');
 const OUT = join(ROOT, 'public', 'images', 'games');
+const OG_OUT = join(ROOT, 'public', 'images', 'og');
 
 // ── Palette: the app's light "paper" tokens (rmhmusic.css), a little stronger where art needs it ──
 const C = {
@@ -397,6 +399,8 @@ const TAB = { E4: [0, 0], F4: [0, 1], G4: [0, 3], D4: [1, 3], C4: [1, 1] };
 function system(r, o) {
   const { x0, x1, y0, s, tg, beat, bars, lean, time = false, final = false, pencil = false } = o;
   const yTab = o.yTab;
+  // Rule weight scale: the staves were drawn for the card's 34px staff space.
+  const lw = o.lw ?? 1;
   const xn = x0 + (time ? 5.7 : 4) * s;
   const barW = 4 * beat;
   const plot = [];
@@ -411,8 +415,8 @@ function system(r, o) {
   // Tab fret numbers break the string they sit on.
   const gaps = Array.from({ length: 6 }, () => []);
   for (const p of plot) gaps[TAB[p.name][0]].push([p.x, tg * 0.72]);
-  let ink = handLines(r, x0, x1, y0, s, 5, C.staffInk, 3.4, 1.5);
-  ink += handLines(r, x0, x1, yTab, tg, 6, C.staffInk, 3, 1.5, gaps);
+  let ink = handLines(r, x0, x1, y0, s, 5, C.staffInk, 3.4 * lw, 1.5);
+  ink += handLines(r, x0, x1, yTab, tg, 6, C.staffInk, 3 * lw, 1.5, gaps);
   ink += clef(x0 + 1.6 * s, y0, s);
   if (time) ink += four(x0 + 3.5 * s, y0, s) + four(x0 + 3.5 * s, y0 + 2 * s, s);
   // The tab clef: T A B stacked across the six strings.
@@ -620,12 +624,53 @@ function iconSvg() {
 </svg>`;
 }
 
+/**
+ * The link-preview image (Open Graph / Twitter), 1200×630. The wordmark large on the upper-left
+ * of the page, and one system of Ode to Joy (staff and tab) running across under it and off the
+ * right edge. Crop-safe: the wordmark, clef and the first bars sit inside the central ~80%, so a
+ * 2:1 (Twitter) or a tight centre crop still reads; only staff and tab run out to the edges.
+ */
+function ogSvg() {
+  const W = 1200;
+  const H = 630;
+  const s = 23;
+  const r = rng(20261111);
+  const x0 = 150;
+  const sys = system(r, {
+    x0,
+    x1: W,
+    y0: 318,
+    yTab: 462,
+    s,
+    tg: 17,
+    beat: 66,
+    bars: ODE.slice(0, 4),
+    lean: -0.25,
+    time: true,
+    crop: true,
+    lw: 0.8,
+  });
+  const empty = emptyStaves(r, 110, W, [46], s, 1.8);
+  const wm = wordmark(0, 236, 660, { left: x0 + 4 });
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  <defs>${paperDefs('o', 13)}${inkDefs('o-ink', 0.75, 9, 3)}</defs>
+  ${paper('o', W, H)}
+  <path d="M100 0Q104 315 99 ${H}" fill="none" stroke="${C.margin}" stroke-width="3" opacity="0.8"/>
+  ${empty}
+  <g filter="url(#o-ink)">${sys.ink}${wm.ink}</g>
+</svg>`;
+}
+
 // ── Render ─────────────────────────────────────────────────────────────────────
 const PIECES = {
   card: { svg: cardSvg, w: 1600, h: 2400, out: 'rmhmusic.webp', alpha: false, q: 86 },
   banner: { svg: bannerSvg, w: 3840, h: 1280, out: 'banners/rmhmusic.webp', alpha: false, q: 84 },
   logo: { svg: logoSvg, w: 1024, h: 270, out: 'logos/rmhmusic.webp', alpha: true, q: 90 },
   icon: { svg: iconSvg, w: 1024, h: 1024, out: 'icons/rmhmusic.webp', alpha: false, q: 88 },
+  // PNG, not WebP: link-preview crawlers all take PNG/JPEG, WebP support among them is patchy.
+  // Kept out of `pnpm images:variants` (public/images/og/ is excluded: the declared 1200×630 is
+  // part of the meta contract). A 64-colour palette keeps it small; see `png` below.
+  og: { svg: ogSvg, w: 1200, h: 630, out: 'rmhmusic.png', dir: OG_OUT, alpha: false, png: true },
 };
 
 function arg(name) {
@@ -701,10 +746,26 @@ async function main() {
       if (missing.length) throw new Error(`fonts not loaded: ${missing.join(', ')}`);
       const png = await page.screenshot({ omitBackground: p.alpha, fullPage: false });
       await page.close();
-      const out = join(OUT, p.out);
+      const out = join(p.dir ?? OUT, p.out);
       let img = sharp(png).resize(p.w, p.h, { kernel: 'lanczos3' });
       if (!p.alpha) img = img.flatten({ background: C.paper }).removeAlpha();
-      await img.clone().webp({ quality: p.q, effort: 6, alphaQuality: 100 }).toFile(out);
+      if (p.png) {
+        // Palette PNG: the paper is a handful of cream tones and the ink one navy, so 64 colours
+        // with light dithering keep the grain without banding at a fraction of a truecolour file.
+        await img
+          .clone()
+          .png({
+            palette: true,
+            colours: 64,
+            quality: 80,
+            dither: 0.5,
+            effort: 10,
+            compressionLevel: 9,
+          })
+          .toFile(out);
+      } else {
+        await img.clone().webp({ quality: p.q, effort: 6, alphaQuality: 100 }).toFile(out);
+      }
       if (preview)
         await img
           .clone()

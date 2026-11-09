@@ -9,9 +9,9 @@ import { getAlsoPlayed } from '@/lib/games/store.server';
 import type { AlsoPlayed } from '@/lib/games/store-types';
 import type { LibraryExtras } from '@/lib/games/detail-types';
 import { GamePage } from '@/components/steam/GamePage';
-import { buildMeta, buildCanonical, ogCardPath, noindexHead } from '@/lib/seo';
+import { buildMeta, buildCanonical, ogCardPath } from '@/lib/seo';
 import { jsonLdScript, videoGameSchema, breadcrumbSchema } from '@/lib/schema';
-import { GAMES_INDEX_PATH } from '@/lib/seo-catalog';
+import { GAMES_INDEX_PATH, appHubHead } from '@/lib/seo-catalog';
 import { aiAvailable } from '@/lib/devplatform/ai.server';
 import { listReviews, getRatingAgg, listGuides } from '@/lib/games/meta.server';
 import type { ReviewView, RatingAgg, GuideSummary } from '@/lib/games/reviews';
@@ -101,9 +101,10 @@ export const Route = createFileRoute('/games/_library/$gameId')({
   // route's own type is still being inferred, so without this it resolves to
   // `never` and every field access errors.
   head: ({ loaderData, params }: { loaderData?: HubPayload; params: { gameId: string } }) =>
-    // An app's page is not indexed in v1: no reviews, guides or card of its own.
+    // An app's page is not indexed, but it is the public page a link to the app resolves to for a
+    // bot (the app's own route is behind the sign-in gate), so it carries the app's embed.
     loaderData?.kind === 'app'
-      ? noindexHead(loaderData.title)
+      ? appHubHead(params.gameId)
       : {
           meta: buildMeta({
             title: loaderData

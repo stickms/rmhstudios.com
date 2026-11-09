@@ -2,7 +2,9 @@
 
 /**
  * LessonScreen — the page around one lesson (`/rmhmusic/lesson/<id>`): a way
- * back to the path, "Change input", and the lesson's activity. An unknown id,
+ * back to the path, "Change input", and the lesson's activity, chosen by its mode
+ * (`play-note` → FirstNoteLesson, `staff-flashcards` → FlashcardLesson with the lesson's deck),
+ * each behind a placeholder of exactly its own boxes. An unknown id,
  * or a lesson that has not shipped yet, gets a friendly "not available yet"
  * page with a link home — never a crash or a blank. A document (`.app-page`).
  */
@@ -12,15 +14,25 @@ import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { getLesson } from '@/lib/rmhmusic/learn/content/path';
+import { DECKS } from '@/lib/rmhmusic/learn/content/decks';
+import { getLesson, type Lesson } from '@/lib/rmhmusic/learn/content/path';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from './buttons';
 import { FirstNoteLesson } from './FirstNoteLesson';
+import { FlashcardLesson } from './FlashcardLesson';
 import { InputSetup } from './InputSetup';
 import { ModeToggle } from './ModeToggle';
+import { STAFF_BOX } from './StaffCard';
 import { useInputRelease } from './useLearnInput';
 
-function Shell({
+/** Whether this screen can run the lesson: it has shipped and its activity is wired here. */
+function isPlayable(lesson: Lesson | undefined): lesson is Lesson {
+  if (!lesson?.available) return false;
+  if (lesson.mode === 'play-note') return true;
+  return lesson.mode === 'staff-flashcards' && !!lesson.deck && lesson.deck in DECKS;
+}
+
+export function Shell({
   title,
   action,
   busy = false,
@@ -99,17 +111,56 @@ function LessonSkeleton() {
   );
 }
 
+/**
+ * The flashcard lesson's placeholder: its boxes exactly — the card's sheet (title line, the staff
+ * and the answer line under it, the sentence line) and below it the letters and the input region
+ * (`.rmm-flash__answers`, whose heights the stylesheet fixes for every width).
+ */
+export function FlashcardSkeleton() {
+  return (
+    <div aria-hidden="true" className="rmm-flash space-y-4">
+      <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
+        <div className="h-8">
+          <div className="app-skeleton mx-auto h-8 w-40" />
+        </div>
+        <div className={STAFF_BOX}>
+          <div className="app-skeleton aspect-[200/102] w-full" />
+          <div className="h-9" />
+        </div>
+        <div className="flex h-11 items-center">
+          <div className="app-skeleton h-5 w-56 max-w-full" />
+        </div>
+      </section>
+      <div className="rmm-flash__answers">
+        <div className="rmm-flash__letters">
+          {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="app-skeleton h-full w-full" />
+          ))}
+        </div>
+        <div className="rmm-input-region">
+          <div className="app-skeleton h-full w-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LessonScreen({ lessonId }: { lessonId: string }) {
   const { t } = useTranslation('c-rmhmusic');
   const status = useLearnStore((s) => s.status);
   const error = useLearnStore((s) => s.error);
   const [setupOpen, setSetupOpen] = useState(false);
+  // Once the lesson has been on screen, it stays: a session that expires (or a save that fails)
+  // mid-lesson is the lesson's to show — its result stays up with a sign-in link or Retry — so the
+  // store's `unauthorized` must not swap it for the load-time sign-in page and lose the result.
+  const [started, setStarted] = useState(false);
+  if (status === 'ready' && !started) setStarted(true);
   const setupButton = useRef<HTMLButtonElement>(null);
   // Leaving the screen (any route change) or hiding the tab stops the mic; the screen sees it
   // through the hub's phases (useInputPhases), so nothing here needs to re-render.
   useInputRelease();
   const lesson = getLesson(lessonId);
-  const playable = lesson?.available === true && lesson.mode === 'play-note';
+  const playable = isPlayable(lesson);
 
   // The store is empty until `load()` runs in the browser (a no-op when the home already loaded it).
   useEffect(() => {
@@ -135,7 +186,14 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
   }
 
   let body: ReactNode;
-  if (status === 'error' && error === 'unauthorized') {
+  if (started) {
+    body =
+      lesson.mode === 'staff-flashcards' ? (
+        <FlashcardLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
+      ) : (
+        <FirstNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
+      );
+  } else if (status === 'error' && error === 'unauthorized') {
     body = (
       <div role="alert" className="rmm-sheet space-y-3 p-5">
         <p className="text-(--app-text)">
@@ -167,10 +225,10 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
         </button>
       </div>
     );
-  } else if (status !== 'ready') {
-    body = <LessonSkeleton />;
   } else {
-    body = <FirstNoteLesson lessonId={lesson.id} paused={setupOpen} />;
+    // Not started yet: the placeholder of exactly the lesson's boxes (the first render after
+    // `ready` takes the branch above).
+    body = lesson.mode === 'staff-flashcards' ? <FlashcardSkeleton /> : <LessonSkeleton />;
   }
 
   const ready = status === 'ready';

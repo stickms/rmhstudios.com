@@ -12,11 +12,12 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'reac
 import { playNote, MAX_VOICES } from '@/lib/rmhmusic/learn/audio/voice';
 import type { InputSource, NoteEvent } from '@/lib/rmhmusic/learn/input/events';
 import type { InputPhases } from '@/lib/rmhmusic/learn/input/hub';
-import { bindMicRelease } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
+import { bindMicRelease, startMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import { switchInput } from '@/lib/rmhmusic/learn/input/switch';
 import type { MidiDevice } from '@/lib/rmhmusic/learn/input/midi';
 import type { LearnInput } from '@/lib/rmhmusic/learn/schemas';
 import { subscribeMicLevel, useLearnStore } from '@/lib/rmhmusic/learn/store';
+import { getAudioContext } from '@/lib/shared/platform';
 
 /** Run `fn` for every note event while mounted (and while the hub exists). */
 export function useNoteEvents(fn: (e: NoteEvent) => void): void {
@@ -203,4 +204,32 @@ export function useInputRelease(onRelease?: () => void): void {
       hub.stop('keys');
     };
   }, [hub]);
+}
+
+/**
+ * For a lesson: start the learner's chosen input on entry. The computer keys need no permission;
+ * the mic and MIDI start by themselves only when the browser already granted them (and, for the
+ * mic, sound is already running, which iOS ties to a tap) — otherwise the lesson shows the input
+ * chooser, and its click starts them. Switching inputs mid-lesson goes through `chooseInput`,
+ * which stops the old one; leaving the lesson is `useInputRelease`.
+ */
+export function useLessonInputStart(): void {
+  const hub = useLearnStore((s) => s.hub);
+  const input = useLearnStore((s) => s.profile?.input ?? 'screen');
+  useEffect(() => {
+    if (!hub) return;
+    let cancelled = false;
+    if (input === 'keys') void hub.start('keys').catch(() => {});
+    if (input === 'mic' || input === 'midi') {
+      void (async () => {
+        if (hub.phase(input) !== 'idle' || !(await permissionGranted(input))) return;
+        if (input === 'mic' && getAudioContext()?.state !== 'running') return;
+        if (cancelled) return;
+        await (input === 'mic' ? startMic(hub) : hub.start(input)).catch(() => {});
+      })();
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [hub, input]);
 }

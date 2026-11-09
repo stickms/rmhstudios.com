@@ -5,7 +5,7 @@
  * media query and an attribute selector, so this pins the two copies together: same custom
  * properties, same values, and every palette token the light base sets is overridden by both (or
  * is on the short neutral list below). Without it, a fix lands in one path and not the other —
- * which is how the toggle-to-dark path kept the white cloud tile on dialogs.
+ * which is how the toggle-to-dark path once kept a cloud tile on dialogs.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -14,8 +14,25 @@ import { APP_ROUTE_THEME_BG } from '@/stores/themeStore';
 
 const CSS = readFileSync(join(__dirname, '../../../components/rmhmusic/rmhmusic.css'), 'utf8');
 
-/** Tokens the light base sets that are the same in both modes on purpose. */
-const NEUTRAL = new Set(['--app-font-display']);
+/**
+ * Tokens the light base sets that are the same in both modes on purpose: the display face, and the
+ * eleven material knobs RMH Music turns off (a native-material route has no gel coat, haze or grain
+ * floor, so there is no dark value to differ).
+ */
+const NEUTRAL = new Set([
+  '--app-font-display',
+  '--app-gel-body',
+  '--app-gel-depth',
+  '--app-jelly-haze',
+  '--jelly-tile',
+  '--liquid-coat',
+  '--liquid-fill-coat',
+  '--app-gel-fresnel',
+  '--app-gel-edge-r',
+  '--app-gel-edge-g',
+  '--app-gel-edge-b',
+  '--gel-well-shade',
+]);
 
 /**
  * A light token that is only an alias (`var(--app-surface)`) follows its target into dark: the

@@ -1,0 +1,132 @@
+/**
+ * Practice: a flashcard session dealt from the learner's remembered cards instead of one lesson's
+ * deck — pure.
+ *
+ * A remembered card is a row of `music_learn_card` (`CardRow`, as the cards API sends it), written
+ * only by a Practice review. A session takes the cards that are due, most overdue first
+ * (`dueCards`), and tops up to PRACTICE_CARDS with cards the learner has never been asked in
+ * Practice, from the decks of the flashcard lessons that have shipped. A card already remembered
+ * but not yet due is never dealt early, and no card is dealt twice in one session, so once every
+ * card has been seen a session holds only what is due, and may be empty.
+ */
+import { PATH, getLesson } from './path';
+import { DECKS, cardId, parseCardId, shuffle, type Card, type Deck } from './decks';
+import { dueCards, type CardState } from '../srs/schedule';
+
+/** Cards in one Practice session, at most. */
+export const PRACTICE_CARDS = 10;
+
+/** One remembered card as the API sends it: its schedule, with times as ISO strings. */
+export interface CardRow {
+  cardId: string;
+  due: string;
+  lastReviewAt: string | null;
+  stability: number;
+  difficulty: number;
+  reps: number;
+  lapses: number;
+}
+
+/**
+ * The scheduler's state for a row. An unparseable `due` becomes NaN and an unparseable
+ * `lastReviewAt` null; the scheduler repairs both (a reviewed card with no `last` is shown, not
+ * hidden), so a bad row is asked again rather than lost.
+ */
+export function stateFromRow(row: CardRow): CardState {
+  const last = row.lastReviewAt === null ? Number.NaN : Date.parse(row.lastReviewAt);
+  return {
+    due: Date.parse(row.due),
+    stability: row.stability,
+    difficulty: row.difficulty,
+    reps: row.reps,
+    lapses: row.lapses,
+    last: Number.isFinite(last) ? last : null,
+  };
+}
+
+/** The decks of the flashcard lessons that have shipped: where new Practice cards come from. */
+export function practiceDecks(): Deck[] {
+  const ids = new Set<string>();
+  for (const unit of PATH) {
+    for (const lesson of unit.lessons) {
+      if (lesson.available && lesson.mode === 'staff-flashcards' && lesson.deck) {
+        ids.add(lesson.deck);
+      }
+    }
+  }
+  return [...ids].flatMap((id) => (DECKS[id] ? [DECKS[id]] : []));
+}
+
+/**
+ * Deal a Practice session at `now`: the due remembered cards first (most overdue first), then new
+ * cards from `decks` in an order shuffled with `rand`, `limit` in all at most. A remembered id no
+ * deck knows is skipped; a due card from a deck not in `decks` is still practised (it is a card
+ * the learner has met).
+ */
+export function buildPracticeSession(
+  rows: readonly { cardId: string; state: CardState }[],
+  decks: readonly Deck[],
+  now: number,
+  rand: () => number,
+  limit: number = PRACTICE_CARDS,
+): Card[] {
+  const max = Number.isFinite(limit) ? Math.max(0, Math.floor(limit)) : 0;
+  const known = rows.filter((r) => parseCardId(r.cardId) !== null);
+  const out: Card[] = [];
+  const taken = new Set<string>();
+  for (const row of dueCards(known, now, max)) {
+    if (taken.has(row.cardId)) continue;
+    taken.add(row.cardId);
+    out.push(parseCardId(row.cardId)!);
+  }
+
+  const remembered = new Set(known.map((r) => r.cardId));
+  const fresh: Card[] = [];
+  for (const deck of decks) {
+    for (const midi of deck.midis) {
+      const id = cardId(deck.clef, midi);
+      if (remembered.has(id) || taken.has(id)) continue;
+      taken.add(id);
+      fresh.push({ id, clef: deck.clef, midi });
+    }
+  }
+  for (const card of shuffle(fresh, rand)) {
+    if (out.length >= max) break;
+    out.push(card);
+  }
+  return out;
+}
+
+/**
+ * Whether at least one card the learner has reviewed is due at `now` (the home's Practice link).
+ * A never-reviewed row, or one no deck knows, does not count: new cards are always available, so
+ * they would show the link for ever.
+ */
+export function hasDueReviewedCard(rows: readonly CardRow[], now: number): boolean {
+  const reviewed = rows
+    .filter((r) => r.reps > 0 && parseCardId(r.cardId) !== null)
+    .map((r) => ({ state: stateFromRow(r) }));
+  return dueCards(reviewed, now, 1).length > 0;
+}
+
+/**
+ * Whether the home shows its Practice link: a card the learner reviewed is due, or they have
+ * finished a flashcard lesson and Practice would still deal at least one card (a new one from the
+ * shipped decks, or one that is due). Rows are only written by Practice itself, so without the
+ * second case the link could never appear for a learner who has not already found the page; and
+ * once every card has been seen and none is due, the link goes away rather than leading to an
+ * empty sheet.
+ */
+export function practiceAvailable(
+  rows: readonly CardRow[],
+  progress: readonly { lessonId: string; completedAt: string | null }[],
+  now: number,
+): boolean {
+  if (hasDueReviewedCard(rows, now)) return true;
+  const metFlashcards = progress.some(
+    (p) => p.completedAt !== null && getLesson(p.lessonId)?.mode === 'staff-flashcards',
+  );
+  if (!metFlashcards) return false;
+  const remembered = rows.map((r) => ({ cardId: r.cardId, state: stateFromRow(r) }));
+  return buildPracticeSession(remembered, practiceDecks(), now, () => 0, 1).length > 0;
+}

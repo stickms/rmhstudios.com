@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 import { PATH } from '@/lib/rmhmusic/learn/content/path';
+import { practiceAvailable } from '@/lib/rmhmusic/learn/content/practice';
 import { releaseMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import type { LessonProgressRow } from '@/lib/rmhmusic/learn/store';
@@ -37,9 +38,14 @@ import { useInputRelease } from './useLearnInput';
  * (`INPUT_TEXT`), and the button is one line that truncates (`INPUT_BUTTON`). Both are in rem, so
  * at 200% text they grow together, and the skeleton reserves the same two boxes. The line sits at
  * the bottom of its box, against the button it belongs with.
+ *
+ * The button's row (`INPUT_ROW`, one 44px line in both states) also holds, at its far end, a
+ * quiet "Practice" link while at least one reviewed card is due. The row is there before the link
+ * is, so the link appearing (the cards load after the profile) moves nothing.
  */
 const INPUT_TEXT = 'flex h-10 min-w-0 items-end';
 const INPUT_BUTTON = 'max-w-full min-w-0';
+const INPUT_ROW = 'flex h-11 min-w-0 items-center gap-4';
 
 /** Loading placeholder, built from the static path so it is as tall as the loaded page. */
 function HomeSkeleton() {
@@ -50,7 +56,7 @@ function HomeSkeleton() {
         <div className={INPUT_TEXT}>
           <span className="app-skeleton h-5 w-48 max-w-full" />
         </div>
-        <div className="flex h-11 items-center">
+        <div className={INPUT_ROW}>
           <span className="app-skeleton h-5 w-28 max-w-full" />
         </div>
       </div>
@@ -87,10 +93,18 @@ export function LearnHome() {
   // Only the home's own action (the instrument toggle) reports a failed save here.
   const instrumentFailed = useLearnStore((s) => s.saveFailed.includes('instrument'));
 
-  // The store is empty until `load()` runs in the browser, never during SSR.
+  // The store is empty until `load()` runs in the browser, never during SSR. The cards load on
+  // their own: a failure there only means no Practice link.
   useEffect(() => {
-    void useLearnStore.getState().load();
+    const store = useLearnStore.getState();
+    void store.load();
+    void store.loadCards();
   }, []);
+  const cards = useLearnStore((s) => s.cards);
+  const practiceDue = useMemo(
+    () => practiceAvailable(cards, progress, Date.now()),
+    [cards, progress],
+  );
 
   const rows = useMemo(
     () => new Map<string, LessonProgressRow>(progress.map((r) => [r.lessonId, r])),
@@ -163,16 +177,21 @@ export function LearnHome() {
               {inputLine}
             </p>
           </div>
-          <button
-            ref={setupButton}
-            type="button"
-            onClick={() => onSetupChange(true)}
-            // Ink on the page, not a slab: no jelly body behind it.
-            data-liquid-material="off"
-            className={`${TEXT_BUTTON} ${INPUT_BUTTON}`}
-          >
-            <span className="truncate">{t('setup-input', { defaultValue: 'Set up input' })}</span>
-          </button>
+          <div className={INPUT_ROW}>
+            <button
+              ref={setupButton}
+              type="button"
+              onClick={() => onSetupChange(true)}
+              className={`${TEXT_BUTTON} ${INPUT_BUTTON}`}
+            >
+              <span className="truncate">{t('setup-input', { defaultValue: 'Set up input' })}</span>
+            </button>
+            {practiceDue && (
+              <Link to="/rmhmusic/practice" className={`${TEXT_BUTTON} ms-auto shrink-0`}>
+                {t('practice', { defaultValue: 'Practice' })}
+              </Link>
+            )}
+          </div>
         </div>
         {instrumentFailed && (
           <p role="status" className="text-sm text-(--app-danger)">

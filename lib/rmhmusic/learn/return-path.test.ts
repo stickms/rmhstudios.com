@@ -11,6 +11,13 @@ describe('rmhmusicReturnPath', () => {
     );
   });
 
+  it('returns to Practice', () => {
+    expect(rmhmusicReturnPath('/rmhmusic/practice')).toBe('/rmhmusic/practice');
+    expect(rmhmusicReturnPath('/rmhmusic/practice/')).toBe('/rmhmusic/practice');
+    expect(rmhmusicReturnPath('/rmhmusic/practice/x')).toBe('/rmhmusic');
+    expect(rmhmusicReturnPath('/rmhmusic/practicex')).toBe('/rmhmusic');
+  });
+
   it('sends everything else to the app home, never off the app', () => {
     for (const bad of [
       undefined,

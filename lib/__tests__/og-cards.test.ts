@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildMeta, ogCardPath, absoluteUrl, SITE_URL, DEFAULT_OG_IMAGE } from '@/lib/seo';
 import { STATIC_CARDS, staticCardFor, staticCardImage } from '@/lib/og/static-cards';
@@ -7,6 +7,8 @@ import { catalogStatsFor } from '@/lib/og/catalog-stats';
 import { fitText } from '@/lib/og/chrome.server';
 import { MAX_COLLAGE_TILES, collageTiles } from '@/lib/og/collage';
 import { postCardShowsContent } from '@/lib/og/post-visibility';
+import { appHubHead, appRouteHead } from '@/lib/seo-catalog';
+import { apps } from '@/lib/apps';
 
 /**
  * The Open Graph card system, as a gate.
@@ -149,6 +151,64 @@ describe('buildMeta', () => {
 
   it('emits a canonical og:url for the page', () => {
     expect(meta(buildMeta(base), 'og:url')).toBe(`${SITE_URL}/settings/appearance`);
+  });
+});
+
+describe('appRouteHead', () => {
+  const headMeta = (id: string) => appRouteHead(id).meta as ReturnType<typeof buildMeta>;
+
+  it('points an app without its own image at its rendered card', () => {
+    const app = apps.find((a) => !a.ogImagePath && a.href.startsWith('/'));
+    expect(app, 'an app with no ogImagePath').toBeDefined();
+    const tags = headMeta(app!.id);
+    expect(meta(tags, 'og:image')).toBe(`${SITE_URL}/api/og/app/${app!.id}`);
+    expect(meta(tags, 'twitter:image')).toBe(`${SITE_URL}/api/og/app/${app!.id}`);
+    expect(meta(tags, 'og:image:width')).toBe('1200');
+    expect(meta(tags, 'og:image:height')).toBe('630');
+    expect(meta(tags, 'og:image:alt')).toBe(`${app!.title} on RMH Studios.`);
+    expect(meta(tags, 'twitter:card')).toBe('summary_large_image');
+  });
+
+  it('uses a declared ogImagePath, at 1200×630, with its own alt text', () => {
+    const app = apps.find((a) => a.id === 'rmhmusic');
+    expect(app?.ogImagePath).toBe('/images/og/rmhmusic.png');
+    const tags = headMeta('rmhmusic');
+    expect(meta(tags, 'og:image')).toBe(`${SITE_URL}/images/og/rmhmusic.png`);
+    expect(meta(tags, 'twitter:image')).toBe(`${SITE_URL}/images/og/rmhmusic.png`);
+    expect(meta(tags, 'og:image:width')).toBe('1200');
+    expect(meta(tags, 'og:image:height')).toBe('630');
+    expect(meta(tags, 'twitter:card')).toBe('summary_large_image');
+    expect(meta(tags, 'og:image:alt')).toBe(app!.ogImageAlt);
+    expect(meta(tags, 'twitter:image:alt')).toBe(app!.ogImageAlt);
+  });
+
+  it('every declared ogImagePath is a 1200×630 PNG on disk with alt text', () => {
+    // The head declares 1200×630 for it (buildMeta's default), so the file has
+    // to be exactly that, or the declaration is a lie and consumers crop wrongly.
+    for (const app of apps.filter((a) => a.ogImagePath)) {
+      const path = app.ogImagePath!;
+      expect(path, app.id).toMatch(/^\/images\/og\/[a-z0-9-]+\.png$/);
+      expect(app.ogImageAlt, `${app.id}: ogImageAlt`).toBeTruthy();
+      const file = resolve(process.cwd(), 'public', path.slice(1));
+      expect(existsSync(file), `${app.id}: ${path} missing`).toBe(true);
+      const png = readFileSync(file);
+      expect(png.subarray(1, 4).toString('latin1'), `${app.id}: not a PNG`).toBe('PNG');
+      expect([png.readUInt32BE(16), png.readUInt32BE(20)], `${app.id}: size`).toEqual([1200, 630]);
+      expect(png.length, `${app.id}: keep it under ~400 KB`).toBeLessThanOrEqual(400 * 1024);
+    }
+  });
+});
+
+describe('appHubHead', () => {
+  // The app's own route is behind the sign-in gate, so a link-preview bot only ever sees this page.
+  it('carries the app\'s embed and stays out of search', () => {
+    const route = appRouteHead('rmhmusic').meta as ReturnType<typeof buildMeta>;
+    const hub = appHubHead('rmhmusic').meta as ReturnType<typeof buildMeta>;
+    for (const key of ['og:image', 'og:title', 'og:description', 'og:url', 'twitter:card']) {
+      expect(meta(hub, key), key).toBe(meta(route, key));
+    }
+    expect(meta(hub, 'og:image')).toBe(`${SITE_URL}/images/og/rmhmusic.png`);
+    expect(hub.some((m) => 'name' in m && m.name === 'robots' && m.content === 'noindex, follow')).toBe(true);
   });
 });
 

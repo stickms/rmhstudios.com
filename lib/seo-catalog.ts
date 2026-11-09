@@ -121,9 +121,11 @@ export function appRouteHead(id: string, options: HeadOptions = {}) {
       path,
       // The rendered card, not the raw screenshot this used to point at: a
       // 1200×630 with the app's art *in* it declares its dimensions, says which
-      // site it is from, and — unlike `imagePath` — exists for every app.
-      image: ogCardPath('app', app.id),
-      imageAlt: `${app.title} on RMH Studios.`,
+      // site it is from, and — unlike `imagePath` — exists for every app. An app
+      // with a link-preview image drawn for it (`ogImagePath`, also 1200×630, so
+      // buildMeta's default dimensions and large card hold) uses that instead.
+      image: app.ogImagePath ?? ogCardPath('app', app.id),
+      imageAlt: (app.ogImagePath && app.ogImageAlt) || `${app.title} on RMH Studios.`,
     }),
     links: [buildCanonical(path), ...(options.links ?? []), ...fontLinks],
     scripts: [
@@ -135,6 +137,18 @@ export function appRouteHead(id: string, options: HeadOptions = {}) {
       ),
     ],
   };
+}
+
+/**
+ * Head for an app's public library page (`/games/<appId>`). The app's own route is behind the sign-in
+ * gate, which redirects a link-preview bot (always signed out) to `/login` on the server, so a pasted
+ * `/rmhmusic` unfurls as the login page. This page is public, so it carries the app's embed (title,
+ * description, image, canonical) while staying out of search results (`noindex, follow`): the
+ * canonical and `og:url` point at the app itself, so a click on the unfurl goes there.
+ */
+export function appHubHead(id: string, options: HeadOptions = {}) {
+  const head = appRouteHead(id, options);
+  return { ...head, meta: [...head.meta, { name: 'robots', content: 'noindex, follow' }] };
 }
 
 /**

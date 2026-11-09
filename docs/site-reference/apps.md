@@ -14,7 +14,7 @@ Generated from `lib/apps.ts`, the single source of truth every card on the site 
 | --- | ----- | ------ | ---- | ---- |
 | **RMHTube** | [`/rmhtube`](https://rmhstudios.com/rmhtube) | — | required | `Watch Party` `Real-time` `Beta` |
 | **RMH Type** | [`/rmhtype`](https://rmhstudios.com/rmhtype) | — | required | `Typing` `Multiplayer` `Competitive` `Beta` |
-| **RMHMusic** | [`/rmhmusic`](https://rmhstudios.com/rmhmusic) | Beta | required | `Music` `Learning` `Piano` `Guitar` `Beta` |
+| **RMH Music** | [`/rmhmusic`](https://rmhstudios.com/rmhmusic) | Beta | required | `Music` `Learning` `Piano` `Guitar` `MIDI` `Beta` |
 | **RMH Study** | [`/rmhstudy`](https://rmhstudios.com/rmhstudy) | — | required | `Pomodoro` `Study` `Productivity` `Beta` |
 | **RMH TF2 Hub** | [`/tf2`](https://rmhstudios.com/tf2) | — | — | `TF2` `HUD` `Loadout` `Beta` |
 | **RMH Studio** | [`/studio`](https://rmhstudios.com/studio) | — | required | `DAW` `Music Production` `Beta` |
@@ -48,9 +48,9 @@ RMH Type is a competitive typing platform. Practice solo to improve your WPM, or
 
 **Route:** `/rmhtype` · **Catalog id:** `rmhtype` · **Sign-in:** required
 
-### RMHMusic
+### RMH Music
 
-RMHMusic is a beginner-friendly app for learning piano and guitar. Pick your instrument, connect a microphone or MIDI keyboard (or use the on-screen keys), calibrate its delay and start with a first note lesson, with your progress saved to your account. It is a Beta: reading notes on a staff, pitch and chord ear training, rhythm and time signatures, a tuner and play-along with sheet music are being added in stages.
+RMH Music teaches piano and guitar from the first note. Pick an instrument and play into a microphone, a MIDI keyboard, your computer keyboard or the on-screen keys; the app calibrates the delay of your input and hears what you play. The path of lessons starts with playing your first note, and your progress is saved to your account. It is a Beta and the path is being added in stages: note-reading flashcards, a fretboard and keyboard trainer, ear training for pitch, intervals and chords, and rhythm are planned next.
 
 **Route:** `/rmhmusic` · **Catalog id:** `rmhmusic` · **Status:** Beta · **Sign-in:** required
 
