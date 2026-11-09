@@ -15,21 +15,6 @@ on:
         description: Effects to dump in full — schema names or ids, comma separated
         type: string
         default: Aces High
-  push:
-    branches: [claude/intelligent-pasteur-1ebvf7]
-    paths:
-      - .github/workflows/tf2-effect-diagnostics.yml
-      - scripts/tf2-assets/effect_audit.py
-      - scripts/tf2-assets/visuals_audit.py
-      - scripts/tf2-assets/model_probe.py
-      - scripts/tf2-assets/paint_audit.py
-      - scripts/tf2-assets/material_audit.py
-      - scripts/tf2-assets/itemlist.py
-      - scripts/tf2-assets/render-probe/**
-      - scripts/tf2-assets/convert.py
-      - scripts/tf2-assets/glb.py
-      - components/tf2-hud/loadout/**
-      - lib/tf2-loadout/**
 
 permissions:
   contents: write
@@ -56,13 +41,7 @@ jobs:
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Install SteamCMD
-        run: |
-          sudo dpkg --add-architecture i386
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq lib32gcc-s1 lib32stdc++6 curl
-          mkdir -p "$HOME/steamcmd" && cd "$HOME/steamcmd"
-          curl -fsSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar xz
+      - uses: ./.github/actions/install-steamcmd
 
       - name: Make room on the runner
         run: |

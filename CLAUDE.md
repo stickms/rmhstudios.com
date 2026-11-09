@@ -416,7 +416,7 @@ suite, path-filtered to `scripts/epic/**`), `go-microservices.yml` (Bazel test),
 `senior-review.yml` (LLM review gate), `deploy.yml`, `synthetic-perf.yml`, `candidate-image.yml` (native image smoke),
 `build-cache.yml` (independent reusable-stage maintenance),
 and the build/deploy guards `build-vibe-packages`,
-`compose-validate`, `prisma-validate`, `prisma-migrate-status`. Run the core
+`compose-validate`, `prisma` (validate + migrate-status jobs). Run the core
 checks locally before opening a pull request. Which suite runs where, and what
 gates a deploy:
 [`docs/testing.md`](docs/testing.md) §CI.

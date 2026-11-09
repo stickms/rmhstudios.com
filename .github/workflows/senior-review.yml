@@ -1,15 +1,11 @@
 name: senior-review
 
-# Runs an LLM "senior SWE" review on pull requests opened by a specific author
-# (arexwu) and blocks merge until the review passes. PRs from anyone else still
-# trigger this workflow but short-circuit to success on the first step, so the
-# check always reports a result and can safely be marked "required" in branch
-# protection without blocking other contributors.
-#
-# The gate FAILS OPEN by design: only an explicit FAIL verdict turns the check
-# red. A model timeout, an API error, a truncated run, or an unparseable verdict
-# all resolve to PASS with a warning annotation — a flaky reviewer must never be
-# the reason a good PR cannot merge.
+# Runs an LLM "senior SWE" review on every pull request, whoever authored it,
+# and posts it as a PR comment. ADVISORY ONLY (owner decision, 2026-11-09): the
+# job always succeeds, so it can never block a merge and must not be added to
+# the required checks. A model timeout, an API error or an unparseable verdict
+# is a warning annotation, nothing more; a FAIL verdict is surfaced as a
+# warning annotation and in the comment, not as a red check.
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
@@ -32,20 +28,7 @@ jobs:
       # the action fails with "Unable to get ACTIONS_ID_TOKEN_REQUEST_URL".
       id-token: write
     steps:
-      # Decide whether this PR's author is the one we gate on. Every later step
-      # is guarded on this output, so non-target PRs finish green with no review.
-      - name: author gate
-        id: author
-        run: |
-          if [ "${{ github.event.pull_request.user.login }}" = "arexwu" ]; then
-            echo "is_target=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "is_target=false" >> "$GITHUB_OUTPUT"
-            echo "PR author is not the gated author; skipping review."
-          fi
-
       - name: checkout
-        if: steps.author.outputs.is_target == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
@@ -55,7 +38,6 @@ jobs:
       # somehow unavailable we fall back to the PR's own commit range rather than
       # leaving the reviewer with an empty file it would review as "no changes".
       - name: compute diff
-        if: steps.author.outputs.is_target == 'true'
         id: diff
         env:
           BASE: ${{ github.event.pull_request.base.ref }}
@@ -78,10 +60,10 @@ jobs:
       #   verdict.txt — a single token, exactly PASS or FAIL
       #
       # continue-on-error keeps an action-level failure (API outage, rate limit,
-      # timeout) out of the job result; the enforce step below decides the gate.
+      # timeout) out of the job result; the advisory report step below only annotates.
       - name: senior SWE review
         id: review
-        if: steps.author.outputs.is_target == 'true' && steps.diff.outputs.has_changes == 'true'
+        if: steps.diff.outputs.has_changes == 'true'
         continue-on-error: true
         uses: anthropics/claude-code-action@71d3414a2ac47c29d9b7d0da6ca01963a9a6e5fc # v1
         with:
@@ -99,8 +81,8 @@ jobs:
             conventions. Be specific and cite `file:line`. Ignore pure style nits a
             formatter would catch.
 
-            Then make a merge decision. This verdict gates merge, so reserve FAIL
-            for things you would genuinely refuse to merge:
+            Then make a merge decision. This review is advisory and a human decides the
+            merge, so reserve FAIL for things you would genuinely refuse to merge:
             - FAIL only if there is at least one BLOCKING issue: a correctness bug
               that will misbehave in production, a likely regression, a security
               hole, data loss, or a missing test for genuinely risky new logic.
@@ -128,10 +110,9 @@ jobs:
             verdict (`PASS` when in doubt) rather than leaving the file unwritten.
 
       # Post the review as a PR comment regardless of verdict so the author always
-      # sees the feedback. Never let a comment-posting hiccup fail the gate: the
+      # sees the feedback. Never let a comment-posting hiccup fail the job: the
       # review is also echoed into the run log as a backstop.
       - name: post review comment
-        if: steps.author.outputs.is_target == 'true'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
@@ -157,12 +138,11 @@ jobs:
           gh pr comment "$PR_NUMBER" --body-file "$body" \
             || echo "::warning::Could not post the review comment; the full review is in the run log above."
 
-      # The gate. Only an explicit FAIL blocks merge. Anything else — a missing
-      # verdict file, garbled output, a crashed reviewer, an empty diff — passes
-      # with a warning annotation so the gate degrades to a no-op instead of a
-      # wall when the tooling misbehaves.
-      - name: enforce verdict
-        if: steps.author.outputs.is_target == 'true'
+      # Advisory summary. Never fails the job: a FAIL verdict becomes a warning
+      # annotation, anything unusable becomes a different warning, and the step
+      # always exits 0.
+      - name: report verdict (advisory)
+        if: always()
         env:
           HAS_CHANGES: ${{ steps.diff.outputs.has_changes }}
           REVIEW_OUTCOME: ${{ steps.review.outcome }}
@@ -216,13 +196,14 @@ jobs:
 
           case "$verdict" in
             FAIL)
-              echo "::error::Senior SWE review failed — see the review comment on the PR."
-              exit 1
+              echo "::warning::Senior SWE review flagged blocking issues (advisory, not a gate) — see the review comment on the PR."
               ;;
             PASS)
               echo "Senior SWE review passed."
               ;;
             *)
-              echo "::warning::No usable verdict produced (reviewer step outcome: ${REVIEW_OUTCOME:-skipped}). Failing open and passing the gate."
+              echo "::warning::No usable verdict produced (reviewer step outcome: ${REVIEW_OUTCOME:-skipped}). Advisory only; nothing blocked."
               ;;
           esac
+
+          exit 0

@@ -2,7 +2,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # The CI half of the deploy embed's checklist (deploy.yml).
 #
-# The checks run as PARALLEL jobs (`ci`, `integration`, `go-test`, `build`), so no single
+# The checks run as PARALLEL jobs (`ci`, `integration`, `go-test`, `build`; the first two
+# are reusable-workflow calls, whose jobs list as "<caller> / <job>", matched by full name), so no single
 # job knows the others' state — and several jobs editing one Discord message
 # would overwrite each other's partial views. Instead the checklist is rendered
 # from the GitHub API's view of THIS run's jobs and steps (the source of truth),
@@ -54,11 +55,11 @@ def dur:
   if .secs == null then ""
   elif .secs >= 60 then " · \(.secs / 60 | floor)m \(.secs % 60 | tostring | if length == 1 then "0" + . else . end)s"
   else " · \(.secs)s" end;
-[ row("Typecheck"; "ci"; "Typecheck"; "step"),
-  row("Lint"; "ci"; "Lint"; "step"),
-  row("Unit tests 1/2"; "unit (1/2)"; "Test"; "job"),
-  row("Unit tests 2/2"; "unit (2/2)"; "Test"; "job"),
-  row("Integration tests"; "integration"; "Integration tests"; "job"),
+[ row("Typecheck"; "ci / typecheck"; "Typecheck"; "step"),
+  row("Lint"; "ci / typecheck"; "Lint"; "step"),
+  row("Unit tests 1/2"; "ci / test (1/2)"; "Test"; "job"),
+  row("Unit tests 2/2"; "ci / test (2/2)"; "Test"; "job"),
+  row("Integration tests"; "integration / integration"; "Integration tests"; "job"),
   row("Go tests"; "go-test"; "build + test (bazel)"; "job"),
   row("Candidate smoke"; "build"; "Smoke the published production images"; "step"),
   row("Images built + pushed"; "build"; "Build + push both images (bake, single graph)"; "step") ]
