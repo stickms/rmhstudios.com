@@ -1,0 +1,202 @@
+/**
+ * Spaced-repetition scheduler for note cards ("FSRS-lite").
+ *
+ * A deliberately small model with three numbers per card. It borrows the idea
+ * of separate stability and difficulty from FSRS but none of its fitted
+ * constants: the numbers below are hand-picked, simple to reason about, and
+ * only meant to space a handful of staff-reading cards sensibly.
+ *
+ *   stability   S, in days. Roughly "how long until I would likely forget this
+ *               card". It is also the interval the card is next shown after.
+ *               0 means never successfully reviewed.
+ *   difficulty  D, in [1, 10], starting at 5. How hard this card is for this
+ *               learner. It moves a little on every review (again +1,
+ *               hard +0.4, good -0.2, easy -0.5) and damps or boosts growth.
+ *
+ * On a review with grade g at time `now`:
+ *
+ *   again  The learner missed it. S falls to 30% of its old value (so it is
+ *          strictly smaller), the card comes back after MIN_INTERVAL_DAYS
+ *          (~15 minutes), and it counts as a lapse unless it was a brand-new
+ *          card (reps = 0), where there was nothing to forget yet.
+ *   others S grows: S' = base * (1 + (F_g - 1) * k_D * k_t), where
+ *            base = max(S, 1 day) (so a lapsed or brand-new card restarts
+ *                   from a one-day footing, not from minutes),
+ *            F_g  = grade factor: hard 1.2, good 2.2, easy 3.5,
+ *            k_D  = 1 - 0.05 * (D - 5), in [0.75, 1.2]: harder cards grow
+ *                   less, easier ones more (uses D before this review),
+ *            k_t  = elapsed / base clamped to [0.5, 1.5]: reviewing early
+ *                   earns less growth, reviewing late a little more. Fixed
+ *                   at 1 for a card with no prior review.
+ *          Because (F_g - 1) > 0 and k_D, k_t > 0, S' > base for every
+ *          non-again grade, and easy > good > hard from the same state.
+ *
+ * The interval used for `due` is clamp(S', MIN_INTERVAL_DAYS, MAX_INTERVAL_DAYS)
+ * days after `now`, and S' itself is capped at MAX_INTERVAL_DAYS.
+ *
+ * Totality. Elapsed time is max(0, now - last), so a clock that went
+ * backwards counts as zero elapsed and `due` is always `>= now`. `now` itself
+ * must be a finite number or a RangeError is thrown; everything else is
+ * repaired rather than trusted: a stored state with NaN/Infinity/out-of-range
+ * fields is replaced field by field by safe defaults, a never-seen card
+ * (reps = 0) is "new" and due immediately however stale its stored `due`, and
+ * a stored `due` more than MAX_INTERVAL_DAYS after its review (written while
+ * the clock was far ahead) is capped there, so a card cannot be stranded for
+ * years.
+ */
+
+export type Grade = 'again' | 'hard' | 'good' | 'easy';
+
+export interface CardState {
+  /** Epoch ms the card is next due. */
+  due: number;
+  /** Days. 0 until the first successful review. */
+  stability: number;
+  /** 1 (easy) to 10 (hard). */
+  difficulty: number;
+  reps: number;
+  lapses: number;
+  /** Epoch ms of the last review, or null for a card never reviewed. */
+  last: number | null;
+}
+
+export const DAY_MS = 86_400_000;
+/** About 15 minutes: when a missed card comes back. */
+export const MIN_INTERVAL_DAYS = 0.01;
+export const MAX_INTERVAL_DAYS = 365;
+
+const GRADE_FACTOR = { hard: 1.2, good: 2.2, easy: 3.5 } as const;
+const DIFFICULTY_DELTA: Record<Grade, number> = {
+  again: 1,
+  hard: 0.4,
+  good: -0.2,
+  easy: -0.5,
+};
+const DEFAULT_DIFFICULTY = 5;
+const MIN_DIFFICULTY = 1;
+const MAX_DIFFICULTY = 10;
+/** Weight of (difficulty - 5) in the growth damping. */
+const DIFFICULTY_WEIGHT = 0.05;
+/** What a lapse leaves of the old stability. */
+const LAPSE_KEEP = 0.3;
+/** Growth starts from at least a day, so relearned cards do not crawl. */
+const BASE_STABILITY_DAYS = 1;
+const TIMING_MIN = 0.5;
+const TIMING_MAX = 1.5;
+
+/** Clamp that maps NaN to `fallback` (so every output is a real number). */
+function clamp(n: number, lo: number, hi: number, fallback = lo): number {
+  if (Number.isNaN(n)) return fallback;
+  return Math.min(hi, Math.max(lo, n));
+}
+
+function assertNow(now: number): void {
+  if (typeof now !== 'number' || !Number.isFinite(now)) {
+    throw new RangeError(`now must be a finite number, got ${String(now)}`);
+  }
+}
+
+function count(n: unknown): number {
+  return typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+}
+
+/** Make a stored state safe to compute with, whatever was persisted. */
+function sanitize(s: CardState): CardState {
+  const fin = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
+  return {
+    due: fin(s.due) ? s.due : 0,
+    stability: fin(s.stability) ? clamp(s.stability, 0, MAX_INTERVAL_DAYS) : 0,
+    difficulty: fin(s.difficulty)
+      ? clamp(s.difficulty, MIN_DIFFICULTY, MAX_DIFFICULTY)
+      : DEFAULT_DIFFICULTY,
+    reps: count(s.reps),
+    lapses: count(s.lapses),
+    last: fin(s.last) ? s.last : null,
+  };
+}
+
+/**
+ * The due time to compare against `now`. New cards (and a reviewed card that
+ * lost its `last`, which only corruption produces) are due now. Otherwise the
+ * stored due is capped at MAX_INTERVAL_DAYS after the review it came from, or
+ * after `now` if the clock has since gone backwards past that review: the
+ * scheduler never writes a longer interval, so anything later was written by a
+ * clock that was ahead.
+ */
+function effectiveDue(s: CardState, now: number): number {
+  const c = sanitize(s);
+  if (c.reps === 0 || c.last === null) return now;
+  return Math.min(c.due, Math.min(c.last, now) + MAX_INTERVAL_DAYS * DAY_MS);
+}
+
+export function newCard(now: number): CardState {
+  assertNow(now);
+  return { due: now, stability: 0, difficulty: DEFAULT_DIFFICULTY, reps: 0, lapses: 0, last: null };
+}
+
+export function review(s: CardState, grade: Grade, now: number): CardState {
+  assertNow(now);
+  const c = sanitize(s);
+  const difficulty = clamp(
+    c.difficulty + DIFFICULTY_DELTA[grade],
+    MIN_DIFFICULTY,
+    MAX_DIFFICULTY,
+    DEFAULT_DIFFICULTY,
+  );
+  const reps = c.reps + 1;
+
+  let stability: number;
+  let lapses = c.lapses;
+  if (grade === 'again') {
+    stability = c.stability * LAPSE_KEEP;
+    if (c.reps > 0) lapses += 1;
+  } else {
+    const base = Math.max(c.stability, BASE_STABILITY_DAYS);
+    // `now - last` can be Infinity or negative for wild clocks; clamp handles both.
+    const elapsedDays = c.last === null ? 0 : Math.max(0, now - c.last) / DAY_MS;
+    const timing =
+      c.last === null ? 1 : clamp(elapsedDays / base, TIMING_MIN, TIMING_MAX, 1);
+    const difficultyTerm = 1 - DIFFICULTY_WEIGHT * (c.difficulty - DEFAULT_DIFFICULTY);
+    stability = clamp(
+      base * (1 + (GRADE_FACTOR[grade] - 1) * difficultyTerm * timing),
+      0,
+      MAX_INTERVAL_DAYS,
+    );
+  }
+
+  const intervalDays = clamp(stability, MIN_INTERVAL_DAYS, MAX_INTERVAL_DAYS);
+  const reviewed = grade === 'again' ? MIN_INTERVAL_DAYS : intervalDays;
+  return {
+    due: now + reviewed * DAY_MS,
+    stability,
+    difficulty,
+    reps,
+    lapses,
+    last: now,
+  };
+}
+
+export function isDue(s: CardState, now: number): boolean {
+  assertNow(now);
+  return effectiveDue(s, now) <= now;
+}
+
+/**
+ * The cards due at `now`, most overdue first (new cards count as zero overdue,
+ * so they follow the genuinely overdue ones, in input order), at most `limit`.
+ */
+export function dueCards<T extends { state: CardState }>(
+  cards: T[],
+  now: number,
+  limit: number,
+): T[] {
+  assertNow(now);
+  const max = Number.isNaN(limit) ? 0 : Math.floor(Math.max(0, limit));
+  if (max === 0) return [];
+  return cards
+    .map((card, index) => ({ card, index, due: effectiveDue(card.state, now) }))
+    .filter((e) => e.due <= now)
+    .sort((a, b) => a.due - b.due || a.index - b.index)
+    .slice(0, max)
+    .map((e) => e.card);
+}
