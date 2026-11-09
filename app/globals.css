@@ -294,7 +294,7 @@
   /* ── Monochrome material contract — glass reads as clean, near-opaque frost ── */
   --site-glass-tint: rgba(255, 255, 255, 0.34);
   --site-glass-tint-strong: rgba(255, 255, 255, 0.5);
-  --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
+  --site-glass-pane-tint: var(--site-glass-tint);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
   --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 98%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
@@ -956,7 +956,7 @@
   --site-warning-fg: #ffffff;
   --site-glass-tint: rgba(255, 255, 255, 0.36);
   --site-glass-tint-strong: rgba(255, 255, 255, 0.52);
-  --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
+  --site-glass-pane-tint: var(--site-glass-tint);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
   --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 98%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
@@ -1039,7 +1039,7 @@
   /* Light glass: brighter frost, white rims, cool low-alpha depth. */
   --site-glass-tint: rgba(255, 255, 255, 0.3);
   --site-glass-tint-strong: rgba(255, 255, 255, 0.48);
-  --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
+  --site-glass-pane-tint: var(--site-glass-tint);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
   --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 98%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
@@ -1148,7 +1148,7 @@
   --site-glass-tint-strong: rgba(46, 49, 57, 0.9);
   /* A black transparent ground adds no body. Use graphite by role so chrome,
      cards and floating panels remain distinct, including on narrow screens. */
-  --site-glass-pane-tint: color-mix(in srgb, var(--site-surface-opaque) 82%, transparent);
+  --site-glass-pane-tint: var(--site-glass-tint);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-surface-opaque) 92%, transparent);
   --site-glass-overlay-tint: color-mix(in srgb, var(--site-surface-opaque) 98%, transparent);
   --site-glass-mobile-tint: var(--site-glass-pane-tint);
@@ -1232,7 +1232,7 @@
   --site-warning-fg: #100b00;
   --site-glass-tint: rgba(255, 250, 238, 0.3);
   --site-glass-tint-strong: rgba(255, 250, 238, 0.48);
-  --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
+  --site-glass-pane-tint: var(--site-glass-tint);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
   --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 98%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
@@ -1315,7 +1315,7 @@
   --site-warning-fg: #100b00;
   --site-glass-tint: rgba(150, 185, 255, 0.09);
   --site-glass-tint-strong: rgba(150, 185, 255, 0.15);
-  --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
+  --site-glass-pane-tint: var(--site-glass-tint);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
   --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 98%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
@@ -1407,7 +1407,7 @@
   /* Clearer, colder material with a narrow high-energy edge. */
   --site-glass-tint: rgba(169, 224, 255, 0.065);
   --site-glass-tint-strong: rgba(177, 232, 255, 0.12);
-  --site-glass-pane-tint: color-mix(in srgb, var(--site-bg) 18%, transparent);
+  --site-glass-pane-tint: var(--site-glass-tint);
   --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
   --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 98%, transparent);
   --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
