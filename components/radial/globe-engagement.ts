@@ -3,9 +3,9 @@
  * loop: the docked globe's idle drift, its DOM pins and 2D cage) and in the worker (`globe-worker.ts`: the coat's haze).
  *
  * Engaged means engaged WITH THE GLOBE: a pointer over or near the globe or its dock, a press / drag / dwell hold on
- * the ball, or keyboard focus inside the dock or the open hub — and a short settle after the last of those, so a
- * release can finish its spring at the rate it started at. Input anywhere else on the page (moving over cards,
- * scrolling, typing in a field) does not raise the globe's rate: the globe is a sidebar's worth of the page and its
+ * the ball, keyboard focus inside the dock or the open hub, or the page scrolling under the docked globe (which kicks
+ * its spin) — and a short settle after the last of those, so a release or a scroll's coast can finish at the rate it
+ * started at. Input anywhere else on the page (moving over cards, typing in a field) does not raise the globe's rate: the globe is a sidebar's worth of the page and its
  * cost must stay with it, not follow the visitor round the site. (Until 2026-11-08 any pointer, key or wheel event in
  * the window held the engaged rate for `IDLE_AFTER_MS`, 20 s, so for an active visitor the docked globe drifted at the
  * engaged rate nearly all the time — ~255 ms/s of main thread in the software-GL harness against 85–158 at the floor.)
@@ -32,6 +32,15 @@ export const GLOBE_NEAR_MARGIN_PX = 24;
  * rate it started at, where the old window-wide rule held it for 20 s.
  */
 export const GLOBE_SETTLE_MS = 1500;
+
+/**
+ * How long after the last scroll that kicked the docked globe's spin it still counts as scrolling, ms. A scroll is
+ * engagement only while it is turning the globe: the spin it kicks is advanced on the ambient tick, so on the idle
+ * floor (7 Hz on a phone) the globe visibly stepped while the page moved and Safari's toolbar grew and shrank. The
+ * settle ({@link GLOBE_SETTLE_MS}) then carries the engaged rate through the coast. Scrolling that does not move the
+ * page (no `scrollY` change), and input elsewhere on the page, still do not raise the rate.
+ */
+export const GLOBE_SCROLL_HOLD_MS = 160;
 
 /** A viewport box (CSS px), as `getBoundingClientRect` gives it. */
 export interface GlobeBox {
@@ -65,10 +74,12 @@ export interface GlobeEngagementInput {
   pressed: boolean;
   /** Keyboard focus inside the dock or the open hub. */
   focused: boolean;
+  /** The page is scrolling under the docked globe and kicking its spin (see {@link GLOBE_SCROLL_HOLD_MS}). */
+  scrolling?: boolean;
 }
 
 export function isDirectlyEngaged(i: GlobeEngagementInput): boolean {
-  return i.near || i.pressed || i.focused;
+  return i.near || i.pressed || i.focused || i.scrolling === true;
 }
 
 /**

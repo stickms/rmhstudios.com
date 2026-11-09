@@ -8,6 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   GLOBE_NEAR_MARGIN_PX,
+  GLOBE_SCROLL_HOLD_MS,
   GLOBE_SETTLE_MS,
   GlobeEngagement,
   engagedRate,
@@ -53,6 +54,16 @@ describe('isDirectlyEngaged', () => {
     expect(isDirectlyEngaged({ near: false, pressed: true, focused: false })).toBe(true);
     expect(isDirectlyEngaged({ near: false, pressed: false, focused: true })).toBe(true);
     expect(isDirectlyEngaged({ near: false, pressed: false, focused: false })).toBe(false);
+  });
+
+  it('a scroll that is turning the globe engages it; without one it does not', () => {
+    expect(
+      isDirectlyEngaged({ near: false, pressed: false, focused: false, scrolling: true }),
+    ).toBe(true);
+    expect(
+      isDirectlyEngaged({ near: false, pressed: false, focused: false, scrolling: false }),
+    ).toBe(false);
+    expect(GLOBE_SCROLL_HOLD_MS).toBeLessThan(GLOBE_SETTLE_MS);
   });
 });
 
