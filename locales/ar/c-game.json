@@ -372,5 +372,6 @@
   "metronome": "Metronome",
   "assist-tick": "Assist Tick",
   "assists-not-uploaded-hint": "Free, with no score penalty — but a run played with any of these is not uploaded.",
-  "chart-on-play": "Chart on play"
+  "chart-on-play": "Chart on play",
+  "dnf": "DNF"
 }

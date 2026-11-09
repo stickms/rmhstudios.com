@@ -50,6 +50,8 @@ const EDGE_GAP = 16;
 const SLAM_MAX = 19;
 /** Space between the slam at its widest and the first bar, px, at most. */
 const SLAM_GAP = 10;
+/** Clear space between the margin and a column beside it (the leaderboard), px. */
+const LIMIT_GAP = 8;
 /** Below this the record would sit on top of the bars, so it is not drawn. */
 const MIN_RECORD_GUTTER = 150;
 /** Share of the height the bars occupy, centred. */
@@ -96,10 +98,19 @@ function lineTile(color: string): HTMLCanvasElement {
 
 export function SideWaves({
   stageRef,
+  rightLimitRef,
+  layoutKey,
   enabled,
 }: {
   /** The playfield's box; the margins are everything outside it. */
   stageRef: RefObject<HTMLElement | null>;
+  /**
+   * A column that sits in the right-hand margin (the multiplayer leaderboard). The
+   * right margin ends where it starts, so the waves are never drawn under it.
+   */
+  rightLimitRef?: RefObject<HTMLElement | null>;
+  /** Changes when the field moves without resizing (the leaderboard mounting). */
+  layoutKey?: unknown;
   enabled: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -157,6 +168,8 @@ export function SideWaves({
     let height = 0;
     let stageLeft = 0;
     let stageRight = 0;
+    // Where the right margin ends: the canvas edge, or the leaderboard's.
+    let rightEdge = 0;
 
     /** Rects are read when the layout changes, never per frame. */
     const measure = () => {
@@ -168,11 +181,19 @@ export function SideWaves({
       if (canvas.height !== height) canvas.height = height;
       stageLeft = field.left - box.left;
       stageRight = field.right - box.left;
+      const limit = rightLimitRef?.current?.getBoundingClientRect();
+      rightEdge =
+        limit && limit.width > 0
+          ? Math.min(width, Math.max(stageRight, limit.left - box.left - LIMIT_GAP))
+          : width;
     };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(canvas);
     observer.observe(stage);
+    // The stage resizes when the leaderboard mounts, which re-measures; observing the
+    // column too covers it changing width on its own.
+    if (rightLimitRef?.current) observer.observe(rightLimitRef.current);
 
     /** Log-spaced band edges as FFT bin indices, rebuilt only if the analyser changes. */
     const bandEdges = (bins: number, rate: number): Int32Array => {
@@ -238,7 +259,7 @@ export function SideWaves({
       if (off) return next(true);
 
       const leftRoom = stageLeft;
-      const rightRoom = width - stageRight;
+      const rightRoom = rightEdge - stageRight;
       const showLeft = leftRoom >= MIN_GUTTER;
       const showRight = rightRoom >= MIN_GUTTER;
       if (!showLeft && !showRight) return next(true);
@@ -318,7 +339,7 @@ export function SideWaves({
         const ink = dir === -1 ? cyan : pink;
         const screen = dir === -1 ? screens.cyan : screens.pink;
         const edge = dir === -1 ? stageLeft : stageRight;
-        const outer = dir === -1 ? 0 : width;
+        const outer = dir === -1 ? 0 : rightEdge;
         // Spacing scales with the margin, so a narrow one still keeps the clear strip
         // and a slam that cannot reach the bars, in less room. The bars start beyond
         // the clear strip AND the slam at its widest, so a kick never touches them.
@@ -555,7 +576,7 @@ export function SideWaves({
       observer.disconnect();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     };
-  }, [enabled, stageRef]);
+  }, [enabled, stageRef, rightLimitRef, layoutKey]);
 
   return (
     <canvas
