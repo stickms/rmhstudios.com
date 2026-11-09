@@ -115,13 +115,25 @@ timeline/glow/dispersion/refraction/reflection/impact/flash-budget/nudge`, `char
   `drag-report.ts` (the drag owners' report), `ambient-tick.ts` (the tick grid the globe
   and its cursor share). Components never import the arc service; they take jelly
   through role classes and `data-jelly*` attributes. It all mounts from
-  `hooks/useLiquidInteractions.ts`.
+  `hooks/useLiquidInteractions.ts`. **`refract/`** is refractive glass (built, tested, shipped DORMANT: every tier's `refractHosts` is 0): `profile.ts` (the rim
+  map of a size class, the class quantisation, `DISPERSION`), `coverage.ts` (where the
+  snapshot sits behind a host and how much of it the picture still covers), `filters.ts` (one
+  shared SVG `<filter>` per size class, refcounted), `scene-image.ts` (the snapshot as one
+  blob URL), `layer.ts` (one host's `span.jelly-refract`) and `install.ts`
+  (`installRefraction`: which on-screen hosts hold a layer, up to `JELLY_BUDGETS[tier]
+.refractHosts`, kept in place by the registry's observers; no rAF, nothing at rest). Its
+  CSS is `app/jelly-refract.css`; contract `docs/plasmatic-jelly-system.md` §1.2, gate
+  `lib/__tests__/jelly-refract.test.ts`.
 - **Liquid glass (what the globe still uses):** `liquid/glass/` — the WebGL rim/haze
   engine (`engine.ts`, `shader.ts`, `haze-shader.ts`, `renderer.ts`, the glass worker) is
   **gone**. What stays: `scene.ts` + `scene-store.ts` + `scene-feed.ts` (the page snapshot
   the liquid globe refracts, built on `eversion/capture`; `scene-feed.ts` is the refcounted
-  feed — one picture on load, route change, theme change and resize, nothing at scroll or
-  content mutation; `RadialShell` holds it), `policy.ts` (`innerRadius`, `PLASMA_LOOK`),
+  feed — one picture on load, route change, theme change and resize, and, only when the rim
+  layers (`refract/`) are switched on, on a reflowed page and when a scroll rests with a fixed
+  glass host's picture run out; nothing during a scroll or on a content mutation; `RadialShell`
+  holds it). A picture also records the document's
+  height and where `<body>` sat (the capture draws from the body's origin), so a layer can
+  register it to the live page), `policy.ts` (`innerRadius`, `PLASMA_LOOK`),
   `color.ts` and `jelly-glsl.ts` (the noise GLSL). `liquid/optics.ts` is the N-BK7 optics;
   `liquid/hover-css.ts` is the PostCSS plugin that strips hand-written hover lifts
   (deformation comes from the CSS soft body only). `dough.ts` is the globe's soft-body

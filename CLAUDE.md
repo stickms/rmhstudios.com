@@ -256,21 +256,33 @@ carries the weight. One ink-gel primary action (`<Button variant="signal">`) per
    ≥120px). It is one transform-only layer on the host's own `::after` that has
    **no box at rest** and drifts only while the host is hovered or holds keyboard
    focus. A floor of grain (`public/jelly/haze-tile.webp`) stays under every role,
-   so a surface reads as jelly with no JavaScript. Never a canvas, never a node
-   injected into a host.
+   so a surface reads as jelly with no JavaScript. Never a canvas, and no node
+   injected for the haze (the one injected child a host can hold is the rim's
+   refraction layer, item 4).
 3. **Plasma, inside and dormant:** a core and filaments clipped inside the gel,
    invisible at rest. Hover wakes it to `--plasma-wake` (a radial gradient at the
    pointer, `--px` / `--py`); press, focus and clicks brighten it. Plasma never
    draws an outline.
-4. **Edge, soft and RGB-tinted:** a static CSS rim, `--gel-glow` — one soft inset
+4. **Edge, soft and RGB-tinted, and it refracts:** a static CSS rim, `--gel-glow` — one soft inset
    glow (`--gel-bevel` × `--gel-shoulder` wide) whose colour carries a red/blue
    tint, under a lit top hairline. The rim is **molded**, not drawn: the slab
    rises out of the ground over a widened shoulder, lit on the light side, with a
    feathered silhouette (`--gel-feather`) — no hairline outline, no border. The
-   1px Fresnel edge (`--gel-fresnel`) returns only where the feather is off. There
-   is no shader rim and no live refraction of page content on site surfaces; the
-   liquid globe keeps its own shader and refracts the page snapshot
-   (`lib/liquid/glass/scene-feed.ts`).
+   1px Fresnel edge (`--gel-fresnel`) returns only where the feather is off.
+   **Refraction (2026-11-09; contract `docs/plasmatic-jelly-system.md` §1.2): built,
+   tested and shipped DORMANT.** A glass host that is on screen can hold one
+   `aria-hidden` `span.jelly-refract` (its first child) whose band just inside the
+   rim shows the shared page snapshot (`lib/liquid/glass/scene-feed.ts`) through a
+   plain SVG displacement filter with the RGB dispersion (`lib/jelly/refract/`,
+   `app/jelly-refract.css`, mounted by `useLiquidInteractions` only while a budget is
+   set): the same in Chromium, Firefox and WebKit, **never `backdrop-filter`**.
+   `JELLY_BUDGETS[tier].refractHosts` is **0 on every tier** — the filter failed the
+   performance bar in Firefox on a software renderer (~50 ms a frame while the page
+   scrolls, +290% scroll p95), and so did chrome/overlay/pane only — so today nothing
+   is imported, captured or drawn and the rim is the static lip above. Do not set a
+   budget without re-measuring the bar (§1.2 "Measured"); the next step is to bake the
+   rim into an image per picture instead of filtering per frame. The liquid globe keeps
+   its own shader and refracts the same snapshot.
 5. **No broad gloss band or glint across the face.** Shine lives at the edges
    and in the press dot.
 
@@ -311,7 +323,8 @@ transform` with an ease of its own on a body, untriggered flicker, ripple, or a
   or a new force in the arc service, with a constant for every number.
 
 **What the migration gave up** (accepted, owner 2026-11-07): live refraction of
-page content at the rim and in the press dent, the outline bulging past a host
+page content at the rim and in the press dent (the rim's refraction was rebuilt
+2026-11-09 as a filter on the snapshot and shipped dormant, item 4), the outline bulging past a host
 (the lattice silhouette), ambient arcs, Coulomb attraction, neighbour nudges, haze
 that moves at rest, and (at rest) the red-toward-the-light / blue-away rim offset
 and the plasma subsurface tint. Don't restore them without a new design.
@@ -388,8 +401,10 @@ worker (`components/radial/globe-worker.ts`)
 at 60 Hz when you are engaged with the globe, a 15 Hz floor otherwise (30 / 7 on
 handhelds), and 0 when the tab is hidden or unfocused, the globe is off screen,
 the tier is degraded, or Jelly motion is Still (`JELLY_BUDGETS` in
-`lib/jelly/tiers.ts`). The page snapshot the globe refracts is taken only on load,
-a route change, a theme change and a resize (≥1.5s apart). Rects are read in
+`lib/jelly/tiers.ts`). The page snapshot the globe and the rim layers refract is
+taken only on load, a route change, a theme change and a resize (≥1.5s apart); with
+the rim layers switched on it is also taken after a reflow and when a scroll rests
+with a fixed glass host's picture run out, never during a scroll. Rects are read in
 scroll/resize/activation, never per frame or pointer event; nothing writes custom
 properties to `<html>` per frame; never a filter or `backdrop-filter` on a
 full-viewport layer.
