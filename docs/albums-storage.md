@@ -44,14 +44,10 @@ deployed — so run it first, then ship the code.
    ```sh
    pnpm db:migrate:prod      # prisma migrate deploy
    ```
-2. **Seed the existing Alex Wu album** into storage + DB. Run from a checkout
-   that still has `public/albums/` (e.g. `main`, or your saved copy):
-   ```sh
-   pnpm albums:migrate
-   # or point at a saved copy if the files are already gone from the repo:
-   ALBUMS_SOURCE_DIR=/path/to/saved/albums pnpm albums:migrate
-   ```
-   It uploads each photo (full/optimized/thumb) and clip (mp4 + poster)
+2. **Seed the existing Alex Wu album** into storage + DB. **Completed on
+   2026-11-09 and the script (`scripts/migrate-albums-to-storage.ts`, the
+   `albums:migrate` command) was removed; see git history** if it is ever needed
+   again. It uploaded each photo (full/optimized/thumb) and clip (mp4 + poster)
    verbatim, then seeds `Album` + `AlbumSlide`. Idempotent (skips if the album
    already has slides; `--force` to add anyway).
 3. **Deploy this branch.** The carousel + library now serve from the DB/storage.

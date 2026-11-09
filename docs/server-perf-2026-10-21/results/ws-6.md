@@ -54,6 +54,8 @@ Sitemap, OG and oembed figures are in-process (no HTTP/production build). Event-
 None.
 
 ## Commands
+> `scripts/perf-ws6/` was removed on 2026-11-09 (F7 prune); the benchmarks below are historical, recoverable from git history.
+
 ```bash
 # 2026-10-22 additions (run with --env-file=.env pointing at the seeded DB)
 pnpm exec tsx --env-file=.env scripts/perf-ws6/svgtopng-fonts-bench.mts

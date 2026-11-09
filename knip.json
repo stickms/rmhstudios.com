@@ -1,0 +1,31 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "app/routes/**/*.{ts,tsx}",
+    "app/client.tsx",
+    "app/router.tsx",
+    "server/*/index.ts",
+    "server/nitro/*.ts",
+    "scripts/**/*.{ts,mts,mjs,js,cjs}",
+    "testing/**/*.{ts,tsx}",
+    "deploy/**/*.{ts,mjs,cjs}",
+    "webhook-server.cjs",
+    "vitest*.config.ts",
+    "**/*.worker.ts",
+    "**/__tests__/**/*.{ts,tsx}",
+    "**/*.{test,spec}.{ts,tsx}"
+  ],
+  "project": [
+    "app/**/*.{ts,tsx}",
+    "components/**/*.{ts,tsx}",
+    "lib/**/*.{ts,tsx}",
+    "hooks/**/*.{ts,tsx}",
+    "stores/**/*.{ts,tsx}",
+    "server/**/*.{ts,tsx}"
+  ],
+  "ignore": [
+    "app/routeTree.gen.ts",
+    "lib/i18n/resources.*.ts"
+  ],
+  "ignoreWorkspaces": ["cli", "docs/**"]
+}
