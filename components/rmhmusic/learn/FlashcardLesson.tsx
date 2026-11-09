@@ -159,11 +159,17 @@ export function FlashcardLesson({
   }, [keysPlayNotes]);
 
   // Focus follows the learner: after an answer given from the letters (or with nothing focused),
-  // to Next; after Next, back to the letters — so a keyboard user never lands on <body>.
+  // to Next; after Next, back to the letters — so a keyboard user never lands on <body>. Next is
+  // inert and hidden in the same commit that leaves `feedback`, but the browser has not yet moved
+  // focus off it when this runs, so focus on Next (or inside any inert subtree) counts as nowhere.
   const index = lesson.kind === 'asking' || lesson.kind === 'feedback' ? lesson.index : -1;
   useLayoutEffect(() => {
     const active = document.activeElement;
-    const nowhere = !active || active === document.body;
+    const nowhere =
+      !active ||
+      active === document.body ||
+      (lesson.kind === 'asking' &&
+        (active === nextButton.current || active.closest('[inert]') !== null));
     if (lesson.kind === 'feedback') {
       if (nowhere || letterGroup.current?.contains(active)) {
         nextButton.current?.focus({ preventScroll: true });
