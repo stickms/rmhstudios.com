@@ -43,8 +43,15 @@ import { useSliceItStore } from '@/lib/slice-it/store';
 const BANDS = 48;
 /** Narrower than this and there is nothing worth drawing. */
 const MIN_GUTTER = 72;
-/** Space between the field's edge and where the bars start, px. */
-const EDGE_GAP = 10;
+/** Clear space between the field (and the readouts that line up with it) and anything
+ *  drawn in the margin, px, at most. Nothing in the margin touches the field. */
+const EDGE_GAP = 16;
+/** The slam column's widest, on a kick, px, at most. */
+const SLAM_MAX = 19;
+/** Space between the slam at its widest and the first bar, px, at most. */
+const SLAM_GAP = 10;
+/** Below this the record would sit on top of the bars, so it is not drawn. */
+const MIN_RECORD_GUTTER = 150;
 /** Share of the height the bars occupy, centred. */
 const USABLE = 0.88;
 /** Frame spacing: 45 Hz is plenty for a margin and spares the main thread. */
@@ -312,8 +319,14 @@ export function SideWaves({
         const screen = dir === -1 ? screens.cyan : screens.pink;
         const edge = dir === -1 ? stageLeft : stageRight;
         const outer = dir === -1 ? 0 : width;
-        const x0 = edge + dir * EDGE_GAP;
-        const reach = Math.max(8, room - EDGE_GAP - 14);
+        // Spacing scales with the margin, so a narrow one still keeps the clear strip
+        // and a slam that cannot reach the bars, in less room. The bars start beyond
+        // the clear strip AND the slam at its widest, so a kick never touches them.
+        const gap = Math.min(EDGE_GAP, Math.max(10, room * 0.16));
+        const slamMax = Math.min(SLAM_MAX, Math.max(8, room * 0.12));
+        const barStart = gap + slamMax + Math.min(SLAM_GAP, Math.max(5, room * 0.08));
+        const x0 = edge + dir * barStart;
+        const reach = Math.max(8, room - barStart - 14);
         // Distance from the field, then to px.
         const px = (d: number) => edge + dir * d;
 
@@ -326,7 +339,7 @@ export function SideWaves({
               near the field, with a wave travelling outward. */
         ctx.fillStyle = ink;
         ctx.globalAlpha = 0.34;
-        const cols = Math.floor(room / CELL);
+        const cols = Math.floor((room - gap) / CELL);
         const rows = Math.floor(height / CELL);
         const speed = 2.4 + energy * 4.5;
         for (let gy = 0; gy < rows; gy++) {
@@ -334,14 +347,14 @@ export function SideWaves({
           const level = levels[bandAt(Math.max(top, Math.min(top + usable - 1, cy)), top, usable)];
           for (let gx = 0; gx < cols; gx++) {
             const d = gx * CELL + CELL / 2;
-            const fade = 1 - d / room;
+            const fade = 1 - d / (room - gap);
             const ripple = 0.5 + 0.5 * Math.sin(d * 0.05 - clock * speed);
             const s = Math.min(
               CELL - 1,
               1 + (level * 0.75 + thump * 0.55 + ripple * 0.3 * (0.3 + energy)) * CELL * 0.7 * fade,
             );
             if (s < 1.5) continue;
-            const x = px(d);
+            const x = px(gap + d);
             ctx.fillRect(
               Math.round(x - s / 2),
               Math.round(cy - s / 2),
@@ -357,7 +370,7 @@ export function SideWaves({
         const rcx = edge + dir * room * 0.52;
         const rcy = height * 0.5;
         const radius = Math.min(room * 0.36, height * 0.2) * (1 + 0.05 * thump);
-        if (radius > 24) {
+        if (radius > 24 && room >= MIN_RECORD_GUTTER) {
           ctx.save();
           ctx.translate(rcx, rcy);
           ctx.rotate(dir === -1 ? angle : -angle);
@@ -408,10 +421,10 @@ export function SideWaves({
         }
 
         /* 3. The slam: the column at the field's edge, thicker on every kick. */
-        const slam = 3 + thump * 16;
+        const slam = Math.min(slamMax, 3 + thump * 16);
         ctx.fillStyle = ink;
         ctx.globalAlpha = 0.9;
-        ctx.fillRect(dir === -1 ? edge - slam : edge, top, slam, usable);
+        ctx.fillRect(dir === -1 ? edge - gap - slam : edge + gap, top, slam, usable);
         ctx.globalAlpha = 1;
 
         /* 4. The spectrum. */
