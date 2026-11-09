@@ -1378,7 +1378,7 @@ export function GameCanvas() {
       // measured ~10 `shadowBlur` activations per frame against ~15 rasterising
       // ops, i.e. most of what it draws goes through a blur. Resolved here so the
       // decision is made once per theme/class change rather than per frame; the
-      // MutationObserver below re-reads it when `perf-lite` is toggled.
+      // MutationObserver below re-reads it when the root classes change.
       glow: canvasGlowEnabled(),
       bg,
       bgAlt: v('--slice-bg-alt', '#101a55'),
@@ -1407,7 +1407,7 @@ export function GameCanvas() {
     };
   };
 
-  // Drop the cached theme when `perf-lite` or the root classes change (and on
+  // Drop the cached theme when the root classes change (and on
   // unmount); the `--slice-*` values themselves are fixed.
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -2344,7 +2344,7 @@ export function GameCanvas() {
     // them fires on a threshold.
     //
     // Gated exactly like the combo-break wash and the milestone label: `glow`
-    // (which folds in reduced motion and `perf-lite`), `flashOff` (A2's
+    // (which folds in reduced motion and a low-end device), `flashOff` (A2's
     // photosensitivity mode) and `fx` (A7's intensity dial). When any of them
     // says no the TARGET goes to zero and the field drains to the calm look
     // rather than snapping to it — degrading to calm, not to broken.
@@ -2426,7 +2426,7 @@ export function GameCanvas() {
     //
     // Gated by `backdropVisible`, which folds in all three switches this layer
     // has to obey: the player's own choice, `glow` (reduced motion and
-    // `perf-lite`), and A2's photosensitivity mode. A full-screen luminance
+    // a low-end device), and A2's photosensitivity mode. A full-screen luminance
     // change tracking a 200 BPM track is precisely what that last one exists to
     // stop, and it is not negotiable against a decoration.
     // Resolved per frame from the store, exactly like `palette` and `skin`
@@ -3087,7 +3087,7 @@ export function GameCanvas() {
           // and a thin light rim — the scheme's neon, not a raised surface. The
           // halo is the only blur on a note, and it comes from one cached sprite
           // per colour (see "Cached blur layers"), so a busy chart costs a
-          // `drawImage` per note rather than a blur. With `glow` off (perf-lite)
+          // `drawImage` per note rather than a blur. With `glow` off (a low-end device)
           // there is no halo, just the body and the rim.
           if (groove) {
             if (cutProgress >= 0) {
@@ -3101,7 +3101,7 @@ export function GameCanvas() {
                 const level = strengthOf(
                   judged && Math.abs(judged.at - (slice.hitTime ?? 0)) < 250 ? judged.text : undefined,
                 );
-                // A weak renderer (`perf-lite`) gets a smaller burst, not a broken one.
+                // A low-end device (no glow) gets a smaller burst, not a broken one.
                 spawnCutFx(
                   fxRef.current,
                   cut,
@@ -3253,7 +3253,7 @@ export function GameCanvas() {
     // `fillRect` and reads the same way — the field goes flat for a moment.
     //
     // Gated on `theme.glow`, which is false under reduced motion and on
-    // `perf-lite` devices: a screen-wide tint appearing on a miss is exactly the
+    // low-end devices: a screen-wide tint appearing on a miss is exactly the
     // kind of thing that preference is asking not to happen.
     const comboBreak = glow && !flashOff ? engine.getComboBreak() : null;
     if (comboBreak) {
@@ -3270,7 +3270,7 @@ export function GameCanvas() {
     // 3c. V5 — combo milestones: an escalating flash + label at 50/100/250/
     // 500/1000. Gated on `glow` exactly like the combo-break wash above — a
     // screen flash tied to hitting a number is precisely what A2's
-    // photosensitivity mode (and reduced motion / perf-lite, which fold into
+    // photosensitivity mode (and reduced motion / a low-end device, which fold into
     // the same flag) turns off.
     const milestone = glow && !flashOff ? engine.getComboMilestone() : null;
     if (milestone) {

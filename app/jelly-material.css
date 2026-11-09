@@ -18,8 +18,8 @@
       holds keyboard focus (§3b). Nothing moves on an idle page.
    4. The static CSS rim — one soft inset glow (`--gel-glow`) under a lit top hairline on every surface; fields add the
       well.
-   5. The degradation block — print and the app tier's high contrast hide every jelly layer; `perf-lite` keeps the
-      static haze and the CSS rim but nothing moves.
+   5. The degradation block — print and the app tier's high contrast hide every jelly layer. There is no other tier:
+      software-rendering and low-end devices get the whole material.
    6. The soft body (§8) — CSS springs on `scale` / `translate`, with the pointer position as two variables.
 
    Hard rules (gates: filter-cost-budget, site-infinite-animation N3/N12, stacking N6):
@@ -339,7 +339,7 @@
      liquid-glass.css used to isolate on are gone); the roles are positioned already (liquid-glass.css, the button's
      `relative`). Wake starts at the identity frame (no phase delay): only the hovered host runs, so there is nothing
      to fall into lockstep with, and a delay would snap the streaks to a later frame on wake. */
-  html:not(.native-material, .perf-lite)
+  html:not(.native-material)
     :is(
       .glass-fill,
       .glass-pane,
@@ -372,7 +372,7 @@
     ) {
     isolation: isolate;
   }
-  html:not(.native-material, .perf-lite)
+  html:not(.native-material)
     :is(
       .glass-fill,
       .glass-pane,
@@ -496,7 +496,7 @@
      compositor layers instead of 10). `:has(:focus-visible)` is keyboard focus only. The host's own keyboard focus
      does not wake it: §6 pauses the haze there (a ring over a moving ground), and a paused animation would only
      promote the layer. */
-  html:not(.native-material, .perf-lite)
+  html:not(.native-material)
     :is(
       .glass-fill,
       .glass-pane,
@@ -527,7 +527,7 @@
         )
         *
     ):hover::after,
-  html:not(.native-material, .perf-lite)
+  html:not(.native-material)
     :is(
       .glass-fill,
       .glass-pane,
@@ -564,7 +564,7 @@
   }
   /* The box is born on wake, so it fades in from 0 rather than popping (Task 11). Same selectors as the wake rule. */
   @starting-style {
-    html:not(.native-material, .perf-lite)
+    html:not(.native-material)
       :is(
         .glass-fill,
         .glass-pane,
@@ -595,7 +595,7 @@
           )
           *
       ):hover::after,
-    html:not(.native-material, .perf-lite)
+    html:not(.native-material)
       :is(
         .glass-fill,
         .glass-pane,
@@ -665,9 +665,9 @@
   }
   /* A role's hairline keeps only `--gel-edge-line` of its colour (a lit top edge keeps its ratio), so a slab is molded
      out of the ground, not outlined. The degraded
-     tiers keep the full edge: it is their only one. A border utility (danger, accent, selection) is in a later layer and
+     modes (print, app high contrast) keep the full edge: it is their only one. A border utility (danger, accent, selection) is in a later layer and
      still wins. */
-  html:not(.perf-lite):not(.app-high-contrast)
+  html:not(.app-high-contrast)
     :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay):not([data-liquid-canvas='on']):not(
       [data-liquid-material='off']
     ) {
@@ -858,9 +858,9 @@ html[data-jelly-motion='still']
 
 /* ── 7. Degradation (01 D8, 04 §4.7) ──────────────────────────────────────────────────────────────────────────────
    High contrast (app) and print: no jelly at all — no woken haze, no floor, no rim glow, no soft-body transform.
-   `perf-lite` keeps the static floor and the CSS rim; only the moving layer goes (no woken haze). `!important` because
-   these are accessibility contracts, not looks: they outrank theme, material and utility layers alike. */
-:is(.perf-lite, .app-high-contrast)
+   `!important` because these are accessibility contracts, not looks: they outrank theme, material and utility layers
+   alike. */
+.app-high-contrast
   :is(
     .glass-fill,
     .glass-pane,
@@ -1047,7 +1047,7 @@ html[data-game-state='playing']
    the track is a field, which never moves. lib/__tests__/jelly-soft-body.test.ts pins all of it.
 
    Scope: off native-material routes (`html.native-material`: /tf2, /games keep their own scheme) and while a game is in
-   play. `perf-lite` and the app tier's high contrast keep the press, plain: critically damped both ways, no hover. Touch
+   play. The app tier's high contrast keeps the press, plain: critically damped both ways, no hover. Touch
    and other no-hover pointers get the press and its spring, never the hover plump (the hover rules sit in a fine-pointer
    query). Print resets it (below).
 
@@ -1156,74 +1156,7 @@ html[data-game-state='playing']
     --jelly-spring-dur: var(--spring-release-dur);
     --jelly-spring-ease: var(--spring-release);
   }
-  /* No wobble where the material is off: perf-lite and the app tier's high contrast press, then settle critically. */
-  html.perf-lite:not(.native-material, [data-game-state='playing'])
-    :is(
-      .glass-fill,
-      .glass-interactive,
-      [data-evert],
-      [data-liquid-surface],
-      [data-fluid-press],
-      [data-jelly='card'],
-      [data-jelly='lift'],
-      [data-jelly='control'],
-      [data-jelly='sink'],
-      [data-jelly='firm'],
-      button,
-      [role='button'],
-      [role='tab'],
-      [role='menuitem'],
-      [role='switch'],
-      [role='option'],
-      summary,
-      [data-slot='button'],
-      [data-jelly-press-body]
-    ):not(
-      .glass-pane:not([data-jelly-press-body]),
-      .glass-chrome:not([data-jelly-press-body]),
-      .glass-overlay,
-      .glass-inset,
-      .app-glass,
-      [data-liquid-glass]:not(.glass-fill, .glass-interactive),
-      [data-jelly='off'],
-      [data-jelly='none'],
-      [data-jelly='pane'],
-      [data-jelly='drag'],
-      [data-liquid-material='off'],
-      [data-liquid-motion='off'],
-      [data-fluid-press='off'],
-      [data-fluid-press='none'],
-      :disabled,
-      [aria-disabled='true'],
-      [data-evert-delegate],
-      [data-gesture]:not([data-gesture='hold']),
-      [draggable='true'],
-      input,
-      textarea,
-      select,
-      [contenteditable='true'],
-      [contenteditable=''],
-      canvas,
-      video,
-      iframe,
-      .radial-globe,
-      .radial-globe__stage,
-      .radial-globe__glass,
-      .radial-globe__jelly,
-      .radial-globe__cage,
-      .radial-globe__skin,
-      .rad-globe-dock,
-      .eversion-overlay,
-      .evert-ghost,
-      :is(p, blockquote, figcaption, dd, .prose) a:not([data-jelly], [data-fluid-press]),
-      :is(
-          [data-jelly-scope='off'],
-          [data-jelly-zone='playfield'],
-          [data-liquid-motion='off'],
-          [inert]
-        )
-        *
-    ),
+  /* No wobble where the material is off: the app tier's high contrast presses, then settle critically. */
   html:not(.native-material, [data-game-state='playing'])
     .app-high-contrast
     :is(
@@ -1297,7 +1230,7 @@ html[data-game-state='playing']
     --jelly-spring-ease: var(--spring-press);
   }
   @media (hover: hover) and (pointer: fine) {
-    html:not(.native-material, [data-game-state='playing'], .perf-lite)
+    html:not(.native-material, [data-game-state='playing'])
       :is(
         .glass-fill,
         .glass-interactive,
@@ -1369,7 +1302,7 @@ html[data-game-state='playing']
         calc(1 + var(--jelly-edge-reach) / var(--jelly-s, 1000))
       );
     }
-    html:not(.native-material, [data-game-state='playing'], .perf-lite)
+    html:not(.native-material, [data-game-state='playing'])
       :is(
         .glass-fill,
         .glass-interactive,
@@ -1705,7 +1638,7 @@ html[data-game-state='playing']
      or a touch) the gradients sit outside the box and draw nothing. The wake is the role's plasma at `--plasma-wake`
      strength, the dot is `--gel-specular`, both faint enough to keep text at 4.5:1. */
   @media (hover: hover) and (pointer: fine) {
-    html:not(.native-material, .perf-lite)
+    html:not(.native-material)
       :is(
         .glass-fill,
         .glass-pane,
@@ -1761,7 +1694,7 @@ html[data-game-state='playing']
         var(--jelly-tile);
       --jelly-floor-size: auto, auto, var(--jelly-tile-size);
     }
-    html:not(.native-material, .perf-lite)
+    html:not(.native-material)
       :is(
         .glass-fill,
         .glass-pane,

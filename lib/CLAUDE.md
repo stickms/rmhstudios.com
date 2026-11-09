@@ -88,6 +88,12 @@ bundle only**. SSR/server builds get the real module.
   what is left of its JavaScript. `tiers.ts` is the single shared policy (tiers,
   `JELLY_BUDGETS`, `jellyMode()`, `jellyOff()`, opt-out and host selectors,
   `MOTION_BOUNDS`, `FLASH_LEDGER`; every jelly service reads it, nothing restates it).
+  There is no low-end tier (`perf-lite` was removed 2026-11-08): `JellyTier` is
+  `full | coarse | handheld | off`, and software-rendering or weak devices get the full
+  material. `lib/low-end.ts` is the separate capability read (`isLowEndCapability()`,
+  `softRenderDetected()`) for games, RUM, the eversion mesh tier and the globe's CSS
+  fallback; it is never a class on `<html>` and nothing in `jelly/` or the CSS material
+  reads it (`lib/__tests__/no-perf-lite.test.ts`).
   `soft-policy.ts` + `spring-curves.ts` hold the soft body's numbers (`SOFT_BODY`,
   `CSS_SPRINGS`, `CSS_SOFT_BODY`, the size cap) and sample the springs into the
   `--spring-*` `linear()` tokens (`jelly-spring-tokens.test.ts` keeps the CSS equal).

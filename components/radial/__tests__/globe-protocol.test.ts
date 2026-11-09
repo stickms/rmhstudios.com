@@ -167,14 +167,14 @@ describe('clockChanged', () => {
 });
 
 describe('the fallback decision', () => {
-  const env = { perfLite: false, hasWorker: true, hasOffscreenCanvas: true, canTransfer: true };
+  const env = { softRender: false, hasWorker: true, hasOffscreenCanvas: true, canTransfer: true };
 
   it('uses the worker where it can', () => {
     expect(decideGlobeBackend(env)).toEqual({ backend: 'worker' });
   });
 
   it.each([
-    [{ perfLite: true }, 'perf-lite'],
+    [{ softRender: true }, 'software-render'],
     [{ hasWorker: false }, 'no-worker'],
     [{ hasOffscreenCanvas: false }, 'no-offscreen'],
     [{ canTransfer: false }, 'no-offscreen'],

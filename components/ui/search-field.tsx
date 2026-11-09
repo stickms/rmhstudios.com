@@ -57,7 +57,7 @@ export const SearchField = React.forwardRef<HTMLInputElement, SearchFieldProps>(
             // `.glass-inset` — the field tier, which is what a field is, and what
             // `Input` already takes. The hand-rolled box painted the same shape and
             // none of the material, so this one field degraded nowhere: every
-            // high-contrast / reduced-transparency / perf-lite rule in globals.css
+            // high-contrast / reduced-transparency rule in globals.css
             // targets the glass classes and nothing else.
             'glass-inset h-12 w-full rounded-site-sm py-3 pl-10 pr-11 text-base sm:text-sm text-site-text transition-colors duration-site-fast',
             'placeholder:text-site-text-muted focus:border-site-accent focus:outline-none',

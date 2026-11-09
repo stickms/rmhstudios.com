@@ -177,16 +177,14 @@ describe('default theme before first paint', () => {
  * The inline scripts in `__root.tsx` that run before first paint, as one string.
  *
  * Everything between `const themeScript = \`` and the end of the `head()` scripts
- * array is pre-paint: `platformScript`, `PERF_TIER_SCRIPT`, `themeScript`,
+ * array is pre-paint: `platformScript`, `themeScript`,
  * `localeScript` and `bodyThemeScript`. The gate below asks whether a given class
  * or attribute name appears anywhere in that text, which is deliberately loose —
  * it proves the pre-paint stack KNOWS about the token, and leaves whether it
  * resolves it correctly to the runtime audit, which can actually see the pixels.
  */
 function prePaintScriptText(): string {
-  const root = read('app/routes/__root.tsx');
-  const perfTier = read('lib/perf-tier.ts');
-  return `${root}\n${perfTier}`;
+  return read('app/routes/__root.tsx');
 }
 
 describe('FOUC contract: pre-paint parity', () => {
@@ -203,7 +201,6 @@ describe('FOUC contract: pre-paint parity', () => {
     'components/Providers.tsx',
     'stores/themeStore.ts',
     'lib/appearance/prefs.ts',
-    'lib/perf-tier.ts',
   ];
 
   /**

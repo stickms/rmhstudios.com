@@ -130,8 +130,8 @@ violation of one of them:
    ambient text colour. `globals.css` supplies the pairings by default through
    zero-specificity rules, and a custom accent is contrast-checked at runtime —
    but hardcoding `text-white` on a themed surface defeats both.
-3. **Degradation is central, not per-component.** `perf-lite`, print and the
-   jelly switches are handled once,
+3. **Degradation is central, not per-component.** Print, the app tier's high
+   contrast and the jelly switches are handled once,
    in the token layer and the glass classes. A component that branches on them by
    hand is a bug. **Legibility must never depend on an optic** — text has to hold
    on `--site-surface-opaque`.
@@ -178,7 +178,7 @@ them share one frame and one pointer listener. A click discharges arcs and pulse
 layout, and neighbours move at most a bounded nudge that returns to rest. Nothing
 paints a replacement cursor, moves a gradient centre, or animates a root variable,
 and no component adds its own pointer loop, deformation or arc code. **The
-background remains still**: jelly moves, the room does not. `perf-lite` and print remove the ambient motion and arcs
+background remains still**: jelly moves, the room does not. Print removes the ambient motion and arcs
 live. The navigator globe keeps its own dough jelly, which ripples where it is pressed. See [the implementation contract](docs/plasmatic-jelly-system.md).
 
 **A tier class is not decoration you can inline.** `bg-site-surface border
@@ -345,7 +345,7 @@ nothing else changes.
 - The **default** is strict monochrome jelly. Others are the same material in
   their own palette over their own aurora.
 - There is **no high-contrast theme** (removed 2026-10-27); the site ships
-  Midnight and Daylight. `perf-lite` and print render the material off.
+  Midnight and Daylight. Print and the app tier's high contrast render the material off.
 - On top of any theme, an **accent preset** overrides only the accent tokens.
 - **User themes** are the same idea taken to a marketplace: a theme is colours
   plus a few scalar knobs, from which the full contract is _derived_ — so every
@@ -376,10 +376,11 @@ makes the accessible variants work.
 - **Every string goes through i18n** with an English default. 16 locales ship,
   and RTL (`ar`, `ur`) is first-class — logical spacing, mirrored directional
   icons, `dir` set before paint.
-- **Preference switches and a device tier degrade the material centrally**:
-  jelly motion, electric arcs, plus a
-  `perf-lite` tier derived from conservative device facts (not a measured-fps
-  probe, which would restyle the page under the user for reasons they can't see).
+- **Preference switches degrade the material centrally**:
+  jelly motion and electric arcs. There is no device tier: software-rendering and
+  low-end devices get the full material (the `perf-lite` class was removed
+  2026-11-08). A capability read, `lib/low-end.ts`, stays for games, RUM and the
+  globe's CSS fallback; it is never a class on `<html>` and the material never reads it.
 - **Comfort is a settings suite, not a theme.** On top of whichever theme is
   active, a visitor sets text size, density, a dyslexia-friendly face, a
   jelly-motion and electric-arc switch, tilt effects, and a
@@ -465,7 +466,7 @@ If you remember six things:
    intent read from projection, response on pointer-down; the formulas live in
    one file. `transform`/`opacity` and independent transforms only, and nothing
    writes root variables per frame.
-5. **Degrade centrally.** `perf-lite` and
+5. **Degrade centrally.** Print, app high contrast and
    the jelly switches are the token layer's and the jelly policy's job — and
    legibility may never depend on an optic.
 6. **Look at it.** Both themes, two widths, jelly motion Still once.

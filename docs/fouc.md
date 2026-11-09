@@ -263,8 +263,8 @@ in the commit gate. It fails on the mistakes that produced every flash the audit
 found:
 
 1. **A root-level visual decision applied only after hydration.** The gate scans
-   `Providers.tsx`, `themeStore.ts`, `lib/appearance/prefs.ts` and
-   `lib/perf-tier.ts` for every class, `data-*` attribute and custom property
+   `Providers.tsx`, `themeStore.ts` and `lib/appearance/prefs.ts`
+   for every class, `data-*` attribute and custom property
    written to `<html>` from client code, and requires each one to also be written
    by the pre-paint scripts. Transient tokens (`vt-active`, `vt-liquid` — set for
    the duration of a View Transition, with no persisted state behind them) are the

@@ -126,18 +126,6 @@ describe('electric arcs runtime', () => {
     expect(rt.active).toBe(true);
   });
 
-  it('perf-lite removes the layer', () => {
-    const rt = install();
-    for (const cls of ['perf-lite']) {
-      env.root.classes.add(cls);
-      env.mutate();
-      expect(rt.active, cls).toBe(false);
-      expect(env.canvas(), cls).toBeUndefined();
-      env.root.classes.delete(cls);
-      env.mutate();
-      expect(rt.active, cls).toBe(true);
-    }
-  });
 
   it('the hub open or an eversion in progress switches arcs off, including the API', () => {
     const rt = install();
@@ -373,11 +361,10 @@ describe('electric arcs runtime', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it('still, off and perf-lite: a strike draws nothing and nudges nothing', () => {
+  it('still and off: a strike draws nothing and nudges nothing', () => {
     for (const set of [
       () => env.root.setAttribute('data-jelly-motion', 'still'),
       () => env.root.setAttribute('data-electric-arcs', 'off'),
-      () => env.root.classes.add('perf-lite'),
     ]) {
       set();
       install({ ambient: false });
@@ -390,7 +377,6 @@ describe('electric arcs runtime', () => {
       teardown = null;
       env.root.removeAttribute('data-jelly-motion');
       env.root.removeAttribute('data-electric-arcs');
-      env.root.classes.delete('perf-lite');
     }
   });
 

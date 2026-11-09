@@ -49,7 +49,6 @@ import { APP_ROUTE_THEME_BG, APP_THEME_BG, THEME_BG, DEFAULT_STYLE } from '@/sto
 import { ACCENT_MAP } from '@/lib/appearance';
 import { ACCESS_PREPAINT_SCRIPT } from '@/lib/access/prefs';
 import { DELIGHT_PREPAINT_SCRIPT } from '@/lib/delight/season';
-import { PERF_TIER_SCRIPT } from '@/lib/perf-tier';
 import { MEDIA_REVEAL_SCRIPT } from '@/lib/media-reveal';
 import { COOKIE_CONSENT_SCRIPT } from '@/lib/cookie-consent';
 // Two entry sheets over the one `globals.css` body — app/site-tier.css explains
@@ -256,8 +255,7 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
  * pop, measured at ~1.9s after first contentful paint on `/hearthworks` by
  * `testing/e2e/fouc.mjs`. The effect STAYS: it is the client-navigation path (a
  * soft nav from a site page into a game never re-runs this script) and the
- * recovery path if this one throws, exactly as `PERF_TIER_SCRIPT`'s re-assert in
- * `Providers` is. What changed is that it is now a no-op on a hard load, which is
+ * recovery path if this one throws. What changed is that it is now a no-op on a hard load, which is
  * where the flash was.
  */
 function buildThemeScript(siteTier: boolean): string {
@@ -522,7 +520,6 @@ export const Route = createRootRoute({
         links: [{ rel: 'stylesheet', href: appCss }],
         scripts: [
           { children: platformScript },
-          { children: PERF_TIER_SCRIPT },
           ...(accountSeed ? [{ children: accountSeed }] : []),
           { children: globalNotFound ? notFoundThemeScript : themeScript },
           { children: accessScript },
@@ -614,12 +611,6 @@ export const Route = createRootRoute({
       ],
       scripts: [
         { children: platformScript },
-        // The device effect tier, stamped BEFORE first paint for the same
-        // reason `platformScript` above stamps `ios-webkit` there: the class
-        // selects a stylesheet, so applying it after hydration means the
-        // devices it protects render the full effect stack for the entire
-        // load. See lib/perf-tier.ts §PERF_TIER_SCRIPT.
-        { children: PERF_TIER_SCRIPT },
         // Must precede every <img>: marks images as their bytes land so they
         // fade in instead of popping in on a slow connection (lib/media-reveal).
         { children: MEDIA_REVEAL_SCRIPT },

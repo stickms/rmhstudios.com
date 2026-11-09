@@ -13,7 +13,7 @@ Surfaces are hazy, translucent slabs with a refracting rim, a gently drifting
 interior, a soft body under the pointer and electric arcs between neighbours
 ([the contract](./plasmatic-jelly-system.md)). The role class (`.glass-*`) is
 what carries all of that, and what the degradation switches (high contrast,
-reduced transparency, `perf-lite`, the jelly motion and arcs settings) act on.
+reduced transparency, the jelly motion and arcs settings) act on.
 Pages look consistent because they share four things: the `_site` **radial
 shell**, the `PageLayout` column system, the `--site-*` token contract, and the
 same route-level conventions (head/SEO, i18n, auth, loading and error states).
@@ -196,8 +196,8 @@ Work through this for every new or edited page:
       tier supplies the haze, the refracting rim and the soft body; there is no
       `backdrop-filter` in any role. Preference fallbacks are central. Never
       rely on an optic for **legibility** — text has to hold on
-      `--site-surface-opaque` too, because high-contrast, reduced transparency
-      and perf-lite all collapse to it. Opt into material through the role
+      `--site-surface-opaque` too, because high-contrast and reduced transparency
+      collapse to it. Opt into material through the role
       class. Historical `refract`/`liquid` flags are compatibility aliases. See
       [the plasmatic jelly contract](plasmatic-jelly-system.md).
 - [ ] **Decorative responses come from the jelly services.** Squash, wobble,

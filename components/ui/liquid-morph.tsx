@@ -32,7 +32,7 @@
  * and stops after it settles, so nothing reads layout at rest.
  *
  * Gates: `reduced` (from useReducedMotion) → nothing mounts, the plain `layoutId`
- * spring remains. perf-lite / high-contrast strip `.lg-goo` in CSS (plain spring
+ * spring remains. High contrast strips `.lg-goo` in CSS (plain spring
  * slide remains). The goo blobs use a near-opaque accent fill because the goo
  * matrix alpha-thresholds — translucent fills would be cut entirely; final
  * subtlety comes from the speed-gated underlay opacity (0 at rest).
@@ -267,11 +267,10 @@ export function useLiquidMorph({
 
   const sampleRef = useRef<() => boolean>(() => false);
   sampleRef.current = () => {
-    // §5.47 gate: reduced / perf-lite get a PLAIN spring slide —
+    // §5.47 gate: reduced gets a PLAIN spring slide —
     // no squash, no goo — so sample nothing and let the loop idle. Read reactively
     // so a runtime settings change takes effect on the next kick.
-    const de = document.documentElement;
-    if (reduced || de.classList.contains('perf-lite')) return false;
+    if (reduced) return false;
     const cap = capsuleRef.current;
     const under = underlayRef.current;
     if (!cap || !under) return false;
