@@ -28,12 +28,19 @@ import { fadeRise, popIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 import { COMBO_MILESTONES, GameEngine } from '@/lib/slice-it/engine';
 import { useGameSession } from '@/hooks/useGameSession';
-import { useSliceItStore, approachSeconds, reactionWindowMs } from '@/lib/slice-it/store';
+import {
+  useSliceItStore,
+  approachSeconds,
+  reactionWindowMs,
+  musicGain,
+  sfxGain,
+} from '@/lib/slice-it/store';
 import { visibilityAlpha } from '@/lib/slice-it/modifiers';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import { longestHoldSeconds, visibleSliceRange } from '@/lib/slice-it/visible-window';
 import { HUD } from './HUD';
 import { MarginHud } from './MarginHud';
+import { VolumeMixer } from './VolumeMixer';
 import { TOP_BAR_MIN, useMarginRoom } from './useMarginRoom';
 import { GameOver } from './GameOver';
 import { MainMenu } from './MainMenu';
@@ -91,29 +98,6 @@ function interpolateHex(hex1: string, hex2: string, ratio: number): string {
   const b = Math.round(b1 + (b2 - b1) * ratio);
 
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-}
-
-/**
- * M1 — Mirror, applied at the render/input boundary rather than to the chart.
- *
- * `render` below draws the engine's own prepared slices (`engine.getSlices()`),
- * which `prepareChart` deliberately leaves un-mirrored — see `chart.ts`'s
- * `applyMirror` for why rewriting the judged chart isn't reachable this wave,
- * and for the reference transform this is the visual equivalent of. Flipping
- * BOTH what a note is drawn at (`mirrorLane` applied to `slice.lane` in
- * `render`) and which engine lane a keypress targets (`mirrorLane` applied in
- * `handleInput`) is the same involution applied twice, so composing them
- * reproduces exactly what swapping the chart itself would look like: a note
- * that started life in lane 0 is drawn in, and only hittable from, the visual
- * position for lane 1.
- *
- * A no-op under One Track — there is only one lane to mirror into, and
- * mirroring it anyway would send every keypress to a lane nothing is ever
- * queued on.
- */
-function mirrorLane(lane: number): number {
-  const state = useSliceItStore.getState();
-  return state.mirror && !state.modifiers.oneTrack ? 1 - lane : lane;
 }
 
 /**
@@ -1444,7 +1428,7 @@ export function GameCanvas() {
     setCountdown,
     isMultiplayer,
     volume,
-    setVolume,
+    musicVolume,
     audioOffset,
     setAudioOffset,
     setKeybinds,
@@ -1492,8 +1476,8 @@ export function GameCanvas() {
 
   // Sync volume store value → AudioManager
   useEffect(() => {
-    AudioManager.getInstance().setVolume(volume / 100);
-  }, [volume]);
+    AudioManager.getInstance().setVolume(musicGain(volume, musicVolume));
+  }, [volume, musicVolume]);
 
   // ── Resize canvas to fill its wrapper ──────────────────────────────────────
   useEffect(() => {
@@ -1615,7 +1599,7 @@ export function GameCanvas() {
       } else if (audio.getCurrentTime() === 0) {
         engine.start();
       }
-      engine.submitInput(mirrorLane(lane), pressTime);
+      engine.submitInput(lane, pressTime);
     },
     [engine],
   );
@@ -1623,7 +1607,7 @@ export function GameCanvas() {
   const handleInputRelease = useCallback(
     (lane: number) => {
       if (!engine) return;
-      engine.submitRelease(mirrorLane(lane));
+      engine.submitRelease(lane);
     },
     [engine],
   );
@@ -1791,8 +1775,13 @@ export function GameCanvas() {
     if (!engine) return;
 
     const beep = (frequency: number, gain: number) => {
-      const sfxVolume = useSliceItStore.getState().sfxVolume / 100;
-      AudioManager.getInstance().playSfX(frequency, 'sine', 0.12, sfxVolume * gain);
+      const state = useSliceItStore.getState();
+      AudioManager.getInstance().playSfX(
+        frequency,
+        'sine',
+        0.12,
+        sfxGain(state.volume, state.sfxVolume) * gain,
+      );
     };
 
     /**
@@ -2318,7 +2307,6 @@ export function GameCanvas() {
     // PERFORMANCE tier: a fast machine still gets every flash without this.
     const flashOff = runState.reducedFlash;
     const fx = runState.effectIntensity; // A7
-    const mirrorOn = runState.mirror && !isOneTrack;
     // The printed playfield: no glow, no rail, no energy treatment — see `Skin.groove`.
     const groove = skin.groove;
 
@@ -2590,7 +2578,7 @@ export function GameCanvas() {
         latestFeedback.text !== 'BAD' &&
         latestFeedback.text !== 'RELEASED'
       ) {
-        const rawParticleLane = mirrorOn ? 1 - latestFeedback.lane : latestFeedback.lane;
+        const rawParticleLane = latestFeedback.lane;
         const particleLaneIdx = Math.max(0, Math.min(rawParticleLane, LANE_POS.length - 1));
         const particleLaneVal = isOneTrack ? LANE_POS[0] : LANE_POS[particleLaneIdx];
 
@@ -2650,10 +2638,6 @@ export function GameCanvas() {
       // judges: difficulty already resolved, modifiers already applied, and the
       // same object identities it mutates. Draw what is being judged.
       //
-      // Mirror is unaffected: `prepareChart` deliberately does not apply it
-      // (see `applyMirror`'s note), so these lanes are raw and `mirrorLane`
-      // below is still the whole of M1.
-      //
       // ── Visible window ────────────────────────────────────────────────────
       //
       // The loop below walked EVERY note in the chart on EVERY frame and let
@@ -2678,11 +2662,7 @@ export function GameCanvas() {
 
       for (let si = from; si < to; si++) {
         const slice = slices[si];
-        // M1 — Mirror: the lane this note is DRAWN in and hittable from. Every
-        // downstream read of "which lane" (position, colour, switch/arrow
-        // direction) uses this instead of the raw `slice.lane` so the whole
-        // note stays self-consistent under the flip — see `mirrorLane` above.
-        const laneIdx = mirrorOn ? 1 - slice.lane : slice.lane;
+        const laneIdx = slice.lane;
         ctx.globalAlpha = 1;
 
         // Compute scroll position along the movement axis
@@ -3440,7 +3420,7 @@ export function GameCanvas() {
         !flashOff
       ) {
         const pulseAge = (nowMs - latestFeedback.time) / HIT_PULSE_MS;
-        const pulseLane = mirrorOn ? 1 - latestFeedback.lane : latestFeedback.lane;
+        const pulseLane = latestFeedback.lane;
         const pulseVal = isOneTrack
           ? LANE_POS[0]
           : LANE_POS[Math.max(0, Math.min(pulseLane, LANE_POS.length - 1))];
@@ -3784,43 +3764,8 @@ export function GameCanvas() {
 
                 {/* Settings section */}
                 <div className="w-full bg-slice-shadow-dark/30 rounded-2xl p-4 border border-slice-border flex flex-col gap-4">
-                  {/* Volume */}
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">
-                        {t('volume', { defaultValue: 'Volume' })}
-                      </span>
-                      <span className="text-sm font-bold text-blue-500">{volume}%</span>
-                    </div>
-                    <Slider
-                      value={[volume]}
-                      min={0}
-                      max={100}
-                      step={1}
-                      onValueChange={([v]) => setVolume(v)}
-                      className="w-full"
-                    />
-                  </div>
-
-                  {/* SFX Volume */}
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">
-                        {t('effects', { defaultValue: 'Effects' })}
-                      </span>
-                      <span className="text-sm font-bold text-blue-500">
-                        {useSliceItStore.getState().sfxVolume}%
-                      </span>
-                    </div>
-                    <Slider
-                      value={[useSliceItStore.getState().sfxVolume]}
-                      min={0}
-                      max={100}
-                      step={1}
-                      onValueChange={([v]) => useSliceItStore.getState().setSfxVolume(v)}
-                      className="w-full"
-                    />
-                  </div>
+                  {/* Master / music / effects */}
+                  <VolumeMixer />
 
                   {/* Audio Offset */}
                   <div className="flex items-center justify-between gap-2">
@@ -3974,23 +3919,8 @@ export function GameCanvas() {
               </div>
 
               <div className="bg-slice-shadow-dark/30 rounded-xl p-3 border border-slice-border flex flex-col gap-3">
-                {/* Volume */}
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black text-slice-text-muted uppercase tracking-wider">
-                      {t('volume', { defaultValue: 'Volume' })}
-                    </span>
-                    <span className="text-xs font-bold text-blue-500">{volume}%</span>
-                  </div>
-                  <Slider
-                    value={[volume]}
-                    min={0}
-                    max={100}
-                    step={1}
-                    onValueChange={([v]) => setVolume(v)}
-                    className="w-full"
-                  />
-                </div>
+                {/* Master / music / effects */}
+                <VolumeMixer compact />
 
                 {/* Audio Offset */}
                 <div className="flex items-center justify-between gap-2">
