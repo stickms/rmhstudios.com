@@ -95,7 +95,7 @@ export async function applyReviews(
   for (const r of reviews) if (!isKnownCardId(r.cardId)) throw new UnknownCardError(r.cardId);
   // Throws RangeError on a non-finite clock, before any write.
   const fresh = newCard(now);
-  const ids = [...new Set(reviews.map((r) => r.cardId))];
+  const ids = [...new Set(reviews.map((r) => r.cardId))].sort();
   if (ids.length === 0) return [];
 
   return prisma.$transaction(async (tx) => {
