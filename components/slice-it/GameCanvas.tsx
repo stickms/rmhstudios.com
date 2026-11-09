@@ -3372,10 +3372,19 @@ export function GameCanvas() {
         // Stamped in the gap between the lanes, beside the receptors, in the two
         // spot inks. The size and opacity the player set still apply.
         const stampX = isMobileV ? w / 2 : CURSOR_MAIN + 70 * judgementScale;
+        // Centred on the gap between the two lanes. The lanes are at 40% and 62% of the
+        // field, so its middle is 51%, not the 50% `feedbackY` is: the stamp sat about a
+        // tenth of the gap too high.
+        const stampY =
+          isOneTrack && !isMobileV
+            ? LANE_POS[0] + BAR_H * 1.6
+            : isMobileV
+              ? feedbackY
+              : (LANE_POS[0] + LANE_POS[1]) / 2;
         const half = drawStamp(
           ctx,
           stampX,
-          isOneTrack && !isMobileV ? LANE_POS[0] + BAR_H * 1.6 : feedbackY,
+          stampY,
           latestFeedback.text,
           stampInks(latestFeedback.text, theme),
           (isMobileV ? 0.7 : 1) * judgementScale,
@@ -3389,7 +3398,7 @@ export function GameCanvas() {
           ctx.fillText(
             `${ms > 0 ? '+' : ''}${ms} ms`,
             stampX + half + 14,
-            isOneTrack ? LANE_POS[0] + BAR_H * 1.6 : feedbackY,
+            stampY,
           );
           ctx.textBaseline = 'alphabetic';
         }

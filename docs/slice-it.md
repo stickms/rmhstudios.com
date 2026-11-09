@@ -275,9 +275,21 @@ behind it not rendered. A run keeps the fixed viewport.
 
 Nothing in the menu is sticky or fixed on a phone (the library's search bar is sticky
 from 640px up only), because a layer flush to an edge is what makes Safari paint a band.
-The four places (Library, Daily, Setlists, Versus) are one 34px row under the bar, at
-the top, instead of a 52px bar at the foot. The one fixed layer left is the full-screen
-"loading a track" cover, which exists for a moment.
+The four places (Library, Daily, Setlists, Versus) are one 34px row under the bar, at the
+top, showing only their names. The one fixed layer left is the full-screen "loading a
+track" cover, which exists for a moment.
+
+### The margin keeps clear of the field
+
+Nothing in a side margin touches the field or the readouts above and below it. From the
+field outward: a clear strip (up to 16px), the kick's slam column at its widest (up to
+19px), a gap (up to 10px), then the bars. The bars start beyond the slam at its full
+width, so a kick never reaches them. All three scale down with a narrow margin
+(`SideWaves.tsx`), so a 72px margin keeps its clear strip in less room. Below 72px
+nothing draws, and the record only draws from 150px, where it does not sit on the bars.
+
+The judgement stamp is centred on the gap between the two lanes (the lanes are at 40% and
+62% of the field, so its middle is 51%, not 50%).
 
 ### A struck note breaks
 
@@ -292,7 +304,7 @@ throws more and harder (`strengthOf`).
 
 The burst is gated like every other flash: **Effect Intensity** scales its size (0 keeps
 the cut and drops the rest), **Reduced Flash** removes the crack line, the sparks and the
-ring (shards and dust stay), and `perf-lite` gets a smaller burst with no flash pieces.
+ring (shards and dust stay), and a low-end device (`canvasGlowEnabled()` false) gets a smaller burst with no flash pieces.
 Pieces are integrated against wall-clock time, capped at `MAX_FX`, and nothing is
 blurred. Only the groove skins (Circle, Pixel, Record) cut notes; the older skins keep
 their own bursts.
