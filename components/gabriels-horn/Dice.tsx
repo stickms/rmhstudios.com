@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Gabriel's Horn — the three dice, and the orb they sit in.
  *

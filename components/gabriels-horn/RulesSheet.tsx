@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Gabriel's Horn — the rules, in the game.
  *

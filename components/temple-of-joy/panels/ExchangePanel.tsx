@@ -10,7 +10,6 @@
  * points is not a dependency's worth of problem, and this way it inherits the
  * theme's gold without any configuration.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';

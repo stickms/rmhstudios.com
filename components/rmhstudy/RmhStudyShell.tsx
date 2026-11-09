@@ -1,7 +1,6 @@
 /**
  * RmhStudyShell — RMHStudy's root wrapper. Palette only; the rest is `AppShell`.
  */
-'use client';
 
 import AppShell from '@/components/shared/AppShell';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';

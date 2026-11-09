@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * FirstNoteLesson — a "play any note" lesson (`play-first-note`): the first note
  * from any started input completes it with three stars. On-screen and

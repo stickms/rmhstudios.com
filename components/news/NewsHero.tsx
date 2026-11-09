@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { Link } from '@tanstack/react-router';

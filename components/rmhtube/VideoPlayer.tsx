@@ -26,7 +26,6 @@
  * sliding DVR window that means something different on every viewer's machine,
  * so a room watching one shares play/pause and nothing else.
  */
-'use client';
 
 import {
   useRef,

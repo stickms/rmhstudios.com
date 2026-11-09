@@ -1,4 +1,3 @@
-'use client';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fetchGlobalLeaderboard, type LeaderboardEntry } from '../../lib/synapse-storm/persistence';

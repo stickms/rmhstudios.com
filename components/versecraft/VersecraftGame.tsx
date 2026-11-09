@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useGameStore } from '@/lib/versecraft/store';

@@ -4,7 +4,6 @@
  * Shows question text, category badge, difficulty indicator,
  * and question progress (e.g. "Q3/8") with entrance animation.
  */
-'use client';
 
 import { m as motion } from 'framer-motion';
 

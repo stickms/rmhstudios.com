@@ -4,7 +4,6 @@
  * Detects image URLs, Giphy links, and Tenor links in message content
  * and renders them inline below the text. Themed via CSS custom property prefix.
  */
-'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { ImageOff } from 'lucide-react';

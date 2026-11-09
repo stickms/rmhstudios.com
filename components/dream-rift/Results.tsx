@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * End-of-run results: victory or game-over summary, per-player co-op scores,
  * personal-best persistence, and optional score submission to the leaderboard

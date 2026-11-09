@@ -2,7 +2,6 @@
  * The animation index the asset sync publishes (`anims.json`): which clips each class body has, and the
  * clip each taunt item plays. One fetch per page load, shared by every viewer.
  */
-'use client';
 
 import { useEffect, useState } from 'react';
 import type { HeldStance } from './catalog-types';

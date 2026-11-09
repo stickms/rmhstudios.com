@@ -8,7 +8,6 @@
  *
  * Reference: docs/rmhbox/design-spec/minigames-2.md §3.11
  */
-'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 // `m as motion`, not `motion`: `Providers` wraps the app in `LazyMotion`, and `m`

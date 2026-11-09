@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Page-wide tactile feedback, by delegation from the page root: every gel
  * button ripples and clicks, every segmented control and checkbox bloops, and

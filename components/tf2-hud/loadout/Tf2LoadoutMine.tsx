@@ -2,7 +2,6 @@
  * The signed-in user's saved loadouts: searchable by title or item name,
  * filterable by class, loading further pages as you scroll.
  */
-'use client';
 
 import { Link } from '@tanstack/react-router';
 import { Search, Trash2 } from 'lucide-react';

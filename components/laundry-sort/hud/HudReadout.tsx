@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Score, clock and combo — updated **without** React.
  *

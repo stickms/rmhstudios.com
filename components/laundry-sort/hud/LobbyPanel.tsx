@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The versus lobby, and the public-lobby browser that feeds it.
  *

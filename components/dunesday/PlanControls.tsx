@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Everything that shapes the plan: fit-to-deadline vs. set-your-pace, the
  * dates, the average, the weekly rhythm, days off, and the packing options.

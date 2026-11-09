@@ -13,8 +13,6 @@
  * Browser only (socket.io-client, the auth client).
  */
 
-'use client';
-
 import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';

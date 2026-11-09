@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Light / dark for `/pf2ecal`.
  *

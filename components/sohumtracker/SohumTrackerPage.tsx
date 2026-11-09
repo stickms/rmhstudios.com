@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * `/sohumtracker` — the live activity dossier.
  *

@@ -1,5 +1,3 @@
-'use client';
-
 import { useRef, useState } from 'react';
 import { Crown, Gamepad2, LogOut, UserPlus, Users, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

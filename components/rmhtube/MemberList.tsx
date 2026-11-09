@@ -8,7 +8,6 @@
  *  - Ban/kick controls (host only)
  *  - Presence status (watching / afk / brb) with self-selector
  */
-'use client';
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { usePopPresence } from '@/hooks/usePopPresence';

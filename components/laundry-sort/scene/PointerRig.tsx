@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Input. One code path for mouse, touch and pen, plus a keyboard fallback.
  *

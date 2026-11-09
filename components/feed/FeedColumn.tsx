@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useRef, useEffect, Suspense, lazy } from 'react';
 import { BadgeCheck, Search, ShieldCheck, X } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';

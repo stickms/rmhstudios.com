@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Y2 — the reading ruler: a line-focus band that dims everything except the line
  * you are on.

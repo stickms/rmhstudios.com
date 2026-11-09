@@ -30,7 +30,6 @@
  *   (`docs/design-language.md` §5.1.1). A press is a discrete event; what moves
  *   afterwards moves on its own.
  */
-'use client';
 
 import {
   useCallback,

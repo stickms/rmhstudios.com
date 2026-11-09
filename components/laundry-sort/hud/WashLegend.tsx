@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The four washes, in bin order, with their weave marks.
  *

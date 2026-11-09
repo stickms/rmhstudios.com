@@ -1,5 +1,3 @@
-'use client';
-
 import { useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Volume2, VolumeX } from 'lucide-react';

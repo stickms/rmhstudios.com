@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Monthly coin statement (C4) — the wallet's "Statement" tab. Lazy-loaded when
  * the tab opens. Read-only: it summarises the ledger and links the CSV download.

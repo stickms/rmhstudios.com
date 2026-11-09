@@ -12,7 +12,6 @@
  * Items are buttons with `data-menu-item`, so Tab, the arrow keys and the
  * gamepad's d-pad move between them (menu-nav.ts) and A / Enter picks.
  */
-'use client';
 
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

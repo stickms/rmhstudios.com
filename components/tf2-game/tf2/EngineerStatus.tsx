@@ -4,7 +4,6 @@
  * upgrade progress, sentry ammo and kills, dispenser metal, teleporter
  * recharge — or "Not built" — and an alert edge while sapped or damaged.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import type { HudBuilding, HudEngineer } from '@/lib/tf2-game/client/hud-state';

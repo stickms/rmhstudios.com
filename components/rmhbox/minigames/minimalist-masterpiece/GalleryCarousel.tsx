@@ -1,7 +1,6 @@
 /**
  * GalleryCarousel — Grid display of gallery drawings with SVG stroke rendering.
  */
-'use client';
 
 import { useTranslation } from "react-i18next";
 import DrawingCard from './DrawingCard';

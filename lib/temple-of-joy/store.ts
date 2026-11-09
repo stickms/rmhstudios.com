@@ -10,7 +10,6 @@
  * Nothing here should be subscribed to naively; the state changes sixty times
  * a second.
  */
-'use client';
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';

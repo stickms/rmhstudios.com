@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The Windows 7 user picture: a rounded glass frame around the avatar. Shows
  * the RMH profile picture when there is one, otherwise a default Aero picture

@@ -1,5 +1,3 @@
-'use client';
-
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { createPortal } from 'react-dom';

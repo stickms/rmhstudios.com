@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Nightrail — everything that is not the run itself: the menu, the level
  * picker, the Tricktionary, and the two ways a run can end.

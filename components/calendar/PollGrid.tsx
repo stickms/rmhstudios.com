@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * K1 — the availability grid. One component paints your answers AND shows the
  * group's heat map, for a poll of up to 14 days x 48 slots (672 cells).

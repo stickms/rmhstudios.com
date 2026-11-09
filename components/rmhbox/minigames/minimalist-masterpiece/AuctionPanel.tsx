@@ -3,7 +3,6 @@
  *
  * Self-bid is disabled (players cannot bid on their own drawings).
  */
-'use client';
 
 import { useTranslation } from "react-i18next";
 import DrawingCard from './DrawingCard';

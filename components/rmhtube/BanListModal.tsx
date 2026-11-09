@@ -4,7 +4,6 @@
  * Only accessible to the host and moderators.
  * Shows all banned users with the ability to unban them.
  */
-'use client';
 
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

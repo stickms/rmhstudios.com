@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * How to play, and the one thing a player cannot discover by playing: that
  * abandoning a selection which can no longer reach a GlobeSet is recorded as a

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Visual theme picker: one live preview card per site theme, grouped the same
  * way as the theme catalog. Each card's swatch area is wrapped in that theme's

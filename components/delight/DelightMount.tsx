@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Global runtime for the delight package. After the page is idle it reads the
  * public config (April Fools flag, hunt live?) — cached in localStorage for ten

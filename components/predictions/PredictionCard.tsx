@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, Zap, ArrowUpRight } from 'lucide-react';

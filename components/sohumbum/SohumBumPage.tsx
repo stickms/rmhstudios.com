@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * /sohumbum — a standing review of one user's stated 2030 pledge.
  *

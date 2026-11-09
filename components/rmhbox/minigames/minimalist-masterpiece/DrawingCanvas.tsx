@@ -8,7 +8,6 @@
  * All lines use round end-caps. Supports undo via edit history.
  * Players can select a background color for the canvas.
  */
-'use client';
 
 import { useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

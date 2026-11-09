@@ -5,8 +5,6 @@
 // communication. Following /lib/rmhbox/store.ts pattern.
 // =============================================================================
 
-'use client';
-
 import { create } from 'zustand';
 import type {
   AltairClientLobbyState,

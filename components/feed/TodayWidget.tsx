@@ -1,5 +1,3 @@
-'use client';
-
 /**
  *"Today"widget — the daily loop at a glance. Concentrates the scattered daily
  * surfaces (check-in streak, coin wheel, six daily puzzles, daily quests) into

@@ -10,7 +10,6 @@
  *
  * Reference: docs/rmhbox/design-spec/core.md §12A.4.4
  */
-'use client';
 
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

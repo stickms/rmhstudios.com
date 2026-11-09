@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * /dunesday — the MCU + Dune marathon planner, presented as Dunesday 7: a
  * Windows 7-style desktop with a logon screen, windows, a file system and

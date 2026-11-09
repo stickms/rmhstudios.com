@@ -33,8 +33,6 @@
  * flips rarely, and it renders as a ring colour plus one spring.
  */
 
-'use client';
-
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/shallow';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * PracticeLesson — `/rmhmusic/practice`: a flashcard session over the learner's remembered cards.
  * It deals the cards that are due, most overdue first, topped up to ten with cards never asked

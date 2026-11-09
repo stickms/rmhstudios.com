@@ -3,7 +3,6 @@
  * Up to 6 emojis per line, max 2 lines (12 total).
  * Uses @twemoji/api for reliable emoji → Twemoji URL conversion.
  */
-'use client';
 
 import { useState, useCallback } from 'react';
 import { getEmojiUrl } from '@/lib/rmhbox/emoji-cinema/twemoji-url';

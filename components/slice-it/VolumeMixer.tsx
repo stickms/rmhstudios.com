@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Slice It — the three volume sliders, for the in-run pause and settings menus.
  *

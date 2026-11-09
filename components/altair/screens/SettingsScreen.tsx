@@ -1,7 +1,6 @@
 /**
  * SettingsScreen — Theme, keybinds, and gameplay options.
  */
-'use client';
 
 import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { Gamepad2, MonitorPlay, Radio, Circle, type LucideIcon } from 'lucide-react';
 

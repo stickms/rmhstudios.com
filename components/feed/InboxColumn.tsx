@@ -1,5 +1,3 @@
-'use client';
-
 import { MessageCircle, Users, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';

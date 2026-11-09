@@ -12,8 +12,6 @@
  * belong to any particular screen.
  */
 
-'use client';
-
 import { create } from 'zustand';
 import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';

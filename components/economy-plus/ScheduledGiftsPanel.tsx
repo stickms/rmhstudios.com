@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Scheduled gifts (C7) — the wallet's "Gifts" tab. Lazy-loaded when the tab
  * opens: gifts waiting to be unwrapped, a form to send one, and gifts you have

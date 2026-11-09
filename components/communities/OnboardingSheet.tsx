@@ -1,5 +1,3 @@
-'use client';
-
 /** N3 — the questions a new member sees in a sheet right after joining. */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

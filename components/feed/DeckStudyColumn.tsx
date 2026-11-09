@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState, useCallback, useRef } from'react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from'@tanstack/react-router';

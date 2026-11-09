@@ -1,7 +1,6 @@
 /**
  * Problems — validation results for the changed files (or the whole HUD on request).
  */
-'use client';
 
 import { AlertTriangle, CircleAlert, Info, Sparkles } from 'lucide-react';
 import { useState } from 'react';

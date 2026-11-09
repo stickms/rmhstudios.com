@@ -1,5 +1,3 @@
-'use client';
-
 import { AdminHubCard } from '@/components/admin/AdminHubCard';
 import { useTranslation } from 'react-i18next';
 

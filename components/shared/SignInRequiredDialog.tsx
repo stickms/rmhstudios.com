@@ -16,7 +16,6 @@
  *
  * Use {@link useSignInGate} rather than this component directly.
  */
-'use client';
 
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

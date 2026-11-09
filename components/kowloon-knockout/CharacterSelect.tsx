@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useCallback, lazy, Suspense } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';

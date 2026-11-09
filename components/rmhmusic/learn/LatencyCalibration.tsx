@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * LatencyCalibration — eight clicks at 100 BPM; the learner plays along on
  * whatever input they use (or taps the pad), and the median lag between click

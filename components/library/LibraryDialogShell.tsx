@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The Radix dialog the library's five modals share, portalled to `<body>`.
  *

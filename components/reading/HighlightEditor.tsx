@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Create-with-note / edit dialog for a highlight (L1). The note can be private
  * (default) or public; making a highlight public is also what makes it count

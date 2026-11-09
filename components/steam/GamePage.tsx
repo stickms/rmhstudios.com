@@ -1,5 +1,3 @@
-'use client';
-
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Play } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect, useCallback, useId, useRef } from'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { DialogTitle } from '@/components/ui/dialog';

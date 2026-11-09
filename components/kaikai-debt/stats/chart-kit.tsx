@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The pieces every chart in the debt analytics panel is built from.
  *

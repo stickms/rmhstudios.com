@@ -15,7 +15,6 @@
  *   selectedGameName?: string | null — Display name of the picked game
  *   hasGamePicked?: boolean — Whether a game (or vote) has been picked
  */
-'use client';
 
 import { useState, useEffect } from 'react';
 import { Play } from 'lucide-react';

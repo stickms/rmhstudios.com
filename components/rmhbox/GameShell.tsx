@@ -20,7 +20,6 @@
  *   playerCount: number — Number of players in the game
  *   children: React.ReactNode — Game content
  */
-'use client';
 
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

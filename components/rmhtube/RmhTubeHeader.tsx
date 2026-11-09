@@ -5,7 +5,6 @@
  * The hairline is drawn by the room/landing pages themselves, so the bar
  * doesn't draw its own.
  */
-'use client';
 
 import AppHeader, { type AppHeaderProps } from '@/components/shared/AppHeader';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';

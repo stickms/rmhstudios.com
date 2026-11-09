@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * ThemeMiniShell (§14.3) — a reusable, non-interactive miniature of the site
  * shell rendered UNDER a theme's scoped `--site-*` vars over that theme's own

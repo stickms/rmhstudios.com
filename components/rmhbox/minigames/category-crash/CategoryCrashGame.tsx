@@ -25,7 +25,6 @@
  *   playerId: string — Current player's user ID
  *   playerName: string — Current player's display name
  */
-'use client';
 
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

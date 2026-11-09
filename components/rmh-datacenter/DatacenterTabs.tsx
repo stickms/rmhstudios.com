@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The RMH Datacenter sub-nav.
  *

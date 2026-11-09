@@ -1,5 +1,3 @@
-'use client';
-
 import type { FeedItem, FeedItemUser } from'@/lib/feed-types';
 import { RMHarkActions } from'./RMHarkActions';
 import { useEffect, useRef, useState, useMemo } from'react';

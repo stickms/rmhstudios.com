@@ -2,7 +2,6 @@
  * LevelUpScreen — Upgrade picker overlay shown on level up.
  * Presents 3-4 options: new weapon, weapon upgrade, new passive, passive upgrade, or gold.
  */
-'use client';
 
 import { useAltairGameStore, UpgradeChoice } from '@/lib/altair/stores/game-store';
 import { WEAPONS, EVOLVED_WEAPONS } from '@/lib/altair/data/weapons';

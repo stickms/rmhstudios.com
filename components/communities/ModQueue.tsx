@@ -1,5 +1,3 @@
-'use client';
-
 /** N4 — the community mod queue: held and flagged content, plus the removal log. */
 import { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';

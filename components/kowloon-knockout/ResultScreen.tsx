@@ -1,5 +1,3 @@
-'use client';
-
 import { m as motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/kowloon-knockout/store';

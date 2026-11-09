@@ -12,7 +12,6 @@
  *
  * Offline there is nobody to administer: only the map and the settings show.
  */
-'use client';
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

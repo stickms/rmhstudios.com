@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The top bar's quick panels — a cheap preview behind every utility control.
  *

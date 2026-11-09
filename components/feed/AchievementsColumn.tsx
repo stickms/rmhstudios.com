@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState, useRef } from'react';
 import { Trophy, Users, Gamepad2, Coins, Hammer, Sparkles, Lock } from'lucide-react';
 import { useTranslation } from'react-i18next';

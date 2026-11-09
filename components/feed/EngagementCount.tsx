@@ -1,5 +1,3 @@
-'use client';
-
 import { AnimatedCount } from'@/components/ui/AnimatedCount';
 
 /** Compact engagement count: 1234 → 1.2K, 1234567 → 1.2M, 0 → hidden. */

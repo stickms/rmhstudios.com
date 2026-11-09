@@ -1,5 +1,3 @@
-'use client';
-
 import { Suspense, Fragment, Component, useEffect, useRef, useState, type ReactNode, type MutableRefObject } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';

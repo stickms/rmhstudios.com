@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Profile guestbook (plan U15). Lazy-loaded by ProfileColumn the first time
  * its tab is opened, so a profile view that never opens it pays nothing.

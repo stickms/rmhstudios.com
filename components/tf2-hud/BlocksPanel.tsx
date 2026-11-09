@@ -4,7 +4,6 @@
  * align or space the group as a unit. A panel that should differ overrides one value and says so;
  * the block never silently rewrites it.
  */
-'use client';
 
 import {
   AlignHorizontalJustifyCenter,

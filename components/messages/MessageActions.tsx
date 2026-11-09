@@ -1,5 +1,3 @@
-'use client';
-
 import { useRef, useState, type ReactNode } from 'react';
 import { Copy, EyeOff, MoreHorizontal, Pencil, Reply, Undo2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

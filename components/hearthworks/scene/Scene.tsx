@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The isometric board: a fixed-angle orthographic camera over the world's tiles.
  *

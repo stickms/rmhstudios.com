@@ -1,5 +1,3 @@
-'use client';
-
 /** L6 — admin glossary: terms, aliases, short definitions and an optional link. */
 
 import { useState } from 'react';

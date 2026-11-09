@@ -1,5 +1,3 @@
-'use client';
-
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 import { markPageEnterComplete } from '@/lib/motion';
 

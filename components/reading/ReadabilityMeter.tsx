@@ -1,5 +1,3 @@
-'use client';
-
 import { lazy, Suspense } from 'react';
 import { useIdleReady } from '@/hooks/useIdleReady';
 

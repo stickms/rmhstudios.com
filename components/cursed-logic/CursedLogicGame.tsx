@@ -1,4 +1,3 @@
-'use client';
 import './cursed-logic.css';
 
 import { useEffect, useRef, useState } from 'react';

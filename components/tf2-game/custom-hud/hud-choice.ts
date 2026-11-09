@@ -8,7 +8,6 @@
  * in localStorage (selection.ts); a draft the HUD editor saves in another tab
  * is picked up when it is the one in use.
  */
-'use client';
 
 import { create } from 'zustand';
 import { prepareHud, type PreparedHud } from '@/lib/tf2-game/client/custom-hud/renderer';

@@ -6,7 +6,6 @@
  *
  * Props: none (fetches data itself)
  */
-'use client';
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

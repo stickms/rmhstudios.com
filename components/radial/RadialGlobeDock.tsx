@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The docked globe — the desktop shell's default navigation.
  *

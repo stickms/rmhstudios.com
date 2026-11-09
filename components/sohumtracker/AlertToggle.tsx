@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * "Tell me when he joins voice" — the page's only interactive control.
  *

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Kudos on a profile (G4): free thank-you notes with a reason. Lazy-loaded by
  * ProfileColumn the first time the tab opens.

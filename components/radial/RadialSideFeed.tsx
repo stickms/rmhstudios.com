@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The home deck's second feed.
  *

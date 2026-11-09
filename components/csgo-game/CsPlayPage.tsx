@@ -5,7 +5,6 @@
  * Online play needs an account (the hub refuses otherwise); `?lobby=CODE` joins that room once signed
  * in.
  */
-'use client';
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

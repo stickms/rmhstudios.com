@@ -17,8 +17,6 @@
  * and it opens as soon as the surface loads, milliseconds after hydration.
  */
 
-'use client';
-
 import { Suspense, lazy } from 'react';
 import { useSession } from '@/components/Providers';
 

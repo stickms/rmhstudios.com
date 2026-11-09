@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";

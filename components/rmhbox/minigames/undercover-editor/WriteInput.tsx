@@ -12,7 +12,6 @@
  *   timeRemaining: number — Seconds left for this turn
  *   onSubmit: (text: string) => void — Callback when sentence is submitted
  */
-'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { Send, Clock } from 'lucide-react';

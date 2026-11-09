@@ -26,8 +26,6 @@
  * `useSyncExternalStore` so the toggle re-renders.
  */
 
-'use client';
-
 import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
 
 const STORAGE_KEY = 'rmh-kaikai-debt-muted';

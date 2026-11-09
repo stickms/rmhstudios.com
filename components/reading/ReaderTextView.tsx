@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The library reader's text view (L1, L6, L8, Y2 in the reader).
  *

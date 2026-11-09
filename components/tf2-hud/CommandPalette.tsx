@@ -1,7 +1,6 @@
 /**
  * Command palette (Ctrl/Cmd+K): jump to a page or file, or run any editor action.
  */
-'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

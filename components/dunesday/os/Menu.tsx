@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * A Windows 7 popup menu — right-click menus, the power and Ease of Access
  * menus on the logon screen, the Start menu's shut-down options.

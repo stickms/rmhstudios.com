@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, type RefObject } from 'react';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import { canvasGlowEnabled } from '@/lib/render/canvas2d-fx';

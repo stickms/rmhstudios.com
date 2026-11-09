@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * InputSetup — the "Set up input" dialog: choose how you play, then optionally
  * check timing. Built on the shared `Dialog` (Radix owns the focus trap and

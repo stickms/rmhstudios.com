@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { OfficeHoursProfileButton } from '@/components/calendar/OfficeHoursProfileButton';
 import { Link } from '@tanstack/react-router';

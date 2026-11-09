@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The resume rail (B2) — "pick up where you left off".
  *

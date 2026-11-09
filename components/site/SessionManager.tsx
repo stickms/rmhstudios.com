@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Active session (device) management — lists the signed-in user's sessions and
  * lets them revoke any single one or log out of all other devices. Rendered on

@@ -12,7 +12,6 @@
  * `appClassName` is the app's palette class (see `components/shared/
  * app-theme.css`); `theme` picks the appearance modifier.
  */
-'use client';
 
 import type { ReactNode } from 'react';
 import AppToaster from './AppToaster';

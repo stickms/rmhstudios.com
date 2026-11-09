@@ -10,7 +10,6 @@
  * file is missing; components draw a plain fallback in that case, so a HUD
  * without network access still reads.
  */
-'use client';
 
 import { useEffect, useSyncExternalStore } from 'react';
 import { ImageStore } from '@/lib/tf2-hud/assets/images';

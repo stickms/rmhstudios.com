@@ -11,7 +11,6 @@
  *   difficulty: string — Difficulty rating for the article pair
  *   duration: number — Reveal duration in seconds
  */
-'use client';
 
 import { m as motion } from 'framer-motion';
 import { ArrowRight, BookOpen, Target } from 'lucide-react';

@@ -4,7 +4,6 @@
  * Shows the current standings sorted by score, with per-round deltas.
  * Also displays a summary of all matchups for the round.
  */
-'use client';
 
 import { m as motion } from 'framer-motion';
 import { Trophy, Crown, Zap } from 'lucide-react';

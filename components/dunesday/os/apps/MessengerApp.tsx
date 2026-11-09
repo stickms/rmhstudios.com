@@ -1,5 +1,3 @@
-'use client';
-
 /** Dunesday Messenger — the AI buddy, in a Windows Live Messenger-style window. */
 
 import { BuddyChat } from '../../Buddy';

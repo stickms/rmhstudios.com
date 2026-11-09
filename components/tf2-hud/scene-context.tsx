@@ -2,7 +2,6 @@
  * One scene per editor: the preview, outline, inspector and test tools all read
  * the same build instead of each rebuilding it.
  */
-'use client';
 
 import { createContext, useContext, type ReactNode } from 'react';
 import { useScene, type SceneResult } from '@/lib/tf2-hud/use-scene';

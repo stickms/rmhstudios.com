@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useId, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';

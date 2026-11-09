@@ -4,7 +4,6 @@
  * browser that can do WebGL; otherwise — or before the game files have been synced — a short note
  * says why there is nothing to turn around. The slots below remain the way to pick items.
  */
-'use client';
 
 import { Box } from 'lucide-react';
 import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react';

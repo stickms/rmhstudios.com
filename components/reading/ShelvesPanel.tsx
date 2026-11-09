@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * L7 — a member's want-to-read / reading / read shelves, each public or private
  * (private by default). Moving a book to Read stamps its finish date, which is

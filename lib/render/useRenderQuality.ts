@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useReducedMotion } from '@/hooks/useReducedMotion';

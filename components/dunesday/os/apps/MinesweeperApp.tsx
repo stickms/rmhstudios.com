@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Minesweeper — the Windows 7 game: three classic levels plus Custom, a safe
  * first click, flood reveal, flags and question marks, chording, a timer and

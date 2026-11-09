@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * L2 footnotes and L6 glossary terms inside article bodies.
  *

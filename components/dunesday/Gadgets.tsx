@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * A row of Windows Vista Sidebar gadgets: an analog clock, a dual-dial meter
  * (the old CPU Meter, reading your marathon instead), an Arrakis weather

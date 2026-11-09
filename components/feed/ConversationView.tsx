@@ -1,5 +1,3 @@
-'use client';
-
 import { lazy, Suspense, useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { m as motion } from 'framer-motion';
 import { Loader2, ArrowLeft, Send, ImagePlus, ImagePlay, X, Plus, Reply } from 'lucide-react';

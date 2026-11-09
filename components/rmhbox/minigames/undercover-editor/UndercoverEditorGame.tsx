@@ -14,7 +14,6 @@
  *   UE_REVIEW_START, UE_MATCHING_SAVED, UE_PLAYER_LOCKED_IN,
  *   UE_REVEAL, UE_ERROR, TIMER_TICK
  */
-'use client';
 
 import { useState, useCallback } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';

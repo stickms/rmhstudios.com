@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * LiveStaff — a small treble staff that shows the note just played at its pitch, with ledger
  * lines, a sharp for a black key and an ottava sign for a note beyond the drawn range, and its

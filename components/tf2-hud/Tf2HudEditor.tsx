@@ -3,7 +3,6 @@
  * the middle, and inspector / code / test / changes / problems / assets on the
  * right. On a phone the same panes become one-at-a-time views.
  */
-'use client';
 
 import { useNavigate } from '@tanstack/react-router';
 import {

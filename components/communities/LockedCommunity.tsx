@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Private communities are "listed + locked": anyone can see that one exists and
  * read its metadata, nobody but members sees its content. These are the shared

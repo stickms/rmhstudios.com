@@ -1,5 +1,3 @@
-'use client';
-
 // Which roster models R2 actually holds, fetched once per page load and shared
 // by every picker. Every failure is "not available", never an error: the roster
 // then offers only the bundled Y-Bot.

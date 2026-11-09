@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Data-saver mode (plan B20).
  *

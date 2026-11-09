@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * On-screen touch controls for Dream Rift (mobile / tablet).
  *

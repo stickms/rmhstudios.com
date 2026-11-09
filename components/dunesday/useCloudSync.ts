@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Opt-in cloud sync for the plan — what the calendar subscription, RSS feed
  * and Discord posts read from.

@@ -3,7 +3,6 @@
  * "Say :", U opens "Say (TEAM) :", Enter sends, Esc cancels) and the voice
  * menus (Z, X, C — eight lines each, 1–8 to speak, 0 or Esc to close).
  */
-'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

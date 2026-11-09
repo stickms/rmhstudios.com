@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 // `m as motion`, not `motion`: `Providers` wraps the app in `LazyMotion`, and `m`
 // is the component that honours it — `motion` bundles its own full feature

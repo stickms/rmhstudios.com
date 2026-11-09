@@ -11,7 +11,6 @@
  *   getPlayerName: (userId: string) => string — Name lookup
  *   currentUserId: string — Current player's ID (to highlight self)
  */
-'use client';
 
 import { Shield, Eye } from 'lucide-react';
 import type { TeamInfo } from './UndercoverAgentGame';

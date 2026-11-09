@@ -3,7 +3,6 @@
  * harness (scripts/tf2-game/hud-harness) and for looking at the HUD without a
  * running game. Nothing here talks to a server.
  */
-'use client';
 
 import { useMemo, useState } from 'react';
 import { createHudStore } from '@/lib/tf2-game/client/hud-store';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Passkey management panel — list, add, rename, and delete WebAuthn
  * credentials for the signed-in user. Rendered on /settings/security.

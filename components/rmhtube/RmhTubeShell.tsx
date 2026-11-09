@@ -4,7 +4,6 @@
  * RMHTube is the one app that offers a high-contrast appearance; `AppShell`
  * resolves it from the same persisted `theme` value.
  */
-'use client';
 
 import AppShell from '@/components/shared/AppShell';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';

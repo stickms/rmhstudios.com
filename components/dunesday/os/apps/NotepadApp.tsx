@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Notepad. Opens and saves plain-text files in the sandbox file system.
  *

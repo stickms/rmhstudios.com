@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The client half of `POST /api/pulse` — one shared timer for everything a
  * signed-in tab needs to keep fresh in the background.

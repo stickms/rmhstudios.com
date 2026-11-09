@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The small slice of Markdown the assistant actually emits, rendered as React
  * elements.

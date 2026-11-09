@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * MarketColumn — the player-to-player marketplace surface.
  *

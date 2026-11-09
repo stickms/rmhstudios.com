@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The restaurant's own chrome.
  *

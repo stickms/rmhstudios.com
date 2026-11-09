@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The Frutiger Aero aquarium: a glass tank of tropical fish, swaying weed and
  * rising bubbles, sitting on a little dune (it is still Dunesday). Tap a fish

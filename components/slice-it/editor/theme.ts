@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The colours the timeline canvas draws with, resolved once per theme change.
  *

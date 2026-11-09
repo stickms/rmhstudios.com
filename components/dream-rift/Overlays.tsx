@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * In-run overlays: the stage-intro banner, the visual-novel dialogue box (with
  * procedurally-drawn portraits), the pause menu and the end-of-run results.

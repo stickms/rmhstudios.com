@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Everything the Dunesday desktop's apps share: the plan and its actions, the
  * derived schedule and progress, cloud sync, sounds, and achievement balloons.

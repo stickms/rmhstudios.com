@@ -1,5 +1,3 @@
-'use client';
-
 import { AdminBody } from '@/components/admin/AdminBody';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';

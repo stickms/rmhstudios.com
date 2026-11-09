@@ -1,5 +1,3 @@
-'use client';
-
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
 import { TrendingUp, Gamepad2 } from 'lucide-react';

@@ -13,7 +13,6 @@
  * Every entry is a real button (mouse, touch, Tab / arrows, Enter); the background, logo and dialogs'
  * pictures are decoration. Where the channel is not published yet the caller keeps its plain menu.
  */
-'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

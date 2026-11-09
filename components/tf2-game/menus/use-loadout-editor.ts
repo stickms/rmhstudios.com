@@ -6,7 +6,6 @@
  * against the catalog and the game's rules, it goes on at the next respawn or resupply, at once in the
  * team's respawn room) and the match's answer.
  */
-'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

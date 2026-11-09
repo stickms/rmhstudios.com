@@ -1,5 +1,3 @@
-'use client';
-
 import { useNavigate } from '@tanstack/react-router';
 import type { MouseEvent } from 'react';
 import { runLiquidOpen } from '@/lib/view-transition';

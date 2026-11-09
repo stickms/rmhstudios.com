@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Pop-out windows (plan U10) — Document Picture-in-Picture, the floating
  * always-on-top window Chrome/Edge give a page (YouTube's mini-player, Meet's

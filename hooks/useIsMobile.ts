@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect, useSyncExternalStore } from "react";
 
 const MOBILE_QUERY = "(max-width: 767px)";

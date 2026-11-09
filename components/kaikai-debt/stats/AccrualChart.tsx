@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The accrual chart — what he has owed, and what he is about to owe.
  *

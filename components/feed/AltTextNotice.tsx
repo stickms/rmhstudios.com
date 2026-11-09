@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { ImageOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from'react';
 import { EyeOff } from'lucide-react';
 import { useTranslation } from'react-i18next';

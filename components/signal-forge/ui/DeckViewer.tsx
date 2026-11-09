@@ -5,8 +5,6 @@
  * Cards are sorted by type then cost. Keyboard shortcut: D / F.
  */
 
-'use client';
-
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Card } from '@/lib/signal-forge';

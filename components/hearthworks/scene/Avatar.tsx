@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The player's character. All motion is derived from the avatar's speed through `locomotionBlend`, so idle → walk
  * → run crossfades continuously instead of switching clips, and every visible quantity (limb swing, bob, lean,

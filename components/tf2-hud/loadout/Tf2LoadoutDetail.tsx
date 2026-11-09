@@ -2,7 +2,6 @@
  * A shared loadout: every slot read-only, with like, copy-link, and "edit a
  * copy" (which forks it into your account and opens it in the builder).
  */
-'use client';
 
 import { Link, useNavigate } from '@tanstack/react-router';
 import { AlertTriangle, Copy, GitFork, Heart, Pencil } from 'lucide-react';

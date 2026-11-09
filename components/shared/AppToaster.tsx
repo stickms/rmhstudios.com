@@ -8,7 +8,6 @@
  *
  * Mounted for you by `AppShell` — apps should not render it directly.
  */
-'use client';
 
 import { X, CheckCircle2, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

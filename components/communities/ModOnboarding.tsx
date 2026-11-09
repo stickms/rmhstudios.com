@@ -1,5 +1,3 @@
-'use client';
-
 /** N3 — mods write up to five onboarding questions; options can grant a label and flairs. */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

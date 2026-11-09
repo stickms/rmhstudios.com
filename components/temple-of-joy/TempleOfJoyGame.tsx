@@ -5,7 +5,6 @@
  * vigil catch-up, driving the tick, wiring the audio, and saving on the way
  * out. The interface itself is the four components below it.
  */
-'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { useTempleStore } from '@/lib/temple-of-joy/store';

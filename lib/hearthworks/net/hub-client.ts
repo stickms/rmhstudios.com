@@ -10,8 +10,6 @@
  * somebody opens multiplayer.
  */
 
-'use client';
-
 import { authClient } from '@/lib/auth-client';
 import type { HubLike } from './connector';
 import { createHubClientWith } from './hub-client-core';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The run's instrument panel: clock, deck progress, GlobeSets taken, and the two
  * ways out — a hint, and the solver.

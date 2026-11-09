@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * C2 — which chart of this song you are about to play.
  *

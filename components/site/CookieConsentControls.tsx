@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Settings → Privacy: change or withdraw the cookie choice made at the banner.
  *

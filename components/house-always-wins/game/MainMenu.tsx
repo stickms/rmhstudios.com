@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * House Always Wins — main menu.
  *

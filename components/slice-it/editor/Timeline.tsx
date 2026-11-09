@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The timeline — a vertical scrolling canvas. Time runs bottom (now) to top
  * (later), matching the game's own note approach so an author reads the editor

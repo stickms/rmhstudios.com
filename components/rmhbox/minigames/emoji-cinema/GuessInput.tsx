@@ -4,7 +4,6 @@
  * Shows fuzzy match suggestions from the full movie list as the
  * player types. Selecting a suggestion fills in the input.
  */
-'use client';
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Fuse from 'fuse.js';

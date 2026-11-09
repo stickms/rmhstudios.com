@@ -3,7 +3,6 @@
  * cache and the route's ETag make repeat visits a 304), shared by every
  * component, with lookup maps built once.
  */
-'use client';
 
 import { useEffect, useState } from 'react';
 import { loadoutApi } from './api';

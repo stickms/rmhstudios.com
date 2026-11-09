@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * RMHHomes — "can I afford it?".
  *

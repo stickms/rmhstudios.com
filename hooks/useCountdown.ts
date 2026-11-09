@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * A countdown to a fixed instant, broken into whole days / hours / minutes /
  * seconds.

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The month calendar — the spine of `/sohumtracker`.
  *

@@ -10,7 +10,6 @@
  * garden mouse-only, and it is the part of the game people will spend the most
  * evenings in.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';

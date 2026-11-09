@@ -5,7 +5,6 @@
  * visual states: default, selected (locked in), correct, incorrect, disabled.
  * Touch-friendly sizing for mobile play.
  */
-'use client';
 
 import { m as motion } from 'framer-motion';
 

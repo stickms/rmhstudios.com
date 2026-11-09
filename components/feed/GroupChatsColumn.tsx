@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState, useCallback, useRef } from'react';
 import { Link, useNavigate } from'@tanstack/react-router';
 import { Loader2, Users, Plus, X } from'lucide-react';

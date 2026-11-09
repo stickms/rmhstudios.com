@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * useDeviceAttitude — "move the phone to look at the thing".
  *

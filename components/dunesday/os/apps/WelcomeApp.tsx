@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Getting Started — the first window a new desktop opens, like Windows 7's
  * Welcome Center: who's logged on, where the marathon stands, and one-click

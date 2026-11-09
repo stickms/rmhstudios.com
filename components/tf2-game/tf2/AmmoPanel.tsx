@@ -5,7 +5,6 @@
  * HudDemomanPipes: cloak, stickybombs, minigun spin, the Engineer's metal) and
  * the stickybomb charge bar under the ammo (HudDemomanCharge).
  */
-'use client';
 
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

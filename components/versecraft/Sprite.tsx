@@ -1,5 +1,3 @@
-'use client';
-
 import { m as motion } from 'framer-motion';
 import type { Emotion } from '@/lib/versecraft/gen/world-types';
 import { spriteUrl } from '@/lib/versecraft/sprites/registry';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The lint panel — `docs/slice-it-chart-editor.md` §9.
  *

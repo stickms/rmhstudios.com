@@ -6,7 +6,6 @@
  * when the host leaves (host migration), and 12 players at most (the host uploads a snapshot stream to
  * every member).
  */
-'use client';
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

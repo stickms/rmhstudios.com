@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * A Windows 7 message box: icon, text, OK. Opened through `showMessage()`.
  * Enter or Escape dismisses it, like the real one.

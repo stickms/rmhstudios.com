@@ -6,7 +6,6 @@
  * What they share is the discipline — a token for every colour, real
  * semantics, and no state signalled by colour alone.
  */
-'use client';
 
 import {
   useEffect,

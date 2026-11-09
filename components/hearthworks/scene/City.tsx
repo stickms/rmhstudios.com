@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The city layer as the scene draws it: roads and zone pads as two blended ground meshes that follow the block
  * heights, the lots, utilities and town green as instanced models, a signpost over any lot short of power or water,

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The analytics panel — everything the counter cannot say in one number.
  *

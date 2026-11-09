@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useRef } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 import { BeforeCaptureScheduler } from '@/lib/eversion/before-capture';

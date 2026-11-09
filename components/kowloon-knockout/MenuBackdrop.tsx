@@ -13,7 +13,6 @@
  * It runs at 30 fps, or 15 fps when the graphics preference is Low. The CSS gradient underneath is
  * the pre-hydration / no-canvas fallback and is removed once the first frame is painted.
  */
-'use client';
 
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { jellyMotionLevel } from '@/lib/jelly/tiers';

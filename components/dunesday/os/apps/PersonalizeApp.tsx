@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Personalization — the Control Panel page for how Dunesday 7 looks and
  * behaves: desktop background, window colour and transparency, day / night,

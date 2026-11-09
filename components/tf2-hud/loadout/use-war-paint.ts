@@ -3,7 +3,6 @@
  * worker, so the preview keeps moving while it is drawn; `null` until it is ready (and when the kit has
  * not been synced), in which case the weapon keeps its own texture.
  */
-'use client';
 
 import { useEffect, useState } from 'react';
 import { CanvasTexture, SRGBColorSpace } from 'three';

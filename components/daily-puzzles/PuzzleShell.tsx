@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * PuzzleShell — the one grammar every daily puzzle speaks.
  *

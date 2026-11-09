@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from "react-i18next";
 import EmojiSentence from './EmojiSentence';
 import EmojiKeyboard from './EmojiKeyboard';

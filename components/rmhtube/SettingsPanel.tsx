@@ -12,7 +12,6 @@
  * So: two sections in one sheet. **Yours** is local to this browser and open to
  * everyone; **Room** is shared, and shown only to the host who can change it.
  */
-'use client';
 
 import { useState, useCallback, useId } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Gabriel's Horn — change the rules by asking for it.
  *

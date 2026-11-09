@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * L4 readability meter (built on lib/creator/readability.ts): reading time, a
  * Flesch–Kincaid grade for English drafts only (hidden, not wrong, for other

@@ -1,5 +1,3 @@
-'use client';
-
 // The RMH Studios mark — a 6-fold radial spirograph (Inkscape-generated, path
 // baked). Rendered as line-art in `currentColor` so it inherits the orb's
 // accent-contrast ink, with `pathLength={1}` so the stroke-draw "bloom" is

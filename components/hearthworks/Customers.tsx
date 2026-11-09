@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { ITEMS } from '@/lib/hearthworks/content';
 import { hearthworksStore, useHearthworks } from '@/lib/hearthworks/store';

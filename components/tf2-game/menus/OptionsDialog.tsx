@@ -15,7 +15,6 @@
  * Mouse, keyboard (tabs, Tab / arrows, Enter), gamepad (the lobby's / the HUD's focus navigation) and
  * touch (44 px targets and 16 px fields on coarse pointers, from the TF2 Hub's controls).
  */
-'use client';
 
 import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

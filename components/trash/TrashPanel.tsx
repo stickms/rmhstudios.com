@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The recycle bin (plan I1).
  *

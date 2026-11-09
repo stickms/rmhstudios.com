@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Web Push subscription state + subscribe/unsubscribe actions for the
  * current browser. `supported` is false (and everything is a no-op) when the

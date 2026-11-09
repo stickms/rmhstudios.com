@@ -8,7 +8,6 @@
  *
  * Uses createPortal to render outside the header containing block.
  */
-'use client';
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';

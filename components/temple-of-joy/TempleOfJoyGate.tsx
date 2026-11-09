@@ -18,7 +18,6 @@
  * The loading screen is the temple's own, not a generic spinner: it is the
  * first thing anyone sees and it should already feel like the game.
  */
-'use client';
 
 import './temple-of-joy.css';
 import { useCallback, useEffect, useState } from 'react';

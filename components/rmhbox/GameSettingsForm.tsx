@@ -13,7 +13,6 @@
  *
  * Reference: docs/rmhbox/design-spec/core.md §12A.7
  */
-'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Switch } from '@/components/ui/switch';

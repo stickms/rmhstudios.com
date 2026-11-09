@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Photo mode (plan U14) — the shared panel. A game lazy-loads this only when
  * the player opens photo mode, pauses its sim, hides its HUD, and hands over a

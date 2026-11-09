@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState } from 'react';
 import { Loader2, MapPin, X, Star, LocateFixed } from 'lucide-react';
 import { toast } from 'sonner';

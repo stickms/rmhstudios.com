@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useState } from 'react';
 import { ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
 import { useTranslation } from 'react-i18next';

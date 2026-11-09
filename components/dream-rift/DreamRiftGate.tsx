@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * DreamRiftGate — top-level entry for the Dream Rift game.
  *

@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { Heart, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';

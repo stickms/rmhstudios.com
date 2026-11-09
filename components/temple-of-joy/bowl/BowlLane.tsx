@@ -27,7 +27,6 @@
  *   registry of live bodies, and keeping a body in it one moment past its
  *   removal is a wasm trap rather than a wrong number. See `RackPin`.
  */
-'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';

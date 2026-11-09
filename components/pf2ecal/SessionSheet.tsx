@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The detail surface for one session: the full roster, the notes, your own
  * answer with an optional note, and the edit/cancel/delete controls.

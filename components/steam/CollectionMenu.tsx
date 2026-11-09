@@ -1,5 +1,3 @@
-'use client';
-
 import { useId, useState } from 'react';
 import { getRouteApi } from '@tanstack/react-router';
 import { toast } from 'sonner';

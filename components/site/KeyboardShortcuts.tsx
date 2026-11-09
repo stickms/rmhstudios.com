@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Site-wide keyboard shortcuts for the sidebar shell (mounted in _site.tsx so
  * full-screen games keep their own key handling):

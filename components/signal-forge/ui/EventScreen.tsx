@@ -5,8 +5,6 @@
  * between floors and offer risk/reward trade-offs.
  */
 
-'use client';
-
 import React from 'react';
 
 interface EventData {

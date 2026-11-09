@@ -1,5 +1,3 @@
-'use client';
-
 /** S2 posting requirement, N1 required flair, N2 star threshold. */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

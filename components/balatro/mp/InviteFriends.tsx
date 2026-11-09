@@ -8,7 +8,6 @@
  *
  * Rendered in InvitePopover's `friends` slot (MpToolbar passes it).
  */
-'use client';
 
 import { Check, Loader2, UserPlus } from 'lucide-react';
 import { useCallback, useSyncExternalStore } from 'react';

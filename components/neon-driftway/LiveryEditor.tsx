@@ -1,5 +1,3 @@
-'use client';
-
 /** Livery editor: base colour, two accents, a stripe pattern; saved per member, shared as a code. */
 
 import { useEffect, useRef, useState } from 'react';

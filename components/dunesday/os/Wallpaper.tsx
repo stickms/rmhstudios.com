@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The desktop background. Four wallpapers in the Frutiger Aero / Windows 7
  * spirit — an Aero meadow, the dunes of Arrakis, an aurora night, and

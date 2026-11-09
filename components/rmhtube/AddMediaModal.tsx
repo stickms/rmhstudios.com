@@ -9,7 +9,6 @@
  *  - **Several links at once** — pasting text with more than one URL queues
  *    them all (up to `MAX_BATCH`, inside the hub's add rate limit).
  */
-'use client';
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { X, Link as LinkIcon, Radio, ListPlus } from 'lucide-react';

@@ -1,5 +1,3 @@
-'use client';
-
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import type { CuratedBuild } from '@/lib/builds/curated';
 import { cn } from '@/lib/utils';

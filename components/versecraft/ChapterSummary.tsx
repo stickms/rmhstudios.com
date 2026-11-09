@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { m as motion } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';

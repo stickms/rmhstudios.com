@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Properties of the current selection.
  *

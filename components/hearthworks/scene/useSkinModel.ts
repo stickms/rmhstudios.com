@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import type { SkinId } from '@/lib/hearthworks/skins';
 import { getManifest, loadManifest, subscribeManifest, type ModelEntry } from '@/lib/hearthworks/skins/model-manifest';

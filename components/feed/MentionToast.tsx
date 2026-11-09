@@ -1,5 +1,3 @@
-'use client';
-
 import { toast } from'sonner';
 import type { useNavigate } from'@tanstack/react-router';
 import type { MentionNotification } from'@/lib/feed-sse';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The live parts of the input setup rows: the microphone's level bar and
  * detected note, the MIDI device list and played notes, and the plain-language

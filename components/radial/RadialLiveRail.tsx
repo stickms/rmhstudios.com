@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The desktop live rail — the right flank of the shell frame.
  *

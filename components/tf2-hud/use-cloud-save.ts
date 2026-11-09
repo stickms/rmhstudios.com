@@ -4,7 +4,6 @@
  * is dirty. Autosaves are marked so the server folds them into one history
  * entry instead of burying real versions under hundreds of keystroke saves.
  */
-'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Studio live jam client (F13). Mirrors the shared project to the local Studio
  * store, and sends this member's edits as whole-track replacements.

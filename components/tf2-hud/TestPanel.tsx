@@ -2,7 +2,6 @@
  * Test state: the values the game would feed the HUD. Change them to see every
  * state — low health, an uber, the last seconds of a round — without a match.
  */
-'use client';
 
 import { ImageUp, RotateCcw, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';

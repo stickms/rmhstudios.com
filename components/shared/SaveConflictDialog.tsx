@@ -21,7 +21,6 @@
  * `.app-theme` app and equally inside a game with its own palette and no app
  * chrome (Temple of Joy renders it over its own ground).
  */
-'use client';
 
 import { useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

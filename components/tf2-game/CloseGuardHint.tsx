@@ -5,7 +5,6 @@
  * tab: `useCloseGuard` makes the browser ask first, and this offers to move
  * crouch to a free key instead. Dismissal is remembered in localStorage.
  */
-'use client';
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

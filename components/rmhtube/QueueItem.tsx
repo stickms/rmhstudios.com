@@ -2,7 +2,6 @@
  * QueueItem — Individual queue entry with thumbnail, title, duration,
  * voting (Phase 3.5), and remove button.
  */
-'use client';
 
 import { X, GripVertical, Play, ThumbsUp, ListPlus, Radio } from 'lucide-react';
 import { useTranslation } from "react-i18next";

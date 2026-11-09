@@ -5,7 +5,6 @@
  * (except the two authors) vote for their favorite. Authors see a
  * spectating message instead of vote buttons.
  */
-'use client';
 
 import { m as motion } from 'framer-motion';
 import { Vote, Eye } from 'lucide-react';

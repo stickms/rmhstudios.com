@@ -1,5 +1,3 @@
-'use client';
-
 import { Suspense, lazy, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_SKIN, SKINS, SKIN_IDS, SKIN_TIERS, canAfford, type SkinId, type SkinTier } from '@/lib/hearthworks/skins';

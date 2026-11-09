@@ -1,5 +1,3 @@
-'use client';
-
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Clock, Gamepad2, Link as LinkIcon, MapPin, Radio, Trophy, Users } from 'lucide-react';

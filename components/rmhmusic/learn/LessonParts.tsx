@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The pieces every lesson's input region shares (FirstNoteLesson, FlashcardLesson): the result
  * blocks once a lesson ends — saved (stars as noteheads), failed (Retry) and signed out (a

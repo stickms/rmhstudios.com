@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The two sides of the ledger, as people.
  *

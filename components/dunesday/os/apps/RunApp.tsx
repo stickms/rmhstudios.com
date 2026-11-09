@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The Run box (Win+R): type a program, a folder or a path and Dunesday 7
  * opens it. Understands the aliases in `RUN_ALIASES` (notepad, calc, winmine,

@@ -1,5 +1,4 @@
 // components/daily-puzzles/three/DeskScene.tsx
-'use client';
 
 import { Suspense, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';

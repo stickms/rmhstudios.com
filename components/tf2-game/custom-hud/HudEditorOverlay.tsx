@@ -11,7 +11,6 @@
  * (its dialogs too: `portalRoot`), so opening it no longer leaves full screen;
  * it borrows the pointer lock and gives it back on the way out.
  */
-'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';

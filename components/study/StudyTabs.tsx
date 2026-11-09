@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * StudyTabs — the Decks ⇄ Browse strip shared by `/study` and `/study/browse`.
  *

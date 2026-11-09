@@ -2,7 +2,6 @@
  * /half-life-2 — the Half-Life 2 demo (Point Insertion, the two maps the demo
  * licence ships data for) on the browser engine.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import SpPlayPage from './SpPlayPage';

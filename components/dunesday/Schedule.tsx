@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The plan itself: tonight's card, the day-by-day list (or a month heat-map),
  * and the ways to take it elsewhere — calendar file, plain text, share link,

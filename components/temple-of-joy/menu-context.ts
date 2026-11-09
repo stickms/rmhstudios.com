@@ -7,7 +7,6 @@
  * Outside a gate (a test, a story) there is nothing to return to, so the default
  * is a no-op and Settings hides the row.
  */
-'use client';
 
 import { createContext, useContext } from 'react';
 

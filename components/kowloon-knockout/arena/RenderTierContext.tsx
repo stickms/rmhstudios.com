@@ -1,5 +1,3 @@
-'use client';
-
 import { createContext, useContext, useEffect, useMemo, useState, useCallback, type ReactNode } from 'react';
 import { useThree } from '@react-three/fiber';
 import { useIsMobile } from '@/lib/studio/hooks/useIsMobile';

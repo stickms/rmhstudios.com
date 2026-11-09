@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, type ReactNode } from 'react';
 import type { ParseCallback } from '@twemoji/api';
 

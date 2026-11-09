@@ -6,7 +6,6 @@
  * (the client's stats and its network counters, sampled four times a second —
  * a timer, not a frame loop: the game owns the only frame loop).
  */
-'use client';
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

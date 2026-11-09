@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Bulk content management (plan I2).
  *

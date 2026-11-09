@@ -5,8 +5,6 @@
 // multiplayer. Uses the same server as all other games (port 7001).
 // =============================================================================
 
-'use client';
-
 import { singleFlight } from '@/lib/shared/realtime/single-flight';
 import { io, Socket } from 'socket.io-client';
 import { ensureTrailingSlash } from '@/lib/url';

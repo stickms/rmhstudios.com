@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Notification bell for the left sidebar: opens a compact popover with the
  * most recent notifications so triage doesn't require leaving the page. On

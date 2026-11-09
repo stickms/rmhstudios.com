@@ -4,7 +4,6 @@
  * and domination notes), the spectated player's name, the Spy's disguise
  * status, centre messages (game_text, HUD alerts) and the win panel.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import type {

@@ -1,5 +1,3 @@
-'use client';
-
 import { Link } from '@tanstack/react-router';
 import { BedDouble, Bath, Ruler, MapPin, PawPrint, ImageOff, Sparkles, Globe } from 'lucide-react';
 import type { Listing } from '@/lib/homes/types';

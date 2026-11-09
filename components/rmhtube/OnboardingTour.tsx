@@ -4,7 +4,6 @@
  * Shows a series of tooltip-style steps explaining the UI.
  * Only appears once (tracked via `hasSeenTour` in settings).
  */
-'use client';
 
 import { useState, useCallback } from 'react';
 import { X, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';

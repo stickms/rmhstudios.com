@@ -1,5 +1,3 @@
-'use client';
-
 import { BookOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { GuideSummary } from '@/lib/games/reviews';

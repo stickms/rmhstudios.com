@@ -1,7 +1,6 @@
 /**
  * A small rendering of a scheme border, drawn with the same code the preview uses.
  */
-'use client';
 
 import { useEffect, useRef } from 'react';
 import { drawBorder } from '@/lib/tf2-hud/scene/paint';

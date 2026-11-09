@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The community composer: the site's ComposeBox plus a flair picker (N1) and the
  * posting-requirement notice (S2). Posting rules are enforced on the server; this

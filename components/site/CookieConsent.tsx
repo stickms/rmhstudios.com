@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Minimal cookie-consent banner. Shows once per browser until the user makes a
  * choice, then never again. Deliberately unobtrusive: a slim bottom card that

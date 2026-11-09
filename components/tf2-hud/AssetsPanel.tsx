@@ -2,7 +2,6 @@
  * Assets — fonts, sounds and textures in the HUD: upload, preview, replace,
  * remove, and register fonts in the scheme so panels can use them.
  */
-'use client';
 
 import { Download, Play, Trash2, Upload } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';

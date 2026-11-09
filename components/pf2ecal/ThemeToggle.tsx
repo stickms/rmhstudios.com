@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Auto / Light / Dark, in the page header.
  *

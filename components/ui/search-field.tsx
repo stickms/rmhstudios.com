@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * SearchField — the one search input on the site.
  *

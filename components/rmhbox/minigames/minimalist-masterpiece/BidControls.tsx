@@ -4,7 +4,6 @@
  * The onBid callback receives the new TOTAL bid amount for this drawing.
  * The server expects { drawingId, amount } where amount is the cumulative bid.
  */
-'use client';
 
 import { useTranslation } from "react-i18next";
 

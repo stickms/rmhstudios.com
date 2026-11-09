@@ -4,7 +4,6 @@
  * and room for page actions. Flat and square like the editor's TopBar, so the
  * hub, the workshop and the loadout builder all read as one in-game menu.
  */
-'use client';
 
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';

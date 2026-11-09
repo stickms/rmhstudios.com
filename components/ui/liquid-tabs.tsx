@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * LiquidTabs — the shared tab-strip renderer. A thin, presentational
  * tablist (a styled radiogroup, not a router): the caller owns `value`/`onChange`

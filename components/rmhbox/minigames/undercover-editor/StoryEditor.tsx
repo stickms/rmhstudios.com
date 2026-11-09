@@ -12,7 +12,6 @@
  *   onEdit: (storyId, edits) => void — Submit word edits (1 or 2)
  *   onSkip: () => void — Skip editing this round
  */
-'use client';
 
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

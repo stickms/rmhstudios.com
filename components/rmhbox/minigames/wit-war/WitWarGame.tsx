@@ -14,7 +14,6 @@
  *
  * Reference: docs/rmhbox/design-spec/wit-war.md
  */
-'use client';
 
 import { useState, useCallback } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';

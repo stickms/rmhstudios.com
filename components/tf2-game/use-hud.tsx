@@ -3,7 +3,6 @@
  * screen geometry (the virtual-unit scale and the layout table) and the
  * player's settings, shared by every HUD panel through context.
  */
-'use client';
 
 import {
   createContext,

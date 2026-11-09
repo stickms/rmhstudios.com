@@ -5,8 +5,6 @@
  * the pause menu so the rules text is defined in exactly one place.
  */
 
-'use client';
-
 import React from 'react';
 import { useTranslation } from "react-i18next";
 

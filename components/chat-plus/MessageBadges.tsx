@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { Forward, MessageSquareText, Pin } from 'lucide-react';
 import { forwardLabel } from '@/lib/chat-plus/flags';

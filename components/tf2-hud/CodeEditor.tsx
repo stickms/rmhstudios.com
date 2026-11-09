@@ -3,7 +3,6 @@
  * completion, find/replace — wired to the project so every keystroke is live in the
  * preview. Re-mounted per file (`key={path}`).
  */
-'use client';
 
 import { autocompletion, completionKeymap, type CompletionContext } from '@codemirror/autocomplete';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';

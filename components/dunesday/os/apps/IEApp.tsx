@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Internet Explorer for the Dunesday 7 sandbox.
  *

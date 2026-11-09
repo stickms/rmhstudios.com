@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * AnchoredMenu — a dropdown panel that hangs off a trigger inside the page.
  *

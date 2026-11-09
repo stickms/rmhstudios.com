@@ -3,7 +3,6 @@
  * Shows HP bar, XP bar, timer, kills, weapon slots, and passive slots.
  * Hovering (desktop) or tapping (mobile) a slot shows a tooltip popover.
  */
-'use client';
 
 import { useAltairGameStore, xpRequired } from '@/lib/altair/stores/game-store';
 import { WEAPONS, EVOLVED_WEAPONS } from '@/lib/altair/data/weapons';

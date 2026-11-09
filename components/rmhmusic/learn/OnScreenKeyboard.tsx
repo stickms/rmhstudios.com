@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * OnScreenKeyboard — a piano played by touch, mouse or keyboard focus. Each pointer is tracked on
  * its own, so several fingers can hold a chord, and sliding a finger along the keys plays each one

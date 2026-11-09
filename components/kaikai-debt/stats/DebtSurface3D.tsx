@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The debt terrain — the (month × category) grid as a 3D height field.
  *

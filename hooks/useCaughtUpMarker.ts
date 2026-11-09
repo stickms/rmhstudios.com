@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSession } from '@/components/Providers';
 import type { FeedItem } from '@/lib/feed-types';

@@ -2,7 +2,6 @@
  * The inspector's block strip: which block the selected panel belongs to and what an edit does to it
  * (the whole block, or only this panel), or an offer to make a block when look-alike panels sit near it.
  */
-'use client';
 
 import { Boxes, Unlink } from 'lucide-react';
 import { useMemo } from 'react';

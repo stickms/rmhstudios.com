@@ -1,7 +1,6 @@
 /**
  * BossHealthBar — Displayed at the top of the screen during boss fights.
  */
-'use client';
 
 interface BossHealthBarProps {
   bossName: string;

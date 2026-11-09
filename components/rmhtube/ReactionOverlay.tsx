@@ -1,7 +1,6 @@
 /**
  * ReactionOverlay — Floating emoji reactions on the video player.
  */
-'use client';
 
 import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
 import { emit, getSocket } from '@/lib/rmhtube/socket';

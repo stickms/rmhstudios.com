@@ -5,8 +5,6 @@
  * hand-sort toggle, and Overwriter's Pen activation.
  */
 
-'use client';
-
 import React from 'react';
 import { useTranslation } from "react-i18next";
 import type { Relic } from '@/lib/signal-forge';

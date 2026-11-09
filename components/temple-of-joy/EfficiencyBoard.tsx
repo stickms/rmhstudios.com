@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EFFICIENCY_GAME_ID, exponentOf } from '@/lib/temple-of-joy/efficiency';

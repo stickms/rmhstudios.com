@@ -1,5 +1,3 @@
-'use client';
-
 /**
  *"Friends online"widget — surfaces followed users who are online now and
  * what joinable room they're in, so the multiplayer apps stop depending on

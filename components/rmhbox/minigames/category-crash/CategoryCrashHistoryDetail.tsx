@@ -6,7 +6,6 @@
  *
  * Reference: docs/rmhbox/design-spec/minigames-1.md §3.15
  */
-'use client';
 
 import { useTranslation } from "react-i18next";
 import type { HistoryDetailProps } from '@/lib/rmhbox/history-display-registry';

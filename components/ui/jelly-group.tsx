@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * JellyGroup — one jelly parent for a cluster of related controls.
  *

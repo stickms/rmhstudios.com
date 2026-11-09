@@ -1,5 +1,3 @@
-'use client';
-
 import { useLocation } from '@tanstack/react-router';
 import type { Collection } from '@/lib/games/collections';
 import type { LibraryKind } from '@/lib/games/library';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * /wallet — the member's coin home (C1 goals, C4 statement, C5 community goals,
  * C7 gifts). The balance header is the only thing that renders eagerly; every

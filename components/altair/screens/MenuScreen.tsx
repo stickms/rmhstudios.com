@@ -2,7 +2,6 @@
  * MenuScreen — Main title screen for Altair.
  * Shows play, meta shop, settings, and leaderboard options.
  */
-'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

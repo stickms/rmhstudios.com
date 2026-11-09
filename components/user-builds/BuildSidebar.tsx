@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Star, TrendingUp } from 'lucide-react';

@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarPlus, Download, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

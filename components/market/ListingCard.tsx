@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * A single marketplace listing card. Mirrors the shop/customization card idioms
  * (rarity rim, kind-specific swatch preview) so the market reads as one system.

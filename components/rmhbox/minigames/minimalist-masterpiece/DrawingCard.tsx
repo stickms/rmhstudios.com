@@ -4,7 +4,6 @@
  * Renders an array of strokes as SVG paths on a fixed-size canvas.
  * Used by GalleryCarousel and AuctionPanel.
  */
-'use client';
 
 interface StrokePoint {
   x: number;

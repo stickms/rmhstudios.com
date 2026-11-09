@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * N6 — community census. Members answer once; results are aggregate-only and are
  * published when a mod closes the census (or its end date passes) AND at least

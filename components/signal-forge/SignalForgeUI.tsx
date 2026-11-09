@@ -7,8 +7,6 @@
  * (modals, collection viewer) and the Escape-key pause toggle.
  */
 
-'use client';
-
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Card, RelicTemplate } from '@/lib/signal-forge';

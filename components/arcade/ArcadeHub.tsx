@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Arcade Pass hub — the daily-challenge board.
  *

@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

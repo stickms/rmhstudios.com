@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The list under a document: your highlights, ones that no longer match the
  * text ("orphans" — listed rather than guessed at), readers' public notes, and a

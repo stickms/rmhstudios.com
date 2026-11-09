@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The "new personal best" moment (plan U4) — the instant after a good run is
  * when people share, so this is where the share sheet lives.

@@ -2,7 +2,6 @@
  * What an `image` property resolves to: the file it points at (following `.vmt`
  * → `$basetexture`), drawn small, or the missing-texture checkerboard.
  */
-'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ImageStore } from '@/lib/tf2-hud/assets/images';

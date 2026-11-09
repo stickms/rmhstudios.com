@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Achievement pop-ups in the style of an XP/Vista notification-area balloon.
  * Each one dismisses itself after a few seconds; the close button is there for

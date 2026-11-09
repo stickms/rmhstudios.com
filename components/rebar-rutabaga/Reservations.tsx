@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Booking, prices and the house rules — the page's last quiet room.
  *

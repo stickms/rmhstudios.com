@@ -1,5 +1,3 @@
-'use client';
-
 /** Timed comments (F1) and the loaded commentary track (T5), drawn over the video. */
 import { useEffect, useState } from 'react';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';

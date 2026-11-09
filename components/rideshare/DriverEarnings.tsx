@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { Loader2, Wallet, Car, Star, TrendingUp, Gift, Building2, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

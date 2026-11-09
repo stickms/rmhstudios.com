@@ -14,7 +14,6 @@
  * Both: closed captions in a box near the bottom centre (HudCloseCaption) that
  * grows upward from the panel's bottom edge, as the engine's caption box does.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import type { HudCaption, HudFade, HudHl2, HudPortal } from '@/lib/tf2-game/client/hud-state';

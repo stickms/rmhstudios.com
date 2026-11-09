@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Draws many procedural models with a handful of draw calls: every part of every instance is
  * grouped by (shape, palette colour) into one InstancedMesh, so a forest of 500 trees is a few

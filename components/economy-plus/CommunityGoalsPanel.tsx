@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Community goal pots (C5) — the wallet's "Community" tab. Lazy-loaded when the
  * tab opens. Admins also see the controls to open, cancel and fulfil goals.

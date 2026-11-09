@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The credit dial — a FICO-style half circle, and the only one on the site.
  *

@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 import { DURATION } from '@/lib/motion';

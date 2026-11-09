@@ -6,7 +6,6 @@
  * localStorage (lib/tf2-game/client/sp-save.ts); a level the asset channel has not published shows as
  * unavailable.
  */
-'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

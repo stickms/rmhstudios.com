@@ -7,7 +7,6 @@
  * the game. A page of its own (the document scrolls), in the TF2 Hub's palette (AppShell
  * `tf2hud-theme`), with the hub's own controls (components/tf2-hud/ui).
  */
-'use client';
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

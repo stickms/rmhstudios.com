@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * A capacity meter, drawn as rack units.
  *

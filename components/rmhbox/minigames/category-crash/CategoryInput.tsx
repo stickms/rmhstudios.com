@@ -16,7 +16,6 @@
  *   onSave: (answers) => void   — Auto-save callback
  *   onSubmit: (answers) => void — Final submit callback
  */
-'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';

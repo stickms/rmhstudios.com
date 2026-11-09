@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Getting the schedule into the calendar app people actually look at.
  *

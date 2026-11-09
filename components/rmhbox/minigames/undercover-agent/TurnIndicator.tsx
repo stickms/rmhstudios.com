@@ -17,7 +17,6 @@
  *   winner: 'red' | 'blue' | 'draw' | null — Game winner (if set)
  *   winReason: string | null — Reason for game ending
  */
-'use client';
 
 import { m as motion } from 'framer-motion';
 import { Clock, Hash, Trophy } from 'lucide-react';

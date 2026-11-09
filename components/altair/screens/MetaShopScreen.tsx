@@ -2,7 +2,6 @@
  * MetaShopScreen — Persistent upgrade shop using coins.
  * v1.3: 20 upgrades organized by category (Offense, Defense, Utility, Special).
  */
-'use client';
 
 import { useTranslation } from "react-i18next";
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';

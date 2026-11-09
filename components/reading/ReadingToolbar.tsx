@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The always-visible strip above an article: the Y2 reading-ruler switch and a
  * way into "My reading". Static and tiny so it is part of the server HTML and

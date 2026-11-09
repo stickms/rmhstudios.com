@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The Arcade section — the player block at the top of `/games`.
  *

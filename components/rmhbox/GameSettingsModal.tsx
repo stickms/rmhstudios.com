@@ -10,7 +10,6 @@
  *
  * Reference: docs/rmhbox/design-spec/core.md §12A.7
  */
-'use client';
 
 import { createPortal } from 'react-dom';
 import { X, Settings } from 'lucide-react';

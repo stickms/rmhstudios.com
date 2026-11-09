@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * First-run language chooser. Shown once per device (localStorage-gated) so a
  * new visitor can confirm or change the auto-detected language before diving

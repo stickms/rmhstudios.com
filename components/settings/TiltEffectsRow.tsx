@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * TiltEffectsRow (§5.5x C.3) — the iOS motion-permission gate for tilt-driven glass
  * light. On iOS, `DeviceOrientationEvent.requestPermission()` needs a user gesture,

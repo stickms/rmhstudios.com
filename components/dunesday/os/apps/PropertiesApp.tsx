@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The Properties sheet, for either a title on the watch list (`params.title`)
  * or a file-system item (`params.node`).

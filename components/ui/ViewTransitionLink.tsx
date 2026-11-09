@@ -1,5 +1,3 @@
-'use client';
-
 import { Link, useNavigate } from '@tanstack/react-router';
 import type { LinkComponent } from '@tanstack/react-router';
 import type { ComponentProps } from 'react';

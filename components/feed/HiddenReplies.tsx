@@ -1,5 +1,3 @@
-'use client';
-
 import { useId, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, Eye, EyeOff } from 'lucide-react';

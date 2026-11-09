@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The profile's birthday chip (G1). Mounted only when the server says it is the
  * owner's day, and lazy-loaded, so a normal profile view pays nothing. The

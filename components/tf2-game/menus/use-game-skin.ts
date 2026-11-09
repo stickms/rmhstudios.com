@@ -4,7 +4,6 @@
  * it loads), Panorama's for CS:GO, the TF2 Hub's for TF2. A class that re-points the --app-* tokens the
  * dialog's controls read, and the custom properties it draws from.
  */
-'use client';
 
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import type { HudGame } from '@/lib/tf2-game/client/hud-state';

@@ -4,7 +4,6 @@
  * the preview will, in the face that is actually active at the current
  * resolution, and says plainly when that face is a stand-in or missing.
  */
-'use client';
 
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';

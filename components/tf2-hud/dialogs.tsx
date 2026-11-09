@@ -1,7 +1,6 @@
 /**
  * Small modal flows: ask for a name, confirm a destructive step, place uploads.
  */
-'use client';
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

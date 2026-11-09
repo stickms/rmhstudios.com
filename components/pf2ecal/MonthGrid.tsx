@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The month view — an overview, and a way to jump to a date.
  *

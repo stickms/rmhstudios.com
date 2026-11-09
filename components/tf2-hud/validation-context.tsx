@@ -1,7 +1,6 @@
 /**
  * One validation run shared by the file tree and the problems panel.
  */
-'use client';
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useEditor } from '@/lib/tf2-hud/store';

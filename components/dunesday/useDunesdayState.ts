@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The page's single source of state: the plan in localStorage, optionally
  * seeded from a `#plan=` share link, with a small set of named actions.

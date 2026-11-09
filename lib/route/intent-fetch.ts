@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Start a page's own client-side GETs before the page mounts, and hand each
  * response to the page exactly once.

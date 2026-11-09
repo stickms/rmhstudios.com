@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The four difficulty tabs, plus the nesting indicator.
  *

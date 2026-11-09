@@ -1,5 +1,3 @@
-'use client';
-
 import { create } from 'zustand';
 import type { TablePhase, PlayerSeatClient, RoomListEntry, RoomInfo, RoundResultPayload, PlayerBetClient } from './types';
 

@@ -1,5 +1,3 @@
-'use client';
-
 /** One gift / mixtape exchange: join, set exclusions, the draw result, gifting, the reveal. */
 import { lazy, Suspense, useState } from 'react';
 import { Link } from '@tanstack/react-router';

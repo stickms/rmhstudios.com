@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * A DeepSeek write-up, rendered.
  *

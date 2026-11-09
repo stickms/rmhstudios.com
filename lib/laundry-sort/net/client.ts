@@ -11,8 +11,6 @@
  * server will refuse to seat.
  */
 
-'use client';
-
 import { singleFlight } from '@/lib/shared/realtime/single-flight';
 import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';

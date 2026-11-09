@@ -1,5 +1,3 @@
-'use client';
-
 import { useRef, useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ChevronDown, User, Plus, Award } from 'lucide-react';

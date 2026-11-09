@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * What the player gets at the end: the time, the grid they can paste, the two
  * numbers the run was quietly keeping (dead ends and hints), their own record,

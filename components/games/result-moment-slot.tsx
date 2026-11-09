@@ -1,5 +1,3 @@
-'use client';
-
 import { lazy, Suspense, useCallback, useState } from 'react';
 
 /**

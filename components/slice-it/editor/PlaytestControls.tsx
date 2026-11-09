@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The playtest transport: play from the playhead, loop the selection, stop.
  *

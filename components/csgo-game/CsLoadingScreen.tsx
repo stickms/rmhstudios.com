@@ -3,7 +3,6 @@
  * map's name large in Teko with the mode beneath, and a thin bar along the bottom with the stage under
  * way (the `csgo-menu` channel: lib/tf2-game/client/menus/source-gameui.ts), the game's logo in the corner.
  */
-'use client';
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

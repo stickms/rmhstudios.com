@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Loading states for `/pf2ecal`.
  *

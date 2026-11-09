@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Renders a single frame from a sprite sheet via CSS background-position — used
  * for character/boss portraits in menus and dialogue without needing the image

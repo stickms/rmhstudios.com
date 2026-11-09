@@ -6,7 +6,6 @@
  * mechanic behind them; a first-time player should not be looking at four
  * counters reading zero that the game has not explained yet.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';

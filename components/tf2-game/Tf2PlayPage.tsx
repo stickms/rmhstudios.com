@@ -6,7 +6,6 @@
  * lobby's sign-in prompt keeps the invite through the login detour). `?hud=draft:<id>|cloud:<id>|share:<token>|default`
  * (the HUD editor's "Test in game") makes that HUD the one the game draws.
  */
-'use client';
 
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * "What happened" — the write-up for one session, inside its sheet.
  *

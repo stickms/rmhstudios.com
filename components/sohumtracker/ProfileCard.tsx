@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The live profile card — the first thing on `/sohumtracker` and the thing the page
  * is really for: is he on, and what is he doing instead.

@@ -1,5 +1,3 @@
-'use client';
-
 /** Gift and mixtape exchanges (G3 / F2): the caller's list, plus a create form. */
 import { useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';

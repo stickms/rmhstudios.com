@@ -1,5 +1,3 @@
-'use client';
-
 import { useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { isFrameCapped } from '@/lib/render/frame-cap';

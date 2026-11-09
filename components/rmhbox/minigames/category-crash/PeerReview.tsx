@@ -22,7 +22,6 @@
  *   onVote: (targetUserId, categoryIndex, vote) => void
  *   onAdvanceVoting: () => void
  */
-'use client';
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

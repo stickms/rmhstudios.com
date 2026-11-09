@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * A Windows 7 Aero glass window, drawn with 7.css (MIT, khang-nd/7.css) — the
  * real thing: the streaked glass frame, the glowing caption buttons.

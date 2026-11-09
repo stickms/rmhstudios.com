@@ -4,7 +4,6 @@
  * with it and the Blocks panel edits a block's shared values with it, so a property looks and behaves
  * the same wherever it is edited.
  */
-'use client';
 
 import type { InputHTMLAttributes } from 'react';
 import { useTranslation } from 'react-i18next';

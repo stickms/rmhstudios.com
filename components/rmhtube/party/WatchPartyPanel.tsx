@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bookmark, Grid3x3, MessageSquareText, Mic, Swords, X } from 'lucide-react';

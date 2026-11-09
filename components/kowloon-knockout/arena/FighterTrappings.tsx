@@ -1,5 +1,3 @@
-'use client';
-
 import type { CSSProperties, RefObject } from 'react';
 import '../kk-hud.css';
 import { Html } from '@react-three/drei';

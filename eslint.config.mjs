@@ -211,6 +211,10 @@ export default tseslint.config(
       // fail the build rather than add a line to a warning list nobody reads.
       // See docs/loading-audit-2026-08-11/02-critical-path.md §1.
       'local/no-lucide-namespace-import': 'error',
+      // Zero backlog since the A8 codemod (2026-11-09): `'use client'` is a
+      // Next.js/RSC directive with no effect here, and it misleads readers into
+      // thinking the files without it are server components. Autofixable.
+      'local/no-use-client-directive': 'error',
       // Same shape as the rule above, same reason for "error": the backlog is
       // zero as of 2026-08-12, and the failure is invisible.
       //

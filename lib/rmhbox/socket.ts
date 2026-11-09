@@ -9,8 +9,6 @@
  * Implementation: docs/rmhbox/implementation/phase-4.md §5
  */
 
-'use client';
-
 import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';

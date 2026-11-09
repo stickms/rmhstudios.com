@@ -12,7 +12,6 @@
  *   selectedGameId: string | null — Currently picked game ID
  *   onPickGame: (minigameId: string) => void — Callback when host picks a game
  */
-'use client';
 
 import { useState, useCallback } from 'react';
 import { Switch } from '@/components/ui/switch';

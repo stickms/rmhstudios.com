@@ -1,5 +1,3 @@
-'use client';
-
 /** Marathon Calendar — the night-by-night schedule, list or month view. */
 
 import { BareChrome } from '../../AeroWindow';

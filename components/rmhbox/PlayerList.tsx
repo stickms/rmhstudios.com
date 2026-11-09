@@ -11,7 +11,6 @@
  *   onKick?: (userId: string) => void — Kick callback
  *   onTransferHost?: (userId: string) => void — Transfer host callback
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import { Crown, Wifi, WifiOff, UserMinus, ArrowRightLeft } from 'lucide-react';

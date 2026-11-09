@@ -1,7 +1,6 @@
 /**
  * The keyboard shortcut sheet (press `?`).
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import { Modal } from './ui';

@@ -6,7 +6,6 @@
  * Everything degrades to nothing (or an item icon) when WebGL, the model list or the catalog is missing, so
  * a page built on them never has to handle those cases.
  */
-'use client';
 
 import { Suspense, useMemo } from 'react';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The only party UI on the room's first paint: a small button. The panel and
  * the timed-comment overlay are separate chunks, loaded on click / when idle.

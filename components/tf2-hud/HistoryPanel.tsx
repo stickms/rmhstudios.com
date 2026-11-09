@@ -2,7 +2,6 @@
  * History — every undoable step, newest first. Click any row to travel to that
  * state; the steps after it stay available as redo until a new edit is made.
  */
-'use client';
 
 import { Redo2, Undo2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

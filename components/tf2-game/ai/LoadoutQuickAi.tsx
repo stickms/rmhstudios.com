@@ -11,7 +11,6 @@
  * game's rules and sends it through the view's own flow (HudCommand `loadout`), so it goes on at the
  * next respawn or resupply, at once in your respawn room; "Undo" restores the loadout before.
  */
-'use client';
 
 import { Shirt, Undo2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';

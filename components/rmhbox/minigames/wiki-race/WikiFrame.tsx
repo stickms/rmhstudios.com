@@ -22,7 +22,6 @@
  *                        scrolling still allowed)
  *   onNavigate: (targetTitle: string) => void
  */
-'use client';
 
 import { useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';

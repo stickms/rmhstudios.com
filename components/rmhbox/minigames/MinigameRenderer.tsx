@@ -13,7 +13,6 @@
  * Props:
  *   minigameId: string — The ID of the minigame to render
  */
-'use client';
 
 import { lazy, Suspense, useCallback, useEffect, type ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';

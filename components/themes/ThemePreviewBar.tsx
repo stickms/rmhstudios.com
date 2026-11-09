@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * ThemePreviewBar (§14.2/§14.3) — the floating glass confirm capsule shown while
  * a theme is previewed site-wide (try-before-buy or the editor's preview-on-site).

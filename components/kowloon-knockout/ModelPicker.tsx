@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFighterRoster } from '@/lib/kowloon-knockout/render/fighter/useFighterRoster';

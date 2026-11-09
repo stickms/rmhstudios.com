@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WidgetFrame } from '@/components/ui/widget-frame';

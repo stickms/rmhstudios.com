@@ -23,8 +23,6 @@
  *   on reconnect, so an intent expressed during a blip survives it.
  */
 
-'use client';
-
 import { io, type Socket, type ManagerOptions, type SocketOptions } from 'socket.io-client';
 import { ensureTrailingSlash } from '@/lib/url';
 import type { RealtimeStatus } from './types';

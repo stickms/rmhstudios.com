@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from'react';
 import { Link } from'@tanstack/react-router';
 import { Sparkles, Gamepad2, Search, UserCircle } from'lucide-react';

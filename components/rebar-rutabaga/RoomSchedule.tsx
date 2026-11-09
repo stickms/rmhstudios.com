@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The room, as a materials schedule.
  *

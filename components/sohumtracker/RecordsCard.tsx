@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Personal bests, and this week measured against last.
  *

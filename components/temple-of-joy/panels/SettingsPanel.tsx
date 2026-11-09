@@ -10,7 +10,6 @@
  * Then motion, then the number format, then the save. Nothing here is buried
  * behind a sub-page.
  */
-'use client';
 
 import { useRef, useState } from 'react';
 import { useClipboard } from '@/hooks/useClipboard';

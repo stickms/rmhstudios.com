@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * "Sign in to see this" — the one shape, for the one state.
  *

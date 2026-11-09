@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * "Download my data" panel (GDPR/CCPA data-subject access request). Fetches
  * /api/account/export and saves the returned JSON as a file. Rendered on

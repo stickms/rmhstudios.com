@@ -3,7 +3,6 @@
  * loads only when the item has a GLB and the browser can do WebGL; otherwise a
  * short note says why there is nothing to turn around.
  */
-'use client';
 
 import { Box } from 'lucide-react';
 import { lazy, Suspense, useMemo, type ReactNode } from 'react';

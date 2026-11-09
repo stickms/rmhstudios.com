@@ -1,5 +1,4 @@
 // components/daily-puzzles/three/DeskProps.tsx
-'use client';
 
 import { RoundedBox } from '@react-three/drei';
 

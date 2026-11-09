@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The shared collaborative-document editor.
  *

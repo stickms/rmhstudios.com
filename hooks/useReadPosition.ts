@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * useReadPosition (B7) — remember where someone stopped in a long document, and
  * offer to take them back.

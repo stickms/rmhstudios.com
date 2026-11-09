@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Bell, BellOff, Loader2, MapPin, Search, Trash2 } from 'lucide-react';

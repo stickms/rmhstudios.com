@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * "Sell" dialog — lists the caller's tradable, unequipped, owned cosmetics with
  * a price input so they can post a marketplace listing. Loads the user's

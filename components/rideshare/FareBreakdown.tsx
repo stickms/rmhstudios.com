@@ -1,5 +1,3 @@
-'use client';
-
 import { CircleDollarSign, Clock, Route as RouteIcon, Flag } from 'lucide-react';
 import { fareBreakdown, formatUsd, formatDistance, formatDuration } from '@/lib/rideshare/geo';
 import { rideClassName } from '@/lib/rideshare/classes';

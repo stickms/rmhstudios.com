@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from'react';
 import { Flame, Trophy, CalendarCheck, Check } from'lucide-react';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';

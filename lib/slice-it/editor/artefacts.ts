@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Slice It chart editor — the cached analysis artefacts a re-chart runs from.
  *

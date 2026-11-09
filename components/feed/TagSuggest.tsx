@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState } from 'react';
 import { Hash, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

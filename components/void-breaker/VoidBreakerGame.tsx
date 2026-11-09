@@ -1,5 +1,3 @@
-'use client';
-
 import { useGameSession } from '@/hooks/useGameSession';
 import { useRef, useEffect, useCallback, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';

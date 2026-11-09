@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Book3DViewer — pick a book up and look at it.
  *

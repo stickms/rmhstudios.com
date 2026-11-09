@@ -1,5 +1,3 @@
-'use client';
-
 import type { ReactNode } from 'react';
 import { RadialShell } from '@/components/radial/RadialShell';
 import { ShellLayoutContext } from './shell-context';

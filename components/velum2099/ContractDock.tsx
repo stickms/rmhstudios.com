@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Velum2099 contract board (R12). The game is plain DOM; this React layer talks
  * to it over window events: `velum2099:sim` (a drive started/stopped),

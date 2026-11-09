@@ -1,5 +1,3 @@
-"use client";
-
 import { useGameSession } from "@/hooks/useGameSession";
 import { useRef, useEffect, useState, useCallback, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";

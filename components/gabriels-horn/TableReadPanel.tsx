@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Gabriel's Horn — the table read (R11). Your bluff rate, call accuracy and
  * "tell" for the game just played, beside the table's average and your career.

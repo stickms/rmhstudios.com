@@ -1,5 +1,3 @@
-'use client';
-
 import { create } from 'zustand';
 import type { TablePhase, PlayerSeatClient, RoundResultEntry, HandResult, RoomListEntry, RoomInfo } from './types';
 import type { Card } from './logic';

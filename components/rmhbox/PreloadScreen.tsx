@@ -7,7 +7,6 @@
  * Props:
  *   players: { userId: string; userName: string; ready: boolean }[] — Player readiness list
  */
-'use client';
 
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -13,7 +13,6 @@
  *   onGoBack: (title, pathIndex) => void
  *   disabled: boolean       — True when player has finished
  */
-'use client';
 
 import { useRef, useEffect } from 'react';
 import { ChevronRight, MapPin, Target } from 'lucide-react';

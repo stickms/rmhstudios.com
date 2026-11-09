@@ -1,5 +1,4 @@
 /** Actual TF2 PCF graphs, animated material textures and Source-space attachments. */
-'use client';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
 import type { Box3, Object3D } from 'three';

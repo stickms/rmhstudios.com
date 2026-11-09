@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Account standing — the user's own view of every strike on their account, and
  * the form to appeal one.

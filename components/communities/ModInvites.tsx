@@ -1,5 +1,3 @@
-'use client';
-
 /** Invite links for a private community: create, copy, see usage, revoke. */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';

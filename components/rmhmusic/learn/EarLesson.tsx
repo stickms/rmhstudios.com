@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * EarLesson — ear training (`ear-interval`: two notes one after the other, named as an interval;
  * `ear-chord`: three notes together, named as a chord quality): ten questions, each a sound the

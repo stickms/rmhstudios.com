@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useCallback, useRef, useEffect } from'react';
 import { useTranslation } from'react-i18next';
 import { Trophy, Coins, Zap } from'lucide-react';

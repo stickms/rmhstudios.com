@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * `authClient.useSession()`, without the sign-in takeover that flashes when you
  * come back to the tab.

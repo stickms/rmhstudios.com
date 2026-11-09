@@ -1,5 +1,3 @@
-'use client';
-
 import { laneColor, relativeLuminance, resolvePalette } from '@/lib/slice-it/palettes';
 import {
   approachEnergy,

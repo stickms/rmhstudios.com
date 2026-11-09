@@ -2,7 +2,6 @@
  * A HUD in a list: title, author, counts, tags, and the two things you do with
  * it — open it, or edit your own copy.
  */
-'use client';
 
 import { Link } from '@tanstack/react-router';
 import { GitFork, Heart, Download } from 'lucide-react';

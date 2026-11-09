@@ -1,5 +1,3 @@
-'use client';
-
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Crown, Eye, Loader2, Users } from 'lucide-react';

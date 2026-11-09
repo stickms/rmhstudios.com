@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The House Always Wins — the front door, which no longer asks for a name.
  *

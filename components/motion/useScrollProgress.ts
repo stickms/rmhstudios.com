@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * useScrollProgress — thin wrapper over framer-motion's `useScroll` for
  * parallax / progress bars OUTSIDE a ScrollScene. Attach `ref` to the element

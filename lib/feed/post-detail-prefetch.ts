@@ -1,5 +1,3 @@
-'use client';
-
 import { startIntentFetch } from '@/lib/route/intent-fetch';
 
 /**

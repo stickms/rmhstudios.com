@@ -1,5 +1,3 @@
-'use client';
-
 import { cn } from'@/lib/utils';
 import type { UserStatus } from'@/lib/profile/status';
 

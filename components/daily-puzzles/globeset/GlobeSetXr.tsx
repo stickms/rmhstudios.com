@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * GlobeSet, standing in your room.
  *

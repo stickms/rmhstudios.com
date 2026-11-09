@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Verbs every part of the desktop shares: launch an app, open a file the way
  * Explorer would, show a message box.

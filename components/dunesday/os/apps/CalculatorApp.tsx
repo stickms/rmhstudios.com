@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Windows 7 Calculator, Standard mode, for the Dunesday 7 sandbox.
  *

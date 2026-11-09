@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The page's one modal surface: a bottom sheet on a phone, a centred card on a
  * desktop (the switch is pure CSS — see `pf2ecal.css`).

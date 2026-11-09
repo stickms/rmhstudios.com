@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * `/pf2ecal` — the whole board.
  *

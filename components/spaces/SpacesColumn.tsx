@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * SpacesColumn — the "Live Spaces" directory, extracted from the old
  * `/spaces` index route so it can be embedded as a tab inside `/communities`.

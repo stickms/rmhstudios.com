@@ -3,7 +3,6 @@
  * Peers keep playing over their direct channels when the hub drops, so this is
  * information, not an alarm; the in-game Multiplayer panel carries the detail.
  */
-'use client';
 
 import { Loader2, Wifi, WifiOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

@@ -1,7 +1,6 @@
 /**
  * Download the HUD as a zip that drops straight into tf/custom.
  */
-'use client';
 
 import { Download } from 'lucide-react';
 import { useState } from 'react';

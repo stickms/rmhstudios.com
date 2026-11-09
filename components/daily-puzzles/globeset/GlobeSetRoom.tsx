@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * GlobeSet over your camera — the iOS room view.
  *

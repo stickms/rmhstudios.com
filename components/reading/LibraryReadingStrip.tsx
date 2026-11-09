@@ -1,5 +1,3 @@
-'use client';
-
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import ChallengePanel from './ChallengePanel';

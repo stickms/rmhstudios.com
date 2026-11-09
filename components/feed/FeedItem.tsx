@@ -1,5 +1,3 @@
-'use client';
-
 import { memo } from'react';
 import type { FeedItem as FeedItemType } from'@/lib/feed-types';
 import { RMHarkCard } from'./RMHarkCard';

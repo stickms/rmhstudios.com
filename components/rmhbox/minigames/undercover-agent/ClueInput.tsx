@@ -11,7 +11,6 @@
  *   onSubmit: (word: string, number: number | 'unlimited') => void — Submit handler
  *   timeRemaining: number — Seconds remaining for this phase
  */
-'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { Send, Clock } from 'lucide-react';

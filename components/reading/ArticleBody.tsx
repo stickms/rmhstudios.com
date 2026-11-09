@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The shared article body for /blog/$slug and /news/$slug.
  *

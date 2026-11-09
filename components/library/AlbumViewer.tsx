@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * AlbumViewer — fullscreen carousel viewer for a library album.
  *

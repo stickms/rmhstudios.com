@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Compact achievement showcase for profile headers: the user's three best
  * unlocked badges (highest tier, then most recent) plus an unlocked count.

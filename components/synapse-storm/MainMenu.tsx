@@ -1,4 +1,3 @@
-'use client';
 import React, { useState, useEffect, useId } from 'react';
 import { Zap, Brain, Activity, Target, Layers, Timer, Settings2, Users, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

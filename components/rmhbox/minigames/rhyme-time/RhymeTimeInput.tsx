@@ -16,7 +16,6 @@
  *     the default is only the pre-connection fallback.
  *   onSubmit: (word: string) => void — Callback when a word is submitted
  */
-'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';

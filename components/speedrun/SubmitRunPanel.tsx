@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Submit one of your own replays to a board.
  *

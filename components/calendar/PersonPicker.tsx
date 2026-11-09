@@ -1,5 +1,3 @@
-'use client';
-
 /** A small people typeahead (backed by /api/users/search) that collects chips. */
 
 import { useEffect, useState } from 'react';

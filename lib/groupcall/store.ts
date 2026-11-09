@@ -27,8 +27,6 @@
  *    calls we have left are the steady state, not the edge case.
  */
 
-'use client';
-
 import { create } from 'zustand';
 import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';

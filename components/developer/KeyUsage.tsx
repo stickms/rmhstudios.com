@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Per-key usage history.
  *

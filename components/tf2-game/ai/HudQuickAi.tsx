@@ -17,7 +17,6 @@
  * Signed out, the chips are the presets (no AI) and asking explains that the AI needs an account.
  * Nothing the model says is run: changes are data, checked by ai-core's validators.
  */
-'use client';
 
 import { Check, PencilRuler, Undo2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';

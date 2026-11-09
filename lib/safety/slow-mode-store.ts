@@ -1,5 +1,3 @@
-'use client';
-
 import { create } from 'zustand';
 import type { Socket } from 'socket.io-client';
 import {

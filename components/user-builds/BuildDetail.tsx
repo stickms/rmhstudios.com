@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Heart, Eye, GitBranch, ExternalLink, Calendar, Edit, Trash2, Lock } from 'lucide-react';

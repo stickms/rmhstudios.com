@@ -1,5 +1,3 @@
-'use client';
-
 import { useMemo } from 'react';
 import { Billboard } from '@react-three/drei';
 import { makeLabelTexture, type LabelOptions } from './canvasLabel';

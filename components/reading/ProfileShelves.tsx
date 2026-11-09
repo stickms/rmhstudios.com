@@ -1,5 +1,3 @@
-'use client';
-
 /** L7 on profiles — lazy-loaded when the Shelves tab opens. */
 
 import { Link } from '@tanstack/react-router';

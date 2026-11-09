@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * A person wearing a skin: the skinned model when the manifest has one for it and it has loaded, the procedural figure
  * otherwise. The fallback is automatic and total: no manifest, an unknown skin, a failed download, a model that will

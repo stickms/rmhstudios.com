@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The wardrobe's turntable: a small canvas showing a skin as it will look in the world, turning slowly and cycling
  * idle → walk → run so the model's real animation is visible before buying it. The skin's skinned model when it has

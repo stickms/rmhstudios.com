@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * EventsColumn — the Events surface, extracted from the old `/events` route so it
  * can be embedded as a tab inside `/communities`. Unlike the former route (which

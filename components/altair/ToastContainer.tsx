@@ -1,7 +1,6 @@
 /**
  * ToastContainer — Renders toast notifications for Altair.
  */
-'use client';
 
 import { useAltairToastStore, Toast } from '@/lib/altair/stores/toast-store';
 

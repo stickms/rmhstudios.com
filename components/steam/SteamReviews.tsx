@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { Award, Star, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';

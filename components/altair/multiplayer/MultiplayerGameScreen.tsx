@@ -13,8 +13,6 @@
  * menu over a world that keeps running.
  */
 
-'use client';
-
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { markGamePlaying } from '@/lib/game-capabilities';

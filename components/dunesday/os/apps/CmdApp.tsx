@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Command Prompt for the Dunesday 7 sandbox.
  *

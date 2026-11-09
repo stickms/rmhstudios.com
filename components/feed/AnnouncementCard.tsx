@@ -1,5 +1,3 @@
-'use client';
-
 import { Link } from'@tanstack/react-router';
 import type { FeedItem } from'@/lib/feed-types';
 import { ArrowRight, Gamepad2, AppWindow, Newspaper, BookOpen, FlaskConical, Vote } from'lucide-react';

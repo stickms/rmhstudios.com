@@ -5,7 +5,6 @@
  * score deltas, a "First!" badge for the fastest correct answer,
  * and pass/timeout indicators.
  */
-'use client';
 
 import { m as motion } from 'framer-motion';
 import { Check, X, Clock, SkipForward, Zap } from 'lucide-react';

@@ -1,5 +1,3 @@
-'use client';
-
 /** K4 — the "repeats" controls inside the event composer. */
 
 import { useTranslation } from 'react-i18next';

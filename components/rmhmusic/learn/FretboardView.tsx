@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * FretboardView — the first frets of a guitar neck, drawn on the page's paper: six strings across
  * (the high E on top and the low E at the bottom, as a player sees the neck looking down, and as

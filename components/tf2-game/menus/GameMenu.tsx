@@ -10,7 +10,6 @@
  * landscape phone), or before the game's files are there, the screen keeps the file's background and
  * art and lists the entries as 44 px buttons of its own, in the same order and words.
  */
-'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';

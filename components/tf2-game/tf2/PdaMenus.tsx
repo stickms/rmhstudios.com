@@ -5,7 +5,6 @@
  * destruction PDA (the same four, for demolition), and the Spy's disguise kit
  * (nine classes in menu order, `-` toggles which team's uniform).
  */
-'use client';
 
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';

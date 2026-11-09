@@ -1,5 +1,3 @@
-'use client';
-
 import { Check, Scale, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 

@@ -11,7 +11,6 @@
  * any number of re-renders. Mark the surrounding subtree `data-no-twemoji` to
  * keep the observer out of it and use this instead.
  */
-'use client';
 
 /** Twemoji's SVG assets, same origin the provider's default base resolves to. */
 const TWEMOJI_BASE = 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/';

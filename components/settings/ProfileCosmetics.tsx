@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Profile customization — equip the cosmetics you already own.
  *

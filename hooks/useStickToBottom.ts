@@ -21,8 +21,6 @@
  * list can, because the message list did not change.
  */
 
-'use client';
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface StickToBottomOptions {

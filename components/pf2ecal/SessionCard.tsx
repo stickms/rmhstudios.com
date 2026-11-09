@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * One session in the agenda.
  *

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * StudioTabs — the Create hub's top-level strip.
  *

@@ -5,7 +5,6 @@
  * the dead dimmed, and "Dominated" / "Nemesis" tags. Below: the map, and the
  * local player's kills, deaths and assists.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import type { HudMatch, HudScoreRow } from '@/lib/tf2-game/client/hud-state';

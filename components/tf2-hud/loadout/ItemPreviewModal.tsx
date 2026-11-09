@@ -2,7 +2,6 @@
  * Look at any item in 3D before equipping it: a weapon, a cosmetic or a taunt's gear, worn by the class
  * being built. A decorated weapon shows its kit; everything else is the plain item.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import { Btn, Modal } from '@/components/tf2-hud/ui';

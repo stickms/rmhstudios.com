@@ -1,5 +1,3 @@
-'use client';
-
 import { SwissFormatOption } from '@/components/competitive/SwissStandings';
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';

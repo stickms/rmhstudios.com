@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect } from 'react';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { subscribePulse } from '@/lib/pulse';

@@ -4,7 +4,6 @@
  * is available when its `resource/tf_<language>.txt` is in the base, the project or
  * a game file loaded here (kept on this device, never part of an export).
  */
-'use client';
 
 import { Upload } from 'lucide-react';
 import { useRef } from 'react';

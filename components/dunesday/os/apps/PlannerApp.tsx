@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Dunesday Planner — plan settings beside the marathon status and where the
  * hours go. The panels render bare (no inner window frames) inside the OS

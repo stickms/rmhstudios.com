@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * S1 — the daily challenge panel.
  *

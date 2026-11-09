@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '@/components/ui/spinner';
 import { PuzzleBackLink } from '@/components/daily-puzzles/PuzzleShell';

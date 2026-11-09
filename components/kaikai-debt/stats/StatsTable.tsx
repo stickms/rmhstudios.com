@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The table view — every chart's data, as data.
  *

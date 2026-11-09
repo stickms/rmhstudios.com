@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Mic, Square, Trash2, Send, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

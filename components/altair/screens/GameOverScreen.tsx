@@ -2,7 +2,6 @@
  * GameOverScreen — Shown on death or victory.
  * Displays run summary and coin payout breakdown.
  */
-'use client';
 
 import { useMemo, useEffect } from 'react';
 import { useTranslation } from "react-i18next";

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The share affordance for a private casino table: the join code, and the link
  * that carries it.

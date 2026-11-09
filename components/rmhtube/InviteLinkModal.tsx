@@ -4,7 +4,6 @@
  * Host and moderators can create invite links with configurable
  * expiration and max uses.
  */
-'use client';
 
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -9,7 +9,6 @@
  *
  * Reads/writes to the Zustand store (persisted to localStorage).
  */
-'use client';
 
 import { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';

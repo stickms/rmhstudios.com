@@ -23,7 +23,6 @@
  * a separate alert region; the command line is a combobox over its
  * suggestions.
  */
-'use client';
 
 import {
   useCallback,

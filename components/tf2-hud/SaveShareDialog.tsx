@@ -1,7 +1,6 @@
 /**
  * Save to your account, publish to the workshop, and share a link.
  */
-'use client';
 
 import { Copy, ExternalLink, Link2, Link2Off } from 'lucide-react';
 import { useEffect, useState } from 'react';

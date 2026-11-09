@@ -1,5 +1,3 @@
-'use client';
-
 /** N1 — mods define flairs: a name plus a token colour preset. */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

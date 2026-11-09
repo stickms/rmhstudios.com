@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * PathUnit — one unit of the learning path, as a section of a sheet of manuscript paper: the
  * unit's title written above a five-line staff (closed by a double bar line), then its lessons

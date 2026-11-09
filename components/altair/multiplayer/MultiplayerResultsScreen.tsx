@@ -5,8 +5,6 @@
  * and navigation options (play again, meta shop, leave).
  */
 
-'use client';
-
 import { useEffect, useState } from 'react';
 import { Trophy, Skull, Heart, Clock, Swords, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

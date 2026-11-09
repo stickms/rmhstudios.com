@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The invite picker — who gets rung when an ad-hoc group call starts.
  *

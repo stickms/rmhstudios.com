@@ -3,7 +3,6 @@
  * runtime pointed at the current files, starts the events the game would start as the Play-mode numbers
  * change, and hands the scene a style function for whatever is moving.
  */
-'use client';
 
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { animationEvents } from '../play/anim-events';

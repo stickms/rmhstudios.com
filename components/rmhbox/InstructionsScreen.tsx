@@ -15,7 +15,6 @@
  *   isHost: boolean — Whether current user is host
  *   onSkip: () => void — Callback for host to skip instructions
  */
-'use client';
 
 import { BookOpen, Lightbulb, SkipForward } from 'lucide-react';
 import { useTranslation } from "react-i18next";

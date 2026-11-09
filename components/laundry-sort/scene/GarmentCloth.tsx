@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * One soft body → one mesh.
  *

@@ -1,5 +1,3 @@
-'use client';
-
 import { Suspense, lazy } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

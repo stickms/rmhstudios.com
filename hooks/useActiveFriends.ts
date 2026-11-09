@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { useSession } from '@/components/Providers';
 import { useIdleReady } from '@/hooks/useIdleReady';

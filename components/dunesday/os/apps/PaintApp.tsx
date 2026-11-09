@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Paint for the Dunesday 7 sandbox — Windows 7 Paint, ribbon-lite.
  *

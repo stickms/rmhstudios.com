@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Lighting for the laundry room.
  *

@@ -13,8 +13,6 @@
  * returned so the card can show "NEW BEST".
  */
 
-'use client';
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { unrankedReason } from './modifiers';
 import type { GameEngine } from './engine';

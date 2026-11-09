@@ -6,7 +6,6 @@
  * Also manages background music lifecycle so it persists across route changes
  * (including multiplayer lobby/game pages).
  */
-'use client';
 
 import { useEffect } from 'react';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';

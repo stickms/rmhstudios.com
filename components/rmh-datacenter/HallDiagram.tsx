@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * A campus's hall, drawn.
  *

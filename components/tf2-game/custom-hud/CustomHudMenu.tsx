@@ -17,7 +17,6 @@
  * Painting happens when the menu's inputs change (a menu is open for seconds,
  * and rebuilding it costs a few ms) and when a texture arrives — no frame loop.
  */
-'use client';
 
 import {
   useEffect,

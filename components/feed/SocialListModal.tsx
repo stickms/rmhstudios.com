@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { UserAvatar } from'@/components/ui/UserAvatar';

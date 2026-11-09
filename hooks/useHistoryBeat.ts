@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect } from 'react';
 import { HISTORY_BEAT_INTERVAL_MS, type HistoryEntityType } from '@/lib/history/constants';
 

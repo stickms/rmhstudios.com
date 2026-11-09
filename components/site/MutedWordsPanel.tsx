@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Muted-words manager (reader-level content control). Fetches and updates
  * /api/preferences/muted-words. Posts whose text contains a muted word are

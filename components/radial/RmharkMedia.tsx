@@ -1,5 +1,3 @@
-'use client';
-
 import { memo, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EyeOff } from 'lucide-react';
