@@ -260,6 +260,24 @@ number under one billion", which is to say it accepted anything.
 
 ## Presentation
 
+### A struck note breaks
+
+A struck disc is not a fade: it is cut along a line **rolled for that strike**
+(`components/slice-it/cut-fx.ts`, `rollCut`): any angle, a little off-centre, with
+its own spin. The two halves slide apart along the cut's normal, drift along the blade
+and tumble in opposite directions, with a hairline of paper down the crack for the first
+few frames. At the same moment `spawnCutFx` throws glass (sharp, spinning shards on both
+sides of the cut), sparks (thin streaks along the blade), a few square flecks of dust and,
+for MARVELOUS / PERFECT / GREAT, a ring that leaves the receptor. A cleaner judgement
+throws more and harder (`strengthOf`).
+
+The burst is gated like every other flash: **Effect Intensity** scales its size (0 keeps
+the cut and drops the rest), **Reduced Flash** removes the crack line, the sparks and the
+ring (shards and dust stay), and `perf-lite` gets a smaller burst with no flash pieces.
+Pieces are integrated against wall-clock time, capped at `MAX_FX`, and nothing is
+blurred. Only the groove skins (Circle, Pixel, Record) cut notes; the older skins keep
+their own bursts.
+
 The playfield's decoration is deliberately small and deliberately gated. Two
 things drive all of it, and neither is a timer:
 

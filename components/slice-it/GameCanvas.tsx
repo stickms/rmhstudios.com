@@ -41,6 +41,7 @@ import { longestHoldSeconds, visibleSliceRange } from '@/lib/slice-it/visible-wi
 import { HUD } from './HUD';
 import { MarginHud } from './MarginHud';
 import { VolumeMixer } from './VolumeMixer';
+import { drawFx, rollCut, spawnCutFx, stepFx, strengthOf, type Cut, type Fx } from './cut-fx';
 import { TOP_BAR_MIN, useMarginRoom } from './useMarginRoom';
 import { GameOver } from './GameOver';
 import { MainMenu } from './MainMenu';
@@ -51,7 +52,7 @@ import { MultiplayerSidebar } from './MultiplayerSidebar';
 import { MatchResults } from './MatchResults';
 import { addMatchListener, leaveLobby } from '@/lib/slice-it/net/client';
 import type { PausePayload } from '@/lib/slice-it/net/events';
-import type { BeatMap } from '@/lib/slice-it/types';
+import type { BeatMap, Slice } from '@/lib/slice-it/types';
 import { toast } from 'sonner';
 import { canvasGlowEnabled } from '@/lib/render/canvas2d-fx';
 import { gameSurfaceDpr } from '@/lib/display-scale';
@@ -297,7 +298,7 @@ function drawNoteStem(
 const PRESS_FALLBACK = { cyan: '#2db3f0', pink: '#f4509f', paper: '#f0f1f6', ink: '#050921' };
 
 /** How long a struck disc takes to fall apart along the slice, ms. */
-const CUT_MS = 240;
+const CUT_MS = 280;
 
 const screenTiles = new Map<string, HTMLCanvasElement>();
 let patternCache: { ctx: CanvasRenderingContext2D; map: Map<string, CanvasPattern | null> } | null =
@@ -521,11 +522,13 @@ function drawNoteBody(
 }
 
 /**
- * A struck disc, cut in two on the slice and sliding apart as it fades.
+ * A struck disc, cut in two along ITS OWN line and sliding apart as it fades.
  *
- * Two clips of the same sprite along a line steeper than the lane — the same device
- * as the wordmark — each translated a few pixels along the cut. `progress` is 0 at
- * the strike and 1 when it is gone.
+ * Each strike rolls a `Cut` (angle, offset, spin — `cut-fx.ts`), so no two notes break
+ * the same way. Two clips of the same sprite on either side of the line: each half
+ * slides off along the cut's normal, drifts a little along the blade, and tumbles in
+ * the opposite direction to the other. For the first few frames a hairline of paper
+ * runs down the crack. `progress` is 0 at the strike and 1 when it is gone.
  */
 function drawDiscCut(
   ctx: CanvasRenderingContext2D,
@@ -538,29 +541,33 @@ function drawDiscCut(
   ink: string,
   dpr: number,
   progress: number,
+  cut: Cut,
+  crack: boolean,
 ): void {
   const r = size / 2;
-  const travel = 3 + progress * 12;
-  const x0 = cx - r - 1;
-  const x1 = cx + r + 1;
-  const top = cy - r - 1;
-  const bottom = cy + r + 1;
-  const at = (f: number) => top + (bottom - top) * f;
-  const half = (dir: 1 | -1) => {
+  const dx = Math.cos(cut.angle);
+  const dy = Math.sin(cut.angle);
+  const nx = -dy;
+  const ny = dx;
+  // Out fast, then easing: the break is a snap, not a drift.
+  const out = 1 - Math.pow(1 - Math.min(1, progress), 2.2);
+  const slide = 2.5 + out * r * 0.9;
+  const along = out * r * 0.22;
+  const big = r * 3;
+  // A point on the cut line, off-centre by this strike's own offset.
+  const px = cx + nx * cut.offset * r;
+  const py = cy + ny * cut.offset * r;
+  const half = (side: 1 | -1) => {
     ctx.save();
-    ctx.translate(dir * travel * 0.9, dir * travel * 0.75);
+    ctx.translate(nx * slide * side + dx * along * side, ny * slide * side + dy * along * side);
+    ctx.translate(cx, cy);
+    ctx.rotate(cut.spin * out * side);
+    ctx.translate(-cx, -cy);
     ctx.beginPath();
-    if (dir === -1) {
-      ctx.moveTo(x0, top);
-      ctx.lineTo(x1, top);
-      ctx.lineTo(x1, at(0.36));
-      ctx.lineTo(x0, at(0.64));
-    } else {
-      ctx.moveTo(x0, at(0.64));
-      ctx.lineTo(x1, at(0.36));
-      ctx.lineTo(x1, bottom);
-      ctx.lineTo(x0, bottom);
-    }
+    ctx.moveTo(px - dx * big, py - dy * big);
+    ctx.lineTo(px + dx * big, py + dy * big);
+    ctx.lineTo(px + dx * big + nx * big * side, py + dy * big + ny * big * side);
+    ctx.lineTo(px - dx * big + nx * big * side, py - dy * big + ny * big * side);
     ctx.closePath();
     ctx.clip();
     drawNoteBody(ctx, shape, cx, cy, size, color, paper, ink, dpr);
@@ -568,6 +575,19 @@ function drawDiscCut(
   };
   half(-1);
   half(1);
+  if (crack && progress < 0.42) {
+    const fade = 1 - progress / 0.42;
+    ctx.save();
+    ctx.globalAlpha = fade;
+    ctx.strokeStyle = paper;
+    ctx.lineWidth = 1 + fade * 3;
+    ctx.lineCap = 'butt';
+    ctx.beginPath();
+    ctx.moveTo(px - dx * r * (1.1 + out), py - dy * r * (1.1 + out));
+    ctx.lineTo(px + dx * r * (1.1 + out), py + dy * r * (1.1 + out));
+    ctx.stroke();
+    ctx.restore();
+  }
 }
 
 /**
@@ -2155,6 +2175,14 @@ export function GameCanvas() {
     { x: number; y: number; vx: number; vy: number; life: number; color: string; size: number }[]
   >([]);
   const lastHitTimeRef = useRef(0);
+  // A struck note's own cut (angle, offset, spin), rolled the first frame it is seen
+  // struck. Keyed by the slice object and checked against its `hitTime`, so a restart
+  // that reuses the object rolls a fresh one.
+  const cutsRef = useRef(new WeakMap<Slice, Cut>());
+  // Glass, sparks and dust from struck notes (`cut-fx.ts`).
+  const fxRef = useRef<Fx[]>([]);
+  // The last judgement per lane, so a strike's burst can be scaled by how clean it was.
+  const lastJudgeRef = useRef<Record<number, { text: string; at: number }>>({});
 
   const spawnParticles = (x: number, y: number, color: string, hitResult: string = 'GOOD') => {
     // Particle intensity scales with hit accuracy
@@ -2573,6 +2601,10 @@ export function GameCanvas() {
     const latestFeedback = engine.feedbackQueue[engine.feedbackQueue.length - 1];
     if (latestFeedback && latestFeedback.time > lastHitTimeRef.current) {
       lastHitTimeRef.current = latestFeedback.time;
+      lastJudgeRef.current[latestFeedback.lane] = {
+        text: latestFeedback.text,
+        at: latestFeedback.time,
+      };
       if (
         latestFeedback.text !== 'MISS' &&
         latestFeedback.text !== 'BAD' &&
@@ -3059,7 +3091,48 @@ export function GameCanvas() {
           // there is no halo, just the body and the rim.
           if (groove) {
             if (cutProgress >= 0) {
-              drawDiscCut(ctx, skin.noteShape, nx, ny, size, color, theme.paper, theme.ink, dpr, cutProgress);
+              // This strike's own cut: rolled, and the glass thrown, the first frame the
+              // note is seen struck. Effect intensity 0 keeps the cut and drops the rest.
+              let cut = cutsRef.current.get(slice);
+              if (!cut || cut.at !== slice.hitTime) {
+                cut = rollCut(slice.hitTime ?? 0);
+                cutsRef.current.set(slice, cut);
+                const judged = lastJudgeRef.current[slice.lane];
+                const level = strengthOf(
+                  judged && Math.abs(judged.at - (slice.hitTime ?? 0)) < 250 ? judged.text : undefined,
+                );
+                // A weak renderer (`perf-lite`) gets a smaller burst, not a broken one.
+                spawnCutFx(
+                  fxRef.current,
+                  cut,
+                  nx,
+                  ny,
+                  size,
+                  {
+                    color,
+                    paper: theme.paper,
+                    ink: theme.ink,
+                    accent: slice.lane === 0 ? theme.pink : theme.cyan,
+                  },
+                  level,
+                  fx * (glow ? 1 : 0.4),
+                  glow > 0 && !flashOff,
+                );
+              }
+              drawDiscCut(
+                ctx,
+                skin.noteShape,
+                nx,
+                ny,
+                size,
+                color,
+                theme.paper,
+                theme.ink,
+                dpr,
+                cutProgress,
+                cut,
+                glow > 0 && !flashOff,
+              );
             } else {
               drawNoteBody(ctx, skin.noteShape, nx, ny, size, color, theme.paper, theme.ink, dpr);
             }
@@ -3263,6 +3336,10 @@ export function GameCanvas() {
       }
     }
     ctx.globalAlpha = 1;
+
+    // The glass, sparks and dust from struck notes — over the notes, under the stamp.
+    stepFx(fxRef.current, step);
+    drawFx(ctx, fxRef.current);
 
     // Feedback / Judgment Text
     if (latestFeedback && performance.now() - latestFeedback.time < 1000) {
