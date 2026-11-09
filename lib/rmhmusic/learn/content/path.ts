@@ -175,7 +175,7 @@ export const PATH: Unit[] = [
         title: 'Note values',
         summary: 'Whole, half, quarter and eighth notes, and how long each lasts.',
         mode: 'rhythm-basics',
-        available: false,
+        available: true,
       },
       {
         id: 'rhythm-44-vs-34',
@@ -183,7 +183,7 @@ export const PATH: Unit[] = [
         title: '4/4 vs 3/4',
         summary: 'Feel the difference between counting four beats and three.',
         mode: 'rhythm-basics',
-        available: false,
+        available: true,
       },
       {
         id: 'rhythm-tap-the-beat',
@@ -191,7 +191,7 @@ export const PATH: Unit[] = [
         title: 'Tap the beat',
         summary: 'Keep a steady beat by tapping along.',
         mode: 'rhythm-basics',
-        available: false,
+        available: true,
       },
     ],
   },

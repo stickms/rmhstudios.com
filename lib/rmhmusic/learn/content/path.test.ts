@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DECKS } from './decks';
 import { CHORDS } from '../theory/chords';
 import { INTERVALS } from '../theory/intervals';
+import { rhythmActivity } from '../machines/rhythm';
 import { PATH, getLesson, isKnownLesson } from './path';
 
 const lessons = PATH.flatMap((unit) => unit.lessons);
@@ -28,7 +29,7 @@ describe('learning path', () => {
     expect(getLesson('play-first-note')?.mode).toBe('play-note');
     expect(getLesson('nope')).toBeUndefined();
   });
-  it('ships the first-note lesson, the staff-reading lessons, the note finders, the pitch match, the ear training and playing a chord', () => {
+  it('ships the first-note lesson, the staff-reading lessons, the note finders, the pitch match, the ear training, playing a chord and the rhythm lessons', () => {
     const available = lessons.filter((l) => l.available);
     expect(available.map((l) => l.id)).toEqual([
       'staff-what-is-a-staff',
@@ -43,6 +44,9 @@ describe('learning path', () => {
       'ear-fifth-octave',
       'ear-major-minor',
       'chord-play-c-major',
+      'rhythm-note-values',
+      'rhythm-44-vs-34',
+      'rhythm-tap-the-beat',
     ]);
     expect(getLesson('keys-layout-and-strings')?.mode).toBe('keyboard-map');
     expect(getLesson('fretboard-first-frets')?.mode).toBe('fretboard');
@@ -55,6 +59,10 @@ describe('learning path', () => {
     expect(getLesson('ear-major-minor')?.mode).toBe('ear-chord');
     expect(getLesson('chord-play-c-major')?.mode).toBe('play-chord');
     expect(getLesson('chord-play-c-major')?.unit).toBe('train-your-ear');
+    for (const id of ['rhythm-note-values', 'rhythm-44-vs-34', 'rhythm-tap-the-beat']) {
+      expect(getLesson(id)?.mode, id).toBe('rhythm-basics');
+      expect(getLesson(id)?.unit, id).toBe('rhythm-basics');
+    }
   });
   it('wires every available lesson to an activity the lesson screen runs', () => {
     const handled = new Set([
@@ -66,10 +74,16 @@ describe('learning path', () => {
       'ear-interval',
       'ear-chord',
       'play-chord',
+      'rhythm-basics',
     ]);
     for (const l of lessons.filter((x) => x.available)) {
       expect(handled.has(l.mode), `${l.id} (${l.mode})`).toBe(true);
     }
+  });
+  it('gives every rhythm lesson an activity the rhythm screen runs', () => {
+    const rhythm = lessons.filter((l) => l.mode === 'rhythm-basics');
+    expect(rhythm.length).toBe(3);
+    for (const l of rhythm) expect(rhythmActivity(l.id), l.id).not.toBeNull();
   });
   it('names an existing deck for every staff-flashcards lesson', () => {
     const flash = lessons.filter((l) => l.mode === 'staff-flashcards');

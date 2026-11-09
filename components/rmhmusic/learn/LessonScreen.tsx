@@ -14,6 +14,7 @@ import { ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DECKS } from '@/lib/rmhmusic/learn/content/decks';
 import { getLesson, type Lesson } from '@/lib/rmhmusic/learn/content/path';
+import { rhythmActivity } from '@/lib/rmhmusic/learn/machines/rhythm';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from './buttons';
 import { EarLesson, EarListenBox } from './EarLesson';
@@ -24,6 +25,7 @@ import { InputSetup } from './InputSetup';
 import { MatchNoteLesson, MatchStaffBox } from './MatchNoteLesson';
 import { ModeToggle } from './ModeToggle';
 import { ChordNameBox, PlayChordLesson } from './PlayChordLesson';
+import { RhythmLesson } from './RhythmLesson';
 import { STAFF_BOX } from './StaffCard';
 import { useInputRelease } from './useLearnInput';
 
@@ -35,6 +37,7 @@ function isPlayable(lesson: Lesson | undefined): lesson is Lesson {
   if (lesson.mode === 'match-note') return true;
   if (lesson.mode === 'ear-interval' || lesson.mode === 'ear-chord') return true;
   if (lesson.mode === 'play-chord') return true;
+  if (lesson.mode === 'rhythm-basics') return rhythmActivity(lesson.id) !== null;
   return lesson.mode === 'staff-flashcards' && !!lesson.deck && lesson.deck in DECKS;
 }
 
@@ -250,6 +253,32 @@ function PlayChordSkeleton() {
   );
 }
 
+/**
+ * The rhythm lessons' placeholder: their boxes exactly — the sheet (title line, the 8rem question
+ * box, the sentence line) and the 12.5rem answers box (`.rmm-rhythm__answers`). All three rhythm
+ * lessons share it.
+ */
+function RhythmSkeleton() {
+  return (
+    <div aria-hidden="true" className="rmm-rhythm space-y-4">
+      <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
+        <div className="h-8">
+          <div className="app-skeleton mx-auto h-8 w-40" />
+        </div>
+        <div className="rmm-values">
+          <div className="app-skeleton h-full w-full" />
+        </div>
+        <div className="flex h-11 items-center">
+          <div className="app-skeleton h-5 w-56 max-w-full" />
+        </div>
+      </section>
+      <div className="rmm-rhythm__answers">
+        <div className="app-skeleton h-full w-full" />
+      </div>
+    </div>
+  );
+}
+
 export function LessonScreen({ lessonId }: { lessonId: string }) {
   const { t } = useTranslation('c-rmhmusic');
   const status = useLearnStore((s) => s.status);
@@ -308,6 +337,8 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
           paused={setupOpen}
           onChangeInput={() => setSetupOpen(true)}
         />
+      ) : lesson.mode === 'rhythm-basics' ? (
+        <RhythmLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : (
         <FirstNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       );
@@ -357,6 +388,8 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
         <EarSkeleton />
       ) : lesson.mode === 'play-chord' ? (
         <PlayChordSkeleton />
+      ) : lesson.mode === 'rhythm-basics' ? (
+        <RhythmSkeleton />
       ) : (
         <LessonSkeleton />
       );
