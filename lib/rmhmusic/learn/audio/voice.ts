@@ -11,6 +11,7 @@
  */
 import { getAudioContext } from '@/lib/shared/platform';
 import { midiToFreq } from '../pitch/notes';
+import { resumeAudio } from './resume';
 
 const ATTACK_S = 0.01;
 const RELEASE_S = 0.25;
@@ -25,14 +26,57 @@ interface Voice {
   release(): void;
 }
 
+/**
+ * How a note is voiced. This is the one entry for every sound the lessons make (single notes,
+ * intervals and chords through `sequence.ts`): callers say what to play, never how it sounds, so
+ * the synth below can later be replaced by sampled instruments behind the same calls.
+ */
+export interface PlayOptions {
+  /** 0..1. */
+  velocity?: number;
+  /** Reserved for the instrument to voice the note with; ignored until instruments exist. */
+  instrument?: string;
+}
+
+/**
+ * Whether sound can be made now: `ready`; `asleep` (the audio context exists but is suspended
+ * until a tap, or is still waking); `none` (no Web Audio, or the context is closed).
+ */
+export type SoundStatus = 'ready' | 'asleep' | 'none';
+
+export function soundStatus(): SoundStatus {
+  const ctx = getAudioContext();
+  if (!ctx || ctx.state === 'closed') return 'none';
+  return ctx.state === 'running' ? 'ready' : 'asleep';
+}
+
+/**
+ * Wake sound from a tap: true once it is ready, false if it cannot start (no Web Audio, closed, or
+ * the context never resumed in time). Call inside the gesture.
+ */
+export async function wakeSound(): Promise<boolean> {
+  const ctx = getAudioContext();
+  if (!ctx) return false;
+  return resumeAudio(ctx);
+}
+
+/** Run `fn` when sound becomes ready or asleep again; returns the unsubscribe. */
+export function onSoundChange(fn: () => void): () => void {
+  const ctx = getAudioContext();
+  if (!ctx) return () => {};
+  ctx.addEventListener('statechange', fn);
+  return () => ctx.removeEventListener('statechange', fn);
+}
+
 const voices: Voice[] = [];
 const noop = () => {};
 
 /**
  * Start a note; returns a function that releases it (safe to call twice).
- * `velocity` is 0..1.
+ * `velocity` (0..1) may be given alone or in `opts`.
  */
-export function playNote(midi: number, velocity = 0.8): () => void {
+export function playNote(midi: number, opts: number | PlayOptions = {}): () => void {
+  const velocity = (typeof opts === 'number' ? opts : opts.velocity) ?? 0.8;
   const ctx = getAudioContext();
   if (!ctx || !Number.isFinite(midi)) return noop;
   // A context starts suspended until a user gesture; notes come from one.

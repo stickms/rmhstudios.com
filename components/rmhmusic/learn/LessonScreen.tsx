@@ -16,6 +16,7 @@ import { DECKS } from '@/lib/rmhmusic/learn/content/decks';
 import { getLesson, type Lesson } from '@/lib/rmhmusic/learn/content/path';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from './buttons';
+import { EarLesson, EarListenBox } from './EarLesson';
 import { FirstNoteLesson } from './FirstNoteLesson';
 import { FindNoteLesson, FindNoteStaffBox } from './FindNoteLesson';
 import { FlashcardLesson } from './FlashcardLesson';
@@ -31,6 +32,7 @@ function isPlayable(lesson: Lesson | undefined): lesson is Lesson {
   if (lesson.mode === 'play-note') return true;
   if (lesson.mode === 'keyboard-map' || lesson.mode === 'fretboard') return true;
   if (lesson.mode === 'match-note') return true;
+  if (lesson.mode === 'ear-interval') return true;
   return lesson.mode === 'staff-flashcards' && !!lesson.deck && lesson.deck in DECKS;
 }
 
@@ -202,6 +204,29 @@ function MatchNoteSkeleton() {
   );
 }
 
+/**
+ * The ear lessons' placeholder: their boxes exactly — the listening sheet (title line, the empty
+ * staff and the sound row, the sentence line) and the answers box (`.rmm-ear__answers`).
+ */
+function EarSkeleton() {
+  return (
+    <div aria-hidden="true" className="rmm-ear space-y-4">
+      <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
+        <div className="h-8">
+          <div className="app-skeleton mx-auto h-8 w-40" />
+        </div>
+        <EarListenBox skeleton />
+        <div className="flex h-11 items-center">
+          <div className="app-skeleton h-5 w-56 max-w-full" />
+        </div>
+      </section>
+      <div className="rmm-ear__answers">
+        <div className="app-skeleton h-full w-full" />
+      </div>
+    </div>
+  );
+}
+
 export function LessonScreen({ lessonId }: { lessonId: string }) {
   const { t } = useTranslation('c-rmhmusic');
   const status = useLearnStore((s) => s.status);
@@ -251,6 +276,8 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
         <FindNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : lesson.mode === 'match-note' ? (
         <MatchNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
+      ) : lesson.mode === 'ear-interval' ? (
+        <EarLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : (
         <FirstNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       );
@@ -296,6 +323,8 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
         <FindNoteSkeleton />
       ) : lesson.mode === 'match-note' ? (
         <MatchNoteSkeleton />
+      ) : lesson.mode === 'ear-interval' ? (
+        <EarSkeleton />
       ) : (
         <LessonSkeleton />
       );

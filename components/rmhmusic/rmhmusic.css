@@ -644,6 +644,36 @@
   flex: none;
 }
 
+/* ── Ear training (EarLesson.tsx, LessonScreen's EarSkeleton) ─────────────────────────
+   Below the listening sheet: the answers, one plain word each, stacked in a column no wider than a
+   phone (up to three at 2.75rem), then — in the same box — the result, which takes all of it. The
+   box is tall enough for the failed-save block (a sentence, Try again, Back to your lessons), and
+   the same in the placeholder, so nothing moves from loading to asking to the result. */
+.rmm-ear__answers {
+  display: flex;
+  flex-direction: column;
+  height: 11.5rem;
+}
+.rmm-ear__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 24rem;
+  margin-inline: auto;
+}
+/* A tile of the sheet's paper, so the backdrop's staves never show through; while the question is
+   being heard, dim until it has played (the buttons stay focusable and say nothing is wrong). */
+.rmm-ear__choices > button {
+  background-color: var(--app-surface);
+}
+.rmm-ear__choices > button:hover:not([aria-disabled='true']) {
+  background-color: var(--app-surface-hover);
+}
+.rmm-ear__choices > button[aria-disabled='true'] {
+  opacity: 0.6;
+}
+
 /* The octave bar (2.75rem) and its gap (0.5rem) above the keys. */
 .rmm-keys__bed--tall {
   height: calc(var(--rmm-board-h, 17.75rem) - 3.25rem);

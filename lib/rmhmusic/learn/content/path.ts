@@ -9,7 +9,13 @@
  */
 
 export type LessonMode =
-  'staff-flashcards' | 'keyboard-map' | 'fretboard' | 'rhythm-basics' | 'play-note' | 'match-note';
+  | 'staff-flashcards'
+  | 'keyboard-map'
+  | 'fretboard'
+  | 'rhythm-basics'
+  | 'play-note'
+  | 'match-note'
+  | 'ear-interval';
 
 export interface Lesson {
   id: string;
@@ -106,6 +112,28 @@ export const PATH: Unit[] = [
         title: 'Match white keys',
         summary: 'Play the natural notes from middle C up to the next C.',
         mode: 'match-note',
+        available: true,
+      },
+    ],
+  },
+  {
+    id: 'train-your-ear',
+    title: 'Train your ear',
+    lessons: [
+      {
+        id: 'ear-second-third',
+        unit: 'train-your-ear',
+        title: 'Seconds and thirds',
+        summary: 'Hear two notes and tell a step from a skip: a second from a third.',
+        mode: 'ear-interval',
+        available: true,
+      },
+      {
+        id: 'ear-fifth-octave',
+        unit: 'train-your-ear',
+        title: 'Fifths and octaves',
+        summary: 'Tell a fifth and an octave from a third, by ear alone.',
+        mode: 'ear-interval',
         available: true,
       },
     ],
