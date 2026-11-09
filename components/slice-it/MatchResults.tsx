@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { CheckCircle2, Clock, Crown, Medal, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import { useRunSummary, useSubmitScore } from '@/lib/slice-it/useSubmitScore';
@@ -49,16 +48,16 @@ export function MatchResults({
   const pending = standings.filter((s) => !s.finished).length;
 
   return (
-    <div className="absolute inset-0 z-70 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-slice-bg/90 p-4">
-      <div className="w-full max-w-xl bg-slice-bg border border-slice-border rounded-[2rem] overflow-hidden my-auto">
-        <header className="text-center py-6 px-4">
-          <h2 className="text-3xl font-black text-slice-text-darker uppercase tracking-tighter">
+    <div className="slice-results slice-mr absolute inset-0 z-70 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-slice-bg/95 p-4">
+      <div className="slice-mr__panel my-auto">
+        <header className="slice-mr__head">
+          <h2 className="slice-display slice-mr__title">
             {results
               ? t('match-results', { defaultValue: 'Match Results' })
               : t('waiting-for-players', { defaultValue: 'Waiting for Players…' })}
           </h2>
           {results && pending > 0 && (
-            <p className="text-xs font-bold text-slice-text-light uppercase tracking-widest mt-1">
+            <p className="slice-label">
               {t('players-did-not-finish', {
                 defaultValue: '{{count}} did not finish',
                 count: pending,
@@ -66,12 +65,12 @@ export function MatchResults({
             </p>
           )}
           {submission.isNewBest && (
-            <p className="mt-2 inline-block bg-yellow-400 text-black text-[10px] font-black px-2 py-1 rounded-md">
+            <span className="slice-stamp text-pink-500 slice-mr__best">
               {t('new-best', { defaultValue: 'NEW BEST!' })}
-            </p>
+            </span>
           )}
           {submission.status === 'unranked' && (
-            <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-orange-400">
+            <p className="slice-label text-slice-accent">
               {t('unranked', { defaultValue: 'Unranked' })}
             </p>
           )}
@@ -79,40 +78,40 @@ export function MatchResults({
 
         {results?.teams && <TeamScoreboard teams={results.teams} />}
 
-        <ul className="px-6 pb-4 space-y-3 max-h-[50vh] overflow-y-auto">
+        <ol className="slice-mr__list">
           {standings.map((standing) => (
             <StandingRow
-              key={standing.userId}
+              key={standing.userId ?? standing.socketId}
               standing={standing}
               isSelf={standing.socketId === selfSocketId}
             />
           ))}
           {standings.length === 0 && (
-            <li className="text-center text-slice-text-light py-8 font-bold">
+            <li className="slice-mr__empty">
               {t('waiting-for-results', { defaultValue: 'Waiting for results…' })}
             </li>
           )}
-        </ul>
+        </ol>
 
         {/*
           Only for players who finished: a standings list where half the room
           dropped is not a match to write up, and a recap that narrated a
           disconnection as a result would read as mockery.
         */}
-        <footer className="px-6 py-5 flex gap-3">
-          <Button variant="ghost" className="flex-1 text-slice-text-muted" onClick={onBack}>
+        <footer className="slice-mr__foot">
+          <Button className="slice-btn-alt" onClick={onBack}>
             {t('leave', { defaultValue: 'LEAVE' })}
           </Button>
           {isHost ? (
             <Button
-              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-black uppercase tracking-widest rounded-xl"
+              className="slice-btn-primary"
               onClick={() => net.requestRematch()}
               disabled={connection !== 'connected'}
             >
               {t('return-to-lobby', { defaultValue: 'Return to Lobby' })}
             </Button>
           ) : (
-            <p className="flex-1 text-center text-xs font-bold text-slice-text-light uppercase tracking-widest self-center">
+            <p className="slice-label slice-mr__wait">
               {t('waiting-for-host', { defaultValue: 'Waiting for host to return to lobby…' })}
             </p>
           )}
@@ -127,9 +126,9 @@ export function MatchResults({
  *
  * Linked by **user id**, not by handle: `FinalStanding` comes off the wire with
  * `userId` and a display name and no handle, and its shape lives in
- * `lib/slice-it/net/events.ts`, which this wave does not own. The player page
- * resolves either form and emits the handle version as its canonical, so the id
- * URL works without becoming the one search engines keep.
+ * `lib/slice-it/net/events.ts`. The player page resolves either form and emits the
+ * handle version as its canonical, so the id URL works without becoming the one
+ * search engines keep.
  *
  * An empty `userId` renders as plain text. That is the guest case (`X10`) once
  * guest seats exist, and it is the right rendering for it: a guest has no page
@@ -156,17 +155,10 @@ function PlayerLink({
   );
 }
 
-const TEAM_STYLES: Record<TeamId, string> = {
-  a: 'bg-blue-500/20 text-blue-500',
-  b: 'bg-orange-500/20 text-orange-500',
-};
-
 function TeamBadge({ team }: { team: TeamId }) {
   const { t } = useTranslation('r-slice-it');
   return (
-    <span
-      className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full shrink-0 ${TEAM_STYLES[team]}`}
-    >
+    <span className="slice-mr__team" data-team={team}>
       {team === 'a'
         ? t('mp-team-a', { defaultValue: 'Team A' })
         : t('mp-team-b', { defaultValue: 'Team B' })}
@@ -188,25 +180,17 @@ function TeamScoreboard({ teams }: { teams: TeamTotal[] }) {
   const drawn = teams.every((team) => team.place === 1);
 
   return (
-    <section className="px-6 pb-4">
-      <ul className="grid grid-cols-2 gap-3">
+    <section className="slice-mr__teams">
+      <ul className="slice-mr__team-grid">
         {teams.map((team) => (
           <li
             key={team.team}
-            className={`p-4 rounded-xl bg-slice-bg border border-slice-border ${
-              team.place === 1 && !drawn ? 'ring-2 ring-yellow-500/50' : ''
-            }`}
+            className="slice-mr__team-card"
+            data-win={(team.place === 1 && !drawn) || undefined}
           >
-            <span className="flex items-center gap-2">
-              <TeamBadge team={team.team} />
-              {team.place === 1 && !drawn && (
-                <Crown className="w-4 h-4 text-yellow-500" aria-hidden />
-              )}
-            </span>
-            <span className="block mt-1 text-2xl font-black tabular-nums text-slice-text">
-              {team.score.toLocaleString()}
-            </span>
-            <span className="block text-[10px] font-bold text-slice-text-light font-mono">
+            <TeamBadge team={team.team} />
+            <span className="slice-mr__team-score">{team.score.toLocaleString()}</span>
+            <span className="slice-mr__meta">
               {(team.accuracy * 100).toFixed(1)}% ·{' '}
               {t('mp-team-players', {
                 defaultValue: '{{count}} players',
@@ -217,7 +201,7 @@ function TeamScoreboard({ teams }: { teams: TeamTotal[] }) {
         ))}
       </ul>
       {drawn && (
-        <p className="text-center text-[10px] font-black uppercase tracking-widest text-slice-text-light mt-2">
+        <p className="slice-label slice-mr__drawn">
           {t('mp-team-draw', { defaultValue: 'Drawn' })}
         </p>
       )}
@@ -230,74 +214,35 @@ function StandingRow({ standing, isSelf }: { standing: FinalStanding; isSelf: bo
   const place = standing.place;
 
   return (
-    <li
-      className={`flex items-center gap-3 p-4 rounded-xl border border-slice-border ${
-        isSelf ? 'bg-blue-500/10 ring-2 ring-blue-500/30' : 'bg-slice-bg'
-      }`}
-    >
-      <span className="shrink-0 w-6 flex justify-center">
-        {!standing.finished ? (
-          <WifiOff className="w-5 h-5 text-slice-text-muted" aria-hidden />
-        ) : place === 1 ? (
-          <Crown className="w-6 h-6 text-yellow-500" aria-hidden />
-        ) : place === 2 ? (
-          <Medal className="w-6 h-6 text-slice-text-light" aria-hidden />
-        ) : place === 3 ? (
-          <Medal className="w-6 h-6 text-amber-700" aria-hidden />
-        ) : (
-          <span className="text-sm font-black text-slice-text-light">#{place}</span>
-        )}
+    <li className={`slice-mr__row ${isSelf ? 'is-self' : ''}`}>
+      <span
+        className="slice-mr__place"
+        data-first={(standing.finished && place === 1) || undefined}
+      >
+        {standing.finished ? place : t('dnf', { defaultValue: 'DNF' })}
       </span>
 
-      <span className="flex-1 min-w-0">
-        <span className="flex items-center gap-2">
-          <PlayerLink
-            userId={standing.userId}
-            name={standing.name}
-            className={`font-bold text-sm truncate ${isSelf ? 'text-blue-500' : 'text-slice-text'}`}
-          />
+      <span className="slice-mr__who">
+        <span className="slice-mr__name">
+          <PlayerLink userId={standing.userId} name={standing.name} className="" />
           {isSelf && (
-            <span className="text-[9px] font-black bg-blue-500 text-white px-1.5 py-0.5 rounded-full shrink-0">
-              {t('you-badge', { defaultValue: 'YOU' })}
-            </span>
+            <span className="slice-mr__you">{t('you-badge', { defaultValue: 'YOU' })}</span>
           )}
           {standing.team && <TeamBadge team={standing.team} />}
         </span>
-        <span className="flex items-center gap-2 mt-0.5">
-          {standing.finished ? (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-500">
-              <CheckCircle2 className="w-3 h-3" aria-hidden />
-              {t('finished', { defaultValue: 'Finished' })}
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slice-text-light">
-              <Clock className="w-3 h-3" aria-hidden />
-              {t('did-not-finish', { defaultValue: 'Did not finish' })}
-            </span>
-          )}
-          {standing.modifiers.difficulty !== 'normal' && (
-            <span className="text-[9px] font-black uppercase text-slice-text-muted">
-              {standing.modifiers.difficulty}
-            </span>
-          )}
-          {standing.modifiers.speed !== 1 && (
-            <span className="text-[9px] font-bold text-purple-500">
-              {standing.modifiers.speed.toFixed(1)}x
-            </span>
-          )}
-          {standing.scoreMultiplier !== 1 && (
-            <span className="text-[9px] font-black text-green-600">
-              {standing.scoreMultiplier.toFixed(2)}x
-            </span>
-          )}
+        <span className="slice-mr__meta">
+          {standing.finished
+            ? t('finished', { defaultValue: 'Finished' })
+            : t('did-not-finish', { defaultValue: 'Did not finish' })}
+          {standing.modifiers.difficulty !== 'normal' && <> · {standing.modifiers.difficulty}</>}
+          {standing.modifiers.speed !== 1 && <> · {standing.modifiers.speed.toFixed(1)}x</>}
+          {standing.scoreMultiplier !== 1 && <> · ×{standing.scoreMultiplier.toFixed(2)}</>}
         </span>
       </span>
 
-      <span className="text-right shrink-0">
-        <span className="block text-xl font-black text-slice-text">
-          {standing.score.toLocaleString()}
-        </span>
-        <span className="block text-[10px] font-bold text-slice-text-light font-mono">
+      <span className="slice-mr__score">
+        <span className="slice-mr__figure">{standing.score.toLocaleString()}</span>
+        <span className="slice-mr__meta">
           {gradeFor(standing.accuracy)} · {(standing.accuracy * 100).toFixed(1)}% ·{' '}
           {standing.maxCombo}x
         </span>

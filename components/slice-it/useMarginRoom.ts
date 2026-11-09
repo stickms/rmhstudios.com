@@ -31,6 +31,12 @@ export function useMarginRoom(
   rootRef: RefObject<HTMLElement | null>,
   stageRef: RefObject<HTMLElement | null>,
   enabled: boolean,
+  /**
+   * Changes when something outside the two observed boxes moves the field without
+   * resizing it: the multiplayer leaderboard mounting beside it re-centres a field of
+   * the same width, and neither observer fires for a move.
+   */
+  layoutKey?: unknown,
 ): MarginRoom | null {
   const [room, setRoom] = useState<MarginRoom | null>(null);
 
@@ -69,7 +75,7 @@ export function useMarginRoom(
     observer.observe(root);
     observer.observe(stage);
     return () => observer.disconnect();
-  }, [rootRef, stageRef, enabled]);
+  }, [rootRef, stageRef, enabled, layoutKey]);
 
   return room;
 }

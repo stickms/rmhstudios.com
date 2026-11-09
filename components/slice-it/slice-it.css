@@ -806,6 +806,342 @@ a.neumorphic-sm:hover,
   margin-top: 28px;
 }
 
+/* ─── Match results (multiplayer) ───────────────────────────────────────────
+ *
+ * The same sleeve as the solo results: hard-edged, the standings printed as a
+ * tracklist with the place as its number, and the row that is you cut in paper.
+ */
+.slice-mr__panel {
+  width: 100%;
+  max-width: 40rem;
+  border: 1px solid var(--slice-border);
+  background: var(--slice-label);
+}
+
+.slice-mr__head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--slice-border);
+}
+
+.slice-mr__title {
+  margin: 0;
+  font-size: clamp(26px, 4vw, 40px);
+  overflow-wrap: anywhere;
+}
+
+.slice-mr__best {
+  align-self: flex-start;
+}
+
+.slice-mr__teams {
+  padding: 0;
+  border-bottom: 1px solid var(--slice-border);
+}
+
+.slice-mr__team-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.slice-mr__team-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 16px 24px;
+  border-right: 1px solid var(--slice-border);
+  border-bottom: 3px solid transparent;
+}
+
+.slice-mr__team-card:last-child {
+  border-right: 0;
+}
+
+.slice-mr__team-card[data-win] {
+  border-bottom-color: var(--slice-accent);
+}
+
+.slice-mr__team-score {
+  font-family: var(--slice-mono);
+  font-size: 26px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.slice-mr__drawn {
+  margin: 0;
+  padding: 0 24px 12px;
+}
+
+.slice-mr__team {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid currentColor;
+  font-family: var(--slice-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.slice-mr__team[data-team='a'] {
+  color: var(--slice-primary);
+}
+
+.slice-mr__team[data-team='b'] {
+  color: var(--slice-accent);
+}
+
+.slice-mr__list {
+  max-height: 50vh;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.slice-mr__row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 14px;
+  min-height: 66px;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--slice-border);
+}
+
+.slice-mr__row.is-self {
+  background: var(--slice-paper);
+  color: var(--slice-label);
+}
+
+.slice-mr__place {
+  font-family: var(--slice-mono);
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--slice-text-muted);
+}
+
+.slice-mr__place[data-first] {
+  color: var(--slice-accent);
+}
+
+.slice-mr__row.is-self .slice-mr__place {
+  color: var(--slice-label);
+}
+
+.slice-mr__who,
+.slice-mr__score {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slice-mr__score {
+  align-items: flex-end;
+}
+
+.slice-mr__name {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  font-family: var(--slice-display);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-size: 15px;
+  line-height: 1.05;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.slice-mr__name > a,
+.slice-mr__name > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slice-mr__you {
+  flex: none;
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+  font-family: var(--slice-mono);
+  font-stretch: normal;
+  font-variation-settings: normal;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--slice-accent);
+}
+
+.slice-mr__row.is-self .slice-mr__you {
+  color: var(--slice-label);
+}
+
+.slice-mr__figure {
+  font-family: var(--slice-mono);
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.slice-mr__meta {
+  font-family: var(--slice-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--slice-text-muted);
+}
+
+.slice-mr__row.is-self .slice-mr__meta {
+  color: var(--slice-label);
+  opacity: 0.7;
+}
+
+.slice-mr__empty {
+  padding: 28px 24px;
+  font-family: var(--slice-mono);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--slice-text-muted);
+}
+
+.slice-mr__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 24px 22px;
+}
+
+.slice-mr__foot > * {
+  flex: 1 1 10rem;
+}
+
+.slice-mr__wait {
+  text-align: right;
+}
+
+/* ─── Loading (a track, then the room) ──────────────────────────────────────
+ *
+ * One groove for the track, and in a match a thinner one for how many racers are in,
+ * with each racer's state in mono. Hard-edged, in the two spot inks.
+ */
+.slice-load {
+  display: flex;
+  width: 100%;
+  max-width: 28rem;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.slice-load__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.slice-load__pct {
+  font-family: var(--slice-mono);
+  font-size: 28px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--slice-primary);
+}
+
+.slice-load__track {
+  height: 12px;
+  border: 1px solid var(--slice-border);
+  background: var(--slice-label);
+}
+
+.slice-load__track > span {
+  display: block;
+  height: 100%;
+  background: var(--slice-primary);
+  transform-origin: left center;
+  transition: transform 0.3s var(--ease-smooth);
+}
+
+.slice-load__track--thin {
+  height: 6px;
+}
+
+.slice-load__track--thin > span {
+  background: var(--slice-accent);
+}
+
+.slice-load__players {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.slice-load__players > .slice-label {
+  margin: 0;
+  text-align: center;
+}
+
+.slice-load__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--slice-border);
+}
+
+.slice-load__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--slice-border);
+}
+
+.slice-load__name {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--slice-display);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.slice-load__state {
+  flex: none;
+  font-family: var(--slice-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--slice-text-muted);
+}
+
+.slice-load__row[data-ready] .slice-load__state {
+  color: var(--slice-primary);
+}
+
 /* ─── Duotone covers ────────────────────────────────────────────────────────
  *
  * A cover is printed in one spot ink on label black, with a halftone screen:

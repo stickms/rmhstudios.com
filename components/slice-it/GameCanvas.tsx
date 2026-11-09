@@ -1335,6 +1335,8 @@ export function GameCanvas() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   /** The whole screen, so the room the field leaves around itself can be measured. */
   const rootRef = useRef<HTMLDivElement>(null);
+  // The multiplayer leaderboard column, so the margin waves stop where it starts.
+  const leaderboardRef = useRef<HTMLElement>(null);
   /** Device-pixel ratio the drawing buffer was last sized with. */
   const dprRef = useRef(1);
   const [engine, setEngine] = useState<GameEngine | null>(null);
@@ -3638,7 +3640,7 @@ export function GameCanvas() {
    * moment the player is reading their score off it.
    */
   const lockAspect = status === 'PLAYING' || status === 'FINISHED';
-  const marginRoom = useMarginRoom(rootRef, wrapperRef, lockAspect && !isPortrait);
+  const marginRoom = useMarginRoom(rootRef, wrapperRef, lockAspect && !isPortrait, isMultiplayer);
   const marginHud = status === 'PLAYING' && marginRoom !== null && marginRoom.top >= TOP_BAR_MIN;
 
   return (
@@ -3652,7 +3654,12 @@ export function GameCanvas() {
       {/* The margins either side of the 16:9 field, filled with the music. Behind
           everything, and only while the field is locked to its ratio in landscape —
           anywhere else there is no margin to fill. */}
-      <SideWaves stageRef={wrapperRef} enabled={lockAspect && !isPortrait} />
+      <SideWaves
+        stageRef={wrapperRef}
+        rightLimitRef={leaderboardRef}
+        layoutKey={isMultiplayer}
+        enabled={lockAspect && !isPortrait}
+      />
       {/* The readouts, in the band a taller-than-16:9 window leaves above the field
           (and the tally in the one below it, if that is tall enough too). A short or
           narrow window has no such band and keeps the HUD on the field. */}
@@ -4115,67 +4122,51 @@ export function GameCanvas() {
 
           {/* Synchronized Loading Overlay */}
           {status === 'PLAYING' && isLoadingSong && (
-            <div className="absolute inset-0 z-60 bg-slice-bg/90 flex flex-col items-center justify-center p-10">
-              <div className="w-full max-w-md space-y-4">
-                <div className="flex justify-between items-end mb-1">
-                  <span className="text-sm font-black text-slice-text-muted uppercase tracking-widest">
+            <div className="absolute inset-0 z-60 flex flex-col items-center justify-center bg-slice-bg/95 p-10">
+              <div className="slice-load">
+                <div className="slice-load__head">
+                  <span className="slice-label">
                     {loadingProgressText || t('loading-assets', { defaultValue: 'Loading Assets' })}
                   </span>
-                  <span className="text-2xl font-black text-blue-500">
-                    {Math.round(loadingProgress)}%
-                  </span>
+                  <span className="slice-load__pct">{Math.round(loadingProgress)}%</span>
                 </div>
-                <div className="h-4 bg-slice-bg rounded-full border border-slice-border p-1">
-                  <div
-                    className="h-full bg-slice-primary w-full origin-left transition-transform duration-300"
-                    style={{ transform: `scaleX(${loadingProgress / 100})` }}
-                  />
+                <div className="slice-load__track">
+                  <span style={{ transform: `scaleX(${loadingProgress / 100})` }} />
                 </div>
 
                 {/* Multiplayer: per-player loading status */}
                 {isMultiplayer && loadingPlayers.length > 0 && (
-                  <div className="space-y-2 pt-2">
-                    <p className="text-[11px] font-black text-slice-text-light uppercase tracking-widest text-center">
+                  <div className="slice-load__players">
+                    <p className="slice-label">
                       {t('waiting-for-players-game-canvas', {
                         defaultValue: 'Waiting for players...',
                       })}
                     </p>
-                    {/* Overall bar: X / total loaded */}
-                    <div className="h-2 bg-slice-bg rounded-full border border-slice-border overflow-hidden">
-                      <div
-                        className="h-full bg-green-400 w-full origin-left transition-transform duration-500"
+                    {/* Players ready, out of everyone: a second, thinner groove. */}
+                    <div className="slice-load__track slice-load__track--thin">
+                      <span
                         style={{
-                          transform: `scaleX(${(loadingPlayers.length === 0 ? 0 : (loadingPlayers.filter((p) => p.loaded).length / loadingPlayers.length) * 100) / 100})`,
+                          transform: `scaleX(${loadingPlayers.length === 0 ? 0 : loadingPlayers.filter((p) => p.loaded).length / loadingPlayers.length})`,
                         }}
                       />
                     </div>
-                    <div className="flex flex-col gap-1.5">
+                    <ol className="slice-load__list">
                       {loadingPlayers.map((p) => (
-                        <div
-                          key={p.socketId}
-                          className="flex items-center justify-between bg-slice-bg px-3 py-2 rounded-xl border border-slice-border"
-                        >
-                          <span className="text-xs font-bold text-slice-text-darker truncate">
-                            {p.name}
+                        <li key={p.socketId} className="slice-load__row" data-ready={p.loaded || undefined}>
+                          <span className="slice-load__name">{p.name}</span>
+                          <span className="slice-load__state">
+                            {p.loaded
+                              ? t('player-ready', { defaultValue: 'Ready ✓' })
+                              : t('loading-game-canvas', { defaultValue: 'Loading' })}
                           </span>
-                          {p.loaded ? (
-                            <span className="text-[11px] font-black text-green-500 uppercase tracking-wide">
-                              {t('player-ready', { defaultValue: 'Ready ✓' })}
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1 text-[11px] font-bold text-slice-text-light">
-                              <span className="w-3 h-3 border-2 border-slate-400 border-t-blue-500 rounded-full animate-spin inline-block" />
-                              {t('loading-game-canvas', { defaultValue: 'Loading' })}
-                            </span>
-                          )}
-                        </div>
+                        </li>
                       ))}
-                    </div>
+                    </ol>
                   </div>
                 )}
 
                 {!isMultiplayer && (
-                  <p className="text-center text-xs text-slice-text-light font-bold uppercase tracking-tighter animate-pulse">
+                  <p className="slice-label animate-pulse">
                     {t('synchronizing', { defaultValue: 'Synchronizing with group...' })}
                   </p>
                 )}
@@ -4316,7 +4307,7 @@ export function GameCanvas() {
 
       {/* Sidebar for Multiplayer Opponents — only shown in multiplayer */}
       {(status === 'PLAYING' || (status === 'FINISHED' && isMultiplayer)) && isMultiplayer && (
-        <MultiplayerSidebar />
+        <MultiplayerSidebar asideRef={leaderboardRef} />
       )}
     </div>
   );

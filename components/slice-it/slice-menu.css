@@ -1142,3 +1142,273 @@
     position: fixed;
   }
 }
+
+/* ── The live leaderboard (multiplayer) ───────────────────────
+ *
+ * You and everyone you are racing, in score order. Rows swap on a spring when someone
+ * passes someone (framer `layout`, in MultiplayerSidebar), and a row that moved shows a
+ * short ▲ or ▼. Hard edges and hairlines like the library: the row that is you is the
+ * cut paper row.
+ */
+
+.slice-lb {
+  position: relative;
+  z-index: 10;
+  /* `display` is set in the media query below, not here: this sheet is unlayered, so a
+     `display` in this rule would beat Tailwind's layered `hidden` / `lg:flex`. */
+  display: none;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: 288px;
+  padding: 18px 0 0;
+  border-left: 1px solid var(--slice-border);
+  background: var(--slice-bg);
+}
+
+.slice-lb__title {
+  margin: 0;
+  padding: 0 18px 12px;
+}
+
+.slice-lb__list {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  overflow-y: auto;
+  border-top: 1px solid var(--slice-border);
+}
+
+.slice-lb__row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto 14px;
+  align-items: center;
+  column-gap: 10px;
+  min-height: 62px;
+  padding: 0 14px 4px 14px;
+  border-bottom: 1px solid var(--slice-border);
+  color: var(--slice-text);
+}
+
+.slice-lb__row.is-self {
+  background: var(--slice-paper);
+  color: var(--slice-label);
+}
+
+.slice-lb__rank {
+  font-family: var(--slice-mono);
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--slice-text-muted);
+}
+
+.slice-lb__rank[data-top] {
+  color: var(--slice-accent);
+}
+
+.slice-lb__row.is-self .slice-lb__rank {
+  color: var(--slice-label);
+}
+
+.slice-lb__who {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.slice-lb__name {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  font-family: var(--slice-display);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-size: 13px;
+  line-height: 1.05;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.slice-lb__name > a,
+.slice-lb__name > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slice-lb__you,
+.slice-lb__team {
+  flex: none;
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+  font-family: var(--slice-mono);
+  font-weight: 600;
+  font-stretch: normal;
+  font-variation-settings: normal;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+
+.slice-lb__you {
+  color: var(--slice-accent);
+}
+
+.slice-lb__row.is-self .slice-lb__you {
+  color: var(--slice-label);
+}
+
+.slice-lb__team[data-team='a'] {
+  color: var(--slice-primary);
+}
+
+.slice-lb__team[data-team='b'] {
+  color: var(--slice-accent);
+}
+
+.slice-lb__meta {
+  font-family: var(--slice-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--slice-text-muted);
+}
+
+.slice-lb__row.is-self .slice-lb__meta {
+  color: var(--slice-label);
+  opacity: 0.7;
+}
+
+.slice-lb__done {
+  color: var(--slice-primary);
+}
+
+.slice-lb__row.is-self .slice-lb__done {
+  color: var(--slice-label);
+}
+
+.slice-lb__score {
+  font-family: var(--slice-mono);
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.slice-lb__move {
+  font-size: 11px;
+  line-height: 1;
+  text-align: center;
+}
+
+.slice-lb__move[data-dir='up'] {
+  color: var(--slice-primary);
+}
+
+.slice-lb__move[data-dir='down'] {
+  color: var(--slice-accent);
+}
+
+.slice-lb__row.is-self .slice-lb__move {
+  color: var(--slice-label);
+}
+
+/* The score as a share of the leader's, a groove along the foot of the row. */
+.slice-lb__bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--slice-primary);
+  transform-origin: left center;
+  transition: transform 0.3s var(--ease-smooth);
+}
+
+.slice-lb__row.is-self .slice-lb__bar {
+  background: var(--slice-accent);
+}
+
+.slice-lb__alone {
+  margin: 0;
+  padding: 14px 18px 18px;
+  font-family: var(--slice-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--slice-text-muted);
+}
+
+/* Phones: the same rows as one scrollable line above the playfield. */
+.slice-lb-strip {
+  z-index: 10;
+  display: none;
+  flex-shrink: 0;
+  gap: 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--slice-border);
+  background: var(--slice-bg);
+}
+
+.slice-lb-chip {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 96px;
+  padding: 7px 12px;
+  border-right: 1px solid var(--slice-border);
+  color: var(--slice-text);
+}
+
+.slice-lb-chip.is-self {
+  background: var(--slice-paper);
+  color: var(--slice-label);
+  /* Your own chip stays on screen however many racers there are. */
+  position: sticky;
+  right: 0;
+}
+
+.slice-lb-chip__top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+}
+
+.slice-lb-chip__name {
+  max-width: 7rem;
+  overflow: hidden;
+  font-family: var(--slice-display);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.slice-lb-chip__score {
+  font-family: var(--slice-mono);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The wide column from 1024px, the strip below it. */
+@media (min-width: 1024px) {
+  .slice-lb {
+    display: flex;
+  }
+}
+
+@media (max-width: 1023px) {
+  .slice-lb-strip {
+    display: flex;
+  }
+}

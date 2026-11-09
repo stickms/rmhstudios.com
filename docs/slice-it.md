@@ -306,6 +306,25 @@ their headings.
 playable; a chart is generated on play), and the hourly sweep
 (`requeueFailedAnalyses`) re-queues it alongside the `failed` ones.
 
+### The live leaderboard (multiplayer)
+
+The column beside the field is a leaderboard, not a list of opponents: **you are in it**,
+and the rows are in score order. When someone passes someone the rows swap places on a
+spring (framer `layout` with the shared `transition`) and the row that moved shows a short
+▲ or ▼ that clears itself after about a second and a half. Opponents come from the
+server's score tick; your own row is read from your own run, because the server's echo of
+it is a quarter of a second behind your hands. Ties break on the socket id so equal scores
+keep one order. Below 1024px it is one scrollable strip of chips above the field, in the
+same order, with your chip pinned to the right edge.
+
+Everything else on the multiplayer screen is the singleplayer one: the margin waves, the
+readouts above and below the field and the shattering notes. The waves stop where the
+leaderboard starts (`SideWaves` takes it as `rightLimitRef`), and the field and the waves
+re-measure when it mounts (`layoutKey`), because it re-centres a field of the same width
+and neither resize observer fires for a move. The match results and the loading screen are
+the same hard-edged sleeve as the solo results: the standings are a tracklist with the
+place as its number, and the row that is you is cut in paper.
+
 ### A struck note breaks
 
 A struck disc is not a fade: it is cut along a line **rolled for that strike**
