@@ -118,6 +118,9 @@ export function FlashcardLesson({
   const nextButton = useRef<HTMLButtonElement>(null);
   const letterGroup = useRef<HTMLDivElement>(null);
   const movedOn = useRef(false);
+  // True once the learner has moved to a card by Next or Retry: only then is a new card announced
+  // (the first one is the page the learner just opened, already named by its heading).
+  const [announceCards, setAnnounceCards] = useState(false);
 
   // A held Enter repeats a click on whatever holds focus; focus hops letters → Next → letters as
   // cards go by, so a repeat must not activate anything (see key-repeat.ts).
@@ -132,6 +135,7 @@ export function FlashcardLesson({
       setLast({ card: lesson.cards[lesson.index], right: lesson.right });
     }
     movedOn.current = true;
+    setAnnounceCards(true);
     perform(send({ type: 'next' }));
   };
 
@@ -189,7 +193,10 @@ export function FlashcardLesson({
     }
   }, [lesson.kind, index]);
 
-  const retry = () => perform(send({ type: 'retry' }));
+  const retry = () => {
+    setAnnounceCards(true);
+    perform(send({ type: 'retry' }));
+  };
 
   const inSession = lesson.kind === 'asking' || lesson.kind === 'feedback';
   const total = inSession ? lesson.cards.length : lesson.total;
@@ -254,7 +261,8 @@ export function FlashcardLesson({
     });
   }
 
-  // What a screen reader hears once a card is answered, and the score at the end.
+  // What a screen reader hears once a card is answered, the next card when it is dealt (its
+  // visible title, "Card 2 of 10"), and the score at the end.
   const said =
     lesson.kind === 'feedback'
       ? lesson.right
@@ -263,9 +271,13 @@ export function FlashcardLesson({
             defaultValue: 'Right: {{note}}.',
           })
         : line
-      : inSession
-        ? ''
-        : line;
+      : lesson.kind === 'asking'
+        ? announceCards
+          ? title
+          : ''
+        : inSession
+          ? ''
+          : line;
 
   const correctLetter =
     lesson.kind === 'feedback' ? noteLetter(lesson.cards[lesson.index].midi) : null;
