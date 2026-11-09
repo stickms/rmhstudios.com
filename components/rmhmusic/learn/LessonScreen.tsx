@@ -255,7 +255,7 @@ function RhythmSkeleton() {
         <div className="rmm-values">
           <div className="app-skeleton h-full w-full" />
         </div>
-        <div className="flex h-11 items-center">
+        <div className="flex min-h-11 items-center">
           <div className="app-skeleton h-5 w-56 max-w-full" />
         </div>
       </section>
