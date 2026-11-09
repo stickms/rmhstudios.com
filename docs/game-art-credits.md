@@ -19,7 +19,7 @@ No official Valve / Counter-Strike / Half-Life / Portal files are used in the ca
 | nightrail | Michroma, Jost | as above | Neon glow |
 | portal | Jost | jost/Jost[wght].ttf | "O" replaced with a drawn blue portal ring |
 | rmhbox | Titan One, Fredoka | titanone/TitanOne-Regular.ttf, fredoka/Fredoka[wdth,wght].ttf | Two-colour wordmark, stroke |
-| rmhmusic (2026-11-08) | IM Fell English, Bodoni Moda Italic | scripts/game-art/fonts/IMFellEnglish/ (OFL), bodonimoda/BodoniModa-Italic[wght].ttf | Wordmark in IM Fell English with a drawn note for the dot of the i, fitted to width; hand-copied manuscript (staves, clef, notes and tab drawn as paths, ruled freehand, inked through a displacement filter); no tagline or captions. Generator: `scripts/game-art/rmhmusic.mjs` |
+| rmhmusic (2026-11-08) | IM Fell English, Bodoni Moda Italic | scripts/game-art/fonts/IMFellEnglish/ (OFL), bodonimoda/BodoniModa-Italic[wght].ttf | Wordmark in IM Fell English with a drawn note for the dot of the i, fitted to width; hand-copied manuscript (staves, clef, notes and tab drawn as paths, ruled freehand, inked through a displacement filter); no tagline or captions. Also renders the 1200x630 link preview `public/images/og/rmhmusic.png` (2026-11-09). Generator: `scripts/game-art/rmhmusic.mjs` |
 | slice-it | Archivo, Bodoni Moda, IBM Plex Mono | archivo/Archivo[wdth,wght].ttf, bodonimoda/BodoniModa-Italic[wght].ttf | "SLICE" cut on a diagonal in Archivo (width 125, weight 900) followed on the same baseline by a Bodoni Moda italic "it!" (one line); outlines converted to paths (`public/images/games/logos/slice-it-line.svg`, renamed twice — from `slice-it.svg`, then `slice-it-cut.svg` — so a cached copy of an earlier logo cannot be served at the same URL) |
 | synapse-storm | Exo 2 (Italic), Jost, Orbitron | orbitron/Orbitron[wght].ttf | Neon glow |
 | temple-of-joy | Cinzel, Jost | cinzel/Cinzel[wght].ttf | Gold gradient, stroke, shadow |
@@ -797,8 +797,8 @@ player-bar artwork credited in the Marlon Jack and batch B entries above (marked
 sources (the owner's portrait, Winslow Homer's palm, the Mozart autograph, the LP photo, the Oberkampf print) or the
 Yellowtail / Instrument Serif / DM Mono type is in the new files.
 
-All four files are **original vector artwork drawn in SVG** by `scripts/game-art/rmhmusic.mjs` and rendered with
-headless Chromium (Playwright) at 2x, then downscaled with sharp (Lanczos) and encoded to WebP. No third-party image is
+All five files (four catalog images and the link-preview image) are **original vector artwork drawn in SVG** by `scripts/game-art/rmhmusic.mjs` and rendered with
+headless Chromium (Playwright) at 2x, then downscaled with sharp (Lanczos) and encoded to WebP (the link preview to a palette PNG). No third-party image is
 used. The art is one page of hand-copied manuscript paper, the way a teacher writes out a first tune: the app's notebook
 paper (`components/rmhmusic/rmhmusic.css`: cream paper with a seeded `feTurbulence` grain, pre-printed faint staves, a
 red-pencil margin rule, navy ink) with "Ode to Joy" (Beethoven, public domain) in C on the staff and the same notes as
@@ -812,7 +812,9 @@ noteheads, stems, ledger lines, bar lines, the common-time "4" and the note that
 geometry, not font glyphs. The card has the first eight bars in two systems; the banner is one system running off the
 right edge (seven bars, text-free, as the other library banners are, because the logo is laid over its lower edge);
 the logo is the wordmark alone with a thin paper-coloured halo so it reads on dark and light grounds; the icon is a
-hand-ruled staff with a treble clef and two beamed eighths. The output is deterministic: re-running the script
+hand-ruled staff with a treble clef and two beamed eighths; the link preview (added 2026-11-09) is the wordmark over one
+system of the first four bars, laid out so the wordmark, clef and first bars stay inside the central ~80% that every
+unfurl crop keeps. The output is deterministic: re-running the script
 reproduces the same files.
 
 | Asset | Font(s) used | Source | Changes |
@@ -821,8 +823,11 @@ reproduces the same files.
 | banner (`banners/rmhmusic.webp`) | IM Fell English, Bodoni Moda Italic | as above | No wordmark; "T A B" and fret numbers only |
 | logo (`logos/rmhmusic.webp`) | IM Fell English | as above | Wordmark only, thin paper-coloured halo, transparent background |
 | icon (`icons/rmhmusic.webp`) | none | — | Treble clef and two beamed eighth notes on a hand-ruled staff, cream page in a navy frame |
+| link preview (`public/images/og/rmhmusic.png`, added 2026-11-09) | IM Fell English, Bodoni Moda Italic | as above | 1200x630 Open Graph / Twitter image: the wordmark large on the upper left, one system of the first four bars (staff and tab) running across and off the right edge, a faint pre-printed stave above; no tagline, kicker or badge. PNG with a 64-colour palette (about 310 KB), since link-preview crawlers take PNG everywhere and WebP only in places |
 
 IM Fell English is vendored beside the generator (`scripts/game-art/fonts/IMFellEnglish/`, woff2 plus its `OFL.txt`);
 Bodoni Moda is the self-hosted copy in `components/shared/game-fonts/` (see "Logos, design schemes and fonts" above).
 Both are loaded by the generator through `file://` URLs. Regenerate with `node scripts/game-art/rmhmusic.mjs` (pass
-`--chromium <path>` or `PW_CHROMIUM` if Playwright's own browser build is not installed), then `pnpm images:variants`.
+`--chromium <path>` or `PW_CHROMIUM` if Playwright's own browser build is not installed; `--only og` for the link
+preview alone), then `pnpm images:variants` (which leaves `public/images/og/` alone: an Open Graph image keeps the one
+size its meta tags declare).
