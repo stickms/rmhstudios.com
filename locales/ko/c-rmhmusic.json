@@ -69,7 +69,6 @@
   "lesson-started": "Started",
   "lesson-unavailable-body": "This lesson isn't ready yet. Pick another one from your learning path.",
   "lesson-unavailable-title": "Not available yet",
-  "lessons-started_other": "{{started}} of {{count}} lessons started",
   "loading-lesson": "Loading the lesson…",
   "loading-lessons": "Loading your lessons…",
   "mic-blocked": "Microphone access was blocked. To allow it, tap the lock or settings icon next to the address bar, turn on the microphone for this site, then try again.",
@@ -95,7 +94,5 @@
   "staff-empty": "Staff: no note played yet",
   "staff-last-note": "Last note: {{note}}",
   "streak-days_other": "{{count}} day streak",
-  "streak-none": "No streak yet",
-  "streak-unavailable": "Streak unavailable",
   "use-screen-keys": "Use on-screen keys instead"
 }

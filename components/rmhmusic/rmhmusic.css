@@ -310,6 +310,14 @@
   opacity: 1;
 }
 
+/* ── Paper things ─────────────────────────────────────────────────────────────
+   The hero's art, the path and the lesson's instruction page are sheets of paper lying on the
+   ground: barely rounded corners, a hairline edge, no shadow. Controls keep the app's rounder
+   radius; paper is not a control. Not a palette token, so it lives outside the palette blocks. */
+.rmhmusic-theme {
+  --rmm-paper-radius: 4px;
+}
+
 /* ── The hero: the catalog card's banner and wordmark ────────────────────────
    The art is replaced later at the same paths and aspect ratios, so nothing here depends on
    what it shows: the frame reserves 3:1, the image covers it, and the frame's own paper tone
@@ -322,7 +330,7 @@
   position: relative;
   aspect-ratio: 3 / 1;
   overflow: hidden;
-  border-radius: var(--app-radius-lg);
+  border-radius: var(--rmm-paper-radius);
   background-color: var(--app-bg-subtle);
   border: 1px solid var(--app-border);
 }
@@ -348,43 +356,65 @@
   object-fit: contain;
 }
 
-/* ── Notebook pages (PathUnit) ────────────────────────────────────────────── */
+/* A sheet of paper: the path, the lesson's instruction page, a message. */
 .rmm-sheet {
   background-color: var(--app-surface);
   border: 1px solid var(--app-border);
-  border-radius: var(--app-radius);
-}
-/* A unit's header: the title written above a five-line staff. */
-.rmm-sheet__head {
-  /* 25px of staff under the title, 12px above the page's first ruled line. */
-  padding: 1rem 1rem calc(25px + 1.25rem);
-  background-image: repeating-linear-gradient(
-    to bottom,
-    var(--rmm-staff) 0 1px,
-    transparent 1px 6px
-  );
-  background-size: calc(100% - 2rem) 25px;
-  background-repeat: no-repeat;
-  background-position: 1rem calc(100% - 0.75rem);
-}
-/* Lesson rows are the page's ruled lines. */
-.rmm-ruled > li + li {
-  border-top: 1px solid var(--rmm-rule);
+  border-radius: var(--rmm-paper-radius);
 }
 
-/* A handwritten-feeling tag: the book serif in italic, on a pencilled outline. */
-.rmm-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  min-height: 1.75rem;
-  padding-inline: 0.625rem;
-  border: 1px dashed var(--app-border-bright);
-  border-radius: var(--app-radius-sm);
-  font-family: var(--app-font-display);
-  font-style: italic;
-  font-size: 0.875rem;
-  color: var(--app-text-muted);
+/* ── The learning path (PathUnit) ─────────────────────────────────────────────
+   One sheet of manuscript paper for the whole path. Each unit is a section of the score: its
+   title written large above a five-line staff, the staff closed by a double bar line (a final
+   bar, thin then thick, after the last unit), then its lessons on the page's ruled lines. */
+.rmm-unit + .rmm-unit {
+  margin-top: 1.5rem;
+}
+.rmm-unit__head {
+  padding: 1.5rem 1rem 0.75rem;
+}
+@media (min-width: 640px) {
+  .rmm-unit__head {
+    padding-inline: 2rem;
+  }
+}
+/* 25px: five lines 6px apart. The bar lines are its pseudo-elements, so the staff needs no
+   markup beyond one empty, aria-hidden box. */
+.rmm-unit__staff {
+  position: relative;
+  height: 25px;
+  margin-top: 0.5rem;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--app-border) 0 1px,
+    transparent 1px 6px
+  );
+}
+.rmm-unit__staff::before,
+.rmm-unit__staff::after {
+  content: '';
+  position: absolute;
+  inset-block: 0 -1px;
+}
+/* The opening bar line. */
+.rmm-unit__staff::before {
+  inset-inline-start: 0;
+  border-inline-start: 1px solid var(--app-border-bright);
+}
+/* The closing double bar: thin, thin. */
+.rmm-unit__staff::after {
+  inset-inline-end: 0;
+  width: 5px;
+  border-inline: 1px solid var(--app-border-bright);
+}
+/* …and after the last unit, the final bar: thin, thick. */
+.rmm-unit:last-child .rmm-unit__staff::after {
+  width: 7px;
+  border-inline-end-width: 3px;
+}
+/* Lesson rows are the page's ruled lines. */
+.rmm-ruled > li {
+  border-top: 1px solid var(--rmm-rule);
 }
 
 /* Headings in the display face, at its one weight: never a synthesised bold or slant. */

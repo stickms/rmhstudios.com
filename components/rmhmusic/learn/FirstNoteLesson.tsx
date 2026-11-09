@@ -19,7 +19,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
-import { CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { releaseMic, startMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import { firstNoteMachine, type Effect } from '@/lib/rmhmusic/learn/machines/first-note';
@@ -152,7 +151,6 @@ export function FirstNoteLesson({
   if (lesson.kind === 'saved' || lesson.kind === 'saving') {
     region = (
       <div className="rmm-sheet flex h-full flex-col items-center-safe justify-center-safe gap-2 overflow-y-auto p-4 text-center">
-        <CheckCircle2 className="h-8 w-8 shrink-0 text-(--app-success)" aria-hidden="true" />
         <p
           className="flex justify-center gap-1"
           aria-label={t('lesson-stars', {

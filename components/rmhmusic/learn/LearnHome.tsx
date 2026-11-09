@@ -1,8 +1,9 @@
 'use client';
 
 /**
- * LearnHome — RMH Music's landing: the catalog card's art as a hero, the instrument toggle, the
- * input in use, and the learning path as notebook pages (units → lessons). A document
+ * LearnHome — RMH Music's landing: the catalog card's art as a hero, the heading, the instrument
+ * toggle, the input in use, and the learning path on one sheet of manuscript paper (units →
+ * lessons). A document
  * (`.app-page`), so the page scrolls and mobile Safari's bars collapse.
  *
  * No layout shift between loading and loaded: the header, hero, heading and every row keep the
@@ -12,7 +13,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Guitar, Piano, SlidersHorizontal } from 'lucide-react';
+import { ArrowLeft, Guitar, Piano } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
@@ -21,7 +22,7 @@ import { releaseMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import type { LessonProgressRow } from '@/lib/rmhmusic/learn/store';
 import type { Instrument } from '@/lib/rmhmusic/learn/schemas';
-import { PRIMARY_BUTTON, SECONDARY_BUTTON } from './buttons';
+import { PRIMARY_BUTTON, TEXT_BUTTON } from './buttons';
 import { HomeHero } from './HomeHero';
 import { InputSetup } from './InputSetup';
 import { ModeToggle } from './ModeToggle';
@@ -30,28 +31,34 @@ import { StreakChip } from './StreakChip';
 import { useInputRelease } from './useLearnInput';
 
 /**
- * The "Playing with … / Set up input" row, the same box loaded or not: the text, clamped to two
- * lines, sits in a box two lines tall (`INPUT_ROW_TEXT`) beside a 44px button, so a long
- * translation cannot change its height. With large text (200%) the two no longer fit side by side,
- * and the button wraps below the text instead of crushing it; the skeleton wraps the same way.
+ * The input in use: a quiet line ("Playing with: On-screen keys") and, under it, a text button to
+ * change it. Always two stacked boxes of fixed size, never side by side, so nothing here depends
+ * on how long a translation is: the line is clamped to two lines inside a box two lines tall
+ * (`INPUT_TEXT`), and the button is one line that truncates (`INPUT_BUTTON`). Both are in rem, so
+ * at 200% text they grow together, and the skeleton reserves the same two boxes. The line sits at
+ * the bottom of its box, against the button it belongs with.
  */
-const INPUT_ROW = 'flex min-h-11 flex-wrap items-center justify-between gap-3';
-const INPUT_ROW_TEXT = 'flex min-h-10 min-w-0 flex-[1_1_7rem] items-center';
+const INPUT_TEXT = 'flex h-10 min-w-0 items-end';
+const INPUT_BUTTON = 'max-w-full min-w-0';
 
 /** Loading placeholder, built from the static path so it is as tall as the loaded page. */
 function HomeSkeleton() {
   return (
     <div aria-hidden="true" className="space-y-4">
       <div className="app-skeleton h-12 w-full pointer-coarse:h-13" />
-      <div className={INPUT_ROW}>
-        <span className={INPUT_ROW_TEXT}>
-          <span className="app-skeleton h-5 w-40 max-w-full" />
-        </span>
-        <span className="app-skeleton h-11 w-36 max-w-full shrink-0" />
+      <div>
+        <div className={INPUT_TEXT}>
+          <span className="app-skeleton h-5 w-48 max-w-full" />
+        </div>
+        <div className="flex h-11 items-center">
+          <span className="app-skeleton h-5 w-28 max-w-full" />
+        </div>
       </div>
-      {PATH.map((unit) => (
-        <PathUnit key={unit.id} unit={unit} progress={new Map()} placeholder />
-      ))}
+      <div className="rmm-sheet">
+        {PATH.map((unit) => (
+          <PathUnit key={unit.id} unit={unit} progress={new Map()} placeholder />
+        ))}
+      </div>
     </div>
   );
 }
@@ -89,8 +96,6 @@ export function LearnHome() {
     () => new Map<string, LessonProgressRow>(progress.map((r) => [r.lessonId, r])),
     [progress],
   );
-  const available = PATH.flatMap((u) => u.lessons).filter((l) => l.available);
-  const started = available.filter((l) => rows.has(l.id)).length;
   const ready = status === 'ready' && !!profile;
   const loading = !ready && status !== 'error';
 
@@ -107,6 +112,10 @@ export function LearnHome() {
     mic: t('input-mic', { defaultValue: 'Microphone' }),
   };
   const inputName = inputNames[profile?.input ?? 'screen'];
+  const inputLine = t('input-playing-with', {
+    input: inputName,
+    defaultValue: 'Playing with: {{input}}',
+  });
 
   let body;
   if (status === 'error') {
@@ -145,23 +154,24 @@ export function LearnHome() {
           onChange={(id) => void useLearnStore.getState().setInstrument(id as Instrument)}
           aria-label={t('instrument-label', { defaultValue: 'Instrument' })}
         />
-        <div className={INPUT_ROW}>
-          <div className={INPUT_ROW_TEXT}>
-            <p className="line-clamp-2 min-w-0 text-sm leading-5 text-(--app-text-muted)">
-              {t('input-playing-with', {
-                input: inputName,
-                defaultValue: 'Playing with: {{input}}',
-              })}
+        <div>
+          <div className={INPUT_TEXT}>
+            <p
+              title={inputLine}
+              className="line-clamp-2 min-w-0 text-sm leading-5 text-(--app-text-muted)"
+            >
+              {inputLine}
             </p>
           </div>
           <button
             ref={setupButton}
             type="button"
             onClick={() => onSetupChange(true)}
-            className={`${SECONDARY_BUTTON} shrink-0`}
+            // Ink on the page, not a slab: no jelly body behind it.
+            data-liquid-material="off"
+            className={`${TEXT_BUTTON} ${INPUT_BUTTON}`}
           >
-            <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
-            {t('setup-input', { defaultValue: 'Set up input' })}
+            <span className="truncate">{t('setup-input', { defaultValue: 'Set up input' })}</span>
           </button>
         </div>
         {instrumentFailed && (
@@ -169,9 +179,11 @@ export function LearnHome() {
             {t('error-save', { defaultValue: "Couldn't save that change. Try again." })}
           </p>
         )}
-        {PATH.map((unit) => (
-          <PathUnit key={unit.id} unit={unit} progress={rows} onOpenLesson={onOpenLesson} />
-        ))}
+        <div className="rmm-sheet">
+          {PATH.map((unit) => (
+            <PathUnit key={unit.id} unit={unit} progress={rows} onOpenLesson={onOpenLesson} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -180,7 +192,8 @@ export function LearnHome() {
     <div className="app-page">
       <div className="rmm-column mx-auto flex w-full max-w-3xl flex-1 flex-col pr-[max(1.25rem,var(--safe-right))] pl-[max(1.25rem,var(--safe-left))] min-[1800px]:max-w-4xl">
         {/* Every full-screen app ships a labelled way out. With large text on a narrow phone the
-            toggle and streak chip wrap below it (kept at the end) rather than widen the page. */}
+            streak and toggle wrap below it (kept at the end) rather than widen the page. The
+            streak comes first, so its empty slot (no streak) sits inside, not at the edge. */}
         <header className="flex flex-wrap items-center justify-between gap-2 pt-[calc(0.5rem+var(--safe-top))]">
           <Link
             to="/apps"
@@ -193,8 +206,8 @@ export function LearnHome() {
             </span>
           </Link>
           <div className="ms-auto flex shrink-0 items-center gap-2">
-            <ModeToggle />
             <StreakChip />
+            <ModeToggle />
           </div>
         </header>
 
@@ -205,28 +218,13 @@ export function LearnHome() {
             </p>
           )}
           <HomeHero />
-          <div>
-            <h1 className="rmm-display text-3xl text-(--app-text)">
-              {ready
-                ? instrument === 'guitar'
-                  ? t('heading-guitar', { defaultValue: 'Learn guitar' })
-                  : t('heading-piano', { defaultValue: 'Learn piano' })
-                : t('heading-default', { defaultValue: 'Learn music' })}
-            </h1>
-            {/* Reserved in every state: two lines on a phone (a long translation wraps), one above 400px. */}
-            <p className="mt-1 line-clamp-2 min-h-12 text-(--app-text-muted) min-[401px]:line-clamp-1 min-[401px]:min-h-6">
-              {ready ? (
-                t('lessons-started', {
-                  count: available.length,
-                  started,
-                  defaultValue_one: '{{started}} of {{count}} lesson started',
-                  defaultValue: '{{started}} of {{count}} lessons started',
-                })
-              ) : status === 'error' ? null : (
-                <span aria-hidden="true" className="app-skeleton block h-6 w-44" />
-              )}
-            </p>
-          </div>
+          <h1 className="rmm-display text-[2.5rem] leading-[3rem] text-(--app-text) sm:text-5xl sm:leading-[3.5rem]">
+            {ready
+              ? instrument === 'guitar'
+                ? t('heading-guitar', { defaultValue: 'Learn guitar' })
+                : t('heading-piano', { defaultValue: 'Learn piano' })
+              : t('heading-default', { defaultValue: 'Learn music' })}
+          </h1>
           {body}
         </main>
         <InputSetup open={setupOpen} onOpenChange={onSetupChange} returnFocus={setupButton} />
