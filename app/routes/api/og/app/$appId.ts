@@ -23,6 +23,16 @@ export const Route = createFileRoute('/api/og/app/$appId')({
       GET: defineHandler({ auth: 'none' }, async ({ params }) => {
         const app = apps.find((a) => a.id === params.appId);
         if (!app) return new Response('Not found', { status: 404 });
+        // An app with its own link-preview image answers this URL with it, so a
+        // consumer still holding the card URL gets the same picture the page
+        // advertises. A redirect rather than serving the bytes: the file is a
+        // static asset with its own caching, and this route stays catalog-only.
+        if (app.ogImagePath) {
+          return new Response(null, {
+            status: 302,
+            headers: { Location: app.ogImagePath, 'Cache-Control': 'public, max-age=3600' },
+          });
+        }
 
         const png = await renderPageCard({
           cacheKey: `app:${app.id}`,

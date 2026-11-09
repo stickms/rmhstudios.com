@@ -139,6 +139,14 @@ In order of preference:
    were the last catalog entries pointing `og:image` straight at a screenshot,
    and the several with no `imagePath` unfurled indistinguishably from each
    other as a result.
+   The one exception is a catalog app with a link-preview image **drawn for the
+   unfurl** at 1200×630 by its art pipeline (RMH Music's manuscript page,
+   `scripts/game-art/rmhmusic.mjs --only og`): it declares `ogImagePath` (and
+   `ogImageAlt`) in its catalog entry, `appRouteHead` points `og:image` at that
+   file with the same declared 1200×630 and large Twitter card, and
+   `/api/og/app/<id>` 302s to it so the old card URL shows the same picture.
+   Such a file lives in `public/images/og/` (outside the image-variants
+   manifest), is a PNG under ~400 KB, and `og-cards.test.ts` checks its size.
 2. **A raw picture**, when there is genuinely nothing to frame it with — a
    devlog hero image, an album cover. Pass it as `image` and `imageSize: null`,
    since it is not 1200×630.

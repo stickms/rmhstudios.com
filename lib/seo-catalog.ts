@@ -121,9 +121,11 @@ export function appRouteHead(id: string, options: HeadOptions = {}) {
       path,
       // The rendered card, not the raw screenshot this used to point at: a
       // 1200×630 with the app's art *in* it declares its dimensions, says which
-      // site it is from, and — unlike `imagePath` — exists for every app.
-      image: ogCardPath('app', app.id),
-      imageAlt: `${app.title} on RMH Studios.`,
+      // site it is from, and — unlike `imagePath` — exists for every app. An app
+      // with a link-preview image drawn for it (`ogImagePath`, also 1200×630, so
+      // buildMeta's default dimensions and large card hold) uses that instead.
+      image: app.ogImagePath ?? ogCardPath('app', app.id),
+      imageAlt: (app.ogImagePath && app.ogImageAlt) || `${app.title} on RMH Studios.`,
     }),
     links: [buildCanonical(path), ...(options.links ?? []), ...fontLinks],
     scripts: [

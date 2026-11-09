@@ -19,6 +19,9 @@ const entry: AppInfo = {
   imagePath: '/images/games/rmhmusic.webp',
   bannerPath: '/images/games/banners/rmhmusic.webp',
   logoPath: '/images/games/logos/rmhmusic.webp',
+  ogImagePath: '/images/og/rmhmusic.png',
+  ogImageAlt:
+    'Hand-ruled manuscript paper with the RMH Music wordmark above the first bars of Ode to Joy, written on a staff with guitar tab beneath.',
   authGate: true,
 };
 
