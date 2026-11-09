@@ -40,7 +40,6 @@ export function PhoneRecord({ song, onStart, onDetails }: PhoneRecordProps) {
           )}
         </div>
         <div className="slice-prec__text">
-          <div className="slice-label">{t('side-a', { defaultValue: 'Side A' })}</div>
           <h2 className="slice-prec__title">{song.title}</h2>
           <div className="slice-prec__meta">
             <span className="slice-rec__artist">{song.artist}</span>
@@ -51,7 +50,7 @@ export function PhoneRecord({ song, onStart, onDetails }: PhoneRecordProps) {
         </div>
       </div>
 
-      <Pressings className="mt-3" />
+      <Pressings className="mt-2.5" />
 
       <div className="slice-prec__go">
         <Button className="slice-btn-primary" onClick={() => onStart(song)}>

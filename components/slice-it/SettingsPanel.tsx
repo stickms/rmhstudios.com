@@ -47,7 +47,7 @@ import { bindsForLane, conflictingBinds } from '@/lib/slice-it/input';
 import { LANE_PALETTE_IDS } from '@/lib/slice-it/palettes';
 import { timingScale } from '@/lib/slice-it/scoring';
 import { FREE_SKIN_IDS } from '@/lib/slice-it/skins';
-import { useSliceItStore } from '@/lib/slice-it/store';
+import { sfxGain, useSliceItStore } from '@/lib/slice-it/store';
 
 /**
  * ## Two rules this file follows that the rest of the game does not
@@ -528,12 +528,12 @@ interface SettingsPanelProps {
 export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
   const { t } = useTranslation(['r-slice-it', 'c-game']);
 
-  const userName = useSliceItStore((s) => s.userName);
-  const setUserName = useSliceItStore((s) => s.setUserName);
   const keybinds = useSliceItStore((s) => s.keybinds);
   const setKeybinds = useSliceItStore((s) => s.setKeybinds);
   const volume = useSliceItStore((s) => s.volume);
   const setVolume = useSliceItStore((s) => s.setVolume);
+  const musicVolume = useSliceItStore((s) => s.musicVolume);
+  const setMusicVolume = useSliceItStore((s) => s.setMusicVolume);
   const sfxVolume = useSliceItStore((s) => s.sfxVolume);
   const setSfxVolume = useSliceItStore((s) => s.setSfxVolume);
   const hitSound = useSliceItStore((s) => s.hitSound);
@@ -543,7 +543,6 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
   const setInputOffset = useSliceItStore((s) => s.setInputOffset);
   const extraBinds = useSliceItStore((s) => s.extraBinds);
   const modifiers = useSliceItStore((s) => s.modifiers);
-  const setModifiers = useSliceItStore((s) => s.setModifiers);
   const quantColors = useSliceItStore((s) => s.quantColors);
   const setQuantColors = useSliceItStore((s) => s.setQuantColors);
   const noteSkin = useSliceItStore((s) => s.noteSkin);
@@ -564,12 +563,6 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
   const setJudgementOpacity = useSliceItStore((s) => s.setJudgementOpacity);
   const comboPosition = useSliceItStore((s) => s.comboPosition);
   const setComboPosition = useSliceItStore((s) => s.setComboPosition);
-  const metronome = useSliceItStore((s) => s.metronome);
-  const setMetronome = useSliceItStore((s) => s.setMetronome);
-  const assistTick = useSliceItStore((s) => s.assistTick);
-  const setAssistTick = useSliceItStore((s) => s.setAssistTick);
-  const mirror = useSliceItStore((s) => s.mirror);
-  const setMirror = useSliceItStore((s) => s.setMirror);
   const scrollSpeed = useSliceItStore((s) => s.scrollSpeed);
   const setScrollSpeed = useSliceItStore((s) => s.setScrollSpeed);
   const scrollMode = useSliceItStore((s) => s.scrollMode);
@@ -589,7 +582,7 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
   const previewHitSound = React.useCallback(async (soundId: string) => {
     const am = AudioManager.getInstance();
     am.initialize();
-    const sfxVol = useSliceItStore.getState().sfxVolume / 100;
+    const sfxVol = sfxGain(useSliceItStore.getState().volume, useSliceItStore.getState().sfxVolume);
     if (soundId === DEFAULT_HIT_SOUND_ID) {
       setPreviewingSound(soundId);
       am.playSfX(880, 'triangle', 0.1, sfxVol);
@@ -655,7 +648,7 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
           ~564px of unbreakable words against a 144px CLOSE button, which
           overflowed the drawer horizontally: the heading ran under the button,
           both were clipped, and the whole panel scrolled sideways with its left
-          edge — the operator field, the section labels — off screen. The auth
+          edge — the first field, the section labels — off screen. The auth
           splash in `MainMenu.tsx` carries the same width-AND-height guard for
           exactly this viewport. */}
       <div className="flex items-center justify-between gap-3 mb-5 sm:mb-12">
@@ -672,18 +665,6 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
       </div>
 
       <div className="max-w-3xl mx-auto w-full space-y-8 sm:space-y-12">
-        <Section title={t('c-game:authorized-operator', { defaultValue: 'Authorized Operator' })}>
-          <input
-            type="text"
-            className="w-full bg-slice-bg border border-slice-border rounded-2xl p-6 text-xl font-bold text-slice-text focus:outline-none transition-shadow"
-            placeholder={t('c-game:enter-name', { defaultValue: 'Enter name' })}
-            aria-label={t('c-game:authorized-operator', { defaultValue: 'Authorized Operator' })}
-            maxLength={32}
-            value={userName}
-            onChange={(e) => setUserName(e.target.value)}
-          />
-        </Section>
-
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
           <Section title={t('c-game:audio-output-level', { defaultValue: 'Audio Output Level' })}>
             <div className="bg-slice-bg p-8 rounded-3xl border border-slice-border space-y-6">
@@ -697,6 +678,18 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
                 step={1}
                 onValueChange={(vals) => setVolume(vals[0])}
                 aria-label={t('c-game:master', { defaultValue: 'Master' })}
+              />
+
+              <div className="flex justify-between text-sm font-black text-slice-text-darker pt-4">
+                <span>{t('c-game:music', { defaultValue: 'Music' })}</span>
+                <span className="text-blue-500 font-mono tabular-nums">{musicVolume}%</span>
+              </div>
+              <Slider
+                value={[musicVolume]}
+                max={100}
+                step={1}
+                onValueChange={(vals) => setMusicVolume(vals[0])}
+                aria-label={t('c-game:music', { defaultValue: 'Music' })}
               />
 
               <div className="flex justify-between text-sm font-black text-slice-text-darker pt-4">
@@ -780,113 +773,33 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
           </Section>
         </div>
 
-        <Section title={t('gameplay', { defaultValue: 'Gameplay' })}>
-          <div className="space-y-3">
-            <ToggleRow
-              label={t('health-gauge', { defaultValue: 'Health Gauge' })}
-              description={t('health-gauge-hint', {
-                defaultValue:
-                  'Misses drain a gauge. Solo, emptying it ends the run; in a match it only costs the bonus. Worth a score multiplier.',
-              })}
-              value={modifiers.healthGauge}
-              onChange={(next) => setModifiers({ ...modifiers, healthGauge: next })}
-            />
-            <ToggleRow
-              label={t('quant-colors', { defaultValue: 'Rhythm Colours' })}
-              description={t('quant-colors-hint', {
-                defaultValue:
-                  'Colour notes by where they land in the beat — red on the beat, blue on eighths, purple on triplets, yellow on sixteenths.',
-              })}
-              value={quantColors}
-              onChange={setQuantColors}
-            />
-            <ToggleRow
-              label={t('mod-mirror', { defaultValue: 'Mirror' })}
-              description={t('mod-mirror-hint', {
-                defaultValue:
-                  'Swap every lane. Not harder, so it earns no score bonus — it just turns every chart into a second chart to practise on.',
-              })}
-              value={mirror}
-              onChange={setMirror}
-            />
-            {/* M6 — same family as Health Gauge above: a fail condition the
-                player opts into, not a thing that happens to them. */}
-            <ToggleRow
-              label={t('mod-perfectionist', { defaultValue: 'Perfectionist' })}
-              description={t('mod-perfectionist-hint', {
-                defaultValue:
-                  'Anything short of PERFECT ends the run — not just a MISS. Same family as Sudden Death, and mutually exclusive with it: turning this on turns that off. The biggest score bonus in the game.',
-              })}
-              value={!!modifiers.perfectionist}
-              onChange={(next) => setModifiers({ ...modifiers, perfectionist: next })}
-            />
-          </div>
-        </Section>
-
-        {/* P4 — the two guide sounds. Learning tools, so they sit together and
-            away from the modifier list: neither changes the chart or the score,
-            and grouping them with the challenge switches implies they do. */}
-        <Section title={t('practice-aids', { defaultValue: 'Practice Aids' })}>
-          <div className="space-y-3">
-            <ToggleRow
-              label={t('metronome', { defaultValue: 'Metronome' })}
-              description={t('metronome-hint', {
-                defaultValue:
-                  'A click on every beat, whether or not there is a note there. The fastest way to hear that you are rushing a section rather than misreading it.',
-              })}
-              value={metronome}
-              onChange={setMetronome}
-            />
-            <ToggleRow
-              label={t('assist-tick', { defaultValue: 'Assist Tick' })}
-              description={t('assist-tick-hint', {
-                defaultValue:
-                  'A click on every note at the moment it should be hit, played whether you hit it or not — so a missed note still tells you where it was.',
-              })}
-              value={assistTick}
-              onChange={setAssistTick}
-            />
-          </div>
-        </Section>
-
-        {/* A9 — Lenient Timing and the windows it produces. Kept as its own
-            section rather than folded into Gameplay: the whole point is to
-            make the abstraction visible, and a toggle sitting right above
-            the numbers it changes is what makes that legible. */}
+        {/* Gameplay modifiers (health gauge, perfectionist, lenient timing) and the
+            practice aids (metronome, assist tick) are chosen per song, in the
+            song's own settings, where their score multipliers are shown. What
+            stays here is the read-only size of each window right now. */}
         <Section title={t('timing-windows', { defaultValue: 'Judgement Windows' })}>
-          <div className="space-y-3">
-            <ToggleRow
-              label={t('mod-lenient-timing', { defaultValue: 'Lenient Timing' })}
-              description={t('mod-lenient-timing-hint', {
+          <div className="bg-slice-bg p-6 rounded-3xl border border-slice-border">
+            <div className="text-[10px] text-slice-text-light font-bold leading-snug mb-3">
+              {t('timing-windows-hint', {
                 defaultValue:
-                  'Widens every window instead of shrinking it — the mirror of Strict Timing. Unranked: a run played on wider windows is not comparable to one played on the stock ones, not because it is any less real.',
+                  'The actual size of each window right now, at this speed and these modifiers.',
               })}
-              value={!!modifiers.lenientTiming}
-              onChange={(next) => setModifiers({ ...modifiers, lenientTiming: next })}
-            />
-            <div className="bg-slice-bg p-6 rounded-3xl border border-slice-border">
-              <div className="text-[10px] text-slice-text-light font-bold leading-snug mb-3">
-                {t('timing-windows-hint', {
-                  defaultValue:
-                    'The actual size of each window right now, at this speed and these modifiers.',
-                })}
-              </div>
-              <dl className="space-y-1.5">
-                {Object.entries(HIT_WINDOWS).map(([name, seconds]) => (
-                  <div key={name} className="flex items-center justify-between gap-3">
-                    <dt
-                      className="text-[10px] font-black uppercase tracking-wider"
-                      style={{ color: JUDGEMENT_COLORS[name as keyof typeof JUDGEMENT_COLORS] }}
-                    >
-                      {name}
-                    </dt>
-                    <dd className="font-mono text-xs font-bold text-slice-text-darker tabular-nums">
-                      ±{Math.round(seconds * timingScale(modifiers) * 1000)} ms
-                    </dd>
-                  </div>
-                ))}
-              </dl>
             </div>
+            <dl className="space-y-1.5">
+              {Object.entries(HIT_WINDOWS).map(([name, seconds]) => (
+                <div key={name} className="flex items-center justify-between gap-3">
+                  <dt
+                    className="text-[10px] font-black uppercase tracking-wider"
+                    style={{ color: JUDGEMENT_COLORS[name as keyof typeof JUDGEMENT_COLORS] }}
+                  >
+                    {name}
+                  </dt>
+                  <dd className="font-mono text-xs font-bold text-slice-text-darker tabular-nums">
+                    ±{Math.round(seconds * timingScale(modifiers) * 1000)} ms
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </Section>
 
@@ -997,6 +910,17 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
                 { id: 'minimal', label: t('skin-minimal', { defaultValue: 'Minimal' }) },
               ].filter((option) => FREE_SKIN_IDS.includes(option.id))}
               onChange={setNoteSkin}
+            />
+            {/* Rhythm Colours is how notes are inked, not how the game plays, so it
+                sits with the skin rather than with the modifiers. */}
+            <ToggleRow
+              label={t('quant-colors', { defaultValue: 'Rhythm Colours' })}
+              description={t('quant-colors-hint', {
+                defaultValue:
+                  'Colour notes by where they land in the beat — red on the beat, blue on eighths, purple on triplets, yellow on sixteenths.',
+              })}
+              value={quantColors}
+              onChange={setQuantColors}
             />
           </Well>
         </Section>

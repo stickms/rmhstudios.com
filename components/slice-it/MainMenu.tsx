@@ -11,8 +11,10 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { LogOut, Settings } from 'lucide-react';
-import { useSliceItStore } from '@/lib/slice-it/store';
+import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { MenuItem, MenuLabel } from '@/components/ui/menu';
+import { LogOut, Menu as MenuIcon, Settings } from 'lucide-react';
+import { musicGain, useSliceItStore } from '@/lib/slice-it/store';
 import { GameEngine } from '@/lib/slice-it/engine';
 import { hitSoundPath, hitSoundPreloadList } from '@/lib/slice-it/hit-sound-pool';
 import { asset } from '@/lib/storage/asset';
@@ -52,9 +54,8 @@ interface MainMenuProps {
 export function MainMenu({ engine: propEngine }: MainMenuProps) {
   const { t } = useTranslation('c-game');
   const { t: ts } = useTranslation('r-slice-it');
-  const setUserName = useSliceItStore((state) => state.setUserName);
-  const userName = useSliceItStore((state) => state.userName);
   const volume = useSliceItStore((state) => state.volume);
+  const musicVolume = useSliceItStore((state) => state.musicVolume);
   const hitSound = useSliceItStore((state) => state.hitSound);
   const setSongId = useSliceItStore((state) => state.setSongId);
   const setIsMultiplayer = useSliceItStore((state) => state.setIsMultiplayer);
@@ -73,6 +74,9 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
   const search = useSearch({ strict: false }) as Record<string, string | undefined>;
   const { startRun, isLoading } = useStartRun(engine);
   const [showSettings, setShowSettings] = React.useState(false);
+  // A phone's bar is the logo and one menu button; account, settings and quit live in it.
+  const [barMenuOpen, setBarMenuOpen] = React.useState(false);
+  const barMenuRef = React.useRef<HTMLButtonElement>(null);
   const [showCalibration, setShowCalibration] = React.useState(false);
   const [showMultiplayer, setShowMultiplayer] = React.useState(false);
   const [soloMode, setSoloMode] = React.useState<SoloMode>('library');
@@ -93,8 +97,8 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
 
   // Apply volume on mount
   React.useEffect(() => {
-    AudioManager.getInstance().setVolume(volume / 100);
-  }, [volume]);
+    AudioManager.getInstance().setVolume(musicGain(volume, musicVolume));
+  }, [volume, musicVolume]);
 
   // Preload persisted hit sound on mount — the whole pool if it is Shuffle.
   React.useEffect(() => {
@@ -117,16 +121,13 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
   // Ref to stop SongLibrary preview audio from outside
   const stopPreviewRef = React.useRef<(() => void) | null>(null);
 
-  // Side effect to set username
-  React.useEffect(() => {
-    if (session.data?.user && !userName) {
-      const user = session.data.user as { name?: string | null; username?: string | null };
-      const name = user.name || user.username || 'OPERATOR';
-      setUserName(name);
-    }
-  }, [session.data, userName, setUserName]);
-
   const avatarUrl = (session.data?.user as { image?: string | null } | undefined)?.image ?? null;
+  // The operator is whoever is signed in — there is nothing to type. (A name field
+  // in Settings used to shadow it, which only ever let the two disagree.)
+  const sessionUser = session.data?.user as
+    | { name?: string | null; username?: string | null }
+    | undefined;
+  const userName = sessionUser ? sessionUser.name || sessionUser.username || 'OPERATOR' : '';
 
   /**
    * Open a track's details panel.
@@ -317,10 +318,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             <header className="slice-line">
               <div className="slice-line__l">
                 <span className="slice-chip">RMH-050</span>
-                <span className="slice-label">
-                  {t('menu-rpm', { defaultValue: '33 1/3 RPM' })} <i>/</i>{' '}
-                  {t('side-a', { defaultValue: 'Side A' })}
-                </span>
               </div>
               <div className="slice-line__r">
                 <span className="slice-label">
@@ -351,15 +348,69 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             <h1 className="slice-bar__title">
               <img
                 className="slice-bar__logo"
-                src="/images/games/logos/slice-it.svg"
+                src="/images/games/logos/slice-it-line.svg"
                 alt={t('game-title', { defaultValue: 'Slice It!' })}
-                width={1015}
-                height={504}
+                width={1395}
+                height={282}
                 decoding="async"
                 fetchPriority="high"
               />
             </h1>
             {!isPhone && renderNav(false)}
+            {isPhone ? (
+              <>
+                <button
+                  ref={barMenuRef}
+                  type="button"
+                  className="slice-bar__icon ml-auto"
+                  aria-haspopup="menu"
+                  aria-expanded={barMenuOpen}
+                  aria-label={t('menu', { defaultValue: 'Menu' })}
+                  onClick={() => setBarMenuOpen((open) => !open)}
+                >
+                  <MenuIcon className="size-5" aria-hidden />
+                </button>
+                <AnchoredMenu
+                  open={barMenuOpen}
+                  onClose={() => setBarMenuOpen(false)}
+                  anchorRef={barMenuRef}
+                  label={t('menu', { defaultValue: 'Menu' })}
+                  className="slice-tokens slice-menu-panel w-56"
+                >
+                  <MenuLabel className="flex items-center gap-2.5">
+                    <UserAvatar
+                      src={avatarUrl}
+                      alt=""
+                      size={24}
+                      fallbackName={userName || undefined}
+                      className="shrink-0"
+                    />
+                    <span className="min-w-0 truncate">{userName || 'GUEST'}</span>
+                  </MenuLabel>
+                  <MenuItem
+                    icon={Settings}
+                    onSelect={() => {
+                      setBarMenuOpen(false);
+                      // After the menu has closed and given focus back, not in the
+                      // same tick: the settings panel's own focus handling would
+                      // otherwise lose the race with it.
+                      window.setTimeout(() => setShowSettings(true), 80);
+                    }}
+                  >
+                    {t('settings', { defaultValue: 'Settings' })}
+                  </MenuItem>
+                  <MenuItem
+                    icon={LogOut}
+                    onSelect={() => {
+                      setBarMenuOpen(false);
+                      quit();
+                    }}
+                  >
+                    {t('quit', { defaultValue: 'QUIT' })}
+                  </MenuItem>
+                </AnchoredMenu>
+              </>
+            ) : (
             <div className="slice-bar__who">
               <UserAvatar
                 src={avatarUrl}
@@ -387,6 +438,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 <LogOut className="size-[18px]" aria-hidden />
               </button>
             </div>
+            )}
           </header>
           )}
 
@@ -404,11 +456,11 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   animate="animate"
                 >
                   <img
-                    className="mx-auto h-24 w-auto"
-                    src="/images/games/logos/slice-it.svg"
+                    className="mx-auto h-auto w-full max-w-[17rem]"
+                    src="/images/games/logos/slice-it-line.svg"
                     alt=""
-                    width={1015}
-                    height={504}
+                    width={1395}
+                    height={282}
                     decoding="async"
                   />
                   <hr className="slice-slash" />
@@ -444,10 +496,10 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   <h1 className="slice-sleeve__title">
                     <img
                       className="slice-sleeve__logo"
-                      src="/images/games/logos/slice-it.svg"
+                      src="/images/games/logos/slice-it-line.svg"
                       alt={t('game-title', { defaultValue: 'Slice It!' })}
-                      width={1015}
-                      height={504}
+                      width={1395}
+                      height={282}
                       decoding="async"
                       fetchPriority="high"
                     />

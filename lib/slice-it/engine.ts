@@ -72,7 +72,7 @@ import {
   type ReplayInput,
 } from './replay';
 import type { SliceItReplay } from '@/lib/game/replay';
-import { useSliceItStore } from './store';
+import { sfxGain, useSliceItStore } from './store';
 import {
   accuracyOf,
   accuracyWeight,
@@ -642,11 +642,12 @@ export class GameEngine {
 
     const store = useSliceItStore.getState();
     const rate = this.speedMultiplier || 1;
-    const volume = (store.sfxVolume / 100) * TICK_VOLUME_SCALE;
+    const volume = sfxGain(store.volume, store.sfxVolume) * TICK_VOLUME_SCALE;
     // Sounds are scheduled on the render clock, which is ahead of the heard position
     // `currentTime` carries by the output latency: scheduling from the heard
     // position would put every guide tick that much late against the music.
-    const renderTime = currentTime + (this.audioManager.getRenderPosition() - this.audioManager.getCurrentTime());
+    const renderTime =
+      currentTime + (this.audioManager.getRenderPosition() - this.audioManager.getCurrentTime());
     const atContext = (trackTime: number) => context.currentTime + (trackTime - renderTime) / rate;
 
     if (store.metronome) {
@@ -912,7 +913,7 @@ export class GameEngine {
       this.breakCombo();
       this.score = Math.max(0, this.score - BOMB_PENALTY);
       this.pushFeedback('BOMB!', lane, '#ff0000');
-      this.audioManager.playSfX(150, 'sawtooth', 0.3, store.sfxVolume / 100);
+      this.audioManager.playSfX(150, 'sawtooth', 0.3, sfxGain(store.volume, store.sfxVolume));
       this.drainHealth(HEALTH_BOMB_DRAIN);
       this.commit();
       return;
@@ -1099,7 +1100,7 @@ export class GameEngine {
         this.holdBilledTo.set(lane, this.now());
       }
 
-      const sfxVolume = store.sfxVolume / 100;
+      const sfxVolume = sfxGain(store.volume, store.sfxVolume);
       const sample = this.nextHitSample(store.hitSound);
       const clean = result === 'MARVELOUS' || result === 'PERFECT';
       // G12 — pitch the hit sound by the note's own register, so a chart sounds
