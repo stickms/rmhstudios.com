@@ -32,7 +32,11 @@ export const DELETION_SWEEP_QUEUE = 'account.finalize-deletions';
 export const EMBEDDING_SWEEP_QUEUE = 'search.embedding-sweep';
 export const REMINDER_FIRE_QUEUE = 'reminders.fire';
 export const COHORT_RETENTION_QUEUE = 'ops.cohort-retention';
-/** Daily at 05:10 UTC — a few grouped scans over session/activity, quiet window. */
+/**
+ * Daily at 05:10 UTC — a few grouped scans over session/activity, quiet window.
+ * (The jobs worker runs it at 05:25, `server/jobs/queue-policy.ts`: the
+ * communities contributors rebuild also fires at 05:10.)
+ */
 export const COHORT_RETENTION_CRON = '10 5 * * *';
 
 export const DEEPSEEK_BALANCE_QUEUE = 'ops.deepseek-balance';
