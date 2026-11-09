@@ -62,6 +62,9 @@ const log = createLogger('jobs');
 // exit, no graceful pg-boss stop) and a second signal re-ran the whole stop.
 let stopping = false;
 let bossRef: PgBoss | null = null;
+/** Boot attempts after the first, and the gap between them (just over `RETRY_AFTER_MS` in lib/jobs/boss.server.ts). */
+const BOOT_RETRIES = 3;
+const BOOT_RETRY_MS = 31_000;
 const stoppers: Array<() => void> = [];
 
 async function shutdown(sig: string): Promise<void> {
@@ -77,7 +80,7 @@ async function shutdown(sig: string): Promise<void> {
   }
   if (bossRef) {
     try {
-      await bossRef.stop({ graceful: true });
+      await bossRef.stop({ graceful: true, timeout: 30_000 });
     } catch {
       /* best-effort */
     }
@@ -98,7 +101,17 @@ async function main() {
     // Telemetry must not stop the worker from starting.
   }
 
-  const boss = await getBoss(true);
+  // A blip at boot (Postgres restarting, a pool full right after a deploy's migrations) used to exit(1): Docker restarted
+  // the container and deploy.sh read the changed RestartCount as a failed release. Retry in-process first.
+  // `getBoss` memoises a failed start for BOOT_RETRY_MS (lib/jobs/boss.server.ts RETRY_AFTER_MS), so wait it out.
+  // With no DATABASE_URL there is nothing to retry: exit at once, as before.
+  let boss = await getBoss(true);
+  for (let attempt = 1; !boss && process.env.DATABASE_URL && attempt <= BOOT_RETRIES; attempt++) {
+    if (stopping) return;
+    log.warn({ event: 'jobs.start_retry', attempt, of: BOOT_RETRIES });
+    await new Promise((resolve) => setTimeout(resolve, BOOT_RETRY_MS));
+    boss = await getBoss(true);
+  }
   if (!boss) {
     log.error({
       event: 'jobs.start_failed',
@@ -261,7 +274,11 @@ async function main() {
     await registerArcadeCrons(boss);
     log.info({ event: 'jobs.started', queue: 'arcade.rivals' });
   } catch (e) {
-    log.error({ event: 'jobs.register_failed', queue: 'arcade.rivals', err: (e as Error)?.message });
+    log.error({
+      event: 'jobs.register_failed',
+      queue: 'arcade.rivals',
+      err: (e as Error)?.message,
+    });
   }
 
   // Economy-plus (2026-10-12 batch): community goal deadlines + refunds (C5),
@@ -354,7 +371,11 @@ async function main() {
     await registerRecipeJobs(boss);
     log.info({ event: 'jobs.started', queue: 'devplatform.recipes' });
   } catch (e) {
-    log.error({ event: 'jobs.register_failed', queue: 'devplatform.recipes', err: (e as Error)?.message });
+    log.error({
+      event: 'jobs.register_failed',
+      queue: 'devplatform.recipes',
+      err: (e as Error)?.message,
+    });
   }
 
   // On-call app alarms (lib/oncall/checks.server.ts): once a minute, read the

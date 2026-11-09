@@ -445,9 +445,18 @@ services:
   jobs:
     <<: *common
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-jobs
-    mem_limit: 512m
+    # 768m, not 512m: on 2026-11-09 a deploy was rolled back because this container restarted once, three minutes
+    # into the web bake, with no `jobs.stopping`, no `[jobs] fatal` and no stack in its log — the signature of a
+    # SIGKILL (cgroup OOM), at a minute where several cron ticks coincide. deploy.sh counts ANY change in a worker's
+    # RestartCount as a failed release (`check_workers`), so one transient kill rolled back the whole non-web fleet.
+    # 768m matches the other workers that carry ~37 queues' worth of Prisma + pg-boss; it is a ceiling, the
+    # reservation below is what the scheduler counts on.
+    mem_limit: 768m
     mem_reservation: 128m
     cpus: 0.5
+    # Let in-flight handlers finish on a deploy: `boss.stop({ graceful: true })` waits up to 30 s, and Docker's default
+    # 10 s grace SIGKILLed the process first, leaving those jobs to expire and re-run.
+    stop_grace_period: 45s
     # Async queue drainer — the web tier falls back to inline work if it's
     # starved (never a correctness dependency), so it yields to web too.
     cpu_shares: 512
@@ -462,6 +471,11 @@ services:
       # run wider. pg-boss's pool is separate (lib/jobs/boss.server.ts, 8).
       # deploy.sh may lower it on a host with a small max_connections (see web).
       - DATABASE_POOL_SIZE=${JOBS_DB_POOL_SIZE:-16}
+      # V8 old-space cap, below the cgroup limit (see web: V8 does not reliably size its heap to a container limit, so
+      # an uncapped heap climbs until the kernel kills the process with no log). 512 leaves ~256 MB of the 768m for the
+      # Prisma engine, pg-boss's pool, buffers and the runtime itself. Never worse than before: the old 512m limit
+      # killed this process at 512 MB of TOTAL memory, so its heap could not have been above this cap.
+      - NODE_OPTIONS=--max-old-space-size=512
       # The on-call checks (lib/oncall/checks.server.ts) read each hub's
       # /internal/metrics over the compose network, like the admin page on web.
       - SOCKET_INTERNAL_URL=http://socket:${PORT_SOCKET:-7001}
