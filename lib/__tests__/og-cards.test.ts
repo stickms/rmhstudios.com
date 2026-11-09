@@ -7,7 +7,7 @@ import { catalogStatsFor } from '@/lib/og/catalog-stats';
 import { fitText } from '@/lib/og/chrome.server';
 import { MAX_COLLAGE_TILES, collageTiles } from '@/lib/og/collage';
 import { postCardShowsContent } from '@/lib/og/post-visibility';
-import { appRouteHead } from '@/lib/seo-catalog';
+import { appHubHead, appRouteHead } from '@/lib/seo-catalog';
 import { apps } from '@/lib/apps';
 
 /**
@@ -196,6 +196,19 @@ describe('appRouteHead', () => {
       expect([png.readUInt32BE(16), png.readUInt32BE(20)], `${app.id}: size`).toEqual([1200, 630]);
       expect(png.length, `${app.id}: keep it under ~400 KB`).toBeLessThanOrEqual(400 * 1024);
     }
+  });
+});
+
+describe('appHubHead', () => {
+  // The app's own route is behind the sign-in gate, so a link-preview bot only ever sees this page.
+  it('carries the app\'s embed and stays out of search', () => {
+    const route = appRouteHead('rmhmusic').meta as ReturnType<typeof buildMeta>;
+    const hub = appHubHead('rmhmusic').meta as ReturnType<typeof buildMeta>;
+    for (const key of ['og:image', 'og:title', 'og:description', 'og:url', 'twitter:card']) {
+      expect(meta(hub, key), key).toBe(meta(route, key));
+    }
+    expect(meta(hub, 'og:image')).toBe(`${SITE_URL}/images/og/rmhmusic.png`);
+    expect(hub.some((m) => 'name' in m && m.name === 'robots' && m.content === 'noindex, follow')).toBe(true);
   });
 });
 

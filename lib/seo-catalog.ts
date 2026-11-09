@@ -140,6 +140,18 @@ export function appRouteHead(id: string, options: HeadOptions = {}) {
 }
 
 /**
+ * Head for an app's public library page (`/games/<appId>`). The app's own route is behind the sign-in
+ * gate, which redirects a link-preview bot (always signed out) to `/login` on the server, so a pasted
+ * `/rmhmusic` unfurls as the login page. This page is public, so it carries the app's embed (title,
+ * description, image, canonical) while staying out of search results (`noindex, follow`): the
+ * canonical and `og:url` point at the app itself, so a click on the unfurl goes there.
+ */
+export function appHubHead(id: string, options: HeadOptions = {}) {
+  const head = appRouteHead(id, options);
+  return { ...head, meta: [...head.meta, { name: 'robots', content: 'noindex, follow' }] };
+}
+
+/**
  * `ItemList` JSON-LD for a catalog index page.
  *
  * The index pages are the only place a crawler can see the catalog as a *set*
