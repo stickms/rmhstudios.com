@@ -639,7 +639,7 @@ export function SettingsPanel({ onClose, onCalibrate }: SettingsPanelProps) {
   );
 
   return (
-    <div className="absolute inset-0 z-80 bg-slice-bg p-5 sm:p-12 flex flex-col overflow-y-auto overflow-x-hidden">
+    <div className="slice-screen absolute inset-0 z-80 bg-slice-bg p-5 sm:p-12 flex flex-col overflow-y-auto overflow-x-hidden">
       {/* `gap-3` + `min-w-0` + `shrink-0`, and the big type gated on width AND
           height — all four are one bug.
 

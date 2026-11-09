@@ -114,7 +114,7 @@ export function DailyPanel({ engine, onPlay, onBack }: DailyPanelProps) {
   }, [selection, engine, alreadyPlayed, onPlay, setModifiers]);
 
   return (
-    <div className="flex flex-col h-full min-h-0 overflow-y-auto p-4 sm:p-6 gap-5">
+    <div className="slice-doc-panel flex flex-col h-full min-h-0 overflow-y-auto p-4 sm:p-6 gap-5">
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"
