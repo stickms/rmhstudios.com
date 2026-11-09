@@ -380,7 +380,7 @@ export const EXCLUDED_ROUTES: Record<string, ExclusionReason> = {
   '/shop': 'redirect', // → /store?tab=shop
   '/pricing': 'redirect', // → /store?tab=membership
   '/personas': 'redirect', // → /create/personas
-  '/playlists': 'redirect', // → /library?view=music
+  '/playlists': 'redirect', // → /library?view=playlists
   '/spaces': 'redirect', // → /communities?tab=spaces
   '/v': 'redirect', // → /create
   '/search': 'redirect', // → /explore (the two pages were merged)

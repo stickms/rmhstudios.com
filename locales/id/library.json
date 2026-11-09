@@ -36,7 +36,7 @@
   "cat-all": "All",
   "cat-books": "Books",
   "cat-collections": "Collections",
-  "cat-music": "Music",
+  "cat-playlists": "Playlists",
   "cat-reads": "Reads",
   "clear-search": "Clear search",
   "close": "Tutup",
@@ -90,7 +90,7 @@
   "section-collections": "Koleksi",
   "section-community": "Unggahan komunitas",
   "section-curated": "Kurasi",
-  "section-music": "Music",
+  "section-playlists": "Playlists",
   "sections-label": "Library sections",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"

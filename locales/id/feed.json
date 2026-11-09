@@ -888,7 +888,7 @@
   "playlists-empty-title": "Belum ada daftar putar",
   "playlists-search-empty-desc-name": "Try a different playlist name.",
   "playlists-search-empty-title": "No matching playlists",
-  "playlists-signin-desc": "Simpan lagu dan video ke dalam daftar putar permanen Anda sendiri.",
+  "playlists-signin-desc-video": "Save videos into your own persistent playlists.",
   "playlists-signin-title": "Masuk untuk membuat daftar putar",
   "playlists-title": "Daftar Putar",
   "poll": "Polling",

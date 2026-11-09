@@ -5,13 +5,13 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import {
-  ListMusic,
+  ListVideo,
   Plus,
   Trash2,
   Pencil,
   ChevronDown,
   ChevronRight,
-  Music2,
+  Video,
   ExternalLink,
   Users,
   X,
@@ -52,7 +52,7 @@ export function PlaylistsColumn({
   searchQuery = '',
 }: {
   initialData: { playlists: Summary[] | null };
-  // When hosted inside another page (e.g. the Library"Music"section) the host
+  // When hosted inside another page (e.g. the Library "Playlists" section) the host
   // supplies the heading and outer scroll region, so drop our own ColumnHeader
   // and full-height wrapper.
   embedded?: boolean;
@@ -249,7 +249,7 @@ export function PlaylistsColumn({
     <div className={embedded ? 'lib-playlists' : undefined}>
       {!embedded && (
         <ColumnHeader
-          icon={ListMusic}
+          icon={ListVideo}
           title={t('playlists-title', { defaultValue: 'Playlists' })}
         />
       )}
@@ -257,10 +257,10 @@ export function PlaylistsColumn({
       {!signedIn ? (
         <div className="p-4">
           <EmptyState
-            icon={ListMusic}
+            icon={ListVideo}
             title={t('playlists-signin-title', { defaultValue: 'Sign in to build playlists' })}
-            description={t('playlists-signin-desc', {
-              defaultValue: 'Save tracks and videos into your own persistent playlists.',
+            description={t('playlists-signin-desc-video', {
+              defaultValue: 'Save videos into your own persistent playlists.',
             })}
             action={
               <Link to="/login" search={{ callbackURL: '/playlists' }}>
@@ -305,7 +305,7 @@ export function PlaylistsColumn({
 
           {visiblePlaylists.length === 0 ? (
             <EmptyState
-              icon={Music2}
+              icon={Video}
               title={
                 normalizedQuery
                   ? t('playlists-search-empty-title', { defaultValue: 'No matching playlists' })
@@ -415,7 +415,7 @@ export function PlaylistsColumn({
                                   />
                                 ) : (
                                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-site-bg">
-                                    <Music2 className="h-4 w-4 text-site-text-dim" aria-hidden />
+                                    <Video className="h-4 w-4 text-site-text-dim" aria-hidden />
                                   </div>
                                 )}
                                 <div className="min-w-0 flex-1">

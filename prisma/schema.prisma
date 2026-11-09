@@ -3923,7 +3923,7 @@ model Playlist {
   id        String   @id @default(cuid())
   userId    String
   name      String   @db.VarChar(100)
-  kind      String   @default("music") @db.VarChar(16) // "music" | "video"
+  kind      String   @default("video") @db.VarChar(16) // "video"; legacy "music" rows (retired app) are never read
   itemCount Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

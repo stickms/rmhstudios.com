@@ -888,7 +888,7 @@
   "playlists-empty-title": "아직 재생목록이 없습니다",
   "playlists-search-empty-desc-name": "Try a different playlist name.",
   "playlists-search-empty-title": "No matching playlists",
-  "playlists-signin-desc": "트랙과 동영상을 나만의 재생목록에 저장하세요.",
+  "playlists-signin-desc-video": "Save videos into your own persistent playlists.",
   "playlists-signin-title": "재생목록을 만들려면 로그인하세요",
   "playlists-title": "재생목록",
   "poll": "투표",

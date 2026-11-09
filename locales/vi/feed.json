@@ -888,7 +888,7 @@
   "playlists-empty-title": "Chưa có danh sách phát nào",
   "playlists-search-empty-desc-name": "Try a different playlist name.",
   "playlists-search-empty-title": "No matching playlists",
-  "playlists-signin-desc": "Lưu bài hát và video vào danh sách phát riêng của bạn.",
+  "playlists-signin-desc-video": "Save videos into your own persistent playlists.",
   "playlists-signin-title": "Đăng nhập để tạo danh sách phát",
   "playlists-title": "Danh sách phát",
   "poll": "Khảo sát",

@@ -128,7 +128,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/personas` | redirects to `/create/personas` | public | `app/routes/_site/personas/index.tsx` |
 | `/personas/:id` | Persona | public | `app/routes/_site/personas/$id.tsx` |
 | `/photo-of-the-day` | Photo of the day | public | `app/routes/_site/photo-of-the-day.tsx` |
-| `/playlists` | redirects to `/library?view=music` | public | `app/routes/_site/playlists.tsx` |
+| `/playlists` | redirects to `/library?view=playlists` | public | `app/routes/_site/playlists.tsx` |
 | `/predictions` | Predictions | public | `app/routes/_site/predictions.tsx` |
 | `/pricing` | redirects to `/store?tab=membership` | public | `app/routes/_site/pricing.tsx` |
 | `/profile/:id` | redirects to `/u/$userid` | public | `app/routes/_site/profile/$id.tsx` |

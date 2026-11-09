@@ -947,7 +947,7 @@
   "playlists-empty-title": "No playlists yet",
   "playlists-search-empty-desc-name": "Try a different playlist name.",
   "playlists-search-empty-title": "No matching playlists",
-  "playlists-signin-desc": "Save tracks and videos into your own persistent playlists.",
+  "playlists-signin-desc-video": "Save videos into your own persistent playlists.",
   "playlists-signin-title": "Sign in to build playlists",
   "playlists-title": "Playlists",
   "poll": "Poll",

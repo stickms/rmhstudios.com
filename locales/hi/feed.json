@@ -911,7 +911,7 @@
   "playlists-empty-title": "अभी तक कोई प्लेलिस्ट नहीं",
   "playlists-search-empty-desc-name": "Try a different playlist name.",
   "playlists-search-empty-title": "No matching playlists",
-  "playlists-signin-desc": "ट्रैक और वीडियो अपनी स्थायी प्लेलिस्ट में सहेजें।",
+  "playlists-signin-desc-video": "Save videos into your own persistent playlists.",
   "playlists-signin-title": "प्लेलिस्ट बनाने के लिए साइन इन करें",
   "playlists-title": "प्लेलिस्ट",
   "poll": "पोल",

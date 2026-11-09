@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const prismaMock = vi.hoisted(() => ({
-  playlist: { findFirst: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
+  playlist: { findFirst: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
   playlistItem: { findFirst: vi.fn(), create: vi.fn(), deleteMany: vi.fn() },
   playlistCollaborator: {
     count: vi.fn(),
@@ -19,6 +19,7 @@ import {
   addItem,
   canEditPlaylist,
   isPlaylistOwner,
+  listPlaylists,
   MAX_COLLABORATORS,
   removeCollaborator,
   removeItem,
@@ -35,6 +36,7 @@ describe('canEditPlaylist', () => {
     expect(prismaMock.playlist.findFirst).toHaveBeenCalledWith({
       where: {
         id: 'p1',
+        kind: 'video',
         OR: [{ userId: 'u1' }, { collaborators: { some: { userId: 'u1' } } }],
       },
       select: { id: true },
@@ -44,6 +46,18 @@ describe('canEditPlaylist', () => {
   it('is false for strangers and unknown playlists', async () => {
     prismaMock.playlist.findFirst.mockResolvedValue(null);
     expect(await canEditPlaylist('u2', 'p1')).toBe(false);
+  });
+});
+
+describe('legacy music playlists are dead data', () => {
+  // Only the retired RMHMusic listening-party app filled `music` playlists, so
+  // the list is scoped to video playlists and those rows are never shown.
+  it('listPlaylists only lists video playlists', async () => {
+    prismaMock.playlist.findMany.mockResolvedValue([]);
+    await listPlaylists('u1');
+    expect(prismaMock.playlist.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ kind: 'video' }) }),
+    );
   });
 });
 
@@ -72,11 +86,11 @@ describe('item edits go through canEditPlaylist', () => {
 });
 
 describe('collaborator management is owner-only', () => {
-  it('isPlaylistOwner checks Playlist.userId only', async () => {
+  it('isPlaylistOwner checks Playlist.userId only (on a live video playlist)', async () => {
     prismaMock.playlist.findFirst.mockResolvedValue(null);
     expect(await isPlaylistOwner('collab', 'p1')).toBe(false);
     expect(prismaMock.playlist.findFirst).toHaveBeenCalledWith({
-      where: { id: 'p1', userId: 'collab' },
+      where: { id: 'p1', userId: 'collab', kind: 'video' },
       select: { id: true },
     });
   });
