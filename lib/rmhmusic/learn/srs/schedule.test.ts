@@ -88,6 +88,22 @@ describe('review', () => {
     expect(days(s, s.last!)).toBeCloseTo(MAX_INTERVAL_DAYS, 6);
   });
 
+  it('counts a lapse only when the card had been successfully reviewed', () => {
+    const missedTwice = review(review(newCard(T0), 'again', T0), 'again', T0 + DAY_MS);
+    expect(missedTwice.lapses).toBe(0);
+    expect(missedTwice.reps).toBe(2);
+    const forgotten = review(review(newCard(T0), 'good', T0), 'again', T0 + 3 * DAY_MS);
+    expect(forgotten.lapses).toBe(1);
+    expect(forgotten.reps).toBe(2);
+  });
+
+  it('throws RangeError for an unknown grade instead of treating it as again', () => {
+    const s = newCard(T0);
+    for (const bad of ['', 'GOOD', 'toString', undefined, null, 3]) {
+      expect(() => review(s, bad as unknown as Grade, T0)).toThrow(RangeError);
+    }
+  });
+
   it('keeps difficulty within [1, 10] under any run of grades', () => {
     for (const g of ['again', 'easy'] as const) {
       let s = newCard(T0);
@@ -212,8 +228,30 @@ describe('isDue', () => {
   });
 
   it('does not strand a card for years when the clock was once ahead', () => {
-    const s = { ...review(newCard(T0), 'good', T0), due: T0 + 5000 * DAY_MS };
-    expect(isDue(s, T0 + (MAX_INTERVAL_DAYS + 1) * DAY_MS)).toBe(true);
+    // Reviewed while the device clock ran 5000 days ahead: stability 2.2 days,
+    // so the stored due is ~T0 + 5002 days.
+    const s = review(newCard(T0), 'good', T0 + 5000 * DAY_MS);
+    expect(days(s, s.last!)).toBeCloseTo(2.2, 6);
+    expect(s.due).toBeGreaterThan(T0 + 5000 * DAY_MS);
+    // The clock is corrected: the card is shown by T0 + 3 days, not ~5000 days later.
+    expect(isDue(s, T0)).toBe(true);
+    expect(isDue(s, T0 + 3 * DAY_MS)).toBe(true);
+    expect(dueCards([{ state: s }], T0, 5)).toHaveLength(1);
+    // Reviewing it then re-anchors it to the corrected clock.
+    const again = review(s, 'good', T0);
+    expect(again.last).toBe(T0);
+    expect(isDue(again, T0 + 1 * DAY_MS)).toBe(false);
+  });
+
+  it('keeps the stored due for a review only slightly ahead of now (cross-device skew)', () => {
+    const s = review(newCard(T0), 'good', T0 + 1000);
+    expect(isDue(s, T0)).toBe(false);
+    expect(isDue(s, s.due)).toBe(true);
+  });
+
+  it('shows a reviewed card that lost its last review time', () => {
+    const s = { ...review(newCard(T0), 'good', T0), last: null };
+    expect(isDue(s, T0)).toBe(true);
   });
 });
 

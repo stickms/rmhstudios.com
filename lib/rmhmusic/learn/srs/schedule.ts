@@ -16,9 +16,12 @@
  * On a review with grade g at time `now`:
  *
  *   again  The learner missed it. S falls to 30% of its old value (so it is
- *          strictly smaller), the card comes back after MIN_INTERVAL_DAYS
- *          (~15 minutes), and it counts as a lapse unless it was a brand-new
- *          card (reps = 0), where there was nothing to forget yet.
+ *          no larger; equal only at S = 0), the card comes back after
+ *          MIN_INTERVAL_DAYS (~15 minutes), and it counts as a lapse only if
+ *          the card had been successfully reviewed (S > 0): a card that was
+ *          never remembered has nothing to forget, however many times it was
+ *          missed. (A missed card keeps S > 0 afterwards, so missing a
+ *          remembered card twice in a row is two lapses.)
  *   others S grows: S' = base * (1 + (F_g - 1) * k_D * k_t), where
  *            base = max(S, 1 day) (so a lapsed or brand-new card restarts
  *                   from a one-day footing, not from minutes),
@@ -36,13 +39,25 @@
  *
  * Totality. Elapsed time is max(0, now - last), so a clock that went
  * backwards counts as zero elapsed and `due` is always `>= now`. `now` itself
- * must be a finite number or a RangeError is thrown; everything else is
- * repaired rather than trusted: a stored state with NaN/Infinity/out-of-range
- * fields is replaced field by field by safe defaults, a never-seen card
- * (reps = 0) is "new" and due immediately however stale its stored `due`, and
- * a stored `due` more than MAX_INTERVAL_DAYS after its review (written while
- * the clock was far ahead) is capped there, so a card cannot be stranded for
- * years.
+ * must be a finite number and `grade` one of the four grades, or a RangeError
+ * is thrown; everything else is repaired rather than trusted: a stored state
+ * with NaN/Infinity/out-of-range fields is replaced field by field by safe
+ * defaults, and a never-seen card (reps = 0) is "new" and due immediately
+ * however stale its stored `due`.
+ *
+ * Clock that was once ahead. `due` is an absolute time, so a review written
+ * while the device clock ran ahead stores a `due` that is ahead too. The
+ * scheduler cannot know when the clock was corrected (it keeps no state beyond
+ * the card), but it can see the symptom: `last` is later than `now`. Such a
+ * card is treated as due now (so it is re-asked and re-anchored by the next
+ * review) once `last` is more than CLOCK_SKEW_TOLERANCE_MS ahead of `now`;
+ * within the tolerance (ordinary cross-device skew) the stored `due` is used
+ * as written. What is protected: after the clock is corrected a card is
+ * shown at most once early, instead of being hidden for as long as the clock
+ * was ahead. What is not: a card whose clock was ahead by less than the
+ * tolerance may be delayed by up to that tolerance, and a card with
+ * reps > 0 but no `last` (stored state incomplete) is shown rather than
+ * hidden.
  */
 
 export type Grade = 'again' | 'hard' | 'good' | 'easy';
@@ -64,6 +79,8 @@ export const DAY_MS = 86_400_000;
 /** About 15 minutes: when a missed card comes back. */
 export const MIN_INTERVAL_DAYS = 0.01;
 export const MAX_INTERVAL_DAYS = 365;
+/** A review this far ahead of `now` means the clock was wrong when it was written. */
+export const CLOCK_SKEW_TOLERANCE_MS = DAY_MS;
 
 const GRADE_FACTOR = { hard: 1.2, good: 2.2, easy: 3.5 } as const;
 const DIFFICULTY_DELTA: Record<Grade, number> = {
@@ -116,17 +133,17 @@ function sanitize(s: CardState): CardState {
 }
 
 /**
- * The due time to compare against `now`. New cards (and a reviewed card that
- * lost its `last`, which only corruption produces) are due now. Otherwise the
- * stored due is capped at MAX_INTERVAL_DAYS after the review it came from, or
- * after `now` if the clock has since gone backwards past that review: the
- * scheduler never writes a longer interval, so anything later was written by a
- * clock that was ahead.
+ * The due time to compare against `now`. New cards, a reviewed card that lost
+ * its `last` (only corruption produces that: show it rather than hide it) and
+ * a card whose review lies more than CLOCK_SKEW_TOLERANCE_MS in the future
+ * (the clock was ahead when it was written, see the header) are due now.
+ * Otherwise the stored `due` stands.
  */
 function effectiveDue(s: CardState, now: number): number {
   const c = sanitize(s);
   if (c.reps === 0 || c.last === null) return now;
-  return Math.min(c.due, Math.min(c.last, now) + MAX_INTERVAL_DAYS * DAY_MS);
+  if (c.last - now > CLOCK_SKEW_TOLERANCE_MS) return now;
+  return c.due;
 }
 
 export function newCard(now: number): CardState {
@@ -136,6 +153,9 @@ export function newCard(now: number): CardState {
 
 export function review(s: CardState, grade: Grade, now: number): CardState {
   assertNow(now);
+  if (!Object.prototype.hasOwnProperty.call(DIFFICULTY_DELTA, grade)) {
+    throw new RangeError(`unknown grade ${String(grade)}`);
+  }
   const c = sanitize(s);
   const difficulty = clamp(
     c.difficulty + DIFFICULTY_DELTA[grade],
@@ -149,13 +169,12 @@ export function review(s: CardState, grade: Grade, now: number): CardState {
   let lapses = c.lapses;
   if (grade === 'again') {
     stability = c.stability * LAPSE_KEEP;
-    if (c.reps > 0) lapses += 1;
+    if (c.stability > 0) lapses += 1;
   } else {
     const base = Math.max(c.stability, BASE_STABILITY_DAYS);
     // `now - last` can be Infinity or negative for wild clocks; clamp handles both.
     const elapsedDays = c.last === null ? 0 : Math.max(0, now - c.last) / DAY_MS;
-    const timing =
-      c.last === null ? 1 : clamp(elapsedDays / base, TIMING_MIN, TIMING_MAX, 1);
+    const timing = c.last === null ? 1 : clamp(elapsedDays / base, TIMING_MIN, TIMING_MAX, 1);
     const difficultyTerm = 1 - DIFFICULTY_WEIGHT * (c.difficulty - DEFAULT_DIFFICULTY);
     stability = clamp(
       base * (1 + (GRADE_FACTOR[grade] - 1) * difficultyTerm * timing),
