@@ -3778,8 +3778,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
     .site-sticky-chrome,
     .site-sticky-secondary,
     [data-slot='context-rail'],
-    .lib-explorer,
-    .tab-sheet-scroll
+    .lib-explorer
   ):not(.site-sticky-pinned),
 .radial-shell__main .sticky:not(.site-sticky-pinned) {
   /* `relative`, not `static`: a glass role host (`.glass-chrome` on a header)

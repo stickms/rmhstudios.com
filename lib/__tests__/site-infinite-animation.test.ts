@@ -121,7 +121,6 @@ const BASELINE = new Map<string, string>([
     'cosmetic name-colour effect on a purchased username, text-sized',
   ],
   ['app/globals.css :: glitch', 'cosmetic name effect on a purchased username, text-sized'],
-  ['app/globals.css :: shake', 'cosmetic name effect on a purchased username, text-sized'],
   [
     'app/globals.css :: dr-float',
     'Dream Rift landing title float (its game landing, not a surface)',

@@ -85,7 +85,7 @@ const GEL_GEOMETRY = [
   '--gel-well-shade',
 ];
 
-const THEMES = ['default', 'light', 'graphite', 'sepia', 'nocturne', 'ultra'];
+const THEMES = ['default', 'graphite'];
 
 /** Whitespace-insensitive view of a stylesheet: runs collapsed, none just inside parentheses (prettier wraps them). */
 const flatten = (css: string) =>

@@ -185,7 +185,7 @@ const hexOf = (c: RGBA) => toHex(c);
 // ── the themes ──────────────────────────────────────────────────────────────────────────────────────────
 const rootBlock = blocks(GLOBALS, ':root').find((b) => b.includes('--site-jelly-haze:'));
 const ROOT_TOKENS: Tokens = decls(rootBlock ?? '');
-const THEMES = ['default', 'light', 'graphite', 'sepia', 'nocturne', 'ultra'] as const;
+const THEMES = ['default', 'graphite'] as const;
 function siteTheme(name: string): Tokens {
   const own: Tokens = Object.assign({}, ...blocks(GLOBALS, `.style-${name}`).map(decls));
   return { ...ROOT_TOKENS, ...own };

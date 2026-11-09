@@ -167,7 +167,7 @@ describe('default theme before first paint', () => {
   });
 
   it('a retired id self-heals to the default', () => {
-    const { classes, stored } = runThemeScript({ 'rmh-style': 'nocturne' });
+    const { classes, stored } = runThemeScript({ 'rmh-style': 'sepia' });
     expect(classes.has('style-graphite')).toBe(true);
     expect(stored.get('rmh-style')).toBe(DEFAULT_STYLE);
   });

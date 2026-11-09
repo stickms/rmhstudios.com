@@ -96,9 +96,7 @@
     --kd-seq-5: rgb(255 191 134);
   }
 }
-html.style-graphite .kd-root,
-html.style-nocturne .kd-root,
-html.style-ultra .kd-root {
+html.style-graphite .kd-root {
   --kd-seq-1: rgb(132 51 0);
   --kd-seq-2: rgb(172 77 0);
   --kd-seq-3: rgb(213 106 0);
@@ -107,9 +105,7 @@ html.style-ultra .kd-root {
 }
 /* …and the light ones take it back, so a light theme under a dark OS preference
    is not left with the dark ramp the media query just handed it. */
-html.style-default .kd-root,
-html.style-light .kd-root,
-html.style-sepia .kd-root {
+html.style-default .kd-root {
   --kd-seq-1: rgb(250 156 78);
   --kd-seq-2: rgb(236 127 31);
   --kd-seq-3: rgb(213 104 0);
