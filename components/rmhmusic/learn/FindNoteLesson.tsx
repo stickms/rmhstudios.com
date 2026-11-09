@@ -35,6 +35,7 @@ import {
   createFindNoteMachine,
   dealTargets,
   findNotePool,
+  playHintFits,
   targetStaff,
   type Answer,
   type FindNoteMode,
@@ -128,7 +129,8 @@ export function FindNoteLesson({
     t('lesson-not-saved', { defaultValue: 'Not saved yet' }),
   );
 
-  const plays = input !== 'screen';
+  // "Or play it" only where it is true: the computer keys reach C4 to C5, not the low notes.
+  const plays = target ? playHintFits(input, target.midi) : input !== 'screen';
   const pianoGroupHint = (letter: NoteLetter): string => {
     switch (letter) {
       case 'C':
@@ -229,7 +231,7 @@ export function FindNoteLesson({
           : ''
         : line;
 
-  // The staff card: the target, drawn where its music is written; its name always written under.
+  // The staff card: the target, drawn where its music is written, its name pencilled beside it.
   let question: ReactNode = null;
   if (target) {
     const staff = targetStaff(target.midi, instrument);
@@ -288,6 +290,8 @@ export function FindNoteLesson({
     ) : (
       <OnScreenKeyboard
         tall
+        // The letters would give the answer away: the learner finds the key by its place.
+        hideLabels
         // The two-octave lesson asks C3 to B4: open on C3, so a wide screen shows all of it.
         startOctave={mode === 'fretboard' ? 3 : 4}
         rightKey={lesson.kind === 'feedback' && target ? target.midi : null}

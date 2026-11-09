@@ -25,6 +25,7 @@
  * whole pool before any repeat, never the same target twice in a row.
  */
 import { dealRounds } from '../content/decks';
+import { inKeysRange } from '../input/keyboard-map';
 import type { Instrument } from '../schemas';
 import type { Clef } from '../theory/clef';
 import {
@@ -116,4 +117,14 @@ export function targetStaff(midi: number, instrument: Instrument): { clef: Clef;
 /** Deal `count` targets from `pool`: the whole pool before any repeat, never one twice in a row. */
 export function dealTargets(pool: readonly number[], count: number, rand: () => number): Target[] {
   return dealRounds(pool, count, rand).map((midi) => ({ midi }));
+}
+
+/**
+ * Whether "or play it" is true for a target on this input: the microphone and a MIDI controller
+ * play anything, the computer keys only reach C4 to C5, and the on-screen input has nothing to
+ * play (the board is the input).
+ */
+export function playHintFits(input: 'screen' | 'keys' | 'mic' | 'midi', midi: number): boolean {
+  if (input === 'screen') return false;
+  return input === 'keys' ? inKeysRange(midi) : true;
 }

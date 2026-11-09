@@ -6,6 +6,7 @@ import {
   MIN_WHITE_PX,
   clampOctave,
   inView,
+  octaveShowing,
   swipeShift,
   whiteKeysFor,
   windowKeys,
@@ -88,5 +89,36 @@ describe('on-screen keyboard window', () => {
     expect(swipeShift(60, 5)).toBe(-1);
     expect(swipeShift(30, 0)).toBe(0);
     expect(swipeShift(50, 60)).toBe(0);
+  });
+});
+
+describe('octaveShowing', () => {
+  const C = (octave: number) => 12 * (octave + 1);
+
+  it('keeps the window when the key is already in view', () => {
+    expect(octaveShowing(C(4), 4, 7)).toBe(4);
+    expect(octaveShowing(C(4) + 11, 4, 7)).toBe(4); // B4 is the seventh white
+    expect(octaveShowing(C(5) + 2, 4, 14)).toBe(4); // D5, in the second octave of a wide window
+  });
+
+  it("moves to the key's own octave when a narrow window shows another", () => {
+    expect(octaveShowing(C(4) + 4, 3, 7)).toBe(4); // E4 from a window on C3
+    expect(octaveShowing(C(3) + 4, 4, 7)).toBe(3);
+    expect(octaveShowing(C(5), 3, 7)).toBe(5);
+  });
+
+  it('shows black keys too, and the highest key of the octave', () => {
+    expect(octaveShowing(C(4) + 10, 3, 7)).toBe(4); // A#4
+    expect(octaveShowing(C(4) + 1, 3, 7)).toBe(4); // C#4
+  });
+
+  it('moves as little as it can when a wide window would show the key as its second octave', () => {
+    expect(octaveShowing(C(4) + 4, 3, 14)).toBe(3); // E4 is in C3's second octave
+    expect(octaveShowing(C(5), 3, 14)).toBe(4); // C5 needs the window one octave up
+  });
+
+  it('leaves the window alone for a key no window can show', () => {
+    expect(octaveShowing(C(0), 4, 7)).toBe(4);
+    expect(octaveShowing(C(9), 4, 7)).toBe(4);
   });
 });

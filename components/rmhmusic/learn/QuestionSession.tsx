@@ -22,7 +22,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode, RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { isHeldActivation } from '@/lib/rmhmusic/learn/input/key-repeat';
+import { isHeldOnControl } from '@/lib/rmhmusic/learn/input/key-repeat';
 import { releaseMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import type { CompleteOutcome } from '@/lib/rmhmusic/learn/machines/learn-data';
 import type { Machine } from '@/lib/rmhmusic/learn/machines/runner';
@@ -292,10 +292,10 @@ export function SessionSheet<C, A>({
   );
 }
 
-/** The session's wrapper: cancels a repeating Enter that bubbled up from a button. */
+/** The session's wrapper: cancels a repeating Enter that bubbled up from a button or a link. */
 export function SessionFrame({ className, children }: { className: string; children: ReactNode }) {
   const onKeyDown = (e: ReactKeyboardEvent) => {
-    if (isHeldActivation(e.nativeEvent) && (e.target as HTMLElement).closest('button')) {
+    if (isHeldOnControl({ key: e.key, repeat: e.repeat, target: e.target as HTMLElement })) {
       e.preventDefault();
     }
   };

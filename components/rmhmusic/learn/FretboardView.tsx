@@ -29,7 +29,7 @@
  * pencil where the learner tapped. They are decoration; the lesson says the same in words.
  */
 
-import { memo, useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { playNote } from '@/lib/rmhmusic/learn/audio/voice';
@@ -61,7 +61,7 @@ const openName = (string: number) => midiToName(STANDARD_TUNING[string]).replace
 const same = (a: FretPosition | null | undefined, string: number, fret: number) =>
   !!a && a.string === string && a.fret === fret;
 
-export const FretboardView = memo(function FretboardView({
+export function FretboardView({
   asking,
   onAnswer,
   right,
@@ -80,6 +80,7 @@ export const FretboardView = memo(function FretboardView({
   const { t } = useTranslation('c-rmhmusic');
   const [focus, setFocus] = useState<FretPosition>({ string: STRING_COUNT - 1, fret: 0 });
   const grid = useRef<HTMLDivElement>(null);
+  const helpId = useId();
   const releases = useRef(new Set<() => void>());
 
   // Let go of any note still sounding when the board goes away.
@@ -134,8 +135,17 @@ export const FretboardView = memo(function FretboardView({
         ref={grid}
         role="group"
         aria-label={t('find-fretboard', { defaultValue: 'Fretboard, frets 0 to 5' })}
+        aria-describedby={helpId}
         className="rmm-fret__grid"
       >
+        {/* How the arrow keys move, read after the group's name. A sentence rather than
+            `aria-description`, which not every screen reader reads yet. */}
+        <span id={helpId} className="sr-only">
+          {t('find-fretboard-help', {
+            defaultValue:
+              'Arrow keys move between strings and frets. Enter or Space answers with that place.',
+          })}
+        </span>
         {INLAYS.map((fret) => (
           <span
             key={`inlay-${fret}`}
@@ -223,4 +233,4 @@ export const FretboardView = memo(function FretboardView({
       </div>
     </div>
   );
-});
+}

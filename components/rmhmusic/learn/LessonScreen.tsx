@@ -152,7 +152,7 @@ export function FlashcardSkeleton() {
 
 /**
  * The note finder's placeholder: its boxes exactly — the target's sheet (title line, the low staff
- * card and its name line, the sentence line), then the board and the input line
+ * card with its name drawn inside it, the sentence line), then the board and the input line
  * (`.rmm-find__answers`, one height on piano and guitar, so the placeholder needs no instrument).
  */
 function FindNoteSkeleton() {

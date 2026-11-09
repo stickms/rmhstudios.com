@@ -7,7 +7,9 @@
  *
  * The SVG's box is fixed and the line under it (where the answer is written once given) is
  * reserved, so asking, answering and the next card never move anything. While asking, the image
- * says only which staff the note is on; once answered it names the note. The note's colour (ink,
+ * says only which staff the note is on; once answered it names the note. The note finder instead
+ * gives a `caption`: its target's name pencilled beside the note in every state, with no line under
+ * the card. All SVG text is `direction="ltr"` so RTL locales do not mirror it. The note's colour (ink,
  * the accent when right, red pencil when wrong) is never the only signal: the lesson says it in
  * words.
  */
@@ -133,6 +135,8 @@ export function StaffCard({
               x="19.5"
               y="101"
               textAnchor="middle"
+              // Positioned in the card's own coordinates, whatever the page's direction (ar, ur).
+              direction="ltr"
               fontSize="10"
               className="rmm-display"
               stroke="none"
@@ -167,6 +171,8 @@ export function StaffCard({
               key={card.id}
               x={CARD_NOTE_X + 20}
               y={layout.noteY + 6}
+              // `text-anchor: start` ends at x under `dir="rtl"`, which put the name on the note.
+              direction="ltr"
               fontSize="19"
               // A margin of paper round the letters where they cross a staff line.
               stroke="var(--app-surface)"

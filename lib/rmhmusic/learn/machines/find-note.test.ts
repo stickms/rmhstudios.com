@@ -8,6 +8,7 @@ import {
   findNoteMachine,
   findNotePool,
   isRight,
+  playHintFits,
   step,
   targetStaff,
   type Effect,
@@ -262,5 +263,35 @@ describe('targetStaff (Review Focus 6: the guitar is written an octave up)', () 
     expect(targetStaff(60, 'piano')).toEqual({ clef: 'treble', midi: 60 });
     expect(targetStaff(59, 'piano')).toEqual({ clef: 'bass', midi: 59 });
     expect(targetStaff(48, 'piano')).toEqual({ clef: 'bass', midi: 48 });
+  });
+});
+
+describe('playHintFits', () => {
+  it('never offers "play it" to on-screen input, where the board is the input', () => {
+    expect(playHintFits('screen', 60)).toBe(false);
+  });
+
+  it('offers it on the microphone and MIDI for any target', () => {
+    for (const input of ['mic', 'midi'] as const) {
+      expect(playHintFits(input, 40)).toBe(true); // the open low E
+      expect(playHintFits(input, 48)).toBe(true);
+    }
+  });
+
+  it('offers it on the computer keys only for notes those keys play (C4 to C5)', () => {
+    expect(playHintFits('keys', 60)).toBe(true);
+    expect(playHintFits('keys', 71)).toBe(true);
+    expect(playHintFits('keys', 40)).toBe(false); // guitar's open low E
+    expect(playHintFits('keys', 55)).toBe(false); // G3
+    expect(playHintFits('keys', 48)).toBe(false); // the two-octave lesson's C3
+  });
+
+  it('is false for exactly the keys-input targets the home row cannot reach', () => {
+    const unreachable = [
+      ...findNotePool('fretboard', 'guitar'),
+      ...findNotePool('fretboard', 'piano'),
+    ].filter((midi) => !playHintFits('keys', midi));
+    expect(unreachable.length).toBeGreaterThan(0);
+    expect(unreachable.every((midi) => midi < 60 || midi > 72)).toBe(true);
   });
 });

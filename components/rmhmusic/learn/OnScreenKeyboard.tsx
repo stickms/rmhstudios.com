@@ -19,7 +19,7 @@
  * even in the frame before `html.native-material` is stamped on a client navigation.
  */
 
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent, PointerEvent } from 'react';
 import { Minus, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -30,6 +30,7 @@ import {
   MIN_OCTAVE,
   clampOctave,
   inView,
+  octaveShowing,
   swipeShift,
   whiteKeysFor,
   windowKeys,
@@ -78,6 +79,7 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
   startOctave = DEFAULT_OCTAVE,
   rightKey = null,
   wrongKey = null,
+  hideLabels = false,
 }: {
   className?: string;
   /** Taller keys, filling the note finder's board box (see `.rmm-find__board`). */
@@ -87,10 +89,17 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
   /**
    * Marks drawn on keys once a question is answered (the note finder): the right key gets a filled
    * notehead, a wrong key pressed an open one. Decoration: the lesson says the same in words.
-   * Plain numbers, so the memo holds while nothing is marked.
+   * Plain numbers, so the memo holds while nothing is marked. When the right key is out of view
+   * (a phone shows one octave) the window moves to the nearest octave that shows it, so the mark
+   * is never somewhere the learner has to hunt for.
    */
   rightKey?: number | null;
   wrongKey?: number | null;
+  /**
+   * No letter on the white keys, for a lesson that asks the learner to find a key by its place
+   * (the note finder): the letters would answer the question. The keys keep their accessible names.
+   */
+  hideLabels?: boolean;
 }) {
   const { t } = useTranslation('c-rmhmusic');
   const screen = useLearnStore((s) => s.screen);
@@ -148,6 +157,17 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
     observer.observe(bed);
     return () => observer.disconnect();
   }, []);
+
+  // A key is marked once the question is answered: bring it into view if the window does not show
+  // it. Before paint, so the mark never appears and then jumps; `whites` is the measured count.
+  useLayoutEffect(() => {
+    if (rightKey === null) return;
+    const next = octaveShowing(rightKey, octave, whites);
+    if (next === octave) return;
+    releaseAll();
+    setOctave(next);
+    // Only when a key is marked or the room changes: the learner's own octave moves stand after.
+  }, [rightKey, whites]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const shift = (by: number) => {
     const next = clampOctave(octave + by);
@@ -318,7 +338,9 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
                   )}
                 />
               )}
-              {!key.black && <span aria-hidden="true">{key.midi % 12 === 0 ? name : letter}</span>}
+              {!key.black && !hideLabels && (
+                <span aria-hidden="true">{key.midi % 12 === 0 ? name : letter}</span>
+              )}
             </button>
           );
         })}

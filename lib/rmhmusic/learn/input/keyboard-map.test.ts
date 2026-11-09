@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { keyToMidi } from './keyboard-map';
+import { inKeysRange, keyToMidi } from './keyboard-map';
 
 describe('keyToMidi', () => {
   it('maps the home row to C4..C5 with sharps on the row above', () => {
@@ -57,5 +57,38 @@ describe('keyToMidi', () => {
   it('does not match inherited object keys', () => {
     expect(keyToMidi('toString')).toBeNull();
     expect(keyToMidi('constructor')).toBeNull();
+  });
+});
+
+describe('inKeysRange', () => {
+  it('is the notes the home row plays, C4 to C5, and nothing outside them', () => {
+    expect(inKeysRange(60)).toBe(true);
+    expect(inKeysRange(66)).toBe(true);
+    expect(inKeysRange(72)).toBe(true);
+    expect(inKeysRange(59)).toBe(false);
+    expect(inKeysRange(73)).toBe(false);
+    expect(inKeysRange(40)).toBe(false); // the open low E
+    expect(inKeysRange(48)).toBe(false); // the two-octave lesson's C3
+  });
+
+  it('agrees with what keyToMidi can produce', () => {
+    for (let midi = 30; midi < 90; midi++) {
+      const played = [
+        'KeyA',
+        'KeyW',
+        'KeyS',
+        'KeyE',
+        'KeyD',
+        'KeyF',
+        'KeyT',
+        'KeyG',
+        'KeyY',
+        'KeyH',
+        'KeyU',
+        'KeyJ',
+        'KeyK',
+      ].some((c) => keyToMidi(c) === midi);
+      expect(inKeysRange(midi)).toBe(played);
+    }
   });
 });
