@@ -944,12 +944,9 @@ body:has(.radial-shell) .call-banner {
   animation: dock-globe-glint 1.6s ease-in-out 1;
 }
 /* `still` stops it, as it stops every ambient motion (WCAG 2.2.2), and so do the
-   degraded tiers (lib/jelly/tiers.ts DEGRADED_ROOT_SELECTOR; high contrast hides
-   the whole ring below). */
+   high contrast hides the whole ring below). */
 html[data-jelly-motion='still'] .rad-globe-dock__shimmer::before,
-html[data-jelly-motion='still'] .rad-globe-dock__shimmer::after,
-:root:is(.perf-lite) .rad-globe-dock__shimmer::before,
-:root:is(.perf-lite) .rad-globe-dock__shimmer::after {
+html[data-jelly-motion='still'] .rad-globe-dock__shimmer::after {
   animation: none;
 }
 @keyframes dock-globe-shimmer {
@@ -1613,8 +1610,8 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
      If a blank ever shows on the way IN too (the same buffer, during the 0.32s
      before the growing veil covers it), the answer is not a longer transition —
      it is to stop filtering `.radial-frame` at all and let the veil carry the
-     separation alone, which is already what `perf-lite`, `reduce-transparency`
-     and `ios-webkit` do a few rules below. */
+     separation alone, which is already what `reduce-transparency` and
+     `ios-webkit` do a few rules below. */
   transition: filter 0.32s var(--ease-glass, var(--ease-smooth));
 }
 /* …and the "rasterises once" above is only true if the blurred layer HOLDS
@@ -1637,15 +1634,13 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
      that transition is declared on the open state itself. */
 }
 
-/* The degradation tiers opt out and lean on the veil, which is already opaque
-   enough to carry the separation on its own: `perf-lite` because a full-page
-   rasterisation is exactly what that tier exists to avoid, and
-   `reduce-transparency` because a visitor who asked for less see-through
-   material did not ask for a blurrier one.
+/* `reduce-transparency` opts out and leans on the veil, which is already opaque
+   enough to carry the separation on its own: a visitor who asked for less
+   see-through material did not ask for a blurrier one.
 
-   `ios-webkit` joins them, and for a reason that is worth separating from the
-   other two: it is not that the device is weak or that the visitor asked for
-   less, it is that the premise above does not hold on WebKit. "A `filter` on a
+   `ios-webkit` joins it, and for a reason that is worth separating: it is not
+   that the visitor asked for less, it is that the premise above does not hold
+   on WebKit. "A `filter` on a
    static subtree rasterises once and is then a cached texture" is a CHROMIUM
    measurement. `.radial-frame` is the whole feed — a subtree as tall as the
    document, holding every lazy-loaded card — and asking a phone to keep a
@@ -1658,19 +1653,15 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    this way — `hooks/useLiquidBackground.ts` detaches wholesale on `ios-webkit`
    because "moving a fixed, oversized gradient underneath multiple translucent
    surfaces can wedge WebKit's compositor". Same engine, same shape of problem. */
-html.perf-lite .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-backdrop,
-html.perf-lite .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-topbar,
-html.perf-lite .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-frame,
 html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-backdrop,
 html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-topbar,
 html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-frame,
-html:is(.perf-lite, .ios-webkit) .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) > [data-floating]:not([data-floating='hub']) {
+html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) > [data-floating]:not([data-floating='hub']) {
   filter: none;
 }
 /* The veil is translucent ONLY because the page behind it is blurred (see its
    own note). Wherever that blur is off, it has to carry the separation alone or
    the menu opens onto a legible, unblurred page with a tint over it. */
-html.perf-lite .radial-hub__veil,
 html.ios-webkit .radial-hub__veil {
   background: var(--site-bg);
 }
@@ -1679,8 +1670,7 @@ html.ios-webkit .radial-hub__veil {
    On a phone the menu used to black the page out: iOS Safari is one of the tiers
    above that skip the blur, so its veil was opaque `--site-bg`. The page now stays
    there, very slightly blurred, with only a light tint over it for the globe's
-   labels. Only `perf-lite` and `reduce-transparency` keep the opaque veil: the first
-   exists to avoid this raster and the second asked for less see-through material.
+   labels. Only `reduce-transparency` keeps the opaque veil: it asked for less see-through material.
 
    WebKit is the one engine the note above warns about (a blur of the document-tall
    feed is a memory bet there). The radius is kept to 3px for that reason, and the
@@ -1690,11 +1680,13 @@ html.ios-webkit .radial-hub__veil {
   .radial-shell {
     --hub-page-blur: 3px;
   }
-  html:not(.perf-lite) .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) :is(.radial-backdrop, .radial-topbar, .radial-frame),
-html:not(.perf-lite) .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) > [data-floating]:not([data-floating='hub']) {
+  /* `html:root` matches the specificity of the `html.ios-webkit` rules above (this block wins on order, as it always
+     has on iOS). */
+  html:root .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) :is(.radial-backdrop, .radial-topbar, .radial-frame),
+html:root .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) > [data-floating]:not([data-floating='hub']) {
     filter: blur(var(--hub-page-blur, 3px));
   }
-  html:not(.perf-lite) .radial-hub__veil {
+  html:root .radial-hub__veil {
     /* A gradient, not a flat colour: Safari reads a plain full-width background colour at the screen's edge as
        the page's edge and fills its tab bar with it (the band that showed while the menu was open). */
     background: linear-gradient(
@@ -2015,7 +2007,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
    square stage it made jelly-coverage.css paint a rectangular rim, haze floor and
    plasma glow round the ball — the globe's jelly is drawn by its own round shader);
    until then (and wherever it is not eligible — high contrast, reduced
-   transparency, `perf-lite`, no WebGL) the CSS glass above is the material.
+   transparency, a software renderer, no WebGL) the CSS glass above is the material.
 
    The disc keeps its rim hairline and its drop shadow (box-shadow); only the
    painted gradients and the drifting sheen are the shader's now. That also
@@ -2225,8 +2217,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
   opacity: 0;
   animation: globe-current-halo 2.4s ease-out 3;
 }
-html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-globe__pin-dot::before,
-:root:is(.perf-lite) .radial-globe__pin[aria-current='page'] .radial-globe__pin-dot::before {
+html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-globe__pin-dot::before {
   animation: none;
 }
 .radial-globe__pin[aria-current='page'] .radial-globe__pin-name {
@@ -3712,7 +3703,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
    exactly the living scene the panes are meant to sample. So the glass classes
    render at full strength here — the elevation tiers, the rim glint, the lens
    band, the pointer light — and every degradation (high-contrast,
-   reduce-transparency, perf-lite, iOS safety tier) still owns the fallback in
+   reduce-transparency, iOS safety tier) still owns the fallback in
    globals.css. Nothing is overridden per-shell any more — the content layer
    (.radial-shell__main, z-index 1) already sits above the fixed ring backdrop,
    so every pane inside it samples the backdrop instead of hiding it. */

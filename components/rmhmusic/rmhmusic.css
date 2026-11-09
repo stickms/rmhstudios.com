@@ -1,58 +1,533 @@
 /**
- * RMHMusic — palette.
+ * RMHMusic — the notebook-paper scheme, in light and dark.
  *
- * Structure comes from the shared app chrome (see
- * `components/shared/app-theme.css`). RMHMusic contributes a violet accent on
- * a near-black ramp, because the app paints a full-bleed visualiser behind its
- * chrome and any lift in the ground washes it out.
+ * Structure comes from the shared app chrome (`components/shared/app-theme.css`); this file is
+ * the palette and the paper. Scheme: docs/game-design-schemes/rmhmusic.json.
  *
- * `/rmhmusic` is a THEME_EXCLUDED_ROUTE (see `components/Providers.tsx`), so
- * the site theme class is never applied here and `--site-*` would otherwise
- * resolve against the *light* base palette — black-on-black on the landing
- * hero. The `--site-*` aliases at the bottom repoint the components that still
- * read site tokens at this palette. They are a compatibility shim for existing
- * markup, not a pattern to extend: new markup reads `--app-*`.
+ *   Light ("paper", the base): cream notebook paper, navy fountain-pen ink, blue ruled lines,
+ *   a faint red-pencil margin rule, and one pen-ink accent — indigo #4338ca. Indigo keeps the
+ *   violet-blue identity the app always had while reading as INK on paper (7.0:1 on the ground),
+ *   which a light violet could not.
+ *   Dark ("night manuscript"): deep ink-navy paper, pale cream ink, the same indigo lightened to
+ *   #a8b4ff, ruled lines a step lighter than the paper.
+ *
+ * Every text/background pair is ≥ 4.5:1 and the focus ring (the accent) ≥ 3:1 against the ground
+ * and the sheets in both modes; the table is in the Task 13 report and the ratios are noted
+ * beside the tokens that are closest to the line.
+ *
+ * ## How the mode is chosen (no flash, no mismatch)
+ *
+ * Light is the base. Dark applies under `@media (prefers-color-scheme: dark)` unless `<html>`
+ * says `data-app-dark="0"`, and under `<html data-app-dark="1">`. The server-rendered page is
+ * therefore right for the system preference with no script; the site's pre-paint script stamps
+ * `data-app-dark` from a stored choice before first paint (`/rmhmusic` in `APP_ROUTE_THEME_BG`,
+ * `stores/themeStore.ts`, whose two grounds are `--app-bg` below). See
+ * `components/rmhmusic/useRmhMusicMode.ts`.
+ *
+ * `/rmhmusic` is a THEME_EXCLUDED_ROUTE, so no site theme class is ever applied here. Nothing in
+ * the app reads `--site-*` tokens any more (the shared primitives it uses are re-pointed at
+ * `--app-*` by app-theme.css), so the old compatibility aliases are gone.
  */
 
 @import '../shared/app-theme.css';
 
+/* The display face: IM Fell English, the face of the logo's wordmark (a 17th-century English
+   roman, cut from the Fell types). Declared here and nowhere else, so it loads only on RMH Music;
+   `app/routes/rmhmusic.tsx` preloads it. One weight (400) and no italic: headings set it at 400
+   and `.rmm-display` turns off synthesised bold and slant. OFL licence beside the file.
+
+   `swap`, so a heading shows at once in the book serif and changes face when Fell arrives —
+   without moving anything. Every heading has an explicit line height and a fixed number of lines,
+   so no box changes; and the fallback below takes Fell's own vertical metrics (ascent 91%,
+   descent 36% of the size: its hhea values), so the glyphs' line box does not jump either
+   (Chromium counts a text node moving 3px inside its heading as a layout shift). */
+@font-face {
+  font-family: 'IM Fell English';
+  src: url('../shared/game-fonts/IMFellEnglish/IMFellEnglish-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+/* The metric overrides below apply only when one of these local() faces is installed; otherwise
+   the named serifs in the stack are used without them (a negligible shift). */
+@font-face {
+  font-family: 'RMM Book Serif';
+  src:
+    local('Iowan Old Style'), local('IowanOldStyle-Roman'), local('Palatino Linotype'),
+    local('Palatino'), local('Palatino-Roman'), local('Book Antiqua'), local('Georgia'),
+    local('Times New Roman'), local('TimesNewRomanPSMT'), local('Liberation Serif'),
+    local('Noto Serif'), local('DejaVu Serif');
+  font-weight: 400;
+  font-style: normal;
+  ascent-override: 91%;
+  descent-override: 36%;
+  line-gap-override: 0%;
+}
+
+/* ── Light: paper ─────────────────────────────────────────────────────────── */
 .rmhmusic-theme {
-  --app-bg: #0b0b0b;
-  --app-bg-subtle: #111113;
-  --app-surface: #17171a;
-  --app-surface-hover: #202024;
-  --app-surface-active: #2a2a2f;
-  --app-border: #2c2c31;
-  --app-border-bright: #3d3d44;
-  --app-text: #f2f2f5;
-  --app-text-muted: #a8a8b3;
-  --app-text-dim: #7c7c88;
+  --app-bg: #f6f0e1;
+  --app-bg-subtle: #efe7d4;
+  /* A sheet: a slightly whiter page lying on the cream ground. */
+  --app-surface: #fcf8ee;
+  --app-surface-hover: #f0e8d5;
+  --app-surface-active: #e6dcc4;
+  /* Ruled-line blue: dividers. `-bright` outlines controls (3.0:1 on the ground). */
+  --app-border: #c3cfe4;
+  --app-border-bright: #6f82a8;
+  --app-text: #1a2747;
+  --app-text-muted: #3f4d70;
+  /* 5.0:1 on the hover fill, its lowest pairing. */
+  --app-text-dim: #56627f;
 
-  --app-accent: #a78bfa;
-  /* Near-black ink on the light violet accent (≈9:1); white would be 2.4:1. */
-  --app-accent-fg: #16101f;
-  --app-accent-hover: #8b6df0;
-  --app-success: #34d399;
-  --app-danger: #f87171;
-  --app-warning: #fbbf24;
+  --app-accent: #4338ca;
+  --app-accent-fg: #fcf8ee;
+  --app-accent-hover: #3730a3;
+  --app-success: #1d6b40;
+  --app-danger: #b02331;
+  --app-warning: #835400;
+  --app-info: #2c5aa0;
 
-  /* ── Compatibility aliases (see header) ── */
-  --site-bg: var(--app-bg);
-  --site-bg-subtle: var(--app-bg-subtle);
-  --site-surface: var(--app-surface);
-  --site-surface-opaque: var(--app-surface);
-  --site-surface-hover: var(--app-surface-hover);
-  --site-surface-active: var(--app-surface-active);
-  --site-border: var(--app-border);
-  --site-border-bright: var(--app-border-bright);
-  --site-text: var(--app-text);
-  --site-text-muted: var(--app-text-muted);
-  --site-text-dim: var(--app-text-dim);
-  --site-accent: var(--app-accent);
-  --site-accent-hover: var(--app-accent-hover);
-  --site-accent-dim: var(--app-accent-dim);
-  --site-accent-fg: var(--app-accent-fg);
-  --site-success: var(--app-success);
-  --site-danger: var(--app-danger);
-  --site-warning: var(--app-warning);
+  --app-accent-dim: rgb(67 56 202 / 0.1);
+  --app-glass-bg: var(--app-surface);
+  --app-toast-bg: var(--app-surface);
+  --app-scrim: rgb(26 39 71 / 0.45);
+  --app-gel-body: rgb(255 255 255 / 0.2);
+  --app-gel-depth: rgb(26 39 71 / 0.05);
+  --app-jelly-haze: color-mix(in srgb, var(--app-accent) 10%, white);
+
+  /* Type: IM Fell English for headings (the logo's face); behind it the system book serifs given
+     Fell's metrics (`RMM Book Serif`), then the same serifs by name — a browser that has not
+     resolved the local face yet (Firefox) still sets a book serif of the same width, not its
+     much wider generic serif — then the generic serif. */
+  --app-font-display:
+    'IM Fell English', 'RMM Book Serif', 'Iowan Old Style', 'Palatino Linotype', Palatino,
+    'Book Antiqua', Georgia, 'Times New Roman', 'Liberation Serif', ui-serif, serif;
+
+  /* Paper decoration — never text, so no contrast floor; kept faint on purpose. */
+  --rmm-rule: #c3cfe4;
+  --rmm-margin: #e3a7a2;
+  --rmm-staff: #c9d2e3;
+  --rmm-grain: rgb(26 39 71 / 0.035);
+  /* The backdrop's ambient notes and the note a learner just played. */
+  --rmm-note: #a3aec6;
+  --rmm-pop: var(--app-accent);
+  /* The on-screen piano: ivory and ink keys; a played key fills with the accent. */
+  --rmm-key-white: #fcf8ee;
+  --rmm-key-white-ink: #3f4d70;
+  --rmm-key-black: #1a2747;
+  --rmm-key-lit: #4338ca;
+  --rmm-key-lit-ink: #fcf8ee;
+  /* A key's focus ring is two-tone, so one of its rings contrasts with every key colour. */
+  --rmm-key-ring: #1a2747;
+  --rmm-key-ring-inner: #fcf8ee;
+
+  color-scheme: light;
+}
+
+/* ── Dark: night manuscript ───────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-app-dark='0']) .rmhmusic-theme {
+    --app-bg: #0f182b;
+    --app-bg-subtle: #0b1324;
+    --app-surface: #162238;
+    --app-surface-hover: #1d2b46;
+    --app-surface-active: #243554;
+    --app-border: #2a3b5e;
+    /* 3.2:1 on the sheets. */
+    --app-border-bright: #5a6f9c;
+    --app-text: #f2ebd9;
+    --app-text-muted: #c9c1ad;
+    --app-text-dim: #a8a18f;
+    --app-accent: #a8b4ff;
+    --app-accent-fg: #0f182b;
+    --app-accent-hover: #c9d0ff;
+    --app-success: #86d6a6;
+    --app-danger: #f4a3a3;
+    --app-warning: #e9c46f;
+    --app-info: #9cc2f2;
+    --app-accent-dim: rgb(168 180 255 / 0.14);
+    --app-scrim: rgb(5 9 18 / 0.6);
+    --app-gel-body: rgb(255 255 255 / 0.015);
+    --app-gel-depth: rgb(0 0 0 / 0.14);
+    /* The haze stays in the night-paper family (blue ink in the paper), not milky white. */
+    --app-jelly-haze: color-mix(in srgb, var(--app-accent) 30%, var(--app-surface));
+    /* …and without the material's white cloud tile, which reads as milk on night paper. */
+    --jelly-tile: none;
+    --rmm-rule: #2a3b5e;
+    --rmm-margin: #6a3a48;
+    --rmm-staff: #1f2d4d;
+    --rmm-grain: rgb(242 235 217 / 0.03);
+    --rmm-note: #3d5080;
+    --rmm-key-white: #e4dcc8;
+    --rmm-key-white-ink: #1a2747;
+    --rmm-key-black: #070d1a;
+    --rmm-key-lit: #4f5ad6;
+    --rmm-key-lit-ink: #ffffff;
+    --rmm-key-ring: #070d1a;
+    --rmm-key-ring-inner: #e4dcc8;
+    color-scheme: dark;
+  }
+}
+:root[data-app-dark='1'] .rmhmusic-theme {
+  --app-bg: #0f182b;
+  --app-bg-subtle: #0b1324;
+  --app-surface: #162238;
+  --app-surface-hover: #1d2b46;
+  --app-surface-active: #243554;
+  --app-border: #2a3b5e;
+  --app-border-bright: #5a6f9c;
+  --app-text: #f2ebd9;
+  --app-text-muted: #c9c1ad;
+  --app-text-dim: #a8a18f;
+  --app-accent: #a8b4ff;
+  --app-accent-fg: #0f182b;
+  --app-accent-hover: #c9d0ff;
+  --app-success: #86d6a6;
+  --app-danger: #f4a3a3;
+  --app-warning: #e9c46f;
+  --app-info: #9cc2f2;
+  --app-accent-dim: rgb(168 180 255 / 0.14);
+  --app-scrim: rgb(5 9 18 / 0.6);
+  --app-gel-body: rgb(255 255 255 / 0.015);
+  --app-gel-depth: rgb(0 0 0 / 0.14);
+  --app-jelly-haze: color-mix(in srgb, var(--app-accent) 30%, var(--app-surface));
+  /* Kept identical to the block above by lib/rmhmusic/learn/theme-parity.test.ts. */
+  --jelly-tile: none;
+  --rmm-rule: #2a3b5e;
+  --rmm-margin: #6a3a48;
+  --rmm-staff: #1f2d4d;
+  --rmm-grain: rgb(242 235 217 / 0.03);
+  --rmm-note: #3d5080;
+  --rmm-key-white: #e4dcc8;
+  --rmm-key-white-ink: #1a2747;
+  --rmm-key-black: #070d1a;
+  --rmm-key-lit: #4f5ad6;
+  --rmm-key-lit-ink: #ffffff;
+  --rmm-key-ring: #070d1a;
+  --rmm-key-ring-inner: #e4dcc8;
+  color-scheme: dark;
+}
+
+/* The document's own ground (the scrollbar gutter, the overscroll area) and scheme. The pre-paint
+   script paints them on <html> inline when script runs; with JavaScript off only these rules can,
+   so the page no longer shows a white strip and a light scrollbar beside the paper. The colours are
+   `--app-bg` above, and the `/rmhmusic` entry of APP_ROUTE_THEME_BG has the same two:
+   theme-parity.test.ts pins these rules and that entry to `--app-bg` (light and dark).
+   A browser without `:has()` keeps the browser's white, as before. */
+:root:has(.rmhmusic-theme) {
+  background-color: #f6f0e1;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-app-dark='0']):has(.rmhmusic-theme) {
+    background-color: #0f182b;
+    color-scheme: dark;
+  }
+}
+
+/* ── The paper ground ─────────────────────────────────────────────────────────
+   The app's root paints it, before any script: the paper colour and a faint grain made of two
+   dot lattices at co-prime pitches (so no regular pattern shows). No raster texture. */
+.rmhmusic-theme {
+  position: relative;
+  background-color: var(--app-bg);
+  background-image:
+    radial-gradient(var(--rmm-grain) 0.6px, transparent 0.9px),
+    radial-gradient(var(--rmm-grain) 0.6px, transparent 0.9px);
+  background-size:
+    7px 7px,
+    11px 13px;
+  background-position:
+    0 0,
+    3px 5px;
+}
+
+/* Every screen is a document (`.app-page`) laid over the backdrop. */
+.rmhmusic-theme .app-page {
+  position: relative;
+  z-index: 1;
+}
+
+/* The page column carries the red-pencil margin rule, in its own gutter. */
+.rmm-column {
+  position: relative;
+}
+.rmm-column::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0.375rem;
+  width: 3px;
+  border-inline: 1px solid var(--rmm-margin);
+  pointer-events: none;
+}
+@media (min-width: 768px) {
+  .rmm-column::before {
+    inset-inline-start: -1.5rem;
+  }
+}
+
+/* ── The animated backdrop (PaperBackdrop.tsx) ────────────────────────────────
+   A band of staff paper across the top of the app. The staves are CSS — they are there before
+   any script and stay put; the canvas over them only draws the drifting notes, bar lines and
+   the note a learner plays, so its first frame adds marks and changes no colour. The staff
+   geometry here (first staff at 64px, lines 10px apart, a staff every 128px) is
+   `STAFF_FIRST` / `STAFF_GAP` / `STAFF_PERIOD` in `lib/rmhmusic/learn/backdrop/scene.ts`;
+   change both together. */
+.rmm-backdrop {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: min(100svh, 56rem);
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--rmm-staff) 0 1px,
+    transparent 1px 10px,
+    var(--rmm-staff) 10px 11px,
+    transparent 11px 20px,
+    var(--rmm-staff) 20px 21px,
+    transparent 21px 30px,
+    var(--rmm-staff) 30px 31px,
+    transparent 31px 40px,
+    var(--rmm-staff) 40px 41px,
+    transparent 41px 128px
+  );
+  background-position: 0 64px;
+  /* The band dissolves into plain paper rather than ending on a line. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 14rem), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 14rem), transparent);
+}
+.rmm-backdrop__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  transition: opacity var(--app-duration-slow) var(--ease-smooth, ease);
+}
+.rmm-backdrop__canvas[data-ready='true'] {
+  opacity: 1;
+}
+
+/* ── Paper things ─────────────────────────────────────────────────────────────
+   The hero's art, the path and the lesson's instruction page are sheets of paper lying on the
+   ground: barely rounded corners, a hairline edge, no shadow. Controls keep the app's rounder
+   radius; paper is not a control. Not a palette token, so it lives outside the palette blocks.
+
+   This 4px is the sanctioned paper-corner exception to the site's radius rule, from the owner's
+   "notebook paper" directive for this app: the CLAUDE.md radius rule (tokens, `--site-radius`)
+   governs the site tier, and the full-screen app tier owns its look. It is written as a custom
+   property, which is how it passes the CSS_RADIUS design gate: the gate is not what allows it,
+   the directive is, so use the property for paper and the `--app-radius*` tokens for controls. */
+.rmhmusic-theme {
+  --rmm-paper-radius: 4px;
+}
+
+/* ── The hero: the catalog card's banner and wordmark ────────────────────────
+   The art is replaced later at the same paths and aspect ratios, so nothing here depends on
+   what it shows: the frame reserves 3:1, the image covers it, and the frame's own paper tone
+   is what shows until (or if never) it loads. */
+.rmm-hero {
+  position: relative;
+  padding-bottom: 1.25rem;
+}
+.rmm-hero__frame {
+  position: relative;
+  aspect-ratio: 3 / 1;
+  overflow: hidden;
+  border-radius: var(--rmm-paper-radius);
+  background-color: var(--app-bg-subtle);
+  border: 1px solid var(--app-border);
+}
+.rmm-hero__frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* The wordmark sits on the frame's lower edge, half on the art and half on the paper, like a
+   label stuck to a notebook cover. Its box is reserved by its aspect ratio. */
+.rmm-hero__logo {
+  position: absolute;
+  inset-inline-start: 0.75rem;
+  bottom: 0;
+  width: min(56%, 20rem);
+  aspect-ratio: 1024 / 270;
+}
+.rmm-hero__logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* A sheet of paper: the path, the lesson's instruction page, a message. */
+.rmm-sheet {
+  background-color: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--rmm-paper-radius);
+}
+
+/* ── The learning path (PathUnit) ─────────────────────────────────────────────
+   One sheet of manuscript paper for the whole path. Each unit is a section of the score: its
+   title written large above a five-line staff, the staff closed by a double bar line (a final
+   bar, thin then thick, after the last unit), then its lessons on the page's ruled lines. */
+.rmm-unit + .rmm-unit {
+  margin-top: 1.5rem;
+}
+.rmm-unit__head {
+  padding: 1.5rem 1rem 0.75rem;
+}
+@media (min-width: 640px) {
+  .rmm-unit__head {
+    padding-inline: 2rem;
+  }
+}
+/* 25px: five lines 6px apart. The bar lines are its pseudo-elements, so the staff needs no
+   markup beyond one empty, aria-hidden box. */
+.rmm-unit__staff {
+  position: relative;
+  height: 25px;
+  margin-top: 0.5rem;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--app-border) 0 1px,
+    transparent 1px 6px
+  );
+}
+.rmm-unit__staff::before,
+.rmm-unit__staff::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+}
+/* The opening bar line. */
+.rmm-unit__staff::before {
+  inset-inline-start: 0;
+  border-inline-start: 1px solid var(--app-border-bright);
+}
+/* The closing double bar: thin, thin. */
+.rmm-unit__staff::after {
+  inset-inline-end: 0;
+  width: 5px;
+  border-inline: 1px solid var(--app-border-bright);
+}
+/* …and after the last unit, the final bar: thin, thick. */
+.rmm-unit:last-child .rmm-unit__staff::after {
+  width: 7px;
+  border-inline-end-width: 3px;
+}
+/* Lesson rows are the page's ruled lines. */
+.rmm-ruled > li {
+  border-top: 1px solid var(--rmm-rule);
+}
+
+/* Headings in the display face, at its one weight: never a synthesised bold or slant. */
+.rmm-display {
+  font-family: var(--app-font-display);
+  font-weight: 400;
+  font-style: normal;
+  font-synthesis: none;
+}
+
+/* ── The lesson's input region (FirstNoteLesson.tsx, LessonScreen's placeholder) ─────
+   One box for every state of the lesson below its instruction page: the keys, the input
+   chooser, "listening" for a running mic or MIDI controller, the result card. It is exactly the
+   keyboard's height (the octave bar 2.75rem + 0.5rem gap + the bed 10rem, 12rem from 640px), so
+   the page is the same height whatever the input and before, during and after the first note.
+   Taller content (the chooser) scrolls inside it. */
+.rmm-input-region {
+  height: calc(2.75rem + 0.5rem + 10rem);
+}
+@media (min-width: 640px) {
+  .rmm-input-region {
+    height: calc(2.75rem + 0.5rem + 12rem);
+  }
+}
+
+/* ── The on-screen keyboard (OnScreenKeyboard.tsx) ───────────────────────────
+   How many white keys show is decided here, from the keyboard's own width, so the server render
+   and the first client render are the same and nothing moves after mount: one more key per 44px,
+   from 7 (a 320–360px phone) to 14 (two octaves, from 616px). `whiteKeysFor` in
+   lib/rmhmusic/learn/keyboard-layout.ts is the same rule, and its test reads these steps. The bed
+   always holds two octaves; the keys past the count sit beyond its clipped right edge. */
+.rmm-keys {
+  container-type: inline-size;
+}
+.rmm-keys__bed {
+  --rmm-white-count: 7;
+  overflow: hidden;
+}
+@container (min-width: 352px) {
+  .rmm-keys__bed {
+    --rmm-white-count: 8;
+  }
+}
+@container (min-width: 396px) {
+  .rmm-keys__bed {
+    --rmm-white-count: 9;
+  }
+}
+@container (min-width: 440px) {
+  .rmm-keys__bed {
+    --rmm-white-count: 10;
+  }
+}
+@container (min-width: 484px) {
+  .rmm-keys__bed {
+    --rmm-white-count: 11;
+  }
+}
+@container (min-width: 528px) {
+  .rmm-keys__bed {
+    --rmm-white-count: 12;
+  }
+}
+@container (min-width: 572px) {
+  .rmm-keys__bed {
+    --rmm-white-count: 13;
+  }
+}
+@container (min-width: 616px) {
+  .rmm-keys__bed {
+    --rmm-white-count: 14;
+  }
+}
+.rmm-keys__white {
+  flex: none;
+  width: calc(100% / var(--rmm-white-count));
+}
+/* Black keys are placed in white-key units (`--rmm-at`, `--rmm-share`) of the same width. One
+   whose right-hand white is past the last visible white (`--rmm-wb` ≥ the count) would be a sliver
+   at the clipped edge: `--rmm-shown` is 0 for it, collapsing its width and border to nothing. */
+.rmm-keys__black {
+  --rmm-shown: clamp(0, (var(--rmm-white-count) - var(--rmm-wb)) * 999, 1);
+  left: calc(100% / var(--rmm-white-count) * var(--rmm-at));
+  width: calc(100% / var(--rmm-white-count) * var(--rmm-share) * var(--rmm-shown));
+  border-width: calc(1px * var(--rmm-shown));
+}
+/* Focus on a key: the app's accent ring would vanish against the pale keys in dark mode (1.4:1),
+   so keys take a two-tone ring inside their own box — a dark ring with a light one within it —
+   and whichever key colour is underneath, one of the two contrasts with it by 4:1 or more. */
+.rmhmusic-theme .rmm-keys__bed button:focus-visible {
+  outline: 2px solid var(--rmm-key-ring);
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 4px var(--rmm-key-ring-inner);
+}
+/* The swipe strip: a pencilled track the learner drags sideways to change octave. Vertical drags
+   still scroll the page (`pan-y`); the keys themselves keep every touch for playing. */
+.rmm-keys__strip {
+  touch-action: pan-y;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--rmm-staff) 0 1px,
+    transparent 1px 12px
+  );
+  background-size: 100% 9px;
+  background-repeat: repeat-x;
+  background-position: 0 50%;
 }

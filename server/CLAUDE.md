@@ -35,19 +35,21 @@ Consequences:
   goroutines inside the Go `supervisor`, or as the Go `status` binary) and their
   dead Node source was **deleted in the rewrite reap (R0-T5)** — recover from
   git history (or the `pre-rewrite-*` tags) if a rollback ever needs them.
-- The Go realtime hubs (gamehub/rmhbox/rmhtube/rmhmusic) and the `gateway` were
+- The Go realtime hubs (gamehub/rmhbox/rmhtube) and the `gateway` were
   **removed in the rewrite** — they never served production traffic. Apache
   routes `/socket/`, `/rmhbox-ws/`, `/rmhtube-ws/` and `/` straight to the Node
-  ports; these hubs here are the realtime tier.
+  ports; these hubs here are the realtime tier. RMHMusic (the piano & guitar
+  learning app) has no hub or socket handler: it is web tier only, over HTTP
+  routes under `app/routes/api/rmhmusic/learn/`.
 
 ## Directory guide
 
 ### Active in production
 
 - **`socket-server/`** — unified Socket.IO hub, port 7001, path `/socket/`.
-  Hosts ~18 games/apps on one default namespace: Slice It, Neon Driftway,
+  Hosts many games/apps on one default namespace: Slice It, Neon Driftway,
   Synapse Storm, RMH Type, RMH Study, Altair, Kowloon Knockout, Rochester
-  Offensive, **RMHMusic**, casino games (Blackjack/Hold'em/Baccarat/Roulette),
+  Offensive, casino games (Blackjack/Hold'em/Baccarat/Roulette),
   Lights Out, Doctrine, Velum, Dream Rift, RMH TF2 (server
   browser and peer-to-peer signaling only — every match runs in a player's
   browser; see `docs/tf2-game.md` §Multiplayer hosting; Hearthworks
@@ -87,10 +89,6 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
 - **`rmhtube/`** — watch-together hub, port 7003, path `/rmhtube-ws/`.
   Hard auth. Leader-authoritative sync (2s heartbeat), media queue, chat.
   **Restores rooms from DB on boot** (unlike rmhbox).
-- **`rmhmusic/`** — collaborative listening. **Not a standalone server**: its
-  RoomManager/SyncEngine/QueueManager/ChatHandler mount inside socket-server
-  (port 7001) via `socket-server/handlers/rmhmusic.ts`. Auth required.
-  (The standalone Go rmhmusic:7002 hub was removed in the rewrite.)
 - **`ladder-worker/`** — RMHLadder job-discovery cron. No port. `node-cron`
   schedule `LADDER_CRON_SCHEDULE` (default every 12h) around
   `lib/rmhladder/pipeline`. Self-bootstraps an empty DB on startup
@@ -191,7 +189,7 @@ history if a rollback ever needs it.
 1. **Single-instance assumption.** All hub state is process-local; there is no
    socket.io Redis adapter. Don't design for horizontal scaling here — that's
    what the Go fleet's Redis backplane is for.
-2. Auth strictness differs by hub: socket-server soft, rmhbox/rmhtube/rmhmusic
+2. Auth strictness differs by hub: socket-server soft, rmhbox/rmhtube
    hard.
 3. rmhtube persists rooms; rmhbox doesn't.
 4. Leaderboard/match writes are fire-and-forget — never block gameplay on DB
@@ -240,7 +238,7 @@ on boot. Also confirm:
       per-socket rate-limit rule maps in each `config.ts` are the de-facto
       event allowlist, so a new event needs an entry or it is silently dropped.
 - [ ] **Auth strictness matches the hub** (socket-server soft; rmhbox / rmhtube
-      / rmhmusic hard), and gameplay never blocks on a leaderboard/match write.
+      hard), and gameplay never blocks on a leaderboard/match write.
 - [ ] **No new cron in the web tier** — background work belongs in a worker
       process or the Go supervisor.
 - [ ] The service still starts: `pnpm dev` boots all six workers/hubs, and a

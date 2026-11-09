@@ -550,11 +550,6 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'steam-unfavorite',
     'steam-yesterday',
   ],
-  'c-rmhmusic': [
-    // UX/QoL batch (plan U1–U15, 2026-10-11) — English-only until the translate pipeline runs.
-    'mini-pop-in',
-    'mini-pop-out',
-  ],
   'c-news': [
     'read-our-take-news-card',
   ],

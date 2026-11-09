@@ -4,8 +4,8 @@
  *
  * Twitch's slow mode ("one message every 30s") and Discord's raid protection
  * ("lots of brand-new accounts just joined and are posting") are two halves
- * of one control a room host needs. Spaces, RMHTube rooms, RMHMusic rooms and
- * group chats all have chat and none of them has either.
+ * of one control a room host needs. Spaces, RMHTube rooms and group chats all
+ * have chat and none of them has either.
  *
  *   • **Slow mode** is a per-user cooldown the host sets (off, 5s … 5m).
  *     Hosts, moderators and anyone the host exempts bypass it.

@@ -113,12 +113,12 @@ reflection; it does not claim wave-optics diffraction or ray-traced live page co
 
 ## Fallbacks and ownership
 
-| Condition                                                                | Result                                                                           |
-| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| No WebGL2 / context loss / outside budget                                | Complete CSS clear coat and border                                               |
-| Touch                                                                    | Static pane material; direct globe manipulation remains available                |
-| Reduced transparency / high contrast / forced colors / perf-lite / print | No shader canvases; readable fallback surfaces                                   |
-| Hidden tab                                                               | Frames stop; teardown releases observers, timers, canvases and context resources |
+| Condition                                                    | Result                                                                           |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| No WebGL2 / context loss / outside budget                    | Complete CSS clear coat and border                                               |
+| Touch                                                        | Static pane material; direct globe manipulation remains available                |
+| Reduced transparency / high contrast / forced colors / print | No shader canvases; readable fallback surfaces                                   |
+| Hidden tab                                                   | Frames stop; teardown releases observers, timers, canvases and context resources |
 
 Site CSS is `app/liquid-glass.css`; app-token adaptation is `components/shared/app-theme.css`.
 `hooks/useLiquidInteractions.ts` mounts the document services. `glass/engine.ts` owns

@@ -1,6 +1,6 @@
 'use client';
 
-/** Curate up to 10 tracks for a mixtape exchange (F2), using the RMHMusic Spotify search. */
+/** Curate up to 10 tracks for a mixtape exchange (F2), using the site's Spotify track search. */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Search, X } from 'lucide-react';
@@ -36,7 +36,7 @@ export default function MixtapeEditor({
   async function search() {
     if (!q.trim()) return;
     setSearching(true);
-    const res = await fetch(`/api/rmhmusic/spotify/search?q=${encodeURIComponent(q.trim())}`).catch(
+    const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(q.trim())}`).catch(
       () => null,
     );
     const data = res?.ok

@@ -5,6 +5,7 @@ import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { SliceItLoading } from '@/components/slice-it/SliceItLoading';
 import { validateLibrarySearch } from '@/lib/slice-it/library-search';
 import { buildCanonical, buildMeta } from '@/lib/seo';
+import { useSliceItStore } from '@/lib/slice-it/store';
 
 // Static, not `lazy()`: Start already splits this route's component into its own
 // chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
@@ -14,11 +15,14 @@ import { buildCanonical, buildMeta } from '@/lib/seo';
 import { GameCanvas } from '@/components/slice-it/GameCanvas';
 
 function SliceItPage() {
+  // The menu is a document on a phone (slice-menu.css, "A phone"): the page scrolls, so
+  // Safari's bars collapse and content passes under them. A run is a fixed viewport.
+  const screen = useSliceItStore((s) => (s.status === 'MENU' ? 'menu' : 'play'));
   return (
     <SliceThemeWrapper>
-      <main className="app-viewport slice-theme bg-slice-bg">
+      <main className="app-viewport slice-page slice-theme bg-slice-bg" data-slice-screen={screen}>
         {/* Game Canvas — occupies remaining space */}
-        <div className="flex-1 min-h-0 w-full relative">
+        <div className="slice-page__body flex-1 min-h-0 w-full relative">
           <GameErrorBoundary gameName="Slice It">
             {/* Slice It's own skeleton, not the shared black sheet — see
                 `SliceItLoading` for why this game does not use it. */}

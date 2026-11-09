@@ -5,6 +5,7 @@
  * (and `isMidiSupported()` is false there). Sysex is not requested, which also
  * keeps the browser permission prompt as light as it can be.
  */
+import { createDeviceRunner } from './device-runner';
 import type { InputAdapter, NoteEvent, NoteListener } from './events';
 import { parseMidiMessage } from './midi-parse';
 
@@ -30,9 +31,6 @@ export function createMidiInput(): MidiInputAdapter {
   };
 
   let access: MIDIAccess | null = null;
-  /** Bumped by every stop(); a start that finds it changed has been cancelled. */
-  let generation = 0;
-  let pending: { promise: Promise<void>; generation: number } | null = null;
   let bound = new Set<MIDIInput>();
   /** Notes currently down, so stop() can release them. */
   const held = new Set<number>();
@@ -65,52 +63,39 @@ export function createMidiInput(): MidiInputAdapter {
     for (const l of [...deviceListeners]) l();
   };
 
-  const open = async (gen: number): Promise<void> => {
+  /** Acquire MIDI access for one run of the lifecycle; `wanted()` turns false when a stop() arrives. */
+  const open = async (wanted: () => boolean): Promise<void> => {
     if (!isMidiSupported()) throw new Error('Web MIDI is not supported in this browser.');
     const granted = await navigator.requestMIDIAccess({ sysex: false });
     // stop() arrived while the permission prompt was open: bind nothing.
-    if (gen !== generation) return;
+    if (!wanted()) return;
     access = granted;
     granted.addEventListener('statechange', onStateChange);
     bindInputs();
     for (const l of [...deviceListeners]) l();
   };
 
+  const release = () => {
+    if (!access) return;
+    access.removeEventListener('statechange', onStateChange);
+    bound.forEach((input) => {
+      input.onmidimessage = null;
+    });
+    bound = new Set();
+    access = null;
+    const now = performance.now();
+    for (const midi of held) emit({ type: 'off', midi, velocity: 0, time: now, source: 'midi' });
+    held.clear();
+    for (const l of [...deviceListeners]) l();
+  };
+
+  // Start/stop/cancel is the shared device lifecycle; this adapter only says how to open and release MIDI.
+  const life = createDeviceRunner({ launch: (_run, wanted) => open(wanted), stopDevice: release });
+
   const adapter: MidiInputAdapter = {
     source: 'midi',
-
-    start(): Promise<void> {
-      if (access) return Promise.resolve();
-      const requested = generation;
-      if (pending) {
-        if (pending.generation === generation) return pending.promise;
-        // The in-flight start was cancelled; begin afresh once it has let go,
-        // unless a stop() has arrived since this start was requested.
-        const again = () => (requested === generation ? adapter.start() : Promise.resolve());
-        return pending.promise.then(again, again);
-      }
-      const gen = generation;
-      const promise = open(gen).finally(() => {
-        pending = null;
-      });
-      pending = { promise, generation: gen };
-      return promise;
-    },
-
-    stop() {
-      generation++;
-      if (!access) return;
-      access.removeEventListener('statechange', onStateChange);
-      bound.forEach((input) => {
-        input.onmidimessage = null;
-      });
-      bound = new Set();
-      access = null;
-      const now = performance.now();
-      for (const midi of held) emit({ type: 'off', midi, velocity: 0, time: now, source: 'midi' });
-      held.clear();
-      for (const l of [...deviceListeners]) l();
-    },
+    start: () => life.start(),
+    stop: () => life.stop(),
 
     subscribe(l) {
       listeners.add(l);

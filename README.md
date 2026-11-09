@@ -19,7 +19,7 @@ presets, 32 locales) alongside real-time multiplayer.
     -   *Synapse Storm* (multiplayer trivia) · *Dream Rift* (co-op bullet hell)
     -   *Daily Puzzles* hub (Lights Out, Alibi, Chainlink, Impostor, Outcast, Spectrum) · *Strategies* (coalition meta-game)
     -   *Signal Forge*, *Cursed Logic*, *Project Vega* (hidden `/secret/` games), plus *Temple of Joy*, *Neon Driftway*, *House Always Wins*, *Laundry Sort*, *Versecraft*, and more
--   **Apps**: RMHTube (watch videos in sync), RMHMusic (Spotify listening rooms), RMHType (typing races), RMHStudy (synced Pomodoro rooms), RMHCode (installable coding CLI + tokens), RMHLadder (early-career job board), plus the RMHVibe / Creator Studio AI page builder.
+-   **Apps**: RMHTube (watch videos in sync), RMHMusic (learn piano and guitar), RMHType (typing races), RMHStudy (synced Pomodoro rooms), RMHCode (installable coding CLI + tokens), RMHLadder (early-career job board), plus the RMHVibe / Creator Studio AI page builder.
 -   **Social & Economy**: Social feed (RMHarks), messaging & group chats, communities, profiles, achievements/quests, a coin economy (wallet, shop, market, staking, battle pass, tips), tournaments/ranked/wager, and Stripe-backed memberships.
 -   **Authentication (RMH Auth)**: Secure login powered by Better Auth — Discord and GitHub OAuth plus passkeys and email/password (Google sign-in is switched off).
 -   **Developer API**: A scoped, versioned public API (`/api/v1`), documented at [docs.rmhstudios.com](https://docs.rmhstudios.com/en/latest/developer-api/index.html) with an OpenAPI 3.1 spec at `/api/v1/openapi.json`.
@@ -55,7 +55,7 @@ the status dashboard, and the asset streamer. All container ports bind to
 | Service | Port | Role |
 |---|---|---|
 | `web` (Nitro SSR) | 7005 (blue/green spare 7015) | React SSR app + API routes |
-| `socket` | 7001 | Games realtime hub (Socket.IO); also hosts RMHMusic |
+| `socket` | 7001 | Games realtime hub (Socket.IO) |
 | `rmhbox` | 7676 | Party-game lobby hub (Socket.IO) |
 | `rmhtube` | 7003 | Watch-together hub (Socket.IO) |
 | `ladder-worker` | — | RMHLadder job-discovery cron (`node-cron`) |
@@ -71,7 +71,7 @@ the status dashboard, and the asset streamer. All container ports bind to
 | `assets` | 7007 | Range-aware S3/R2 streaming for `/library` `/music` `/models` `/sprites` |
 
 > The earlier full-Go realtime topology (a `gateway` fronting Go `gamehub` /
-> `rmhbox` / `rmhtube` / `rmhmusic` hubs with a Redis backplane, plus its
+> `rmhbox` / `rmhtube` hubs with a Redis backplane, plus its
 > Helm/k3s charts) was **removed in the rewrite** — it never served production
 > traffic and duplicated the Node hubs. Recover it from git history (tag
 > `pre-rewrite-go-realtime`) if it is ever revived.

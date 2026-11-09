@@ -8,26 +8,26 @@
  * the same predicate by hand, and three copies of a predicate drift. Every jelly service that still runs JavaScript —
  * the click arcs, the globe, the scene feed, the pointer variable — reads its tier, budget and off state
  * from here, so a theme or preference that switches the material off switches all of it off together. (The CSS
- * material answers to the same signals through selectors: `.perf-lite`, `html[data-jelly-motion]`.)
+ * material answers to the same signals through selectors: `.app-high-contrast`, `html[data-jelly-motion]`.)
  *
  * ## What decides the tier
  *
- * Only signals the site already stamps: `html.perf-lite` (`lib/perf-tier.ts`), the handheld query (copied exactly
- * from `handheld-tier.test.ts`, which scans this file for near-misses), `(hover: hover) and (pointer: fine)` and the
- * off predicate. The tier is computed per route and on media-query change and never flips on a frame-rate reading;
+ * Only the handheld query (copied exactly from `handheld-tier.test.ts`, which scans this file for near-misses),
+ * `(hover: hover) and (pointer: fine)` and the off predicate. There is no low-end tier: a software renderer, Data Saver
+ * or a weak device gets the same material as any other (the old low-end class is gone; games and the globe's CSS
+ * fallback read `lib/low-end.ts`, which the material never does). The tier is computed per route and on media-query change and never flips on a frame-rate reading;
  * that was the (retired) governor's job.
  *
  * ## Off versus tier
  *
- * {@link jellyOff} answers "may the MATERIAL layers draw" (the globe, arcs) and is true under `perf-lite`
- * too, because the site stamps `perf-lite` in {@link DEGRADED_ROOT_SELECTOR}. {@link jellyTier} keeps `perf-lite` apart
- * as `'lite'` because press still works on a weak device (04 §3.4). {@link jellyMode} folds both, plus the preferences
- * and game state, into what each service may do now.
+ * {@link jellyOff} answers "may the MATERIAL layers draw" (the globe, arcs): false in print, under the app tier's high
+ * contrast and in a hidden tab. {@link jellyTier} is the device tier. {@link jellyMode} folds both, plus the
+ * preferences and game state, into what each service may do now.
  *
  * SSR-safe: nothing here touches `window` or `document` at import, and every reader takes its document as an argument.
  */
 
-export type JellyTier = 'full' | 'coarse' | 'handheld' | 'lite' | 'off';
+export type JellyTier = 'full' | 'coarse' | 'handheld' | 'off';
 export type JellyMotion = 'lively' | 'calm' | 'still';
 export type ElectricArcsMode = 'full' | 'clicks' | 'off';
 
@@ -54,7 +54,6 @@ export const JELLY_BUDGETS: Readonly<Record<JellyTier, Readonly<JellyBudget>>> =
   coarse: { clockHz: 60, idleClockHz: 15, ambientArcMinIntervalMs: 2000, clickBolts: 2 },
   // R10: half the desktop ambient-arc rate, not 04's zero — the owner wants phones charged too.
   handheld: { clockHz: 30, idleClockHz: 7, ambientArcMinIntervalMs: 4000, clickBolts: 1 },
-  lite: { clockHz: 0, idleClockHz: 0, ambientArcMinIntervalMs: Infinity, clickBolts: 0 },
   off: { clockHz: 0, idleClockHz: 0, ambientArcMinIntervalMs: Infinity, clickBolts: 0 },
 };
 
@@ -146,13 +145,11 @@ export const JELLY_LAYOUT = {
 } as const;
 
 /**
- * The root class that degrades the material, exactly as the site stamps it on `<html>` today. Print is a media query,
- * read separately. The site's high-contrast theme and the
- * OS forced-colours / reduced-transparency fallbacks were removed: the material always draws.
+ * The app tier's high-contrast theme lives on the app shell, not `<html>`, so it is looked up in the document. Together
+ * with print (a media query, read separately) it is the only state that turns the material off. The site's
+ * high-contrast theme, the OS forced-colours / reduced-transparency fallbacks and the old low-end tier are gone: the
+ * material always draws.
  */
-export const DEGRADED_ROOT_SELECTOR = '.perf-lite';
-
-/** The app tier's high-contrast theme lives on the app shell, not `<html>`, so it is looked up in the document. */
 export const APP_HIGH_CONTRAST_SELECTOR = '.app-high-contrast';
 
 /**
@@ -234,12 +231,10 @@ const matches = (win: Window | undefined, query: string): boolean => {
   }
 };
 
-/** Why the material may not draw at all, apart from `perf-lite` (which is the `lite` tier, not off). */
+/** Why the material may not draw at all: print, or the app tier's high contrast. */
 function hardOff(doc: Document, win: Window | undefined): boolean {
   return matches(win, PRINT_QUERY) || !!doc.querySelector(APP_HIGH_CONTRAST_SELECTOR);
 }
-
-const perfLite = (doc: Document): boolean => doc.documentElement.matches('.perf-lite');
 
 /**
  * The device/state tier. Never `hidden`-dependent (a background tab is a clock decision, not a tier) and never
@@ -249,7 +244,6 @@ export function jellyTier(env?: JellyEnv): JellyTier {
   const { doc, win } = resolveEnv(env);
   if (!doc) return 'off';
   if (hardOff(doc, win)) return 'off';
-  if (perfLite(doc)) return 'lite';
   if (matches(win, HANDHELD_QUERY)) return 'handheld';
   if (matches(win, FINE_POINTER_QUERY)) return 'full';
   return 'coarse';
@@ -273,14 +267,13 @@ export function gamePlaying(doc: Document | undefined = defaultDoc()): boolean {
 }
 
 /**
- * May the material layers draw at all: false for the globe and the arcs under a degraded root
- * ({@link DEGRADED_ROOT_SELECTOR}, so `perf-lite` included), the app high-contrast theme, print, or a hidden tab. No
- * document (SSR) → true.
+ * May the material layers draw at all: false for the globe and the arcs under the app high-contrast theme, print, or a
+ * hidden tab. No document (SSR) → true.
  */
 export function jellyOff(doc: Document | undefined = defaultDoc()): boolean {
   if (!doc) return true;
   const win = doc.defaultView ?? undefined;
-  return doc.hidden || perfLite(doc) || hardOff(doc, win);
+  return doc.hidden || hardOff(doc, win);
 }
 
 export interface JellyModeState {
@@ -295,7 +288,7 @@ export interface JellyModeState {
  * folded into one answer so the globe and the arcs cannot disagree.
  *
  * - Hidden tab and print: nothing.
- * - Other material-off states and `perf-lite`: no ambient, no arcs.
+ * - Other material-off states (the app tier's high contrast): no ambient, no arcs.
  * - Game playing (R16): ambient and arcs zeroed.
  * - `still`: ambient motion and arcs stop; direct hover/press/scroll reactions remain available (they are CSS).
  */

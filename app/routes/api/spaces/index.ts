@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { createSpace, listLiveSpaces, SpaceError } from '@/lib/spaces.server';
+import { SPACE_PINNED_KINDS, SPACE_PIN_REF_MAX } from '@/lib/spaces/types';
 
 /**
  * POST /api/spaces — create/schedule a Space (community spaces require the host
@@ -12,8 +13,8 @@ import { createSpace, listLiveSpaces, SpaceError } from '@/lib/spaces.server';
 
 const pinnedSchema = z
   .object({
-    kind: z.enum(['post', 'url', 'music_room', 'tube_room']),
-    ref: z.string().min(1).max(500),
+    kind: z.enum(SPACE_PINNED_KINDS),
+    ref: z.string().min(1).max(SPACE_PIN_REF_MAX),
   })
   .optional();
 

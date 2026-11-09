@@ -24,7 +24,7 @@
  *
  * ## Gates, at press time and before anything loads
  *
- * `jellyMode().arcs === 'off'` (print, hidden tab, `perf-lite`, game in play, `jellyMotion = still`, the app tier's
+ * `jellyMode().arcs === 'off'` (print, hidden tab, game in play, `jellyMotion = still`, the app tier's
  * high contrast, `electricArcs = off`), a zero click-bolt budget, `html.native-material` routes, a press inside a
  * play-field or other opt-out scope (`OPT_OUT_SCOPE_SELECTOR`), and the radial hub or an eversion. Everything about the
  * target (fields, overlays, toasts, opted-out hosts) and the flash ledger (≤ 3 onsets/s, WCAG 2.3.1) is the runtime's.
@@ -127,7 +127,7 @@ function createController(doc: Document, runtimeOptions: ElectricArcsOptions): C
           teardown = null;
           return null;
         }
-        // Any gate going to `off` (the preference, still, a game starting, perf-lite, print) ends the session now.
+        // Any gate going to `off` (the preference, still, a game starting, print) ends the session now.
         offEnv = onJellyEnvChange(() => {
           if (jellyMode({ doc }).arcs === 'off') stop();
         }, doc);

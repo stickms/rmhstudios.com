@@ -80,17 +80,13 @@ function PinnedPanel({ pinned }: { pinned: SpacePinned }) {
       ? pinned.ref
       : pinned.kind === 'post'
         ? `/post/${pinned.ref}`
-        : pinned.kind === 'music_room'
-          ? `/rmhmusic/${pinned.ref}`
-          : `/rmhtube/${pinned.ref}`;
+        : `/rmhtube/${pinned.ref}`;
   const label =
     pinned.kind === 'url'
       ? t('space-pinned-link', { defaultValue: 'Pinned link' })
       : pinned.kind === 'post'
         ? t('space-pinned-post', { defaultValue: 'Pinned post' })
-        : pinned.kind === 'music_room'
-          ? t('space-pinned-music', { defaultValue: 'Listening room' })
-          : t('space-pinned-tube', { defaultValue: 'Watch party' });
+        : t('space-pinned-tube', { defaultValue: 'Watch party' });
   return (
     <div className="glass-fill mx-4 mt-3 rounded-site px-4 py-3">
       <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-site-accent">

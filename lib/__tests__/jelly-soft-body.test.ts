@@ -10,13 +10,13 @@
  *  - one host list, scoped off native-material routes and a game in play, mirroring the hosts and exclusions of the physics
  *    service it replaced (panes never move; opt-outs, disabled controls, gesture surfaces, the globe, prose links and play-fields
  *    are not hosts);
- *  - hover plumps cards and dents controls, fine pointers only, never under perf-lite or the app high-contrast mode;
+ *  - hover plumps cards and dents controls, fine pointers only, never under the app high-contrast mode;
  *  - press squashes on the press spring and releases on the release spring; every Button variant presses (D-C3);
  *  - press-through (D-C2, revised by Task 8): a host never squashes while a real control inside it is the thing
  *    pressed (a plain `<a>` is not one, so a card wrapped in a link squashes), and a `data-jelly-press-body` host (a
  *    JellyGroup, the top bar, the selection bar, a scroller's pill) squashes as one body when any member is pressed,
  *    while the member adds no squash, dent or opacity cue of its own;
- *  - perf-lite / app high contrast keep the press, plain (critically damped both ways);
+ *  - app high contrast keeps the press, plain (critically damped both ways);
  *  - nothing at rest: no will-change, no animation, no transition but `scale` on a spring; print resets it;
  *  - the legacy opacity press cue (globals.css) stands down exactly where the soft body springs (D-B1);
  *  - the hub's compose pill presses as one body (D-C6); the hook mounts the pointer variable, not physics.
@@ -87,7 +87,7 @@ const GLOBALS = rules(read('app/globals.css'));
 const RADIAL = rules(read('components/radial/radial.css'));
 
 const SCOPE = "html:not(.native-material, [data-game-state='playing']) ";
-const SCOPE_HOVER = "html:not(.native-material, [data-game-state='playing'], .perf-lite) ";
+const SCOPE_HOVER = "html:not(.native-material, [data-game-state='playing']) ";
 const FINE = '@media (hover: hover) and (pointer: fine)';
 const RELEASE = 'scale var(--spring-release-dur) var(--spring-release)';
 const PRESS = 'scale var(--spring-press-dur) var(--spring-press)';
@@ -216,7 +216,7 @@ describe('the CSS soft body (app/jelly-material.css §8)', () => {
     expect(decl(root[0].body, '--jelly-spring-t')).toMatch(/^--[\w-]+ 0s$/);
   });
 
-  it('plumps cards and dents controls on hover, fine pointers only, never under perf-lite or app high contrast', () => {
+  it('plumps cards and dents controls on hover, fine pointers only, never under app high contrast', () => {
     // A pane or chrome press body (the top bar, the selection bar) never plumps: it is always under the pointer, and
     // the old physics never moved chrome on hover. It only squashes (below).
     const card = ruleFor(
@@ -333,17 +333,12 @@ describe('the CSS soft body (app/jelly-material.css §8)', () => {
       expect(read(f), f).not.toContain(retired);
   });
 
-  it('keeps the press, plain, under perf-lite and the app high-contrast mode', () => {
+  it('keeps the press, plain, under the app high-contrast mode', () => {
     const lite = MATERIAL.filter(
       (r) => decl(r.body, '--jelly-spring-t') === PRESS && !r.body.includes('scale:'),
     );
     expect(lite).toHaveLength(1);
-    expect(lite[0].selectors.sort()).toEqual(
-      [
-        `html.perf-lite:not(.native-material, [data-game-state='playing']) ${HOST}`,
-        `${SCOPE}.app-high-contrast ${HOST}`,
-      ].sort(),
-    );
+    expect(lite[0].selectors.sort()).toEqual([`${SCOPE}.app-high-contrast ${HOST}`]);
   });
 
   it('does nothing at rest: no will-change, no animation, and only scale on a spring', () => {
@@ -378,9 +373,7 @@ describe('the CSS soft body (app/jelly-material.css §8)', () => {
         r.at.some((a) => a.includes(FINE)),
         r.selectors[0],
       ).toBe(true);
-      expect(
-        r.selectors[0].startsWith('html:not(.native-material, .perf-lite) :is(.glass-fill'),
-      ).toBe(true);
+      expect(r.selectors[0].startsWith('html:not(.native-material) :is(.glass-fill')).toBe(true);
     }
     expect(wake[0].selectors[0].endsWith(':hover')).toBe(true);
     expect(decl(wake[0].body, '--jelly-floor-size')).toBe('auto, auto, var(--jelly-tile-size)');

@@ -25,20 +25,19 @@ interface Summary {
 }
 
 /**
- * Reusable"save this track/video to a playlist"dialog. Controlled: pass the
- * `item`to add and toggle `open`. Lists the caller's playlists (of the given
- * kind) and lets them create a new one inline.
+ * Reusable"save this video to a playlist"dialog. Controlled: pass the
+ * `item`to add and toggle `open`. Lists the caller's video playlists and lets
+ * them create a new one inline. (Music playlists belonged to the retired
+ * RMHMusic listening-party app; none can be created or filled now.)
  */
 export function AddToPlaylistDialog({
  item,
  open,
  onOpenChange,
- kind ='music',
 }: {
  item: PlaylistItemInput | null;
  open: boolean;
  onOpenChange: (open: boolean) => void;
- kind?:'music'|'video';
 }) {
  const { t } = useTranslation('feed');
  const [playlists, setPlaylists] = useState<Summary[]>([]);
@@ -52,12 +51,12 @@ export function AddToPlaylistDialog({
  if (!open) return;
  setAddedId(null);
  setLoading(true);
- fetch(`/api/playlists?kind=${kind}`, { credentials:'include'})
+ fetch('/api/playlists?kind=video', { credentials:'include'})
  .then((r) => (r.ok ? r.json() : { playlists: [] }))
  .then((d) => setPlaylists(d.playlists ?? []))
  .catch(() => setPlaylists([]))
  .finally(() => setLoading(false));
- }, [open, kind]);
+ }, [open]);
 
  const add = async (playlistId: string) => {
  if (!item) return;
@@ -97,7 +96,7 @@ export function AddToPlaylistDialog({
  method:'POST',
  credentials:'include',
  headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ name, kind }),
+ body: JSON.stringify({ name, kind:'video'}),
  });
  const data = await res.json().catch(() => ({}));
  if (!res.ok || !data.id) {

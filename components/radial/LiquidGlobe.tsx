@@ -58,6 +58,7 @@ import {
 } from '@/lib/jelly/tiers';
 import { evert } from '@/lib/eversion/thurston';
 import { ambientTickDue, msToAmbientTick } from '@/lib/jelly/ambient-tick';
+import { softRenderDetected } from '@/lib/low-end';
 import {
   copyQuat,
   dragRotvec,
@@ -252,13 +253,13 @@ const lensScale = (x: number, y: number, z: number) => {
 
 /**
  * Whether this visit may get the shader material (`./jelly-glass`, drawn in the globe's worker). The CSS glass stays
- * for `perf-lite` (a weak device should not pay for a second GL context). Whether a worker can own a WebGL 2 context
+ * for a browser found to rasterise in software (it should not pay for a second GL context). Whether a worker can own a WebGL 2 context
  * at all is the host's decision (`globe-worker-host.ts`): where it cannot, the CSS glass stays too — the page's own
  * thread never makes a GL context for the globe, not even to probe for one.
  */
 function jellyEligible(): boolean {
   if (typeof window === 'undefined') return false;
-  return !document.documentElement.classList.contains('perf-lite');
+  return !softRenderDetected();
 }
 
 /**
@@ -1820,7 +1821,7 @@ export function LiquidGlobe({
      * cage is its own antipode, so the run starts and lands on the untouched
      * disc. Where the skin draws the surface (`data-skin="on"`) the disc fades
      * out under it on the same path; everywhere else (high contrast, reduced
-     * transparency, `perf-lite`, no WebGL2) this IS the body turning inside out.
+     * transparency, a software renderer, no WebGL2) this IS the body turning inside out.
      */
     const momNow = new Float64Array(6);
     const momRest = new Float64Array(6);

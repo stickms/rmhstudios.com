@@ -6,9 +6,9 @@ const SAMPLE_RATE = 44100;
 const LENGTH = 2048;
 
 /** A pure sine of `freq` Hz at peak amplitude `amp`. */
-function sine(freq: number, amp = 0.5): Float32Array {
-  const buf = new Float32Array(LENGTH);
-  for (let i = 0; i < LENGTH; i++) buf[i] = amp * Math.sin((2 * Math.PI * freq * i) / SAMPLE_RATE);
+function sine(freq: number, amp = 0.5, rate = SAMPLE_RATE, length = LENGTH): Float32Array {
+  const buf = new Float32Array(length);
+  for (let i = 0; i < length; i++) buf[i] = amp * Math.sin((2 * Math.PI * freq * i) / rate);
   return buf;
 }
 
@@ -67,5 +67,46 @@ describe('detectPitch (YIN)', () => {
     const bad = new Float32Array(LENGTH).fill(NaN);
     expect(detectPitch(bad, SAMPLE_RATE)).toBeNull();
     expect(detectPitch(sine(440), 0)).toBeNull();
+  });
+
+  // The lag search runs on a decimated copy of the frame; these pin that the
+  // full-rate refinement keeps the accuracy at both common device rates and
+  // that the full-rate fallback (short frames, low rates) still works.
+  it.each([82.41, 440, 1046.5, 1396.9])('detects a %s Hz sine at 48 kHz within 5 cents', (freq) => {
+    const result = detectPitch(sine(freq, 0.5, 48000), 48000);
+    expect(result).not.toBeNull();
+    expect(Math.abs(centsBetween(freq, result!.freq))).toBeLessThan(5);
+    expect(result!.clarity).toBeGreaterThan(0.8);
+  });
+
+  it('returns the fundamental of a harmonic-rich tone at 48 kHz', () => {
+    const buf = new Float32Array(LENGTH);
+    for (let h = 1; h <= 6; h++) {
+      const partial = sine(110 * h, 0.3 / h, 48000);
+      for (let i = 0; i < LENGTH; i++) buf[i] += partial[i];
+    }
+    const result = detectPitch(buf, 48000);
+    expect(result).not.toBeNull();
+    expect(Math.abs(centsBetween(110, result!.freq))).toBeLessThan(5);
+  });
+
+  it('falls back to the full-rate search for a frame too short to decimate', () => {
+    // 1480 samples: long enough for 60 Hz at 44.1 kHz, too short for the decimated search.
+    const result = detectPitch(sine(220, 0.5, SAMPLE_RATE, 1480), SAMPLE_RATE);
+    expect(result).not.toBeNull();
+    expect(Math.abs(centsBetween(220, result!.freq))).toBeLessThan(5);
+  });
+
+  it('detects at a low sample rate where no decimation applies', () => {
+    const result = detectPitch(sine(440, 0.5, 16000), 16000);
+    expect(result).not.toBeNull();
+    expect(Math.abs(centsBetween(440, result!.freq))).toBeLessThan(5);
+  });
+
+  it('returns the same answer when called again (reused scratch buffers)', () => {
+    const a = detectPitch(sine(330), SAMPLE_RATE);
+    detectPitch(sine(90, 0.5, 48000), 48000);
+    const b = detectPitch(sine(330), SAMPLE_RATE);
+    expect(b).toEqual(a);
   });
 });

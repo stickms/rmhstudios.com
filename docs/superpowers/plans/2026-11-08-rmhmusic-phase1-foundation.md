@@ -16,20 +16,22 @@
 |----|-------|--------|
 | A | 1–5 | Additive libs + `midi=(self)` header. No user-visible change. |
 | B | 6 | Additive Prisma tables + migration + API routes. |
-| C | 7–11 | New home UI, old app retired, docs/catalog. The switch. |
+| C | 7–11, 13–16, 12 | New home UI, old app retired, docs/catalog, redesign, art, state machines + performance, cross-browser verification. The switch. |
+
+**Execution order for PR C (owner directives of 2026-11-08 added Tasks 13–16):** 7, 8, 9 (done) → 10 → 11 → 15 → 13 → 14 → 16 → 12. Tasks 13–16 each run alone (shared working tree; the commit gate reads it).
 
 Branch is always `claude/hopeful-bohr-99d1vw`. After a PR merges: `git fetch origin main && git checkout -B claude/hopeful-bohr-99d1vw origin/main` and start the next.
 
 ## Global Constraints
 
-- Route stays `/rmhmusic`, catalog id `rmhmusic`, auth-gated, `app-theme rmhmusic-theme`, violet accent `--app-accent` on near-black; read `--app-*` tokens only in new markup.
+- Route stays `/rmhmusic`, catalog id `rmhmusic`, auth-gated, `app-theme rmhmusic-theme`; read `--app-*` tokens only in new markup. **Look (owner, 2026-11-08, supersedes "keep the existing look"): music-inspired notebook-paper / staff-paper scheme with a light paper mode and a dark night-manuscript mode (Task 13).**
 - All user-facing strings via `t('key', { defaultValue })` in namespace `c-rmhmusic`; **new keys only** (never edit an existing key's wording); run `pnpm i18n:extract`; no `{/* */}` comment directly before a `t()` call.
 - All audio through `getAudioContext()` from `@/lib/shared/platform`; never `new AudioContext()`.
 - **No new `requestAnimationFrame` loops** (`lib/__tests__/raf-loop-allowlist.test.ts` gate) — poll the mic analyser with a timer.
 - Server-only code in `*.server.ts`; API routes only via `defineHandler`; zod-validate input.
 - Mobile first: usable at 360px wide, tap targets ≥44px, `.app-page`/`.app-screen` viewport primitives, safe-area insets (components/CLAUDE.md "Full-screen games/apps").
 - Tests: colocated `*.test.ts`, only for pure non-obvious logic (docs/testing.md scope). Run `pnpm exec vitest run <path>`.
-- Old Prisma tables (`RmhMusic*`, `MusicGuess*`) are **NOT dropped or altered**; existing achievements definitions are left untouched.
+- Old Prisma tables (`RmhMusic*`, `MusicGuess*`) are **NOT dropped or altered**; existing achievements definitions are left untouched. (Phase 1 only: the owner approved the drop on 2026-11-09 — `prisma/migrations/20261109120000_drop_rmhmusic_legacy`.)
 - Toolchain: run every command with `PATH=/opt/node24/bin:$PATH` (the repo needs Node ≥24.18; the default `node` is v22). Dependencies are already installed.
 - Every commit passes `pnpm check:consistency` (a failing gate is fixed, never bypassed). Commit messages end with the two attribution trailer lines from the session reminder.
 
@@ -236,3 +238,90 @@ Branch is always `claude/hopeful-bohr-99d1vw`. After a PR merges: `git fetch ori
 - [ ] **Step 1:** Full gate: `pnpm exec tsc --noEmit && pnpm lint && pnpm test && pnpm check:consistency --base main`; `pnpm build` once to confirm the server bundles still build after deleting `server/rmhmusic`.
 - [ ] **Step 2:** Push, open the PR (mirror the repo PR template headings if present; state: old tables kept, achievements kept, translations pending, Apache reload needed from PR A), wait for CI green.
 - [ ] **Step 3:** Merge; reset the branch to `origin/main`; write the Phase 2 plan.
+
+
+---
+
+## Addendum — owner directives of 2026-11-08 (Tasks 13–16)
+
+Added mid-run by the owner: (1) "a full design and layout redesign … match the game card a bit more, with more animated backgrounds"; (2) "update the game card and banner to better reflect what rmh music is now"; (3) "a new aesthetic music-inspired design scheme (maybe like notebook paper/music staffs/notes/etc)"; (4) "allow for light/dark mode"; (5) "ensure mobile friendliness … support for all major browsers, resolutions … utmost performance and optimization, and look for implicit state machines". Every review finding so far in the input hub, mic adapter, store and lesson screen was an implicit state machine (booleans/counters/maps encoding a lifecycle); Task 15 removes that class of bug.
+
+### Task 15: Explicit state machines and a performance pass (logic layer)
+
+**Files:**
+- Create: `lib/rmhmusic/learn/machines/*.ts` (+ colocated `*.test.ts`), one file per machine
+- Modify: whatever the audit finds in `lib/rmhmusic/learn/**` and `components/rmhmusic/learn/**` (hub, mic/midi adapters, store, `useLearnInput`, `InputSetup`, `LatencyCalibration`, `FirstNoteLesson`, `LessonScreen`)
+
+**Interfaces:**
+- Produces: for each machine a typed `State` union discriminated by `kind`, a typed `Event` union, and a pure exhaustive `transition(state, event): State` (plus, where useful, `effects(prev, next): Effect[]` so side effects stay at the edges). No new dependency (no xstate). Look first for repo precedent (`grep -rn "Machine" components lib | head`, e.g. `handOffMachine` in `components/radial/RadialHub.tsx`) and match it.
+
+- [ ] **Step 1: Audit.** Write `.superpowers`-free notes in the PR description (not a file): list every place where two or more booleans/flags/counters/maps jointly encode a lifecycle — at minimum: hub per-source start/stop/cancel (`starting`, `cancelled`, `started`, stop counters, `errors`); mic/midi adapter `running`/pending/`generation`; store `status`/`error`/`writes`/`queue`/`confirmed`/`loading`; `useLearnInput` start/stop paths; `InputSetup` per-source connection states; `LatencyCalibration` idle/starting/running/done/failed; `FirstNoteLesson` played/saving/saved/failed and the once-guard; `LessonScreen` phases; dialog open/close vs input state.
+- [ ] **Step 2: Machines.** Replace each with an explicit machine (impossible states unrepresentable: e.g. `{kind:'starting', cancelRequested:boolean}` instead of two maps). Unit-test every machine with a transition table: each (state, event) pair asserts the next state; add the previously found bugs as named regression cases (stop-start-stop leaves nothing live; a stop during a pending start releases the mic; two note events in one tick complete once; a failed save then Retry completes once; overlapping profile writes serialise and the last intent wins; a `ready` store never refetches; a hidden tab stops the mic and never restarts it).
+- [ ] **Step 3: Behaviour preserved.** All existing tests in `lib/rmhmusic/learn/**` pass unchanged or are replaced by equivalent transition-table cases; none deleted without a replacement.
+- [ ] **Step 4: Performance — measure first, then optimise, and report numbers.** (a) Pitch detection: measure `detectPitch` per call and CPU share at the 25 ms cadence; reduce cost (decimate the buffer to ~11 kHz before detection, bounded by `maxFreq` 1400 Hz, keeping the existing accuracy tests passing; consider moving detection to an AudioWorklet or Worker only if main-thread cost is still material, and justify). (b) Render pressure: a note event or the level meter must not re-render the whole screen — use store selectors / memo / throttling where measurement shows churn. (c) Bundles: `pnpm build` is too heavy for the sandbox; instead measure with `pnpm exec vite build` only if memory allows, otherwise reason from imports: the lesson and setup screens are lazy chunks, nothing imports Tone.js, no `.server` code in client chunks. (d) Idle CPU: with the mic off and no interaction there is no timer, loop or listener running. (e) Core Web Vitals proxy for `/rmhmusic` and the lesson route in Chromium via Playwright (LCP, CLS, long tasks) using the throwaway harness approach; record before/after.
+- [ ] **Step 4b:** the store's skeleton→ready transition and any state-machine refactor must not change first-paint markup or cause a layout shift.
+- [ ] **Step 5:** gates green (`pnpm exec vitest run lib/rmhmusic lib/__tests__/raf-loop-allowlist.test.ts`, `docs:site:check`, `docs:api:check`), commit(s) `refactor(rmhmusic): explicit state machines` / `perf(rmhmusic): …`.
+
+### Task 13: Notebook-paper theme (light and dark), layout redesign, animated backdrop
+
+**Files:**
+- Modify: `components/rmhmusic/rmhmusic.css` (palette), `components/rmhmusic/learn/{LearnHome,PathUnit,StreakChip,InputSetup,LessonScreen,OnScreenKeyboard,LatencyCalibration,FirstNoteLesson}.tsx`, `app/routes/rmhmusic.tsx` (mode attribute + pre-paint)
+- Create: `lib/rmhmusic/learn/backdrop/*.ts` (pure staff-and-notes scene renderer + tests), `components/rmhmusic/learn/PaperBackdrop.tsx` (canvas host), `lib/rmhmusic/learn/mode.ts` (+ test), `components/rmhmusic/learn/ModeToggle.tsx`, `components/rmhmusic/learn/LiveStaff.tsx`
+- Modify: `lib/__tests__/raf-loop-allowlist.test.ts` (entry for the backdrop host with its stop conditions)
+
+**Interfaces:**
+- Produces: `type Mode = 'light' | 'dark'`; `resolveMode(stored: string | null, prefersDark: boolean): Mode`; a persisted, user-togglable mode that defaults to `prefers-color-scheme` and never flashes the wrong palette (set before first paint; no hydration mismatch — follow `lib/__tests__/fouc-contract.test.ts` and how RMHType/RMHStudy persist their theme; all storage access in try/catch).
+
+- [ ] **Step 1: Direction.** Notebook / staff paper: cream ruled paper with a red-pencil-style margin rule, navy fountain-pen ink, one pen-ink accent; staves, noteheads, clefs and handwritten-feeling annotations as decoration. Dark mode is a "night manuscript": deep ink-navy paper with pale ink and the same accent family. Define BOTH palettes as `--app-*` tokens in `rmhmusic.css` (light default, dark under the mode attribute and via `prefers-color-scheme` when no choice is stored); every text/background pair ≥ 4.5:1 (verify numerically and note the ratios in the PR), focus ring ≥ 3:1; drop the old `--site-*` compatibility aliases if nothing needs them.
+- [ ] **Step 2: Layout.** Match the app's catalog card: a hero that reuses the card's banner art and wordmark (`/images/games/banners/rmhmusic.webp`, `/images/games/logos/rmhmusic.webp` through the repo's image component so variants are used), the instrument toggle and streak beside it, then the path as notebook pages (each unit a page with a staff-lined header; lessons as ruled lines with notehead markers; stars as noteheads). Mobile first (360–390 px) and graceful at tablet/desktop widths up to ultrawide; the page scrolls as a document.
+- [ ] **Step 3: Phone keyboard.** The on-screen keyboard fits the viewport width on phones (about 1.5 octaves with white keys ≥ 44 px wide and black keys ≥ 24 px), with octave-shift buttons and swipe-to-shift; no scrollbar-only access; chords (multi-touch) still work; desktop keeps two octaves.
+- [ ] **Step 4: Live staff.** `LiveStaff`: a small treble-clef staff (SVG) that shows the note just played at its pitch with ledger lines and the note name — the first step towards reading music; used in the first lesson and the setup preview.
+- [ ] **Step 5: Animated backdrop.** A canvas of staves with slowly drifting notes that lightly reacts to played notes, following the Kowloon `MenuBackdrop` precedent: pure renderer in `lib/`, fixed-size buffer (never reallocated per frame), `requestAnimationFrame` only while the host is mounted AND the tab is visible AND jelly motion is not 'still' (`jellyMotionLevel` / `data-jelly-motion`), 30 fps (15 fps on the low graphics tier), a CSS paper fallback underneath until the first frame, one frame then stop when still, nothing flashes (WCAG 2.3.1) and nothing moves faster than a slow drift (2.2.2), works in both modes. Add the allowlist entry with the reason.
+- [ ] **Step 5b: No flash, no shift (owner, 2026-11-08).** (a) The mode and every palette token are correct in the server-rendered HTML and before first paint — no flash of the wrong mode, no hydration mismatch (pre-paint attribute/script pattern plus `color-scheme`). (b) The paper ground is painted by CSS before any JS; the canvas backdrop is progressive enhancement over a CSS fallback with identical colours. (c) Hero banner and logo reserve their size (intrinsic width/height or aspect-ratio), go through the repo's image component (variants, placeholder), above-the-fold ones eager/priority; no swap-in jump. (d) Fonts: use fonts the app already loads or preload them; any new web font needs a metrics-matched fallback (`size-adjust`) — no FOUT reflow. (e) The skeleton equals the loaded layout (Task 8 made this true; keep it true after the redesign and measure skeleton vs loaded document height at 360/390/768/1280). (f) Streak chip, instrument toggle, N-of-M line, keyboard and octave controls reserve their size. (g) Signed-out visitors: `/rmhmusic` and `/rmhmusic/lesson/*` redirect server-side (`beforeLoad` `redirect` → HTTP redirect, no client flash of app chrome) to `/login` with a `callbackURL` that returns to the same page; after sign-in the return has no flash. Run the repo's own tooling (`lib/__tests__/fouc-contract.test.ts`, `testing/e2e/fouc-routes.mjs`, method in `docs/fouc-audit-2026-10-06.md`) and extend the fixtures for the new routes.
+- [ ] **Step 6:** keep every behaviour and test from Tasks 8–9 and 15; gates green (design-consistency, game-viewport, ios-edge, fouc-contract, raf allowlist, i18n); new strings via `t()` with new keys only; commits `feat(rmhmusic): notebook-paper theme in light and dark` etc.
+
+### Task 14: New RMH Music card, banner, logo and icon art
+
+**Files:**
+- Replace (same paths, same format and aspect ratio as today): `public/images/games/rmhmusic.webp` (card, 2:3), `public/images/games/banners/rmhmusic.webp` (banner, 3:1), `public/images/games/logos/rmhmusic.webp` (wordmark, transparent), `public/images/games/icons/rmhmusic.webp`
+- Modify: `lib/images/variants.gen.ts` (regenerate: `pnpm images:variants`), `lib/catalog/apps/rmhmusic.ts` (copy/tags/gradient if the new art needs them)
+
+**Interfaces:** none.
+
+- [ ] **Step 1:** Look at the current assets first (convert to PNG with sharp to view). They advertise the retired Spotify app (a headphone-wearing man, a player bar, "Listen to Spotify together", "SHARED QUEUES · ROOM CHAT · GUESS THE SONG") and must be replaced.
+- [ ] **Step 2:** Render new art from code (HTML/SVG in the preinstalled Chromium via Playwright → screenshot → sharp → webp), in the Task 13 notebook-paper look: cream notebook paper, a staff with noteheads and a treble clef, a piano keyboard strip and a guitar fretboard/chord box, handwritten-style annotations, the script "RMH Music" wordmark (redrawn or kept, must stay legible on both light and dark cards), and a short tagline such as "Learn piano & guitar". No Spotify, no headphones, no player UI. Work at 2× then export at the existing pixel dimensions (read the current files' dimensions first; keep file size in the same ballpark, ≤ 600 KB for the card and banner).
+- [ ] **Step 3:** View each result as an image before committing; check the card on the apps page's crop (card is cropped differently from the banner), contrast of any text over paper, and that the logo has a transparent background.
+- [ ] **Step 4:** `pnpm images:variants` then `pnpm images:variants:check`; update the catalog copy to describe the new product (learn piano and guitar: reading, ear training, tuner, play-along, MIDI/mic input; remove Spotify/listening-room wording; tags `['Music','Learning','Piano','Guitar','Beta']`); run `pnpm docs:site:check`, `pnpm docs:api:check`; commit `feat(rmhmusic): new card, banner and logo for the learning app`.
+
+### Task 16: Cross-browser, resolution and mobile verification
+
+**Files:** fixes only, wherever the matrix finds problems; a short results table goes in the PR description (not a file).
+
+**Interfaces:** none.
+
+- [ ] **Step 1: Engines.** Use the preinstalled Chromium plus Firefox and WebKit: download them with the CLI of the SAME preinstalled Playwright (do not install another Playwright version; see the environment notes) into its browsers path. If the network or system libraries block a download, report exactly what failed and test what is possible.
+- [ ] **Step 2: Matrix.** Chromium × Firefox × WebKit; viewports 320×568, 360×640, 390×844, 412×915, 768×1024, 1024×768, 844×390 (landscape phone), 1280×800, 1920×1080, 2560×1440; touch emulation on the phone sizes; light and dark; RTL (`ar`); jelly motion still; 200% text zoom. For the home, setup dialog, calibration, first lesson (before/after completion) check: no horizontal page scroll, no clipped or overlapping text, white keys ≥ 44 px / black ≥ 24 px, safe-area insets, focus ring visible, backdrop animates and stops when still/hidden, no console errors.
+- [ ] **Step 3: Fallbacks.** WebKit and iOS have no Web MIDI → the row says so; denied microphone; suspended AudioContext; no `getUserMedia`; `localStorage` unavailable (mode toggle still works for the session); reduced GPU (canvas fallback).
+- [ ] **Step 4: Targets.** Compare the CSS/JS features the new screens use (`color-mix`, `:has`, `@starting-style`, `dvh`/`svh`, container queries, `structuredClone`, `AbortSignal.any`, pointer events, `OffscreenCanvas`) against the repo's browserslist / Vite build target and the last two major versions of Chrome, Firefox and Safari; add a fallback or avoid the feature where it is unsupported.
+- [ ] **Step 4b: Flash and shift (owner, 2026-11-08).** For `/rmhmusic` and the lesson route on every engine × viewport cell: cumulative layout shift (a `layout-shift` PerformanceObserver) must be 0.00 signed in with a cold and a warm store, and for a signed-out visit (the server redirect to `/login` and the return after sign-in); capture first-paint versus hydrated screenshots and diff them to prove no FOUC; load once with JavaScript disabled and confirm the server-rendered HTML paints the paper ground, hero and skeleton correctly (nothing unstyled); repeat under CDP network and CPU throttling (slow 3G, 4× CPU) and confirm no reflow; in both light and dark and with a stored and an unstored mode preference. Fix every finding.
+- [ ] **Step 5:** Fix what is found (commit per fix) and re-run the affected cells; list in the PR which cells passed, which failed and were fixed, and which could not be tested.
+
+### Task 17: Delete the compatibility shims and dead config for the removed app
+
+Owner directive (2026-11-08): "No need for backwards compatibility or anything, removed features or routes can be deleted."
+
+**Files:** whatever each step below names.
+
+**Interfaces:** none.
+
+- [ ] **Step 1: Redirect shims.** Delete `app/routes/rmhmusic/$roomId.tsx` and `app/routes/_site/music-trivia.tsx` (old URLs simply 404 now). Regenerate `app/routeTree.gen.ts` with the repo's generator (additions/removals only, Register block intact), remove their entries from `lib/sitemap.ts`, `lib/__tests__/fouc-contract.test.ts` and `testing/e2e/fouc-routes.mjs`, regenerate `docs/site-reference/*` (`pnpm docs:site`). Confirm `/rmhmusic/lesson/$lessonId` and `/rmhmusic` still resolve.
+- [ ] **Step 2: Spaces.** Remove the legacy `music_room` pin kind everywhere (types, validation, `SpaceRoom` label-only rendering, API, socket rehydrate path and the comments about it). Database rows are not touched.
+- [ ] **Step 3: Music playlists.** If `kind: 'music'` playlists existed only for the removed app (check `Playlist`/`PlaylistItem` usage, the Library "Create" button, `PlaylistsColumn` copy and the `playlists-empty-desc-rmhtube` key from Task 10), remove the ability to create them and the UI that mentions them; keep the database enum. Report what you found and decided.
+- [ ] **Step 4: Constants.** Move `ROOM_CODE_ALPHABET` (and `ROOM_CODE_LENGTH` if used) from `lib/rmhmusic/constants.ts` into studio-jam's own library next to its handler's other code, update the import in `server/socket-server/handlers/studio-jam.ts`, delete `lib/rmhmusic/constants.ts`.
+- [ ] **Step 5: Locale keys.** Prune the dead `c-rmhmusic` keys: run `pnpm i18n:extract`, keep ONLY the changes to `locales/*/c-rmhmusic.json` (revert every other locale file it rewrites), and apply the same prune to `locales/*/.sources.c-rmhmusic.json` if those files track keys; verify `lib/__tests__/i18n-catalogs.test.ts` and `i18n-default-drift.test.ts`.
+- [ ] **Step 6: Spotify config.** In `deploy/apache/rmhstudios.conf` remove the CSP hosts that only the removed Spotify Web Playback needed (keep `open.spotify.com` in `frame-src` if `ProfileSongEmbed` embeds it; keep whatever else still uses Spotify — check `grep -rn -i spotify app components lib server`), fix the comments; keep `.env.example` Spotify variables if `/api/spotify/search` still reads them. Note in the PR that the Apache vhost needs a reload.
+- [ ] **Step 7: Achievements.** Delete the definitions, icons and group entries for `game.rmhmusic.host_room` and `game.first_music_guess` ONLY if the achievements code handles unknown ids in existing user rows safely (read `lib/achievements/*` and how earned rows are rendered/counted); otherwise keep them and say why.
+- [ ] **Step 8: Go.** Remove the `RmhMusicRoom` struct in `go-services/pkg/db/models.go` and the RMHmusic strings in `go-services/cmd/status` / `internal/status` (and their tests) ONLY if a Go toolchain is available to run `go build ./... && go vet ./... && go test ./...` in `go-services` (check `which go`; Bazel files need `make gazelle` only when files are added/removed, not here); otherwise leave Go untouched and report it.
+- [ ] **Step 9: Retired docs.** Delete `docs/rmhmusic/` (the retired Spotify design), `docs/plans/2026-03-02-rmhmusic.md`, and `docs/go-migration/sections/11-rmhmusic.html` plus its entry in `docs/go-migration/build/sections.json` ONLY if the Sphinx/docs build config tolerates it (read `docs/index.md`, `docs/conf.py` or the docs workflow); update `docs/index.md` and `docs/README.md` globs/rows accordingly. Leave dated audits and runbooks alone.
+- [ ] **Step 10: NOT in this task.** Do not drop database tables or touch `prisma/schema.prisma`/migrations (needs the owner's explicit confirmation).
+- [ ] **Step 11:** gates green (`pnpm docs:site:check`, `pnpm docs:api:check`, the sitemap/fouc/i18n/design/raf tests that your deletions touch, `lib/__tests__/test-discovery.test.ts`); commits `chore(rmhmusic): delete the compatibility shims for the retired app`, etc.

@@ -437,7 +437,7 @@ for ~40 min and reported nothing. Run it on a branch with
 `gh workflow run web-ci.yml --ref <branch>`. When re-enabled on PRs, the job is
 path-filtered by `eversion-changes` to what the effect depends on: `lib/eversion`,
 `components/radial`, the settings row and its preference API/schema, the theme
-store, `lib/perf-tier*` and `lib/render`, the glass layer, the two English
+store, `lib/low-end*` and `lib/render`, the glass layer, the two English
 namespaces it uses, `package.json`, the lockfile, the Vite config, the bundle
 budget script, the baselines and this workflow - not every route, store or English
 string. It runs nightly on `main`. It is `continue-on-error` until T37 makes it
@@ -581,7 +581,7 @@ material — a filter step matches `lib/jelly/`, `lib/liquid/`,
   a fixture that needs no server (~40 s). The rest of the material is CSS, judged by the
   unit gates and by `frame-budget.mjs`. It fails for real on every deterministic check:
   click charge and hops, the flash ledger under a click storm, the arc layer following
-  `electricArcs` / `still` / `perf-lite` live, zero frames at rest, teardown.
+  `electricArcs` / `still` live, zero frames at rest, teardown.
 - **Non-blocking: `testing/e2e/frame-budget.mjs --gate`** against the built app
   (step-level `continue-on-error`: the step still shows its exit code, a red
   summary row and an `::error::` annotation, but the job's conclusion ignores

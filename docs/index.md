@@ -149,7 +149,6 @@ superpowers/**
 
 rmhbox/**
 altair/**
-rmhmusic/**
 rmhtube/**
 rmhvibe/**
 signal-forge/**

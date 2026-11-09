@@ -23,7 +23,7 @@ import {
   FileText,
   Layers,
   LayoutGrid,
-  ListMusic,
+  ListVideo,
   Newspaper,
   Rotate3d,
   Upload,
@@ -89,8 +89,8 @@ const fetchAlbums = createServerFn({ method: 'GET' }).handler(async () => ({
 }));
 
 // The former standalone /playlists page is folded into the library as the
-// "Music" section. Signed-out visitors get null (the section shows a sign-in
-// prompt), mirroring the old page's behavior.
+// "Playlists" section (RMHTube video playlists). Signed-out visitors get null
+// (the section shows a sign-in prompt), mirroring the old page's behavior.
 const fetchPlaylists = createServerFn({ method: 'GET' }).handler(async () => {
   const session = await getRequestSession();
   if (!session) return { playlists: null };
@@ -98,10 +98,12 @@ const fetchPlaylists = createServerFn({ method: 'GET' }).handler(async () => {
 });
 
 // The library grew past a comfortable single scroll (reads + albums +
-// collections + books + music). A sticky category navigator filters to one
+// collections + books + playlists). A sticky category navigator filters to one
 // section; the active category is mirrored into `?view=` so deep links (e.g.
-// the /playlists redirect → /library?view=music) land on the right section.
-const LIBRARY_VIEWS = ['all', 'reads', 'albums', 'collections', 'books', 'music'] as const;
+// the /playlists redirect → /library?view=playlists) land on the right section.
+// The section used to be "Music" (`?view=music`), named for the retired
+// listening-party app; that old link still lands on the playlists.
+const LIBRARY_VIEWS = ['all', 'reads', 'albums', 'collections', 'books', 'playlists'] as const;
 type LibraryView = (typeof LIBRARY_VIEWS)[number];
 
 // useLayoutEffect warns during SSR; the scroll settle below only ever has work
@@ -119,7 +121,7 @@ export const Route = createFileRoute('/_site/library/')({
     links: [buildCanonical('/library')],
   }),
   validateSearch: (search: Record<string, unknown>): { view?: LibraryView } => {
-    const view = search.view;
+    const view = search.view === 'music' ? 'playlists' : search.view;
     return LIBRARY_VIEWS.includes(view as LibraryView) ? { view: view as LibraryView } : {};
   },
   // perf audit §4.2: the server fns were awaited sequentially — serial HTTP
@@ -488,9 +490,9 @@ function Library() {
                   icon: Disc3,
                 },
                 {
-                  id: 'music',
-                  label: t('cat-music', { defaultValue: 'Music' }),
-                  icon: ListMusic,
+                  id: 'playlists',
+                  label: t('cat-playlists', { defaultValue: 'Playlists' }),
+                  icon: ListVideo,
                 },
                 {
                   id: 'collections',
@@ -561,11 +563,11 @@ function Library() {
                 />
               )}
 
-              {shows('music') && (
-                <section className="lib__section lib__section--catalog lib__section--music glass-fill lib-section-shell">
+              {shows('playlists') && (
+                <section className="lib__section lib__section--catalog lib__section--playlists glass-fill lib-section-shell">
                   <div className="lib__section-head">
                     <h2 className="lib__section-title">
-                      {t('section-music', { defaultValue: 'Music' })}
+                      {t('section-playlists', { defaultValue: 'Playlists' })}
                     </h2>
                     {playlists && (
                       <span className="lib__section-count">
@@ -584,7 +586,7 @@ function Library() {
                 (filtered.length === 0 ? (
                   // Canonical EmptyState, and state-aware copy: the bare
                   // "No books match that search." line claimed a search was
-                  // responsible even when the field was untouched. (The music
+                  // responsible even when the field was untouched. (The playlists
                   // section on this same page already used EmptyState.)
                   <EmptyState
                     icon={BookOpen}

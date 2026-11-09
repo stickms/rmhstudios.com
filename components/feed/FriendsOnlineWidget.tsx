@@ -18,7 +18,7 @@ import { pulseSnapshot, subscribePulse } from'@/lib/pulse';
 
 interface OnlineFriend {
  user: { id: string; name: string | null; handle: string | null; image: string | null };
- activity: { kind:'rmhtube'|'rmhmusic'; label: string; href: string } | null;
+ activity: { kind:'rmhtube'; label: string; href: string } | null;
 }
 
 /**

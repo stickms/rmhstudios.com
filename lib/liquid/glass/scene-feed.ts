@@ -9,10 +9,10 @@
  * A picture is 100–300 ms of time-sliced main-thread work, so the triggers are deliberately few: the first acquire,
  * a route change (the caller says when), a theme change on `<html>`, a window resize and the tab becoming visible.
  * Never scroll — the globe re-places the picture it has by the scroll offset — and never content mutations. The
- * provider coalesces requests and holds its tier's minimum interval; `SCENE_POLICY` gives the handheld, `lite` and
+ * provider coalesces requests and holds its tier's minimum interval; `SCENE_POLICY` gives the handheld and
  * `off` tiers no budget at all, so nothing is captured there.
  */
-import { APP_HIGH_CONTRAST_SELECTOR, DEGRADED_ROOT_SELECTOR, jellyTier } from '@/lib/jelly/tiers';
+import { APP_HIGH_CONTRAST_SELECTOR, jellyTier } from '@/lib/jelly/tiers';
 import { createSceneProvider, SCENE_POLICY, type SceneProvider, type SceneShot } from './scene';
 import { clearScene, publishScene } from './scene-store';
 
@@ -38,7 +38,6 @@ function startFeed(doc: Document): FeedState {
   const root = doc.documentElement;
   const off = () =>
     win.matchMedia('print').matches ||
-    root.matches(DEGRADED_ROOT_SELECTOR) ||
     !!doc.querySelector(APP_HIGH_CONTRAST_SELECTOR);
   // While the hub is open the page behind it is blurred and covered, and the picture taken BEFORE it opened is the one
   // the globe is refracting; a new one now would be of the wrong thing.

@@ -13,7 +13,7 @@
  *   flash onsets, every strike is a jelly surface (never a field or the page), and hop and click arcs never outnumber what
  *   the ledger admitted.
  * - **Preferences, live (R9):** the `.jelly-arc-layer` exists while arcs are on, is absent under
- *   `html[data-electric-arcs="off"]`, under `html[data-jelly-motion="still"]` and under `.perf-lite`, and comes back.
+ *   `html[data-electric-arcs="off"]`, and under `html[data-jelly-motion="still"]`, and comes back.
  * - **Rest:** with no input and no arc in flight the click runtime requests no animation frame.
  * - **Teardown** leaves no arc node behind, and the page throws nothing.
  */
@@ -279,11 +279,6 @@ try {
   await page.evaluate(() => document.documentElement.removeAttribute('data-jelly-motion'));
   await settle(400);
   check('leaving still brings the arc layer back', (await count('.jelly-arc-layer')) === 1);
-  await page.evaluate(() => document.documentElement.classList.add('perf-lite'));
-  await settle(500);
-  check('.perf-lite removes the arc layer', (await count('.jelly-arc-layer')) === 0);
-  await page.evaluate(() => document.documentElement.classList.remove('perf-lite'));
-  await settle(300);
 
   // ── Teardown ──
   await page.evaluate(() => window.__jelly.stop());

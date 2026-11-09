@@ -18,11 +18,12 @@ import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser, resolveUserDisplay } from '@/lib/user-display';
 import { getRole, canModerate } from '@/lib/communities/access.server';
 import { setActivity } from '@/lib/presence.server';
-import type {
-  LiveSpaceSummary,
-  SpaceMessageView,
-  SpacePinned,
-  SpaceView,
+import {
+  parseSpacePinned,
+  type LiveSpaceSummary,
+  type SpaceMessageView,
+  type SpacePinned,
+  type SpaceView,
 } from '@/lib/spaces/types';
 
 /**
@@ -85,7 +86,7 @@ function shapeSpace(row: SpaceRow): SpaceView {
     scheduledAt: row.scheduledAt?.toISOString() ?? null,
     startedAt: row.startedAt?.toISOString() ?? null,
     endedAt: row.endedAt?.toISOString() ?? null,
-    pinned: (row.pinned as SpacePinned | null) ?? null,
+    pinned: parseSpacePinned(row.pinned),
     recordChat: row.recordChat,
     createdAt: row.createdAt.toISOString(),
     host: resolveUser(row.host),

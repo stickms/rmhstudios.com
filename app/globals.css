@@ -1700,16 +1700,6 @@ html:not(.app-route) .site-aurora::after {
   transition: translate 0.9s var(--ease-smooth); /* lazier trail */
 }
 
-/* Low-end devices and high-contrast (canvas is `none` there) pay nothing for the
-   parallax follow — both aurora layers. */
-html.perf-lite .site-aurora::before,
-html.perf-lite .site-aurora::after {
-  animation: none;
-  translate: none;
-  transition: none;
-  will-change: auto;
-}
-
 /* Page canvas show-through: elements that use bg-site-bg as the page ground let
    the aurora read through (cheap — no blur). Full-screen fixed takeovers (admin
    MDX editor) and the mobile drawer's sliding panel stay opaque. High-contrast
@@ -1771,16 +1761,13 @@ html.app-route {
 /* ─────────────────────────────────────────────────────────────────────────
    Handheld tier — the THIRD device axis (§6.4/§10).
 
-   `html.perf-lite` means "this machine is weak". `html.ios-webkit` means "this
-   compositor behaves differently". Neither describes the fact this block is
-   about, and that gap is why phones were paying full price:
+   `html.ios-webkit` means "this compositor behaves differently". It does not
+   describe the fact this block is about, and that gap is why phones were paying
+   full price:
 
-     - `lib/perf-tier.ts` documents that NO iPhone is ever `perf-lite` (its
-       signals are Chromium-only except hardwareConcurrency, which iOS reports
-       as 4–6), and its Android triggers are `deviceMemory < 4` or
-       `hardwareConcurrency <= 2` — thresholds a current mid-range Android also
-       clears. So in practice almost no phone reached the one tier that turns
-       continuous decorative GPU work off.
+     - There was never a "weak machine" class that a current phone reached: the
+       old low-end signals are Chromium-only except hardwareConcurrency, which
+       iOS reports as 4–6, and a mid-range Android clears the thresholds too.
      - `ios-webkit` DID freeze the aurora, but only on iOS. Android Chrome ran
        the full animated backdrop with no equivalent.
 
@@ -1862,7 +1849,7 @@ html.app-route {
        (nesting a backdrop sampler in a filtered subtree re-rasterizes it) and
        never labels/icons (alpha thresholding destroys glyph edges; those live in
        the sibling layer above at z-index ≥ 1).
-   Degradations: perf-lite / high-contrast drop the whole underlay so only the
+   Degradations: high-contrast drops the whole underlay so only the
    plain layoutId spring slide remains (the capsule above is untouched). Reduced
    motion never mounts it in the first place (the components gate on
    useReducedMotion), so no CSS rule is needed for that path. */
@@ -1870,9 +1857,6 @@ html.app-route {
   filter: url(#glass-goo);
   contain: layout paint;
   pointer-events: none;
-}
-html.perf-lite .lg-goo {
-  display: none;
 }
 
 /* Success toast rim-flash (§5.5). Sonner portals its toasts to <body> and tags
@@ -1928,42 +1912,6 @@ html [data-sonner-toast] {
   --rebar-ink-faint: #6d675d;
   --rebar-line: #35302a;
   --rebar-line-strong: #f3efe6;
-}
-
-/* Device tiering (§6.4/§10): low-end devices keep chrome/overlay blur (few, carry
-   the identity) but demote L2 panes to flat tint, drop the pointer light, and
-   strip the lens — both branches: Chromium's backdrop-filter AND the §3.6 mirror
-   `filter` + aurora copy (JS never generates the filters either). The glint stays
-   but rests at the static element-anchored sun (no fixed attachment); the far
-   aurora + sheen go. CSS-only demotion — no component branches. */
-html.perf-lite {
-  --glass-glint-attach: scroll;
-  /* Cap the device budget at 1; the independent viewport cap may lower it
-     further through --glass-blur-factor. */
-  --glass-blur-cap-tier: 1;
-  --glass-glint-layer: linear-gradient(
-    180deg,
-    color-mix(
-      in srgb,
-      var(--site-glass-glint, var(--site-glass-rim))
-        calc(var(--glass-glint-opacity, 0.9) * var(--glass-glint-hover, 1) * 100%),
-      transparent
-    ),
-    transparent 34%
-  );
-}
-html.perf-lite .glass-pane {
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-html.perf-lite .glass-refract::before {
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  filter: none; /* strip the §3.6 mirror displacement */
-  background-image: none; /* and the aurora copy it displaced */
-}
-html.perf-lite .site-aurora::after {
-  display: none;
 }
 
 /* iOS/WebKit compositor safety tier. WebKit can wedge the page while compositing
@@ -4545,8 +4493,6 @@ html[data-page-leaving='sibling']
    Keep them in step — if one moves, move the other;
    `lib/__tests__/motion-pop-spring.test.ts` fails if they drift.
 
-   `perf-lite` keeps the anchored scale-fade but drops the sampled settle for a
-   single eased tween — 2 stops instead of 10, on a device already struggling.
    Everything here is gated on no-preference, and the global reduce rule in
    §REDUCED MOTION collapses it anyway. */
 :root {
@@ -5198,8 +5144,7 @@ html.nav-pop .page-root > * {
    the way the springs do (their last third is sub-pixel); `snappy` and `pop`
    keep their overshoot through a y > 1 control point. Chromium and Gecko
    accelerate `linear()` and keep the exact springs. After every token it
-   overrides (the evert springs are declared above), before `perf-lite`, which
-   still wins. */
+   overrides (the evert springs are declared above). */
 @supports (font: -apple-system-body) {
   :root {
     --spring-smooth: var(--ease-smooth);
@@ -5208,17 +5153,6 @@ html.nav-pop .page-root > * {
     --evert-ease: var(--ease-smooth);
     --evert-ease-pop: cubic-bezier(0.34, 1.4, 0.64, 1);
   }
-}
-
-/* perf-lite: one short tween instead of the sampled settle; the focus ring simply lands. */
-html.perf-lite {
-  --evert-in: 0.16s;
-  --evert-ease: var(--ease-smooth);
-  --evert-pop-in: 0.16s;
-  --evert-ease-pop: var(--ease-smooth);
-}
-html.perf-lite :focus-visible {
-  animation: none;
 }
 
 /* ─── Scoped shared-element View Transitions ─────────────────────────────
@@ -6513,8 +6447,7 @@ body {
   }
 
   /* The three decorative pseudo-elements the material hangs its rim glint,
-     refraction and liquid sheen on (the same set `perf-lite`, high-contrast and
-     `reduce-transparency` already switch off above). */
+     refraction and liquid sheen on. */
   .glass-chrome--aside::before,
   .glass-refract::before,
   .glass-refract--prism::before,

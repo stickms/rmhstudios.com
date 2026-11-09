@@ -1,13 +1,17 @@
 /**
- * Persistent media playlists (music/video) — the durable personal library
- * behind the apps' ephemeral room queues. The owner can do everything; invited
+ * Persistent media playlists — the durable personal library behind RMHTube's
+ * ephemeral room queues. Every playlist is a `video` playlist. Rows of kind
+ * `music` were filled only by the retired RMHMusic listening-party app; they are
+ * dead data, so every query here is scoped to `PLAYLIST_KIND` and they are never
+ * listed, opened or edited. The owner can do everything; invited
  * collaborators can read a playlist and add/remove its items. Every "may this
  * user edit this playlist" decision goes through `canEditPlaylist` below.
  */
 
 import { prisma } from '@/lib/prisma.server';
 
-export type PlaylistKind = 'music' | 'video';
+/** The only live playlist kind. Legacy `music` rows are ignored everywhere. */
+export const PLAYLIST_KIND = 'video';
 
 export const MAX_PLAYLISTS = 100;
 export const MAX_ITEMS = 500;
@@ -17,7 +21,10 @@ export type PlaylistRole = 'owner' | 'collaborator';
 
 /** Rows the user may open: their own, or ones they collaborate on. */
 function accessWhere(userId: string) {
-  return { OR: [{ userId }, { collaborators: { some: { userId } } }] };
+  return {
+    kind: PLAYLIST_KIND,
+    OR: [{ userId }, { collaborators: { some: { userId } } }],
+  };
 }
 
 /**
@@ -36,7 +43,7 @@ export async function canEditPlaylist(userId: string, playlistId: string): Promi
 
 export async function isPlaylistOwner(userId: string, playlistId: string): Promise<boolean> {
   const row = await prisma.playlist.findFirst({
-    where: { id: playlistId, userId },
+    where: { id: playlistId, userId, kind: PLAYLIST_KIND },
     select: { id: true },
   });
   return row !== null;
@@ -78,12 +85,9 @@ export interface NewItem {
   durationMs?: number | null;
 }
 
-export async function listPlaylists(
-  userId: string,
-  kind?: PlaylistKind,
-): Promise<PlaylistSummary[]> {
+export async function listPlaylists(userId: string): Promise<PlaylistSummary[]> {
   const rows = await prisma.playlist.findMany({
-    where: { ...accessWhere(userId), ...(kind ? { kind } : {}) },
+    where: accessWhere(userId),
     orderBy: { updatedAt: 'desc' },
     select: { id: true, name: true, kind: true, itemCount: true, updatedAt: true, userId: true },
   });
@@ -123,15 +127,11 @@ export async function getPlaylist(id: string, userId: string): Promise<PlaylistD
 
 export type CreateResult = { ok: true; id: string } | { ok: false; error: string; status: number };
 
-export async function createPlaylist(
-  userId: string,
-  name: string,
-  kind: PlaylistKind,
-): Promise<CreateResult> {
-  const count = await prisma.playlist.count({ where: { userId } });
+export async function createPlaylist(userId: string, name: string): Promise<CreateResult> {
+  const count = await prisma.playlist.count({ where: { userId, kind: PLAYLIST_KIND } });
   if (count >= MAX_PLAYLISTS) return { ok: false, error: 'Too many playlists', status: 400 };
   const pl = await prisma.playlist.create({
-    data: { userId, name: name.trim().slice(0, 100) || 'Untitled', kind },
+    data: { userId, name: name.trim().slice(0, 100) || 'Untitled', kind: PLAYLIST_KIND },
     select: { id: true },
   });
   return { ok: true, id: pl.id };
@@ -140,14 +140,14 @@ export async function createPlaylist(
 /** Rename (owner only). Returns false when the playlist isn't the caller's. */
 export async function renamePlaylist(id: string, userId: string, name: string): Promise<boolean> {
   const res = await prisma.playlist.updateMany({
-    where: { id, userId },
+    where: { id, userId, kind: PLAYLIST_KIND },
     data: { name: name.trim().slice(0, 100) || 'Untitled' },
   });
   return res.count > 0;
 }
 
 export async function deletePlaylist(id: string, userId: string): Promise<boolean> {
-  const res = await prisma.playlist.deleteMany({ where: { id, userId } });
+  const res = await prisma.playlist.deleteMany({ where: { id, userId, kind: PLAYLIST_KIND } });
   return res.count > 0;
 }
 

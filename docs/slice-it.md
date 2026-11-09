@@ -304,7 +304,7 @@ throws more and harder (`strengthOf`).
 
 The burst is gated like every other flash: **Effect Intensity** scales its size (0 keeps
 the cut and drops the rest), **Reduced Flash** removes the crack line, the sparks and the
-ring (shards and dust stay), and `perf-lite` gets a smaller burst with no flash pieces.
+ring (shards and dust stay), and a low-end device (`canvasGlowEnabled()` false) gets a smaller burst with no flash pieces.
 Pieces are integrated against wall-clock time, capped at `MAX_FX`, and nothing is
 blurred. Only the groove skins (Circle, Pixel, Record) cut notes; the older skins keep
 their own bursts.
@@ -383,7 +383,7 @@ a decoration — and dim and desaturate as the health gauge falls
    away.
 2. **Three switches turn it off, and any one of them wins**
    (`backdropVisible`): the player's own setting, `canvasGlowEnabled()` (which
-   folds in `prefers-reduced-motion` and `perf-lite`), and `A2`'s Reduced Flash.
+   folds in `prefers-reduced-motion` and a low-end device), and `A2`'s Reduced Flash.
    `A7`'s Effect Intensity scales what is left. On a light theme the wash is
    inverted to *shading* rather than glow, so it cannot flatten the pale
    `--slice-rail`.

@@ -27,7 +27,7 @@ Multiplayer games talk to Node hubs over Socket.io, not to the web tier:
 
 | Hub | Port | Serves |
 | --- | ---- | ------ |
-| `socket-server` | 7001 | The general hub, including RMHMusic |
+| `socket-server` | 7001 | The general hub for the games |
 | `rmhbox` | 7676 | RMHBox party games |
 | `rmhtube` | 7003 | Watch-party sync |
 
@@ -44,7 +44,7 @@ authoritative on the server. The client renders it; it does not own it.
 
 - Audio: `howler`/`tone`. Always obtain a context via `getAudioContext()` from `lib/shared/platform.ts` — never `new AudioContext()` — so the page doesn't end up with several competing contexts.
 - 3D: `@react-three/fiber` with `@react-three/rapier` for physics.
-- `lib/performance-tier.ts` and `lib/motion-features.ts` scale effects to the device. Respect `useReducedMotion` — the global `MotionConfig` already sets `reducedMotion="user"`, so framer-motion animations honour it, but imperative animation loops need to check.
+- `lib/low-end.ts` (`isLowEndCapability()`) and `lib/motion-features.ts` scale effects to the device. Respect `useReducedMotion` — the global `MotionConfig` already sets `reducedMotion="user"`, so framer-motion animations honour it, but imperative animation loops need to check.
 
 ## Cross-cutting surfaces
 

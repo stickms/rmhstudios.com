@@ -177,16 +177,14 @@ describe('default theme before first paint', () => {
  * The inline scripts in `__root.tsx` that run before first paint, as one string.
  *
  * Everything between `const themeScript = \`` and the end of the `head()` scripts
- * array is pre-paint: `platformScript`, `PERF_TIER_SCRIPT`, `themeScript`,
+ * array is pre-paint: `platformScript`, `themeScript`,
  * `localeScript` and `bodyThemeScript`. The gate below asks whether a given class
  * or attribute name appears anywhere in that text, which is deliberately loose —
  * it proves the pre-paint stack KNOWS about the token, and leaves whether it
  * resolves it correctly to the runtime audit, which can actually see the pixels.
  */
 function prePaintScriptText(): string {
-  const root = read('app/routes/__root.tsx');
-  const perfTier = read('lib/perf-tier.ts');
-  return `${root}\n${perfTier}`;
+  return read('app/routes/__root.tsx');
 }
 
 describe('FOUC contract: pre-paint parity', () => {
@@ -203,7 +201,6 @@ describe('FOUC contract: pre-paint parity', () => {
     'components/Providers.tsx',
     'stores/themeStore.ts',
     'lib/appearance/prefs.ts',
-    'lib/perf-tier.ts',
   ];
 
   /**
@@ -542,7 +539,7 @@ describe('FOUC contract: hydration', () => {
    */
   const LAZY_IN_ROUTE_ALLOWED: Record<string, string> = {
     'app/routes/_site.tsx':
-      'first-run/welcome modals, cookie consent, shortcuts and the mini player — mounted on the client after an interaction or a stored flag, never server-rendered',
+      'first-run/welcome modals, cookie consent and shortcuts — mounted on the client after an interaction or a stored flag, never server-rendered',
     'app/routes/_site/admin/blog/$slug/edit.tsx':
       'admin-only MDX editor, behind auth: not in the audit, nothing public to swap',
     'app/routes/_site/admin/blog/new.tsx': 'admin-only MDX editor, behind auth',
@@ -567,7 +564,6 @@ describe('FOUC contract: hydration', () => {
     'app/routes/hearthworks.tsx': 'client-only 3D scene: the server renders the fallback',
     'app/routes/library.$slug.tsx': 'the book and EPUB readers open from the page on demand',
     'app/routes/rmhcode/index.tsx': 'the token generator opens on demand from the page',
-    'app/routes/rmhmusic/$roomId.tsx': 'the visualizer mounts once audio is playing',
     'app/routes/slice-it/edit.$songId.tsx': 'the chart editor, behind auth, client-only canvas',
     'app/routes/synapse-storm.tsx': 'client-only WebGL game: the server renders the fallback',
     'app/routes/temple-of-joy/index.tsx': 'client-only game gate: the server renders the fallback',

@@ -40,8 +40,8 @@ that: if it doesn't move a novice toward reading and playing with confidence, it
 
 ## Constraints (from the repo)
 
-- Keep the existing look: shared full-screen `--app-*` tier, `rmhmusic-theme` violet accent on
-  near-black, route stays `/rmhmusic` (theme-excluded), catalog id `rmhmusic`.
+- Shared full-screen `--app-*` tier, route stays `/rmhmusic` (theme-excluded), catalog id `rmhmusic`.
+  **Look: superseded by the owner's 2026-11-08 addendum below (notebook-paper scheme, light + dark).**
 - `pnpm check:consistency` before every commit; i18n via `t()` in `c-rmhmusic`; new strings are
   new keys (old wording keys are dead); all audio through `getAudioContext()`; server-only code in
   `*.server.ts`; API routes via `defineHandler`; schema changes carry a migration.
@@ -111,6 +111,11 @@ Phase 1 removes all routes, components, socket handler and references. **The old
 dropped table can't be restored, and the owner hasn't confirmed what history to keep. A separate
 cleanup migration comes later, only on the owner's say-so.
 
+**Update 2026-11-09:** the owner approved the drop. The seven old tables (`rmh_music_room`,
+`rmh_music_room_member`, `rmh_music_queue_item`, `rmh_music_chat_message`,
+`rmh_music_track_comment`, `music_guess_puzzle`, `music_guess_attempt`) are removed by
+`prisma/migrations/20261109120000_drop_rmhmusic_legacy`; achievement and coin history is untouched.
+
 ## Left to the builder
 
 Pitch-detector choice and tuning (YIN vs MPM), piano/guitar sound source (samples vs synth,
@@ -122,3 +127,16 @@ curriculum text, schema column details.
 Route/ids unchanged; no per-answer coins; old tables kept; uploads private; mic chords labelled
 best-effort; phase 4 library deferred to a spike; minimal tests per repo test policy; the
 separate builder-review step skipped for speed at the owner's request.
+
+## Addendum 2026-11-08 — owner directives
+
+- **Design:** a new music-inspired scheme (notebook paper, staves, notes), a full layout redesign that
+  matches the app's game card, animated backgrounds, **light and dark modes**.
+- **Art:** the catalog card, banner, logo and icon are redrawn to show what RMH Music is now (learning
+  piano and guitar), not the retired Spotify player.
+- **Quality bar:** mobile-friendly, all major browsers (Chromium, Firefox, WebKit) and resolutions,
+  utmost performance, and no implicit state machines — lifecycles become explicit, tested machines.
+- **Calls made:** animated backdrop follows the Kowloon `MenuBackdrop` precedent (pure renderer, fixed
+  buffer, rAF only while mounted + visible + not "still"); mode defaults to `prefers-color-scheme` and is
+  user-togglable; a live staff shows the played note (a first step toward reading); the state-machine and
+  performance pass (Task 15) comes before the restyle so behaviour is settled first.

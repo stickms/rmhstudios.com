@@ -228,21 +228,6 @@
   box-shadow: 3px 2px 0 var(--slice-primary);
 }
 
-/* ─── Buttons ───────────────────────────────────────────────────────────────
- *
- * The shared `Button` is built for the site's material. Where that material is
- * off (the `perf-lite` tier) `liquid-glass.css` gives every flat button an opaque
- * SITE surface via an UNLAYERED rule, which beats every `bg-*` utility. Inside
- * the game a button is the game's own control, so that rule is handed back to
- * the layered cascade (`revert-layer`) — except `.slice-btn-primary`/`-alt`, which
- * are unlayered themselves and would be reverted along with it.
- */
-html.perf-lite .slice-theme [data-jelly-rest='flat']:not(.slice-btn-primary, .slice-btn-alt),
-html.perf-lite .slice-tokens [data-jelly-rest='flat']:not(.slice-btn-primary, .slice-btn-alt) {
-  background-color: revert-layer;
-  border-color: revert-layer;
-}
-
 /* Hard edges everywhere in the game; a circle stays a circle. */
 .slice-theme [class*='rounded-']:not(.rounded-full),
 .slice-tokens [class*='rounded-']:not(.rounded-full),
@@ -288,28 +273,6 @@ html.perf-lite .slice-tokens [data-jelly-rest='flat']:not(.slice-btn-primary, .s
 .slice-tokens
   :is(.bg-blue-500, .bg-blue-600, .bg-sky-500, .bg-cyan-500, .bg-pink-500, .bg-red-500).text-white {
   color: var(--slice-label);
-}
-
-/*
- * Under `perf-lite` the site paints every flat button an opaque surface with an
- * unlayered rule of higher specificity than the classes above, so the game's own
- * two buttons restate their fills at the same specificity (and for hover).
- */
-html.perf-lite .slice-theme .slice-btn-primary[data-jelly-rest='flat'] {
-  background-color: var(--slice-paper);
-  color: var(--slice-bg);
-}
-html.perf-lite .slice-theme .slice-btn-primary[data-jelly-rest='flat']:hover {
-  background-color: var(--slice-primary);
-}
-html.perf-lite .slice-theme .slice-btn-alt[data-jelly-rest='flat'] {
-  background-color: transparent;
-  color: var(--slice-paper);
-  border-color: transparent;
-}
-html.perf-lite .slice-theme .slice-btn-alt[data-jelly-rest='flat']:hover {
-  background-color: var(--slice-paper);
-  color: var(--slice-bg);
 }
 
 /* The primary action: a paper slab whose right edge is the cut. */
@@ -386,7 +349,6 @@ html .slice-tokens :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay) 
 
 /* The site's flat buttons carry a faint sheen; in here a button is a flat fill. */
 html .slice-theme [data-slot='button'],
-html.perf-lite .slice-theme [data-slot='button'],
 html .slice-tokens [data-slot='button'] {
   background-image: none;
   box-shadow: none;

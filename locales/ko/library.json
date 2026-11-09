@@ -36,7 +36,7 @@
   "cat-all": "All",
   "cat-books": "Books",
   "cat-collections": "Collections",
-  "cat-music": "Music",
+  "cat-playlists": "Playlists",
   "cat-reads": "Reads",
   "clear-search": "Clear search",
   "close": "닫기",
@@ -90,7 +90,7 @@
   "section-collections": "컬렉션",
   "section-community": "커뮤니티 업로드",
   "section-curated": "엄선",
-  "section-music": "Music",
+  "section-playlists": "Playlists",
   "sections-label": "Library sections",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"

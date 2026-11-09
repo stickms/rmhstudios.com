@@ -36,9 +36,8 @@ import { useEffect } from 'react';
  * and the tilt moves the aurora alone.
  *
  * No React re-renders (writes straight to the DOM), and fully gated off under
- * reduced motion (OS preference or the `html.reduce-motion` account toggle) and
- * on low-end devices (`html.perf-lite`) — the same gates as the aurora parallax, so
- * tilt light never runs where those degradations apply. Mounted once in
+ * reduced motion (OS preference or the `html.reduce-motion` account toggle) — the same gates as the aurora parallax, so
+ * tilt light never runs where that degradation applies. Mounted once in
  * `components/Providers.tsx`.
  *
  * ## Where these values are written, and why it is not `<html>` (load-bearing)
@@ -106,7 +105,6 @@ export function useLiquidBackground(): void {
     // underneath multiple translucent surfaces can wedge WebKit's compositor;
     // keeping this hook detached preserves ordinary component animations.
     if (root.classList.contains('ios-webkit')) return;
-    if (root.classList.contains('perf-lite')) return;
     // Handheld tier. `app/globals.css` pins the aurora layers' `translate` to
     // `none` under exactly this query, so every offset this hook computed there
     // was written to a property nothing read — a pointer/tilt listener, a rAF

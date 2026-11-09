@@ -2064,10 +2064,10 @@
   );
 }
 
-/* Music (playlists) folded into the library as a first-class section. The
+/* Playlists folded into the library as a first-class section. The
    embedded PlaylistsColumn drops its own header; this wrapper just aligns its
    content under the section heading. */
-.lib__section--music .lib-playlists {
+.lib__section--playlists .lib-playlists {
   margin-block-start: 4px;
 }
 

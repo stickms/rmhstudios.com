@@ -134,14 +134,6 @@ export const COIN_FLOWS: readonly CoinFlow[] = [
     note: 'Fixed tiers per season.',
   },
   {
-    id: 'music-guess-reward',
-    kind: 'faucet',
-    surface: 'RMHMusic — the daily guess',
-    source: 'app/routes/api/rmhmusic/guess/$id/attempt.ts',
-    bounded: true,
-    note: 'One puzzle per day.',
-  },
-  {
     id: 'creator-earnings-payout',
     kind: 'faucet',
     surface: 'Creator earnings withdrawal',
