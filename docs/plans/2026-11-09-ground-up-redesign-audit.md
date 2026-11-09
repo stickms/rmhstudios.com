@@ -2922,16 +2922,16 @@ A4: open
 A5: open
 A6: open
 A7: open
-A8: open
+A8: done (#1529)
 B1: open
 B2: open
-B3: open
+B3: in-progress (eversion warms on intent, speculation rules removed; docked-globe poster and en backfill left to B6)
 B4: open
 B5: open
 B6: open
 B7: open
 C1: open
-C2: open
+C2: done (unsubscribe GET is read-only + RFC 8058 POST; remaining GET writers are authenticated and accepted, see commit)
 C3: open
 C4: open
 D1: declined (owner, 2026-11-09: no data moves off the box)
@@ -2944,17 +2944,17 @@ D7: open
 E1: open
 E2: open
 E3: open
-E4: open
+E4: in-progress (steps 1-2 done: dead palettes and selectors pruned; split + keyframes pending)
 E5: open
 E6: open
 E7: open
 E8: open
 F1: open
 F2: open
-F3: open
-F4: open
+F3: in-progress (check jobs defined once in ci-checks.yml, prisma workflows merged, senior-review advisory; asset-sync merge declined: too different)
+F4: done (archive, facts.json + facts:check, drift fixed, AGENTS.md symlink; design-doc merge pending)
 F5: open
 F6: open (owner: no history rewrite)
-F7: open
+F7: done (dead scripts and deps removed, knip baseline in docs/_generated)
 F8: open
 ```
