@@ -78,7 +78,8 @@ export interface RefractionDeps {
 
 const isRoleHost = (el: Element) => el.matches(REFRACT_HOSTS);
 
-function defaultMeasure(win: Window & typeof globalThis) {
+/** Measure a host's padding box, radius and kind from the live document (exported for the squash test). */
+export function createHostMeasure(win: Window & typeof globalThis) {
   const fixedCache = new WeakMap<Element, boolean>();
   const fixedLike = (el: Element): boolean => {
     let n: Element | null = el;
@@ -96,6 +97,11 @@ function defaultMeasure(win: Window & typeof globalThis) {
     if (cs.position === 'static') return null;
     const rect = h.getBoundingClientRect();
     const bw = h.clientLeft;
+    // The host squashes and plumps under the hand (`scale`, about its centre): its rect then changes by a few px while its
+    // layout box does not. Place the layer by the CENTRE of the rect and the layout size, which a scale about the centre
+    // leaves alone, so a press or hover never reads as the page having moved.
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
     const w = h.clientWidth;
     const hh = h.clientHeight;
     if (w < MIN_HOST.w || hh < MIN_HOST.h) return null;
@@ -108,8 +114,8 @@ function defaultMeasure(win: Window & typeof globalThis) {
       w,
       h: hh,
       radius: innerRadius(cs.borderTopLeftRadius, bw, w, hh),
-      left: rect.left + bw,
-      top: rect.top + h.clientTop,
+      left: cx - h.offsetWidth / 2 + bw,
+      top: cy - h.offsetHeight / 2 + h.clientTop,
       fixed,
       // The picture HIDES chrome and overlay glass (and keeps cards, panes and fields), so only those lose their own tint
       // to the opaque band and must paint it again over the picture.
@@ -160,7 +166,7 @@ export function installRefraction(doc: Document = document, deps: RefractionDeps
       win.matchMedia('print').matches ||
       doc.documentElement.classList.contains('app-route') ||
       !!doc.querySelector(APP_HIGH_CONTRAST_SELECTOR));
-  const measure = deps.measure ?? defaultMeasure(win);
+  const measure = deps.measure ?? createHostMeasure(win);
   const makeLayer = deps.createLayer ?? ((el: Element) => createLayer(el, doc));
   const acquire = deps.acquireFilter ?? acquireRefractFilter;
   const scrollNow = deps.scroll ?? (() => ({ x: win.scrollX, y: win.scrollY }));
@@ -347,10 +353,11 @@ export function installRefraction(doc: Document = document, deps: RefractionDeps
       };
       h.layer.apply(h.view);
       h.layer.setMoving(false);
-      if (m.fixed && (image.scrollX !== scroll.x || image.scrollY !== scroll.y))
-        needsPicture = true;
+      // A fixed host over moved content is exact for static content (the picture is shifted by the scroll) until the shifted
+      // picture stops covering it: only then is a fresh one worth its cost.
+      if (m.fixed && place.cover < 0.999) needsPicture = true;
     }
-    // A fixed, sticky or overlay host over moved content needs a picture of where the content is now.
+    // A fixed, sticky or overlay host whose picture has run out needs one of where the content is now.
     if (askPicture && needsPicture) feed.request('scroll-rest');
     if (layoutShifted) requestWhenQuiet();
   };

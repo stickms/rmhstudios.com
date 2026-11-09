@@ -5,7 +5,12 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import type { JellyRegistry } from '../../registry';
-import { installRefraction, type HostMeasure, type RefractionDeps } from '../install';
+import {
+  createHostMeasure,
+  installRefraction,
+  type HostMeasure,
+  type RefractionDeps,
+} from '../install';
 import type { LayerView, RefractLayer } from '../layer';
 import type { SceneImage } from '../scene-image';
 
@@ -391,24 +396,34 @@ describe('installRefraction', () => {
     expect(r.layers.get(bar)!.moving).toBe(false);
   });
 
-  it('asks for a fresh picture at scroll rest only when a fixed host holds a layer and the picture is stale', () => {
-    const withBar = rig();
-    withBar.add('bar', { fixed: true, left: 0, top: 0, w: 1000, h: 64 });
-    withBar.flush();
-    withBar.scrollStart();
-    withBar.setScroll(0, 300);
-    withBar.notifyRegistry();
-    withBar.flush();
-    expect(withBar.feed.request).toHaveBeenCalledWith('scroll-rest');
+  it('asks for a fresh picture at scroll rest only when the shifted picture no longer covers a fixed host', () => {
+    const covered = rig();
+    covered.add('bar', { fixed: true, left: 0, top: 0, w: 1000, h: 64 });
+    covered.flush();
+    covered.scrollStart();
+    // 300px on, the picture (800px tall) still holds everything under the bar: exact for static content, no new picture.
+    covered.setScroll(0, 300);
+    covered.notifyRegistry();
+    covered.flush();
+    expect(covered.feed.request.mock.calls, 'covered').toEqual([]);
+
+    const gone = rig();
+    gone.add('bar', { fixed: true, left: 0, top: 0, w: 1000, h: 64 });
+    gone.flush();
+    gone.scrollStart();
+    gone.setScroll(0, 900);
+    gone.notifyRegistry();
+    gone.flush();
+    expect(gone.feed.request).toHaveBeenCalledWith('scroll-rest');
 
     const inFlow = rig();
     inFlow.add('card');
     inFlow.flush();
     inFlow.scrollStart();
-    inFlow.setScroll(0, 300);
+    inFlow.setScroll(0, 900);
     inFlow.notifyRegistry();
     inFlow.flush();
-    expect(inFlow.feed.request).not.toHaveBeenCalled();
+    expect(inFlow.feed.request.mock.calls, 'inFlow').toEqual([]);
   });
 
   it('fades a host that moved or resized since the picture and asks for a new one only after things are quiet', () => {
@@ -533,5 +548,51 @@ describe('installRefraction', () => {
     r.flush();
     expect(r.layers.get(bar)!.last.tint).toBe('rgb(10, 12, 20)');
     expect(r.layers.get(card)!.last.tint).toBeNull();
+  });
+});
+
+describe('createHostMeasure', () => {
+  /** A host 300 x 100 at (100, 200) with a 1px border, as a fake element whose rect is what the squash does to it. */
+  const host = (scale: number) => {
+    const w = 300;
+    const h = 100;
+    const cx = 100 + w / 2;
+    const cy = 200 + h / 2;
+    return {
+      matches: () => false,
+      parentElement: null,
+      clientLeft: 1,
+      clientTop: 1,
+      clientWidth: w - 2,
+      clientHeight: h - 2,
+      offsetWidth: w,
+      offsetHeight: h,
+      getBoundingClientRect: () => ({
+        left: cx - (w * scale) / 2,
+        top: cy - (h * scale) / 2,
+        width: w * scale,
+        height: h * scale,
+      }),
+    } as unknown as Element;
+  };
+  const win = {
+    document: { documentElement: {} },
+    getComputedStyle: () => ({
+      display: 'block',
+      position: 'relative',
+      borderTopLeftRadius: '24px',
+      backgroundColor: 'rgb(0, 0, 0)',
+    }),
+  } as unknown as Window & typeof globalThis;
+
+  it('places a squashed host where it is laid out, not where the squash draws it (a press must not read as the page moving)', () => {
+    const measure = createHostMeasure(win);
+    const rest = measure(host(1))!;
+    const pressed = measure(host(0.97))!;
+    expect(rest.left).toBeCloseTo(101, 5);
+    expect(rest.top).toBeCloseTo(201, 5);
+    expect(pressed.left).toBeCloseTo(rest.left, 5);
+    expect(pressed.top).toBeCloseTo(rest.top, 5);
+    expect(pressed.w).toBe(rest.w);
   });
 });
