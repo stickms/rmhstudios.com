@@ -46,6 +46,7 @@ import {
   pointerNear,
   type GlobeBox,
 } from './globe-engagement';
+import { ballCentreY, predictScrollY } from './globe-scroll-track';
 import { currentScene, onSceneChange } from '@/lib/liquid/glass/scene-store';
 import { PLASMA_LOOK } from '@/lib/liquid/glass/policy';
 import {
@@ -135,6 +136,8 @@ const SETTLE_SPRING = spring(0.62, 0.1);
  * `--globe-coat-fade` in radial.css: the timer flips `data-globe-coat` to `on` as the transition lands.
  */
 const COAT_FADE_MS = 420;
+/** After the last scroll or toolbar move, how long before the picture is re-placed from a real layout read, ms. */
+const PLACE_SETTLE_MS = 140;
 /** After the skin's chunk lands, how long before its GPU program is warmed (off the page's first busy second). */
 const SKIN_WARM_MS = 2500;
 /** A docked globe's spin kick per pixel scrolled (deg/s), and the most a scroll can add to it. */
@@ -1121,15 +1124,47 @@ export function LiquidGlobe({
        host clones it and transfers the clone to the worker, where the coat samples it through a ball-lens model at the
        hub's own blur. Placing it reads layout, so it happens when the globe attaches, resizes, finishes blooming, or a
        new picture lands, never per frame. */
+    /* Where the ball was when it was last measured, and how tall the visual viewport was then. The phone dock is
+       bottom-anchored, so from these a placement needs no layout read (`./globe-scroll-track.ts`). */
+    let geom: { cx: number; cy: number; r: number; vvH: number } | null = null;
+    const dockEl = stage?.closest('.radial-hub__dock') ?? null;
+    const hubEl = stage?.closest('.radial-hub') ?? null;
+    /** Docked on the phone orb (fixed, bottom-anchored), not the open hub or the desktop rail's sticky dock. */
+    const fastDocked = () => dockEl !== null && hubEl?.getAttribute('data-phase') === 'closed';
+    /**
+     * Re-place the picture from the last measured ball and the viewport's height now, at scroll offset `y`: posted
+     * straight from the event, no frame wait and no forced layout. False when this globe cannot (not docked on the
+     * phone orb, nothing measured, no picture), and the caller uses the measured path.
+     */
+    const placeFast = (y: number): boolean => {
+      const g = coatHost.current;
+      const scene = currentScene();
+      if (cancelled || !g || !scene || !geom || !fastDocked()) return false;
+      const vvH = window.visualViewport?.height ?? window.innerHeight;
+      g.place(
+        geom.cx,
+        ballCentreY(geom.cy, geom.vvH, vvH),
+        geom.r,
+        window.scrollX - scene.scrollX,
+        y - scene.scrollY,
+      );
+      return true;
+    };
     const attachScene = (g: GlobeWorkerHost) => {
       const scene = currentScene();
       g.scene(scene);
       if (!stage || !scene) return;
       const rect = stage.getBoundingClientRect();
+      geom = {
+        cx: rect.left + rect.width / 2,
+        cy: rect.top + rect.height / 2,
+        r: sizeRef.current / 2,
+        vvH: window.visualViewport?.height ?? window.innerHeight,
+      };
       g.place(
-        rect.left + rect.width / 2,
-        rect.top + rect.height / 2,
-        sizeRef.current / 2,
+        geom.cx,
+        geom.cy,
+        geom.r,
         window.scrollX - scene.scrollX,
         window.scrollY - scene.scrollY,
       );
@@ -1157,7 +1192,13 @@ export function LiquidGlobe({
     // refracts has to be re-placed with the scroll — once per frame at most.
     let scrollRaf = 0;
     let scrollIdle = 0;
+    let placeSettle = 0;
     let lastScrollY = window.scrollY;
+    let lastScrollAt = performance.now();
+    const settlePlacement = () => {
+      window.clearTimeout(placeSettle);
+      placeSettle = window.setTimeout(refreshScene, PLACE_SETTLE_MS);
+    };
     const endScrolling = () => {
       scrollIdle = 0;
       scrolling.current = false;
@@ -1168,7 +1209,10 @@ export function LiquidGlobe({
       // carries it on and slows it. Read in the scroll event, where layout is clean.
       const y = window.scrollY;
       const dy = y - lastScrollY;
+      const at = performance.now();
+      const ahead = predictScrollY(y, lastScrollY, at - lastScrollAt);
       lastScrollY = y;
+      lastScrollAt = at;
       if (dy !== 0 && !drag.current.active && !settle.current) {
         const w = rot.current.w;
         w[1] = Math.max(-SCROLL_SPIN_MAX, Math.min(SCROLL_SPIN_MAX, w[1]! + dy * SCROLL_SPIN));
@@ -1182,6 +1226,12 @@ export function LiquidGlobe({
           syncEngagement.current(performance.now());
         }
       }
+      // The picture is placed from the event itself, a little ahead of the page, with no layout read; a real read
+      // follows once the scroll has rested. Where that is not possible, the measured path below.
+      if (placeFast(ahead)) {
+        settlePlacement();
+        return;
+      }
       if (scrollRaf) return;
       scrollRaf = requestAnimationFrame(() => {
         scrollRaf = 0;
@@ -1189,6 +1239,13 @@ export function LiquidGlobe({
       });
     };
     if (ambient) window.addEventListener('scroll', onScroll, { passive: true });
+    // Safari's toolbar growing and shrinking moves the bottom-anchored ball against the page with no scroll: the same
+    // synchronous placement, from the visual viewport's height.
+    const onViewport = () => {
+      if (placeFast(window.scrollY)) settlePlacement();
+    };
+    const visual = ambient ? window.visualViewport : null;
+    visual?.addEventListener('resize', onViewport);
     const stopScene = onSceneChange(refreshScene);
     /** The theme's tokens, as computed-style STRINGS: the worker resolves them to numbers, nothing reads a canvas. */
     const readTheme = (el: HTMLElement): GlobeThemeCss => {
@@ -1308,6 +1365,8 @@ export function LiquidGlobe({
       globeRoot?.removeEventListener('transitionend', onGrowEnd as EventListener);
       window.removeEventListener('resize', refreshScene);
       window.removeEventListener('scroll', onScroll);
+      visual?.removeEventListener('resize', onViewport);
+      window.clearTimeout(placeSettle);
       cancelAnimationFrame(scrollRaf);
       if (scrollIdle) clearTimeout(scrollIdle);
       scrolling.current = false;
