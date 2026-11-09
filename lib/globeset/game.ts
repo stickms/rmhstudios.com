@@ -19,6 +19,7 @@
 
 import { BOARD_SIZE, DECK_SIZE, fullDeck, isGlobeSet, type Card } from './cards';
 import { createSeededRng } from '../daily-puzzles/seed';
+import { formatClockSeconds } from '@/lib/core/format';
 
 /**
  * Mixed into the date seed so GlobeSet's shuffle is uncorrelated with the other
@@ -270,14 +271,7 @@ export function scoreRun(summary: RunSummary): number {
 }
 
 /** `m:ss`, or `h:mm:ss` past an hour. Used by the HUD, the share card and the board. */
-export function formatDuration(totalSeconds: number): string {
-  const s = Math.max(0, Math.floor(totalSeconds));
-  const hours = Math.floor(s / 3600);
-  const minutes = Math.floor((s % 3600) / 60);
-  const seconds = s % 60;
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return hours > 0 ? `${hours}:${pad(minutes)}:${pad(seconds)}` : `${minutes}:${pad(seconds)}`;
-}
+export const formatDuration = (totalSeconds: number): string => formatClockSeconds(totalSeconds, { hours: true });
 
 /** Sanity bound shared by the client and the race server. */
 export const MAX_RUN_SECONDS = 3 * 60 * 60;

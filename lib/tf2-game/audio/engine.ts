@@ -83,6 +83,7 @@ import {
   type SoundscapeLoop,
   type SoundscapeSelection,
 } from './soundscapes';
+import { clamp01 } from '@/lib/core/math';
 
 /** A sound to play: the simulation's SoundEvent fits, plus a few client-side extras. */
 export interface AudioEmit {
@@ -1078,10 +1079,6 @@ export class AudioEngine {
       },
     };
   }
-}
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
 function dist(a: Vec3, b: Vec3): number {

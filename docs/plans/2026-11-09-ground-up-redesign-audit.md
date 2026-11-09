@@ -2916,7 +2916,7 @@ For a coding agent picking up an item from this document:
 ```yaml
 # status ledger: agents append here
 A1: open
-A2: open (owner: keep every one-off page; collapse redirect stubs only)
+A2: done (owner kept every page; redirect stubs stay as routes: they also redirect in-app client navigation, which a server-only redirect rule would not)
 A3: open
 A4: open
 A5: open
@@ -2930,7 +2930,7 @@ B4: open
 B5: open
 B6: open
 B7: open
-C1: open
+C1: in-progress (contract + implement() + api() + raw-fetch ratchet landed with one worked endpoint; migrating call sites)
 C2: done (unsubscribe GET is read-only + RFC 8058 POST; remaining GET writers are authenticated and accepted, see commit)
 C3: open
 C4: open
@@ -2940,7 +2940,7 @@ D3: open
 D4: open
 D5: open
 D6: open
-D7: open
+D7: done (dependabot groups @tanstack/* + nitro as one framework bump gated by the integration suite)
 E1: open
 E2: open
 E3: open

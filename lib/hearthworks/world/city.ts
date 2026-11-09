@@ -77,6 +77,7 @@ import {
 } from './city-cells';
 import type { CityState, CityStats } from './city-types';
 import type { World, WorldEvent } from './types';
+import { clamp, clamp01 } from '@/lib/core/math';
 
 const DIRS4 = [
   [0, -1],
@@ -85,8 +86,6 @@ const DIRS4 = [
   [-1, 0],
 ] as const;
 
-const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
-const clamp01 = (v: number) => clamp(v, 0, 1);
 const chebyshev = (ax: number, az: number, bx: number, bz: number) =>
   Math.max(Math.abs(ax - bx), Math.abs(az - bz));
 

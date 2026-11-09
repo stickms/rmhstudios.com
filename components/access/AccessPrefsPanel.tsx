@@ -4,7 +4,7 @@ import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
 
 import { Switch } from '@/components/ui/switch';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { useAccessPrefs } from '@/lib/access/use-access-prefs';
 import {
   setAccessPrefs,
@@ -50,11 +50,11 @@ function Seg<K extends keyof AccessPrefs>({
   options: { id: AccessPrefs[K] & string; label: string }[];
   value: AccessPrefs[K] & string;
 }) {
-  const tabs: LiquidTab[] = options.map((o) => ({ id: o.id, label: o.label }));
+  const tabs: TabItem[] = options.map((o) => ({ id: o.id, label: o.label }));
   return (
     <div>
       <p className="mb-1.5 text-xs text-site-text-muted">{label}</p>
-      <LiquidTabs
+      <Tabs
         tabs={tabs}
         value={value}
         aria-label={label}

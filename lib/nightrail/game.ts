@@ -73,6 +73,7 @@ import type {
   Train,
   TrickDirection,
 } from './types';
+import { clamp } from '@/lib/core/math';
 
 /**
  * Something worth reacting to that happened during a step.
@@ -178,10 +179,6 @@ function nextRandom(state: RunState): number {
   t = Math.imul(t ^ (t >>> 15), t | 1);
   t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
 }
 
 /** Lateral centre of a rail on this level. */

@@ -266,6 +266,7 @@ export function envelopeFor(
   return build(-0.05, 1, 'climbing');
 }
 
+// eslint-disable-next-line no-restricted-syntax -- clamp that also rounds to 2 decimals
 function clamp(value: number, min: number, max: number): number {
   // Two decimals: an intensity of 1.0500000000000003 renders in a debug overlay
   // and reads as a bug. Rounding here also makes the `=== 1` check above exact.

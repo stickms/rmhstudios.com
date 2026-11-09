@@ -7,6 +7,7 @@
  * the string is exact for the formats engines actually return; anything else (oklch, lab) falls back to a canvas read of
  * the OPAQUE colour, with the alpha taken from the string separately.
  */
+import { clamp01 } from '@/lib/core/math';
 export type RGBA = [number, number, number, number];
 
 const NUM = '(-?[\\d.]+(?:e-?\\d+)?)';
@@ -17,7 +18,6 @@ const SRGB = new RegExp(
   'i',
 );
 
-const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 const alphaOf = (s: string | undefined) => {
   if (s === undefined) return 1;
   return clamp01(s.endsWith('%') ? parseFloat(s) / 100 : parseFloat(s));

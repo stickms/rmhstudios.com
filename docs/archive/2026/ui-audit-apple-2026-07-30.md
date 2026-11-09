@@ -141,7 +141,7 @@ tracking that make the look, so a heading is one class.
 - **The radial shell chrome** (hub orb, ring backdrop, rails, pointer metaball)
   is untouched by everything above. `/design` happens to be a standalone page
   with its own nav, but nothing in §2 requires removing the shell — see §6.
-- **`LiquidTabs`** is already a proper Apple segmented control as of the
+- **`Tabs`** is already a proper Apple segmented control as of the
   preceding commit (equal segments filling the track, wrapping instead of
   scrolling, `--site-radius` track).
 - **Accessibility work from the 2026-07-28 audit** — 44px targets, contrast

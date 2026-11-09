@@ -31,6 +31,7 @@ import {
   type ClipSlot,
   type OneShotSlot,
 } from './model-manifest';
+import { clamp01 } from '@/lib/core/math';
 
 export type AirState = 'ground' | 'jump' | 'fall';
 
@@ -73,7 +74,6 @@ const BUSY_GAP_S = 0.15;
 /** Weights at or below this are not worth blending: that action is switched off. */
 const MIN_WEIGHT = 0.002;
 
-const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 /** Frame-rate-independent step of `cur` toward `target`. */
 export const approach = (cur: number, target: number, dt: number, rate: number): number =>
   cur + (target - cur) * (1 - Math.exp(-rate * dt));

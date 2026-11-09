@@ -10,6 +10,7 @@ import { useDreamRift } from '@/lib/dream-rift/store';
 import { CHARACTERS } from '@/lib/dream-rift/render/sprites';
 import { saveHiScore } from '@/lib/dream-rift/highscore';
 import { RunPanel } from '@/components/arcade/RunPanel';
+import { formatClockSeconds } from '@/lib/core/format';
 
 export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () => void; onMenu: () => void; onLeaderboard: () => void }) {
     const result = useDreamRift((s) => s.result);
@@ -104,7 +105,7 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
                 <Row label="Stage Reached" value={`${result.stageReached} / 3`} />
                 <Row label="Score" value={result.score.toLocaleString()} highlight />
                 {coop && <Row label="Combined Score" value={result.combinedScore.toLocaleString()} highlight />}
-                <Row label="Time Survived" value={formatTime(result.timeSurvived)} />
+                <Row label="Time Survived" value={formatClockSeconds(result.timeSurvived)} />
                 <Row label="Graze" value={result.graze.toLocaleString()} />
                 <Row label="Spell Cards" value={String(result.spellsCaptured)} />
                 <Row label="Deaths" value={String(result.deaths)} />
@@ -161,13 +162,6 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
             </div>
         </div>
     );
-}
-
-function formatTime(seconds: number): string {
-    const s = Math.max(0, Math.floor(seconds));
-    const m = Math.floor(s / 60);
-    const rem = s % 60;
-    return `${m}:${String(rem).padStart(2, '0')}`;
 }
 
 function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {

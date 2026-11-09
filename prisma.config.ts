@@ -29,7 +29,15 @@ import 'dotenv/config';
 const migrationUrl = process.env.DATABASE_DIRECT_URL || process.env.DATABASE_URL;
 
 export default defineConfig({
-  schema: path.join('prisma', 'schema.prisma'),
+  schema: path.join('prisma', 'schema'),
+  // Explicit, and load-bearing since the schema became a folder (redesign C3):
+  // Prisma resolves the default migrations directory relative to the schema
+  // location, which would be `prisma/schema/migrations` — an empty directory,
+  // so `migrate deploy` would apply nothing and `migrate diff` would see an
+  // empty database. The history lives where it always has.
+  migrations: {
+    path: path.join('prisma', 'migrations'),
+  },
   datasource: {
     url: migrationUrl!,
   },

@@ -28,7 +28,7 @@
  *
  * ## Height is a touch target, not a font size
  *
- * `min-h-9 pointer-coarse:min-h-11` — the same floor `LiquidTabs` keeps. The
+ * `min-h-9 pointer-coarse:min-h-11` — the same floor `Tabs` keeps. The
  * hand-rolled rows were `py-2` around `text-sm`, which lands at 36px: fine under
  * a mouse, under the 44px floor under a thumb, and these menus are how you
  * delete a post.

@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { Check, Copy, Crown, Link2, LogOut, Play, RefreshCw, UserX } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useLobbyLink } from '@/hooks/useLobbyLink';
 import {
@@ -176,7 +176,7 @@ export function LobbyPanel({ onLeave }: { onLeave: () => void }) {
               <p className="ls-muted text-[11px] font-semibold uppercase tracking-widest">
                 {t('round-length', { defaultValue: 'Round length' })}
               </p>
-              <LiquidTabs
+              <Tabs
                 tabs={MATCH_DURATIONS.map((d) => ({
                   id: String(d),
                   label: t('seconds-short', { defaultValue: '{{count}}s', count: d }),
@@ -191,7 +191,7 @@ export function LobbyPanel({ onLeave }: { onLeave: () => void }) {
               <p className="ls-muted text-[11px] font-semibold uppercase tracking-widest">
                 {t('difficulty', { defaultValue: 'Difficulty' })}
               </p>
-              <LiquidTabs
+              <Tabs
                 tabs={DIFFICULTIES.map((d) => ({
                   id: d,
                   label: difficultyLabel[d],

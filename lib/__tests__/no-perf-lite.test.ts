@@ -58,7 +58,7 @@ describe('perf-lite is gone', () => {
   });
 
   it('the jelly mount hook stamps data-jelly-ready without probing for a software renderer', () => {
-    const hook = read('hooks/useLiquidInteractions.ts');
+    const hook = read('hooks/useJellyPointer.ts');
     expect(hook).toContain("setAttribute('data-jelly-ready', '')");
     for (const probe of [
       'reconcileSoftRender',

@@ -58,6 +58,7 @@ import type {
   EmojiCinemaState,
   GuessLogEntry,
 } from './types';
+import { shuffle } from '@/lib/core/rng';
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -67,13 +68,6 @@ function normalizeGuess(text: string): string {
 }
 
 /** Fisher-Yates shuffle (in-place). */
-function shuffle<T>(arr: T[]): T[] {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
 
 // ─── Emoji Cinema Minigame ───────────────────────────────────────
 

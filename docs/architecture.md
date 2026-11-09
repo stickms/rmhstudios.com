@@ -313,7 +313,7 @@ realtime topology.)
 ## 7. Data & media
 
 - **PostgreSQL** via Prisma 7 (`@prisma/adapter-pg`) in Node and raw pgx in
-  Go — one shared schema (`prisma/schema.prisma`, model count in [`_generated/facts.json`](./_generated/facts.json)). Go models
+  Go — one shared schema (`prisma/schema/` (per-domain files), model count in [`_generated/facts.json`](./_generated/facts.json)). Go models
   mirror Prisma column casing verbatim.
 - **Media:** R2/S3 via `lib/storage/` (local-FS fallback for dev); MinIO
   provides the bucket locally; the Go `assets` service streams

@@ -74,6 +74,7 @@ export function parseCardId(id: string): Card | null {
 }
 
 /** Fisher-Yates, in place, with an injected `rand` clamped to [0, 1). */
+// eslint-disable-next-line no-restricted-syntax -- shuffle sanitises the injected rand (NaN/1.0) and mutates in place
 export function shuffle<T>(items: T[], rand: () => number): T[] {
   for (let i = items.length - 1; i > 0; i--) {
     const r = rand();

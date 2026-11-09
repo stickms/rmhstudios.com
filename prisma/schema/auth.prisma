@@ -1,0 +1,981 @@
+// User Model (Better Auth)
+model User {
+  id               String           @id @default(cuid())
+  tf2Huds          Tf2Hud[]         @relation("Tf2HudOwner")
+  tf2HudLikes      Tf2HudLike[]
+  tf2HudBlobs      Tf2HudUserBlob[]
+  tf2Loadouts      Tf2Loadout[]     @relation("Tf2LoadoutOwner")
+  tf2LoadoutLikes  Tf2LoadoutLike[]
+  name             String?
+  username         String?          @unique // Added for username login
+  handle           String?          @unique // Unique user handle for @mentions and URLs
+  handleChangedAt  DateTime? // Last time the handle was changed (2-week cooldown)
+  email            String?          @unique
+  emailVerified    Boolean?
+  password         String? // Added for password login
+  image            String?
+  stripeCustomerId String? // Stripe customer id (set by @better-auth/stripe on signup)
+  isAdmin          Boolean          @default(false)
+  isVerified       Boolean          @default(false)
+  // Moderation: temporary/permanent ban (null = not banned)
+  bannedUntil      DateTime?
+  banReason        String?          @db.VarChar(500)
+  // Presence: last heartbeat from an active client (for "online now")
+  lastSeenAt       DateTime?
+  // Referral program: this user's shareable invite code (lazily generated)
+  referralCode     String?          @unique
+  // ─── RMHark AI bot users (generated + driven by the bot-worker) ──
+  isBot            Boolean          @default(false) // synthetic account created by the bot-worker
+  botPersona       String?          @db.Text // private prompt seed describing the bot's posting "theme"
+  botLastPostAt    DateTime? // last time the worker posted as this bot (pacing)
+  // Denormalized follower count, kept in sync on follow/unfollow so hot paths
+  // (recommendations, profile cards) can sort/read without a relation aggregate.
+  followerCount    Int              @default(0)
+  // Denormalized following/post counts, maintained on follow-unfollow and
+  // post create/delete so the (hot) profile page never runs COUNT(*) aggregates.
+  // Reconciled by scripts/reconcile-social-counts.ts.
+  followingCount   Int              @default(0)
+  postCount        Int              @default(0)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  sessions Session[]
+  accounts Account[]
+
+  // Game Relations (Progression linked to User)
+  altairProfile        AltairPlayer?
+  altairMetaProgress   AltairMetaProgress?
+  altairCoopProfile    AltairCoopProfile?
+  altairMatchPlayers   AltairMatchPlayer[]
+  altairSoloRuns       AltairSoloRun[]
+  laundryProfile       LaundryPlayer?
+  globesetProfile      GlobeSetPlayer?
+  sliceItProfile       Player?
+  vegaProfile          VegaPlayer?
+  signalForgeProfile   SignalForgePlayer?
+  templeOfJoyProfile   TempleOfJoySave?
+  gameSaves            GameSave[]
+  neonDriftwayProfile  NeonDriftwayPlayer?
+  nightrailProfile     NightrailPlayer?
+  synapseStormProfile  SynapseStormPlayer?
+  rmhboxProfile        RMHboxProfile?
+  rmhtypeProfiles      RmhTypeProfile[]
+  libraryUploads       LibraryDocument[]     @relation("LibraryUploader")
+  libraryCollections   LibraryCollection[]   @relation("LibraryCollectionOwner")
+  /// Per-user library upload quota override (null → the default cap). Raised by
+  /// an admin when approving a quota appeal.
+  libraryUploadQuota   Int?
+  libraryQuotaRequests LibraryQuotaRequest[] @relation("LibraryQuotaRequests")
+  rmhstudyProfile      RmhStudyProfile?
+  voidBreakerProfile   VoidBreakerPlayer?
+  dailyPuzzleScores    DailyPuzzleScore[]
+  versecraftSave       VersecraftSave?
+  versecraftProgress   VersecraftProgress?
+  dreamRiftProfile     DreamRiftPlayer?
+  dreamRiftCoopRuns    DreamRiftCoopRun[]
+  gabrielsHornProfile  GabrielsHornPlayer?
+
+  // Slice-It Library Relations
+  uploadedSongs     Song[]            @relation("SongUploader")
+  songLikes         SongLike[]
+  songRatings       SongRating[]
+  songComments      SongComment[]
+  songScores        SongLeaderboard[]
+  songPlays         SongPlay[]
+  sliceRuns         SliceRun[]
+  authoredCharts    Chart[]           @relation("ChartAuthor")
+  chartReviews      ChartReview[]
+  sliceDailyEntries SliceDailyEntry[]
+  sliceSetlists     SliceSetlist[]
+  curatedChartPacks ChartPack[]       @relation("ChartPackCurator")
+
+  // RmhTube Relations
+  rmhtubeHostedRooms RmhTubeRoom[]       @relation("RmhTubeHostedRooms")
+  rmhtubeRoomMembers RmhTubeRoomMember[]
+  rmhtubeQueueItems  RmhTubeQueueItem[]
+  rmhtubePlaylists   RmhTubePlaylist[]
+  rmhtubeStats       RmhTubeUserStats?
+
+  // Site Feedback
+  feedbacks Feedback[]
+
+  // RMHark (Feed) Relations
+  rmharks                RMHark[]
+  rmharkLikes            RMHarkLike[]
+  rmharkComments         RMHarkComment[]
+  rmharkReposts          RMHarkRepost[]
+  rmharkViews            RMHarkView[]
+  rmharkCommentLikes     RMHarkCommentLike[]
+  rmharkCommentReposts   RMHarkCommentRepost[]
+  rmharkCommentViews     RMHarkCommentView[]
+  rmharkPollVotes        RMHarkPollVote[]
+  announcementPollVotes  FeedAnnouncementPollVote[]
+  rmharkReactions        RMHarkReaction[]
+  rmharkCommentReactions RMHarkCommentReaction[]
+
+  // Profile & Social
+  profile   UserProfile?
+  followers Follow[]     @relation("UserFollowing")
+  following Follow[]     @relation("UserFollowers")
+
+  // Per-creator memberships: who supports this creator, and who this user supports.
+  creatorMemberships CreatorMembership[] @relation("CreatorMemberships")
+  supportedCreators  CreatorMembership[] @relation("SupportedCreators")
+
+  // Notifications
+  notifications     Notification[] @relation("UserNotifications")
+  notificationsSent Notification[] @relation("UserNotificationActor")
+
+  // Engagement: bookmarks, achievements, daily streak
+  bookmarks    RMHarkBookmark[]
+  achievements UserAchievement[]
+  dailyStreak  DailyStreak?
+  postUnlocks  PostUnlock[]
+
+  // Communities created + memberships
+  communitiesCreated      Community[]             @relation("CommunityCreator")
+  communityMembers        CommunityMember[]
+  communityInvitesCreated CommunityInvite[]
+  communityJoinRequests   CommunityJoinRequest[]
+  communityAnnouncements  CommunityAnnouncement[] @relation("CommunityAnnouncementAuthor")
+
+  // Progression: quests + battle-pass season progress
+  quests         UserQuest[]
+  seasonProgress UserSeasonProgress[]
+
+  // Composer: saved drafts + scheduled posts
+  scheduledPosts ScheduledPost[]
+
+  // Daily coin wheel spins
+  wheelSpins DailyWheelSpin[]
+
+  // Coin staking (interest-bearing vault)
+  coinStake CoinStake?
+
+  // Creator storefront
+  storefrontProducts  StorefrontProduct[]  @relation("StorefrontCreator")
+  storefrontPurchases StorefrontPurchase[] @relation("StorefrontBuyer")
+
+  // AI persona chatbots
+  aiPersonas        AiPersona[]        @relation("PersonaOwner")
+  aiPersonaMessages AiPersonaMessage[]
+
+  // Build marketplace unlocks
+  buildUnlocks BuildUnlock[]
+
+  // Ranked play: ELO ratings + challenges
+  eloRatings         EloRating[]
+  challengesIssued   RankedChallenge[] @relation("ChallengeChallenger")
+  challengesReceived RankedChallenge[] @relation("ChallengeOpponent")
+
+  // Gifted (coin-funded) memberships
+  giftMembershipsReceived GiftMembership[] @relation("GiftRecipient")
+  giftMembershipsSent     GiftMembership[] @relation("GiftGifter")
+
+  // Group DMs
+  groupChatsOwned       GroupChat[]            @relation("GroupOwner")
+  groupMemberships      GroupChatMember[]
+  groupMessages         GroupMessage[]
+  groupPollVotes        GroupPollVote[]
+  groupMessageReactions GroupMessageReaction[]
+
+  // RMHStudy flashcards
+  flashcardDecks   FlashcardDeck[]
+  flashcardReviews FlashcardReview[]
+
+  // Saved media playlists (music/video)
+  playlists              Playlist[]
+  playlistCollaborations PlaylistCollaborator[]
+
+  // RMHTube channel subscriptions
+  rmhtubeSubscriptions RmhTubeSubscription[] @relation("TubeSubscriber")
+  rmhtubeSubscribers   RmhTubeSubscription[] @relation("TubeChannel")
+
+  // Developer API keys + one-time promo claims
+  developerApiKeys DeveloperApiKey[]
+  webhookEndpoints WebhookEndpoint[] @relation("UserWebhookEndpoints")
+  promoClaims      PromoClaim[]
+
+  // Economy: shop inventory, coin ledger (tips/gifts)
+  inventory     UserInventory[]
+  coinsSent     CoinTransaction[] @relation("CoinSender")
+  coinsReceived CoinTransaction[] @relation("CoinRecipient")
+
+  // Prediction markets: created markets + open positions
+  predictionsCreated  Prediction[]         @relation("PredictionCreator")
+  predictionPositions PredictionPosition[] @relation("PredictionPositions")
+
+  // Wager matches: coin-staked 1v1 challenges on skill games
+  wagerMatchesChallenged WagerMatch[] @relation("WagerChallenger")
+  wagerMatchesOpposed    WagerMatch[] @relation("WagerOpponent")
+  wagerMatchesWon        WagerMatch[] @relation("WagerWinner")
+
+  // Tournaments: created events + entries
+  tournamentsCreated Tournament[]        @relation("TournamentCreator")
+  tournamentEntries  TournamentEntrant[]
+
+  // Creator coin -> value bridge: redemption requests authored / reviewed
+  redemptionRequests  RedemptionRequest[] @relation("RedemptionCreator")
+  redemptionsReviewed RedemptionRequest[] @relation("RedemptionReviewer")
+
+  // Admin-authored feed announcements
+  feedAnnouncements FeedAnnouncement[]
+
+  // Admin moderation: audit log entries authored, strikes received/issued
+  auditLogs      AdminAuditLog[] @relation("AuditAdmin")
+  strikes        UserStrike[]    @relation("StrikeUser")
+  strikesIssued  UserStrike[]    @relation("StrikeAdmin")
+  appealsDecided UserStrike[]    @relation("StrikeAppealAdmin")
+
+  // Moderation (reports filed / received, blocks & mutes)
+  reportsFiled      ContentReport[] @relation("ReportReporter")
+  reportsResolved   ContentReport[] @relation("ReportResolver")
+  blocksMade        UserBlock[]     @relation("BlockBlocker")
+  blocksReceived    UserBlock[]     @relation("BlockBlocked")
+  mutesMade         UserMute[]      @relation("MuteMuter")
+  mutesReceived     UserMute[]      @relation("MuteMuted")
+  callMutesMade     CallMute[]      @relation("CallMuteOwner")
+  callMutesReceived CallMute[]      @relation("CallMuteTarget")
+
+  // RMH Music learning programme
+  musicLearnProfile MusicLearnProfile?
+  musicLearnLessons MusicLearnLessonProgress[]
+  musicLearnCards   MusicLearnCard[]
+
+  // Direct Messages
+  conversationsAsOne     Conversation[]          @relation("ConversationParticipantOne")
+  conversationsAsTwo     Conversation[]          @relation("ConversationParticipantTwo")
+  directMessages         DirectMessage[]
+  directMessageReactions DirectMessageReaction[]
+
+  // rmhcode & User Builds
+  rmhCodeTokens RmhCodeToken[]
+  userBuilds    UserBuild[]
+  buildLikes    BuildLike[]
+  buildComments BuildComment[]
+  buildViews    BuildView[]
+
+  // ─── Doctrine Engine (RMH Strategies) ─────────────────────────
+  doctrineTier                String                       @default("PUBLIC") // PUBLIC | INSIDER | OPERATOR
+  doctrineTierChangedAt       DateTime?
+  doctrineTimezone            String                       @default("America/New_York")
+  doctrineRecruitedById       String?
+  doctrineRecruitedBy         User?                        @relation("DoctrineRecruitment", fields: [doctrineRecruitedById], references: [id])
+  doctrineRecruits            User[]                       @relation("DoctrineRecruitment")
+  doctrineReputation          DoctrineReputation?
+  doctrinePuzzleSubmissions   DoctrinePuzzleSubmission[]
+  doctrinePuzzleReplays       DoctrinePuzzleReplay[]
+  doctrineSafehouseAccessLogs DoctrineAccessLog[]
+  doctrineIncidentReports     DoctrineIncidentReport[]
+  doctrineReactions           DoctrineReaction[]
+  doctrineRecruitmentCodes    DoctrineRecruitmentCode[]
+  doctrineSahurParticipations DoctrineSahurParticipation[]
+
+  // RMH Ladder Relations
+  ladderPrefs             LadderUserPrefs?
+  ladderKeywords          LadderKeyword[]
+  ladderWatchlist         LadderWatchlistEntry[]
+  ladderJobActions        LadderJobAction[]
+  ladderApplications      LadderApplication[]
+  ladderAlerts            LadderAlert[]
+  ladderResumes           LadderResume[]
+  ladderResumeVersions    LadderResumeVersion[]
+  ladderResumeReviews     LadderResumeReview[]
+  ladderJobMatches        LadderJobMatch[]
+  ladderAiTasks           LadderAiTask[]
+  ladderSavedSearches     LadderSavedSearch[]
+  ladderApplicationEvents LadderApplicationEvent[]
+  ladderAlertEvents       LadderAlertEvent[]
+  ladderProductEvents     LadderProductEvent[]
+
+  // ─── RMH Rideshare ────────────────────────────────────────────
+  rideshareDriver       RideshareDriver?
+  rideshareApplications RideshareDriver[] @relation("RideshareApplicationReviewer")
+  ridesRequested        Ride[]            @relation("RideRider")
+  ridesDriven           Ride[]            @relation("RideDriver")
+  rideMessages          RideMessage[]
+  rideSavedPlaces       RideSavedPlace[]
+
+  // ─── RMHHomes (community housing marketplace) ─────────────────
+  homeListings  HomeListing[]
+  homeFavorites HomeFavorite[]
+  homeWatches   HomeWatch[]
+
+  media Media[]
+
+  // WebAuthn passkeys (@better-auth/passkey)
+  passkeys Passkey[]
+
+  // Web Push subscriptions
+  pushSubscriptions PushSubscription[]
+
+  // "Tell me when he joins voice" opt-ins on /sohumtracker
+  discordWatchAlerts DiscordWatchAlert[]
+
+  // Referral program
+  referralsMade    Referral[] @relation("Referrer")
+  referralReceived Referral?  @relation("Referee")
+
+  // Notification preferences (per-type opt-outs)
+  notificationPreference NotificationPreference?
+
+  // Appearance preferences (theme + accent), synced across devices
+  appearancePreference AppearancePreference?
+
+  // Layout preferences (sidebar pin/hide + home widget stack), synced (§15)
+  layoutPreference LayoutPreference?
+
+  // ─── Platform expansion (2026-07-19 design) ──────────────────────────────
+  arcadeStreak         ArcadeStreak?
+  creatorTiers         CreatorTier[]
+  spacesHosted         Space[]          @relation("SpaceHost")
+  spaceMessages        SpaceMessage[]
+  eventsHosted         CommunityEvent[] @relation("EventHost")
+  eventRsvps           EventRsvp[]
+  gameReplays          GameReplay[]
+  marketListingsSold   MarketListing[]  @relation("MarketSeller")
+  marketListingsBought MarketListing[]  @relation("MarketBuyer")
+  sharedMoments        SharedMoment[]
+  reminders            Reminder[]
+  guestbookOwned       GuestbookEntry[] @relation("GuestbookOwner")
+  guestbookSigned      GuestbookEntry[] @relation("GuestbookAuthor")
+
+  // ─── Parity / QOL / customization (2026-07-20 design) ────────────────────
+  saveFolders         SaveFolder[]
+  savedItems          SavedItem[]
+  historyEntries      HistoryEntry[]
+  contentAwardsGiven  ContentAward[]
+  wishlistEntries     WishlistEntry[]
+  closeFriendsOwned   CloseFriend[]    @relation("CircleOwner")
+  closeFriendOf       CloseFriend[]    @relation("CircleMember")
+  userLists           UserList[]
+  userListMemberships UserListMember[]
+  feedSignals         FeedSignal[]
+  gameReviews         GameReview[]
+  gameReviewVotes     GameReviewVote[]
+  gameGuides          GameGuide[]
+  userThemes          UserTheme[]
+  profileLayout       ProfileLayout?
+  savedSearches       SavedSearch[]
+
+  // ─── Emoji & sticker packs (2026-08-04) ──────────────────────────────────
+  emojiPacks       EmojiPack[]
+  bulkOperations   BulkOperation[]
+  recoveryCodes    RecoveryCode[]
+  trustedContacts  TrustedContact[]        @relation("TrustedContactOwner")
+  trustedFor       TrustedContact[]        @relation("TrustedContactPerson")
+  recoveryRequests RecoveryRequest[]
+  messageHides     DirectMessageHide[]
+  typingKeyStats   RmhTypeKeyStat[]
+  profileLinks     ProfileLink[]
+  handleChanges    HandleChange[]
+  speedrunEntries  SpeedrunEntry[]
+  ladderAnswers    LadderAnswerBank?
+  emojiPackSubs    EmojiPackSubscription[]
+
+  // ─── Voice calls ─────────────────────────────────────────────────────────
+  callsPlaced   Call[] @relation("CallCaller")
+  callsReceived Call[] @relation("CallCallee")
+
+  // ─── Group voice calls ───────────────────────────────────────────────────
+  groupCallsHosted GroupCall[]            @relation("GroupCallHost")
+  groupCalls       GroupCallParticipant[]
+
+  // ─── The Next 100 (2026-08-05) ───────────────────────────────────────────
+  /// Set by POST /api/account/delete. The account is signed out and hidden
+  /// immediately, but the anonymisation runs 30 days later — so a deletion at
+  /// 2am in anger is recoverable by simply signing back in (B12).
+  deletionScheduledAt DateTime?
+
+  aiUsage    AiUsage[]
+  activities Activity[]
+  gameStats  GameStat[]
+
+  /// Responsible play (W8). Optional: a member with no row has no limits.
+  playLimits UserPlayLimits?
+
+  /// Rebar & Rutabaga bookings (W1).
+  rebarReservations RebarReservation[]
+
+  /// Seasonal ranked standings (P5), beside the lifetime `eloRatings`.
+  seasonRatings RankedSeasonRating[]
+
+  /// Cross-game assists (P7). Optional: no row means no assists.
+  gameAssists GameAssistPreference?
+
+  /// What the AI surfaces remember about them (M3). Member-editable.
+  memories MemberMemory[]
+
+  /// Compute bought with coins from RMH Datacenter (W2).
+  computeGrants ComputeGrant[]
+
+  /// What this member agreed to give which builds (B1).
+  buildGrants         BuildGrant[]
+  readPositions       ReadPosition[]
+  heldNotifications   HeldNotification[]
+  conversationPrefs   ConversationPref[]
+  idempotencyKeys     SiteIdempotencyKey[]
+  featureRequests     FeatureRequest[]
+  featureRequestVotes FeatureRequestVote[]
+
+  creatorPosts           CreatorPost[]
+  referralMilestones     ReferralMilestone[]
+  profileBlocks          ProfileBlock[]
+  readingRooms           ReadingRoom[]
+  remixEdges             RemixEdge[]
+  appSeasonStats         AppSeasonStat[]
+  questChainProgresses   QuestChainProgress[]
+  pools                  Pool[]
+  poolContributions      PoolContribution[]
+  communityPageRevisions CommunityPageRevision[]
+  kaikaiDebtEntries      KaikaiDebtEntry[]       @relation("KaikaiDebtAuthor")
+  kaikaiDebtsOwed        KaikaiDebtEntry[]       @relation("KaikaiDebtCreditor")
+
+  // ─── PF2e team calendar (/pf2ecal) ───────────────────────────────────────
+  pf2eSessionsCreated Pf2eSession[]         @relation("Pf2eSessionAuthor")
+  pf2eSessionsEdited  Pf2eSession[]         @relation("Pf2eSessionEditor")
+  pf2eResponses       Pf2eSessionResponse[]
+  pf2eAnnouncements   Pf2eAnnouncement[]    @relation("Pf2eAnnouncementAuthor")
+  pf2eRecaps          Pf2eRecap[]           @relation("Pf2eRecapAuthor")
+  pf2eSettingsEdits   Pf2eSettings[]        @relation("Pf2eSettingsEditor")
+
+  // ─── Feature ideas 2026-10-12 (docs/plans/2026-10-12-feature-ideas-every-surface.md)
+  // P24 party: R2 rmhbox packs, R15 connections grids
+  rmhboxPacks                RmhboxPack[]
+  rmhboxPackReports          RmhboxPackReport[]
+  connectionsGrids           ConnectionsGrid[]
+  connectionsPlays           ConnectionsPlay[]
+  // P23 creative: F12 studio challenge entries and votes
+  studioChallengeEntries     StudioChallengeEntry[]
+  studioChallengeVotes       StudioChallengeVote[]
+  // P25 action: R5 Neon Driftway livery
+  ndwLivery                  NdwLivery?
+  // P19 canvas: Z5 pixel canvas, X3 context notes
+  canvasPlacements           CanvasPlacement[]
+  canvasCooldowns            CanvasCooldown[]
+  contextNotes               ContextNote[]
+  contextNoteRatings         ContextNoteRating[]
+  // P18 delight: Z2 hunt, Z4 fortunes, Z6 photo of the day, Y4 translations
+  huntProgress               HuntProgress[]
+  fortuneCookies             FortuneCookie[]
+  photoNominations           PhotoNomination[]
+  photoVotes                 PhotoVote[]
+  translationSuggestions     TranslationSuggestion[]
+  // P27 async games: R11 R12 R13 R18 R21
+  hornTableRead              GabrielsHornTableRead?
+  velumContractsMade         VelumContract[]              @relation("VelumContractMaker")
+  velumContractsHeld         VelumContract[]              @relation("VelumContractHolder")
+  versecraftSeedListings     VersecraftSeedListing[]
+  versecraftSeedRatings      VersecraftSeedRating[]
+  marchSignals               MarchSignal[]
+  marchSignalVotes           MarchSignalVote[]
+  nightrailTricks            NightrailTrick[]
+  nightrailTrickVotes        NightrailTrickVote[]
+  translationVotes           TranslationVote[]
+  // P22 ladder-homes: F6 referrals, F8 interview reports, F9 roommate quiz
+  ladderReferralOffers       LadderReferralOffer[]
+  ladderReferralRequests     LadderReferralRequest[]
+  ladderInterviewReports     LadderInterviewReport[]
+  homeRoommateProfile        HomeRoommateProfile?
+  // P16 devplatform: D5 recipes
+  devRecipes                 DevRecipe[]
+  // P15 ops: O2 notice dismissals, O5 experiment exposures
+  noticeDismissals           TargetedNoticeDismissal[]
+  experimentExposures        ExperimentExposure[]
+  // P21 tools: F4 study plans, F11 calc notebooks, F15 marathon lists
+  studyPlans                 StudyPlan[]
+  calcNotebooks              CalcNotebook[]
+  marathonLists              MarathonList[]
+  // P14 safety: S7 pile-on guard
+  pileOnGuards               PileOnGuard[]
+  // P12 forecasting: G6 market comments
+  predictionComments         PredictionComment[]
+  electionRooms              ElectionRoom[]               @relation("ElectionRoomOwner")
+  electionLeaguesOwned       ElectionLeague[]             @relation("ElectionLeagueOwner")
+  electionLeagueMemberships  ElectionLeagueMember[]       @relation("ElectionLeagueMember")
+  // P07 arcade: E1/E12 seeded runs, E2 backlog, E6 achievement tips, E11 rivals
+  arcadeSeedRuns             ArcadeSeedRun[]
+  gamePlayStatuses           GamePlayStatus[]
+  achievementTips            AchievementTip[]
+  achievementTipVotes        AchievementTipVote[]
+  arcadeRivals               ArcadeRival[]                @relation("ArcadeRivalOwner")
+  arcadeRivalOf              ArcadeRival[]                @relation("ArcadeRivalTarget")
+  // P20 watch parties: F1 timed comments, F17 watch later, T5 commentary tracks
+  rmhtubeTimedComments       RmhTubeTimedComment[]
+  rmhtubeWatchLater          RmhTubeWatchLater[]
+  rmhtubeCommentaryTracks    RmhTubeCommentaryTrack[]
+  // P11 gifting: G1 birthdays, G2 advent, G3 gift exchange, G4 kudos, F2 mixtape exchange
+  birthday                   UserBirthday?
+  adventClaims               AdventClaim[]
+  giftExchangesOrganised     GiftExchange[]               @relation("GiftExchangeOrganiser")
+  giftExchangeMemberships    GiftExchangeMember[]         @relation("GiftExchangeMemberUser")
+  giftExchangeRecipientOf    GiftExchangeMember[]         @relation("GiftExchangeMemberRecipient")
+  kudosSent                  Kudos[]                      @relation("KudosFrom")
+  kudosReceived              Kudos[]                      @relation("KudosTo")
+  // P03 discovery: A3 digest, A4 custom feeds, A5 memories, A6 keyword alerts, A7 watches
+  customFeeds                CustomFeed[]
+  customFeedSubscriptions    CustomFeedSubscription[]
+  memoriesOptIn              MemoriesOptIn?
+  keywordAlerts              KeywordAlert[]
+  keywordAlertHits           KeywordAlertHit[]
+  watches                    Watch[]
+  // P06 communities-plus: N3 onboarding answers, N4 mod items, N5 challenge, N6 census, N7 scores
+  communityOnboardingAnswers CommunityOnboardingAnswer[]
+  communityModItems          CommunityModItem[]
+  communityChallengeEntries  CommunityChallengeEntry[]
+  // P08 competitive: E5 pick'em, E7 jams, E9 friendly challenges
+  bracketPicks               BracketPick[]
+  gameJamsCreated            GameJam[]
+  gameJamEntries             GameJamEntry[]
+  gameJamRatings             GameJamRating[]
+  friendlyChallengesSent     FriendlyChallenge[]          @relation("FriendlyChallenger")
+  friendlyChallengesReceived FriendlyChallenge[]          @relation("FriendlyOpponent")
+  communityChallengeVotes    CommunityChallengeVote[]
+  communityCensusAnswered    CommunityCensusParticipant[]
+  // P13 reading: L1 highlights, L3 goal, L7 shelves, L5 stories
+  readingHighlights          ReadingHighlight[]
+  readingGoals               ReadingGoal[]
+  readingShelfEntries        ReadingShelfEntry[]
+  readingPrefs               ReadingPrefs?
+  glossaryTermsCreated       GlossaryTerm[]               @relation("GlossaryTermAuthor")
+  newsStoriesCreated         NewsStory[]                  @relation("NewsStoryAuthor")
+  communityContributorScores CommunityContributorScore[]
+  // P09 calendar: K1 polls, K2 office hours, K3 feed, K4 occurrence RSVPs, F5 study buddy
+  availabilityPolls          AvailabilityPoll[]
+  availabilityResponses      AvailabilityPollResponse[]
+  availabilityInvites        AvailabilityPollInvitee[]
+  officeHoursConfig          OfficeHoursConfig?
+  officeHoursBookingsAsHost  OfficeHoursBooking[]         @relation("OfficeHoursHost")
+  officeHoursBookingsAsGuest OfficeHoursBooking[]         @relation("OfficeHoursGuest")
+  calendarFeed               CalendarFeed?
+  calendarFeedSlots          CalendarFeedSlot[]
+  eventOccurrenceRsvps       EventOccurrenceRsvp[]
+  studyBuddyRequests         StudyBuddyRequest[]
+  studyBuddyMatchesA         StudyBuddyMatch[]            @relation("StudyBuddyA")
+  studyBuddyMatchesB         StudyBuddyMatch[]            @relation("StudyBuddyB")
+  // P02 posts-plus: X4 prompts/answers, X5 series, X8 auto-delete
+  qotdPromptsCreated         QotdPrompt[]
+  qotdAnswers                QotdAnswer[]
+  postSeries                 PostSeries[]
+  postSeriesFollows          PostSeriesFollow[]
+  postAutoDelete             PostAutoDelete?
+  chatFolders                ChatFolder[]
+  chatPins                   ChatPin[]
+  dmPollVotes                DirectPollVote[]
+  // Back-relations for the models at the end of this file. One line per field,
+  // each package's lines together; never re-align this block.
+  // P01 feed-plus: X6 take votes, X12 require-alt-text
+  rmharkTakeVotes            RMHarkTakeVote[]
+  requireAltText             Boolean                      @default(false)
+  savingsGoals               SavingsGoal[]
+  loadoutPresets             LoadoutPreset[]
+  communityGoalPledges       CommunityGoalPledge[]
+  scheduledGiftsSent         ScheduledGift[]              @relation("ScheduledGiftSender")
+  scheduledGiftsReceived     ScheduledGift[]              @relation("ScheduledGiftRecipient")
+  // P05 profiles (P1-P10)
+  profilePlus                ProfilePlus?
+  stampsCreated              Stamp[]                      @relation("StampCreator")
+  profileStamps              ProfileStamp[]
+  webringsOwned              Webring[]                    @relation("WebringOwner")
+  webringMemberships         WebringMember[]
+  endorsementsGiven          SkillEndorsement[]           @relation("EndorsementGiven")
+  endorsementsReceived       SkillEndorsement[]           @relation("EndorsementReceived")
+
+  /// Who may see this user's per-title playtime: 'public' (any signed-in viewer)
+  /// | 'followers' (people who follow this user) | 'private' (only them).
+  /// Enforced server-side in lib/playtime, never by a client.
+  playtimePrivacy           String               @default("public") @db.VarChar(10)
+  /// Set when the one-time "your playtime is visible" notice is dismissed.
+  playtimeNoticeDismissedAt DateTime?
+  gamePlaytime              GamePlaytime[]
+  gamePlaytimeDays          GamePlaytimeDay[]
+  userCards                 UserCard[]
+  cardDrops                 CardDrop[]
+  gameBadges                GameBadge[]
+  cardListingsSold          CardListing[]        @relation("CardSeller")
+  cardListingsBought        CardListing[]        @relation("CardBuyer")
+  cardBuyOrders             CardBuyOrder[]
+  gameCollectionItems       GameCollectionItem[]
+  gameProfileShowcase       GameProfileShowcase?
+  userGems                  UserGems?
+  gemEntries                GemEntry[]
+  cardTradesSent            CardTrade[]          @relation("CardTradeFrom")
+  cardTradesReceived        CardTrade[]          @relation("CardTradeTo")
+  gameThreads               GameThread[]
+  gameThreadPosts           GameThreadPost[]
+
+  @@index([isBot])
+  @@index([followerCount])
+  // Backs the nightly finalize-deletion sweep; partial in effect since the
+  // column is null for every live account.
+  @@index([deletionScheduledAt])
+  // Backs the "online now" fallback count (WHERE lastSeenAt >= cutoff). The
+  // fast path is a Redis presence set; this keeps the DB fallback sane.
+  @@index([lastSeenAt])
+  @@map("user")
+}
+
+// One row per successfully attributed invite. `rewardedAt` is set when the
+// mutual coin reward fires (on the referee's first achievement unlock, so
+// throwaway signups earn nothing).
+model Referral {
+  id         String    @id @default(cuid())
+  referrerId String
+  refereeId  String    @unique
+  code       String    @db.VarChar(32)
+  createdAt  DateTime  @default(now())
+  rewardedAt DateTime?
+
+  referrer User @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee  User @relation("Referee", fields: [refereeId], references: [id], onDelete: Cascade)
+
+  @@index([referrerId])
+  @@map("referral")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Coarse device family ("Chrome on macOS") — NOT a tracking identifier.
+  /// A sign-in whose (userId, deviceFp) pair has never been seen triggers the
+  /// new-device alert (B11). Deliberately low-entropy: the goal is "is this
+  /// familiar to the account owner", not "is this the same physical machine".
+  deviceFp  String?   @db.VarChar(80)
+  /// Hashed via lib/hash-ip.server — raw addresses are never stored here.
+  ipHash    String?   @db.VarChar(64)
+  /// Set once the owner has been told about this device, so an alert fires at
+  /// most once per device rather than on every session refresh.
+  alertedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, deviceFp])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  expiresAt             DateTime? // Re-added for Better Auth compatibility
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([providerId, accountId])
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@map("verification")
+}
+
+// Web Push subscriptions — one row per browser/device a user enabled push on.
+// Endpoint is globally unique; rows are removed when the push service reports
+// the subscription gone (404/410) or the user disables push on that device.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?  @db.VarChar(255)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscription")
+}
+
+// WebAuthn credentials for password-less sign-in (@better-auth/passkey).
+// Field names/types follow the plugin's expected schema exactly.
+model Passkey {
+  id           String    @id @default(cuid())
+  name         String?
+  publicKey    String
+  userId       String
+  credentialID String
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  createdAt    DateTime? @default(now())
+  aaguid       String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([credentialID])
+  @@map("passkey")
+}
+
+// ─── Security / Bug Bounty reports ────────────────────────────────────
+
+enum SecurityReportStatus {
+  NEW
+  TRIAGING
+  ACCEPTED
+  RESOLVED
+  DUPLICATE
+  NOT_APPLICABLE
+}
+
+model SecurityReport {
+  id            String               @id @default(cuid())
+  title         String
+  category      String
+  severity      String
+  affectedArea  String?
+  description   String
+  reporterName  String?
+  reporterEmail String?
+  status        SecurityReportStatus @default(NEW)
+  adminNotes    String?
+  // Set when the reporter was signed in; nullable for external researchers.
+  userId        String?
+  // SHA-256 of the client IP — abuse correlation without storing raw IPs.
+  ipHash        String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("security_report")
+}
+
+// ─── User Strikes ─────────────────────────────────────────────────────────
+// A strike is the moderation penalty; the appeal columns below are the user's
+// side of it. Before they existed a strike was admin-write-only — the punished
+// user got a SYSTEM notification and had no way to see the record or contest
+// it. `/settings/account-status` reads these; `/admin/appeals` writes them.
+model UserStrike {
+  id        String    @id @default(cuid())
+  userId    String
+  adminId   String
+  reason    String    @db.VarChar(500)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  // What the strike attached to, so the user's status page can link to the
+  // content instead of just naming it. Same (entityType, entityId) vocabulary
+  // ContentReport uses ('rmhark' | 'comment' | 'build' | 'user' | …).
+  entityType String? @db.VarChar(32)
+  entityId   String? @db.VarChar(64)
+
+  // Set when the user opens their status page and sees this strike, so
+  // moderators can tell "notified" from "acknowledged".
+  acknowledgedAt DateTime?
+
+  // ── Appeal (one per strike; NONE until the user files) ──
+  appealStatus  AppealStatus @default(NONE)
+  appealText    String?      @db.VarChar(2000)
+  appealedAt    DateTime?
+  appealNote    String?      @db.VarChar(1000) // moderator's decision note, shown to the user
+  appealAdminId String? // reviewer who decided; null while PENDING
+  decidedAt     DateTime?
+
+  user        User  @relation("StrikeUser", fields: [userId], references: [id], onDelete: Cascade)
+  admin       User  @relation("StrikeAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+  appealAdmin User? @relation("StrikeAppealAdmin", fields: [appealAdminId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc)])
+  // Drives the admin appeal queue: open appeals oldest-first.
+  @@index([appealStatus, appealedAt])
+  @@map("user_strike")
+}
+
+/// Lifecycle of a strike appeal. NONE = never filed (the default for every
+/// strike). OVERTURNED voids the strike — it stops counting toward the
+/// three-strike auto-ban and is struck through on the user's status page.
+enum AppealStatus {
+  NONE
+  PENDING
+  UPHELD
+  OVERTURNED
+}
+
+/// Single-use account recovery codes. Hashed at rest — a plaintext recovery
+/// code is a password that never expires.
+model RecoveryCode {
+  id        String    @id @default(cuid())
+  userId    String
+  codeHash  String    @db.VarChar(200)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("recovery_code")
+}
+
+/// People who can vouch for a recovery request.
+model TrustedContact {
+  id          String    @id @default(cuid())
+  userId      String
+  contactId   String
+  /// The contact has to accept; an unconfirmed nomination cannot vouch.
+  confirmedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  user    User @relation("TrustedContactOwner", fields: [userId], references: [id], onDelete: Cascade)
+  contact User @relation("TrustedContactPerson", fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contactId])
+  @@index([contactId])
+  @@map("trusted_contact")
+}
+
+/// An in-flight account recovery. Deliberately slow: a mandatory delay and a
+/// notification to every existing session, or this is a social-engineering
+/// vector rather than a recovery path.
+model RecoveryRequest {
+  id         String   @id @default(cuid())
+  userId     String
+  /// PENDING | APPROVED | REJECTED | EXPIRED | USED
+  status     String   @default("PENDING") @db.VarChar(12)
+  approvals  Int      @default(0)
+  /// Who has vouched, so nobody can vouch twice.
+  approvedBy String[] @default([])
+  tokenHash  String   @db.VarChar(200)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status, expiresAt])
+  @@map("recovery_request")
+}
+
+/// Handle history. An account can build trust as @alice and hand the handle
+/// over; without this the history is gone.
+model HandleChange {
+  id        String   @id @default(cuid())
+  userId    String
+  oldHandle String   @db.VarChar(30)
+  newHandle String   @db.VarChar(30)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([oldHandle])
+  @@map("handle_change")
+}
+
+/// Referral milestones, paid on ACTIVATION rather than signup (F6).
+///
+/// `Referral` already records who invited whom. What was missing is the loop:
+/// a referrer who brings ten active people and one who brings ten bounces were
+/// indistinguishable. Rewarding activation is also the anti-fraud posture —
+/// signup is free to fake, three separate active days is not.
+model ReferralMilestone {
+  id        String   @id @default(cuid())
+  userId    String
+  /// Count of ACTIVATED referrals this milestone was granted for.
+  threshold Int
+  coins     Int      @default(0)
+  cosmetic  String?  @db.VarChar(60)
+  grantedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, threshold])
+  @@index([userId])
+  @@map("referral_milestone")
+}
+
+// ─── Responsible play (W8, 2026-09-19) ────────────────────────────────────
+// The guard rails every coin-risking surface on the site shipped without.
+//
+// The audit for `docs/plans/2026-09-19-next-phase-feature-ideas.md` grepped the
+// tree for `selfExclu|age-gate|isAdult|over18` and found nothing: `/wager`,
+// `/predictions`, `CoinStake`, `DailyWheelSpin` and the five casino tables ran
+// with per-stake ceilings (`lib/wager/constants.ts`) and no per-DAY anything.
+//
+// Coins cannot be cashed out, which is why this is a small feature rather than
+// an incident. It is not a reason to keep adding risk surfaces without it.
+
+/// One row per member who has ever set a limit. Absent row = no limits, which
+/// is why every read goes through `resolvePlayLimits()` rather than assuming a
+/// row exists.
+model UserPlayLimits {
+  userId String @id
+
+  /// Most coins this member may stake per rolling UTC day, across every risk
+  /// surface. Null = no cap. Enforced in `debitCoinsOn` for `type: 'WAGER'`,
+  /// which is the one chokepoint both the web tier and the socket tier share.
+  dailyCoinCap Int?
+
+  /// Set by the member; until it passes, every `WAGER` debit is refused and the
+  /// risk surfaces are hidden from navigation and search. Deliberately NOT
+  /// clearable early — see `play-limits.ts` for why the asymmetry is the
+  /// feature rather than an inconvenience.
+  selfExcludedUntil DateTime?
+
+  /// A shorter, softer break. Same refusal, no navigation change.
+  coolOffUntil DateTime?
+
+  /// A LOOSENING waiting out its 24 hours. Tightening applies immediately and
+  /// never lands here; only a change that would give the member more rope is
+  /// parked, so that "raise my limit" can never be an impulse the site honours
+  /// in the same minute it was typed.
+  ///
+  /// `pendingCap` is the requested new cap (null means "remove the cap"), and
+  /// `pendingCapAt` is when it becomes effective. Both are cleared together,
+  /// so `pendingCapAt != null` is the only test for "a change is in flight" —
+  /// a null `pendingCap` is a meaningful request, not an empty slot.
+  pendingCap   Int?
+  pendingCapAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_play_limits")
+}
+
+// ── P11: G1 G2 G3 G4 F2 ──
+
+/// Opt-in birthday (G1): month/day only, never a year. Row present = opted in.
+model UserBirthday {
+  userId           String   @id
+  month            Int
+  day              Int
+  /// Last calendar year followers were nudged, so the daily job is idempotent.
+  lastNotifiedYear Int?
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([month, day])
+  @@map("user_birthday")
+}

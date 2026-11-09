@@ -143,7 +143,7 @@ all — it is a Discord-gateway client.</div>
     <tr><td><code>docker-compose.yml</code></td><td>The single source of truth for services, ports, healthchecks, and stop-grace contracts (prod and staging via <code>--env-file</code>).</td></tr>
     <tr><td><code>Dockerfile</code></td><td>Multi-stage build producing the one shared <code>rmhstudios-app</code> image (frontend bundle + bundled server entrypoints + Chromium for the vibe worker).</td></tr>
     <tr><td><code>vite.config.ts</code></td><td>Vite + TanStack Start + Nitro build configuration for the web tier.</td></tr>
-    <tr><td><code>prisma/schema.prisma</code></td><td>The 142-model Postgres schema (auth, feed, games, economy, doctrine, …).</td></tr>
+    <tr><td><code>prisma/schema/</code></td><td>The 142-model Postgres schema (auth, feed, games, economy, doctrine, …).</td></tr>
     <tr><td><code>MODULE.bazel</code>, <code>Makefile</code></td><td>Bazel module + Make targets — the build-system layer used especially by the Go services.</td></tr>
   </tbody>
 </table>

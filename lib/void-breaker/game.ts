@@ -114,12 +114,10 @@ import type { CharacterDef } from './characters';
 import { getWeapon, type WeaponDef } from './weapons';
 import { neutralModifiers } from './modifiers';
 import type { RunModifiers } from './modifiers';
+import { clamp } from '@/lib/core/math';
 
 function dist(ax: number, ay: number, bx: number, by: number): number {
   return Math.sqrt((ax - bx) ** 2 + (ay - by) ** 2);
-}
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
 }
 function norm(x: number, y: number): [number, number] {
   const len = Math.sqrt(x * x + y * y);

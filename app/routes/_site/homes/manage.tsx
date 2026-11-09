@@ -24,7 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { Bell, Bookmark, Plus, Home as HomeIcon } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { PageTabs } from '@/components/feed/PageTabs';
-import { type LiquidTab } from '@/components/ui/liquid-tabs';
+import { type TabItem } from '@/components/ui/tabs';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
@@ -144,7 +144,7 @@ function HomesManagePage() {
     );
   }
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     {
       id: 'listings',
       label: t('homes-tab-listings', { defaultValue: 'My listings' }),

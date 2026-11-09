@@ -665,7 +665,7 @@ html[data-app-dark='1'] .pf2e-field::-webkit-calendar-picker-indicator {
 /* ── Segmented control ────────────────────────────────────────────────────
    UISegmentedControl: a tinted track with a raised pill behind the selected
    segment. The pill is a sibling element translated with a CSS custom
-   property, NOT a framer-motion `layoutId` — that belongs to LiquidTabs and is
+   property, NOT a framer-motion `layoutId` — that belongs to Tabs and is
    CI-enforced (design-language.md §13 rule 3). A transform on one element is
    also cheaper than the layout projection would be. */
 .pf2e-segmented {

@@ -16,6 +16,7 @@
 
 import type { CatalogItem, LoadoutEntry } from './catalog-types';
 import type { CatalogIndex } from './use-catalog';
+import { clamp01, lerp } from '@/lib/core/math';
 
 export type Range = [number, number];
 
@@ -78,8 +79,6 @@ export function rng(seed: number): () => number {
   };
 }
 
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
 const wrap01 = (x: number) => x - Math.floor(x);
 
 function blank(size: number, value: number): Raster {

@@ -29,7 +29,7 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { ArcadeHub } from '@/components/arcade/ArcadeHub';
 import { LeaderboardColumn } from '@/components/feed/LeaderboardColumn';
 
@@ -77,7 +77,7 @@ export function ArcadeSection({
 
   const title = t('arcade-title', { defaultValue: 'Arcade Pass' });
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     {
       id: 'challenges',
       label: t('arcade-tab-challenges', { defaultValue: 'Challenges' }),
@@ -115,7 +115,7 @@ export function ArcadeSection({
       </div>
 
       <div className="px-4 pb-3">
-        <LiquidTabs
+        <Tabs
           size="sm"
           tabs={tabs}
           value={sub}

@@ -477,7 +477,7 @@ a.neumorphic-sm:hover,
 
 /* ─── Shared controls ──────────────────────────────────────────────────────
  *
- * `ui/slider`, `ui/switch` and `LiquidTabs` paint with `--site-*` tokens, which
+ * `ui/slider`, `ui/switch` and `Tabs` paint with `--site-*` tokens, which
  * inside `.slice-theme` resolve against the ROOT theme and came out black. They
  * are restyled through `[data-slot]`, the mechanism `globals.css` already gives
  * a theme for exactly this.

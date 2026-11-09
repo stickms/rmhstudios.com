@@ -276,7 +276,7 @@ the budget never saw it. It now counts the site-tier sheet. Honest figure:
 - **framer-motion** (`motion-dom` + `framer-motion`, ~42 KB min in the entry,
   behind `LazyMotion`) — 108 files use it. A wholesale swap is a large rewrite
   for a cost the entry composition does not single out; the 08-12 audit already
-  moved scroll reveals to CSS. The `LiquidTabs` `layoutId` thumb the previous
+  moved scroll reveals to CSS. The `Tabs` `layoutId` thumb the previous
   audit flagged was looked at and left: since NAV-1 its layout read is the
   commit's *first*, so it duplicates nothing, and a CSS-only thumb would either
   paint no selection until JS measured it (losing the server-rendered state) or

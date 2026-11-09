@@ -1,7 +1,7 @@
 /**
  * PageTabs — where a page's tab strip sits, and what sits under it.
  *
- * `LiquidTabs` already guarantees the strip itself looks the same everywhere
+ * `Tabs` already guarantees the strip itself looks the same everywhere
  * (one sheet, equal segments, full track — see its docblock). What it cannot
  * own is the *placement*: every tabbed page re-typed its own wrapper, and they
  * disagreed. Measured at 1600px, on a page column 800px wide:
@@ -31,11 +31,11 @@
  */
 
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
-import { LiquidTabs, type LiquidTab, type LiquidTabRenderProps } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem, type TabRenderProps } from '@/components/ui/tabs';
 import { swapContentAfter } from '@/lib/page-transition';
 
 interface PageTabsProps {
-  tabs: LiquidTab[];
+  tabs: TabItem[];
   value: string;
   /** Tablist mode. Omit only in link mode, where the `<Link>` navigates. */
   onChange?: (id: string) => void;
@@ -48,12 +48,12 @@ interface PageTabsProps {
   /**
    * Link mode (§16.2) — render each tab as the caller's element, typically a
    * TanStack `<Link>`, so route tabs stay crawlable and prefetched.
-   * `LiquidTabs` still owns the sheet, capsule and morph; this component still
+   * `Tabs` still owns the sheet, capsule and morph; this component still
    * owns the gutter. Without the passthrough a page whose tabs switch routes
-   * had to drop to `LiquidTabs` directly and re-type the placement by hand,
+   * had to drop to `Tabs` directly and re-type the placement by hand,
    * which is the exact drift this component exists to end.
    */
-  renderTab?: (tab: LiquidTab, props: LiquidTabRenderProps) => ReactNode;
+  renderTab?: (tab: TabItem, props: TabRenderProps) => ReactNode;
   /** Accessible name for the tablist (already translated). */
   'aria-label'?: string;
   /** Optional search field, rendered in a matching gutter below the strip. */
@@ -88,7 +88,7 @@ export function PageTabs({
   return (
     <div ref={controls} data-slot="page-controls" className="page-controls">
       <div className={`mt-3 ${search ? 'mb-2' : 'mb-3'} ${GUTTER}`}>
-        <LiquidTabs
+        <Tabs
           tabs={tabs}
           value={value}
           onChange={onChange}

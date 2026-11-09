@@ -327,7 +327,7 @@ body:has(.radial-shell) .call-banner {
   padding: 0 max(1.25rem, calc(var(--rad-gutter) - 0.75rem));
   /* A thicker, more refractive shoulder than a card: the bar is the one surface that always has moving page under it. */
   --gel-bevel: 9px;
-  /* The bar is `.glass-chrome`: the glass role owns its fill and its shape (app/liquid-glass.css), so no background or
+  /* The bar is `.glass-chrome`: the glass role owns its fill and its shape (app/glass-roles.css), so no background or
      radius is set here. A local `background` is unlayered and would beat the role, which is how this bar stayed an
      opaque white strip over the page. No border: the shader draws the edge; the degraded tiers get the role's own. No
      backdrop-filter, at any width: the engine draws the slab. */
@@ -2416,7 +2416,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   max-width: calc(100vw - 2rem);
   /* One jelly pill, the compose button's material: the same lit sphere shading, and the jelly soft body
      (`data-fluid-press` on the parent in RadialHub). Everything inside is plain ink on it, with no body of its
-     own (`data-fluid-press="none"`), so there is one body, not five stacked. */
+     own (`data-jelly="off"`), so there is one body, not five stacked. */
   background: radial-gradient(
     ellipse 90% 140% at 30% 20%,
     color-mix(in srgb, var(--site-accent) 62%, var(--site-accent-fg)) 0%,
@@ -3339,7 +3339,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
     margin-bottom: var(--site-floating-reserve);
   }
 }
-/* The strip itself is <LiquidTabs> (§16.2 — one tab-strip grammar site-wide);
+/* The strip itself is <Tabs> (§16.2 — one tab-strip grammar site-wide);
    all this does is stop it from growing when the deck's list scrolls. */
 .rad-deck__tabs {
   flex: none;

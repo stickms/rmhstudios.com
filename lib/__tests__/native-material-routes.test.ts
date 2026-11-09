@@ -67,10 +67,10 @@ describe('syncNativeMaterialClass', () => {
 describe('wiring', () => {
   const read = (f: string) => readFileSync(join(process.cwd(), f), 'utf8');
 
-  it('Providers keeps the class in step with the pathname, next to useLiquidInteractions', () => {
+  it('Providers keeps the class in step with the pathname, next to useJellyPointer', () => {
     const src = read('components/Providers.tsx');
     expect(src).toMatch(
-      /useLiquidInteractions\(!isNativeMaterialRoute\(pathname\)\);[\s\S]{0,400}useEffect\(\(\) => syncNativeMaterialClass\(document\.documentElement, pathname\), \[pathname\]\);/,
+      /useJellyPointer\(!isNativeMaterialRoute\(pathname\)\);[\s\S]{0,400}useEffect\(\(\) => syncNativeMaterialClass\(document\.documentElement, pathname\), \[pathname\]\);/,
     );
   });
 

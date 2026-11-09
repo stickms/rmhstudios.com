@@ -38,7 +38,7 @@ export interface RecurrenceRule {
 /**
  * The shipped rule. Editing these five numbers re-shapes every *future*
  * generated session; sessions the table has already touched are left alone (see
- * `pinnedToRule` in `prisma/schema.prisma`), so a rule change never silently
+ * `pinnedToRule` in `prisma/schema/`), so a rule change never silently
  * rewrites a night people have already RSVP'd to.
  */
 export const CAMPAIGN_RULE: RecurrenceRule = {

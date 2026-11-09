@@ -123,7 +123,7 @@ timeline/glow/dispersion/refraction/reflection/impact/flash-budget/nudge`, `char
   `drag-report.ts` (the drag owners' report), `ambient-tick.ts` (the tick grid the globe
   and its cursor share). Components never import the arc service; they take jelly
   through role classes and `data-jelly*` attributes. It all mounts from
-  `hooks/useLiquidInteractions.ts`.
+  `hooks/useJellyPointer.ts`.
 - **Liquid glass (what the globe still uses):** `liquid/glass/` — the WebGL rim/haze
   engine (`engine.ts`, `shader.ts`, `haze-shader.ts`, `renderer.ts`, the glass worker) is
   **gone**. What stays: `scene.ts` + `scene-store.ts` + `scene-feed.ts` (the page snapshot
@@ -174,7 +174,7 @@ don't remove that plugin.
 
 ## Database (Prisma)
 
-- `prisma/schema.prisma`: 323 models, ~8900 lines. IDs are
+- `prisma/schema/`: 323 models, ~8900 lines. IDs are
   `String @id @default(cuid())`; models `@@map` to snake_case tables; 71
   enums. Model families: auth/user, social feed (RMHark*), per-game
   player/match tables, economy (CoinTransaction, inventory, quests),

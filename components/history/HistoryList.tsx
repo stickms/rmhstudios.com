@@ -18,7 +18,7 @@ import {
   type HistoryEntityType,
 } from '@/lib/history/constants';
 import type { HistoryView } from '@/lib/history/history.server';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 
 interface HistoryData {
   items: HistoryView[];
@@ -120,11 +120,11 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
       </div>
 
       {/* A scrolling row of mutually-exclusive filter chips is a tab strip.
-          `LiquidTabs scroll` is the shared renderer AND the shared scroller, so
+          `Tabs scroll` is the shared renderer AND the shared scroller, so
           this drops both the `chip()` helper — which was byte-identical to the
           one in `SavesHub`, copy-pasted between two files — and the
           `HorizontalScroller` wrapping it. */}
-      <LiquidTabs
+      <Tabs
         tabs={[
           { id: 'all', label: t('all', { defaultValue: 'All' }) },
           ...HISTORY_ENTITY_TYPES.map((type) => ({

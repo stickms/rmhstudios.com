@@ -10,7 +10,7 @@ import {
 import { propertyTypeLabel } from '@/lib/homes/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 
@@ -60,7 +60,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
   return (
     <div className="glass-fill rounded-site p-5">
       <div className="flex flex-wrap items-center gap-2">
-        <LiquidTabs
+        <Tabs
           size="sm"
           tabs={LISTING_TABS}
           value={filters.listingType}

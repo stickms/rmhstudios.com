@@ -183,7 +183,7 @@ sequenceDiagram
 <div class="note"><b>CSRF, briefly.</b> Because the session cookie is sent automatically on every request to RMH's origin, a malicious third-party page could try to forge a state-changing request on the user's behalf — a <b>cross-site request forgery</b>. Better Auth defends the OAuth flow with a <code>state</code> parameter that must round-trip through the IdP, and the route's strict origin allow-list (<code>trustedOrigins</code> plus <code>ALLOWED_ORIGINS</code>) blocks credentialed requests from unknown origins. CSRF protection is the library's and the route's responsibility, not each feature's.</div>
 
 <h2 id="data-model">The data model: User, Session, Account, Verification</h2>
-<p>Four Prisma models in <code>prisma/schema.prisma</code> hold the entire auth state. They are deliberately small and they map (via <code>@@map</code>) to the lower-cased table names Better Auth expects.</p>
+<p>Four Prisma models in <code>prisma/schema/</code> hold the entire auth state. They are deliberately small and they map (via <code>@@map</code>) to the lower-cased table names Better Auth expects.</p>
 
 <table>
   <thead><tr><th>Model</th><th>Holds</th><th>Key fields</th><th>Cardinality to User</th></tr></thead>

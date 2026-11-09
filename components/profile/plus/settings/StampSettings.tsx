@@ -5,7 +5,7 @@ import { Plus, Trash2, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   STAMP_MAX_CREATED,
@@ -248,7 +248,7 @@ export default function StampSettings({ userId }: { userId: string }) {
         <h3 id="stamp-browse" className="text-sm font-semibold text-site-text">
           {t('stamp-browse', { defaultValue: 'Collect stamps' })}
         </h3>
-        <LiquidTabs
+        <Tabs
           aria-label={t('stamp-sort', { defaultValue: 'Sort stamps' })}
           tabs={[
             { id: 'new', label: t('stamp-sort-new', { defaultValue: 'Newest' }) },

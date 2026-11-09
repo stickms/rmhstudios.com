@@ -18,6 +18,7 @@
  * breaking reject.
  */
 import { parseHex, toHex, relativeLuminance, contrastRatio } from '@/lib/appearance/contrast';
+import { clamp01 } from '@/lib/core/math';
 
 export const THEME_TOKENS_VERSION = 2 as const;
 
@@ -109,9 +110,6 @@ export const DEFAULT_THEME_TOKENS: ThemeTokens = {
 };
 
 // ── color math (pure; deterministic hex/rgba, no color-mix) ──────────────────
-function clamp01(n: number): number {
-  return Math.min(1, Math.max(0, n));
-}
 
 /** rgba() string for a hex color at a given alpha. */
 function rgba(hexColor: string, alpha: number): string {

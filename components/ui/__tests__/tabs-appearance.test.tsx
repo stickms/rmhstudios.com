@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { LiquidTabs } from '../liquid-tabs';
+import { Tabs } from '../tabs';
 import { AppTierContext } from '../app-tier-context';
 
 const tabs = [
@@ -8,9 +8,9 @@ const tabs = [
   { id: 'b', label: 'Beta' },
 ];
 
-describe('LiquidTabs appearance', () => {
+describe('Tabs appearance', () => {
   it('is the flat glow on the main site by default, and its tabs are flat members', () => {
-    const html = renderToStaticMarkup(<LiquidTabs tabs={tabs} value="a" aria-label="t" />);
+    const html = renderToStaticMarkup(<Tabs tabs={tabs} value="a" aria-label="t" />);
     expect(html).toContain('data-tab-appearance="glow"');
     // The strip is one opted-out subtree: no tab inside it is a jelly body, whichever element a caller renders.
     expect(html).toContain('data-jelly-scope="off"');
@@ -22,7 +22,7 @@ describe('LiquidTabs appearance', () => {
 
   it('keeps the raised thumb, and its pressable tabs, when a game or app asks for it', () => {
     const html = renderToStaticMarkup(
-      <LiquidTabs tabs={tabs} value="a" aria-label="t" appearance="thumb" />,
+      <Tabs tabs={tabs} value="a" aria-label="t" appearance="thumb" />,
     );
     expect(html).toContain('data-tab-appearance="thumb"');
     expect(html.match(/data-fluid-press=""/g)).toHaveLength(2);
@@ -32,7 +32,7 @@ describe('LiquidTabs appearance', () => {
   it('defaults to the raised thumb on a game/app route, with its pressable tabs untouched', () => {
     const html = renderToStaticMarkup(
       <AppTierContext.Provider value={true}>
-        <LiquidTabs tabs={tabs} value="a" aria-label="t" />
+        <Tabs tabs={tabs} value="a" aria-label="t" />
       </AppTierContext.Provider>,
     );
     expect(html).toContain('data-tab-appearance="thumb"');
@@ -43,7 +43,7 @@ describe('LiquidTabs appearance', () => {
   it('an explicit appearance beats the route', () => {
     const html = renderToStaticMarkup(
       <AppTierContext.Provider value={true}>
-        <LiquidTabs tabs={tabs} value="a" aria-label="t" appearance="glow" />
+        <Tabs tabs={tabs} value="a" aria-label="t" appearance="glow" />
       </AppTierContext.Provider>,
     );
     expect(html).toContain('data-tab-appearance="glow"');
@@ -52,7 +52,7 @@ describe('LiquidTabs appearance', () => {
   it('keeps its ARIA contract in both appearances', () => {
     for (const appearance of ['glow', 'thumb'] as const) {
       const html = renderToStaticMarkup(
-        <LiquidTabs tabs={tabs} value="b" aria-label="t" appearance={appearance} />,
+        <Tabs tabs={tabs} value="b" aria-label="t" appearance={appearance} />,
       );
       expect(html).toMatch(/aria-selected="true"[^>]*>[\s\S]*Beta/);
       expect(html.match(/aria-selected="false"/g)).toHaveLength(1);
@@ -61,7 +61,7 @@ describe('LiquidTabs appearance', () => {
 
   it('link mode marks the current route with aria-current and stays inside the opted-out strip', () => {
     const html = renderToStaticMarkup(
-      <LiquidTabs
+      <Tabs
         tabs={tabs}
         value="a"
         aria-label="t"

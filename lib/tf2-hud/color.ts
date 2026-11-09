@@ -4,6 +4,7 @@
  */
 
 import type { Rgba } from './scheme/scheme';
+import { clamp } from '@/lib/core/math';
 
 export interface Hsv {
   /** 0–360 */
@@ -14,7 +15,6 @@ export interface Hsv {
   v: number;
 }
 
-const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 const byte = (n: number) => clamp(Math.round(n), 0, 255);
 
 export function rgbToHsv({ r, g, b }: Rgba): Hsv {

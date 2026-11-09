@@ -15,7 +15,7 @@ import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { Button } from '@/components/ui/button';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { LiquidTab } from '@/components/ui/liquid-tabs';
+import type { TabItem } from '@/components/ui/tabs';
 import { apiJson } from './api';
 
 import { WALLET_TABS, type WalletTab } from '@/lib/economy/wallet-tabs';
@@ -53,7 +53,7 @@ export function WalletPage({
     staleTime: 15_000,
   });
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     { id: 'goals', label: t('wallet-tab-goals', { defaultValue: 'Goals' }), icon: Target },
     {
       id: 'statement',

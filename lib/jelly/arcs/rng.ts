@@ -5,24 +5,16 @@
  * seeded stream, so tests are deterministic and a re-strike can regenerate "the same path with new detail" from
  * `seed + k`. Nothing here reads `Math.random` or a clock.
  *
- * The generator is mulberry32, the same algorithm `lib/dream-rift/rng.ts` and `lib/laundry-sort/rng.ts` use. It is
- * restated here rather than imported because every existing copy lives inside a game's module, and site chrome must
- * not depend on a game directory (games are deleted and rewritten on their own schedule).
+ * The generator is mulberry32, the shared one in `lib/core/rng.ts` (site chrome may depend on `lib/core`, not on a game directory).
  */
+
+import { mulberry32 } from '@/lib/core/rng';
 
 /** A source of uniform numbers in [0, 1). */
 export type Rand = () => number;
 
-/** mulberry32: a fast 32-bit seeded generator, uniform in [0, 1). */
-export function mulberry32(seed: number): Rand {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+// mulberry32 is the shared generator (lib/core/rng.ts); re-exported so the arc modules keep their local import.
+export { mulberry32 };
 
 /** Mix two integers into a well-spread 32-bit seed (`seed`, `salt` → a fresh independent stream). */
 export function mixSeed(seed: number, salt: number): number {

@@ -109,6 +109,7 @@ const TIMING_MIN = 0.5;
 const TIMING_MAX = 1.5;
 
 /** Clamp that maps NaN to `fallback` (so every output is a real number). */
+// eslint-disable-next-line no-restricted-syntax -- clamp with a NaN fallback argument
 function clamp(n: number, lo: number, hi: number, fallback = lo): number {
   if (Number.isNaN(n)) return fallback;
   return Math.min(hi, Math.max(lo, n));

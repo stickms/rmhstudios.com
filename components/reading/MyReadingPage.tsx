@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { BookMarked, Highlighter, Target } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { parseReadingTab, type ReadingTab } from '@/lib/reading/tabs';
 
@@ -25,7 +25,7 @@ export function MyReadingPage({ tab }: { tab: ReadingTab }) {
       backLabel={t('back-to-library', { defaultValue: 'Back to the library' })}
     >
       <div className="space-y-4 pt-4 pb-12 md:px-4">
-        <LiquidTabs
+        <Tabs
           aria-label={t('my-reading-tabs', { defaultValue: 'My reading sections' })}
           value={tab}
           onChange={(id) =>

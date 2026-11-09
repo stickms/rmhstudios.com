@@ -32,8 +32,8 @@ locales, RTL for `ar`/`ur`). Node ≥24.18, pnpm workspace.
 | `server/`      | **Node** service tier: web SSR plus socket-server (7001), rmhbox (7676), rmhtube (7003), and the ladder-worker / homes-worker / jobs (pg-boss) workers.                  | [`server/CLAUDE.md`](server/CLAUDE.md)           |
 | `go-services/` | **Go** microservice fleet (Bazel + gazelle): `supervisor`, `status`, `assets` run in prod; the gateway + Go hubs were removed (rewrite §5.2).                            | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
 | `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                           | `lib/CLAUDE.md`                                  |
-| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidDrag`, `useLiquidInteractions`, `useLiquidBackground`, `useReveal`, …).                       | `lib/CLAUDE.md`                                  |
-| `prisma/`      | `schema.prisma` (model/enum/line counts: `docs/_generated/facts.json`) + migrations.                                                                                                        | `lib/CLAUDE.md`                                  |
+| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidDrag`, `useJellyPointer`, `useLiquidBackground`, `useReveal`, …).                       | `lib/CLAUDE.md`                                  |
+| `prisma/`      | `schema/` (one file per domain; model/enum/line counts: `docs/_generated/facts.json`) + migrations.                                                                                                        | `lib/CLAUDE.md`                                  |
 | `locales/`     | 16 shipped locales × the registered namespaces (count: `docs/_generated/facts.json`); `en` is authoritative. (More directories exist on disk than are wired up — see the i18n note below.)                      | `lib/CLAUDE.md` §i18n                            |
 | `data/`        | Static JSON (RMHBox content packs, library metadata).                                                                                                                    | —                                                |
 | `public/`      | Static assets, `robots.txt`, `manifest.webmanifest`.                                                                                                                     | —                                                |
@@ -145,6 +145,13 @@ _why_.
    opt out. Admin routes get `auth: 'admin'` instead of a hand-rolled
    `isAdmin` check. The `/api/v1/**` developer API keeps its own richer wrapper
    (`withDeveloperApi`) because it speaks a different error envelope.
+   **Typed contracts (redesign C1):** declare an endpoint once with `endpoint<{ body; res }>()({ method, path })`
+   in a client-safe `*.contract.ts` (types via `import type` from the zod schemas, so no zod ships), bind it
+   on the server with `implement(contract, options, handler)` from `@/lib/api/implement.server` (it IS
+   `defineHandler`, plus compile-time checks that the schemas and return match the contract), and call it from
+   the client with `api(contract, input)` from `@/lib/contract/client`. New code does not add raw
+   `fetch('/api/…')` strings — `lib/__tests__/raw-api-fetch-ratchet.test.ts` only lets that count fall.
+   Worked example: `lib/playtime/playtime.contract.ts`.
 4. **Design language:** every color/radius/shadow/font via `--site-*` token
    utilities (`bg-site-surface`, `rounded-site`, …) so every theme works;
    full-screen apps use the parallel `--app-*` contract in
@@ -323,7 +330,7 @@ Cards `--site-radius` (32px), controls `--site-radius-sm` (24px — a pill up to
 the scale is concentric in 8px steps). **A cluster of related controls is one body,
 not a row of pills:** `<JellyGroup>` (`components/ui/jelly-group.tsx`) is the parent
 and its members are flat (no edge or body of their own); the selected member is a
-quiet flat mark lying on it (a neutral capsule with a hairline ring in `LiquidTabs` on the
+quiet flat mark lying on it (a neutral capsule with a hairline ring in `Tabs` on the
 main site; a feathered glow in `JellyGroup`). A lone control may
 still be a pill. A dropdown is one rounded slab: its rows are plain
 text with no fill, edge or radius, and hover wakes a soft glow behind the text.

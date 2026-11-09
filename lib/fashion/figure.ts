@@ -21,6 +21,7 @@
  */
 
 import { frameFor, monotoneSpline } from '@/lib/loft/grid';
+import { clamp01, lerp } from '@/lib/core/math';
 
 export type SegmentId =
   'head' | 'neck' | 'torso' | 'upperArm' | 'forearm' | 'hand' | 'thigh' | 'shin' | 'foot';
@@ -130,13 +131,8 @@ const GIRTH = {
   ankle: [0.014, 0.018],
 } as const;
 
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const girth = (key: keyof typeof GIRTH, spec: FigureSpec) =>
   lerp(GIRTH[key][0], GIRTH[key][1], clamp01(spec.build)) * spec.height;
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
-}
 
 /** Clamp a spec into {@link FIGURE_LIMITS}, so a stray value cannot deform the body. */
 export function normaliseFigure(spec: Partial<FigureSpec>): FigureSpec {

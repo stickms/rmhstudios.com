@@ -23,6 +23,7 @@
 // =============================================================================
 
 import { DRONE_FRAMES, ECHO_FRAME, decodeSprite, type DecodedSprite } from './menu-sprites';
+import { clamp01 } from '@/lib/core/math';
 
 export interface CorridorScene {
   readonly width: number;
@@ -70,7 +71,6 @@ function hash01(n: number): number {
 }
 
 const frac = (v: number): number => v - Math.floor(v);
-const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /** Lamp brightness over time: a gentle breath, with the odd slow brown-out on some lamps. */
 function lampLevel(index: number, t: number): number {

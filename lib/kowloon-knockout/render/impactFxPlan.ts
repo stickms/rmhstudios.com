@@ -7,6 +7,7 @@
 // the attacker's colour, a knockout is one huge golden ring) is unit-tested.
 // ============================================================
 import { powerWeight, type ImpactEvent, type ImpactProfile } from './impact';
+import { clamp01 } from '@/lib/core/math';
 
 export interface RingPlan {
     /** `ground`: flat shockwave at the victim's feet. `contact`: a ring facing the camera at the contact point. */
@@ -111,8 +112,6 @@ export function planImpactFx(e: ImpactEvent, prof: ImpactProfile, opts: PlanOpti
 }
 
 // ── Motion curves ──────────────────────────────────────────────────────────────
-
-const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /** A ring's radius and brightness `age` seconds into its `life`: it flies out fast and slows (ease-out) while fading. */
 export function ringAt(age: number, life: number, size: number): { radius: number; fade: number } {

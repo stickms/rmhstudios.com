@@ -132,7 +132,7 @@ function AdminSecurityReportsPage() {
     >
         {/* The byte-identical twin of the switcher in admin/reports.tsx — same
             hand-rolled accent pill, same missing `aria-pressed`. Both are
-            `LiquidTabs` now, which is what stops them drifting apart again. */}
+            `Tabs` now, which is what stops them drifting apart again. */}
       <PageTabs
           tabs={SECURITY_REPORT_STATUSES.map((s) => ({
             id: s,

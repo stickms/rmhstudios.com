@@ -19,7 +19,7 @@ import {
   THEME_EXCLUDED_ROUTES,
   THEME_EXCLUDED_EXCEPTIONS,
 } from '@/components/Providers';
-import { GlassFilter } from '@/components/ui/liquid-glass';
+import { GlassFilter } from '@/components/ui/glass-filter';
 import { SiteHeadContent } from '@/components/SiteHeadContent';
 import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
 import { NavigationProgress } from '@/components/ui/NavigationProgress';

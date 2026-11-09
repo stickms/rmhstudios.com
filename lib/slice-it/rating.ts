@@ -430,6 +430,7 @@ export function skillRating(best: readonly SkillContribution[]): number {
     .reduce((sum, value, i) => sum + value * Math.pow(SKILL_DECAY, i), 0);
 }
 
+// eslint-disable-next-line no-restricted-syntax -- clamp01 maps non-finite to 0
 function clamp01(value: number): number {
   return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
 }

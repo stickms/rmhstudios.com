@@ -5,6 +5,7 @@ import type { EffectPlacement, ItemSlot } from './catalog-types';
 export function defaultPlacement(_slot: ItemSlot | 'cosmetic'): Required<EffectPlacement> {
   return { x: 0, y: 0, z: 0, s: 1 };
 }
+// eslint-disable-next-line no-restricted-syntax -- clamp with a fallback for non-number input
 const clamp = (v: unknown, lo: number, hi: number, fallback: number): number =>
   typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : fallback;
 export function resolvePlacement(

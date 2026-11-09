@@ -8,7 +8,7 @@
  * docs/superpowers/specs/2026-10-27-jelly-groups-design.md.
  *
  * Use it for a row of same-kind, mutually related controls (toolbars, action rows, segmented choices). A lone
- * control stays a pill; a real tab strip is `LiquidTabs`. Groups are one level deep.
+ * control stays a pill; a real tab strip is `Tabs`. Groups are one level deep.
  */
 
 import * as React from 'react';

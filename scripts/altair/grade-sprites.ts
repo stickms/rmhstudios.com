@@ -23,6 +23,7 @@ import { readdirSync, statSync, mkdirSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
+import { lerp } from '../../lib/core/math';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = join(HERE, 'sprite-src');
@@ -55,7 +56,6 @@ function kindFor(rel: string): Kind {
   return 'amber'; // pickups, projectiles, icons
 }
 
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 function sample(ramp: Ramp, l: number): RGB {
   const x = Math.min(0.9999, Math.max(0, l)) * 3;

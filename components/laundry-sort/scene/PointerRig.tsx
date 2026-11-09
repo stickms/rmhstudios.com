@@ -34,6 +34,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { LaundryMatch } from '@/lib/laundry-sort/match';
 import type { Ray } from '@/lib/laundry-sort/solver';
+import { clamp } from '@/lib/core/math';
 
 /** Reticle travel in NDC units per second. */
 const KEY_SPEED = 1.5;
@@ -360,8 +361,4 @@ export function PointerRig({ matchRef, enabled }: Props) {
       />
     </mesh>
   );
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
 }

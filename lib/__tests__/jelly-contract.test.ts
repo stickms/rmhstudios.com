@@ -410,7 +410,7 @@ describe('N7 — arcs reach only admitted surfaces, never past their range', () 
  * docs/plasmatic-jelly-system.md §10).
  *
  * Wobble, glow, ripple, flicker and the press lens are forces in the services, never stylesheet animation. So in the
- * jelly sheets (`app/jelly*.css` and the role base `app/liquid-glass.css`):
+ * jelly sheets (`app/jelly*.css` and the role base `app/glass-roles.css`):
  *  - no transition of `transform` / `translate` / `scale` / `rotate` / `all` except on the soft body's own spring: the
  *    soft body is CSS now (app/jelly-material.css §8, CSS-first jelly PR 3), so a moving property may transition only
  *    on a generated `--spring-*` curve (jelly-spring-tokens.test.ts holds those equal to the springs). An ease or a
@@ -429,7 +429,7 @@ describe('N13 — never fake a law', () => {
       .readdirSync(path.join(ROOT, 'app'))
       .filter((f) => /^jelly[\w-]*\.css$/.test(f))
       .map((f) => `app/${f}`),
-    'app/liquid-glass.css',
+    'app/glass-roles.css',
   ].sort();
   const css = (f: string) =>
     fs.readFileSync(path.join(ROOT, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');

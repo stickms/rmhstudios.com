@@ -1,12 +1,8 @@
 import type { Rect } from "./types";
 
-export function clamp(v: number, min: number, max: number): number {
-  return v < min ? min : v > max ? max : v;
-}
+import { clamp, lerp } from '@/lib/core/math';
 
-export function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
+export { clamp, lerp };
 
 // Move `value` toward `target` by at most `maxDelta`.
 export function approach(value: number, target: number, maxDelta: number): number {

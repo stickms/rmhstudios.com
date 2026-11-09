@@ -15,7 +15,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 
 type NavItem = {
   label: string;
@@ -73,12 +73,12 @@ export default function RmhLadderShell({
     return pathname.startsWith(to);
   }
 
-  // §16.2: the sub-nav is the shared LiquidTabs sheet in LINK MODE — route <Link>s
+  // §16.2: the sub-nav is the shared Tabs sheet in LINK MODE — route <Link>s
   // (some public/crawlable + prefetched) keep their semantics and `aria-current`,
-  // while LiquidTabs owns the sheet, the flowing capsule + morph and the visual
+  // while Tabs owns the sheet, the flowing capsule + morph and the visual
   // grammar every other strip uses (one renderer, one look). The shell is a layout
   // route (Outlet) so the capsule survives navigation and morphs between routes.
-  const tabs: LiquidTab[] = navItems.map(({ label, to, icon }) => ({
+  const tabs: TabItem[] = navItems.map(({ label, to, icon }) => ({
     id: to,
     label: t(`ladder.nav.${label.toLowerCase()}`, { defaultValue: label }),
     icon,
@@ -96,13 +96,13 @@ export default function RmhLadderShell({
         {/* §5.45: the sub-nav rides a standalone glass sheet (pill) below the page
             title; the sign-in CTA stays a sibling outside the sheet, pushed right. */}
         <div className="mb-4 flex items-center gap-2">
-          <LiquidTabs
+          <Tabs
             tabs={tabs}
             value={activeTo}
             scroll
             aria-label={t('ladder.navigation', { defaultValue: 'RMH Ladder navigation' })}
             renderTab={(tab, props) => (
-              // Bare <Link> wearing LiquidTabs' own tab class (props.className) so
+              // Bare <Link> wearing Tabs' own tab class (props.className) so
               // the route tab matches every other strip exactly; `min-h-11` keeps
               // the 44px touch target the ladder nav had. props.children is the
               // pre-composed icon + label at z-1 above the flowing capsule.

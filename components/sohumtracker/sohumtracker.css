@@ -593,7 +593,7 @@
 /* ── Segmented control ────────────────────────────────────────────────────
    Buttons in a `role="group"` with `aria-pressed`, NOT `role="tablist"`: these
    switch a rendered range rather than revealing pre-existing tab panels, and
-   the site's <LiquidTabs> carries `--site-*` chrome that would look imported
+   the site's <Tabs> carries `--site-*` chrome that would look imported
    on this palette. Same call, and the same shape, as `/pf2ecal`'s control. */
 
 .stk-segmented {

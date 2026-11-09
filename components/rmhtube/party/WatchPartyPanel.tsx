@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bookmark, Grid3x3, MessageSquareText, Mic, Swords, X } from 'lucide-react';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import PredictTab from './PredictTab';
 import BingoTab from './BingoTab';
 import LaterTab from './LaterTab';
@@ -28,7 +28,7 @@ export default function WatchPartyPanel({ id, onClose }: { id?: string; onClose:
       className="fixed right-3 top-16 z-50 flex max-h-[min(36rem,calc(100dvh-5rem))] w-[min(26rem,calc(100vw-1.5rem))] flex-col rounded-(--app-radius) app-glass"
     >
       <div className="flex items-center justify-between gap-2 border-b border-(--app-border) p-2">
-        <LiquidTabs
+        <Tabs
           tabs={tabs}
           value={tab}
           onChange={(id) => setTab(id as Tab)}

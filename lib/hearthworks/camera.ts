@@ -12,6 +12,7 @@
  */
 
 import { EASE } from '@/lib/motion';
+import { lerp } from '@/lib/core/math';
 
 export type Vec3 = readonly [number, number, number];
 export interface CameraPose {
@@ -98,8 +99,6 @@ export function thirdPose(avatar: { x: number; z: number; yaw: number; y?: numbe
     fov: THIRD_FOV,
   };
 }
-
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /**
  * A pose between `a` and `b` at `t` ∈ [0,1]. The target slides linearly; the camera's distance from

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { fetchJson } from '@/lib/http';
 
 type Filter = 'shown' | 'pending' | 'hidden';
@@ -41,7 +41,7 @@ export default function NotesPanel() {
   };
   return (
     <div className="space-y-4">
-      <LiquidTabs
+      <Tabs
         aria-label={t('notes-filter', { defaultValue: 'Note filter' })}
         value={filter}
         onChange={(id) => setFilter(id as Filter)}

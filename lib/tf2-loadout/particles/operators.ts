@@ -4,11 +4,12 @@
 import { Vector3 } from 'three';
 import { operatorStrength, type SimParticle, type SimSystem } from './simulation';
 import { number as n, vector, type Params, type ParticleOperator } from './types';
+import { lerp } from '@/lib/core/math';
 
 const TAU = Math.PI * 2,
   DEG = Math.PI / 180;
+// eslint-disable-next-line no-restricted-syntax -- clamp with default lo=0, hi=1
 const clamp = (v: number, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, v));
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const ramp = (v: number, a: number, b: number) => (a === b ? +(v >= b) : clamp((v - a) / (b - a)));
 const smooth = (v: number) => v * v * (3 - 2 * v);
 const bias = (v: number, b: number) => (b <= 0 ? 0 : b >= 1 ? 1 : v / ((1 / b - 2) * (1 - v) + 1));

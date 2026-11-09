@@ -1,0 +1,454 @@
+// ─── Site Feedback ──────────────────────────────────────────────────
+model Feedback {
+  id        String   @id @default(cuid())
+  category  String
+  message   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  /// B23 — client context captured at submit: route, viewport, theme, locale,
+  /// build sha and the last few client errors. A bug report without this is
+  /// expensive to action and users rarely attach it by hand.
+  context Json?
+  /// Storage key of a user-reviewed, user-redactable screenshot. Never
+  /// captured silently — the image is shown before upload, because a
+  /// screenshot tool that uploads without showing you is a privacy incident.
+  shotKey String? @db.VarChar(300)
+
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("feedback")
+}
+
+// ─── Moderation ───────────────────────────────────────────────────────────
+// User-facing reporting plus block/mute. Admins review reports via the queue.
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  HATE
+  VIOLENCE
+  SEXUAL
+  SELF_HARM
+  MISINFORMATION
+  ILLEGAL
+  OTHER
+}
+
+model ContentReport {
+  id           String       @id @default(cuid())
+  reporterId   String
+  reason       ReportReason
+  details      String?      @db.VarChar(1000)
+  // What is being reported. entityType is "rmhark" | "comment" | "user" | "build" | "dm".
+  entityType   String       @db.VarChar(32)
+  entityId     String       @db.VarChar(64)
+  // Convenience: the user who owns the reported content (for quick triage).
+  targetUserId String?
+
+  status        ReportStatus @default(PENDING)
+  resolvedById  String?
+  resolvedAt    DateTime?
+  moderatorNote String?      @db.VarChar(1000)
+
+  createdAt DateTime @default(now())
+
+  reporter   User  @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolvedBy User? @relation("ReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([entityType, entityId])
+  @@index([reporterId])
+  @@map("content_report")
+}
+
+model UserBlock {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("BlockBlocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("BlockBlocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+  @@map("user_block")
+}
+
+model UserMute {
+  id        String   @id @default(cuid())
+  muterId   String
+  mutedId   String
+  createdAt DateTime @default(now())
+
+  muter User @relation("MuteMuter", fields: [muterId], references: [id], onDelete: Cascade)
+  muted User @relation("MuteMuted", fields: [mutedId], references: [id], onDelete: Cascade)
+
+  @@unique([muterId, mutedId])
+  @@index([muterId])
+  @@map("user_mute")
+}
+
+/// A user-authored AI persona chatbot (#8). Its `systemPrompt` shapes replies;
+/// conversations are per (persona, user) and stored in AiPersonaMessage.
+model AiPersona {
+  id           String   @id @default(cuid())
+  ownerId      String
+  name         String   @db.VarChar(40)
+  tagline      String?  @db.VarChar(120)
+  systemPrompt String   @db.VarChar(2000)
+  greeting     String?  @db.VarChar(500)
+  emoji        String?  @db.VarChar(8)
+  // AI-generated avatar (xAI → webp in object storage). Null until the
+  // background generation kicked off on create succeeds; the UI falls back to
+  // the emoji until then.
+  avatarUrl    String?  @db.VarChar(500)
+  isPublic     Boolean  @default(true)
+  chatCount    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  owner    User               @relation("PersonaOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  messages AiPersonaMessage[]
+
+  @@index([ownerId])
+  @@index([isPublic, chatCount(sort: Desc)])
+  @@map("ai_persona")
+}
+
+model AiPersonaMessage {
+  id        String   @id @default(cuid())
+  personaId String
+  userId    String
+  role      String   @db.VarChar(12) // 'user' | 'assistant'
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  persona AiPersona @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([personaId, userId, createdAt])
+  @@map("ai_persona_message")
+}
+
+// ─── Emoji & sticker packs ──────────────────────────────────────────────────
+//
+// Creating a pack is a membership feature (`custom-emoji` / `sticker-packs` in
+// lib/entitlements/features.ts); SUBSCRIBING to and using one is free for
+// everyone. That asymmetry is the whole design: members supply the content, and
+// the content is what makes the site feel alive for the people who don't pay.
+//
+// Items are moderated before they render in anyone else's conversation — a
+// custom emoji is a user-supplied image drawn inline at small size in someone
+// else's thread, which is the classic vector for shipping a slur as a picture.
+
+model EmojiPack {
+  id              String   @id @default(cuid())
+  ownerId         String
+  /// Share-link identity. Immutable once published.
+  slug            String   @unique @db.VarChar(48)
+  name            String   @db.VarChar(60)
+  description     String?  @db.VarChar(300)
+  /// 'emoji' (inline, shortcode-addressable) | 'sticker' (large, standalone) | 'mixed'
+  kind            String   @default("emoji") @db.VarChar(8)
+  coverUrl        String?  @db.VarChar(500)
+  /// 'public' — listed and searchable | 'unlisted' — link only | 'private' — owner only
+  visibility      String   @default("public") @db.VarChar(8)
+  /// PENDING | APPROVED | REMOVED. Only APPROVED packs are usable by non-owners.
+  status          String   @default("PENDING") @db.VarChar(12)
+  itemCount       Int      @default(0)
+  subscriberCount Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner         User                    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  items         EmojiPackItem[]
+  subscriptions EmojiPackSubscription[]
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([status, visibility, subscriberCount(sort: Desc)])
+  @@map("emoji_pack")
+}
+
+model EmojiPackItem {
+  id         String   @id @default(cuid())
+  packId     String
+  /// Shortcode without colons. Unique within a pack; resolution across packs is
+  /// ordered by the subscriber's pack order, so a collision is a preference and
+  /// not an error.
+  name       String   @db.VarChar(32)
+  /// 'emoji' | 'sticker'
+  kind       String   @default("emoji") @db.VarChar(8)
+  url        String   @db.VarChar(500)
+  /// Mandatory. A custom emoji with no alt text is invisible to a screen reader
+  /// and to anyone whose images fail to load, so it is not optional at any tier.
+  alt        String   @db.VarChar(140)
+  /// Animated items are frozen to their first frame under prefers-reduced-motion.
+  animated   Boolean  @default(false)
+  position   Int      @default(0)
+  usageCount Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  pack EmojiPack @relation(fields: [packId], references: [id], onDelete: Cascade)
+
+  @@unique([packId, name])
+  @@index([packId, position])
+  @@map("emoji_pack_item")
+}
+
+model EmojiPackSubscription {
+  packId    String
+  userId    String
+  /// The subscriber's ordering, which decides shortcode precedence on collision.
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  pack EmojiPack @relation(fields: [packId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([packId, userId])
+  @@index([userId, position])
+  @@map("emoji_pack_subscription")
+}
+
+/// Public feature requests with voting (F22).
+///
+/// The `declined` and `shipped` statuses REQUIRE `officialNote` — enforced in
+/// `lib/requests/`, not by the database, because Prisma cannot express a
+/// conditional NOT NULL. A board where things quietly rot in `open` is worse
+/// than no board: it converts hope into resentment.
+model FeatureRequest {
+  id           String        @id @default(cuid())
+  authorId     String
+  title        String        @db.VarChar(120)
+  body         String        @db.Text
+  status       RequestStatus @default(OPEN)
+  officialNote String?       @db.Text
+  /// Duplicate handling — votes follow the merge target.
+  mergedIntoId String?
+  voteCount    Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  author     User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  mergedInto FeatureRequest?      @relation("RequestMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
+  duplicates FeatureRequest[]     @relation("RequestMerge")
+  votes      FeatureRequestVote[]
+
+  @@index([status, voteCount(sort: Desc)])
+  @@index([authorId, createdAt(sort: Desc)])
+  @@map("feature_request")
+}
+
+model FeatureRequestVote {
+  requestId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  request FeatureRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([requestId, userId])
+  @@map("feature_request_vote")
+}
+
+enum RequestStatus {
+  OPEN
+  PLANNED
+  IN_PROGRESS
+  SHIPPED
+  DECLINED
+}
+
+/// Z4: community one-liners. `runDate` (UTC YYYY-MM-DD) is claimed lazily, once per day.
+model FortuneCookie {
+  id         String    @id @default(cuid())
+  userId     String
+  text       String    @db.VarChar(140)
+  status     String    @default("pending") @db.VarChar(10) // pending | approved | rejected
+  runDate    String?   @unique @db.VarChar(10)
+  createdAt  DateTime  @default(now())
+  reviewedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+  @@map("fortune_cookie")
+}
+
+/// Z6: an image a member nominated for a UTC day. One per member per day.
+model PhotoNomination {
+  id        String   @id @default(cuid())
+  userId    String
+  dayKey    String   @db.VarChar(10)
+  imageUrl  String   @db.VarChar(500)
+  caption   String   @default("") @db.VarChar(140)
+  votes     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  casts PhotoVote[]
+
+  @@unique([userId, dayKey])
+  @@index([dayKey, votes(sort: Desc), createdAt])
+  @@map("photo_nomination")
+}
+
+model PhotoVote {
+  id           String   @id @default(cuid())
+  nominationId String
+  userId       String
+  dayKey       String   @db.VarChar(10)
+  createdAt    DateTime @default(now())
+
+  nomination PhotoNomination @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dayKey])
+  @@index([nominationId])
+  @@map("photo_vote")
+}
+
+/// Y4: a member's suggested translation of one English string. Accepted rows are
+/// exported by an admin as JSON; nothing writes to locales/ at runtime.
+model TranslationSuggestion {
+  id        String   @id @default(cuid())
+  userId    String
+  locale    String   @db.VarChar(8)
+  ns        String   @db.VarChar(64)
+  key       String   @db.VarChar(200)
+  text      String   @db.VarChar(1000)
+  votes     Int      @default(0)
+  status    String   @default("open") @db.VarChar(10) // open | accepted | rejected
+  createdAt DateTime @default(now())
+
+  user  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  casts TranslationVote[]
+
+  @@unique([userId, locale, ns, key])
+  @@index([locale, ns, key])
+  @@index([locale, status])
+  @@map("translation_suggestion")
+}
+
+model TranslationVote {
+  id           String   @id @default(cuid())
+  suggestionId String
+  userId       String
+  createdAt    DateTime @default(now())
+
+  suggestion TranslationSuggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([suggestionId, userId])
+  @@index([userId])
+  @@map("translation_vote")
+}
+
+model ContextNote {
+  id           String   @id @default(cuid())
+  postId       String
+  authorId     String
+  body         String   @db.VarChar(500)
+  helpfulCount Int      @default(0)
+  notCount     Int      @default(0)
+  // Set by the bridging evaluation; `hidden` is the admin override and always wins.
+  visible      Boolean  @default(false)
+  hidden       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  post    RMHark              @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  ratings ContextNoteRating[]
+
+  @@unique([postId, authorId])
+  @@index([postId, visible])
+  @@index([authorId])
+  @@index([createdAt(sort: Desc)])
+  @@map("context_note")
+}
+
+model ContextNoteRating {
+  id        String   @id @default(cuid())
+  noteId    String
+  raterId   String
+  helpful   Boolean
+  createdAt DateTime @default(now())
+
+  note  ContextNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  rater User        @relation(fields: [raterId], references: [id], onDelete: Cascade)
+
+  @@unique([noteId, raterId])
+  @@index([raterId, createdAt(sort: Desc)])
+  @@map("context_note_rating")
+}
+
+// ── P23 creative: F12 studio sample flip, F14 runnable code embeds ──
+model StudioChallenge {
+  id           String    @id @default(cuid())
+  title        String    @db.VarChar(120)
+  brief        String    @db.VarChar(1000)
+  sampleKey    String    @db.VarChar(200)
+  sampleName   String    @db.VarChar(120)
+  startsAt     DateTime
+  endsAt       DateTime
+  votingEndsAt DateTime
+  winnerId     String?
+  finalizedAt  DateTime?
+  createdById  String
+  createdAt    DateTime  @default(now())
+
+  entries StudioChallengeEntry[]
+  votes   StudioChallengeVote[]
+
+  @@index([startsAt(sort: Desc)])
+  @@map("studio_challenge")
+}
+
+model StudioChallengeEntry {
+  id          String   @id @default(cuid())
+  challengeId String
+  userId      String
+  title       String   @db.VarChar(120)
+  linkUrl     String?  @db.VarChar(500)
+  audioKey    String?  @db.VarChar(200)
+  voteCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  challenge StudioChallenge       @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes     StudioChallengeVote[]
+
+  @@unique([challengeId, userId])
+  @@index([challengeId, voteCount(sort: Desc)])
+  @@index([userId])
+  @@map("studio_challenge_entry")
+}
+
+// One vote per member per challenge: the composite key is the gate.
+model StudioChallengeVote {
+  challengeId String
+  voterId     String
+  entryId     String
+  createdAt   DateTime @default(now())
+
+  challenge StudioChallenge      @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  voter     User                 @relation(fields: [voterId], references: [id], onDelete: Cascade)
+  entry     StudioChallengeEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@id([challengeId, voterId])
+  @@index([entryId])
+  @@index([voterId])
+  @@map("studio_challenge_vote")
+}

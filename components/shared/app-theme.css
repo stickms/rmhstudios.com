@@ -565,7 +565,7 @@
    7. Material utilities
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* Translucent panel. No backdrop-filter, on purpose (see `app/liquid-glass.css`): the tier is dense enough to read on
+/* Translucent panel. No backdrop-filter, on purpose (see `app/glass-roles.css`): the tier is dense enough to read on
    its own (`--app-glass-bg` is ~85% opaque). */
 .app-glass {
   /* Jelly host knobs (app/jelly-material.css §1): the pane role, in the app palette. The palette knobs redirect
@@ -667,7 +667,7 @@
   }
 }
 /* Site roles in the app palette. `.glass-fill` / `-pane` / `-chrome` / `-overlay` / `-inset` and the `Switch`
-   primitive are written against the `--site-*` contract (app/liquid-glass.css, app/jelly-material.css,
+   primitive are written against the `--site-*` contract (app/glass-roles.css, app/jelly-material.css,
    app/jelly-coverage.css). An app route carries no site theme class, and `html.app-route` resolves the site glass
    tint to the opaque Daylight surface (app/globals.css), so a bare `.glass-fill` in an app painted a WHITE card under
    the app's ink, and a `Switch` took the site's accent. This points that contract at the app palette on the role host
@@ -851,13 +851,13 @@
   }
 }
 
-/* ── LiquidTabs inside the app tier ───────────────────────────────────────
+/* ── Tabs inside the app tier ───────────────────────────────────────
    The strip's paint is three custom properties (globals.css,
    `[data-slot='liquid-tabs']`) defaulting to `--site-*`, which the full-screen
    apps do not theme — so a difficulty or length switcher in RMHType / RMHStudy /
    RMHTube rendered a site-coloured thumb on an app ground. Re-point the same
    three properties (and the track) at the `--app-*` contract; specificity 0,2,0
-   beats the unlayered base rule. Label ink follows in `liquid-tabs.tsx` via an
+   beats the unlayered base rule. Label ink follows in `tabs.tsx` via an
    `--app-text` → `--site-text` fallback. */
 .app-theme [data-slot='liquid-tabs'] {
   --tab-thumb-bg: var(--app-surface-hover);

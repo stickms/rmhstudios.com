@@ -45,6 +45,7 @@ import { modsFromReplay } from '@/lib/slice-it/replay';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import type { SliceItReplay } from '@/lib/game/replay';
 import type { BeatMap, SliceSong } from '@/lib/slice-it/types';
+import { formatClockSeconds } from '@/lib/core/format';
 
 interface ReplayResponse {
   id: string;
@@ -371,7 +372,7 @@ export function ReplayViewer({ replayId, onClose }: ReplayViewerProps) {
             })}
           </p>
           <p className="text-slice-text-muted text-xs tabular-nums">
-            {formatTime(position)} / {formatTime(durationSeconds)}
+            {formatClockSeconds(position)} / {formatClockSeconds(durationSeconds)}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -459,10 +460,4 @@ export function ReplayViewer({ replayId, onClose }: ReplayViewerProps) {
       )}
     </div>
   );
-}
-
-/** `m:ss`, which is how a track position is read. */
-function formatTime(seconds: number): string {
-  const total = Math.max(0, Math.floor(seconds));
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }

@@ -1,0 +1,954 @@
+// ─── RMHark (Feed) Models ─────────────────────────────────────────
+
+model RMHark {
+  id        String   @id @default(cuid())
+  userId    String
+  content   String   @db.Text
+  gifUrl    String?  @db.Text
+  imageUrls String[] @default([])
+  // Per-image alt text (accessibility), aligned by index with imageUrls.
+  // May be shorter than imageUrls; a missing/empty entry means "no description".
+  imageAlts String[] @default([])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ─── Denormalized engagement counters (Phase 1: eventual consistency) ──
+  // Maintained transactionally by the like/comment/repost/view routes via
+  // atomic increment/decrement, so the feed read path never needs `_count`
+  // aggregation. Drift is reconciled by scripts/reconcile-feed-counts.ts.
+  likeCount    Int @default(0)
+  commentCount Int @default(0)
+  repostCount  Int @default(0)
+  viewCount    Int @default(0)
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes     RMHarkLike[]
+  comments  RMHarkComment[]
+  reposts   RMHarkRepost[]
+  views     RMHarkView[]
+  media     Media[]
+  poll      RMHarkPoll?
+  bookmarks RMHarkBookmark[]
+
+  // Paid unlock: coins required to view content (null/0 = free)
+  unlockPrice Int?
+  unlocks     PostUnlock[]
+
+  // Optional community this post belongs to
+  communityId String?
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: SetNull)
+
+  // Self-relation for reposts (quote-repost displays the original inline)
+  originalId String?
+  original   RMHark?  @relation("RMHarkReposts", fields: [originalId], references: [id], onDelete: SetNull)
+  repostedBy RMHark[] @relation("RMHarkReposts")
+
+  deletedAt      DateTime?
+  /// 'author' | 'moderator' | 'system'. Only 'author' is restorable from the
+  /// recycle bin — moderation must not be undone by the person moderated.
+  deletedBy      String?   @db.VarChar(12)
+  deletedByAdmin Boolean   @default(false)
+
+  // Audience: who can see this post.
+  audience RMHarkAudience @default(PUBLIC)
+
+  // Content warning: media/text hidden behind a click-to-reveal overlay.
+  isSensitive Boolean @default(false)
+
+  // Who is allowed to reply to this post (anti-harassment control).
+  replyControl RMHarkReplyControl @default(EVERYONE)
+
+  // Author-pinned to the top of their profile (one per user, enforced in code).
+  pinnedAt DateTime?
+
+  // Edit history: editedAt set on first edit; prior versions stored separately.
+  editedAt DateTime?
+  edits    RMHarkEdit[]
+
+  reactions RMHarkReaction[]
+
+  // Normalized hashtags extracted at write time (replaces scanning content with
+  // ILIKE '%#tag%'). Trending / tag feeds read these indexed rows instead.
+  hashtags PostHashtag[]
+
+  // Authored threads (chain-your-own-posts). Follow-up segments carry the root
+  // post's id in `threadRootId` (null on the root and on standalone posts) so
+  // the feed can show only the root; the root carries `threadReplyCount` (number
+  // of follow-ups) to render a "show this thread" affordance.
+  threadRootId         String?
+  /// F1 — 'standard' | 'megathread' | 'ama'. Changes how the comment tree
+  /// renders and sorts, not what a post IS, so it is a column rather than a
+  /// separate model. Defaults keep every existing row a standard post.
+  kind                 String               @default("standard") @db.VarChar(16)
+  threadReplyCount     Int                  @default(0)
+  postAnalyticsDailies PostAnalyticsDaily[]
+
+  // P01 feed-plus X6: take meter. A post marked `isTake` collects one
+  // agree/disagree vote per member; the denormalized tallies are only ever
+  // exposed to voters and the author (see lib/feed/take.server.ts).
+  isTake                  Boolean                  @default(false)
+  takeAgreeCount          Int                      @default(0)
+  takeDisagreeCount       Int                      @default(0)
+  takeVotes               RMHarkTakeVote[]
+  // P06 communities-plus: N1 flair, N2 starboard, N5 challenge entry
+  communityFlair          CommunityPostFlair?
+  communityStar           CommunityStarPost?
+  communityChallengeEntry CommunityChallengeEntry?
+
+  // P02 posts-plus. `expiresAt` (X8 TTL) and `seriesId` (X5) are read-time hints so
+  // the feed never needs a second query; the tables behind them (post_lifecycle,
+  // post_series_item) are the source of truth and carry the indexes.
+  expiresAt    DateTime?
+  seriesId     String?
+  lifecycle    PostLifecycle?
+  seriesItem   PostSeriesItem?
+  qotdAnswer   QotdAnswer?
+  // P19 X3: true while at least one context note on this post is visible (feed reads this boolean only)
+  hasNote      Boolean         @default(false)
+  contextNotes ContextNote[]
+  // P23 F14: true when the post carries a runnable code snippet (feed reads this boolean only)
+  hasEmbed     Boolean         @default(false)
+  codeEmbed    PostCodeEmbed?
+
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  // Composite index backing keyset pagination on (createdAt desc, id desc)
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  // Per-author keyset scan for the Following feed (userId IN (...) ORDER BY
+  // createdAt desc, id desc). Also backs a partial index added in the migration
+  // (rmheet_feed_scan_idx) for the For-You WHERE deleted/community/thread filters.
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([userId, pinnedAt])
+  @@index([threadRootId])
+  // Community feed keyset scan (communityId + ORDER BY createdAt desc, id desc).
+  @@index([communityId, createdAt(sort: Desc), id(sort: Desc)])
+  // Quote-repost lookups ("who quoted this post") and original hydration.
+  @@index([originalId])
+  @@map("rmheet")
+}
+
+model RMHarkReaction {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String
+  emoji     String   @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rmheetId, userId, emoji])
+  @@index([rmheetId])
+  @@map("rmheet_reaction")
+}
+
+model RMHarkLike {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rmheetId, userId])
+  // The interest-profile builder samples a viewer's most recent likes
+  // (where userId, order by createdAt desc, take 80) — this backs that scan.
+  @@index([userId, createdAt(sort: Desc)])
+  // Per-post "recent likers" scans (where rmheetId, order by createdAt desc).
+  @@index([rmheetId, createdAt(sort: Desc)])
+  @@map("rmheet_like")
+}
+
+model RMHarkComment {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Denormalized engagement counters (maintained atomically by the comment
+  // like/reply routes) so the comment list never runs per-comment _count.
+  likeCount  Int @default(0)
+  replyCount Int @default(0)
+
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Optional threaded replies
+  parentId String?
+  parent   RMHarkComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies  RMHarkComment[] @relation("CommentReplies")
+
+  // Engagement
+  likes   RMHarkCommentLike[]
+  reposts RMHarkCommentRepost[]
+  views   RMHarkCommentView[]
+
+  deletedAt      DateTime?
+  /// 'author' | 'moderator' | 'system'. Only 'author' is restorable from the
+  /// recycle bin — moderation must not be undone by the person moderated.
+  deletedBy      String?   @db.VarChar(12)
+  deletedByAdmin Boolean   @default(false)
+
+  reactions RMHarkCommentReaction[]
+
+  /// P01 feed-plus X2: set when the ROOT post's author hides this reply. The
+  /// reply stays readable under a "Hidden replies" disclosure; null = visible.
+  hiddenAt DateTime?
+
+  @@index([rmheetId, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([parentId])
+  @@map("rmheet_comment")
+}
+
+model RMHarkCommentReaction {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  emoji     String   @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  comment RMHarkComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId, emoji])
+  @@index([commentId])
+  @@map("rmheet_comment_reaction")
+}
+
+model RMHarkCommentLike {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  comment RMHarkComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@map("rmheet_comment_like")
+}
+
+model RMHarkCommentRepost {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  comment RMHarkComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@map("rmheet_comment_repost")
+}
+
+model RMHarkCommentView {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String?
+  ipHash    String?
+  createdAt DateTime @default(now())
+
+  comment RMHarkComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@unique([commentId, ipHash])
+  @@index([commentId])
+  @@map("rmheet_comment_view")
+}
+
+model RMHarkRepost {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rmheetId, userId])
+  @@index([userId])
+  // Composite index backing keyset pagination on (createdAt desc, id desc)
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  // Per-author keyset scan for the Following feed's repost branch.
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)])
+  @@map("rmheet_repost")
+}
+
+/// DEAD (rewrite R0-T7): no writers; views live in Redis (hot-counters) + viewCount. Drop scheduled R1-T3.
+model RMHarkView {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String?
+  ipHash    String?
+  createdAt DateTime @default(now())
+
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rmheetId, userId])
+  @@unique([rmheetId, ipHash])
+  @@index([rmheetId])
+  @@map("rmheet_view")
+}
+
+model RMHarkPoll {
+  id          String    @id @default(cuid())
+  rmheetId    String    @unique
+  question    String    @db.VarChar(200)
+  multiSelect Boolean   @default(false)
+  closesAt    DateTime? // optional scheduled close; null = never closes
+  createdAt   DateTime  @default(now())
+
+  rmhark  RMHark             @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  options RMHarkPollOption[]
+
+  @@map("rmheet_poll")
+}
+
+model RMHarkPollOption {
+  id       String @id @default(cuid())
+  pollId   String
+  text     String @db.VarChar(80)
+  position Int
+
+  // Denormalized tally, maintained atomically by the vote route so feed reads
+  // never aggregate _count over rmheet_poll_vote per option per render.
+  voteCount Int @default(0)
+
+  poll  RMHarkPoll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes RMHarkPollVote[]
+
+  @@index([pollId])
+  @@map("rmheet_poll_option")
+}
+
+model RMHarkPollVote {
+  id        String   @id @default(cuid())
+  optionId  String
+  userId    String
+  /// 1 = first preference. Null on single-choice polls, which keeps every
+  /// existing row valid and lets both methods share one table.
+  rank      Int?
+  createdAt DateTime @default(now())
+
+  option RMHarkPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([optionId, userId])
+  @@index([optionId])
+  @@index([userId, rank])
+  @@map("rmheet_poll_vote")
+}
+
+// ─── Follow Relation ─────────────────────────────────────────────
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  // Keyset pagination of a user's followers / following ordered by recency
+  // (celebrity accounts have millions of followers — single-column index +
+  // sort is not enough).
+  @@index([followingId, createdAt(sort: Desc)])
+  @@index([followerId, createdAt(sort: Desc)])
+  @@map("follow")
+}
+
+/// Normalized hashtag registry. Tags are extracted from post content at write
+/// time (see lib/tags-extract.server.ts) into these tables so trending and tag
+/// feeds are indexed lookups instead of ILIKE '%#tag%' scans of rmheet.content.
+model Hashtag {
+  id        String   @id @default(cuid())
+  tag       String   @unique // normalized: lowercased, no leading '#'
+  postCount Int      @default(0) // denormalized count of linked, non-deleted posts
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts PostHashtag[]
+
+  // Trending: order tags by popularity.
+  @@index([postCount(sort: Desc)])
+  @@map("hashtag")
+}
+
+/// Join row linking a post to a hashtag it contains.
+model PostHashtag {
+  id        String   @id @default(cuid())
+  hashtagId String
+  rmheetId  String
+  createdAt DateTime @default(now())
+
+  hashtag Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+  rmhark  RMHark  @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+
+  @@unique([hashtagId, rmheetId])
+  // Keyset scan of a tag's recent posts (createdAt mirrors the post's createdAt;
+  // rmheetId is the ORDER BY tie-break). WS8.
+  @@index([hashtagId, createdAt(sort: Desc), rmheetId(sort: Desc)])
+  @@index([rmheetId])
+  @@map("post_hashtag")
+}
+
+// ─── Bookmarks ────────────────────────────────────────────────────────────
+/// DEPRECATED — folded into `SavedItem` (entityType 'rmhark') by migration
+/// 20260803210000. Nothing reads or writes this table; the rows are kept for one
+/// deploy so the change is reversible without a restore, then the table and this
+/// model should be dropped. Do not add callers.
+model RMHarkBookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  rmheetId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, rmheetId])
+  @@index([userId, createdAt(sort: Desc)])
+  // Reverse lookup: a post's bookmark rows (bookmark toggle / count by post).
+  @@index([rmheetId])
+  @@map("rmheet_bookmark")
+}
+
+// ─── Admin Feed Announcements ─────────────────────────────────────────────
+// Pinned banners admins publish from the admin panel; rendered at the top of
+// the home feed for everyone until deactivated or expired.
+
+model FeedAnnouncement {
+  id          String    @id @default(cuid())
+  title       String    @db.VarChar(120)
+  body        String    @db.VarChar(1000)
+  linkUrl     String?   @db.VarChar(500)
+  linkLabel   String?   @db.VarChar(60)
+  variant     String    @default("info") @db.VarChar(16) // info | success | warning | event
+  active      Boolean   @default(true)
+  pinned      Boolean   @default(true)
+  createdById String
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Rich attachments (mirrors RMHark): uploaded images, an embedded GIF/image
+  // URL, and an optional poll. Mentions/hashtags live inline in `body`.
+  imageUrls String[] @default([])
+  gifUrl    String?  @db.Text
+
+  createdBy User                  @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  poll      FeedAnnouncementPoll?
+
+  @@index([active, createdAt(sort: Desc)])
+  @@map("feed_announcement")
+}
+
+/// DEAD (rewrite R0-T7): orphaned parent, zero code references. Drop scheduled R1-T3 (with option/vote children).
+model FeedAnnouncementPoll {
+  id             String    @id @default(cuid())
+  announcementId String    @unique
+  question       String    @db.VarChar(200)
+  multiSelect    Boolean   @default(false)
+  closesAt       DateTime? // optional scheduled close; null = never closes
+  createdAt      DateTime  @default(now())
+
+  announcement FeedAnnouncement             @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  options      FeedAnnouncementPollOption[]
+
+  @@map("feed_announcement_poll")
+}
+
+model FeedAnnouncementPollOption {
+  id       String @id @default(cuid())
+  pollId   String
+  text     String @db.VarChar(80)
+  position Int
+
+  poll  FeedAnnouncementPoll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes FeedAnnouncementPollVote[]
+
+  @@index([pollId])
+  @@map("feed_announcement_poll_option")
+}
+
+model FeedAnnouncementPollVote {
+  id        String   @id @default(cuid())
+  optionId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  option FeedAnnouncementPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user   User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([optionId, userId])
+  @@index([optionId])
+  @@map("feed_announcement_poll_vote")
+}
+
+// ─── RMHark Edit History ──────────────────────────────────────────────────
+// One row per prior version, captured the moment before an edit is applied.
+model RMHarkEdit {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+
+  @@index([rmheetId, createdAt(sort: Desc)])
+  @@map("rmheet_edit")
+}
+
+enum RMHarkAudience {
+  PUBLIC // anyone
+  FOLLOWERS // the author's followers only
+  PRIVATE // only the author
+  SUPPORTERS // active members of the author (any creator tier)
+  CIRCLE // the author's close-friends circle (§11)
+}
+
+enum RMHarkReplyControl {
+  EVERYONE // anyone can reply (default)
+  FOLLOWING // only accounts the author follows
+  MENTIONED // only accounts @mentioned in the post (plus the author)
+}
+
+// ─── Paid post unlocks ────────────────────────────────────────────────────
+model PostUnlock {
+  id        String   @id @default(cuid())
+  userId    String
+  rmheetId  String
+  pricePaid Int
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, rmheetId])
+  @@index([rmheetId])
+  @@map("post_unlock")
+}
+
+/// A saved draft (scheduledAt = null) or a scheduled post (scheduledAt set).
+/// Scheduled posts are materialized into real RMHarks lazily by the publisher
+/// once their time is due. `publishedId` links to the created post afterwards.
+model ScheduledPost {
+  id           String             @id @default(cuid())
+  userId       String
+  content      String             @db.Text
+  gifUrl       String?            @db.Text
+  imageUrls    String[]           @default([])
+  // Per-image alt text (accessibility), aligned by index with imageUrls.
+  imageAlts    String[]           @default([])
+  audience     RMHarkAudience     @default(PUBLIC)
+  isSensitive  Boolean            @default(false)
+  replyControl RMHarkReplyControl @default(EVERYONE)
+  unlockPrice  Int?
+  communityId  String?
+  poll         Json? // { question, options[], multiSelect, durationHours }
+  scheduledAt  DateTime? // null = plain draft
+  publishedId  String? // set once published → the created RMHark id
+  isCapsule    Boolean            @default(false) // Z7: sealed until scheduledAt, can't be edited or published early
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([scheduledAt])
+  @@map("scheduled_post")
+}
+
+// ─── Shareable stat cards (§13) ────────────────────────────────────────────
+// Created only when a user chooses to share a moment (nothing public by
+// default). Deleting the row kills the landing page and 404s the OG route.
+model SharedMoment {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   @db.VarChar(24) // 'achievement'|'rank'|'streak'|'pass_tier'|'arcade'|'wrapped_stat'|'market'
+  payload   Json // snapshot at share time: { title, value, subtitle, ... }
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("shared_moment")
+}
+
+// Feed controls (§17): reader tuning signals. 'mute_tag' filters a hashtag out;
+// 'less_author' demotes an author (applied in ranking — recorded here);
+// 'follow_tag' boosts a topic. Every signal is inspectable + reversible in
+// settings (the transparency half).
+model FeedSignal {
+  userId    String
+  kind      String   @db.VarChar(16) // 'less_author' | 'mute_tag' | 'follow_tag'
+  targetId  String   @db.VarChar(64) // authorId | tag (lowercase, no '#')
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, kind, targetId])
+  @@index([userId, kind])
+  @@map("feed_signal")
+}
+
+/// The unified activity stream (C7).
+///
+/// History, recents, saves and bookmarks each answered "things this user
+/// touched" with a different storage strategy. This is the append-only source
+/// the resume rail (B2), cross-app quest chains (F19) and the "now" profile
+/// block (F8) all project from. Writes are buffered — a view event per scroll
+/// against a synchronous insert would be catastrophic.
+model Activity {
+  id       BigInt       @id @default(autoincrement())
+  userId   String
+  verb     ActivityVerb
+  /// 'post' | 'game' | 'doc' | 'video' | 'deck' | 'build' | …
+  kind     String       @db.VarChar(24)
+  entityId String
+  meta     Json         @default("{}")
+  at       DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, at(sort: Desc)])
+  @@index([userId, verb, at(sort: Desc)])
+  @@index([kind, entityId, at(sort: Desc)])
+  @@map("activity")
+}
+
+enum ActivityVerb {
+  VIEWED
+  PLAYED
+  SAVED
+  COMPLETED
+  RATED
+  SHARED
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// The Next 100 — batch 2 (F4, F5, F6, F8, F9, F10, F17, F19, F20, F21, E13)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Creator-authored long-form with per-tier gating (F4).
+///
+/// `BlogPost` is admin-authored; `CreatorMembership`/`CreatorTier` already let
+/// creators charge. The missing piece was anything long enough to be worth the
+/// money. The paywall is enforced in the loader — the gated body is NEVER sent
+/// to the client and hidden with CSS, which is the mistake this shape exists to
+/// make impossible.
+model CreatorPost {
+  id           String    @id @default(cuid())
+  authorId     String
+  title        String    @db.VarChar(160)
+  slug         String    @db.VarChar(160)
+  bodyMarkdown String    @db.Text
+  /// Null = public. Otherwise the minimum CreatorTier required to read it.
+  minTierId    String?
+  /// The free preview above the paywall — the actual conversion lever, and
+  /// what makes the page indexable without cloaking.
+  teaser       String?   @db.Text
+  coverKey     String?   @db.VarChar(300)
+  publishedAt  DateTime?
+  emailedAt    DateTime?
+  viewCount    Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  author  User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  minTier CreatorTier? @relation(fields: [minTierId], references: [id], onDelete: SetNull)
+
+  @@unique([authorId, slug])
+  @@index([authorId, publishedAt(sort: Desc)])
+  @@index([publishedAt(sort: Desc)])
+  @@map("creator_post")
+}
+
+/// Nightly per-post analytics rollup (F5).
+///
+/// Totals tell a creator what happened and never why. These are the three
+/// views that change behaviour — where readers leave, where they came from,
+/// and whether the post won or lost followers. Rolled up nightly rather than
+/// computed per request: it is an aggregate over RMHarkView.
+model PostAnalyticsDaily {
+  id             BigInt   @id @default(autoincrement())
+  postId         String
+  day            DateTime @db.Date
+  views          Int      @default(0)
+  uniques        Int      @default(0)
+  /// Share of viewers still present at each 10% depth — where people leave.
+  retention      Json     @default("[]")
+  /// { feed, profile, search, external, notification, share } → count
+  sources        Json     @default("{}")
+  followsGained  Int      @default(0)
+  followsLost    Int      @default(0)
+  /// Median seconds on post, split first-time vs returning.
+  dwellFirst     Int      @default(0)
+  dwellReturning Int      @default(0)
+
+  post RMHark @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, day])
+  @@index([day])
+  @@map("post_analytics_daily")
+}
+
+/// Lineage for derived works (F10).
+///
+/// Builds, themes, playlists and worlds are all forkable in principle and none
+/// recorded a parent, so a derivative credited nothing and the original author
+/// saw no benefit from being built on. One edge table serves every kind, and
+/// gives `lib/commerce` a chain to route a revenue share up.
+model RemixEdge {
+  id        BigInt   @id @default(autoincrement())
+  /// 'build' | 'theme' | 'playlist' | 'world' | 'level'
+  kind      String   @db.VarChar(16)
+  sourceId  String
+  derivedId String
+  authorId  String
+  createdAt DateTime @default(now())
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  /// A work has exactly one parent — that is what makes the ancestry walk
+  /// terminate and the revenue share computable.
+  @@unique([kind, derivedId])
+  @@index([kind, sourceId])
+  @@map("remix_edge")
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Feature ideas 2026-10-12 — docs/plans/2026-10-12-feature-ideas-every-surface.md
+// Each feature package appends its models below under its own header comment.
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ── P01 feed-a: X6 ──
+// One agree/disagree vote per member per take. The tallies live on `rmheet`
+// (takeAgreeCount / takeDisagreeCount); this table is what makes a vote
+// once-only and lets a viewer's own vote be read back.
+model RMHarkTakeVote {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String
+  agree     Boolean
+  createdAt DateTime @default(now())
+
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rmheetId, userId])
+  @@index([userId])
+  @@map("rmheet_take_vote")
+}
+
+/// X5 — a named, ordered series of one author's own public posts.
+model PostSeries {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String   @db.VarChar(80)
+  description String?  @db.VarChar(280)
+  postCount   Int      @default(0)
+  followCount Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     PostSeriesItem[]
+  followers PostSeriesFollow[]
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("post_series")
+}
+
+/// X5 — membership + order. One row per post (a post is in at most one series).
+model PostSeriesItem {
+  postId   String   @id
+  seriesId String
+  position Int
+  addedAt  DateTime @default(now())
+
+  post   RMHark     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  series PostSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@index([seriesId, position])
+  @@map("post_series_item")
+}
+
+/// X5 — "follow series": notified when a new part is added.
+model PostSeriesFollow {
+  seriesId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  series PostSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([seriesId, userId])
+  @@index([userId])
+  @@index([seriesId, createdAt])
+  @@map("post_series_follow")
+}
+
+/// X8 — per-post lifecycle. `expiresAt` is the TTL the sweep job reads (indexed here
+/// rather than on the hot rmheet table); `keepForever` is set when the author
+/// restores the post from the recycle bin so neither the TTL nor the auto-delete
+/// job takes it again. `userId` is denormalised for the job and has no FK of its
+/// own: the row cascades with the post, which cascades with the author.
+model PostLifecycle {
+  postId      String    @id
+  userId      String
+  expiresAt   DateTime?
+  keepForever Boolean   @default(false)
+
+  post RMHark @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("post_lifecycle")
+}
+
+/// X8 — "auto-delete my posts older than N months" (3 / 6 / 12 / 24). One row per
+/// opted-in account; the daily job works through rows oldest-`lastRunAt` first.
+model PostAutoDelete {
+  userId    String    @id
+  months    Int
+  lastRunAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lastRunAt])
+  @@map("post_auto_delete")
+}
+
+// ── P03 discovery: A3 daily digest, A4 custom feeds, A5 memories, A6 keyword alerts, A7 watch ──
+
+/// A3 — the generated "Today on RMH" front page: one row per UTC day, built by a daily job.
+model DailyDigestSnapshot {
+  day       String   @id @db.VarChar(10)
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@map("daily_digest_snapshot")
+}
+
+/// A4 — a member-defined feed: tags + people + keywords. Public ones can be subscribed to.
+model CustomFeed {
+  id              String   @id @default(cuid())
+  ownerId         String
+  name            String   @db.VarChar(60)
+  description     String?  @db.VarChar(200)
+  tags            String[]
+  authorIds       String[]
+  keywords        String[]
+  isPublic        Boolean  @default(false)
+  subscriberCount Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner         User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  subscriptions CustomFeedSubscription[]
+
+  @@index([ownerId])
+  @@index([isPublic, subscriberCount(sort: Desc)])
+  @@map("custom_feed")
+}
+
+model CustomFeedSubscription {
+  feedId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  feed CustomFeed @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([feedId, userId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("custom_feed_subscription")
+}
+
+/// A5 — a row means the member opted in to "On this day" notifications.
+model MemoriesOptIn {
+  userId    String   @id
+  /// UTC day (YYYY-MM-DD) last notified, so the daily job is idempotent.
+  lastDay   String?  @db.VarChar(10)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("memories_opt_in")
+}
+
+/// A6 — a keyword alert. `anchor` is one required word, indexed, so the fan-out job
+/// finds candidate alerts for a post with one IN query instead of scanning every alert.
+model KeywordAlert {
+  id        String   @id @default(cuid())
+  userId    String
+  query     String   @db.VarChar(80)
+  anchor    String   @db.VarChar(64)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, query])
+  @@index([anchor])
+  @@map("keyword_alert")
+}
+
+/// A6 — dedupe ledger: at most one alert notification per (member, post).
+model KeywordAlertHit {
+  userId    String
+  rmheetId  String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, rmheetId])
+  @@index([createdAt])
+  @@map("keyword_alert_hit")
+}
+
+/// A7 — watch anything. kind: community | build | market. level: all | important.
+/// "Nothing" is the absence of a row.
+model Watch {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   @db.VarChar(16)
+  targetId  String   @db.VarChar(200)
+  level     String   @db.VarChar(12)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind, targetId])
+  @@index([kind, targetId])
+  @@map("watch")
+}
+
+// A member's own watch list for the generalized marathon planner. shareId is
+// the unguessable capability in the public read-only link.
+model MarathonList {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @db.VarChar(120)
+  items     Json
+  deadline  String   @db.VarChar(10)
+  shareId   String   @unique @db.VarChar(24)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@map("marathon_list")
+}

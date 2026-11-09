@@ -113,7 +113,7 @@ export function ThemeMiniShell({
             </p>
           </div>
 
-          {/* Static LiquidTabs-like pill strip */}
+          {/* Static Tabs-like pill strip */}
           <div className="glass-fill flex w-fit items-center gap-0.5 rounded-full p-0.5">
             {['One', 'Two', 'Three'].map((label, i) => (
               <span

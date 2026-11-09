@@ -30,7 +30,7 @@ import {
 } from '@/lib/appearance/prefs';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import { TiltEffectsRow } from '@/components/settings/TiltEffectsRow';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { JellyGroup } from '@/components/ui/jelly-group';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 
@@ -126,7 +126,7 @@ export function AppearancePanel() {
         title={t('text-size', { defaultValue: 'Text size' })}
         description={t('text-size-desc', { defaultValue: 'Scale the whole interface.' })}
       >
-        <LiquidTabs
+        <Tabs
           aria-label={t('text-size', { defaultValue: 'Text size' })}
           tabs={FONT_SCALES.map((scale) => ({ id: String(scale), label: FONT_LABELS[scale] }))}
           value={String(activeFontScale)}
@@ -139,7 +139,7 @@ export function AppearancePanel() {
         title={t('density', { defaultValue: 'Density' })}
         description={t('density-desc', { defaultValue: 'Compact tightens spacing.' })}
       >
-        <LiquidTabs
+        <Tabs
           aria-label={t('density', { defaultValue: 'Density' })}
           tabs={(['cozy', 'compact'] as const).map((d) => ({
             id: d,
@@ -273,7 +273,7 @@ export function AppearancePanel() {
             'How much the jelly surfaces move on their own. Still pauses all ambient motion and turns electric arcs off.',
         })}
       >
-        <LiquidTabs
+        <Tabs
           aria-label={t('jelly-motion', { defaultValue: 'Jelly motion' })}
           tabs={JELLY_MOTION_LEVELS.map((id) => ({ id, label: jellyMotionLabels[id] }))}
           value={store.jellyMotion}
@@ -300,7 +300,7 @@ export function AppearancePanel() {
             'Small sparks between surfaces and where you click. Turn them off if flicker bothers you.',
         })}
       >
-        <LiquidTabs
+        <Tabs
           aria-label={t('electric-arcs', { defaultValue: 'Electric arcs' })}
           tabs={ELECTRIC_ARC_MODES.map((id) => ({ id, label: electricArcLabels[id] }))}
           value={store.electricArcs}

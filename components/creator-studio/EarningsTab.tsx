@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Coins, Gift, Package, Banknote } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -149,7 +149,7 @@ export function EarningsTab() {
       <Card className="p-4 space-y-4" pane>
         <h3 className="site-section-label">{t('redeem', { defaultValue: 'Redeem coins' })}</h3>
 
-        <LiquidTabs
+        <Tabs
           tabs={[
             {
               id: 'SUB_CREDIT',

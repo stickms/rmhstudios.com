@@ -8,6 +8,7 @@
 import { Howl, Howler } from 'howler';
 import { useAltairSettingsStore } from '../stores/settings-store';
 import { asset } from '@/lib/storage/asset';
+import { clamp01 } from '@/lib/core/math';
 
 export type AltairSfxEvent =
   | 'ui_click'
@@ -210,10 +211,6 @@ const lastPlayedAt: Partial<Record<AltairSfxEvent, number>> = {};
 const lastVariant: Partial<Record<AltairSfxEvent, number>> = {};
 let lastResumeAttempt = 0;
 let sfxEnabled = false;
-
-function clamp01(v: number): number {
-  return Math.max(0, Math.min(1, v));
-}
 
 function tryResumeAudioContext(): void {
   const now = Date.now();

@@ -13,7 +13,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         // Flat at rest, like the globe menu's buttons: just the label on the ground (`data-jelly-rest="flat"`; the
-        // degraded tiers give it an opaque slab, app/liquid-glass.css).
+        // degraded tiers give it an opaque slab, app/glass-roles.css).
         default: 'font-semibold text-site-accent hover:text-site-accent-hover',
         destructive: 'bg-site-danger text-site-danger-fg hover:opacity-85',
         danger: 'bg-site-danger text-site-danger-fg hover:opacity-85',

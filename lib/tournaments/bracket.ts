@@ -154,7 +154,7 @@ export interface PersistableMatch {
  * The persistence path used to discover these ids the slow way: insert each
  * match one at a time to learn its generated id, then walk the bracket a second
  * time issuing an UPDATE per match to wire the links. Since `nextMatchId` is a
- * plain string column (not a Prisma relation — see schema.prisma), the ids can
+ * plain string column (not a Prisma relation — see prisma/schema/), the ids can
  * simply be minted up front, which collapses both passes into a single bulk
  * insert. Kept here, pure and id-generator-agnostic, so it stays unit-testable
  * and this module keeps its no-I/O contract.

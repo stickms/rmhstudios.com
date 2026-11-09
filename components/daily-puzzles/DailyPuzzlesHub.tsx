@@ -48,7 +48,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useQuitGame } from '@/hooks/useQuitGame';
 import { useCelebration } from '@/hooks/useCelebration';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PuzzlePage } from '@/components/daily-puzzles/PuzzleShell';
@@ -413,9 +413,9 @@ export function DailyPuzzlesHub() {
 
         {/* ── Filters + share ─────────────────────────────────────────────── */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Filter tabs → shared LiquidTabs (§5.4): the single flowing-capsule
+          {/* Filter tabs → shared Tabs (§5.4): the single flowing-capsule
               implementation replaces this hub's hand-rolled layoutId pill. */}
-          <LiquidTabs
+          <Tabs
             tabs={filters}
             value={filter}
             onChange={(id) => setFilter(id as Filter)}

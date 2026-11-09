@@ -86,8 +86,12 @@ const ROUTES: RouteFile[] = collectRoutes(API_DIR)
   .filter((r) => r.src.includes('server:') && r.src.includes('handlers'))
   .sort((a, b) => a.file.localeCompare(b.file));
 
+// `implement` (lib/api/implement.server.ts) is `defineHandler` bound to a typed
+// contract (redesign audit C1); it runs the same preamble.
 const hasWrapper = (src: string): boolean =>
-  src.includes('defineHandler') || src.includes('withDeveloperApi');
+  src.includes('defineHandler') ||
+  src.includes('withDeveloperApi') ||
+  src.includes("from '@/lib/api/implement.server'");
 
 const callsGetSession = (src: string): boolean => /auth\.api\.getSession/.test(src);
 

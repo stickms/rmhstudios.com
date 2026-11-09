@@ -14,6 +14,7 @@
  * is a pin down when a person would call it down — are answerable in a test.
  */
 import { bowlBallRadius } from './bowling';
+import { clamp } from '@/lib/core/math';
 
 /** Foul line to the head pin's spot. Sixty feet. */
 export const LANE_LENGTH = 18.288;
@@ -182,8 +183,4 @@ export function countStanding(
   let up = 0;
   for (const pin of pins) if (pinStanding(pin.rotation, pin.translation)) up++;
   return up;
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
 }

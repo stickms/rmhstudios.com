@@ -19,7 +19,7 @@
  *
  * The segmented control's selection pill is a translated sibling driven by a
  * CSS custom property, NOT a framer-motion `layoutId` — that belongs to
- * `LiquidTabs` and re-rolling it is CI-enforced (design-language.md §13 rule 3).
+ * `Tabs` and re-rolling it is CI-enforced (design-language.md §13 rule 3).
  */
 
 import type { ReactNode } from 'react';
@@ -129,7 +129,7 @@ export interface Segment<T extends string> {
  *
  * It is a `radiogroup`, which is what a one-of-N selector is: it picks a value,
  * it does not switch panels. The tab role would be wrong here on the merits,
- * and tab strips on this site belong to `<LiquidTabs>` anyway
+ * and tab strips on this site belong to `<Tabs>` anyway
  * (design-language.md §13 rule 1).
  *
  * (The rule's scan reads source text rather than JSX, so spelling that role out

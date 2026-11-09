@@ -6,7 +6,7 @@
  * rejection reason. Nothing here touches Prisma.
  *
  * The DB columns are plain `VarChar`s rather than enums (see
- * `prisma/schema.prisma` → `SpeedrunCategory` / `SpeedrunEntry`), so these
+ * `prisma/schema/` → `SpeedrunCategory` / `SpeedrunEntry`), so these
  * unions are the only place the allowed values are written down. Parse into
  * them at the boundary — {@link toSpeedrunStatus} — instead of casting.
  */

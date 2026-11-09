@@ -1,5 +1,5 @@
 /**
- * LiquidTabs — the shared tab-strip renderer. A thin, presentational
+ * Tabs — the shared tab-strip renderer. A thin, presentational
  * tablist (a styled radiogroup, not a router): the caller owns `value`/`onChange`
  * and any URL/panel wiring. The active capsule is one framer-motion `layoutId`
  * element that morphs between tab positions with SPRING.snappy, so switching tabs
@@ -12,12 +12,12 @@
  *  - **Link mode** (`renderTab`, §16.2): each tab is rendered by the caller —
  *    typically a TanStack `<Link>` — so route tabs stay crawlable/prefetched.
  *    The container becomes a `<nav>` and the active item is `aria-current="page"`
- *    (not `aria-selected`); LiquidTabs still owns the sheet, capsule and morph.
+ *    (not `aria-selected`); Tabs still owns the sheet, capsule and morph.
  *    Selection is the browser's job (href), so `onChange`/roving-arrow selection
  *    don't apply — every link is reachable with Tab/Shift+Tab as usual.
  *
  * Constraints:
- *  - `layoutId` is `useId()`-scoped so several LiquidTabs on one page never
+ *  - `layoutId` is `useId()`-scoped so several Tabs on one page never
  *    share a capsule and morph into each other.
  *  - Roving arrow-key nav (WAI-ARIA tabs pattern): ←/→/↑/↓ move, Home/End jump,
  *    focus follows selection (tablist mode only).
@@ -76,7 +76,7 @@ import { useIsAppTier } from '@/components/ui/app-tier-context';
  */
 const EQUAL_SEGMENT_MAX = 4;
 
-export interface LiquidTab {
+export interface TabItem {
   id: string;
   /** Already-translated label text. */
   label: string;
@@ -90,11 +90,11 @@ export interface LiquidTab {
 }
 
 /**
- * Props LiquidTabs hands to a `renderTab` callback in link mode (§16.2). The
+ * Props Tabs hands to a `renderTab` callback in link mode (§16.2). The
  * component owns the sheet, capsule, morph and roving structure; the caller only
  * builds the interactive element (typically a `<Link>`), spreading these onto it.
  */
-export interface LiquidTabRenderProps {
+export interface TabRenderProps {
   /** Whether this tab is the active one. */
   active: boolean;
   /** Stable dom id for the interactive element (aria/focus target). */
@@ -111,8 +111,8 @@ export interface LiquidTabRenderProps {
   children: React.ReactNode;
 }
 
-interface LiquidTabsProps {
-  tabs: LiquidTab[];
+interface TabsProps {
+  tabs: TabItem[];
   value: string;
   /** Tablist mode only — link mode navigates via the caller's `<Link>`. */
   onChange?: (id: string) => void;
@@ -154,10 +154,10 @@ interface LiquidTabsProps {
   /**
    * Link mode (§16.2). Render each tab through this callback instead of as a
    * `role="tab"` button — for route tabs that must stay crawlable/prefetched
-   * `<Link>`s. See {@link LiquidTabRenderProps}. Presence of this prop flips the
+   * `<Link>`s. See {@link TabRenderProps}. Presence of this prop flips the
    * container to a `<nav>` with `aria-current` semantics.
    */
-  renderTab?: (tab: LiquidTab, props: LiquidTabRenderProps) => React.ReactNode;
+  renderTab?: (tab: TabItem, props: TabRenderProps) => React.ReactNode;
   /** Accessible name for the tablist / nav (already translated). */
   'aria-label'?: string;
   /**
@@ -168,7 +168,7 @@ interface LiquidTabsProps {
   appearance?: 'glow' | 'thumb';
 }
 
-export function LiquidTabs({
+export function Tabs({
   tabs,
   value,
   onChange,
@@ -180,13 +180,13 @@ export function LiquidTabs({
   renderTab,
   appearance: appearanceProp,
   'aria-label': ariaLabel,
-}: LiquidTabsProps) {
+}: TabsProps) {
   // Games and apps keep the raised thumb; the main site gets the flat glow. An explicit prop wins.
   const appTier = useIsAppTier();
   const appearance = appearanceProp ?? (appTier ? 'thumb' : 'glow');
   const uid = useId();
   const listRef = useRef<HTMLElement>(null);
-  // useId scopes the capsule's layoutId so multiple LiquidTabs never collide.
+  // useId scopes the capsule's layoutId so multiple Tabs never collide.
   const layoutId = `liquid-tab-${uid}`;
   // §16.2: with `idBase` the tab dom ids are deterministic so callers can wire
   // aria-controls panels + aria-labelledby back-references; without it they stay
@@ -290,7 +290,7 @@ export function LiquidTabs({
   // Icon + label + count/badge, each above the thumb at z-1. In `iconOnly` mode
   // a tab that has an icon hides its label visually but keeps it as the
   // `sr-only` accessible name (the button/link also gets a `title` tooltip).
-  const content = (tab: LiquidTab) => {
+  const content = (tab: TabItem) => {
     const Icon = tab.icon;
     const compactLabel = iconOnly && Boolean(Icon);
     return (

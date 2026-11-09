@@ -20,7 +20,7 @@ import { z } from 'zod';
 /* Verbs                                                                      */
 /* -------------------------------------------------------------------------- */
 
-/** Mirrors `enum ActivityVerb` in `prisma/schema.prisma`. */
+/** Mirrors `enum ActivityVerb` in `prisma/schema/`. */
 export const ACTIVITY_VERBS = [
   'VIEWED',
   'PLAYED',

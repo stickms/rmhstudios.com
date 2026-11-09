@@ -28,7 +28,7 @@ import { MEMBER_FEATURES, type MemberFeature } from '@/lib/entitlements/features
 import { ShopColumn } from '@/components/feed/ShopColumn';
 import { MarketColumn } from '@/components/market/MarketColumn';
 import { DailyTab } from '@/components/economy-plus/DailyTab';
-import type { LiquidTab } from '@/components/ui/liquid-tabs';
+import type { TabItem } from '@/components/ui/tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { getShopData } from '@/lib/shop/list.server';
 import { browse } from '@/lib/market/market.server';
@@ -98,7 +98,7 @@ function Store() {
     [navigate],
   );
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     { id: 'shop', label: t('store-tab-shop', { defaultValue: 'Shop' }), icon: ShoppingBag },
     { id: 'market', label: t('store-tab-market', { defaultValue: 'Market' }), icon: StoreIcon },
     { id: 'daily', label: te('store-tab-daily', { defaultValue: 'Daily' }), icon: CalendarClock },
@@ -117,7 +117,7 @@ function Store() {
         defaultValue: 'Membership, cosmetics you can buy with coins, and the player marketplace.',
       })}
     >
-      {/* §16.2: Membership/Shop/Market as the shared LiquidTabs sheet, below the page title
+      {/* §16.2: Membership/Shop/Market as the shared Tabs sheet, below the page title
           `PageLayout` renders (this page used to draw its own title capsule —
           the whole point of the shared header is that it doesn't have to).
           `?tab=` mirroring, roving nav and the aria-controls tabpanel wiring

@@ -91,6 +91,7 @@ export function normalizeRun(
 }
 
 /** Non-negative integer, at most `ceiling` and always within `int4`. */
+// eslint-disable-next-line no-restricted-syntax -- clamp(value, ceiling): rounds, non-finite -> 0, INT4-capped
 function clamp(value: number, ceiling: number | undefined): number {
   // A non-finite value is a bug upstream, not a zero-score run — but writing 0
   // is the only option that keeps a personal best monotonic, so take it and let

@@ -69,7 +69,7 @@ time; no pathological rule).
 
 ## Fixes — page switches
 
-### NAV-1 [fixed] `LiquidTabs` forced a full-page layout on mount
+### NAV-1 [fixed] `Tabs` forced a full-page layout on mount
 
 Its overflow-edge effect read `scrollWidth` synchronously in a mount effect. A
 strip mounts as part of nearly every page switch, so this read laid out the

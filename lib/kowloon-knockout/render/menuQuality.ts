@@ -9,6 +9,7 @@
 //   off     no 3D layer at all (the pixel street stays; nothing renders on the GPU)
 // ============================================================
 import type { TierPreference } from './graphicsStore';
+import { clamp } from '@/lib/core/math';
 
 export type MenuFightersSetting = 'auto' | 'smooth' | 'pixel' | 'off';
 export const MENU_FIGHTERS_SETTINGS: readonly MenuFightersSetting[] = ['auto', 'smooth', 'pixel', 'off'];
@@ -34,8 +35,6 @@ export interface MenuQuality {
     /** Point lights to keep (the rim lights read most; fill drops first on weak GPUs). */
     lights: 1 | 2 | 3;
 }
-
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 /** A weak device: a phone, the Low preset, or a machine that says it has little memory or few cores. */
 export function isWeakDevice(i: MenuQualityInput): boolean {

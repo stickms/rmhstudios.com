@@ -4,11 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import { SettingsSection } from '@/components/settings/SettingsSection';
-import {
-  PLAYTIME_PRIVACY_VALUES,
-  isPlaytimePrivacy,
-  type PlaytimePrivacy,
-} from '@/lib/playtime/privacy';
+import { PLAYTIME_PRIVACY_VALUES, type PlaytimePrivacy } from '@/lib/playtime/privacy';
+import { api } from '@/lib/contract/client';
+import { getPlaytimeSettingsApi, setPlaytimePrivacyApi } from '@/lib/playtime/playtime.contract';
 
 /**
  * Who may see how long this account has played each game and app: shown in the
@@ -22,28 +20,16 @@ export function PlaytimePrivacyControls() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    fetch('/api/settings/playtime-privacy', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { playtimePrivacy?: unknown } | null) => {
-        if (d && isPlaytimePrivacy(d.playtimePrivacy)) setValue(d.playtimePrivacy);
-        setLoaded(true);
-      })
-      .catch(() => setLoaded(true));
+    api(getPlaytimeSettingsApi)
+      .then((d) => setValue(d.playtimePrivacy))
+      .catch(() => {})
+      .finally(() => setLoaded(true));
   }, []);
 
   function choose(next: PlaytimePrivacy) {
     const previous = value;
     setValue(next);
-    fetch('/api/settings/playtime-privacy', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ playtimePrivacy: next }),
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error('save failed');
-      })
-      .catch(() => {
+    api(setPlaytimePrivacyApi, { body: { playtimePrivacy: next } }).catch(() => {
         setValue(previous);
         toast.error(t('playtime-privacy-save-error', { defaultValue: 'Could not save' }));
       });

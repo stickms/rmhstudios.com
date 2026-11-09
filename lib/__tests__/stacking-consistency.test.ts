@@ -307,7 +307,7 @@ describe('§4 — nothing `fixed` inside a deformable jelly host (R3, N4)', () =
    * build repeated content from, which the previous version of this test asserted for `.glass-fill` alone.)
    */
   it.each([
-    'app/liquid-glass.css',
+    'app/glass-roles.css',
     'app/jelly-material.css',
     'app/jelly-coverage.css',
     'components/shared/app-theme.css',
@@ -327,7 +327,7 @@ describe('§4 — nothing `fixed` inside a deformable jelly host (R3, N4)', () =
   });
 
   it('the role sheets exist and define the roles (the scan above is not vacuous)', () => {
-    const css = readFileSync(join(ROOT, 'app', 'liquid-glass.css'), 'utf8');
+    const css = readFileSync(join(ROOT, 'app', 'glass-roles.css'), 'utf8');
     expect(css).toMatch(/\.glass-fill/);
     expect(readFileSync(join(ROOT, 'app', 'jelly-material.css'), 'utf8')).toMatch(/\.glass-pane/);
   });

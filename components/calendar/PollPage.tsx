@@ -17,7 +17,7 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -330,7 +330,7 @@ export default function PollPage({ id }: { id: string }) {
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <LiquidTabs
+        <Tabs
           tabs={[
             { id: 'mine', label: t('tab-mine', { defaultValue: 'Your availability' }) },
             { id: 'group', label: t('tab-group', { defaultValue: 'Group' }) },
@@ -352,7 +352,7 @@ export default function PollPage({ id }: { id: string }) {
 
       {tab === 'mine' && !locked && (
         <div className="glass-fill flex flex-wrap items-center gap-x-5 gap-y-3 rounded-site p-4">
-          <LiquidTabs
+          <Tabs
             tabs={[
               { id: '1', label: t('brush-yes', { defaultValue: 'Available' }), icon: Check },
               { id: '2', label: t('brush-maybe', { defaultValue: 'If need be' }) },

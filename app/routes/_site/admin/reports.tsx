@@ -130,7 +130,7 @@ function AdminReportsPage() {
         {/* An exclusive switcher IS a tab strip, whatever it is built from — an
             accent pill row with no `role` is still one, and this one had no
             `aria-pressed` either, so a screen reader could not tell which status
-            was showing. `LiquidTabs` brings the roving focus, the selected
+            was showing. `Tabs` brings the roving focus, the selected
             state and the shared capsule; `count` is the badge this was drawing
             by hand. */}
         <PageTabs

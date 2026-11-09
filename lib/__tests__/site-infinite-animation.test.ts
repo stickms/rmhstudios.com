@@ -279,7 +279,7 @@ describe('N3 — no perpetual CSS animation on the site tier without an owner', 
 });
 
 describe('N12 — nothing jelly paints at z ≥ 0 inside a host', () => {
-  const sheets = ['app/liquid-glass.css', MATERIAL].map((f) => ({ f, all: rules(read(f)) }));
+  const sheets = ['app/glass-roles.css', MATERIAL].map((f) => ({ f, all: rules(read(f)) }));
 
   it('the woken-haze layer declares a negative z-index', () => {
     const decls = sheets

@@ -571,8 +571,8 @@ not a step of `eversion-e2e`: as that job's last step it never ran, because the
 eversion scripts alone outlast its 75-minute timeout. It runs on every nightly
 and manual dispatch, and on a pull request only when the change touches the
 material — a filter step matches `lib/jelly/`, `lib/liquid/`,
-`app/jelly-*.css`, `app/liquid-glass.css`, `app/globals.css`,
-`components/ui/button.tsx`, `hooks/useLiquidInteractions.ts`,
+`app/jelly-*.css`, `app/glass-roles.css`, `app/globals.css`,
+`components/ui/button.tsx`, `hooks/useJellyPointer.ts`,
 `hooks/useFluidDrag.ts`, `lib/fluid.ts`, the three jelly e2e scripts
 (`frame-budget`, `jelly-interaction`, `fouc-routes`), `testing/e2e/lib/gpu.mjs`,
 `package.json`, `pnpm-lock.yaml`, `vite.config.*` and `web-ci.yml` itself

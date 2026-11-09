@@ -10,6 +10,7 @@ import { EnemyEntity } from './types';
 import { SpatialHash } from './spatial-hash';
 import { DestructibleProp, PROP_COLLISION_OFFSET_Y } from './tile-generator';
 import { avoidObstacles } from './obstacle-avoidance';
+import { clamp } from '@/lib/core/math';
 
 const NAV_CELL_SIZE = 32;
 const NAV_HALF_CELLS = 18; // 37x37 local grid
@@ -52,10 +53,6 @@ const DIRS: ReadonlyArray<{ dx: number; dy: number; cost: number }> = [
   { dx: -1, dy: 1, cost: Math.SQRT2 },
   { dx: -1, dy: -1, cost: Math.SQRT2 },
 ];
-
-function clamp(n: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, n));
-}
 
 // ─── A* scratch state ───────────────────────────────────────────────────────
 // The search grid is a fixed 37x37, `buildLocalPath` is synchronous and never

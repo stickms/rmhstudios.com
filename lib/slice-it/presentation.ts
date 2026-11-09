@@ -300,6 +300,7 @@ export function approachLevel(current: number, target: number, dt: number): numb
   return lag(current, target, dt, target >= current ? BACKDROP_ATTACK_TAU : BACKDROP_RELEASE_TAU);
 }
 
+// eslint-disable-next-line no-restricted-syntax -- clamp01 maps non-finite to 0
 function clamp01(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(1, value));
