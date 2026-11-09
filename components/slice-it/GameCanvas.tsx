@@ -3636,7 +3636,10 @@ export function GameCanvas() {
     // Column below `lg` so the opponent board can sit as a strip ABOVE the
     // playfield; a row above it so the board is the familiar right-hand column.
     // As a row at every width, that 288px column was most of a 360px phone.
-    <div ref={rootRef} className="relative flex flex-col lg:flex-row w-full h-full bg-slice-bg">
+    <div
+      ref={rootRef}
+      className="slice-canvas-root relative flex flex-col lg:flex-row w-full h-full bg-slice-bg"
+    >
       {/* The margins either side of the 16:9 field, filled with the music. Behind
           everything, and only while the field is locked to its ratio in landscape —
           anywhere else there is no margin to fill. */}
@@ -3678,7 +3681,7 @@ export function GameCanvas() {
           seeing further up the lane than an opponent is exactly the advantage
           the lock exists to deny. */}
       <div
-        className={`relative z-10 w-full min-w-0 flex-1 ${
+        className={`slice-canvas-stage relative z-10 w-full min-w-0 flex-1 ${
           !lockAspect
             ? ''
             : isPortrait
@@ -3688,7 +3691,7 @@ export function GameCanvas() {
       >
         <div
           ref={wrapperRef}
-          className={`relative bg-slice-bg overflow-hidden ${
+          className={`slice-canvas-wrapper relative bg-slice-bg overflow-hidden ${
             !lockAspect
               ? 'h-full w-full'
               : `border border-slice-border ${isPortrait ? 'h-full w-full' : 'app-stage'}`
@@ -3696,7 +3699,7 @@ export function GameCanvas() {
         >
           <canvas
             ref={canvasRef}
-            className="w-full h-full cursor-pointer block touch-none select-none"
+            className="slice-canvas-el w-full h-full cursor-pointer block touch-none select-none"
             data-jelly-zone="playfield"
           />
 

@@ -429,7 +429,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
     const canStart = Boolean(lobby.song) && readyCount === present.length && sidesFilled;
 
     return (
-      <div className="absolute inset-0 z-60 flex items-center-safe justify-center-safe overflow-y-auto bg-slice-bg p-4 text-slice-text">
+      <div className="slice-screen absolute inset-0 z-60 flex items-center-safe justify-center-safe overflow-y-auto bg-slice-bg p-4 text-slice-text">
         <Card className="w-full max-w-2xl bg-slice-card-bg border border-slice-border rounded-[10px] shadow-none my-auto">
           <CardHeader>
             <div className="flex justify-between items-center gap-2 mb-2">
@@ -799,7 +799,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="absolute inset-0 z-60 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-slice-bg p-4 text-slice-text">
+    <div className="slice-screen absolute inset-0 z-60 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-slice-bg p-4 text-slice-text">
       {children}
     </div>
   );
