@@ -260,6 +260,37 @@ number under one billion", which is to say it accepted anything.
 
 ## Presentation
 
+### The phone menu is a document
+
+Outside a run, below 640px, the menu scrolls the **page**, not a box inside it
+(`components/slice-it/slice-menu.css`, "A phone: the menu is a document"). Safari
+collapses its bars only for document scroll, and shows page content through its floating
+bar only when there is some under it; a viewport-high shell with scroll boxes inside gave
+neither, so the bars never shrank and the strip behind the bottom bar was flat page
+colour. `app/routes/slice-it/index.tsx` stamps `data-slice-screen="menu"` or `"play"` on
+the page from the store's status; in `menu`, on a phone, every box between the page and
+the lists drops its height and clip, the hidden playfield canvas leaves the flow, and a
+full screen (settings, calibration, the lobby's pages) is the page itself with the menu
+behind it not rendered. A run keeps the fixed viewport.
+
+Nothing in the menu is sticky or fixed on a phone (the library's search bar is sticky
+from 640px up only), because a layer flush to an edge is what makes Safari paint a band.
+The four places (Library, Daily, Setlists, Versus) are one 34px row under the bar, at the
+top, showing only their names. The one fixed layer left is the full-screen "loading a
+track" cover, which exists for a moment.
+
+### The margin keeps clear of the field
+
+Nothing in a side margin touches the field or the readouts above and below it. From the
+field outward: a clear strip (up to 16px), the kick's slam column at its widest (up to
+19px), a gap (up to 10px), then the bars. The bars start beyond the slam at its full
+width, so a kick never reaches them. All three scale down with a narrow margin
+(`SideWaves.tsx`), so a 72px margin keeps its clear strip in less room. Below 72px
+nothing draws, and the record only draws from 150px, where it does not sit on the bars.
+
+The judgement stamp is centred on the gap between the two lanes (the lanes are at 40% and
+62% of the field, so its middle is 51%, not 50%).
+
 ### A struck note breaks
 
 A struck disc is not a fade: it is cut along a line **rolled for that strike**
