@@ -69,6 +69,12 @@ describe('Globe Eversion load gating', () => {
     }
   });
 
+  it('the warm-up runs on intent (the hub opening), never at idle on every shell page', () => {
+    const src = read('components/radial/eversion/EversionRoot.tsx');
+    expect(src).not.toMatch(/requestIdleCallback/);
+    expect(src).toMatch(/!root\.hubOpen\) return;\s*void wantBridge\(\);/);
+  });
+
   it('startEversion waits for load before importing', () => {
     const body = startEversionBody();
     expect(body).toContain("document.readyState === 'complete'");
@@ -79,7 +85,7 @@ describe('Globe Eversion load gating', () => {
   });
 
   it('the bridge is mounted only for a device that reports WebGL2', () => {
-    expect(rootModule).toMatch(/if \(result\.webgl2\) set\(\{ bridgeWanted: true \}\)/);
+    expect(rootModule).toMatch(/if \(result\.webgl2\) \{\s*set\(\{ bridgeWanted: true \}\)/);
     expect(read('components/radial/eversion/EversionRoot.tsx')).toMatch(
       /if \(!root\.bridgeWanted\) return null;/,
     );

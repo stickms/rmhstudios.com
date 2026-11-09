@@ -297,101 +297,23 @@ const accessScript = ACCESS_PREPAINT_SCRIPT;
 // fixed aurora layer (z-index -1) behind the glass is visible (globals.css, "The page ground is the ROOT's").
 const bodyThemeScript = `if(window.__themeBg&&document.documentElement.classList.contains("app-route"))document.body.style.backgroundColor=window.__themeBg`;
 
-/**
- * Paths that must never be speculatively prefetched (OPT-04).
+/*
+ * No Speculation Rules (removed 2026-11-09, redesign audit B3).
  *
- * A prefetched document is fetched WITHOUT any user interaction and WITH the
- * user's cookies, so anything whose GET has a side effect would fire on hover
- * for a page the visitor may never open. `href_matches` takes URLPattern
- * syntax, where `*` spans path separators — `/api/*` covers `/api/a/b/c`, and a
- * trailing `*` with no slash (`/admin*`) covers both `/admin` and `/admin/…`.
+ * The document used to carry a `speculationrules` script asking the browser to
+ * prefetch the whole SSR document of any same-origin link on hover (OPT-04).
+ * Every one of those links is a router `<Link>`: a click is a client-side
+ * navigation that never requests the document, so each hover cost a full SSR
+ * render (session lookup + the page's queries) whose bytes were thrown away.
+ * The router's own intent preload (`defaultPreload: 'intent'` in
+ * `app/router.tsx`) already fetches what a client navigation actually uses —
+ * the route chunks and loader data. One prefetch mechanism, not three.
  *
- * ## Why `/api/*` is wholesale, not decorative
- *
- * An audit of every GET handler under `app/routes/api/**` found eight that
- * write or cost money on a plain GET:
- *
- *  - `api/email/unsubscribe.ts` — consumes a signed token and upserts
- *    `NotificationPreference.emailDigest = false`. A prefetch unsubscribes you.
- *  - `api/group-chats/$id/index.ts` and `api/group-chats/$id/messages.ts` —
- *    both write `groupChatMember.lastReadAt` (mark-as-read) inside the GET.
- *  - `api/messages/$conversationId.ts` — `updateMany` marking DMs read.
- *  - `api/doctrine/safehouse/content.ts` — `doctrineAccessLog.createMany`.
- *  - `api/doctrine/puzzles/today.ts` — creates the day's puzzle rows on demand.
- *  - `api/doctrine/puzzles/replay.ts` — creates a `DoctrinePuzzleReplay` row.
- *  - `api/ai/takeaways.ts` — `rateLimit: 'ai'`; on a cache miss it spends model
- *    tokens. `api/rmhladder/prep.ts` documents the same hazard from the other
- *    side: it is a POST *because* a read that costs money must not be
- *    prefetchable.
- *
- * Page routes were audited too — no route loader or `beforeLoad` under
- * `app/routes/**` writes, so the document tier is safe on its own merits. The
- * remaining entries below are the auth/payment/admin classes the spec calls
- * for, plus two pages excluded on cost rather than correctness (noted inline).
+ * The old exclusion list also documented eight GET handlers that WRITE on a
+ * plain GET (unsubscribe, mark-as-read, doctrine rows, AI spend). Those are
+ * tracked as redesign audit item C2 (safe methods are safe) rather than hidden
+ * behind a prefetch exclusion list.
  */
-const SPECULATION_EXCLUDED_PATHS = [
-  // Every JSON endpoint, auth flow and upload target — see the audit above.
-  '/api/*',
-  // Auth flows: session and token minting. `/logout*` has no route today; it is
-  // listed so adding one later can't silently become prefetchable.
-  '/login*',
-  '/logout*',
-  '/rmhcode/auth*',
-  // Payment. No `/checkout` route exists today (Stripe redirects off-site);
-  // listed for the same defensive reason as `/logout*`.
-  '/checkout*',
-  // Admin console.
-  '/admin*',
-  // Referral landing: a tracking link that stores an attribution code and
-  // immediately redirects. `noindex`, and disallowed in robots.txt.
-  '/ref/*',
-  // Not a correctness fix — a prefetch does not run scripts, so the mark-read
-  // that `ConversationView` fires on mount does not go off. These are excluded
-  // because they are per-viewer pages that miss the anonymous HTML cache: every
-  // hover would cost a session resolution plus the page's own queries for a
-  // view that is often never opened.
-  '/messages*',
-  '/settings*',
-] as const;
-
-/**
- * Speculation Rules: let the *browser* prefetch whole documents on its own
- * heuristics (OPT-04).
- *
- * `eagerness: "moderate"` is hover — the same intent signal the router already
- * uses — but run off the main thread, with automatic backoff on Save-Data, low
- * battery and constrained connections that the JS preload path cannot match.
- * Deliberately prefetch only: `prerender` (OPT-05) additionally *runs* the next
- * page's effects, which needs a `whenActivated` guard around every analytics,
- * RUM and socket call first.
- *
- * `where.not` is the load-bearing half — see SPECULATION_EXCLUDED_PATHS.
- * `[data-no-speculate]` is the per-link escape hatch: put it on an anchor (or
- * any ancestor the selector matches) to opt that link out without touching this
- * list.
- *
- * CSP: `script-src` in `deploy/apache/rmhstudios.conf` includes
- * `'unsafe-inline'`, so this inline script is permitted as-is. Every speculated
- * URL is same-origin, which `default-src 'self'` already allows. If script-src
- * is ever tightened to nonces, this script needs the nonce too.
- */
-const speculationRules = JSON.stringify({
-  prefetch: [
-    {
-      source: 'document',
-      where: {
-        and: [
-          { href_matches: '/*' },
-          ...SPECULATION_EXCLUDED_PATHS.map((path) => ({ not: { href_matches: path } })),
-          // Per-link opt-out, and respect an author's existing `nofollow`.
-          { not: { selector_matches: '[data-no-speculate]' } },
-          { not: { selector_matches: '[rel~="nofollow"]' } },
-        ],
-      },
-      eagerness: 'moderate',
-    },
-  ],
-});
 
 /**
  * Resolve the locale from the session cookie (explicit user preference) or
@@ -497,7 +419,7 @@ export const Route = createRootRoute({
 
     if (discord) {
       // Minimal head for a Discord Activity: no external fonts, no preconnects,
-      // no speculation rules or JSON-LD — nothing that leaves the origin, because
+      // no JSON-LD — nothing that leaves the origin, because
       // inside the Activity iframe every request has to go through Discord's
       // URL-mapping proxy and a third-party font host is not mapped.
       //
@@ -629,9 +551,6 @@ export const Route = createRootRoute({
         // Hides the server-rendered cookie notice before first paint for a
         // visitor who has already answered it — lib/cookie-consent.ts.
         { children: COOKIE_CONSENT_SCRIPT },
-        // Browser-driven document prefetch on hover. Ignored by engines that
-        // don't implement it; see SPECULATION_EXCLUDED_PATHS for the safety list.
-        { type: 'speculationrules', children: speculationRules },
         // Site-wide structured data (Organization + WebSite w/ SearchAction).
         jsonLdScript([organizationSchema(), websiteSchema()]),
       ],

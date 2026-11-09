@@ -12,7 +12,6 @@ import {
   getHub,
   hasNoEffect,
   setController,
-  warmEversion,
   wantBridge,
 } from './eversion-root';
 import {
@@ -56,27 +55,16 @@ export function EversionRoot() {
     eversionRoot.getServerSnapshot,
   );
 
-  // The warm-up: idle if it comes, a short timer regardless, whichever lands first; never before `load`
-  // (`startEversion`). A device that reports no WebGL2 never mounts the bridge (R6 m5).
+  // The warm-up runs on INTENT, not at idle (redesign audit B3). The effect only ever plays for a
+  // navigation taken from the open globe, so opening the hub is the first moment it can be needed; warming
+  // at idle on every shell page downloaded the WebGL host, the capture library and built the render worker
+  // for visitors who never open the globe. `wantBridge` skips the idle wait (the hub is open: intent), and
+  // a device that reports no WebGL2 still never mounts the bridge (R6 m5). A navigation picked before the
+  // warm-up lands waits on `awaitController` exactly as a cold Settings preview does.
   useEffect(() => {
-    if (!isEversionEnabled() || root.shells === 0) return;
-    const w = window as typeof window & {
-      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-      cancelIdleCallback?: (h: number) => void;
-    };
-    let ran = false;
-    const warm = () => {
-      if (ran) return;
-      ran = true;
-      void warmEversion();
-    };
-    const timer = setTimeout(warm, 800);
-    const handle = w.requestIdleCallback?.(warm, { timeout: 800 });
-    return () => {
-      clearTimeout(timer);
-      if (handle !== undefined) w.cancelIdleCallback?.(handle);
-    };
-  }, [root.shells]);
+    if (!isEversionEnabled() || root.shells === 0 || !root.hubOpen) return;
+    void wantBridge();
+  }, [root.shells, root.hubOpen]);
 
   // Only navigation from the open globe can hand the screen to the effect.
   useEffect(() => {

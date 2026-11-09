@@ -144,15 +144,6 @@ export function onController(fn: (c: EversionControllerHandle | null) => void): 
   };
 }
 
-/** Warm up at idle (no intent yet): mounts the bridge once the device is known to run the effect. */
-export function warmEversion(): Promise<boolean> {
-  return startEversion().then((result) => {
-    if (result.webgl2) set({ bridgeWanted: true });
-    else noEffect = true;
-    return result.webgl2;
-  });
-}
-
 /**
  * Ask for the bridge now (the visitor's intent: skip the idle wait). A device the warm-up says cannot run the
  * effect releases every waiting action to the ordinary navigation.
