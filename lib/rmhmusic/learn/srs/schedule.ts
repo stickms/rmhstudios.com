@@ -58,6 +58,13 @@
  * tolerance may be delayed by up to that tolerance, and a card with
  * reps > 0 but no `last` (stored state incomplete) is shown rather than
  * hidden.
+ *
+ * Corrupted `due`. When the stored `due` is used it is bounded to
+ * `last + MAX_INTERVAL_DAYS`, the furthest `review()` ever writes, so a
+ * hand-edited or corrupted row (say due = 1e15 beside a valid `last`) is
+ * still shown within a year of its last review instead of never. This can
+ * never shorten a legitimate interval. What it does not cover: a clock that
+ * was far ahead when `last` was written, which the skew rule above handles.
  */
 
 export type Grade = 'again' | 'hard' | 'good' | 'easy';
@@ -137,13 +144,14 @@ function sanitize(s: CardState): CardState {
  * its `last` (only corruption produces that: show it rather than hide it) and
  * a card whose review lies more than CLOCK_SKEW_TOLERANCE_MS in the future
  * (the clock was ahead when it was written, see the header) are due now.
- * Otherwise the stored `due` stands.
+ * Otherwise the stored `due` stands, bounded to `last + MAX_INTERVAL_DAYS`
+ * (the furthest `review()` writes) so a corrupted `due` cannot hide the card.
  */
 function effectiveDue(s: CardState, now: number): number {
   const c = sanitize(s);
   if (c.reps === 0 || c.last === null) return now;
   if (c.last - now > CLOCK_SKEW_TOLERANCE_MS) return now;
-  return c.due;
+  return Math.min(c.due, c.last + MAX_INTERVAL_DAYS * DAY_MS);
 }
 
 export function newCard(now: number): CardState {

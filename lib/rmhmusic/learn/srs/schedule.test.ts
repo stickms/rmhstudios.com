@@ -249,6 +249,23 @@ describe('isDue', () => {
     expect(isDue(s, s.due)).toBe(true);
   });
 
+  it('bounds a corrupted stored due to a year after the last review', () => {
+    const s = { ...review(newCard(T0), 'good', T0), due: T0 + 5000 * DAY_MS };
+    expect(isDue(s, T0)).toBe(false);
+    expect(isDue(s, T0 + 366 * DAY_MS)).toBe(true);
+    expect(isDue({ ...s, due: 1e15 }, T0 + 366 * DAY_MS)).toBe(true);
+  });
+
+  it('keeps the exact stored due of a legitimate card', () => {
+    const s = review(newCard(T0), 'good', T0);
+    expect(days(s, T0)).toBeCloseTo(2.2, 6);
+    expect(isDue(s, s.due - 1)).toBe(false);
+    expect(isDue(s, s.due)).toBe(true);
+    const long = review({ ...s, stability: MAX_INTERVAL_DAYS }, 'easy', T0 + 400 * DAY_MS);
+    expect(isDue(long, long.due - 1)).toBe(false);
+    expect(isDue(long, long.due)).toBe(true);
+  });
+
   it('shows a reviewed card that lost its last review time', () => {
     const s = { ...review(newCard(T0), 'good', T0), last: null };
     expect(isDue(s, T0)).toBe(true);
