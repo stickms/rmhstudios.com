@@ -11,7 +11,7 @@ import { useSliceItStore } from '@/lib/slice-it/store';
 // chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
 // hydration, and an update reaching the boundary then swaps the server-rendered
 // library for `SliceItLoading` — measured as the whole library vanishing for
-// ~1.1s and coming back (docs/fouc-audit-2026-10-06.md §8, §13).
+// ~1.1s and coming back (docs/archive/2026/fouc-audit-2026-10-06.md §8, §13).
 import { GameCanvas } from '@/components/slice-it/GameCanvas';
 
 function SliceItPage() {

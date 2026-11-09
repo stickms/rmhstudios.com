@@ -131,7 +131,7 @@ function inPage() {
   const card = q('.glass-fill');
   // The first page-level card, at least 60% of the screen wide so a chip or a small tile never counts. Its left edge
   // against the heading's is the double-gutter signature: the frame insets the page once (`--rad-gutter`) and the title
-  // sits on it, so a card that starts further in has had a second gutter added by a wrapper (docs/ui-audit-2026-10-31.md).
+  // sits on it, so a card that starts further in has had a second gutter added by a wrapper (docs/archive/2026/ui-audit-2026-10-31.md).
   const surface = [...document.querySelectorAll('.glass-fill, .glass-pane')].find((el) => {
     if (
       el.parentElement?.closest('.glass-fill, .glass-pane, .glass-overlay, [role=dialog], dialog')

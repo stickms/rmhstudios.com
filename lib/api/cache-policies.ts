@@ -10,7 +10,7 @@
  * claim that the handler (and everything it calls) never reads the session, a
  * cookie or a request header.** `auth: 'none'` is not proof of that — 46 of 69
  * `auth: 'none'` handlers read the session themselves
- * (docs/loading-audit-2026-08-11/03-api-caching.md §2). The claim is enforced
+ * (docs/archive/2026/loading-audit-2026-08-11/03-api-caching.md §2). The claim is enforced
  * two ways, both in `lib/__tests__/api-cache-policy.test.ts`:
  *
  *  - statically, by `scripts/api-cache-triage.ts`, which walks the handler and

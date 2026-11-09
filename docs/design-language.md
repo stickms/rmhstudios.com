@@ -87,9 +87,9 @@ without a single component change.
 
 **Current companions:** [radial UI + the globe](../components/radial/README.md) ·
 [the per-page checklist](./page-consistency.md) ·
-[UI audit 2026-10-09](./ui-audit-2026-10-09.md) (the most recent site-tier pass) ·
-[UI audit 2026-08-01](./ui-audit-2026-08-01.md) ·
-[performance audit 2026-08-01](./performance-audit-2026-08-01.md) (why the
+[UI audit 2026-10-31](./archive/2026/ui-audit-2026-10-31.md) (the most recent site-tier pass; archived) ·
+[UI audit 2026-08-01](./archive/2026/ui-audit-2026-08-01.md) ·
+[performance audit 2026-08-01](./archive/2026/performance-audit-2026-08-01.md) (why the
 cursor effects went).
 
 **Historical specs** — intent at the time of writing, superseded where this file
@@ -179,8 +179,8 @@ per-page checklist with code.)
    phone width and a desktop width, and once with jelly motion set to Still
    (ambient haze and arcs gone, press still works). Three
    themes × two widths is the floor; the audit matrix in
-   `docs/ui-audit-2026-07-28.md` §1 is the extended version, and
-   `docs/ui-audit-2026-10-09.md` is the most recent pass over the site tier.
+   `docs/archive/2026/ui-audit-2026-07-28.md` §1 is the extended version, and
+   `docs/archive/2026/ui-audit-2026-10-09.md` is the most recent pass over the site tier.
 10. **One signal, room for the jelly.** At most one `<Button variant="signal">`
     per view; bodies sit ≥ `--space-4` (16px) apart with `--jelly-margin` (16px)
     unclipped round them — no `overflow: hidden` directly around a body. Cards
@@ -1018,7 +1018,7 @@ gated off there too, via `html.app-route`).
   new frame every vsync forever. Measured on `/` (1920×1080, vsync-capped
   Chromium): ~1020ms/s of browser CPU and 16.7fps with the motion, 63ms/s and a
   locked 60fps without it — and removing `backdrop-filter` instead changed
-  nothing ([perf audit 2026-10-08](performance-audit-2026-10-08.md)). The only
+  nothing ([perf audit 2026-10-08](./archive/2026/performance-audit-2026-10-08.md)). The only
   movement left is the opt-in device-tilt parallax (event-driven `translate`,
   below), which settles. `lib/__tests__/static-backdrop.test.ts` fails the build
   if a backdrop layer animates again. Both layers are gated off under

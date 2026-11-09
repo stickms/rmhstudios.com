@@ -255,7 +255,7 @@ describe('error containment', () => {
 /**
  * The `cache` / `etag` half of the wrapper had **no tests at all** until the
  * 2026-08-11 loading audit started declaring policies on real routes
- * (`docs/loading-audit-2026-08-11/03-api-caching.md`). It is the part where a
+ * (`docs/archive/2026/loading-audit-2026-08-11/03-api-caching.md`). It is the part where a
  * mistake is a data leak rather than a bug: `visibility: 'public'` on a
  * per-user response means the CDN stores the first caller's body under the URL
  * and serves it to everyone else.

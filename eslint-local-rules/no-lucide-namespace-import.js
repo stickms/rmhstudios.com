@@ -33,7 +33,7 @@
  * Replacing those four lookups with explicit `Record<string, LucideIcon>` maps
  * deleted both chunks from the build outright, cut requests on `/` from 533 to
  * 382, and left a 1.4 KB shared factory behind. Full write-up:
- * `docs/loading-audit-2026-08-11/02-critical-path.md` §1.
+ * `docs/archive/2026/loading-audit-2026-08-11/02-critical-path.md` §1.
  *
  * ## Why it needs a rule rather than a note
  *

@@ -7,7 +7,7 @@ This pass built the thing that was missing rather than reasoning about the code:
 a harness that drives the **built** site in Chromium and measures what every page
 looked like, frame by frame, across nine stored-preference profiles. How it works
 and why each detector asks its question the way it does is in
-[`fouc.md`](./fouc.md); this document is what it found.
+[`fouc.md`](../../fouc.md); this document is what it found.
 
 ## Method
 

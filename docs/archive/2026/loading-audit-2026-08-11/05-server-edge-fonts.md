@@ -180,7 +180,7 @@ fixed and now gated by CI; the full account is
 
 **The header situation as found:** `deploy/apply-cloudflare-cache-rules.sh` is
 committed and unapplied; the two checklist items in
-[`../performance-slo.md`](../performance-slo.md) ("Configure
+[`../performance-slo.md`](../../../performance-slo.md) ("Configure
 `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ZONE_ID`", "Apply the Cloudflare rules")
 are still unchecked. Until then, **every anonymous view of the homepage, both
 catalogs and every article is a full origin SSR render.**

@@ -7,7 +7,7 @@
  * their default `High` priority they shared a slow link equally with the Inter
  * preload, so the font finished after the JavaScript — 6–8 s on 3G, ~31 s on
  * 2G — and text painted in the fallback and re-shaped long after first paint.
- * `components/SiteHeadContent.tsx` lowers them; docs/performance-audit-2026-10-21.md
+ * `components/SiteHeadContent.tsx` lowers them; docs/archive/2026/performance-audit-2026-10-21.md
  * has the measurements. The failure mode this guards is a quiet revert: the
  * root shell going back to the router's stock `<HeadContent />`, which is what
  * every TanStack example uses.

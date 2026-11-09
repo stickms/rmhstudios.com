@@ -4,7 +4,7 @@
  * `defineHandler` refuses `public` on an authenticated route at module load, but
  * `auth: 'none'` is NOT proof a response is anonymous-invariant: 46 of 69
  * `auth: 'none'` handlers read the session themselves
- * (docs/loading-audit-2026-08-11/03-api-caching.md §2). A public policy on one of
+ * (docs/archive/2026/loading-audit-2026-08-11/03-api-caching.md §2). A public policy on one of
  * those stores the first caller's personalised body and serves it to everyone.
  * Nothing in the wrapper can see that, so this file does, two ways:
  *

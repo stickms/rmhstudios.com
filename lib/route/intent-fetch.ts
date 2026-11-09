@@ -27,7 +27,7 @@
  *   for {@link FRESH_MS}: enough for the page that started it to mount, too
  *   short to survive a long-press reaction (press, menu, pick) and then an open.
  *
- * Measured effect: docs/performance-audit-2026-10-21.md §Instant navigation.
+ * Measured effect: docs/archive/2026/performance-audit-2026-10-21.md §Instant navigation.
  */
 
 /** How long an answered request may stand in for a fresh one. */

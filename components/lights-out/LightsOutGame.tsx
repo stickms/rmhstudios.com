@@ -252,7 +252,7 @@ export function LightsOutGame() {
     // "Loading..." box; React reused that div as the board's column when the
     // effect above built the grid, so a 100x33 box became a 640x769 column and its
     // padding landed a frame later: 0.10 of layout shift under the 125% font
-    // scale, measured by testing/e2e/fouc.mjs (docs/fouc-audit-2026-10-06.md §9).
+    // scale, measured by testing/e2e/fouc.mjs (docs/archive/2026/fouc-audit-2026-10-06.md §9).
     // The grid is built in an effect rather than server-rendered because today's
     // puzzle depends on the visitor's LOCAL date, which the server cannot know.
     // (The `.app-page` document itself now lives in the /daily layout route.)

@@ -55,7 +55,7 @@ RMH mark is that centre, and it is always on screen.
   It used to drift and breathe forever, and a backdrop that is never still is a
   page that never goes idle — a full composite on every vsync, 144 or 240 times a
   second on a high-refresh panel, for decoration nobody is watching
-  ([perf audit 2026-10-08](docs/performance-audit-2026-10-08.md)). Motion is
+  ([perf audit 2026-10-08](docs/archive/2026/performance-audit-2026-10-08.md)). Motion is
   spent on what you touch.
 
 The consequence worth internalising: **navigating is a physical act here.** That
@@ -195,7 +195,7 @@ at a whisper over the glass tint (`.glass-inset`): they grey slightly off a ligh
 page and lift slightly off a dark one, with a hairline and no shadow. An inset
 _highlight_ (a light top rim) is the glint and is fine; an inset _shadow_ is not.
 `design-consistency.test.ts` fails a site-tier `shadow-inner` or dark
-`shadow-[inset_…]` (audit: `docs/ui-perf-audit-2026-10-09.md`).
+`shadow-[inset_…]` (audit: `docs/archive/2026/ui-perf-audit-2026-10-09.md`).
 
 **Budgets are real.** A rim slab, a haze canvas and a moving carrier are each
 per-element GPU work, so each has a per-tier cap (at most 24 rims, 8 animated haze
@@ -278,7 +278,7 @@ it is written — none of which looked like a performance bug in the source:
    engine's clock (60 Hz engaged, a 15 Hz floor when idle, 0 when the tab is
    hidden, nothing hazy is on screen, or the tier is degraded), behind a governor
    that only ever turns it down. A backdrop that never rests was the
-   [2026-10-08](docs/performance-audit-2026-10-08.md) failure; the jelly's floor is
+   [2026-10-08](docs/archive/2026/performance-audit-2026-10-08.md) failure; the jelly's floor is
    a deliberate, budgeted reversal of that audit's "rest" limit, not a licence for
    another perpetual layer.
 

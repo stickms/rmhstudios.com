@@ -1,5 +1,5 @@
 /**
- * OPT-01 — bundle-size budget gate (docs/optimization-ideas-2026-08-05.md).
+ * OPT-01 — bundle-size budget gate (docs/archive/2026/optimization-ideas-2026-08-05.md).
  *
  * Measures the **critical path**: the transitive STATIC-import closure of the
  * Vite client entry — the set of chunks the browser must have in hand before
@@ -33,7 +33,7 @@
  * is the cross-check that proves the walk is complete.
  *
  * So the walk parses static `import`/`export ... from` specifiers straight out
- * of the emitted chunks — the method docs/performance-audit-2026-08-04.md
+ * of the emitted chunks — the method docs/archive/2026/performance-audit-2026-08-04.md
  * §"Re-running the measurement" describes.
  *
  * ── Why the TanStack Router versions are pinned exactly ───────────────────
@@ -142,7 +142,7 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  *
  * **2026-10-07 — entry raised 299,000 → 307,700 B (OPT-01 line).** The bytes
  * were bought by **no finished page blanking to a spinner during hydration**
- * (docs/fouc-audit-2026-10-06.md §13). Measured on this tree with
+ * (docs/archive/2026/fouc-audit-2026-10-06.md §13). Measured on this tree with
  * `vite build --sourcemap`: `main` (45584d5) 290.5 KB, this branch 305,601 B —
  * about +8 KB.
  *
@@ -569,7 +569,7 @@ async function main(): Promise<number> {
         '  _site.tsx, or anything a route module touches at TOP LEVEL) started\n' +
         '  importing a library it only needs lazily. `routeTree.gen.ts` imports all\n' +
         '  739 route modules statically, so a top-level import in ANY route module\n' +
-        '  lands on every page. See docs/performance-audit-2026-08-04.md.\n' +
+        '  lands on every page. See docs/archive/2026/performance-audit-2026-08-04.md.\n' +
         '  Run `pnpm run check:entry-composition` to see which packages are in there.\n' +
         '  Raising a budget requires a PR-body line naming the feature that bought\n' +
         '  the bytes (OPT-01).',

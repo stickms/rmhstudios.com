@@ -163,7 +163,7 @@ function FeedWheel({ initial }: { initial: InitialFeed }) {
   // On a page switch, the first screen of the wheel is built in the click's own
   // commit and the remaining ~11 cards a moment later in a transition React
   // time-slices — fifteen full RMHark cards in one synchronous commit was the
-  // bulk of the switch's long task (docs/performance-audit-2026-10-21.md
+  // bulk of the switch's long task (docs/archive/2026/performance-audit-2026-10-21.md
   // §Navigation commit). Never on first load or back/forward, see
   // `useDeferOnNavigate`.
   const wheelReady = useDeferOnNavigate();

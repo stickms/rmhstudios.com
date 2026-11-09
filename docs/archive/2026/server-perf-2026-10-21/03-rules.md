@@ -1,7 +1,7 @@
 # 03 — Rules every change obeys
 
 These are in priority order. When two conflict, the earlier one wins. The repo's
-own conventions ([`/CLAUDE.md`](../../CLAUDE.md), the commit gate) apply on top
+own conventions ([`/CLAUDE.md`](../../../../CLAUDE.md), the commit gate) apply on top
 of all of them and are not repeated here except where performance work tends to
 break them.
 

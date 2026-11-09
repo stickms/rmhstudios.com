@@ -312,7 +312,7 @@
 
 /* ════ REVEAL ════
    Scroll-driven, and fail-OPEN — same change, same reasons, as the twin block in
-   rmh-pmc.css. See docs/performance-audit-2026-08-12.md §1.4. The hidden start
+   rmh-pmc.css. See docs/archive/2026/performance-audit-2026-08-12.md §1.4. The hidden start
    state lives only where a scroll timeline can undo it, so a page that cannot
    animate has never hidden anything. */
 @supports (animation-timeline: view()) {

@@ -16,7 +16,7 @@
  * (`{isAdmin && <RevealItem/>}`) cannot desynchronise the cascade the way a
  * hand-threaded index does.
  *
- * See docs/performance-audit-2026-08-12.md §1.1.
+ * See docs/archive/2026/performance-audit-2026-08-12.md §1.1.
  */
 import type { ElementType, ReactNode } from 'react';
 import { cn } from '@/lib/utils';

@@ -12,7 +12,7 @@ export function ThinkingStream({ text, className = '' }: { text: string; classNa
   // every streamed token, and it re-pinned unconditionally — so a reader who
   // scrolled up to re-read something was yanked back down by the next token.
   // The hook records the pin decision on `scroll` (before the content grows) and
-  // re-pins from a ResizeObserver. See docs/performance-audit-2026-08-12.md §1.5.
+  // re-pins from a ResizeObserver. See docs/archive/2026/performance-audit-2026-08-12.md §1.5.
   const { containerRef, contentRef } = useStickToBottom<HTMLDivElement, HTMLDivElement>();
 
   if (!text) return null;

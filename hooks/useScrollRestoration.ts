@@ -103,7 +103,7 @@ function topOf(s: Scroller): number {
 // runs in React's MUTATION phase — after the incoming page's DOM has been
 // inserted and before the effects that finish it. Reading there laid the whole
 // new page out once mid-commit, only for the next effect's write to invalidate
-// it again (docs/ui-perf-audit-2026-10-09.md, NAV-2). Every way the offset can
+// it again (docs/archive/2026/ui-perf-audit-2026-10-09.md, NAV-2). Every way the offset can
 // change raises a `scroll` event (a user scroll, a clamp when content shrinks,
 // a programmatic scroll), so the value the listener last saw IS the current
 // one — no read needed at the moment of leaving.

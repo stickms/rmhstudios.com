@@ -449,7 +449,7 @@ integration; the rest are open rows from the ledgers. Infrastructure proposals a
 
 ## 7. Production verification plan
 
-Per [`performance-slo.md`](../performance-slo.md): the origin numbers in section 1 do not include the network or the
+Per [`performance-slo.md`](../../../performance-slo.md): the origin numbers in section 1 do not include the network or the
 browser, so they are not the production authority. RUM and the synthetic workflow are, and the rollback policy there
 applies unchanged: roll back when, for two consecutive comparable windows with at least 100 samples per affected group,
 p75 exceeds the route-class budget or p95 exceeds 125% of it, or a synthetic breach of 25% or more on the new version

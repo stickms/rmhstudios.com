@@ -102,7 +102,7 @@ a TTL override** — since respect-origin is what makes the origin the final gat
 Each assertion was verified to fail on the real bug and pass on the fix.
 
 Still worth doing: tick the two boxes in
-[`../performance-slo.md`](../performance-slo.md) and save the `VERIFY_ONLY=1`
+[`../performance-slo.md`](../../../performance-slo.md) and save the `VERIFY_ONLY=1`
 output as the record.
 
 ### 3 — Per-route API cache policies, route by route ⭐ M, ongoing
@@ -163,7 +163,7 @@ three.js is not duplicated; it is simply large, and initialisation is larger
 (KTX2/Basis textures), OPT-37 (`OffscreenCanvas`), and staging scene construction
 across frames so the freeze becomes a progress bar. `/rmhmusic` is in the same
 class and deserves its own profile. See
-[`../3d-performance-audit.md`](../3d-performance-audit.md).
+[`../3d-performance-audit.md`](../../../3d-performance-audit.md).
 
 > **Re-measured 2026-10-21 on a real GPU: does not reproduce.** 0–70 ms of
 > ≥ 50 ms frames unthrottled, 180–380 ms at 4× CPU, the largest of them the

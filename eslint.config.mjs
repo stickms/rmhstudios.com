@@ -209,7 +209,7 @@ export default tseslint.config(
       // the count is zero and the only direction it can move is up. The failure
       // is invisible — bytes, not correctness — which is exactly why it needs to
       // fail the build rather than add a line to a warning list nobody reads.
-      // See docs/loading-audit-2026-08-11/02-critical-path.md §1.
+      // See docs/archive/2026/loading-audit-2026-08-11/02-critical-path.md §1.
       'local/no-lucide-namespace-import': 'error',
       // Zero backlog since the A8 codemod (2026-11-09): `'use client'` is a
       // Next.js/RSC directive with no effect here, and it misleads readers into
@@ -230,7 +230,7 @@ export default tseslint.config(
       // Fifteen modules had regressed to `motion` (including `radial/Parallax`,
       // which is in the site shell and therefore on every `_site` route's
       // critical path); all fixed 2026-08-12. See
-      // docs/performance-audit-2026-08-12.md §1.3.
+      // docs/archive/2026/performance-audit-2026-08-12.md §1.3.
       //
       // `m`, `AnimatePresence`, `LazyMotion`, `MotionConfig`, the hooks and all
       // types are unrestricted — only the `motion` component is the problem.
@@ -242,7 +242,7 @@ export default tseslint.config(
               name: 'framer-motion',
               importNames: ['motion'],
               message:
-                'Import `m as motion` instead. `motion` ships its own full feature bundle and defeats the <LazyMotion> split in components/Providers.tsx (docs/performance-audit-2026-08-12.md §1.3).',
+                'Import `m as motion` instead. `motion` ships its own full feature bundle and defeats the <LazyMotion> split in components/Providers.tsx (docs/archive/2026/performance-audit-2026-08-12.md §1.3).',
             },
           ],
         },

@@ -14,7 +14,7 @@
  * Georgia, the face lands, and the heading changes shape and width in front of
  * the reader. That was every decorative family on the site, loaded from Google
  * Fonts after first paint by design, so the swap was guaranteed rather than
- * merely possible (docs/fouc-audit-2026-10-06.md §10).
+ * merely possible (docs/archive/2026/fouc-audit-2026-10-06.md §10).
  *
  * `optional` is the one value that cannot swap: the browser gives the face a
  * ~100ms window, and if it misses, the fallback stays for the rest of that page

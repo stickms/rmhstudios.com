@@ -251,7 +251,7 @@ COPY --from=image-variants /app/lib/images/variants.gen.ts ./lib/images/variants
 # vibe-builder now runs fully parallel with this stage instead of gating it. The
 # `react.js` assertion is made in vibe-builder itself, on the exact directory the
 # runner copies, so the guarantee is unchanged.
-# See docs/performance-audit-2026-08-12.md §3.2.
+# See docs/archive/2026/performance-audit-2026-08-12.md §3.2.
 
 ARG COMPOSE_PROJECT_NAME=rmhstudios
 ARG DATABASE_URL
@@ -482,7 +482,7 @@ COPY --link --from=vite-builder --chown=1001:1001 /app/.output ./.output
 # — which is what lets vibe-builder run in parallel with the Vite build instead of
 # gating it. Placed AFTER the .output COPY so it cannot clobber them. (The
 # `react.js` assertion lives in vibe-builder: see the note above this stage.)
-# See docs/performance-audit-2026-08-12.md §3.2.
+# See docs/archive/2026/performance-audit-2026-08-12.md §3.2.
 COPY --link --from=vibe-builder --chown=1001:1001 /app/public/vibe-packages ./.output/public/vibe-packages
 
 # ─── Custom server bundles (from env-agnostic stage) ────────────────────

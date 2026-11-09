@@ -7,8 +7,8 @@
 > audited the site tier against the liquid-globe material.
 >
 > Companions: [`ui-audit-2026-10-09.md`](./ui-audit-2026-10-09.md) (the same
-> day's minimalism/consistency pass), [`design.md`](../design.md) §3 (now states
-> "Nothing is debossed"), [`design-language.md`](./design-language.md).
+> day's minimalism/consistency pass), [`design.md`](../../../design.md) §3 (now states
+> "Nothing is debossed"), [`design-language.md`](../../design-language.md).
 >
 > Finding IDs: `NAV-x` page switches, `LOAD-x` first load, `DEB-x` debossed
 > surfaces, `CON-x` material consistency, `SLOW-x` slow networks and device

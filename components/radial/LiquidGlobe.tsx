@@ -693,7 +693,7 @@ export function LiquidGlobe({
      pins through the reticle from warming each one it passes; the router's own
      preload cache dedupes repeats. Never in the idle rehearsal, never for an
      external link, and never when the user has asked to save data
-     (docs/ui-perf-audit-2026-10-09.md, NAV-4). */
+     (docs/archive/2026/ui-perf-audit-2026-10-09.md, NAV-4). */
   const lockPreload = useRef<ReturnType<typeof setTimeout> | null>(null);
   const warmLocked = useCallback(
     (idx: number) => {

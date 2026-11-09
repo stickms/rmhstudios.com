@@ -14,7 +14,7 @@
  * precomputed twiddles and no per-frame copy, so a WASM port of the same
  * algorithm would win 2–4× where splitting across 4–8 cores wins 4–8×. (WASM is
  * still worth doing after this, and composes with it; see
- * docs/performance-audit-2026-08-12.md §2.1.)
+ * docs/archive/2026/performance-audit-2026-08-12.md §2.1.)
  *
  * ## Why it degrades instead of failing
  *

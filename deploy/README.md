@@ -190,4 +190,4 @@ single-instance. `web` runs multiple Nitro cluster workers in one container; the
 `redis`/`redis-state` planes back caching and durable rate-limit/presence state.
 Horizontal scaling of the realtime hubs would need sticky sessions plus a shared
 backplane first — see the scalability audit in
-[`../docs/scalability-audit-2026-07-17.md`](../docs/scalability-audit-2026-07-17.md).
+[`../docs/archive/2026/scalability-audit-2026-07-17.md`](../docs/archive/2026/scalability-audit-2026-07-17.md).

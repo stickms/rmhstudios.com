@@ -81,7 +81,7 @@ bundle only**. SSR/server builds get the real module.
   into one hub, `content/` lesson path, `audio/`), the client Zustand `store.ts`,
   and server-only progress (`progress.server.ts`) behind the
   `app/routes/api/rmhmusic/learn/` routes. **Status, unfinished work, future
-  features and known gaps for it live in [`RMHMUSIC_ROADMAP.md`](../RMHMUSIC_ROADMAP.md)
+  features and known gaps for it live in [`docs/rmhmusic/roadmap.md`](../docs/rmhmusic/roadmap.md)
   at the repo root — read it first.**
 - **`shared/`:** the cross-app tier. `realtime/client.ts` is the socket.io
   factory every app's `socket.ts` builds on (fast reconnect, wake signals,

@@ -270,7 +270,7 @@ measuring now. Open — [`06-backlog.md`](06-backlog.md) §3.
   is a real investigation (three.js shader compilation, scene construction,
   geometry upload), not a known fix. The applicable levers remain OPT-26
   (KTX2/Basis), OPT-37 (`OffscreenCanvas`) and staging scene construction across
-  frames. See [`../3d-performance-audit.md`](../3d-performance-audit.md).
+  frames. See [`../3d-performance-audit.md`](../../../3d-performance-audit.md).
 - **`rapier-*` at 2.18 MB and `maplibre-gl-*` at 949 KB.** Both correctly behind
   route-level `lazy()` boundaries and absent from the critical path. Large, but
   paid only by the routes that need them.

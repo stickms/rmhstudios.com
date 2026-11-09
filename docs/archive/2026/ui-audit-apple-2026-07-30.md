@@ -6,8 +6,8 @@
 > `app/globals.css` §"Standalone design-system story", ≈L3894–4230) and specifies
 > how to move the rest of the site onto it.
 >
-> Companion docs: [`design-language.md`](./design-language.md) (the system as
-> currently documented), [`page-consistency.md`](./page-consistency.md) (the
+> Companion docs: [`design-language.md`](../../design-language.md) (the system as
+> currently documented), [`page-consistency.md`](../../page-consistency.md) (the
 > per-page checklist), [`ui-audit-2026-07-28.md`](./ui-audit-2026-07-28.md) (the
 > defect audit — contrast, targets, overlap; still valid and **not** superseded).
 >

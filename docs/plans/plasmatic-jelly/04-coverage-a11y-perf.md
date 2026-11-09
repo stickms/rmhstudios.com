@@ -324,7 +324,7 @@ the document under the user.
 
 Measured by a new `testing/e2e/jelly-budget.mjs`. It uses CDP `Performance.getMetrics`
 (`TaskDuration`) over 10 s windows on `/`, a dense feed and an app route, at both device
-profiles, with the method of `docs/performance-audit-2026-10-08.md`. Its results go into
+profiles, with the method of `docs/archive/2026/performance-audit-2026-10-08.md`. Its results go into
 a new `docs/performance-audit-<date>.md` before the `data-material` flag is removed.
 
 ---

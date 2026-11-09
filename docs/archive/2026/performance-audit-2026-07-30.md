@@ -11,7 +11,7 @@ Read the two prior documents first — they are still accurate and their
 - [`performance-audit-2026-07-17.md`](performance-audit-2026-07-17.md) — DB
   indexes, FTS search paths, bundle splitting, SSR i18n, virtualized timelines,
   serving topology.
-- [`3d-performance-audit.md`](3d-performance-audit.md) — the WebGL games: render
+- [`3d-performance-audit.md`](../../3d-performance-audit.md) — the WebGL games: render
   tiers, DPR clamps, instancing/culling, bloom resolution, glTF conversion.
 
 **Method.** Four sweeps, each mechanical rather than by inspection, so the
@@ -362,7 +362,7 @@ PostgreSQL 16 instance and all five indexes verified present, with
 `prisma migrate status` reporting no drift.
 
 Not measured: the latency effect of items 2–4. The RUM and synthetic plumbing in
-[`performance-slo.md`](performance-slo.md) is how to confirm those, and its
+[`performance-slo.md`](../../performance-slo.md) is how to confirm those, and its
 checklist still has "forward `[rum:metric]` logs to a durable metrics backend"
 unchecked — until that is done, before/after percentiles for a write-path change
 are not obtainable from this repo.

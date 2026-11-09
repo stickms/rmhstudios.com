@@ -145,7 +145,7 @@ export function ExploreColumn({
    * After the arriving page has painted, not in the effect itself: `focus()`
    * needs up-to-date style and layout, so calling it straight after a page
    * switch's commit laid out the whole incoming page synchronously — ~55ms of
-   * the switch's one long task at 4× CPU (docs/performance-audit-2026-10-21.md
+   * the switch's one long task at 4× CPU (docs/archive/2026/performance-audit-2026-10-21.md
    * §Navigation commit). One frame later that layout already exists and the
    * call is free. `preventScroll`, because the field is at the top of the page
    * and a back/forward arrival has just had its scroll position restored.

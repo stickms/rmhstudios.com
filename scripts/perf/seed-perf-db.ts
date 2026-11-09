@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 /**
  * Deterministic synthetic dataset for the server-perf program
- * (docs/server-perf-2026-10-21/01-method.md §1.5).
+ * (docs/archive/2026/server-perf-2026-10-21/01-method.md §1.5).
  *
  *   pnpm tsx scripts/perf/seed-perf-db.ts [--db rmh_perf_build] [--small]
  *

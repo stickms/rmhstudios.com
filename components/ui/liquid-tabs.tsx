@@ -337,7 +337,7 @@ export function LiquidTabs({
   // of the ENTIRE incoming page mid-commit — which the next effect's DOM write
   // then invalidated, so the page was laid out twice before its first paint.
   // On a 4×-throttled CPU that one read was 120–330ms of every tabbed page
-  // switch (docs/ui-perf-audit-2026-10-09.md, NAV-1). A ResizeObserver
+  // switch (docs/archive/2026/ui-perf-audit-2026-10-09.md, NAV-1). A ResizeObserver
   // callback runs AFTER the frame's own layout, so the same read there is free.
   const syncEdges = useCallback(() => {
     const el = listRef.current;

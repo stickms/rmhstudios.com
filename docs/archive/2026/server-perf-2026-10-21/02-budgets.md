@@ -2,7 +2,7 @@
 
 Budgets say how fast is fast enough, so work stops where the user stops
 noticing. They are **origin** budgets on the local bench (`01-method.md` §2) —
-not the RUM/synthetic budgets in [`performance-slo.md`](../performance-slo.md),
+not the RUM/synthetic budgets in [`performance-slo.md`](../../../performance-slo.md),
 which include the network and the browser and remain the production authority.
 
 ## 1. Route classes

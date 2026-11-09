@@ -28,7 +28,7 @@ Read the earlier passes first; their findings hold and are not revisited:
 - [`performance-audit-2026-08-09.md`](performance-audit-2026-08-09.md) +
   [`loading-audit-2026-08-11/`](loading-audit-2026-08-11/index.md) — anonymous
   HTML cache, font blocking, the icon chunk.
-- [`3d-performance-audit.md`](3d-performance-audit.md) — the WebGL tier.
+- [`3d-performance-audit.md`](../../3d-performance-audit.md) — the WebGL tier.
 - [`build-deploy-audit-2026-08-08.md`](build-deploy-audit-2026-08-08.md) — the
   CI/deploy pipeline as it stands.
 
@@ -819,7 +819,7 @@ to be the important part of §2.1, and it is done.
 | `modern-screenshot` in `EpubReader` | **Maybe, later** — DOM→raster in JS is genuinely slow, but it is user-initiated, once, with a spinner. Measure before acting. |
 | `lib/laundry-sort/solver.ts` (1,165 lines) | **No** — a puzzle solver run once per level, not per frame. |
 | `lib/synapse-storm/generator.ts` (1,116 lines) | **No** — same shape. Generation is a one-off. |
-| Game loops (`lib/altair/engine/**`, `void-breaker`) | **No** — bound by draw calls and GPU fill rate, not by JS arithmetic. See [`3d-performance-audit.md`](3d-performance-audit.md); a WASM rewrite optimises the half that isn't the bottleneck. |
+| Game loops (`lib/altair/engine/**`, `void-breaker`) | **No** — bound by draw calls and GPU fill rate, not by JS arithmetic. See [`3d-performance-audit.md`](../../3d-performance-audit.md); a WASM rewrite optimises the half that isn't the bottleneck. |
 | Image processing | **Already native** — `sharp`, `@napi-rs/canvas`, `@resvg/resvg-js`. |
 | Audio decode | **Already WASM** — `@audio/decode` / `wasm-audio-decoders`, externalized in `vite.config.ts`. |
 

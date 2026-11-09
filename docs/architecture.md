@@ -252,7 +252,7 @@ runtime behavior.
 
 ## 4. CI
 
-**Eleven** workflows live in `.github/workflows/` — the fleet was consolidated in
+The workflows (count: `workflows` in [`_generated/facts.json`](./_generated/facts.json)) live in `.github/workflows/` — the fleet was consolidated in
 the rewrite, and this table used to describe the ~45-workflow one that preceded
 it (`typecheck-server.yml`, `vitest-coverage.yml`, `codeql.yml` and the granular
 linter/scanner set are all gone). `ls .github/workflows/` is the truth; this is
@@ -313,7 +313,7 @@ realtime topology.)
 ## 7. Data & media
 
 - **PostgreSQL** via Prisma 7 (`@prisma/adapter-pg`) in Node and raw pgx in
-  Go — one shared schema (`prisma/schema.prisma`, 234 models). Go models
+  Go — one shared schema (`prisma/schema.prisma`, model count in [`_generated/facts.json`](./_generated/facts.json)). Go models
   mirror Prisma column casing verbatim.
 - **Media:** R2/S3 via `lib/storage/` (local-FS fallback for dev); MinIO
   provides the bucket locally; the Go `assets` service streams

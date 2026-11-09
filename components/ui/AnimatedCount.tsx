@@ -41,7 +41,7 @@ interface AnimatedCountProps {
  *
  * ## Why this is not the CSS `@property` + `counter()` version
  *
- * docs/performance-audit-2026-08-12.md §1.2 proposed animating a registered
+ * docs/archive/2026/performance-audit-2026-08-12.md §1.2 proposed animating a registered
  * `<integer>` custom property and rendering it with `counter()`, for zero React
  * involvement. Implementation found two blockers, both fatal here:
  *

@@ -11,7 +11,7 @@ still hold, and this pass deliberately does not revisit them:
   indexes, FTS, bundle splitting, SSR i18n, serving topology.
 - [`performance-audit-2026-07-30.md`](performance-audit-2026-07-30.md) — pollers,
   write amplification, predicate indexes, frame-loop `getComputedStyle`.
-- [`3d-performance-audit.md`](3d-performance-audit.md) — the WebGL games.
+- [`3d-performance-audit.md`](../../3d-performance-audit.md) — the WebGL games.
 
 **Method.** Everything below was measured, not inspected: headless Chromium
 driving the real dev server, CPU throttled 4× (a mid-range phone), with

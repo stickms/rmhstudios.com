@@ -88,7 +88,7 @@ export function createServerPrismaClient(logger: Logger): PrismaClient {
  * Pay Prisma's one-time start-up cost at boot instead of on the first player's
  * action. The first query on a fresh client initialises the query compiler and
  * opens the first pool connection; measured on the socket hub that is a single
- * ~280 ms event-loop stall (docs/server-perf-2026-10-21/results/ws-5.md) landing
+ * ~280 ms event-loop stall (docs/archive/2026/server-perf-2026-10-21/results/ws-5.md) landing
  * on whichever table or lobby acts first. Fire-and-forget: a failure only means
  * the first real query pays as before.
  */

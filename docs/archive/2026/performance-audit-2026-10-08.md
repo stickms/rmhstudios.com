@@ -17,7 +17,7 @@ work runs — CSS vs JS), [`-08-09`](performance-audit-2026-08-09.md) +
 [`loading-audit-2026-08-11/`](loading-audit-2026-08-11/index.md) (load),
 [`-08-04`](performance-audit-2026-08-04.md) (entry chunk),
 [`-08-01`](performance-audit-2026-08-01.md) (the custom-property restyle),
-[`3d-performance-audit.md`](3d-performance-audit.md) (the WebGL tier).
+[`3d-performance-audit.md`](../../3d-performance-audit.md) (the WebGL tier).
 
 ---
 
@@ -25,8 +25,8 @@ work runs — CSS vs JS), [`-08-09`](performance-audit-2026-08-09.md) +
 
 `pnpm build`, booted from `.output/server/index.mjs` against a migrated local
 Postgres, driven by Chromium through a harness that is now committed as
-[`testing/e2e/frame-budget.mjs`](../testing/e2e/frame-budget.mjs) (see
-[`testing.md`](testing.md) §6). 69 routes — every site section, every game and
+[`testing/e2e/frame-budget.mjs`](../../../testing/e2e/frame-budget.mjs) (see
+[`testing.md`](../../testing.md) §6). 69 routes — every site section, every game and
 app landing page from the catalog — at **desktop** (1920×1080, DPR 1) and
 **mobile** (390×844, DPR 2, touch), signed out. Per route:
 

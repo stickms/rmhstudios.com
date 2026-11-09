@@ -158,7 +158,7 @@ long tasks"_ ([`loading-audit-2026-08-11/06-backlog.md`](loading-audit-2026-08-1
 
 `pnpm build:frontend`, both builds (`origin/main` at `f17b5b066` and this branch)
 served side by side from `.output/server/index.mjs` with no database, signed out.
-Measured with [`testing/e2e/frame-budget.mjs`](../testing/e2e/frame-budget.mjs),
+Measured with [`testing/e2e/frame-budget.mjs`](../../../testing/e2e/frame-budget.mjs),
 which gained two things in this pass:
 
 - **`FRAME_GPU=1`** launches Chromium on the host's real GPU (Metal through ANGLE
@@ -424,7 +424,7 @@ Measuring before reaching for it changed the picture on all three.
 
 ### Method
 
-`testing/e2e/page-switch.mjs` (new; [`testing.md`](testing.md) §6) drives the
+`testing/e2e/page-switch.mjs` (new; [`testing.md`](../../testing.md) §6) drives the
 **built** app (`pnpm build:frontend`, Nitro server, migrated local Postgres
 seeded with 40 users, 400 posts, 12 tags, 6 communities so the feed and
 discovery modules render a realistic DOM). A real click on a nav-rail link from
@@ -760,7 +760,7 @@ medians of 3, three conditions per build:
 - **press, cold, slow 4G** — a fresh browser context per sample (nothing
   cached), 150ms RTT, 1.6 Mbps.
 
-The harness gained what this needed ([`testing.md`](testing.md) §6): the press
+The harness gained what this needed ([`testing.md`](../../testing.md) §6): the press
 mode, a real cold mode, `~card` (tap a post card, which is a `div`, not a link),
 byte and request accounting for the click and for the settled page view, and a
 count of how often the router's pending skeleton or an in-page spinner showed.

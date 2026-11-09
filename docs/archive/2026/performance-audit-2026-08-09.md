@@ -170,7 +170,7 @@ old code and pass on the new.
 > **Still required to realise the win:** the Cloudflare cache rule must exist for
 > these headers to do anything —
 > `deploy/apply-cloudflare-cache-rules.sh`, still unchecked in
-> [`performance-slo.md`](performance-slo.md)'s rollout checklist. The origin is
+> [`performance-slo.md`](../../performance-slo.md)'s rollout checklist. The origin is
 > now saying "cacheable"; nothing is listening yet.
 
 ---

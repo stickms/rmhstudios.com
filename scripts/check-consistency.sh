@@ -493,7 +493,7 @@ else
     if has '\.(ts|tsx)$'; then
       mkdir -p .cache/tsc
       # `pnpm run typecheck`, never bare `tsc`. Two packages in this workspace
-      # ship a `tsc` bin — `typescript` (5.9, the module typescript-eslint
+      # ship a `tsc` bin — `typescript` (6.x, the module typescript-eslint
       # imports) and `typescript-native` (7.x, the Go compiler) — so
       # node_modules/.bin/tsc is whichever pnpm linked last. The script pins the
       # native one by path, and its .tsbuildinfo is a separate file because the
@@ -515,6 +515,19 @@ else
       fi
     else
       skip "docs freshness" "registry/catalog/routes untouched"
+    fi
+
+    # docs/_generated/facts.json holds the counts (models, routes, tests, css, ...)
+    # that CLAUDE.md and the living docs point at. Only the paths that feed those
+    # counts (or the file itself) can make it stale.
+    if has '^(prisma/|app/routes/|components/.*\.tsx$|.*\.css$|.*\.test\.tsx?$|\.github/workflows/|lib/i18n/config\.ts|scripts/gen-repo-facts\.ts|docs/_generated/)'; then
+      if pnpm run facts:check; then
+        pass "docs/_generated/facts.json is current"
+      else
+        fail "facts.json is stale — run pnpm facts:generate and stage it"
+      fi
+    else
+      skip "facts freshness" "no counted paths touched"
     fi
 
     # A new game's art dropped into public/images/** without regenerating

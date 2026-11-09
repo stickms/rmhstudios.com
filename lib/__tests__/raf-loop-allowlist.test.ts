@@ -311,7 +311,7 @@ const ALLOW = new Set<string>([
   // deferred `querySelectorAll` inside `useReveal(key)`, and the reveal is now a
   // scroll-driven CSS animation with no JS at all. (`rmh-pmc/shared.tsx` stays —
   // it lost the same hook, but has a separate counter tick that still uses rAF.)
-  // See docs/performance-audit-2026-08-12.md §1.4.
+  // See docs/archive/2026/performance-audit-2026-08-12.md §1.4.
   'components/rmh-pmc/ContactPage.tsx',
   'components/rmh-pmc/shared.tsx',
   'components/rmhcalculator/ScientificCalculator.tsx',

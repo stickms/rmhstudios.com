@@ -598,7 +598,7 @@ interaction with Playwright under `Emulation.setCPUThrottlingRate`, collect
 container's own drift cannot be mistaken for a result.
 
 **A second pass found a bigger one, and it was not in this directory**
-([`docs/performance-audit-2026-08-01.md`](../../docs/performance-audit-2026-08-01.md)).
+([`docs/archive/2026/performance-audit-2026-08-01.md`](../../docs/archive/2026/performance-audit-2026-08-01.md)).
 The globe still dragged at 4.4fps with 624ms of input latency while its own frame
 loop measured **2.8ms** — ~66% of the profile was Chromium's own C++ style work.
 The cause was a `pointermove` handler elsewhere on the page writing custom

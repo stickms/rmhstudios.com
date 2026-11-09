@@ -16,7 +16,7 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
    * ```
    *
    * — the canonical layout-thrash shape, run on every keystroke. See
-   * docs/performance-audit-2026-08-12.md §1.7.
+   * docs/archive/2026/performance-audit-2026-08-12.md §1.7.
    *
    * Engines without `field-sizing` are unaffected: the `@supports` block in
    * globals.css simply does not apply, and the field behaves exactly as a

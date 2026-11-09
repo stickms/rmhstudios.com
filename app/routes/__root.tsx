@@ -432,7 +432,7 @@ export const Route = createRootRoute({
       // applied before first paint, so the whole appearance landed after
       // hydration: the ground went white → black, and under a 125% font scale
       // every rem-sized thing on the page grew by a quarter
-      // (docs/fouc-audit-2026-10-06.md §6).
+      // (docs/archive/2026/fouc-audit-2026-10-06.md §6).
       return {
         meta: [
           { charSet: 'utf-8' },
@@ -589,7 +589,7 @@ function RootDocument({ children }: { children: ReactNode }) {
             `opacity: 0` under `[data-reveal]`/`.reveal` and undoes it in script.
             (`components/motion/useRevealWatchdog` — the 1.5s deadline that used
             to rescue a stuck IntersectionObserver — is gone with the observer;
-            see docs/performance-audit-2026-08-12.md §1.1.) */}
+            see docs/archive/2026/performance-audit-2026-08-12.md §1.1.) */}
         {/* `.store-art__img` is on the same footing: the storefront cards fade
             their art in from opacity 0 once it loads, and the class that does
             it is set by an event handler. No scripting, no handler, no art —

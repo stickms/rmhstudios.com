@@ -101,7 +101,7 @@ the harness; what the harness gates is the kind of evidence a change may carry
 | **P0 — Instrument and baseline** (WS0) | the harness, the seeded perf dataset, the wired `Server-Timing` phases, `results/baseline.json` + `results/ws-0.md` | a baseline exists for every route in the route list, both auth modes; budgets in `02-budgets.md` are ratified against it |
 | **P1 — Parallel workstreams** (WS1–WS9) | commits per workstream + `results/ws-N.md`, each Shipped row tagged `exact` or `latency` | each workstream meets its exit criteria or closes with "measured, no win" |
 | **P2 — Integration** | workstreams merged (`04-workstreams.md` §Merge order); full commit gate on the merged tree; full harness re-run; `06-report.md` | merged tree green; no route regressed past tolerance (`02-budgets.md` §3) |
-| **P3 — Production verification** | RUM/synthetic windows per [`performance-slo.md`](../performance-slo.md) | the rollback policy there applies unchanged |
+| **P3 — Production verification** | RUM/synthetic windows per [`performance-slo.md`](../../../performance-slo.md) | the rollback policy there applies unchanged |
 
 Evidence that is exact and hardware-independent (query counts, payload bytes,
 cache headers) can be produced before the harness exists. Latency claims wait

@@ -108,7 +108,7 @@ function routeLabel(rawUrl: string | undefined, method: string | undefined): str
 }
 
 /**
- * Bench-only response headers (docs/server-perf-2026-10-21/01-method.md §1.3).
+ * Bench-only response headers (docs/archive/2026/server-perf-2026-10-21/01-method.md §1.3).
  *
  * `x-rmh-queries: <n>` carries the request's Prisma operation count so the perf
  * harness can read it without a log scrape. It is OFF unless

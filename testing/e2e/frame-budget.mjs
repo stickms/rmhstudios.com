@@ -57,7 +57,7 @@
 // builds against each other, not against a real device.** Frames at rest and
 // perpetual-animation counts are hardware-independent and are what `--gate`
 // checks. Findings and the measured before/after of the pass that introduced
-// this tool: docs/performance-audit-2026-10-08.md.
+// this tool: docs/archive/2026/performance-audit-2026-10-08.md.
 //
 // ## What `--gate` fails, and what it SKIPs (GPU-less runners)
 //
@@ -94,7 +94,7 @@ const CHROMIUM_PATH =
  * ambient clock drops to the tier's idle floor (`JELLY_BUDGETS[tier].idleClockHz`, 15 Hz on desktop) and stays
  * there; it is 0 only when the tab is hidden, the window unfocused, nothing jelly is on screen, the tier is degraded
  * or `jellyMotion = still`. The rest limit is therefore that floor + 1 frame of slack (13 fps) — a DELIBERATE
- * reversal of the 2026-10-08 audit's 2 fps rest limit (docs/performance-audit-2026-10-08.md), recorded in the
+ * reversal of the 2026-10-08 audit's 2 fps rest limit (docs/archive/2026/performance-audit-2026-10-08.md), recorded in the
  * jelly contract (docs/plasmatic-jelly-system.md). Both numbers come from `lib/jelly/tiers.ts`; never restate them
  * here. The CPU target at rest on `/` stays ≤ 250 ms/s (04 §3.5, advisory — reported, not gated).
  */
@@ -478,7 +478,7 @@ if (gate && failures.length > 0) {
     `\n${failures.length} route(s) failed the gate: ${failures.map((f) => `${f.profile} ${f.route} (${f.gateFailures.join('; ')})`).join(', ')}.` +
       `\nRest/engaged limit ${FRAME_LIMIT} frames/s; no unsanctioned perpetual animation; every route must load.` +
       `\nAt rest the jelly runs on its ${IDLE_FLOOR_HZ} Hz idle floor (R7) and nothing else may tick; anything faster re-renders on every vsync —` +
-      `\nsee docs/plasmatic-jelly-system.md and docs/performance-audit-2026-10-08.md.`,
+      `\nsee docs/plasmatic-jelly-system.md and docs/archive/2026/performance-audit-2026-10-08.md.`,
   );
   process.exit(1);
 }

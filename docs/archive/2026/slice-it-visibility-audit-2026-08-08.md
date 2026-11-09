@@ -1,8 +1,8 @@
 # Slice It! — what shipped vs. what you can reach (2026-08-08)
 
-[`_handoff/implementation-status.md`](_handoff/implementation-status.md) records
+[`_handoff/implementation-status.md`](../../_handoff/implementation-status.md) records
 **155 of the 162** ideas in
-[`plans/2026-08-06-slice-it-feature-ideas.md`](plans/2026-08-06-slice-it-feature-ideas.md)
+[`plans/2026-08-06-slice-it-feature-ideas.md`](../../plans/2026-08-06-slice-it-feature-ideas.md)
 as shipped. That count is honest about the code: the logic, the schemas, the
 routes and the tests are there, and the tests pass.
 

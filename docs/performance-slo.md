@@ -86,7 +86,7 @@ here is overwhelmingly main-thread JavaScript and GPU compositing, and a phone
 pays 4–6× for both. Mixed into one population with desktop traffic, a 3× mobile
 regression reads as mild drift and passes its band. That is not hypothetical:
 six consecutive audits measured only unthrottled desktop Chromium
-(`docs/loading-audit-2026-08-11/01-measurements.md` §6) and none of them could
+(`docs/archive/2026/loading-audit-2026-08-11/01-measurements.md` §6) and none of them could
 have seen it. Split the report before concluding a route is healthy:
 
 ```bash
