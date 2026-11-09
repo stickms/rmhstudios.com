@@ -49,4 +49,16 @@ describe('SessionSheet at large text', () => {
     expect(html).toMatch(/<h2[^>]*class="[^"]*\bmin-h-8\b/);
     expect(html).toMatch(/class="[^"]*\bmin-h-10\b/);
   });
+
+  it('lets Next drop below the sentence when they cannot share a line, and breaks a long word', () => {
+    // Beside a Next button that is always laid out (hidden, not removed), a sentence at large text
+    // had ~100px: a single word was wider than its box and spilled out of the sheet's left edge.
+    expect(html).toMatch(/class="flex min-h-11 flex-wrap items-center gap-3"/);
+    expect(html).toMatch(/<p[^>]*class="[^"]*\bbreak-words\b/);
+  });
+
+  it('takes no room for Next until a question is answered, so the hint has the whole row', () => {
+    expect(html).toMatch(/<button[^>]*class="[^"]*\bhidden\b/);
+    expect(html).not.toMatch(/<button[^>]*class="[^"]*\binvisible\b/);
+  });
 });

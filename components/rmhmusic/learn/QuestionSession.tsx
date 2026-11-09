@@ -261,19 +261,22 @@ export function SessionSheet<C, A>({
         </span>
       </h2>
       {question}
-      <div className="flex min-h-11 items-center gap-3">
-        <div className="flex min-h-10 min-w-0 flex-1 items-center justify-center">
-          <p key={lineKey} className="text-sm leading-5 text-(--app-text-muted)">
+      {/* Wraps so that at large text Next drops below the sentence instead of squeezing it to a
+          word a line; at the normal size the sentence's 7rem basis plus Next always fits. */}
+      <div className="flex min-h-11 flex-wrap items-center gap-3">
+        <div className="flex min-h-10 min-w-0 flex-[1_1_7rem] items-center justify-center">
+          <p key={lineKey} className="text-sm leading-5 break-words text-(--app-text-muted)">
             {line}
           </p>
         </div>
-        {/* Always here so the line never reflows; hidden (and inert) until a question is answered. */}
+        {/* Not laid out (and inert) until a question is answered, so the hint has the whole row:
+            a hidden-but-reserved Next left it 140px on a 320px phone and cut it to two lines. */}
         <button
           ref={session.nextButton}
           type="button"
           onClick={session.next}
           inert={!feedback || undefined}
-          className={cn(PRIMARY_BUTTON, !feedback && 'invisible')}
+          className={cn(PRIMARY_BUTTON, !feedback && 'hidden')}
         >
           {t('flash-next', { defaultValue: 'Next' })}
         </button>
