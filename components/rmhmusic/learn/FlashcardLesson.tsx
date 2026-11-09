@@ -29,10 +29,11 @@
  */
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DECKS, buildSession, type Card } from '@/lib/rmhmusic/learn/content/decks';
 import { getLesson } from '@/lib/rmhmusic/learn/content/path';
+import { isHeldActivation } from '@/lib/rmhmusic/learn/input/key-repeat';
 import { releaseMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import {
   createFlashcardsMachine,
@@ -117,6 +118,14 @@ export function FlashcardLesson({
   const nextButton = useRef<HTMLButtonElement>(null);
   const letterGroup = useRef<HTMLDivElement>(null);
   const movedOn = useRef(false);
+
+  // A held Enter repeats a click on whatever holds focus; focus hops letters → Next → letters as
+  // cards go by, so a repeat must not activate anything (see key-repeat.ts).
+  const onKeyDown = (e: ReactKeyboardEvent) => {
+    if (isHeldActivation(e.nativeEvent) && (e.target as HTMLElement).closest('button')) {
+      e.preventDefault();
+    }
+  };
 
   const next = () => {
     if (lesson.kind === 'feedback') {
@@ -337,7 +346,8 @@ export function FlashcardLesson({
   }
 
   return (
-    <div className="rmm-flash space-y-4">
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- cancels a repeating Enter that bubbled up from a button; the wrapper is not itself interactive
+    <div className="rmm-flash space-y-4" onKeyDown={onKeyDown}>
       <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
         <h2
           title={title}
