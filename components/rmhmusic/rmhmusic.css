@@ -172,6 +172,21 @@
   color-scheme: dark;
 }
 
+/* The document's own ground (the scrollbar gutter, the overscroll area) and scheme. The pre-paint
+   script paints them on <html> inline when script runs; with JavaScript off only these rules can,
+   so the page no longer shows a white strip and a light scrollbar beside the paper. The colours are
+   `--app-bg` above (theme-parity.test.ts pins them) and the `/rmhmusic` entry of
+   APP_ROUTE_THEME_BG. A browser without `:has()` keeps the browser's white, as before. */
+:root:has(.rmhmusic-theme) {
+  background-color: #f6f0e1;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-app-dark='0']):has(.rmhmusic-theme) {
+    background-color: #0f182b;
+    color-scheme: dark;
+  }
+}
+
 /* ── The paper ground ─────────────────────────────────────────────────────────
    The app's root paints it, before any script: the paper colour and a faint grain made of two
    dot lattices at co-prime pitches (so no regular pattern shows). No raster texture. */

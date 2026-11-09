@@ -7,18 +7,23 @@
  *   public/images/games/logos/rmhmusic.webp    logo    1024×270, transparent (the wordmark)
  *   public/images/games/icons/rmhmusic.webp    icon    1024×1024, opaque
  *
- * The art is the app's own notebook paper (components/rmhmusic/rmhmusic.css: cream paper, navy
- * fountain-pen ink, blue ruled lines, a red-pencil margin rule, one indigo pen-ink accent) with
- * what a beginner learns in it: a treble staff with a correctly notated melody, a piano keyboard
- * and a guitar chord box, all showing C major. Everything is original vector artwork drawn here as
- * SVG; the treble clef, noteheads, time signature and instruments are geometry, not font glyphs.
- * The only third-party inputs are the bundled OFL fonts in components/shared/game-fonts/
- * (Cormorant Garamond for the wordmark, the pen annotations and the tagline, IBM Plex
- * Mono for string names). See docs/game-art-credits.md.
+ * The art is a page of hand-copied manuscript paper, the way a teacher would write out a first
+ * tune for a student: the app's notebook paper (cream, navy ink, ruled blue staves, a red-pencil
+ * margin) with "Ode to Joy" written on the staff and the same notes on a guitar tab beneath, so
+ * piano and guitar are both there without a caption. There are no taglines, annotations,
+ * badges or footers. What makes it read as made by a person rather than a program: staves
+ * ruled freehand (each line bows a little and the whole system leans a fraction), noteheads and
+ * stems that are not quite level, ink that is uneven at the edge and in density (an SVG
+ * displacement + noise filter on the inked layer), and the wordmark set in a letterpress face
+ * with a note for the dot of the i. Everything is original vector artwork drawn here; the
+ * treble clef, noteheads and time signature are geometry, not font glyphs. The one third-party
+ * input is IM Fell English (SIL OFL, Igino Marini's digitisation of the 17th-century Fell types),
+ * vendored in scripts/game-art/fonts/. See docs/game-art-credits.md.
  *
- * Pipeline: SVG → an HTML page in a temp dir (fonts via file:// URLs) → headless Chromium
- * (Playwright) at 2× → sharp (Lanczos down to the exact size) → WebP. Deterministic: no
- * randomness (the paper grain is a seeded feTurbulence), so a re-run reproduces the same art.
+ * Pipeline: SVG → an HTML page in a temp dir (font via file:// URL) → headless Chromium
+ * (Playwright) at 2× → sharp (Lanczos down to the exact size) → WebP. Deterministic: the
+ * "hand" is a seeded PRNG and the paper and ink noise are seeded feTurbulence, so a re-run
+ * reproduces the same art.
  *
  *   node scripts/game-art/rmhmusic.mjs                      # all four, into public/
  *   node scripts/game-art/rmhmusic.mjs --only card,icon     # a subset
@@ -35,42 +40,36 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import sharp from 'sharp';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const FONTS = join(ROOT, 'components', 'shared', 'game-fonts');
+const HERE = dirname(fileURLToPath(import.meta.url));
+const ROOT = resolve(HERE, '..', '..');
+const FONTS = join(HERE, 'fonts');
+const GAME_FONTS = join(ROOT, 'components', 'shared', 'game-fonts');
 const OUT = join(ROOT, 'public', 'images', 'games');
 
 // ── Palette: the app's light "paper" tokens (rmhmusic.css), a little stronger where art needs it ──
 const C = {
   paper: '#f6f0e1', // --app-bg
   sheet: '#fcf8ee', // --app-surface
-  paperDeep: '#efe7d4', // --app-bg-subtle
   ink: '#1a2747', // --app-text
   inkMuted: '#3f4d70', // --app-text-muted
-  accent: '#4338ca', // --app-accent (pen ink)
-  accentWash: '#d9d8f6', // the accent at ~15% on the sheet: a pressed key
-  rule: '#c3cfe4', // --rmm-rule
-  staffFaint: '#d3dbea', // --rmm-staff, a touch lighter so it stays background
-  staffInk: '#6f82a8', // --app-border-bright: the inked staff in ruled-line blue
+  pencil: '#585d6b', // graphite: a teacher's fingering marks
+  staffFaint: '#cdd6e8', // the pre-printed manuscript staves
+  staffInk: '#6f82a8', // the same staves where the music is written
   margin: '#dd8f88', // --rmm-margin, pencil-strong
 };
 
 // ── Fonts ──────────────────────────────────────────────────────────────────────
-const fontUrl = (p) => pathToFileURL(join(FONTS, p)).href;
+const fontUrl = (p, dir = FONTS) => pathToFileURL(join(dir, p)).href;
 const FONT_CSS = `
-@font-face{font-family:'Great Vibes';src:url('${fontUrl('GreatVibes/GreatVibes-Regular.woff2')}') format('woff2');font-weight:400}
-@font-face{font-family:'Cormorant Garamond';src:url('${fontUrl('CormorantGaramond/CormorantGaramond-Variable.woff2')}') format('woff2');font-weight:300 700;font-style:normal}
-@font-face{font-family:'Cormorant Garamond';src:url('${fontUrl('CormorantGaramond/CormorantGaramond-Italic-Variable.woff2')}') format('woff2');font-weight:300 700;font-style:italic}
-@font-face{font-family:'IBM Plex Mono';src:url('${fontUrl('IBMPlexMono/IBMPlexMono-Medium.woff2')}') format('woff2');font-weight:500}
-@font-face{font-family:'Bodoni Moda';src:url('${fontUrl('BodoniModa/BodoniModa-Italic-wght.woff2')}') format('woff2');font-weight:400 900;font-style:italic}
-@font-face{font-family:'Cinzel';src:url('${fontUrl('Cinzel/Cinzel-Variable.woff2')}') format('woff2');font-weight:400 900;font-style:normal}
-@font-face{font-family:'Jost';src:url('${fontUrl('Jost/Jost-Variable.woff2')}') format('woff2');font-weight:100 900;font-style:normal}
+@font-face{font-family:'IM Fell English';src:url('${fontUrl('IMFellEnglish/IMFellEnglish-Regular.woff2')}') format('woff2');font-weight:400;font-style:normal}
+@font-face{font-family:'IM Fell English';src:url('${fontUrl('IMFellEnglish/IMFellEnglish-Italic.woff2')}') format('woff2');font-weight:400;font-style:italic}
+@font-face{font-family:'Bodoni Moda';src:url('${fontUrl('BodoniModa/BodoniModa-Italic-wght.woff2', GAME_FONTS)}') format('woff2');font-weight:400 900;font-style:italic}
 `;
-const FONT_CHECKS = [
-  "400 40px 'Great Vibes'",
-  "600 40px 'Cormorant Garamond'",
-  "italic 600 40px 'Cormorant Garamond'",
-  "500 40px 'IBM Plex Mono'",
-];
+const FELL = "'IM Fell English'";
+// Fell's figures are old-style (a 0 like an o, a 1 like a small-cap I), wrong for fret numbers and
+// fingerings; Bodoni Moda's italic has lining figures and a pen-like slant.
+const DIGITS = "'Bodoni Moda'";
+const FONT_CHECKS = [`400 40px ${FELL}`, `italic 400 40px ${FELL}`, `italic 600 40px ${DIGITS}`];
 
 // ── Geometry helpers ───────────────────────────────────────────────────────────
 const f = (n) => Number(n.toFixed(2));
@@ -253,97 +252,6 @@ function barline(x, y0, s, color = C.ink, final = false) {
   return `${thin}<rect x="${f(x + 0.32 * s)}" y="${f(y0)}" width="${f(0.42 * s)}" height="${f(4 * s)}" fill="${color}"/>`;
 }
 
-/** Faint empty manuscript staves over a region, the app backdrop's paper. */
-function manuscript(x1, x2, yStart, yEnd, s, gap, color = C.staffFaint) {
-  let g = '';
-  for (let y = yStart; y + 4 * s <= yEnd; y += 4 * s + gap) g += staffLines(x1, x2, y, s, color, 2);
-  return g;
-}
-
-// ── Instruments ────────────────────────────────────────────────────────────────
-const WHITE = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-/** Black keys sit after these white keys (C#, D#, F#, G#, A#): groups of two and three. */
-const HAS_SHARP = new Set(['C', 'D', 'F', 'G', 'A']);
-
-/**
- * A piano keyboard from C, `n` white keys wide. `lit` names white keys to highlight
- * (e.g. ['C4','E4','G4']), labelled at the key's foot in pen ink.
- */
-function keyboard(x, y, w, h, n, { lit = [], labels = true, startOct = 4, labelSize } = {}) {
-  const kw = w / n;
-  const bw = kw * 0.6;
-  const bh = h * 0.62;
-  const r = kw * 0.12;
-  let g = `<g>`;
-  // The case: a navy lip above the keys, like the fallboard edge.
-  g += `<rect x="${f(x - kw * 0.12)}" y="${f(y - h * 0.09)}" width="${f(w + kw * 0.24)}" height="${f(h * 0.09 + h + kw * 0.12)}" rx="${f(r * 1.4)}" fill="${C.ink}"/>`;
-  for (let i = 0; i < n; i++) {
-    const name = WHITE[i % 7] + (startOct + Math.floor(i / 7));
-    const on = lit.includes(name);
-    const kx = x + i * kw;
-    g += `<path d="M${f(kx + 2)} ${f(y)}H${f(kx + kw - 2)}V${f(y + h - r)}Q${f(kx + kw - 2)} ${f(y + h)} ${f(kx + kw - 2 - r)} ${f(y + h)}H${f(kx + 2 + r)}Q${f(kx + 2)} ${f(y + h)} ${f(kx + 2)} ${f(y + h - r)}Z" fill="${on ? C.accentWash : C.sheet}"/>`;
-    if (on) {
-      g += `<rect x="${f(kx + kw * 0.2)}" y="${f(y + h - kw * 0.2 - kw * 0.12)}" width="${f(kw * 0.6)}" height="${f(kw * 0.12)}" rx="${f(kw * 0.06)}" fill="${C.accent}"/>`;
-    }
-    if (labels && on) {
-      const fs = labelSize ?? kw * 0.5;
-      g += `<text x="${f(kx + kw / 2)}" y="${f(y + h - kw * 0.48)}" text-anchor="middle" font-family="Cormorant Garamond" font-style="italic" font-weight="700" font-size="${f(fs)}" fill="${C.accent}">${name[0]}</text>`;
-    }
-  }
-  for (let i = 0; i < n - 1; i++) {
-    if (!HAS_SHARP.has(WHITE[i % 7])) continue;
-    const bx = x + (i + 1) * kw - bw / 2;
-    g += `<path d="M${f(bx)} ${f(y)}H${f(bx + bw)}V${f(y + bh - r * 0.6)}Q${f(bx + bw)} ${f(y + bh)} ${f(bx + bw - r * 0.6)} ${f(y + bh)}H${f(bx + r * 0.6)}Q${f(bx)} ${f(y + bh)} ${f(bx)} ${f(y + bh - r * 0.6)}Z" fill="${C.ink}"/>`;
-    // A sliver of light on the key's face.
-    g += `<rect x="${f(bx + bw * 0.18)}" y="${f(y + bh * 0.06)}" width="${f(bw * 0.12)}" height="${f(bh * 0.78)}" rx="${f(bw * 0.06)}" fill="#3a4a72" opacity="0.7"/>`;
-  }
-  return `${g}</g>`;
-}
-
-/**
- * A six-string chord box, strings 6 → 1 left to right, nut on top. `shape` is the chord in
- * standard notation low E → high E ('x32010' = C major); `fingers` the fingering in the same order.
- */
-function chordBox(x, y, w, frets, shape, fingers, { name, stringNames = true } = {}) {
-  const gap = w / 5;
-  const fh = gap * 1.28;
-  const h = fh * frets;
-  const line = gap * 0.055;
-  let g = `<g>`;
-  if (name) {
-    g += `<text x="${f(x + w / 2)}" y="${f(y - gap * 1.25)}" text-anchor="middle" font-family="Cormorant Garamond" font-weight="700" font-size="${f(gap * 1.25)}" fill="${C.ink}">${name}</text>`;
-  }
-  for (let i = 0; i < 6; i++) {
-    const sx = x + i * gap;
-    g += `<line x1="${f(sx)}" y1="${f(y)}" x2="${f(sx)}" y2="${f(y + h)}" stroke="${C.ink}" stroke-width="${f(line * (1.5 - i * 0.12))}" stroke-linecap="round"/>`;
-  }
-  for (let k = 1; k <= frets; k++) {
-    g += `<line x1="${f(x)}" y1="${f(y + k * fh)}" x2="${f(x + w)}" y2="${f(y + k * fh)}" stroke="${C.ink}" stroke-width="${f(line)}"/>`;
-  }
-  g += `<rect x="${f(x - line)}" y="${f(y - gap * 0.2)}" width="${f(w + 2 * line)}" height="${f(gap * 0.22)}" rx="${f(gap * 0.05)}" fill="${C.ink}"/>`;
-  for (let i = 0; i < 6; i++) {
-    const sx = x + i * gap;
-    const c = shape[i];
-    const my = y - gap * 0.62;
-    const m = gap * 0.2;
-    if (c === 'x') {
-      g += `<path d="M${f(sx - m)} ${f(my - m)}L${f(sx + m)} ${f(my + m)}M${f(sx + m)} ${f(my - m)}L${f(sx - m)} ${f(my + m)}" stroke="${C.ink}" stroke-width="${f(gap * 0.07)}" stroke-linecap="round"/>`;
-    } else if (c === '0') {
-      g += `<circle cx="${f(sx)}" cy="${f(my)}" r="${f(m)}" fill="none" stroke="${C.ink}" stroke-width="${f(gap * 0.06)}"/>`;
-    } else {
-      const fy = y + (Number(c) - 0.5) * fh;
-      g += `<circle cx="${f(sx)}" cy="${f(fy)}" r="${f(gap * 0.36)}" fill="${C.accent}"/>`;
-      g += `<text x="${f(sx)}" y="${f(fy + gap * 0.17)}" text-anchor="middle" font-family="IBM Plex Mono" font-weight="500" font-size="${f(gap * 0.46)}" fill="${C.sheet}">${fingers[i]}</text>`;
-    }
-  }
-  if (stringNames) {
-    'EADGBE'.split('').forEach((n, i) => {
-      g += `<text x="${f(x + i * gap)}" y="${f(y + h + gap * 0.8)}" text-anchor="middle" font-family="IBM Plex Mono" font-weight="500" font-size="${f(gap * 0.44)}" fill="${C.inkMuted}">${n}</text>`;
-    });
-  }
-  return `${g}</g>`;
-}
-
 // ── Paper ──────────────────────────────────────────────────────────────────────
 function paperDefs(id, seed = 7) {
   return `
@@ -367,156 +275,252 @@ function paper(id, w, h) {
   <rect width="${w}" height="${h}" fill="url(#${id}-vig)"/>`;
 }
 
-/** A hand-drawn pen arrow along a quadratic curve, with a two-stroke head. */
-function penArrow(x1, y1, cx, cy, x2, y2, w, color = C.accent) {
-  const ang = Math.atan2(y2 - cy, x2 - cx);
-  const L = w * 5.5;
-  const a1 = ang + Math.PI * 0.82;
-  const a2 = ang - Math.PI * 0.82;
-  return `<g fill="none" stroke="${color}" stroke-width="${f(w)}" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M${f(x1)} ${f(y1)}Q${f(cx)} ${f(cy)} ${f(x2)} ${f(y2)}"/>
-    <path d="M${f(x2 + Math.cos(a1) * L)} ${f(y2 + Math.sin(a1) * L)}L${f(x2)} ${f(y2)}L${f(x2 + Math.cos(a2) * L)} ${f(y2 + Math.sin(a2) * L)}"/>
-  </g>`;
+// ── The hand ───────────────────────────────────────────────────────────────────
+/** A small seeded PRNG (mulberry32): the same seed always writes the same page. */
+function rng(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
-
-/** The pen-ink swash under the wordmark: a tapered stroke. */
-function swash(x1, y1, x2, y2, sag, w, color = C.accent) {
-  const mx = (x1 + x2) / 2;
-  const pts = [
-    [x1, y1, w * 0.15],
-    [x1 + (mx - x1) * 0.5, (y1 + y2) / 2 + sag * 0.7, w * 0.8],
-    [mx, (y1 + y2) / 2 + sag, w],
-    [mx + (x2 - mx) * 0.55, (y1 + y2) / 2 + sag * 0.6, w * 0.7],
-    [x2, y2, w * 0.1],
-  ];
-  return `<path d="${ribbon(pts, 30)}" fill="${color}"/>`;
-}
-
-/** The swash's cream outline, drawn under it (and under the lettering's ink) on the logo. */
-function swashHalo(x1, y1, x2, y2, sag, w, halo) {
-  return swash(x1, y1, x2, y2, sag, w, C.sheet).replace(
-    '<path ',
-    `<path stroke="${C.sheet}" stroke-width="${halo}" stroke-linejoin="round" `,
-  );
-}
-
-const pen = (
-  x,
-  y,
-  size,
-  text,
-  { anchor = 'middle', color = C.accent, weight = 600, italic = true } = {},
-) =>
-  `<text x="${f(x)}" y="${f(y)}" text-anchor="${anchor}" font-family="Cormorant Garamond" ${italic ? 'font-style="italic"' : ''} font-weight="${weight}" font-size="${f(size)}" fill="${color}">${text}</text>`;
-
-/** Mono digits for fingerings (lining figures; the serif's are old-style). */
-const finger = (x, y, size, text, color = C.inkMuted) =>
-  `<text x="${f(x)}" y="${f(y)}" text-anchor="middle" font-family="IBM Plex Mono" font-weight="500" font-size="${f(size)}" fill="${color}">${text}</text>`;
+const spread = (r, amount) => (r() - 0.5) * 2 * amount;
 
 /**
- * Ink metrics of the wordmark at 1px, measured in Chromium before drawing (see main), so the
- * lettering can be fitted to a width and the swash hung under its real ink.
+ * Ink that behaves like ink: the edge wanders (a displacement map over low-frequency noise) and
+ * the density varies a little from stroke to stroke. `k` scales the noise to the canvas size
+ * (1 = the 1600px card); `amp` is the edge wander in px at that size.
  */
-const WORD = 'RMH Music';
-let WM = { left: 0, right: 0, ascent: 0, descent: 0 };
+function inkDefs(id, k, seed, amp = 3.4) {
+  return `
+  <filter id="${id}" x="-1%" y="-1%" width="102%" height="102%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="${f(0.05 / k)}" numOctaves="3" seed="${seed}" result="warp"/>
+    <feDisplacementMap in="SourceGraphic" in2="warp" scale="${f(amp * k)}" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+    <feTurbulence type="fractalNoise" baseFrequency="${f(0.012 / k)}" numOctaves="2" seed="${seed + 9}" result="dens"/>
+    <feColorMatrix in="dens" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.7 0 0 0 0.6" result="a"/>
+    <feComposite in="rough" in2="a" operator="in"/>
+  </filter>`;
+}
 
 /**
- * The wordmark's typeface, picked with `--wordmark-font <key>` (default below). Every entry is a
- * bundled OFL face from components/shared/game-fonts/. `pieces` is the word laid out piece by
- * piece — each piece's advance and ink measured in Chromium — so a face with one awkward capital
- * can be corrected by hand: `sx` scales a piece horizontally about its pen origin and `gap`
- * (em/1000) follows it. Great Vibes' looped capital H is wide enough to dwarf the R and M and
- * crowd the M, so it is narrowed and the word space is set by hand; the other faces set the word
- * as one run. `swashDrop` (em) hangs the swash under the baseline for the upright faces, whose
- * letters it would otherwise cut through (a script's long descenders hide it). `stroke` is a hairline of ink round the fill (em), which gives a thin script a
- * fountain pen's weight.
+ * `n` ruled lines, `gap` apart, drawn freehand: each bows a little and ends a little off level.
+ * `breaks` is an optional list per line of [x, halfWidth] gaps (the tab's fret numbers sit in
+ * the line, not on top of it).
  */
-const WORDMARKS = {
-  'great-vibes': {
-    family: 'Great Vibes',
-    weight: 400,
-    style: 'normal',
-    stroke: 0.012,
-    swashDrop: 0,
-    pieces: [
-      { text: 'R', sx: 1, gap: 20 },
-      { text: 'M', sx: 1, gap: 30 },
-      { text: 'H', sx: 0.8, gap: 170 },
-      { text: 'Music', sx: 1, gap: 0 },
-    ],
-  },
-  cormorant: {
-    family: 'Cormorant Garamond',
-    weight: 700,
-    style: 'italic',
-    stroke: 0.004,
-    swashDrop: 0.1,
-  },
-  bodoni: { family: 'Bodoni Moda', weight: 700, style: 'italic', stroke: 0, swashDrop: 0.1 },
-  cinzel: { family: 'Cinzel', weight: 700, style: 'normal', stroke: 0, swashDrop: 0.1 },
-  jost: { family: 'Jost', weight: 600, style: 'normal', stroke: 0, swashDrop: 0.1 },
-};
-const WORDMARK_FONT = arg('--wordmark-font') ?? 'cormorant';
-if (!WORDMARKS[WORDMARK_FONT]) throw new Error(`unknown wordmark font: ${WORDMARK_FONT}`);
-const WORDMARK = WORDMARKS[WORDMARK_FONT];
-const PIECES_OF_WORD = WORDMARK.pieces ?? [{ text: WORD, sx: 1, gap: 0 }];
-const wordmarkFont = (px) => `${WORDMARK.style} ${WORDMARK.weight} ${px}px '${WORDMARK.family}'`;
-/** Filled by main(): [{ text, x, sx }] in em, plus the ink box. */
-let LAYOUT = [];
+function handLines(r, x1, x2, y0, gap, n, color, w, wob, breaks = []) {
+  let g = '';
+  for (let k = 0; k < n; k++) {
+    const y = y0 + k * gap;
+    const a = spread(r, wob);
+    const b = spread(r, wob);
+    const c = spread(r, wob * 1.4);
+    const sw = f(w * (0.88 + r() * 0.3));
+    const yAt = (x) => {
+      const t = (x - x1) / (x2 - x1);
+      return y + a + (b - a) * t + 2 * c * t * (1 - t);
+    };
+    // The segments between the gaps.
+    const cuts = (breaks[k] ?? []).slice().sort((p, q) => p[0] - q[0]);
+    const segs = [];
+    let from = x1;
+    for (const [bx, hw] of cuts) {
+      if (bx - hw > from) segs.push([from, bx - hw]);
+      from = Math.max(from, bx + hw);
+    }
+    if (from < x2) segs.push([from, x2]);
+    for (const [sa, sb] of segs) {
+      const ya = yAt(sa);
+      const yb = yAt(sb);
+      const ym = yAt((sa + sb) / 2);
+      g += `<path d="M${f(sa)} ${f(ya)}Q${f((sa + sb) / 2)} ${f(2 * ym - (ya + yb) / 2)} ${f(sb)} ${f(yb)}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round"/>`;
+    }
+  }
+  return g;
+}
 
-function layoutWord(measured) {
+// ── The tune ───────────────────────────────────────────────────────────────────
+/**
+ * "Ode to Joy" (Beethoven, public domain), in C, the first thing most beginners play. One
+ * simplification, kept for a first reader: the dotted-quarter-and-eighth in bars 4 and 8 is two
+ * quarters. Bars of four beats; each note is [name, beats].
+ */
+const ODE = [
+  [
+    ['E4', 1],
+    ['E4', 1],
+    ['F4', 1],
+    ['G4', 1],
+  ],
+  [
+    ['G4', 1],
+    ['F4', 1],
+    ['E4', 1],
+    ['D4', 1],
+  ],
+  [
+    ['C4', 1],
+    ['C4', 1],
+    ['D4', 1],
+    ['E4', 1],
+  ],
+  [
+    ['E4', 1],
+    ['D4', 1],
+    ['D4', 2],
+  ],
+  [
+    ['E4', 1],
+    ['E4', 1],
+    ['F4', 1],
+    ['G4', 1],
+  ],
+  [
+    ['G4', 1],
+    ['F4', 1],
+    ['E4', 1],
+    ['D4', 1],
+  ],
+  [
+    ['C4', 1],
+    ['C4', 1],
+    ['D4', 1],
+    ['E4', 1],
+  ],
+  [
+    ['D4', 1],
+    ['C4', 1],
+    ['C4', 2],
+  ],
+];
+/** Right-hand fingering, by note, for the first system: the teacher's pencil. */
+const FINGERS = ['3', '3', '4', '5', '5', '4', '3', '2', '1', '1', '2', '3', '3', '2', '2'];
+/** Guitar tab: [string (0 = high E), fret]. The tune lies on the top two strings. */
+const TAB = { E4: [0, 0], F4: [0, 1], G4: [0, 3], D4: [1, 3], C4: [1, 1] };
+
+/**
+ * One hand-copied system: a staff with the tune and, beneath it, the same notes as guitar tab.
+ * Returns the ink and the pencil as separate layers (they take different filters), both leaning
+ * with the system. `bars` are slices of ODE; `crop` lets the last bar run off the canvas.
+ */
+function system(r, o) {
+  const { x0, x1, y0, s, tg, beat, bars, lean, time = false, final = false, pencil = false } = o;
+  const yTab = o.yTab;
+  const xn = x0 + (time ? 5.7 : 4) * s;
+  const barW = 4 * beat;
+  const plot = [];
+  bars.forEach((bar, bi) => {
+    let off = 0;
+    for (const [name, beats] of bar) {
+      plot.push({ name, beats, x: xn + bi * barW + (off + 0.46) * beat });
+      off += beats;
+    }
+  });
+
+  // Tab fret numbers break the string they sit on.
+  const gaps = Array.from({ length: 6 }, () => []);
+  for (const p of plot) gaps[TAB[p.name][0]].push([p.x, tg * 0.72]);
+  let ink = handLines(r, x0, x1, y0, s, 5, C.staffInk, 3.4, 1.5);
+  ink += handLines(r, x0, x1, yTab, tg, 6, C.staffInk, 3, 1.5, gaps);
+  ink += clef(x0 + 1.6 * s, y0, s);
+  if (time) ink += four(x0 + 3.5 * s, y0, s) + four(x0 + 3.5 * s, y0 + 2 * s, s);
+  // The tab clef: T A B stacked across the six strings.
+  ['T', 'A', 'B'].forEach((ch, i) => {
+    ink += `<text x="${f(x0 + 1.7 * s)}" y="${f(yTab + tg * (1.55 + i * 1.55))}" text-anchor="middle" font-family="${FELL}" font-size="${f(tg * 1.95)}" fill="${C.ink}">${ch}</text>`;
+  });
+
+  let pen = '';
+  plot.forEach((p, i) => {
+    const hy = noteY(y0, s, p.name);
+    // A hand never sets a notehead quite level or quite plumb.
+    const dx = spread(r, 2.4);
+    const dy = spread(r, 2);
+    const rot = spread(r, 3.2);
+    ink += `<g transform="translate(${f(dx)} ${f(dy)}) rotate(${f(rot)} ${f(p.x)} ${f(hy)})">${note(p.x, y0, s, p.name, { hollow: p.beats === 2 })}</g>`;
+    const [str, fret] = TAB[p.name];
+    ink += `<text x="${f(p.x + spread(r, 1.5))}" y="${f(yTab + str * tg + tg * 0.34 + spread(r, 1.2))}" text-anchor="middle" font-family="${DIGITS}" font-style="italic" font-weight="600" font-size="${f(tg * 1.3)}" fill="${C.ink}">${fret}</text>`;
+    if (pencil && FINGERS[i]) {
+      pen += `<text x="${f(p.x + spread(r, 3))}" y="${f(hy - 4.1 * s + spread(r, 3))}" text-anchor="middle" font-family="${DIGITS}" font-style="italic" font-size="${f(s * 0.95)}" fill="${C.pencil}">${FINGERS[i]}</text>`;
+    }
+  });
+  bars.forEach((_, bi) => {
+    const bx = xn + (bi + 1) * barW;
+    const last = bi === bars.length - 1;
+    if (last && !final && !o.crop) return;
+    if (bx > x1 - 8) return;
+    ink += last && final ? barline(bx, y0, s, C.ink, true) : barline(bx, y0, s, C.ink);
+    // The bar line crosses the tab too.
+    ink += `<line x1="${f(bx)}" y1="${f(yTab)}" x2="${f(bx)}" y2="${f(yTab + 5 * tg)}" stroke="${C.ink}" stroke-width="${f(0.1 * s)}"/>`;
+  });
+  const t = `rotate(${lean} ${f(x0)} ${f(y0)})`;
+  return { ink: `<g transform="${t}">${ink}</g>`, pencil: `<g transform="${t}">${pen}</g>` };
+}
+
+/** The pre-printed manuscript staves the music is written on, faint, ruled freehand. */
+function emptyStaves(r, x1, x2, rows, s, w = 2.2) {
+  return rows.map((y) => handLines(r, x1, x2, y, s, 5, C.staffFaint, w, 1.8)).join('');
+}
+
+// ── The wordmark ───────────────────────────────────────────────────────────────
+/**
+ * "RMH Music" in IM Fell English with a note for the dot of the i. The i is a dotless ı laid out
+ * piece by piece (each piece's advance and ink measured in Chromium, see main) so the notehead
+ * can be set over its real centre. Metrics are per 1px of font size.
+ */
+const WORD_PARTS = ['RMH Mus', 'ı', 'c'];
+let WM = null;
+
+function wordmark(cx, y, width, { halo = 0, left } = {}) {
   let pen = 0;
   let minL = Infinity;
   let maxR = -Infinity;
-  LAYOUT = PIECES_OF_WORD.map((p, i) => {
-    const m = measured[i];
+  const at = WM.parts.map((m) => {
     const x = pen;
-    minL = Math.min(minL, x - m.left * p.sx);
-    maxR = Math.max(maxR, x + m.right * p.sx);
-    pen += m.advance * p.sx + p.gap / 1000;
-    return { text: p.text, x, sx: p.sx };
+    minL = Math.min(minL, x - m.left);
+    maxR = Math.max(maxR, x + m.right);
+    pen += m.advance;
+    return { x, ...m };
   });
-  return { left: -minL, right: maxR };
-}
-
-/**
- * The wordmark fitted to `width` of ink, centred on `cx`, baseline `y`; an optional cream halo so
- * it reads on dark and light grounds. Returns the markup and the ink box.
- */
-function wordmark(cx, y, width, { halo = 0 } = {}) {
-  const inkW = WM.right + WM.left;
-  const size = width / inkW;
-  // text-anchor start at x: ink spans x - left·size … x + right·size.
-  const x = cx - width / 2 + WM.left * size;
-  const t = (extra) =>
-    LAYOUT.map((p) => {
-      const px = x + p.x * size;
-      const tf =
-        p.sx === 1
-          ? ''
-          : ` transform="translate(${f(px)} 0) scale(${p.sx} 1) translate(${f(-px)} 0)"`;
-      return `<text x="${f(px)}" y="${f(y)}"${tf} font-family="${WORDMARK.family}" font-weight="${WORDMARK.weight}" font-style="${WORDMARK.style}" font-size="${f(size)}" ${extra}>${p.text}</text>`;
-    }).join('');
-  const weight = size * WORDMARK.stroke;
+  const size = width / (maxR - minL);
+  const x0 = (left ?? cx - width / 2) - minL * size;
+  const dotted = at[1];
+  // The notehead over the ı: a quarter-note head with a short stem and an eighth flag.
+  const hx = x0 + (dotted.x + (dotted.right - dotted.left) / 2) * size;
+  const hy = y - (WM.xh + 0.12) * size;
+  const rx = 0.082 * size;
+  const ry = 0.058 * size;
+  const sw = 0.03 * size;
+  const sx = hx + rx * 0.9 - sw / 2;
+  const sy2 = hy - 0.25 * size;
+  const fs = 0.088 * size;
+  const flag = `<path d="M${f(sx - sw / 2)} ${f(sy2)}C${f(sx + 0.1 * fs)} ${f(sy2 + 0.9 * fs)} ${f(sx + 1.25 * fs)} ${f(sy2 + 1.3 * fs)} ${f(sx + 0.85 * fs)} ${f(sy2 + 2.75 * fs)}C${f(sx + 1.0 * fs)} ${f(sy2 + 1.65 * fs)} ${f(sx + 0.3 * fs)} ${f(sy2 + 1.35 * fs)} ${f(sx - sw / 2)} ${f(sy2 + 1.05 * fs)}Z"/>`;
+  const noteShapes = (extra) =>
+    `<g ${extra}><ellipse cx="${f(hx)}" cy="${f(hy)}" rx="${f(rx)}" ry="${f(ry)}" transform="rotate(-22 ${f(hx)} ${f(hy)})"/><rect x="${f(sx - sw / 2)}" y="${f(sy2)}" width="${f(sw)}" height="${f(hy - sy2)}"/>${flag}</g>`;
+  const text = (extra) =>
+    at
+      .map(
+        (m, i) =>
+          `<text x="${f(x0 + m.x * size)}" y="${f(y)}" font-family="${FELL}" font-size="${f(size)}" ${extra}>${WORD_PARTS[i]}</text>`,
+      )
+      .join('');
   const haloSvg = halo
-    ? t(
-        `fill="${C.sheet}" stroke="${C.sheet}" stroke-width="${f(halo + weight)}" stroke-linejoin="round"`,
+    ? text(
+        `fill="${C.sheet}" stroke="${C.sheet}" stroke-width="${f(halo)}" stroke-linejoin="round"`,
+      ) +
+      noteShapes(
+        `fill="${C.sheet}" stroke="${C.sheet}" stroke-width="${f(halo)}" stroke-linejoin="round"`,
       )
     : '';
-  const ink = t(
-    `fill="${C.ink}" stroke="${C.ink}" stroke-width="${f(weight)}" stroke-linejoin="round"`,
-  );
+  const ink = text(`fill="${C.ink}"`) + noteShapes(`fill="${C.ink}"`);
   return {
-    svg: haloSvg + ink,
     halo: haloSvg,
     ink,
     size,
-    x1: cx - width / 2,
-    x2: cx + width / 2,
-    top: y - WM.ascent * size,
+    x1: x0 + minL * size,
+    x2: x0 + maxR * size,
+    top: Math.min(y - WM.ascent * size, sy2),
     bottom: y + WM.descent * size,
-    /** How far the swash hangs below where a script's descenders would hide it. */
-    drop: WORDMARK.swashDrop * size,
   };
 }
 
@@ -524,109 +528,86 @@ function wordmark(cx, y, width, { halo = 0 } = {}) {
 function cardSvg() {
   const W = 1600;
   const H = 2400;
-  const M = 150; // the red margin rule
-  const s = 50;
-  const y0 = 930; // inked staff, top line
-  const xs = 210;
-  const xe = 1470;
-  // A rising C major scale, C4 → C5, with the right hand's fingering (thumb under after E).
-  const melody = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5'];
-  const fingers = ['1', '2', '3', '1', '2', '3', '4', '5'];
-  const nx = [488, 610, 732, 854, 1010, 1132, 1254, 1376];
-  let notes = '';
-  melody.forEach((n, i) => {
-    notes += note(nx[i], y0, s, n);
-    notes += pen(nx[i], y0 + 7.1 * s, 66, n[0]);
-    notes += finger(nx[i], y0 - 1.6 * s, 40, fingers[i]);
+  const s = 34; // staff space
+  const pitch = 252; // one stave to the next on the printed page
+  const row = (k) => 140 + pitch * k;
+  const x0 = 210;
+  const x1 = 1450;
+  const r = rng(20261108);
+  const sys1 = system(r, {
+    x0,
+    x1,
+    y0: row(3),
+    yTab: row(4) + 6,
+    s,
+    tg: 32,
+    beat: 64,
+    bars: ODE.slice(0, 4),
+    lean: -0.28,
+    time: true,
+    pencil: true,
   });
-  const ta = nx[2] + 6;
-  const tb = nx[3] - 6;
-  const thumb = `<path d="M${ta} ${y0 - 2.55 * s}Q${(ta + tb) / 2} ${y0 - 3.45 * s} ${tb} ${y0 - 2.55 * s}" fill="none" stroke="${C.accent}" stroke-width="4" stroke-linecap="round"/>`;
-  const thumbLabel = pen((ta + tb) / 2, y0 - 3.7 * s, 42, 'thumb under', { weight: 500 });
-
-  const wm = wordmark(W / 2 + M / 2 - 10, 410, 1200);
-  const kbX = 230;
-  const kbY = 1600;
-  const kbW = 820;
-  const kbH = 400;
-  const cbX = 1150;
-  const cbY = 1690;
-  const band = [y0 - 5 * s, y0 + 8.4 * s];
+  const sys2 = system(r, {
+    x0,
+    x1,
+    y0: row(5),
+    yTab: row(6) + 6,
+    s,
+    tg: 32,
+    beat: 64,
+    bars: ODE.slice(4),
+    lean: 0.22,
+    final: true,
+  });
+  const empty = emptyStaves(r, x0 - 40, x1 + 80, [0, 1, 2, 7, 8].map(row), s);
+  const wm = wordmark(0, 560, 1240, { left: x0 + 8 });
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  <defs>${paperDefs('c')}</defs>
+  <defs>${paperDefs('c')}${inkDefs('c-ink', 1, 5)}${inkDefs('c-pen', 1, 11, 2)}</defs>
   ${paper('c', W, H)}
-  ${manuscript(M, W, 110, band[0], 24, 110)}
-  ${manuscript(M, W, band[1] + 70, H - 60, 24, 110)}
-  <rect x="${M - 1.5}" y="0" width="3" height="${H}" fill="${C.margin}" opacity="0.85"/>
-  ${swash(wm.x1 + 70, wm.bottom + 4 + wm.drop, wm.x2 - 30, wm.bottom - 10 + wm.drop, 18, 12)}
-  ${wm.svg}
-  ${pen(W / 2 + M / 2 - 10, wm.bottom + 150, 100, 'Learn piano &amp; guitar', { color: C.ink, italic: false, weight: 600 })}
-  ${staffLines(xs, xe, y0, s, C.staffInk, 3.4)}
-  ${clef(xs + 72, y0, s)}
-  ${four(xs + 160, y0, s)}${four(xs + 160, y0 + 2 * s, s)}
-  ${notes}
-  ${barline(932, y0, s)}
-  ${barline(xe - 22, y0, s, C.ink, true)}
-  ${thumb}${thumbLabel}
-  ${penArrow(nx[0] - 26, y0 + 7.5 * s, nx[0] - 150, y0 + 10.6 * s, kbX + 44, kbY - 46, 4.5)}
-  ${pen(nx[0] - 120, y0 + 9.3 * s, 42, 'middle C', { anchor: 'end', weight: 500 })}
-  ${keyboard(kbX, kbY, kbW, kbH, 10, { lit: ['C4', 'E4', 'G4'] })}
-  ${chordBox(cbX, cbY, 280, 4, 'x32010', ['', '3', '2', '', '1', ''], { name: 'C' })}
-  ${pen(W / 2 + M / 2 - 10, 2130, 56, 'C major, on keys and on strings', { color: C.inkMuted, weight: 500 })}
-  ${pen(W / 2 + M / 2 - 10, 2262, 70, 'Read music · Train your ear · Play along', { color: C.ink, weight: 500 })}
+  <path d="M150 0Q155 1200 149 ${H}" fill="none" stroke="${C.margin}" stroke-width="3" opacity="0.8"/>
+  ${empty}
+  <g filter="url(#c-ink)">${sys1.ink}${sys2.ink}${wm.ink}</g>
+  <g filter="url(#c-pen)" opacity="0.8">${sys1.pencil}</g>
 </svg>`;
 }
 
 function bannerSvg() {
   const W = 3840;
   const H = 1280;
-  // Content sits in y ≈ 170–800: the library hero crops a wide window's banner to about that band.
-  const s = 78;
-  const y0 = 330;
-  const xs = 1440;
-  const xe = 2830;
-  // "Ode to Joy", bars 1–2, in C position: E E F G | G F E D, fingers 3 3 4 5 | 5 4 3 2.
-  const melody = ['E4', 'E4', 'F4', 'G4', 'G4', 'F4', 'E4', 'D4'];
-  const fingers = ['3', '3', '4', '5', '5', '4', '3', '2'];
-  const nx = [1880, 1992, 2104, 2216, 2364, 2476, 2588, 2700];
-  let notes = '';
-  melody.forEach((n, i) => {
-    notes += note(nx[i], y0, s, n);
-    notes += pen(nx[i], y0 + 5.75 * s, 76, n[0]);
-    notes += finger(nx[i], y0 - 0.9 * s, 50, fingers[i]);
+  const s = 60;
+  const r = rng(20261109);
+  const rows = [250, 640, 1010];
+  const sys = system(r, {
+    x0: 420,
+    x1: W,
+    y0: rows[0],
+    yTab: rows[1],
+    s,
+    tg: 40,
+    beat: 124,
+    bars: ODE.slice(0, 7),
+    lean: -0.2,
+    time: true,
+    crop: true,
   });
+  const empty = emptyStaves(r, 380, W, [rows[2]], s, 3.2);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  <defs>${paperDefs('b', 11)}</defs>
+  <defs>${paperDefs('b', 11)}${inkDefs('b-ink', 2.4, 3)}</defs>
   ${paper('b', W, H)}
-  ${manuscript(0, W, 70, H - 30, 28, 120)}
-  <rect x="430" y="0" width="4" height="${H}" fill="${C.margin}" opacity="0.8"/>
-  ${staffLines(xs, xe, y0, s, C.staffInk, 4.5)}
-  ${clef(xs + 110, y0, s)}
-  ${four(xs + 245, y0, s)}${four(xs + 245, y0 + 2 * s, s)}
-  ${notes}
-  ${barline(2290, y0, s)}
-  ${barline(xe - 34, y0, s, C.ink, true)}
-  ${keyboard(560, 215, 740, 580, 7, { lit: ['C4', 'E4', 'G4'] })}
-  ${chordBox(2990, 330, 360, 4, 'x32010', ['', '3', '2', '', '1', ''], { name: 'C' })}
-  ${pen(930, 900, 64, 'piano', { color: C.inkMuted, weight: 500 })}
-  ${pen(3170, 900, 64, 'guitar', { color: C.inkMuted, weight: 500 })}
+  <path d="M330 0Q336 640 329 ${H}" fill="none" stroke="${C.margin}" stroke-width="5" opacity="0.8"/>
+  ${empty}
+  <g filter="url(#b-ink)">${sys.ink}</g>
 </svg>`;
 }
 
 function logoSvg() {
   const W = 1024;
   const H = 270;
-  const wm = wordmark(W / 2, 0, W - 60, { halo: 16 });
-  // Centre the ink box vertically: shift the whole group so top/bottom sit inside the canvas.
-  const sy = wm.bottom - 22 + wm.drop; // the swash's left end; its underside is ~14px lower
-  const dy = (H - (Math.max(wm.bottom, sy + 14) - wm.top)) / 2 - wm.top;
+  const wm = wordmark(W / 2, 0, W - 70, { halo: 9 });
+  // Centre the ink box vertically in the canvas.
+  const dy = (H - (wm.bottom - wm.top)) / 2 - wm.top;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  <g transform="translate(0 ${f(dy)})">
-    ${wm.halo}
-    ${swashHalo(wm.x1 + 60, sy, wm.x2 - 40, sy - 12, 14, 12, 14)}
-    ${swash(wm.x1 + 60, sy, wm.x2 - 40, sy - 12, 14, 12)}
-    ${wm.ink}
-  </g>
+  <g transform="translate(0 ${f(dy)})">${wm.halo}${wm.ink}</g>
 </svg>`;
 }
 
@@ -634,15 +615,18 @@ function iconSvg() {
   const W = 1024;
   const s = 104;
   const y0 = 300;
+  const r = rng(20261110);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${W}" viewBox="0 0 ${W} ${W}">
-  <defs>${paperDefs('i', 3)}<clipPath id="i-page"><rect x="64" y="64" width="${W - 128}" height="${W - 128}" rx="150"/></clipPath></defs>
+  <defs>${paperDefs('i', 3)}${inkDefs('i-ink', 0.64, 7, 3.4)}<clipPath id="i-page"><rect x="64" y="64" width="${W - 128}" height="${W - 128}" rx="150"/></clipPath></defs>
   <rect width="${W}" height="${W}" fill="${C.ink}"/>
   <g clip-path="url(#i-page)">${paper('i', W, W)}
-    <rect x="170" y="64" width="5" height="${W}" fill="${C.margin}" opacity="0.9"/>
+    <path d="M170 64Q173 540 169 ${W}" fill="none" stroke="${C.margin}" stroke-width="5" opacity="0.9"/>
   </g>
-  ${staffLines(150, 874, y0, s, C.staffInk, 9)}
-  ${clef(330, y0, s)}
-  ${beamedPair(600, 'F4', 760, 'A4', y0, s, C.accent)}
+  <g filter="url(#i-ink)" transform="rotate(-1.2 512 512)">
+    ${handLines(r, 150, 874, y0, s, 5, C.staffInk, 8, 3)}
+    ${clef(330, y0, s)}
+    <g transform="rotate(-2 680 520)">${beamedPair(600, 'F4', 760, 'A4', y0, s, C.ink)}</g>
+  </g>
 </svg>`;
 }
 
@@ -659,7 +643,7 @@ function arg(name) {
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
-/** The wordmark's ink box in the chosen typeface, per 1px of font size. */
+/** The wordmark's piece advances and ink boxes in IM Fell English, per 1px of font size. */
 async function measureWordmark(browser, tmp) {
   const file = join(tmp, 'measure.html');
   writeFileSync(
@@ -668,30 +652,26 @@ async function measureWordmark(browser, tmp) {
   );
   const page = await browser.newPage();
   await page.goto(pathToFileURL(file).href);
-  const m = await page.evaluate(
-    async ({ word, pieces, font }) => {
-      await document.fonts.load(font);
-      const ctx = document.createElement('canvas').getContext('2d');
-      ctx.font = font;
-      const t = ctx.measureText(word);
+  const m = await page.evaluate(async (parts) => {
+    const font = "400 1000px 'IM Fell English'";
+    await document.fonts.load(font);
+    const ctx = document.createElement('canvas').getContext('2d');
+    ctx.font = font;
+    const box = (t) => {
+      const q = ctx.measureText(t);
       return {
-        ascent: t.actualBoundingBoxAscent / 1000,
-        descent: t.actualBoundingBoxDescent / 1000,
-        pieces: pieces.map((p) => {
-          const q = ctx.measureText(p);
-          return {
-            advance: q.width / 1000,
-            left: q.actualBoundingBoxLeft / 1000,
-            right: q.actualBoundingBoxRight / 1000,
-          };
-        }),
+        advance: q.width / 1000,
+        left: q.actualBoundingBoxLeft / 1000,
+        right: q.actualBoundingBoxRight / 1000,
+        ascent: q.actualBoundingBoxAscent / 1000,
+        descent: q.actualBoundingBoxDescent / 1000,
       };
-    },
-    { word: WORD, pieces: PIECES_OF_WORD.map((p) => p.text), font: wordmarkFont(1000) },
-  );
+    };
+    const all = box(parts.join(''));
+    return { parts: parts.map(box), xh: box('x').ascent, ascent: all.ascent, descent: all.descent };
+  }, WORD_PARTS);
   await page.close();
-  const ink = layoutWord(m.pieces);
-  return { ...ink, ascent: m.ascent, descent: m.descent };
+  return m;
 }
 
 async function main() {
@@ -721,12 +701,12 @@ async function main() {
       // Load every face up front (a face is otherwise only fetched once text uses it), then check.
       await page.evaluate(
         (checks) => Promise.all(checks.map((c) => document.fonts.load(c))),
-        [...FONT_CHECKS, wordmarkFont(40)],
+        FONT_CHECKS,
       );
       await page.evaluate(() => document.fonts.ready);
       const missing = await page.evaluate(
         (checks) => checks.filter((c) => !document.fonts.check(c)),
-        [...FONT_CHECKS, wordmarkFont(40)],
+        FONT_CHECKS,
       );
       if (missing.length) throw new Error(`fonts not loaded: ${missing.join(', ')}`);
       const png = await page.screenshot({ omitBackground: p.alpha, fullPage: false });

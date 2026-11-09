@@ -100,3 +100,30 @@ describe('rmhmusic.css: the two dark palettes stay identical', () => {
     ).toEqual([]);
   });
 });
+
+describe('rmhmusic.css: the document ground matches the paper', () => {
+  const { light, systemDark } = palettes(CSS);
+  const clean = stripComments(CSS);
+  const ground = (selector: string) => {
+    const at = clean.indexOf(`${selector} {`);
+    if (at < 0) throw new Error(`rmhmusic.css: no ${selector} rule`);
+    return declarationsOf(blockAfter(clean, at));
+  };
+
+  // With JavaScript off nothing paints <html>; these rules do, in the paper's own colour.
+  it('light: <html> is painted with the light --app-bg', () => {
+    expect(ground(':root:has(.rmhmusic-theme)').get('background-color')).toBe(light.get('--app-bg'));
+  });
+
+  it('dark OS: <html> is painted with the dark --app-bg and takes the dark scheme', () => {
+    const rule = ground(":root:not([data-app-dark='0']):has(.rmhmusic-theme)");
+    expect(rule.get('background-color')).toBe(systemDark.get('--app-bg'));
+    expect(rule.get('color-scheme')).toBe('dark');
+  });
+});
+
+function declarationsOf(body: string): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const m of body.matchAll(/([\w-]+)\s*:\s*([^;]+);/g)) out.set(m[1], m[2].trim());
+  return out;
+}

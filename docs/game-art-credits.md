@@ -19,7 +19,7 @@ No official Valve / Counter-Strike / Half-Life / Portal files are used in the ca
 | nightrail | Michroma, Jost | as above | Neon glow |
 | portal | Jost | jost/Jost[wght].ttf | "O" replaced with a drawn blue portal ring |
 | rmhbox | Titan One, Fredoka | titanone/TitanOne-Regular.ttf, fredoka/Fredoka[wdth,wght].ttf | Two-colour wordmark, stroke |
-| rmhmusic (2026-11-08) | Cormorant Garamond (upright and Italic), IBM Plex Mono | cormorantgaramond/CormorantGaramond[wght].ttf, cormorantgaramond/CormorantGaramond-Italic[wght].ttf, ibmplexmono/IBMPlexMono-Medium.ttf | Wordmark in Cormorant Garamond bold italic fitted to width, cream halo on the logo; treble clef, notes and "4" drawn as paths, not glyphs. Generator: `scripts/game-art/rmhmusic.mjs` |
+| rmhmusic (2026-11-08) | IM Fell English, Bodoni Moda Italic | scripts/game-art/fonts/IMFellEnglish/ (OFL), bodonimoda/BodoniModa-Italic[wght].ttf | Wordmark in IM Fell English with a drawn note for the dot of the i, fitted to width; hand-copied manuscript (staves, clef, notes and tab drawn as paths, ruled freehand, inked through a displacement filter); no tagline or captions. Generator: `scripts/game-art/rmhmusic.mjs` |
 | slice-it | Archivo, Bodoni Moda, IBM Plex Mono | archivo/Archivo[wdth,wght].ttf, bodonimoda/BodoniModa-Italic[wght].ttf | "SLICE" cut on a diagonal in Archivo (width 125, weight 900) with a Bodoni Moda italic "it!"; outlines converted to paths (`public/images/games/logos/slice-it.svg`) |
 | synapse-storm | Exo 2 (Italic), Jost, Orbitron | orbitron/Orbitron[wght].ttf | Neon glow |
 | temple-of-joy | Cinzel, Jost | cinzel/Cinzel[wght].ttf | Gold gradient, stroke, shadow |
@@ -799,24 +799,30 @@ Yellowtail / Instrument Serif / DM Mono type is in the new files.
 
 All four files are **original vector artwork drawn in SVG** by `scripts/game-art/rmhmusic.mjs` and rendered with
 headless Chromium (Playwright) at 2x, then downscaled with sharp (Lanczos) and encoded to WebP. No third-party image is
-used. The look is the app's own notebook paper (`components/rmhmusic/rmhmusic.css`): cream paper with a seeded
-`feTurbulence` grain, faint manuscript staves, a red-pencil margin rule, navy ink and the indigo pen-ink accent. The
-treble clef (one calligraphic stroke), noteheads, stems, ledger line, bar lines, the common-time "4", the piano
-keyboard and the guitar chord box are geometry, not font glyphs. What it shows is notated correctly: the card has a
-rising C major scale C4 to C5 with right-hand fingering (1 2 3 1 2 3 4 5, thumb under after E) and "middle C" pointed
-at the keyboard's first C; the banner has the first two bars of "Ode to Joy" (Beethoven, public domain) in C position
-(E E F G | G F E D, fingers 3 3 4 5 | 5 4 3 2); both show a C major chord as the keys C-E-G and as the open guitar shape
-x32010. The banner carries no wordmark, as the other library banners do not (the logo is laid over it). The output is
-deterministic: re-running the script reproduces the same files.
+used. The art is one page of hand-copied manuscript paper, the way a teacher writes out a first tune: the app's notebook
+paper (`components/rmhmusic/rmhmusic.css`: cream paper with a seeded `feTurbulence` grain, pre-printed faint staves, a
+red-pencil margin rule, navy ink) with "Ode to Joy" (Beethoven, public domain) in C on the staff and the same notes as
+guitar tab beneath it, so piano and guitar are both there with no caption. It carries no tagline, annotation, badge
+or footer text. It is made to look drawn by a person: every staff line is ruled freehand (a seeded PRNG bows each line
+and leans each system a fraction of a degree), noteheads and stems are not quite level or plumb, and the inked layer
+goes through an SVG displacement-and-density filter so edges wander and ink density varies. The first card system
+carries a teacher's pencil fingering (3 3 4 5 | 5 4 3 2 | 1 1 2 3 | 3 2 2). One simplification for a first reader: the
+dotted quarter and eighth in bars 4 and 8 are written as two quarters. The treble clef (one calligraphic stroke),
+noteheads, stems, ledger lines, bar lines, the common-time "4" and the note that dots the i of the wordmark are
+geometry, not font glyphs. The card has the first eight bars in two systems; the banner is one system running off the
+right edge (seven bars, text-free, as the other library banners are, because the logo is laid over its lower edge);
+the logo is the wordmark alone with a thin paper-coloured halo so it reads on dark and light grounds; the icon is a
+hand-ruled staff with a treble clef and two beamed eighths. The output is deterministic: re-running the script
+reproduces the same files.
 
-| Asset | Font(s) used (Google Fonts, OFL 1.1) | Source path (google/fonts `ofl/`) | Changes |
+| Asset | Font(s) used | Source | Changes |
 |---|---|---|---|
-| card (`rmhmusic.webp`) | Cormorant Garamond (upright and Italic), IBM Plex Mono | cormorantgaramond/CormorantGaramond[wght].ttf, cormorantgaramond/CormorantGaramond-Italic[wght].ttf, ibmplexmono/IBMPlexMono-Medium.ttf | Wordmark (bold italic) fitted to width; Cormorant for the tagline and the pen annotations; Plex Mono for fingerings and string names |
-| banner (`banners/rmhmusic.webp`) | Cormorant Garamond (upright and Italic), IBM Plex Mono | as above | Text-free apart from note names, fingerings and the "piano" / "guitar" labels |
-| logo (`logos/rmhmusic.webp`) | Cormorant Garamond Italic | cormorantgaramond/CormorantGaramond-Italic[wght].ttf | Navy ink with a cream halo round the lettering and the indigo swash, so it reads on dark and light grounds; transparent background |
-| icon (`icons/rmhmusic.webp`) | none | — | Treble clef and two beamed eighth notes on a cream page in a navy frame |
+| card (`rmhmusic.webp`) | IM Fell English (Regular), Bodoni Moda Italic | IM Fell English: `scripts/game-art/fonts/IMFellEnglish/` (SIL OFL 1.1, Igino Marini's digitisation of the 17th-century Fell types, from Fontsource `@fontsource/im-fell-english` 5.3.0); Bodoni Moda: `components/shared/game-fonts/BodoniModa/` | Wordmark in IM Fell English (i dotted with a drawn note) with the "T A B" of the tab clef; fret numbers and pencil fingerings in Bodoni Moda Italic, whose figures are lining (Fell's are old-style) |
+| banner (`banners/rmhmusic.webp`) | IM Fell English, Bodoni Moda Italic | as above | No wordmark; "T A B" and fret numbers only |
+| logo (`logos/rmhmusic.webp`) | IM Fell English | as above | Wordmark only, thin paper-coloured halo, transparent background |
+| icon (`icons/rmhmusic.webp`) | none | — | Treble clef and two beamed eighth notes on a hand-ruled staff, cream page in a navy frame |
 
-The fonts are the self-hosted copies in `components/shared/game-fonts/` (woff2 with their `OFL.txt`; see "Logos,
-design schemes and fonts" above), loaded by the generator through `file://` URLs. Regenerate with
-`node scripts/game-art/rmhmusic.mjs` (pass `--chromium <path>` or `PW_CHROMIUM` if Playwright's own browser build is
-not installed), then `pnpm images:variants`.
+IM Fell English is vendored beside the generator (`scripts/game-art/fonts/IMFellEnglish/`, woff2 plus its `OFL.txt`);
+Bodoni Moda is the self-hosted copy in `components/shared/game-fonts/` (see "Logos, design schemes and fonts" above).
+Both are loaded by the generator through `file://` URLs. Regenerate with `node scripts/game-art/rmhmusic.mjs` (pass
+`--chromium <path>` or `PW_CHROMIUM` if Playwright's own browser build is not installed), then `pnpm images:variants`.
