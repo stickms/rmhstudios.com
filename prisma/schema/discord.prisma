@@ -1,0 +1,623 @@
+// Tracks which Discord channel was last used for an activity per guild.
+// Used by the daily recap script to know where to post recaps.
+model DiscordActivityChannel {
+  id           String    @id @default(cuid())
+  guildId      String
+  channelId    String
+  activity     String // e.g. "lights-out"
+  updatedAt    DateTime  @default(now()) @updatedAt
+  // Scheduled recap: set when the first player starts the daily puzzle
+  recapDateKey String? // YYYY-MM-DD of the puzzle day to recap
+  recapDueAt   DateTime? // when to send the recap (24h after first activity)
+
+  @@unique([guildId, activity])
+  @@index([recapDueAt], map: "idx_discord_activity_recap_due")
+  @@map("discord_activity_channel")
+}
+
+// Tracks per-user, per-guild daily puzzle participation.
+// A user completing in one guild propagates to all guilds they opened the activity in.
+model DiscordDailyParticipant {
+  id          String   @id @default(cuid())
+  discordId   String // Discord user ID
+  guildId     String
+  dateKey     String // YYYY-MM-DD
+  username    String
+  status      String   @default("playing") // "playing" | "completed"
+  moves       Int?
+  ratingEmoji String?
+  ratingLabel String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@unique([discordId, guildId, dateKey])
+  @@index([guildId, dateKey], map: "idx_discord_daily_participant_guild_date")
+  @@index([discordId, dateKey], map: "idx_discord_daily_participant_user_date")
+  @@map("discord_daily_participant")
+}
+
+// Tracks per-user daily puzzle progress across guilds/devices (prevents move resets)
+model DiscordDailyProgress {
+  id          String   @id @default(cuid())
+  discordId   String
+  dateKey     String // YYYY-MM-DD
+  gridJson    String // JSON-encoded grid state
+  moves       Int      @default(0)
+  completed   Boolean  @default(false)
+  ratingLabel String?
+  ratingEmoji String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@unique([discordId, dateKey])
+  @@map("discord_daily_progress")
+}
+
+model DiscordChatSession {
+  discordUserId String   @id
+  username      String
+  history       Json
+  lastMessageId String?
+  updatedAt     DateTime @updatedAt
+
+  @@map("discord_chat_session")
+}
+
+// Rolling per-channel memory of Alex's @mention conversations. Unlike a /chat
+// session (which is per-user and only reachable through the slash command),
+// @mention replies were previously stateless — rebuilt each time from Discord's
+// recent-message window and forgotten the moment they scrolled out. This table
+// persists a trimmed transcript of recent channel activity (both messages
+// directed at Alex and surrounding chatter he can catch up on) so his memory
+// survives beyond that window and across bot restarts. `messages` is a JSON array
+// of turns, pruned by count and age on every write. See
+// go-services/internal/discordbot/chat_memory.go.
+model DiscordAlexChannelMemory {
+  channelId String   @id
+  guildId   String
+  messages  Json
+  updatedAt DateTime @updatedAt
+
+  @@map("discord_alex_channel_memory")
+}
+
+// One "Alex" tamagotchi per Discord guild — a communal virtual pet the server
+// raises together. Stats decay over real time (lazily recomputed from
+// statsUpdatedAt on every read), Alex grows from infant to adult with age, and
+// the discord-bot worker sends proactive care/ambient/life-event messages into
+// lastChannelId. See go-services/internal/discordbot/pet*.go.
+model DiscordAlexPet {
+  guildId    String   @id
+  name       String   @default("Alex")
+  generation Int      @default(1)
+  bornAt     DateTime @default(now())
+
+  hunger       Float @default(80)
+  happiness    Float @default(80)
+  energy       Float @default(90)
+  hygiene      Float @default(90)
+  health       Float @default(100)
+  intelligence Float @default(0)
+
+  alive     Boolean @default(true)
+  lifeStage String  @default("infant")
+  career    String?
+
+  statsUpdatedAt    DateTime @default(now())
+  lastInteractionAt DateTime @default(now())
+  lastChannelId     String?
+
+  lastFedAt     DateTime?
+  lastPlayedAt  DateTime?
+  lastCleanedAt DateTime?
+  lastSleptAt   DateTime?
+  lastStudiedAt DateTime?
+  lastChatAt    DateTime?
+
+  lastCareAlertAt DateTime?
+  lastAmbientAt   DateTime?
+  diedAt          DateTime?
+  introSentAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("discord_alex_pet")
+}
+
+// Per-guild bookkeeping for the single global Alex: which channel he last spoke
+// / was used in for a server, and whether he's already introduced himself there.
+// Decoupled from the (global) pet so his care/ambient posts can broadcast to
+// every server's last-used channel.
+model DiscordAlexGuild {
+  guildId       String    @id
+  lastChannelId String?
+  introSentAt   DateTime?
+  // Per-server proactive-message level, set via /alexmessages by the bot owner or
+  // a member with Manage Messages:
+  //   "all"  — random ambient posts + care alerts + life events (default)
+  //   "care" — care alerts + life events only (no random chatter)
+  //   "off"  — completely silent (no proactive messages at all)
+  messageLevel  String    @default("all")
+  // Per-server override for Alex's personality/system prompt, set via /prompt.
+  // NULL means Alex uses his built-in default persona (for /chat and mentions).
+  customPrompt  String?
+  updatedAt     DateTime  @updatedAt
+
+  @@map("discord_alex_guild")
+}
+
+// Global, per-user caretaking tally that powers the /caretakers leaderboard. A
+// user's caretaking counts once across all servers (rows are keyed by a fixed
+// global sentinel in the guildId column).
+model DiscordAlexCaretaker {
+  guildId      String
+  userId       String
+  username     String
+  avatarHash   String? // Discord avatar hash, for the rendered /caretakers leaderboard image
+  feeds        Int      @default(0)
+  plays        Int      @default(0)
+  cleans       Int      @default(0)
+  naps         Int      @default(0)
+  talks        Int      @default(0)
+  studies      Int      @default(0)
+  interactions Int      @default(0) // replies to Alex's community prompts/events
+  points       Int      @default(0)
+  updatedAt    DateTime @updatedAt
+
+  @@id([guildId, userId])
+  @@index([guildId, points])
+  @@map("discord_alex_caretaker")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DISCORD ACTIVITY WATCH (the /sohumbum2 dossier)
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// A standing, per-user record of what one Discord account actually does with its
+// day: how long it sits in voice, how much it types, and which games it is in
+// while doing neither of the two things it said it would be doing. Written by
+// the `discord-bot` worker's watch tracker
+// (go-services/internal/discordbot/watch*.go), read by `/sohumbum2`.
+//
+// WHO IS TRACKED IS AN EXPLICIT ALLOWLIST. The tracker only ever writes rows for
+// Discord IDs named in `DISCORD_WATCH_USER_IDS`; every gateway event for anyone
+// else is dropped before it reaches this schema. That is a deliberate design
+// constraint rather than a filter applied at read time — a bot with the message
+// and presence intents sees the whole server, and the difference between "we
+// only show one user" and "we only store one user" is the entire privacy story.
+//
+// Raw message rows keep a TRUNCATED copy of message text so the summarizer has
+// something to characterise ("what was he talking about"). They are the only
+// place content is stored, they are capped at 500 characters, and the summarizer
+// deletes them once their day has been summarised and the retention window has
+// passed — the rollups and the prose summaries are what persist.
+
+/// One contiguous stay in a voice channel: opened on join, closed on leave, and
+/// re-opened on a channel move (a move is a leave plus a join, so "longest
+/// session" means what it sounds like). `leftAt IS NULL` is the open-session
+/// marker the tracker reconciles against on startup, which is why the column is
+/// nullable rather than defaulted.
+///
+/// The `*Sec` counters are accumulated by the state machine rather than derived:
+/// mute/deafen/stream/video/alone are all toggles that flip mid-session, so the
+/// only way to know how long a flag was ON is to bank the elapsed time each time
+/// it changes. `flagsChangedAt` / `peersChangedAt` are those banking cursors.
+model DiscordWatchVoiceSession {
+  id          String  @id @default(cuid())
+  discordId   String
+  guildId     String
+  channelId   String
+  channelName String?
+
+  joinedAt    DateTime
+  leftAt      DateTime?
+  /// "leave" | "move" | "shutdown" | "stale" — how the session ended. `stale`
+  /// means the bot restarted and found a session it could no longer vouch for.
+  endedReason String?
+
+  durationSec Int @default(0)
+
+  mutedSec     Int @default(0)
+  deafenedSec  Int @default(0)
+  streamingSec Int @default(0)
+  videoSec     Int @default(0)
+  /// Time spent as the only human in the channel. The single most damning
+  /// number this page has, so it gets its own column.
+  aloneSec     Int @default(0)
+
+  selfMute   Boolean @default(false)
+  selfDeaf   Boolean @default(false)
+  streaming  Boolean @default(false)
+  video      Boolean @default(false)
+  serverMute Boolean @default(false)
+  serverDeaf Boolean @default(false)
+
+  /// Other (non-bot) members in the channel right now, and the high-water mark.
+  peerCount Int @default(0)
+  peakPeers Int @default(0)
+
+  flagsChangedAt DateTime
+  peersChangedAt DateTime
+
+  /// When the "he just joined voice" push went out for this session. The claim
+  /// is taken with a conditional update BEFORE the push, so two sweeps racing
+  /// cannot both notify; the cost is that a send which fails after the claim is
+  /// not retried, which is the right trade for a notification about something
+  /// happening right now.
+  alertedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([discordId, joinedAt(sort: Desc)], map: "idx_discord_watch_voice_user")
+  @@index([discordId, leftAt], map: "idx_discord_watch_voice_open")
+  @@map("discord_watch_voice_session")
+}
+
+/// One tracked message. `messageId` is unique so a gateway redelivery cannot
+/// double-count, and `content` is a truncated copy kept only long enough for the
+/// summarizer to say what the day was about (see the retention note above).
+model DiscordWatchMessage {
+  id          String  @id @default(cuid())
+  discordId   String
+  guildId     String
+  channelId   String
+  channelName String?
+  messageId   String  @unique
+
+  sentAt DateTime
+
+  /// Truncated message text — NULL when the Message Content intent is off, in
+  /// which case only the shape metrics below are recorded.
+  content String? @db.VarChar(500)
+
+  charCount   Int @default(0)
+  wordCount   Int @default(0)
+  attachments Int @default(0)
+  embeds      Int @default(0)
+  links       Int @default(0)
+  mentions    Int @default(0)
+  emoji       Int @default(0)
+  stickers    Int @default(0)
+
+  isReply     Boolean @default(false)
+  isQuestion  Boolean @default(false)
+  /// Sent between midnight and 5am in the tracking timezone.
+  isLateNight Boolean @default(false)
+  /// The message reads as being about looking for work — an application, an
+  /// interview, a recruiter, a CV. Decided at insert time by `matchesJobHunt`
+  /// so the finding OUTLIVES the message text, which is deleted at 45 days.
+  /// Always false when the Message Content intent is off and there is no text.
+  mentionsJob Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([discordId, sentAt(sort: Desc)], map: "idx_discord_watch_message_user")
+  @@map("discord_watch_message")
+}
+
+/// One contiguous run of a rich-presence activity — "Playing Counter-Strike 2"
+/// for two hours and eleven minutes. Same open/close shape as a voice session:
+/// `endedAt IS NULL` means it is still running.
+model DiscordWatchPresenceSession {
+  id        String @id @default(cuid())
+  discordId String
+  guildId   String
+
+  activityName String
+  /// Discord activity type: 0 playing · 1 streaming · 2 listening · 3 watching
+  /// · 4 custom · 5 competing.
+  activityType Int     @default(0)
+  details      String?
+  state        String?
+
+  startedAt   DateTime
+  endedAt     DateTime?
+  durationSec Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([discordId, startedAt(sort: Desc)], map: "idx_discord_watch_presence_user")
+  @@index([discordId, endedAt], map: "idx_discord_watch_presence_open")
+  @@map("discord_watch_presence_session")
+}
+
+/// The daily rollup — one row per tracked user per local day, and the row the
+/// calendar renders a cell from. Everything here is an aggregate the tracker
+/// increments as events arrive, so the page never has to scan raw rows.
+///
+/// A session that crosses local midnight is SPLIT across the two days it
+/// touches rather than being credited to whichever day it started in; a 2am
+/// bedtime is exactly the kind of thing this page exists to record accurately.
+model DiscordWatchDay {
+  discordId String
+  /// YYYY-MM-DD in `timeZone`, not UTC.
+  dateKey   String
+  timeZone  String @default("America/New_York")
+
+  voiceSec        Int @default(0)
+  voiceSessions   Int @default(0)
+  longestVoiceSec Int @default(0)
+  mutedSec        Int @default(0)
+  deafenedSec     Int @default(0)
+  streamingSec    Int @default(0)
+  videoSec        Int @default(0)
+  aloneSec        Int @default(0)
+  lateNightSec    Int @default(0)
+
+  messages    Int @default(0)
+  words       Int @default(0)
+  characters  Int @default(0)
+  attachments Int @default(0)
+  links       Int @default(0)
+  mentions    Int @default(0)
+  emoji       Int @default(0)
+  stickers    Int @default(0)
+  replies     Int @default(0)
+  questions   Int @default(0)
+
+  lateNightMessages Int @default(0)
+  reactionsGiven    Int @default(0)
+  reactionsReceived Int @default(0)
+
+  /// Messages that read as being about looking for work. Counted, not
+  /// inferred — the flag is set on the message row when it arrives.
+  jobMentions Int @default(0)
+
+  /// Compose sessions started, and the ones that never produced a message.
+  /// `typingAbandonedSec` is how long he spent typing those.
+  typingStarts       Int @default(0)
+  typingAbandoned    Int @default(0)
+  typingAbandonedSec Int @default(0)
+
+  /// Time at each status, from the status-session log. Mutually exclusive — a
+  /// status is one value — so these sum to his presence for the day.
+  onlineSec Int @default(0)
+  idleSec   Int @default(0)
+  dndSec    Int @default(0)
+
+  /// Time signed in on each client. These OVERLAP: desktop and mobile are
+  /// routinely both true, so the three can sum to more than online+idle+dnd.
+  /// Read them as "how much of the day was he reachable on a phone", not as a
+  /// partition of it.
+  desktopSec Int @default(0)
+  mobileSec  Int @default(0)
+  webSec     Int @default(0)
+
+  gamingSec    Int     @default(0)
+  gameSessions Int     @default(0)
+  topGame      String?
+  topGameSec   Int     @default(0)
+
+  topChannel         String?
+  topChannelMessages Int     @default(0)
+
+  /// Per-hour message, voice-second and gaming-second histograms, 24 integers
+  /// each, index 0 = local midnight. Stored as JSON because they are read as a
+  /// unit (the page draws them as one chart) and never queried by hour.
+  ///
+  /// Gaming is bucketed from the MERGED spans, like voice, so simultaneous
+  /// "Playing" activities cannot push an hour past 3600.
+  hourlyMessages  Json?
+  hourlyVoiceSec  Json?
+  hourlyGamingSec Json?
+
+  firstSeenAt DateTime?
+  lastSeenAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([discordId, dateKey])
+  @@index([discordId, dateKey(sort: Desc)], map: "idx_discord_watch_day_user_date")
+  @@map("discord_watch_day")
+}
+
+/// A DeepSeek-written summary of one period. `period` is "day" | "week" |
+/// "month" and `periodKey` is the matching key shape (YYYY-MM-DD, YYYY-Www,
+/// YYYY-MM), so all three live in one table and the page fetches them together.
+///
+/// `sourceHash` is a digest of the PROMPT the summary was generated from — the
+/// exact question the model was asked. The summarizer regenerates a period only
+/// when that hash changes, which is what stops a finished day being
+/// re-summarised (and re-billed) on every pass while still letting today's
+/// summary refresh as the day fills in. Hashing the prompt rather than a list of
+/// figures means "anything the model would see changed" is the literal rule,
+/// with no second list of fields to drift out of step with the prompt.
+model DiscordWatchSummary {
+  id        String @id @default(cuid())
+  discordId String
+  period    String
+  periodKey String
+
+  /// A short title for the period — the line the calendar cell shows.
+  headline String
+  /// The narrative paragraph.
+  summary  String
+  /// The one-line judgement ("Nothing was applied for.").
+  verdict  String?
+  /// A single word for the day's mood, used for the cell's tint.
+  mood     String?
+  /// Array of topic strings the model pulled out of the messages.
+  topics   Json?
+
+  model       String
+  sourceHash  String
+  generatedAt DateTime @default(now())
+
+  /// When this period's digest was posted to Discord, for the weekly one that
+  /// is. Non-null means "already posted" and is what makes the post idempotent
+  /// across regenerations: a summary rewritten because the figures moved does
+  /// not get announced twice.
+  digestPostedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([discordId, period, periodKey])
+  @@index([discordId, period, periodKey(sort: Desc)], map: "idx_discord_watch_summary_lookup")
+  @@map("discord_watch_summary")
+}
+
+/// One compose session: he started typing in a channel, and either a message
+/// came out of it or one did not.
+///
+/// Discord re-sends `TYPING_START` roughly every eight seconds while somebody
+/// keeps typing, so a single run is many events; they are coalesced into one row
+/// by extending `lastTypingAt` while the gap stays under the idle window.
+///
+/// `sent` is the whole point. A compose session with no message is a thing he
+/// wrote and then deleted, which is the only trace this tracker can get of a
+/// decision — every other column on this page records something he did.
+model DiscordWatchTypingSession {
+  id          String  @id @default(cuid())
+  discordId   String
+  guildId     String
+  channelId   String
+  channelName String?
+
+  startedAt    DateTime
+  /// The last typing event of this run; the gap from here decides when the run
+  /// is settled and can be judged.
+  lastTypingAt DateTime
+  /// Set when the run is settled, either by a message or by the idle window.
+  settledAt    DateTime?
+  durationSec  Int       @default(0)
+
+  /// A message from him landed in this channel while the run was open.
+  sent Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([discordId, startedAt(sort: Desc)], map: "idx_discord_watch_typing_user")
+  @@index([discordId, settledAt], map: "idx_discord_watch_typing_open")
+  @@map("discord_watch_typing_session")
+}
+
+/// Somebody who asked to be told when the tracked account joins a voice channel.
+///
+/// Keyed to a site account rather than to an anonymous push endpoint on purpose:
+/// the site already has one push path (`lib/push/send.server.ts`, VAPID, dead-
+/// endpoint cleanup) and it is keyed by user. A second, anonymous one would be a
+/// second thing to get the encryption and the 410-handling right in.
+model DiscordWatchAlert {
+  id        String @id @default(cuid())
+  userId    String
+  /// Which tracked account this is about, so the table survives a second one.
+  discordId String
+
+  /// "voice" — the only kind so far, named rather than implied so adding
+  /// "he posted at 4am" later does not need a migration to tell them apart.
+  kind String @default("voice")
+
+  /// Rate limiting, per subscriber: he joins and leaves a call six times an
+  /// evening and nobody wants six notifications about it.
+  lastNotifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, discordId, kind])
+  @@index([discordId, kind], map: "idx_discord_watch_alert_target")
+  @@map("discord_watch_alert")
+}
+
+/// One contiguous run of a presence STATE: a status (online/idle/dnd) held on a
+/// particular set of clients. Opened when either changes, closed when either
+/// changes again — the same open/close shape as a voice session, and resumed
+/// across a brief restart by the same heartbeat rule.
+///
+/// This exists because the live row records a LEVEL, not an interval: "online
+/// since 14:02" is knowable from it, but "he was online for nine hours
+/// yesterday, six of them on his phone" is not, and that needs a log.
+///
+/// Offline is the ABSENCE of a row rather than a row of its own. A gap is
+/// already unambiguous, and storing offline would double the write volume to
+/// record something derivable.
+model DiscordWatchStatusSession {
+  id        String @id @default(cuid())
+  discordId String
+
+  /// "online" | "idle" | "dnd" — never "offline" (see above).
+  status String
+
+  /// Which clients he was signed in on for this run. These OVERLAP by design:
+  /// Discord reports desktop and mobile independently and both are routinely
+  /// true at once, so per-platform totals derived from them can sum to more
+  /// than the elapsed time. That is the honest answer, not a bug.
+  desktop Boolean @default(false)
+  mobile  Boolean @default(false)
+  web     Boolean @default(false)
+
+  startedAt   DateTime
+  endedAt     DateTime?
+  durationSec Int       @default(0)
+  /// "change" | "offline" | "shutdown" | "stale" — why the run ended.
+  endedReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([discordId, startedAt(sort: Desc)], map: "idx_discord_watch_status_user")
+  @@index([discordId, endedAt], map: "idx_discord_watch_status_open")
+  @@map("discord_watch_status_session")
+}
+
+/// The live state behind /sohumbum2's profile card: is he online, what is he
+/// doing right now, and what does he look like while doing it.
+///
+/// One row per tracked user, overwritten in place — this is a "now" record, not
+/// a log, and the log is the four tables above. It exists because the rest of
+/// the schema stores INTERVALS: "in voice since 14:02" is derivable from an open
+/// session row, but Discord's own online/idle/dnd status is a level rather than
+/// an interval, and there is nothing to derive it from once the event has passed.
+///
+/// The identity fields are cached from the gateway so the card can render his
+/// real avatar without the web tier holding a bot token to go ask.
+model DiscordWatchLive {
+  discordId String @id
+
+  /// "online" | "idle" | "dnd" | "offline" — Discord's own status vocabulary,
+  /// which the page maps straight onto Discord's own status colours.
+  status          String   @default("offline")
+  statusChangedAt DateTime @default(now())
+
+  username   String?
+  globalName String?
+  /// Discord avatar hash; the page builds the CDN URL from it and falls back to
+  /// the default avatar when it is null.
+  avatarHash String?
+
+  /// The activity Discord last reported, so the card can say "Playing X" even
+  /// between presence sessions being opened and closed. This is the HEADLINE
+  /// one (a game outranks anything else); `activities` carries the full set.
+  activityName String?
+  activityType Int?
+
+  /// Every activity running right now, as a JSON array of
+  /// `{ name, type, details, state, startedAt }`.
+  ///
+  /// Discord stacks these — a game, Spotify and a stream can all be live at
+  /// once, and the client shows all of them. A single `activityName` column
+  /// could only ever describe one, which made the card quietly wrong exactly
+  /// when there was the most to say.
+  activities Json?
+
+  /// The custom status: Discord's activity type 4, which is not an activity at
+  /// all but a line of text somebody typed about themselves. Kept apart from
+  /// `activities` for that reason — it is never "time spent doing something",
+  /// and folding it in would put "🧋" on the chart next to eleven hours of
+  /// Counter-Strike. The page renders it as the bubble beside the name.
+  customStatus String?
+  /// The emoji beside that text, as a literal character (Unicode) or a custom
+  /// emoji name. Nullable independently: a status can be text-only or emoji-only.
+  customEmoji  String?
+
+  updatedAt DateTime @updatedAt
+
+  @@map("discord_watch_live")
+}

@@ -29,7 +29,7 @@ import 'dotenv/config';
 const migrationUrl = process.env.DATABASE_DIRECT_URL || process.env.DATABASE_URL;
 
 export default defineConfig({
-  schema: path.join('prisma', 'schema.prisma'),
+  schema: path.join('prisma', 'schema'),
   datasource: {
     url: migrationUrl!,
   },

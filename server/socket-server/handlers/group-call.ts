@@ -152,7 +152,7 @@ interface LiveParticipant {
  * One live room. Ephemeral by design, exactly like `LiveCall` in `call.ts` — a
  * hub restart drops the rooms and the peers find out through ICE rather than
  * through us. The DB rows left behind are swept by the janitor query the
- * `[status, createdAt]` index in `schema.prisma` exists for.
+ * `[status, createdAt]` index in `prisma/schema/` exists for.
  */
 interface LiveGroupCall {
   id: string;

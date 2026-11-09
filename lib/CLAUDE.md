@@ -174,7 +174,7 @@ don't remove that plugin.
 
 ## Database (Prisma)
 
-- `prisma/schema.prisma`: 323 models, ~8900 lines. IDs are
+- `prisma/schema/`: 323 models, ~8900 lines. IDs are
   `String @id @default(cuid())`; models `@@map` to snake_case tables; 71
   enums. Model families: auth/user, social feed (RMHark*), per-game
   player/match tables, economy (CoinTransaction, inventory, quests),

@@ -22,9 +22,9 @@
 
 <div class="keyterm"><span class="term">ORM (object-relational mapper)</span> — a library that maps database tables to in-language data structures and turns method calls (<code>prisma.user.findUnique(...)</code>) into SQL, so you read and write rows as typed objects instead of hand-writing query strings.</div>
 
-<p>Prisma is the ORM rmhstudios uses. Its source of truth is a single declarative file, <code>prisma/schema.prisma</code>. From that file Prisma <i>generates</i> a TypeScript client whose method names and argument shapes are derived from your models, so a typo in a field name fails at compile time rather than at 3 a.m. in production.</p>
+<p>Prisma is the ORM rmhstudios uses. Its source of truth is a single declarative file, <code>prisma/schema/</code>. From that file Prisma <i>generates</i> a TypeScript client whose method names and argument shapes are derived from your models, so a typo in a field name fails at compile time rather than at 3 a.m. in production.</p>
 
-<div class="keyterm"><span class="term">Schema</span> — the <code>prisma/schema.prisma</code> file: a single declarative description of every model, field, relation, index, and enum. It is both the spec the database is migrated to match and the spec the generated client is built from.</div>
+<div class="keyterm"><span class="term">Schema</span> — the <code>prisma/schema/</code> file: a single declarative description of every model, field, relation, index, and enum. It is both the spec the database is migrated to match and the spec the generated client is built from.</div>
 
 <p>The header of the schema tells you the two key choices. The datasource is Postgres, and the generator is configured to run through a JavaScript query engine rather than a native binary, because the database is reached through a connection-pool adapter (more on that below):</p>
 

@@ -1,0 +1,538 @@
+// --- Blog Models ---
+
+model BlogPost {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  date        String
+  description String
+  image       String?
+  tags        String[]
+  content     String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date(sort: Desc)])
+  @@map("blog_post")
+}
+
+// ─── News ─────────────────────────────────────────────────────────
+
+enum NewsStatus {
+  STAGING
+  PUBLISHED
+}
+
+model NewsArticle {
+  id               String     @id @default(cuid())
+  slug             String     @unique
+  title            String
+  date             String
+  description      String     @db.Text
+  content          String     @db.Text
+  category         String
+  tags             String[]
+  featured         Boolean    @default(false)
+  sourceTitle      String
+  sourceUrl        String
+  sourcePublisher  String
+  sourceDate       String?
+  image            String?
+  discordMessageId String?
+  status           NewsStatus @default(PUBLISHED)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@index([status, date(sort: Desc)])
+  @@index([category])
+  @@index([slug])
+  @@map("news_article")
+}
+
+// ─── Developer API: Media Upload ──────────────────────────────────────────────
+
+enum MediaStatus {
+  PENDING
+  ATTACHED
+}
+
+/// Developer-API uploaded media. The `media_id` is an opaque handle; posts
+/// still store the resolved `url` in RMHark.imageUrls. Reclaimed by the
+/// reconciling sweep in lib/media/sweep.server.ts.
+model Media {
+  id          String      @id
+  userId      String
+  key         String
+  url         String
+  contentType String
+  bytes       Int
+  status      MediaStatus @default(PENDING)
+  postId      String?
+  createdAt   DateTime    @default(now())
+  attachedAt  DateTime?
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post         RMHark?   @relation(fields: [postId], references: [id], onDelete: SetNull)
+  /// E13 — last time the assets service served this object. Written at most
+  /// once a day per key, so the tiering sweep has something to sort on without
+  /// a write per request.
+  lastAccessAt DateTime?
+  /// 'hot' | 'cold'. A cold object is served from infrequent-access storage and
+  /// restores on first request; the UI must SAY so ("archived · loads in a
+  /// moment") rather than letting it look broken.
+  tier         String    @default("hot") @db.VarChar(8)
+
+  @@index([status, createdAt])
+  @@index([postId])
+  @@index([userId])
+}
+
+/// A user-uploaded library book. PDF + cover live in R2 (keyed by id); this row
+/// is the metadata the bookshelf and reader resolve. The static catalog
+/// (public/library + data/library-metadata.json) is unaffected.
+model LibraryDocument {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  title            String
+  description      String   @default("")
+  pages            Int      @default(0)
+  /// Document format: "pdf" (default) or "epub". Drives which reader renders it
+  /// and the content-type / extension used to store and serve the file.
+  format           String   @default("pdf")
+  pdfKey           String
+  coverKey         String?
+  sizeBytes        Int      @default(0)
+  uploadedByUserId String?
+  uploadedBy       User?    @relation("LibraryUploader", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+  reported         Boolean  @default(false)
+  hidden           Boolean  @default(false)
+  /// Curated/official entry (admin upload or migrated static catalog) — shown in
+  /// the "Curated" section above community uploads.
+  official         Boolean  @default(false)
+  /// Manual sort order within a section (lower first); ties broken by recency.
+  position         Int      @default(0)
+  /// Original public/library filename when this row was migrated from the bundled
+  /// static catalog. Unique so the migration is idempotent and the static list can
+  /// dedupe against already-migrated books.
+  originFilename   String?  @unique
+  /// Preserved table of contents (chapter → page) for migrated/edited books.
+  toc              Json?
+  createdAt        DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([uploadedByUserId])
+  @@index([official])
+  @@map("library_document")
+}
+
+/// A reader-made grouping of books (a "series" / "collection") shown as its own
+/// shelf on the library page. A user owns their collections and may only add books
+/// they uploaded; admins own "official" collections and may add any book. Members
+/// are referenced by book slug (stable for both static-catalog and uploaded books),
+/// so a collection can span both without a hard foreign key to LibraryDocument.
+model LibraryCollection {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String   @default("")
+  ownerUserId String?
+  owner       User?    @relation("LibraryCollectionOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  /// Curated/official collection (admin-made) — surfaced above community series.
+  official    Boolean  @default(false)
+  /// R2 key of the collection's (AI-generated) cover image, served via
+  /// /api/library/cover/<collectionId>. Null until a cover is generated.
+  coverKey    String?
+  hidden      Boolean  @default(false)
+  /// Manual sort order across collections (lower first).
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items LibraryCollectionItem[]
+
+  @@index([ownerUserId])
+  @@index([official])
+  @@map("library_collection")
+}
+
+model LibraryCollectionItem {
+  id           String            @id @default(cuid())
+  collectionId String
+  collection   LibraryCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  /// The member book's slug (resolved to a LibraryBook at read time).
+  bookSlug     String
+  /// Order within the collection (lower first).
+  position     Int               @default(0)
+  createdAt    DateTime          @default(now())
+
+  @@unique([collectionId, bookSlug])
+  @@index([collectionId])
+  @@map("library_collection_item")
+}
+
+/// A regular user's appeal to raise their library upload quota, reviewed by an
+/// admin in the admin panel. Approving sets the user's libraryUploadQuota.
+model LibraryQuotaRequest {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation("LibraryQuotaRequests", fields: [userId], references: [id], onDelete: Cascade)
+  /// The new total cap the user is asking for.
+  requestedTotal  Int
+  reason          String    @default("") @db.Text
+  /// pending | approved | denied
+  status          String    @default("pending")
+  decidedByUserId String?
+  createdAt       DateTime  @default(now())
+  decidedAt       DateTime?
+
+  @@index([status])
+  @@index([userId])
+  @@map("library_quota_request")
+}
+
+// ─── Albums (library photo/video carousels) ─────────────────────────────────
+/// A library album: an ordered set of image/video slides shown in the
+/// fullscreen carousel viewer at /library/albums/$slug. Heavy media lives in
+/// object storage (R2/S3) keyed by slide id — not in the repo / build image —
+/// and is served via the CDN (prod) or the /api/albums/asset proxy (dev).
+model Album {
+  id          String   @id @default(cuid())
+  /// URL slug, e.g. "alex-wu".
+  slug        String   @unique
+  title       String
+  description String   @default("") @db.Text
+  /// Manual ordering on the library page (ascending).
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  slides AlbumSlide[]
+
+  @@index([position])
+  @@map("album")
+}
+
+/// One slide in an album. `type` is "image" or "video". Storage keys point at
+/// objects in the `albums/` key space (see lib/storage/keys.ts):
+///  - images: fullKey (full-res original), srcKey (web-optimized webp), thumbKey
+///  - videos: srcKey (compressed mp4), thumbKey (poster frame); fullKey is null.
+model AlbumSlide {
+  id        String   @id @default(cuid())
+  albumId   String
+  album     Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  /// "image" | "video".
+  type      String
+  position  Int      @default(0)
+  /// Full-resolution original object key (images only; null for video).
+  fullKey   String?
+  /// Web-optimized image / compressed video object key.
+  srcKey    String
+  /// Thumbnail (image) or poster frame (video) object key.
+  thumbKey  String
+  /// Video MIME type (e.g. "video/mp4"); null for images.
+  mime      String?
+  alt       String   @default("")
+  /// Suggested filename on download.
+  download  String   @default("")
+  /// Client-supplied idempotency key, stable across upload retries. Lets a
+  /// retried upload (e.g. after a lost response) resolve to the same slide
+  /// instead of creating a duplicate. Null for migrated/legacy rows.
+  uploadKey String?
+  createdAt DateTime @default(now())
+
+  @@unique([albumId, uploadKey])
+  @@index([albumId, position])
+  @@map("album_slide")
+}
+
+// ─── Parity / QOL / customization (2026-07-20 design) ───────────────────────
+
+// Unified Saves (§4): user-created folders holding polymorphic saved items
+// (posts, builds, songs, …). Addressing reuses the ledger's
+// entityType/entityId convention. Replaces the flat, posts-only bookmark.
+model SaveFolder {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   @db.VarChar(40)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items SavedItem[]
+
+  @@index([userId, sortOrder])
+  @@map("save_folder")
+}
+
+model SavedItem {
+  id         String   @id @default(cuid())
+  userId     String
+  folderId   String? // null = default "Saved"
+  entityType String   @db.VarChar(24) // see SAVE_ENTITY_TYPES in lib/saves/types.ts
+  entityId   String
+  createdAt  DateTime @default(now())
+  /// X9: private note ("why I saved this"), at most 500 characters. Only ever read
+  /// back to the owner of the row.
+  note       String?  @db.VarChar(500)
+
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder SaveFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, entityType, entityId])
+  @@index([userId, folderId, createdAt(sort: Desc)])
+  // Reverse lookup: "how many people saved this?" — the insights panel counts
+  // saves per post. `RMHarkBookmark` carried an equivalent `@@index([rmheetId])`
+  // and this table inherited its rows without inheriting the index, which would
+  // have turned that count into a full scan of every save on the site.
+  @@index([entityType, entityId])
+  @@map("saved_item")
+}
+
+// History & resume (§5): most-recent visit per (user, entity), with an optional
+// playback `position` for resume. Upserted by a throttled client heartbeat;
+// swept after HISTORY_RETENTION_DAYS.
+model HistoryEntry {
+  id         String   @id @default(cuid())
+  userId     String
+  entityType String   @db.VarChar(24) // 'tube_video' | 'song' | 'game' | 'library_doc' | 'news' | ...
+  entityId   String
+  position   Int? // seconds (media) | percent*100 (docs) | null (games)
+  duration   Int?
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityType, entityId])
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("history_entry")
+}
+
+// Universal search v2 (§18): site-wide saved searches (promotes the
+// ladder-only pattern). Optional weekly new-result alerts.
+model SavedSearch {
+  id        String    @id @default(cuid())
+  userId    String
+  query     String    @db.VarChar(200) // raw query incl. operators
+  types     Json      @default("[]") // entity-type chips
+  alerts    Boolean   @default(false)
+  lastRunAt DateTime?
+  createdAt DateTime  @default(now())
+
+  /// B8 — which list surface this view belongs to ('search' | 'ladder' |
+  /// 'homes' | 'market' | 'arcade' | an admin queue). Defaults to 'search' so
+  /// every existing row keeps meaning exactly what it meant.
+  surface String  @default("search") @db.VarChar(24)
+  /// Filter state, validated per surface at READ time rather than write time —
+  /// so a filter removed from a surface degrades to "drop the unknown key"
+  /// instead of crashing the page on a stale view.
+  payload Json    @default("{}")
+  /// User-given name. Null keeps the old behaviour of labelling by query text.
+  name    String? @db.VarChar(60)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, surface])
+  @@map("saved_search")
+}
+
+/// Cross-device read position for long-form content (B7).
+model ReadPosition {
+  userId    String
+  /// 'library' | 'news' | 'blog' | 'docs'
+  kind      String   @db.VarChar(20)
+  entityId  String
+  /// 0–1. Paired with an anchor so a reflow at a different width still lands.
+  fraction  Float    @default(0)
+  anchorId  String?  @db.VarChar(120)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, kind, entityId])
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("read_position")
+}
+
+// ── P13 reading: L1 L3 L5 L6 L7 L8 ──
+enum ReadingDocKind {
+  library
+  blog
+  news
+}
+
+enum ReadingGoalUnit {
+  books
+  pages
+}
+
+enum ReadingShelf {
+  want
+  reading
+  read
+}
+
+/// L1 — a member's highlight (and optional note) on a library book unit, a blog
+/// post or a news article. The anchor is the text-anchor.ts quote selector:
+/// exact text + 32 chars of context each side + offsets, re-anchored on load.
+/// `unit` is "" for articles, "p12" (PDF page) or "c3" (EPUB chapter) for books.
+/// `version` is a short hash of the unit text at highlight time.
+model ReadingHighlight {
+  id        String         @id @default(cuid())
+  userId    String
+  docKind   ReadingDocKind
+  docKey    String         @db.VarChar(200)
+  unit      String         @default("") @db.VarChar(16)
+  exact     String         @db.VarChar(2000)
+  prefix    String         @default("") @db.VarChar(64)
+  suffix    String         @default("") @db.VarChar(64)
+  start     Int
+  end       Int
+  version   String         @default("") @db.VarChar(16)
+  note      String?        @db.VarChar(2000)
+  isPublic  Boolean        @default(false)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  user     User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  passages ReadingHighlightPassage[]
+
+  @@index([userId, docKind, docKey])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([docKind, docKey, isPublic])
+  @@map("reading_highlight")
+}
+
+/// L8 — per-passage reader counter. A "passage" is a sentence, identified by a
+/// hash of its normalised text. `readers` counts distinct members with a public
+/// highlight touching it, maintained incrementally on highlight create/delete.
+model ReadingPassageStat {
+  id        String         @id @default(cuid())
+  docKind   ReadingDocKind
+  docKey    String         @db.VarChar(200)
+  unit      String         @default("") @db.VarChar(16)
+  passage   String         @db.VarChar(24)
+  sample    String         @db.VarChar(400)
+  start     Int            @default(0)
+  readers   Int            @default(0)
+  updatedAt DateTime       @updatedAt
+
+  links ReadingHighlightPassage[]
+
+  @@unique([docKind, docKey, unit, passage])
+  @@index([docKind, docKey, readers])
+  @@map("reading_passage_stat")
+}
+
+/// L8 — joins a public highlight to the passages it counted toward, so removal
+/// can decrement exactly what creation incremented.
+model ReadingHighlightPassage {
+  highlightId String
+  statId      String
+  userId      String
+
+  highlight ReadingHighlight   @relation(fields: [highlightId], references: [id], onDelete: Cascade)
+  stat      ReadingPassageStat @relation(fields: [statId], references: [id], onDelete: Cascade)
+
+  @@id([highlightId, statId])
+  @@index([statId, userId])
+  @@map("reading_highlight_passage")
+}
+
+/// L3 — a member's yearly reading goal, in books or pages.
+model ReadingGoal {
+  id        String          @id @default(cuid())
+  userId    String
+  year      Int
+  unit      ReadingGoalUnit
+  target    Int
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, year])
+  @@map("reading_goal")
+}
+
+/// L7 — a library item on a member's want / reading / read shelf. `docSlug` is
+/// the library slug (static catalogue books have no row, so no FK). `pages` is a
+/// snapshot of the page count when the entry was written, for the L3 page goal.
+model ReadingShelfEntry {
+  id         String       @id @default(cuid())
+  userId     String
+  docSlug    String       @db.VarChar(200)
+  title      String       @db.VarChar(300)
+  shelf      ReadingShelf
+  pages      Int          @default(0)
+  finishedAt DateTime?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, docSlug])
+  @@index([userId, shelf, updatedAt(sort: Desc)])
+  @@index([userId, finishedAt])
+  @@map("reading_shelf_entry")
+}
+
+/// L7 — per-shelf privacy (default private) for a member's shelves.
+model ReadingPrefs {
+  userId        String  @id
+  wantPublic    Boolean @default(false)
+  readingPublic Boolean @default(false)
+  readPublic    Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reading_prefs")
+}
+
+/// L5 — a news "story": a set of related articles shown as one timeline.
+model NewsStory {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String   @db.VarChar(160)
+  summary     String   @default("") @db.VarChar(600)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User?              @relation("NewsStoryAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  articles  NewsStoryArticle[]
+
+  @@map("news_story")
+}
+
+/// L5 — membership of a news article (by slug) in a story. An article belongs to
+/// at most one story, hence the unique slug.
+model NewsStoryArticle {
+  id          String   @id @default(cuid())
+  storyId     String
+  articleSlug String   @unique
+  addedAt     DateTime @default(now())
+
+  story NewsStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([storyId])
+  @@map("news_story_article")
+}
+
+/// L6 — an admin-managed lore glossary term. `aliases` also auto-link.
+model GlossaryTerm {
+  id          String   @id @default(cuid())
+  term        String   @db.VarChar(80)
+  termKey     String   @unique @db.VarChar(80)
+  aliases     String[]
+  definition  String   @db.VarChar(600)
+  linkUrl     String?  @db.VarChar(300)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User? @relation("GlossaryTermAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@map("glossary_term")
+}

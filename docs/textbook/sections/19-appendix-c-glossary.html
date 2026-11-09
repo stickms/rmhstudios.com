@@ -325,7 +325,7 @@ first taught.</p>
   <dt><b>ORM (object-relational mapper)</b></dt>
   <dd>A library that maps database tables to in-language structures, turning method calls such
   as <code>prisma.user.findUnique(...)</code> into SQL. rmhstudios uses Prisma, which generates
-  a typed TypeScript client from <code>prisma/schema.prisma</code>. (Ch. 5)</dd>
+  a typed TypeScript client from <code>prisma/schema/</code>. (Ch. 5)</dd>
 
   <dt><b>Observability</b></dt>
   <dd>Instrumenting a system with metrics, logs, and traces so its internal state can be
@@ -394,7 +394,7 @@ first taught.</p>
   (last-write-wins, capped around 500 KB) for games such as Temple of Joy and Signal Forge. (Ch. 8)</dd>
 
   <dt><b>Schema</b></dt>
-  <dd>The single declarative <code>prisma/schema.prisma</code> file describing every model,
+  <dd>The single declarative <code>prisma/schema/</code> file describing every model,
   field, relation, index, and enum — at once the spec the database is migrated to and the spec
   the typed client is generated from. rmhstudios's schema defines roughly 142 models against a
   single Postgres instance. (Ch. 5)</dd>

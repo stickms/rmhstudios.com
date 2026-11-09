@@ -1,0 +1,152 @@
+// --- Game Models ---
+
+model AltairPlayer {
+  id                String   @id @default(uuid())
+  username          String   @unique
+  bestTime          Float    @default(0)
+  totalKills        Int      @default(0)
+  totalXP           Int      @default(0)
+  totalGold         Int      @default(0)
+  totalTimeSurvived Float    @default(0)
+  gamesPlayed       Int      @default(1)
+  updatedAt         DateTime @default(now()) @updatedAt
+
+  // Link to Auth User
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([bestTime(sort: Desc)], map: "idx_altair_best_time")
+  @@index([totalKills(sort: Desc)], map: "idx_altair_kills")
+  @@index([totalXP(sort: Desc)], map: "idx_altair_xp")
+  @@index([totalGold(sort: Desc)], map: "idx_altair_gold")
+  @@index([totalTimeSurvived(sort: Desc)], map: "idx_altair_survival")
+}
+
+// ─── Altair Meta Progression (persisted to DB) ────────────────────────
+
+model AltairMetaProgress {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coins              Int       @default(0)
+  // Earned coins the server will still accept from a client save (refills with time; see
+  // lib/altair/meta-guard.ts). Interim bound until single-player runs are replay-verified.
+  coinAllowance      Int       @default(8000)
+  coinAllowanceAt    DateTime?
+  upgrades           Json      @default("{}")
+  unlockedClasses    Json      @default("[\"knight\",\"arcanist\",\"ranger\"]")
+  doubleTimeUnlocked Boolean   @default(false)
+  classFirstClears   Json      @default("[]")
+  totalRunsPlayed    Int       @default(0)
+  bestTimeSurvived   Float     @default(0)
+  bestKills          Int       @default(0)
+  bossesDefeated     Json      @default("[]")
+  bestiary           Json      @default("{}")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@map("altair_meta_progress")
+}
+
+// A single-player run the SERVER issued (seed + loadout) and later replays (lib/altair/solo). Coins and
+// leaderboard totals are written from the replay's numbers only, under this row, exactly once.
+model AltairSoloRun {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Equals userId while the run is open and NULL once it is closed. Unique, so a user has at most one
+  // open run (NULLs do not collide). Starting a run closes the previous one.
+  openUserId      String?   @unique
+  seed            Int
+  classId         String
+  doubleTime      Boolean
+  loadout         Json
+  // open | submitted | verified | rejected | unverified | abandoned | expired
+  status          String    @default("open")
+  issuedAt        DateTime  @default(now())
+  expiresAt       DateTime
+  submittedAt     DateTime?
+  verifiedAt      DateTime?
+  steps           Int?
+  // The replay's numbers (never the client's claim) once verified.
+  result          Json?
+  rejectReason    String?
+  coinsCredited   Int       @default(0)
+  // Part of coinsCredited that was the one-time first-clear bonus for this class (0 or 200). A user has at
+  // most one such run per class: persistVerifiedSoloRun checks it under a lock on the meta row.
+  firstClearBonus Int       @default(0)
+
+  @@index([userId, issuedAt(sort: Desc)])
+  @@index([userId, classId, firstClearBonus])
+  @@index([status, expiresAt])
+  @@map("altair_solo_run")
+}
+
+// ─── Altair Multiplayer (Co-op) Models ────────────────────────
+
+model AltairCoopProfile {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalCoopRuns        Int      @default(0)
+  totalCoopWins        Int      @default(0)
+  totalRevivesGiven    Int      @default(0)
+  totalRevivesReceived Int      @default(0)
+  totalCoopKills       Int      @default(0)
+  totalCoopCoins       Int      @default(0)
+  favoriteClassId      String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([totalCoopWins(sort: Desc)])
+  @@index([totalRevivesGiven(sort: Desc)])
+  @@map("altair_coop_profile")
+}
+
+model AltairMatch {
+  id             String              @id @default(cuid())
+  lobbyId        String
+  // Hub-issued id of the verified run this row came from (null on rows written before server-side
+  // verification). Unique, so a replayed submission can never be recorded twice.
+  runId          String?             @unique
+  startedAt      DateTime            @default(now())
+  endedAt        DateTime?
+  durationMs     Int?
+  playerCount    Int
+  doubleTime     Boolean             @default(false)
+  victory        Boolean             @default(false)
+  sharedKills    Int                 @default(0)
+  bossesDefeated String[]            @default([])
+  results        Json?
+  players        AltairMatchPlayer[]
+
+  @@index([startedAt(sort: Desc)])
+  @@index([lobbyId])
+  @@map("altair_match")
+}
+
+model AltairMatchPlayer {
+  id            String      @id @default(cuid())
+  matchId       String
+  match         AltairMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userName      String
+  classId       String
+  slot          Int
+  finalLevel    Int         @default(1)
+  kills         Int         @default(0)
+  coinsEarned   Int         @default(0)
+  timeSurvived  Float       @default(0)
+  wasDowned     Boolean     @default(false)
+  wasRevived    Boolean     @default(false)
+  revivesGiven  Int         @default(0)
+  wasAliveAtEnd Boolean     @default(true)
+  stats         Json        @default("{}")
+  createdAt     DateTime    @default(now())
+
+  @@unique([matchId, userId])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("altair_match_player")
+}

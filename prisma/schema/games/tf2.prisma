@@ -1,0 +1,193 @@
+// ─────────────────────────── RMH TF2 HUD Editor ───────────────────────────
+// A custom TF2 HUD is stored as a *manifest* (path → content hash) per version;
+// file bytes live once each in object storage under `tf2-hud/blobs/`, addressed
+// by SHA-1, so forks and versions share them. See docs/tf2-hud-editor.md.
+
+enum Tf2HudVisibility {
+  PRIVATE
+  UNLISTED
+  PUBLIC
+
+  @@map("tf2_hud_visibility")
+}
+
+model Tf2Hud {
+  id            String           @id @default(cuid())
+  ownerId       String
+  owner         User             @relation("Tf2HudOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  /// URL slug (`/tf2-hud/h/<slug>`): the title plus a short random suffix.
+  slug          String           @unique
+  title         String           @db.VarChar(80)
+  description   String           @default("") @db.VarChar(2000)
+  tags          String[]
+  visibility    Tf2HudVisibility @default(PRIVATE)
+  /// Commit of the TF2 Default base this HUD's manifest is relative to.
+  baseCommit    String           @db.VarChar(64)
+  forkOfId      String?
+  forkOf        Tf2Hud?          @relation("Tf2HudForks", fields: [forkOfId], references: [id], onDelete: SetNull)
+  forks         Tf2Hud[]         @relation("Tf2HudForks")
+  latestVersion Int              @default(0)
+  fileCount     Int              @default(0)
+  totalBytes    Int              @default(0)
+  likeCount     Int              @default(0)
+  forkCount     Int              @default(0)
+  downloadCount Int              @default(0)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  versions Tf2HudVersion[]
+  likes    Tf2HudLike[]
+  shares   Tf2HudShare[]
+
+  @@index([visibility, updatedAt(sort: Desc)])
+  @@index([visibility, likeCount(sort: Desc)])
+  @@index([visibility, forkCount(sort: Desc)])
+  @@index([ownerId, updatedAt(sort: Desc)])
+  @@index([forkOfId])
+  @@map("tf2_hud")
+}
+
+model Tf2HudVersion {
+  id         String   @id @default(cuid())
+  hudId      String
+  hud        Tf2Hud   @relation(fields: [hudId], references: [id], onDelete: Cascade)
+  number     Int
+  message    String   @default("") @db.VarChar(200)
+  /// Background saves fold into the previous autosave instead of adding rows.
+  autosave   Boolean  @default(false)
+  /// [{ path, sha1?, size?, deleted? }] — the overlay on the TF2 Default base.
+  manifest   Json
+  fileCount  Int      @default(0)
+  totalBytes Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@unique([hudId, number])
+  @@map("tf2_hud_version")
+}
+
+model Tf2HudLike {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hudId     String
+  hud       Tf2Hud   @relation(fields: [hudId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, hudId])
+  @@index([hudId])
+  @@map("tf2_hud_like")
+}
+
+model Tf2HudShare {
+  id        String   @id @default(cuid())
+  hudId     String
+  hud       Tf2Hud   @relation(fields: [hudId], references: [id], onDelete: Cascade)
+  /// Unguessable bearer token for read-only access to the latest version.
+  token     String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([hudId])
+  @@map("tf2_hud_share")
+}
+
+/// One stored file, keyed by the SHA-1 of its bytes.
+model Tf2HudBlob {
+  sha1       String           @id @db.VarChar(40)
+  /// Uncompressed size in bytes (what the game would load).
+  size       Int
+  /// How the stored object is encoded: "none" or "br" (Brotli).
+  encoding   String           @default("none") @db.VarChar(8)
+  /// Bytes actually stored, after compression.
+  storedSize Int              @default(0)
+  storageKey String
+  createdAt  DateTime         @default(now())
+  owners     Tf2HudUserBlob[]
+
+  @@map("tf2_hud_blob")
+}
+
+/// Proof that a user supplied (or can already read) a blob's bytes. A manifest
+/// may only reference blobs its author has one of these for, so knowing a hash
+/// is never enough to claim someone else's file.
+model Tf2HudUserBlob {
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sha1      String     @db.VarChar(40)
+  blob      Tf2HudBlob @relation(fields: [sha1], references: [sha1], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+
+  @@id([userId, sha1])
+  @@index([sha1])
+  @@map("tf2_hud_user_blob")
+}
+
+// ─────────────────────────── RMH TF2 Loadouts ───────────────────────────
+// Per-class cosmetic/weapon loadouts built in the TF2 Hub. Items are referenced
+// by the game's own defindex; names, slots and icons come from the auto-refreshed
+// catalog below, so a game update never needs a migration. Visibility reuses the
+// HUD enum (PRIVATE / UNLISTED / PUBLIC).
+
+model Tf2Loadout {
+  id          String           @id @default(cuid())
+  ownerId     String
+  owner       User             @relation("Tf2LoadoutOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  /// URL slug (`/tf2/loadout/l/<slug>`): the title plus a short random suffix.
+  slug        String           @unique
+  title       String           @db.VarChar(80)
+  description String           @default("") @db.VarChar(2000)
+  /// scout | soldier | pyro | demoman | heavy | engineer | medic | sniper | spy
+  tfClass     String           @db.VarChar(12)
+  /// { [slotKey]: { item: defindex, paint?: defindex, effect?: id } }
+  slots       Json
+  /// Every defindex in `slots`, so a workshop search for an item name can find loadouts that use it.
+  itemIds     Int[]
+  visibility  Tf2HudVisibility @default(PRIVATE)
+  forkOfId    String?
+  forkOf      Tf2Loadout?      @relation("Tf2LoadoutForks", fields: [forkOfId], references: [id], onDelete: SetNull)
+  forks       Tf2Loadout[]     @relation("Tf2LoadoutForks")
+  likeCount   Int              @default(0)
+  forkCount   Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  likes Tf2LoadoutLike[]
+
+  @@index([visibility, updatedAt(sort: Desc)])
+  @@index([visibility, likeCount(sort: Desc)])
+  @@index([visibility, tfClass])
+  @@index([ownerId, updatedAt(sort: Desc)])
+  @@index([forkOfId])
+  @@index([itemIds], type: Gin)
+  @@map("tf2_loadout")
+}
+
+model Tf2LoadoutLike {
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loadoutId String
+  loadout   Tf2Loadout @relation(fields: [loadoutId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+
+  @@id([userId, loadoutId])
+  @@index([loadoutId])
+  @@map("tf2_loadout_like")
+}
+
+/// The item catalog the loadout builder reads, built from the game's own schema
+/// and refreshed on a schedule (see lib/tf2-loadout/catalog.server.ts). One row.
+model Tf2LoadoutCatalog {
+  id        String   @id
+  /// SHA-1 of the schema file the catalog was built from.
+  hash      String   @db.VarChar(40)
+  /// HTTP ETag of the schema at the mirror, for conditional refreshes.
+  etag      String?  @db.VarChar(200)
+  label     String   @db.VarChar(120)
+  itemCount Int
+  hasIcons  Boolean  @default(false)
+  /// Brotli-compressed catalog JSON.
+  data      Bytes
+  builtAt   DateTime
+  /// Last time a refresh was attempted successfully (even if nothing changed).
+  checkedAt DateTime
+
+  @@map("tf2_loadout_catalog")
+}

@@ -1,0 +1,1109 @@
+// ─── Prediction markets ────────────────────────────────────────────
+
+enum PredictionStatus {
+  PENDING // submitted by a user, awaiting admin approval
+  OPEN // approved, trading is live
+  RESOLVED_YES
+  RESOLVED_NO
+  DENIED // rejected by an admin
+}
+
+/// A binary (YES/NO) prediction market priced by an LMSR market maker. The live
+/// YES price is the implied probability and moves as users trade. Shares pay 1
+/// coin each on the winning side at resolution. `creatorId` is null for markets
+/// seeded by the DeepSeek worker.
+model Prediction {
+  id            String           @id @default(cuid())
+  title         String           @db.VarChar(160)
+  description   String?          @db.VarChar(1000)
+  creatorId     String?
+  status        PredictionStatus @default(PENDING)
+  isAiGenerated Boolean          @default(false)
+
+  // LMSR state (floats). Shares pay 1 coin each on the winning side.
+  b      Float @default(120) // liquidity parameter
+  qYes   Float @default(0) // YES shares outstanding
+  qNo    Float @default(0) // NO shares outstanding
+  volume Int   @default(0) // total coins traded (display only)
+
+  closesAt   DateTime? // trading deadline
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // ─── Self-referential (auto) markets ────────────────────────────────
+  // When `resolverKey` is set the market resolves itself from the platform's
+  // own ground truth (a leaderboard, a build's like count, a tournament
+  // result …) via a resolver in `lib/predictions/resolvers/`. No admin or AI
+  // judge is involved. `resolverParams` carries the resolver's inputs, and
+  // `subjectUrl` deep-links the card to whatever the market is about.
+  resolverKey    String?   @db.VarChar(120) // e.g. "build.likes" — null for ordinary markets
+  resolverParams Json? // resolver inputs, e.g. { buildId, threshold }
+  subjectUrl     String?   @db.VarChar(200) // in-app deep link to the subject
+  autoResolveAt  DateTime? // when the resolver becomes eligible to settle this market
+
+  creator       User?                    @relation("PredictionCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+  positions     PredictionPosition[]
+  seasonMarkets PredictionSeasonMarket[]
+  comments      PredictionComment[]
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([resolverKey, status]) // resolver settlement sweeps
+  // Per-author pending-submission cap, counted on every market creation.
+  @@index([creatorId, status])
+  @@map("prediction")
+}
+
+/// A user's aggregate holdings in a single market. Updated per trade; settled at
+/// resolution (winning shares credited back as coins).
+model PredictionPosition {
+  id           String  @id @default(cuid())
+  predictionId String
+  userId       String
+  yesShares    Float   @default(0)
+  noShares     Float   @default(0)
+  spent        Int     @default(0) // net coins spent (cost basis)
+  settled      Boolean @default(false)
+  lastP        Float? // implied P(YES) right after the member's latest trade (forecast for scoring)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prediction Prediction @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+  user       User       @relation("PredictionPositions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([predictionId, userId])
+  @@index([userId])
+  @@map("prediction_position")
+}
+
+/// A coin-funded membership: `supporter` supports `creator` for a 30-day period.
+/// Renewing extends `expiresAt`; membership is "active" while expiresAt > now.
+model CreatorMembership {
+  id          String   @id @default(cuid())
+  creatorId   String
+  supporterId String
+  priceCoins  Int
+  startedAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  // Multi-tier memberships (Creator Studio). Null for legacy single-price rows;
+  // backfilled to the creator's auto-created default tier by the studio UI.
+  tierId String?
+
+  creator   User         @relation("CreatorMemberships", fields: [creatorId], references: [id], onDelete: Cascade)
+  supporter User         @relation("SupportedCreators", fields: [supporterId], references: [id], onDelete: Cascade)
+  tier      CreatorTier? @relation(fields: [tierId], references: [id], onDelete: SetNull)
+
+  @@unique([creatorId, supporterId])
+  @@index([creatorId])
+  @@index([supporterId])
+  @@index([expiresAt])
+  @@index([tierId])
+  @@map("creator_membership")
+}
+
+/// Records a one-time promotional claim (e.g. the free-month offer) so the
+/// server can enforce once-ever redemption regardless of client state.
+model PromoClaim {
+  id        String   @id @default(cuid())
+  userId    String
+  promo     String   @db.VarChar(64)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, promo])
+  @@map("promo_claim")
+}
+
+/// A coin-funded gift membership (#18). Grants a tier for a time window,
+/// independent of Stripe billing. getUserTier folds active grants in.
+model GiftMembership {
+  id        String   @id @default(cuid())
+  userId    String // recipient
+  gifterId  String? // null = system grant
+  tier      String   @db.VarChar(16) // 'starter' | 'pro'
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user   User  @relation("GiftRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  gifter User? @relation("GiftGifter", fields: [gifterId], references: [id], onDelete: SetNull)
+
+  @@index([userId, expiresAt])
+  @@map("gift_membership")
+}
+
+// Stripe subscription state, synced by @better-auth/stripe via webhook.
+model Subscription {
+  id                   String    @id @default(cuid())
+  plan                 String // "starter" | "pro" | "enterprise"
+  referenceId          String // the owning User.id
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  status               String? // active | trialing | past_due | canceled | incomplete | ...
+  periodStart          DateTime?
+  periodEnd            DateTime?
+  cancelAtPeriodEnd    Boolean?
+  seats                Int?
+  trialStart           DateTime?
+  trialEnd             DateTime?
+  // Added by @better-auth/stripe 1.7, which checks for them at startup and
+  // writes them from the subscription webhooks.
+  cancelAt             DateTime?
+  canceledAt           DateTime?
+  endedAt              DateTime?
+  billingInterval      String?
+  stripeScheduleId     String?
+
+  @@index([referenceId])
+  @@index([stripeCustomerId])
+}
+
+// ─── Achievements ─────────────────────────────────────────────────────────
+// Definitions live in code (lib/achievements/catalog.ts); only unlocks are
+// persisted. `progress` supports incremental achievements (e.g. "win 50 games").
+
+model UserAchievement {
+  id            String    @id @default(cuid())
+  userId        String
+  achievementId String    @db.VarChar(64) // matches a catalog key
+  progress      Int       @default(0)
+  unlockedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId, unlockedAt])
+  @@map("user_achievement")
+}
+
+/// Idempotency key for drops: a drop is granted once per (user, title, dropIndex).
+model CardDrop {
+  userId    String
+  gameId    String   @db.VarChar(64)
+  dropIndex Int      @db.SmallInt
+  cardIndex Int      @db.SmallInt
+  foil      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, gameId, dropIndex])
+  @@map("card_drop")
+}
+
+// A single trading card for sale at a fixed price (Phase C; design:
+// docs/superpowers/specs/2026-10-30-card-market-design.md). The card is held in
+// escrow by the listing: creating it decrements the seller's stack in the same
+// transaction. The price is immutable; reuse the shop market's ListingStatus.
+model CardListing {
+  id         String        @id @default(cuid())
+  sellerId   String
+  gameId     String        @db.VarChar(64)
+  cardIndex  Int           @db.SmallInt
+  foil       Boolean       @default(false)
+  priceCoins Int
+  status     ListingStatus @default(ACTIVE)
+  buyerId    String?
+  createdAt  DateTime      @default(now())
+  closedAt   DateTime?
+
+  seller User  @relation("CardSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyer  User? @relation("CardBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
+
+  @@index([status, gameId, cardIndex, foil, priceCoins])
+  @@index([sellerId, status])
+  @@map("card_listing")
+}
+
+// Gems (design: docs/superpowers/specs/2026-10-30-gems-boosters-design.md). A member's
+// balance, never negative, and an append-only entry for every movement so the balance
+// can always be explained. Gems cannot be traded.
+model UserGems {
+  userId    String   @id
+  gems      Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_gems")
+}
+
+model GemEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  delta     Int
+  /// 'unpack' | 'pack' | 'buy'
+  reason    String   @db.VarChar(16)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("gem_entry")
+}
+
+enum BuyOrderStatus {
+  OPEN
+  FILLED
+  CANCELED
+}
+
+// A standing instruction to buy one card for up to `priceCoins`. Custody-free: no
+// coins are held; the balance is checked when it fills, and a fill is the same
+// transaction as a purchase (docs/superpowers/specs/2026-10-30-market-depth-design.md).
+model CardBuyOrder {
+  id              String         @id @default(cuid())
+  buyerId         String
+  gameId          String         @db.VarChar(64)
+  cardIndex       Int            @db.SmallInt
+  foil            Boolean        @default(false)
+  priceCoins      Int
+  status          BuyOrderStatus @default(OPEN)
+  createdAt       DateTime       @default(now())
+  closedAt        DateTime?
+  filledListingId String?
+
+  buyer User @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@index([gameId, cardIndex, foil, status, priceCoins(sort: Desc)])
+  @@index([buyerId, status])
+  @@map("card_buy_order")
+}
+
+enum CardTradeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELED
+}
+
+// Card-for-card offers (design: docs/superpowers/specs/2026-10-30-card-trades-design.md).
+// Not escrowed: both sides are re-checked, under both users' card locks, when the
+// recipient accepts, which is the only moment cards move.
+model CardTrade {
+  id        String          @id @default(cuid())
+  fromId    String
+  toId      String
+  status    CardTradeStatus @default(PENDING)
+  createdAt DateTime        @default(now())
+  closedAt  DateTime?
+  expiresAt DateTime
+
+  from  User            @relation("CardTradeFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to    User            @relation("CardTradeTo", fields: [toId], references: [id], onDelete: Cascade)
+  items CardTradeItem[]
+
+  @@index([toId, status])
+  @@index([fromId, status])
+  @@map("card_trade")
+}
+
+model CardTradeItem {
+  tradeId   String
+  /// True when the proposer gives this card, false when they ask for it.
+  fromGives Boolean
+  gameId    String  @db.VarChar(64)
+  cardIndex Int     @db.SmallInt
+  foil      Boolean @default(false)
+  qty       Int     @db.SmallInt
+
+  trade CardTrade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+
+  @@id([tradeId, fromGives, gameId, cardIndex, foil])
+  @@map("card_trade_item")
+}
+
+// ─── Daily Streak ─────────────────────────────────────────────────────────
+model DailyStreak {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  current       Int       @default(0)
+  longest       Int       @default(0)
+  lastCheckIn   DateTime?
+  lastDateKey   String?   @db.VarChar(10) // YYYY-MM-DD in the user's tz
+  totalCheckIns Int       @default(0)
+  freezeTokens  Int       @default(0) // optional "streak freeze" inventory
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("daily_streak")
+}
+
+// ─── Cosmetics Shop ───────────────────────────────────────────────────────
+// Catalog lives in code (lib/shop/catalog.ts). UserInventory records ownership
+// and which item is currently equipped per slot.
+
+enum ShopItemKind {
+  THEME // unlocks a premium site theme
+  PET // profile pet variant
+  NAME_COLOR // username color
+  BADGE // profile flair badge
+  BANNER // profile banner
+  POST_FLAIR // decoration shown on the user's posts
+  AVATAR_FRAME // ring around the avatar
+}
+
+model UserInventory {
+  id         String       @id @default(cuid())
+  userId     String
+  itemId     String       @db.VarChar(64) // catalog key
+  kind       ShopItemKind
+  equipped   Boolean      @default(false)
+  acquiredAt DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@index([userId, kind])
+  @@index([userId, equipped])
+  @@map("user_inventory")
+}
+
+// ─── Coin Ledger (tips & gifts) ───────────────────────────────────────────
+enum CoinTxnType {
+  TIP
+  GIFT
+  PURCHASE
+  REWARD
+  ADMIN
+  MEMBERSHIP
+  WAGER // coin-staked match / tournament entry, escrow, and payout
+  MARKET // secondary-market (player marketplace) sale proceeds — excluded from creator "earned"
+}
+
+/// The coin ledger. Every movement of currency is a row here, and the sign
+/// convention is what makes the whole thing reconcilable:
+///
+///   FAUCET   senderId = null, recipientId = user   → supply created
+///   TRANSFER senderId = user, recipientId = user   → supply conserved
+///   SINK     senderId = user, recipientId = null   → supply destroyed
+///
+/// `recipientId` is nullable precisely so sinks can be recorded. Before that,
+/// spending coins decremented a balance and wrote NO row (or wrote only the
+/// seller's payout, silently dropping the platform cut), so the ledger could
+/// never be summed and checked against the balances it was supposed to explain.
+/// With all three shapes present:
+///
+///   balance(u) == Σ(amount where recipientId = u) − Σ(amount where senderId = u)
+///
+/// which is exactly what `reconcileUser` asserts. Write rows ONLY through
+/// `lib/economy/ledger.server.ts`.
+model CoinTransaction {
+  id          String      @id @default(cuid())
+  senderId    String? // null for system faucets (rewards, quests, refunds)
+  recipientId String? // null for sinks (coins destroyed: shop, unlocks, fees)
+  amount      BigInt
+  type        CoinTxnType
+  note        String?     @db.VarChar(280)
+  entityType  String?     @db.VarChar(32) // e.g. "rmhark", "profile"
+  entityId    String?     @db.VarChar(64)
+  createdAt   DateTime    @default(now())
+
+  /// Caller-supplied dedupe token. A retried request (double-click, client
+  /// retry, webhook redelivery) reusing the same key hits the unique index and
+  /// is recognised as a replay instead of moving coins a second time.
+  idempotencyKey String? @unique @db.VarChar(128)
+
+  sender    User? @relation("CoinSender", fields: [senderId], references: [id], onDelete: SetNull)
+  recipient User? @relation("CoinRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, createdAt(sort: Desc)])
+  @@index([senderId, createdAt(sort: Desc)])
+  /// Drives the economy dashboard: supply by type over a time window.
+  @@index([createdAt(sort: Desc), type])
+  @@map("coin_transaction")
+}
+
+// ─── Progression: Quests ──────────────────────────────────────────────────
+// Quest definitions live in code (lib/quests/catalog.ts). One row per user per
+// quest per period (daily/weekly), tracking progress + claim state.
+model UserQuest {
+  id        String   @id @default(cuid())
+  userId    String
+  questId   String   @db.VarChar(64)
+  periodKey String   @db.VarChar(16) // e.g. "2026-06-21" (daily) or "2026-W25" (weekly)
+  progress  Int      @default(0)
+  completed Boolean  @default(false)
+  claimed   Boolean  @default(false)
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questId, periodKey])
+  @@index([userId, periodKey])
+  @@map("user_quest")
+}
+
+// ─── Progression: Battle Pass ─────────────────────────────────────────────
+// Season + tier rewards defined in code (lib/battlepass/season.ts). Premium
+// track is unlocked by spending RMH coins. Claimed tiers stored as a Json array.
+model UserSeasonProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  seasonId    String   @db.VarChar(32)
+  seasonXp    Int      @default(0)
+  premium     Boolean  @default(false)
+  claimedFree Json     @default("[]") // tier numbers claimed on the free track
+  claimedPaid Json     @default("[]") // tier numbers claimed on the premium track
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, seasonId])
+  @@map("user_season_progress")
+}
+
+/// One row per user per UTC day: the daily coin-wheel spin and its reward.
+/// The unique [userId, dateKey] enforces once-per-day server-side.
+model DailyWheelSpin {
+  id        String   @id @default(cuid())
+  userId    String
+  dateKey   String   @db.VarChar(16) // YYYY-MM-DD (UTC)
+  reward    Int
+  segment   Int // winning segment index (for animation replay)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dateKey])
+  @@index([userId])
+  @@map("daily_wheel_spin")
+}
+
+/// An interest-bearing coin vault (#18). One per user. Interest accrues lazily:
+/// each deposit/withdraw first rolls elapsed time into `accrued` so we never
+/// need a background job. `lastAccrued` marks the last roll-up time.
+model CoinStake {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  principal    BigInt   @default(0)
+  accrued      BigInt   @default(0)
+  /// Compound interest into principal instead of holding it for a claim.
+  autoReinvest Boolean  @default(false)
+  lastAccrued  DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("coin_stake")
+}
+
+/// A digital product a creator sells for coins (#19). The `deliverable` (a link,
+/// code, or message) is revealed only to the creator and to buyers. A 10%
+/// platform fee is burned on each sale as a coin sink.
+model StorefrontProduct {
+  id          String   @id @default(cuid())
+  creatorId   String
+  title       String   @db.VarChar(80)
+  description String?  @db.VarChar(500)
+  price       Int // coins
+  deliverable String?  @db.Text
+  active      Boolean  @default(true)
+  salesCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator   User                 @relation("StorefrontCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  purchases StorefrontPurchase[]
+
+  @@index([creatorId])
+  @@map("storefront_product")
+}
+
+model StorefrontPurchase {
+  id        String   @id @default(cuid())
+  productId String
+  buyerId   String
+  pricePaid Int
+  createdAt DateTime @default(now())
+
+  product StorefrontProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyer   User              @relation("StorefrontBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, buyerId])
+  @@index([buyerId])
+  @@map("storefront_purchase")
+}
+
+/// Global daily counter for AI image generations (cost guard). One row per UTC day.
+model ImageGenBudget {
+  day   String @id // UTC date, "YYYY-MM-DD"
+  count Int    @default(0)
+
+  @@map("image_gen_budget")
+}
+
+// ─── Creator coin → value bridge (§4) ─────────────────────────────────────
+// Creators convert coins provably EARNED from creator activity (tips,
+// memberships, storefront/unlock sales) into real value: subscription credit
+// (granted internally via GiftMembership, no Stripe), merch, or a gated cash
+// payout. Requests are admin-reviewed. "Earned" is derived from the ledger, so
+// there is no stored earned-balance column — see lib/creator/earnings.server.ts.
+
+enum RedemptionKind {
+  SUB_CREDIT // burn coins → subscription time (GiftMembership)
+  MERCH // burn coins → merch reward, fulfilled manually
+  PAYOUT // burn coins → cash payout (gated: verified creator + admin/KYC)
+}
+
+enum RedemptionStatus {
+  PENDING
+  APPROVED
+  FULFILLED
+  REJECTED
+}
+
+model RedemptionRequest {
+  id             String           @id @default(cuid())
+  userId         String
+  kind           RedemptionKind
+  amountCoins    Int // coins to burn on fulfilment
+  tierGranted    String?          @db.VarChar(16) // SUB_CREDIT: 'starter' | 'pro'
+  monthsGranted  Int? // SUB_CREDIT
+  fiatValueCents Int? // MERCH/PAYOUT accounting/display
+  note           String?          @db.VarChar(500) // requester note / fulfilment reference id
+  status         RedemptionStatus @default(PENDING)
+  reviewedById   String?
+  reviewNote     String?          @db.VarChar(500)
+  externalRef    String?          @db.VarChar(120) // Stripe transfer id / shipment tracking
+  createdAt      DateTime         @default(now())
+  reviewedAt     DateTime?
+  fulfilledAt    DateTime?
+
+  user       User  @relation("RedemptionCreator", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("RedemptionReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("redemption_request")
+}
+
+// ─── Creator Studio (§3) ───────────────────────────────────────────────────
+// A creator-defined membership tier (max 3 per creator, enforced in code).
+model CreatorTier {
+  id         String   @id @default(cuid())
+  creatorId  String
+  name       String   @db.VarChar(40)
+  priceCoins Int // per 30 days
+  perks      Json     @default("[]") // ordered perk keys: 'badge'|'posts'|'chat'|'early_builds'
+  sortOrder  Int      @default(0)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  creator      User                @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  memberships  CreatorMembership[]
+  creatorPosts CreatorPost[]
+
+  @@index([creatorId, active])
+  @@map("creator_tier")
+}
+
+// ─── Player Marketplace (§8) ───────────────────────────────────────────────
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  CANCELED
+  HELD // flagged for admin review (anomalous price); funds not yet released
+}
+
+model MarketListing {
+  id          String        @id @default(cuid())
+  sellerId    String
+  inventoryId String        @unique // the exact UserInventory row held in escrow
+  itemId      String        @db.VarChar(64)
+  priceCoins  Int
+  status      ListingStatus @default(ACTIVE)
+  buyerId     String?
+  createdAt   DateTime      @default(now())
+  closedAt    DateTime?
+  // Set when an admin reviewed a HELD listing and released it: the reviewed
+  // price no longer trips the anomaly hold, so the listing can actually sell.
+  // Cleared whenever the row is recycled into a new listing.
+  reviewedAt  DateTime?
+
+  seller User  @relation("MarketSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyer  User? @relation("MarketBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
+
+  @@index([status, itemId, priceCoins])
+  @@index([sellerId, status])
+  @@map("market_listing")
+}
+
+// Post awards (§7): a public, paid recognition badge pinned to content. The
+// coin flow lands in the existing ledger (recipient share as TIP, giver spend
+// as PURCHASE) — no new CoinTxnType.
+model ContentAward {
+  id         String   @id @default(cuid())
+  awardId    String   @db.VarChar(32) // catalog key (lib/awards/catalog.ts)
+  giverId    String
+  anonymous  Boolean  @default(false)
+  hidden     Boolean  @default(false) // recipient hid it
+  entityType String   @db.VarChar(24) // 'rmhark' | 'comment' | 'build' | 'guide'
+  entityId   String
+  createdAt  DateTime @default(now())
+
+  giver User @relation(fields: [giverId], references: [id], onDelete: Cascade)
+
+  @@index([entityType, entityId])
+  @@index([giverId, createdAt(sort: Desc)])
+  @@map("content_award")
+}
+
+// Wishlists (§8): what a user wants — shop items, market cosmetics, or a
+// creator's future builds. Powers price/publish alerts and gifting.
+model WishlistEntry {
+  id            String    @id @default(cuid())
+  userId        String
+  entityType    String    @db.VarChar(24) // 'shop_item' | 'market_cosmetic' | 'creator_builds'
+  entityId      String // catalog key | itemId | creatorId
+  targetPrice   Int? // coins; market alerts only
+  createdAt     DateTime  @default(now())
+  // P10 (C8): price-drop / daily-shop alert state, written only by the daily alert job.
+  lastSeenPrice Int?
+  lastAlertKey  String?   @db.VarChar(40)
+  lastAlertAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityType, entityId])
+  @@index([entityType, entityId]) // reverse index: who wants this?
+  @@map("wishlist_entry")
+}
+
+/// Per-call AI metering (A2). One row per model call, append-only.
+model AiUsage {
+  id         BigInt   @id @default(autoincrement())
+  userId     String?
+  /// An `AiTask` from lib/ai/provider.server.ts.
+  task       String   @db.VarChar(40)
+  provider   String   @db.VarChar(20)
+  model      String   @db.VarChar(60)
+  /// Prompt id + version from the registry, so a quality regression is a query.
+  promptId   String?  @db.VarChar(60)
+  promptVer  Int?
+  inTokens   Int      @default(0)
+  outTokens  Int      @default(0)
+  /// Micro-dollars — integer, so a month's SUM has no float drift.
+  costMicros Int      @default(0)
+  ok         Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@map("ai_usage")
+}
+
+/// Nightly achievement rarity rollup (F7).
+///
+/// Rarity is the entire psychology of a badge case: an achievement 0.4% of
+/// players hold is worth displaying, one 90% hold is not. Computed nightly
+/// rather than per request — it is a full-table count.
+model AchievementRarity {
+  achievementId String   @id @db.VarChar(80)
+  holders       Int      @default(0)
+  /// Share of non-banned accounts holding it, 0–1.
+  pct           Float    @default(0)
+  computedAt    DateTime @default(now())
+
+  @@index([pct])
+  @@map("achievement_rarity")
+}
+
+/// Cross-app quest chain progress (F19).
+///
+/// `UserQuest` tracks per-game objectives; nothing spanned the platform, so
+/// nobody discovered the app tier from the arcade or the reverse — the biggest
+/// internal cross-sell opportunity, unused. Chains are deliberately relaxed in
+/// pace: a cross-app chain on a daily cadence becomes an obligation, and
+/// obligation is what makes people leave.
+model QuestChainProgress {
+  userId    String
+  chainId   String    @db.VarChar(40)
+  /// Per-step counters keyed by step index.
+  steps     Json      @default("{}")
+  claimedAt DateTime?
+  updatedAt DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, chainId])
+  @@map("quest_chain_progress")
+}
+
+/// Group gifting and pooled purchases (F20).
+///
+/// Contributions are ESCROWED, not spent. The refund path must be correct
+/// before launch, not after: a pool that fails and quietly keeps the coins is
+/// the fastest way to lose economy trust.
+model Pool {
+  id         String    @id @default(cuid())
+  creatorId  String
+  /// 'membership-gift' | 'tournament-prize' | 'creator-tip'
+  purpose    String    @db.VarChar(24)
+  /// The gift recipient / tournament / creator, depending on purpose.
+  targetId   String?
+  goalCoins  Int
+  raised     Int       @default(0)
+  expiresAt  DateTime
+  settledAt  DateTime?
+  /// Set when the pool expired short of its goal and contributions were
+  /// returned. Distinguishes "refunded" from "still open" without a status enum
+  /// that would need migrating every time a purpose is added.
+  refundedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  creator       User               @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  contributions PoolContribution[]
+
+  @@index([expiresAt, settledAt, refundedAt])
+  @@index([creatorId])
+  @@map("pool")
+}
+
+model PoolContribution {
+  id         BigInt    @id @default(autoincrement())
+  poolId     String
+  userId     String
+  coins      Int
+  /// Set when this specific contribution was returned, so a partial refund
+  /// sweep is resumable and can never pay the same person twice.
+  refundedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  pool Pool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([poolId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("pool_contribution")
+}
+
+/// One line of the Kaikai Debt Counter's ledger (/kaikaidebtcounter).
+///
+/// **One table, two provenances.** A member entry and a generated receipt are
+/// the same thing to every reader of this table — a dated line item with an
+/// amount and a reason — and the page's infinite scroll is a single
+/// `createdAt DESC` walk across both. Splitting them would mean merging two
+/// keyset cursors in application code for no gain; `source` discriminates where
+/// it matters (author, provenance badge) and nowhere else.
+///
+///  - `source = 'member'` — a signed-in person added it. `addedById` is set and
+///    `claim` holds what they actually typed.
+///  - `source = 'ledger'` — DeepSeek generated it to extend the history below
+///    the fold, and it was cached here so it is generated exactly once for
+///    everyone, ever. No author, no claim.
+///
+/// Append-only by construction: nothing in the product edits or deletes a row,
+/// because the counter's premise is that the pile only grows. A row that has to
+/// go (abuse, a name that shouldn't be there) is a moderation action against the
+/// author, not an `UPDATE` here.
+///
+/// `amountCents` has no upper bound in policy — a member's debt is worth
+/// whatever the appraiser decides it is worth. The only ceiling is this column:
+/// `Int` tops out at 2^31 − 1 cents (~$21.47M), and `clampEntryCents` saturates
+/// there so an absurd appraisal is capped rather than throwing on insert.
+/// Generated rows are separately drawn from a $5–$250 band, which is the texture
+/// of his back history rather than a rule about what he can owe.
+///
+/// It is the exact, auditable figure; the live counter's compounded projection
+/// is derived from it at read time and is deliberately never written back (see
+/// `lib/kaikai-debt/debt.ts`).
+model KaikaiDebtEntry {
+  /// UUIDv7 per the new-table PK policy — append-only and read newest-first, so
+  /// a time-sortable key gives insert locality and makes the keyset scan cheap.
+  id          String   @id @default(uuid(7))
+  /// 'member' | 'ledger'. See the note above; VarChar rather than an enum
+  /// because two values do not earn a type that needs a migration to extend.
+  source      String   @default("member") @db.VarChar(8)
+  /// What he owes. The headline of the log row.
+  item        String   @db.VarChar(80)
+  /// Why he owes it — the one-line justification. This is the "log" part.
+  note        String   @db.VarChar(180)
+  /// One of DEBT_CATEGORIES in `lib/kaikai-debt/debt.ts`. VarChar rather than an
+  /// enum: the list is a joke and will be edited, and a Postgres enum makes
+  /// every edit a migration.
+  category    String   @db.VarChar(16)
+  amountCents Int
+  /// What the submitter actually typed, kept verbatim; null on generated rows.
+  /// The appraisal is a model output and can be wrong, or funny in the wrong
+  /// direction; without the source text there is no way to tell which, and no
+  /// way to re-run an appraisal.
+  claim       String?  @db.VarChar(500)
+  addedById   String?
+  /// Who he owes it TO.
+  ///
+  /// On a member row this is the person who added it — they are the creditor by
+  /// construction. On a generated row it is a real member picked at random, so
+  /// the archive reads as debts to actual people rather than to nobody. Nullable
+  /// because a row can outlive the account (the FK is SetNull, not Cascade: the
+  /// debt still happened, it just stops naming anyone).
+  creditorId  String?
+  /// Member rows use `now()`. Generated rows are back-dated, walking away from
+  /// DEBT_EPOCH_MS in RECEIPT_STRIDE_MS steps, so the infinite scroll reads as
+  /// history rather than as a pile of rows all stamped the same second. The
+  /// stride is deterministic because uniqueness here is what keeps keyset
+  /// pagination total — a tie is a page boundary that drops or repeats a row.
+  createdAt   DateTime @default(now())
+
+  addedBy  User? @relation("KaikaiDebtAuthor", fields: [addedById], references: [id], onDelete: Cascade)
+  creditor User? @relation("KaikaiDebtCreditor", fields: [creditorId], references: [id], onDelete: SetNull)
+
+  /// The one read this table serves: the infinite ledger, newest first.
+  /// `id` breaks ties so the cursor can never stall on duplicate timestamps.
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  /// "what has this person put on his tab" — also the per-author rate check.
+  @@index([addedById, createdAt(sort: Desc)])
+  /// Backs the member-only subtotal and the frontier lookup for generation.
+  @@index([source, createdAt])
+  /// "everything Kaikai owes this person", across both provenances.
+  @@index([creditorId, createdAt(sort: Desc)])
+  @@map("kaikai_debt_entry")
+}
+
+// ── P10: C1 C5 C6 C7 C8 ──
+
+/// A coin savings goal (C1). A goal is a view over the balance: it never locks
+/// coins and never touches the ledger. `targetCoins` is a snapshot taken
+/// server-side when the goal is set (catalog price / cheapest live listing /
+/// the member's own number).
+model SavingsGoal {
+  id          String    @id @default(cuid())
+  userId      String
+  /// 'shop_item' | 'market_cosmetic' | 'custom'
+  kind        String    @db.VarChar(16)
+  /// Catalog id for shop_item / market_cosmetic; null for custom.
+  itemId      String?   @db.VarChar(64)
+  title       String    @db.VarChar(80)
+  targetCoins Int
+  createdAt   DateTime  @default(now())
+  reachedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("savings_goal")
+}
+
+/// A site-wide all-or-nothing goal pot (C5). Statuses: OPEN -> FUNDED (target
+/// reached; pledging closes) -> FULFILLED (admin delivered the unlock), or
+/// OPEN -> REFUNDING (deadline passed short of target, or admin cancelled)
+/// -> REFUNDED once every pledge has been returned through the ledger.
+/// Not built on `Pool`: a pool settles to a beneficiary user and has a
+/// per-member creator; a community goal settles to nobody and is admin-run.
+model CommunityGoal {
+  id          String    @id @default(cuid())
+  title       String    @db.VarChar(120)
+  description String    @default("") @db.VarChar(600)
+  /// What reaching the goal unlocks, shown on the card ("The Aurora theme").
+  unlock      String    @db.VarChar(160)
+  targetCoins Int
+  raisedCoins Int       @default(0)
+  deadline    DateTime
+  status      String    @default("OPEN") @db.VarChar(12)
+  createdById String
+  createdAt   DateTime  @default(now())
+  fundedAt    DateTime?
+  fulfilledAt DateTime?
+  refundedAt  DateTime?
+
+  pledges CommunityGoalPledge[]
+
+  @@index([status, deadline])
+  @@index([createdAt(sort: Desc)])
+  @@map("community_goal")
+}
+
+model CommunityGoalPledge {
+  id         BigInt    @id @default(autoincrement())
+  goalId     String
+  userId     String
+  coins      Int
+  /// Set when this pledge was returned, so a partial refund sweep is
+  /// resumable and can never pay the same pledge twice.
+  refundedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  goal CommunityGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, refundedAt])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("community_goal_pledge")
+}
+
+/// A store gift that arrives on a date (C7). Paid at send time through the
+/// ledger; delivered (or refunded) exactly once by the delivery job.
+/// Statuses: SCHEDULED -> DELIVERED | CANCELLED | REFUNDED.
+model ScheduledGift {
+  id          String    @id @default(cuid())
+  senderId    String
+  /// Null only if the recipient's account was deleted before delivery.
+  recipientId String?
+  itemId      String    @db.VarChar(64)
+  price       Int
+  message     String?   @db.VarChar(200)
+  deliverAt   DateTime
+  status      String    @default("SCHEDULED") @db.VarChar(12)
+  createdAt   DateTime  @default(now())
+  deliveredAt DateTime?
+  unwrappedAt DateTime?
+
+  sender    User  @relation("ScheduledGiftSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User? @relation("ScheduledGiftRecipient", fields: [recipientId], references: [id], onDelete: SetNull)
+
+  @@index([status, deliverAt])
+  @@index([recipientId, status, deliverAt])
+  @@index([senderId, createdAt(sort: Desc)])
+  @@map("scheduled_gift")
+}
+
+/// A gift (G3) or RMHMusic mixtape (F2) exchange. The draw is stored with its
+/// seed so a disputed result can be re-run (lib/gifting/secret-santa.ts).
+model GiftExchange {
+  id          String    @id @default(cuid())
+  organizerId String
+  kind        String    @default("GIFT") @db.VarChar(8) // GIFT | MIXTAPE
+  title       String    @db.VarChar(80)
+  theme       String?   @db.VarChar(80)
+  /// Max coins per gift (GIFT only).
+  budget      Int?
+  /// Sign-ups close and the draw runs at this time.
+  drawAt      DateTime
+  /// Pairings become visible to every member after this time.
+  revealAt    DateTime
+  status      String    @default("OPEN") @db.VarChar(10) // OPEN | DRAWN | FAILED | CANCELLED
+  seed        Int?
+  singleCycle Boolean?
+  drawnAt     DateTime?
+  createdAt   DateTime  @default(now())
+
+  organizer User                 @relation("GiftExchangeOrganiser", fields: [organizerId], references: [id], onDelete: Cascade)
+  members   GiftExchangeMember[]
+
+  @@index([organizerId])
+  @@index([status, drawAt])
+  @@map("gift_exchange")
+}
+
+model GiftExchangeMember {
+  id          String    @id @default(cuid())
+  exchangeId  String
+  userId      String
+  /// Set by the draw. Only the owner may read it before revealAt.
+  recipientId String?
+  /// User ids this member asks not to be paired with ("not my roommate").
+  excludeIds  String[]
+  /// Mixtape (F2): up to 10 { id, title, artist, albumArt, previewUrl }.
+  tracks      Json?
+  giftedAt    DateTime?
+  createdAt   DateTime  @default(now())
+
+  exchange  GiftExchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+  user      User         @relation("GiftExchangeMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  recipient User?        @relation("GiftExchangeMemberRecipient", fields: [recipientId], references: [id], onDelete: SetNull)
+
+  @@unique([exchangeId, userId])
+  @@index([userId])
+  @@index([recipientId])
+  @@map("gift_exchange_member")
+}
+
+/// A free, non-coin thank-you note with a reason (G4).
+model Kudos {
+  id        String   @id @default(cuid())
+  fromId    String
+  toId      String
+  reason    String   @db.VarChar(200)
+  createdAt DateTime @default(now())
+
+  from User @relation("KudosFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to   User @relation("KudosTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@index([toId, createdAt(sort: Desc)])
+  @@index([fromId, createdAt])
+  @@map("kudos")
+}
+
+model AchievementTip {
+  id            String   @id @default(cuid())
+  achievementId String   @db.VarChar(64)
+  userId        String
+  body          String   @db.VarChar(500)
+  votes         Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  user User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vote AchievementTipVote[]
+
+  @@index([achievementId, votes(sort: Desc)])
+  @@index([userId])
+  @@map("achievement_tip")
+}
+
+model AchievementTipVote {
+  tipId  String
+  userId String
+
+  tip  AchievementTip @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  user User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([tipId, userId])
+  @@index([userId])
+  @@map("achievement_tip_vote")
+}
+
+// ── P12 forecasting: G5 seasons, G6 comment positions ──
+
+/// A forecasting season: a fixed set of existing markets scored by accuracy (points, never coins).
+model PredictionSeason {
+  id        String   @id @default(cuid())
+  title     String   @db.VarChar(80)
+  startsAt  DateTime
+  endsAt    DateTime
+  createdAt DateTime @default(now())
+
+  markets PredictionSeasonMarket[]
+
+  @@index([endsAt])
+  @@map("prediction_season")
+}
+
+model PredictionSeasonMarket {
+  seasonId     String
+  predictionId String
+
+  season     PredictionSeason @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  prediction Prediction       @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+
+  @@id([seasonId, predictionId])
+  @@index([predictionId])
+  @@map("prediction_season_market")
+}
+
+/// A comment on a market, with the commenter's position snapshotted at comment time.
+model PredictionComment {
+  id           String   @id @default(cuid())
+  predictionId String
+  userId       String
+  body         String   @db.VarChar(500)
+  side         String?  @db.VarChar(3) // "YES" | "NO" | null when they held nothing
+  shares       Int      @default(0) // shares on `side` at comment time
+  createdAt    DateTime @default(now())
+
+  prediction Prediction @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([predictionId, createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("prediction_comment")
+}

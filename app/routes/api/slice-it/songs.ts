@@ -56,7 +56,7 @@ import { packSongIds } from '@/lib/slice-it/packs.server';
  * - **`shelf=recent` (L17).** `SongPlay` already records `{songId, userId,
  *   count, lastPlayedAt}` on every play and was never read as a list. This
  *   assumes an `@@index([userId, lastPlayedAt(sort: Desc)])` on `SongPlay` that
- *   does not exist yet (this change does not own `prisma/schema.prisma` — see
+ *   does not exist yet (this change does not own `prisma/schema/` — see
  *   `docs/_handoff/library-requests.md`); the query is correct today, just an
  *   unindexed sort over one user's rows until that index lands.
  */

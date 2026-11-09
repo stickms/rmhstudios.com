@@ -61,7 +61,7 @@ server/             Node service tier (socket-server, rmhbox, rmhtube, ladder-wo
 go-services/        Go worker fleet: supervisor + status + assets (Bazel + gazelle) — see §4
 stores/             Zustand stores (theme, locale, feed, …)
 hooks/              Custom hooks (useReducedMotion, useCelebration, useIsMobile, …)
-prisma/             schema.prisma (234 models) + migrations
+prisma/             schema/ (234 models, one file per domain) + migrations
 data/               Static JSON (RMHBox content packs, library metadata)
 scripts/            One-off scripts (seeding, i18n, OG/icon generation, coverage, …)
 public/             Static assets (favicon, manifest, og/icons, robots.txt)

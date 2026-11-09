@@ -1,0 +1,101 @@
+// ─── Versecraft (Poetry VN) ─────────────────────────────────────────
+
+model VersecraftSave {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  saveData  Json
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("versecraft_save")
+}
+
+model VersecraftProgress {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  completedChapters Json     @default("[]")
+  unlockedEndings   Json     @default("[]")
+  completedRoutes   Json     @default("[]")
+  totalPoemsWritten Int      @default(0)
+  totalPlaytime     Int      @default(0)
+  updatedAt         DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("versecraft_progress")
+}
+
+// A generated, shareable "version" — one seed deterministically maps to one
+// world (cast, setting, route). Persisted so anyone with the seed replays the
+// exact same world, and so the (paid) DeepSeek generation is done once.
+model VersecraftWorld {
+  id        String   @id @default(cuid())
+  seed      String   @unique
+  mcPrompt  String   @default("")
+  source    String   @default("fallback") // 'ai' | 'fallback'
+  world     Json
+  createdBy String?
+  plays     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  chapters    VersecraftGenChapter[]
+  seedListing VersecraftSeedListing?
+
+  @@index([createdAt(sort: Desc)])
+  @@map("versecraft_world")
+}
+
+// A generated chapter cached per (seed, index, choicePathHash) so each player's
+// choice-divergent prose is reproducible, and the DeepSeek call for a given
+// (seed, index, path) happens at most once. `ledger` holds the scribe's
+// distillation of this chapter, persisted alongside the prose.
+model VersecraftGenChapter {
+  id             String @id @default(cuid())
+  seed           String
+  index          Int
+  choicePathHash String @default("")
+  source         String @default("fallback")
+  content        Json
+  ledger         Json?
+
+  world VersecraftWorld @relation(fields: [seed], references: [seed], onDelete: Cascade)
+
+  @@unique([seed, index, choicePathHash])
+  @@map("versecraft_gen_chapter")
+}
+
+// R13: a published Versecraft story seed. `seed` points at the persisted world.
+model VersecraftSeedListing {
+  id          String   @id @default(cuid())
+  seed        String   @unique
+  title       String   @db.VarChar(80)
+  authorId    String
+  ratingSum   Int      @default(0)
+  ratingCount Int      @default(0)
+  forks       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  author  User                   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  world   VersecraftWorld        @relation(fields: [seed], references: [seed], onDelete: Cascade)
+  ratings VersecraftSeedRating[]
+
+  @@index([createdAt(sort: Desc)])
+  @@index([authorId])
+  @@map("versecraft_seed_listing")
+}
+
+model VersecraftSeedRating {
+  listingId String
+  userId    String
+  stars     Int
+  createdAt DateTime @default(now())
+
+  listing VersecraftSeedListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([listingId, userId])
+  @@index([userId])
+  @@map("versecraft_seed_rating")
+}

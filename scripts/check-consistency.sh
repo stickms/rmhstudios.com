@@ -389,8 +389,8 @@ if list '^app/routes/(_site/)?[^/]*\.tsx$' | grep -q .; then
   done
 fi
 
-if has '^prisma/schema\.prisma$' && ! has '^prisma/migrations/'; then
-  warn "schema.prisma changed with no migration in this commit."
+if has '^prisma/schema/.*\.prisma$' && ! has '^prisma/migrations/'; then
+  warn "prisma/schema/ changed with no migration in this commit."
   printf '%s    → `pnpm db:push` is dev-only; production runs `prisma migrate deploy`.%s\n' "$dim" "$off"
 fi
 
