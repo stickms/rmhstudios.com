@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const ctx = {
   state: 'running',
   sampleRate: 48000,
-  resume: vi.fn(),
+  resume: vi.fn().mockResolvedValue(undefined),
   createMediaStreamSource: vi.fn(() => ({ connect: vi.fn(), disconnect: vi.fn() })),
   createAnalyser: vi.fn(() => ({
     fftSize: 0,
@@ -15,7 +15,7 @@ const ctx = {
 };
 vi.mock('@/lib/shared/platform', () => ({ getAudioContext: () => ctx }));
 
-import { createMicInput } from './mic';
+import { AUDIO_START_ERROR, createMicInput } from './mic';
 import { RESUME_TIMEOUT_MS } from '../audio/resume';
 
 function fakeStream() {
@@ -125,7 +125,9 @@ describe('createMicInput when sound never resumes', () => {
   });
   afterEach(() => {
     ctx.state = 'running';
-    ctx.resume.mockReset();
+    // Back to the shared default (resolves), not mockReset(): that would drop the implementation
+    // for whichever test runs next.
+    ctx.resume.mockReset().mockResolvedValue(undefined);
     vi.useRealTimers();
     vi.unstubAllGlobals();
   });
@@ -135,7 +137,10 @@ describe('createMicInput when sound never resumes', () => {
     vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
     const mic = createMicInput();
     const started = mic.start();
-    const failed = expect(started).rejects.toThrow();
+    const failed = expect(started).rejects.toMatchObject({
+      name: AUDIO_START_ERROR,
+      message: 'Sound could not start in this browser.',
+    });
     await vi.advanceTimersByTimeAsync(RESUME_TIMEOUT_MS);
     await failed;
     expect(getUserMedia).not.toHaveBeenCalled();

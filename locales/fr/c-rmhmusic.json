@@ -75,6 +75,7 @@
   "lesson-unavailable-title": "Not available yet",
   "loading-lesson": "Loading the lesson…",
   "loading-lessons": "Loading your lessons…",
+  "mic-audio-failed": "Sound couldn't start on this device. Reload the page and try again.",
   "mic-blocked": "Microphone access was blocked. To allow it, tap the lock or settings icon next to the address bar, turn on the microphone for this site, then try again.",
   "mic-failed": "The microphone couldn't start. Another app may be using it. Close it and try again.",
   "mic-heard": "Hearing {{note}} ({{cents}} cents)",

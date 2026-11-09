@@ -17,6 +17,9 @@ import type { InputAdapter, NoteEvent, NoteListener } from './events';
 import { createDeviceRunner } from './device-runner';
 import { createSegmenter, type Segmenter } from './mic-segmenter';
 
+/** The `name` of the error raised when sound would not start; `InputDetails` maps it to a sentence. */
+export const AUDIO_START_ERROR = 'AudioStartError';
+
 /** Analysis rate. A timer, not requestAnimationFrame: the repo gates rAF loops. */
 const POLL_MS = 25;
 /** YIN needs two periods of the lowest pitch (60 Hz); 2048 covers that at 48 kHz. */
@@ -59,7 +62,7 @@ export function createMicInput(opts: { onLevel?: (rms: number) => void } = {}): 
     // and never wait on it forever (an audio interruption, no output device).
     const running = await resumeAudio(ctx);
     if (!wanted()) return;
-    if (!running) throw new Error('Sound could not start in this browser.');
+    if (!running) throw audioStartError('Sound could not start in this browser.');
 
     // Rejections keep their original `name` (NotAllowedError, NotFoundError).
     const media = await navigator.mediaDevices.getUserMedia({
@@ -148,5 +151,15 @@ export function createMicInput(opts: { onLevel?: (rms: number) => void } = {}): 
 function unsupported(message: string): Error {
   const error = new Error(message);
   error.name = 'NotSupportedError';
+  return error;
+}
+
+/**
+ * Web Audio exists but would not run (it never resumed: an audio interruption, no output device).
+ * Named so the setup row can say so instead of blaming another app for the microphone.
+ */
+function audioStartError(message: string): Error {
+  const error = new Error(message);
+  error.name = AUDIO_START_ERROR;
   return error;
 }

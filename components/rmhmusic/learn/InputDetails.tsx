@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { InputSource } from '@/lib/rmhmusic/learn/input/events';
+import { AUDIO_START_ERROR } from '@/lib/rmhmusic/learn/input/mic';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import { SECONDARY_BUTTON } from './buttons';
 import { LiveStaff } from './LiveStaff';
@@ -143,6 +144,10 @@ export function InputErrorNotice({
   } else if (source === 'mic' && error.name === 'NotSupportedError') {
     message = t('mic-unsupported', {
       defaultValue: "This browser can't use a microphone on this page.",
+    });
+  } else if (source === 'mic' && error.name === AUDIO_START_ERROR) {
+    message = t('mic-audio-failed', {
+      defaultValue: "Sound couldn't start on this device. Reload the page and try again.",
     });
   } else if (source === 'mic') {
     message = t('mic-failed', {
