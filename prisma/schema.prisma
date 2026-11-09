@@ -106,12 +106,6 @@ model User {
   rmhtubePlaylists   RmhTubePlaylist[]
   rmhtubeStats       RmhTubeUserStats?
 
-  // ─── RMHMusic ──────────────────────────────────────────────────
-  rmhMusicHostedRooms  RmhMusicRoom[]        @relation("RmhMusicHostedRooms")
-  rmhMusicRoomMembers  RmhMusicRoomMember[]  @relation("RmhMusicRoomMembers")
-  rmhMusicQueueItems   RmhMusicQueueItem[]   @relation("RmhMusicQueueItems")
-  rmhMusicChatMessages RmhMusicChatMessage[] @relation("RmhMusicChatMessages")
-
   // Site Feedback
   feedbacks Feedback[]
 
@@ -206,10 +200,6 @@ model User {
   // RMHTube channel subscriptions
   rmhtubeSubscriptions RmhTubeSubscription[] @relation("TubeSubscriber")
   rmhtubeSubscribers   RmhTubeSubscription[] @relation("TubeChannel")
-
-  // RMHMusic "guess the song" game
-  musicPuzzles       MusicGuessPuzzle[]
-  musicGuessAttempts MusicGuessAttempt[]
 
   // Developer API keys + one-time promo claims
   developerApiKeys DeveloperApiKey[]
@@ -521,7 +511,6 @@ model User {
   arcadeRivalOf              ArcadeRival[]                @relation("ArcadeRivalTarget")
   // P20 watch parties: F1 timed comments, F17 watch later, T5 commentary tracks
   rmhtubeTimedComments       RmhTubeTimedComment[]
-  rmhMusicTrackComments      RmhMusicTrackComment[]
   rmhtubeWatchLater          RmhTubeWatchLater[]
   rmhtubeCommentaryTracks    RmhTubeCommentaryTrack[]
   // P11 gifting: G1 birthdays, G2 advent, G3 gift exchange, G4 kudos, F2 mixtape exchange
@@ -3351,134 +3340,6 @@ model CreatorMembership {
   @@index([expiresAt])
   @@index([tierId])
   @@map("creator_membership")
-}
-
-// ─── RMHMusic ────────────────────────────────────────────────────
-
-model RmhMusicRoom {
-  id         String   @id @default(cuid())
-  code       String   @unique
-  name       String   @db.VarChar(64)
-  hostId     String
-  host       User     @relation("RmhMusicHostedRooms", fields: [hostId], references: [id])
-  isPublic   Boolean  @default(true)
-  password   String?
-  maxMembers Int      @default(10)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  members RmhMusicRoomMember[]
-  queue   RmhMusicQueueItem[]
-  chat    RmhMusicChatMessage[]
-
-  @@index([isPublic, createdAt(sort: Desc)])
-  @@map("rmh_music_room")
-}
-
-model RmhMusicRoomMember {
-  id       String       @id @default(cuid())
-  roomId   String
-  room     RmhMusicRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  userId   String
-  user     User         @relation("RmhMusicRoomMembers", fields: [userId], references: [id])
-  joinedAt DateTime     @default(now())
-  leftAt   DateTime?
-
-  @@unique([roomId, userId])
-  // Same per-viewer presence fan-out as rmhtube_room_member above.
-  @@index([userId, leftAt])
-  @@map("rmh_music_room_member")
-}
-
-/// DEAD (rewrite R0-T7): zero code references. Drop scheduled R1-T3; do not add writers.
-model RmhMusicQueueItem {
-  id          String       @id @default(cuid())
-  roomId      String
-  room        RmhMusicRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  spotifyUri  String
-  title       String       @db.VarChar(256)
-  artist      String       @db.VarChar(256)
-  albumArt    String       @db.VarChar(500)
-  durationMs  Int
-  addedById   String
-  addedBy     User         @relation("RmhMusicQueueItems", fields: [addedById], references: [id])
-  addedByName String       @db.VarChar(50)
-  position    Int
-  playedAt    DateTime?
-  createdAt   DateTime     @default(now())
-
-  @@index([roomId, position])
-  @@map("rmh_music_queue_item")
-}
-
-/// A short comment pinned to a moment in an RMHMusic track. Tracks are external
-/// Spotify results with no internal row, so the comment is keyed on the
-/// `spotifyUri` string the player and queue already carry.
-model RmhMusicTrackComment {
-  id         String   @id @default(cuid())
-  trackUri   String   @db.VarChar(256)
-  userId     String
-  positionMs Int
-  body       String   @db.VarChar(280)
-  createdAt  DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([trackUri, positionMs])
-  @@index([userId, trackUri])
-  @@map("rmh_music_track_comment")
-}
-
-/// DEAD (rewrite R0-T7): zero code references. Drop scheduled R1-T3; do not add writers.
-model RmhMusicChatMessage {
-  id        String       @id @default(cuid())
-  roomId    String
-  room      RmhMusicRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User         @relation("RmhMusicChatMessages", fields: [userId], references: [id])
-  userName  String       @db.VarChar(50)
-  content   String       @db.VarChar(300)
-  createdAt DateTime     @default(now())
-
-  @@index([roomId, createdAt(sort: Desc)])
-  @@map("rmh_music_chat_message")
-}
-
-/// "Guess the song" puzzle (#33). Players reveal progressive text hints and
-/// guess the title; needs no external audio. Answers are matched leniently
-/// against `acceptedAnswers`.
-model MusicGuessPuzzle {
-  id              String   @id @default(cuid())
-  authorId        String
-  title           String   @db.VarChar(160) // canonical answer (song title)
-  artist          String   @db.VarChar(160)
-  hints           Json // ordered array of hint strings
-  acceptedAnswers Json // lowercased acceptable answers
-  plays           Int      @default(0)
-  solves          Int      @default(0)
-  createdAt       DateTime @default(now())
-
-  author   User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  attempts MusicGuessAttempt[]
-
-  @@index([createdAt(sort: Desc)])
-  @@map("music_guess_puzzle")
-}
-
-model MusicGuessAttempt {
-  id        String   @id @default(cuid())
-  puzzleId  String
-  userId    String
-  solved    Boolean  @default(false)
-  hintsUsed Int      @default(0)
-  createdAt DateTime @default(now())
-
-  puzzle MusicGuessPuzzle @relation(fields: [puzzleId], references: [id], onDelete: Cascade)
-  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([puzzleId, userId])
-  @@index([userId])
-  @@map("music_guess_attempt")
 }
 
 /// A developer API key for the subscriber-gated REST API. Only a SHA-256 hash
