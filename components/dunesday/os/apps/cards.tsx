@@ -701,7 +701,7 @@ export function CardsStatus({
       <span className="ds-cards__status-msg">{message}</span>
       <span>{t('cards-score', { defaultValue: 'Score: {{n}}', n: score })}</span>
       <span>{t('cards-moves', { defaultValue: 'Moves: {{n}}', n: moves })}</span>
-      <span>{t('cards-time', { defaultValue: 'Time: {{time}}', time: formatTime(seconds) })}</span>
+      <span>{t('cards-time', { defaultValue: 'Time: {{time}}', time: formatClockSeconds(seconds) })}</span>
     </div>
   );
 }
