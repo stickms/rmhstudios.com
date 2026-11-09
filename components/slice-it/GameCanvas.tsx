@@ -3101,7 +3101,7 @@ export function GameCanvas() {
                 const level = strengthOf(
                   judged && Math.abs(judged.at - (slice.hitTime ?? 0)) < 250 ? judged.text : undefined,
                 );
-                // A weak renderer (`perf-lite`) gets a smaller burst, not a broken one.
+                // A low-end device (no glow) gets a smaller burst, not a broken one.
                 spawnCutFx(
                   fxRef.current,
                   cut,
