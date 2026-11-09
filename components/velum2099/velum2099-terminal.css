@@ -240,6 +240,7 @@
     height: 8px;
     background: #ff2222;
     border-radius: 50%;
+    corner-shape: round;
     margin-right: 6px;
     vertical-align: middle;
     box-shadow: 0 0 6px #ff2222;

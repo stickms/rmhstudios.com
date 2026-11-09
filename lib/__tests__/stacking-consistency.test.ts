@@ -263,8 +263,8 @@ describe('§5.6 — a big z-index inside the frame is a claim nobody can hear (R
 /**
  * R3 under Plasmatic Jelly (gate N4, 05 §1.1). Liquid Glass exempted `.glass-fill` because "L1 has no blur", and blur
  * was the only thing that made a glass root a containing block. Jelly changes the reason, not the rule: EVERY role can
- * now carry a transform — hover plump, press squash, release wobble, drag stretch, a ≤ 1.5 px neighbour nudge
- * (lib/jelly/physics.ts) — and a transformed element is a containing block for `position: fixed` descendants exactly
+ * now carry a transform — hover plump, press squash, release wobble (the CSS soft body, app/jelly-material.css §8), a
+ * ≤ 1.5 px arc nudge (lib/jelly/arcs/nudge.ts) — and a transformed element is a containing block for `position: fixed` descendants exactly
  * like a blurred one. So the scan covers every `glass-*` role and every `data-jelly` host. The files that already had
  * the shape when the rule widened are frozen in {@link DEFORMABLE_HOST_BASELINE} and drain one-directionally.
  */

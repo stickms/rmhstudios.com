@@ -16,6 +16,7 @@ import {
   Plus,
   Search,
   Shuffle,
+  SlidersHorizontal,
   Table2,
   Upload,
   X,
@@ -25,6 +26,9 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { MenuItem, MenuLabel, MenuSeparator } from '@/components/ui/menu';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import {
   Dialog,
   DialogContent,
@@ -33,7 +37,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useSession } from '@/components/Providers';
-import { useSliceItStore } from '@/lib/slice-it/store';
+import { musicGain, useSliceItStore } from '@/lib/slice-it/store';
 import { PREVIEW_SECONDS, previewFragment } from '@/lib/slice-it/preview';
 import { timeAgoShort } from '@/lib/utils';
 import {
@@ -154,6 +158,12 @@ export function SongLibrary({
   const { t: ts } = useTranslation('r-slice-it');
   const { data: session } = useSession();
   const volume = useSliceItStore((s) => s.volume);
+  const musicVolume = useSliceItStore((s) => s.musicVolume);
+  // A phone gets one compact row — a search field and an options menu — in place of
+  // the heading, the sort, the view toggle, the tool buttons and the artist chips.
+  const isPhone = useMediaQuery('(max-width: 639px)');
+  const [optionsOpen, setOptionsOpen] = React.useState(false);
+  const optionsRef = React.useRef<HTMLButtonElement>(null);
 
   // The row's primary action, named for what it actually does here.
   const selectLabel =
@@ -426,8 +436,8 @@ export function SongLibrary({
   }, [stopPreview]);
 
   React.useEffect(() => {
-    if (previewRef.current) previewRef.current.volume = volume / 100;
-  }, [volume]);
+    if (previewRef.current) previewRef.current.volume = musicGain(volume, musicVolume);
+  }, [volume, musicVolume]);
 
   const togglePreview = (song: SliceSong) => {
     if (previewId === song.id && previewRef.current) {
@@ -449,7 +459,7 @@ export function SongLibrary({
     // That is what makes previewing a 6 MB track affordable at all.
     const start = song.previewStart ?? 0;
     const audio = new Audio(previewFragment(song.audioUrl, start));
-    audio.volume = volume / 100;
+    audio.volume = musicGain(volume, musicVolume);
     audio.onended = () => setPreviewId(null);
     // The fragment's END bound is honoured inconsistently across browsers, so
     // the stop is enforced here too. Without it a preview on an engine that
@@ -558,9 +568,194 @@ export function SongLibrary({
    */
   const scrollsAsOneColumn = filters.view !== 'table';
 
+  /* The three dialogs the toolbar opens. Controlled, with the trigger optional: the
+     wide toolbar passes its icon button, the phone's options menu passes none and
+     opens them from state — one body of content for both. */
+  const randomDialog = (trigger?: React.ReactNode) => (
+    <Dialog open={randomOpen} onOpenChange={setRandomOpen}>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none rounded-2xl max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="text-slice-text font-black">
+            {ts('random-title', { defaultValue: 'Surprise Me' })}
+          </DialogTitle>
+        </DialogHeader>
+        <RandomForm
+          constraints={randomConstraints}
+          onChange={setRandomConstraints}
+          onSubmit={() => void rollRandom()}
+          loading={randomLoading}
+          authed={Boolean(session)}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+
+  const packsDialog = (trigger?: React.ReactNode) => (
+    <Dialog open={packsOpen} onOpenChange={setPacksOpen}>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none rounded-2xl max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="text-slice-text font-black">
+            {ts('packs-title', { defaultValue: 'Packs' })}
+          </DialogTitle>
+        </DialogHeader>
+        <PackPanel />
+      </DialogContent>
+    </Dialog>
+  );
+
+  const uploadDialog = (trigger?: React.ReactNode) => (
+    <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none rounded-2xl max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="text-slice-text font-black">
+            {t('upload-track-title', { defaultValue: 'UPLOAD TRACK' })}
+          </DialogTitle>
+        </DialogHeader>
+        <UploadForm
+          onDone={() => {
+            setUploadOpen(false);
+            void load(null, false);
+          }}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+
+  /**
+   * Open a dialog from a menu row. Not in the same tick: the menu hands focus back
+   * to its button as it closes, and a dialog that has just opened treats focus
+   * leaving it as a dismissal — so it would open and shut in one breath.
+   */
+  const openFromMenu = (open: () => void) => {
+    setOptionsOpen(false);
+    window.setTimeout(open, 80);
+  };
+
+  /** The phone's compact row, and the menu that holds everything it replaced. */
+  const phoneToolbar = (
+    <div
+      className={`flex items-center gap-2 shrink-0 px-3 py-2 border-b border-slice-shadow-dark/50 bg-slice-bg ${
+        scrollsAsOneColumn ? 'sm:sticky sm:top-0 sm:z-20' : ''
+      }`}
+    >
+      <div className="relative min-w-0 flex-1">
+        <Search
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-slice-text-light w-4 h-4"
+          aria-hidden
+        />
+        <Input
+          placeholder={t('search-tracks', { defaultValue: 'Search {{count}} tracks…', count: total })}
+          className="pl-9 bg-slice-card-bg border border-slice-shadow-dark/50 rounded-lg h-10 text-sm text-slice-text"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          aria-label={t('search-placeholder', { defaultValue: 'Search songs, artists...' })}
+        />
+      </div>
+      <button
+        ref={optionsRef}
+        type="button"
+        className="slice-opt"
+        aria-haspopup="menu"
+        aria-expanded={optionsOpen}
+        aria-label={t('library-options', { defaultValue: 'Library options' })}
+        onClick={() => setOptionsOpen((open) => !open)}
+      >
+        <SlidersHorizontal className="size-5" aria-hidden />
+        {(Boolean(filters.artist) || filters.sort !== 'recent' || filters.view !== 'grid') && (
+          <span className="slice-opt__dot" aria-hidden />
+        )}
+      </button>
+      <AnchoredMenu
+        open={optionsOpen}
+        onClose={() => setOptionsOpen(false)}
+        anchorRef={optionsRef}
+        label={t('library-options', { defaultValue: 'Library options' })}
+        className="slice-tokens slice-menu-panel w-64"
+      >
+        <MenuLabel>{t('sort-by', { defaultValue: 'Sort by' })}</MenuLabel>
+        {SONG_SORTS.map((option) => (
+          <MenuItem
+            key={option}
+            checked={filters.view === 'grid' && filters.sort === option}
+            onSelect={() => {
+              setFilters({ sort: option as SongSort, dir: undefined, view: 'grid' });
+              setOptionsOpen(false);
+            }}
+          >
+            {sortLabel(option, t)}
+          </MenuItem>
+        ))}
+        <MenuSeparator />
+        <MenuLabel>{ts('view-toggle', { defaultValue: 'Library view' })}</MenuLabel>
+        {viewTabs.map((tab) => (
+          <MenuItem
+            key={tab.id}
+            icon={tab.icon}
+            checked={filters.view === tab.id}
+            onSelect={() => {
+              handleViewChange(tab.id);
+              setOptionsOpen(false);
+            }}
+          >
+            {tab.label}
+          </MenuItem>
+        ))}
+        {!readOnly && (
+          <>
+            <MenuSeparator />
+            <MenuItem
+              icon={Shuffle}
+              onSelect={() => openFromMenu(() => setRandomOpen(true))}
+            >
+              {ts('random-title', { defaultValue: 'Surprise Me' })}
+            </MenuItem>
+            {session && (
+              <MenuItem
+                icon={Layers}
+                onSelect={() => openFromMenu(() => setPacksOpen(true))}
+              >
+                {ts('packs-title', { defaultValue: 'Packs' })}
+              </MenuItem>
+            )}
+            {session && (
+              <MenuItem
+                icon={Upload}
+                onSelect={() => openFromMenu(() => setUploadOpen(true))}
+              >
+                {t('upload-track-title', { defaultValue: 'UPLOAD TRACK' })}
+              </MenuItem>
+            )}
+          </>
+        )}
+        {artistFacet.length > 0 && (
+          <>
+            <MenuSeparator />
+            <MenuLabel>{ts('filtered-by-artist', { defaultValue: 'Artist' })}</MenuLabel>
+            {artistFacet.slice(0, 12).map((artist) => (
+              <MenuItem
+                key={artist.key}
+                checked={filters.artist === artist.key}
+                hint={artist.songCount}
+                onSelect={() => {
+                  setFilters({ artist: filters.artist === artist.key ? undefined : artist.key });
+                  setOptionsOpen(false);
+                }}
+              >
+                {artist.display}
+              </MenuItem>
+            ))}
+          </>
+        )}
+      </AnchoredMenu>
+    </div>
+  );
+
   return (
     <div
-      className={`w-full h-full bg-slice-bg flex flex-col ${
+      className={`slice-lib w-full h-full bg-slice-bg flex flex-col ${
         scrollsAsOneColumn ? 'overflow-y-auto overscroll-contain' : 'overflow-hidden'
       }`}
     >
@@ -568,19 +763,14 @@ export function SongLibrary({
           the view toggle are how you change what you are looking at, so they
           stay reachable while the shelves scroll past them. `bg-slice-bg` is
           load-bearing — without it the rows show through as they pass under. */}
+      {isPhone ? (
+        phoneToolbar
+      ) : (
       <div
         className={`flex flex-wrap gap-2 items-center shrink-0 p-3 border-b border-slice-shadow-dark/50 bg-slice-bg ${
-          scrollsAsOneColumn ? 'sticky top-0 z-20' : ''
+          scrollsAsOneColumn ? 'sm:sticky sm:top-0 sm:z-20' : ''
         }`}
       >
-        {/* The side's heading, as the sleeve prints it. */}
-        <div className="slice-lib-head">
-          <h2 className="slice-display">{t('side-a', { defaultValue: 'Side A' })}</h2>
-          <span className="slice-label">
-            {t('library-tracks', { defaultValue: 'Library · {{count}} tracks', count: total })}
-          </span>
-        </div>
-
         <div className="relative flex-1 min-w-[10rem]">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slice-text-light w-4 h-4"
@@ -591,7 +781,7 @@ export function SongLibrary({
               `<input>` nor a `<select>` renders one. These two controls can be
               44px, so on a coarse pointer they are. */}
           <Input
-            placeholder={t('search-placeholder', { defaultValue: 'Search songs, artists...' })}
+            placeholder={t('search-tracks', { defaultValue: 'Search {{count}} tracks…', count: total })}
             className="pl-9 bg-slice-card-bg border border-slice-shadow-dark/50 rounded-lg h-9 pointer-coarse:h-11 text-sm text-slice-text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
@@ -649,91 +839,63 @@ export function SongLibrary({
           />
         </div>
 
-        {!readOnly && (
-          <Dialog open={randomOpen} onOpenChange={setRandomOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 rounded-lg p-0 touch-target"
-                aria-label={ts('random-button', { defaultValue: 'Pick a random song' })}
-                title={ts('random-button', { defaultValue: 'Pick a random song' })}
-              >
-                <Shuffle className="w-4 h-4" aria-hidden />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none rounded-2xl max-w-sm">
-              <DialogHeader>
-                <DialogTitle className="text-slice-text font-black">
-                  {ts('random-title', { defaultValue: 'Surprise Me' })}
-                </DialogTitle>
-              </DialogHeader>
-              <RandomForm
-                constraints={randomConstraints}
-                onChange={setRandomConstraints}
-                onSubmit={() => void rollRandom()}
-                loading={randomLoading}
-                authed={Boolean(session)}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
+        {!readOnly &&
+          randomDialog(
+            <Button
+              variant="outline"
+              className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 rounded-lg p-0 touch-target"
+              aria-label={ts('random-button', { defaultValue: 'Pick a random song' })}
+              title={ts('random-button', { defaultValue: 'Pick a random song' })}
+            >
+              <Shuffle className="w-4 h-4" aria-hidden />
+            </Button>,
+          )}
 
         {/* L16 — the pack builder's entry point. Without one, `ChartPack` is a
             model nothing can reach: two features shipped dormant on this branch
             already. */}
-        {!readOnly && session && (
-          <Dialog open={packsOpen} onOpenChange={setPacksOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 rounded-lg text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/30 p-0 touch-target"
-                aria-label={ts('packs-title', { defaultValue: 'Packs' })}
-              >
-                <Layers className="w-4 h-4" aria-hidden />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none rounded-2xl max-w-lg">
-              <DialogHeader>
-                <DialogTitle className="text-slice-text font-black">
-                  {ts('packs-title', { defaultValue: 'Packs' })}
-                </DialogTitle>
-              </DialogHeader>
-              <PackPanel />
-            </DialogContent>
-          </Dialog>
-        )}
+        {!readOnly &&
+          session &&
+          packsDialog(
+            <Button
+              variant="ghost"
+              className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 rounded-lg text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/30 p-0 touch-target"
+              aria-label={ts('packs-title', { defaultValue: 'Packs' })}
+            >
+              <Layers className="w-4 h-4" aria-hidden />
+            </Button>,
+          )}
 
-        {!readOnly && session && (
-          <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-            <DialogTrigger asChild>
-              <Button
-                className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 rounded-lg bg-blue-500 text-white hover:bg-blue-600 p-0 touch-target"
-                aria-label={t('upload-track-title', { defaultValue: 'UPLOAD TRACK' })}
-              >
-                <Upload className="w-4 h-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none rounded-2xl max-w-lg">
-              <DialogHeader>
-                <DialogTitle className="text-slice-text font-black">
-                  {t('upload-track-title', { defaultValue: 'UPLOAD TRACK' })}
-                </DialogTitle>
-              </DialogHeader>
-              <UploadForm
-                onDone={() => {
-                  setUploadOpen(false);
-                  void load(null, false);
-                }}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
+        {!readOnly &&
+          session &&
+          uploadDialog(
+            <Button
+              className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 rounded-lg bg-blue-500 text-white hover:bg-blue-600 p-0 touch-target"
+              aria-label={t('upload-track-title', { defaultValue: 'UPLOAD TRACK' })}
+            >
+              <Upload className="w-4 h-4" />
+            </Button>,
+          )}
       </div>
+      )}
+
+      {/* A phone has no toolbar buttons to carry the dialogs, so they are mounted here
+          and opened from the options menu. */}
+      {isPhone && !readOnly && (
+        <>
+          {randomDialog()}
+          {session && packsDialog()}
+          {session && uploadDialog()}
+        </>
+      )}
 
       {/* L15 — the artist facet. Hidden while a search is running: chips are a
           way to browse, and a query is a statement that you already know what
           you want. */}
-      {!filters.q && (filters.artist || artistFacet.length > 0 || artistFacetLoading) && (
+      {!filters.q &&
+        (isPhone
+          ? Boolean(filters.artist)
+          : filters.artist || artistFacet.length > 0 || artistFacetLoading) && (
         <div className="shrink-0 border-b border-slice-shadow-dark/50 px-3 py-2">
           {filters.artist ? (
             <div className="flex items-center gap-2 flex-wrap">

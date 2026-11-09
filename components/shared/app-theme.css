@@ -153,7 +153,6 @@
    without it simply shows no haze. */
 .app-theme {
   --app-jelly-haze: color-mix(in srgb, var(--app-text) 18%, white);
-  --app-jelly-haze-strong: color-mix(in srgb, var(--app-text) 8%, white);
   --app-jelly-haze-pane: 0.09;
   /* Repeated cards (the `bg-(--app-surface)` adapter, §7): ~0.7 of the pane, as on the site tier. */
   --app-jelly-haze-fill: 0.065;
@@ -161,8 +160,6 @@
   --app-jelly-plasma-b: color-mix(in oklch, var(--app-accent), #9b6bff 45%);
   --app-jelly-plasma: 0.8;
   --app-jelly-flow-speed: 1;
-  --app-jelly-quiet: 0.75;
-  --app-jelly-on: 1;
   /* #989 gel colours, mirroring the site's `--gel-*` (app/globals.css :root explains each): a translucent body that
      darkens toward its base, the ink-gel primary action, the RGB-led edge tints and the 1px Fresnel line. The px
      geometry (`--gel-bevel`, `--gel-disperse-*`) is theme-independent and read from the site tokens. */
@@ -214,7 +211,6 @@
   --app-scrim: rgb(0 0 0 / 0.4);
   /* Jelly on a light ground: a cool milky grey (white haze vanishes on white). */
   --app-jelly-haze: color-mix(in srgb, var(--app-text) 10%, #eef0f6);
-  --app-jelly-haze-strong: color-mix(in srgb, var(--app-text) 14%, #e4e8f0);
   --app-jelly-haze-pane: 0.12;
   --app-jelly-haze-fill: 0.085;
   /* A pale plasma at half gain: a saturated accent darkens a near-white ground
@@ -270,15 +266,12 @@
   --app-focus-width: 3px;
   /* No jelly in high contrast: every knob zero, `-on: 0` is the kill switch. */
   --app-jelly-haze: transparent;
-  --app-jelly-haze-strong: transparent;
   --app-jelly-haze-pane: 0;
   --app-jelly-haze-fill: 0;
   --app-jelly-plasma-a: transparent;
   --app-jelly-plasma-b: transparent;
   --app-jelly-plasma: 0;
   --app-jelly-flow-speed: 0;
-  --app-jelly-quiet: 0;
-  --app-jelly-on: 0;
   /* Gel: the opaque surface; dispersion, Fresnel and specular off. */
   --app-gel-body: var(--app-surface);
   --app-gel-depth: var(--app-surface);
@@ -573,15 +566,13 @@
    ══════════════════════════════════════════════════════════════════════════ */
 
 /* Translucent panel. No backdrop-filter, on purpose (see `app/liquid-glass.css`): the tier is dense enough to read on
-   its own (`--app-glass-bg` is ~85% opaque), and `lib/liquid/glass/engine.ts` draws the clear, refracting, lit slab on
-   it as a canvas behind the content, the same as the site's panels. */
+   its own (`--app-glass-bg` is ~85% opaque). */
 .app-glass {
   /* Jelly host knobs (app/jelly-material.css §1): the pane role, in the app palette. The palette knobs redirect
-     every jelly consumer (engine uniforms, carrier, floor, CSS rim) from `--site-jelly-*` to `--app-jelly-*`. */
+     every jelly consumer (woken haze, floor, CSS rim) from `--site-jelly-*` to `--app-jelly-*`. */
   --jelly-haze-a: var(--app-jelly-haze-pane);
   --jelly-plasma-k: 0.06;
   --jelly-flow-speed: 1;
-  --jelly-flow-axis-deg: 100deg;
   --jelly-haze-color: var(--app-jelly-haze);
   --jelly-plasma-a: var(--app-jelly-plasma-a);
   --jelly-plasma-b: var(--app-jelly-plasma-b);
@@ -603,18 +594,6 @@
   border: 1px solid var(--app-border-bright);
   box-shadow: none;
 }
-/* A haze canvas or a CSS carrier draws the haze: the static floor steps aside (perf-lite keeps it). */
-html:not(.perf-lite) .app-glass:is([data-jelly-haze='on'], [data-jelly-flow='on']) {
-  --jelly-floor: none, none;
-}
-/* With the slab drawn, the shader owns the edge light and the coat — but not the haze floor (the rim slab is not
-   a haze canvas; see app/liquid-glass.css). */
-.app-glass[data-liquid-canvas='on'] {
-  background-image: var(--jelly-floor, none);
-  background-size: var(--jelly-floor-size, auto);
-  box-shadow: none;
-}
-
 /* Shared app chrome and controls share the site's clear coat; gameplay and
    media keep their own rendering. Repeated surfaces never acquire blur. */
 .app-theme :is(button, [role='button']):not([data-liquid-material='off']) {
@@ -630,17 +609,12 @@ html:not(.perf-lite) .app-glass:is([data-jelly-haze='on'], [data-jelly-flow='on'
    Plasmatic Jelly (04 §1, "App tier cards"): these are the app tier's repeated
    content, so they take the CARD role — the `.glass-fill` knobs of
    app/jelly-material.css §1, in the app palette — with the static haze floor
-   in their background stack and a static CSS rim. A CSS flow carrier
-   (`lib/jelly/flow-carriers.ts`) replaces the floor while one is attached; the
-   carrier's isolation and stacking come from liquid-glass.css /
-   jelly-material.css, keyed on `[data-jelly-flow='on']`, so nothing here
-   changes when it is. No per-file edit: every `bg-(--app-surface)` card in an
-   app or game picks this up. */
+   in their background stack and a static CSS rim. No per-file edit: every
+   `bg-(--app-surface)` card in an app or game picks this up. */
 .app-theme :is([class~='bg-(--app-surface)'], [data-liquid-surface]) {
   --jelly-haze-a: var(--app-jelly-haze-fill);
   --jelly-plasma-k: 0.05;
   --jelly-flow-speed: 1;
-  --jelly-flow-axis-deg: 100deg;
   --jelly-haze-color: var(--app-jelly-haze);
   --jelly-plasma-a: var(--app-jelly-plasma-a);
   --jelly-plasma-b: var(--app-jelly-plasma-b);
@@ -677,16 +651,6 @@ html:not(.perf-lite) .app-glass:is([data-jelly-haze='on'], [data-jelly-flow='on'
     inset calc(-1 * var(--gel-disperse-b, 0px)) calc(-1 * var(--gel-disperse-b, 0px))
       var(--gel-bevel, 6px) 0 var(--app-gel-edge-b),
     inset 0 0 0 1px var(--app-gel-fresnel);
-}
-/* A carrier or a haze canvas draws the haze: the static floor steps aside
-   (perf-lite keeps it, as on the site tier). */
-html:not(.perf-lite)
-  .app-theme
-  :is([class~='bg-(--app-surface)'], [data-liquid-surface]):is(
-    [data-jelly-haze='on'],
-    [data-jelly-flow='on']
-  ) {
-  --jelly-floor: none, none;
 }
 /* Play-fields never wear the material (R16): a board cell or a stage that
    happens to use the surface token keeps a plain fill. */
@@ -764,13 +728,6 @@ html:not(.perf-lite)
     }
   }
 }
-.app-theme .liquid-light > span {
-  background: radial-gradient(
-    closest-side,
-    color-mix(in srgb, var(--app-text) 24%, transparent),
-    transparent
-  );
-}
 .app-high-contrast .app-glass {
   background: var(--app-surface);
   -webkit-backdrop-filter: none;
@@ -812,6 +769,7 @@ html:not(.perf-lite)
   width: 2rem;
   height: 2rem;
   border-radius: 9999px;
+  corner-shape: round;
 }
 
 .app-skeleton-thumbnail {

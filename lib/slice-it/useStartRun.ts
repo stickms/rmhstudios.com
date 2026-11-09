@@ -79,6 +79,11 @@ export function useStartRun(engine: GameEngine | null) {
         // The run's receipt, minted by that read. Null for a signed-out player,
         // whose score is not going on a leaderboard anyway.
         store.setRunToken(song.runToken ?? null);
+        store.setNowPlaying({
+          title: song.title,
+          artist: song.artist,
+          coverUrl: song.coverUrl ?? null,
+        });
 
         if (options.countPlay !== false) {
           // Fire-and-forget: a play count is not worth delaying a song for.

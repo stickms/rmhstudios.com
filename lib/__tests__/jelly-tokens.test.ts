@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { CHARGE, DENT, JELLY_LAYOUT, PLASMA } from '@/lib/jelly/tiers';
+import { JELLY_LAYOUT, PLASMA } from '@/lib/jelly/tiers';
 
 /**
  * #989 token parity (docs/plasmatic-jelly-system.md §1.1; CLAUDE.md "Design system: Plasmatic Jelly").
  *
- * `lib/jelly/tiers.ts` is the source of truth for every physics, plasma, charge and layout number; `app/globals.css`
+ * `lib/jelly/tiers.ts` is the source of truth for the plasma wake and layout numbers; `app/globals.css`
  * mirrors the ones CSS needs as tokens. A mirror that drifts is a second, silent definition, so this gate parses
  * `:root` and asserts each mirror equals its constant exactly (with its unit). It also holds the gel colour contract:
  * every theme block restates the gel colours (a theme never inherits a material), high contrast turns them opaque
@@ -54,20 +54,8 @@ const ROOT_TOKENS: Tokens = Object.assign({}, ...blocks(GLOBALS, ':root').map(de
 /** CSS token → the exact value its TS constant demands. */
 const MIRRORS: Record<string, string> = {
   '--plasma-wake': `${PLASMA.wake}`,
-  '--jelly-dent-depth': `${DENT.depthPx}px`,
-  '--jelly-dent-damping': `${DENT.damping}`,
-  '--jelly-lens-strength': `${DENT.lensStrength}`,
-  '--jelly-lens-dispersion': `${DENT.lensDispersionPx}px`,
-  '--jelly-content-strain': `${DENT.contentStrain}`,
   '--jelly-margin': `${JELLY_LAYOUT.marginPx}px`,
-  '--jelly-body-budget': `${JELLY_LAYOUT.bodyBudget}`,
-  '--sim-hz': `${JELLY_LAYOUT.simHz}`,
   '--space-4': `${JELLY_LAYOUT.minGapPx}px`,
-  '--arc-breakdown-gap': `${CHARGE.breakdownGapPx}px`,
-  '--arc-formative-lag': `${CHARGE.formativeLagMs}ms`,
-  // px/s has no CSS unit: the mirror is the bare number.
-  '--pulse-speed': `${CHARGE.pulseSpeedPxS}`,
-  '--pulse-tau': `${CHARGE.pulseTauMs}ms`,
 };
 
 /** The gel colours every theme block restates. */
@@ -89,17 +77,12 @@ const GEL_GEOMETRY = [
   '--gel-disperse-r',
   '--gel-disperse-g',
   '--gel-disperse-b',
-  // The molded rim (2026-10-25): shoulder depth, edge feather, bevel widening.
-  '--gel-mold',
+  // The molded rim (2026-10-25), in CSS: edge feather and bevel widening.
   '--gel-feather',
   '--gel-shoulder',
   '--gel-field-line',
   '--gel-edge-line',
   '--gel-well-shade',
-  // The lens (2026-10-26): wavelength spread, slab thickness and environment reflection.
-  '--gel-dispersion',
-  '--gel-lens',
-  '--gel-reflect',
 ];
 
 const THEMES = ['default', 'light', 'graphite', 'sepia', 'nocturne', 'ultra'];
@@ -110,12 +93,12 @@ const flatten = (css: string) =>
 
 const px = (v: string | undefined) => (v === undefined ? NaN : parseFloat(v));
 
-describe('#989 physics mirrors equal lib/jelly/tiers.ts', () => {
+describe('#989 token mirrors equal lib/jelly/tiers.ts', () => {
   it.each(Object.entries(MIRRORS))('%s', (token, expected) => {
     expect(ROOT_TOKENS[token], `${token} in :root (mirror of the TS constant)`).toBe(expected);
   });
 
-  it('no theme block re-declares a physics mirror (one value, everywhere)', () => {
+  it('no theme block re-declares a mirror (one value, everywhere)', () => {
     for (const theme of THEMES) {
       const own = Object.assign({}, ...blocks(GLOBALS, `.style-${theme}`).map(decls));
       for (const token of Object.keys(MIRRORS)) {

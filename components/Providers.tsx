@@ -55,6 +55,7 @@ import {
 } from '@/lib/appearance/prefs';
 import { useSpatialParallax } from '@/hooks/useSpatialParallax';
 import { useLiquidInteractions } from '@/hooks/useLiquidInteractions';
+import { useSoftRenderSettle } from '@/hooks/useSoftRenderSettle';
 import { isNativeMaterialRoute, syncNativeMaterialClass } from '@/lib/native-material-routes';
 import { useLiquidBackground } from '@/hooks/useLiquidBackground';
 import { useIdleReady } from '@/hooks/useIdleReady';
@@ -77,7 +78,6 @@ import { ConfirmProvider } from '@/components/ui/confirm-dialog';
 import type { Locale } from '@/lib/i18n/config';
 import type { LocaleBundle } from '@/lib/i18n/resources';
 import { recoverViewTransition } from '@/lib/view-transition';
-import { applyPerfTier } from '@/lib/perf-tier';
 import { AppTierContext } from '@/components/ui/app-tier-context';
 import { installScrollbarReveal } from '@/lib/scrollbar-reveal';
 import { installSwapReveal } from '@/lib/swap-reveal';
@@ -391,14 +391,16 @@ export function Providers({
 
   // The backdrop stays still; bounded material responses live on surfaces.
   useLiquidBackground();
-  // Also mounts the jelly soft-body physics (press/hover/release on every jelly host, `data-fluid-press` included),
-  // the registry, the CSS flow carriers, the arcs and the glass engine — see hooks/useLiquidInteractions.ts.
+  // Mounts the pointer variable (`--px` / `--py` for the CSS soft body and woken haze) and the lazy click arcs — see
+  // hooks/useLiquidInteractions.ts. The rest of the material is CSS.
   // The TF2 HUD Editor is deliberately plain Team Fortress 2 — it installs none of the jelly.
   useLiquidInteractions(!isNativeMaterialRoute(pathname));
   // The CSS-only material (the woken haze) has no install step to skip, so a native-material route is marked on <html>
   // instead and the material's rules are scoped off it. Stamped pre-paint by __root.tsx on a hard load; this keeps it
   // in step on client navigation and clears it on the way out.
   useEffect(() => syncNativeMaterialClass(document.documentElement, pathname), [pathname]);
+  // Remember whether this browser draws in software (the globe's CSS fallback, the games' glow); the material ignores it.
+  useSoftRenderSettle();
 
   // The eversion state layer's input (globals.css §7.3): where each `data-evert` control turns inside out from
   // (the pointer's entry, the finger, the exit) and when a press is down. Delegated, passive, no frame loop.
@@ -585,18 +587,6 @@ export function Providers({
     document.documentElement.classList.toggle('app-route', isAppRoute);
   }, [isAppRoute]);
 
-  // Re-assert the device effect tier. `html.perf-lite` is read by the aurora
-  // layers, the radial blob field, the GL tier gate, glass-lens, canvas2d-fx and
-  // the liquid morph/pop motions — see lib/perf-tier.ts.
-  //
-  // The class is now applied pre-paint by PERF_TIER_SCRIPT in `__root.tsx`, so
-  // this is a no-op on every normal load (`toggle` with an unchanged value does
-  // not invalidate style) and exists only as the recovery path if that inline
-  // script threw. It must NOT be removed and it must NOT become the primary
-  // stamp again: from here the class lands after hydration, which is precisely
-  // the load window the tier is supposed to make cheap.
-  useEffect(() => applyPerfTier(), []);
-
   // Scrollbars reveal on scroll rather than sitting on screen permanently
   // (lib/scrollbar-reveal.ts + the §Scrollbars block in app/globals.css).
   useEffect(() => installScrollbarReveal(), []);
@@ -641,6 +631,13 @@ export function Providers({
     if (isJellyMotion(jm)) st.setJellyMotion(jm);
     const ea = safeStorage.getItem(ELECTRIC_ARCS_KEY);
     if (isElectricArcs(ea)) st.setElectricArcs(ea);
+    // The globe cursor and its per-device settings were removed (2026-11-08): drop the stale key so devices do not keep
+    // dead data. Nothing reads it any more. Safe to delete once every device that ever stored it has loaded the site.
+    try {
+      localStorage.removeItem('rmh-globe-cursor');
+    } catch {
+      /* storage blocked — nothing to clean */
+    }
     // Marketplace user theme (§14): the no-flash script already painted it; hydrate
     // the store so the runtime effect keeps it applied and can clear it on removal.
     try {

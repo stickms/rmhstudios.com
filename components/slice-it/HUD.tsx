@@ -6,7 +6,7 @@ import { useSliceItStore } from '@/lib/slice-it/store';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import type { GameEngine } from '@/lib/slice-it/engine';
 import { HEALTH_MAX } from '@/lib/slice-it/constants';
-import { gradeFor, missesAllowedFor, nextGradeAbove } from '@/lib/slice-it/scoring';
+import { gradeFor } from '@/lib/slice-it/scoring';
 import type { BeatMap } from '@/lib/slice-it/types';
 import type { Section } from '@/lib/slice-it/beatmap/sections';
 
@@ -82,18 +82,29 @@ interface HUDProps {
    * pace readout) if it is mounted before one exists.
    */
   engine?: GameEngine | null;
+  /**
+   * The readouts live in the margins of the screen (`MarginHud`), so this renders
+   * only what belongs on the field itself: the combo counter. It also stops sampling
+   * the engine — the margin HUD does that — so nothing is read twice.
+   */
+  margins?: boolean;
 }
 
-export function HUD({ engine }: HUDProps) {
-  const { t } = useTranslation('c-game');
-  const { t: ts } = useTranslation('r-slice-it');
+/**
+ * What the readouts show, sampled from the engine once a frame.
+ *
+ * One hook for both homes of the readouts — the in-field {@link HUD} and the
+ * margin HUD — so they cannot disagree about what a grade or a progress fraction is.
+ * `enabled: false` stops the per-frame sampling (it is the only cost).
+ */
+export function useHudReadout(engine: GameEngine | null | undefined, enabled = true) {
   const { score, combo, modifiers } = useSliceItStore();
-  const comboPosition = useSliceItStore((s) => s.comboPosition);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [sample, setSample] = useState<EngineSample>(EMPTY_SAMPLE);
 
   useEffect(() => {
+    if (!enabled) return;
     let raf: number;
     const tick = () => {
       const audio = AudioManager.getInstance();
@@ -116,7 +127,7 @@ export function HUD({ engine }: HUDProps) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [engine]);
+  }, [engine, enabled]);
 
   // Clamped at both ends. The clock is NEGATIVE through the lead-in
   // (`LEAD_IN_SECONDS`), which would otherwise render a negative-width fill and
@@ -132,14 +143,67 @@ export function HUD({ engine }: HUDProps) {
   const sections = useMemo(() => activeMap?.artefacts?.sections ?? NO_SECTIONS, [activeMap]);
 
   const grade = gradeFor(sample.accuracy);
-  const next = nextGradeAbove(sample.accuracy);
-  const missesLeft = next
-    ? missesAllowedFor(sample.hitPoints, sample.notesResolved, sample.totalNotes, next.min)
-    : null;
 
   // Only news once the run has produced something to be full-combo *about*.
   const showChain = sample.notesResolved >= 8 && sample.isFullCombo;
   const healthRatio = Math.max(0, Math.min(1, sample.health / HEALTH_MAX));
+
+  return {
+    score,
+    combo,
+    modifiers,
+    elapsed,
+    duration,
+    progress,
+    sections,
+    sample,
+    grade,
+    showChain,
+    healthRatio,
+  };
+}
+
+export function HUD({ engine, margins = false }: HUDProps) {
+  const { t } = useTranslation('c-game');
+  const { t: ts } = useTranslation('r-slice-it');
+  const comboPosition = useSliceItStore((s) => s.comboPosition);
+  const {
+    score,
+    combo,
+    modifiers,
+    elapsed,
+    duration,
+    progress,
+    sections,
+    sample,
+    grade,
+    showChain,
+    healthRatio,
+  } = useHudReadout(engine, !margins);
+
+  // The readouts are in the margins: the field keeps only the combo, where the eye
+  // is, and nothing else to read.
+  if (margins) {
+    if (combo <= 5 || comboPosition === 'hidden') return null;
+    return (
+      <div
+        className="absolute top-0 left-0 right-0 pointer-events-none z-40 px-3 pt-2 sm:px-6 sm:pt-3"
+        data-jelly-zone="hud"
+      >
+        <div className="relative">
+          <div className={`absolute top-0 text-center ${COMBO_ANCHOR[comboPosition]}`}>
+            <div className="slice-hud-combo">
+              <span>×</span>
+              {combo}
+            </div>
+            <div className="slice-label mt-0.5 hidden sm:block">
+              {t('combo-label', { defaultValue: 'Combo' })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -179,8 +243,7 @@ export function HUD({ engine }: HUDProps) {
       <div className="flex justify-between items-start relative">
         <div className="flex flex-col gap-1.5 items-start">
           <div>
-            <div className="slice-label">{t('score-hud', { defaultValue: 'Score' })}</div>
-            <div className="mt-1 flex items-center gap-3 sm:gap-5">
+            <div className="flex items-center gap-3 sm:gap-5">
               <span className="slice-hud-score">{score.toLocaleString()}</span>
               {/* The grade rides with the score: it is the headline the player
                   glances at, stamped beside the number it summarises. */}
@@ -188,31 +251,17 @@ export function HUD({ engine }: HUDProps) {
             </div>
           </div>
 
-          {/* Live accuracy and what it costs to keep the next grade. Wraps below
-              `sm` so a 320px phone never has to choose between the number and
-              the hint. */}
+          {/* Live accuracy. */}
           {engine && (
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 max-w-[60vw]">
-              <span className="slice-figure text-[13px] text-slice-text">
-                {(sample.accuracy * 100).toFixed(2)}%
-              </span>
-              {next && missesLeft !== null && (
-                <span className="slice-label normal-case tracking-normal">
-                  {ts('misses-for-grade', {
-                    defaultValue: '{{n}} misses left for {{grade}}',
-                    n: missesLeft,
-                    grade: next.grade,
-                  })}
-                </span>
-              )}
-            </div>
+            <span className="slice-figure text-[13px] text-slice-text">
+              {(sample.accuracy * 100).toFixed(2)}%
+            </span>
           )}
         </div>
 
         {/* Speed — shifted left to avoid the settings gear */}
         <div className="text-right mr-10 sm:mr-12">
-          <div className="slice-label">{t('speed', { defaultValue: 'Speed' })}</div>
-          <div className="slice-figure mt-1 text-xl sm:text-3xl font-medium text-slice-text leading-none">
+          <div className="slice-figure text-xl sm:text-3xl font-medium text-slice-text leading-none">
             {modifiers.speed.toFixed(1)}×
           </div>
         </div>

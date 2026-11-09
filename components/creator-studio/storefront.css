@@ -114,6 +114,7 @@
   background: rgba(0, 0, 0, 0.6);
   padding: 3px 9px;
   border-radius: 9999px;
+  corner-shape: round;
 
   white-space: nowrap;
 }
@@ -134,6 +135,7 @@
   border: 0.5px solid rgba(255, 255, 255, 0.14);
   padding: 3px 9px;
   border-radius: 9999px;
+  corner-shape: round;
 }
 
 /* Toolbars (search/sort/submit) are rendered inside .store — strip their own
@@ -579,6 +581,7 @@
   width: 28px;
   height: 28px;
   border-radius: 9999px;
+  corner-shape: round;
   color: var(--site-text);
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
@@ -648,9 +651,4 @@
 .store-persona-meta svg {
   display: inline;
   vertical-align: -1px;
-}
-
-/* The molded rim: while the shader draws this card's edge, its own hairline would outline what the rim dissolves. */
-.store-spot__link[data-liquid-canvas='on'] {
-  border-color: transparent;
 }

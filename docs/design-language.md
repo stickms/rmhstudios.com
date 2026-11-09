@@ -69,8 +69,8 @@ without a single component change.
 > ledger (≤ 3 per second). Every jelly service runs on **one** frame driver
 > (`lib/jelly/frame.ts`) and **one** pointer hub (`lib/jelly/pointer.ts`); bodies sit
 > ≥ 16 px apart with a 16 px unclipped margin; nothing fakes a law (no transform
-> transitions, no keyframes but the `.jelly-flow` drift, no `filter:` in jelly CSS —
-> the press lens is applied from `lib/jelly/lens.ts` only). Everywhere below that speaks of a tier's "backdrop blur",
+> transitions off the `--spring-*` curves, no keyframes but the woken-haze drift, no `filter:` in jelly CSS —
+> the press lens is retired). Everywhere below that speaks of a tier's "backdrop blur",
 > a "≤8 backdrop-filters" budget, an `@supports not (backdrop-filter)` fallback,
 > "taps never emit ripples" or "nothing reacts to the pointer", read it through
 > that contract. The role-by-purpose rules are unchanged.
@@ -161,8 +161,8 @@ per-page checklist with code.)
 5. **Motion comes from the token set.** `lib/motion.ts` (`DURATION`, `EASE`,
    `SPRING`, `APPLE_SPRING`, `transition`, and the named variants) rather than
    ad-hoc numbers, so a global re-tune stays a one-line change. (§7)
-6. **It degrades centrally, not per component.** `perf-lite`, print and the
-   jelly switches
+6. **It degrades centrally, not per component.** Print, the app tier's high
+   contrast and the jelly switches
    (`jellyMotion`, `electricArcs`) are handled by the token layer, the glass
    classes and `lib/jelly/tiers.ts`. A component that branches on them by hand
    is a bug, and so is a component with its own pointer loop, deformation or
@@ -205,7 +205,7 @@ them locally.
 
 | Principle                              | What it means here                                                                                                                                                                           | API                                                 |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| **Instantaneous response**             | A surface reacts on `pointerdown`, never on `click` and never after a recognition delay. Site-wide via one delegated listener: every jelly host is a soft body; `data-fluid-press` tunes it. | `lib/jelly/physics.ts`                              |
+| **Instantaneous response**             | A surface reacts on `pointerdown`, never on `click` and never after a recognition delay. Site-wide via one delegated listener: every jelly host is a soft body; `data-fluid-press` tunes it. | `app/jelly-material.css` §8                         |
 | **Interruptible & redirectable**       | Motion is a spring carrying position _and velocity_, so grabbing something mid-flight retargets it from where it is and how fast it is going. A duration tween structurally cannot do this.  | `springStep`                                        |
 | **Momentum crosses the lift**          | The velocity the finger left with is handed to the animation, not discarded.                                                                                                                 | `VelocityTracker` → `springStep`                    |
 | **Intent is read from the projection** | "Where would this throw come to rest?", not "is it past the line right now?" — which is why a fast flick dismisses a sheet that has barely moved.                                            | `projectDistance`, `resolveDetent`, `shouldDismiss` |
@@ -218,8 +218,8 @@ moves 4px or 400px. The two animation tiers share one vocabulary — `SPRINGS` i
 (framer-motion) — and a test asserts they cannot drift apart.
 
 Where it ships today: every jelly host — buttons, cards, fields, panes — through
-the soft-body service (`lib/jelly/physics.ts`, which absorbed the old
-`useFluidPress` press layer); phone-width sheet dialogs (drag-to-dismiss
+the CSS soft body (`app/jelly-material.css` §8, which absorbed the old
+`useFluidPress` press layer and the `lib/jelly/physics.ts` service); phone-width sheet dialogs (drag-to-dismiss
 with rubber-banding and flick projection); and the navigation globe (throw,
 magnetism and keyboard glide all on one interruptible spring). Touch-friendly by
 construction: `touch-action: manipulation` removes the ~300ms tap delay on
@@ -281,7 +281,7 @@ or a fire button held for thirty seconds is not a tap, and springing it reads as
 lag while promoting a compositor layer during exactly the frames a game can least
 afford one.
 
-The degraded tiers (`perf-lite`, the app tier's high contrast) and
+The app tier's high contrast and
 `jellyMotion = still` keep only the press — no hover body, nudge or wobble —
 and print and a playing game stand the soft body down entirely
 (`jellyMode()` in `lib/jelly/tiers.ts`). Direct manipulation that remains useful
@@ -423,7 +423,7 @@ The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassPane` and
 material lab at `/jelly` (`/liquid-glass` redirects there). Everyone uses the
 shared default jelly material. The Glass clarity slider is retired: saved device and account values
 cannot make the site opaque or change its tint. Old device keys are cleared
-before first paint and during hydration. Renderer capability fallbacks and `perf-lite` still apply; the site has no
+before first paint and during hydration. The liquid globe keeps its CSS fallback where there is no usable WebGL or the renderer is software (`lib/low-end.ts`); there is no low-end material tier, and the site has no
 high-contrast theme and no OS forced-colours or reduced-transparency fallback.
 
 On top of any theme a user can pick an **accent preset** — a curated color
@@ -659,8 +659,8 @@ itself goes transparent, so glass reads as one lit sheet, not an outlined frame.
 Its bright segment is lit by a **static sun** above the page. It used to track a
 JS-published scene light (`--light-x/--light-y`, written by `useGlassLight` on
 every pointer frame); that hook is deleted and nothing writes those properties
-now, so the `var()` fallbacks in the gradient — which were always the touch and
-perf-lite path — are the only path. Scrims carry no glint.
+now, so the `var()` fallbacks in the gradient — which were always the touch
+path — are the only path. Scrims carry no glint.
 
 **L1 answers the light too.** `.glass-fill` carries the same glint layer plus the
 micro-noise, at an **ambient** resting strength (`--glass-glint-rest`, 0.45× the
@@ -709,17 +709,17 @@ floating UI `.glass-overlay`, a field `.glass-inset`, a backdrop `.glass-scrim`.
 
 Rules: never put a backdrop tier (`.glass-pane/chrome/overlay`) on an ancestor of
 a `position:fixed` element (`backdrop-filter` creates a containing block — use
-`.glass-chrome--aside`, which blurs on `::before`). `html.perf-lite`
-degrades these classes automatically — no per-component branching.
+`.glass-chrome--aside`, which blurs on `::before`). Print and the app tier's
+high contrast degrade these classes automatically — no per-component branching.
 
-`html.perf-lite` is applied by **`lib/perf-tier.ts`** (from `Providers.tsx`) off
-two conservative device facts: `navigator.deviceMemory < 4`, or
-`hardwareConcurrency <= 2`. It is read in about a dozen places (both aurora
-layers, the radial blob field, `.lg-goo`, `glass-lens`, `canvas2d-fx`,
-`useLiquidBackground`, the sheen keyframe, liquid morph/pop) and
-until 2026-07-30 **nothing ever set it**, so every one of those degradations was
-dead code and the weakest machine on the site rendered the full effect stack.
-Deliberately capability reads and not a measured-fps probe: a tier that can flip
+**There is no low-end material tier.** The `perf-lite` class (stamped on `<html>`
+off `deviceMemory < 4`, `hardwareConcurrency <= 2`, Data Saver or a software
+renderer) was removed 2026-11-08: software-rendering and low-end devices get the
+full material, and nothing on the site material branches on device weakness. The
+same capability reads survive as `isLowEndCapability()` in **`lib/low-end.ts`**,
+which is never a class on `<html>`: games (canvas glow, hearthworks models,
+slice-it), the eversion's mesh tier, RUM and the globe's CSS fallback ask it.
+Deliberately capability reads and not a measured-fps probe: a signal that can flip
 mid-session restyles the document under the user for reasons they can't see.
 
 The `Card` primitive is L1 `.glass-fill` by default; pass `pane` for L2 and
@@ -1238,8 +1238,6 @@ gated off there too, via `html.app-route`).
      wrapper it portals — so `Select` and `ProfileHoverCard` re-anchor themselves
      through a collision flip for free, and neither has to say anything.
 
-  `perf-lite` keeps the anchored scale-fade but drops the sampled settle for one
-  eased tween — two stops instead of ten, on a device already struggling.
   Reduced motion removes the whole thing, and the menu simply appears.
   Retiring the last two menus that still answered this privately — `lib-ctx-in`
   at 120ms and `vibe-model-pop` at 140ms — is what closed the loop §7.1 was
@@ -1319,8 +1317,7 @@ gated off there too, via `html.app-route`).
     `(hover: hover) and (pointer: fine)`, so a phone never shows a sticky hover.
     The site's Reduce motion switch collapses it (the state still shows, at
     once); the OS preference does not (2026-10-21: "it should always play by
-    default"). `perf-lite`
-    swaps the springs for one short tween. Forced colors drop the layer.
+    default"). Forced colors drop the layer.
 - **Never `transition-all`, and never animate a layout property.** `all` makes
   the engine watch every animatable property on the element, so a class change
   that happens to touch `width`/`padding`/`gap` animates a reflow nobody asked
@@ -1375,8 +1372,8 @@ gated off there too, via `html.app-route`).
   track the cursor** (§5.1.1); **reduced motion** (OS or the account toggle)
   never runs it and gets the ordinary fade; it **always plays in full**
   (4.6 s, under WCAG 2.2.2's five seconds; no input speeds it up, amended
-  2026-10-20), and back/forward never animates; and it follows the **degradation tiers** (the minimum tier on
-  `perf-lite`, today's navigation when WebGL2 or the capture is unavailable). It
+  2026-10-20), and back/forward never animates; and it follows the **degradation tiers** (the minimum tier on a
+  low-end device, `lib/low-end.ts`; today's navigation when WebGL2 or the capture is unavailable). It
   is dark behind `isEversionEnabled()` until the device lab signs off. A second
   long navigation effect is not covered by this exception.
 - `hooks/usePopPresence.ts` — keeps a hand-rolled menu mounted through its
@@ -1754,11 +1751,11 @@ remain the authority:
   and namespace-registry integrity for §10.
 - **`lib/__tests__/raf-loop-allowlist.test.ts`** — keeps rAF loops (the §7
   radial motion layer) to the sanctioned owners instead of one per feature.
-  Everything is held to "idle at rest" except one: the glass engine's ambient
-  haze clock is "idle when unseen" (it stops for a hidden tab, nothing hazy on
-  screen, a degraded tier or `still`). Since #989 the whole jelly has ONE rAF,
-  `lib/jelly/frame.ts`: the engine, `lib/jelly/physics.ts`, the arc renderer and
-  the fallback light are drivers on it, awake only while something moves, and
+  Everything is held to "idle at rest" except one: the liquid globe's ambient
+  clock is "idle when unseen" (it stops for a hidden tab, an off-screen globe, a
+  degraded tier or `still`). Since #989 the whole jelly has ONE rAF,
+  `lib/jelly/frame.ts`: the pointer variable, the drag-settle spring and the arc
+  renderer are drivers on it, awake only while something moves, and
   `jelly-ownership.test.ts` (N2 b) pins that single owner plus the single pointer
   hub `lib/jelly/pointer.ts`. `useGlassLight.ts`, `useCardSheen.ts` and
   `useParallax.ts` were removed with the hooks themselves (§5.1.1).
@@ -1772,7 +1769,7 @@ remain the authority:
   `appearance-jelly-motion.test.ts` / `appearance-electric-arcs.test.ts` keep the
   two preference pipelines in agreement. The jelly gates in
   `scripts/check-consistency.sh` (ownership, no site `infinite` animation outside
-  `.jelly-flow`, negative-z paint layers, no blur in any role) are listed in
+  the woken haze, negative-z paint layers, no blur in any role) are listed in
   [`plasmatic-jelly-system.md`](plasmatic-jelly-system.md) §9.
 - **`pnpm lint`** — `eslint-plugin-jsx-a11y` at "warn"; the bar is no _new_
   warnings versus the base branch.

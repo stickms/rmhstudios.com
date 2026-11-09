@@ -123,14 +123,14 @@ async function warm(urgent: boolean): Promise<PrefetchResult> {
   performance.mark(EVERSION_MARKS.prefetch);
 
   const [{ getEversionHost, detectHostMode }] = await loadChunks();
-  const [{ detectRuntimeQuality }, { pickTier }, { isPerfLite }] = await Promise.all([
+  const [{ detectRuntimeQuality }, { pickTier }, { isLowEndCapability }] = await Promise.all([
     import('@/lib/render/runtime'),
     import('./gl/governor-tiers'),
-    import('@/lib/perf-tier'),
+    import('@/lib/low-end'),
   ]);
   const tier = pickTier({
     renderTier: detectRuntimeQuality().tier,
-    perfLite: isPerfLite(),
+    lowEnd: isLowEndCapability(),
     isMobile: window.matchMedia?.('(max-width: 767px)').matches ?? false,
   });
   // The imports are in: from here on the chunk is "ready" for eligibility,

@@ -28,11 +28,21 @@ import { fadeRise, popIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 import { COMBO_MILESTONES, GameEngine } from '@/lib/slice-it/engine';
 import { useGameSession } from '@/hooks/useGameSession';
-import { useSliceItStore, approachSeconds, reactionWindowMs } from '@/lib/slice-it/store';
+import {
+  useSliceItStore,
+  approachSeconds,
+  reactionWindowMs,
+  musicGain,
+  sfxGain,
+} from '@/lib/slice-it/store';
 import { visibilityAlpha } from '@/lib/slice-it/modifiers';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import { longestHoldSeconds, visibleSliceRange } from '@/lib/slice-it/visible-window';
 import { HUD } from './HUD';
+import { MarginHud } from './MarginHud';
+import { VolumeMixer } from './VolumeMixer';
+import { drawFx, rollCut, spawnCutFx, stepFx, strengthOf, type Cut, type Fx } from './cut-fx';
+import { TOP_BAR_MIN, useMarginRoom } from './useMarginRoom';
 import { GameOver } from './GameOver';
 import { MainMenu } from './MainMenu';
 import { Button } from '@/components/ui/button';
@@ -42,7 +52,7 @@ import { MultiplayerSidebar } from './MultiplayerSidebar';
 import { MatchResults } from './MatchResults';
 import { addMatchListener, leaveLobby } from '@/lib/slice-it/net/client';
 import type { PausePayload } from '@/lib/slice-it/net/events';
-import type { BeatMap } from '@/lib/slice-it/types';
+import type { BeatMap, Slice } from '@/lib/slice-it/types';
 import { toast } from 'sonner';
 import { canvasGlowEnabled } from '@/lib/render/canvas2d-fx';
 import { gameSurfaceDpr } from '@/lib/display-scale';
@@ -89,29 +99,6 @@ function interpolateHex(hex1: string, hex2: string, ratio: number): string {
   const b = Math.round(b1 + (b2 - b1) * ratio);
 
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-}
-
-/**
- * M1 — Mirror, applied at the render/input boundary rather than to the chart.
- *
- * `render` below draws the engine's own prepared slices (`engine.getSlices()`),
- * which `prepareChart` deliberately leaves un-mirrored — see `chart.ts`'s
- * `applyMirror` for why rewriting the judged chart isn't reachable this wave,
- * and for the reference transform this is the visual equivalent of. Flipping
- * BOTH what a note is drawn at (`mirrorLane` applied to `slice.lane` in
- * `render`) and which engine lane a keypress targets (`mirrorLane` applied in
- * `handleInput`) is the same involution applied twice, so composing them
- * reproduces exactly what swapping the chart itself would look like: a note
- * that started life in lane 0 is drawn in, and only hittable from, the visual
- * position for lane 1.
- *
- * A no-op under One Track — there is only one lane to mirror into, and
- * mirroring it anyway would send every keypress to a lane nothing is ever
- * queued on.
- */
-function mirrorLane(lane: number): number {
-  const state = useSliceItStore.getState();
-  return state.mirror && !state.modifiers.oneTrack ? 1 - lane : lane;
 }
 
 /**
@@ -311,7 +298,7 @@ function drawNoteStem(
 const PRESS_FALLBACK = { cyan: '#2db3f0', pink: '#f4509f', paper: '#f0f1f6', ink: '#050921' };
 
 /** How long a struck disc takes to fall apart along the slice, ms. */
-const CUT_MS = 240;
+const CUT_MS = 280;
 
 const screenTiles = new Map<string, HTMLCanvasElement>();
 let patternCache: { ctx: CanvasRenderingContext2D; map: Map<string, CanvasPattern | null> } | null =
@@ -535,11 +522,13 @@ function drawNoteBody(
 }
 
 /**
- * A struck disc, cut in two on the slice and sliding apart as it fades.
+ * A struck disc, cut in two along ITS OWN line and sliding apart as it fades.
  *
- * Two clips of the same sprite along a line steeper than the lane — the same device
- * as the wordmark — each translated a few pixels along the cut. `progress` is 0 at
- * the strike and 1 when it is gone.
+ * Each strike rolls a `Cut` (angle, offset, spin — `cut-fx.ts`), so no two notes break
+ * the same way. Two clips of the same sprite on either side of the line: each half
+ * slides off along the cut's normal, drifts a little along the blade, and tumbles in
+ * the opposite direction to the other. For the first few frames a hairline of paper
+ * runs down the crack. `progress` is 0 at the strike and 1 when it is gone.
  */
 function drawDiscCut(
   ctx: CanvasRenderingContext2D,
@@ -552,29 +541,33 @@ function drawDiscCut(
   ink: string,
   dpr: number,
   progress: number,
+  cut: Cut,
+  crack: boolean,
 ): void {
   const r = size / 2;
-  const travel = 3 + progress * 12;
-  const x0 = cx - r - 1;
-  const x1 = cx + r + 1;
-  const top = cy - r - 1;
-  const bottom = cy + r + 1;
-  const at = (f: number) => top + (bottom - top) * f;
-  const half = (dir: 1 | -1) => {
+  const dx = Math.cos(cut.angle);
+  const dy = Math.sin(cut.angle);
+  const nx = -dy;
+  const ny = dx;
+  // Out fast, then easing: the break is a snap, not a drift.
+  const out = 1 - Math.pow(1 - Math.min(1, progress), 2.2);
+  const slide = 2.5 + out * r * 0.9;
+  const along = out * r * 0.22;
+  const big = r * 3;
+  // A point on the cut line, off-centre by this strike's own offset.
+  const px = cx + nx * cut.offset * r;
+  const py = cy + ny * cut.offset * r;
+  const half = (side: 1 | -1) => {
     ctx.save();
-    ctx.translate(dir * travel * 0.9, dir * travel * 0.75);
+    ctx.translate(nx * slide * side + dx * along * side, ny * slide * side + dy * along * side);
+    ctx.translate(cx, cy);
+    ctx.rotate(cut.spin * out * side);
+    ctx.translate(-cx, -cy);
     ctx.beginPath();
-    if (dir === -1) {
-      ctx.moveTo(x0, top);
-      ctx.lineTo(x1, top);
-      ctx.lineTo(x1, at(0.36));
-      ctx.lineTo(x0, at(0.64));
-    } else {
-      ctx.moveTo(x0, at(0.64));
-      ctx.lineTo(x1, at(0.36));
-      ctx.lineTo(x1, bottom);
-      ctx.lineTo(x0, bottom);
-    }
+    ctx.moveTo(px - dx * big, py - dy * big);
+    ctx.lineTo(px + dx * big, py + dy * big);
+    ctx.lineTo(px + dx * big + nx * big * side, py + dy * big + ny * big * side);
+    ctx.lineTo(px - dx * big + nx * big * side, py - dy * big + ny * big * side);
     ctx.closePath();
     ctx.clip();
     drawNoteBody(ctx, shape, cx, cy, size, color, paper, ink, dpr);
@@ -582,6 +575,19 @@ function drawDiscCut(
   };
   half(-1);
   half(1);
+  if (crack && progress < 0.42) {
+    const fade = 1 - progress / 0.42;
+    ctx.save();
+    ctx.globalAlpha = fade;
+    ctx.strokeStyle = paper;
+    ctx.lineWidth = 1 + fade * 3;
+    ctx.lineCap = 'butt';
+    ctx.beginPath();
+    ctx.moveTo(px - dx * r * (1.1 + out), py - dy * r * (1.1 + out));
+    ctx.lineTo(px + dx * r * (1.1 + out), py + dy * r * (1.1 + out));
+    ctx.stroke();
+    ctx.restore();
+  }
 }
 
 /**
@@ -1327,6 +1333,8 @@ const GAMEPAD_PAUSE_BUTTON = 9; // Start/Menu
 export function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  /** The whole screen, so the room the field leaves around itself can be measured. */
+  const rootRef = useRef<HTMLDivElement>(null);
   /** Device-pixel ratio the drawing buffer was last sized with. */
   const dprRef = useRef(1);
   const [engine, setEngine] = useState<GameEngine | null>(null);
@@ -1370,7 +1378,7 @@ export function GameCanvas() {
       // measured ~10 `shadowBlur` activations per frame against ~15 rasterising
       // ops, i.e. most of what it draws goes through a blur. Resolved here so the
       // decision is made once per theme/class change rather than per frame; the
-      // MutationObserver below re-reads it when `perf-lite` is toggled.
+      // MutationObserver below re-reads it when the root classes change.
       glow: canvasGlowEnabled(),
       bg,
       bgAlt: v('--slice-bg-alt', '#101a55'),
@@ -1399,7 +1407,7 @@ export function GameCanvas() {
     };
   };
 
-  // Drop the cached theme when `perf-lite` or the root classes change (and on
+  // Drop the cached theme when the root classes change (and on
   // unmount); the `--slice-*` values themselves are fixed.
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -1440,7 +1448,7 @@ export function GameCanvas() {
     setCountdown,
     isMultiplayer,
     volume,
-    setVolume,
+    musicVolume,
     audioOffset,
     setAudioOffset,
     setKeybinds,
@@ -1488,8 +1496,8 @@ export function GameCanvas() {
 
   // Sync volume store value → AudioManager
   useEffect(() => {
-    AudioManager.getInstance().setVolume(volume / 100);
-  }, [volume]);
+    AudioManager.getInstance().setVolume(musicGain(volume, musicVolume));
+  }, [volume, musicVolume]);
 
   // ── Resize canvas to fill its wrapper ──────────────────────────────────────
   useEffect(() => {
@@ -1611,7 +1619,7 @@ export function GameCanvas() {
       } else if (audio.getCurrentTime() === 0) {
         engine.start();
       }
-      engine.submitInput(mirrorLane(lane), pressTime);
+      engine.submitInput(lane, pressTime);
     },
     [engine],
   );
@@ -1619,7 +1627,7 @@ export function GameCanvas() {
   const handleInputRelease = useCallback(
     (lane: number) => {
       if (!engine) return;
-      engine.submitRelease(mirrorLane(lane));
+      engine.submitRelease(lane);
     },
     [engine],
   );
@@ -1787,8 +1795,13 @@ export function GameCanvas() {
     if (!engine) return;
 
     const beep = (frequency: number, gain: number) => {
-      const sfxVolume = useSliceItStore.getState().sfxVolume / 100;
-      AudioManager.getInstance().playSfX(frequency, 'sine', 0.12, sfxVolume * gain);
+      const state = useSliceItStore.getState();
+      AudioManager.getInstance().playSfX(
+        frequency,
+        'sine',
+        0.12,
+        sfxGain(state.volume, state.sfxVolume) * gain,
+      );
     };
 
     /**
@@ -2162,6 +2175,14 @@ export function GameCanvas() {
     { x: number; y: number; vx: number; vy: number; life: number; color: string; size: number }[]
   >([]);
   const lastHitTimeRef = useRef(0);
+  // A struck note's own cut (angle, offset, spin), rolled the first frame it is seen
+  // struck. Keyed by the slice object and checked against its `hitTime`, so a restart
+  // that reuses the object rolls a fresh one.
+  const cutsRef = useRef(new WeakMap<Slice, Cut>());
+  // Glass, sparks and dust from struck notes (`cut-fx.ts`).
+  const fxRef = useRef<Fx[]>([]);
+  // The last judgement per lane, so a strike's burst can be scaled by how clean it was.
+  const lastJudgeRef = useRef<Record<number, { text: string; at: number }>>({});
 
   const spawnParticles = (x: number, y: number, color: string, hitResult: string = 'GOOD') => {
     // Particle intensity scales with hit accuracy
@@ -2314,7 +2335,6 @@ export function GameCanvas() {
     // PERFORMANCE tier: a fast machine still gets every flash without this.
     const flashOff = runState.reducedFlash;
     const fx = runState.effectIntensity; // A7
-    const mirrorOn = runState.mirror && !isOneTrack;
     // The printed playfield: no glow, no rail, no energy treatment — see `Skin.groove`.
     const groove = skin.groove;
 
@@ -2324,7 +2344,7 @@ export function GameCanvas() {
     // them fires on a threshold.
     //
     // Gated exactly like the combo-break wash and the milestone label: `glow`
-    // (which folds in reduced motion and `perf-lite`), `flashOff` (A2's
+    // (which folds in reduced motion and a low-end device), `flashOff` (A2's
     // photosensitivity mode) and `fx` (A7's intensity dial). When any of them
     // says no the TARGET goes to zero and the field drains to the calm look
     // rather than snapping to it — degrading to calm, not to broken.
@@ -2406,7 +2426,7 @@ export function GameCanvas() {
     //
     // Gated by `backdropVisible`, which folds in all three switches this layer
     // has to obey: the player's own choice, `glow` (reduced motion and
-    // `perf-lite`), and A2's photosensitivity mode. A full-screen luminance
+    // a low-end device), and A2's photosensitivity mode. A full-screen luminance
     // change tracking a 200 BPM track is precisely what that last one exists to
     // stop, and it is not negotiable against a decoration.
     // Resolved per frame from the store, exactly like `palette` and `skin`
@@ -2581,12 +2601,16 @@ export function GameCanvas() {
     const latestFeedback = engine.feedbackQueue[engine.feedbackQueue.length - 1];
     if (latestFeedback && latestFeedback.time > lastHitTimeRef.current) {
       lastHitTimeRef.current = latestFeedback.time;
+      lastJudgeRef.current[latestFeedback.lane] = {
+        text: latestFeedback.text,
+        at: latestFeedback.time,
+      };
       if (
         latestFeedback.text !== 'MISS' &&
         latestFeedback.text !== 'BAD' &&
         latestFeedback.text !== 'RELEASED'
       ) {
-        const rawParticleLane = mirrorOn ? 1 - latestFeedback.lane : latestFeedback.lane;
+        const rawParticleLane = latestFeedback.lane;
         const particleLaneIdx = Math.max(0, Math.min(rawParticleLane, LANE_POS.length - 1));
         const particleLaneVal = isOneTrack ? LANE_POS[0] : LANE_POS[particleLaneIdx];
 
@@ -2646,10 +2670,6 @@ export function GameCanvas() {
       // judges: difficulty already resolved, modifiers already applied, and the
       // same object identities it mutates. Draw what is being judged.
       //
-      // Mirror is unaffected: `prepareChart` deliberately does not apply it
-      // (see `applyMirror`'s note), so these lanes are raw and `mirrorLane`
-      // below is still the whole of M1.
-      //
       // ── Visible window ────────────────────────────────────────────────────
       //
       // The loop below walked EVERY note in the chart on EVERY frame and let
@@ -2674,11 +2694,7 @@ export function GameCanvas() {
 
       for (let si = from; si < to; si++) {
         const slice = slices[si];
-        // M1 — Mirror: the lane this note is DRAWN in and hittable from. Every
-        // downstream read of "which lane" (position, colour, switch/arrow
-        // direction) uses this instead of the raw `slice.lane` so the whole
-        // note stays self-consistent under the flip — see `mirrorLane` above.
-        const laneIdx = mirrorOn ? 1 - slice.lane : slice.lane;
+        const laneIdx = slice.lane;
         ctx.globalAlpha = 1;
 
         // Compute scroll position along the movement axis
@@ -3071,11 +3087,52 @@ export function GameCanvas() {
           // and a thin light rim — the scheme's neon, not a raised surface. The
           // halo is the only blur on a note, and it comes from one cached sprite
           // per colour (see "Cached blur layers"), so a busy chart costs a
-          // `drawImage` per note rather than a blur. With `glow` off (perf-lite)
+          // `drawImage` per note rather than a blur. With `glow` off (a low-end device)
           // there is no halo, just the body and the rim.
           if (groove) {
             if (cutProgress >= 0) {
-              drawDiscCut(ctx, skin.noteShape, nx, ny, size, color, theme.paper, theme.ink, dpr, cutProgress);
+              // This strike's own cut: rolled, and the glass thrown, the first frame the
+              // note is seen struck. Effect intensity 0 keeps the cut and drops the rest.
+              let cut = cutsRef.current.get(slice);
+              if (!cut || cut.at !== slice.hitTime) {
+                cut = rollCut(slice.hitTime ?? 0);
+                cutsRef.current.set(slice, cut);
+                const judged = lastJudgeRef.current[slice.lane];
+                const level = strengthOf(
+                  judged && Math.abs(judged.at - (slice.hitTime ?? 0)) < 250 ? judged.text : undefined,
+                );
+                // A low-end device (no glow) gets a smaller burst, not a broken one.
+                spawnCutFx(
+                  fxRef.current,
+                  cut,
+                  nx,
+                  ny,
+                  size,
+                  {
+                    color,
+                    paper: theme.paper,
+                    ink: theme.ink,
+                    accent: slice.lane === 0 ? theme.pink : theme.cyan,
+                  },
+                  level,
+                  fx * (glow ? 1 : 0.4),
+                  glow > 0 && !flashOff,
+                );
+              }
+              drawDiscCut(
+                ctx,
+                skin.noteShape,
+                nx,
+                ny,
+                size,
+                color,
+                theme.paper,
+                theme.ink,
+                dpr,
+                cutProgress,
+                cut,
+                glow > 0 && !flashOff,
+              );
             } else {
               drawNoteBody(ctx, skin.noteShape, nx, ny, size, color, theme.paper, theme.ink, dpr);
             }
@@ -3196,7 +3253,7 @@ export function GameCanvas() {
     // `fillRect` and reads the same way — the field goes flat for a moment.
     //
     // Gated on `theme.glow`, which is false under reduced motion and on
-    // `perf-lite` devices: a screen-wide tint appearing on a miss is exactly the
+    // low-end devices: a screen-wide tint appearing on a miss is exactly the
     // kind of thing that preference is asking not to happen.
     const comboBreak = glow && !flashOff ? engine.getComboBreak() : null;
     if (comboBreak) {
@@ -3213,7 +3270,7 @@ export function GameCanvas() {
     // 3c. V5 — combo milestones: an escalating flash + label at 50/100/250/
     // 500/1000. Gated on `glow` exactly like the combo-break wash above — a
     // screen flash tied to hitting a number is precisely what A2's
-    // photosensitivity mode (and reduced motion / perf-lite, which fold into
+    // photosensitivity mode (and reduced motion / a low-end device, which fold into
     // the same flag) turns off.
     const milestone = glow && !flashOff ? engine.getComboMilestone() : null;
     if (milestone) {
@@ -3279,6 +3336,10 @@ export function GameCanvas() {
       }
     }
     ctx.globalAlpha = 1;
+
+    // The glass, sparks and dust from struck notes — over the notes, under the stamp.
+    stepFx(fxRef.current, step);
+    drawFx(ctx, fxRef.current);
 
     // Feedback / Judgment Text
     if (latestFeedback && performance.now() - latestFeedback.time < 1000) {
@@ -3436,7 +3497,7 @@ export function GameCanvas() {
         !flashOff
       ) {
         const pulseAge = (nowMs - latestFeedback.time) / HIT_PULSE_MS;
-        const pulseLane = mirrorOn ? 1 - latestFeedback.lane : latestFeedback.lane;
+        const pulseLane = latestFeedback.lane;
         const pulseVal = isOneTrack
           ? LANE_POS[0]
           : LANE_POS[Math.max(0, Math.min(pulseLane, LANE_POS.length - 1))];
@@ -3568,16 +3629,25 @@ export function GameCanvas() {
    * moment the player is reading their score off it.
    */
   const lockAspect = status === 'PLAYING' || status === 'FINISHED';
+  const marginRoom = useMarginRoom(rootRef, wrapperRef, lockAspect && !isPortrait);
+  const marginHud = status === 'PLAYING' && marginRoom !== null && marginRoom.top >= TOP_BAR_MIN;
 
   return (
     // Column below `lg` so the opponent board can sit as a strip ABOVE the
     // playfield; a row above it so the board is the familiar right-hand column.
     // As a row at every width, that 288px column was most of a 360px phone.
-    <div className="relative flex flex-col lg:flex-row w-full h-full bg-slice-bg">
+    <div
+      ref={rootRef}
+      className="slice-canvas-root relative flex flex-col lg:flex-row w-full h-full bg-slice-bg"
+    >
       {/* The margins either side of the 16:9 field, filled with the music. Behind
           everything, and only while the field is locked to its ratio in landscape —
           anywhere else there is no margin to fill. */}
       <SideWaves stageRef={wrapperRef} enabled={lockAspect && !isPortrait} />
+      {/* The readouts, in the band a taller-than-16:9 window leaves above the field
+          (and the tally in the one below it, if that is tall enough too). A short or
+          narrow window has no such band and keeps the HUD on the field. */}
+      {marginHud && marginRoom && <MarginHud engine={engine} room={marginRoom} />}
       {/* Game Area Container - Flex Grow.
           Landscape used `aspect-video` capped at `min(1400px, (100vh - 6rem) * 16/9)`
           — a hand-derived fit with two problems. `100vh` on a phone is the
@@ -3611,7 +3681,7 @@ export function GameCanvas() {
           seeing further up the lane than an opponent is exactly the advantage
           the lock exists to deny. */}
       <div
-        className={`relative z-10 w-full min-w-0 flex-1 ${
+        className={`slice-canvas-stage relative z-10 w-full min-w-0 flex-1 ${
           !lockAspect
             ? ''
             : isPortrait
@@ -3621,7 +3691,7 @@ export function GameCanvas() {
       >
         <div
           ref={wrapperRef}
-          className={`relative bg-slice-bg overflow-hidden ${
+          className={`slice-canvas-wrapper relative bg-slice-bg overflow-hidden ${
             !lockAspect
               ? 'h-full w-full'
               : `border border-slice-border ${isPortrait ? 'h-full w-full' : 'app-stage'}`
@@ -3629,7 +3699,7 @@ export function GameCanvas() {
         >
           <canvas
             ref={canvasRef}
-            className="w-full h-full cursor-pointer block touch-none select-none"
+            className="slice-canvas-el w-full h-full cursor-pointer block touch-none select-none"
             data-jelly-zone="playfield"
           />
 
@@ -3642,7 +3712,7 @@ export function GameCanvas() {
             >
               <button
                 data-mobile-btn
-                className="pointer-events-auto touch-none select-none flex-1 h-full flex items-end justify-center pb-4 opacity-0 active:opacity-30 transition-opacity"
+                className="pointer-events-auto touch-none select-none flex-1 h-full"
                 // Inline, because `touch-none` is a layered utility and the unlayered global
                 // `button { touch-action: manipulation }` in globals.css beats it: the lane
                 // pads kept pinch-zoom, so a two-finger pinch zoomed the page mid-song.
@@ -3671,13 +3741,10 @@ export function GameCanvas() {
                   handleInputRelease(0);
                 }}
               >
-                <div className="w-12 h-12 rounded-full bg-blue-500/20 border-2 border-blue-500 flex items-center justify-center text-blue-500 text-lg font-black">
-                  L
-                </div>
               </button>
               <button
                 data-mobile-btn
-                className="pointer-events-auto touch-none select-none flex-1 h-full flex items-end justify-center pb-4 opacity-0 active:opacity-30 transition-opacity"
+                className="pointer-events-auto touch-none select-none flex-1 h-full"
                 // Inline, because `touch-none` is a layered utility and the unlayered global
                 // `button { touch-action: manipulation }` in globals.css beats it: the lane
                 // pads kept pinch-zoom, so a two-finger pinch zoomed the page mid-song.
@@ -3706,9 +3773,6 @@ export function GameCanvas() {
                   handleInputRelease(1);
                 }}
               >
-                <div className="w-12 h-12 rounded-full bg-pink-500/20 border-2 border-pink-500 flex items-center justify-center text-pink-500 text-lg font-black">
-                  R
-                </div>
               </button>
             </div>
           )}
@@ -3774,43 +3838,8 @@ export function GameCanvas() {
 
                 {/* Settings section */}
                 <div className="w-full bg-slice-shadow-dark/30 rounded-2xl p-4 border border-slice-border flex flex-col gap-4">
-                  {/* Volume */}
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">
-                        {t('volume', { defaultValue: 'Volume' })}
-                      </span>
-                      <span className="text-sm font-bold text-blue-500">{volume}%</span>
-                    </div>
-                    <Slider
-                      value={[volume]}
-                      min={0}
-                      max={100}
-                      step={1}
-                      onValueChange={([v]) => setVolume(v)}
-                      className="w-full"
-                    />
-                  </div>
-
-                  {/* SFX Volume */}
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">
-                        {t('effects', { defaultValue: 'Effects' })}
-                      </span>
-                      <span className="text-sm font-bold text-blue-500">
-                        {useSliceItStore.getState().sfxVolume}%
-                      </span>
-                    </div>
-                    <Slider
-                      value={[useSliceItStore.getState().sfxVolume]}
-                      min={0}
-                      max={100}
-                      step={1}
-                      onValueChange={([v]) => useSliceItStore.getState().setSfxVolume(v)}
-                      className="w-full"
-                    />
-                  </div>
+                  {/* Master / music / effects */}
+                  <VolumeMixer />
 
                   {/* Audio Offset */}
                   <div className="flex items-center justify-between gap-2">
@@ -3964,23 +3993,8 @@ export function GameCanvas() {
               </div>
 
               <div className="bg-slice-shadow-dark/30 rounded-xl p-3 border border-slice-border flex flex-col gap-3">
-                {/* Volume */}
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-black text-slice-text-muted uppercase tracking-wider">
-                      {t('volume', { defaultValue: 'Volume' })}
-                    </span>
-                    <span className="text-xs font-bold text-blue-500">{volume}%</span>
-                  </div>
-                  <Slider
-                    value={[volume]}
-                    min={0}
-                    max={100}
-                    step={1}
-                    onValueChange={([v]) => setVolume(v)}
-                    className="w-full"
-                  />
-                </div>
+                {/* Master / music / effects */}
+                <VolumeMixer compact />
 
                 {/* Audio Offset */}
                 <div className="flex items-center justify-between gap-2">
@@ -4088,7 +4102,7 @@ export function GameCanvas() {
             </div>
           )}
 
-          {status === 'PLAYING' && <HUD engine={engine} />}
+          {status === 'PLAYING' && <HUD engine={engine} margins={marginHud} />}
 
           {/* Synchronized Loading Overlay */}
           {status === 'PLAYING' && isLoadingSong && (

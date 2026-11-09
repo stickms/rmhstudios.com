@@ -4,17 +4,16 @@
    There is NO backdrop-filter anywhere in this file, on purpose. Frosted blur is the opposite of liquid glass (it throws
    away the detail refraction needs), it is the one engine-specific piece (Firefox flickers under transforms, Safari
    and Chromium disagree about stacking), and it is what made glass look different per browser. Surfaces carry their own
-   legibility with an adaptive tint instead, and `lib/liquid/glass/engine.ts` draws the clear, refracting, lit slab on
-   top: a canvas behind the content (`.liquid-glass-canvas`) on `glass-pane/chrome/overlay`. This sheet is also the
-   complete fallback tier: with no WebGL2, under reduced transparency/high contrast/`perf-lite`, a surface is simply
-   the tint + a static lit edge below, and looks the same in every engine. */
+   legibility with an adaptive tint instead. This sheet is the whole base material, the same in every engine: the tint,
+   the gel coat and a static lit edge. The rim, the woken haze and the soft body that sit on it are app/jelly-material.css.
+   (A WebGL rim shader drew the slab over this until the CSS-first migration; it is gone. The liquid globe keeps its own
+   shader, components/radial/jelly-glass.ts.) */
 @layer components {
   :root {
-    --liquid-rim: color-mix(in srgb, white 62%, transparent);
     /* The gel coat (#989 layer 1): a hazy body that darkens slightly toward its base — VERTICAL, from the theme's
        `--gel-body` to `--gel-depth`. It replaced a 155deg/145deg diagonal clear-coat whose white band swept across
        every face: #989 forbids a gloss band or glint across a surface (shine lives only at the edges, drawn by the
-       rim below and in jelly-material.css §4, and in the dent). Restated per host in jelly-material.css §2 so the
+       static rim in jelly-material.css §4, and in the dent). Restated per host in jelly-material.css §2 so the
        gradient resolves against the host's own theme tokens (scoped theme previews). */
     --liquid-coat: linear-gradient(
       180deg,
@@ -23,12 +22,6 @@
     );
     /* A repeated card's CSS face: the same gel coat, one layer (it was a second diagonal highlight). */
     --liquid-fill-coat: var(--liquid-coat);
-    /* No shadows, no inset highlights: glass is not lifted off the page by a drop shadow, it is SEEN by what its edge
-       does to the light, and the shader draws that (refracted rim, lit edge) on every surface the engine admits.
-       `--liquid-edge` is kept as a name (a zero shadow, valid inside any box-shadow list) so no consumer breaks. The CSS
-       tier, for what the engine does not draw (no WebGL, reduced transparency, perf-lite, past the budget), is a coat
-       and a hairline: nothing that could clash. */
-    --liquid-edge: 0 0 0 0 transparent;
   }
 
   /* Clear-coat reflection has no backdrop cost on repeated content. */
@@ -41,7 +34,7 @@
   }
   /* The tints are LOW on purpose. Liquid glass is clear: the page has to read through it, bent at the rim. Each role
      carries only as much body as it needs to stay legible with no blur behind it (a blur is exactly what is not wanted),
-     and the shader's shaded bevel and lit edge, not an opaque fill, are what make the surface visible. */
+     and the rim's lit edge (jelly-material.css §4), not an opaque fill, is what makes the surface visible. */
   .glass-pane:not([data-liquid-material='off']) {
     background-color: var(--site-glass-pane-tint);
   }
@@ -139,182 +132,10 @@
     :is(button, [role='button']):not([data-liquid-material='off']):not([data-fluid-press='none']) {
     background-image: var(--liquid-coat);
   }
-
-  /* The engine's slab. The canvas is the host's last child, painted BEHIND its content: `isolation` makes the host the
-     stacking context the negative z-index is resolved in, so the canvas sits above the host's own tint and below every
-     in-flow child, positioned or not. The shader draws the bevel and rim light, so the static CSS edge and coat
-     step aside; the host keeps its tint (the interior shows through it), and its hairline border turns transparent (the
-     molded rim, below). There is no drop shadow anywhere. */
-  .liquid-glass-canvas {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    /* -2, not -1: the eversion hover layer (`::before`, z-index -1) must paint OVER the slab. At -1 the canvas, being the
-       last child, painted over it and the opaque bevel band hid the outer ring of every hover: it looked cut off.
-       Plasmatic Jelly adds one layer UNDER this: the haze (`.jelly-haze-canvas` or the CSS `.jelly-flow` carrier) paints
-       at z-index -3 (app/jelly-material.css). Order inside an isolated host: host tint → haze -3 → rim slab -2 →
-       evert hover -1 → live content. Nothing jelly paints at z ≥ 0 inside a host. */
-    z-index: -2;
-    pointer-events: none;
-    user-select: none;
-  }
-  /* The entrance (engine.ts `ENTER_MS` = `--liquid-enter`). A rim or haze canvas is transparent until its first frame
-     lands (`data-liquid-fresh`), then fades in OVER the CSS material, which stays until the fade is done: only then
-     does the engine mark the host `data-liquid-canvas="on"` (rim) or `data-jelly-haze="on"` (haze) and the static
-     coat, edge and carrier step aside. `@starting-style` covers a canvas whose first frame lands before its first
-     style, and `data-liquid-settled` stops a canvas that has entered from fading again when it is re-inserted (React
-     wiping its host) or handed to the glass worker. Opacity only; without `@starting-style` the frame-gated fade
-     still runs. */
-  :is(.liquid-glass-canvas, .jelly-haze-canvas) {
-    transition: opacity var(--liquid-enter) var(--ease-smooth);
-  }
-  :is(.liquid-glass-canvas, .jelly-haze-canvas)[data-liquid-fresh] {
-    opacity: 0;
-  }
-  :is(.liquid-glass-canvas, .jelly-haze-canvas)[data-liquid-settled] {
-    transition: none;
-  }
-  @starting-style {
-    :is(.liquid-glass-canvas, .jelly-haze-canvas) {
-      opacity: 0;
-    }
-  }
-  /* A CSS jelly carrier (`.jelly-flow`, z -3) or a haze canvas needs the same isolated stacking context the rim slab
-     does, or its negative z-index resolves against the nearest ancestor context and paints under the host's tint.
-     `data-liquid-layer` is the engine's mark from the moment a canvas is in the host (while it fades in, too). */
-  :is(
-    [data-liquid-canvas='on'],
-    [data-liquid-layer],
-    [data-jelly-flow='on'],
-    [data-jelly-haze='on']
-  ) {
-    isolation: isolate;
-  }
-  [data-liquid-layer][data-liquid-static] {
-    position: relative;
-  }
-  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay)[data-liquid-canvas='on']:not(
-      [data-liquid-material='off']
-    ) {
-    /* The slab draws the bevel and the lit edge, so the static coat steps aside. The static jelly haze floor
-       (`--jelly-floor`, app/jelly-material.css) does NOT: a rim slab is not a haze canvas, and if the haze canvas never
-       arrives (budget, context loss) the floor is all the haze the surface has. It goes only under
-       `[data-jelly-haze='on']`, which jelly-material.css handles. */
-    background-image: var(--jelly-floor, none);
-    background-size: var(--jelly-floor-size, auto);
-    box-shadow: none;
-  }
-
-  /* The shader's tilt/light is the hover state on every admitted control. */
-  .evert-ghost[data-kind='hover'][data-liquid-canvas='on'] {
-    background: none;
-  }
-
-  /* Controls (buttons, fields) the engine draws: the slab replaces the static coat. Their border and fill stay theirs.
-     Fields keep the static jelly haze floor for the same reason the roles above do. */
-  [data-slot='button'][data-liquid-canvas='on']:not([data-liquid-material='off']) {
-    background-image: none;
-  }
-  :is([data-slot='input'], [data-slot='textarea'], .glass-inset)[data-liquid-canvas='on']:not(
-      [data-liquid-material='off']
-    ) {
-    background-image: var(--jelly-floor, none);
-    background-size: var(--jelly-floor-size, auto);
-  }
-  /* The molded rim (2026-10-25): while the shader draws a surface's edge, the static hairline would outline the slab the
-     rim dissolves into the ground, so it goes transparent. Its width stays (layout never changes). The degraded tiers
-     remove the canvas and this attribute with it, so their solid edge stays; a Tailwind border colour (utilities layer)
-     still wins where a component's border means something (an error, a selection). */
-  [data-liquid-canvas='on']:not([data-liquid-material='off']) {
-    border-color: transparent;
-  }
-
-  /* A separate clipped carrier owns the moving light. No pseudo collisions,
-     gradient-position animation, backdrop filters or inherited CSS writes.
-     #989: no glint across a face — the pointer's light shows only in the gel's edge band (`--gel-bevel` wide, the
-     same content-box mask as a field's rim-only carrier), so it reads as the rim catching the light near the pointer,
-     never a hotspot sliding over the text. */
-  .liquid-light {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    border-radius: inherit;
-    pointer-events: none;
-    contain: strict;
-    z-index: -1;
-    padding: var(--gel-bevel, 6px);
-    -webkit-mask:
-      linear-gradient(var(--site-surface-opaque) 0 0) content-box,
-      linear-gradient(var(--site-surface-opaque) 0 0);
-    -webkit-mask-composite: xor;
-    mask:
-      linear-gradient(var(--site-surface-opaque) 0 0) content-box exclude,
-      linear-gradient(var(--site-surface-opaque) 0 0);
-  }
-  .liquid-light > span {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 180px;
-    height: 180px;
-    border-radius: 50%;
-    background: radial-gradient(
-      closest-side,
-      color-mix(in srgb, var(--site-glass-light, white) 36%, transparent),
-      transparent
-    );
-    opacity: 0.55;
-    will-change: transform;
-  }
 }
 
-/* Accessibility rules intentionally outrank both theme and material layers. */
-:is(.perf-lite) .liquid-light,
-.app-high-contrast .liquid-light {
-  display: none !important;
-}
-:is(.perf-lite) .liquid-glass-canvas,
-.app-high-contrast .liquid-glass-canvas {
-  display: none !important;
-}
-@media print {
-  .liquid-light {
-    display: none !important;
-  }
-}
-@media print {
-  .liquid-glass-canvas {
-    display: none !important;
-  }
-}
-
-/* The molded rim, for utilities: a component that spells its edge `border border-site-border` (the neutral hairline) keeps
-   that edge through the components layer above, because utilities outrank it, and the shader's lit rim then sits on top of
-   a hairline — two edges where the slab should dissolve into the ground. Unlayered, so it beats the utility; matches the
-   exact neutral token only, so a border that MEANS something (danger, accent, a selection) stays, and the degraded tiers,
-   which remove `data-liquid-canvas`, keep their solid edge. */
-[data-liquid-canvas='on']:not([data-liquid-material='off'])[class~='border-site-border'] {
-  border-color: transparent;
-}
-
-/* The shader paints this surface's whole gel body (lib/liquid/glass/engine.ts sets the attribute a few frames after the
-   body's first frame lands), so the host's own fill and coat step aside. Unlayered, so it also beats a component's own
-   background utility: the engine only arms hosts whose fill is the plain role tint (no `bg-[…]`/gradient classes, no
-   inline background-image, no `data-jelly-nogel`). The silhouette can then bulge and sag past the host's box
-   with its fill. The degraded tiers remove the canvas and this attribute with it. */
-html:not(.perf-lite) [data-jelly-gel='on']:not([data-liquid-material='off']) {
-  background-color: transparent;
-  background-image: none;
-}
-
-/* A flat control has no body at rest, so where the material is off (perf-lite, print) it needs its own
-   affordance: an opaque slab with a solid edge, like every other degraded surface. */
-html.perf-lite [data-jelly-rest='flat'] {
-  background-color: var(--site-surface-opaque);
-  border-color: var(--site-border);
-}
+/* A flat control has no body at rest, so where the material is off (print) it needs its own
+   affordance: a solid edge, like every other degraded surface. */
 @media print {
   [data-jelly-rest='flat'] {
     border-color: var(--site-border);

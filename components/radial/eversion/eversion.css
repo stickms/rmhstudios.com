@@ -108,7 +108,7 @@
 
    The picture must look like the page it replaces, which behind an open hub is
    BLURRED by the same `filter` radial.css gives the shell layers, and is not on
-   the tiers that opt out of that blur (perf-lite, reduce-transparency,
+   the tiers that opt out of that blur (reduce-transparency,
    ios-webkit: the veil carries it alone there). With the hub closed (the
    Settings Preview) it is sharp, as the page is.
 
@@ -142,13 +142,13 @@
   filter: blur(0px);
   transition: filter 250ms var(--ease-glass, var(--ease-smooth));
 }
-html:is(.perf-lite, .ios-webkit) .radial-hub .eversion-hold {
+html.ios-webkit .radial-hub .eversion-hold {
   filter: none;
 }
-/* The phone page is blurred on every tier but those two (radial.css, "Phones"), so the
+/* The phone page is blurred on every tier but those (radial.css, "Phones"), so the
    frozen picture of it is too. */
 @media (max-width: 767.98px) {
-  html:not(.perf-lite)
+  html
     .radial-hub:is([data-phase='open'], [data-phase='everting'])
     .eversion-hold-layer:not(.eversion-hold-layer--focus)
     .eversion-hold {
@@ -272,6 +272,7 @@ html[data-eversion-settle] *:not(.radial-hub, .radial-hub *, .evert-popup, .ever
   width: var(--popup-size);
   height: var(--popup-size);
   border-radius: 50%;
+  corner-shape: round;
   overflow: hidden;
   pointer-events: none;
   contain: layout paint style;
@@ -295,6 +296,7 @@ html[data-eversion-settle] *:not(.radial-hub, .radial-hub *, .evert-popup, .ever
   position: absolute;
   inset: 6%;
   border-radius: 50%;
+  corner-shape: round;
   border: 1.5px solid color-mix(in oklab, var(--site-accent) 32%, transparent);
 }
 .evert-popup__meridian {

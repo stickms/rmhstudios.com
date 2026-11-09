@@ -1204,6 +1204,7 @@
 .el-root .el-btn {
   border: var(--el-bw) solid var(--el-ink);
   border-radius: 999px;
+  corner-shape: round;
   background: var(--el-ink);
   color: #fff;
   font-family: var(--el-body);
@@ -1257,6 +1258,7 @@
 }
 .el-root .el-input {
   border-radius: 999px;
+  corner-shape: round;
   background: #fff;
   box-shadow: none;
   padding-inline: 18px;
@@ -1266,6 +1268,7 @@
 .el-root .el-chip,
 .el-sticker {
   border-radius: 999px;
+  corner-shape: round;
   box-shadow: none;
   color: var(--el-ink);
   background: #fff;
@@ -1287,6 +1290,7 @@
   background: var(--el-gop);
   color: #fff;
   border-radius: 999px;
+  corner-shape: round;
   border-color: var(--el-ink);
 }
 
@@ -1347,6 +1351,7 @@
 .el-meter,
 .el-bar2 {
   border-radius: 999px;
+  corner-shape: round;
   overflow: hidden;
   background: var(--el-paper-2);
 }
@@ -2357,6 +2362,7 @@ html.ios-webkit .el-room__grid {
   height: 16px;
   border: var(--el-bw) solid var(--el-ink);
   border-radius: 999px;
+  corner-shape: round;
   overflow: hidden;
   background: var(--el-paper-2);
 }
@@ -2701,6 +2707,7 @@ html.ios-webkit .el-room__grid {
   /* a finger on the globe turns it in both axes; the page scrolls from the margins around it */
   touch-action: none;
   border-radius: 50%;
+  corner-shape: round;
   outline-offset: 4px;
 }
 .el-globe__canvas:active {
@@ -2719,6 +2726,7 @@ html.ios-webkit .el-room__grid {
   max-width: 100%;
   border: 4px solid var(--el-ink);
   border-radius: 50%;
+  corner-shape: round;
   background: var(--el-paper-2);
 }
 .el-globe__panel {

@@ -7,8 +7,8 @@
  * one has a formula:
  *
  * 1. **Instantaneous response.** A surface reacts on touch-DOWN, never on click
- *    or after a recognition delay. (Owned by the soft-body service,
- *    `lib/jelly/physics.ts`, which absorbed the old `useFluidPress` press layer.)
+ *    or after a recognition delay. (Owned by the CSS soft body,
+ *    `app/jelly-material.css` §8, which absorbed the old `useFluidPress` press layer.)
  * 2. **Interruptible, and redirectable mid-flight.** Motion is driven by a
  *    SPRING carrying position *and velocity*, so grabbing something already in
  *    motion retargets it from where it is and how fast it is going, instead of
@@ -189,7 +189,7 @@ export const SPRINGS = {
   /*
    * Plasmatic Jelly soft-body springs (docs/plans/plasmatic-jelly/02-soft-body.md §1.2).
    * Each is a perceptual period T and a damping ratio ζ, written as `spring(T, 1 − ζ)`.
-   * They drive `lib/jelly/envelope.ts`; the matching `APPLE_SPRING.jelly*` entries keep
+   * `lib/jelly/soft-policy.ts` samples `jellyPress` / `jellyRelease` into the CSS `--spring-*` curves; the matching `APPLE_SPRING.jelly*` entries keep
    * the declarative tier in step (the "two vocabularies agree" test).
    */
   /** Hover plump/lean toward the cursor. T 0.34s, ζ 0.78. */

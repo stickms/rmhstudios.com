@@ -8,7 +8,7 @@
  * environment watchers stay:
  *
  * - `jellyMode().arcs === 'off'` (`lib/jelly/tiers.ts`): print, the app tier's high contrast
- *   (site and app), `perf-lite`, a hidden tab, a playing game, `jellyMotion = still`, `electricArcs = off`;
+ *   (site and app), a hidden tab, a playing game, `jellyMotion = still`, `electricArcs = off`;
  * - the radial hub open (`.radial-hub:not([data-phase="closed"])`) or an eversion in progress (`.eversion-overlay`) —
  *   tiers does not know about these, so this file checks them, through one body observer and again at every action.
  *
@@ -89,9 +89,6 @@ export { HUB_OR_EVERSION_SELECTOR };
  */
 const CANDIDATE_BLOCK =
   '[aria-hidden="true"],[inert],[data-jelly-arcs="off"],.glass-inset,[data-slot="input"],[data-slot="textarea"],input,textarea,select,.glass-overlay,[data-sonner-toaster],[data-sonner-toast]';
-
-/** Charge a soft-body release adds, per unit of release energy. */
-const RELEASE_CHARGE = 0.5;
 
 export interface ElectricArcsOptions {
   /** Use this registry instead of the document's shared one (tests). */
@@ -415,9 +412,6 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
   hubWatch.observe(doc.body, { attributes: true, subtree: true, attributeFilter: ['data-phase'] });
   const overlayWatch = new win.MutationObserver(evaluate);
   overlayWatch.observe(doc.body, { childList: true });
-  const offRelease = bus.on('body:release', ({ el, energy }) => {
-    charge.add(el, RELEASE_CHARGE * Math.max(0, Math.min(1, energy)), clock());
-  });
   const warmTimer = ambientWanted
     ? setTimeout(() => {
         warm = true;
@@ -476,7 +470,6 @@ export function installElectricArcs(doc: Document, opts: ElectricArcsOptions = {
       offEnv();
       hubWatch.disconnect();
       overlayWatch.disconnect();
-      offRelease();
       releaseRegistry?.();
       if (current === runtime) current = null;
     },

@@ -35,6 +35,8 @@ import { toast } from 'sonner';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { calculateScoreMultiplier } from '@/lib/slice-it/scoring';
+import { MODIFIER_BONUSES } from '@/lib/slice-it/constants';
+import { unrankedReason } from '@/lib/slice-it/modifiers';
 import { ChartPicker, type ChartOption } from './ChartPicker';
 import { useTranslation } from 'react-i18next';
 import { isHeicCover, normalizeCover } from '@/lib/slice-it/cover-image';
@@ -74,16 +76,26 @@ const ModifierToggle = ({
   label,
   active,
   onClick,
+  bonus,
+  offBoard,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
+  /** The score bonus this adds to the multiplier, shown under the name. */
+  bonus?: number;
+  /** Shown instead of a bonus: turning this on keeps the run off the leaderboard. */
+  offBoard?: string;
 }) => {
   const id = React.useId();
   return (
     <label className="slice-mod">
-      <span id={id} className="slice-mod__label">
-        {label}
+      <span className="slice-mod__text">
+        <span id={id} className="slice-mod__label">
+          {label}
+        </span>
+        {bonus !== undefined && <span className="slice-mod__tag">+{bonus.toFixed(2)}×</span>}
+        {offBoard && <span className="slice-mod__tag slice-mod__tag--off">{offBoard}</span>}
       </span>
       <Switch checked={active} onCheckedChange={() => onClick()} aria-labelledby={id} />
     </label>
@@ -98,6 +110,12 @@ export function SongDetailsPanel({
 }: SongDetailsPanelProps) {
   const { t } = useTranslation('c-game');
   const { modifiers, setModifiers } = useSliceItStore();
+  const metronome = useSliceItStore((s) => s.metronome);
+  const setMetronome = useSliceItStore((s) => s.setMetronome);
+  const assistTick = useSliceItStore((s) => s.assistTick);
+  const setAssistTick = useSliceItStore((s) => s.setAssistTick);
+  const offBoard = unrankedReason(modifiers, metronome || assistTick) !== null;
+  const notUploaded = t('not-uploaded-tag', { defaultValue: 'Not uploaded' });
   const session = useSession();
   // `isOwner` is decided by the server and shipped on the DTO. Comparing a
   // session id against a `uploadedBy` field here meant the API had to leak a
@@ -461,7 +479,6 @@ export function SongDetailsPanel({
             ) : (
               <span className="slice-rec__ph slice-dots-cyan" aria-hidden />
             )}
-            <span className="slice-rec__tag">{t('side-a', { defaultValue: 'Side A' })}</span>
           </div>
 
           <div className="slice-rec__head">
@@ -560,6 +577,9 @@ export function SongDetailsPanel({
                   {t('multiplier', { defaultValue: 'Multiplier' })}
                 </span>
                 <b>×{getScoreMultiplier().toFixed(2)}</b>
+                {offBoard && (
+                  <span className="slice-mod__tag slice-mod__tag--off">{notUploaded}</span>
+                )}
               </div>
             </div>
           )}
@@ -586,19 +606,39 @@ export function SongDetailsPanel({
             {t('game-modifiers', { defaultValue: 'Game Modifiers' })}
           </h3>
           <div className="grid grid-cols-2 gap-2 mb-4">
+            {/* The two run-ending rules. They used to live in Settings, away from the
+                multiplier they change. Health Gauge's bonus is forfeited if the
+                gauge empties; Perfectionist's is the biggest in the game. */}
+            <ModifierToggle
+              label={t('mod-health-gauge', { defaultValue: 'Health Gauge' })}
+              active={modifiers.healthGauge}
+              bonus={MODIFIER_BONUSES.healthGauge}
+              onClick={() => setModifiers({ ...modifiers, healthGauge: !modifiers.healthGauge })}
+            />
+            <ModifierToggle
+              label={t('mod-perfectionist', { defaultValue: 'Perfectionist' })}
+              active={!!modifiers.perfectionist}
+              bonus={MODIFIER_BONUSES.perfectionist}
+              onClick={() =>
+                setModifiers({ ...modifiers, perfectionist: !modifiers.perfectionist })
+              }
+            />
             <ModifierToggle
               label={t('mod-invisible', { defaultValue: 'Invisible' })}
               active={modifiers.invisible}
+              bonus={MODIFIER_BONUSES.invisible}
               onClick={() => setModifiers({ ...modifiers, invisible: !modifiers.invisible })}
             />
             <ModifierToggle
               label={t('mod-bombs', { defaultValue: 'Bombs' })}
               active={modifiers.bombs}
+              bonus={MODIFIER_BONUSES.bombs}
               onClick={() => setModifiers({ ...modifiers, bombs: !modifiers.bombs })}
             />
             <ModifierToggle
               label={t('mod-switching', { defaultValue: 'Switching' })}
               active={modifiers.switching}
+              bonus={MODIFIER_BONUSES.switching}
               onClick={() =>
                 setModifiers({
                   ...modifiers,
@@ -610,16 +650,19 @@ export function SongDetailsPanel({
             <ModifierToggle
               label={t('mod-spin', { defaultValue: 'Spin' })}
               active={modifiers.spin}
+              bonus={MODIFIER_BONUSES.spin}
               onClick={() => setModifiers({ ...modifiers, spin: !modifiers.spin })}
             />
             <ModifierToggle
               label={t('mod-strict-timing', { defaultValue: 'Strict Timing' })}
               active={modifiers.strictTiming}
+              bonus={MODIFIER_BONUSES.strictTiming}
               onClick={() => setModifiers({ ...modifiers, strictTiming: !modifiers.strictTiming })}
             />
             <ModifierToggle
               label={t('mod-one-track', { defaultValue: 'One Track' })}
               active={modifiers.oneTrack}
+              bonus={MODIFIER_BONUSES.oneTrack}
               onClick={() =>
                 setModifiers({
                   ...modifiers,
@@ -642,6 +685,7 @@ export function SongDetailsPanel({
             <ModifierToggle
               label={t('mod-s-random', { defaultValue: 'S-Random' })}
               active={!!modifiers.sRandom}
+              bonus={MODIFIER_BONUSES.sRandom}
               onClick={() => setModifiers({ ...modifiers, sRandom: !modifiers.sRandom })}
             />
           </div>
@@ -654,26 +698,63 @@ export function SongDetailsPanel({
               mistake `ASSIST_MODIFIERS` exists to avoid. */}
           <h3 className="slice-section-title">{t('assists', { defaultValue: 'Assists' })}</h3>
           <p className="text-[10px] text-slice-text-light font-bold leading-snug mb-3">
-            {t('assists-hint', {
+            {t('assists-not-uploaded-hint', {
               defaultValue:
-                'Free, and unranked. No score penalty — these keep a run off the board rather than costing you points on it.',
+                'Free, with no score penalty — but a run played with any of these is not uploaded.',
             })}
           </p>
           <div className="grid grid-cols-2 gap-2 mb-4">
             <ModifierToggle
               label={t('mod-no-fail', { defaultValue: 'No Fail' })}
               active={!!modifiers.noFail}
+              offBoard={notUploaded}
               onClick={() => setModifiers({ ...modifiers, noFail: !modifiers.noFail })}
             />
             <ModifierToggle
               label={t('mod-assist', { defaultValue: 'Assist (0.75x)' })}
               active={!!modifiers.assist}
+              offBoard={notUploaded}
               onClick={() => setModifiers({ ...modifiers, assist: !modifiers.assist })}
             />
             <ModifierToggle
               label={t('mod-tap-holds', { defaultValue: 'Taps Only' })}
               active={!!modifiers.tapHolds}
+              offBoard={notUploaded}
               onClick={() => setModifiers({ ...modifiers, tapHolds: !modifiers.tapHolds })}
+            />
+            <ModifierToggle
+              label={t('mod-lenient-timing', { defaultValue: 'Lenient Timing' })}
+              active={!!modifiers.lenientTiming}
+              offBoard={notUploaded}
+              onClick={() =>
+                setModifiers({ ...modifiers, lenientTiming: !modifiers.lenientTiming })
+              }
+            />
+          </div>
+
+          {/* P4 — the two guide sounds. Learning tools: no bonus, and a run that
+              plays with either is not uploaded. */}
+          <h3 className="slice-section-title">
+            {t('practice-aids', { defaultValue: 'Practice Aids' })}
+          </h3>
+          <p className="text-[10px] text-slice-text-light font-bold leading-snug mb-3">
+            {t('practice-aids-hint', {
+              defaultValue:
+                'Guide sounds for learning a chart. A run played with either one is not uploaded.',
+            })}
+          </p>
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <ModifierToggle
+              label={t('metronome', { defaultValue: 'Metronome' })}
+              active={metronome}
+              offBoard={notUploaded}
+              onClick={() => setMetronome(!metronome)}
+            />
+            <ModifierToggle
+              label={t('assist-tick', { defaultValue: 'Assist Tick' })}
+              active={assistTick}
+              offBoard={notUploaded}
+              onClick={() => setAssistTick(!assistTick)}
             />
           </div>
 

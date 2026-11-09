@@ -459,6 +459,7 @@
 .toj-scroll::-webkit-scrollbar-thumb {
   background: var(--toj-rule-strong);
   border-radius: 99px;
+  corner-shape: round;
 }
 
 .toj-scroll::-webkit-scrollbar-track {
@@ -855,6 +856,7 @@
   gap: var(--toj-gap-within);
   padding: var(--toj-1) var(--toj-3);
   border-radius: var(--toj-radius-pill);
+  corner-shape: round;
   border: 1px solid transparent;
   background: var(--toj-surface-sunk);
   color: var(--toj-ink-soft);
@@ -1237,6 +1239,7 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
+  corner-shape: round;
   pointer-events: none;
   /* Where each disc sits before the first frame has placed it.
      A satellite has no meaningful position until the field has been laid out,
@@ -1289,6 +1292,7 @@
   top: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
+  corner-shape: round;
   pointer-events: none;
   background: none;
   z-index: 500;
@@ -1346,6 +1350,7 @@
   width: 1.85rem;
   height: 1.85rem;
   border-radius: 50%;
+  corner-shape: round;
   font-size: 0.92rem;
   background: var(--toj-surface);
   border: 1px solid rgb(var(--toj-gold-rgb) / 0.42);
@@ -1392,6 +1397,7 @@
   width: 3px;
   height: 3px;
   border-radius: 50%;
+  corner-shape: round;
   background: rgb(var(--toj-gold-rgb) / 0.5);
   pointer-events: none;
   animation: toj-drift 11s linear infinite;
@@ -1451,6 +1457,7 @@
   width: clamp(3rem, 8vw, 4.25rem);
   aspect-ratio: 1;
   border-radius: 50%;
+  corner-shape: round;
   display: grid;
   place-items: center;
   font-size: clamp(1.4rem, 3.6vw, 1.9rem);
@@ -1563,6 +1570,7 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
+  corner-shape: round;
   pointer-events: auto;
   font-size: clamp(0.65rem, 8cqw, 1.1rem);
   color: var(--toj-sable);
@@ -1670,6 +1678,7 @@
   gap: var(--toj-icon-gap);
   padding: var(--toj-2) var(--toj-4);
   border-radius: var(--toj-radius-pill);
+  corner-shape: round;
   border: 1px solid rgb(var(--toj-gold-rgb) / 0.45);
   background: var(--toj-gold-wash);
   color: var(--toj-gold-deep);
@@ -1700,6 +1709,7 @@
   gap: var(--toj-icon-gap);
   padding: var(--toj-1) var(--toj-3) 0.45rem;
   border-radius: 99px;
+  corner-shape: round;
   border: 1px solid rgb(var(--toj-gold-rgb) / 0.4);
   background: var(--toj-surface);
   box-shadow: var(--toj-lift-sm);
@@ -1755,6 +1765,7 @@
   /* Fully round. The room has no square corners left in it, and a pill is also
      the shape a thumb reads as "press me" fastest. */
   border-radius: var(--toj-radius-pill);
+  corner-shape: round;
   border: 1px solid var(--toj-rule-strong);
   background: var(--toj-surface);
   box-shadow: var(--toj-lift-sm);
@@ -1836,6 +1847,7 @@
   margin: var(--toj-2) var(--toj-2) 0;
   padding: var(--toj-1) var(--toj-3);
   border-radius: var(--toj-radius-pill);
+  corner-shape: round;
   background: var(--toj-surface-sunk);
   overflow-x: auto;
   scrollbar-width: none;
@@ -1916,6 +1928,7 @@
   gap: var(--toj-gap-within);
   padding: var(--toj-2) var(--toj-3);
   border-radius: var(--toj-radius-pill);
+  corner-shape: round;
   font-size: 0.8rem;
   color: var(--toj-ink-soft);
   white-space: nowrap;
@@ -2171,6 +2184,7 @@
   height: 4px;
   margin: 0 auto var(--toj-4);
   border-radius: 99px;
+  corner-shape: round;
   background: var(--toj-rule-strong);
 }
 
@@ -2218,6 +2232,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
+  corner-shape: round;
   background: var(--toj-gold);
   animation: toj-dot 2s var(--toj-ease) infinite;
 }
@@ -2500,6 +2515,7 @@ button.toj-row:active:not(:disabled) {
   place-items: center;
   font-size: 1.1rem;
   border-radius: var(--toj-radius-pill);
+  corner-shape: round;
   background: var(--toj-surface);
   border: 1px solid var(--toj-rule);
   flex-shrink: 0;
@@ -2523,6 +2539,7 @@ button.toj-row:active:not(:disabled) {
   min-width: 1.15rem;
   padding: 0 0.25rem;
   border-radius: var(--toj-radius-pill);
+  corner-shape: round;
   background: var(--toj-ink);
   color: var(--toj-surface);
   font-size: 0.64rem;
@@ -2600,6 +2617,7 @@ button.toj-row:active:not(:disabled) {
   width: 4px;
   height: 4px;
   border-radius: 50%;
+  corner-shape: round;
   background: var(--toj-manna);
 }
 
@@ -2610,6 +2628,7 @@ button.toj-row:active:not(:disabled) {
   gap: var(--toj-1);
   padding: var(--toj-1);
   border-radius: var(--toj-radius-pill);
+  corner-shape: round;
   background: var(--toj-surface-sunk);
   overflow-x: auto;
   scrollbar-width: none;
@@ -2637,6 +2656,7 @@ button.toj-row:active:not(:disabled) {
   gap: var(--toj-gap-within);
   padding: var(--toj-2) var(--toj-3);
   border-radius: var(--toj-radius-pill);
+  corner-shape: round;
   font-size: 0.78rem;
   color: var(--toj-ink-soft);
   white-space: nowrap;
@@ -2750,6 +2770,7 @@ button.toj-row:active:not(:disabled) {
   width: 1.75rem;
   height: 1.75rem;
   border-radius: var(--toj-radius-pill);
+  corner-shape: round;
   background: var(--toj-surface-sunk);
   font-size: 0.9rem;
 }
@@ -3007,6 +3028,7 @@ button.toj-row:active:not(:disabled) {
   gap: var(--toj-icon-gap);
   padding: var(--toj-1) var(--toj-3);
   border-radius: 99px;
+  corner-shape: round;
   border: 1px solid var(--toj-rule);
   background: var(--toj-surface);
   font-size: 0.76rem;
@@ -3054,6 +3076,7 @@ button.toj-row:active:not(:disabled) {
   display: grid;
   place-items: center;
   border-radius: 50%;
+  corner-shape: round;
   background: var(--toj-surface);
   border: 1px solid var(--toj-rule);
   font-size: 1.2rem;
@@ -3145,6 +3168,7 @@ button.toj-row:active:not(:disabled) {
 .toj-mana {
   height: 0.55rem;
   border-radius: 99px;
+  corner-shape: round;
   background: var(--toj-surface-sunk);
   overflow: hidden;
   margin: 0.35rem 0 0.7rem;
@@ -3153,6 +3177,7 @@ button.toj-row:active:not(:disabled) {
 .toj-mana-fill {
   height: 100%;
   border-radius: 99px;
+  corner-shape: round;
   background: linear-gradient(90deg, var(--toj-grace), var(--toj-gold));
   transition: width 400ms linear;
 }
@@ -3407,6 +3432,7 @@ button.toj-row:active:not(:disabled) {
   width: 0.4rem;
   height: 42%;
   border-radius: var(--toj-radius-pill);
+  corner-shape: round;
   background: color-mix(in oklab, var(--toj-ink) 22%, transparent);
   overflow: hidden;
   pointer-events: none;
@@ -3417,6 +3443,7 @@ button.toj-row:active:not(:disabled) {
   inset: auto 0 0 0;
   height: 100%;
   border-radius: var(--toj-radius-pill);
+  corner-shape: round;
   background: linear-gradient(to top, var(--toj-gold), var(--toj-gold-bright));
   transform-origin: bottom;
   transform: scaleY(var(--toj-power, 0));
@@ -3434,6 +3461,7 @@ button.toj-row:active:not(:disabled) {
   max-width: calc(100% - 1.2rem);
   padding: var(--toj-1) var(--toj-3);
   border-radius: var(--toj-radius-pill);
+  corner-shape: round;
   /* A backing, because the scene behind it is a lit rose window and a plain
      grey caption over that is neither readable nor deliberate-looking. */
   background: color-mix(in oklab, var(--toj-ground-deep) 72%, transparent);
@@ -4685,6 +4713,7 @@ button.toj-row:active:not(:disabled) {
   width: 72%;
   height: 72%;
   border-radius: 50%;
+  corner-shape: round;
   background: radial-gradient(circle at 50% 38%, #f0ad28, var(--tm-disc) 62%, #d78f12);
   transition:
     scale 420ms var(--toj-ease),
@@ -4697,6 +4726,7 @@ button.toj-row:active:not(:disabled) {
   position: absolute;
   inset: 0;
   border-radius: 50%;
+  corner-shape: round;
   background-image: radial-gradient(circle, rgb(110 58 4 / 0.34) 0 1px, transparent 1.6px);
   background-size: 6px 6px;
   -webkit-mask-image: linear-gradient(to bottom, transparent 38%, #000 100%);
@@ -4710,6 +4740,7 @@ button.toj-row:active:not(:disabled) {
   width: 104%;
   height: 104%;
   border-radius: 50%;
+  corner-shape: round;
   background: radial-gradient(circle, rgb(255 228 140 / 0.7), transparent 64%);
   animation: toj-menu-halo 5.6s ease-in-out infinite;
 }

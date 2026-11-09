@@ -169,6 +169,7 @@
   aspect-ratio: 118 / 230;
   border: calc(var(--gui-u) * 6) solid;
   border-radius: 50%;
+  corner-shape: round;
 }
 .gui-ring-blue {
   top: 5%;
@@ -321,6 +322,7 @@
   background: none;
   border: 2px solid var(--sm-blue);
   border-radius: 50%;
+  corner-shape: round;
   box-shadow: 0 0 10px rgb(30 160 240 / 0.6);
   mask: none;
 }

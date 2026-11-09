@@ -9,7 +9,8 @@ import { useSliceItStore } from '@/lib/slice-it/store';
 import type { GameEngine } from '@/lib/slice-it/engine';
 import { useRunSummary, useSubmitScore } from '@/lib/slice-it/useSubmitScore';
 import { gradeFor } from '@/lib/slice-it/scoring';
-import { JUDGEMENT_ORDER, RANKED_MIN_SPEED } from '@/lib/slice-it/constants';
+import { JUDGEMENT_ORDER } from '@/lib/slice-it/constants';
+import { unrankedReason } from '@/lib/slice-it/modifiers';
 import type { RunStats } from '@/lib/slice-it/types';
 import type { TimingSummary } from '@/lib/slice-it/integrity';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,8 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
   // screens used to carry their own copy with different guards.
   const summary = useRunSummary(false, engine);
   const { isNewBest, previousBest } = useSubmitScore(summary);
-  const isUnranked = modifiers.speed < RANKED_MIN_SPEED;
+  const practiceAids = useSliceItStore((s) => s.metronome || s.assistTick);
+  const unranked = unrankedReason(modifiers, practiceAids);
 
   // Read once per render, not per section: `getRunStats()` copies the histogram,
   // and four callers would be four copies of it a frame.
@@ -73,14 +75,6 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
 
   return (
     <div className="slice-results absolute inset-0 z-50 overflow-y-auto overscroll-contain bg-slice-bg">
-      <div className="slice-results__line">
-        <span className="slice-chip">RMH-050</span>
-        <span className="slice-label">
-          {t('side-a', { defaultValue: 'Side A' })} <i>/</i>{' '}
-          {t('end-of-side', { defaultValue: 'End of side' })}
-        </span>
-      </div>
-
       <div className="slice-results__grid">
         {/* The grade, cut on the slice. Two clips of the same letter, the lower one
             shifted along the cut; the real grade is read out by the label. */}
@@ -108,18 +102,22 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
 
         {/* The liner notes. */}
         <div className="slice-results__notes">
-          <div className="slice-label">
-            {t('side-a', { defaultValue: 'Side A' })} ·{' '}
-            {t('pressed-by-you', { defaultValue: 'Pressed by you' })}
-          </div>
           <h2 className="slice-display slice-results__title">
             {failedTitle ?? songTitle ?? t('complete', { defaultValue: 'COMPLETE' })}
           </h2>
           {failedTitle && songTitle && <div className="slice-serif text-2xl">{songTitle}</div>}
-          {isUnranked && (
+          {unranked && (
             <div className="slice-label mt-3 text-slice-accent">
               {t('unranked', { defaultValue: 'Unranked' })} ·{' '}
-              {t('speed-below', { defaultValue: 'Speed below 1.0x' })}
+              {unranked === 'speed'
+                ? t('speed-below', { defaultValue: 'Speed below 1.0x' })
+                : unranked === 'lenient'
+                  ? t('unranked-lenient', { defaultValue: 'Lenient timing' })
+                  : unranked === 'assist'
+                    ? t('unranked-assist', { defaultValue: 'Assists on' })
+                    : t('unranked-practice', { defaultValue: 'Practice aids on' })}
+              {' · '}
+              {t('not-uploaded', { defaultValue: 'Score not uploaded' })}
             </div>
           )}
           {/* Full-combo and all-marvellous lamps, in the genre's escalation. */}

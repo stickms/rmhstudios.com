@@ -68,6 +68,7 @@
 ### Task 3: Remove `perf-lite` from CSS, the document and the docs
 
 **Files:**
+- (Note, 2026-11-08: Task 5 deleted `testing/e2e/{liquid-glass,liquid-glass-engine,jelly-theme-navigation}.mjs` and `pnpm audit:jelly-clip`; skip those and use `pnpm audit:pages` for the browser sweep.)
 - Modify: `app/{jelly-material,globals,liquid-glass,jelly-coverage,jelly-arcs}.css`, `components/radial/radial.css`, `components/radial/eversion/eversion.css`, `components/shared/app-theme.css`, `components/slice-it/slice-it.css`, `components/kaikai-debt/kaikai-debt.css`, `components/Providers.tsx`, `app/routes/__root.tsx`, `testing/e2e/*.mjs` (jelly-interaction, liquid-glass, liquid-glass-engine, jelly-theme-navigation), `CLAUDE.md`, `lib/CLAUDE.md`, `components/CLAUDE.md`, `docs/plasmatic-jelly-system.md`, `docs/design-language.md`
 - Delete: `lib/perf-tier.ts`, `lib/performance-tier.ts`, `lib/__tests__/performance-tier.test.ts`, `lib/__tests__/perf-tier-script.test.ts`
 - Test: `lib/__tests__/{site-infinite-animation,jelly-woken-haze,jelly-contract,fouc-contract,native-material-routes}.test.ts`, `lib/eversion/__tests__/eversion-css.test.ts`

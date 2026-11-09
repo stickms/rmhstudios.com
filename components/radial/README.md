@@ -444,7 +444,7 @@ cheapest at:
   stage a rectangular site-material host) after the first frame is drawn, and a lost context
   hands back to it.
 - **Not everywhere.** High contrast, reduced transparency (setting or media
-  query), `prefers-contrast: more`, `perf-lite` and no-WebGL keep the CSS glass;
+  query), `prefers-contrast: more`, a software renderer (`lib/low-end.ts`) and no-WebGL keep the CSS glass;
   refraction applies in all of them. Reduced motion keeps the material, static.
 
 ## Globe Eversion (the hub's navigation transition)
@@ -493,7 +493,7 @@ with the task plan beside it. The components here are in `eversion/`
 - **Back/forward never animates.** A traversal during priming reports
   `traversal` and the hub just closes; mid-run it aborts with a crossfade onto
   the live page. A run always ends: a stall watchdog force-ends it with a fade.
-- `perf-lite` runs the effect at the minimum tier. There is no reduced-motion
+- A low-end device (`lib/low-end.ts`) runs the effect at the minimum tier. There is no reduced-motion
   alternative to the effect.
 - **The orb returns through the hub's ordinary closed-state fade.** It is hidden
   during the run (`data-phase='everting'`, `opacity` + `pointer-events` only, so it

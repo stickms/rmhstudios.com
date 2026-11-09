@@ -230,7 +230,7 @@ jobs:
           fi
           changed=$(git diff --name-only HEAD^1 HEAD)
           echo "$changed"
-          if echo "$changed" | grep -Eq '^(lib/eversion/|components/radial/|app/globals\.css$|app/routes/eversion-lab\.tsx$|app/routes/api/preferences/appearance\.ts$|testing/e2e/eversion|testing/e2e/lib/|testing/e2e/baselines/|stores/themeStore|lib/appearance/|lib/perf-tier|lib/render/|components/settings/AppearancePanel|components/ui/liquid-|lib/jelly/|lib/liquid/|app/jelly-[a-z-]+\.css$|app/liquid-glass\.css$|testing/e2e/(frame-budget|jelly-interaction)\.mjs$|locales/en/(feed|settings-appearance)\.json$|prisma/schema\.prisma$|package\.json$|pnpm-lock\.yaml$|vite\.config\.[cm]?[jt]s$|scripts/check-bundle-budget|\.github/workflows/web-ci\.yml$)'; then
+          if echo "$changed" | grep -Eq '^(lib/eversion/|components/radial/|app/globals\.css$|app/routes/eversion-lab\.tsx$|app/routes/api/preferences/appearance\.ts$|testing/e2e/eversion|testing/e2e/lib/|testing/e2e/baselines/|stores/themeStore|lib/appearance/|lib/low-end|lib/render/|components/settings/AppearancePanel|components/ui/liquid-|lib/jelly/|lib/liquid/|app/jelly-[a-z-]+\.css$|app/liquid-glass\.css$|testing/e2e/(frame-budget|jelly-interaction)\.mjs$|locales/en/(feed|settings-appearance)\.json$|prisma/schema\.prisma$|package\.json$|pnpm-lock\.yaml$|vite\.config\.[cm]?[jt]s$|scripts/check-bundle-budget|\.github/workflows/web-ci\.yml$)'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"

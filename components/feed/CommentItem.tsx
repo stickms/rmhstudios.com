@@ -1,580 +1,691 @@
 'use client';
 
-import { useState, useEffect, useRef } from'react';
-import { Link } from'@tanstack/react-router';
-import { useReconsider } from'@/components/safety/use-reconsider';
-import { MessageCircle, Repeat2, Heart, Eye, Trash2, MoreHorizontal, Repeat, BadgeCheck, ShieldCheck, Languages, Image as ImageIcon } from'lucide-react';
-import { Button } from'@/components/ui/button';
-import { useConfirm } from'@/components/ui/confirm-dialog';
-import { MAX_COMMENT_LENGTH } from'@/lib/rmhark-limits';
-import { RMHarkContent } from'./RMHarkContent';
-import ChatMediaEmbed, { stripEmbedUrls, extractMediaEmbeds } from'@/components/shared/ChatMediaEmbed';
-import { GifPicker } from'@/components/feed/GifPicker';
-import { EngagementListModal } from'./EngagementListModal';
-import { UserAvatar } from'./UserAvatar';
-import { AIGenerateButton } from'./AIGenerateButton';
-import { MentionTextarea } from'./MentionTextarea';
-import { EmojiPickerButton } from'@/components/shared/EmojiPickerButton';
-import { useEmojiInsert } from'@/lib/emoji/use-emoji-insert';
+import { useState, useEffect, useRef } from 'react';
+import { Link } from '@tanstack/react-router';
+import { useReconsider } from '@/components/safety/use-reconsider';
+import {
+  MessageCircle,
+  Repeat2,
+  Heart,
+  Eye,
+  Trash2,
+  MoreHorizontal,
+  Repeat,
+  BadgeCheck,
+  ShieldCheck,
+  Languages,
+  Image as ImageIcon,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useConfirm } from '@/components/ui/confirm-dialog';
+import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-limits';
+import { RMHarkContent } from './RMHarkContent';
+import ChatMediaEmbed, {
+  stripEmbedUrls,
+  extractMediaEmbeds,
+} from '@/components/shared/ChatMediaEmbed';
+import { GifPicker } from '@/components/feed/GifPicker';
+import { EngagementListModal } from './EngagementListModal';
+import { UserAvatar } from './UserAvatar';
+import { AIGenerateButton } from './AIGenerateButton';
+import { MentionTextarea } from './MentionTextarea';
+import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
+import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
-import { useFreshUser } from'@/stores/userDisplayStore';
-import { timeAgoShort } from'@/lib/utils';
-import { useTranslation } from'react-i18next';
-import { useLocaleStore } from'@/stores/localeStore';
-import { LOCALE_TO_LANGUAGE_NAME } from'@/lib/i18n/config';
-import { useOptimisticAction } from'@/hooks/useOptimisticAction';
-import { useSignInPrompt } from'@/hooks/useSignInPrompt';
-import { EngagementCount, engagementPill } from'./EngagementCount';
-import type { ReactionSummary } from'@/lib/social/reactions';
-import { applyReactionToggle } from'@/lib/social/reactions';
-import { ReactionMenu } from'@/components/shared/ReactionMenu';
-import { ReactionChips } from'@/components/shared/ReactionChips';
-import { useReactionTrigger } from'@/lib/emoji/use-reaction-trigger';
-import { HideReplyMenuItem, HiddenRepliesGroup } from'./HiddenReplies';
+import { useFreshUser } from '@/stores/userDisplayStore';
+import { timeAgoShort } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { useLocaleStore } from '@/stores/localeStore';
+import { LOCALE_TO_LANGUAGE_NAME } from '@/lib/i18n/config';
+import { useOptimisticAction } from '@/hooks/useOptimisticAction';
+import { useSignInPrompt } from '@/hooks/useSignInPrompt';
+import { EngagementCount, engagementPill } from './EngagementCount';
+import type { ReactionSummary } from '@/lib/social/reactions';
+import { applyReactionToggle } from '@/lib/social/reactions';
+import { ReactionMenu } from '@/components/shared/ReactionMenu';
+import { ReactionChips } from '@/components/shared/ReactionChips';
+import { useReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
+import { HideReplyMenuItem, HiddenRepliesGroup } from './HiddenReplies';
 
 export interface Comment {
- id: string;
- content: string;
- createdAt: string;
- userId: string;
- user: { id: string; name: string; image: string | null; username: string | null; handle?: string | null; isVerified?: boolean; isAdmin?: boolean };
- likeCount?: number;
- repostCount?: number;
- viewCount?: number;
- liked?: boolean;
- reposted?: boolean;
- replies?: Comment[];
- deletedAt?: string | null;
- deletedByAdmin?: boolean;
- /** X2: the post's author folded this reply under "Hidden replies". */
- hidden?: boolean;
- /** Grouped-by-emoji reaction summary (server-side via `groupReactions`). */
- reactions?: ReactionSummary[];
- /** Client-only: optimistic comment awaiting its server round-trip. */
- pending?: boolean;
+  id: string;
+  content: string;
+  createdAt: string;
+  userId: string;
+  user: {
+    id: string;
+    name: string;
+    image: string | null;
+    username: string | null;
+    handle?: string | null;
+    isVerified?: boolean;
+    isAdmin?: boolean;
+  };
+  likeCount?: number;
+  repostCount?: number;
+  viewCount?: number;
+  liked?: boolean;
+  reposted?: boolean;
+  replies?: Comment[];
+  deletedAt?: string | null;
+  deletedByAdmin?: boolean;
+  /** X2: the post's author folded this reply under "Hidden replies". */
+  hidden?: boolean;
+  /** Grouped-by-emoji reaction summary (server-side via `groupReactions`). */
+  reactions?: ReactionSummary[];
+  /** Client-only: optimistic comment awaiting its server round-trip. */
+  pending?: boolean;
 }
 
 interface SessionUser {
- id?: string;
- name?: string | null;
- image?: string | null;
+  id?: string;
+  name?: string | null;
+  image?: string | null;
 }
 
 // How many levels of replies to indent before collapsing the rest behind a
 //"Show more replies"button. Keeps deep chains from running off-screen.
 const MAX_NESTED_DEPTH = 4;
 
+// A reply's thread hangs under its parent's text column, 44px (avatar + gap) in
+// from the parent's left edge; the thread container pulls that back (`-ml-11`) and
+// indents by one step (`pl-4`) instead, so a nested reply costs 16px, not 60.
+// Replies indent for the first levels only, then continue at the same left edge:
+// at 390px every further indent step takes a column of text away from the reply,
+// and four steps used to leave one character per line.
+const INDENT_DEPTH = 3;
+
 function countDescendants(replies: Comment[] | undefined): number {
- if (!replies?.length) return 0;
- return replies.reduce((total, r) => total + 1 + countDescendants(r.replies), 0);
+  if (!replies?.length) return 0;
+  return replies.reduce((total, r) => total + 1 + countDescendants(r.replies), 0);
 }
 
 interface CommentItemProps {
- comment: Comment;
- postId: string;
- sessionUser?: SessionUser | null;
- onReplyAdded?: (parentId: string, reply: Comment) => void;
- onCommentRemoved?: (commentId: string) => void;
- /** Nesting level — used to cap indentation on long reply chains. */
- depth?: number;
- /** The post author's id — only they get the hide/unhide reply control (X2). */
- postAuthorId?: string;
- /** Called after the author hides/unhides a reply so the page can regroup it. */
- onHiddenChange?: (commentId: string, hidden: boolean) => void;
+  comment: Comment;
+  postId: string;
+  sessionUser?: SessionUser | null;
+  onReplyAdded?: (parentId: string, reply: Comment) => void;
+  onCommentRemoved?: (commentId: string) => void;
+  /** Nesting level — used to cap indentation on long reply chains. */
+  depth?: number;
+  /** The post author's id — only they get the hide/unhide reply control (X2). */
+  postAuthorId?: string;
+  /** Called after the author hides/unhides a reply so the page can regroup it. */
+  onHiddenChange?: (commentId: string, hidden: boolean) => void;
 }
 
-export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onCommentRemoved, depth = 0, postAuthorId, onHiddenChange }: CommentItemProps) {
- const { t } = useTranslation("feed");
- const confirm = useConfirm();
- const locale = useLocaleStore((s) => s.locale);
- const freshCommentUser = useFreshUser(comment.user) ?? comment.user;
- const [replyOpen, setReplyOpen] = useState(false);
- const [replyContent, setReplyContent] = useState('');
- const [showGifPicker, setShowGifPicker] = useState(false);
- const [submitting, setSubmitting] = useState(false);
- const replyRef = useRef<HTMLTextAreaElement>(null);
- const insertEmoji = useEmojiInsert(replyRef, replyContent, setReplyContent);
- const remaining = MAX_COMMENT_LENGTH - replyContent.length;
+export function CommentItem({
+  comment,
+  postId,
+  sessionUser,
+  onReplyAdded,
+  onCommentRemoved,
+  depth = 0,
+  postAuthorId,
+  onHiddenChange,
+}: CommentItemProps) {
+  const { t } = useTranslation('feed');
+  const confirm = useConfirm();
+  const locale = useLocaleStore((s) => s.locale);
+  const freshCommentUser = useFreshUser(comment.user) ?? comment.user;
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [replyContent, setReplyContent] = useState('');
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const replyRef = useRef<HTMLTextAreaElement>(null);
+  const insertEmoji = useEmojiInsert(replyRef, replyContent, setReplyContent);
+  const remaining = MAX_COMMENT_LENGTH - replyContent.length;
 
- const [liked, setLiked] = useState(comment.liked ?? false);
- const [likeCount, setLikeCount] = useState(comment.likeCount ?? 0);
- const [reposted, setReposted] = useState(comment.reposted ?? false);
- const [repostCount, setRepostCount] = useState(comment.repostCount ?? 0);
- const [viewCount, setViewCount] = useState(comment.viewCount ?? 0);
- const { run: runLike } = useOptimisticAction();
- const { run: runRepost } = useOptimisticAction();
- const { run: runReaction } = useOptimisticAction();
- const promptSignIn = useSignInPrompt();
- const [reactions, setReactions] = useState<ReactionSummary[]>(comment.reactions ?? []);
- const [reactionMenu, setReactionMenu] = useState<{ x: number; y: number } | null>(null);
- const reactionTrigger = useReactionTrigger((x, y) => setReactionMenu({ x, y }));
- const viewTracked = useRef(false);
- const [menuOpen, setMenuOpen] = useState(false);
- const [engagementModal, setEngagementModal] = useState<'likes'|'reposts'| null>(null);
- const [threadExpanded, setThreadExpanded] = useState(false);
- const [translatedText, setTranslatedText] = useState<string | null>(null);
- const [showTranslated, setShowTranslated] = useState(false);
- const [translating, setTranslating] = useState(false);
- const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const [liked, setLiked] = useState(comment.liked ?? false);
+  const [likeCount, setLikeCount] = useState(comment.likeCount ?? 0);
+  const [reposted, setReposted] = useState(comment.reposted ?? false);
+  const [repostCount, setRepostCount] = useState(comment.repostCount ?? 0);
+  const [viewCount, setViewCount] = useState(comment.viewCount ?? 0);
+  const { run: runLike } = useOptimisticAction();
+  const { run: runRepost } = useOptimisticAction();
+  const { run: runReaction } = useOptimisticAction();
+  const promptSignIn = useSignInPrompt();
+  const [reactions, setReactions] = useState<ReactionSummary[]>(comment.reactions ?? []);
+  const [reactionMenu, setReactionMenu] = useState<{ x: number; y: number } | null>(null);
+  const reactionTrigger = useReactionTrigger((x, y) => setReactionMenu({ x, y }));
+  const viewTracked = useRef(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
+  const [threadExpanded, setThreadExpanded] = useState(false);
+  const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [showTranslated, setShowTranslated] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
 
- // When the site language changes, drop any cached translation so the next
- //"Translate"click re-translates into the newly selected language.
- useEffect(() => {
- setTranslatedText(null);
- setShowTranslated(false);
- }, [locale]);
+  // When the site language changes, drop any cached translation so the next
+  //"Translate"click re-translates into the newly selected language.
+  useEffect(() => {
+    setTranslatedText(null);
+    setShowTranslated(false);
+  }, [locale]);
 
- const handleTranslate = async () => {
- setMenuOpen(false);
- if (translatedText) {
- setShowTranslated((s) => !s);
- return;
- }
- const to = LOCALE_TO_LANGUAGE_NAME[locale];
- setTranslating(true);
- try {
- const res = await fetch(`/api/comments/${comment.id}/translate?to=${encodeURIComponent(to)}`, { credentials:'include'});
- if (res.ok) {
- const data = await res.json();
- if (data.text) {
- setTranslatedText(data.text);
- setShowTranslated(true);
- }
- }
- } finally {
- setTranslating(false);
- }
- };
+  const handleTranslate = async () => {
+    setMenuOpen(false);
+    if (translatedText) {
+      setShowTranslated((s) => !s);
+      return;
+    }
+    const to = LOCALE_TO_LANGUAGE_NAME[locale];
+    setTranslating(true);
+    try {
+      const res = await fetch(
+        `/api/comments/${comment.id}/translate?to=${encodeURIComponent(to)}`,
+        { credentials: 'include' },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.text) {
+          setTranslatedText(data.text);
+          setShowTranslated(true);
+        }
+      }
+    } finally {
+      setTranslating(false);
+    }
+  };
 
- const hasReplies = !!comment.replies?.length;
- // At the depth cap, collapse the remaining chain behind a button instead of
- // indenting further (which would push content out of bounds).
- const collapseThread = depth >= MAX_NESTED_DEPTH && hasReplies && !threadExpanded;
+  const hasReplies = !!comment.replies?.length;
+  // At the depth cap, collapse the remaining chain behind a button instead of
+  // indenting further (which would push content out of bounds).
+  const collapseThread = depth >= MAX_NESTED_DEPTH && hasReplies && !threadExpanded;
 
- const isAuthor = sessionUser?.id === comment.userId;
+  const isAuthor = sessionUser?.id === comment.userId;
 
- // Outside-press dismissal, Escape, focus return, the roving arrow keys and the
- // close animation all live in AnchoredMenu now. This file used to carry its own
- // outside-click listener — and, because the panel was an in-place
- // `absolute top-full … z-50`, it was measured inside `.radial-frame`'s stacking
- // context (pinned at z-index 1), so a comment near the top of the column had its
- // menu painted UNDER the top bar. AnchoredMenu portals to <body>.
+  // Outside-press dismissal, Escape, focus return, the roving arrow keys and the
+  // close animation all live in AnchoredMenu now. This file used to carry its own
+  // outside-click listener — and, because the panel was an in-place
+  // `absolute top-full … z-50`, it was measured inside `.radial-frame`'s stacking
+  // context (pinned at z-index 1), so a comment near the top of the column had its
+  // menu painted UNDER the top bar. AnchoredMenu portals to <body>.
 
- // Track view
- useEffect(() => {
- if (viewTracked.current) return;
- viewTracked.current = true;
- fetch(`/api/rmharks/${postId}/comment/${comment.id}/view`, { method:'POST'})
- .then(() => setViewCount((v) => v + 1))
- .catch(() => {});
- }, [postId, comment.id]);
+  // Track view
+  useEffect(() => {
+    if (viewTracked.current) return;
+    viewTracked.current = true;
+    fetch(`/api/rmharks/${postId}/comment/${comment.id}/view`, { method: 'POST' })
+      .then(() => setViewCount((v) => v + 1))
+      .catch(() => {});
+  }, [postId, comment.id]);
 
- const toggleLike = () => {
- if (!sessionUser) {
- promptSignIn(t('like-reply-sign-in', { defaultValue:'Sign in to like replies.'}));
- return;
- }
- const wasLiked = liked;
- const prevCount = likeCount;
- runLike({
- apply: () => {
- setLiked(!wasLiked);
- setLikeCount((c) => c + (wasLiked ? -1 : 1));
- },
- rollback: () => {
- setLiked(wasLiked);
- setLikeCount(prevCount);
- },
- commit: () => fetch(`/api/rmharks/${postId}/comment/${comment.id}/like`, { method:'POST'}),
- });
- };
+  const toggleLike = () => {
+    if (!sessionUser) {
+      promptSignIn(t('like-reply-sign-in', { defaultValue: 'Sign in to like replies.' }));
+      return;
+    }
+    const wasLiked = liked;
+    const prevCount = likeCount;
+    runLike({
+      apply: () => {
+        setLiked(!wasLiked);
+        setLikeCount((c) => c + (wasLiked ? -1 : 1));
+      },
+      rollback: () => {
+        setLiked(wasLiked);
+        setLikeCount(prevCount);
+      },
+      commit: () => fetch(`/api/rmharks/${postId}/comment/${comment.id}/like`, { method: 'POST' }),
+    });
+  };
 
- const toggleRepost = () => {
- if (!sessionUser) {
- promptSignIn(t('rermhark-reply-sign-in', { defaultValue:'Sign in to reRMHark replies.'}));
- return;
- }
- const wasReposted = reposted;
- const prevCount = repostCount;
- runRepost({
- apply: () => {
- setReposted(!wasReposted);
- setRepostCount((c) => c + (wasReposted ? -1 : 1));
- },
- rollback: () => {
- setReposted(wasReposted);
- setRepostCount(prevCount);
- },
- commit: () => fetch(`/api/rmharks/${postId}/comment/${comment.id}/repost`, { method:'POST'}),
- });
- };
+  const toggleRepost = () => {
+    if (!sessionUser) {
+      promptSignIn(t('rermhark-reply-sign-in', { defaultValue: 'Sign in to reRMHark replies.' }));
+      return;
+    }
+    const wasReposted = reposted;
+    const prevCount = repostCount;
+    runRepost({
+      apply: () => {
+        setReposted(!wasReposted);
+        setRepostCount((c) => c + (wasReposted ? -1 : 1));
+      },
+      rollback: () => {
+        setReposted(wasReposted);
+        setRepostCount(prevCount);
+      },
+      commit: () =>
+        fetch(`/api/rmharks/${postId}/comment/${comment.id}/repost`, { method: 'POST' }),
+    });
+  };
 
- const toggleReaction = async (emoji: string) => {
- if (!sessionUser) {
- promptSignIn(t('react-sign-in', { defaultValue:'Sign in to react.'}));
- return;
- }
- const prev = reactions;
- await runReaction({
- apply: () => setReactions(applyReactionToggle(prev, emoji)),
- rollback: () => setReactions(prev),
- commit: () =>
- fetch(`/api/comments/${comment.id}/react`, {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ emoji }),
- }),
- });
- };
+  const toggleReaction = async (emoji: string) => {
+    if (!sessionUser) {
+      promptSignIn(t('react-sign-in', { defaultValue: 'Sign in to react.' }));
+      return;
+    }
+    const prev = reactions;
+    await runReaction({
+      apply: () => setReactions(applyReactionToggle(prev, emoji)),
+      rollback: () => setReactions(prev),
+      commit: () =>
+        fetch(`/api/comments/${comment.id}/react`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emoji }),
+        }),
+    });
+  };
 
- const handleDelete = async () => {
- if (!(await confirm({ title: t('delete-reply-confirm', { defaultValue:'Delete this reply?'}), danger: true }))) return;
- try {
- const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}`, { method:'DELETE'});
- if (res.ok) {
- onCommentRemoved?.(comment.id);
- }
- } catch (error) {
- console.error('Delete comment error:', error);
- }
- };
+  const handleDelete = async () => {
+    if (
+      !(await confirm({
+        title: t('delete-reply-confirm', { defaultValue: 'Delete this reply?' }),
+        danger: true,
+      }))
+    )
+      return;
+    try {
+      const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        onCommentRemoved?.(comment.id);
+      }
+    } catch (error) {
+      console.error('Delete comment error:', error);
+    }
+  };
 
- const hiddenReplies = (comment.replies ?? []).filter((reply) => reply.hidden);
- const renderReply = (reply: Comment) => (
- <CommentItem
- key={reply.id}
- comment={reply}
- postId={postId}
- sessionUser={sessionUser}
- onReplyAdded={onReplyAdded}
- onCommentRemoved={onCommentRemoved}
- postAuthorId={postAuthorId}
- onHiddenChange={onHiddenChange}
- // Reset depth after an expanded thread so indentation
- // restarts shallow instead of running off-screen.
- depth={threadExpanded ? 0 : depth + 1}
- />
- );
+  const hiddenReplies = (comment.replies ?? []).filter((reply) => reply.hidden);
+  const renderReply = (reply: Comment) => (
+    <CommentItem
+      key={reply.id}
+      comment={reply}
+      postId={postId}
+      sessionUser={sessionUser}
+      onReplyAdded={onReplyAdded}
+      onCommentRemoved={onCommentRemoved}
+      postAuthorId={postAuthorId}
+      onHiddenChange={onHiddenChange}
+      // Reset depth after an expanded thread so indentation
+      // restarts shallow instead of running off-screen.
+      depth={threadExpanded ? 1 : depth + 1}
+    />
+  );
 
- const reconsider = useReconsider();
- const handleSubmitReply = async () => {
- if (!replyContent.trim() || submitting) return;
- setSubmitting(true);
- try {
- const res = await reconsider((confirmReconsider) =>
- fetch(`/api/rmharks/${postId}/comment`, {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({
- content: replyContent.trim(),
- parentId: comment.id,
- confirmReconsider,
- }),
- }),
- );
- if (!res) return;
- if (res.ok) {
- const newReply = await res.json();
- onReplyAdded?.(comment.id, newReply);
- setReplyContent('');
- setReplyOpen(false);
- }
- } catch (error) {
- console.error('Reply error:', error);
- } finally {
- setSubmitting(false);
- }
- };
+  const reconsider = useReconsider();
+  const handleSubmitReply = async () => {
+    if (!replyContent.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await reconsider((confirmReconsider) =>
+        fetch(`/api/rmharks/${postId}/comment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: replyContent.trim(),
+            parentId: comment.id,
+            confirmReconsider,
+          }),
+        }),
+      );
+      if (!res) return;
+      if (res.ok) {
+        const newReply = await res.json();
+        onReplyAdded?.(comment.id, newReply);
+        setReplyContent('');
+        setReplyOpen(false);
+      }
+    } catch (error) {
+      console.error('Reply error:', error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
- return (
- <div className="py-3"{...(comment.deletedAt || comment.pending ? {} : reactionTrigger)}>
- <div className="flex gap-3">
- {/* Avatar */}
- <UserAvatar user={freshCommentUser} size="sm"/>
+  return (
+    <div
+      // A top-level reply is a card of the same material as the feed's posts
+      // (`.glass-fill`, L1) with its whole thread inside it; a nested reply is a
+      // row on that card, so the column never gets a second card width.
+      className={depth === 0 ? 'glass-fill rounded-site p-4' : 'pt-3'}
+      {...(comment.deletedAt || comment.pending ? {} : reactionTrigger)}
+    >
+      <div className="flex gap-3">
+        {/* Avatar */}
+        <UserAvatar user={freshCommentUser} size="sm" />
 
- <div className="flex-1 min-w-0">
- {/* Header */}
- <div className="flex items-center gap-2 text-sm">
- <Link to={`/u/${freshCommentUser.handle || freshCommentUser.id}`as string} className="flex items-center gap-2 min-w-0 hover:underline">
- <span className="font-bold text-site-text truncate">
- {freshCommentUser.name ||'Unknown'}
- </span>
- {freshCommentUser.isVerified && (
- <BadgeCheck className="w-4 h-4 text-site-success shrink-0"/>
- )}
- {freshCommentUser.isAdmin && (
- <span title={t('admin-title', { defaultValue:'Admin'})} className="inline-flex items-center shrink-0">
- <ShieldCheck className="w-4 h-4 text-site-accent"/>
- </span>
- )}
- {freshCommentUser.handle && (
- <span className="text-site-text-dim truncate">
- @{freshCommentUser.handle}
- </span>
- )}
- </Link>
- {/* Relative time drifts by a tick between SSR and hydration; suppress
+        <div className="flex-1 min-w-0">
+          {/* Header */}
+          <div className="flex items-center gap-2 text-sm">
+            <Link
+              to={`/u/${freshCommentUser.handle || freshCommentUser.id}` as string}
+              className="flex items-center gap-2 min-w-0 hover:underline"
+            >
+              <span className="font-bold text-site-text truncate">
+                {freshCommentUser.name || 'Unknown'}
+              </span>
+              {freshCommentUser.isVerified && (
+                <BadgeCheck className="w-4 h-4 text-site-success shrink-0" />
+              )}
+              {freshCommentUser.isAdmin && (
+                <span
+                  title={t('admin-title', { defaultValue: 'Admin' })}
+                  className="inline-flex items-center shrink-0"
+                >
+                  <ShieldCheck className="w-4 h-4 text-site-accent" />
+                </span>
+              )}
+              {freshCommentUser.handle && (
+                <span className="text-site-text-dim truncate">@{freshCommentUser.handle}</span>
+              )}
+            </Link>
+            {/* Relative time drifts by a tick between SSR and hydration; suppress
  the expected mismatch so it isn't reported as a hydration error. */}
- <span className="text-site-text-dim shrink-0"suppressHydrationWarning>
- · {timeAgoShort(comment.createdAt)}
- </span>
+            <span className="text-site-text-dim shrink-0" suppressHydrationWarning>
+              · {timeAgoShort(comment.createdAt)}
+            </span>
 
- {/* More menu */}
- {!comment.deletedAt && (
- <div className="relative ml-auto shrink-0">
- <button
- ref={menuBtnRef}
- onClick={() => setMenuOpen((v) => !v)}
- aria-haspopup="menu"
- aria-expanded={menuOpen}
- className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
- >
- <MoreHorizontal className="w-3.5 h-3.5"/>
- </button>
- <AnchoredMenu
- open={menuOpen}
- onClose={() => setMenuOpen(false)}
- anchorRef={menuBtnRef}
- label={t('more-options', { defaultValue:'More options'})}
- className="w-52"
- >
- <MenuItem
- icon={Heart}
- onSelect={() => { setMenuOpen(false); setEngagementModal('likes'); }}
- >
- {t('liked-by', { defaultValue:'Liked by'})}
- </MenuItem>
- <MenuItem
- icon={Repeat}
- onSelect={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
- >
- {t('rermarkd-by', { defaultValue:"reRMHark'd by"})}
- </MenuItem>
- {comment.content.length > 8 && (
- <MenuItem
- icon={Languages}
- disabled={translating}
- onSelect={handleTranslate}
- >
- {translating ? t('translating', { defaultValue:'Translating…'}) : translatedText ? (showTranslated ? t('show-original', { defaultValue:'Show original'}) : t('show-translation', { defaultValue:'Show translation'})) : t('translate', { defaultValue:'Translate'})}
- </MenuItem>
- )}
- {!!sessionUser?.id && sessionUser.id === postAuthorId && !comment.pending && (
- <HideReplyMenuItem
- postId={postId}
- commentId={comment.id}
- hidden={!!comment.hidden}
- onChanged={(h) => onHiddenChange?.(comment.id, h)}
- onDone={() => setMenuOpen(false)}
- />
- )}
- {isAuthor && (
- <MenuItem
- icon={Trash2}
- tone="danger"
- onSelect={() => { setMenuOpen(false); handleDelete(); }}
- >
- {t('delete', { defaultValue:'Delete'})}
- </MenuItem>
- )}
- </AnchoredMenu>
- </div>
- )}
- </div>
+            {/* More menu */}
+            {!comment.deletedAt && (
+              <div className="relative ml-auto shrink-0">
+                <button
+                  ref={menuBtnRef}
+                  onClick={() => setMenuOpen((v) => !v)}
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                  className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
+                >
+                  <MoreHorizontal className="w-3.5 h-3.5" />
+                </button>
+                <AnchoredMenu
+                  open={menuOpen}
+                  onClose={() => setMenuOpen(false)}
+                  anchorRef={menuBtnRef}
+                  label={t('more-options', { defaultValue: 'More options' })}
+                  className="w-52"
+                >
+                  <MenuItem
+                    icon={Heart}
+                    onSelect={() => {
+                      setMenuOpen(false);
+                      setEngagementModal('likes');
+                    }}
+                  >
+                    {t('liked-by', { defaultValue: 'Liked by' })}
+                  </MenuItem>
+                  <MenuItem
+                    icon={Repeat}
+                    onSelect={() => {
+                      setMenuOpen(false);
+                      setEngagementModal('reposts');
+                    }}
+                  >
+                    {t('rermarkd-by', { defaultValue: "reRMHark'd by" })}
+                  </MenuItem>
+                  {comment.content.length > 8 && (
+                    <MenuItem icon={Languages} disabled={translating} onSelect={handleTranslate}>
+                      {translating
+                        ? t('translating', { defaultValue: 'Translating…' })
+                        : translatedText
+                          ? showTranslated
+                            ? t('show-original', { defaultValue: 'Show original' })
+                            : t('show-translation', { defaultValue: 'Show translation' })
+                          : t('translate', { defaultValue: 'Translate' })}
+                    </MenuItem>
+                  )}
+                  {!!sessionUser?.id && sessionUser.id === postAuthorId && !comment.pending && (
+                    <HideReplyMenuItem
+                      postId={postId}
+                      commentId={comment.id}
+                      hidden={!!comment.hidden}
+                      onChanged={(h) => onHiddenChange?.(comment.id, h)}
+                      onDone={() => setMenuOpen(false)}
+                    />
+                  )}
+                  {isAuthor && (
+                    <MenuItem
+                      icon={Trash2}
+                      tone="danger"
+                      onSelect={() => {
+                        setMenuOpen(false);
+                        handleDelete();
+                      }}
+                    >
+                      {t('delete', { defaultValue: 'Delete' })}
+                    </MenuItem>
+                  )}
+                </AnchoredMenu>
+              </div>
+            )}
+          </div>
 
- {/* Content */}
- <RMHarkContent text={stripEmbedUrls(comment.content)} className="text-sm text-site-text mt-0.5 whitespace-pre-wrap break-words"/>
- {extractMediaEmbeds(comment.content).length > 0 && (
- <ChatMediaEmbed content={comment.content} themePrefix="site"/>
- )}
- {showTranslated && translatedText && (
- <p className="mt-2 whitespace-pre-wrap break-words rounded-site glass-fill px-4 py-3 text-sm text-site-text">
- {translatedText}
- </p>
- )}
+          {/* Content */}
+          <RMHarkContent
+            text={stripEmbedUrls(comment.content)}
+            className="text-sm text-site-text mt-0.5 whitespace-pre-wrap break-words"
+          />
+          {extractMediaEmbeds(comment.content).length > 0 && (
+            <ChatMediaEmbed content={comment.content} themePrefix="site" />
+          )}
+          {showTranslated && translatedText && (
+            <p className="mt-2 whitespace-pre-wrap break-words rounded-site glass-fill px-4 py-3 text-sm text-site-text">
+              {translatedText}
+            </p>
+          )}
 
- {!comment.deletedAt && !comment.pending && (
- <ReactionChips reactions={reactions} onToggle={toggleReaction} className="mt-2"/>
- )}
+          {!comment.deletedAt && !comment.pending && (
+            <ReactionChips reactions={reactions} onToggle={toggleReaction} className="mt-2" />
+          )}
 
- {/* Actions row */}
- {!comment.deletedAt && (
- <div className="flex items-center gap-5 mt-2 -ml-1.5">
- {/* Reply */}
- {sessionUser && (
- <button
- onClick={() => setReplyOpen((v) => !v)}
- className="group flex items-center rounded-full text-site-text-dim hover:text-site-accent transition-colors duration-site-fast"
- >
- <span className={`${engagementPill} h-6 gap-1 px-1 group-hover:bg-site-accent-dim/50 group-active:scale-95`}>
- <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform"/>
- </span>
- </button>
- )}
+          {/* Actions row */}
+          {!comment.deletedAt && (
+            <div className="flex items-center gap-5 mt-2 -ml-1.5">
+              {/* Reply */}
+              {sessionUser && (
+                <button
+                  onClick={() => setReplyOpen((v) => !v)}
+                  className="group flex items-center rounded-full text-site-text-dim hover:text-site-accent transition-colors duration-site-fast"
+                >
+                  <span
+                    className={`${engagementPill} h-6 gap-1 px-1 group-hover:bg-site-accent-dim/50 group-active:scale-95`}
+                  >
+                    <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                  </span>
+                </button>
+              )}
 
- {/* reRMHark — icon AND count are one button, so the count is part of the
+              {/* reRMHark — icon AND count are one button, so the count is part of the
  hit area instead of dead space next to it. */}
- <button
- onClick={toggleRepost}
- aria-pressed={reposted}
- className={`group flex min-w-11 items-center rounded-full transition-colors duration-site-fast ${
- reposted ?'text-site-success':'text-site-text-dim'
- }`}
- title={reposted ? t('undo-rermhark', { defaultValue:'Undo reRMHark'}) :'reRMHark'}
- >
- <span className={`${engagementPill} h-6 gap-1 px-1 group-hover:bg-site-success/10 group-active:scale-95`}>
- <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform"/>
- <EngagementCount value={repostCount} />
- </span>
- </button>
+              <button
+                onClick={toggleRepost}
+                aria-pressed={reposted}
+                className={`group flex min-w-11 items-center rounded-full transition-colors duration-site-fast ${
+                  reposted ? 'text-site-success' : 'text-site-text-dim'
+                }`}
+                title={
+                  reposted ? t('undo-rermhark', { defaultValue: 'Undo reRMHark' }) : 'reRMHark'
+                }
+              >
+                <span
+                  className={`${engagementPill} h-6 gap-1 px-1 group-hover:bg-site-success/10 group-active:scale-95`}
+                >
+                  <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                  <EngagementCount value={repostCount} />
+                </span>
+              </button>
 
- {/* Like */}
- <button
- onClick={toggleLike}
- aria-pressed={liked}
- className={`group flex min-w-11 items-center rounded-full transition-colors duration-site-fast ${
- liked ?'text-site-danger':'text-site-text-dim'
- }`}
- title={liked ? t('unlike', { defaultValue:'Unlike'}) : t('like', { defaultValue:'Like'})}
- >
- <span className={`${engagementPill} h-6 gap-1 px-1 group-hover:bg-site-danger/10 group-active:scale-95`}>
- <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${liked ?'fill-current':''}`} />
- <EngagementCount value={likeCount} />
- </span>
- </button>
+              {/* Like */}
+              <button
+                onClick={toggleLike}
+                aria-pressed={liked}
+                className={`group flex min-w-11 items-center rounded-full transition-colors duration-site-fast ${
+                  liked ? 'text-site-danger' : 'text-site-text-dim'
+                }`}
+                title={
+                  liked
+                    ? t('unlike', { defaultValue: 'Unlike' })
+                    : t('like', { defaultValue: 'Like' })
+                }
+              >
+                <span
+                  className={`${engagementPill} h-6 gap-1 px-1 group-hover:bg-site-danger/10 group-active:scale-95`}
+                >
+                  <Heart
+                    className={`w-4 h-4 group-hover:scale-110 transition-transform ${liked ? 'fill-current' : ''}`}
+                  />
+                  <EngagementCount value={likeCount} />
+                </span>
+              </button>
 
- {/* Views */}
- <div className="flex min-w-11 items-center text-site-text-dim">
- <span className={`${engagementPill} h-6 gap-1 px-1`}>
- <Eye className="w-4 h-4"/>
- <EngagementCount value={viewCount} />
- </span>
- </div>
- </div>
- )}
+              {/* Views */}
+              <div className="flex min-w-11 items-center text-site-text-dim">
+                <span className={`${engagementPill} h-6 gap-1 px-1`}>
+                  <Eye className="w-4 h-4" />
+                  <EngagementCount value={viewCount} />
+                </span>
+              </div>
+            </div>
+          )}
 
- {/* Inline reply box */}
- {replyOpen && sessionUser && (
- <div className="mt-2 flex gap-2">
- <UserAvatar
- user={{ id: sessionUser.id ||'', name: sessionUser.name || null, image: sessionUser.image || null }}
- size="xs"
- linkToProfile={false}
- />
- <div className="flex-1 min-w-0">
- <MentionTextarea
- ref={replyRef}
- autoFocus
- value={replyContent}
- onChange={setReplyContent}
- placeholder={t('reply-placeholder', { handle: freshCommentUser.handle || freshCommentUser.name ||'Unknown', defaultValue:'Post your reply...'})}
- rows={2}
- maxLength={MAX_COMMENT_LENGTH}
- className="w-full glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm px-3 py-2 resize-none outline-none focus:border-site-accent transition-colors"
- onKeyDown={(e) => {
- if (e.key ==='Enter'&& (e.metaKey || e.ctrlKey)) {
- handleSubmitReply();
- }
- if (e.key ==='Escape') {
- setReplyOpen(false);
- setReplyContent('');
- setShowGifPicker(false);
- }
- }}
- />
- <div className="flex items-center justify-between mt-2">
- <div className="flex items-center gap-2">
- <span className={`text-xs font-mono ${remaining <= 20 ?'text-site-warning':'text-site-text-dim'}`}>
- {remaining}
- </span>
- <button
- onClick={() => { setReplyOpen(false); setReplyContent(''); setShowGifPicker(false); }}
- className="text-xs text-site-text-dim hover:text-site-text transition-colors"
- >
- {t('cancel', { defaultValue:'Cancel'})}
- </button>
- </div>
- <div className="flex items-center gap-2">
- <AIGenerateButton
- request={{ mode:'reply', rmharkId: postId, parentId: comment.id, draft: replyContent }}
- onGenerated={(text) => setReplyContent(text)}
- size="sm"
- title="Generate a reply with AI"
- />
- <button
- type="button"
- onClick={() => setShowGifPicker((v) => !v)}
- aria-label={t('add-gif-aria', { defaultValue:'Add a GIF'})}
- className="p-2 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
- >
- <ImageIcon className="w-4 h-4"/>
- </button>
- <EmojiPickerButton direction="up"onSelect={insertEmoji} />
- <Button
- variant="accent"
- size="sm"
- disabled={!replyContent.trim() || remaining < 0 || submitting}
- onClick={handleSubmitReply}
- >
- {submitting ? t('posting', { defaultValue:'Posting…'}) : t('reply', { defaultValue:'Reply'})}
- </Button>
- </div>
- </div>
- {showGifPicker && (
- <GifPicker
- className="mt-2"
- onClose={() => setShowGifPicker(false)}
- onSelect={(u) => {
- setReplyContent((c) => (c ? `${c} ${u}`: u));
- setShowGifPicker(false);
- }}
- />
- )}
- </div>
- </div>
- )}
+          {/* Inline reply box */}
+          {replyOpen && sessionUser && (
+            <div className="mt-2 flex gap-2">
+              <UserAvatar
+                user={{
+                  id: sessionUser.id || '',
+                  name: sessionUser.name || null,
+                  image: sessionUser.image || null,
+                }}
+                size="xs"
+                linkToProfile={false}
+              />
+              <div className="flex-1 min-w-0">
+                <MentionTextarea
+                  ref={replyRef}
+                  autoFocus
+                  value={replyContent}
+                  onChange={setReplyContent}
+                  placeholder={t('reply-placeholder', {
+                    handle: freshCommentUser.handle || freshCommentUser.name || 'Unknown',
+                    defaultValue: 'Post your reply...',
+                  })}
+                  rows={2}
+                  maxLength={MAX_COMMENT_LENGTH}
+                  className="w-full glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm px-3 py-2 resize-none outline-none focus:border-site-accent transition-colors"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                      handleSubmitReply();
+                    }
+                    if (e.key === 'Escape') {
+                      setReplyOpen(false);
+                      setReplyContent('');
+                      setShowGifPicker(false);
+                    }
+                  }}
+                />
+                <div className="flex items-center justify-between mt-2">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-xs font-mono ${remaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}
+                    >
+                      {remaining}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setReplyOpen(false);
+                        setReplyContent('');
+                        setShowGifPicker(false);
+                      }}
+                      className="text-xs text-site-text-dim hover:text-site-text transition-colors"
+                    >
+                      {t('cancel', { defaultValue: 'Cancel' })}
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <AIGenerateButton
+                      request={{
+                        mode: 'reply',
+                        rmharkId: postId,
+                        parentId: comment.id,
+                        draft: replyContent,
+                      }}
+                      onGenerated={(text) => setReplyContent(text)}
+                      size="sm"
+                      title="Generate a reply with AI"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowGifPicker((v) => !v)}
+                      aria-label={t('add-gif-aria', { defaultValue: 'Add a GIF' })}
+                      className="p-2 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
+                    >
+                      <ImageIcon className="w-4 h-4" />
+                    </button>
+                    <EmojiPickerButton direction="up" onSelect={insertEmoji} />
+                    <Button
+                      variant="accent"
+                      size="sm"
+                      disabled={!replyContent.trim() || remaining < 0 || submitting}
+                      onClick={handleSubmitReply}
+                    >
+                      {submitting
+                        ? t('posting', { defaultValue: 'Posting…' })
+                        : t('reply', { defaultValue: 'Reply' })}
+                    </Button>
+                  </div>
+                </div>
+                {showGifPicker && (
+                  <GifPicker
+                    className="mt-2"
+                    onClose={() => setShowGifPicker(false)}
+                    onSelect={(u) => {
+                      setReplyContent((c) => (c ? `${c} ${u}` : u));
+                      setShowGifPicker(false);
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
 
- {/* Threaded replies */}
- {hasReplies && (
- collapseThread ? (
- <button
- onClick={() => setThreadExpanded(true)}
- className="mt-2 ml-2 flex items-center gap-2 text-xs font-medium text-site-accent hover:underline"
- >
- <MessageCircle className="w-3.5 h-3.5"/>
- {t('show-more-replies', { count: countDescendants(comment.replies), defaultValue_one:'Show {{count}} more reply', defaultValue:'Show {{count}} more replies'})}
- </button>
- ) : (
- <div className="mt-2 ml-2 border-l-2 border-site-border pl-3 space-y-1">
- {comment.replies!.filter((reply) => !reply.hidden).map(renderReply)}
- <HiddenRepliesGroup count={hiddenReplies.length}>
- {hiddenReplies.map(renderReply)}
- </HiddenRepliesGroup>
- </div>
- )
- )}
- </div>
- </div>
+          {/* Threaded replies */}
+          {hasReplies &&
+            (collapseThread ? (
+              <button
+                onClick={() => setThreadExpanded(true)}
+                className="mt-2 ml-2 flex items-center gap-2 text-xs font-medium text-site-accent hover:underline"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                {t('show-more-replies', {
+                  count: countDescendants(comment.replies),
+                  defaultValue_one: 'Show {{count}} more reply',
+                  defaultValue: 'Show {{count}} more replies',
+                })}
+              </button>
+            ) : (
+              <div className={`mt-1 -ml-11 space-y-1 ${depth < INDENT_DEPTH ? 'pl-4' : ''}`}>
+                {comment.replies!.filter((reply) => !reply.hidden).map(renderReply)}
+                <HiddenRepliesGroup count={hiddenReplies.length}>
+                  {hiddenReplies.map(renderReply)}
+                </HiddenRepliesGroup>
+              </div>
+            ))}
+        </div>
+      </div>
 
- {engagementModal && (
- <EngagementListModal
- open={engagementModal !== null}
- onClose={() => setEngagementModal(null)}
- postId={postId}
- commentId={comment.id}
- type={engagementModal}
- />
- )}
+      {engagementModal && (
+        <EngagementListModal
+          open={engagementModal !== null}
+          onClose={() => setEngagementModal(null)}
+          postId={postId}
+          commentId={comment.id}
+          type={engagementModal}
+        />
+      )}
 
- {reactionMenu && (
- <ReactionMenu
- x={reactionMenu.x}
- y={reactionMenu.y}
- onSelect={toggleReaction}
- onClose={() => setReactionMenu(null)}
- />
- )}
- </div>
- );
+      {reactionMenu && (
+        <ReactionMenu
+          x={reactionMenu.x}
+          y={reactionMenu.y}
+          onSelect={toggleReaction}
+          onClose={() => setReactionMenu(null)}
+        />
+      )}
+    </div>
+  );
 }

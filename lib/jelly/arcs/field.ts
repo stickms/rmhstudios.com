@@ -5,7 +5,7 @@
  * ## Click charge and hops
  *
  * {@link ElectricField.deposit} adds charge to a body (a click deposits `CHARGE.clickCharge`) and emits
- * `charge:pulse` at the deposit point — the engine renders the ring travelling through the gel. When the ring reaches
+ * `charge:pulse` at the deposit point (the ring travelling through the gel is no longer drawn). When the ring reaches
  * the rim facing the nearest neighbour in reach (`ARC_BUDGET.clickRadius`, never the body it just came from), the
  * charge jumps: an arc through the shared flash ledger carries `q · hopFraction` to the neighbour (the sender keeps the
  * rest), the neighbour gets its own `charge:pulse` at the landing point, and the chain continues from there. A hop that

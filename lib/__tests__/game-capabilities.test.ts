@@ -262,8 +262,8 @@ describe('playabilityFor', () => {
     save: 'none',
     accessibility: [],
   };
-  const desktop = { coarsePointer: false, perfLite: false };
-  const phone = { coarsePointer: true, perfLite: false };
+  const desktop = { coarsePointer: false, lowEnd: false };
+  const phone = { coarsePointer: true, lowEnd: false };
 
   it('passes a touch-friendly game on a phone', () => {
     expect(playabilityFor(base, phone)).toEqual({ playable: true });
@@ -286,7 +286,7 @@ describe('playabilityFor', () => {
   });
 
   it('blocks a demanding game on a low-end device', () => {
-    expect(playabilityFor({ ...base, demanding: true }, { ...desktop, perfLite: true })).toEqual({
+    expect(playabilityFor({ ...base, demanding: true }, { ...desktop, lowEnd: true })).toEqual({
       playable: false,
       reason: 'too-demanding',
     });

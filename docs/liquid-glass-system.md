@@ -6,6 +6,10 @@
 > the "no continuous resting loop", "taps never emit waves" and "clicks never push
 > neighbours" rules in this file no longer hold. Retained for the optics, snapshot
 > lifecycle and globe history; where the two disagree, the jelly contract wins.
+>
+> **Update 2026-11-08 (CSS-first jelly):** the glass engine this file describes (`lib/liquid/glass/engine.ts`, the
+> rim and haze shaders, the glass worker) was deleted. Only the optics, the snapshot (`scene.ts`, now fed by
+> `scene-feed.ts` for the liquid globe) and the globe history below still describe live code.
 
 Current as of 2026-10-22. This contract supersedes the earlier blur, accent-tinted coat,
 control eversion and tap-wave implementations.
@@ -109,12 +113,12 @@ reflection; it does not claim wave-optics diffraction or ray-traced live page co
 
 ## Fallbacks and ownership
 
-| Condition                                                                | Result                                                                           |
-| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| No WebGL2 / context loss / outside budget                                | Complete CSS clear coat and border                                               |
-| Touch                                                                    | Static pane material; direct globe manipulation remains available                |
-| Reduced transparency / high contrast / forced colors / perf-lite / print | No shader canvases; readable fallback surfaces                                   |
-| Hidden tab                                                               | Frames stop; teardown releases observers, timers, canvases and context resources |
+| Condition                                                    | Result                                                                           |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| No WebGL2 / context loss / outside budget                    | Complete CSS clear coat and border                                               |
+| Touch                                                        | Static pane material; direct globe manipulation remains available                |
+| Reduced transparency / high contrast / forced colors / print | No shader canvases; readable fallback surfaces                                   |
+| Hidden tab                                                   | Frames stop; teardown releases observers, timers, canvases and context resources |
 
 Site CSS is `app/liquid-glass.css`; app-token adaptation is `components/shared/app-theme.css`.
 `hooks/useLiquidInteractions.ts` mounts the document services. `glass/engine.ts` owns

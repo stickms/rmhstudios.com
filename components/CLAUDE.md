@@ -32,45 +32,40 @@ feature lives in that feature's directory; genuinely shared primitives live in
   the theme system depends on it, and raw palette classes plus
   `rounded-lg`/`-xl`/`-2xl` fail CI on the site tier.
 - **Surfaces take a glass elevation class by role**, not an equivalent box:
-  `.glass-fill` for repeated content (cards, rows, tiles — a shader slab when on
-  screen, within the viewport budget), `.glass-pane` for singular panels, `.glass-chrome` for sticky
-  chrome, `.glass-overlay` for anything floating (dialogs, popovers, menus,
-  toasts — CI-enforced, because L1 is not a slab and a menu on it ghosts),
+  `.glass-fill` for repeated content (cards, rows, tiles), `.glass-pane` for singular
+  panels, `.glass-chrome` for sticky chrome, `.glass-overlay` for anything floating
+  (dialogs, popovers, menus, toasts — CI-enforced: floating UI below L4 ghosts),
   `.glass-inset` for fields. `bg-site-surface border border-site-border
 rounded-site shadow-site-sm` renders the same _box_ and none of the
   _material_ — no haze, no rim, no soft body, and nothing for
-  `perf-lite` to switch off. Budget per tier
-  (`lib/jelly/tiers.ts`): at most 24 rim slabs, 8 animated haze canvases and 24 CSS
-  flow carriers on a desktop, fewer on phones (roles first, cards, then controls). **No box-shadow
-  on any UI surface** — shadow tokens are zero; the refracting edge is the depth.
-- **Plasmatic Jelly material.** Every role is a hazy translucent slab with
-  always-on internal motion, the refracting lit rim of liquid glass, a soft body
-  and electric arcs — all drawn by document services, never by a component.
-  `lib/liquid/glass/engine.ts` draws the rim (a canvas appended as the host's LAST
-  child, `z-index: -2` in an isolated stacking context) and, for the ambient slots,
-  a `.jelly-haze-canvas`; `lib/jelly/flow-carriers.ts` injects a `.jelly-flow` span
-  as the host's FIRST child elsewhere; `lib/jelly/physics.ts` squashes/wobbles
-  hosts through the CSS `translate`/`scale` properties; `lib/jelly/arcs/` draws
-  arcs on one body-level canvas. **There is no `backdrop-filter` in any glass role,
-  and you must not add one** — the haze is shader- or transform-drawn. Floating
-  glass (`chrome`, `overlay`) refracts a snapshot of the page; a `pane` is lit only
-  unless it opts in (`data-liquid-glass="refract"`, keep text away from its edge).
+  print or the app tier's high contrast to switch off. **No box-shadow on any UI surface** — shadow tokens are
+  zero; the soft molded rim is the depth.
+- **Plasmatic Jelly material.** Every role is a hazy translucent slab with a static
+  molded rim, a haze that drifts when woken, a soft body made of CSS springs, and an
+  electric arc on click — all in `app/jelly-material.css` (plus the click-arc service),
+  never in a component. The rim is one inset glow on the host (`--gel-glow`); the haze is
+  one transform-only layer on the host's own `::after` that has no box at rest and drifts
+  only while the host is hovered or keyboard-focused; hover plumps and press squashes by a
+  transition on `scale` through the `--jelly-spring-t` hook, with the pointer position as
+  `--px` / `--py` (`lib/jelly/pointer-vars.ts`); `lib/jelly/arcs/` draws the click arc on
+  one body-level canvas, created on the first press. Nothing is injected into a host, so a
+  component's children are exactly its own. **There is no `backdrop-filter` in any glass
+  role, and you must not add one.** Floating glass reads the page behind it plainly; there
+  is no live refraction on site surfaces (the liquid globe has its own shader and refracts
+  a page snapshot).
   Opt an element out with `data-jelly="off"` (aliases `data-liquid-material="off"`,
   `data-fluid-press="none"`); opt a gesture subtree out with
   `data-jelly-scope="off"` (alias `data-liquid-motion="off"`) and a game
-  play-field with `data-jelly-zone="playfield"`. Do not put `:first-child` /
-  `:last-child` rules on the direct children of a glass role (the carrier and the
-  canvas are children). **Nothing `position: fixed` inside a jelly host** — a host that can
-  carry a transform is its containing block; portal it. Never add per-card pointer
-  listeners, CSS hover lifts, framer `whileHover`/`whileTap` scale, `infinite`
-  keyframes, arc drawing, gradient-position animation, or inherited root variable
-  writes in frames. `app/liquid-glass.css` + `app/jelly-material.css` are the
-  complete fallback tier. Layout never changes: hosts squash within 4px/3% and
-  neighbours nudge ≤1.5px.
-  The gel *silhouette* the shader draws is larger than the host: it bulges ≈10px and sags ≈18px (`JELLY_BODY`), painted by the
-  shader (`data-jelly-gel="on"`), and is capped per side to the measured room — so keep 16px (`--jelly-margin`) of free
-  room round a slab inside any `overflow` container (`pnpm audit:jelly-clip`). Buttons are flat until touched
-  (`data-jelly-rest="flat"`); only `variant="signal"` and the semantic fills are always slabs. See
+  play-field with `data-jelly-zone="playfield"`. **Nothing `position: fixed` inside a jelly
+  host** — a host that can carry a transform is its containing block; portal it. Never add
+  per-card pointer listeners, CSS hover lifts, framer `whileHover`/`whileTap` scale, your
+  own `transition` on `scale`/`translate`/`transform` of a host, `infinite` keyframes, arc
+  drawing, gradient-position animation, or inherited root variable writes in frames.
+  `app/liquid-glass.css` + `app/jelly-material.css` are the whole material. Layout never
+  changes: hosts squash within 4px/3% and an arc nudges the struck hosts ≤1.5px. Keep 16px
+  (`--jelly-margin`) of free room round a slab inside any `overflow` container so the squash
+  and the focus ring are not cut. Buttons are flat until touched (`data-jelly-rest="flat"`);
+  only `variant="signal"` and the semantic fills are always slabs. See
   [`docs/plasmatic-jelly-system.md`](../docs/plasmatic-jelly-system.md).
 - **Variants:** use `class-variance-authority` for components with variant
   APIs (see `ui/button.tsx`, `ui/badge.tsx`). Set a `data-slot="..."`

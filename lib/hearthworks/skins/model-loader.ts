@@ -31,6 +31,7 @@ import {
 } from 'three';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { isLowEndCapability } from '@/lib/low-end';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import type { SkinId } from './catalog';
 import {
@@ -123,13 +124,13 @@ export const MAX_ANIMS_BYTES = 24 * 1024 * 1024;
 const FETCH_TIMEOUT_MS = 60_000;
 
 /**
- * May skinned models be used at all on this device right now? Not under the site's low-performance tier, not on
+ * May skinned models be used at all on this device right now? Not on a low-end device (`lib/low-end.ts`), not on
  * devices that report little memory, and not when switched off in storage (`hw-models` = `off`, for debugging).
  */
 export function modelsEnabled(): boolean {
   if (typeof window === 'undefined' || typeof document === 'undefined') return false;
   try {
-    if (document.documentElement.classList.contains('perf-lite')) return false;
+    if (isLowEndCapability()) return false;
     const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
     if (typeof mem === 'number' && mem <= 2) return false;
     if (window.localStorage?.getItem('hw-models') === 'off') return false;

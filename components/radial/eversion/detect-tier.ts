@@ -1,6 +1,6 @@
 import { pickTier } from '@/lib/eversion/gl/governor-tiers';
 import type { Tier } from '@/lib/eversion/types';
-import { isPerfLite } from '@/lib/perf-tier';
+import { isLowEndCapability } from '@/lib/low-end';
 
 /**
  * The device's eversion quality tier, read from the live window. Shared by the
@@ -13,7 +13,7 @@ export function detectTier(): Tier {
   const strong = (nav.hardwareConcurrency ?? 4) >= 8 && (nav.deviceMemory ?? 8) >= 8;
   return pickTier({
     renderTier: strong ? 'high' : 'medium',
-    perfLite: isPerfLite(),
+    lowEnd: isLowEndCapability(),
     isMobile: mobile,
   });
 }

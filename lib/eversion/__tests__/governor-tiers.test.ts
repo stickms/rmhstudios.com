@@ -12,17 +12,17 @@ import { DprGovernor, FrameStatsRecorder, governorTargetFps, pickTier } from '..
 
 describe('pickTier', () => {
   it('maps the site tiers onto the effect tiers', () => {
-    const base = { perfLite: false, isMobile: false } as const;
+    const base = { lowEnd: false, isMobile: false } as const;
     expect(pickTier({ ...base, renderTier: 'low' })).toBe('low');
     expect(pickTier({ ...base, renderTier: 'medium' })).toBe('mid');
     expect(pickTier({ ...base, renderTier: 'high' })).toBe('high');
     expect(pickTier({ ...base, renderTier: 'ultra' })).toBe('high');
   });
 
-  it('perf-lite forces low and phones are capped at mid', () => {
-    expect(pickTier({ renderTier: 'ultra', perfLite: true, isMobile: false })).toBe('low');
-    expect(pickTier({ renderTier: 'ultra', perfLite: false, isMobile: true })).toBe('mid');
-    expect(pickTier({ renderTier: 'low', perfLite: false, isMobile: true })).toBe('low');
+  it('a low-end device forces low and phones are capped at mid', () => {
+    expect(pickTier({ renderTier: 'ultra', lowEnd: true, isMobile: false })).toBe('low');
+    expect(pickTier({ renderTier: 'ultra', lowEnd: false, isMobile: true })).toBe('mid');
+    expect(pickTier({ renderTier: 'low', lowEnd: false, isMobile: true })).toBe('low');
   });
 });
 

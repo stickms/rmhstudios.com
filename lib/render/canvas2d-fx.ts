@@ -11,12 +11,14 @@
  * shadow ~10 times per frame against only ~15 rasterising operations — two thirds
  * of everything it drew was drawn through a blur, and that was at rest.
  *
- * The gate reuses the site's existing low-end signals rather than inventing a new
- * heuristic: `html.perf-lite` (set by Providers from device memory/cores, the same
- * class that turns off the glass blur, the aurora parallax and the liquid layer)
- * and the user's reduced-motion preference. Read it once per theme/class change,
- * not per frame — resolving it inside a draw loop would defeat the point.
+ * The gate reuses the site's low-end capability signal (`lib/low-end.ts`: Data Saver,
+ * under 4 GB, two cores or fewer, a software renderer) rather than inventing a new
+ * heuristic. It is a decision about these game canvases only; the site's glass
+ * material does not read it. Read it once per theme/class change, not per frame —
+ * resolving it inside a draw loop would defeat the point.
  */
+
+import { isLowEndCapability } from '@/lib/low-end';
 
 /**
  * Whether decorative blurred shadows / glows are affordable right now.
@@ -26,7 +28,5 @@
  */
 export function canvasGlowEnabled(): boolean {
   if (typeof document === 'undefined') return true;
-  const root = document.documentElement;
-  if (root.classList.contains('perf-lite')) return false;
-  return true;
+  return !isLowEndCapability();
 }

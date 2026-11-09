@@ -5,9 +5,9 @@
  *
  * ## Tier
  *
- * Picked on the MAIN thread — that is where `html.perf-lite` and the device
- * probe are readable — and sent to the worker in `init`. `low` is where
- * `perf-lite` starts; phones default to `mid`; the table behind each tier is
+ * Picked on the MAIN thread — that is where the low-end capability
+ * signal (`lib/low-end.ts`) and the device probe are readable — and sent to the worker in `init`. `low` is where
+ * a low-end device starts; phones default to `mid`; the table behind each tier is
  * `TIERS` in `constants.ts`. Reuses `lib/render/tier.ts`'s vocabulary.
  *
  * ## Governor
@@ -39,8 +39,8 @@ import type { FrameStats, Tier } from '../types';
 export interface TierInputs {
   /** From `detectTier` (`lib/render/tier.ts`). */
   renderTier: RenderTier;
-  /** `html.perf-lite` (`lib/perf-tier.ts`). Forces `low`. */
-  perfLite: boolean;
+  /** `isLowEndCapability()` (`lib/low-end.ts`). Forces `low`. */
+  lowEnd: boolean;
   /** Phones are capped at `mid`. */
   isMobile: boolean;
 }
@@ -53,9 +53,9 @@ const FROM_RENDER_TIER: Readonly<Record<RenderTier, Tier>> = {
   ultra: 'high',
 };
 
-/** Map the site's render tier and `perf-lite` onto the effect's three tiers. */
+/** Map the site's render tier and the low-end signal onto the effect's three tiers. */
 export function pickTier(inputs: TierInputs): Tier {
-  if (inputs.perfLite) return 'low';
+  if (inputs.lowEnd) return 'low';
   const tier = FROM_RENDER_TIER[inputs.renderTier];
   return inputs.isMobile && tier === 'high' ? 'mid' : tier;
 }

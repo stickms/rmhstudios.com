@@ -228,21 +228,6 @@
   box-shadow: 3px 2px 0 var(--slice-primary);
 }
 
-/* ─── Buttons ───────────────────────────────────────────────────────────────
- *
- * The shared `Button` is built for the site's material. Where that material is
- * off (the `perf-lite` tier) `liquid-glass.css` gives every flat button an opaque
- * SITE surface via an UNLAYERED rule, which beats every `bg-*` utility. Inside
- * the game a button is the game's own control, so that rule is handed back to
- * the layered cascade (`revert-layer`) — except `.slice-btn-primary`/`-alt`, which
- * are unlayered themselves and would be reverted along with it.
- */
-html.perf-lite .slice-theme [data-jelly-rest='flat']:not(.slice-btn-primary, .slice-btn-alt),
-html.perf-lite .slice-tokens [data-jelly-rest='flat']:not(.slice-btn-primary, .slice-btn-alt) {
-  background-color: revert-layer;
-  border-color: revert-layer;
-}
-
 /* Hard edges everywhere in the game; a circle stays a circle. */
 .slice-theme [class*='rounded-']:not(.rounded-full),
 .slice-tokens [class*='rounded-']:not(.rounded-full),
@@ -288,28 +273,6 @@ html.perf-lite .slice-tokens [data-jelly-rest='flat']:not(.slice-btn-primary, .s
 .slice-tokens
   :is(.bg-blue-500, .bg-blue-600, .bg-sky-500, .bg-cyan-500, .bg-pink-500, .bg-red-500).text-white {
   color: var(--slice-label);
-}
-
-/*
- * Under `perf-lite` the site paints every flat button an opaque surface with an
- * unlayered rule of higher specificity than the classes above, so the game's own
- * two buttons restate their fills at the same specificity (and for hover).
- */
-html.perf-lite .slice-theme .slice-btn-primary[data-jelly-rest='flat'] {
-  background-color: var(--slice-paper);
-  color: var(--slice-bg);
-}
-html.perf-lite .slice-theme .slice-btn-primary[data-jelly-rest='flat']:hover {
-  background-color: var(--slice-primary);
-}
-html.perf-lite .slice-theme .slice-btn-alt[data-jelly-rest='flat'] {
-  background-color: transparent;
-  color: var(--slice-paper);
-  border-color: transparent;
-}
-html.perf-lite .slice-theme .slice-btn-alt[data-jelly-rest='flat']:hover {
-  background-color: var(--slice-paper);
-  color: var(--slice-bg);
 }
 
 /* The primary action: a paper slab whose right edge is the cut. */
@@ -386,7 +349,6 @@ html .slice-tokens :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay) 
 
 /* The site's flat buttons carry a faint sheen; in here a button is a flat fill. */
 html .slice-theme [data-slot='button'],
-html.perf-lite .slice-theme [data-slot='button'],
 html .slice-tokens [data-slot='button'] {
   background-image: none;
   box-shadow: none;
@@ -428,11 +390,6 @@ html .slice-theme [data-slot='textarea'] {
   border: 1px solid var(--slice-input-border);
   box-shadow: none;
   color: var(--slice-text);
-}
-
-.slice-theme :is(.jelly-flow, .jelly-haze-canvas, canvas[data-liquid-glass]),
-.slice-tokens :is(.jelly-flow, .jelly-haze-canvas, canvas[data-liquid-glass]) {
-  display: none;
 }
 
 /* ─── Material ─────────────────────────────────────────────────────────────
@@ -483,6 +440,7 @@ html .slice-theme [data-slot='textarea'] {
 .neumorphic-inset.rounded-full,
 .neumorphic-sm.rounded-full {
   border-radius: 9999px;
+  corner-shape: round;
 }
 
 /* Selected tool / active tab / the open mode: cyan ink. */
@@ -706,20 +664,6 @@ a.neumorphic-sm:hover,
   color: var(--slice-text);
 }
 
-.slice-results__line {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  min-height: calc(36px + var(--safe-top, 0px));
-  padding: var(--safe-top, 0px) max(28px, var(--safe-right, 0px)) 0 max(28px, var(--safe-left, 0px));
-  border-bottom: 1px solid var(--slice-border);
-}
-
-.slice-results__line .slice-label i {
-  font-style: normal;
-  padding: 0 4px;
-}
-
 .slice-results__grid {
   display: grid;
   gap: 24px;
@@ -917,4 +861,174 @@ a.neumorphic-sm:hover,
 /* Labels printed on a cover sit above its layers. */
 .slice-duotone > :not(img) {
   z-index: 2;
+}
+
+/* ─── The readouts in the margins ───────────────────────────────────────────
+ *
+ * When a window is taller than 16:9 the room above and below the field carries the
+ * song, the score and the tally, so the field is left to the notes. Aligned to the
+ * field's edges (the inline left/width come from its measured box) and hugging it.
+ */
+.slice-mh {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 12px;
+  pointer-events: none;
+  font-family: var(--slice-body);
+  color: var(--slice-text);
+}
+
+.slice-mh--top {
+  top: 0;
+  gap: 10px;
+}
+
+.slice-mh--bottom {
+  bottom: 0;
+  top: auto;
+  flex-direction: row;
+  /* Hugs the field's lower edge, as the top bar hugs its upper one. */
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 4px 0;
+}
+
+.slice-mh__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) auto minmax(0, 0.7fr);
+  align-items: end;
+  gap: 28px;
+}
+
+.slice-mh__song {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
+}
+
+.slice-mh__cover {
+  position: relative;
+  flex-shrink: 0;
+  width: 68px;
+  height: 68px;
+  border: 1px solid var(--slice-border);
+}
+
+.slice-mh__title {
+  margin-top: 6px;
+  overflow: hidden;
+  font-family: var(--slice-display);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-variation-settings: 'wdth' 125;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slice-mh__artist {
+  margin-top: 4px;
+  overflow: hidden;
+  font-family: var(--slice-serif);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slice-mh__score {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.slice-mh__figure {
+  font-family: var(--slice-mono);
+  font-weight: 600;
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.slice-mh .slice-hud-stamp {
+  font-size: 30px;
+}
+
+.slice-mh__aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.slice-mh__speed {
+  font-family: var(--slice-mono);
+  font-weight: 500;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.slice-mh__progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.slice-mh__tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 26px;
+  margin: 0;
+}
+
+.slice-mh__tally > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slice-mh__tally dd {
+  margin: 0;
+  font-family: var(--slice-mono);
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.slice-mh__lamp {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* ─── Menus portalled out of the game ───────────────────────────────────────
+ *
+ * `AnchoredMenu` mounts its panel under <body> so it can escape stacking contexts,
+ * which puts it outside `.slice-theme`: it would arrive in the site's pale glass.
+ * A panel given `slice-tokens slice-menu-panel` carries the game's tokens itself,
+ * is the same flat label-black slab as every other panel in here, and re-points the
+ * site ink the shared menu rows read at the game's paper and ink.
+ */
+.slice-menu-panel.slice-menu-panel {
+  --site-text: var(--slice-paper);
+  --site-text-dim: var(--slice-text-muted);
+  --site-border: var(--slice-border);
+  --site-accent: var(--slice-primary);
+  background-color: var(--slice-label);
+  background-image: none;
+  border: 1px solid var(--slice-border);
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--slice-paper);
 }

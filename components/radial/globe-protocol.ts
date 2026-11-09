@@ -251,12 +251,12 @@ export function clockChanged(a: CoatClock | null, b: CoatClock, slackMs = 500): 
 
 /* ── The fallback decision ──────────────────────────────────────────────────────────────────────────────────────────
    Made once per page load, re-made only when the worker fails. Where a worker cannot own a WebGL 2 context the globe
-   is the CSS glass globe `perf-lite` already shows — never GL on the page's thread. */
+   is the CSS glass globe a software-rendering browser keeps — never GL on the page's thread. */
 
 export type GlobeBackend = 'worker' | 'css';
 
 export type GlobeFallbackReason =
-  | 'perf-lite'
+  | 'software-render'
   | 'no-worker'
   | 'no-offscreen'
   | 'forced'
@@ -266,7 +266,8 @@ export type GlobeFallbackReason =
   | 'context-lost';
 
 export interface GlobeEnv {
-  perfLite: boolean;
+  /** The browser rasterises in software (`softRenderDetected()`, `lib/low-end.ts`): a second GL context is not worth it. */
+  softRender: boolean;
   hasWorker: boolean;
   hasOffscreenCanvas: boolean;
   canTransfer: boolean;
@@ -285,7 +286,7 @@ export function decideGlobeBackend(env: GlobeEnv): {
   reason?: GlobeFallbackReason;
 } {
   if (env.forced) return { backend: 'css', reason: 'forced' };
-  if (env.perfLite) return { backend: 'css', reason: 'perf-lite' };
+  if (env.softRender) return { backend: 'css', reason: 'software-render' };
   if (!env.hasWorker) return { backend: 'css', reason: 'no-worker' };
   if (!env.hasOffscreenCanvas || !env.canTransfer)
     return { backend: 'css', reason: 'no-offscreen' };

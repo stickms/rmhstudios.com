@@ -13,7 +13,7 @@ Surfaces are hazy, translucent slabs with a refracting rim, a gently drifting
 interior, a soft body under the pointer and electric arcs between neighbours
 ([the contract](./plasmatic-jelly-system.md)). The role class (`.glass-*`) is
 what carries all of that, and what the degradation switches (high contrast,
-reduced transparency, `perf-lite`, the jelly motion and arcs settings) act on.
+reduced transparency, the jelly motion and arcs settings) act on.
 Pages look consistent because they share four things: the `_site` **radial
 shell**, the `PageLayout` column system, the `--site-*` token contract, and the
 same route-level conventions (head/SEO, i18n, auth, loading and error states).
@@ -196,8 +196,8 @@ Work through this for every new or edited page:
       tier supplies the haze, the refracting rim and the soft body; there is no
       `backdrop-filter` in any role. Preference fallbacks are central. Never
       rely on an optic for **legibility** — text has to hold on
-      `--site-surface-opaque` too, because high-contrast, reduced transparency
-      and perf-lite all collapse to it. Opt into material through the role
+      `--site-surface-opaque` too, because high-contrast and reduced transparency
+      collapse to it. Opt into material through the role
       class. Historical `refract`/`liquid` flags are compatibility aliases. See
       [the plasmatic jelly contract](plasmatic-jelly-system.md).
 - [ ] **Decorative responses come from the jelly services.** Squash, wobble,
@@ -312,7 +312,6 @@ a different class of drift; none replaces the others.
 | `lib/__tests__/ios-edge-contract.test.ts`                                          | same                                                                                                             | the iOS edge contract: no `theme-color` on iOS, the fixed decoration hidden on `html.ios-webkit`, the root carrying the canvas, the top capsule floating, and a **ratchet** against any NEW `fixed`/`sticky` layer pinned flush to the top or bottom edge (what makes Safari paint a coloured band behind its status bar and tab bar)                                                                                                                        |
 | `lib/__tests__/page-swap-css.test.ts`, `page-transition*.test.ts`                  | same                                                                                                             | the quick page swap: tokens, opacity-only keyframe, frame exemption, wiring                                                                                                                                                                                                                                                                                                                                                                                  |
 | **`pnpm audit:pages`** (`scripts/audit-pages.mjs`)                                 | on demand, before and after any change to the shell, page frame, tabs, top bar or global CSS; against `pnpm dev` | in a real browser with an iPhone Safari user-agent: every visible fixed/sticky element touching a screen edge (the cause of the bands), and the page anatomy: PageLayout heading, tab strip and search starting and ending on the same edges, and the first card starting on the heading's edge (further in means a wrapper added a second gutter). `--full` adds desktop and Daylight. `--strict` fails on anything not in `docs/page-audit-allowlist.json` |
-| **`pnpm audit:jelly-clip`** (`scripts/audit-jelly-clip.mjs`) | on demand, before and after a change to a container that clips (`overflow`, `contain: paint`) round glass; against `pnpm dev` | in a real browser (GPU renderer string spoofed so the shader engine runs): every admitted surface whose canvas overdraws its host and sits within 8px of a clipping ancestor or the viewport's side edge. The runtime room-cap means nothing is ever cut off, so a finding is a layout that cannot bulge there. Also fails on a document that scrolls sideways. `--strict` exits 1 |
 
 Rules of the road:
 

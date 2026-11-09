@@ -131,7 +131,7 @@ const DialogContent = React.forwardRef<
       const height = el.offsetHeight || 1;
       if (overlay) overlay.style.opacity = Math.max(0, 1 - (y / height) * 1.1).toFixed(3);
     },
-    // The sheet stretches along the throw and wobbles out of it (lib/jelly/physics.ts).
+    // The sheet reports its drag to the jelly bus (lib/jelly/drag-report.ts).
     jellyTarget: () => contentRef.current,
     onDismiss: () => closeRef.current?.click(),
     onSettle: () => {

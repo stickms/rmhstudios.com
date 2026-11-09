@@ -142,6 +142,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
+  corner-shape: round;
   display: block;
   background: #fff;
 }
@@ -1337,7 +1338,6 @@ button.stm-star {
   border-radius: var(--stm-radius) !important;
   box-shadow: none !important;
 }
-.stm-legacy .jelly-flow,
 .stm-legacy canvas {
   display: none !important;
 }
@@ -1576,6 +1576,7 @@ button.stm-star {
   padding: 0 6px;
   border: 2px solid var(--stm-level, #9b9b9b);
   border-radius: 50%;
+  corner-shape: round;
   color: var(--stm-bright);
   font-size: 16px;
   font-weight: 600;
@@ -1738,6 +1739,7 @@ button.stm-star {
   height: 32px;
   border: 2px solid var(--stm-blue);
   border-radius: 50%;
+  corner-shape: round;
   color: var(--stm-bright);
   font-size: 14px;
   font-weight: 600;

@@ -95,7 +95,7 @@ function navigationTraceId(): string | undefined {
  *   formFactor  3 values    which population a sample belongs to
  *   vw          6 buckets   which layout the visitor actually got
  *   dpr         3 buckets   how many physical pixels the blur passes cover
- *   mem/cores   quantised   the `perf-lite` inputs, so the tier is auditable
+ *   mem/cores   quantised   the low-end capability inputs (`lib/low-end.ts`), so that signal is auditable
  *   net         5 values    whether request count or CPU is the binding cost
  *   saveData    boolean     an explicit "send me less" from the visitor
  *

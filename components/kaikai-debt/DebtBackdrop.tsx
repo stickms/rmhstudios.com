@@ -1,5 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { isLowEndCapability } from '@/lib/low-end';
+
 /**
  * The page's atmosphere: a slowly turning wireframe globe, a drifting aura, and
  * two light sweeps.
@@ -52,8 +55,12 @@ const MERIDIANS = [0, 30, 60, 90, 120, 150];
 const PARALLELS = [0.34, 0.64, 0.87, 1];
 
 export function DebtBackdrop() {
+  // A low-end device (`lib/low-end.ts`) gets one static wash and nothing that moves (kaikai-debt.css). Read after mount so
+  // the server and the first client render agree; the attribute is on this element, never on <html>.
+  const [lowEnd, setLowEnd] = useState(false);
+  useEffect(() => setLowEnd(isLowEndCapability()), []);
   return (
-    <div className="kd-atmos" aria-hidden>
+    <div className="kd-atmos" data-low-end={lowEnd ? '' : undefined} aria-hidden>
       <div className="kd-atmos__aura" />
       <div className="kd-atmos__aura kd-atmos__aura--reverse" />
 

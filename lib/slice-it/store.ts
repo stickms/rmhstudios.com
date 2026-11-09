@@ -51,7 +51,6 @@ export type GameStatus = 'MENU' | 'PLAYING' | 'FINISHED';
 
 interface SliceItState {
   /* ── Settings (persisted) ─────────────────────────────────────────── */
-  userName: string;
   keybinds: Keybinds;
   /**
    * I1 — additional keys bound to each lane, indexed by lane.
@@ -62,7 +61,15 @@ interface SliceItState {
    * `lib/slice-it/input.ts`.
    */
   extraBinds: string[][];
+  /**
+   * Master volume, percent. Scales BOTH the music and the effects, so one slider
+   * quiets the whole game while the two below keep their balance. (It used to
+   * drive the music alone and was labelled "Master" anyway.)
+   */
   volume: number;
+  /** Music volume, percent, under the master. */
+  musicVolume: number;
+  /** Effects volume, percent, under the master: hit sounds, ticks, the fail cue. */
   sfxVolume: number;
   hitSound: string;
   /** Milliseconds. Positive means the audio runs ahead of the visuals. */
@@ -103,7 +110,7 @@ interface SliceItState {
    * the effect is bounded well under what already ships: `pulse` swings ~10% of
    * alpha on a mid-tone bloom UNDER the playfield, against V13's vignette at
    * 0.6. It is also already behind three switches that existed before it —
-   * reduced motion and `perf-lite` (via `canvasGlowEnabled`), A2's
+   * reduced motion and a low-end device (via `canvasGlowEnabled`), A2's
    * `reducedFlash`, and A7's `effectIntensity` — so the players most likely to
    * be harmed by it never receive it in the first place.
    */
@@ -146,15 +153,6 @@ interface SliceItState {
    * nine switches every session to get back to "my practice setup".
    */
   modifierPresets: { id: string; name: string; modifiers: Modifiers }[];
-  /**
-   * M1 — Mirror. Swaps lanes for every run until turned off again.
-   *
-   * A player preference rather than a per-run `Modifiers` field on purpose:
-   * it earns no score bonus (see `chart.ts` `applyMirror`), so it does not
-   * belong in the schema the server verifies a submission's multiplier
-   * against — there is nothing there to verify.
-   */
-  mirror: boolean;
   /** G9 — scroll speed. 1.0 reproduces today's fixed approach distance. */
   scrollSpeed: number;
   /** G9 — `constant` (BPM-independent) or `bpm` (speed scales with tempo). */
@@ -177,6 +175,12 @@ interface SliceItState {
   /* ── Run state ────────────────────────────────────────────────────── */
   status: GameStatus;
   songId: string;
+  /**
+   * What the current run is playing, for the margins of the screen (cover, title,
+   * artist). Set by `startRun` from the song read it already makes, cleared with the
+   * rest of the run; purely presentational.
+   */
+  nowPlaying: NowPlaying | null;
   /**
    * The current run's signed receipt, from the song read. Handed back with the
    * score so the server can tell how long the run took by its own clock.
@@ -228,12 +232,12 @@ interface SliceItState {
   pause: PausePayload | null;
 
   /* ── Actions ──────────────────────────────────────────────────────── */
-  setUserName: (name: string) => void;
   setKeybinds: (keybinds: Keybinds) => void;
   setExtraBinds: (binds: string[][]) => void;
   /** I5 — input-pipeline delay, ms. Separate from `audioOffset`. */
   setInputOffset: (ms: number) => void;
   setVolume: (volume: number) => void;
+  setMusicVolume: (volume: number) => void;
   setSfxVolume: (volume: number) => void;
   setHitSound: (hitSound: string) => void;
   setAudioOffset: (offset: number) => void;
@@ -253,7 +257,6 @@ interface SliceItState {
   saveModifierPreset: (name: string) => void;
   applyModifierPreset: (id: string) => void;
   deleteModifierPreset: (id: string) => void;
-  setMirror: (value: boolean) => void;
   setScrollSpeed: (value: number) => void;
   setScrollMode: (mode: ScrollMode) => void;
   setVisibilityMode: (mode: VisibilityMode) => void;
@@ -262,6 +265,7 @@ interface SliceItState {
 
   setStatus: (status: GameStatus) => void;
   setSongId: (songId: string) => void;
+  setNowPlaying: (nowPlaying: NowPlaying | null) => void;
   setRunToken: (token: string | null) => void;
   setSelectedChartId: (chartId: string | null) => void;
   setScore: (score: number, combo: number, multiplier?: number) => void;
@@ -292,6 +296,13 @@ interface SliceItState {
   resetMultiplayer: () => void;
 }
 
+/** The track on the deck, as the margins show it. */
+export interface NowPlaying {
+  title: string;
+  artist: string;
+  coverUrl: string | null;
+}
+
 export interface PublicLobbyRow {
   code: string;
   hostName: string;
@@ -305,6 +316,7 @@ const CHAT_KEEP = 50;
 const runDefaults = {
   status: 'MENU' as GameStatus,
   songId: '',
+  nowPlaying: null as NowPlaying | null,
   runToken: null,
   selectedChartId: null,
   score: 0,
@@ -335,11 +347,11 @@ const multiplayerDefaults = {
 export const useSliceItStore = create<SliceItState>()(
   persist(
     (set) => ({
-      userName: '',
       keybinds: { lane1: 'ArrowLeft', lane2: 'ArrowRight' },
       extraBinds: [[], []],
       inputOffset: 0,
       volume: 100,
+      musicVolume: 100,
       sfxVolume: 80,
       hitSound: 'default',
       audioOffset: 0,
@@ -357,7 +369,6 @@ export const useSliceItStore = create<SliceItState>()(
       assistTick: false,
       modifiers: { ...DEFAULT_MODIFIERS },
       modifierPresets: [],
-      mirror: false,
       scrollSpeed: 1.0,
       scrollMode: 'constant',
       visibilityMode: 'fadeOut',
@@ -368,12 +379,12 @@ export const useSliceItStore = create<SliceItState>()(
       ...multiplayerDefaults,
       connection: 'idle' as RealtimeStatus,
 
-      setUserName: (userName) => set({ userName }),
       setKeybinds: (keybinds) => set({ keybinds }),
       setExtraBinds: (extraBinds) => set({ extraBinds }),
       setInputOffset: (inputOffset) =>
         set({ inputOffset: Math.max(-200, Math.min(200, Math.round(inputOffset))) }),
       setVolume: (volume) => set({ volume: clampPercent(volume) }),
+      setMusicVolume: (musicVolume) => set({ musicVolume: clampPercent(musicVolume) }),
       setSfxVolume: (sfxVolume) => set({ sfxVolume: clampPercent(sfxVolume) }),
       setHitSound: (hitSound) => set({ hitSound }),
       setAudioOffset: (audioOffset) =>
@@ -424,7 +435,6 @@ export const useSliceItStore = create<SliceItState>()(
         set((state) => ({
           modifierPresets: state.modifierPresets.filter((preset) => preset.id !== id),
         })),
-      setMirror: (mirror) => set({ mirror }),
       setScrollSpeed: (scrollSpeed) => set({ scrollSpeed: clampScrollSpeed(scrollSpeed) }),
       setScrollMode: (scrollMode) => set({ scrollMode }),
       setVisibilityMode: (visibilityMode) => set({ visibilityMode }),
@@ -434,6 +444,7 @@ export const useSliceItStore = create<SliceItState>()(
 
       setStatus: (status) => set({ status }),
       setSongId: (songId) => set({ songId }),
+      setNowPlaying: (nowPlaying) => set({ nowPlaying }),
       setRunToken: (runToken) => set({ runToken }),
       setSelectedChartId: (selectedChartId) => set({ selectedChartId }),
       setScore: (score, combo, multiplier) =>
@@ -472,15 +483,15 @@ export const useSliceItStore = create<SliceItState>()(
     }),
     {
       name: 'slice-it-storage',
-      version: 9,
+      version: 10,
       // Settings only. Run and lobby state are per-session by definition, and
       // persisting a lobby snapshot would restore a room that no longer exists.
       partialize: (state) => ({
-        userName: state.userName,
         keybinds: state.keybinds,
         extraBinds: state.extraBinds,
         inputOffset: state.inputOffset,
         volume: state.volume,
+        musicVolume: state.musicVolume,
         sfxVolume: state.sfxVolume,
         hitSound: state.hitSound,
         audioOffset: state.audioOffset,
@@ -498,7 +509,6 @@ export const useSliceItStore = create<SliceItState>()(
         assistTick: state.assistTick,
         modifiers: state.modifiers,
         modifierPresets: state.modifierPresets,
-        mirror: state.mirror,
         scrollSpeed: state.scrollSpeed,
         scrollMode: state.scrollMode,
         visibilityMode: state.visibilityMode,
@@ -535,7 +545,7 @@ export const useSliceItStore = create<SliceItState>()(
        *   what an existing player SEES, deliberately and only here: it lands on
        *   `pulse` rather than `none` for the reasons on the field itself. A
        *   returning player who wants the flat playfield back sets it to "None"
-       *   in settings, and anyone on reduced motion, `perf-lite` or Reduced
+       *   in settings, and anyone on reduced motion, a low-end device or Reduced
        *   Flash keeps it whatever this says.
        */
       migrate: (persisted, version) => {
@@ -604,11 +614,33 @@ export const useSliceItStore = create<SliceItState>()(
           // it still feels off.
           state = { ...state, audioOffset: 0, inputOffset: 0 };
         }
+        if (version < 10) {
+          // v10: the operator name field is gone (the name is the signed-in
+          // account's), Mirror is gone, and the volume is split into master / music /
+          // effects. The old `volume` only ever drove the music, so it carries over
+          // as the MASTER and the new music slider starts at full: the music keeps
+          // exactly the level it had, and the effects follow the master as they
+          // should have. Dropped keys are not written back (`partialize`).
+          const { userName: _userName, mirror: _mirror, ...rest } = state;
+          void _userName;
+          void _mirror;
+          state = { ...rest, musicVolume: 100 };
+        }
         return state;
       },
     },
   ),
 );
+
+/** 0–1 gain for the music: master × music. */
+export function musicGain(volume: number, musicVolume: number): number {
+  return (clampPercent(volume) / 100) * (clampPercent(musicVolume) / 100);
+}
+
+/** 0–1 gain for effects (hit sounds, ticks, cues): master × effects. */
+export function sfxGain(volume: number, sfxVolume: number): number {
+  return (clampPercent(volume) / 100) * (clampPercent(sfxVolume) / 100);
+}
 
 function clampPercent(value: number): number {
   if (!Number.isFinite(value)) return 100;

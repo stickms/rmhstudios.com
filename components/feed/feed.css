@@ -125,6 +125,50 @@
   gap: 0.75rem;
 }
 
+/* Post page (`PostDetail`). ONE column: the post, the reply surface, every reply
+   thread and the related posts are direct children of `.post-page` (or of a
+   section that is), so they share the shell's gutter and width, and sit
+   --space-4 apart (the jelly's minimum gap between bodies). Nothing here is a
+   rule or a border: surfaces are `.glass-pane` / `.glass-fill` by role, and the
+   space between them is the only separator. */
+.post-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.post-page__back {
+  display: flex;
+  /* The back control is quiet text; the column's gap already clears it. */
+  margin-block-end: calc(var(--space-4) * -0.5);
+}
+
+.post-page__post {
+  padding: var(--rad-card-pad, 1.25rem);
+}
+
+.post-page__compose {
+  padding: var(--space-4);
+}
+
+.post-page__replies,
+.post-page__related {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* A section label sits with the cards it names, not a full gap above them. */
+.post-page__related > .site-section-label {
+  margin-block-end: calc(var(--space-4) * -0.5);
+}
+
+/* The feed card keeps a side margin of its own on phones (the feed column has no
+   gutter); inside the post page the column already supplies it. */
+.post-page .social-post {
+  margin-inline: 0;
+}
+
 /* Homepage hero — an Apple-style editorial header: big SF display type, a lead
    line, a live pulse, and two drifting monochrome auras for parallax depth. */
 .feed-hero {
@@ -140,6 +184,7 @@
   position: absolute;
   z-index: -1;
   border-radius: 50%;
+  corner-shape: round;
   pointer-events: none;
   filter: blur(28px);
 }
@@ -210,6 +255,7 @@
   gap: 0.4rem;
   padding: 0.4rem 0.7rem;
   border-radius: 999px;
+  corner-shape: round;
   color: var(--site-text-muted);
   font-size: 0.66rem;
   font-weight: 600;
@@ -219,6 +265,7 @@
   width: 0.45rem;
   height: 0.45rem;
   border-radius: 50%;
+  corner-shape: round;
   background: var(--site-success);
   box-shadow: 0 0 0 0 color-mix(in srgb, var(--site-success) 45%, transparent);
   animation: feed-live-pulse 2.4s ease-out infinite;
@@ -481,6 +528,7 @@
   aspect-ratio: 1;
   border: 2.5rem solid color-mix(in srgb, var(--site-accent-fg) 12%, transparent);
   border-radius: 50%;
+  corner-shape: round;
 }
 
 .spatial-whats-new__art span {

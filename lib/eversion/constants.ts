@@ -392,7 +392,7 @@ export interface TierConfig {
 
 /**
  * The tier table. Eight corrugations need ≥ 16 longitudinal samples each to stay
- * smooth, so 128 is the floor (spec §8.2). `low` is where `perf-lite` starts.
+ * smooth, so 128 is the floor (spec §8.2). `low` is where a low-end device starts.
  */
 export const TIERS: Readonly<Record<Tier, TierConfig>> = {
   high: {

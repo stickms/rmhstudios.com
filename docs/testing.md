@@ -263,8 +263,8 @@ and scrolling.
 
 "At rest" means the Plasmatic Jelly idle floor, not zero: once the page has gone
 `IDLE_AFTER_MS` (20 s) without input, the material's ambient clock keeps ticking
-at `idleClockHz` (30 Hz desktop) and never freezes while someone could be
-looking (master plan R7). The `--gate` limit is that floor + 1 (31 fps) — a
+at `idleClockHz` (15 Hz desktop) and never freezes while someone could be
+looking (master plan R7). The `--gate` limit is that floor + 1 (16 fps) — a
 deliberate reversal of the 2026-10-08 audit's 2 fps rest limit, recorded in
 [`plasmatic-jelly-system.md`](./plasmatic-jelly-system.md) §2. `--engaged` sweeps
 a pointer for the whole window and holds pages to the engaged clock (60 Hz) + 5.
@@ -275,7 +275,7 @@ target but not gated.
 Each route also says **what drew** its rest frames: during the same trace,
 hooks on Canvas2D/WebGL draw calls and a MutationObserver record which frames
 each source touched — `haze`, `rim`, `arcs`, `globe` (the dock globe's canvases
-and pin DOM), `cursor`, `offscreen` (the shared WebGL canvas), `canvas`, `dom`
+and pin DOM), `offscreen` (the shared WebGL canvas), `canvas`, `dom`
 (with its top three targets) — and `any`, the frames at least one touched, e.g.
 `drew in: globe 16.5, haze 8.5, offscreen 8.5 (any 23)`. Hooks only, never a
 frame request. When `any` exceeds the busiest single source, two sources are
@@ -437,7 +437,7 @@ for ~40 min and reported nothing. Run it on a branch with
 `gh workflow run web-ci.yml --ref <branch>`. When re-enabled on PRs, the job is
 path-filtered by `eversion-changes` to what the effect depends on: `lib/eversion`,
 `components/radial`, the settings row and its preference API/schema, the theme
-store, `lib/perf-tier*` and `lib/render`, the glass layer, the two English
+store, `lib/low-end*` and `lib/render`, the glass layer, the two English
 namespaces it uses, `package.json`, the lockfile, the Vite config, the bundle
 budget script, the baselines and this workflow - not every route, store or English
 string. It runs nightly on `main`. It is `continue-on-error` until T37 makes it
@@ -577,30 +577,26 @@ material — a filter step matches `lib/jelly/`, `lib/liquid/`,
 `package.json`, `pnpm-lock.yaml`, `vite.config.*` and `web-ci.yml` itself
 (otherwise it writes "jelly e2e skipped" to the job summary and passes).
 
-- **Blocking: `testing/e2e/jelly-interaction.mjs`** — a fixture that needs no
-  server, deterministic on SwiftShader (~75 s). It fails for real on every
-  deterministic check: budgets, neighbour bounds, the flash ledger, return to
-  rest, teardown, zero frames under `still`, rest cadence, perpetual animations.
+- **Blocking: `testing/e2e/jelly-interaction.mjs`** — the click arcs in a real browser,
+  a fixture that needs no server (~40 s). The rest of the material is CSS, judged by the
+  unit gates and by `frame-budget.mjs`. It fails for real on every deterministic check:
+  click charge and hops, the flash ledger under a click storm, the arc layer following
+  `electricArcs` / `still` live, zero frames at rest, teardown.
 - **Non-blocking: `testing/e2e/frame-budget.mjs --gate`** against the built app
   (step-level `continue-on-error`: the step still shows its exit code, a red
   summary row and an `::error::` annotation, but the job's conclusion ignores
   it — the deterministic `jelly-e2e` result is independent). It drives
-  ~50 routes. It is red today at 13–21 frames/s on most site routes
-  (run-to-run noise is ±5): the haze engine ticks from the shared jelly frame
-  driver while the dock globe (`components/radial/LiquidGlobe.tsx`) runs its
-  own rAF loop and timer on the same tick grid, so a tick of each often lands
-  on a different vsync (the per-route attribution in §6 shows it). Pages that
-  render `PinnedHero` (e.g. /pricing) also carry its scroll cue, a
-  framer-motion `repeat: Infinity` animation that writes inline styles from JS,
-  which `getAnimations()` cannot see. It becomes blocking once those are fixed
-  and a few nightlies are green.
+  ~50 routes and gates the rest cadence (the globe's idle floor + 1 frame) and any
+  unsanctioned perpetual animation. Pages that render `PinnedHero` (e.g. /pricing) also
+  carry its scroll cue, a framer-motion `repeat: Infinity` animation that writes inline
+  styles from JS, which `getAnimations()` cannot see. It becomes blocking once those are
+  fixed and a few nightlies are green.
 - **GPU-only checks SKIP, never silently pass.** The runner has no GPU;
   `testing/e2e/lib/gpu.mjs` detects SwiftShader from the WebGL renderer string,
   and a check that needs real GPU frames is reported as `SKIP` in the log, as a
-  `::notice`, and in the job summary (with the GL string). Today that is
-  frame-budget's R7 "a hazy page never draws 0 frames at rest". jelly-interaction
-  judges R7 on the governor's clock (its last step keeps a 6 Hz floor), so it is
-  a real check there and SKIPs only if a governor ever reaches 0 Hz on software GL.
+  `::notice`, and in the job summary (with the GL string). frame-budget's R7 "a
+  hazy page never draws 0 frames at rest" belonged to the retired canvas haze and is
+  never judged now (no haze canvas exists to judge it on).
 
 **Where enforcement lives.** web-ci's Test step is a hard gate on the PR, and
 the deploy's own `test` matrix re-runs the suite on the merge result as a hard gate

@@ -210,7 +210,6 @@ describe('lazy click arcs', () => {
       ['electricArcs = off', () => env.root.setAttribute('data-electric-arcs', 'off'), undefined],
       ['a game in play', () => env.root.setAttribute('data-game-state', 'playing'), undefined],
       ['jellyMotion = still', () => env.root.setAttribute('data-jelly-motion', 'still'), undefined],
-      ['perf-lite', () => env.root.classes.add('perf-lite'), undefined],
       ['a native-material route', () => env.root.classes.add('native-material'), undefined],
       ['a hidden tab', () => (env.state.hidden = true), undefined],
       ['the radial hub open', () => (env.state.hub = true), undefined],

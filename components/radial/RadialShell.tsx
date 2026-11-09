@@ -24,6 +24,7 @@ import { RadialGlobeDock } from './RadialGlobeDock';
 import { RadialLiveRail } from './RadialLiveRail';
 import { RailSlotContext } from './rail-slot';
 import type { SceneFeed } from '@/lib/liquid/glass/scene-feed';
+import { settleSoftRender } from '@/lib/low-end';
 import { TabBadge } from '@/components/site/TabBadge';
 import { openCommandPalette } from '@/components/site/command-palette-bus';
 import {
@@ -370,14 +371,23 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
 
   // The page snapshot the liquid globe refracts (lib/liquid/glass/scene-feed.ts). The shell holds a share for its whole
   // lifetime because a picture can only be taken while the hub is CLOSED, and the hub's globe mounts only once it is
-  // open: a feed owned by the globe would never have one for it. Acquired after the window `load` event (a capture is
-  // main-thread work and must not compete with hydration), through a dynamic import so the capture code stays off the
-  // entry. Tiers without a capture budget (handheld, perf-lite) take no pictures (`SCENE_POLICY`).
+  // open: a feed owned by the globe would never have one for it. Acquired after the window `load` event, at idle (a
+  // capture is main-thread work and must not compete with hydration), through a dynamic import so the capture code
+  // stays off the entry. The handheld tier takes no pictures (`SCENE_POLICY`). A browser found to rasterise in software
+  // keeps the CSS glass globe (`lib/low-end.ts`, `globe-protocol.ts`), which refracts nothing, so it takes none either:
+  // the idle step settles that finding (one throwaway GL probe, skipped while a fresh finding is remembered).
   const sceneFeed = useRef<SceneFeed | null>(null);
   useEffect(() => {
     let cancelled = false;
     let feed: SceneFeed | null = null;
+    let handle: number | null = null;
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+      cancelIdleCallback?: (h: number) => void;
+    };
+    const idle = typeof w.requestIdleCallback === 'function';
     const acquire = () => {
+      if (cancelled || settleSoftRender()) return;
       void import('@/lib/liquid/glass/scene-feed')
         .then((m) => {
           if (cancelled) return;
@@ -388,11 +398,21 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
           /* No picture: the globe simply does not refract the page. */
         });
     };
-    if (document.readyState === 'complete') acquire();
-    else window.addEventListener('load', acquire, { once: true });
+    const schedule = () => {
+      if (cancelled) return;
+      handle = idle
+        ? w.requestIdleCallback!(acquire, { timeout: 400 })
+        : window.setTimeout(acquire, 200);
+    };
+    if (document.readyState === 'complete') schedule();
+    else window.addEventListener('load', schedule, { once: true });
     return () => {
       cancelled = true;
-      window.removeEventListener('load', acquire);
+      window.removeEventListener('load', schedule);
+      if (handle !== null) {
+        if (idle) w.cancelIdleCallback?.(handle);
+        else window.clearTimeout(handle);
+      }
       if (sceneFeed.current === feed) sceneFeed.current = null;
       feed?.release();
     };
@@ -450,7 +470,7 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
     <div
       ref={shellRef}
       className="vibe-app site-shell radial-shell"
-      // A no-op alias now: the jelly soft-body service (lib/jelly/physics.ts) presses every control by default.
+      // A no-op alias now: the CSS soft body (app/jelly-material.css §8) presses every control by default.
       data-fluid-press-scope=""
       data-layout={layout}
       data-home={isHome || undefined}

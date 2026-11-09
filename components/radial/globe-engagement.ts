@@ -11,7 +11,7 @@
  * engaged rate nearly all the time — ~255 ms/s of main thread in the software-GL harness against 85–158 at the floor.)
  *
  * The RATES are not chosen here: engaged is the jelly budget's `clockHz` (60 Hz desktop, 30 handheld, capped under
- * Calm) and otherwise its `idleClockHz` floor (30 / 15), 0 under Still, the degraded tiers, a hidden or unfocused tab
+ * Calm) and otherwise its `idleClockHz` floor (15 / 7), 0 under Still, the degraded tiers, a hidden or unfocused tab
  * or off screen (`lib/jelly/tiers.ts`, the same budget every ambient clock reads). Nothing freezes: away from the
  * globe the drift and haze carry on at the floor. Only the margin and the settle are the globe's own.
  *

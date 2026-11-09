@@ -5,28 +5,24 @@
  * ## Why this is a gate and not just a unit test
  *
  * `lib/jelly/__tests__/tiers.test.ts` tests that `tiers.ts` computes what it says. This file tests the PROMISES the
- * rest of the site is built on, which every jelly service reads from that one module:
+ * rest of the site is built on, which every jelly service that still runs JavaScript (the globe and its cursor, the
+ * click arcs) reads from that one module:
  *
- *  - **N1 — the degradation matrix.** Under every accessibility or weak-device signal (OS reduced transparency, forced
- *    colours, the site and app high-contrast themes, `perf-lite`, print, a hidden tab, a playing game, `jellyMotion =
- *    still`) there is NO ambient motion and NO arc, and the soft body is at most a press acknowledgement. 05 §2 asked
- *    for "deform off" too; 04 §4.7 and the master plan's `JellyDeform` keep an isotropic press under reduced
- *    transparency / high contrast / perf-lite / still (it is not a transparency or ambient effect) and only print,
- *    forced colours, a hidden tab and a playing game remove it. The master plan wins where the plans disagree, so the
- *    gate pins `deform ≤ press`, and `deform = off` exactly where 04 says so.
+ *  - **N1 — the degradation matrix.** Under every accessibility or weak-device signal (the app high-contrast theme,
+ *    print, a hidden tab, a playing game, `jellyMotion = still`) there is NO ambient motion and NO arc.
+ *    (The soft body is CSS now and answers to the same signals through selectors, pinned by `jelly-soft-body.test.ts`
+ *    and `jelly-woken-haze.test.ts`.)
  *  - **N1 — the budgets.** Upper bounds stated as RELATIONS between the owning modules' constants (no tier outdoes
- *    desktop; the idle floor never exceeds the engaged clock; a haze canvas lives on an admitted rim; Tier L never
- *    exceeds the ambient slots; nothing the governor does raises a value), plus the two bounds that come from outside
- *    the codebase: WCAG 2.3.1 (no more than three flashes in any one-second period) and WCAG 2.2.2 (motion that
- *    starts automatically and lasts more than five seconds needs a pause: `still`). The numbers themselves live in
- *    `lib/jelly/tiers.ts`, `lib/liquid/glass/policy.ts` and `lib/jelly/arcs/rate.ts`; tune them there.
- *  - **N1 — the clock (R7).** The ambient clock is 0 when nobody can see the haze (hidden tab, unfocused window, a
- *    scroll in flight, no haze surface on screen, ambient off) and otherwise NEVER 0: after `IDLE_AFTER_MS` it drops
- *    to the tier's idle floor and stays there — the 2026-10-23 decision that deliberately reverses the 2026-10-08
- *    audit's "a page at rest is idle". `testing/e2e/frame-budget.mjs` derives its rest limit from the same floor.
+ *    desktop; the idle floor never exceeds the engaged clock), plus the two bounds that come from outside the
+ *    codebase: WCAG 2.3.1 (no more than three flashes in any one-second period) and WCAG 2.2.2 (motion that starts
+ *    automatically and lasts more than five seconds needs a pause: `still`). The numbers themselves live in
+ *    `lib/jelly/tiers.ts` and `lib/jelly/arcs/rate.ts`; tune them there.
+ *  - **N1 — the clock (R7).** The globe's ambient clock is 0 when nobody can see it and otherwise NEVER 0: after
+ *    `IDLE_AFTER_MS` it drops to the tier's idle floor and stays there — the 2026-10-23 decision that deliberately
+ *    reverses the 2026-10-08 audit's "a page at rest is idle". `testing/e2e/frame-budget.mjs` derives its rest limit
+ *    from the same floor.
  *  - **N7 — where arcs may land.** Endpoints come only from admitted jelly surfaces (the registry), never from a
- *    focused field, never further than the arc budget's reach; and (known violation, see below) never a field, an L4
- *    overlay or a toast.
+ *    focused field, never further than the arc budget's reach; and never a field, an L4 overlay or a toast.
  *
  * Suite runs in `node` (no jsdom), so the documents here are the smallest objects `tiers.ts` reads.
  */
@@ -35,7 +31,6 @@ import * as path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
-  AMBIENT_BOUNDS,
   CALM,
   FLASH_LEDGER,
   GAME_PLAYING_BUDGET,
@@ -49,11 +44,8 @@ import {
   jellyTier,
   type JellyTier,
 } from '@/lib/jelly/tiers';
-import { GOVERNOR_MAX_STEP, governBudget } from '@/lib/jelly/governor';
 import { REGISTRY_EXCLUDE } from '@/lib/jelly/registry';
-import { envelopeCaps } from '@/lib/jelly/envelope';
-import { SOFT_BODY, nudgePeak, pickNudgeTargets, softFeatures } from '@/lib/jelly/soft-policy';
-import { GLASS_BUDGET, HAZE, ambientHz, type ClockState } from '@/lib/liquid/glass/policy';
+import { SOFT_BODY } from '@/lib/jelly/soft-policy';
 import { ARC_BUDGET } from '@/lib/jelly/arcs/rate';
 import { buildPairs, clickTargets, nearestRimWithin } from '@/lib/jelly/arcs/pairs';
 import { createFlashLedger } from '@/lib/jelly/arcs/ledger';
@@ -93,13 +85,12 @@ function fakeDoc(o: DocOpts = {}): Document {
   } as unknown as Document;
 }
 
-/** Every signal that must stand the material down, with what 04 §4.7 leaves of the soft body. */
-const DEGRADED: Array<[string, DocOpts, 'press' | 'off']> = [
-  ['print', { media: [FINE, 'print'] }, 'off'],
-  ['the app high-contrast theme', { appHighContrast: true }, 'press'],
-  ['perf-lite', { classes: ['perf-lite'] }, 'press'],
-  ['a hidden tab', { hidden: true }, 'off'],
-  ['a game in play (R16)', { attrs: { 'data-game-state': 'playing' } }, 'off'],
+/** Every signal that must stand the material down. */
+const DEGRADED: Array<[string, DocOpts]> = [
+  ['print', { media: [FINE, 'print'] }],
+  ['the app high-contrast theme', { appHighContrast: true }],
+  ['a hidden tab', { hidden: true }],
+  ['a game in play (R16)', { attrs: { 'data-game-state': 'playing' } }],
 ];
 
 const TIERS = Object.keys(JELLY_BUDGETS) as JellyTier[];
@@ -111,30 +102,25 @@ describe('N1 — every degraded state stands the material down', () => {
   it('the default document is fully on (the control for every row below)', () => {
     const doc = fakeDoc();
     expect(jellyTier({ doc })).toBe('full');
-    expect(jellyMode({ doc })).toEqual({ ambient: true, arcs: 'full', deform: 'full' });
+    expect(jellyMode({ doc })).toEqual({ ambient: true, arcs: 'full' });
   });
 
-  it.each(DEGRADED)('%s: no ambient motion, no arcs, at most a press', (_label, opts, deform) => {
+  it.each(DEGRADED)('%s: no ambient motion, no arcs', (_label, opts) => {
     const doc = fakeDoc(opts);
     const mode = jellyMode({ doc });
     expect(mode.ambient).toBe(false);
     expect(mode.arcs).toBe('off');
-    expect(mode.deform).toBe(deform);
   });
 
   it.each(DEGRADED)('%s: the budget has nothing ambient left to spend', (_label, opts) => {
     const b = jellyBudget({ doc: fakeDoc(opts) });
-    expect(b.hazeSlots).toBe(0);
-    expect(b.carriers).toBe(0);
-    expect(b.animatedViewports).toBe(0);
     expect(b.clockHz).toBe(0);
     expect(b.idleClockHz).toBe(0);
-    expect(b.lattices).toBe(0);
     expect(b.clickBolts).toBe(0);
     expect(b.ambientArcMinIntervalMs).toBe(Infinity);
   });
 
-  it('every material-off signal is also jellyOff (the engine, carriers and arcs read it)', () => {
+  it('every material-off signal is also jellyOff (the globe and the arcs read it)', () => {
     for (const [label, opts] of DEGRADED) {
       if (label.startsWith('a game') || label.startsWith('jellyMotion')) continue; // mode-level, not material-off
       expect(jellyOff(fakeDoc(opts)), label).toBe(true);
@@ -143,16 +129,14 @@ describe('N1 — every degraded state stands the material down', () => {
 
   it('electricArcs = off removes arcs and nothing else; still overrides electricArcs = full (R9)', () => {
     const off = jellyMode({ doc: fakeDoc({ attrs: { 'data-electric-arcs': 'off' } }) });
-    expect(off).toEqual({ ambient: true, arcs: 'off', deform: 'full' });
+    expect(off).toEqual({ ambient: true, arcs: 'off' });
     const still = jellyMode({
       doc: fakeDoc({ attrs: { 'data-jelly-motion': 'still', 'data-electric-arcs': 'full' } }),
     });
     expect(still.arcs).toBe('off');
     expect(still.ambient).toBe(false);
-    expect(still.deform).toBe('full');
     const budget = jellyBudget({ doc: fakeDoc({ attrs: { 'data-jelly-motion': 'still' } }) });
-    expect([budget.hazeSlots, budget.carriers, budget.clockHz, budget.idleClockHz, budget.clickBolts]).toEqual([0, 0, 0, 0, 0]);
-    expect(budget.lattices).toBe(JELLY_BUDGETS.full.lattices);
+    expect([budget.clockHz, budget.idleClockHz, budget.clickBolts]).toEqual([0, 0, 0]);
   });
 
   it('calm keeps clicks but no ambient arcs, and never runs faster than its cap', () => {
@@ -161,24 +145,6 @@ describe('N1 — every degraded state stands the material down', () => {
     const b = jellyBudget({ doc });
     expect(b.ambientArcMinIntervalMs).toBe(Infinity);
     expect(b.clockHz).toBeLessThanOrEqual(CALM.maxClockHz);
-    expect(b.hazeSlots).toBeLessThanOrEqual(JELLY_BUDGETS.full.hazeSlots);
-  });
-
-  it('a degraded tier keeps no soft-body extras: no wobble, hover, nudge or lattice', () => {
-    for (const [tier, motion] of [
-      ['lite', 'lively'],
-      ['off', 'lively'],
-    ] as const) {
-      const f = softFeatures(tier, motion);
-      expect(f, `${tier}/${motion}`).toMatchObject({
-        wobble: false,
-        hover: false,
-        nudge: false,
-        lattice: false,
-        lattices: 0,
-      });
-    }
-    expect(softFeatures('full', 'calm').nudge, 'calm: no neighbour nudge (04 §4.2)').toBe(false);
   });
 });
 
@@ -197,26 +163,13 @@ describe('N1 — budgets: upper bounds the services cannot exceed', () => {
         }
       }
     }
-    for (const t of ['lite', 'off'] as const) {
-      expect(JELLY_BUDGETS[t]).toMatchObject({
-        hazeSlots: 0,
-        carriers: 0,
-        clockHz: 0,
-        clickBolts: 0,
-      });
+    for (const t of ['off'] as const) {
+      expect(JELLY_BUDGETS[t]).toMatchObject({ clockHz: 0, clickBolts: 0 });
     }
   });
 
-  it('every haze slot is an admitted rim, every lattice an ambient slot, every rim inside the engine cap', () => {
-    for (const t of TIERS) {
-      const b = JELLY_BUDGETS[t];
-      expect(b.rims, t).toBeLessThanOrEqual(GLASS_BUDGET.maxSurfaces);
-      expect(b.hazeSlots, t).toBeLessThanOrEqual(b.rims);
-      // R6 / 04 §6 hand-off: Tier L cap = ambient slots, not the engine's 24.
-      expect(b.lattices, t).toBeLessThanOrEqual(b.hazeSlots);
-      expect(b.idleClockHz, t).toBeLessThanOrEqual(b.clockHz);
-    }
-    expect(HAZE.maxDrawsPerFrame).toBeLessThanOrEqual(JELLY_BUDGETS.full.hazeSlots);
+  it('the idle floor never exceeds the engaged clock', () => {
+    for (const t of TIERS) expect(JELLY_BUDGETS[t].idleClockHz, t).toBeLessThanOrEqual(JELLY_BUDGETS[t].clockHz);
   });
 
   it('R7: a live tier never idles to 0 while visible', () => {
@@ -230,67 +183,24 @@ describe('N1 — budgets: upper bounds the services cannot exceed', () => {
     );
   });
 
-  it('a playing game keeps only the pause UI rims and nothing that moves on its own (R16)', () => {
+  it('a playing game keeps nothing that moves on its own (R16)', () => {
     expect(GAME_PLAYING_BUDGET).toMatchObject({
-      hazeSlots: 0,
-      carriers: 0,
       clockHz: 0,
       idleClockHz: 0,
-      bodies: 0,
-      lattices: 0,
       clickBolts: 0,
       ambientArcMinIntervalMs: Infinity,
     });
-    expect(GAME_PLAYING_BUDGET.rims).toBeLessThanOrEqual(JELLY_BUDGETS.full.rims);
-  });
-
-  it('the governor only ever lowers a budget', () => {
-    for (const t of TIERS) {
-      const base = JELLY_BUDGETS[t];
-      for (let step = 0; step <= GOVERNOR_MAX_STEP; step++) {
-        const g = governBudget(base, step);
-        for (const k of Object.keys(base) as (keyof typeof base)[]) {
-          if (k === 'ambientArcMinIntervalMs') expect(g[k]).toBeGreaterThanOrEqual(base[k]);
-          else expect(g[k], `${t}@${step}.${k}`).toBeLessThanOrEqual(base[k]);
-        }
-      }
-    }
   });
 });
 
 // ── N1: the ambient clock (R7) ──────────────────────────────────────────────
 
-describe('N1 — the ambient clock is 0 only when nobody can see the haze (R7)', () => {
+describe('N1 — the globe clock is 0 only when nobody can see it (R7)', () => {
   const full = JELLY_BUDGETS.full;
-  const engaged: ClockState = {
-    hidden: false,
-    focused: true,
-    scrolling: false,
-    hazeSurfaces: 3,
-    ambient: true,
-    msSinceInput: 0,
-    clockHz: full.clockHz,
-    idleClockHz: full.idleClockHz,
-  };
 
-  it('engaged runs at the tier clock, never above it', () => {
-    expect(ambientHz(engaged)).toBe(full.clockHz);
-  });
-
-  it.each<[string, Partial<ClockState>]>([
-    ['hidden tab', { hidden: true }],
-    ['unfocused window', { focused: false }],
-    ['a scroll in flight', { scrolling: true }],
-    ['no haze surface on screen', { hazeSurfaces: 0 }],
-    ['ambient off (still, degraded, a game)', { ambient: false }],
-  ])('%s → 0 Hz (no frame scheduled)', (_l, patch) => {
-    expect(ambientHz({ ...engaged, ...patch })).toBe(0);
-  });
-
-  it('after IDLE_AFTER_MS it drops to the idle floor and stays there: no freeze (R7 reverses the 120 s freeze)', () => {
-    expect(ambientHz({ ...engaged, msSinceInput: IDLE_AFTER_MS + 1 })).toBe(full.idleClockHz);
-    expect(ambientHz({ ...engaged, msSinceInput: 60 * 60 * 1000 })).toBe(full.idleClockHz);
+  it('the idle floor is above 0 on every live tier and below the engaged clock: no freeze (R7 reverses the 120 s freeze)', () => {
     expect(full.idleClockHz).toBeGreaterThan(0);
+    expect(full.idleClockHz).toBeLessThanOrEqual(full.clockHz);
   });
 
   it('WCAG 2.2.2: the idle threshold is longer than the 5 s the criterion allows before a pause is needed', () => {
@@ -328,42 +238,12 @@ describe('N1 — flashes and motion stay inside the safety bounds', () => {
     }
   });
 
-  it('a host moves at most MOTION_BOUNDS: translate and scale caps never exceed the edge-travel bound', () => {
-    for (const size of [
-      { w: 24, h: 24 },
-      { w: 120, h: 44 },
-      { w: 600, h: 320 },
-      { w: 1400, h: 900 },
-    ]) {
-      const c = envelopeCaps(size);
-      const edge = c.translate + Math.max(c.scaleX * size.w, c.scaleY * size.h) / 2;
-      expect(edge, `${size.w}×${size.h}`).toBeLessThanOrEqual(MOTION_BOUNDS.maxEdgeTravelPx + 1e-9);
-      expect(c.scaleX).toBeLessThanOrEqual(MOTION_BOUNDS.maxScaleDelta);
-      expect(c.scaleY).toBeLessThanOrEqual(MOTION_BOUNDS.maxScaleDelta);
-      expect(c.lean).toBeLessThanOrEqual(c.translate);
-    }
+  it('a host moves at most MOTION_BOUNDS: the configured poses never exceed the scale or edge-travel bound', () => {
     expect(SOFT_BODY.hoverPlump).toBeLessThanOrEqual(MOTION_BOUNDS.maxScaleDelta);
     expect(SOFT_BODY.pressSquash).toBeLessThanOrEqual(MOTION_BOUNDS.maxScaleDelta);
     expect(MOTION_BOUNDS.nudgePx).toBeLessThanOrEqual(MOTION_BOUNDS.maxEdgeTravelPx);
   });
 
-  it('R12: a nudge is ≤ nudgePx, only within nudgeRadiusPx, at most nudgeMax neighbours, never during scroll', () => {
-    expect(nudgePeak(0)).toBeLessThanOrEqual(MOTION_BOUNDS.nudgePx);
-    expect(nudgePeak(MOTION_BOUNDS.nudgeRadiusPx + 0.01)).toBe(0);
-    const src = { x: 100, y: 100, w: 100, h: 40 };
-    const ring = Array.from({ length: 12 }, (_, i) => ({
-      key: i,
-      rect: { x: 100 + (i - 6) * 20, y: 100 + 40 + 2 + (i % 3), w: 18, h: 18 },
-    }));
-    const hit = pickNudgeTargets(src, ring, 100);
-    expect(hit.length).toBeLessThanOrEqual(MOTION_BOUNDS.nudgeMax);
-    for (const t of hit) expect(t.peak).toBeLessThanOrEqual(MOTION_BOUNDS.nudgePx);
-    expect(pickNudgeTargets(src, ring, 100, 0), 'a scroll just happened').toEqual([]);
-  });
-
-  it('no jelly layer overdraws its host past the focus ring offset (04 §4.5)', () => {
-    expect(AMBIENT_BOUNDS.maxOverdrawPx).toBeLessThanOrEqual(2);
-  });
 });
 
 // ── N7: where arcs may land ─────────────────────────────────────────────────
@@ -410,15 +290,12 @@ class Tagged extends FakeEl {
 function registryOf(els: FakeEl[]): JellyRegistry {
   const entries: JellyEntry[] = els.map((el, order) => ({
     el: el as unknown as Element,
-    role: 'control',
     order,
     visible: true,
     rect: { ...el.box },
   }));
   return {
     visible: () => entries,
-    ambientSlots: () => [],
-    liveSet: () => [],
     entryFor: () => undefined,
     onChange: () => () => {},
     scrolling: false,
@@ -538,16 +415,15 @@ describe('N7 — arcs reach only admitted surfaces, never past their range', () 
  *    soft body is CSS now (app/jelly-material.css §8, CSS-first jelly PR 3), so a moving property may transition only
  *    on a generated `--spring-*` curve (jelly-spring-tokens.test.ts holds those equal to the springs). An ease or a
  *    duration of its own on a moving property is a fake spring; this covers the `--jelly-spring-t` hook too;
- *  - no `@keyframes` except the sanctioned haze drift (`jelly-drift`, `jelly-current`), run by the woken-haze layer
- *    (the glass roles' own `::after`, CSS-first jelly PR 2) and the retired `.jelly-flow` rules until PR 5; N3 in
+ *  - no `@keyframes` except the sanctioned haze drift (`jelly-drift`), run by the woken-haze layer
+ *    (the glass roles' own `::after`, CSS-first jelly PR 2); N3 in
  *    `site-infinite-animation.test.ts` pins where they may be used;
- *  - no `filter` (or `backdrop-filter`) declaration other than `none` — the only filter on a body is the press lens,
- *    set from `lib/jelly/lens.ts` while the dent exists. Likewise, under `lib/jelly` and `lib/liquid` only `lens.ts`
- *    writes an element's `style.filter`.
+ *  - no `filter` (or `backdrop-filter`) declaration other than `none`; the press lens that used to be the one filter on
+ *    a body is retired, so nothing under `lib/jelly` or `lib/liquid` writes an element's `style.filter` either.
  */
 describe('N13 — never fake a law', () => {
   const ROOT = process.cwd();
-  const SANCTIONED_KEYFRAMES = new Set(['jelly-drift', 'jelly-current']);
+  const SANCTIONED_KEYFRAMES = new Set(['jelly-drift']);
   const SHEETS = [
     ...fs
       .readdirSync(path.join(ROOT, 'app'))
@@ -694,7 +570,7 @@ describe('N13 — never fake a law', () => {
     ).toEqual([]);
   });
 
-  it('no filter in jelly CSS: the lens is applied from lib/jelly/lens.ts only', () => {
+  it('no filter in jelly CSS: the press lens was retired with the lattice and the shader rim', () => {
     const offenders = SHEETS.flatMap((f) =>
       decls(f)
         .filter((d) => /^(-webkit-)?(backdrop-)?filter$/.test(d.prop) && d.value !== 'none')
@@ -702,12 +578,12 @@ describe('N13 — never fake a law', () => {
     );
     expect(
       offenders,
-      'No stylesheet filters a jelly body. The press lens is set (and removed) by lib/jelly/lens.ts while the ' +
-        'dent exists (docs/plasmatic-jelly-system.md §3.1).',
+      'No stylesheet filters a jelly body: the press lens (an SVG filter on the host) went with the soft-body ' +
+        'service. The dent is a lit gradient (docs/plasmatic-jelly-system.md §3.1).',
     ).toEqual([]);
   });
 
-  it('under lib/jelly and lib/liquid, only lib/jelly/lens.ts writes an element filter', () => {
+  it('nothing under lib/jelly or lib/liquid writes an element filter', () => {
     const files: string[] = [];
     const walk = (dir: string) => {
       for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
@@ -722,13 +598,12 @@ describe('N13 — never fake a law', () => {
     const WRITE =
       /\.style\.(?:webkitF|f)ilter\s*=(?!=)|setProperty\(\s*['"](?:-webkit-)?filter['"]/;
     const offenders = files.filter((f) => {
-      if (f === 'lib/jelly/lens.ts') return false;
       const src = fs
         .readFileSync(path.join(ROOT, f), 'utf8')
         .replace(/\/\*[\s\S]*?\*\//g, ' ')
         .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
       return WRITE.test(src);
     });
-    expect(offenders, 'The press lens has one owner, lib/jelly/lens.ts.').toEqual([]);
+    expect(offenders, 'The press lens is retired; no jelly service filters an element.').toEqual([]);
   });
 });

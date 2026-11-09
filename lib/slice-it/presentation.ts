@@ -289,7 +289,7 @@ export function backdropBars(
  * ~12% alpha of a mid-tone colour, never a full-screen luminance step) and the
  * 0.34 s release damps the trough between beats so consecutive peaks blur into
  * one another rather than strobing. Above that, `backdropVisible` is the real
- * answer: reduced motion, `perf-lite` and A2's photosensitivity mode each turn
+ * answer: reduced motion, a low-end device and A2's photosensitivity mode each turn
  * the whole layer off.
  */
 export const BACKDROP_ATTACK_TAU = 0.045;

@@ -63,8 +63,14 @@ export function generateUpgradeChoices(
     }
   }
 
+  // Passive and catalyst upgrades are held back until every held weapon is
+  // fully levelled (max level, or already evolved). New passives/catalysts
+  // can still be picked up so slots fill, but levelling them waits.
+  const weaponsMaxed = weapons.every((w) => w.evolved || w.level >= MAX_WEAPON_LEVEL);
+
   // Passive upgrades (existing passives not at max level)
   for (const p of passives) {
+    if (!weaponsMaxed) break;
     if (banishedIds.has(p.passiveId)) continue;
     if (p.level < MAX_PASSIVE_LEVEL) {
       pool.push({
@@ -89,6 +95,7 @@ export function generateUpgradeChoices(
 
   // Catalyst upgrades (existing catalysts not at max level)
   for (const c of catalysts) {
+    if (!weaponsMaxed) break;
     if (banishedIds.has(c.catalystId)) continue;
     if (c.level < MAX_CATALYST_LEVEL) {
       pool.push({

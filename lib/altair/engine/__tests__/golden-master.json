@@ -261,23 +261,35 @@
    ],
    [
     700,
-    "4eed4158c5beb854"
+    "b7897523317234a4"
    ],
    [
     800,
-    "57ae88fe3eb913bb"
+    "3ffb8b0e42e32b6c"
    ],
    [
     900,
-    "b36a67a71bfc229a"
+    "a7ddb369de6354f5"
    ],
    [
     1000,
-    "c34352a7979818ee"
+    "a059a2b37b79a503"
    ],
    [
-    1086,
-    "d7f3ac6048339a84"
+    1100,
+    "c1f326bbee52ba16"
+   ],
+   [
+    1200,
+    "32b142139335b82a"
+   ],
+   [
+    1300,
+    "074a6c0e431da34d"
+   ],
+   [
+    1400,
+    "d0e9bcc70e67d632"
    ]
   ],
   "events": [
@@ -285,19 +297,19 @@
    "f330:levelup:2:3",
    "f471:levelup:3:3",
    "f689:levelup:4:3",
-   "f920:levelup:5:3",
-   "f1086:death"
+   "f854:levelup:5:3",
+   "f1155:levelup:6:3"
   ],
   "final": {
-   "frames": 1086,
-   "time": 314.13333333331684,
-   "kills": 115,
-   "level": 5,
-   "xp": 15,
-   "coins": 3,
-   "enemies": 102,
-   "rngCalls": 6725,
-   "died": true
+   "frames": 1401,
+   "time": 319.3666666666454,
+   "kills": 189,
+   "level": 6,
+   "xp": 17,
+   "coins": 4,
+   "enemies": 51,
+   "rngCalls": 10208,
+   "died": false
   }
  },
  "plague-doctor-countess": {
@@ -425,31 +437,31 @@
    ],
    [
     600,
-    "92e85696288cf466"
+    "0672189553f355b0"
    ],
    [
     700,
-    "87832a8d53ad7278"
+    "f1d82987a3bec379"
    ],
    [
     800,
-    "eb467c03f6e17eef"
+    "9659d82e0424cb89"
    ],
    [
     900,
-    "5b71a4bd401d225c"
+    "c29b0276d47ea04b"
    ],
    [
     1000,
-    "85b217b7d53317b4"
+    "5add1d0414b63041"
    ],
    [
     1100,
-    "4a9237f04996fa3f"
+    "863fa0b5b38a701f"
    ],
    [
-    1200,
-    "8c7346b8d65ec417"
+    1192,
+    "450c1c5f59811c7d"
    ]
   ],
   "events": [
@@ -457,22 +469,20 @@
    "f409:levelup:4:3",
    "f477:levelup:5:3",
    "f551:levelup:6:3",
-   "f765:levelup:7:3",
-   "f821:levelup:8:3",
-   "f928:levelup:9:3",
-   "f1125:levelup:10:3",
-   "f1181:levelup:11:3"
+   "f788:levelup:7:3",
+   "f986:levelup:8:3",
+   "f1192:death"
   ],
   "final": {
-   "frames": 1201,
-   "time": 420.0333333333151,
-   "kills": 610,
-   "level": 11,
-   "xp": 70,
-   "coins": 53,
-   "enemies": 255,
-   "rngCalls": 22777,
-   "died": false
+   "frames": 1192,
+   "time": 419.8999999999819,
+   "kills": 514,
+   "level": 8,
+   "xp": 55,
+   "coins": 23,
+   "enemies": 209,
+   "rngCalls": 18130,
+   "died": true
   }
  },
  "berserker-death": {
@@ -495,35 +505,39 @@
    ],
    [
     500,
-    "f92a27ec3363dbb8"
+    "ff515beabf9a85b6"
    ],
    [
     600,
-    "2391ef7e1616576d"
+    "d0a5056bb2b1a8c3"
    ],
    [
-    655,
-    "b8b74743eb798bf8"
+    700,
+    "6879226a02806e5f"
+   ],
+   [
+    734,
+    "532f141eebed0dcf"
    ]
   ],
   "events": [
    "f312:levelup:2:3",
    "f316:levelup:3:3",
    "f409:levelup:4:3",
-   "f496:levelup:5:3",
-   "f587:levelup:6:3",
-   "f597:levelup:7:3",
-   "f655:death"
+   "f494:levelup:5:3",
+   "f501:levelup:6:3",
+   "f596:levelup:7:3",
+   "f734:death"
   ],
   "final": {
-   "frames": 655,
-   "time": 710.9333333333234,
-   "kills": 199,
+   "frames": 734,
+   "time": 712.2499999999889,
+   "kills": 218,
    "level": 7,
-   "xp": 11,
-   "coins": 5,
-   "enemies": 200,
-   "rngCalls": 8777,
+   "xp": 55,
+   "coins": 39,
+   "enemies": 205,
+   "rngCalls": 10307,
    "died": true
   }
  }

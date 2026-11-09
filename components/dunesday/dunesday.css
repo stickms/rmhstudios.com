@@ -99,6 +99,7 @@
   position: absolute;
   bottom: -60px;
   border-radius: 50%;
+  corner-shape: round;
   background:
     radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.95) 0 8%, rgba(255, 255, 255, 0) 22%),
     radial-gradient(
@@ -134,6 +135,7 @@
   padding: 0 16px;
   border: 1px solid rgba(8, 90, 160, 0.55);
   border-radius: 999px;
+  corner-shape: round;
   font: inherit;
   font-size: 14px;
   font-weight: 600;
@@ -457,6 +459,7 @@
   padding: 3px;
   gap: 3px;
   border-radius: 999px;
+  corner-shape: round;
   background: linear-gradient(180deg, rgba(180, 215, 240, 0.6), rgba(230, 245, 255, 0.7));
   border: 1px solid var(--ds-field-edge);
   box-shadow: inset 0 2px 4px rgba(10, 70, 130, 0.15);
@@ -472,6 +475,7 @@
   padding: 0 12px;
   border: 0;
   border-radius: 999px;
+  corner-shape: round;
   background: transparent;
   color: var(--ds-ink-soft);
   font: inherit;
@@ -527,6 +531,7 @@
   width: 14px;
   height: 56px;
   border-radius: 999px;
+  corner-shape: round;
   background: rgba(150, 190, 220, 0.35);
   display: flex;
   align-items: flex-end;
@@ -537,6 +542,7 @@
 .ds-weekday-fill {
   width: 100%;
   border-radius: 999px;
+  corner-shape: round;
   background: linear-gradient(180deg, #8ae65c, #2f9a2a);
   transition: height 0.2s ease;
 }
@@ -550,6 +556,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
+  corner-shape: round;
   border: 1px solid var(--ds-field-edge);
   background: var(--ds-field);
   color: var(--ds-ink);
@@ -579,6 +586,7 @@
   gap: 6px;
   padding: 3px 4px 3px 10px;
   border-radius: 999px;
+  corner-shape: round;
   font-size: 13px;
   background: rgba(255, 255, 255, 0.8);
   border: 1px solid var(--ds-field-edge);
@@ -713,6 +721,7 @@
   align-items: center;
   padding: 1px 8px;
   border-radius: 999px;
+  corner-shape: round;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -846,6 +855,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
+  corner-shape: round;
   background: var(--ds-grass);
 }
 .ds-cell--empty {
@@ -883,6 +893,7 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
+  corner-shape: round;
   display: grid;
   place-items: center;
   color: #fff;
@@ -900,6 +911,7 @@
   position: absolute;
   inset: 2px 6px 52% 6px;
   border-radius: 50%;
+  corner-shape: round;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.05));
 }
 
@@ -914,6 +926,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
+  corner-shape: round;
   border: 2px solid #fff;
   background: #39d353;
 }
@@ -1008,6 +1021,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
+  corner-shape: round;
   background: var(--ds-aqua-deep);
   animation: ds-typing 1s ease-in-out infinite;
 }
@@ -1041,6 +1055,7 @@
 .ds-suggest {
   padding: 5px 10px;
   border-radius: 999px;
+  corner-shape: round;
   border: 1px solid var(--ds-field-edge);
   background: rgba(255, 255, 255, 0.85);
   color: var(--ds-ink);
@@ -1381,6 +1396,7 @@
 .ds-ripple {
   position: absolute;
   border-radius: 50%;
+  corner-shape: round;
   pointer-events: none;
   background: radial-gradient(
     circle,
@@ -1429,6 +1445,7 @@
     linear-gradient(90deg, transparent 45%, #fff 50%, transparent 55%),
     linear-gradient(0deg, transparent 45%, #fff 50%, transparent 55%);
   border-radius: 50%;
+  corner-shape: round;
   filter: drop-shadow(0 0 4px #fff);
   animation: ds-twinkle 3.4s ease-in-out infinite;
   opacity: 0;
@@ -1774,6 +1791,7 @@
   position: absolute;
   inset: 40px;
   border-radius: 50%;
+  corner-shape: round;
   mix-blend-mode: screen;
   filter: blur(4px);
 }
@@ -1782,6 +1800,7 @@
   position: absolute;
   inset: 30px;
   border-radius: 50%;
+  corner-shape: round;
   background:
     radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 40%),
     conic-gradient(from 45deg, #ff5a3c, #ffc928, #7ad33c, #2ba7ff, #ff5a3c);
@@ -1845,6 +1864,7 @@
   bottom: -18px;
   height: 46px;
   border-radius: 50% 50% 0 0;
+  corner-shape: round;
   background: linear-gradient(180deg, #ffe0a0, #e2a650);
 }
 
@@ -1937,6 +1957,7 @@
   width: 9px;
   height: 9px;
   border-radius: 50%;
+  corner-shape: round;
   border: 1px solid rgba(255, 255, 255, 0.85);
   background: radial-gradient(circle at 30% 30%, #fff 0 20%, rgba(255, 255, 255, 0.15) 40%);
   animation: ds-tank-rise 4.5s ease-in infinite;
@@ -2111,4 +2132,10 @@ html:has(.ds)::-webkit-scrollbar-thumb {
     position: absolute;
     inset: -10px;
   }
+}
+
+/* The vendored 7.css radio dots are `border-radius: 50%` pseudo-elements with no corner-shape of their own. */
+.win7 input[type='radio'] + label::before,
+.win7 input[type='radio']:checked + label::after {
+  corner-shape: round;
 }

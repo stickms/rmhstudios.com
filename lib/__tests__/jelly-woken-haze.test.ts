@@ -76,8 +76,8 @@ const ALL = rules(CSS);
 const decl = (body: string, prop: string) =>
   new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`).exec(body)?.[1]?.trim().replace(/\s+/g, ' ');
 
-/** The host compound's prefix: off native-material routes and perf-lite. */
-const PREFIX = 'html:not(.native-material, .perf-lite) ';
+/** The host compound's prefix: off native-material routes. */
+const PREFIX = 'html:not(.native-material) ';
 /** The base layer rule: the one single-selector `::after` rule under the prefix that generates the box. */
 const BASE = ALL.find(
   (r) =>
@@ -106,7 +106,7 @@ const attaches = (body: string) => {
 };
 
 describe('the woken haze layer', () => {
-  it('is one ::after rule, scoped off native-material routes and perf-lite', () => {
+  it('is one ::after rule, scoped off native-material routes', () => {
     expect(
       BASE,
       'a ::after rule generating the haze layer in app/jelly-material.css',
@@ -276,7 +276,7 @@ describe('where the haze does not move', () => {
   });
 
   it.each([
-    ['perf-lite and app high contrast', ':is(.perf-lite, .app-high-contrast) '],
+    ['app high contrast', '.app-high-contrast '],
     ['an in-play HUD', "html[data-game-state='playing'] [data-jelly-zone='hud'] "],
   ])('is removed under %s', (_label, root) => {
     const hit = layerRules(
@@ -297,7 +297,7 @@ describe('where the haze does not move', () => {
 });
 
 describe('the keyframes it reuses', () => {
-  it.each(['jelly-drift', 'jelly-current'])('%s animates transform only', (name) => {
+  it.each(['jelly-drift'])('%s animates transform only', (name) => {
     const block = new RegExp(`@keyframes\\s+${name}\\s*\\{((?:[^{}]*\\{[^{}]*\\})+)\\s*\\}`).exec(
       CSS,
     );

@@ -141,7 +141,7 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <div className="absolute inset-0 z-60 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-slice-bg p-4">
+    <div className="slice-screen absolute inset-0 z-60 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain bg-slice-bg p-4">
       <Card className="w-full max-w-md bg-slice-bg text-slice-text border border-slice-border">
         <CardHeader>
           <CardTitle className="text-2xl font-black text-center text-slice-text-darker">

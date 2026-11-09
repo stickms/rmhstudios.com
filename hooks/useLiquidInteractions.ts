@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { installLazyClickArcs } from '@/lib/jelly/arc-lazy';
 import { installPointerVars } from '@/lib/jelly/pointer-vars';
-import { reconcileSoftRender } from '@/lib/perf-tier';
 
 /**
  * Mount the Plasmatic Jelly document services once at the provider boundary, including full-screen app routes. One
@@ -14,14 +13,13 @@ import { reconcileSoftRender } from '@/lib/perf-tier';
  * pointer hub it rides were already in the entry (OPT-01, `scripts/check-bundle-budget.ts`). On a `(hover: none)`
  * device it attaches nothing.
  *
- * **After the window `load` event, at idle:** settle whether this browser draws in software (`reconcileSoftRender`,
- * which puts the page on `perf-lite`), and otherwise stamp `html[data-jelly-ready]` so glass that mounts from then on
- * fades in (app/jelly-material.css §7).
+ * **After the window `load` event, at idle:** subscribe the click arcs and stamp `html[data-jelly-ready]` so glass that
+ * mounts from then on fades in (app/jelly-material.css §7). Every browser gets the same material: there is no low-end
+ * tier, and nothing here probes the GPU.
  *
  * The static CSS tier (`app/liquid-glass.css`, `app/jelly-material.css`) is the material. The soft body is CSS too
- * (CSS-first jelly, PR 3: §8, springs on `scale`), so the soft-body physics, the jelly registry (whose observers had
- * no consumer left) and the fallback cursor light (`lib/liquid/runtime.ts`, replaced by the `--px` / `--py` wake) are
- * no longer installed; neither are the glass engine, the CSS flow carriers or the governor (PR 1). The electric arc is
+ * (CSS-first jelly, PR 3: §8, springs on `scale`); the soft-body physics, the glass engine, the CSS flow carriers, the
+ * governor and the fallback cursor light are deleted (their `--px` / `--py` wake is `lib/jelly/pointer-vars.ts`). The electric arc is
  * the one event-woken effect: **after the same idle step**, `installLazyClickArcs` (`lib/jelly/arc-lazy.ts`) subscribes
  * to the first `pointerdown` through the pointer hub; the arcs chunk is imported and the click-only runtime installed
  * on that press, and removed again 10 s after the last click. Ambient arcs no longer exist.
@@ -37,9 +35,6 @@ export function useLiquidInteractions(enabled = true): void {
 
     const start = () => {
       if (cancelled) return;
-      // Settle whether this browser draws in software. If it does, the page is on the low tier (`perf-lite`: the
-      // static CSS material, nothing moving on its own, press still works) and the entrance fade stays off.
-      if (reconcileSoftRender()) return;
       // The click arc: one `pointerdown` subscription on the shared hub and nothing else. The arcs chunk, the runtime
       // and its canvas appear on the first press and are gone ten seconds after the last (lib/jelly/arc-lazy.ts).
       stopArcs = installLazyClickArcs(document);
@@ -53,8 +48,7 @@ export function useLiquidInteractions(enabled = true): void {
     };
     const idle = typeof w.requestIdleCallback === 'function';
     let handle: number | null = null;
-    // The window `load` event, then idle (400 ms at most): the soft-render probe is not free, and nothing here may
-    // compete with hydration.
+    // The window `load` event, then idle (400 ms at most): nothing here may compete with hydration.
     const schedule = () => {
       if (cancelled) return;
       handle = idle

@@ -49,7 +49,7 @@
  * does not depend on the globe's rotation at all. It is redrawn when the
  * SURFACE changes — a ripple is travelling, the soft body is deformed, the plasma
  * level is easing — and otherwise only on the jelly ambient clock (60 Hz engaged,
- * 30 Hz idle, never while Still, hidden, off screen or everting). Spinning alone
+ * 15 Hz idle, never while Still, hidden, off screen or everting). Spinning alone
  * issues no GL work. One context is created per page and reused by every
  * mount of the globe, so opening the menu never compiles a shader twice.
  *

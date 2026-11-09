@@ -149,6 +149,7 @@
 
 .slice-bar__avatar {
   border-radius: 9999px;
+  corner-shape: round;
   box-shadow: 0 0 0 1.5px var(--slice-primary);
 }
 
@@ -198,27 +199,13 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* The track number, as the key art prints it ("A1 DOWNBEAT"). */
-.slice-nav__idx {
-  font-weight: 600;
-  color: var(--slice-accent);
-}
-
 .slice-nav__item:hover {
   background: var(--slice-paper);
   color: var(--slice-label);
 }
 
-.slice-nav__item:hover .slice-nav__idx {
-  color: var(--slice-label);
-}
-
 .slice-nav__item[aria-pressed='true'] {
   background: var(--slice-paper);
-  color: var(--slice-label);
-}
-
-.slice-nav__item[aria-pressed='true'] .slice-nav__idx {
   color: var(--slice-label);
 }
 
@@ -244,10 +231,6 @@
 
 .slice-nav--box .slice-nav__item:last-child {
   border-bottom: 0;
-}
-
-.slice-nav--box .slice-nav__idx {
-  width: 22px;
 }
 
 /* ── The sleeve (wide) ────────────────────────────────────── */
@@ -327,19 +310,6 @@
 .slice-rec__ph {
   position: absolute;
   inset: 0;
-}
-
-/* The catalogue tag printed on the corner of the cover. */
-.slice-rec__tag {
-  position: absolute;
-  inset: 0 auto auto 0;
-  padding: 5px 9px;
-  background: var(--slice-label);
-  color: var(--slice-paper);
-  font-family: var(--slice-mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .slice-rec__head {
@@ -557,20 +527,26 @@
   text-transform: uppercase;
 }
 
-/* ── The tracklist ────────────────────────────────────────── */
-
-.slice-lib-head {
+.slice-mod__text {
   display: flex;
-  flex: 1 0 100%;
-  align-items: baseline;
-  gap: 14px;
-  padding: 6px 8px 2px;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.slice-lib-head h2 {
-  margin: 0;
-  font-size: 26px;
+/* What the row is worth: its score bonus, or that it keeps a run off the board. */
+.slice-mod__tag {
+  font-family: var(--slice-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--slice-primary);
 }
+
+.slice-mod__tag--off {
+  color: var(--slice-text-muted);
+}
+
+/* ── The tracklist ────────────────────────────────────────── */
 
 /* One grid for the heads, the rows and the skeleton, so they line up. */
 .slice-trow {
@@ -825,7 +801,7 @@
 /* ─── The picked record on a phone ──────────────────────────────────────────── */
 .slice-prec {
   flex-shrink: 0;
-  padding: 14px 14px 12px;
+  padding: 10px 14px 10px;
   border-bottom: 1px solid var(--slice-border);
   background: var(--slice-label);
 }
@@ -838,8 +814,8 @@
 .slice-prec__cover {
   position: relative;
   flex-shrink: 0;
-  width: 92px;
-  height: 92px;
+  width: 72px;
+  height: 72px;
   border: 1px solid var(--slice-border);
 }
 
@@ -849,6 +825,7 @@
   flex: 1;
   flex-direction: column;
   justify-content: space-between;
+  gap: 4px;
 }
 
 .slice-prec__title {
@@ -885,28 +862,65 @@
 }
 
 .slice-prec .slice-press {
-  height: 50px;
+  height: 38px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 0 8px;
 }
 
 .slice-prec .slice-press__big {
-  font-size: 16px;
+  font-size: 13px;
 }
 
 .slice-prec__go {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .slice-prec__go .slice-btn-primary {
   flex: 1;
-  height: 50px;
+  height: 44px;
   gap: 10px;
 }
 
 .slice-prec__go .slice-sq {
-  height: 50px;
+  height: 44px;
   min-width: 72px;
+}
+
+/* The phone's options button: a square beside the search field, with a dot when a
+   non-default sort, view or artist is in force. */
+.slice-opt {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--slice-border);
+  background: var(--slice-label);
+  color: var(--slice-paper);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.slice-opt:hover,
+.slice-opt[aria-expanded='true'] {
+  background: var(--slice-paper);
+  color: var(--slice-label);
+}
+
+.slice-opt__dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  background: var(--slice-accent);
 }
 
 /* ── The details sheet (narrow) ───────────────────────────── */
@@ -943,44 +957,40 @@
 
 @media (max-width: 639px) {
   .slice-bar {
-    min-height: calc(48px + var(--safe-top, 0px));
+    min-height: calc(44px + var(--safe-top, 0px));
   }
 
   .slice-bar__logo {
-    height: 34px;
+    height: 30px;
   }
 
-  /* The nav is the last thing in the column, under the library: in the flow, not
-     pinned, so nothing sits flush to the screen edge. */
+  /* The nav is one short row under the bar, in the flow: at the top of the page so
+     the bottom edge is left to Safari's own bar, and nothing is pinned. Code and
+     name sit on one line, so it is 34px where it used to be 52 plus the home
+     indicator. */
   .slice-nav {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0;
     margin: 0;
-    padding: 0 max(0px, var(--safe-right, 0px)) var(--safe-bottom, 0px)
-      max(0px, var(--safe-left, 0px));
+    padding: 0 max(0px, var(--safe-right, 0px)) 0 max(0px, var(--safe-left, 0px));
     flex-shrink: 0;
-    border-top: 1px solid var(--slice-border);
+    border-bottom: 1px solid var(--slice-border);
     background: var(--slice-label);
   }
 
   .slice-nav__item {
-    flex-direction: column;
-    align-items: flex-start;
     justify-content: center;
-    gap: 6px;
-    height: 60px;
-    padding: 0 12px;
+    gap: 5px;
+    height: 34px;
+    padding: 0 4px;
     border-right: 1px solid var(--slice-border);
-    font-size: 11px;
+    font-size: 10.5px;
+    letter-spacing: 0.03em;
   }
 
   .slice-nav__item:last-child {
     border-right: 0;
-  }
-
-  .slice-nav__idx {
-    font-size: 12px;
   }
 
   .slice-sheet {
@@ -992,5 +1002,97 @@
   .slice-sec {
     padding-left: 16px;
     padding-right: 16px;
+  }
+}
+
+/* ── A phone: the menu is a document ──────────────────────────
+ *
+ * Safari collapses its bars only when the DOCUMENT scrolls, and it shows page content
+ * through its floating bar only when there is some under it. The menu used to be a
+ * viewport-high shell with scroll boxes inside, so the bars never shrank and the strip
+ * behind the bottom bar was flat page colour. Below 640px, outside a run, every box
+ * between the page and the lists lets go of its height and its clip, so the page itself
+ * is as tall as the list and scrolls. A run keeps the fixed viewport
+ * (`data-slice-screen='play'`). Nothing here is sticky or fixed: a layer flush to an
+ * edge is exactly what makes Safari paint a band.
+ */
+@media (max-width: 639px) {
+  [data-slice-screen='menu'].slice-page {
+    display: block;
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+  }
+
+  [data-slice-screen='menu']
+    :is(.slice-page__body, .slice-canvas-root, .slice-canvas-stage, .slice-canvas-wrapper) {
+    display: block;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    aspect-ratio: auto;
+    padding: 0;
+    border: 0;
+  }
+
+  /* The playfield canvas has nothing to draw in a menu, and in the flow it would be
+     a screen-high blank above the list. */
+  [data-slice-screen='menu'] .slice-canvas-el {
+    display: none;
+  }
+
+  [data-slice-screen='menu'] .slice-menu {
+    position: relative;
+    inset: auto;
+    display: flex;
+    min-height: 100svh;
+    overflow: visible;
+    /* The floating bar overlaps the foot of the page: leave the last row clear. */
+    padding-bottom: var(--safe-bottom, 0px);
+  }
+
+  [data-slice-screen='menu']
+    :is(.slice-menu__stage, .slice-menu__col, .slice-menu__mode, .slice-lib, .slice-doc-panel) {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    flex: none;
+  }
+
+  [data-slice-screen='menu'] .slice-menu__stage {
+    flex-direction: column;
+  }
+
+  /* A full screen (settings, calibration, the lobby's pages) is the page, not an
+     overlay on it: the menu behind it is not rendered, so the page is its height. */
+  [data-slice-screen='menu'] .slice-screen {
+    position: relative;
+    inset: auto;
+    min-height: 100svh;
+    overflow: visible;
+    padding-bottom: calc(var(--safe-bottom, 0px) + 1.25rem);
+  }
+
+  [data-slice-screen='menu'] .slice-menu:has(> .slice-screen) > :not(.slice-screen) {
+    display: none;
+  }
+
+  /* The sign-in wall replaces the stage rather than covering a list a screen-height
+     taller than it. */
+  [data-slice-screen='menu'] .slice-auth {
+    position: relative;
+    inset: auto;
+    min-height: 70svh;
+    overflow: visible;
+  }
+
+  [data-slice-screen='menu'] .slice-menu__stage:has(> .slice-auth) > :not(.slice-auth) {
+    display: none;
+  }
+
+  /* A track loading covers the screen you are looking at. It is gone in a moment, so
+     the one fixed layer the menu ever has is allowed. */
+  [data-slice-screen='menu'] .slice-loading {
+    position: fixed;
   }
 }

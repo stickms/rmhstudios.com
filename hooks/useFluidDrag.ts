@@ -36,8 +36,7 @@ export { FLUID_DRAG_FRAME_ORDER } from '@/hooks/fluid-drag-settle';
  * (`createSettle` in `hooks/fluid-drag-settle.ts`) is a driver on the ONE jelly frame
  * (`drive(fn, { order: FLUID_DRAG_FRAME_ORDER })` from `lib/jelly/frame.ts`) and the gesture's
  * move/up/cancel come from the ONE pointer hub (`onJellyPointer` from `lib/jelly/pointer.ts`) — the hook owns no
- * `requestAnimationFrame` and adds no window listeners. The driver runs before physics (10) so a drag owner's
- * position for a frame is written before the soft body reads it; it is awake only between a release and the
+ * `requestAnimationFrame` and adds no window listeners. The driver is awake only between a release and the
  * spring arriving, and is unregistered on unmount.
  *
  * ```tsx

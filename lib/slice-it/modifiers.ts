@@ -22,6 +22,7 @@ import {
   MAX_SPEED,
   MIN_SPEED,
   MULTIPLAYER_MIN_SPEED,
+  RANKED_MIN_SPEED,
   type Difficulty,
   type VisibilityMode,
 } from './constants';
@@ -195,6 +196,32 @@ export const ASSIST_MODIFIERS = [
 /** True when a run's settings allow it onto a leaderboard at all. */
 export function isRankedModifierSet(modifiers: Partial<Modifiers>): boolean {
   return !ASSIST_MODIFIERS.some((key) => modifiers[key] === true);
+}
+
+/**
+ * Why a run will not be uploaded, or null if it will be.
+ *
+ * - `speed` — slower than 1.0x.
+ * - `lenient` — wider hit windows.
+ * - `assist` — No Fail, Assist or Taps Only.
+ * - `practice` — the metronome or the assist tick is on. These are guide sounds:
+ *   they never change the chart, the windows or the score, so the server has
+ *   nothing to check them against. The client withholds the run instead.
+ *
+ * One function so the results screen's label, the client's submit guard and
+ * the server's refusal can never disagree about what counts.
+ */
+export type UnrankedReason = 'speed' | 'lenient' | 'assist' | 'practice';
+
+export function unrankedReason(
+  modifiers: Partial<Modifiers>,
+  practiceAids: boolean,
+): UnrankedReason | null {
+  if (typeof modifiers.speed === 'number' && modifiers.speed < RANKED_MIN_SPEED) return 'speed';
+  if (modifiers.lenientTiming === true) return 'lenient';
+  if (!isRankedModifierSet(modifiers)) return 'assist';
+  if (practiceAids) return 'practice';
+  return null;
 }
 
 /**

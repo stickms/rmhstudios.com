@@ -19,11 +19,11 @@
  *      `lib/jelly/__tests__/pointer.test.ts`). Hooks that moved onto both services (`SHARED_FRAME_CLIENTS`, today
  *      `hooks/useFluidDrag.ts` with its settle spring `hooks/fluid-drag-settle.ts`) are held to the same two rules;
  *      that list only grows.
- *  (c) The degraded-root predicate (`.reduce-transparency,.style-high-contrast,.perf-lite`) is declared once, as
- *      `DEGRADED_ROOT_SELECTOR` in `lib/jelly/tiers.ts`. It used to be hand-copied into the engine and the runtime,
- *      and a theme added to one copy left the other drawing.
+ *  (c) The material-off root predicate (the app tier's `.app-high-contrast`; the low-end tier is gone) is
+ *      declared once, as `APP_HIGH_CONTRAST_SELECTOR` in `lib/jelly/tiers.ts`. It used to be hand-copied into the
+ *      engine and the runtime, and a theme added to one copy left the other drawing.
  *  (d) No site-tier file writes `style.transform` / `style.scale` / `style.translate` in a file that handles
- *      pointer input — a per-component deformation outside the physics service. The baseline is today's gesture
+ *      pointer input — a per-component deformation outside the CSS soft body. The baseline is today's gesture
  *      surfaces (a swipe row, a 3D book, the globe, the news hero); games and apps are exempt, read
  *      from `design-consistency.test.ts` like `scripts/check-consistency.sh` does.
  */
@@ -118,7 +118,7 @@ describe('N2 — the jelly services have one owner each', () => {
     expect(
       offenders,
       'Components take jelly through role classes (`glass-*`) and `data-jelly*` attributes, never by importing ' +
-        '`@/lib/jelly/physics|compose|arcs`. One soft body, one arc service — mounted once from ' +
+        '`@/lib/jelly/arcs`. One soft body (CSS), one arc service — mounted once from ' +
         'hooks/useLiquidInteractions.ts (docs/plasmatic-jelly-system.md).',
     ).toEqual([]);
     // Reads every source file on its first call (cold file cache): 5-9s on a loaded machine, past the 5s default.
@@ -210,12 +210,11 @@ describe('N2 — the jelly services have one owner each', () => {
     );
   });
 
-  it('(c) the degraded-root predicate is declared once, in lib/jelly/tiers.ts', () => {
-    const DEGRADED = ['.perf-lite'];
+  it('(c) the material-off root predicate is declared once, in lib/jelly/tiers.ts', () => {
+    const DEGRADED = ['.app-high-contrast'];
     const tiers = readFileSync(join(ROOT, 'lib/jelly/tiers.ts'), 'utf8');
-    expect(tiers).toMatch(
-      /export const DEGRADED_ROOT_SELECTOR = '\.perf-lite';/,
-    );
+    expect(tiers).toMatch(/export const APP_HIGH_CONTRAST_SELECTOR = '\.app-high-contrast';/);
+    expect(tiers, 'the retired degraded-root list is gone').not.toContain('DEGRADED_ROOT_SELECTOR');
     const offenders: string[] = [];
     for (const f of SOURCES) {
       if (f === 'lib/jelly/tiers.ts') continue;
@@ -225,8 +224,8 @@ describe('N2 — the jelly services have one owner each', () => {
     }
     expect(
       offenders,
-      'Import DEGRADED_ROOT_SELECTOR from @/lib/jelly/tiers (or call jellyOff / jellyMode) instead of re-spelling ' +
-        'the degraded root list: a copy is how one service keeps drawing under a theme the others honour.',
+      'Import APP_HIGH_CONTRAST_SELECTOR from @/lib/jelly/tiers (or call jellyOff / jellyMode) instead of re-spelling ' +
+        'the material-off root: a copy is how one service keeps drawing under a theme the others honour.',
     ).toEqual([]);
   });
 

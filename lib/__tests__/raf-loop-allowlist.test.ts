@@ -14,7 +14,7 @@ import { join, posix } from 'node:path';
  * Two standards since Plasmatic Jelly (master plan R7, 2026-10-23):
  *   - IDLE-AT-REST — everything, including every jelly driver.
  *   - IDLE-WHEN-UNSEEN — exactly ONE exception, the engine's ambient haze clock: it keeps
- *     waking its driver (30 Hz idle floor) while a haze surface is visible and stops
+ *     waking its driver (15 Hz idle floor) while a haze surface is visible and stops
  *     (0 Hz, no wake) when nobody can see it.
  *   Since #989 the jelly has ONE rAF, `lib/jelly/frame.ts`; the engine, physics, arc
  *   renderer and fallback light are drivers on it and call no rAF of their own.
@@ -71,7 +71,7 @@ import { join, posix } from 'node:path';
  *                                       from its frame, so when every driver has settled
  *                                       NO frame is requested; `stop()` cancels a pending
  *                                       frame nobody else needs. The ambient clock wakes
- *                                       its driver from a timer (60 Hz engaged, 30 Hz
+ *                                       its driver from a timer (60 Hz engaged, 15 Hz
  *                                       idle floor, 0 when unseen — `policy.ts`
  *                                       `ambientHz`), never by spinning; physics and arcs
  *                                       wake only on input, a strike or a live arc.
@@ -86,9 +86,9 @@ import { join, posix } from 'node:path';
  *                                       soft body, an eversion); otherwise it
  *                                       sleeps on a timer to the next jelly
  *                                       ambient tick (drift + coat haze: engaged
- *                                       rate, then the 30 Hz idle floor after
+ *                                       rate, then the 15 Hz idle floor after
  *                                       IDLE_AFTER_MS, on the grid it shares with
- *                                       the globe cursor) — and with NOTHING
+ *                                       the globe worker's coat clock) — and with NOTHING
  *                                       scheduled under jellyMotion `still`, the
  *                                       degraded tiers, a hidden/unfocused tab or
  *                                       off screen. Every handler that moves it
@@ -218,19 +218,6 @@ const ALLOW = new Set<string>([
   // change (scene, zoom, selection) to coalesce redraws, and the effect's cleanup
   // cancels any pending frame on re-run and on unmount. Nothing is scheduled at rest.
   'components/tf2-hud/Preview.tsx',
-  // The globe cursor (owner, 2026-10-22: "a constantly everting globe"). Every
-  // vsync only while something the pointer did is still settling — movement, a
-  // spring, the fade, sparkles, the trail (`GlobeCursorEngine.busy()`). With the
-  // pointer resting, the eversion alone runs on the jelly ambient tick (a timer to
-  // the shared grid in lib/jelly/ambient-tick.ts: engaged rate, then the
-  // idle floor after IDLE_AFTER_MS — `everting()`), never per vsync; under
-  // jellyMotion `still`, the degraded tiers, a game in play or a hidden tab the
-  // eversion holds and nothing is scheduled once the cursor rests. Nothing either
-  // with the pointer out of the window, the window blurred or touch input. Under
-  // reduced motion it draws one still frame per pointer event. Mounted once per
-  // document; unmount cancels the frame and the timer. It loads only on a fine,
-  // hovering pointer with the cursor switched on.
-  'components/globe-cursor/GlobeCursor.tsx',
   'app/routes/_site/library/index.tsx',
   'app/routes/_site/rmhladder/pipeline.tsx',
   'components/assistant/ConciergePanel.tsx',
@@ -537,9 +524,7 @@ describe('the worker exemption bites (fixtures)', () => {
   it("the repo's worker rAF loops are the exempt ones", () => {
     const real = repoWorkerTargets();
     expect(real.has('components/radial/globe-worker.ts')).toBe(true);
-    expect(real.has('lib/globe-cursor/cursor.worker.ts')).toBe(true);
     expect(usesRaf('components/radial/globe-worker.ts')).toBe(false);
-    expect(usesRaf('lib/globe-cursor/cursor.worker.ts')).toBe(false);
     expect(usesRaf('components/radial/LiquidGlobe.tsx')).toBe(true);
   });
 });

@@ -231,12 +231,71 @@ is what makes "is this score believable?" answerable at all.
   worth meaningfully more than one but not six times more.
 - Accuracy is `Σ weight / (notes × 100)`, so a full MARVELOUS run is exactly 1.0.
 
+### What is chosen where, and what reaches the board
+
+Everything that changes a run is chosen **per song**, in the song's own settings
+(the sleeve panel under the chart's difficulty), and each row shows what it is
+worth: Health Gauge, Perfectionist, Invisible, Bombs, Switching, Spin, Strict
+Timing, One Track and S-Random show their addend from `MODIFIER_BONUSES`.
+Settings holds only what is personal and constant: volumes, keys, offsets, skin,
+backdrop, HUD and accessibility. There is no operator-name field (the name is the
+signed-in account's) and no Mirror.
+
+A run is **not uploaded** when `unrankedReason(modifiers, practiceAids)`
+(`lib/slice-it/modifiers.ts`) returns anything: playback below 1.0x, Lenient
+Timing, the assists (No Fail, Assist, Taps Only), or either practice aid
+(Metronome, Assist Tick). The results label, the client's submit guard
+(`useSubmitScore`) and the score endpoint all call that one function. The
+endpoint cannot see the guide sounds, since they change neither the chart nor
+the windows, so for those the client is the only gate.
+
+Volume is three sliders: **Master** scales both **Music** and **Effects**
+(`musicGain` / `sfxGain` in `lib/slice-it/store.ts`). Hit sounds, guide ticks and
+cues are effects; the song and the library preview are music.
+
 `maxPlausibleScore(duration, modifiers)` is the server's ceiling. It is
 deliberately loose — the line between an exceptional run and a number typed into
 a `fetch` call, not a simulation. The previous endpoint's only check was "a
 number under one billion", which is to say it accepted anything.
 
 ## Presentation
+
+### The phone menu is a document
+
+Outside a run, below 640px, the menu scrolls the **page**, not a box inside it
+(`components/slice-it/slice-menu.css`, "A phone: the menu is a document"). Safari
+collapses its bars only for document scroll, and shows page content through its floating
+bar only when there is some under it; a viewport-high shell with scroll boxes inside gave
+neither, so the bars never shrank and the strip behind the bottom bar was flat page
+colour. `app/routes/slice-it/index.tsx` stamps `data-slice-screen="menu"` or `"play"` on
+the page from the store's status; in `menu`, on a phone, every box between the page and
+the lists drops its height and clip, the hidden playfield canvas leaves the flow, and a
+full screen (settings, calibration, the lobby's pages) is the page itself with the menu
+behind it not rendered. A run keeps the fixed viewport.
+
+Nothing in the menu is sticky or fixed on a phone (the library's search bar is sticky
+from 640px up only), because a layer flush to an edge is what makes Safari paint a band.
+The four places (Library, Daily, Setlists, Versus) are one 34px row under the bar, at
+the top, instead of a 52px bar at the foot. The one fixed layer left is the full-screen
+"loading a track" cover, which exists for a moment.
+
+### A struck note breaks
+
+A struck disc is not a fade: it is cut along a line **rolled for that strike**
+(`components/slice-it/cut-fx.ts`, `rollCut`): any angle, a little off-centre, with
+its own spin. The two halves slide apart along the cut's normal, drift along the blade
+and tumble in opposite directions, with a hairline of paper down the crack for the first
+few frames. At the same moment `spawnCutFx` throws glass (sharp, spinning shards on both
+sides of the cut), sparks (thin streaks along the blade), a few square flecks of dust and,
+for MARVELOUS / PERFECT / GREAT, a ring that leaves the receptor. A cleaner judgement
+throws more and harder (`strengthOf`).
+
+The burst is gated like every other flash: **Effect Intensity** scales its size (0 keeps
+the cut and drops the rest), **Reduced Flash** removes the crack line, the sparks and the
+ring (shards and dust stay), and `perf-lite` gets a smaller burst with no flash pieces.
+Pieces are integrated against wall-clock time, capped at `MAX_FX`, and nothing is
+blurred. Only the groove skins (Circle, Pixel, Record) cut notes; the older skins keep
+their own bursts.
 
 The playfield's decoration is deliberately small and deliberately gated. Two
 things drive all of it, and neither is a timer:
@@ -312,7 +371,7 @@ a decoration — and dim and desaturate as the health gauge falls
    away.
 2. **Three switches turn it off, and any one of them wins**
    (`backdropVisible`): the player's own setting, `canvasGlowEnabled()` (which
-   folds in `prefers-reduced-motion` and `perf-lite`), and `A2`'s Reduced Flash.
+   folds in `prefers-reduced-motion` and a low-end device), and `A2`'s Reduced Flash.
    `A7`'s Effect Intensity scales what is left. On a light theme the wash is
    inverted to *shading* rather than glow, so it cannot flatten the pale
    `--slice-rail`.

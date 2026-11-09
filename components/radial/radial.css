@@ -100,6 +100,7 @@
   z-index: var(--z-skip);
   transform: translateY(-160%);
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-accent);
   color: var(--site-accent-fg);
   padding: 0.6rem 1.1rem;
@@ -143,6 +144,7 @@
   transform: translate(-50%, -50%);
   border: 1px solid var(--site-border);
   border-radius: 50%;
+  corner-shape: round;
   opacity: calc(0.22 - var(--i) * 0.025);
 }
 /* Phones draw the inner three rings only: the outer three extend far past a
@@ -325,8 +327,6 @@ body:has(.radial-shell) .call-banner {
   padding: 0 max(1.25rem, calc(var(--rad-gutter) - 0.75rem));
   /* A thicker, more refractive shoulder than a card: the bar is the one surface that always has moving page under it. */
   --gel-bevel: 9px;
-  --gel-lens: 1.3;
-  --gel-reflect: 1.2;
   /* The bar is `.glass-chrome`: the glass role owns its fill and its shape (app/liquid-glass.css), so no background or
      radius is set here. A local `background` is unlayered and would beat the role, which is how this bar stayed an
      opaque white strip over the page. No border: the shader draws the edge; the degraded tiers get the role's own. No
@@ -410,6 +410,7 @@ body:has(.radial-shell) .call-banner {
   min-height: 0;
   padding: 0;
   border-radius: 999px;
+  corner-shape: round;
   color: var(--site-text);
 }
 /* Unread marker — a dot rather than a count, so the bar's rhythm never shifts. */
@@ -420,6 +421,7 @@ body:has(.radial-shell) .call-banner {
   width: 0.45rem;
   height: 0.45rem;
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-accent);
   box-shadow: 0 0 0 2px var(--site-bg);
 }
@@ -434,6 +436,7 @@ body:has(.radial-shell) .call-banner {
   width: 2rem;
   height: 2rem;
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-surface-hover);
 }
 .radial-topbar__avatar-placeholder {
@@ -450,6 +453,7 @@ body:has(.radial-shell) .call-banner {
   height: var(--site-touch-target);
   background: transparent;
   border-radius: 999px;
+  corner-shape: round;
   cursor: pointer;
   outline: 2px solid transparent;
   transition: outline-color 0.18s ease;
@@ -682,6 +686,7 @@ body:has(.radial-shell) .call-banner {
   min-width: 1.35rem;
   padding: 0.1rem 0.4rem;
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-accent);
   color: var(--site-accent-fg);
   font-size: 0.68rem;
@@ -901,6 +906,7 @@ body:has(.radial-shell) .call-banner {
   width: var(--dock-globe);
   height: var(--dock-globe);
   border-radius: 50%;
+  corner-shape: round;
   overflow: hidden;
   pointer-events: none;
   transform: translate(-50%, -50%);
@@ -927,6 +933,7 @@ body:has(.radial-shell) .call-banner {
   position: absolute;
   inset: 0;
   border-radius: 50%;
+  corner-shape: round;
   border: 1px solid color-mix(in srgb, var(--site-accent) 30%, transparent);
   opacity: 0.35;
 }
@@ -937,12 +944,9 @@ body:has(.radial-shell) .call-banner {
   animation: dock-globe-glint 1.6s ease-in-out 1;
 }
 /* `still` stops it, as it stops every ambient motion (WCAG 2.2.2), and so do the
-   degraded tiers (lib/jelly/tiers.ts DEGRADED_ROOT_SELECTOR; high contrast hides
-   the whole ring below). */
+   high contrast hides the whole ring below). */
 html[data-jelly-motion='still'] .rad-globe-dock__shimmer::before,
-html[data-jelly-motion='still'] .rad-globe-dock__shimmer::after,
-:root:is(.perf-lite) .rad-globe-dock__shimmer::before,
-:root:is(.perf-lite) .rad-globe-dock__shimmer::after {
+html[data-jelly-motion='still'] .rad-globe-dock__shimmer::after {
   animation: none;
 }
 @keyframes dock-globe-shimmer {
@@ -970,6 +974,7 @@ html[data-jelly-motion='still'] .rad-globe-dock__shimmer::after,
   gap: var(--rad-2);
   padding: var(--rad-2) var(--rad-3);
   border-radius: 999px;
+  corner-shape: round;
   border: var(--site-border-width, 1px) solid var(--site-border);
   background: var(--site-glass-tint, var(--site-surface));
   font-size: 0.875rem;
@@ -1018,6 +1023,7 @@ html[data-jelly-motion='still'] .rad-globe-dock__shimmer::after,
   height: 0.5rem;
   flex: none;
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-success);
 }
 .rad-live__dot::after {
@@ -1025,6 +1031,7 @@ html[data-jelly-motion='still'] .rad-globe-dock__shimmer::after,
     position: absolute;
     inset: 0;
     border-radius: 999px;
+    corner-shape: round;
     background: inherit;
     animation: radial-pulse-soft 1.8s ease-in-out infinite;
   }
@@ -1184,6 +1191,7 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
   width: var(--site-hub-orb-size);
   height: var(--site-hub-orb-size);
   border-radius: 999px;
+  corner-shape: round;
   border: none;
   cursor: pointer;
   color: var(--site-accent-fg);
@@ -1263,6 +1271,7 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
   inset: 0;
   z-index: -1;
   border-radius: inherit;
+  corner-shape: inherit;
   /* The orb as a lit sphere. On a phone this is only the placeholder until the real globe is docked over it
      (`data-dock`): wider screens keep it. */
   background: radial-gradient(
@@ -1601,8 +1610,8 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
      If a blank ever shows on the way IN too (the same buffer, during the 0.32s
      before the growing veil covers it), the answer is not a longer transition —
      it is to stop filtering `.radial-frame` at all and let the veil carry the
-     separation alone, which is already what `perf-lite`, `reduce-transparency`
-     and `ios-webkit` do a few rules below. */
+     separation alone, which is already what `reduce-transparency` and
+     `ios-webkit` do a few rules below. */
   transition: filter 0.32s var(--ease-glass, var(--ease-smooth));
 }
 /* …and the "rasterises once" above is only true if the blurred layer HOLDS
@@ -1625,15 +1634,13 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
      that transition is declared on the open state itself. */
 }
 
-/* The degradation tiers opt out and lean on the veil, which is already opaque
-   enough to carry the separation on its own: `perf-lite` because a full-page
-   rasterisation is exactly what that tier exists to avoid, and
-   `reduce-transparency` because a visitor who asked for less see-through
-   material did not ask for a blurrier one.
+/* `reduce-transparency` opts out and leans on the veil, which is already opaque
+   enough to carry the separation on its own: a visitor who asked for less
+   see-through material did not ask for a blurrier one.
 
-   `ios-webkit` joins them, and for a reason that is worth separating from the
-   other two: it is not that the device is weak or that the visitor asked for
-   less, it is that the premise above does not hold on WebKit. "A `filter` on a
+   `ios-webkit` joins it, and for a reason that is worth separating: it is not
+   that the visitor asked for less, it is that the premise above does not hold
+   on WebKit. "A `filter` on a
    static subtree rasterises once and is then a cached texture" is a CHROMIUM
    measurement. `.radial-frame` is the whole feed — a subtree as tall as the
    document, holding every lazy-loaded card — and asking a phone to keep a
@@ -1646,19 +1653,15 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    this way — `hooks/useLiquidBackground.ts` detaches wholesale on `ios-webkit`
    because "moving a fixed, oversized gradient underneath multiple translucent
    surfaces can wedge WebKit's compositor". Same engine, same shape of problem. */
-html.perf-lite .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-backdrop,
-html.perf-lite .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-topbar,
-html.perf-lite .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-frame,
 html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-backdrop,
 html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-topbar,
 html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-frame,
-html:is(.perf-lite, .ios-webkit) .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) > [data-floating]:not([data-floating='hub']) {
+html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) > [data-floating]:not([data-floating='hub']) {
   filter: none;
 }
 /* The veil is translucent ONLY because the page behind it is blurred (see its
    own note). Wherever that blur is off, it has to carry the separation alone or
    the menu opens onto a legible, unblurred page with a tint over it. */
-html.perf-lite .radial-hub__veil,
 html.ios-webkit .radial-hub__veil {
   background: var(--site-bg);
 }
@@ -1667,8 +1670,7 @@ html.ios-webkit .radial-hub__veil {
    On a phone the menu used to black the page out: iOS Safari is one of the tiers
    above that skip the blur, so its veil was opaque `--site-bg`. The page now stays
    there, very slightly blurred, with only a light tint over it for the globe's
-   labels. Only `perf-lite` and `reduce-transparency` keep the opaque veil: the first
-   exists to avoid this raster and the second asked for less see-through material.
+   labels. Only `reduce-transparency` keeps the opaque veil: it asked for less see-through material.
 
    WebKit is the one engine the note above warns about (a blur of the document-tall
    feed is a memory bet there). The radius is kept to 3px for that reason, and the
@@ -1678,11 +1680,13 @@ html.ios-webkit .radial-hub__veil {
   .radial-shell {
     --hub-page-blur: 3px;
   }
-  html:not(.perf-lite) .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) :is(.radial-backdrop, .radial-topbar, .radial-frame),
-html:not(.perf-lite) .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) > [data-floating]:not([data-floating='hub']) {
+  /* `html:root` matches the specificity of the `html.ios-webkit` rules above (this block wins on order, as it always
+     has on iOS). */
+  html:root .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) :is(.radial-backdrop, .radial-topbar, .radial-frame),
+html:root .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) > [data-floating]:not([data-floating='hub']) {
     filter: blur(var(--hub-page-blur, 3px));
   }
-  html:not(.perf-lite) .radial-hub__veil {
+  html:root .radial-hub__veil {
     /* A gradient, not a flat colour: Safari reads a plain full-width background colour at the screen's edge as
        the page's edge and fills its tab bar with it (the band that showed while the menu was open). */
     background: linear-gradient(
@@ -1936,6 +1940,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
   position: absolute;
   inset: 0;
   border-radius: 50%;
+  corner-shape: round;
   pointer-events: none;
   overflow: hidden;
   /* Liquid Glass, held still: a specular bloom up-left, a thickening toward the
@@ -1959,6 +1964,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
   width: 36%;
   height: 36%;
   border-radius: 50%;
+  corner-shape: round;
   opacity: 0;
   background:
     radial-gradient(
@@ -1984,6 +1990,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
   width: 44%;
   height: 30%;
   border-radius: 50%;
+  corner-shape: round;
   background: radial-gradient(
     closest-side,
     color-mix(in srgb, var(--site-text) 12%, transparent),
@@ -2000,7 +2007,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
    square stage it made jelly-coverage.css paint a rectangular rim, haze floor and
    plasma glow round the ball — the globe's jelly is drawn by its own round shader);
    until then (and wherever it is not eligible — high contrast, reduced
-   transparency, `perf-lite`, no WebGL) the CSS glass above is the material.
+   transparency, a software renderer, no WebGL) the CSS glass above is the material.
 
    The disc keeps its rim hairline and its drop shadow (box-shadow); only the
    painted gradients and the drifting sheen are the shader's now. That also
@@ -2040,6 +2047,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
   position: absolute;
   inset: 0;
   border-radius: 50%;
+  corner-shape: round;
   box-shadow: 0 30px 70px -34px rgba(0, 0, 0, 0.5);
 }
 .radial-globe__stage[data-globe-coat='on'] .radial-globe__contact {
@@ -2113,6 +2121,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
   width: 2.15rem;
   height: 2.15rem;
   border-radius: 999px;
+  corner-shape: round;
   /* `--site-surface` is itself a translucent tint, so a tint of it would vanish
      over a light page. Built on the solid companion and mixed a few percent
      toward the ink, which separates the pin from the globe on every theme. */
@@ -2143,6 +2152,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
   position: absolute;
   inset: calc((2.75rem - 2.15rem) / -2);
   border-radius: inherit;
+  corner-shape: inherit;
 }
 /* The name resolves only for the pins actually facing you — `--near` is written
    per frame from the pin's depth — so a dozen labels never pile up in the middle
@@ -2201,13 +2211,13 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
   position: absolute;
   inset: -2px;
   border-radius: inherit;
+  corner-shape: inherit;
   border: 2px solid var(--site-accent);
   pointer-events: none;
   opacity: 0;
   animation: globe-current-halo 2.4s ease-out 3;
 }
-html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-globe__pin-dot::before,
-:root:is(.perf-lite) .radial-globe__pin[aria-current='page'] .radial-globe__pin-dot::before {
+html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-globe__pin-dot::before {
   animation: none;
 }
 .radial-globe__pin[aria-current='page'] .radial-globe__pin-name {
@@ -2274,6 +2284,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   height: var(--reticle-d, 31%);
   transform: translate(-50%, -50%);
   border-radius: 50%;
+  corner-shape: round;
   pointer-events: none;
   z-index: 400;
   --fill: 0;
@@ -2284,6 +2295,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   position: absolute;
   inset: 0;
   border-radius: 50%;
+  corner-shape: round;
   border: var(--site-border-width, 1px) dashed color-mix(in srgb, var(--site-text) 34%, transparent);
   transition:
     border-color 0.2s ease,
@@ -2303,6 +2315,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   position: absolute;
   inset: -9%;
   border-radius: 50%;
+  corner-shape: round;
   background: conic-gradient(
     from -90deg,
     var(--site-accent) 0deg calc(var(--fill) * 360deg),
@@ -2380,6 +2393,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   gap: var(--rad-1);
   padding: 0.4rem 0.5rem;
   border-radius: 999px;
+  corner-shape: round;
   max-width: calc(100vw - 2rem);
   /* One jelly pill, the compose button's material: the same lit sphere shading, and the jelly soft body
      (`data-fluid-press` on the parent in RadialHub). Everything inside is plain ink on it, with no body of its
@@ -2510,6 +2524,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   aspect-ratio: 1;
   translate: -50% -50%;
   border-radius: 50%;
+  corner-shape: round;
   pointer-events: none;
   /* The light's colour: the theme's haze, lifted toward white where the theme's glass light is white (Daylight), so
      the rays still show on a pale page. */
@@ -2669,6 +2684,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   gap: 0.5rem;
   padding: 0.25rem 0.6rem 0.25rem 0.3rem;
   border-radius: 999px;
+  corner-shape: round;
   color: inherit;
   text-decoration: none;
   font-size: 0.82rem;
@@ -2708,6 +2724,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 999px;
+  corner-shape: round;
   border: none;
   background: transparent;
   color: inherit;
@@ -2721,6 +2738,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
 .radial-hub__signin {
   padding: 0.5rem 1rem;
   border-radius: 999px;
+  corner-shape: round;
   color: inherit;
   font-weight: 700;
   font-size: 0.82rem;
@@ -2777,6 +2795,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   align-items: stretch;
   border: none;
   border-radius: 999px;
+  corner-shape: round;
   /* The same jelly sphere as the hub orb's shading (lit upper left, deepening to the far limb). Its softness is
      the CSS soft body's (`data-fluid-press` in RadialFeed, app/jelly-material.css §8): the release spring at rest,
      the press below. */
@@ -2817,6 +2836,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   gap: var(--rad-2);
   padding: var(--rad-3) var(--rad-4);
   border-radius: 999px;
+  corner-shape: round;
 }
 /* The back-to-top arrow grows out of the pill's left end and folds back into it. Width carries the open
    and close (the pill is anchored on the right, so it extends leftwards), opacity follows on the same
@@ -2828,6 +2848,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   padding: 0;
   overflow: hidden;
   border-radius: 999px;
+  corner-shape: round;
   opacity: 0;
   visibility: hidden;
   transition:
@@ -2862,6 +2883,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   padding: var(--rad-2) var(--rad-4);
   border: none;
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-accent);
   color: var(--site-accent-fg);
   font-size: 0.875rem;
@@ -2919,6 +2941,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   width: clamp(4.5rem, 20vw, 6rem);
   height: clamp(4.5rem, 20vw, 6rem);
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-accent);
   color: var(--site-accent-fg);
   box-shadow: none;
@@ -3131,6 +3154,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   align-items: center;
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
+  corner-shape: round;
   background: color-mix(in srgb, var(--site-accent) 14%, transparent);
   color: var(--site-accent);
   font-size: 0.75rem;
@@ -3338,6 +3362,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   width: 26px;
   height: 26px;
   border-radius: 999px;
+  corner-shape: round;
   background: var(--site-accent);
   color: var(--site-accent-fg);
   font-size: 0.5rem;
@@ -3471,6 +3496,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   margin-bottom: var(--panel-gap);
   padding: 0.5rem 0.75rem;
   border-radius: 999px;
+  corner-shape: round;
   border: 1px solid var(--site-border);
   background: var(--site-surface);
 }
@@ -3677,7 +3703,7 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
    exactly the living scene the panes are meant to sample. So the glass classes
    render at full strength here — the elevation tiers, the rim glint, the lens
    band, the pointer light — and every degradation (high-contrast,
-   reduce-transparency, perf-lite, iOS safety tier) still owns the fallback in
+   reduce-transparency, iOS safety tier) still owns the fallback in
    globals.css. Nothing is overridden per-shell any more — the content layer
    (.radial-shell__main, z-index 1) already sits above the fixed ring backdrop,
    so every pane inside it samples the backdrop instead of hiding it. */
@@ -4025,12 +4051,4 @@ html:not(.native-material, [data-game-state='playing']) .radial-feed__compose > 
   .radial-shell:is([data-layout='catalog'], [data-layout='workspace']) .radial-frame {
     grid-template-columns: var(--rad-rail-nav) minmax(0, 1fr);
   }
-}
-
-/* The molded rim: these three spell their own hairline in this sheet, so the shader's lit rim would sit on top of it —
-   two edges where the slab should dissolve into the ground. While the engine draws the rim (`data-liquid-canvas`) the
-   hairline goes clear; the degraded tiers remove that attribute and keep it. Width stays: layout never changes. */
-.radial-topbar__signin[data-liquid-canvas='on'],
-.radial-topbar__search[data-liquid-canvas='on'] {
-  border-color: transparent;
 }
