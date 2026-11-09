@@ -16,7 +16,7 @@
  * screen AND Jelly motion is not Still. Unmount cancels it; a hidden tab cancels it and
  * `visibilitychange` restarts it; scrolling the band out of view stops it (IntersectionObserver)
  * and back in restarts it; `data-jelly-motion="still"` draws one frame and stops, and switching
- * back restarts the loop. It runs at 30 fps, 15 fps on the lite and handheld tiers.
+ * back restarts the loop. It runs at 30 fps, 15 fps on handhelds and low-end devices.
  *
  * Played notes come from the input hub through a plain subscription held in the effect — no
  * React state, so playing re-renders nothing. Colours are read from the CSS tokens once per
@@ -25,6 +25,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { jellyMotionLevel, jellyTier } from '@/lib/jelly/tiers';
+import { isLowEndCapability } from '@/lib/low-end';
 import {
   MAX_POPS,
   POP_IN,
@@ -107,7 +108,7 @@ export function PaperBackdrop() {
         return;
       }
       const tier = jellyTier();
-      const interval = tier === 'lite' || tier === 'handheld' ? FRAME_MS_LOW : FRAME_MS;
+      const interval = tier === 'handheld' || isLowEndCapability() ? FRAME_MS_LOW : FRAME_MS;
       if (last === 0) last = now;
       if (now - last >= interval) {
         stepScene(scene, (now - last) / 1000);

@@ -236,15 +236,6 @@ function beamedPair(x1, n1, x2, n2, y0, s, color = C.ink) {
   return g;
 }
 
-function staffLines(x1, x2, y0, s, color, w) {
-  let g = '';
-  for (let k = 0; k < 5; k++) {
-    const y = y0 + k * s;
-    g += `<line x1="${f(x1)}" y1="${f(y)}" x2="${f(x2)}" y2="${f(y)}" stroke="${color}" stroke-width="${f(w)}"/>`;
-  }
-  return g;
-}
-
 function barline(x, y0, s, color = C.ink, final = false) {
   const thin = `<line x1="${f(x)}" y1="${f(y0)}" x2="${f(x)}" y2="${f(y0 + 4 * s)}" stroke="${color}" stroke-width="${f(0.12 * s)}"/>`;
   if (!final) return thin;
