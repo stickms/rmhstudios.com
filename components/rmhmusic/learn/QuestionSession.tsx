@@ -247,10 +247,9 @@ export function SessionSheet<C, A>({
   const feedback = lesson.kind === 'feedback';
   return (
     <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
-      <h2
-        title={title}
-        className="rmm-display line-clamp-1 h-8 text-2xl leading-8 text-(--app-text)"
-      >
+      {/* Minimum heights, not clamps: one line and two lines at the normal size (so nothing moves),
+          and more at large text, where a clamp would cut the count and the instruction off. */}
+      <h2 className="rmm-display min-h-8 text-2xl leading-8 text-(--app-text)">
         <span
           key={
             lesson.kind === 'asking' || lesson.kind === 'feedback'
@@ -262,13 +261,9 @@ export function SessionSheet<C, A>({
         </span>
       </h2>
       {question}
-      <div className="flex h-11 items-center gap-3">
-        <div className="flex h-10 min-w-0 flex-1 items-center justify-center">
-          <p
-            key={lineKey}
-            title={line || undefined}
-            className="line-clamp-2 text-sm leading-5 text-(--app-text-muted)"
-          >
+      <div className="flex min-h-11 items-center gap-3">
+        <div className="flex min-h-10 min-w-0 flex-1 items-center justify-center">
+          <p key={lineKey} className="text-sm leading-5 text-(--app-text-muted)">
             {line}
           </p>
         </div>

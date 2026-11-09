@@ -385,7 +385,7 @@ export function DeviceLine({
   return (
     <div className="rmm-find__device flex items-center justify-center text-center">
       {typeof body === 'string' ? (
-        <p className="line-clamp-2 text-sm leading-5 text-(--app-text-muted)">{body}</p>
+        <p className="text-sm leading-5 text-(--app-text-muted)">{body}</p>
       ) : (
         body
       )}

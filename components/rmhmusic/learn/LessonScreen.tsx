@@ -62,9 +62,7 @@ export function Shell({
             className="-ms-3 flex min-h-11 min-w-0 items-center gap-1.5 rounded-(--app-radius-sm) px-3 text-sm font-medium text-(--app-text-muted) transition-colors hover:text-(--app-text)"
           >
             <ArrowLeft className="h-4 w-4 shrink-0 rtl-flip" aria-hidden="true" />
-            <span className="truncate">
-              {t('back-to-lessons', { defaultValue: 'Back to lessons' })}
-            </span>
+            <span>{t('back-to-lessons', { defaultValue: 'Back to lessons' })}</span>
           </Link>
           <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
             <ModeToggle />
