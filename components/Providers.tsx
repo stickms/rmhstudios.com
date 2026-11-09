@@ -364,12 +364,12 @@ export function Providers({
   // hooks/useLiquidInteractions.ts. The rest of the material is CSS.
   // The TF2 HUD Editor is deliberately plain Team Fortress 2 — it installs none of the jelly.
   useLiquidInteractions(!isNativeMaterialRoute(pathname));
-  // Remember whether this browser draws in software (the globe's CSS fallback, the games' glow); the material ignores it.
-  useSoftRenderSettle();
   // The CSS-only material (the woken haze) has no install step to skip, so a native-material route is marked on <html>
   // instead and the material's rules are scoped off it. Stamped pre-paint by __root.tsx on a hard load; this keeps it
   // in step on client navigation and clears it on the way out.
   useEffect(() => syncNativeMaterialClass(document.documentElement, pathname), [pathname]);
+  // Remember whether this browser draws in software (the globe's CSS fallback, the games' glow); the material ignores it.
+  useSoftRenderSettle();
 
   // The eversion state layer's input (globals.css §7.3): where each `data-evert` control turns inside out from
   // (the pointer's entry, the finger, the exit) and when a press is down. Delegated, passive, no frame loop.
