@@ -34,18 +34,19 @@ import { useInputRelease } from './useLearnInput';
 /**
  * The input in use: a quiet line ("Playing with: On-screen keys") and, under it, a text button to
  * change it. Always two stacked boxes of fixed size, never side by side, so nothing here depends
- * on how long a translation is: the line is clamped to two lines inside a box two lines tall
- * (`INPUT_TEXT`), and the button is one line that truncates (`INPUT_BUTTON`). Both are in rem, so
- * at 200% text they grow together, and the skeleton reserves the same two boxes. The line sits at
- * the bottom of its box, against the button it belongs with.
+ * on how long a translation is: the line sits in a box two lines tall (`INPUT_TEXT`) and the
+ * button's row is 44px (`INPUT_ROW`). Neither truncates: at 200% text, or in a long translation,
+ * the line and the button's label wrap and the boxes grow by `min-height`, while at 1x they are
+ * exactly these sizes. Both are in rem, so the skeleton, which reserves the same two boxes, grows
+ * with them. The line sits at the bottom of its box, against the button it belongs with.
  *
  * The button's row (`INPUT_ROW`, one 44px line in both states) also holds, at its far end, a
  * quiet "Practice" link while at least one reviewed card is due. The row is there before the link
  * is, so the link appearing (the cards load after the profile) moves nothing.
  */
-const INPUT_TEXT = 'flex h-10 min-w-0 items-end';
-const INPUT_BUTTON = 'max-w-full min-w-0';
-const INPUT_ROW = 'flex h-11 min-w-0 items-center gap-4';
+const INPUT_TEXT = 'flex min-h-10 min-w-0 items-end';
+const INPUT_BUTTON = 'max-w-full min-w-0 py-2 text-start';
+const INPUT_ROW = 'flex min-h-11 min-w-0 items-center gap-4';
 
 /** Loading placeholder, built from the static path so it is as tall as the loaded page. */
 function HomeSkeleton() {
@@ -170,10 +171,7 @@ export function LearnHome() {
         />
         <div>
           <div className={INPUT_TEXT}>
-            <p
-              title={inputLine}
-              className="line-clamp-2 min-w-0 text-sm leading-5 text-(--app-text-muted)"
-            >
+            <p className="min-w-0 text-sm leading-5 break-words text-(--app-text-muted)">
               {inputLine}
             </p>
           </div>
@@ -184,7 +182,7 @@ export function LearnHome() {
               onClick={() => onSetupChange(true)}
               className={`${TEXT_BUTTON} ${INPUT_BUTTON}`}
             >
-              <span className="truncate">{t('setup-input', { defaultValue: 'Set up input' })}</span>
+              <span>{t('setup-input', { defaultValue: 'Set up input' })}</span>
             </button>
             {practiceDue && (
               <Link to="/rmhmusic/practice" className={`${TEXT_BUTTON} ms-auto shrink-0`}>
@@ -217,12 +215,10 @@ export function LearnHome() {
           <Link
             to="/apps"
             onClick={goBack}
-            className="-ms-3 flex min-h-11 min-w-0 items-center gap-1.5 rounded-(--app-radius-sm) px-3 text-sm font-medium text-(--app-text-muted) transition-colors hover:text-(--app-text)"
+            className="-ms-3 flex min-h-11 min-w-0 items-center gap-1.5 rounded-(--app-radius-sm) px-3 py-2 text-sm font-medium text-(--app-text-muted) transition-colors hover:text-(--app-text)"
           >
             <ArrowLeft className="h-4 w-4 shrink-0 rtl-flip" aria-hidden="true" />
-            <span className="truncate">
-              {t('back-to-builds', { defaultValue: 'Back to Builds' })}
-            </span>
+            <span>{t('back-to-builds', { defaultValue: 'Back to Builds' })}</span>
           </Link>
           <div className="ms-auto flex shrink-0 items-center gap-2">
             <StreakChip />

@@ -74,3 +74,24 @@ export function swipeShift(dx: number, dy: number): -1 | 0 | 1 {
   if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) < 1.5 * Math.abs(dy)) return 0;
   return dx > 0 ? -1 : 1;
 }
+
+/**
+ * The octave to open the window on so `midi` is in view, moving as little as it can from `octave`:
+ * the same one when the key already shows, else the nearest window that does (clamped to the
+ * range). A key no window can show leaves the window where it is. `whites` is how many white keys
+ * fit ({@link whiteKeysFor}).
+ */
+export function octaveShowing(midi: number, octave: number, whites: number): number {
+  let best = octave;
+  let bestDistance = Infinity;
+  for (let o = MIN_OCTAVE; o <= MAX_OCTAVE; o++) {
+    const key = windowKeys(o).find((k) => k.midi === midi);
+    if (!key || !inView(key, whites)) continue;
+    const distance = Math.abs(o - octave);
+    if (distance < bestDistance) {
+      best = o;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}

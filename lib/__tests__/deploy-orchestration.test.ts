@@ -49,7 +49,7 @@ function fixture(
     `#!/bin/bash
 if [ "\${MOCK_LATE_FAILURE:-0}" = 1 ]; then
   while [ ! -s "$HEALTH_RESULT_FILE" ]; do sleep 0.02; done
-  touch "$MOCK_ROOT/late-failure"
+  echo "\${MOCK_LATE_RESTARTS:-2}" > "$MOCK_ROOT/late-failure"
 fi
 echo swap >> "$MOCK_ROOT/swaps"
 echo ::deploy-event::traffic-moved
@@ -99,7 +99,7 @@ case "$*" in
     if [ "\${MOCK_MIGRATION_FAIL:-0}" = 1 ]; then echo 'The \x60unsafe_migration\x60 migration started at 2026-10-23 failed'; echo P3009; exit 1; fi ;;
   *'{{.DockerRootDir}}'*) echo "$MOCK_ROOT" ;;
   *'{{.State.Running}} {{.RestartCount}}'*)
-    if [ -f "$MOCK_ROOT/late-failure" ] && [ ! -f "$MOCK_ROOT/restored" ]; then echo 'true 1'; else echo 'true 0'; fi ;;
+    if [ -f "$MOCK_ROOT/late-failure" ] && [ ! -f "$MOCK_ROOT/restored" ]; then echo "true $(cat "$MOCK_ROOT/late-failure")"; else echo 'true 0'; fi ;;
   *' up -d '*) [ ! -f "$MOCK_ROOT/late-failure" ] || touch "$MOCK_ROOT/restored" ;;
   *' ps -q '*) echo fixture-worker ;;
 esac
@@ -265,11 +265,28 @@ describe('production deploy orchestration', () => {
     expect(readState(stateDir, 'live')?.id).toMatch(/^release-\d+-\d+$/);
     expect(readState(stateDir, 'last-successful')?.sha).toBe(shaB);
   }, 25_000);
-  it('detects a worker restart after the initial parallel checks finish', () => {
-    const { result, stateDir } = fixture({ MOCK_LATE_FAILURE: '1' });
+  it('detects a worker crash-loop (two restarts) after the initial parallel checks finish', () => {
+    const { result, stateDir } = fixture({ MOCK_LATE_FAILURE: '1', MOCK_LATE_RESTARTS: '2' });
     expect(result.status, result.error?.message || result.stdout + result.stderr).toBe(1);
     expect(result.stdout).toContain('Rolling back non-web services');
     expect(readState(stateDir, 'last-successful')?.sha).toBe(shaA);
+    expect(readState(stateDir, 'release-candidate')?.phase).toBe('rolledback');
+  }, 25_000);
+  it('tolerates ONE worker restart that left it running: warns, does not roll back', () => {
+    const { result, stateDir } = fixture({ MOCK_LATE_FAILURE: '1', MOCK_LATE_RESTARTS: '1' });
+    expect(result.status, result.error?.message || result.stdout + result.stderr).toBe(0);
+    expect(result.stdout + result.stderr).toContain('restarted 1x during the deploy window');
+    expect(result.stdout).not.toContain('Rolling back non-web services');
+    expect(readState(stateDir, 'live')?.sha).toBe(shaB);
+  }, 25_000);
+  it('WORKER_RESTARTS_TOLERATED=0 restores the strict rule: one restart rolls back', () => {
+    const { result, stateDir } = fixture({
+      MOCK_LATE_FAILURE: '1',
+      MOCK_LATE_RESTARTS: '1',
+      WORKER_RESTARTS_TOLERATED: '0',
+    });
+    expect(result.status, result.error?.message || result.stdout + result.stderr).toBe(1);
+    expect(result.stdout).toContain('Rolling back non-web services');
     expect(readState(stateDir, 'release-candidate')?.phase).toBe('rolledback');
   }, 25_000);
   it('preserves the approved SHA through a script self-update while main advances', () => {

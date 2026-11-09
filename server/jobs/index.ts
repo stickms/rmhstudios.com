@@ -15,6 +15,8 @@ import 'dotenv/config';
 import { installProcessGuards } from '../../lib/perf/process-guards';
 
 import { type Job, type PgBoss } from 'pg-boss';
+import { registerAll, type Registration } from './registry';
+import { withQueuePolicy } from './queue-policy';
 import { createLogger } from '@/server/shared/logger';
 import { startProcessMetrics } from '../../lib/perf/process-metrics';
 import { registerPrismaPoolGauges, startPerfPublisher } from '../../lib/perf/publish.server';
@@ -62,6 +64,9 @@ const log = createLogger('jobs');
 // exit, no graceful pg-boss stop) and a second signal re-ran the whole stop.
 let stopping = false;
 let bossRef: PgBoss | null = null;
+/** Boot attempts after the first, and the gap between them (just over `RETRY_AFTER_MS` in lib/jobs/boss.server.ts). */
+const BOOT_RETRIES = 3;
+const BOOT_RETRY_MS = 31_000;
 const stoppers: Array<() => void> = [];
 
 async function shutdown(sig: string): Promise<void> {
@@ -77,7 +82,7 @@ async function shutdown(sig: string): Promise<void> {
   }
   if (bossRef) {
     try {
-      await bossRef.stop({ graceful: true });
+      await bossRef.stop({ graceful: true, timeout: 30_000 });
     } catch {
       /* best-effort */
     }
@@ -86,6 +91,59 @@ async function shutdown(sig: string): Promise<void> {
 }
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
 process.on('SIGINT', () => void shutdown('SIGINT'));
+
+/**
+ * Every queue family this worker owns, registered in this order after the
+ * progression worker. One failing entry is logged (`jobs.register_failed`) and
+ * the rest still register; each success logs `jobs.started` (./registry.ts).
+ * Crons are scheduled here and only here: the web tier is send-only.
+ */
+const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
+  // RMHEvents §6: T-24h / T-15m RSVP reminders. Own queue; re-checks the RSVP before firing.
+  { queue: 'event.reminder', register: registerEventReminderWorker },
+  // Weekly digest email (§10): its own pg-boss cron.
+  { queue: 'email.weekly-digest', register: registerDigestCron },
+  // O3 Slice It! beatmap generation. `enqueueAnalysis` runs inline when this worker is not up, so a
+  // failure here is slow uploads, never chartless songs.
+  { queue: ANALYSIS_QUEUE, register: registerAnalysisWorker },
+  // Altair co-op: replay each finished match headlessly, persist only what the replay reproduces.
+  // CPU-heavy, one job at a time; a failure leaves runs waiting, never recorded unverified.
+  { queue: VERIFY_COOP_QUEUE, register: registerAltairVerifyWorker },
+  // Altair single-player: replay each solo run, credit coins / leaderboard rows from the replay only.
+  { queue: VERIFY_SOLO_QUEUE, register: registerAltairSoloWorker },
+  // The PF2e table's morning-of Discord reminders: a no-op unless a board has a webhook and reminders on.
+  { queue: PF2E_REMINDER_QUEUE, register: registerPf2eReminderCron },
+  // /dunesday "tonight's lineup" Discord posts (every 10 min, idempotent per plan date).
+  { queue: DUNESDAY_DAILY_QUEUE, register: registerDunesdayDailyCron },
+  // /sohumtracker voice alert: minute-by-minute sweep of the open voice session; push stays in Node.
+  { queue: SOHUMTRACKER_ALERT_QUEUE, register: registerSohumTrackerAlertCron },
+  // C8: bring stale generated charts up to the current generator (25 songs an hour); never touches
+  // a chart with `isGenerated: false`.
+  { queue: REGEN_QUEUE, register: registerRegenCron },
+  // Platform maintenance: outbox drain (every minute, the delivery path for webhooks and
+  // notifications), hourly idempotency/outbox sweeps, nightly achievement rarity, and the rest.
+  { queue: 'platform.maintenance', register: registerMaintenanceCrons },
+  { queue: 'arcade.rivals', register: registerArcadeCrons },
+  // Economy-plus: community goal deadlines + refunds, scheduled gifts, wishlist alerts. These move
+  // coins, so each handler is idempotent and claims its work conditionally.
+  { queue: 'economy', register: registerEconomyCrons },
+  // Gifting & events: daily birthday nudges and the exchange draw sweep.
+  { queue: 'gifting', register: registerGiftingCrons },
+  // Communities-plus: challenge winners and the daily top-contributors rebuild.
+  { queue: 'communities', register: registerCommunityCrons },
+  // P9: nightly sweep of the profile visitor-counter dedupe ledger.
+  { queue: PROFILE_VISIT_SWEEP_QUEUE, register: registerProfileVisitSweepCron },
+  // M3 disappearing messages: expiry is enforced at read time; this only deletes the rows.
+  { queue: CHAT_EXPIRY_QUEUE, register: registerChatExpiryCron },
+  // F5: expire unmatched study-buddy requests and tell their owners.
+  { queue: STUDY_BUDDY_QUEUE, register: registerStudyBuddyCron },
+  // posts-plus: expiry sweep + daily auto-delete, dead-link rescue, due scheduled posts / time capsules.
+  { queue: 'posts-plus', register: registerPostsPlusCrons },
+  // P03 discovery: post-created fan-out, the daily "On this day" run, the /today digest snapshot.
+  { queue: 'discovery', register: registerDiscoveryJobs },
+  // P16 D5: "when X then Y" recipes: polled triggers + personal-best events.
+  { queue: 'devplatform.recipes', register: registerRecipeJobs },
+];
 
 async function main() {
   // Process metrics for the admin performance page: sample this worker and publish
@@ -98,7 +156,17 @@ async function main() {
     // Telemetry must not stop the worker from starting.
   }
 
-  const boss = await getBoss(true);
+  // A blip at boot (Postgres restarting, a pool full right after a deploy's migrations) used to exit(1): Docker restarted
+  // the container and deploy.sh read the changed RestartCount as a failed release. Retry in-process first.
+  // `getBoss` memoises a failed start for BOOT_RETRY_MS (lib/jobs/boss.server.ts RETRY_AFTER_MS), so wait it out.
+  // With no DATABASE_URL there is nothing to retry: exit at once, as before.
+  let boss = await getBoss(true);
+  for (let attempt = 1; !boss && process.env.DATABASE_URL && attempt <= BOOT_RETRIES; attempt++) {
+    if (stopping) return;
+    log.warn({ event: 'jobs.start_retry', attempt, of: BOOT_RETRIES });
+    await new Promise((resolve) => setTimeout(resolve, BOOT_RETRY_MS));
+    boss = await getBoss(true);
+  }
   if (!boss) {
     log.error({
       event: 'jobs.start_failed',
@@ -109,7 +177,9 @@ async function main() {
   bossRef = boss;
   if (stopping) return; // a signal arrived during start; shutdown() stops boss
 
-  await boss.work<ProgressionJob>(PROGRESSION_QUEUE, async (jobs: Job<ProgressionJob>[]) => {
+  const policed = withQueuePolicy(boss, log);
+
+  await policed.work<ProgressionJob>(PROGRESSION_QUEUE, async (jobs: Job<ProgressionJob>[]) => {
     for (const job of jobs) {
       // Throw on failure so pg-boss retries per the send options; runProgression
       // itself swallows per-leg errors, so a throw here is a genuine infra fault.
@@ -119,243 +189,7 @@ async function main() {
 
   log.info({ event: 'jobs.started', queue: PROGRESSION_QUEUE });
 
-  // Event reminders (RMHEvents §6): T-24h / T-15m RSVP reminders. Creates its
-  // own queue idempotently and re-checks the RSVP before firing.
-  try {
-    await registerEventReminderWorker(boss);
-    log.info({ event: 'jobs.started', queue: 'event.reminder' });
-  } catch (e) {
-    log.error({
-      event: 'jobs.register_failed',
-      queue: 'event.reminder',
-      err: (e as Error)?.message,
-    });
-  }
-
-  // Weekly digest email (§10): schedules its own pg-boss cron (worker-only,
-  // since only the worker instance has schedule:true).
-  try {
-    await registerDigestCron(boss);
-    log.info({ event: 'jobs.started', queue: 'email.weekly-digest' });
-  } catch (e) {
-    log.error({
-      event: 'jobs.register_failed',
-      queue: 'email.weekly-digest',
-      err: (e as Error)?.message,
-    });
-  }
-
-  // O3 — Slice It! beatmap generation. It ran inline in the upload route,
-  // blocking an SSR worker for seconds per track on the container that also
-  // serves every page. `enqueueAnalysis` falls back to running inline when this
-  // worker is not up, so a registration failure here is slow uploads, never
-  // chartless songs.
-  try {
-    await registerAnalysisWorker(boss);
-    log.info({ event: 'jobs.started', queue: ANALYSIS_QUEUE });
-  } catch (e) {
-    log.error({
-      event: 'jobs.register_failed',
-      queue: ANALYSIS_QUEUE,
-      err: (e as Error)?.message,
-    });
-  }
-
-  // Altair co-op: replay each finished match headlessly and persist only what the replay
-  // reproduces (lib/altair/verify). CPU-heavy, one job at a time, so it lives here and nowhere near
-  // a request or the socket hub. A registration failure means runs wait in the queue, never that an
-  // unverified result is recorded.
-  try {
-    await registerAltairVerifyWorker(boss);
-    log.info({ event: 'jobs.started', queue: VERIFY_COOP_QUEUE });
-  } catch (e) {
-    log.error({
-      event: 'jobs.register_failed',
-      queue: VERIFY_COOP_QUEUE,
-      err: (e as Error)?.message,
-    });
-  }
-
-  // Altair single-player: replay each submitted solo run and credit coins / leaderboard rows from the
-  // replay only (lib/altair/solo). A registration failure leaves runs waiting, never credited unverified.
-  try {
-    await registerAltairSoloWorker(boss);
-    log.info({ event: 'jobs.started', queue: VERIFY_SOLO_QUEUE });
-  } catch (e) {
-    log.error({
-      event: 'jobs.register_failed',
-      queue: VERIFY_SOLO_QUEUE,
-      err: (e as Error)?.message,
-    });
-  }
-
-  // The PF2e table's morning-of Discord reminders. A no-op unless the board
-  // has a webhook saved AND reminders switched on, so registering it costs one
-  // idle queue on every deploy that never uses it.
-  try {
-    await registerPf2eReminderCron(boss);
-    log.info({ event: 'jobs.started', queue: PF2E_REMINDER_QUEUE });
-  } catch (e) {
-    log.error({
-      event: 'jobs.register_failed',
-      queue: PF2E_REMINDER_QUEUE,
-      err: (e as Error)?.message,
-    });
-  }
-
-  // /dunesday — "tonight's lineup" Discord posts for synced marathon plans.
-  // Same sweep shape as the PF2e reminders: every 10 minutes, idempotent on a
-  // per-plan date, and idle unless someone has saved a webhook.
-  try {
-    await registerDunesdayDailyCron(boss);
-    log.info({ event: 'jobs.started', queue: DUNESDAY_DAILY_QUEUE });
-  } catch (e) {
-    log.error({
-      event: 'jobs.register_failed',
-      queue: DUNESDAY_DAILY_QUEUE,
-      err: (e as Error)?.message,
-    });
-  }
-
-  // /sohumtracker — "tell me when he joins voice". A minute-by-minute sweep of
-  // the open voice session the Go tracker writes; push itself stays in Node,
-  // which is where the VAPID keys and the subscription table live.
-  try {
-    await registerSohumTrackerAlertCron(boss);
-    log.info({ event: 'jobs.started', queue: SOHUMTRACKER_ALERT_QUEUE });
-  } catch (e) {
-    log.error({
-      event: 'jobs.register_failed',
-      queue: SOHUMTRACKER_ALERT_QUEUE,
-      err: (e as Error)?.message,
-    });
-  }
-
-  // C8 — bring stale generated charts up to the current generator, 25 songs an
-  // hour. Never touches a chart with `isGenerated: false`; that flag is the
-  // whole safety property, because the alternative is silently overwriting
-  // somebody's hand-edited chart in bulk, at night, with nothing to trace it to.
-  try {
-    await registerRegenCron(boss);
-    log.info({ event: 'jobs.started', queue: REGEN_QUEUE });
-  } catch (e) {
-    log.error({ event: 'jobs.register_failed', queue: REGEN_QUEUE, err: (e as Error)?.message });
-  }
-
-  // Platform maintenance (2026-08-05 batch): the outbox drain (E4), the hourly
-  // idempotency/outbox sweeps (E5), and the nightly achievement-rarity rollup
-  // (F7). The outbox drain is the latency-sensitive one — it is the delivery
-  // path for webhooks and notifications, so it runs every minute.
-  try {
-    await registerMaintenanceCrons(boss);
-    log.info({ event: 'jobs.started', queue: 'platform.maintenance' });
-  } catch (e) {
-    log.error({
-      event: 'jobs.register_failed',
-      queue: 'platform.maintenance',
-      err: (e as Error)?.message,
-    });
-  }
-
-  try {
-    await registerArcadeCrons(boss);
-    log.info({ event: 'jobs.started', queue: 'arcade.rivals' });
-  } catch (e) {
-    log.error({ event: 'jobs.register_failed', queue: 'arcade.rivals', err: (e as Error)?.message });
-  }
-
-  // Economy-plus (2026-10-12 batch): community goal deadlines + refunds (C5),
-  // scheduled gift delivery (C7) and the daily wishlist price alerts (C8). These
-  // move coins, so each handler is idempotent and claims its work conditionally.
-  try {
-    await registerEconomyCrons(boss);
-    log.info({ event: 'jobs.started', queue: 'economy' });
-  } catch (e) {
-    log.error({ event: 'jobs.register_failed', queue: 'economy', err: (e as Error)?.message });
-  }
-
-  // Gifting & events (2026-10-12 batch): daily birthday nudges (G1) and the
-  // exchange draw sweep (G3/F2). Both idempotent.
-  try {
-    await registerGiftingCrons(boss);
-    log.info({ event: 'jobs.started', queue: 'gifting' });
-  } catch (e) {
-    log.error({ event: 'jobs.register_failed', queue: 'gifting', err: (e as Error)?.message });
-  }
-
-  // Communities-plus (2026-10-12 batch): challenge winners (N5) and the daily
-  // top-contributors rebuild (N7). Both idempotent.
-  try {
-    await registerCommunityCrons(boss);
-    log.info({ event: 'jobs.started', queue: 'communities' });
-  } catch (e) {
-    log.error({ event: 'jobs.register_failed', queue: 'communities', err: (e as Error)?.message });
-  }
-
-  // P9 — nightly sweep of the profile visitor-counter dedupe ledger (rows older
-  // than two days). Housekeeping only: the counter total is stored on the profile.
-  try {
-    await registerProfileVisitSweepCron(boss);
-    log.info({ event: 'jobs.started', queue: PROFILE_VISIT_SWEEP_QUEUE });
-  } catch (e) {
-    log.error({
-      event: 'jobs.register_failed',
-      queue: PROFILE_VISIT_SWEEP_QUEUE,
-      err: (e as Error)?.message,
-    });
-  }
-
-  // M3 — disappearing messages. Expiry is enforced at read time; this sweep only
-  // deletes the rows (and skips any message with an open report).
-  try {
-    await registerChatExpiryCron(boss);
-    log.info({ event: 'jobs.started', queue: CHAT_EXPIRY_QUEUE });
-  } catch (e) {
-    log.error({
-      event: 'jobs.register_failed',
-      queue: CHAT_EXPIRY_QUEUE,
-      err: (e as Error)?.message,
-    });
-  }
-
-  // F5 — expire unmatched study-buddy requests and tell their owners.
-  try {
-    await registerStudyBuddyCron(boss);
-    log.info({ event: 'jobs.started', queue: STUDY_BUDDY_QUEUE });
-  } catch (e) {
-    log.error({
-      event: 'jobs.register_failed',
-      queue: STUDY_BUDDY_QUEUE,
-      err: (e as Error)?.message,
-    });
-  }
-
-  // posts-plus (2026-10-12 batch): post expiry sweep + daily auto-delete (X8), the
-  // dead-link rescue check (X11), and the publisher for due scheduled posts and
-  // time capsules (Z7) so they open on time without their author visiting.
-  try {
-    await registerPostsPlusCrons(boss);
-    log.info({ event: 'jobs.started', queue: 'posts-plus' });
-  } catch (e) {
-    log.error({ event: 'jobs.register_failed', queue: 'posts-plus', err: (e as Error)?.message });
-  }
-
-  // P03 discovery: post-created fan-out (keyword alerts + community watchers), the
-  // daily "On this day" run, and the /today digest snapshot.
-  try {
-    await registerDiscoveryJobs(boss);
-    log.info({ event: 'jobs.started', queue: 'discovery' });
-  } catch (e) {
-    log.error({ event: 'jobs.register_failed', queue: 'discovery', err: (e as Error)?.message });
-  }
-
-  // P16 D5: "when X then Y" recipes — polled triggers + personal-best events.
-  try {
-    await registerRecipeJobs(boss);
-    log.info({ event: 'jobs.started', queue: 'devplatform.recipes' });
-  } catch (e) {
-    log.error({ event: 'jobs.register_failed', queue: 'devplatform.recipes', err: (e as Error)?.message });
-  }
+  await registerAll(policed, REGISTRATIONS, log, () => stopping);
 
   // On-call app alarms (lib/oncall/checks.server.ts): once a minute, read the
   // fleet's own telemetry and page the watchdog. Also this worker's heartbeat —

@@ -19,7 +19,7 @@
  * even in the frame before `html.native-material` is stamped on a client navigation.
  */
 
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent, PointerEvent } from 'react';
 import { Minus, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -30,6 +30,7 @@ import {
   MIN_OCTAVE,
   clampOctave,
   inView,
+  octaveShowing,
   swipeShift,
   whiteKeysFor,
   windowKeys,
@@ -41,6 +42,7 @@ import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { cn } from '@/lib/utils';
 import { SECONDARY_BUTTON } from './buttons';
+import { Notehead } from './Notehead';
 import { useSoundingNotes } from './useLearnInput';
 
 /**
@@ -73,14 +75,37 @@ function swallowNextClick() {
 /** Memoised: it re-renders for its own lit keys, not for every render of the lesson around it. */
 export const OnScreenKeyboard = memo(function OnScreenKeyboard({
   className,
+  tall = false,
+  startOctave = DEFAULT_OCTAVE,
+  rightKey = null,
+  wrongKey = null,
+  hideLabels = false,
 }: {
   className?: string;
+  /** Taller keys, filling the note finder's board box (see `.rmm-find__board`). */
+  tall?: boolean;
+  /** The C the window opens on (octave number; C4 by default). Read once, on mount. */
+  startOctave?: number;
+  /**
+   * Marks drawn on keys once a question is answered (the note finder): the right key gets a filled
+   * notehead, a wrong key pressed an open one. Decoration: the lesson says the same in words.
+   * Plain numbers, so the memo holds while nothing is marked. When the right key is out of view
+   * (a phone shows one octave) the window moves to the nearest octave that shows it, so the mark
+   * is never somewhere the learner has to hunt for.
+   */
+  rightKey?: number | null;
+  wrongKey?: number | null;
+  /**
+   * No letter on the white keys, for a lesson that asks the learner to find a key by its place
+   * (the note finder): the letters would answer the question. The keys keep their accessible names.
+   */
+  hideLabels?: boolean;
 }) {
   const { t } = useTranslation('c-rmhmusic');
   const screen = useLearnStore((s) => s.screen);
   const hub = useLearnStore((s) => s.hub);
   const sounding = useSoundingNotes();
-  const [octave, setOctave] = useState(DEFAULT_OCTAVE);
+  const [octave, setOctave] = useState(() => clampOctave(startOctave));
   // Until measured (server render, first client render) every key counts as in view; measuring
   // changes only the tab order, never the layout.
   const [whites, setWhites] = useState(14);
@@ -132,6 +157,17 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
     observer.observe(bed);
     return () => observer.disconnect();
   }, []);
+
+  // A key is marked once the question is answered: bring it into view if the window does not show
+  // it. Before paint, so the mark never appears and then jumps; `whites` is the measured count.
+  useLayoutEffect(() => {
+    if (rightKey === null) return;
+    const next = octaveShowing(rightKey, octave, whites);
+    if (next === octave) return;
+    releaseAll();
+    setOctave(next);
+    // Only when a key is marked or the room changes: the learner's own octave moves stand after.
+  }, [rightKey, whites]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const shift = (by: number) => {
     const next = clampOctave(octave + by);
@@ -240,7 +276,10 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
           note: from,
           defaultValue: 'Piano keyboard from {{note}}',
         })}
-        className="rmm-keys__bed relative flex h-40 rounded-(--app-radius-sm) select-none sm:h-48"
+        className={cn(
+          'rmm-keys__bed relative flex rounded-(--app-radius-sm) select-none',
+          tall ? 'rmm-keys__bed--tall' : 'h-40 sm:h-48',
+        )}
         onPointerUp={(e) => {
           touching.current = false;
           send({ type: 'pointer-lift', pointer: e.pointerId });
@@ -285,7 +324,24 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
               onBlur={() => send({ type: 'blur', midi: key.midi })}
               onContextMenu={(e) => e.preventDefault()}
             >
-              {!key.black && <span aria-hidden="true">{key.midi % 12 === 0 ? name : letter}</span>}
+              {(rightKey === key.midi || wrongKey === key.midi) && (
+                <Notehead
+                  kind={rightKey === key.midi ? 'filled' : 'open'}
+                  className={cn(
+                    // Wider than a black key, so it must not take the neighbouring keys' presses.
+                    'pointer-events-none absolute left-1/2 h-4 w-5 -translate-x-1/2',
+                    key.black ? 'bottom-3' : 'bottom-8',
+                    rightKey === key.midi
+                      ? 'text-(--app-accent)'
+                      : key.black
+                        ? 'text-(--rmm-key-white)'
+                        : 'text-(--app-danger)',
+                  )}
+                />
+              )}
+              {!key.black && !hideLabels && (
+                <span aria-hidden="true">{key.midi % 12 === 0 ? name : letter}</span>
+              )}
             </button>
           );
         })}

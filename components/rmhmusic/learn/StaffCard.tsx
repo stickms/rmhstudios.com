@@ -7,7 +7,9 @@
  *
  * The SVG's box is fixed and the line under it (where the answer is written once given) is
  * reserved, so asking, answering and the next card never move anything. While asking, the image
- * says only which staff the note is on; once answered it names the note. The note's colour (ink,
+ * says only which staff the note is on; once answered it names the note. The note finder instead
+ * gives a `caption`: its target's name pencilled beside the note in every state, with no line under
+ * the card. All SVG text is `direction="ltr"` so RTL locales do not mirror it. The note's colour (ink,
  * the accent when right, red pencil when wrong) is never the only signal: the lesson says it in
  * words.
  */
@@ -19,6 +21,9 @@ import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import {
   CARD_GAP,
   CARD_H,
+  CARD_LOW_H,
+  CARD_LOW_MIN_STEP,
+  CARD_MIN_STEP,
   CARD_NOTE_X,
   CARD_TOP,
   CARD_W,
@@ -41,35 +46,57 @@ export type StaffCardState = 'ask' | 'right' | 'wrong';
  */
 export const STAFF_BOX = 'mx-auto w-full max-w-72 sm:max-w-80';
 
+/** The low card's aspect ratio, for a placeholder of the same box (`range="low"`). */
+export const STAFF_LOW_ASPECT = 'aspect-[200/117]';
+
 export function StaffCard({
   card,
   state,
   className,
+  range = 'deck',
+  octaveClef = false,
+  caption,
+  label: labelOverride,
 }: {
   card: Card;
   state: StaffCardState;
   className?: string;
+  /** `low` reaches three ledger lines under the treble staff (the note finder; see the layout). */
+  range?: 'deck' | 'low';
+  /** Mark the treble clef with a small 8 below it: read an octave down (guitar music). */
+  octaveClef?: boolean;
+  /**
+   * Written beside the note in every state (the note finder's target), in place of the answer line
+   * under the card, which is then not drawn: the card is the SVG's box alone.
+   */
+  caption?: string;
+  /** The image's accessible name, instead of the flashcard's. */
+  label?: string;
 }) {
   const { t } = useTranslation('c-rmhmusic');
   const titleId = useId();
-  const layout = cardLayout(card.clef, card.midi);
+  const low = range === 'low';
+  const height = low ? CARD_LOW_H : CARD_H;
+  const layout = cardLayout(card.clef, card.midi, low ? CARD_LOW_MIN_STEP : CARD_MIN_STEP);
   const glyph = CLEF_GLYPHS[card.clef];
   const answered = state !== 'ask';
   const name = midiToName(card.midi);
 
-  const label = answered
-    ? card.clef === 'bass'
-      ? t('flash-card-named-bass', {
-          note: name,
-          defaultValue: '{{note}} on the bass staff',
-        })
-      : t('flash-card-named-treble', {
-          note: name,
-          defaultValue: '{{note}} on the treble staff',
-        })
-    : card.clef === 'bass'
-      ? t('flash-card-ask-bass', { defaultValue: 'A note on the bass staff' })
-      : t('flash-card-ask-treble', { defaultValue: 'A note on the treble staff' });
+  const label = labelOverride
+    ? labelOverride
+    : answered
+      ? card.clef === 'bass'
+        ? t('flash-card-named-bass', {
+            note: name,
+            defaultValue: '{{note}} on the bass staff',
+          })
+        : t('flash-card-named-treble', {
+            note: name,
+            defaultValue: '{{note}} on the treble staff',
+          })
+      : card.clef === 'bass'
+        ? t('flash-card-ask-bass', { defaultValue: 'A note on the bass staff' })
+        : t('flash-card-ask-treble', { defaultValue: 'A note on the treble staff' });
 
   const ink =
     state === 'right'
@@ -82,7 +109,7 @@ export function StaffCard({
   return (
     <figure className={cn(STAFF_BOX, className)}>
       <svg
-        viewBox={`0 0 ${CARD_W} ${CARD_H}`}
+        viewBox={`0 0 ${CARD_W} ${height}`}
         role="img"
         aria-labelledby={titleId}
         className="block h-auto w-full text-(--app-text)"
@@ -102,6 +129,21 @@ export function StaffCard({
           {glyph.dots.map((d) => (
             <circle key={`${d.cx}-${d.cy}`} cx={d.cx} cy={d.cy} r={d.r} />
           ))}
+          {octaveClef && card.clef === 'treble' ? (
+            // The octave-down treble clef's 8, set small under the clef's tail.
+            <text
+              x="19.5"
+              y="101"
+              textAnchor="middle"
+              // Positioned in the card's own coordinates, whatever the page's direction (ar, ur).
+              direction="ltr"
+              fontSize="10"
+              className="rmm-display"
+              stroke="none"
+            >
+              8
+            </text>
+          ) : null}
         </g>
         <g className={ink} stroke="currentColor" fill="currentColor" strokeLinecap="round">
           {layout.ledgerYs.map((y, i) => (
@@ -122,15 +164,38 @@ export function StaffCard({
             transform={`rotate(-20 ${CARD_NOTE_X} ${layout.noteY})`}
             stroke="none"
           />
+          {caption !== undefined ? (
+            // The target's name, pencilled beside its note (the note finder): one annotation on the
+            // card, close to what it names, at any height on the staff.
+            <text
+              key={card.id}
+              x={CARD_NOTE_X + 20}
+              y={layout.noteY + 6}
+              // `text-anchor: start` ends at x under `dir="rtl"`, which put the name on the note.
+              direction="ltr"
+              fontSize="19"
+              // A margin of paper round the letters where they cross a staff line.
+              stroke="var(--app-surface)"
+              strokeWidth="4"
+              strokeLinejoin="round"
+              paintOrder="stroke"
+              className="rmm-display"
+              data-card-name=""
+            >
+              {caption}
+            </text>
+          ) : null}
         </g>
       </svg>
-      {/* The answer, written under the note once given; the line is reserved while asking. */}
-      <figcaption
-        aria-hidden="true"
-        className={cn('rmm-display h-9 text-center text-[1.75rem] leading-9', ink)}
-      >
-        {answered ? <span key={card.id}>{noteLetter(card.midi)}</span> : null}
-      </figcaption>
+      {caption === undefined ? (
+        // The answer, written under the note once given; the line is reserved while asking.
+        <figcaption
+          aria-hidden="true"
+          className={cn('rmm-display h-9 text-center text-[1.75rem] leading-9', ink)}
+        >
+          {answered ? <span key={card.id}>{noteLetter(card.midi)}</span> : null}
+        </figcaption>
+      ) : null}
     </figure>
   );
 }

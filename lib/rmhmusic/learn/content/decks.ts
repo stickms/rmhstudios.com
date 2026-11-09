@@ -85,27 +85,31 @@ export function shuffle<T>(items: T[], rand: () => number): T[] {
 }
 
 /**
- * Deal `count` cards from `deck`. The deck is shuffled and dealt through whole, then shuffled
- * again, so every card of a small deck is seen before any repeats; a new round never opens with
- * the card the last one ended on, so the same card never comes up twice in a row (a one-card deck
- * cannot avoid it). `count` is floored and capped at MAX_SESSION_CARDS; 0 or a non-finite count
- * gives no cards.
+ * Deal `count` values from `values`: shuffled and dealt through whole, then shuffled again, so every
+ * value of a small set is dealt before any repeats; a new round never opens with the value the last
+ * one ended on, so the same value never comes up twice in a row (a one-value set cannot avoid it).
+ * `count` is floored and capped at MAX_SESSION_CARDS; 0 or a non-finite count gives nothing.
  */
-export function buildSession(deck: Deck, count: number, rand: () => number): Card[] {
-  if (!Number.isFinite(count) || deck.midis.length === 0) return [];
+export function dealRounds(values: readonly number[], count: number, rand: () => number): number[] {
+  if (!Number.isFinite(count) || values.length === 0) return [];
   const total = Math.min(Math.floor(count), MAX_SESSION_CARDS);
-  const out: Card[] = [];
+  const out: number[] = [];
   while (out.length < total) {
-    const round = shuffle([...deck.midis], rand);
+    const round = shuffle([...values], rand);
     const last = out[out.length - 1];
-    if (last && round.length > 1 && round[0] === last.midi) {
-      // Swap the opener with the next card: it was the last card dealt, so it moves to second.
+    if (last !== undefined && round.length > 1 && round[0] === last) {
+      // Swap the opener with the next value: it was the last one dealt, so it moves to second.
       [round[0], round[1]] = [round[1], round[0]];
     }
-    for (const midi of round) {
+    for (const v of round) {
       if (out.length >= total) break;
-      out.push(toCard(deck, midi));
+      out.push(v);
     }
   }
   return out;
+}
+
+/** Deal `count` cards from `deck` by {@link dealRounds}: no card twice in a row. */
+export function buildSession(deck: Deck, count: number, rand: () => number): Card[] {
+  return dealRounds(deck.midis, count, rand).map((midi) => toCard(deck, midi));
 }

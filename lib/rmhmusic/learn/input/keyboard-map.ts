@@ -33,3 +33,12 @@ export function keyToMidi(code: string, octaveShift = 0): number | null {
   const midi = base + octaveShift * 12;
   return Number.isInteger(midi) && midi >= 0 && midi <= 127 ? midi : null;
 }
+
+/** The lowest and highest notes the computer keys play (A is C4, K is C5), before any octave shift. */
+export const KEYS_LOW = 60;
+export const KEYS_HIGH = 72;
+
+/** Whether the computer keys, as they open, can play this note. */
+export function inKeysRange(midi: number): boolean {
+  return midi >= KEYS_LOW && midi <= KEYS_HIGH;
+}

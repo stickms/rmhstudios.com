@@ -29,7 +29,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import OpenAI from 'openai';
+import type OpenAI from 'openai';
 import { Prisma } from '@prisma/client';
 import { prisma, prismaRead } from '@/lib/prisma.server';
 import { prepareText } from '@/lib/search/hybrid';
@@ -55,9 +55,15 @@ const BASE_URL = process.env.EMBEDDING_BASE_URL || 'https://api.openai.com/v1';
 const MODEL = process.env.EMBEDDING_MODEL || 'text-embedding-3-small';
 
 let client: OpenAI | null = null;
-function getClient(): OpenAI | null {
+// The SDK (~230 modules, ~12 MB RSS) is imported on the first embedding, not at module load: the
+// `jobs` worker imports this file for its five-minute index sweep, which is a no-op while no
+// endpoint is configured, and an idle process should not carry the SDK for that.
+async function getClient(): Promise<OpenAI | null> {
   if (!API_KEY) return null;
-  client ??= new OpenAI({ fetch: timedAiFetch, apiKey: API_KEY, baseURL: BASE_URL });
+  if (!client) {
+    const { default: OpenAIClient } = await import('openai');
+    client ??= new OpenAIClient({ fetch: timedAiFetch, apiKey: API_KEY, baseURL: BASE_URL });
+  }
   return client;
 }
 
@@ -113,7 +119,7 @@ export function contentHash(text: string): string {
  * the caller should see and retry, not a configuration state.
  */
 export async function embed(text: string): Promise<number[] | null> {
-  const c = getClient();
+  const c = await getClient();
   if (!c) return null;
 
   const prepared = prepareText(text);

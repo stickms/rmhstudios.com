@@ -22,3 +22,16 @@ export function scoreFrom(correct: number, total: number): number {
   if (!(total > 0) || !(correct > 0)) return 0;
   return Math.min(100, Math.round((correct / total) * 100));
 }
+
+/**
+ * The mean of per-question points (each 0..100), rounded the way {@link scoreFrom} rounds, so a
+ * lesson scored in points (the pitch match: 100 spot on, less for a close note) and one scored
+ * right-or-wrong agree when every point is 0 or 100. A NaN, negative or infinite entry counts as
+ * 0 and one above 100 as 100; nothing attempted scores 0.
+ */
+export function scoreFromPoints(points: readonly number[]): number {
+  if (points.length === 0) return 0;
+  let sum = 0;
+  for (const p of points) sum += Number.isFinite(p) ? Math.min(100, Math.max(0, p)) : 0;
+  return Math.min(100, Math.round(sum / points.length));
+}

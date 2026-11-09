@@ -110,6 +110,15 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   Owns pg-boss queue maintenance/scheduling (the web tier is send-only).
   Degrades safely: with no `DATABASE_URL` it exits and the web tier runs the
   work inline. Logic lives in `lib/jobs/` + `lib/social/engagement-effects.server.ts`.
+  `jobs/index.ts` is a boot sequence plus one `REGISTRATIONS` table (a new queue
+  family is one row; `registry.ts` isolates failures and logs `jobs.started` /
+  `jobs.register_failed`). `jobs/queue-policy.ts` wraps the pg-boss instance the
+  `register*` functions get: scheduled queues are polled every 5-30 s instead of
+  pg-boss's 2 s default (unscheduled, user-fed queues keep 2 s), and its
+  `SCHEDULE_OVERRIDES` table spreads the `*/N` sweeps off minute 0 — a new
+  sweep should pick an offset there. Heavy SDKs (`openai`, `sharp`, `undici`)
+  are imported on first use in their leaf modules, not at load, so the idle
+  worker does not carry them.
 - **`nitro/`** — not a service: Nitro startup plugins for the web tier,
   registered in `vite.config.ts`. `reflect-metadata.ts` (required by the
   Better Auth passkey plugin — do not remove), `security-headers.ts`
