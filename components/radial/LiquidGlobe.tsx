@@ -135,6 +135,11 @@ const SETTLE_SPRING = spring(0.62, 0.1);
  * `--globe-coat-fade` in radial.css: the timer flips `data-globe-coat` to `on` as the transition lands.
  */
 const COAT_FADE_MS = 420;
+/**
+ * How long after the last visual-viewport resize (iOS Safari's toolbar growing or shrinking) the shader coat stays
+ * handed back to the CSS glass, ms. A fade is `--globe-coat-hold-fade` in radial.css.
+ */
+const TOOLBAR_SETTLE_MS = 260;
 /** After the skin's chunk lands, how long before its GPU program is warmed (off the page's first busy second). */
 const SKIN_WARM_MS = 2500;
 /** A docked globe's spin kick per pixel scrolled (deg/s), and the most a scroll can add to it. */
@@ -1301,7 +1306,38 @@ export function LiquidGlobe({
     const observer = new MutationObserver(sync);
     observer.observe(root, { attributes: true, attributeFilter: ['class', 'style'] });
     sync();
+    /* While iOS Safari's toolbar grows or shrinks the ball moves against the page (the dock follows the toolbar in
+       CSS, radial.css), and the shader coat's refracted picture is placed from a layout read and drawn in the worker,
+       so it trails the ball by frames — the CSS glass has no such picture and tracks it exactly. So the stage hands
+       the ball to the CSS glass (`data-globe-coat="hold"`) for the length of the move and fades the coat back once the
+       viewport has been still for `TOOLBAR_SETTLE_MS`. iOS WebKit only: nothing else resizes the visual viewport
+       under a docked globe on a timescale like this. */
+    let toolbarIdle = 0;
+    const releaseCoat = () => {
+      toolbarIdle = 0;
+      if (cancelled || !stage || stage.dataset.globeCoat !== 'hold') return;
+      stage.dataset.globeCoat = 'entering';
+      window.clearTimeout(coatTimer);
+      coatTimer = window.setTimeout(() => {
+        if (!cancelled && stage.dataset.globeCoat === 'entering') stage.dataset.globeCoat = 'on';
+      }, COAT_FADE_MS);
+    };
+    const onToolbar = () => {
+      if (!stage) return;
+      const state = stage.dataset.globeCoat;
+      if (state !== 'on' && state !== 'entering' && state !== 'hold') return;
+      if (state !== 'hold') {
+        window.clearTimeout(coatTimer);
+        stage.dataset.globeCoat = 'hold';
+      }
+      window.clearTimeout(toolbarIdle);
+      toolbarIdle = window.setTimeout(releaseCoat, TOOLBAR_SETTLE_MS);
+    };
+    const toolbarViewport = root.classList.contains('ios-webkit') ? window.visualViewport : null;
+    toolbarViewport?.addEventListener('resize', onToolbar);
     return () => {
+      toolbarViewport?.removeEventListener('resize', onToolbar);
+      window.clearTimeout(toolbarIdle);
       cancelled = true;
       stopScene();
       globeRoot?.removeEventListener('animationend', onBloomEnd);

@@ -2056,6 +2056,13 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
 }
 /* The shader owns the body, rim hairline and silhouette now, so the CSS disc stops clipping and stops drawing them.
    Only the drop shadow stays CSS (a static ellipse on the surface below: it does not need to deform). */
+/* While iOS Safari's toolbar moves, the ball is handed back to the CSS glass (LiquidGlobe `onToolbar`): the coat fades
+   out fast and the CSS disc, which `on` switches off, is simply the default again. The way back is `entering`, the
+   same cross-fade as the first arrival. */
+.radial-globe__stage[data-globe-coat='hold'] .radial-globe__jelly {
+  opacity: 0;
+  transition-duration: 120ms;
+}
 .radial-globe__stage[data-globe-coat='on'] .radial-globe__glass {
   background: none;
   overflow: visible;
