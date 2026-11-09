@@ -162,7 +162,17 @@ export async function runAnalysis(job: AnalysisJob): Promise<void> {
 }
 
 /**
- * Re-queue songs whose chart failed.
+ * How long a song may sit `pending` before the sweep treats its job as lost.
+ *
+ * A job normally finishes in seconds. One still pending after this has no live job
+ * behind it — the worker was down, or the job expired (`expireInSeconds` above) — and
+ * left alone it would say "Charting…" for ever. Longer than the retry backoff
+ * (3 attempts, 30s doubling) so a job that is merely retrying is not queued twice.
+ */
+const STUCK_PENDING_MS = 15 * 60 * 1000;
+
+/**
+ * Re-queue songs whose chart failed, or whose job was lost.
  *
  * Until the `@audio/decode` bundling fix (`lib/audio/decode.server.ts`) every
  * upload the jobs worker touched ended up `failed`, and nothing ever looked at
@@ -178,7 +188,14 @@ export async function requeueFailedAnalyses(limit = 25): Promise<number> {
   if (!boss) return 0;
 
   const failed = await prisma.song.findMany({
-    where: { analysisState: 'failed' },
+    where: {
+      OR: [
+        { analysisState: 'failed' },
+        // A job that never finished leaves the row `pending`: nothing else ever looks
+        // at it again.
+        { analysisState: 'pending', createdAt: { lt: new Date(Date.now() - STUCK_PENDING_MS) } },
+      ],
+    },
     select: { id: true, bpm: true },
     orderBy: { createdAt: 'asc' },
     take: limit,
