@@ -61,7 +61,13 @@ import { cn } from '@/lib/utils';
 import { EarSoundRow, soundProblem } from './EarSoundRow';
 import { LessonResult } from './LessonParts';
 import { NoteValues, beatsLabel, valueName } from './NoteValues';
-import { SessionFrame, SessionSheet, sessionTitle, useQuestionSession } from './QuestionSession';
+import {
+  SaidParts,
+  SessionFrame,
+  SessionSheet,
+  sessionTitle,
+  useQuestionSession,
+} from './QuestionSession';
 import { TapBeatLesson } from './TapBeatLesson';
 
 /** The metronome's tempo in the 4/4-versus-3/4 lesson (beats per minute). */
@@ -194,20 +200,27 @@ function NoteValuesLesson({ lessonId, paused }: { lessonId: string; paused: bool
     });
   }
   const said =
-    lesson.kind === 'feedback'
-      ? lesson.right
-        ? t('rhythm-values-right-sr', {
-            beats: card ? beatsLabel(t, BEATS_OF[card.value]) : '',
-            defaultValue: 'Right: {{beats}}.',
-          })
-        : line
-      : lesson.kind === 'asking'
-        ? session.announce
-          ? `${title}. ${line}`
-          : ''
-        : inSession
-          ? ''
-          : line;
+    lesson.kind === 'feedback' ? (
+      lesson.right ? (
+        t('rhythm-values-right-sr', {
+          beats: card ? beatsLabel(t, BEATS_OF[card.value]) : '',
+          defaultValue: 'Right: {{beats}}.',
+        })
+      ) : (
+        line
+      )
+    ) : lesson.kind === 'asking' ? (
+      session.announce ? (
+        // The count and the question are two sentences, each a key of its own.
+        <SaidParts parts={[title, line]} />
+      ) : (
+        ''
+      )
+    ) : inSession ? (
+      ''
+    ) : (
+      line
+    );
 
   let answers: ReactNode;
   if (!inSession) {
@@ -438,18 +451,22 @@ function MeterLesson({ lessonId, paused }: { lessonId: string; paused: boolean }
   }
   const problem = soundProblem(t, sound);
   const said =
-    lesson.kind === 'feedback'
-      ? lesson.right
-        ? t('rhythm-meter-right-sr', {
-            count: lesson.cards[lesson.index].beatsPerBar,
-            defaultValue: 'Right: {{count}} beats in a bar.',
-          })
-        : line
-      : lesson.kind === 'asking'
-        ? [session.announce ? title : '', problem].filter(Boolean).join('. ')
-        : inSession
-          ? ''
-          : line;
+    lesson.kind === 'feedback' ? (
+      lesson.right ? (
+        t('rhythm-meter-right-sr', {
+          count: lesson.cards[lesson.index].beatsPerBar,
+          defaultValue: 'Right: {{count}} beats in a bar.',
+        })
+      ) : (
+        line
+      )
+    ) : lesson.kind === 'asking' ? (
+      <SaidParts parts={[session.announce ? title : '', problem]} />
+    ) : inSession ? (
+      ''
+    ) : (
+      line
+    );
 
   const correct: BeatsPerBar | null =
     lesson.kind === 'feedback' ? lesson.cards[lesson.index].beatsPerBar : null;

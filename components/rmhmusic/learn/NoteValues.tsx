@@ -4,10 +4,15 @@
  * beats it lasts. One fixed-height row (`.rmm-values`, 8rem), the same in the placeholder, so
  * showing the counts moves nothing.
  *
- * `asked` is the value the question is about: its name is underlined (a pencilled mark, not just
- * a colour) and the others are set in the muted ink; with none, all four are in full ink. The
- * glyphs are decoration (`aria-hidden`); the names and counts are real text. The row is `ltr`
- * whatever the language, since the order whole to eighth is the order of the lesson.
+ * `asked` is the value the question ("How many beats does the underlined note last?") is about:
+ * its name is underlined (a pencilled mark, not just a colour) and the others are set in the muted
+ * ink; with none, all four are in full ink. For a screen reader the same item is `aria-current`
+ * and carries the word "underlined" after its name, so "which note?" has the answer a sighted
+ * learner gets from the page: the note is named, as it is on screen, and nothing else is said. The
+ * counts, which would be the answer, stay `invisible` (out of the accessibility tree) until the
+ * question has been answered. The glyphs are decoration (`aria-hidden`); the names and counts are
+ * real text. The row is `ltr` whatever the language, since the order whole to eighth is the order
+ * of the lesson.
  */
 
 import { useTranslation } from 'react-i18next';
@@ -97,6 +102,7 @@ export function NoteValues({
       {NOTE_VALUES.map((value) => (
         <li
           key={value}
+          aria-current={asked === value ? 'true' : undefined}
           className={cn(
             'flex flex-col items-center',
             asked === null || asked === value ? 'text-(--app-text)' : 'text-(--app-text-muted)',
@@ -111,6 +117,11 @@ export function NoteValues({
           >
             {valueName(t, value)}
           </span>
+          {asked === value && (
+            <span className="sr-only">
+              {t('rhythm-value-underlined', { defaultValue: 'underlined' })}
+            </span>
+          )}
           <span
             className={cn(
               'h-6 text-center text-xs leading-6 text-(--app-text-muted)',

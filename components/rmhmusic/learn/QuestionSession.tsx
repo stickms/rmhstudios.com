@@ -239,8 +239,8 @@ export function SessionSheet<C, A>({
   line: string;
   /** Changes when the sentence stands for a new thing, so it is replaced rather than edited. */
   lineKey: string;
-  /** What the live region says. */
-  said: string;
+  /** What the live region says: a string, or {@link SaidParts} for several sentences. */
+  said: ReactNode;
 }) {
   const { t } = useTranslation('c-rmhmusic');
   const { lesson } = session;
@@ -287,6 +287,25 @@ export function SessionSheet<C, A>({
         </p>
       </div>
     </section>
+  );
+}
+
+/**
+ * Several sentences for the live region, each its own element. They are never joined into one
+ * string with punctuation of ours ("Question 1 of 4. How many…"): each is a translated sentence on
+ * its own, and a language chooses its own stops (and an RTL or CJK one does not use ". ").
+ */
+export function SaidParts({ parts }: { parts: readonly string[] }) {
+  return (
+    <>
+      {parts
+        .filter((part) => part !== '')
+        .map((part, i) => (
+          <span key={i} className="block">
+            {part}
+          </span>
+        ))}
+    </>
   );
 }
 

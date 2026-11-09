@@ -11,15 +11,25 @@
  * (`audio/metronome.ts`, one per run), and turning its look-ahead `onBeat` into the machine's
  * `beat` at the moment the click is HEARD.
  *
- * **Time.** Taps are the hub's note events and carry their own `performance.now()` timestamp; no
- * handler reads a clock. The metronome's `beatTimes()` are on the same clock. Scoring
- * (`scoring/timing.ts`) subtracts the learner's calibrated latency, or, if they never calibrated,
- * an assumed output delay.
+ * **Time.** Taps are the hub's note events. Each carries a `performance.now()` timestamp, read by
+ * the input ADAPTER (the on-screen pad, the computer keys, the MIDI input) in its own handler at
+ * the moment the event is dispatched; nothing in this file reads a clock to stamp a tap. That is
+ * the same `performance.now()` timebase as the metronome's `beatTimes()`, which map the audio
+ * clock onto it with the one offset `clockOffsetMs` (audio/clicks.ts) that calibration uses too.
+ * Scoring (`scoring/timing.ts`) subtracts the learner's calibrated latency, or, if they never
+ * calibrated, an assumed output delay.
  *
- * **Sound lost mid-run** (a call, a headset unplugged: the context stops) or **a dialog opening**
- * over the lesson ends the run with a plain message and Start begins again; nothing is saved
- * from an abandoned run. Everything the run owns, the metronome and every timer, is cleared on
- * Stop, on unmount, and when sound is lost.
+ * **A run is dropped** (`lost`: a plain message, Start begins again, nothing is saved) when sound
+ * stops mid-run (a call, a headset unplugged: the context stops), when a dialog opens over the
+ * lesson, when the tab is hidden or the window stays out of focus long enough that the browser
+ * throttles timers (`input/away-watch.ts`), and when the metronome had to skip a beat or the run
+ * ends with fewer than sixteen beat times (`finishEvent`). Everything the run owns, the metronome
+ * and every timer, is cleared on Stop, on unmount, and when a run is dropped.
+ *
+ * **Leaving.** `prepare` awaits sound and the input hub; the lesson may be left, or the run
+ * dropped and restarted, in that time. After every await it asks `runStillWanted` (mounted, and the
+ * runner's state NOW still preparing this token) before it starts anything. Unmounting stops the
+ * metronome, clears the timers and releases the pad's note.
  *
  * The beat marker is one accent bar that moves between four fixed positions by a CSS transition
  * (`.rmm-beat__mark`), once per beat: no animation loop and no frame callback; with Jelly motion
@@ -32,28 +42,40 @@ import { useTranslation } from 'react-i18next';
 import { resumeAudio } from '@/lib/rmhmusic/learn/audio/resume';
 import { createMetronome, type Metronome } from '@/lib/rmhmusic/learn/audio/metronome';
 import { onSoundChange, soundStatus } from '@/lib/rmhmusic/learn/audio/voice';
+import { watchAway } from '@/lib/rmhmusic/learn/input/away-watch';
+import { createPadGuard } from '@/lib/rmhmusic/learn/input/pad-guard';
 import {
   BEATS,
   BPM,
   COUNT_IN,
-  TAIL_MS,
   createTapBeatMachine,
+  finishEvent,
+  runStillWanted,
+  tailMs,
   type Effect,
   type State,
 } from '@/lib/rmhmusic/learn/machines/tap-beat';
 import { starsFor } from '@/lib/rmhmusic/learn/scoring/stars';
-import { effectiveLatencyMs } from '@/lib/rmhmusic/learn/scoring/timing';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { getAudioContext } from '@/lib/shared/platform';
 import { LessonResult } from './LessonParts';
 import { Notehead } from './Notehead';
-import { SessionFrame } from './QuestionSession';
+import { SaidParts, SessionFrame } from './QuestionSession';
 import { useLessonInputStart, useNoteEvents } from './useLearnInput';
 import { useMachine } from './useMachine';
 import { cn } from '@/lib/utils';
 
 /** The note the pad sends through the on-screen keys (never sounded: the pad is silent). */
 const PAD_NOTE = 72;
+/** Let go of the pad's note, if it is down (so a later press is not taken for a repeat). */
+function releasePad() {
+  useLearnStore.getState().screen?.release(PAD_NOTE);
+}
+
+/** A run that is in progress (sound woken or waking, the count-in, the tapping). */
+const isLive = (s: State): s is Extract<State, { kind: 'preparing' | 'counting-in' | 'tapping' }> =>
+  s.kind === 'preparing' || s.kind === 'counting-in' || s.kind === 'tapping';
+
 /** The wait before the first click, long enough for the pad to be in reach (s). */
 const LEAD_S = 0.4;
 
@@ -62,7 +84,7 @@ export function TapBeatLesson({ lessonId, paused }: { lessonId: string; paused: 
   const input = useLearnStore((s) => s.profile?.input ?? 'screen');
   const latencyMs = useLearnStore((s) => s.profile?.latencyMs ?? 0);
   const [machine] = useState(() => createTapBeatMachine(latencyMs));
-  const [state, send] = useMachine(machine);
+  const [state, send, getState] = useMachine(machine);
   // The microphone is not used for rhythm.
   useLessonInputStart({ mic: false });
 
@@ -71,10 +93,8 @@ export function TapBeatLesson({ lessonId, paused }: { lessonId: string; paused: 
     metronome: null,
     timers: new Set(),
   });
-  const stateRef = useRef<State>(state);
-  useEffect(() => {
-    stateRef.current = state;
-  });
+  /** False once the lesson has been left: an `await` that resumes after that starts nothing. */
+  const mounted = useRef(false);
   const answersBox = useRef<HTMLDivElement>(null);
 
   const stopAudio = () => {
@@ -116,31 +136,43 @@ export function TapBeatLesson({ lessonId, paused }: { lessonId: string; paused: 
   };
 
   const prepare = async (token: number) => {
+    // After each await: is this still the run the learner started, on a screen still shown?
+    const wanted = () => runStillWanted({ mounted: mounted.current, state: getState(), token });
     const ctx = getAudioContext();
     // Bounded: a resume that never settles shows the plain message instead of hanging here.
-    if (!ctx || !(await resumeAudio(ctx))) {
+    const awake = ctx ? await resumeAudio(ctx) : false;
+    if (!wanted()) return;
+    if (!ctx || !awake) {
       perform(send({ type: 'prepared', token, ok: false }));
       return;
     }
     const { hub } = useLearnStore.getState();
     if (input === 'keys') await hub?.start('keys').catch(() => {});
+    if (!wanted()) return;
     await hub?.start('screen').catch(() => {});
-    // The learner left, or pressed Start again, while sound woke.
-    if (stateRef.current.kind !== 'preparing' || stateRef.current.token !== token) return;
+    // The learner left, pressed Start again, or the run was dropped, while sound woke.
+    if (!wanted()) return;
+    // The tab was hidden while it woke: timers are throttled, so there is no run to give.
+    if (document.hidden) {
+      perform(send({ type: 'lost', token }));
+      return;
+    }
     stopAudio();
-    const tail = TAIL_MS + Math.max(0, effectiveLatencyMs(latencyMs));
-    const metronome = createMetronome(ctx, {
+    const tail = tailMs(latencyMs);
+    const metronome: Metronome = createMetronome(ctx, {
       bpm: BPM,
       beatsPerBar: 4,
+      // Nothing past the last scored beat can ever sound, however late the finish timer is.
+      count: COUNT_IN + BEATS,
       onBeat: (beat, bar, atMs) => {
         const n = bar * 4 + beat;
         // The click is scheduled up to 100 ms ahead; the screen follows what is heard.
         at(atMs, () => perform(send({ type: 'beat', token, beat: n })));
         if (n === COUNT_IN + BEATS - 1) {
           at(atMs + tail, () => {
-            const beats =
-              run.current.metronome?.beatTimes().slice(COUNT_IN, COUNT_IN + BEATS) ?? [];
-            perform(send({ type: 'finished', token, beats }));
+            if (run.current.metronome !== metronome) return;
+            const beats = metronome.beatTimes().slice(COUNT_IN, COUNT_IN + BEATS);
+            perform(send(finishEvent(token, beats, metronome.skipped())));
           });
         }
       },
@@ -159,26 +191,41 @@ export function TapBeatLesson({ lessonId, paused }: { lessonId: string; paused: 
   // Sound stopping mid-run (a call, a headset) ends the run; so does a dialog opening over it.
   useEffect(() => {
     return onSoundChange(() => {
-      const s = stateRef.current;
-      if (
-        (s.kind === 'preparing' || s.kind === 'counting-in' || s.kind === 'tapping') &&
-        soundStatus() !== 'ready'
-      ) {
-        perform(send({ type: 'lost', token: s.token }));
-      }
+      const s = getState();
+      if (isLive(s) && soundStatus() !== 'ready') perform(send({ type: 'lost', token: s.token }));
     });
-    // `perform` and `send` are stable for the life of the screen.
+    // `perform`, `send` and `getState` are stable for the life of the screen.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
-    const s = stateRef.current;
-    if (paused && (s.kind === 'preparing' || s.kind === 'counting-in' || s.kind === 'tapping')) {
-      perform(send({ type: 'lost', token: s.token }));
-    }
+    const s = getState();
+    if (paused && isLive(s)) perform(send({ type: 'lost', token: s.token }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paused]);
-  // Leaving the lesson: nothing keeps running.
-  useEffect(() => stopAudio, []);
+  // The tab hidden, or the window out of focus long enough for timers to be throttled, drops the run.
+  const live = isLive(state);
+  useEffect(() => {
+    if (!live) return;
+    return watchAway({
+      doc: document,
+      win: window,
+      onAway: () => {
+        const s = getState();
+        if (isLive(s)) perform(send({ type: 'lost', token: s.token }));
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live]);
+  // Leaving the lesson: nothing keeps running, and the pad lets go. (Set on every mount, so React's
+  // mount-cleanup-mount in development leaves it mounted.)
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      stopAudio();
+      releasePad();
+    };
+  }, []);
 
   // Focus follows the learner to the result's first control, never <body>.
   const over =
@@ -222,8 +269,8 @@ export function TapBeatLesson({ lessonId, paused }: { lessonId: string; paused: 
     input === 'midi'
       ? t('rhythm-tap-hint-midi', { defaultValue: 'Press a key on your controller on every beat.' })
       : input === 'keys'
-        ? t('rhythm-tap-hint-keys', {
-            defaultValue: 'Tap the pad, press the space bar or a piano key (A to K) on every beat.',
+        ? t('rhythm-tap-hint-keyboard', {
+            defaultValue: 'Tap the pad or press a piano key (A to K) on every beat.',
           })
         : input === 'mic'
           ? t('rhythm-tap-hint-mic', {
@@ -301,8 +348,10 @@ export function TapBeatLesson({ lessonId, paused }: { lessonId: string; paused: 
               {line}
             </p>
           </div>
+          {/* The count and the sentence are two translated sentences: separate elements, never
+              joined with a full stop of ours. */}
           <p className="sr-only" aria-live="polite">
-            {state.kind === 'tapping' ? '' : `${title}. ${line}`}
+            {state.kind === 'tapping' ? '' : <SaidParts parts={[title, line]} />}
           </p>
         </div>
       </section>
@@ -354,7 +403,13 @@ function BeatBar({ position }: { position: number | null }) {
 /**
  * The pad: Start before a run (a click, so the browser allows sound), then the tap surface. A tap is
  * the pointer going down, or Space/Enter going down (never a key's repeats), sent through the
- * on-screen input so it is a timestamped note event like any other.
+ * on-screen input so it is a timestamped note event like any other. (Space and Enter reach it only
+ * while the pad has focus; the piano keys of the computer-keys input are the hub's, not the pad's.)
+ *
+ * Every way a tap can end (pointer up, leaving the pad, a cancelled pointer, the key coming up, focus
+ * moving away, the pad going away) releases the note in every mode, so the screen input never keeps a
+ * note held that would make the next press look like a repeat. A tap still held when the run ends
+ * must not start the next one when it is let go: see `input/pad-guard.ts`.
  */
 function TapPad({
   mode,
@@ -367,38 +422,57 @@ function TapPad({
   busy: boolean;
   onStart: () => void;
 }) {
-  const pad = (down: boolean) => {
-    const { screen } = useLearnStore.getState();
-    if (down) screen?.press(PAD_NOTE);
-    else screen?.release(PAD_NOTE);
+  const [guard] = useState(createPadGuard);
+  const tapping = mode === 'tap';
+  const down = () => {
+    guard.press();
+    useLearnStore.getState().screen?.press(PAD_NOTE);
   };
+  const up = () => {
+    guard.release();
+    releasePad();
+    // A swallow that no click claimed (the pointer slid off) must not outlive this release.
+    window.setTimeout(guard.settle, 0);
+  };
+  // The pad has become Start: a tap that is still down must not start a run when it comes up.
+  useEffect(() => {
+    if (!tapping) guard.toStart();
+  }, [tapping, guard]);
+  // The pad going away (the result replaces it) lets go of its note.
+  useEffect(() => releasePad, []);
+  const isPadKey = (e: React.KeyboardEvent) => e.key === ' ' || e.key === 'Enter';
   return (
     <button
       type="button"
       data-focus-first=""
       aria-busy={busy || undefined}
-      onClick={mode === 'start' ? onStart : undefined}
+      onClick={() => {
+        if (!tapping && guard.allowClick()) onStart();
+      }}
       onPointerDown={
-        mode === 'tap'
+        tapping
           ? (e) => {
               e.preventDefault();
-              pad(true);
+              down();
             }
           : undefined
       }
-      onPointerUp={mode === 'tap' ? () => pad(false) : undefined}
-      onPointerCancel={mode === 'tap' ? () => pad(false) : undefined}
-      onPointerLeave={mode === 'tap' ? () => pad(false) : undefined}
+      onPointerUp={up}
+      onPointerCancel={up}
+      onPointerLeave={up}
+      onBlur={up}
       onKeyDown={
-        mode === 'tap'
+        tapping
           ? (e) => {
-              if (e.key !== ' ' && e.key !== 'Enter') return;
+              if (!isPadKey(e)) return;
               e.preventDefault();
-              if (!e.repeat) pad(true);
+              if (!e.repeat) down();
             }
           : undefined
       }
-      onKeyUp={mode === 'tap' ? () => pad(false) : undefined}
+      onKeyUp={(e) => {
+        if (isPadKey(e)) up();
+      }}
       style={{ touchAction: 'none' }}
       className={cn(
         'rmm-sheet rmm-display h-full w-full text-[2rem] leading-10 text-(--app-text) select-none',
