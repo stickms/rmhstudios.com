@@ -12,7 +12,7 @@
 > the same fixed fields, explicit file paths, and a "done when" that a script
 > can check. An agent should be able to take one item ID and run with it.
 >
-> **Status.** Proposal. Nothing here is decided. Owner decisions recorded in
+> **Status.** Approved by the owner on 2026-11-09 except D1 (see [§1.7](#17-owner-decisions-2026-11-09)); being implemented in order of Part G. Owner decisions recorded in
 > `CLAUDE.md` (Plasmatic Jelly identity, no eyebrows, the phone top bar, the
 > accepted CSS-first jelly trade-offs) are treated as **constraints**, not
 > targets for change. The July rewrite decision to **keep the stack**
@@ -108,7 +108,7 @@ the whole migration.
 
 ## 1. Baseline: the platform in numbers
 
-Snapshot at commit `c9c721c0` (2026-11-09). Re-run [Appendix 2](#appendix-2--regenerate-every-metric) to refresh.
+Snapshot at commit `c9c721c0`, refreshed against `d971bf46` (main, 2026-11-09; see [§1.6](#16-changes-on-main-since-the-first-snapshot)). Re-run [Appendix 2](#appendix-2--regenerate-every-metric) to refresh.
 
 ### 1.1 Size
 
@@ -122,7 +122,7 @@ Snapshot at commit `c9c721c0` (2026-11-09). Re-run [Appendix 2](#appendix-2--reg
 | `go-services/` | 158 files · 38,840 lines (30.4k non-test) |
 | Files > 1,000 / > 2,000 / > 3,000 lines | 104 / 12 / 5 |
 | tf2 family (tf2-game, tf2-hud, tf2-loadout, sp-game, csgo-game) | ≈195k lines, about 15% of the codebase |
-| Test files | 1,037 (≈179k lines); ≈868 in the main suite |
+| Test files | 1,071 (≈183k lines); ≈900 in the main suite |
 | Git pack size | 582.9 MB |
 
 ### 1.2 Routes and API
@@ -147,7 +147,7 @@ Snapshot at commit `c9c721c0` (2026-11-09). Re-run [Appendix 2](#appendix-2--reg
 | Entry budget history | only ever raised: 281,000 → 294,000 → 296,500 → 299,000 → 307,700 → 537,900 |
 | Inline `<script>` blocks in the document | 11 (`app/routes/__root.tsx`) |
 | Providers mounted on every page | 9 contexts + 9 global mounts (`components/Providers.tsx`, 1,036 lines) |
-| `'use client'` directives (a no-op in TanStack Start) | 1,528 files |
+| `'use client'` directives (a no-op in TanStack Start) | 1,536 files |
 | Zustand stores | 48 `create()` calls; 15 `persist` |
 | `useEffect` / `useState` | 1,774 / 4,067 |
 | `typeof window` checks | 209 in 151 files |
@@ -156,7 +156,7 @@ Snapshot at commit `c9c721c0` (2026-11-09). Re-run [Appendix 2](#appendix-2--reg
 
 | Measure | Value |
 |---|---|
-| CSS files / lines repo-wide | 104 / 74,790 |
+| CSS files / lines repo-wide | 104 / 74,968 |
 | `app/globals.css` / `radial.css` / `jelly-material.css` | 6,666 / 4,083 / 2,196 lines (≈34% comments in globals) |
 | Unique custom properties | `--site-*` 120 · `--app-*` 68 · ≈1,557 total · ≈49 bespoke component prefixes |
 | Registered themes vs palettes in CSS | 2 registered (`graphite`, `default`); 4 unregistered full palettes (`light`, `sepia`, `nocturne`, `ultra`) referenced only by tests |
@@ -189,6 +189,43 @@ Snapshot at commit `c9c721c0` (2026-11-09). Re-run [Appendix 2](#appendix-2--reg
 | CI workflows | 20 (≈3,600 lines) |
 | Docs | 957 files · 432 `.md` · 195 date-stamped · 37 "audit" files (9 performance audits) |
 | i18n | 16 shipped + 16 pending locales · 132 namespaces · ≈19.2k English keys |
+
+### 1.6 Changes on main since the first snapshot
+
+Between `c9c721c0` and `d971bf46` (7 merges, 140 files, +16k lines):
+
+- **RMH Music learn mode** (#1525–#1527): about 20 new components and state
+  machines under `components/rmhmusic/learn/` and `lib/rmhmusic/learn/`, plus a
+  root-level `RMHMUSIC_ROADMAP.md`. This adds 34 test files (1,037 → 1,071) and
+  8 more `'use client'` files (1,528 → 1,536). It changes no conclusion here.
+  The root-level roadmap is one more doc outside `docs/` (F4).
+- **Jobs registration is table-driven** (#1522, `server/jobs/registry.ts`):
+  registrations are isolated, cron polling is slower, sweeps are staggered and
+  SDKs are lazy. This is the seam that D4's `defineJob` registry builds on.
+  D4 now extends `registry.ts` rather than replacing it.
+- **Deploy resilience** (#1521, #1523): the jobs container has more headroom,
+  a heap cap, a longer stop grace and a boot retry, so a single worker restart
+  no longer rolls back a deploy. D5's "health-gated rollout for every service"
+  still stands; this narrows its most frequent failure.
+- **Globe** (#1524): the refracted picture is placed once per display frame
+  while scrolling. B3's "poster until first interaction" for the docked globe
+  is unaffected.
+
+Every other headline number (routes, API files, models, raw fetches,
+`routeTree.gen.ts`, CSS, namespaces, workflows) is unchanged.
+
+### 1.7 Owner decisions (2026-11-09)
+
+The owner answered [Appendix 3](#appendix-3--open-questions-for-the-owner):
+
+| Question | Decision | Effect on items |
+|---|---|---|
+| Overall | **All recommendations approved** | Every item is in scope, with the exceptions below |
+| One-off pages (A2 triage) | **Keep all of them** | A2 becomes "keep, and make each one cheap": each moves into a feature or island with its own manifest. Nothing is archived. Redirect stubs still collapse into a redirect table, because they are not pages |
+| Git history rewrite (F6 step 4) | **No** | F6 does only steps 1–3, applied to new and moved files; the pack stays as it is |
+| Managed Postgres (D1 step 3) | **No** | D1 is **out of scope**: no data moves off the box. D2 uses the existing Redis for the Socket.IO adapter, which is pub/sub only and needs no persistence |
+| Page-transition effect (eversion) | **Implementer's call** | Keep it, and load it **on intent** (B3): no idle warm-up, worker built on first use |
+| Everything else in Appendix 3 | Implementer's call, following the recommendation as written | Design labs stay public, the docked globe becomes a poster until first interaction, discordbot is ported last (D3), senior-review becomes advisory, English source of truth is `locales/en` |
 
 ---
 
@@ -796,7 +833,7 @@ risk: low
 depends: []
 ```
 
-**Evidence:** 1,528 files start with `'use client'`, which is a Next.js
+**Evidence:** 1,536 files start with `'use client'`, which is a Next.js
 directive and does nothing in TanStack Start. It misleads every agent that
 reads it ("this is a client component, so the others are server components"),
 which is false here. CLAUDE.md already warns that Next.js references are stale.
@@ -2757,7 +2794,7 @@ Fix these at once. They mislead every agent that reads the docs.
 | `CLAUDE.md` | "67 registered namespaces" | 132 (`NAMESPACES` in `lib/i18n/config.ts`) |
 | `CLAUDE.md` | `pnpm test` "~20s" | unmeasured; suite grew from 247 to ≈868 files |
 | `docs/architecture.md` | 234 models, "eleven workflows" | 511 models, 20 workflows |
-| `docs/testing.md` | 258 test files (247 main), `lib/__tests__` = 149, 16 gates, gate ≈3 s | 1,037 / ≈868 / 288 / ≈41 + 2 dirs / unmeasured |
+| `docs/testing.md` | 258 test files (247 main), `lib/__tests__` = 149, 16 gates, gate ≈3 s | 1,071 / ≈900 / 288 / ≈41 + 2 dirs / unmeasured |
 | `go-services/CLAUDE.md` | Go 1.23 | `go 1.26.8`, toolchain 1.27.1 |
 | `components/CLAUDE.md` | "~860 files" | 1,632 `.tsx` |
 | `AGENTS.md` | "mirrors CLAUDE.md" | 120 lines vs 429 |
@@ -2879,7 +2916,7 @@ For a coding agent picking up an item from this document:
 ```yaml
 # status ledger: agents append here
 A1: open
-A2: open
+A2: open (owner: keep every one-off page; collapse redirect stubs only)
 A3: open
 A4: open
 A5: open
@@ -2897,7 +2934,7 @@ C1: open
 C2: open
 C3: open
 C4: open
-D1: open
+D1: declined (owner, 2026-11-09: no data moves off the box)
 D2: open
 D3: open
 D4: open
@@ -2917,7 +2954,7 @@ F2: open
 F3: open
 F4: open
 F5: open
-F6: open
+F6: open (owner: no history rewrite)
 F7: open
 F8: open
 ```
