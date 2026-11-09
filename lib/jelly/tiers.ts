@@ -40,6 +40,11 @@ export interface JellyBudget {
   ambientArcMinIntervalMs: number;
   /** Bolts thrown per click. */
   clickBolts: number;
+  /**
+   * How many on-screen glass hosts may hold a refracting rim layer at once (`lib/jelly/refract/install.ts`), nearest the
+   * viewport centre first; the rest keep the lit rim. Chosen by measurement (docs/plasmatic-jelly-system.md §1.2), not guessed.
+   */
+  refractHosts: number;
 }
 
 /**
@@ -50,11 +55,35 @@ export interface JellyBudget {
  * which are gone (CSS-first jelly); the CSS material needs no budget, it costs nothing at rest.
  */
 export const JELLY_BUDGETS: Readonly<Record<JellyTier, Readonly<JellyBudget>>> = {
-  full: { clockHz: 60, idleClockHz: 15, ambientArcMinIntervalMs: 2000, clickBolts: 3 },
-  coarse: { clockHz: 60, idleClockHz: 15, ambientArcMinIntervalMs: 2000, clickBolts: 2 },
+  full: {
+    clockHz: 60,
+    idleClockHz: 15,
+    ambientArcMinIntervalMs: 2000,
+    clickBolts: 3,
+    refractHosts: 24,
+  },
+  coarse: {
+    clockHz: 60,
+    idleClockHz: 15,
+    ambientArcMinIntervalMs: 2000,
+    clickBolts: 2,
+    refractHosts: 12,
+  },
   // R10: half the desktop ambient-arc rate, not 04's zero — the owner wants phones charged too.
-  handheld: { clockHz: 30, idleClockHz: 7, ambientArcMinIntervalMs: 4000, clickBolts: 1 },
-  off: { clockHz: 0, idleClockHz: 0, ambientArcMinIntervalMs: Infinity, clickBolts: 0 },
+  handheld: {
+    clockHz: 30,
+    idleClockHz: 7,
+    ambientArcMinIntervalMs: 4000,
+    clickBolts: 1,
+    refractHosts: 0,
+  },
+  off: {
+    clockHz: 0,
+    idleClockHz: 0,
+    ambientArcMinIntervalMs: Infinity,
+    clickBolts: 0,
+    refractHosts: 0,
+  },
 };
 
 /**
@@ -66,6 +95,7 @@ export const GAME_PLAYING_BUDGET: Readonly<JellyBudget> = {
   idleClockHz: 0,
   ambientArcMinIntervalMs: Infinity,
   clickBolts: 0,
+  refractHosts: 0,
 };
 
 /**
@@ -181,11 +211,12 @@ export const JELLY_SELECTOR =
   '.glass-pane,.glass-fill,.glass-chrome,.glass-overlay,.glass-inset,.glass-interactive,.app-glass,[data-liquid-glass],[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"],[data-sonner-toast],[data-jelly],[data-liquid-surface],.app-theme [class~="bg-(--app-surface)"]';
 
 /**
- * The nodes the jelly services inject into `<body>` that React never knows about: the arc layer. Never hosts, never
+ * The nodes the jelly services inject that React never knows about: the arc layer (into `<body>`) and a host's refracting
+ * rim layer (`lib/jelly/refract/layer.ts`, the host's first child). Never hosts, never
  * "content changed"; the registry notifies when one is removed from a host (React's `setTextContent` wipe), so its
  * owner can re-attach it.
  */
-export const JELLY_LAYER_SELECTOR = '.jelly-arc-layer';
+export const JELLY_LAYER_SELECTOR = '.jelly-arc-layer,.jelly-refract';
 
 /**
  * The radial hub open or an eversion in progress: arcs are off. `tiers` does not otherwise know about these, so the

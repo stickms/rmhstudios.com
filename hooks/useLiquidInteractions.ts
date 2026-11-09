@@ -24,6 +24,11 @@ import { installPointerVars } from '@/lib/jelly/pointer-vars';
  * to the first `pointerdown` through the pointer hub; the arcs chunk is imported and the click-only runtime installed
  * on that press, and removed again 10 s after the last click. Ambient arcs no longer exist.
  * The page snapshot the liquid globe refracts comes from the globe's own scene feed (`lib/liquid/glass/scene-feed.ts`).
+ *
+ * **Refractive glass** (`lib/jelly/refract/install.ts`) mounts in the same idle step, as its own lazily-imported chunk: every
+ * main-site glass host that is on screen (up to the tier's `refractHosts`) gets a rim layer that shows that snapshot through
+ * an SVG displacement filter, so the rim bends what is behind it in every browser. It shares this effect's teardown, so a
+ * native-material route (which passes `enabled: false`) never has one. It runs no frame and nothing at rest.
  */
 export function useLiquidInteractions(enabled = true): void {
   useEffect(() => {
@@ -31,6 +36,7 @@ export function useLiquidInteractions(enabled = true): void {
     if (!enabled) return;
     let cancelled = false;
     let stopArcs: (() => void) | null = null;
+    let stopRefraction: (() => void) | null = null;
     const stopPointerVars = installPointerVars(document);
 
     const start = () => {
@@ -40,6 +46,12 @@ export function useLiquidInteractions(enabled = true): void {
       stopArcs = installLazyClickArcs(document);
       // From here on, glass that mounts fades in (app/jelly-material.css §7); the first paint never did.
       document.documentElement.setAttribute('data-jelly-ready', '');
+      // Refractive glass: the rim layers of every glass host (lib/jelly/refract). Its own chunk, after first paint and the
+      // arcs' subscription, so nothing here is in the entry or competes with hydration; it stays quiet at rest.
+      void import('@/lib/jelly/refract/install').then(({ installRefraction }) => {
+        if (cancelled) return;
+        stopRefraction = installRefraction(document);
+      });
     };
     // Safari has no requestIdleCallback (the DOM typings say every browser does), so feature-detect it.
     const w = window as Window & {
@@ -66,6 +78,7 @@ export function useLiquidInteractions(enabled = true): void {
       }
       stopPointerVars();
       stopArcs?.();
+      stopRefraction?.();
       // The material is gone (a native-material route, or unmount): glass that mounts now must not fade in as if
       // the jelly were running.
       document.documentElement.removeAttribute('data-jelly-ready');

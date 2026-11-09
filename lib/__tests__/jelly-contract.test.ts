@@ -570,17 +570,34 @@ describe('N13 — never fake a law', () => {
     ).toEqual([]);
   });
 
-  it('no filter in jelly CSS: the press lens was retired with the lattice and the shader rim', () => {
+  /**
+   * The ONE filter in the jelly sheets (refractive glass, 2026-11-08; docs/plasmatic-jelly-system.md §1.2): the rim layer's
+   * `::before` takes its filter from the custom property the refraction service writes (`--rf-flt`, an SVG displacement
+   * filter of the page snapshot). It is a plain `filter` on a decorative layer that is NOT the host body and never a
+   * `backdrop-filter`; the press lens that this rule retired (an SVG filter on the host itself) stays retired.
+   */
+  const RIM_LAYER_FILTER = { file: 'app/jelly-refract.css', value: 'var(--rf-flt, none)' } as const;
+
+  it('no filter in jelly CSS but the rim layer’s: the press lens was retired with the lattice and the shader rim', () => {
     const offenders = SHEETS.flatMap((f) =>
       decls(f)
         .filter((d) => /^(-webkit-)?(backdrop-)?filter$/.test(d.prop) && d.value !== 'none')
+        .filter((d) => !(f === RIM_LAYER_FILTER.file && d.prop === 'filter' && d.value === RIM_LAYER_FILTER.value))
         .map((d) => `${f}:${d.line} ${d.prop}: ${d.value}`),
     );
     expect(
       offenders,
       'No stylesheet filters a jelly body: the press lens (an SVG filter on the host) went with the soft-body ' +
-        'service. The dent is a lit gradient (docs/plasmatic-jelly-system.md §3.1).',
+        'service. The dent is a lit gradient (docs/plasmatic-jelly-system.md §3.1). The only filter is the refraction ' +
+        'layer’s own (`filter: var(--rf-flt, none)` in app/jelly-refract.css).',
     ).toEqual([]);
+  });
+
+  it('the rim layer’s filter is on its own pseudo-element and nowhere else', () => {
+    const src = css(RIM_LAYER_FILTER.file);
+    const rules = [...src.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sel: m[1].trim(), body: m[2] }));
+    const filtered = rules.filter((r) => /(^|[\s;])filter\s*:/.test(r.body));
+    expect(filtered.map((r) => r.sel)).toEqual(['.jelly-refract::before']);
   });
 
   it('nothing under lib/jelly or lib/liquid writes an element filter', () => {

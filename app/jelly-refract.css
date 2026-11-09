@@ -1,0 +1,123 @@
+/* Refractive glass (docs/plasmatic-jelly-system.md §1.2; docs/superpowers/specs/2026-11-08-refractive-glass-design.md).
+
+   Every main-site glass host that holds a layer (lib/jelly/refract/install.ts) bends the page behind its rim. The layer is one
+   `<span class="jelly-refract" aria-hidden>`, the host's first child with no box of its own (`display: contents`), and
+   everything it draws is in its two pseudo-elements, driven by custom properties the service writes on the span
+   (lib/jelly/refract/layer.ts):
+
+   - `::before` shows the shared page snapshot through a plain `filter: url(#jelly-rf-…)` (an `feImage` map, three
+     `feDisplacementMap`s for the RGB dispersion, and the map's own band opacity), reaching `--rf-pad` past the host so a pixel
+     pushed outward still has picture under it. The map is zero outside the rim band, so the interior stays clear gel and the
+     refracted picture eases into it. That filter form renders the same in Chromium, Firefox and WebKit; `backdrop-filter` is
+     Chromium-only and has no place in a glass role.
+   - `::after` is the host's own soft lip (`--gel-glow`). The host's inset shadow would sit UNDER the opaque band (a
+     negative-z child paints over its parent's shadow), so while a layer is live the lip is painted here, above it, and the
+     host's own shadow yields. The host's border stays the host's: the layer starts inside it.
+
+   Static: nothing here animates, loops or wakes. A layer fades through ONE opacity transition (≤ 300 ms, never repeating)
+   when a picture lands, is cleared, or goes stale (theme, route, a fixed host's picture while the page scrolls). No
+   `backdrop-filter`, no `infinite`, no `@keyframes` (lib/__tests__/jelly-refract.test.ts). Print and the app tier's high
+   contrast never get a layer (the service detaches them) and draw their own opaque edge. */
+@layer components {
+  /* The layer is a negative-z child, so its host must be a stacking context of its own (the roles already are; this is the
+     guarantee for the `-inset` field and anything the isolation rule in jelly-material.css §3b does not name). */
+  [data-refract] {
+    isolation: isolate;
+  }
+
+  /* While a layer is live the host's inset glow moves onto it (above the band). Same selectors as app/jelly-material.css §4
+     plus the marker, so these win on specificity inside the one layer. */
+  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay)[data-refract]:not(
+      [data-liquid-canvas='on']
+    ):not([data-liquid-material='off']),
+  .glass-inset[data-refract]:not([data-liquid-canvas='on']):not([data-liquid-material='off']):not(
+      [data-slot='button']
+    ) {
+    box-shadow: none;
+  }
+
+  /* The span has no box: it only carries the custom properties, and its pseudo-elements are positioned against the host. */
+  .jelly-refract {
+    display: contents;
+  }
+
+  .jelly-refract::before {
+    content: '';
+    position: absolute;
+    z-index: -2;
+    inset: calc(-1 * var(--rf-pad, 10px));
+    pointer-events: none;
+    user-select: none;
+    background-image: var(--rf-img, none);
+    background-repeat: no-repeat;
+    background-size: var(--rf-size, 0 0);
+    background-position: var(--rf-pos, 0 0);
+    background-origin: border-box;
+    /* No mask and no radius: the filter's map is the band (its blue channel is the band's opacity, 0 outside the host box and
+       in the interior), so nothing outside the rim is ever drawn. */
+    filter: var(--rf-flt, none);
+    opacity: var(--rf-cover, 0);
+    transition: opacity 240ms var(--ease-smooth);
+  }
+  /* Chrome and overlay glass are hidden from the picture, and the opaque band would hide their own tint: they paint it again
+     over the picture, as the host does over the page (the floor, the gel coat, then the tint, bottom to top). Cards, panes
+     and fields are IN the picture, tint included. */
+  .jelly-refract[data-tint]::before {
+    background-image:
+      var(--jelly-floor, none), var(--liquid-coat, none), linear-gradient(var(--rf-tint) 0 0),
+      var(--rf-img, none);
+    background-repeat: repeat, no-repeat, no-repeat, no-repeat;
+    background-size:
+      var(--jelly-floor-size, auto),
+      100% 100%,
+      100% 100%,
+      var(--rf-size, 0 0);
+    background-position:
+      0 0,
+      0 0,
+      0 0,
+      var(--rf-pos, 0 0);
+  }
+  @starting-style {
+    .jelly-refract::before {
+      opacity: 0;
+    }
+  }
+  /* Nothing to show: no paint at all once the fade has run (a hidden layer costs the filter nothing). */
+  .jelly-refract[data-rf='off']::before {
+    visibility: hidden;
+    transition:
+      opacity 240ms var(--ease-smooth),
+      visibility 0s linear 240ms;
+  }
+  /* A fixed or sticky host's picture is of where the content WAS: it leaves at the first scroll event and returns when the
+     scroll rests (the service re-places it first). */
+  .jelly-refract[data-moving]::before {
+    opacity: 0;
+  }
+
+  .jelly-refract::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    pointer-events: none;
+    border-radius: var(--rf-r, 0px);
+    box-shadow: var(--gel-glow, 0 0 0 0 transparent);
+  }
+  /* A field adds the well to its lip (app/jelly-material.css §4). */
+  .glass-inset > .jelly-refract::after {
+    box-shadow:
+      var(--gel-glow, 0 0 0 0 transparent),
+      inset 0 1.5px 4px -1px var(--gel-well-shade, transparent);
+  }
+}
+
+@media print {
+  .jelly-refract {
+    display: none;
+  }
+}
+.app-high-contrast .jelly-refract {
+  display: none;
+}
