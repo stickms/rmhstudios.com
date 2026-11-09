@@ -31,6 +31,37 @@
 
 @import '../shared/app-theme.css';
 
+/* The display face: IM Fell English, the face of the logo's wordmark (a 17th-century English
+   roman, cut from the Fell types). Declared here and nowhere else, so it loads only on RMH Music;
+   `app/routes/rmhmusic.tsx` preloads it. One weight (400) and no italic: headings set it at 400
+   and `.rmm-display` turns off synthesised bold and slant. OFL licence beside the file.
+
+   `swap`, so a heading shows at once in the book serif and changes face when Fell arrives —
+   without moving anything. Every heading has an explicit line height and a fixed number of lines,
+   so no box changes; and the fallback below takes Fell's own vertical metrics (ascent 91%,
+   descent 36% of the size: its hhea values), so the glyphs' line box does not jump either
+   (Chromium counts a text node moving 3px inside its heading as a layout shift). */
+@font-face {
+  font-family: 'IM Fell English';
+  src: url('../shared/game-fonts/IMFellEnglish/IMFellEnglish-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'RMM Book Serif';
+  src:
+    local('Iowan Old Style'), local('IowanOldStyle-Roman'), local('Palatino Linotype'),
+    local('Palatino'), local('Palatino-Roman'), local('Book Antiqua'), local('Georgia'),
+    local('Times New Roman'), local('TimesNewRomanPSMT'), local('Liberation Serif'),
+    local('Noto Serif'), local('DejaVu Serif');
+  font-weight: 400;
+  font-style: normal;
+  ascent-override: 91%;
+  descent-override: 36%;
+  line-gap-override: 0%;
+}
+
 /* ── Light: paper ─────────────────────────────────────────────────────────── */
 .rmhmusic-theme {
   --app-bg: #f6f0e1;
@@ -63,9 +94,13 @@
   --app-gel-depth: rgb(26 39 71 / 0.05);
   --app-jelly-haze: color-mix(in srgb, var(--app-accent) 10%, white);
 
-  /* Type: a book serif for headings, all system faces (nothing to download, nothing to swap). */
+  /* Type: IM Fell English for headings (the logo's face); behind it the system book serifs given
+     Fell's metrics (`RMM Book Serif`), then the same serifs by name — a browser that has not
+     resolved the local face yet (Firefox) still sets a book serif of the same width, not its
+     much wider generic serif — then the generic serif. */
   --app-font-display:
-    'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, ui-serif, serif;
+    'IM Fell English', 'RMM Book Serif', 'Iowan Old Style', 'Palatino Linotype', Palatino,
+    'Book Antiqua', Georgia, 'Times New Roman', 'Liberation Serif', ui-serif, serif;
 
   /* Paper decoration — never text, so no contrast floor; kept faint on purpose. */
   --rmm-rule: #c3cfe4;
@@ -352,9 +387,12 @@
   color: var(--app-text-muted);
 }
 
-/* Headings in the book serif. */
+/* Headings in the display face, at its one weight: never a synthesised bold or slant. */
 .rmm-display {
   font-family: var(--app-font-display);
+  font-weight: 400;
+  font-style: normal;
+  font-synthesis: none;
 }
 
 /* ── The lesson's input region (FirstNoteLesson.tsx, LessonScreen's placeholder) ─────

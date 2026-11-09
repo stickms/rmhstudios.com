@@ -101,7 +101,6 @@ export function LiveStaff({ source, note, announce = true, className }: LiveStaf
                 y={fit.label.y}
                 stroke="none"
                 fontSize={LABEL_FONT}
-                fontStyle="italic"
                 className="rmm-display"
               >
                 {fit.label.text}

@@ -62,7 +62,7 @@ function Shell({
               {t('loading-lesson', { defaultValue: 'Loading the lesson…' })}
             </p>
           )}
-          <h1 className="rmm-display text-3xl font-bold tracking-tight text-(--app-text)">
+          <h1 className="rmm-display text-[2.25rem] leading-[2.75rem] text-(--app-text) sm:text-[2.75rem] sm:leading-[3.25rem]">
             {title}
           </h1>
           {children}
@@ -81,8 +81,8 @@ function LessonSkeleton() {
   return (
     <div aria-hidden="true" className="space-y-4">
       <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
-        <div className="h-7">
-          <div className="app-skeleton mx-auto h-7 w-40" />
+        <div className="h-8">
+          <div className="app-skeleton mx-auto h-8 w-40" />
         </div>
         <div className="h-15">
           <div className="app-skeleton mx-auto h-5 w-56 max-w-full" />

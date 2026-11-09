@@ -73,7 +73,7 @@ export function PathUnit({ unit, progress, onOpenLesson, placeholder = false }: 
         {/* Unit and lesson titles are English catalogue strings for now; they are localised in a later phase. */}
         <h2
           id={headingId}
-          className={`rmm-display text-xl font-semibold text-(--app-text)${hidden}`}
+          className={`rmm-display text-2xl text-(--app-text)${hidden}`}
         >
           {unit.title}
         </h2>

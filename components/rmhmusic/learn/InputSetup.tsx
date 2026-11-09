@@ -53,7 +53,7 @@ export function InputSetup({ open, onOpenChange, returnFocus }: InputSetupProps)
             }}
           >
             <DialogHeader>
-              <DialogTitle className="text-lg font-semibold text-(--app-text)">
+              <DialogTitle className="rmm-display text-2xl leading-8 text-(--app-text)">
                 {view === 'choose'
                   ? t('setup-title', { defaultValue: 'How will you play?' })
                   : t('latency-title', { defaultValue: 'Check timing' })}

@@ -206,7 +206,7 @@ export function LearnHome() {
           )}
           <HomeHero />
           <div>
-            <h1 className="rmm-display text-3xl font-bold tracking-tight text-(--app-text)">
+            <h1 className="rmm-display text-3xl text-(--app-text)">
               {ready
                 ? instrument === 'guitar'
                   ? t('heading-guitar', { defaultValue: 'Learn guitar' })

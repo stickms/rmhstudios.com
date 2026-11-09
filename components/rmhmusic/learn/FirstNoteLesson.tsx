@@ -236,7 +236,7 @@ export function FirstNoteLesson({
       <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
         <h2
           title={title}
-          className="rmm-display line-clamp-1 h-7 text-xl font-semibold text-(--app-text)"
+          className="rmm-display line-clamp-1 h-8 text-2xl leading-8 text-(--app-text)"
         >
           {/* Keyed so a new state is a new text node: centred text rewritten in place counts as a layout shift. */}
           <span key={lesson.kind}>{title}</span>

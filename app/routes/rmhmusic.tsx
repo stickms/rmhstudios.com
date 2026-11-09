@@ -14,6 +14,8 @@ import { rmhmusicReturnPath } from '@/lib/rmhmusic/learn/return-path';
 import { RmhMusicStyles } from '@/components/rmhmusic/RmhMusicStyles';
 import { PaperBackdrop } from '@/components/rmhmusic/learn/PaperBackdrop';
 import { useRmhMusicModeRoot } from '@/components/rmhmusic/useRmhMusicMode';
+// The headings' face (rmhmusic.css), preloaded so it is usually there by first paint.
+import fellFont from '@/components/shared/game-fonts/IMFellEnglish/IMFellEnglish-Regular.woff2?url';
 
 const checkAuth = createServerFn({ method: 'GET' })
   .validator((input: unknown) => ({ returnTo: rmhmusicReturnPath(input) }))
@@ -43,6 +45,6 @@ function RmhMusicLayout() {
 
 export const Route = createFileRoute('/rmhmusic')({
   beforeLoad: ({ location }) => checkAuth({ data: location.pathname }),
-  head: () => appRouteHead('rmhmusic'),
+  head: () => appRouteHead('rmhmusic', { fontPreloads: [fellFont] }),
   component: RmhMusicLayout,
 });

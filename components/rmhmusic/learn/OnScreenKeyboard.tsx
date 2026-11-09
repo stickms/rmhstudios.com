@@ -211,7 +211,7 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
             swipe.current = null;
           }}
         >
-          <span className="rmm-display rounded-(--app-radius-sm) bg-(--app-bg) px-2 text-sm text-(--app-text-muted) italic">
+          <span className="rmm-display rounded-(--app-radius-sm) bg-(--app-bg) px-2 text-base text-(--app-text-muted)">
             {from}
           </span>
         </div>
