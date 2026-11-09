@@ -18,6 +18,11 @@ export interface SceneImage {
   readonly height: number;
   readonly scrollX: number;
   readonly scrollY: number;
+  /** The document's height when the picture was taken (`undefined` = unknown). */
+  readonly docHeight: number | undefined;
+  /** How far above its live place in-flow content sits in the picture (`SceneShot.origin`); 0 where unknown. */
+  readonly originX: number;
+  readonly originY: number;
   /** Called when `url` changes, including to `null`. Returns the unsubscribe. */
   onChange(fn: () => void): () => void;
   dispose(): void;
@@ -67,7 +72,16 @@ export function sceneImage(_doc: Document, deps: SceneImageDeps = {}): SceneImag
 
   const listeners = new Set<() => void>();
   let url: string | null = null;
-  let meta = { version: 0, width: 0, height: 0, scrollX: 0, scrollY: 0 };
+  let meta: {
+    version: number;
+    width: number;
+    height: number;
+    scrollX: number;
+    scrollY: number;
+    docHeight?: number;
+    originX?: number;
+    originY?: number;
+  } = { version: 0, width: 0, height: 0, scrollX: 0, scrollY: 0 };
   let wanted = 0;
   let disposed = false;
 
@@ -103,6 +117,9 @@ export function sceneImage(_doc: Document, deps: SceneImageDeps = {}): SceneImag
         height: scene.height,
         scrollX: scene.scrollX,
         scrollY: scene.scrollY,
+        docHeight: scene.docHeight,
+        originX: scene.origin?.x ?? 0,
+        originY: scene.origin?.y ?? 0,
       };
       notify();
     });
@@ -129,6 +146,15 @@ export function sceneImage(_doc: Document, deps: SceneImageDeps = {}): SceneImag
     },
     get scrollY() {
       return meta.scrollY;
+    },
+    get docHeight() {
+      return meta.docHeight;
+    },
+    get originX() {
+      return meta.originX ?? 0;
+    },
+    get originY() {
+      return meta.originY ?? 0;
     },
     onChange(fn) {
       listeners.add(fn);

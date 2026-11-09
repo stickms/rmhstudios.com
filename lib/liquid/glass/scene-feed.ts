@@ -7,8 +7,9 @@
  * keeps the globe's clone; the provider's bitmap is closed once that clone exists.
  *
  * A picture is 100–300 ms of time-sliced main-thread work, so the triggers are deliberately few: the first acquire,
- * a route change (the caller says when), a theme change on `<html>`, a window resize and the tab becoming visible.
- * Never scroll — the globe re-places the picture it has by the scroll offset — and never content mutations. The
+ * a route change (the caller says when), a theme change on `<html>`, a window resize and the tab becoming visible, and
+ * (only while a fixed, sticky or overlay glass host holds a refracting layer) scroll REST, never scroll itself — the globe
+ * and the layers re-place the picture they have by the scroll offset — and never content mutations. The
  * provider coalesces requests and holds its tier's minimum interval; `SCENE_POLICY` gives the handheld and
  * `off` tiers no budget at all, so nothing is captured there.
  */
@@ -16,7 +17,14 @@ import { APP_HIGH_CONTRAST_SELECTOR, jellyTier } from '@/lib/jelly/tiers';
 import { createSceneProvider, SCENE_POLICY, type SceneProvider, type SceneShot } from './scene';
 import { clearScene, publishScene } from './scene-store';
 
-export type SceneFeedReason = 'route' | 'theme' | 'resize' | 'visible' | 'activate';
+export type SceneFeedReason =
+  | 'route'
+  | 'theme'
+  | 'resize'
+  | 'visible'
+  | 'activate'
+  /** Scrolling just rested while a fixed, sticky or overlay refracting surface needs a picture of where the content is now. */
+  | 'scroll-rest';
 
 export interface SceneFeed {
   /** Ask for a fresh picture once things settle. `'route'` also forgets earlier failures. */
@@ -37,8 +45,7 @@ function startFeed(doc: Document): FeedState {
   const win = doc.defaultView!;
   const root = doc.documentElement;
   const off = () =>
-    win.matchMedia('print').matches ||
-    !!doc.querySelector(APP_HIGH_CONTRAST_SELECTOR);
+    win.matchMedia('print').matches || !!doc.querySelector(APP_HIGH_CONTRAST_SELECTOR);
   // While the hub is open the page behind it is blurred and covered, and the picture taken BEFORE it opened is the one
   // the globe is refracting; a new one now would be of the wrong thing.
   const hubOpen = () => !!doc.querySelector('.radial-hub:not([data-phase="closed"])');
@@ -53,6 +60,8 @@ function startFeed(doc: Document): FeedState {
         height: shot.height,
         scrollX: shot.scrollX,
         scrollY: shot.scrollY,
+        docHeight: shot.docHeight,
+        origin: shot.origin,
       }).finally(() => shot.bitmap.close());
     },
   });

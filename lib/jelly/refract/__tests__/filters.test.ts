@@ -23,13 +23,15 @@ describe('acquireRefractFilter', () => {
     expect(doc.body.descendants()).toHaveLength(0);
   });
 
-  it('builds the displacement graph: a map, three displacements, three channel isolations, two blends', () => {
+  it('builds the displacement graph: a map, three displacements, channel isolations, two blends and the band composite', () => {
     const doc = new FakeDoc();
     const f = acquireRefractFilter(asDoc(doc), sizeClass(300, 100, 24), { encode })!;
     const names = doc.body.descendants().map((n) => n.tagName);
     expect(names.filter((n) => n === 'feImage')).toHaveLength(1);
     expect(names.filter((n) => n === 'feDisplacementMap')).toHaveLength(3);
-    expect(names.filter((n) => n === 'feColorMatrix')).toHaveLength(3);
+    expect(names.filter((n) => n === 'feColorMatrix')).toHaveLength(4);
+    expect(names.filter((n) => n === 'feComposite')).toHaveLength(1);
+    expect(names.filter((n) => n === 'feGaussianBlur')).toHaveLength(1);
     expect(names.filter((n) => n === 'feBlend')).toHaveLength(2);
     const scales = doc.body
       .descendants()

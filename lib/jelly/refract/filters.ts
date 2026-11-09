@@ -2,11 +2,16 @@
  * The shared SVG filters the refracting layers use (`./layer.ts`): one `<filter>` per size class, not per host.
  *
  * ```
- * feImage (the class's rim map, stretched over the layer)  ─┐
- * feDisplacementMap(SourceGraphic) at depth × DISPERSION.r → keep red   ─┐
- * feDisplacementMap(SourceGraphic) at depth × DISPERSION.g → keep green ─┼ screen → the dispersed picture
- * feDisplacementMap(SourceGraphic) at depth × DISPERSION.b → keep blue  ─┘
+ * feImage (the class's rim map, stretched over the layer)  ─┬─ R, G: the push        ─┐
+ *                                                           └─ B: the band's opacity  │
+ * feDisplacementMap(SourceGraphic) at depth × DISPERSION.r → keep red   ─┐              │
+ * feDisplacementMap(SourceGraphic) at depth × DISPERSION.g → keep green ─┼ screen ──────┴─ in → the rim
+ * feDisplacementMap(SourceGraphic) at depth × DISPERSION.b → keep blue  ─┘   (then a sub-pixel feGaussianBlur)
  * ```
+ *
+ * The map's blue channel is the band's own opacity (full at the rim, easing to nothing at the band's inner side), moved into
+ * alpha by a colour matrix and composited `in`, so the refracted picture fades into the live interior and the layer needs no
+ * mask of its own.
  *
  * The filter region is the layer's own box (`0 0 1 1` of its bounding box) and the map takes the default primitive
  * region, so it is stretched over whatever box the layer really has: the class (`sizeClass`) only fixes the map's shape.
@@ -126,7 +131,22 @@ function buildFilter(doc: Document, id: string, href: string): Element {
     );
   }
   filter.appendChild(el('feBlend', { in: 'cr', in2: 'cg', mode: 'screen', result: 'rg' }));
-  filter.appendChild(el('feBlend', { in: 'rg', in2: 'cb', mode: 'screen' }));
+  filter.appendChild(el('feBlend', { in: 'rg', in2: 'cb', mode: 'screen', result: 'rgb' }));
+  // The picture is captured at most 1.25x and shown on a 2x or 3x screen, and a displacement map samples without smoothing,
+  // so a diagonal edge steps; a sub-pixel blur makes it a soft rim instead of a staircase.
+  filter.appendChild(
+    el('feGaussianBlur', { in: 'rgb', stdDeviation: String(REFRACT.softenPx), result: 'soft' }),
+  );
+  // The band's opacity: the map's blue channel becomes alpha.
+  filter.appendChild(
+    el('feColorMatrix', {
+      in: 'map',
+      type: 'matrix',
+      values: '0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 1 0 0',
+      result: 'band',
+    }),
+  );
+  filter.appendChild(el('feComposite', { in: 'soft', in2: 'band', operator: 'in' }));
   return filter;
 }
 

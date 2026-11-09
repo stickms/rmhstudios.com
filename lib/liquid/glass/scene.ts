@@ -33,6 +33,9 @@ export const SCENE_EXCLUDE: readonly string[] = [
   '.jelly-haze-canvas',
   '.jelly-flow',
   '.jelly-arc-layer',
+  // A glass host's refracting rim layer (lib/jelly/refract): it shows the previous picture, so a picture holding one would
+  // feed that back into the next refraction. Absolutely positioned and the host's first child, so removing it moves nothing.
+  '.jelly-refract',
 ];
 /**
  * Floating glass keeps its BOX but not its paint. It must not be removed: a sticky header taken out of layout makes
@@ -47,6 +50,14 @@ export interface SceneShot {
   height: number;
   scrollX: number;
   scrollY: number;
+  /** The document's height when the capture STARTED: a refracting layer compares it to the page now to tell a picture of a layout that has since moved. */
+  docHeight?: number;
+  /**
+   * Where `<body>` sat in the document when the capture started. The capture draws the page from the body's own origin, so
+   * in-flow content in the picture sits `origin` above where it is live (a first child's margin that collapses through the
+   * body is live and not in the clone: 12px on the site shell). A refracting layer adds it back when it places the picture.
+   */
+  origin?: { x: number; y: number };
   /** `performance.now()` when the capture finished. */
   at: number;
 }
@@ -186,6 +197,9 @@ export function createSceneProvider(options: SceneOptions): SceneProvider {
     const scrollY = win.scrollY;
     const width = win.innerWidth;
     const height = win.innerHeight;
+    const docHeight = doc.documentElement?.scrollHeight;
+    const bodyRect = doc.body?.getBoundingClientRect?.();
+    const origin = bodyRect ? { x: bodyRect.left + scrollX, y: bodyRect.top + scrollY } : undefined;
     const startedRevision = revision;
     try {
       const out = await capture(
@@ -215,6 +229,8 @@ export function createSceneProvider(options: SceneOptions): SceneProvider {
         height: out.height / out.scale,
         scrollX,
         scrollY,
+        docHeight,
+        origin,
         at: lastAt,
       });
     } catch {

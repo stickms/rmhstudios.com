@@ -14,6 +14,10 @@ export interface SharedScene {
   height: number;
   scrollX: number;
   scrollY: number;
+  /** The document's height when the capture started (undefined where unknown). */
+  docHeight?: number;
+  /** Where `<body>` sat in the document when the capture started (see `SceneShot.origin`). */
+  origin?: { x: number; y: number };
   /** Increments on every new picture, so a reader can tell whether it already has it. */
   version: number;
 }
@@ -27,6 +31,8 @@ export interface SceneMeta {
   height: number;
   scrollX: number;
   scrollY: number;
+  docHeight?: number;
+  origin?: { x: number; y: number };
 }
 
 /** Keep a clone of `source` as the shared scene. The caller still owns (and closes) `source`. */
