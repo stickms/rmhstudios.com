@@ -7,6 +7,10 @@
  * under the note. After the last card the result is saved like any lesson's (stars and XP through
  * `completeLesson`), with Retry or a sign-in link if that fails, and the result stays on screen.
  *
+ * The session itself is `FlashcardSession`, which takes its cards and how to save the result, so
+ * Practice (`PracticeLesson`) runs the same screen over the learner's remembered cards and saves
+ * their reviews instead of a lesson completion.
+ *
  * The ask → feedback → next → saving → saved / failed / signed-out lifecycle is the pure machine
  * in `machines/flashcards.ts`: an answer leaves `asking` synchronously, so a double tap, a key
  * repeat or two notes in one tick answer a card once.
@@ -40,6 +44,7 @@ import {
   type Answer,
   type Effect,
 } from '@/lib/rmhmusic/learn/machines/flashcards';
+import type { CompleteOutcome } from '@/lib/rmhmusic/learn/machines/learn-data';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import { starsFor, scoreFrom } from '@/lib/rmhmusic/learn/scoring/stars';
 import { isSharp } from '@/lib/rmhmusic/learn/staff';
@@ -71,6 +76,13 @@ function answerName(answer: Answer): string {
   return answer.kind === 'letter' ? answer.letter : midiToName(answer.midi);
 }
 
+/** One card of a finished session and whether it was named right. */
+export interface Answered {
+  card: Card;
+  right: boolean;
+}
+
+/** A staff-reading lesson: ten cards from the lesson's deck, saved as a lesson completion. */
 export function FlashcardLesson({
   lessonId,
   paused = false,
@@ -80,12 +92,52 @@ export function FlashcardLesson({
   paused?: boolean;
 }) {
   const { t } = useTranslation('c-rmhmusic');
+  const [cards] = useState(() => {
+    const deck = DECKS[getLesson(lessonId)?.deck ?? ''];
+    return deck ? buildSession(deck, SESSION_CARDS, Math.random) : [];
+  });
+  return (
+    <FlashcardSession
+      cards={cards}
+      paused={paused}
+      save={(fx) => useLearnStore.getState().completeLesson(lessonId, fx.stars, fx.score)}
+      doneTitle={t('lesson-complete', { defaultValue: 'Lesson complete' })}
+      returnTo={`/rmhmusic/lesson/${lessonId}`}
+    />
+  );
+}
+
+/**
+ * One flashcard session over `cards` (at least one). `save` is called once per save attempt, when
+ * the session ends and on Retry, with the machine's `complete` effect and every card answered, in
+ * order; it resolves with how the save went. `stars: false` leaves the noteheads off the result
+ * (a session that earns none).
+ */
+export function FlashcardSession({
+  cards,
+  paused = false,
+  save,
+  doneTitle,
+  returnTo,
+  stars: showStars = true,
+}: {
+  cards: Card[];
+  /** A dialog is open over the session: nothing answers. */
+  paused?: boolean;
+  save: (fx: Effect, answered: readonly Answered[]) => Promise<CompleteOutcome>;
+  /** The title once the session is over and saving or saved. */
+  doneTitle: string;
+  /** Where the sign-in link comes back to. */
+  returnTo: string;
+  stars?: boolean;
+}) {
+  const { t } = useTranslation('c-rmhmusic');
   const hub = useLearnStore((s) => s.hub);
   const input = useLearnStore((s) => s.profile?.input ?? 'screen');
-  const [machine] = useState(() => {
-    const deck = DECKS[getLesson(lessonId)?.deck ?? ''];
-    return createFlashcardsMachine(deck ? buildSession(deck, SESSION_CARDS, Math.random) : []);
-  });
+  const [machine] = useState(() => createFlashcardsMachine(cards));
+  // Every card's result by its index, written on Next (once per card: the machine leaves
+  // `feedback` on the first Next, and a repeat rewrites the same slot).
+  const answered = useRef<Answered[]>([]);
   const [lesson, send] = useMachine(machine);
   const phases = useInputPhases();
   useNoteSound(!paused);
@@ -103,10 +155,9 @@ export function FlashcardLesson({
     for (const fx of effects) {
       // The session is over: the result needs no microphone.
       if (hub) releaseMic(hub);
-      void useLearnStore
-        .getState()
-        .completeLesson(lessonId, fx.stars, fx.score)
-        .then((outcome) => perform(send({ type: 'answered', attempt: fx.attempt, outcome })));
+      void save(fx, answered.current.filter(Boolean)).then((outcome) =>
+        perform(send({ type: 'answered', attempt: fx.attempt, outcome })),
+      );
     }
   };
 
@@ -132,7 +183,9 @@ export function FlashcardLesson({
 
   const next = () => {
     if (lesson.kind === 'feedback') {
-      setLast({ card: lesson.cards[lesson.index], right: lesson.right });
+      const result = { card: lesson.cards[lesson.index], right: lesson.right };
+      answered.current[lesson.index] = result;
+      setLast(result);
     }
     movedOn.current = true;
     setAnnounceCards(true);
@@ -219,7 +272,7 @@ export function FlashcardLesson({
         defaultValue: 'Card {{n}} of {{total}}',
       })
     : lesson.kind === 'saved' || lesson.kind === 'saving'
-      ? t('lesson-complete', { defaultValue: 'Lesson complete' })
+      ? doneTitle
       : t('lesson-not-saved', { defaultValue: 'Not saved yet' });
 
   const hint =
@@ -291,8 +344,8 @@ export function FlashcardLesson({
     answers = (
       <LessonResult
         kind={lesson.kind}
-        stars={stars}
-        lessonId={lessonId}
+        stars={showStars ? stars : null}
+        returnTo={returnTo}
         onRetry={retry}
         className="flex-1"
       />

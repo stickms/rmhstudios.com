@@ -476,3 +476,53 @@ describe('learn store on the server', () => {
     expect(s.status).toBe('ready');
   });
 });
+
+describe('learn store remembered cards', () => {
+  const CARD = {
+    cardId: 'treble:64',
+    due: '2026-11-10T00:00:00.000Z',
+    lastReviewAt: '2026-11-08T00:00:00.000Z',
+    stability: 2.2,
+    difficulty: 4.8,
+    reps: 1,
+    lapses: 0,
+  };
+  beforeEach(() => useLearnStore.setState({ cards: [], cardsStatus: 'idle' }));
+
+  it('a failed card load leaves the profile alone, and a later call tries again', async () => {
+    seedReady(PROFILE);
+    fetchMock.mockResolvedValueOnce(json({ error: 'x' }, 500));
+    await useLearnStore.getState().loadCards();
+    let s = useLearnStore.getState();
+    expect(s.cardsStatus).toBe('load_failed');
+    expect(s.status).toBe('ready');
+    expect(s.error).toBeNull();
+
+    fetchMock.mockResolvedValueOnce(json({ cards: [CARD, { cardId: 1 }] }));
+    await useLearnStore.getState().loadCards();
+    s = useLearnStore.getState();
+    expect(s.cardsStatus).toBe('ready');
+    expect(s.cards).toEqual([CARD]);
+    // Loaded once per page: a second call does not fetch.
+    await useLearnStore.getState().loadCards();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('saveReviews merges the answer by card id and reports a 401 as unauthorized', async () => {
+    useLearnStore.setState({ cards: [CARD], cardsStatus: 'ready' });
+    const again = { ...CARD, reps: 2, stability: 0.66 };
+    const fresh = { ...CARD, cardId: 'treble:67' };
+    fetchMock.mockResolvedValueOnce(json({ cards: [again, fresh] }));
+    const reviews = [{ cardId: 'treble:64', grade: 'again' as const }];
+    expect(await useLearnStore.getState().saveReviews(reviews)).toBe('saved');
+    expect(useLearnStore.getState().cards).toEqual([again, fresh]);
+    const [, init] = fetchMock.mock.calls[0];
+    expect(JSON.parse(String(init?.body))).toEqual({ reviews });
+
+    fetchMock.mockResolvedValueOnce(json({}, 401));
+    expect(await useLearnStore.getState().saveReviews(reviews)).toBe('unauthorized');
+    fetchMock.mockRejectedValueOnce(new TypeError('offline'));
+    expect(await useLearnStore.getState().saveReviews(reviews)).toBe('failed');
+    expect(useLearnStore.getState().cards).toEqual([again, fresh]);
+  });
+});

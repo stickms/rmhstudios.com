@@ -22,12 +22,19 @@ import { createMicInput } from './input/mic';
 import { createMidiInput, type MidiInputAdapter } from './input/midi';
 import { createScreenInput } from './input/screen';
 import type { LessonProgressRow, Profile } from './progress.server';
+import type { CardRow } from './content/practice';
 import * as data from './machines/learn-data';
 import type { CompleteOutcome, ProfileKey } from './machines/learn-data';
 import { INPUTS, INSTRUMENTS, profileSchema } from './schemas';
-import type { Instrument, LearnInput, LessonCompleteInput } from './schemas';
+import type { Instrument, LearnInput, LessonCompleteInput, ReviewInput } from './schemas';
 
-export type { LessonProgressRow, Profile };
+export type { CardRow, LessonProgressRow, Profile };
+
+/**
+ * The remembered cards' load, kept apart from the profile's so a failed card request never
+ * breaks the home: the home just shows no Practice link, and Practice says so itself.
+ */
+export type CardsStatus = 'idle' | 'loading' | 'ready' | 'load_failed' | 'unauthorized';
 
 export type LearnStatus = data.Status;
 export type { CompleteOutcome, ProfileKey };
@@ -63,10 +70,22 @@ export interface LearnState {
   setLatency(ms: number): Promise<void>;
   /** Resolves with how the save went, so the lesson can say so without reading the shared `error`. */
   completeLesson(lessonId: string, stars: number, score: number): Promise<CompleteOutcome>;
+
+  /** The learner's remembered cards (Practice), as the server last answered. */
+  cards: readonly CardRow[];
+  cardsStatus: CardsStatus;
+  /** Fetch the remembered cards once per page load (again after a failure); concurrent calls share it. */
+  loadCards(): Promise<void>;
+  /**
+   * Post one Practice session's reviews. On success the returned rows replace the stored ones, so
+   * the home and the next session see the new schedule without a reload. Pays nothing.
+   */
+  saveReviews(reviews: ReviewInput[]): Promise<CompleteOutcome>;
 }
 
 const PROFILE_URL = '/api/rmhmusic/learn/profile';
 const COMPLETE_URL = '/api/rmhmusic/learn/lesson-complete';
+const CARDS_URL = '/api/rmhmusic/learn/cards';
 
 // ─── Input (client only) ─────────────────────────────────────────
 
@@ -132,6 +151,29 @@ const isRow = (v: unknown): v is LessonProgressRow =>
   typeof (v as LessonProgressRow).stars === 'number';
 
 const isProfile = (v: unknown): v is Profile => profileSchema.safeParse(v).success;
+
+const isCardRow = (v: unknown): v is CardRow => {
+  if (typeof v !== 'object' || v === null) return false;
+  const r = v as CardRow;
+  return (
+    typeof r.cardId === 'string' &&
+    typeof r.due === 'string' &&
+    (r.lastReviewAt === null || typeof r.lastReviewAt === 'string') &&
+    typeof r.stability === 'number' &&
+    typeof r.difficulty === 'number' &&
+    typeof r.reps === 'number' &&
+    typeof r.lapses === 'number'
+  );
+};
+
+/** `prev` with `updated` written over it by card id (the server's answer to a review batch). */
+export function mergeCards(prev: readonly CardRow[], updated: readonly CardRow[]): CardRow[] {
+  const byId = new Map(updated.map((r) => [r.cardId, r]));
+  const out = prev.map((r) => byId.get(r.cardId) ?? r);
+  const seen = new Set(prev.map((r) => r.cardId));
+  for (const r of updated) if (!seen.has(r.cardId)) out.push(r);
+  return out;
+}
 
 // ─── Store ───────────────────────────────────────────────────────
 
@@ -250,6 +292,8 @@ export const useLearnStore = create<LearnState>()((set, get) => {
 
   const change = (c: data.Change) => ask({ type: 'change', change: c });
 
+  let cardsLoading: Promise<void> | null = null;
+
   return {
     ...project(data.initial),
     sync: data.initial,
@@ -286,6 +330,35 @@ export const useLearnStore = create<LearnState>()((set, get) => {
         score,
         at: new Date().toISOString(),
       });
+    },
+
+    cards: [],
+    cardsStatus: 'idle',
+
+    loadCards() {
+      const { cardsStatus } = get();
+      if (cardsStatus === 'ready') return Promise.resolve();
+      if (cardsLoading) return cardsLoading;
+      set({ cardsStatus: 'loading' });
+      cardsLoading = request(CARDS_URL, 'GET').then((reply) => {
+        cardsLoading = null;
+        const rows = reply.ok ? (reply.data as { cards?: unknown } | null)?.cards : null;
+        if (!reply.ok || !Array.isArray(rows)) {
+          set({ cardsStatus: !reply.ok && reply.unauthorized ? 'unauthorized' : 'load_failed' });
+          return;
+        }
+        set({ cards: rows.filter(isCardRow), cardsStatus: 'ready' });
+      });
+      return cardsLoading;
+    },
+
+    async saveReviews(reviews) {
+      const reply = await request(CARDS_URL, 'POST', { reviews });
+      if (!reply.ok) return reply.unauthorized ? 'unauthorized' : 'failed';
+      const rows = (reply.data as { cards?: unknown } | null)?.cards;
+      if (!Array.isArray(rows)) return 'failed';
+      set({ cards: mergeCards(get().cards, rows.filter(isCardRow)) });
+      return 'saved';
     },
   };
 });

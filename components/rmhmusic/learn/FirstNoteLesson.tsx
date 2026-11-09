@@ -103,7 +103,14 @@ export function FirstNoteLesson({
 
   let region: ReactNode;
   if (done) {
-    region = <LessonResult kind={lesson.kind} stars={3} lessonId={lessonId} onRetry={retry} />;
+    region = (
+      <LessonResult
+        kind={lesson.kind}
+        stars={3}
+        returnTo={`/rmhmusic/lesson/${lessonId}`}
+        onRetry={retry}
+      />
+    );
   } else if (needsDevice) {
     region = <DeviceRegion input={input} on={inputOn} />;
   } else {

@@ -32,18 +32,19 @@ function BackToPath() {
 
 /**
  * The end of a lesson. `stars` (0–3) are drawn as three noteheads, filled for each one earned;
- * the count is the image's accessible name.
+ * the count is the image's accessible name. `null` draws none (Practice earns no stars).
+ * `returnTo` is the page the sign-in link comes back to.
  */
 export function LessonResult({
   kind,
   stars,
-  lessonId,
+  returnTo,
   onRetry,
   className,
 }: {
   kind: LessonResultKind;
-  stars: number;
-  lessonId: string;
+  stars: number | null;
+  returnTo: string;
   onRetry: () => void;
   className?: string;
 }) {
@@ -59,23 +60,25 @@ export function LessonResult({
           className,
         )}
       >
-        <p
-          className="flex justify-center gap-1"
-          aria-label={t('lesson-stars', {
-            count: stars,
-            defaultValue_one: '{{count}} star',
-            defaultValue: '{{count}} stars',
-          })}
-          role="img"
-        >
-          {[0, 1, 2].map((i) => (
-            <Notehead
-              key={i}
-              kind={i < stars ? 'filled' : 'open'}
-              className="h-5 w-7 text-(--app-accent)"
-            />
-          ))}
-        </p>
+        {stars !== null && (
+          <p
+            className="flex justify-center gap-1"
+            aria-label={t('lesson-stars', {
+              count: stars,
+              defaultValue_one: '{{count}} star',
+              defaultValue: '{{count}} stars',
+            })}
+            role="img"
+          >
+            {[0, 1, 2].map((i) => (
+              <Notehead
+                key={i}
+                kind={i < stars ? 'filled' : 'open'}
+                className="h-5 w-7 text-(--app-accent)"
+              />
+            ))}
+          </p>
+        )}
         <p role="status" className="min-h-5 self-stretch text-sm text-(--app-text-dim)">
           {kind === 'saving' ? t('lesson-saving', { defaultValue: 'Saving…' }) : null}
         </p>
@@ -102,11 +105,7 @@ export function LessonResult({
             })}
       </p>
       {kind === 'signed-out' ? (
-        <Link
-          to="/login"
-          search={{ callbackURL: `/rmhmusic/lesson/${lessonId}` }}
-          className={PRIMARY_BUTTON}
-        >
+        <Link to="/login" search={{ callbackURL: returnTo }} className={PRIMARY_BUTTON}>
           {t('sign-in', { defaultValue: 'Sign in' })}
         </Link>
       ) : (

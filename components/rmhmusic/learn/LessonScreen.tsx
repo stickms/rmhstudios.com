@@ -32,7 +32,7 @@ function isPlayable(lesson: Lesson | undefined): lesson is Lesson {
   return lesson.mode === 'staff-flashcards' && !!lesson.deck && lesson.deck in DECKS;
 }
 
-function Shell({
+export function Shell({
   title,
   action,
   busy = false,
@@ -116,7 +116,7 @@ function LessonSkeleton() {
  * and the answer line under it, the sentence line) and below it the letters and the input region
  * (`.rmm-flash__answers`, whose heights the stylesheet fixes for every width).
  */
-function FlashcardSkeleton() {
+export function FlashcardSkeleton() {
   return (
     <div aria-hidden="true" className="rmm-flash space-y-4">
       <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">

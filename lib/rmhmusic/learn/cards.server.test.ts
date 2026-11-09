@@ -75,10 +75,14 @@ beforeEach(() => {
 describe('applyReviews', () => {
   it('rejects a card id no deck knows, before writing anything', async () => {
     await expect(
-      applyReviews('u1', [
-        { cardId: 'treble:64', grade: 'good' },
-        { cardId: 'treble:61', grade: 'good' },
-      ], NOW),
+      applyReviews(
+        'u1',
+        [
+          { cardId: 'treble:64', grade: 'good' },
+          { cardId: 'treble:61', grade: 'good' },
+        ],
+        NOW,
+      ),
     ).rejects.toBeInstanceOf(UnknownCardError);
     expect(db.cards).toEqual([]);
     expect(db.txs).toBe(0);

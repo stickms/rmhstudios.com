@@ -202,6 +202,7 @@ import { Route as RmhboxLobbyIdRouteImport } from './routes/rmhbox/$lobbyId'
 import { Route as RmhcodeIndexRouteImport } from './routes/rmhcode/index'
 import { Route as RmhcodeAuthRouteImport } from './routes/rmhcode/auth'
 import { Route as RmhmusicIndexRouteImport } from './routes/rmhmusic/index'
+import { Route as RmhmusicPracticeRouteImport } from './routes/rmhmusic/practice'
 import { Route as RmhstudyIndexRouteImport } from './routes/rmhstudy/index'
 import { Route as RmhstudyRoomIdRouteImport } from './routes/rmhstudy/$roomId'
 import { Route as RmhstudyPlannerRouteImport } from './routes/rmhstudy/planner'
@@ -1150,6 +1151,7 @@ import { Route as ApiRmhladderReferralRequestsIdRouteImport } from './routes/api
 import { Route as ApiRmhladderReferralsIdRouteImport } from './routes/api/rmhladder/referrals.$id'
 import { Route as ApiRmhladderResumeIndexRouteImport } from './routes/api/rmhladder/resume/index'
 import { Route as ApiRmhladderResumeIdRouteImport } from './routes/api/rmhladder/resume/$id'
+import { Route as ApiRmhmusicLearnCardsRouteImport } from './routes/api/rmhmusic/learn/cards'
 import { Route as ApiRmhmusicLearnLessonCompleteRouteImport } from './routes/api/rmhmusic/learn/lesson-complete'
 import { Route as ApiRmhmusicLearnProfileRouteImport } from './routes/api/rmhmusic/learn/profile'
 import { Route as ApiRmhtubeSubscribeChannelIdRouteImport } from './routes/api/rmhtube/subscribe/$channelId'
@@ -2353,6 +2355,11 @@ const RmhcodeAuthRoute = RmhcodeAuthRouteImport.update({
 const RmhmusicIndexRoute = RmhmusicIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => RmhmusicRoute,
+} as any)
+const RmhmusicPracticeRoute = RmhmusicPracticeRouteImport.update({
+  id: '/practice',
+  path: '/practice',
   getParentRoute: () => RmhmusicRoute,
 } as any)
 const RmhstudyIndexRoute = RmhstudyIndexRouteImport.update({
@@ -7232,6 +7239,11 @@ const ApiRmhladderResumeIdRoute = ApiRmhladderResumeIdRouteImport.update({
   path: '/api/rmhladder/resume/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRmhmusicLearnCardsRoute = ApiRmhmusicLearnCardsRouteImport.update({
+  id: '/api/rmhmusic/learn/cards',
+  path: '/api/rmhmusic/learn/cards',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRmhmusicLearnLessonCompleteRoute =
   ApiRmhmusicLearnLessonCompleteRouteImport.update({
     id: '/api/rmhmusic/learn/lesson-complete',
@@ -8720,6 +8732,7 @@ export interface FileRoutesByFullPath {
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
+  '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
@@ -9624,6 +9637,7 @@ export interface FileRoutesByFullPath {
   '/api/rmhladder/referral-requests/$id': typeof ApiRmhladderReferralRequestsIdRoute
   '/api/rmhladder/referrals/$id': typeof ApiRmhladderReferralsIdRouteWithChildren
   '/api/rmhladder/resume/$id': typeof ApiRmhladderResumeIdRouteWithChildren
+  '/api/rmhmusic/learn/cards': typeof ApiRmhmusicLearnCardsRoute
   '/api/rmhmusic/learn/lesson-complete': typeof ApiRmhmusicLearnLessonCompleteRoute
   '/api/rmhmusic/learn/profile': typeof ApiRmhmusicLearnProfileRoute
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
@@ -10075,6 +10089,7 @@ export interface FileRoutesByTo {
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
+  '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
@@ -10978,6 +10993,7 @@ export interface FileRoutesByTo {
   '/api/rmhladder/referral-requests/$id': typeof ApiRmhladderReferralRequestsIdRoute
   '/api/rmhladder/referrals/$id': typeof ApiRmhladderReferralsIdRouteWithChildren
   '/api/rmhladder/resume/$id': typeof ApiRmhladderResumeIdRouteWithChildren
+  '/api/rmhmusic/learn/cards': typeof ApiRmhmusicLearnCardsRoute
   '/api/rmhmusic/learn/lesson-complete': typeof ApiRmhmusicLearnLessonCompleteRoute
   '/api/rmhmusic/learn/profile': typeof ApiRmhmusicLearnProfileRoute
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
@@ -11456,6 +11472,7 @@ export interface FileRoutesById {
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
+  '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
@@ -12361,6 +12378,7 @@ export interface FileRoutesById {
   '/api/rmhladder/referral-requests/$id': typeof ApiRmhladderReferralRequestsIdRoute
   '/api/rmhladder/referrals/$id': typeof ApiRmhladderReferralsIdRouteWithChildren
   '/api/rmhladder/resume/$id': typeof ApiRmhladderResumeIdRouteWithChildren
+  '/api/rmhmusic/learn/cards': typeof ApiRmhmusicLearnCardsRoute
   '/api/rmhmusic/learn/lesson-complete': typeof ApiRmhmusicLearnLessonCompleteRoute
   '/api/rmhmusic/learn/profile': typeof ApiRmhmusicLearnProfileRoute
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
@@ -12839,6 +12857,7 @@ export interface FileRouteTypes {
     | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
+    | '/rmhmusic/practice'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
@@ -13743,6 +13762,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/referral-requests/$id'
     | '/api/rmhladder/referrals/$id'
     | '/api/rmhladder/resume/$id'
+    | '/api/rmhmusic/learn/cards'
     | '/api/rmhmusic/learn/lesson-complete'
     | '/api/rmhmusic/learn/profile'
     | '/api/rmhtube/subscribe/$channelId'
@@ -14194,6 +14214,7 @@ export interface FileRouteTypes {
     | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
+    | '/rmhmusic/practice'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
@@ -15097,6 +15118,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/referral-requests/$id'
     | '/api/rmhladder/referrals/$id'
     | '/api/rmhladder/resume/$id'
+    | '/api/rmhmusic/learn/cards'
     | '/api/rmhmusic/learn/lesson-complete'
     | '/api/rmhmusic/learn/profile'
     | '/api/rmhtube/subscribe/$channelId'
@@ -15574,6 +15596,7 @@ export interface FileRouteTypes {
     | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
+    | '/rmhmusic/practice'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
@@ -16479,6 +16502,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/referral-requests/$id'
     | '/api/rmhladder/referrals/$id'
     | '/api/rmhladder/resume/$id'
+    | '/api/rmhmusic/learn/cards'
     | '/api/rmhmusic/learn/lesson-complete'
     | '/api/rmhmusic/learn/profile'
     | '/api/rmhtube/subscribe/$channelId'
@@ -17473,6 +17497,7 @@ export interface RootRouteChildren {
   ApiRmhcodeAuthValidateRoute: typeof ApiRmhcodeAuthValidateRoute
   ApiRmhladderReferralRequestsIdRoute: typeof ApiRmhladderReferralRequestsIdRoute
   ApiRmhladderResumeIdRoute: typeof ApiRmhladderResumeIdRouteWithChildren
+  ApiRmhmusicLearnCardsRoute: typeof ApiRmhmusicLearnCardsRoute
   ApiRmhmusicLearnLessonCompleteRoute: typeof ApiRmhmusicLearnLessonCompleteRoute
   ApiRmhmusicLearnProfileRoute: typeof ApiRmhmusicLearnProfileRoute
   ApiRmhtubeSubscribeChannelIdRoute: typeof ApiRmhtubeSubscribeChannelIdRoute
@@ -18985,6 +19010,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/rmhmusic/'
       preLoaderRoute: typeof RmhmusicIndexRouteImport
+      parentRoute: typeof RmhmusicRoute
+    }
+    '/rmhmusic/practice': {
+      id: '/rmhmusic/practice'
+      path: '/practice'
+      fullPath: '/rmhmusic/practice'
+      preLoaderRoute: typeof RmhmusicPracticeRouteImport
       parentRoute: typeof RmhmusicRoute
     }
     '/rmhstudy/': {
@@ -25623,6 +25655,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmhladderResumeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rmhmusic/learn/cards': {
+      id: '/api/rmhmusic/learn/cards'
+      path: '/api/rmhmusic/learn/cards'
+      fullPath: '/api/rmhmusic/learn/cards'
+      preLoaderRoute: typeof ApiRmhmusicLearnCardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/rmhmusic/learn/lesson-complete': {
       id: '/api/rmhmusic/learn/lesson-complete'
       path: '/api/rmhmusic/learn/lesson-complete'
@@ -27990,11 +28029,13 @@ const RmhcodeRouteWithChildren =
   RmhcodeRoute._addFileChildren(RmhcodeRouteChildren)
 
 interface RmhmusicRouteChildren {
+  RmhmusicPracticeRoute: typeof RmhmusicPracticeRoute
   RmhmusicIndexRoute: typeof RmhmusicIndexRoute
   RmhmusicLessonLessonIdRoute: typeof RmhmusicLessonLessonIdRoute
 }
 
 const RmhmusicRouteChildren: RmhmusicRouteChildren = {
+  RmhmusicPracticeRoute: RmhmusicPracticeRoute,
   RmhmusicIndexRoute: RmhmusicIndexRoute,
   RmhmusicLessonLessonIdRoute: RmhmusicLessonLessonIdRoute,
 }
@@ -30287,6 +30328,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhcodeAuthValidateRoute: ApiRmhcodeAuthValidateRoute,
   ApiRmhladderReferralRequestsIdRoute: ApiRmhladderReferralRequestsIdRoute,
   ApiRmhladderResumeIdRoute: ApiRmhladderResumeIdRouteWithChildren,
+  ApiRmhmusicLearnCardsRoute: ApiRmhmusicLearnCardsRoute,
   ApiRmhmusicLearnLessonCompleteRoute: ApiRmhmusicLearnLessonCompleteRoute,
   ApiRmhmusicLearnProfileRoute: ApiRmhmusicLearnProfileRoute,
   ApiRmhtubeSubscribeChannelIdRoute: ApiRmhtubeSubscribeChannelIdRoute,
@@ -30454,7 +30496,6 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
 
 import type { getRouter } from './router.tsx'
 import type { createStart } from '@tanstack/react-start'
