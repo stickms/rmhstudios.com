@@ -41,6 +41,7 @@ import type { CoatClock, GlobeThemeCss } from './globe-protocol';
 import {
   GlobeEngagement,
   engagedRate,
+  GLOBE_SCROLL_HOLD_MS,
   isDirectlyEngaged,
   pointerNear,
   type GlobeBox,
@@ -827,6 +828,8 @@ export function LiquidGlobe({
   const pointerAtGlobe = useRef(false);
   /** Keyboard focus is inside the zone (focus-visible, or a key pressed there) — a mouse click's focus does not count. */
   const keyFocus = useRef(false);
+  /** The page is scrolling and kicking the docked globe's spin (`GLOBE_SCROLL_HOLD_MS` after the last kick). */
+  const scrolling = useRef(false);
   /**
    * The window has focus. Kept from `focus`/`blur` (seeded once from `document.hasFocus()`), so the frame loop and the
    * clock state never call `document.hasFocus()` per frame.
@@ -938,6 +941,7 @@ export function LiquidGlobe({
       near: pointerAtGlobe.current,
       pressed: d.active || d.held,
       focused: keyFocus.current,
+      scrolling: scrolling.current,
     });
     if (!engagement.update(now, direct)) return;
     postClock.current();
@@ -1152,7 +1156,13 @@ export function LiquidGlobe({
     // A docked globe stays put while the page moves under it, so the picture it
     // refracts has to be re-placed with the scroll — once per frame at most.
     let scrollRaf = 0;
+    let scrollIdle = 0;
     let lastScrollY = window.scrollY;
+    const endScrolling = () => {
+      scrollIdle = 0;
+      scrolling.current = false;
+      syncEngagement.current(performance.now());
+    };
     const onScroll = () => {
       // A docked globe turns with the page: scrolling kicks its spin about the vertical, and the free coast (step 1b)
       // carries it on and slows it. Read in the scroll event, where layout is clean.
@@ -1163,6 +1173,14 @@ export function LiquidGlobe({
         const w = rot.current.w;
         w[1] = Math.max(-SCROLL_SPIN_MAX, Math.min(SCROLL_SPIN_MAX, w[1]! + dy * SCROLL_SPIN));
         wakeLoop.current();
+        // The spin this scroll just kicked is advanced on the ambient tick: hold the engaged rate while it is turning,
+        // so the globe does not step at the idle floor while the page (and Safari's toolbar) moves.
+        if (scrollIdle) clearTimeout(scrollIdle);
+        scrollIdle = window.setTimeout(endScrolling, GLOBE_SCROLL_HOLD_MS);
+        if (!scrolling.current) {
+          scrolling.current = true;
+          syncEngagement.current(performance.now());
+        }
       }
       if (scrollRaf) return;
       scrollRaf = requestAnimationFrame(() => {
@@ -1291,6 +1309,8 @@ export function LiquidGlobe({
       window.removeEventListener('resize', refreshScene);
       window.removeEventListener('scroll', onScroll);
       cancelAnimationFrame(scrollRaf);
+      if (scrollIdle) clearTimeout(scrollIdle);
+      scrolling.current = false;
       observer.disconnect();
       stopHost?.();
       detach();
