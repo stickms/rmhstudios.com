@@ -16,21 +16,16 @@
  * input chooser shows inline, and its click starts them.
  */
 
-import { useEffect, useLayoutEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { releaseMic, startMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
+import { releaseMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import { firstNoteMachine, type Effect } from '@/lib/rmhmusic/learn/machines/first-note';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
-import { getAudioContext } from '@/lib/shared/platform';
-import { PRIMARY_BUTTON } from './buttons';
-import { InputChooser } from './InputChooser';
+import { DeviceRegion, LessonResult } from './LessonParts';
 import { LiveStaff } from './LiveStaff';
-import { Notehead } from './Notehead';
 import { OnScreenKeyboard } from './OnScreenKeyboard';
-import { permissionGranted, useInputPhases, useNoteEvents, useNoteSound } from './useLearnInput';
+import { useInputPhases, useLessonInputStart, useNoteEvents, useNoteSound } from './useLearnInput';
 import { useMachine } from './useMachine';
 
 /** `lessonId` is the lesson being completed; `paused` (a dialog is open over the lesson) stops notes counting. */
@@ -50,40 +45,8 @@ export function FirstNoteLesson({
 
   const needsDevice = input === 'mic' || input === 'midi';
   const inputOn = !needsDevice || phases[input] === 'active';
-  const chooserShown = lesson.kind === 'listening' && needsDevice && !inputOn;
 
-  // The chooser scrolls inside the lesson's fixed input region. On a phone the learner's own input
-  // (the mic or MIDI row, whose "Use" iOS needs tapped) would sit below that small box's fold, so
-  // the box is scrolled — itself only, never the page (no scrollIntoView) — to show that row,
-  // before paint. The DOM order, and so the Tab order, stays as it is.
-  const chooserBox = useRef<HTMLElement>(null);
-  useLayoutEffect(() => {
-    const box = chooserBox.current;
-    if (!chooserShown || !box) return;
-    const row = box.querySelector<HTMLElement>(`[data-input="${input}"]`);
-    if (!row) return;
-    const top = row.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
-    const max = box.scrollHeight - box.clientHeight;
-    box.scrollTop = Math.max(0, Math.min(max, top - 8));
-  }, [chooserShown, input]);
-
-  // Start the chosen input (switching inputs mid-lesson goes through `chooseInput`, which stops the old one).
-  useEffect(() => {
-    if (!hub) return;
-    let cancelled = false;
-    if (input === 'keys') void hub.start('keys').catch(() => {});
-    if (input === 'mic' || input === 'midi') {
-      void (async () => {
-        if (hub.phase(input) !== 'idle' || !(await permissionGranted(input))) return;
-        if (input === 'mic' && getAudioContext()?.state !== 'running') return;
-        if (cancelled) return;
-        await (input === 'mic' ? startMic(hub) : hub.start(input)).catch(() => {});
-      })();
-    }
-    return () => {
-      cancelled = true;
-    };
-  }, [hub, input]);
+  useLessonInputStart();
 
   // Leaving the lesson (keys and mic stop) is LessonScreen's `useInputRelease`.
 
@@ -138,91 +101,11 @@ export function FirstNoteLesson({
             })
           : t('first-note-hint-screen', { defaultValue: 'Tap any key on the piano below.' });
 
-  const back = (
-    <Link
-      to="/rmhmusic"
-      className="inline-flex min-h-11 items-center justify-center px-2 text-sm font-medium text-(--app-accent)"
-    >
-      {t('lesson-back-to-path', { defaultValue: 'Back to your lessons' })}
-    </Link>
-  );
-
   let region: ReactNode;
-  if (lesson.kind === 'saved' || lesson.kind === 'saving') {
-    region = (
-      <div className="rmm-sheet flex h-full flex-col items-center-safe justify-center-safe gap-2 overflow-y-auto p-4 text-center">
-        <p
-          className="flex justify-center gap-1"
-          aria-label={t('lesson-stars', {
-            count: 3,
-            defaultValue_one: '{{count}} star',
-            defaultValue: '{{count}} stars',
-          })}
-          role="img"
-        >
-          {[0, 1, 2].map((i) => (
-            <Notehead key={i} kind="filled" className="h-5 w-7 text-(--app-accent)" />
-          ))}
-        </p>
-        <p role="status" className="min-h-5 text-sm text-(--app-text-dim)">
-          {lesson.kind === 'saving' ? t('lesson-saving', { defaultValue: 'Saving…' }) : null}
-        </p>
-        {back}
-      </div>
-    );
-  } else if (done) {
-    region = (
-      <div
-        role="alert"
-        className="rmm-sheet flex h-full flex-col items-center-safe justify-center-safe gap-3 overflow-y-auto p-4 text-center"
-      >
-        <p className="text-sm text-(--app-danger)">
-          {lesson.kind === 'signed-out'
-            ? t('error-signed-out', {
-                defaultValue: 'Your session ended. Sign in again to continue.',
-              })
-            : t('lesson-save-failed', {
-                defaultValue: "Couldn't save your progress. Check your connection and try again.",
-              })}
-        </p>
-        {lesson.kind === 'signed-out' ? (
-          <Link
-            to="/login"
-            search={{ callbackURL: `/rmhmusic/lesson/${lessonId}` }}
-            className={PRIMARY_BUTTON}
-          >
-            {t('sign-in', { defaultValue: 'Sign in' })}
-          </Link>
-        ) : (
-          <button type="button" onClick={retry} className={PRIMARY_BUTTON}>
-            {t('retry', { defaultValue: 'Try again' })}
-          </button>
-        )}
-        {back}
-      </div>
-    );
-  } else if (chooserShown) {
-    // Taller than the region: it scrolls inside it rather than growing the page.
-    region = (
-      <section
-        ref={chooserBox}
-        className="rmm-sheet h-full overflow-y-auto overscroll-contain px-4 py-2"
-      >
-        <InputChooser />
-      </section>
-    );
+  if (done) {
+    region = <LessonResult kind={lesson.kind} stars={3} lessonId={lessonId} onRetry={retry} />;
   } else if (needsDevice) {
-    region = (
-      <div className="rmm-sheet flex h-full items-center justify-center p-4 text-center">
-        <p className="text-sm text-(--app-text-muted)">
-          {input === 'mic'
-            ? t('first-note-listening-mic', { defaultValue: 'Listening to your microphone.' })
-            : t('first-note-listening-midi', {
-                defaultValue: 'Listening to your MIDI controller.',
-              })}
-        </p>
-      </div>
-    );
+    region = <DeviceRegion input={input} on={inputOn} />;
   } else {
     // The keys bleed into the page gutter so seven white keys stay ≥ 44px wide: 8px a side, and
     // 14px below 332px (a 320px phone: 280px column + 28px = 308px = 7 × 44px).

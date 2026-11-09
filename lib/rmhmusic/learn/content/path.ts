@@ -20,6 +20,8 @@ export interface Lesson {
   mode: LessonMode;
   /** False until the lesson's activity ships; the path shows it as coming soon. */
   available: boolean;
+  /** A `staff-flashcards` lesson's deck: a key of `DECKS` in `decks.ts` (path.test.ts checks it). */
+  deck?: string;
 }
 
 export interface Unit {
@@ -39,7 +41,8 @@ export const PATH: Unit[] = [
         title: 'What is a staff?',
         summary: 'Five lines and four spaces: where written music lives.',
         mode: 'staff-flashcards',
-        available: false,
+        available: true,
+        deck: 'treble-lines',
       },
       {
         id: 'staff-treble-notes',
@@ -47,7 +50,8 @@ export const PATH: Unit[] = [
         title: 'Treble clef notes',
         summary: 'Read the notes on the lines and spaces of the treble staff.',
         mode: 'staff-flashcards',
-        available: false,
+        available: true,
+        deck: 'treble-all',
       },
       {
         id: 'staff-find-middle-c',
@@ -55,7 +59,8 @@ export const PATH: Unit[] = [
         title: 'Find middle C',
         summary: 'Spot middle C on the staff and on the keyboard.',
         mode: 'staff-flashcards',
-        available: false,
+        available: true,
+        deck: 'middle-c',
       },
       {
         id: 'keys-layout-and-strings',
