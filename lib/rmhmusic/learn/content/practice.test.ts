@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { DAY_MS, newCard, review, type CardState } from '../srs/schedule';
 import { DECKS, cardId } from './decks';
-import { PRACTICE_CARDS, buildPracticeSession, practiceDecks, stateFromRow } from './practice';
+import {
+  PRACTICE_CARDS,
+  buildPracticeSession,
+  hasDueReviewedCard,
+  practiceDecks,
+  stateFromRow,
+  type CardRow,
+} from './practice';
 
 /** mulberry32, so a failing deal can be replayed. */
 function seeded(seed: number): () => number {
@@ -116,5 +123,27 @@ describe('stateFromRow', () => {
     });
     expect(Number.isNaN(s.due)).toBe(true);
     expect(s.last).toBeNull();
+  });
+});
+
+describe('hasDueReviewedCard', () => {
+  const row = (patch: Partial<CardRow>): CardRow => ({
+    cardId: 'treble:64',
+    due: new Date(NOW - DAY_MS).toISOString(),
+    lastReviewAt: new Date(NOW - 3 * DAY_MS).toISOString(),
+    stability: 2,
+    difficulty: 5,
+    reps: 1,
+    lapses: 0,
+    ...patch,
+  });
+  it('is true only for a reviewed, known card that is due', () => {
+    expect(hasDueReviewedCard([], NOW)).toBe(false);
+    expect(hasDueReviewedCard([row({})], NOW)).toBe(true);
+    expect(hasDueReviewedCard([row({ due: new Date(NOW + DAY_MS).toISOString() })], NOW)).toBe(
+      false,
+    );
+    expect(hasDueReviewedCard([row({ reps: 0 })], NOW)).toBe(false);
+    expect(hasDueReviewedCard([row({ cardId: 'treble:61' })], NOW)).toBe(false);
   });
 });

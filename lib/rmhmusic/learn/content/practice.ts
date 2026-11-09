@@ -96,3 +96,15 @@ export function buildPracticeSession(
   }
   return out;
 }
+
+/**
+ * Whether at least one card the learner has reviewed is due at `now` (the home's Practice link).
+ * A never-reviewed row, or one no deck knows, does not count: new cards are always available, so
+ * they would show the link for ever.
+ */
+export function hasDueReviewedCard(rows: readonly CardRow[], now: number): boolean {
+  const reviewed = rows
+    .filter((r) => r.reps > 0 && parseCardId(r.cardId) !== null)
+    .map((r) => ({ state: stateFromRow(r) }));
+  return dueCards(reviewed, now, 1).length > 0;
+}
