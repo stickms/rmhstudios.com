@@ -67,7 +67,7 @@ const tokens = globals.slice(
   globals.indexOf('\n}', tokenAt) + 2,
 );
 assert.ok(tokens.startsWith('\n:root {') && tokens.length > 500, 'found the default token block');
-const sheets = ['liquid-glass', 'jelly-material', 'jelly-arcs', 'jelly-coverage']
+const sheets = ['glass-roles', 'jelly-material', 'jelly-arcs', 'jelly-coverage']
   .map((f) => readFileSync(resolve(root, `app/${f}.css`), 'utf8'))
   .join('\n');
 
