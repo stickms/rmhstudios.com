@@ -5,6 +5,7 @@ import {
   PRACTICE_CARDS,
   buildPracticeSession,
   hasDueReviewedCard,
+  practiceAvailable,
   practiceDecks,
   stateFromRow,
   type CardRow,
@@ -145,5 +146,48 @@ describe('hasDueReviewedCard', () => {
     );
     expect(hasDueReviewedCard([row({ reps: 0 })], NOW)).toBe(false);
     expect(hasDueReviewedCard([row({ cardId: 'treble:61' })], NOW)).toBe(false);
+  });
+});
+
+describe('practiceAvailable (the home link)', () => {
+  const done = [{ lessonId: 'staff-what-is-a-staff', completedAt: new Date(NOW).toISOString() }];
+  const notDone = [{ lessonId: 'staff-what-is-a-staff', completedAt: null }];
+  const row = (patch: Partial<CardRow>): CardRow => ({
+    cardId: 'treble:64',
+    due: new Date(NOW + 30 * DAY_MS).toISOString(),
+    lastReviewAt: new Date(NOW).toISOString(),
+    stability: 30,
+    difficulty: 5,
+    reps: 3,
+    lapses: 0,
+    ...patch,
+  });
+
+  it('is hidden until a flashcard lesson is finished, though no row exists yet', () => {
+    expect(practiceAvailable([], [], NOW)).toBe(false);
+    expect(practiceAvailable([], notDone, NOW)).toBe(false);
+    // First-note is not a flashcard lesson.
+    expect(
+      practiceAvailable([], [{ lessonId: 'play-first-note', completedAt: 'x' }], NOW),
+    ).toBe(false);
+  });
+
+  it('appears after a flashcard lesson, because new cards are waiting', () => {
+    expect(practiceAvailable([], done, NOW)).toBe(true);
+  });
+
+  it('appears when a reviewed card is due, with or without a finished lesson', () => {
+    const due = row({ due: new Date(NOW - DAY_MS).toISOString() });
+    expect(practiceAvailable([due], [], NOW)).toBe(true);
+    expect(practiceAvailable([due], done, NOW)).toBe(true);
+  });
+
+  it('goes away once every shipped card is remembered and none is due', () => {
+    const all = practiceDecks().flatMap((d) => d.midis.map((m) => cardId(d.clef, m)));
+    const rows = [...new Set(all)].map((id) => row({ cardId: id }));
+    expect(practiceAvailable(rows, done, NOW)).toBe(false);
+    // ...and returns as soon as one comes due.
+    rows[0] = row({ cardId: rows[0].cardId, due: new Date(NOW - 1).toISOString() });
+    expect(practiceAvailable(rows, done, NOW)).toBe(true);
   });
 });

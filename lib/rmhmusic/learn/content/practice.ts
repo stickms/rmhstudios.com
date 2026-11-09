@@ -9,7 +9,7 @@
  * but not yet due is never dealt early, and no card is dealt twice in one session, so once every
  * card has been seen a session holds only what is due, and may be empty.
  */
-import { PATH } from './path';
+import { PATH, getLesson } from './path';
 import { DECKS, cardId, parseCardId, shuffle, type Card, type Deck } from './decks';
 import { dueCards, type CardState } from '../srs/schedule';
 
@@ -107,4 +107,26 @@ export function hasDueReviewedCard(rows: readonly CardRow[], now: number): boole
     .filter((r) => r.reps > 0 && parseCardId(r.cardId) !== null)
     .map((r) => ({ state: stateFromRow(r) }));
   return dueCards(reviewed, now, 1).length > 0;
+}
+
+/**
+ * Whether the home shows its Practice link: a card the learner reviewed is due, or they have
+ * finished a flashcard lesson and Practice would still deal at least one card (a new one from the
+ * shipped decks, or one that is due). Rows are only written by Practice itself, so without the
+ * second case the link could never appear for a learner who has not already found the page; and
+ * once every card has been seen and none is due, the link goes away rather than leading to an
+ * empty sheet.
+ */
+export function practiceAvailable(
+  rows: readonly CardRow[],
+  progress: readonly { lessonId: string; completedAt: string | null }[],
+  now: number,
+): boolean {
+  if (hasDueReviewedCard(rows, now)) return true;
+  const metFlashcards = progress.some(
+    (p) => p.completedAt !== null && getLesson(p.lessonId)?.mode === 'staff-flashcards',
+  );
+  if (!metFlashcards) return false;
+  const remembered = rows.map((r) => ({ cardId: r.cardId, state: stateFromRow(r) }));
+  return buildPracticeSession(remembered, practiceDecks(), now, () => 0, 1).length > 0;
 }

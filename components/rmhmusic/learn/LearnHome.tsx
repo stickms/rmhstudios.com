@@ -18,7 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 import { PATH } from '@/lib/rmhmusic/learn/content/path';
-import { hasDueReviewedCard } from '@/lib/rmhmusic/learn/content/practice';
+import { practiceAvailable } from '@/lib/rmhmusic/learn/content/practice';
 import { releaseMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import type { LessonProgressRow } from '@/lib/rmhmusic/learn/store';
@@ -101,7 +101,10 @@ export function LearnHome() {
     void store.loadCards();
   }, []);
   const cards = useLearnStore((s) => s.cards);
-  const practiceDue = useMemo(() => hasDueReviewedCard(cards, Date.now()), [cards]);
+  const practiceDue = useMemo(
+    () => practiceAvailable(cards, progress, Date.now()),
+    [cards, progress],
+  );
 
   const rows = useMemo(
     () => new Map<string, LessonProgressRow>(progress.map((r) => [r.lessonId, r])),
