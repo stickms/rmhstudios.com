@@ -663,6 +663,11 @@ the flow, so `radial.css` ends with a section of explicit arithmetic guarantees:
   The site sets `viewport-fit=cover`, and the body's safe-area padding does
   **not** apply to `position: fixed` — so anything that skips the inset lands in
   the iOS home-indicator gesture strip and gets hard to tap.
+- **Safari's toolbar.** The orb (`bottom`), the open menu's overlay (its `bottom`, which carries the foot pill) and the
+  docked globe's box (`top`) add `--vv-follow` (`100% - 100dvh` on iOS WebKit, `0px` elsewhere; `app/globals.css`), so
+  they follow the toolbar in layout with no script. The docked globe's vertical travel onto the orb is a CSS length
+  (`--hub-half-vh - --orb-bottom - orb/2 + --dock-kc`); `RadialHub.measureDock` measures only layout-fixed numbers
+  (`--dock-dx/kc/scale/ox/oy`) and does not run when the toolbar moves.
 - **The floating-bottom stack.** The orb carries `data-floating="hub"` and is the
   BOTTOM member of the mobile stack defined in `app/globals.css` §5.5x A.1; the
   cookie bar, mini-player and back-to-top all lift above it. Its footprint comes
