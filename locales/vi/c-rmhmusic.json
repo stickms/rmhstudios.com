@@ -10,6 +10,7 @@
   "find-cell-open": "String {{n}}, {{name}}, open",
   "find-count": "Note {{n}} of {{total}}",
   "find-fretboard": "Fretboard, frets 0 to 5",
+  "find-fretboard-help": "Arrow keys move between strings and frets. Enter or Space answers with that place.",
   "find-group-a": "A sits between the last two of the three black keys.",
   "find-group-b": "B is just right of the three black keys.",
   "find-group-c": "C is just left of the two black keys.",
