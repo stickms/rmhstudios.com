@@ -6,7 +6,6 @@ import { targetStaff } from './find-note';
 import {
   MATCH_TARGETS,
   MATCH_TRIES,
-  SAME_TICK_MS,
   createMatchNoteMachine,
   matchNoteMachine,
   matchNotePool,
@@ -142,11 +141,11 @@ describe('match-note machine: tries', () => {
     expect(m.send(on(62, undefined, 5000))).toEqual([]);
     expect(m.get()).toBe(after);
     // Another pitch inside the same tick window is part of the same strike, too.
-    m.send(on(60, undefined, 5000 + SAME_TICK_MS - 1));
+    m.send(on(60, undefined, 5099));
     expect(m.get()).toBe(after);
     expect(after.kind === 'asking' && after.tries.length).toBe(1);
     // Past the window it is a new try.
-    m.send(on(60, undefined, 5000 + SAME_TICK_MS));
+    m.send(on(60, undefined, 5100));
     expect(m.get()).toMatchObject({ kind: 'feedback', right: true });
   });
 
@@ -157,6 +156,28 @@ describe('match-note machine: tries', () => {
     m.send(on(64, undefined, 9000));
     expect(m.get()).toBe(after);
     expect(after).toMatchObject({ kind: 'feedback', correct: 1, right: true });
+  });
+
+  it('a note stamped earlier than the last try is the same strike inside the window', () => {
+    const m = createRunner(createMatchNoteMachine(ten));
+    m.send(on(62, undefined, 5000));
+    const after = m.get();
+    // Out-of-order clocks (two sources) and a negative stamp: within 100 ms either way is one try.
+    m.send(on(60, undefined, 4901));
+    expect(m.get()).toBe(after);
+    // Further back than the window is a new try, not a rejected one.
+    m.send(on(60, undefined, 4900));
+    expect(m.get()).toMatchObject({ kind: 'feedback', right: true });
+  });
+
+  it('a negative or zero time is an ordinary stamp', () => {
+    const m = createRunner(createMatchNoteMachine(ten));
+    m.send(on(62, undefined, -500));
+    expect(m.get().kind === 'asking' && m.get()).toMatchObject({ tries: [{ time: -500 }] });
+    m.send(on(62, undefined, -450));
+    expect(m.get().kind === 'asking' && (m.get() as { tries: unknown[] }).tries.length).toBe(1);
+    m.send(on(62, undefined, 0));
+    expect(m.get().kind === 'asking' && (m.get() as { tries: unknown[] }).tries.length).toBe(2);
   });
 
   it('a non-finite pitch is not a try', () => {

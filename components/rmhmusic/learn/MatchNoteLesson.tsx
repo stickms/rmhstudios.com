@@ -9,8 +9,12 @@
  * - "Hear it" (a text button under the staff) sounds the target as a hint: never a try, as often
  *   as wanted. If the audio context cannot start (blocked, suspended past its timeout, or no Web
  *   Audio) a plain sentence says so on the sheet's line and the next tap tries again; the lesson
- *   never waits on it. While the hint sounds (and a short tail after it), microphone notes are
- *   dropped, so the speaker playing the hint is never taken for the learner's try.
+ *   never waits on it. A tap that had to wait for the audio context sounds only if the learner is
+ *   still on the same target and the lesson is still open, and one tap at a time waits.
+ * - The microphone is deaf to what the lesson itself sounds: the hint, and the notes of the
+ *   on-screen and computer keys (no echo cancellation on the mic), plus a short tail. A note the
+ *   learner started singing inside that window and still holds is replayed as their try when it
+ *   closes (`input/echo-window.ts`).
  * - The result of each try is one sentence on the sheet's line. The microphone reports cents, so
  *   a close note is "a little flat" or "sharp"; every other source plays exact pitches and is
  *   simply spot on or a wrong note (a different octave is named as such). After a spot-on try or
@@ -26,14 +30,20 @@
  * the same as LessonScreen's MatchNoteSkeleton.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { playNote } from '@/lib/rmhmusic/learn/audio/voice';
+import { RELEASE_MS, playNote } from '@/lib/rmhmusic/learn/audio/voice';
 import { resumeAudio } from '@/lib/rmhmusic/learn/audio/resume';
+import {
+  createEchoGuard,
+  hearStillWanted,
+  type GuardNote,
+} from '@/lib/rmhmusic/learn/input/echo-window';
 import { dealTargets, targetStaff } from '@/lib/rmhmusic/learn/machines/find-note';
 import {
   MATCH_TARGETS,
+  MATCH_TRIES,
   createMatchNoteMachine,
   matchNotePool,
   type Effect,
@@ -64,8 +74,6 @@ import { useInputPhases, useLessonInputStart, useNoteEvents, useNoteSound } from
 
 /** How long the hint sounds. */
 const HEAR_MS = 900;
-/** After the hint, how long the microphone may still be hearing the room's echo of it. */
-const HEAR_TAIL_MS = 400;
 
 type Sound = 'ok' | 'waking' | 'blocked' | 'none';
 
@@ -87,8 +95,15 @@ export function MatchNoteLesson({
   // How the last Hear it went, and where in the lesson (`position`): a problem is said only until
   // the learner moves on.
   const [sound, setSound] = useState<{ kind: Sound; at: string }>({ kind: 'ok', at: '' });
-  // Microphone notes before this time (performance.now() ms) are the hint, not the learner.
-  const hintUntil = useRef(0);
+  // When the microphone may not be believed (the hint, the keys' sounds), and the note it may still
+  // owe the learner (`input/echo-window.ts`).
+  const [guard] = useState(() => createEchoGuard({ releaseMs: RELEASE_MS }));
+  const replayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deliverRef = useRef<(e: GuardNote) => void>(() => {});
+  const mounted = useRef(false);
+  // The target in view (-1: none), and whether a Hear it is waiting for the audio context.
+  const indexRef = useRef(-1);
+  const hearing = useRef(false);
   // Hints still sounding: each one's release, called by its timer or when the target changes.
   const hints = useRef(new Map<ReturnType<typeof setTimeout>, () => void>());
 
@@ -100,7 +115,7 @@ export function MatchNoteLesson({
     focusFirst: '.rmm-keys__bed button:not([tabindex="-1"])',
     onEffect: (fx) => {
       if (fx.type !== 'play') return;
-      hintUntil.current = performance.now() + HEAR_MS + HEAR_TAIL_MS;
+      guard.hint(performance.now(), HEAR_MS);
       const release = playNote(fx.midi);
       const timer = setTimeout(() => {
         hints.current.delete(timer);
@@ -116,9 +131,11 @@ export function MatchNoteLesson({
   useLessonInputStart();
 
   // A new target (or the end): the last target's hint stops now, so the microphone is deaf to it
-  // for the tail only, never to the learner's first note of the next one; and on unmount.
+  // for the tail only, never to the learner's first note of the next one; a note dropped for the
+  // last target is forgotten; and on unmount.
   const index = inSession ? lesson.index : -1;
   useEffect(() => {
+    indexRef.current = index;
     const live = hints.current;
     const stop = () => {
       if (live.size === 0) return;
@@ -127,21 +144,52 @@ export function MatchNoteLesson({
         release();
       }
       live.clear();
-      hintUntil.current = Math.min(hintUntil.current, performance.now() + HEAR_TAIL_MS);
+      guard.hintStopped(performance.now());
     };
     stop();
+    guard.forgetPending();
     return stop;
-  }, [index]);
+  }, [index, guard]);
 
-  useNoteEvents((e) => {
-    if (e.source === 'mic' && e.time < hintUntil.current) return;
-    // Only the microphone measures cents; every other source plays exact pitches.
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (replayTimer.current !== null) clearTimeout(replayTimer.current);
+    };
+  }, []);
+
+  // Only the microphone measures cents; every other source plays exact pitches.
+  const deliver = (e: GuardNote) =>
     answer({
       type: e.type,
       midi: e.midi,
       time: e.time,
       ...(e.source === 'mic' && e.cents !== undefined ? { cents: e.cents } : {}),
     });
+  useEffect(() => {
+    deliverRef.current = deliver;
+  });
+
+  // A microphone note dropped inside the window and still sounding when it closes is the learner's
+  // (singing along with the hint): arm a timer for the window's end, and again if it moved.
+  const arm = useCallback(() => {
+    if (replayTimer.current !== null) clearTimeout(replayTimer.current);
+    replayTimer.current = null;
+    const wait = guard.waitMs(performance.now());
+    if (wait === null) return;
+    replayTimer.current = setTimeout(() => {
+      replayTimer.current = null;
+      const note = guard.takeReplay(performance.now());
+      if (note) deliverRef.current(note);
+      else arm();
+    }, wait + 1);
+  }, [guard]);
+
+  useNoteEvents((e) => {
+    const admitted = guard.admit(e);
+    arm();
+    if (admitted) deliver(e);
   });
 
   // Where the learner is: the target and how many tries it has had (a problem with the sound is
@@ -150,9 +198,12 @@ export function MatchNoteLesson({
     ? `${lesson.kind}-${lesson.index}-${lesson.kind === 'asking' ? lesson.tries.length : 'fb'}`
     : lesson.kind;
 
-  // Hear it: sound the target, waking the audio context first (inside this tap) if it sleeps.
+  // Hear it: sound the target, waking the audio context first (inside this tap) if it sleeps. One
+  // tap waits at a time, and a hint that was waiting sounds only for the target it was asked for.
   const hear = () => {
+    if (hearing.current) return;
     const at = position;
+    const askedIndex = index;
     const ctx = getAudioContext();
     if (!ctx) {
       setSound({ kind: 'none', at });
@@ -164,7 +215,13 @@ export function MatchNoteLesson({
       return;
     }
     setSound({ kind: 'waking', at });
+    hearing.current = true;
     void resumeAudio(ctx).then((ok) => {
+      hearing.current = false;
+      if (
+        !hearStillWanted({ askedIndex, currentIndex: indexRef.current, mounted: mounted.current })
+      )
+        return;
       setSound({ kind: ok ? 'ok' : 'blocked', at });
       if (ok) session.send({ type: 'hear' });
     });
@@ -182,26 +239,67 @@ export function MatchNoteLesson({
     t('lesson-not-saved', { defaultValue: 'Not saved yet' }),
   );
 
-  /** One try, in a sentence. */
-  const verdictLine = (played: PlayedPitch): string => {
+  /** One missed try, in one sentence that also says how many tries are left (`left`: 2 or 1). */
+  const tryLine = (played: PlayedPitch, left: number): string => {
     if (!target) return '';
     const v = pitchVerdict(target.midi, played);
     const note = midiToName(v.heard);
+    const two = left > 1;
     switch (v.kind) {
       case 'spot-on':
         return t('match-spot-on', { defaultValue: 'Spot on.' });
       case 'a-little-flat':
-        return t('match-little-flat', { defaultValue: 'Close: a little flat.' });
+        return two
+          ? t('match-try-little-flat-two', {
+              defaultValue: 'Close: a little flat. Two tries left.',
+            })
+          : t('match-try-little-flat-one', {
+              defaultValue: 'Close: a little flat. One try left.',
+            });
       case 'a-little-sharp':
-        return t('match-little-sharp', { defaultValue: 'Close: a little sharp.' });
+        return two
+          ? t('match-try-little-sharp-two', {
+              defaultValue: 'Close: a little sharp. Two tries left.',
+            })
+          : t('match-try-little-sharp-one', {
+              defaultValue: 'Close: a little sharp. One try left.',
+            });
       case 'flat':
-        return t('match-flat', { defaultValue: 'Quite flat: bring it up.' });
+        return two
+          ? t('match-try-flat-two', {
+              defaultValue: 'Quite flat: bring it up. Two tries left.',
+            })
+          : t('match-try-flat-one', {
+              defaultValue: 'Quite flat: bring it up. One try left.',
+            });
       case 'sharp':
-        return t('match-sharp', { defaultValue: 'Quite sharp: bring it down.' });
+        return two
+          ? t('match-try-sharp-two', {
+              defaultValue: 'Quite sharp: bring it down. Two tries left.',
+            })
+          : t('match-try-sharp-one', {
+              defaultValue: 'Quite sharp: bring it down. One try left.',
+            });
       case 'octave':
-        return t('match-octave', { note, defaultValue: 'Wrong octave: that was {{note}}.' });
+        return two
+          ? t('match-try-octave-two', {
+              note,
+              defaultValue: 'Wrong octave: that was {{note}}. Two tries left.',
+            })
+          : t('match-try-octave-one', {
+              note,
+              defaultValue: 'Wrong octave: that was {{note}}. One try left.',
+            });
       default:
-        return t('match-wrong', { note, defaultValue: 'Not quite: that was {{note}}.' });
+        return two
+          ? t('match-try-wrong-two', {
+              note,
+              defaultValue: 'Not quite: that was {{note}}. Two tries left.',
+            })
+          : t('match-try-wrong-one', {
+              note,
+              defaultValue: 'Not quite: that was {{note}}. One try left.',
+            });
     }
   };
 
@@ -217,11 +315,7 @@ export function MatchNoteLesson({
           : t('match-hint', { defaultValue: 'Play the note you see.' });
     } else {
       lineKey = `try-${lesson.index}-${lesson.tries.length}`;
-      const left =
-        lesson.tries.length === 1
-          ? t('match-left-two', { defaultValue: 'Two tries left.' })
-          : t('match-left-one', { defaultValue: 'One try left.' });
-      line = `${verdictLine(last)} ${left}`;
+      line = tryLine(last, MATCH_TRIES - lesson.tries.length);
     }
   } else if (lesson.kind === 'feedback') {
     lineKey = `fb-${lesson.index}`;

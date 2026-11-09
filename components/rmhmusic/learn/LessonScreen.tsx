@@ -1,13 +1,10 @@
 'use client';
 
 /**
- * LessonScreen — the page around one lesson (`/rmhmusic/lesson/<id>`): a way
- * back to the path, "Change input", and the lesson's activity, chosen by its mode
- * (`play-note` → FirstNoteLesson, `staff-flashcards` → FlashcardLesson with the lesson's deck,
- * `keyboard-map` and `fretboard` → FindNoteLesson, `match-note` → MatchNoteLesson), each behind a placeholder of exactly its own
- * boxes. An unknown id,
- * or a lesson that has not shipped yet, gets a friendly "not available yet"
- * page with a link home — never a crash or a blank. A document (`.app-page`).
+ * LessonScreen — the page around one lesson (`/rmhmusic/lesson/<id>`): a way back to the path,
+ * "Change input", and the activity for the lesson's mode (see `isPlayable`), each behind a
+ * placeholder of exactly its own boxes. An unknown or unshipped lesson gets a friendly "not
+ * available yet" page with a link home, never a crash or a blank. A document (`.app-page`).
  */
 
 import { useEffect, useRef, useState } from 'react';

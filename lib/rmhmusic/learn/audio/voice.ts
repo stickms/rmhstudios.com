@@ -14,6 +14,8 @@ import { midiToFreq } from '../pitch/notes';
 
 const ATTACK_S = 0.01;
 const RELEASE_S = 0.25;
+/** How long a released note keeps sounding (ms): the lesson's microphone waits this out. */
+export const RELEASE_MS = RELEASE_S * 1000;
 /** Peak gain at full velocity; low enough that a six-note chord does not clip. */
 const PEAK = 0.18;
 /** Voices sounding at once; the oldest is released to make room. */

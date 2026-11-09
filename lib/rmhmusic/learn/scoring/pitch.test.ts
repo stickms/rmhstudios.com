@@ -87,3 +87,58 @@ describe('pitchVerdict', () => {
     expect(pitchVerdict(60, { midi: 48, cents: 20 })).toEqual({ kind: 'octave', heard: 48 });
   });
 });
+
+describe('pitchVerdict: boundaries', () => {
+  it('is spot on at 10 cents and a little off just past it', () => {
+    expect(pitchVerdict(60, { midi: 60, cents: 10 }).kind).toBe('spot-on');
+    expect(pitchVerdict(60, { midi: 60, cents: 10.01 }).kind).toBe('a-little-sharp');
+    expect(pitchVerdict(60, { midi: 60, cents: -10 }).kind).toBe('spot-on');
+    expect(pitchVerdict(60, { midi: 60, cents: -10.01 }).kind).toBe('a-little-flat');
+  });
+
+  it('is a little off up to 50 cents and quite off just past it', () => {
+    expect(pitchVerdict(60, { midi: 60, cents: 50 }).kind).toBe('a-little-sharp');
+    expect(pitchVerdict(60, { midi: 60, cents: 50.01 }).kind).toBe('sharp');
+    expect(pitchVerdict(60, { midi: 60, cents: -50 }).kind).toBe('a-little-flat');
+    expect(pitchVerdict(60, { midi: 60, cents: -50.01 }).kind).toBe('flat');
+  });
+
+  it('is quite off up to 99.99 cents and a wrong note from a semitone', () => {
+    expect(pitchVerdict(60, { midi: 60, cents: 99.99 }).kind).toBe('sharp');
+    expect(pitchVerdict(60, { midi: 60, cents: -99.99 }).kind).toBe('flat');
+    expect(pitchVerdict(60, { midi: 60, cents: 100 })).toEqual({ kind: 'wrong', heard: 61 });
+    expect(pitchVerdict(60, { midi: 60, cents: -100 })).toEqual({ kind: 'wrong', heard: 59 });
+  });
+
+  it('names an octave exactly at 1200 cents and not a note short of it', () => {
+    expect(pitchVerdict(60, { midi: 72 }).kind).toBe('octave');
+    expect(pitchVerdict(60, { midi: 60, cents: 1200 }).kind).toBe('octave');
+    expect(pitchVerdict(60, { midi: 71 }).kind).toBe('wrong');
+  });
+
+  it('an infinite or NaN error is a wrong note, never spot on', () => {
+    expect(centsOff(60, { midi: Number.POSITIVE_INFINITY })).toBe(Number.POSITIVE_INFINITY);
+    expect(centsOff(60, { midi: Number.NEGATIVE_INFINITY })).toBe(Number.NEGATIVE_INFINITY);
+    expect(centsOff(60, { midi: Number.NaN })).toBeNaN();
+    for (const midi of [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NaN]) {
+      expect(pitchVerdict(60, { midi }).kind).toBe('wrong');
+      expect(pitchPoints(60, { midi })).toBe(0);
+    }
+    // A non-finite `cents` is read as 0, so the note itself decides.
+    expect(centsOff(60, { midi: 60, cents: Number.POSITIVE_INFINITY })).toBe(0);
+    expect(pitchVerdict(60, { midi: 60, cents: Number.POSITIVE_INFINITY }).kind).toBe('spot-on');
+    expect(pitchVerdict(60, { midi: 61, cents: Number.NEGATIVE_INFINITY }).kind).toBe('wrong');
+  });
+});
+
+describe('pitchVerdict and pitchPoints agree', () => {
+  it('"spot on" is exactly the notes worth 100, across every offset', () => {
+    for (const midi of [48, 59, 60, 61, 72]) {
+      for (let c = -1300; c <= 1300; c += 0.25) {
+        const played = { midi, cents: c };
+        const spot = pitchVerdict(60, played).kind === 'spot-on';
+        expect(spot).toBe(pitchPoints(60, played) === 100);
+      }
+    }
+  });
+});

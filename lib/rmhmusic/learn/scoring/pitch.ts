@@ -24,7 +24,10 @@ export interface PlayedPitch {
   cents?: number;
 }
 
-/** Signed error in cents: negative is flat, positive sharp. NaN for a non-finite pitch. */
+/**
+ * Signed error in cents: negative is flat, positive sharp. A non-finite `cents` counts as 0; a
+ * non-finite `midi` (or target) gives NaN or ±Infinity, which no verdict or score treats as close.
+ */
 export function centsOff(targetMidi: number, played: PlayedPitch): number {
   const cents = Number.isFinite(played.cents) ? (played.cents as number) : 0;
   return (played.midi - targetMidi) * 100 + cents;
