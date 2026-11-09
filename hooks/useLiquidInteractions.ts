@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { installLazyClickArcs } from '@/lib/jelly/arc-lazy';
 import { installPointerVars } from '@/lib/jelly/pointer-vars';
+import { refractionEnabled } from '@/lib/jelly/tiers';
 
 /**
  * Mount the Plasmatic Jelly document services once at the provider boundary, including full-screen app routes. One
@@ -48,10 +49,12 @@ export function useLiquidInteractions(enabled = true): void {
       document.documentElement.setAttribute('data-jelly-ready', '');
       // Refractive glass: the rim layers of every glass host (lib/jelly/refract). Its own chunk, after first paint and the
       // arcs' subscription, so nothing here is in the entry or competes with hydration; it stays quiet at rest.
-      void import('@/lib/jelly/refract/install').then(({ installRefraction }) => {
-        if (cancelled) return;
-        stopRefraction = installRefraction(document);
-      });
+      if (refractionEnabled()) {
+        void import('@/lib/jelly/refract/install').then(({ installRefraction }) => {
+          if (cancelled) return;
+          stopRefraction = installRefraction(document);
+        });
+      }
     };
     // Safari has no requestIdleCallback (the DOM typings say every browser does), so feature-detect it.
     const w = window as Window & {

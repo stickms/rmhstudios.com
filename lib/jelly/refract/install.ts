@@ -28,15 +28,22 @@ import { acquireSceneFeed, type SceneFeed } from '@/lib/liquid/glass/scene-feed'
 import { SCENE_HIDE } from '@/lib/liquid/glass/scene';
 import { innerRadius } from '@/lib/liquid/glass/policy';
 import { installJellyRegistry, jellyRegistry, type JellyRegistry } from '../registry';
-import { APP_HIGH_CONTRAST_SELECTOR, JELLY_BUDGETS, jellyTier, type JellyTier } from '../tiers';
+import {
+  APP_HIGH_CONTRAST_SELECTOR,
+  JELLY_BUDGETS,
+  REFRACT_ROLES,
+  REFRACT_ROLE_SELECTORS,
+  jellyTier,
+  type JellyTier,
+} from '../tiers';
 import { placement } from './coverage';
 import { acquireRefractFilter, type RefractFilter } from './filters';
 import { createLayer, type LayerView, type RefractLayer } from './layer';
 import { REFRACT, sizeClass } from './profile';
 import { sceneImage, type SceneImage } from './scene-image';
 
-/** The glass roles that refract (the `-inset` field only where it can hold a child: never an `<input>`). */
-export const REFRACT_HOSTS = '.glass-fill,.glass-pane,.glass-chrome,.glass-overlay,.glass-inset';
+/** The glass roles that refract (`REFRACT_ROLES` in `tiers.ts`; the `-inset` field only where it can hold a child: never an `<input>`). */
+export const REFRACT_HOSTS = REFRACT_ROLE_SELECTORS[REFRACT_ROLES];
 /** Hosts that never refract: an opaque surface shows nothing behind it, a field is replaced content or is edited in place. */
 export const REFRACT_EXCLUDE =
   '.glass-opaque,[data-jelly-refract="off"],input,textarea,select,img,video,canvas,iframe,[contenteditable="true"],[contenteditable=""]';
@@ -65,6 +72,8 @@ export interface RefractionDeps {
   image?: SceneImage;
   feed?: Pick<SceneFeed, 'request' | 'release'>;
   tier?: () => JellyTier;
+  /** The rim-layer budget of a tier (default `JELLY_BUDGETS[tier].refractHosts`; tests pass their own). */
+  budget?: (tier: JellyTier) => number;
   /** True where nothing may refract right now (print, the app tier, app high contrast). */
   off?: () => boolean;
   measure?: (el: Element) => HostMeasure | null;
@@ -160,6 +169,7 @@ export function installRefraction(doc: Document = document, deps: RefractionDeps
     feedHandle = null;
   };
   const tier = deps.tier ?? (() => jellyTier({ doc }));
+  const budgetOf = deps.budget ?? ((t: JellyTier) => JELLY_BUDGETS[t].refractHosts);
   const off =
     deps.off ??
     (() =>
@@ -238,7 +248,7 @@ export function installRefraction(doc: Document = document, deps: RefractionDeps
   const run = () => {
     cancelRun = null;
     if (disposed) return;
-    const budget = off() ? 0 : JELLY_BUDGETS[tier()].refractHosts;
+    const budget = off() ? 0 : budgetOf(tier());
     if (budget <= 0) {
       detachAll();
       dropFeed();

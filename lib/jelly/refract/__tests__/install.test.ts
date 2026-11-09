@@ -166,6 +166,7 @@ function rig(opts: { tier?: 'full' | 'coarse' | 'handheld' | 'off' } = {}) {
     image,
     feed,
     tier: () => opts.tier ?? 'full',
+    budget: (t) => ({ full: 24, coarse: 12, handheld: 0, off: 0 })[t],
     off: () => false,
     measure: (el) => measures.get(el as unknown as Host) ?? null,
     createLayer: (el) => fakeLayer(el as unknown as Host) as unknown as RefractLayer,

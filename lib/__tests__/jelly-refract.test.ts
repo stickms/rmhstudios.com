@@ -9,7 +9,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { CSS_FALLBACKS } from '@/lib/jelly/refract/layer';
 import { DISPERSION, REFRACT } from '@/lib/jelly/refract/profile';
-import { JELLY_BUDGETS, JELLY_LAYER_SELECTOR } from '@/lib/jelly/tiers';
+import { JELLY_BUDGETS, JELLY_LAYER_SELECTOR, refractionEnabled } from '@/lib/jelly/tiers';
 import { SCENE_EXCLUDE } from '@/lib/liquid/glass/scene';
 
 const ROOT = process.cwd();
@@ -117,11 +117,21 @@ describe('the numbers', () => {
     expect(REFRACT.padPx).toBeGreaterThanOrEqual(Math.ceil(REFRACT.depthPx * DISPERSION.r));
   });
 
-  it('budgets hosts per tier, none off the desktop tiers until measured', () => {
+  it('budgets hosts per tier: never more on a weaker tier, none when the material is off, and the switch reads them', () => {
     expect(JELLY_BUDGETS.full.refractHosts).toBeGreaterThanOrEqual(
       JELLY_BUDGETS.coarse.refractHosts,
     );
+    expect(JELLY_BUDGETS.coarse.refractHosts).toBeGreaterThanOrEqual(
+      JELLY_BUDGETS.handheld.refractHosts,
+    );
     expect(JELLY_BUDGETS.off.refractHosts).toBe(0);
+    expect(refractionEnabled()).toBe(Object.values(JELLY_BUDGETS).some((b) => b.refractHosts > 0));
+  });
+
+  it('is dormant until a budget is set: the hook imports nothing while every tier is 0', () => {
+    const hook = stripComments(read('hooks/useLiquidInteractions.ts'));
+    expect(hook).toMatch(/if \(refractionEnabled\(\)\)/);
+    expect(hook).toMatch(/import\('@\/lib\/jelly\/refract\/install'\)/);
   });
 
   it('keeps the layer out of the picture and treats it as a service layer, not content', () => {

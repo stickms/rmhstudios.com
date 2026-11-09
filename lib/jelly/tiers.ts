@@ -42,7 +42,8 @@ export interface JellyBudget {
   clickBolts: number;
   /**
    * How many on-screen glass hosts may hold a refracting rim layer at once (`lib/jelly/refract/install.ts`), nearest the
-   * viewport centre first; the rest keep the lit rim. Chosen by measurement (docs/plasmatic-jelly-system.md §1.2), not guessed.
+   * viewport centre first; the rest keep the lit rim. **0 turns refraction off** (nothing is imported, captured or drawn).
+   * Chosen by measurement (docs/plasmatic-jelly-system.md §1.2): every tier is 0 until the filter's cost is fixed.
    */
   refractHosts: number;
 }
@@ -55,19 +56,21 @@ export interface JellyBudget {
  * which are gone (CSS-first jelly); the CSS material needs no budget, it costs nothing at rest.
  */
 export const JELLY_BUDGETS: Readonly<Record<JellyTier, Readonly<JellyBudget>>> = {
+  // `refractHosts` is the switch (§1.2): 24 on `full`, 12 on `coarse` is what was measured and failed the performance bar in
+  // Firefox on a software renderer (the SVG filter costs ~50 ms a frame while the page scrolls); 0 everywhere ships it dormant.
   full: {
     clockHz: 60,
     idleClockHz: 15,
     ambientArcMinIntervalMs: 2000,
     clickBolts: 3,
-    refractHosts: 24,
+    refractHosts: 0,
   },
   coarse: {
     clockHz: 60,
     idleClockHz: 15,
     ambientArcMinIntervalMs: 2000,
     clickBolts: 2,
-    refractHosts: 12,
+    refractHosts: 0,
   },
   // R10: half the desktop ambient-arc rate, not 04's zero — the owner wants phones charged too.
   handheld: {
@@ -84,6 +87,23 @@ export const JELLY_BUDGETS: Readonly<Record<JellyTier, Readonly<JellyBudget>>> =
     clickBolts: 0,
     refractHosts: 0,
   },
+};
+
+/**
+ * Which glass roles may hold a refracting rim layer (`lib/jelly/refract/install.ts`, docs/plasmatic-jelly-system.md §1.2). The
+ * performance bar decides it, not taste: `'all'` is every role; `'floating'` is spec Approach 2, chrome, overlay and pane, with
+ * cards and fields keeping the lit rim (a card is the one role that squashes and plumps under the hand, and a squash re-runs
+ * the filter on every frame of its spring). The budget `refractHosts` is the other dial; 0 turns the layers off.
+ */
+/** True when any tier may hold a rim layer: when none does, nothing about refraction is even imported. */
+export const refractionEnabled = (): boolean =>
+  Object.values(JELLY_BUDGETS).some((b) => b.refractHosts > 0);
+
+export type RefractRoles = 'all' | 'floating';
+export const REFRACT_ROLES: RefractRoles = 'all';
+export const REFRACT_ROLE_SELECTORS: Readonly<Record<RefractRoles, string>> = {
+  all: '.glass-fill,.glass-pane,.glass-chrome,.glass-overlay,.glass-inset',
+  floating: '.glass-pane,.glass-chrome,.glass-overlay',
 };
 
 /**
