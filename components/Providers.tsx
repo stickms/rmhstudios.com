@@ -178,7 +178,7 @@ function writeCachedUser(user: CachedSessionUser | null) {
  * read is `null` (the pre-paint script's defaults stand); a failed write is dropped and the
  * DOM still updates, so a choice holds for the visit.
  */
-const safeStorage = {
+export const safeStorage = {
   getItem(key: string): string | null {
     try {
       return localStorage.getItem(key);
