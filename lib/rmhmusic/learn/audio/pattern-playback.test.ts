@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ClickContext } from './clicks';
 import { PATTERN_BARS, createPatternPlayback } from './pattern-playback';
 
-function fakeContext() {
+function fakeContext(extra: Record<string, unknown> = {}) {
   const freqs: number[] = [];
   const state = { currentTime: 10 };
   const param = (rec?: (v: number) => void) => ({
@@ -14,6 +14,7 @@ function fakeContext() {
     exponentialRampToValueAtTime: vi.fn(),
   });
   const ctx = {
+    ...extra,
     get currentTime() {
       return state.currentTime;
     },
@@ -103,5 +104,47 @@ describe('createPatternPlayback', () => {
     run(state, 8000);
     expect(heard).toHaveBeenCalledTimes(1);
     expect(heard).toHaveBeenCalledWith(1);
+  });
+
+  it('is heard when the last click has left the speaker: the context’s output latency counts', () => {
+    // The last click is at context time 13.1 s, page time 3100 ms. 300 ms of output delay and the
+    // click's 50 ms put "heard" at 3450.
+    const { ctx, state } = fakeContext({ outputLatency: 0.3 });
+    const heard = vi.fn();
+    const p = createPatternPlayback({ ctx: () => ctx, bpm: 120, onHeard: heard });
+    p.start(0, 3);
+    run(state, 3400);
+    expect(heard).not.toHaveBeenCalled();
+    run(state, 150);
+    expect(heard).toHaveBeenCalledTimes(1);
+  });
+
+  it('a heard timer that fires very late adds no click after the pattern', () => {
+    const { ctx, state, freqs } = fakeContext();
+    const heard = vi.fn();
+    const p = createPatternPlayback({ ctx: () => ctx, bpm: 120, onHeard: heard });
+    p.start(0, 3);
+    // All seven clicks are scheduled by now (the last is due at 3100 ms)…
+    run(state, 3000);
+    expect(freqs).toHaveLength(7);
+    // …and the page then stalls for 20 s before any timer runs.
+    state.currentTime += 20;
+    vi.advanceTimersByTime(30_000);
+    expect(freqs).toHaveLength(7);
+    expect(heard).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('cancel after the last click was scheduled, with a late timer, plays nothing more', () => {
+    const { ctx, state, freqs } = fakeContext();
+    const heard = vi.fn();
+    const p = createPatternPlayback({ ctx: () => ctx, bpm: 120, onHeard: heard });
+    p.start(0, 3);
+    run(state, 3000);
+    p.cancel();
+    state.currentTime += 20;
+    vi.advanceTimersByTime(30_000);
+    expect(freqs).toHaveLength(7);
+    expect(heard).not.toHaveBeenCalled();
   });
 });

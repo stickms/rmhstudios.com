@@ -223,21 +223,130 @@ describe('createMetronome', () => {
     m.stop();
   });
 
-  it('a timer that fires late schedules the clicks it missed in order, never in the past', () => {
-    const { ctx, state, starts } = fakeContext();
+  it('a stall longer than a beat skips the beats it missed: the clicks after it are distinct, ordered, on the grid', () => {
+    const { ctx, state, starts, freqs } = fakeContext();
     const m = createMetronome(ctx, { bpm: 120, beatsPerBar: 4 });
     m.start(0.1);
     // The page stalls: the audio clock moves 1.8 s with no timer firing.
     state.currentTime += 1.8;
+    const stalledAt = state.currentTime;
     const before = starts.length;
     vi.advanceTimersByTime(25);
+    run(state, 500);
     const late = starts.slice(before);
-    expect(late.length).toBeGreaterThanOrEqual(3);
-    for (const t of late) expect(t).toBeGreaterThanOrEqual(state.currentTime);
-    for (let i = 1; i < late.length; i++) expect(late[i]).toBeGreaterThanOrEqual(late[i - 1]);
-    // And the beats are still numbered in order.
+    expect(late.length).toBeGreaterThanOrEqual(1);
+    for (const t of late) expect(t).toBeGreaterThanOrEqual(stalledAt - 0.05);
+    // Every click is at its own instant, later than the one before, never stacked on `now`.
+    for (let i = 1; i < starts.length; i++) expect(starts[i]).toBeGreaterThan(starts[i - 1]);
+    // And on the original grid (10.1 + k * 0.5), so the beat after the stall is where it belongs.
+    for (const t of starts) expect((t - 10.1) / 0.5).toBeCloseTo(Math.round((t - 10.1) / 0.5), 6);
+    // The missed beats were skipped, not squeezed in.
+    expect(m.skipped()).toBeGreaterThanOrEqual(2);
     const times = m.beatTimes();
-    for (let i = 1; i < times.length; i++) expect(times[i]).toBeGreaterThanOrEqual(times[i - 1]);
+    for (let i = 1; i < times.length; i++) expect(times[i]).toBeGreaterThan(times[i - 1]);
+    // Accents stay on the downbeats of the grid: every click is the accent exactly when its grid
+    // index is a multiple of four.
+    starts.forEach((t, k) => {
+      const index = Math.round((t - 10.1) / 0.5);
+      expect(freqs[k]).toBe(index % 4 === 0 ? 1500 : 1000);
+    });
+    m.stop();
+  });
+
+  it('reports the skipped beats’ successors by their grid position (beat and bar)', () => {
+    const { ctx, state } = fakeContext();
+    const seen: [number, number, number][] = [];
+    const m = createMetronome(ctx, {
+      bpm: 120,
+      beatsPerBar: 3,
+      onBeat: (beat, bar, at) => seen.push([beat, bar, at]),
+    });
+    m.start(0.1);
+    state.currentTime += 3.2;
+    vi.advanceTimersByTime(25);
+    run(state, 500);
+    const [beat, bar] = seen.at(-1)!;
+    // 3.2 s on is 6 or 7 beats past the start: beat and bar come from the same grid index.
+    expect(bar * 3 + beat).toBeGreaterThanOrEqual(6);
+    expect(m.skipped()).toBeGreaterThanOrEqual(5);
+    expect(m.beatTimes()).toHaveLength(seen.length);
+    m.stop();
+  });
+
+  it('a click only a little late is still played, at now (not skipped)', () => {
+    const { ctx, state, starts } = fakeContext();
+    const m = createMetronome(ctx, { bpm: 120, beatsPerBar: 4 });
+    m.start(0.1);
+    // Beat 1 is due at 10.6; the timer is 20 ms late for it.
+    state.currentTime = 10.62;
+    vi.advanceTimersByTime(25);
+    expect(m.skipped()).toBe(0);
+    expect(starts[1]).toBeCloseTo(10.62, 6);
+    m.stop();
+  });
+
+  it('start resets the skipped count', () => {
+    const { ctx, state } = fakeContext();
+    const m = createMetronome(ctx, { bpm: 120, beatsPerBar: 4 });
+    m.start(0.1);
+    state.currentTime += 2;
+    vi.advanceTimersByTime(25);
+    expect(m.skipped()).toBeGreaterThan(0);
+    m.stop();
+    m.start(0.1);
+    expect(m.skipped()).toBe(0);
+    m.stop();
+  });
+
+  it('stop from inside onBeat ends the run: nothing more is scheduled, the click just scheduled is silenced', () => {
+    const { ctx, state, starts, oscillators } = fakeContext();
+    const m: ReturnType<typeof createMetronome> = createMetronome(ctx, {
+      bpm: 120,
+      beatsPerBar: 4,
+      onBeat: (beat, bar) => {
+        if (bar === 0 && beat === 2) m.stop();
+      },
+    });
+    m.start(0.1);
+    run(state, 3000);
+    expect(m.running).toBe(false);
+    expect(starts).toHaveLength(3);
+    expect(vi.getTimerCount()).toBe(0);
+    // Each click was cut: stop() called after the one that start() armed.
+    for (const osc of oscillators) expect(osc.stop).toHaveBeenCalledTimes(2);
+  });
+
+  it('stop from inside the very first onBeat leaves no timer', () => {
+    const { ctx, state, starts } = fakeContext();
+    const m: ReturnType<typeof createMetronome> = createMetronome(ctx, {
+      bpm: 120,
+      beatsPerBar: 4,
+      onBeat: () => m.stop(),
+    });
+    m.start(0.1);
+    run(state, 1000);
+    expect(starts).toHaveLength(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('count stops the clicks after that many, even when the stop comes late', () => {
+    const { ctx, state, starts } = fakeContext();
+    const m = createMetronome(ctx, { bpm: 120, beatsPerBar: 4, count: 6 });
+    m.start(0.1);
+    run(state, 8000);
+    expect(starts).toHaveLength(6);
+    expect(m.beatTimes()).toHaveLength(6);
+    m.stop();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('count also holds across a stall that jumps past it', () => {
+    const { ctx, state, starts } = fakeContext();
+    const m = createMetronome(ctx, { bpm: 120, beatsPerBar: 4, count: 4 });
+    m.start(0.1);
+    state.currentTime += 30;
+    vi.advanceTimersByTime(25);
+    expect(starts).toHaveLength(1);
     m.stop();
   });
 

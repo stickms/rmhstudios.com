@@ -9,8 +9,9 @@
  * - `beat` as each click is HEARD (the screen waits for the click's time), numbered from the
  *   first count-in click, 0;
  * - `tap` with the note event's own timestamp (never a clock read here or in a handler);
- * - `finished`, after the last beat and a short tail, with the scheduled time of each scored
- *   beat (`Metronome.beatTimes()`); `lost` when sound stops mid-run.
+ * - `finished`, after the last beat and a short tail ({@link tailMs}), with the scheduled time of
+ *   each scored beat (`Metronome.beatTimes()`); `lost` when sound stops mid-run, the tab is hidden
+ *   or the window left for long enough that timers throttle, or the run's beats are not all there.
  *
  * Every event but `start` carries or is checked against the run's `token`, so a late answer from a
  * run the learner abandoned (sound lost, Start pressed again) changes nothing.
@@ -20,7 +21,9 @@
  * not be lost. The count-in's earlier clicks ignore taps; `tapScore` ignores whatever falls more
  * than 200 ms before the first scored beat, so a tap on the last count-in click itself costs
  * nothing. `finished` is accepted once, in `tapping`, so the lesson completes exactly once however
- * many timers fire.
+ * many timers fire. **A finish with anything but all {@link BEATS} (finite) beat times is a run
+ * that did not happen** (a click was skipped by a stalled timer): it is treated as `lost`, never
+ * scored on the beats that happen to be there.
  */
 import { starsFor, type Stars } from '../scoring/stars';
 import { effectiveLatencyMs, tapScore } from '../scoring/timing';
@@ -35,6 +38,50 @@ export const BEATS = 16;
 export const BPM = 80;
 /** How long after the last scored beat the run waits for a late tap (ms). */
 export const TAIL_MS = 250;
+/**
+ * The longest the run waits after the last beat (ms): less than one beat (750 ms at {@link BPM}),
+ * so the run is stopped before the next click could sound. (The metronome is also told to
+ * schedule no click past the last, so this is the second lock on the same door.)
+ */
+export const MAX_TAIL_MS = 600;
+
+/**
+ * The wait after the last scored beat for a late tap: {@link TAIL_MS} and the learner's latency
+ * (a tap arrives that much after the beat it answers), capped at {@link MAX_TAIL_MS}.
+ */
+export function tailMs(profileLatencyMs: number): number {
+  return Math.min(MAX_TAIL_MS, TAIL_MS + Math.max(0, effectiveLatencyMs(profileLatencyMs)));
+}
+
+/**
+ * Whether the screen should still carry out `prepare` for `token` after an `await`: it must still be
+ * mounted (an unmounted lesson must not start sound), and the machine, read NOW from the runner,
+ * must still be preparing that very run (not lost, restarted or finished meanwhile).
+ */
+export function runStillWanted({
+  mounted,
+  state,
+  token,
+}: {
+  mounted: boolean;
+  state: State;
+  token: number;
+}): boolean {
+  return mounted && state.kind === 'preparing' && state.token === token;
+}
+
+/**
+ * The event that ends a run whose last beat has passed: `finished` with the scored beat times, or
+ * `lost` when they are not all there (`skipped` beats, or not {@link BEATS} of them).
+ */
+export function finishEvent(token: number, beats: readonly number[], skipped: number): Event {
+  return skipped > 0 || !allBeats(beats)
+    ? { type: 'lost', token }
+    : { type: 'finished', token, beats: [...beats] };
+}
+
+const allBeats = (beats: readonly number[]): boolean =>
+  beats.length === BEATS && beats.every(Number.isFinite);
 
 export type State =
   | { kind: 'ready' }
@@ -134,6 +181,7 @@ export function createTapBeatMachine(profileLatencyMs: number): Machine<State, E
       }
       case 'finished': {
         if (s.kind !== 'tapping' || s.token !== e.token) return same;
+        if (!allBeats(e.beats)) return step(s, { type: 'lost', token: e.token });
         const result = tapScore(e.beats, s.taps, latency);
         return {
           state: { kind: 'saving', token: s.token, attempt: 1, result },

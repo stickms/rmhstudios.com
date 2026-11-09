@@ -2,10 +2,14 @@
  * The 4/4-versus-3/4 lesson's sound: a bar pattern played by the metronome — {@link PATTERN_BARS}
  * bars of `beatsPerBar` clicks, the first of each bar accented, then one closing downbeat so the
  * last bar's length can be heard too — and the report that it has been HEARD, once, when that
- * last click has sounded. A pattern that was cancelled or replaced reports nothing, even if its
- * last click was already scheduled. Client-only; the context is handed in.
+ * last click has sounded. "Sounded" is when it leaves the speaker: the click's time, plus the
+ * context's output latency where the browser reports it, plus the click's own length. The
+ * metronome is told how many clicks the pattern has, so it can never schedule one past the last,
+ * however late the timer that reports "heard" (and stops it) fires. A pattern that was cancelled or
+ * replaced reports nothing, even if its last click was already scheduled. Client-only; the
+ * context is handed in.
  */
-import type { ClickContext } from './clicks';
+import { contextLatencyMs, type ClickContext } from './clicks';
 import { CLICK_S, createMetronome, type Metronome } from './metronome';
 
 /** Whole bars before the closing downbeat. */
@@ -54,13 +58,14 @@ export function createPatternPlayback({
       if (!audio || !ready()) return false;
       const mine = token;
       const clicks = PATTERN_BARS * beatsPerBar + 1;
-      let seen = 0;
       const m = createMetronome(audio, {
         bpm,
         beatsPerBar,
-        onBeat: (_beat, _bar, at) => {
-          if (++seen !== clicks) return;
-          // The last click: let it sound, then stop the metronome before it schedules another.
+        count: clicks,
+        onBeat: (beat, bar, at) => {
+          // By grid position, not by how many were scheduled: a skipped click does not shift it.
+          if (bar * beatsPerBar + beat !== clicks - 1) return;
+          // The last click: let it sound (and clear the speaker), then stop the metronome.
           timer = setTimeout(
             () => {
               if (token !== mine) return;
@@ -69,7 +74,7 @@ export function createPatternPlayback({
               metronome = null;
               onHeard(index);
             },
-            Math.max(0, at - performance.now()) + CLICK_S * 1000,
+            Math.max(0, at - performance.now()) + contextLatencyMs(audio) + CLICK_S * 1000,
           );
         },
       });

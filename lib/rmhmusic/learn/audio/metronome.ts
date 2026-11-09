@@ -6,9 +6,19 @@
  * that falls within the next {@link LOOKAHEAD_S} on `ctx.currentTime`, and the audio thread plays
  * each at its exact time. There is no `setInterval` (a chain of `setTimeout`s that re-arms itself,
  * so a slow tick delays the lookout, never a click) and the grid is computed from the start time,
- * never by adding the interval to itself, so there is no accumulated rounding drift. A timer that
- * fires late schedules the clicks it missed, in order, each no earlier than `ctx.currentTime`:
- * nothing is ever scheduled in the past, and the beats after the stall are back on the grid.
+ * never by adding the interval to itself, so there is no accumulated rounding drift.
+ *
+ * **A stalled timer.** Nothing is ever scheduled in the past. A click the timer was only a little
+ * late for (within {@link graceS}: 50 ms, at most a quarter of a beat) is played at once, at
+ * `ctx.currentTime`; its reported time is when it actually starts, so a score stays truthful. A
+ * click missed by more is SKIPPED, not squeezed in: playing every missed click at `currentTime`
+ * would stack them on one instant (one loud click) and put several equal entries in
+ * `beatTimes()`. The run does not re-anchor: the beat index continues on the original grid, so
+ * the clicks after the stall are evenly spaced from the first one back, and the accent still falls
+ * on the grid's downbeats (a bar is still `beatsPerBar` grid beats, skipped ones included).
+ * `onBeat` is not called for a skipped click, and `beatTimes()` holds only clicks that were
+ * scheduled, so its index is NOT the grid index after a skip: {@link Metronome.skipped} says whether
+ * that happened, and a caller that needs every beat (the tap lesson) drops a run that skipped one.
  *
  * **Nothing runs at rest.** Until `start()` there is no timer and no node; `stop()` clears the
  * timer and silences every click not yet played, and is safe to call twice. A lesson stops it on
@@ -62,6 +72,15 @@ export function beatIndexToPosition(
   return { beat: index % per, bar: Math.floor(index / per) };
 }
 
+/**
+ * How late a click may be and still be played (at once) rather than skipped (s): 50 ms, and at
+ * most a quarter of a beat, so the late click and the next one on the grid are never closer than
+ * three quarters of a beat, and never on the same instant.
+ */
+export function graceS(intervalS: number): number {
+  return Math.min(0.05, intervalS / 4);
+}
+
 /** The downbeat (beat 0 of a bar) is higher and louder than the others. */
 export function accentOf(beat: number): { freq: number; peak: number } {
   return beat === 0 ? { freq: 1500, peak: 0.4 } : { freq: 1000, peak: 0.25 };
@@ -70,6 +89,11 @@ export function accentOf(beat: number): { freq: number; peak: number } {
 export interface MetronomeOptions {
   bpm: number;
   beatsPerBar: number;
+  /**
+   * Stop scheduling after this many clicks on the grid (skipped ones count). The run stays
+   * `running` until `stop()`, but no click past the last can ever sound, however late `stop()` is.
+   */
+  count?: number;
   /** A click was scheduled: its beat in the bar, the bar, and its time (ms, performance clock). */
   onBeat?(beat: number, bar: number, at: number): void;
 }
@@ -80,13 +104,21 @@ export interface Metronome {
   /** Silence the clicks still to come and stop the timer; safe to call twice. */
   stop(): void;
   readonly running: boolean;
-  /** Every click of the run so far, ms on the `performance.now()` clock, in order. */
+  /**
+   * Every click scheduled so far, ms on the `performance.now()` clock, in order. After a skip its
+   * index is not the grid index (see {@link Metronome.skipped}).
+   */
   beatTimes(): number[];
+  /** Grid beats missed by a stalled timer and not played, since `start()`. */
+  skipped(): number;
 }
 
 export function createMetronome(ctx: ClickContext, opts: MetronomeOptions): Metronome {
   const intervalS = beatIntervalS(opts.bpm);
   const perBar = opts.beatsPerBar;
+  const grace = graceS(intervalS);
+  const count =
+    opts.count === undefined || Number.isNaN(opts.count) ? Infinity : Math.max(0, opts.count);
   let running = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let voices: ClickVoice[] = [];
@@ -94,8 +126,9 @@ export function createMetronome(ctx: ClickContext, opts: MetronomeOptions): Metr
   let offsetMs = 0;
   let startS = 0;
   let index = 0;
+  let skipped = 0;
 
-  /** Schedule click `index` on its grid time (or now, if the grid time has passed). */
+  /** Schedule click `index` on its grid time (or now, if it is only a little late). */
   const scheduleNext = () => {
     const at = Math.max(startS + index * intervalS, ctx.currentTime);
     const { beat, bar } = beatIndexToPosition(index, perBar);
@@ -115,9 +148,17 @@ export function createMetronome(ctx: ClickContext, opts: MetronomeOptions): Metr
 
   const tick = () => {
     if (!running) return;
-    const horizon = ctx.currentTime + LOOKAHEAD_S;
-    while (running && startS + index * intervalS < horizon) scheduleNext();
-    if (running) timer = setTimeout(tick, TIMER_MS);
+    const now = ctx.currentTime;
+    // Grid beats due before `now - grace` were missed: skip them (see the docblock).
+    const firstKept = Math.ceil((now - grace - startS) / intervalS - 1e-9);
+    if (firstKept > index) {
+      skipped += Math.min(firstKept, count) - index;
+      index = firstKept;
+    }
+    const horizon = now + LOOKAHEAD_S;
+    while (running && index < count && startS + index * intervalS < horizon) scheduleNext();
+    // Every click is scheduled: nothing left for the timer to do (stop() still clears the voices).
+    if (running && index < count) timer = setTimeout(tick, TIMER_MS);
   };
 
   return {
@@ -127,10 +168,11 @@ export function createMetronome(ctx: ClickContext, opts: MetronomeOptions): Metr
       voices = [];
       times = [];
       index = 0;
+      skipped = 0;
       offsetMs = clockOffsetMs(ctx);
       startS = ctx.currentTime + (Number.isFinite(leadS) ? Math.max(0, leadS) : LEAD_S);
       // The first click is always scheduled now, so its time is known to the caller at once.
-      scheduleNext();
+      if (count > 0) scheduleNext();
       tick();
     },
     stop() {
@@ -152,5 +194,6 @@ export function createMetronome(ctx: ClickContext, opts: MetronomeOptions): Metr
       return running;
     },
     beatTimes: () => [...times],
+    skipped: () => skipped,
   };
 }

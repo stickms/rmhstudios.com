@@ -131,6 +131,32 @@ describe('4/4 versus 3/4', () => {
     expect(runner.get()).toMatchObject({ kind: 'feedback', right: false });
   });
 
+  it('"played" after a replay opens the answers once and changes nothing the second time', () => {
+    const { runner, send } = make();
+    send({ type: 'replay' });
+    send({ type: 'replay' });
+    expect(runner.get()).toMatchObject({ kind: 'asking', heard: false });
+    send({ type: 'played', index: 0 });
+    expect(runner.get()).toMatchObject({ kind: 'asking', heard: true });
+    const heard = runner.get();
+    // A replay of a question already heard leaves it open; its "played" is a no-op.
+    send({ type: 'replay' });
+    send({ type: 'played', index: 0 });
+    expect(runner.get()).toBe(heard);
+  });
+
+  it('a "played" for the question before, or after the answer, is ignored', () => {
+    const { runner, send } = make();
+    send({ type: 'played', index: 0 });
+    send({ type: 'answer', answer: { beatsPerBar: 3 } });
+    const fb = runner.get();
+    send({ type: 'played', index: 0 });
+    expect(runner.get()).toBe(fb);
+    send({ type: 'next' });
+    send({ type: 'played', index: 0 });
+    expect(runner.get()).toMatchObject({ kind: 'asking', index: 1, heard: false });
+  });
+
   it('the next question starts unheard; the lesson completes once, scored from the answers', () => {
     const { runner, send, effects } = make();
     send({ type: 'played', index: 0 });

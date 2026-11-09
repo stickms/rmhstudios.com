@@ -2,8 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { createRunner } from './runner';
 import {
   BEATS,
+  BPM,
   COUNT_IN,
+  MAX_TAIL_MS,
+  TAIL_MS,
   createTapBeatMachine,
+  finishEvent,
+  runStillWanted,
+  tailMs,
   type Effect,
   type Event,
   type State,
@@ -185,6 +191,106 @@ describe('tap-beat machine', () => {
     expect(t.state().kind).toBe('no-audio');
     t.send({ type: 'start' });
     expect(t.state()).toMatchObject({ kind: 'preparing', token: 2 });
+  });
+
+  it('sound lost while preparing drops the run; a late "prepared: ok" for it changes nothing', () => {
+    const t = start();
+    t.send({ type: 'start' });
+    t.send({ type: 'lost', token: 1 });
+    expect(t.state()).toMatchObject({ kind: 'no-audio', lost: true, token: 1 });
+    expect(t.effects).toContainEqual({ type: 'stop-audio' });
+    const s = t.state();
+    t.send({ type: 'prepared', token: 1, ok: true });
+    expect(t.state()).toBe(s);
+    t.send({ type: 'beat', token: 1, beat: 0 });
+    expect(t.state()).toBe(s);
+  });
+
+  it('sound lost while counting in drops the run', () => {
+    const t = start();
+    t.send({ type: 'start' });
+    t.send({ type: 'prepared', token: 1, ok: true });
+    t.send({ type: 'beat', token: 1, beat: 0 });
+    t.send({ type: 'lost', token: 1 });
+    expect(t.state()).toMatchObject({ kind: 'no-audio', lost: true });
+    // The count-in's later clicks and the finish of the abandoned run do nothing.
+    t.send({ type: 'beat', token: 1, beat: COUNT_IN - 1 });
+    t.send({ type: 'finished', token: 1, beats: GRID });
+    expect(t.state().kind).toBe('no-audio');
+    expect(t.effects.filter((e) => e.type === 'complete')).toHaveLength(0);
+  });
+
+  it('a lost run, started again, ignores the first run’s "prepared: ok" (second one after lost)', () => {
+    const t = start();
+    t.send({ type: 'start' });
+    t.send({ type: 'prepared', token: 1, ok: true });
+    t.send({ type: 'lost', token: 1 });
+    t.send({ type: 'start' });
+    expect(t.state()).toMatchObject({ kind: 'preparing', token: 2 });
+    // A second "prepared" for the dropped run, arriving now, is not the new run’s.
+    t.send({ type: 'prepared', token: 1, ok: true });
+    expect(t.state()).toMatchObject({ kind: 'preparing', token: 2 });
+    t.send({ type: 'prepared', token: 2, ok: true });
+    expect(t.state()).toMatchObject({ kind: 'counting-in', token: 2 });
+    // And a repeat of the right one adds nothing.
+    const s = t.state();
+    t.send({ type: 'prepared', token: 2, ok: true });
+    expect(t.state()).toBe(s);
+  });
+
+  it('a run that finishes with fewer than 16 beats is a lost run, not a score', () => {
+    for (const beats of [
+      GRID.slice(0, 15),
+      [],
+      [...GRID, 99_999],
+      GRID.map((b, i) => (i === 3 ? NaN : b)),
+    ]) {
+      const t = toTapping();
+      for (const b of GRID) t.send({ type: 'tap', time: b });
+      t.send({ type: 'finished', token: 1, beats });
+      expect(t.state()).toMatchObject({ kind: 'no-audio', lost: true });
+      expect(t.effects).toContainEqual({ type: 'stop-audio' });
+      expect(t.effects.filter((e) => e.type === 'complete')).toHaveLength(0);
+    }
+  });
+
+  it('the finishing tail is bounded below one beat at the run’s tempo', () => {
+    expect(tailMs(0)).toBe(TAIL_MS + 40);
+    expect(tailMs(80)).toBe(TAIL_MS + 80);
+    expect(tailMs(-50)).toBe(TAIL_MS);
+    // A wild saved latency cannot push the stop past the next click.
+    expect(tailMs(500)).toBe(MAX_TAIL_MS);
+    expect(tailMs(Number.NaN)).toBeLessThanOrEqual(MAX_TAIL_MS);
+    expect(MAX_TAIL_MS).toBeLessThan(60_000 / BPM);
+  });
+
+  it('finishEvent is a finish for all sixteen beats and a lost run for anything less', () => {
+    expect(finishEvent(2, GRID, 0)).toEqual({ type: 'finished', token: 2, beats: GRID });
+    expect(finishEvent(2, GRID.slice(1), 0)).toEqual({ type: 'lost', token: 2 });
+    // A beat the metronome skipped makes the times a different run than the grid.
+    expect(finishEvent(2, GRID, 1)).toEqual({ type: 'lost', token: 2 });
+  });
+
+  it('a run that was prepared after the screen left (unmounted, or no longer this run) is not wanted', () => {
+    const preparing = { kind: 'preparing', token: 3 } as const;
+    expect(runStillWanted({ mounted: true, state: preparing, token: 3 })).toBe(true);
+    expect(runStillWanted({ mounted: false, state: preparing, token: 3 })).toBe(false);
+    expect(runStillWanted({ mounted: true, state: preparing, token: 2 })).toBe(false);
+    expect(runStillWanted({ mounted: true, state: { kind: 'ready' }, token: 3 })).toBe(false);
+    expect(
+      runStillWanted({
+        mounted: true,
+        state: { kind: 'no-audio', token: 3, lost: true },
+        token: 3,
+      }),
+    ).toBe(false);
+    expect(
+      runStillWanted({
+        mounted: true,
+        state: { kind: 'counting-in', token: 3, beat: -1 },
+        token: 3,
+      }),
+    ).toBe(false);
   });
 
   it('is a plain Machine value the runner can hold', () => {
