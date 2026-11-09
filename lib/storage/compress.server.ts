@@ -49,11 +49,25 @@
  * Their size ceiling lives in `lib/media/voice-policy.ts`.
  */
 
-import sharp from 'sharp';
+import type sharpType from 'sharp';
 import { brotliCompress, constants as zlibConstants } from 'node:zlib';
 import { promisify } from 'node:util';
 
 const brotli = promisify(brotliCompress);
+
+// sharp (a native addon, ~9 MB RSS) loads on the first image that needs it, not at import: this module
+// sits under every storage write, so any process that imports the storage layer (the `jobs` worker
+// included) would otherwise carry sharp whether or not it ever re-encodes a PNG or WebP.
+let sharpModule: Promise<typeof sharpType> | null = null;
+function loadSharp(): Promise<typeof sharpType> {
+  sharpModule ??= import('sharp')
+    .then((m) => m.default)
+    .catch((e) => {
+      sharpModule = null; // a failed load is not cached
+      throw e;
+    });
+  return sharpModule;
+}
 
 export interface CompressedPayload {
   body: Buffer;
@@ -94,12 +108,14 @@ async function compressPng(input: Buffer): Promise<Buffer> {
   //
   // `effort` is left at sharp's default (7). Level 10 costs several times the
   // CPU for a fraction of a percent, and this runs on the request path.
+  const sharp = await loadSharp();
   return sharp(input)
     .png({ compressionLevel: 9, adaptiveFiltering: true })
     .toBuffer();
 }
 
 async function compressWebp(input: Buffer): Promise<Buffer> {
+  const sharp = await loadSharp();
   return sharp(input).webp({ lossless: true, effort: 6 }).toBuffer();
 }
 
@@ -188,7 +204,7 @@ export async function compressForStorage(
 
     if (type === 'image/webp') {
       // An animated WebP would lose its frames through this path.
-      const meta = await sharp(body).metadata();
+      const meta = await (await loadSharp())(body).metadata();
       if ((meta.pages ?? 1) > 1) return unchanged;
       const out = await compressWebp(body);
       return out.length < body.length ? { body: out, contentType } : unchanged;

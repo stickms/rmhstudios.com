@@ -41,10 +41,18 @@ import type { CoatClock, GlobeThemeCss } from './globe-protocol';
 import {
   GlobeEngagement,
   engagedRate,
+  GLOBE_SCROLL_HOLD_MS,
   isDirectlyEngaged,
   pointerNear,
   type GlobeBox,
 } from './globe-engagement';
+import {
+  SCROLL_TRACK_HOLD_MS,
+  VIEWPORT_TRACK_HOLD_MS,
+  ballCentreY,
+  trackStep,
+  type TrackState,
+} from './globe-scroll-track';
 import { currentScene, onSceneChange } from '@/lib/liquid/glass/scene-store';
 import { PLASMA_LOOK } from '@/lib/liquid/glass/policy';
 import {
@@ -134,6 +142,8 @@ const SETTLE_SPRING = spring(0.62, 0.1);
  * `--globe-coat-fade` in radial.css: the timer flips `data-globe-coat` to `on` as the transition lands.
  */
 const COAT_FADE_MS = 420;
+/** After the last scroll or toolbar move, how long before the picture is re-placed from a real layout read, ms. */
+const PLACE_SETTLE_MS = 140;
 /** After the skin's chunk lands, how long before its GPU program is warmed (off the page's first busy second). */
 const SKIN_WARM_MS = 2500;
 /** A docked globe's spin kick per pixel scrolled (deg/s), and the most a scroll can add to it. */
@@ -827,6 +837,8 @@ export function LiquidGlobe({
   const pointerAtGlobe = useRef(false);
   /** Keyboard focus is inside the zone (focus-visible, or a key pressed there) — a mouse click's focus does not count. */
   const keyFocus = useRef(false);
+  /** The page is scrolling and kicking the docked globe's spin (`GLOBE_SCROLL_HOLD_MS` after the last kick). */
+  const scrolling = useRef(false);
   /**
    * The window has focus. Kept from `focus`/`blur` (seeded once from `document.hasFocus()`), so the frame loop and the
    * clock state never call `document.hasFocus()` per frame.
@@ -938,6 +950,7 @@ export function LiquidGlobe({
       near: pointerAtGlobe.current,
       pressed: d.active || d.held,
       focused: keyFocus.current,
+      scrolling: scrolling.current,
     });
     if (!engagement.update(now, direct)) return;
     postClock.current();
@@ -1117,15 +1130,47 @@ export function LiquidGlobe({
        host clones it and transfers the clone to the worker, where the coat samples it through a ball-lens model at the
        hub's own blur. Placing it reads layout, so it happens when the globe attaches, resizes, finishes blooming, or a
        new picture lands, never per frame. */
+    /* Where the ball was when it was last measured, and how tall the visual viewport was then. The phone dock is
+       bottom-anchored, so from these a placement needs no layout read (`./globe-scroll-track.ts`). */
+    let geom: { cx: number; cy: number; r: number; vvH: number } | null = null;
+    const dockEl = stage?.closest('.radial-hub__dock') ?? null;
+    const hubEl = stage?.closest('.radial-hub') ?? null;
+    /** Docked on the phone orb (fixed, bottom-anchored), not the open hub or the desktop rail's sticky dock. */
+    const fastDocked = () => dockEl !== null && hubEl?.getAttribute('data-phase') === 'closed';
+    /**
+     * Re-place the picture from the last measured ball and the viewport's height now, at scroll offset `y`: posted
+     * straight from the event, no frame wait and no forced layout. False when this globe cannot (not docked on the
+     * phone orb, nothing measured, no picture), and the caller uses the measured path.
+     */
+    const placeFast = (y: number): boolean => {
+      const g = coatHost.current;
+      const scene = currentScene();
+      if (cancelled || !g || !scene || !geom || !fastDocked()) return false;
+      const vvH = window.visualViewport?.height ?? window.innerHeight;
+      g.place(
+        geom.cx,
+        ballCentreY(geom.cy, geom.vvH, vvH),
+        geom.r,
+        window.scrollX - scene.scrollX,
+        y - scene.scrollY,
+      );
+      return true;
+    };
     const attachScene = (g: GlobeWorkerHost) => {
       const scene = currentScene();
       g.scene(scene);
       if (!stage || !scene) return;
       const rect = stage.getBoundingClientRect();
+      geom = {
+        cx: rect.left + rect.width / 2,
+        cy: rect.top + rect.height / 2,
+        r: sizeRef.current / 2,
+        vvH: window.visualViewport?.height ?? window.innerHeight,
+      };
       g.place(
-        rect.left + rect.width / 2,
-        rect.top + rect.height / 2,
-        sizeRef.current / 2,
+        geom.cx,
+        geom.cy,
+        geom.r,
         window.scrollX - scene.scrollX,
         window.scrollY - scene.scrollY,
       );
@@ -1152,7 +1197,43 @@ export function LiquidGlobe({
     // A docked globe stays put while the page moves under it, so the picture it
     // refracts has to be re-placed with the scroll — once per frame at most.
     let scrollRaf = 0;
+    let scrollIdle = 0;
+    let placeSettle = 0;
     let lastScrollY = window.scrollY;
+    const settlePlacement = () => {
+      window.clearTimeout(placeSettle);
+      placeSettle = window.setTimeout(refreshScene, PLACE_SETTLE_MS);
+    };
+    /* The picture is placed once per DISPLAY FRAME while the page or Safari's toolbar is moving, from a read of the
+       scroll offset and the visual viewport's height in that frame (neither forces layout), not once per event:
+       Safari delivers scroll events unevenly and the toolbar's animation with one resize event and none after, so
+       placing from events stepped the picture. The loop starts on an event, extends itself while anything still
+       moves, and stops; at rest nothing runs. */
+    const track: TrackState = {
+      lastY: window.scrollY,
+      lastT: performance.now(),
+      lastVv: window.visualViewport?.height ?? window.innerHeight,
+      until: 0,
+    };
+    let trackRaf = 0;
+    const trackTick = (now: number) => {
+      trackRaf = 0;
+      const vvH = window.visualViewport?.height ?? window.innerHeight;
+      const { ahead, keep } = trackStep(track, window.scrollY, vvH, now);
+      // Not docked on the phone orb (or no picture yet): the measured path owns placement.
+      if (!placeFast(ahead)) return;
+      if (keep) trackRaf = requestAnimationFrame(trackTick);
+      else settlePlacement();
+    };
+    const startTracking = (holdMs: number) => {
+      track.until = Math.max(track.until, performance.now() + holdMs);
+      if (!trackRaf) trackRaf = requestAnimationFrame(trackTick);
+    };
+    const endScrolling = () => {
+      scrollIdle = 0;
+      scrolling.current = false;
+      syncEngagement.current(performance.now());
+    };
     const onScroll = () => {
       // A docked globe turns with the page: scrolling kicks its spin about the vertical, and the free coast (step 1b)
       // carries it on and slows it. Read in the scroll event, where layout is clean.
@@ -1163,6 +1244,20 @@ export function LiquidGlobe({
         const w = rot.current.w;
         w[1] = Math.max(-SCROLL_SPIN_MAX, Math.min(SCROLL_SPIN_MAX, w[1]! + dy * SCROLL_SPIN));
         wakeLoop.current();
+        // The spin this scroll just kicked is advanced on the ambient tick: hold the engaged rate while it is turning,
+        // so the globe does not step at the idle floor while the page (and Safari's toolbar) moves.
+        if (scrollIdle) clearTimeout(scrollIdle);
+        scrollIdle = window.setTimeout(endScrolling, GLOBE_SCROLL_HOLD_MS);
+        if (!scrolling.current) {
+          scrolling.current = true;
+          syncEngagement.current(performance.now());
+        }
+      }
+      // On the phone dock the picture is placed every frame while this lasts (the tracker above); a real measured
+      // placement follows once it has rested. Anywhere else, the measured path below.
+      if (fastDocked()) {
+        startTracking(SCROLL_TRACK_HOLD_MS);
+        return;
       }
       if (scrollRaf) return;
       scrollRaf = requestAnimationFrame(() => {
@@ -1171,6 +1266,13 @@ export function LiquidGlobe({
       });
     };
     if (ambient) window.addEventListener('scroll', onScroll, { passive: true });
+    // Safari's toolbar growing and shrinking moves the bottom-anchored ball against the page with no scroll: the same
+    // synchronous placement, from the visual viewport's height.
+    const onViewport = () => {
+      if (fastDocked()) startTracking(VIEWPORT_TRACK_HOLD_MS);
+    };
+    const visual = ambient ? window.visualViewport : null;
+    visual?.addEventListener('resize', onViewport);
     const stopScene = onSceneChange(refreshScene);
     /** The theme's tokens, as computed-style STRINGS: the worker resolves them to numbers, nothing reads a canvas. */
     const readTheme = (el: HTMLElement): GlobeThemeCss => {
@@ -1290,7 +1392,12 @@ export function LiquidGlobe({
       globeRoot?.removeEventListener('transitionend', onGrowEnd as EventListener);
       window.removeEventListener('resize', refreshScene);
       window.removeEventListener('scroll', onScroll);
+      visual?.removeEventListener('resize', onViewport);
+      window.clearTimeout(placeSettle);
+      cancelAnimationFrame(trackRaf);
       cancelAnimationFrame(scrollRaf);
+      if (scrollIdle) clearTimeout(scrollIdle);
+      scrolling.current = false;
       observer.disconnect();
       stopHost?.();
       detach();

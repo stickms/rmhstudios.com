@@ -385,7 +385,8 @@ through `drive(fn)`), one window pointer listener fan-out, one overlay canvas
 to one host's `::after`; nothing is promoted to a compositor layer at rest. The
 only ambient clock left is the liquid globe's: it draws in a
 worker (`components/radial/globe-worker.ts`)
-at 60 Hz when you are engaged with the globe, a 15 Hz floor otherwise (30 / 7 on
+at 60 Hz when you are engaged with the globe (a pointer at it, a press, keyboard focus,
+or the page scrolling under it and kicking its spin), a 15 Hz floor otherwise (30 / 7 on
 handhelds), and 0 when the tab is hidden or unfocused, the globe is off screen,
 the tier is degraded, or Jelly motion is Still (`JELLY_BUDGETS` in
 `lib/jelly/tiers.ts`). The page snapshot the globe refracts is taken only on load,

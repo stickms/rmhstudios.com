@@ -128,18 +128,18 @@ async function loadBatch(
     case 'news': {
       const rows = await prisma.newsArticle.findMany({
         where: cursor,
-        select: { id: true, title: true, summary: true },
+        select: { id: true, title: true, description: true },
         ...page,
       });
-      return rows.map((r) => ({ id: r.id, text: `${r.title}\n${r.summary ?? ''}` }));
+      return rows.map((r) => ({ id: r.id, text: `${r.title}\n${r.description}` }));
     }
     case 'blog': {
       const rows = await prisma.blogPost.findMany({
         where: cursor,
-        select: { id: true, title: true, excerpt: true },
+        select: { id: true, title: true, description: true },
         ...page,
       });
-      return rows.map((r) => ({ id: r.id, text: `${r.title}\n${r.excerpt ?? ''}` }));
+      return rows.map((r) => ({ id: r.id, text: `${r.title}\n${r.description}` }));
     }
     case 'build': {
       const rows = await prisma.userBuild.findMany({

@@ -24,7 +24,11 @@ import { isIP } from 'node:net';
 // undici ships as a transitive dependency (Node's global fetch uses an OLDER,
 // internal copy that is NOT importable, so we use undici's own fetch/Agent here
 // — the two versions are not dispatcher-compatible).
-import { Agent, fetch as undiciFetch } from 'undici';
+//
+// Loaded on first use, not at import: undici is ~110 modules and ~9 MB RSS, and this module is
+// imported (through push/webhook helpers) by processes that mostly never make a guarded request —
+// the idle `jobs` worker among them.
+import type { Agent, fetch as UndiciFetch } from 'undici';
 
 export class SsrfError extends Error {
   constructor(message: string) {
@@ -146,7 +150,7 @@ async function assertSafeUrl(urlStr: string, opts: SafeFetchOptions): Promise<Pi
 }
 
 /** The Response type undici's fetch returns (WHATWG-compatible with the global). */
-type PinnedResponse = Awaited<ReturnType<typeof undiciFetch>>;
+type PinnedResponse = Awaited<ReturnType<typeof UndiciFetch>>;
 
 /**
  * Hand the pinned response back to the caller as a standard `Response`, tearing
@@ -196,7 +200,8 @@ export async function safeFetch(urlStr: string, opts: SafeFetchOptions = {}): Pr
   // here, so undici connects to that exact IP instead of re-resolving DNS on its
   // own (which would reopen the rebinding TOCTOU this guard exists to close).
   const pinnedHosts = new Map<string, PinnedTarget>();
-  const dispatcher = new Agent({
+  const { Agent: UndiciAgent, fetch: undiciFetch } = await import('undici');
+  const dispatcher = new UndiciAgent({
     connect: {
       // undici's lookup shim mirrors dns.lookup(hostname, { all: true }, cb).
       lookup: (hostname, _lookupOpts, cb) => {
@@ -229,7 +234,7 @@ export async function safeFetch(urlStr: string, opts: SafeFetchOptions = {}): Pr
           redirect: 'manual',
           signal: controller.signal,
           dispatcher,
-        } as Parameters<typeof undiciFetch>[1]);
+        } as Parameters<typeof UndiciFetch>[1]);
       } finally {
         clearTimeout(timer);
       }

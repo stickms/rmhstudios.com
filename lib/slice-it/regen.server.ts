@@ -238,7 +238,9 @@ export async function registerRegenCron(boss: {
   await boss.createQueue(REGEN_QUEUE);
   // :17 rather than :00 — every other cron in this process fires on the hour,
   // and stacking a decode-heavy sweep on top of the outbox drain and the
-  // rarity rollup is how a scheduled job becomes an incident.
+  // rarity rollup is how a scheduled job becomes an incident. (The jobs worker
+  // runs it at :47 — `server/jobs/queue-policy.ts` — because platform.maintenance
+  // also fires at :17, and this is the decode-heavy one.)
   await boss.schedule(REGEN_QUEUE, REGEN_CRON, {}, { tz: 'UTC' });
   await boss.work(REGEN_QUEUE, async () => {
     const result = await backfillStaleCharts(60);
