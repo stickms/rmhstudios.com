@@ -11,6 +11,10 @@ describe('starsFor', () => {
     [60, 1],
     [59, 0],
     [0, 0],
+    [NaN, 0],
+    [-5, 0],
+    [-Infinity, 0],
+    [250, 3],
   ] as const)('score %i → %i stars', (score, stars) => {
     expect(starsFor(score)).toBe(stars);
   });
@@ -23,5 +27,15 @@ describe('scoreFrom', () => {
   });
   it('is 0 with nothing attempted', () => {
     expect(scoreFrom(0, 0)).toBe(0);
+  });
+  it('is 0 for NaN, negative or non-finite inputs', () => {
+    const odd = [NaN, -1, Infinity, -Infinity];
+    for (const a of odd) expect(scoreFrom(a, 10)).toBe(0);
+    for (const b of odd) expect(scoreFrom(5, b)).toBe(0);
+    expect(scoreFrom(Infinity, Infinity)).toBe(0);
+    expect(scoreFrom(NaN, NaN)).toBe(0);
+  });
+  it('caps an over-count at 100', () => {
+    expect(scoreFrom(12, 10)).toBe(100);
   });
 });
