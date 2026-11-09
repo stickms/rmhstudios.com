@@ -418,6 +418,36 @@ const WORD = 'RMH Music';
 let WM = { left: 0, right: 0, ascent: 0, descent: 0 };
 
 /**
+ * Great Vibes' capital H is a wide, looped letter: set in one run it dwarfs the R and M and its
+ * left loop crowds the M. So the word is laid out piece by piece — each piece's advance and ink
+ * measured in Chromium — with the H narrowed horizontally and the joins spaced by hand (em/1000
+ * of the font size). `sx` scales a piece about its pen origin; `gap` follows it.
+ */
+const PIECES_OF_WORD = [
+  { text: 'R', sx: 1, gap: 20 },
+  { text: 'M', sx: 1, gap: 30 },
+  { text: 'H', sx: 0.8, gap: 170 },
+  { text: 'Music', sx: 1, gap: 0 },
+];
+/** Filled by main(): [{ text, x, sx }] in em, plus the ink box. */
+let LAYOUT = [];
+
+function layoutWord(measured) {
+  let pen = 0;
+  let minL = Infinity;
+  let maxR = -Infinity;
+  LAYOUT = PIECES_OF_WORD.map((p, i) => {
+    const m = measured[i];
+    const x = pen;
+    minL = Math.min(minL, x - m.left * p.sx);
+    maxR = Math.max(maxR, x + m.right * p.sx);
+    pen += m.advance * p.sx + p.gap / 1000;
+    return { text: p.text, x, sx: p.sx };
+  });
+  return { left: -minL, right: maxR };
+}
+
+/**
  * The wordmark fitted to `width` of ink, centred on `cx`, baseline `y`; an optional cream halo so
  * it reads on dark and light grounds. Returns the markup and the ink box.
  */
@@ -427,7 +457,14 @@ function wordmark(cx, y, width, { halo = 0 } = {}) {
   // text-anchor start at x: ink spans x - left·size … x + right·size.
   const x = cx - width / 2 + WM.left * size;
   const t = (extra) =>
-    `<text x="${f(x)}" y="${f(y)}" font-family="Great Vibes" font-size="${f(size)}" ${extra}>${WORD}</text>`;
+    LAYOUT.map((p) => {
+      const px = x + p.x * size;
+      const tf =
+        p.sx === 1
+          ? ''
+          : ` transform="translate(${f(px)} 0) scale(${p.sx} 1) translate(${f(-px)} 0)"`;
+      return `<text x="${f(px)}" y="${f(y)}"${tf} font-family="Great Vibes" font-size="${f(size)}" ${extra}>${p.text}</text>`;
+    }).join('');
   // A hairline of ink round the fill gives the thin script a fountain pen's weight.
   const weight = size * 0.012;
   const haloSvg = halo
@@ -597,20 +634,30 @@ async function measureWordmark(browser, tmp) {
   );
   const page = await browser.newPage();
   await page.goto(pathToFileURL(file).href);
-  const m = await page.evaluate(async (word) => {
-    await document.fonts.load("400 1000px 'Great Vibes'");
-    const ctx = document.createElement('canvas').getContext('2d');
-    ctx.font = "400 1000px 'Great Vibes'";
-    const t = ctx.measureText(word);
-    return {
-      left: t.actualBoundingBoxLeft / 1000,
-      right: t.actualBoundingBoxRight / 1000,
-      ascent: t.actualBoundingBoxAscent / 1000,
-      descent: t.actualBoundingBoxDescent / 1000,
-    };
-  }, WORD);
+  const m = await page.evaluate(
+    async ({ word, pieces }) => {
+      await document.fonts.load("400 1000px 'Great Vibes'");
+      const ctx = document.createElement('canvas').getContext('2d');
+      ctx.font = "400 1000px 'Great Vibes'";
+      const t = ctx.measureText(word);
+      return {
+        ascent: t.actualBoundingBoxAscent / 1000,
+        descent: t.actualBoundingBoxDescent / 1000,
+        pieces: pieces.map((p) => {
+          const q = ctx.measureText(p);
+          return {
+            advance: q.width / 1000,
+            left: q.actualBoundingBoxLeft / 1000,
+            right: q.actualBoundingBoxRight / 1000,
+          };
+        }),
+      };
+    },
+    { word: WORD, pieces: PIECES_OF_WORD.map((p) => p.text) },
+  );
   await page.close();
-  return m;
+  const ink = layoutWord(m.pieces);
+  return { ...ink, ascent: m.ascent, descent: m.descent };
 }
 
 async function main() {
