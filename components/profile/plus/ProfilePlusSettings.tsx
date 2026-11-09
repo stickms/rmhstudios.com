@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSession } from '@/components/Providers';
 import { SettingsSection } from '@/components/settings/SettingsSection';
@@ -34,7 +34,7 @@ export default function ProfilePlusSettings() {
           'Everything here is optional, and each piece appears on your profile only once you set it.',
       })}
     >
-      <LiquidTabs
+      <Tabs
         aria-label={t('plus-sections', { defaultValue: 'Profile sections' })}
         tabs={[
           { id: 'about', label: t('tab-about', { defaultValue: 'About you' }) },

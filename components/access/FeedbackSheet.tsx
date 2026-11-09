@@ -8,7 +8,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { FEEDBACK_CATEGORIES, type FeedbackCategory } from '@/lib/feedback-schema';
@@ -70,7 +70,7 @@ export function FeedbackSheet({
           </SheetDescription>
         </SheetHeader>
         <div className="space-y-3 px-1 pb-2">
-          <LiquidTabs
+          <Tabs
             tabs={FEEDBACK_CATEGORIES.map((c) => ({ id: c, label: labels[c] }))}
             value={category}
             onChange={(id) => setCategory(id as FeedbackCategory)}

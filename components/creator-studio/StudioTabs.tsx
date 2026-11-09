@@ -9,7 +9,7 @@
  * linking someone to Earnings meant sending `/create?tab=earnings`, and
  * `/create` paid for the Pages gallery no matter which tab you actually opened.
  *
- * So this is LiquidTabs LINK mode (§16.2), the same shape as `CatalogTabs` and
+ * So this is Tabs LINK mode (§16.2), the same shape as `CatalogTabs` and
  * the RMHLadder sub-nav: real `<Link>` tabs, crawlable and prefetched, the
  * active one marked `aria-current="page"`. A strip that switches routes is
  * navigation, not a radiogroup, so it must not claim `role="tab"` /
@@ -21,7 +21,7 @@ import { Link } from '@tanstack/react-router';
 import { FileText, Boxes, Bot, Coins } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageTabs } from '@/components/feed/PageTabs';
-import type { LiquidTab } from '@/components/ui/liquid-tabs';
+import type { TabItem } from '@/components/ui/tabs';
 
 /** The tab paths, in strip order. `/create` is Pages — the hub's index. */
 export const STUDIO_TAB_PATHS = [
@@ -35,7 +35,7 @@ export type StudioTabPath = (typeof STUDIO_TAB_PATHS)[number];
 export function StudioTabs({ active }: { active: StudioTabPath }) {
   const { t } = useTranslation('feed');
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     { id: '/create', label: t('studio-tab-pages', { defaultValue: 'Pages' }), icon: FileText },
     {
       id: '/create/builds',
@@ -60,7 +60,7 @@ export function StudioTabs({ active }: { active: StudioTabPath }) {
       value={active}
       aria-label={t('create', { defaultValue: 'Create' })}
       renderTab={(tab, props) => (
-        // A bare <Link> wearing LiquidTabs' own tab class, so a route tab is
+        // A bare <Link> wearing Tabs' own tab class, so a route tab is
         // pixel-identical to every tablist-mode strip; `min-h-11` holds the 44px
         // touch target. `props.children` is the pre-composed icon + label.
         <Link

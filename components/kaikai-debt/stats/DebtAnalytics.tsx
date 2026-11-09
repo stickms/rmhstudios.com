@@ -28,7 +28,7 @@
  * screen or in a background tab, so the tab strip is the coarse control and the
  * observers are the fine one.)
  *
- * The strip is `<LiquidTabs>`, which is the site's only sanctioned tab strip.
+ * The strip is `<Tabs>`, which is the site's only sanctioned tab strip.
  */
 
 import { useMemo, useState } from 'react';
@@ -43,7 +43,7 @@ import {
   type DebtStats,
 } from '@/lib/kaikai-debt/stats';
 import type { CreditInputs } from '@/lib/kaikai-debt/credit';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Legend, useChartClock, useToggleSet } from './chart-kit';
@@ -226,7 +226,7 @@ export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
         />
       </div>
 
-      <LiquidTabs
+      <Tabs
         idBase="kd-analytics"
         value={tab}
         onChange={(id) => setTab(id as TabId)}

@@ -478,7 +478,7 @@ frame's layout.
 restyle the 10-09 audit suspected measured small here (~20–25ms of style over
 ~480 elements, inside a `/games → /communities` switch whose longest frame is
 ~75–85ms, against ~75ms from a light page). The measurable part of the
-teardown is framer-motion's layout projection: the `LiquidTabs` thumb is a
+teardown is framer-motion's layout projection: the `Tabs` thumb is a
 `layoutId` element, and its unmount (`willUpdate`) and the follow-up
 projection pass measure layout (`measureScroll`, 16–38ms self time at 4×).
 That is the CSS-only-thumb item the 10-09 audit already listed; see _Not done_.
@@ -593,7 +593,7 @@ the ratios held.
 
 ### Not done
 
-- **A CSS-only `LiquidTabs` thumb.** framer-motion's `layoutId` projection is the
+- **A CSS-only `Tabs` thumb.** framer-motion's `layoutId` projection is the
   measurable part of leaving `/games` (and of mounting any tab strip): it
   measures layout on mount and unmount. Replacing it with a thumb that only
   measures on a user's tab change (FLIP via WAAPI) touches every tab strip on

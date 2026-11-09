@@ -1,7 +1,7 @@
 /** The mod tools tab: queue, AutoMod, flairs, settings, onboarding, related, and (private communities) requests and invites. */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { ModAutomod } from '@/components/communities/ModAutomod';
 import { ModFlairs } from '@/components/communities/ModFlairs';
 import { ModInvites } from '@/components/communities/ModInvites';
@@ -26,7 +26,7 @@ export default function ModPanel({
 }) {
   const { t } = useTranslation('f-communities-plus');
   const [sub, setSub] = useState('queue');
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     { id: 'queue', label: t('mod-queue', { defaultValue: 'Queue' }) },
     { id: 'automod', label: t('mod-automod', { defaultValue: 'AutoMod' }) },
     { id: 'flairs', label: t('mod-flairs', { defaultValue: 'Flairs' }) },
@@ -42,7 +42,7 @@ export default function ModPanel({
   ];
   return (
     <div className="flex flex-col gap-4 px-3 py-3">
-      <LiquidTabs
+      <Tabs
         tabs={tabs}
         value={sub}
         onChange={setSub}

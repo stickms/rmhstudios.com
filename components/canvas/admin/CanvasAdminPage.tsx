@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Grid2x2, StickyNote } from 'lucide-react';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const panels = {
@@ -27,7 +27,7 @@ export function CanvasAdminPage() {
       backTo="/admin"
     >
       <AdminBody>
-        <LiquidTabs
+        <Tabs
           aria-label={t('admin-tabs', { defaultValue: 'Canvas admin sections' })}
           value={tab}
           onChange={(id) => setTab(id as Tab)}

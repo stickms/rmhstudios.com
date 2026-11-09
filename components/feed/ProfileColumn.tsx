@@ -9,7 +9,7 @@ import { Button } from'@/components/ui/button';
 import { authClient } from'@/lib/auth-client';
 import { useResolvedUser, useSession } from'@/components/Providers';
 import { VirtualPostList } from'./VirtualPostList';
-import { LiquidTabs } from'@/components/ui/liquid-tabs';
+import { Tabs } from'@/components/ui/tabs';
 import { AchievementsColumn } from'./AchievementsColumn';
 import { ProfileEditModal } from'./ProfileEditModal';
 import { SocialListModal } from'./SocialListModal';
@@ -500,10 +500,10 @@ export function ProfileColumn({
  </Suspense>
  </div>
 
- {/* Tab bar → shared LiquidTabs (§5.4). handleTabChange keeps the lazy
+ {/* Tab bar → shared Tabs (§5.4). handleTabChange keeps the lazy
  liked-posts fetch on first switch. */}
  <div className="px-4 py-3">
- <LiquidTabs
+ <Tabs
  tabs={[
  {
  id:'rmharks',

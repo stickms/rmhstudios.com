@@ -32,7 +32,7 @@ locales, RTL for `ar`/`ur`). Node ≥24.18, pnpm workspace.
 | `server/`      | **Node** service tier: web SSR plus socket-server (7001), rmhbox (7676), rmhtube (7003), and the ladder-worker / homes-worker / jobs (pg-boss) workers.                  | [`server/CLAUDE.md`](server/CLAUDE.md)           |
 | `go-services/` | **Go** microservice fleet (Bazel + gazelle): `supervisor`, `status`, `assets` run in prod; the gateway + Go hubs were removed (rewrite §5.2).                            | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
 | `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                           | `lib/CLAUDE.md`                                  |
-| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidDrag`, `useLiquidInteractions`, `useLiquidBackground`, `useReveal`, …).                       | `lib/CLAUDE.md`                                  |
+| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidDrag`, `useJellyPointer`, `useLiquidBackground`, `useReveal`, …).                       | `lib/CLAUDE.md`                                  |
 | `prisma/`      | `schema/` (one file per domain; model/enum/line counts: `docs/_generated/facts.json`) + migrations.                                                                                                        | `lib/CLAUDE.md`                                  |
 | `locales/`     | 16 shipped locales × the registered namespaces (count: `docs/_generated/facts.json`); `en` is authoritative. (More directories exist on disk than are wired up — see the i18n note below.)                      | `lib/CLAUDE.md` §i18n                            |
 | `data/`        | Static JSON (RMHBox content packs, library metadata).                                                                                                                    | —                                                |
@@ -330,7 +330,7 @@ Cards `--site-radius` (32px), controls `--site-radius-sm` (24px — a pill up to
 the scale is concentric in 8px steps). **A cluster of related controls is one body,
 not a row of pills:** `<JellyGroup>` (`components/ui/jelly-group.tsx`) is the parent
 and its members are flat (no edge or body of their own); the selected member is a
-quiet flat mark lying on it (a neutral capsule with a hairline ring in `LiquidTabs` on the
+quiet flat mark lying on it (a neutral capsule with a hairline ring in `Tabs` on the
 main site; a feathered glow in `JellyGroup`). A lone control may
 still be a pill. A dropdown is one rounded slab: its rows are plain
 text with no fill, edge or radius, and hover wakes a soft glow behind the text.

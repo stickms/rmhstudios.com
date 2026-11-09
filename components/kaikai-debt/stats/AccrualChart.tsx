@@ -46,7 +46,7 @@ import {
   withCumulative,
   type TimelineBucket,
 } from '@/lib/kaikai-debt/stats';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import {
   AxisLabels,
   ChartCard,
@@ -198,12 +198,12 @@ export function AccrualChart({
       }
       footer={
         /* Three mutually exclusive options with one active is a tab strip
-           whatever it is called, so it is <LiquidTabs> and not a row of pills —
+           whatever it is called, so it is <Tabs> and not a row of pills —
            the rule the design gate cannot see and reviewers must. It goes in the
            footer rather than the header's control corner because a segmented
            control's track spans its container: squeezed into a corner beside
            another button it wrapped onto two rows and read as a floating box. */
-        <LiquidTabs
+        <Tabs
           size="sm"
           value={horizon}
           onChange={(id) => onHorizonChange(id as HorizonId)}

@@ -52,7 +52,7 @@ import {
   type CreditInputs,
 } from '@/lib/kaikai-debt/credit';
 import { formatShare, linearScale, linePath } from '@/lib/kaikai-debt/stats';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { cn } from '@/lib/utils';
@@ -323,7 +323,7 @@ export function CreditScore({ inputs, asOfMs }: CreditScoreProps) {
               wrapped it onto two lines and it read as a floating 2×2 box rather
               than as one control. */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <LiquidTabs
+            <Tabs
               size="sm"
               className="w-full sm:w-64"
               value={String(windowMs)}

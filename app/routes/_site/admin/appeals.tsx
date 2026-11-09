@@ -14,7 +14,7 @@ import { Gavel, ShieldCheck, ShieldX, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -111,7 +111,7 @@ function AdminAppealsPage() {
     }
   };
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     {
       id: 'PENDING',
       label: t('appeals-pending', { defaultValue: 'Pending' }),
@@ -143,7 +143,7 @@ function AdminAppealsPage() {
       backTo="/admin"
     >
       <AdminBody>
-        <LiquidTabs
+        <Tabs
           tabs={tabs}
           value={view}
           onChange={(id) => setView(id as View)}

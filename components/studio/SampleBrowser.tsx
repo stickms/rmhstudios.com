@@ -1,4 +1,4 @@
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FolderOpen, Upload, Play, Trash2, Search, Music } from 'lucide-react';
@@ -96,7 +96,7 @@ export function SampleBrowser() {
       </div>
 
       {/* Tabs */}
-      <LiquidTabs
+      <Tabs
         size="sm"
         className="m-2"
         aria-label={t("sample-source", { defaultValue: "Sample source" })}

@@ -12,7 +12,7 @@
      Switch: track inset, knob droplet                 C   (§3)
      Slider: inset track, liquid range, droplet thumb  C   (§4)
      Native input[type=range]                          L   rim on custom-drawn tracks/thumbs only (§5)
-     LiquidTabs selection thumb                        C   droplet (§6; the track is .glass-inset)
+     Tabs selection thumb                        C   droplet (§6; the track is .glass-inset)
      Badge, NotificationBadge                          L   static rim only, no press, no haze (§7)
      UserAvatar                                        L   ring-only rim, nothing over the face (§7)
      Skeleton                                          L   static haze + rim; its own drift is the only motion (§7)
@@ -302,7 +302,7 @@ html [data-sonner-toaster] [data-sonner-toast] {
   box-shadow: var(--jelly-rim, var(--site-shadow-sm));
 }
 
-/* ── 6. LiquidTabs selection thumb (04 §1: C — a droplet; the strip's track is `.glass-inset`) ─────────────────────
+/* ── 6. Tabs selection thumb (04 §1: C — a droplet; the strip's track is `.glass-inset`) ─────────────────────
    Unlayered and one `[data-slot]` deeper than globals.css's `[data-tab-thumb]`, whose `background` shorthand would
    otherwise reset the image. The thumb's colour stays `--tab-thumb-bg` (themes and games re-skin it); the droplet is
    the gel coat, a lit rim and the gel edge over it (no specular cap across the face, #989). */
@@ -393,7 +393,7 @@ html [data-sonner-toaster] [data-sonner-toast] {
 /* ── Bare dialog shell ──────────────────────────────────────────────────────────────────────────────────────────────
    A full-screen game's dialog keeps the GAME's own panel (its palette, its contrast); the `DialogContent` around it is
    only a focus-trapped, positioned box and must paint nothing. `data-liquid-material='off'` already removes the rim,
-   haze and gel-coat (liquid-glass.css / jelly-material.css `:not([data-liquid-material='off'])`), but the unlayered
+   haze and gel-coat (glass-roles.css / jelly-material.css `:not([data-liquid-material='off'])`), but the unlayered
    degradation rules in globals.css (high contrast, reduce transparency, forced colors) target `.glass-overlay` without
    that guard and would turn the shell into an opaque or bordered box behind the game's panel. This out-ranks them. */
 html .glass-overlay[data-dialog-shell='bare'] {
@@ -401,7 +401,7 @@ html .glass-overlay[data-dialog-shell='bare'] {
   border: 0 !important;
 }
 
-/* ── 6b. LiquidTabs on the main site: the selected tab is a flat, defined capsule, not a raised droplet ─────────────────
+/* ── 6b. Tabs on the main site: the selected tab is a flat, defined capsule, not a raised droplet ─────────────────
    The thumb element stays (it is the layoutId morph and the ink hook), but on the site it paints a quiet neutral capsule
    lying on the track, as the selected segment does in Apple's Liquid Glass: ink at a low alpha, a hairline inset ring in
    the same ink, no accent smear, no coat, no raised rim. Neutral rather than accent so it reads the same in both themes

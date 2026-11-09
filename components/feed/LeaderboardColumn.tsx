@@ -4,7 +4,7 @@ import { Trophy, Coins, Zap } from'lucide-react';
 import { UserAvatar } from'./UserAvatar';
 import { ColumnHeader } from'./ColumnHeader';
 import { Spinner } from'@/components/ui/spinner';
-import { LiquidTabs, type LiquidTab } from'@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from'@/components/ui/tabs';
 import { Reveal } from'@/components/motion';
 import { LIFT_CARD } from'@/components/feed/motionHelpers';
 
@@ -78,8 +78,8 @@ export function LeaderboardColumn({
 
  // §17.5 sweep: this Global/Friends scope toggle was a hand-rolled underline strip
  // with no tab semantics (invisible to the §16.2 design-lint gate) — migrated to
- // the shared §5.45 LiquidTabs sheet. The Friends tab only exists when signed in.
- const scopeTabs: LiquidTab[] = [
+ // the shared §5.45 Tabs sheet. The Friends tab only exists when signed in.
+ const scopeTabs: TabItem[] = [
  { id:'global', label: t('leaderboard-global', { defaultValue:'Global'}) },
  ...(signedIn
  ? [{ id:'friends', label: t('leaderboard-friends', { defaultValue:'Friends'}) }]
@@ -94,7 +94,7 @@ export function LeaderboardColumn({
 
  <div className="space-y-4 p-4">
  {/* Scope toggle — §5.45 tab sheet */}
- <LiquidTabs
+ <Tabs
  tabs={scopeTabs}
  value={scope}
  onChange={(id) => setScope(id as Scope)}

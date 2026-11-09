@@ -14,13 +14,13 @@ import { join } from 'node:path';
  *
  * Four rules (each failure prints the offending file:line + this pointer):
  *   1. `role="tablist"` may only live in the shared renderer
- *      (`components/ui/liquid-tabs.tsx`). Everything else must ride `LiquidTabs`.
+ *      (`components/ui/tabs.tsx`). Everything else must ride `Tabs`.
  *   2. No underline-active-tab pattern: an element with `aria-selected` must not
  *      also carry a `border-b*` / `underline` marker (the §5.45 sheets obsoleted
  *      underline tabs — the active state is the flowing capsule, never a rule).
  *   3. Tab-capsule `layoutId` props may only live in sanctioned files — the
  *      renderer plus the sidebar's flowing nav capsule. Any other inline
- *      `layoutId` capsule is a hand-rolled tab strip that should be `LiquidTabs`.
+ *      `layoutId` capsule is a hand-rolled tab strip that should be `Tabs`.
  *   4. (§17.5) No conditional accent-underline bar: an element that is `absolute`
  *      + anchored to the bottom (`bottom-0`) + a hairline height (`h-px`/`h-0.5`/
  *      `h-1`) + `bg-site-accent` is an active-tab underline indicator — the exact
@@ -36,32 +36,32 @@ import { join } from 'node:path';
  * MANUAL-REVIEW RULE (not executable — no reliable low-false-positive grep exists):
  * a role-less switcher that indicates its active slot by ANY means other than the
  * rule-4 underline shape (e.g. a conditional accent PILL, a segmented control, a
- * `flex-1` button row with an active tint) still belongs on `LiquidTabs`. Reviewers
+ * `flex-1` button row with an active tint) still belongs on `Tabs`. Reviewers
  * must catch those by eye; rule 4 only nails the most common escapee shape.
  */
 
 const ROOT = process.cwd();
 const SCAN_DIRS = ['components', join('app', 'routes')];
 const POINTER =
-  'Use the shared <LiquidTabs> renderer (components/ui/liquid-tabs.tsx). See the ' +
+  'Use the shared <Tabs> renderer (components/ui/tabs.tsx). See the ' +
   'liquid-glass v2 plan §16.2 (one tablist renderer + enforcement).';
 
 /** The single sanctioned tablist renderer. */
-const RENDERER = join('components', 'ui', 'liquid-tabs.tsx');
+const RENDERER = join('components', 'ui', 'tabs.tsx');
 
 /**
  * Rule 1 allowlist — the ONLY `role="tablist"` usages permitted outside the
  * renderer, each an intentional, documented exception (NOT a capsule tab strip):
  *  - AlbumViewer's thumbnail filmstrip: a media carousel that navigates SLIDES
- *    via the WAI-ARIA tabs pattern (thumbnails, not label pills) — LiquidTabs
+ *    via the WAI-ARIA tabs pattern (thumbnails, not label pills) — Tabs
  *    renders text tabs, so it does not model an image filmstrip.
  *  - Temple of Joy's codex rail: the temple is a full-screen game outside the
  *    site shell with its own candlelit palette (temple-of-joy.css) and a
  *    glyph-over-label rail, not text pills. A glass capsule in the middle of it
  *    would read as a piece of a different product.
  *  - The TF2 HUD Editor's TfTabs: that app is intentionally outside the Plasmatic Jelly
- *    material (flat, square, 100% Team Fortress 2), and LiquidTabs' capsule is jelly.
- * New tablists get NO entry here — they must use LiquidTabs.
+ *    material (flat, square, 100% Team Fortress 2), and Tabs' capsule is jelly.
+ * New tablists get NO entry here — they must use Tabs.
  */
 const TABLIST_ALLOW = new Set([
   RENDERER,
@@ -529,7 +529,7 @@ describe('design consistency — one tab-strip grammar (§16.2)', () => {
     expect(SITE_FILES).not.toContain(join('components', 'temple-of-joy', 'TempleTabs.tsx'));
   });
 
-  it('role="tablist" lives only in LiquidTabs (+ documented allowlist)', () => {
+  it('role="tablist" lives only in Tabs (+ documented allowlist)', () => {
     expect(tablist, report('Stray role="tablist"', tablist)).toEqual([]);
   });
 

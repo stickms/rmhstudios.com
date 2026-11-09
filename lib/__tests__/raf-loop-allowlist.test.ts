@@ -29,19 +29,7 @@ import { join, posix } from 'node:path';
  *
  * The shared MOTION-TIER files below are the freeze-relevant ones; each is
  * verified idle-at-rest / one-shot:
- *   - components/ui/liquid-morph.tsx  — idle sampler, stops after SETTLE_FRAMES.
- *                                       NOT a shared motion-tier file, despite
- *                                       having been listed as one that "mounts on
- *                                       every page": its only consumer is the
- *                                       internal /liquid-glass demo route. The
- *                                       entry stays because the rAF is real and
- *                                       still needs sanctioning; the CLAIM is
- *                                       corrected, because an allowlist whose
- *                                       reasons are wrong is one nobody can audit.
- *                                       `liquid-tabs.tsx:243` — the component its
- *                                       docblock names first — uses a plain
- *                                       `layoutId` spring and no morph at all.
- *   - components/ui/liquid-tabs.tsx   — one-shot rAF to move focus after a tab key.
+ *   - components/ui/tabs.tsx   — one-shot rAF to move focus after a tab key.
  *   - hooks/useLiquidBackground.ts    — rAF used as a per-event THROTTLE
  *                                       (one-shot). `useGlassLight.ts`,
  *                                       `useCardSheen.ts` and `useParallax.ts` were
@@ -339,8 +327,7 @@ const ALLOW = new Set<string>([
   'components/ui/AnimatedCount.tsx',
   'components/ui/TwemojiProvider.tsx',
   'components/ui/anchored-menu.tsx',
-  'components/ui/liquid-morph.tsx',
-  'components/ui/liquid-tabs.tsx',
+  'components/ui/tabs.tsx',
   'components/velum2099/game/main.ts',
   'components/void-breaker/VoidBreakerGame.tsx',
   'hooks/useCelebration.ts',

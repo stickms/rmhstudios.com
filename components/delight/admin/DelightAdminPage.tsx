@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Cookie, Compass, Landmark, Languages, PartyPopper } from 'lucide-react';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const panels = {
@@ -31,7 +31,7 @@ export function DelightAdminPage() {
       backTo="/admin"
     >
       <AdminBody>
-        <LiquidTabs
+        <Tabs
           aria-label={t('admin-tabs', { defaultValue: 'Delight tools sections' })}
           value={tab}
           onChange={(id) => setTab(id as Tab)}

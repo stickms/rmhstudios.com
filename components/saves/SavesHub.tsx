@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { IconButton } from '@/components/ui/icon-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import type { HydratedSave, SaveFolderView } from '@/lib/saves/types';
 import { RemindersList } from '@/components/reminders/RemindersList';
 import { SaveNoteEditor } from '@/components/posts-plus/SaveNoteEditor';
@@ -107,7 +107,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
     }
   }
 
-  const filterTabs: LiquidTab[] = [
+  const filterTabs: TabItem[] = [
     { id: 'all', label: t('all', { defaultValue: 'All' }) },
     { id: 'default', label: t('unfiled', { defaultValue: 'Saved' }) },
     ...folders.map((f) => ({ id: f.id, label: f.name, count: f.count })),
@@ -116,10 +116,10 @@ export function SavesHub({ initial }: { initial: HubData }) {
 
   return (
     <div className="px-4 pt-4 pb-12">
-      {/* Folder filter — mutually exclusive, so it is a tab strip (LiquidTabs
+      {/* Folder filter — mutually exclusive, so it is a tab strip (Tabs
           scrolls with an edge fade when the folders outgrow the row). */}
       <div className="mb-4 flex items-center gap-2">
-        <LiquidTabs
+        <Tabs
           tabs={filterTabs}
           value={filter}
           onChange={setFilter}

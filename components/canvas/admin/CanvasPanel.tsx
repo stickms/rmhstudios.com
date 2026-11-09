@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { fetchJson } from '@/lib/http';
 import { CANVAS_SIZES, type CanvasEventView } from '@/lib/canvas/shared';
 
@@ -78,7 +78,7 @@ export default function CanvasPanel() {
           aria-label={t('admin-title-label', { defaultValue: 'Event title' })}
           placeholder={t('admin-title-label', { defaultValue: 'Event title' })}
         />
-        <LiquidTabs
+        <Tabs
           aria-label={t('admin-size', { defaultValue: 'Canvas size' })}
           value={size}
           onChange={setSize}

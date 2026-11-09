@@ -107,7 +107,7 @@ describe('N2 — the jelly services have one owner each', () => {
   const OWNS = (f: string) =>
     f.startsWith('lib/jelly/') ||
     f.startsWith('lib/liquid/') ||
-    f === 'hooks/useLiquidInteractions.ts' ||
+    f === 'hooks/useJellyPointer.ts' ||
     /^hooks\/useJelly[\w-]*\.tsx?$/.test(f) ||
     f === 'app/routes/jelly.tsx';
 
@@ -119,7 +119,7 @@ describe('N2 — the jelly services have one owner each', () => {
       offenders,
       'Components take jelly through role classes (`glass-*`) and `data-jelly*` attributes, never by importing ' +
         '`@/lib/jelly/arcs`. One soft body (CSS), one arc service — mounted once from ' +
-        'hooks/useLiquidInteractions.ts (docs/plasmatic-jelly-system.md).',
+        'hooks/useJellyPointer.ts (docs/plasmatic-jelly-system.md).',
     ).toEqual([]);
     // Reads every source file on its first call (cold file cache): 5-9s on a loaded machine, past the 5s default.
   }, 30_000);

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearch } from '@tanstack/react-router';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { SignedOutLobby } from './SignedOutLobby';
 
 /**
@@ -93,7 +93,7 @@ export function PlayTab({ coins, setCoins, signedIn }: Props) {
           buttons with no tab semantics). The selected game's one-line
           description sits under it, where each button used to carry its own. */}
       <div className="flex flex-col gap-2 px-4">
-        <LiquidTabs
+        <Tabs
           tabs={games.map((g) => ({ id: g.value, label: g.label }))}
           value={selected}
           onChange={(id) => setSelected(id as GameChoice)}

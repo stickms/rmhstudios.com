@@ -8,7 +8,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useSession } from '@/components/Providers';
@@ -71,7 +71,7 @@ function TournamentsPage() {
     >
       {/* §15.1: unified sheet + flowing-capsule tab strip below the page title. */}
       <div>
-        <LiquidTabs
+        <Tabs
           aria-label={t('title', { defaultValue: 'Tournaments' })}
           value={status}
           onChange={(id) => setStatus(id as TournamentStatus)}

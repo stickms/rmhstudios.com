@@ -6,7 +6,7 @@
  * **Not hand-rolled.** `lib/__tests__/design-consistency.test.ts` fails the build
  * on a hand-rolled tab strip, and the reason it does is that a bespoke strip
  * re-invents the roving arrow-key navigation and the `aria-selected` wiring —
- * badly, every time. `LiquidTabs` is the sanctioned primitive; the neumorphic
+ * badly, every time. `Tabs` is the sanctioned primitive; the neumorphic
  * treatment comes from the `--slice-*` palette on the well it sits in
  * (`sheet={false}` hands the container back to us), not from bespoke markup.
  */
@@ -14,7 +14,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Link2, Link2Off, TriangleAlert } from 'lucide-react';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select';
 import { DIFFICULTIES } from '@/lib/slice-it/constants';
 import { checkNesting, repairNesting, violationsByTier } from '@/lib/slice-it/editor/nesting';
@@ -57,7 +57,7 @@ export function DifficultyTabs() {
   return (
     <div className="flex flex-wrap items-center gap-3">
       <div className="neumorphic-inset min-w-0 flex-1 p-1.5">
-        <LiquidTabs
+        <Tabs
           tabs={tabs}
           value={active}
           onChange={(id) => setActive(id as Difficulty)}

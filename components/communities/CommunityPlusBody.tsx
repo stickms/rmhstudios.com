@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { Award, BarChart3, MessageSquare, ShieldCheck, Star, Trophy } from 'lucide-react';
 import { VirtualPostList } from '@/components/feed/VirtualPostList';
 import { EmptyState } from '@/components/ui/empty-state';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { CommunityComposer } from '@/components/communities/CommunityComposer';
@@ -91,7 +91,7 @@ export function CommunityPlusBody({
     };
   }, [slug, flairFilter]);
 
-  const tabs = useMemo<LiquidTab[]>(
+  const tabs = useMemo<TabItem[]>(
     () => [
       { id: 'posts', label: t('tab-posts', { defaultValue: 'Posts' }), icon: MessageSquare },
       { id: 'fame', label: t('tab-fame', { defaultValue: 'Hall of fame' }), icon: Star },
@@ -153,7 +153,7 @@ export function CommunityPlusBody({
       )}
 
       <div className="px-3 py-3">
-        <LiquidTabs
+        <Tabs
           tabs={tabs}
           value={tab}
           onChange={setTab}

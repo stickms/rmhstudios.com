@@ -23,7 +23,7 @@
   --ls-danger: #f87171;
 
   /*
-   * The shared primitives this game uses — Button, Input, LiquidTabs, Spinner
+   * The shared primitives this game uses — Button, Input, Tabs, Spinner
    * — paint from `--site-*`. Game routes are in `THEME_EXCLUDED_ROUTES`
    * (components/Providers.tsx), so no `.style-*` theme class is applied to the
    * document and those tokens fall back to the light defaults in globals.css.

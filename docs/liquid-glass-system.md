@@ -120,8 +120,8 @@ reflection; it does not claim wave-optics diffraction or ray-traced live page co
 | Reduced transparency / high contrast / forced colors / print | No shader canvases; readable fallback surfaces                                   |
 | Hidden tab                                                   | Frames stop; teardown releases observers, timers, canvases and context resources |
 
-Site CSS is `app/liquid-glass.css`; app-token adaptation is `components/shared/app-theme.css`.
-`hooks/useLiquidInteractions.ts` mounts the document services. `glass/engine.ts` owns
+Site CSS is `app/glass-roles.css`; app-token adaptation is `components/shared/app-theme.css`.
+`hooks/useJellyPointer.ts` mounts the document services. `glass/engine.ts` owns
 admission, observation and the shared frame; `shader.ts` owns slab optics; `renderer.ts`
 owns GL and canvas copies; `policy.ts` owns tested budget, geometry and light decisions.
 `lib/liquid/runtime.ts` supplies bounded fallback cursor light. Hover normalization in

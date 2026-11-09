@@ -870,7 +870,7 @@ export function RadialHub() {
                     <Link
                       to={`/u/${user.handle || user.id}` as string}
                       className="radial-hub__identity"
-                      data-fluid-press="none"
+                      data-jelly="off"
                       onClick={footNav(`/u/${user.handle || user.id}`)}
                       tabIndex={tab}
                     >
@@ -885,7 +885,7 @@ export function RadialHub() {
                     <Link
                       to="/settings"
                       className="radial-hub__foot-btn"
-                      data-fluid-press="none"
+                      data-jelly="off"
                       onClick={footNav('/settings')}
                       tabIndex={tab}
                       aria-label={t('settings', { defaultValue: 'Settings' })}
@@ -895,7 +895,7 @@ export function RadialHub() {
                     <button
                       type="button"
                       className="radial-hub__foot-btn"
-                      data-fluid-press="none"
+                      data-jelly="off"
                       onClick={signOut}
                       tabIndex={tab}
                       aria-label={t('sign-out', { defaultValue: 'Sign out' })}
@@ -908,7 +908,7 @@ export function RadialHub() {
                     to="/login"
                     search={{ callbackURL: undefined }}
                     className="radial-hub__signin"
-                    data-fluid-press="none"
+                    data-jelly="off"
                     onClick={footNav('/login', { callbackURL: undefined })}
                     tabIndex={tab}
                   >
@@ -918,7 +918,7 @@ export function RadialHub() {
                 <button
                   type="button"
                   className="radial-hub__foot-btn radial-hub__close"
-                  data-fluid-press="none"
+                  data-jelly="off"
                   onClick={dismiss}
                   tabIndex={tab}
                   aria-label={t('close', { defaultValue: 'Close' })}

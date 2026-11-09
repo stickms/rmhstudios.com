@@ -328,7 +328,7 @@ describe('the CSS soft body (app/jelly-material.css §8)', () => {
       'components/ui/jelly-group.tsx',
       'components/ui/selection-bar.tsx',
       'components/radial/RadialShell.tsx',
-      'components/ui/liquid-tabs.tsx',
+      'components/ui/tabs.tsx',
     ])
       expect(read(f), f).not.toContain(retired);
   });
@@ -437,7 +437,7 @@ describe('the soft body elsewhere', () => {
   });
 
   it('the hook mounts the pointer variable, not the physics, registry or fallback light', () => {
-    const hook = read('hooks/useLiquidInteractions.ts').replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
+    const hook = read('hooks/useJellyPointer.ts').replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
     expect(hook).toMatch(/installPointerVars\(document\)/);
     expect(hook).not.toMatch(
       /installJellyPhysics|installJellyRegistry|installLiquidInteractions|jelly\/physics|jelly\/registry|liquid\/runtime/,
@@ -467,7 +467,7 @@ describe('the spring reaches every host', () => {
   /** The sheets whose layered rules can state a host's transition, with the layer an `@import … layer()` gives them. */
   const SHEETS: [string, string | null][] = [
     ['app/globals.css', null],
-    ['app/liquid-glass.css', null],
+    ['app/glass-roles.css', null],
     ['app/jelly-material.css', null],
     ['app/jelly-coverage.css', null],
     ['app/jelly-arcs.css', null],

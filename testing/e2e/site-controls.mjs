@@ -34,7 +34,7 @@ const js = await bundle({
       import React, {useState} from 'react';
       import {createRoot} from 'react-dom/client';
       import {LazyMotion, MotionConfig, domMax} from 'framer-motion';
-      import {LiquidTabs} from './components/ui/liquid-tabs';
+      import {Tabs} from './components/ui/tabs';
       import {Button} from './components/ui/button';
       import {Card} from './components/ui/card';
       const tabs = [{id:'latest',label:'Latest'}, {id:'following',label:'Following'},
@@ -44,7 +44,7 @@ const js = await bundle({
         return <LazyMotion features={domMax}><MotionConfig reducedMotion="never">
           <main className="vibe-app" data-fluid-press-scope>
             <h1>Community</h1>
-            <LiquidTabs tabs={tabs} value={value} onChange={setValue} aria-label="Feed" idBase="feed" />
+            <Tabs tabs={tabs} value={value} onChange={setValue} aria-label="Feed" idBase="feed" />
             <section id="feed-panel" role="tabpanel" aria-labelledby={'feed-tab-'+value}>
               <Card id="post" interactive className="social-post">
                 <h2>A place to share what you make</h2>
@@ -60,10 +60,10 @@ const js = await bundle({
                 <textarea id="field" className="glass-inset rounded-site" aria-label="Reply" />
               </Card>
             </section>
-            <LiquidTabs tabs={tabs.slice(0,3)} value="latest" aria-label="Sections"
+            <Tabs tabs={tabs.slice(0,3)} value="latest" aria-label="Sections"
               renderTab={(tab,{active,...props})=><a {...props} href={'#'+tab.id} />} />
             <button id="circle" className="rounded-full" aria-label="Circular action">+</button>
-            <button id="opt-out" data-fluid-press="none">Gesture control</button>
+            <button id="opt-out" data-jelly="off">Gesture control</button>
             <div data-gesture="drag"><button id="drag">Drag handle</button></div>
           </main>
         </MotionConfig></LazyMotion>;

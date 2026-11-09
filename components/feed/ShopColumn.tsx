@@ -16,7 +16,7 @@ import {
 import { getPremiumTheme } from '@/lib/shop/themes';
 import { PinnedHero } from './PinnedHero';
 import { ColumnHeader } from './ColumnHeader';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Reveal } from '@/components/motion';
 import { ShopWishButton } from '@/components/economy-plus/ShopWishButton';
 
@@ -250,7 +250,7 @@ export function ShopColumn({
  scrolls horizontally in the shared tab-sheet track (overflow + edge fade,
  §5.5x A.4); ARIA/state are unchanged. */}
       <div data-slot="page-controls" className="my-3 px-3">
-        <LiquidTabs
+        <Tabs
           size="sm"
           aria-label={t('shop-categories-label', { defaultValue: 'Shop categories' })}
           value={tab}

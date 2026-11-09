@@ -24,7 +24,7 @@ import { toast } from 'sonner';
 import { Timer } from 'lucide-react';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -227,7 +227,7 @@ function SpeedrunsPage() {
           </div>
 
           {slugs.length > 1 && (
-            <LiquidTabs
+            <Tabs
               aria-label={t('speedrun-category-label', { defaultValue: 'Category' })}
               value={slug ?? ''}
               onChange={setSlug}

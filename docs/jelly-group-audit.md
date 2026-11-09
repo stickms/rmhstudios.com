@@ -9,7 +9,7 @@ A cluster of related controls is **one jelly body with flat members** (`JellyGro
 ## Already covered without per-site edits
 
 - **Top bar** (`components/radial/RadialShell.tsx`): every control is a `JellyGroup.Item` on the `glass-chrome` bar.
-- **`LiquidTabs`** (about 100 call sites incl. `PageTabs`/`CatalogTabs`): the selected tab is a flat glow on the main site; games and apps keep the raised thumb through `AppTierContext`.
+- **`Tabs`** (about 100 call sites incl. `PageTabs`/`CatalogTabs`): the selected tab is a flat glow on the main site; games and apps keep the raised thumb through `AppTierContext`.
 - **Menus, selects, dropdown rows**: already one slab with plain rows and a hover glow (`anchored-menu`, `select`, `menu`); verified, no change.
 - **Tabs, search and sort on phones** now share one width (`--page-controls-inset`).
 

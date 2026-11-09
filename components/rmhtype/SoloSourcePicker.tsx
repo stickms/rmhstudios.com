@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { BookOpen, Code2, Keyboard } from 'lucide-react';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import type { SoloSource } from '@/lib/rmhtype/sources';
 
 /** Passage-source switch for RMHType solo: standard, real code, or site lore. */
@@ -26,7 +26,7 @@ export function SoloSourcePicker({
       <span className="mb-2 block text-sm font-medium text-(--app-text-muted)">
         {t('type-source-label', { defaultValue: 'Passage source' })}
       </span>
-      <LiquidTabs
+      <Tabs
         tabs={tabs}
         value={value}
         onChange={(id) => onChange(id as SoloSource)}

@@ -26,7 +26,7 @@ import { ShieldCheck } from 'lucide-react';
 import { timeAgo } from '@/components/rmhladder/time';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
@@ -167,7 +167,7 @@ function ReviewPage() {
 
   return (
     <div className="space-y-4">
-      <LiquidTabs
+      <Tabs
         tabs={[
           { id: 'open', label: t('ladder.review.open', { defaultValue: 'Open' }) },
           { id: 'resolved', label: t('ladder.review.resolved', { defaultValue: 'Resolved' }) },

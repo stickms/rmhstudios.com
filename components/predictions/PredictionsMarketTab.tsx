@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
 import { PredictionCard } from './PredictionCard';
 import { useSignInPrompt } from '@/hooks/useSignInPrompt';
@@ -64,7 +64,7 @@ export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
           They are the shared strip now, small, at the width three short labels
           need. */}
       <div className="flex items-center gap-2">
-        <LiquidTabs
+        <Tabs
           size="sm"
           className="w-auto min-w-0 max-w-xs flex-1"
           tabs={filters}

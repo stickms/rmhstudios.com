@@ -17,7 +17,7 @@ import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { TrashRow } from '@/components/trash/TrashRow';
 import { refusalCopy } from '@/components/trash/copy';
@@ -149,7 +149,7 @@ export function TrashPanel() {
         </p>
       </div>
 
-      <LiquidTabs
+      <Tabs
         aria-label={t('trash-filter-label', { defaultValue: 'Filter deleted content' })}
         value={filter}
         onChange={(id) => setFilter(id as Filter)}

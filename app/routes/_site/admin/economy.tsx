@@ -13,7 +13,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Coins, TrendingUp, TrendingDown, Users, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
@@ -71,7 +71,7 @@ function AdminEconomyPage() {
     load(days);
   }, [days, load]);
 
-  const tabs: LiquidTab[] = WINDOWS.map((w) => ({
+  const tabs: TabItem[] = WINDOWS.map((w) => ({
     id: w,
     label: t('economy-window-days', { defaultValue: '{{count}} days', count: Number(w) }),
   }));
@@ -92,7 +92,7 @@ function AdminEconomyPage() {
       backTo="/admin"
     >
       <AdminBody>
-        <LiquidTabs
+        <Tabs
           tabs={tabs}
           value={days}
           onChange={setDays}

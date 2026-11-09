@@ -25,7 +25,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 import { EventCard } from '@/components/events/EventCard';
 import { EventComposer } from '@/components/events/EventComposer';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { auth } from '@/lib/auth';
 import { listEvents, listMemberCommunityEvents, type EventDTO } from '@/lib/events.server';
 import { AsyncReveal } from '@/components/motion';
@@ -82,7 +82,7 @@ export function EventsColumn({ embedded = false }: { embedded?: boolean }) {
     };
   }, [tab]);
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     {
       id: 'upcoming',
       label: t('events-tab-upcoming', { defaultValue: 'Upcoming' }),
@@ -118,7 +118,7 @@ export function EventsColumn({ embedded = false }: { embedded?: boolean }) {
       />
 
       <div className="px-3 py-3">
-        <LiquidTabs
+        <Tabs
           tabs={tabs}
           value={tab}
           onChange={(id) => setTab(id as EventTab)}

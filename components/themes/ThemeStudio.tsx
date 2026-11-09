@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { ViewTransitionLink } from '@/components/ui/ViewTransitionLink';
 import { useThemeStore } from '@/stores/themeStore';
 import { deriveAppliedTheme, type ThemeTokens, type UserThemeView } from '@/lib/themes/tokens';
@@ -247,7 +247,7 @@ export function ThemeStudio({
 
       {/* ── Marketplace browse ── */}
       <SettingsSection title={t('community-themes', { defaultValue: 'Community themes' })}>
-        <LiquidTabs
+        <Tabs
           size="sm"
           aria-label={t('sort-label', { defaultValue: 'Sort themes' })}
           value={sort}

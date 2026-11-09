@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { BookOpen, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -111,7 +111,7 @@ export function SeedGalleryButton() {
               })}
             </DialogDescription>
           </DialogHeader>
-          <LiquidTabs
+          <Tabs
             aria-label={t('gallery-sort', { defaultValue: 'Sort seeds' })}
             value={sort}
             onChange={(id) => setSort(id as Sort)}

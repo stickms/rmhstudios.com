@@ -5,13 +5,13 @@
  * the clock, a versus race is eight people on the same seeded laundry. Ranking
  * them together would make the number on top meaningless.
  *
- * The tab strip rides the shared `LiquidTabs` renderer — hand-rolled tab strips
+ * The tab strip rides the shared `Tabs` renderer — hand-rolled tab strips
  * are a CI failure in this repo (`lib/__tests__/design-consistency.test.ts`).
  */
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
 
 interface Row {
@@ -63,7 +63,7 @@ export function LeaderboardPanel({ refreshKey = 0 }: { refreshKey?: number }) {
 
   return (
     <section className="flex min-h-0 flex-col gap-3">
-      <LiquidTabs
+      <Tabs
         tabs={[
           { id: 'solo', label: t('solo', { defaultValue: 'Solo' }) },
           { id: 'versus', label: t('versus', { defaultValue: 'Versus' }) },

@@ -15,7 +15,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/search-field';
 import { Badge } from '@/components/ui/badge';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -225,7 +225,7 @@ function AdminRidesharePage() {
           />
         ) : (
         <>
-        <LiquidTabs
+        <Tabs
           value={status}
           onChange={(id) => setStatus(id as Status)}
           aria-label={t('application-status', { defaultValue: 'Application status' })}
@@ -372,7 +372,7 @@ function RideHistory({
         aria-label={t('ride-search-label', { defaultValue: 'Search rides' })}
       />
 
-      <LiquidTabs
+      <Tabs
         value={status}
         onChange={(id) => onStatus(id as 'ALL' | RideStatus)}
         aria-label={t('ride-status-filter', { defaultValue: 'Filter rides by status' })}
