@@ -2,7 +2,7 @@
  * The timeline must never serve a post the viewer is not allowed to see.
  *
  * Two regressions this pins, both found by running the real queries against a
- * seeded database (WS2, docs/server-perf-2026-10-21):
+ * seeded database (WS2, docs/archive/2026/server-perf-2026-10-21):
  *
  *  1. KEYSET vs AUDIENCE. `keysetWhere` and `audienceWhere` both return a
  *     top-level `{ OR: [...] }`, and the For-You query spread them into one

@@ -252,7 +252,7 @@ export function ExploreRecommendations({
  {/* Everything from here down is below the fold on Top, which shows trending
  and who-to-follow first. On a page switch it is built after the top of the
  page has painted, in a transition React time-slices — its fifteen hot-post
- cards were most of the switch's one long task (docs/performance-audit-2026-10-21.md
+ cards were most of the switch's one long task (docs/archive/2026/performance-audit-2026-10-21.md
  §Navigation commit). Only on Top: on Posts and People these sections ARE the
  top of the page, and `enabled` is read once at mount, so a later tab change
  never hides anything. */}

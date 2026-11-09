@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
  * the backfill wins the race with hydration React fails to hydrate outright
  * (#418). Measured on `/rmh-capital` ("Latest Perspectives" → "Insights") and
  * `/rmh-pmc`, whose Command page rendered the HOME page's section headings once
- * the catalog loaded (docs/fouc-audit-2026-10-06.md §21).
+ * the catalog loaded (docs/archive/2026/fouc-audit-2026-10-06.md §21).
  *
  * Nearly all of the 113 keys that drifted were one key shared by two call sites
  * that say different things — the catalog can only hold one of them. CLAUDE.md

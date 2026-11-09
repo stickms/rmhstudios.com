@@ -10,10 +10,10 @@
  * 3G, ~31 s on 2G, by which point the text had long painted in the fallback and
  * then re-shaped. At `low` the hints still start in parallel with the HTML (the
  * point of preloading: no import waterfall — removing them outright was measured
- * and rejected, docs/performance-audit-2026-10-08.md Part 2), they just queue
+ * and rejected, docs/archive/2026/performance-audit-2026-10-08.md Part 2), they just queue
  * behind the CSS and the font. Measured cold, n=3–5 medians: font done 1.9 s →
  * 0.3 s (4G), 6.4 s → 1.4 s (3G); FCP −2–20%; hydration unchanged or earlier.
- * docs/performance-audit-2026-10-21.md §"Critical CSS + preload priority".
+ * docs/archive/2026/performance-audit-2026-10-21.md §"Critical CSS + preload priority".
  *
  * Built on the router's own public `useTags` + `Asset`, so the server render and
  * the hydration render produce the same tags (no mismatch), and a router

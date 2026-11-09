@@ -93,14 +93,8 @@ jobs:
         if: steps.cfg.outputs.ready == 'true'
         run: pnpm exec tsx scripts/tf2-assets/publish.ts check
 
-      - name: Install SteamCMD
+      - uses: ./.github/actions/install-steamcmd
         if: steps.cfg.outputs.ready == 'true'
-        run: |
-          sudo dpkg --add-architecture i386
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq lib32gcc-s1 lib32stdc++6 curl
-          mkdir -p "$HOME/steamcmd" && cd "$HOME/steamcmd"
-          curl -fsSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar xz
 
       - name: Gate on the current Steam build (app 740)
         id: gate

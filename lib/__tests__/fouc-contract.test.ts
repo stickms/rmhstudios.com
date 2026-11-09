@@ -167,7 +167,7 @@ describe('default theme before first paint', () => {
   });
 
   it('a retired id self-heals to the default', () => {
-    const { classes, stored } = runThemeScript({ 'rmh-style': 'nocturne' });
+    const { classes, stored } = runThemeScript({ 'rmh-style': 'sepia' });
     expect(classes.has('style-graphite')).toBe(true);
     expect(stored.get('rmh-style')).toBe(DEFAULT_STYLE);
   });
@@ -530,7 +530,7 @@ describe('FOUC contract: hydration', () => {
    * in that window — a session resolving, a context value changing — makes React
    * discard the server-rendered page and show the fallback until the chunk
    * lands. Measured on 30 routes: finished pages blanked to "Loading…" for
-   * 90–1800ms and came back (docs/fouc-audit-2026-10-06.md §13).
+   * 90–1800ms and came back (docs/archive/2026/fouc-audit-2026-10-06.md §13).
    *
    * So a route module imports its page statically. The entries below are the
    * `lazy()`s that cannot do that harm, each for the reason given; the list is

@@ -8,7 +8,7 @@
  * suspends — even when the value resolved long ago, because a native promise's
  * `then` callbacks never run synchronously.
  *
- * Two places that bites, both on `/` (docs/performance-audit-2026-10-21.md):
+ * Two places that bites, both on `/` (docs/archive/2026/performance-audit-2026-10-21.md):
  *
  * - **Client navigations** (§Navigation commit). The render is synchronous, so
  *   the suspension commits the Suspense fallback, and React then holds the real

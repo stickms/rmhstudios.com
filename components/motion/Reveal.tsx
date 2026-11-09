@@ -71,7 +71,7 @@ export interface RevealProps {
  * `data-reveal` is kept: the `noscript` rule in `app/routes/__root.tsx` keys on
  * it, and it is a useful marker for anything auditing reveal surfaces.
  *
- * See docs/performance-audit-2026-08-12.md §1.1.
+ * See docs/archive/2026/performance-audit-2026-08-12.md §1.1.
  */
 export function Reveal({ as = 'div', delay = 0, y, className, children }: RevealProps) {
   // Cast for the same reason the framer version cast `motion[as]`: a bare

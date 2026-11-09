@@ -168,7 +168,7 @@ export const INSTRUMENT_SOURCE = `(() => {
   // fire, and it never did: /slice-it/player/$handle threw #418 on every load,
   // React re-rendered the whole document, and every attribute the pre-paint
   // scripts had put on <html> — class, data-app-dark, color-scheme — was wiped
-  // (docs/fouc-audit-2026-10-06.md §7–8).
+  // (docs/archive/2026/fouc-audit-2026-10-06.md §7–8).
   var HYDRATION = /hydrat|did not match|server (?:html|rendered)|text content does not match|Minified React error #(?:418|421|423|425|428)/i;
   try {
     window.addEventListener('error', function (e) {

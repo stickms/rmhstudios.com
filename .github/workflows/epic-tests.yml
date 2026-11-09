@@ -10,7 +10,7 @@
 # It ran in NO workflow until the 2026-08-08 testing audit, while docs/testing.md
 # claimed an `epic-tests.yml` gated it. This is that file. Path-filtered, so a
 # frontend PR does not pay for a browser download: the account-wide concurrent
-# runner cap is a tracked concern (docs/ci-speed-audit-2026-07-17.md §3).
+# runner cap is a tracked concern (docs/archive/2026/ci-speed-audit-2026-07-17.md §3).
 # ─────────────────────────────────────────────────────────────────────────────
 name: epic-tests
 

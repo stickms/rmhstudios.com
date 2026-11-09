@@ -25,7 +25,7 @@ export default function GuessLog({ entries }: GuessLogProps) {
   const { t } = useTranslation("c-rmhbox");
   // `useStickToBottom`, not `scrollTop = scrollHeight` in an effect. Reading
   // `scrollHeight` FORCES a synchronous layout on every new guess, and the old
-  // form re-pinned unconditionally. See docs/performance-audit-2026-08-12.md §1.5.
+  // form re-pinned unconditionally. See docs/archive/2026/performance-audit-2026-08-12.md §1.5.
   const { containerRef, contentRef } = useStickToBottom<HTMLDivElement, HTMLDivElement>();
 
   if (entries.length === 0) return null;

@@ -26,7 +26,7 @@
  * no aspect-ratio or max-* clamp for browsers to disagree about. Before it, the
  * stage was 0×0 in the server HTML and jumped to the letterbox once JS had
  * measured — 0.443 of layout shift after first paint, the largest the FOUC audit
- * measured anywhere (docs/fouc-audit-2026-10-06.md §4). The measured pixel size
+ * measured anywhere (docs/archive/2026/fouc-audit-2026-10-06.md §4). The measured pixel size
  * still wins once it lands; it is the same box, so nothing moves.
  */
 

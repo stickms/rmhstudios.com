@@ -200,7 +200,7 @@ function manualChunks(id: string) {
 // chunks and their modulepreloads, not members of the shared graph — so the lever
 // is aimed at the wrong population. Don't re-run it expecting a different answer;
 // the request-count problem needs route-level chunk shaping, not a size floor.
-// Full numbers: docs/loading-audit-2026-08-11/06-backlog.md §7.
+// Full numbers: docs/archive/2026/loading-audit-2026-08-11/06-backlog.md §7.
 
 export default defineConfig({
   customLogger: logger,
@@ -252,7 +252,7 @@ export default defineConfig({
       // modules statically and Start's splitter only lifts out route
       // COMPONENTS: anything else a route module touches at top level lands in
       // the shared entry that every page loads. See
-      // docs/performance-audit-2026-08-04.md.
+      // docs/archive/2026/performance-audit-2026-08-04.md.
     }),
     react(),
     nitro({

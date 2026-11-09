@@ -1,5 +1,5 @@
 /**
- * OPT-02 — entry-chunk composition guard (docs/optimization-ideas-2026-08-05.md).
+ * OPT-02 — entry-chunk composition guard (docs/archive/2026/optimization-ideas-2026-08-05.md).
  *
  * OPT-01 (scripts/check-bundle-budget.ts) catches the SYMPTOM — bytes. This
  * catches the CAUSE: a package that must never sit in the entry chunk's static
@@ -22,7 +22,7 @@
  *
  * Byte attribution decodes each chunk's `mappings` and charges the bytes
  * between consecutive segments to `sources[sourceIndex]` — the same method
- * docs/performance-audit-2026-08-04.md used by hand to find the Discord SDK.
+ * docs/archive/2026/performance-audit-2026-08-04.md used by hand to find the Discord SDK.
  */
 /* eslint-disable no-console -- CI reporter intentionally writes a human-readable report */
 import { existsSync, readFileSync } from 'node:fs';
@@ -331,7 +331,7 @@ async function main(): Promise<number> {
         '  because app/routeTree.gen.ts imports all 739 route modules statically and\n' +
         "  Start's splitter only lifts out route COMPONENTS. Anything else a route\n" +
         '  module touches at top level is a site-wide cost.\n' +
-        '  See docs/performance-audit-2026-08-04.md §"The rule this leaves behind".',
+        '  See docs/archive/2026/performance-audit-2026-08-04.md §"The rule this leaves behind".',
     );
     return 1;
   }

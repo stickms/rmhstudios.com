@@ -960,7 +960,7 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   // The English catalog held one of the two, so once the non-core catalog
   // loaded, the other page's copy flipped to it after first paint — and, when
   // the catalog won the race with hydration, failed hydration outright
-  // (docs/fouc-audit-2026-10-06.md §21). English-only until
+  // (docs/archive/2026/fouc-audit-2026-10-06.md §21). English-only until
   // `pnpm i18n:translate && pnpm i18n:resources` runs, as above. (The
   // admin keys sit in the `admin` list of the backlog block above — an
   // object literal cannot name a namespace twice.)

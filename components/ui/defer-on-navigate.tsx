@@ -9,7 +9,7 @@ import { startTransition, useEffect, useState, useSyncExternalStore, type ReactN
  * page with a catalog, a storefront and an Arcade Pass panel under the fold was
  * rendered, inserted, styled and laid out in full before the first pixel of it
  * could paint — 600ms+ of one long task on a 4×-throttled CPU for `/games`
- * (docs/ui-perf-audit-2026-10-09.md, NAV-5). The click felt dead for that long.
+ * (docs/archive/2026/ui-perf-audit-2026-10-09.md, NAV-5). The click felt dead for that long.
  *
  * Wrapping the below-the-fold part of such a page in this component splits that
  * commit in two. On a page switch the wrapped subtree first renders as an empty
@@ -34,7 +34,7 @@ import { startTransition, useEffect, useState, useSyncExternalStore, type ReactN
  *    in the microtask between the two listeners, and only then is the class
  *    set. So every back/forward arrival deferred anyway and the router restored
  *    the scroll offset against a page that was still a placeholder short
- *    (`/games` from 1800px came back at 1335px; docs/performance-audit-2026-10-21.md
+ *    (`/games` from 1800px came back at 1335px; docs/archive/2026/performance-audit-2026-10-21.md
  *    §Navigation commit). History subscribers are notified inside the router's
  *    handler, before that microtask.
  *
@@ -96,7 +96,7 @@ function shouldDeferNow(): boolean {
  * already flipped `documentHydrated`; reading only the flag, the wheel rendered
  * its first four cards against fifteen server-rendered ones, hydration failed
  * (#418), and React client-rendered the whole first feed over the server HTML
- * (docs/performance-audit-2026-10-21.md §Home LCP).
+ * (docs/archive/2026/performance-audit-2026-10-21.md §Home LCP).
  */
 const noopSubscribe = () => () => {};
 function useIsHydrating(): boolean {

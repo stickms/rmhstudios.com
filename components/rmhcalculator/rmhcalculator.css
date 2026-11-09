@@ -209,7 +209,7 @@
    `field-sizing: content` gets the same box out of the layout pass the browser
    was already running. The JS fallback is still there for engines without it,
    scoped by the matching `@supports not`. See
-   docs/performance-audit-2026-08-12.md §1.7. */
+   docs/archive/2026/performance-audit-2026-08-12.md §1.7. */
 @supports (field-sizing: content) {
   .rmhcalc-display__input {
     field-sizing: content;

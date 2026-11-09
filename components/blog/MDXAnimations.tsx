@@ -18,7 +18,7 @@ import { DURATION, EASE } from '@/lib/motion';
  * Every rule reads from the `--site-*` contract (design-language.md §0.1). The
  * old map hardcoded `text-white`, `bg-black/50`, `border-white/10` and the
  * `--neon-*` accents, so an article was legible on the dark default and washed
- * out on `.style-light` / `.style-high-contrast`. Duration and easing come from
+ * out on the light theme. Duration and easing come from
  * `lib/motion.ts` (§0.5) rather than a local `0.5`.
  */
 const animationProps = {

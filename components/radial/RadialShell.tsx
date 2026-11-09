@@ -355,7 +355,7 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
   // rendered until the incoming one (or its pending skeleton) commits — so
   // keying the shell on `pathname` dropped the home spacing under the still-
   // visible feed and jolted it 14px for a frame on every switch away from Home
-  // (docs/ui-perf-audit-2026-10-09.md, SLOW-3). `resolvedLocation` moves with
+  // (docs/archive/2026/ui-perf-audit-2026-10-09.md, SLOW-3). `resolvedLocation` moves with
   // the commit; it is unset only before the first resolve, where the two agree.
   const renderedPathname = useRouterState({
     select: (s) => (s.resolvedLocation ?? s.location).pathname,

@@ -116,7 +116,7 @@ function whenIdle(fn: () => void) {
  * inside server markup React had not adopted yet, and when React got there the
  * text no longer matched: #418, and the boundary was thrown away and re-rendered
  * on the client. Measured on /daily/outcast and /daily/spectrum, whose loading
- * screen leads with an emoji (docs/fouc-audit-2026-10-06.md §13). So the pass
+ * screen leads with an emoji (docs/archive/2026/fouc-audit-2026-10-06.md §13). So the pass
  * rewrites an emoji only once its element and everything under it are
  * React-owned, and retries the rest when the browser is idle until they are. A
  * node React has adopted is safe to rewrite for the same reason the

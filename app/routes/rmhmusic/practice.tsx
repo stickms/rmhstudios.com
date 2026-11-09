@@ -10,7 +10,7 @@ import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 
 // Static, not `lazy()`: Start already splits this route's component into its own
-// chunk and loads it BEFORE hydrating (docs/fouc-audit-2026-10-06.md §13).
+// chunk and loads it BEFORE hydrating (docs/archive/2026/fouc-audit-2026-10-06.md §13).
 import { PracticeLesson } from '@/components/rmhmusic/learn/PracticeLesson';
 
 export const Route = createFileRoute('/rmhmusic/practice')({

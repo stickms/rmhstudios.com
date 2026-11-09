@@ -4,7 +4,7 @@
  *
  * The scroll-reveal used to be driven from here (`useReveal(pathname)`); it is
  * now a scroll-driven CSS animation in rmh-pmc.css, so there is nothing to
- * drive. See docs/performance-audit-2026-08-12.md §1.4.
+ * drive. See docs/archive/2026/performance-audit-2026-08-12.md §1.4.
  */
 import { Outlet } from '@tanstack/react-router';
 import { CommandBar, Gutter, SiteFooter } from './shared';

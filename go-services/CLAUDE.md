@@ -6,7 +6,7 @@
 > Operator runbook (authoritative for build/deploy):
 > [`docs/go-migration/go-backend-and-bazel.md`](../docs/go-migration/go-backend-and-bazel.md).
 
-Go module `github.com/rmhstudios/rmh-go` (Go 1.23). The module root is
+Go module `github.com/rmhstudios/rmh-go` (`go 1.26.8`, toolchain `go1.27.1` — see `go.mod`). The module root is
 `go-services/`, but the **Bazel workspace root is the repo root**
 (`MODULE.bazel` at `/`). Where docs and code disagree, **the code wins** —
 `go-services/README.md` and `FOUNDATION.md` predate the Bazel migration and

@@ -33,8 +33,8 @@ locales, RTL for `ar`/`ur`). Node ≥24.18, pnpm workspace.
 | `go-services/` | **Go** microservice fleet (Bazel + gazelle): `supervisor`, `status`, `assets` run in prod; the gateway + Go hubs were removed (rewrite §5.2).                            | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
 | `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                           | `lib/CLAUDE.md`                                  |
 | `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidDrag`, `useLiquidInteractions`, `useLiquidBackground`, `useReveal`, …).                       | `lib/CLAUDE.md`                                  |
-| `prisma/`      | `schema.prisma` (323 models, 71 enums, ~8.9k lines) + migrations.                                                                                                        | `lib/CLAUDE.md`                                  |
-| `locales/`     | 16 shipped locales × 67 registered namespaces; `en` is authoritative. (More directories exist on disk than are wired up — see the i18n note below.)                      | `lib/CLAUDE.md` §i18n                            |
+| `prisma/`      | `schema.prisma` (model/enum/line counts: `docs/_generated/facts.json`) + migrations.                                                                                                        | `lib/CLAUDE.md`                                  |
+| `locales/`     | 16 shipped locales × the registered namespaces (count: `docs/_generated/facts.json`); `en` is authoritative. (More directories exist on disk than are wired up — see the i18n note below.)                      | `lib/CLAUDE.md` §i18n                            |
 | `data/`        | Static JSON (RMHBox content packs, library metadata).                                                                                                                    | —                                                |
 | `public/`      | Static assets, `robots.txt`, `manifest.webmanifest`.                                                                                                                     | —                                                |
 | `scripts/`     | Seeding, i18n pipeline, OG/icon generation, ladder pipeline, news pipeline, epic build.                                                                                  | `docs/README.md`                                 |
@@ -52,11 +52,12 @@ pnpm dev                     # Vite (7005) + socket/rmhbox/rmhtube hubs + ladder
 pnpm exec tsc --noEmit       # typecheck
 pnpm lint                    # eslint (jsx-a11y at warn — add no new warnings)
 pnpm format                  # prettier
-pnpm test                    # main test suite (~20s; mission-critical scope — docs/testing.md)
+pnpm test                    # main test suite (mission-critical scope — docs/testing.md; time it with `time pnpm test`)
 pnpm test:epic               # epic content-build suite (needs Chromium)
 pnpm test:integration        # real flows vs a running app + throwaway Postgres (docs/testing.md §8)
 pnpm build                   # vibe-packages → vite build → esbuild 6 server bundles
 pnpm i18n:extract            # after adding t() strings
+pnpm facts:generate          # refresh docs/_generated/facts.json (model/route/test/namespace counts; facts:check gates it)
 pnpm check:consistency       # THE COMMIT GATE — run before every commit (see below)
 pnpm audit:pages             # real-browser sweep: iOS edge-pinned layers + page-anatomy drift (needs pnpm dev)
 make gazelle && make test    # Go: regenerate BUILD files, run Bazel tests
@@ -416,7 +417,7 @@ suite, path-filtered to `scripts/epic/**`), `go-microservices.yml` (Bazel test),
 `senior-review.yml` (LLM review gate), `deploy.yml`, `synthetic-perf.yml`, `candidate-image.yml` (native image smoke),
 `build-cache.yml` (independent reusable-stage maintenance),
 and the build/deploy guards `build-vibe-packages`,
-`compose-validate`, `prisma-validate`, `prisma-migrate-status`. Run the core
+`compose-validate`, `prisma` (validate + migrate-status jobs). Run the core
 checks locally before opening a pull request. Which suite runs where, and what
 gates a deploy:
 [`docs/testing.md`](docs/testing.md) §CI.

@@ -18,7 +18,6 @@
         "server/socket-server/**/*.ts",
         "server/rmhbox/**/*.ts",
         "server/rmhtube/**/*.ts",
-        "server/recap/**/*.ts",
         "lib/rmhbox/**/*.ts",
         "lib/blackjack/logic.ts",
         "lib/lights-out/**/*.ts",

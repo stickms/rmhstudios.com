@@ -17,7 +17,7 @@
  * future change reintroduces an inline opacity/transform here, that is the
  * regression, and this is what catches it.
  *
- * See docs/performance-audit-2026-08-12.md §1.1.
+ * See docs/archive/2026/performance-audit-2026-08-12.md §1.1.
  */
 import { describe, expect, it } from 'vitest';
 import { renderToString } from 'react-dom/server';

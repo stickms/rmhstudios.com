@@ -77,7 +77,7 @@
  *
  * @see server/nitro/otel.ts — opens the scope, marks `total`, sends the header
  * @see lib/otel/trace.ts — the scope this writes into
- * @see docs/optimization-ideas-2026-08-05.md OPT-49
+ * @see docs/archive/2026/optimization-ideas-2026-08-05.md OPT-49
  */
 
 import { currentScope, serverTimingTrace, type TraceScope } from './trace';

@@ -735,8 +735,7 @@
      every theme and had no answer at all for high-contrast.
 
      These sit alongside the site tokens rather than inside a theme block: the
-     table looks the same in every theme, by design. High-contrast overrides the
-     two that matter for legibility (see the `.style-high-contrast` block). */
+     table looks the same in every theme, by design. */
   --casino-card: #f6f6f4;
   --casino-card-ink: #14161a;
   --casino-card-red: #c81e2b;
@@ -823,8 +822,7 @@
      precisely because a square corner is a shape and not a radius.
 
      `.style-graphite` is not an inversion of this; it is the same room at
-     evening service, warm charcoal rather than the blue-black the site uses.
-     `.style-high-contrast` squares the contrast up to AA-large on every pair. */
+     evening service, warm charcoal rather than the blue-black the site uses. */
   --rebar-sulphur: #c9a81b;
   /* Ink for anything printed ON the sulphur fill — the reticle's lock count,
      the hazard rule's label. Paired with that fill, so it does not follow
@@ -1011,91 +1009,6 @@
   --focus-ring: var(--site-accent);
 }
 
-/* Glass Light — daylight canvas: near-white base with soft pastel sky radials;
-   white frost at higher opacity, dark ink, cooler/lighter depth shadows. */
-.style-light {
-  color-scheme: light;
-  --site-bg: #e9edf6;
-  --site-bg-subtle: rgba(120, 145, 195, 0.09);
-  --site-surface: rgba(255, 255, 255, 0.3);
-  --site-surface-hover: rgba(255, 255, 255, 0.48);
-  --site-surface-active: rgba(255, 255, 255, 0.62);
-  --site-surface-opaque: #ffffff;
-  --site-border: rgba(18, 30, 66, 0.1);
-  --site-border-bright: rgba(18, 30, 66, 0.2);
-  --site-text: #17203a;
-  --site-text-muted: rgba(38, 50, 82, 0.82);
-  --site-text-dim: rgba(38, 50, 82, 0.68);
-  --site-accent: #6a4fd0;
-  --site-accent-fg: #ffffff;
-  --site-accent-hover: #7a61da;
-  --site-accent-dim: rgba(106, 79, 208, 0.12);
-  --site-success: #1f9d40;
-  --site-success-fg: #08120c;
-  --site-danger: #d70015;
-  --site-danger-fg: #ffffff;
-  --site-warning: #a8730a;
-  --site-warning-fg: #100b00;
-  /* Light glass: brighter frost, white rims, cool low-alpha depth. */
-  --site-glass-tint: rgba(255, 255, 255, 0.3);
-  --site-glass-tint-strong: rgba(255, 255, 255, 0.48);
-  --site-glass-pane-tint: var(--site-glass-tint);
-  --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 98%, transparent);
-  --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
-  --site-glass-ink: rgba(244, 247, 253, 0.55);
-  --site-glass-rim: rgba(255, 255, 255, 0.9);
-  --site-glass-rim-soft: rgba(255, 255, 255, 0.55);
-  --site-glass-light: rgba(255, 255, 255, 0.6);
-  --site-glass-depth: 0 0 0 0 transparent;
-  --site-glass-depth-sm: 0 0 0 0 transparent;
-  --site-glass-saturate: 150%;
-  /* §4.35: bright rims on bright frost need less light to read as an edge. */
-  --glass-glint-opacity: 0.5;
-  --site-radius: 26px;
-  --site-radius-sm: 20px;
-  --site-canvas:
-    radial-gradient(110% 85% at 8% -5%, rgba(120, 165, 255, 0.28), transparent 60%),
-    radial-gradient(95% 75% at 95% 2%, rgba(185, 150, 255, 0.24), transparent 60%),
-    radial-gradient(110% 95% at 88% 102%, rgba(120, 226, 205, 0.2), transparent 62%),
-    radial-gradient(80% 70% at 5% 100%, rgba(255, 175, 215, 0.16), transparent 60%),
-    linear-gradient(180deg, #eef1f9 0%, #e6ebf5 50%, #edf0f8 100%);
-  --site-aurora-far-1: rgba(120, 165, 255, 0.11);
-  --site-aurora-far-2: rgba(185, 150, 255, 0.1);
-  /* Light theme: leave the OSM map tiles as-is (already light). */
-  --site-map-filter: none;
-  --background: #e9edf6;
-  --foreground: #17203a;
-
-  /* Plasmatic Jelly material + arcs (meanings: the :root block). */
-  --site-jelly-haze: #f4f7fd;
-  --site-jelly-haze-strong: #ffffff;
-  --site-jelly-haze-fill: 0.014;
-  --site-jelly-haze-inset: 0.0055;
-  --site-jelly-haze-pane: 0.019;
-  --site-jelly-haze-chrome: 0.025;
-  --site-jelly-haze-overlay: 0.0085;
-  --site-jelly-plasma-a: color-mix(in srgb, var(--site-accent) 45%, white);
-  --site-jelly-plasma-b: #9fdcf4;
-  --site-jelly-plasma: 0.138;
-  --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.15;
-  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
-  --site-arc-core: color-mix(in oklch, var(--site-accent) 80%, #1b1240);
-  --site-arc-glow: color-mix(in oklch, var(--site-accent) 45%, transparent);
-  /* #989 gel layers (meanings: the :root block). Daylight. */
-  --gel-body: rgba(255, 255, 255, 0.12);
-  --gel-depth: rgba(18, 30, 66, 0.04);
-  --gel-ink: var(--site-accent);
-  --on-ink: var(--site-accent-fg);
-  --gel-fresnel: rgba(255, 255, 255, 0.3);
-  --gel-specular: rgba(255, 255, 255, 0.95);
-  --gel-edge-r: rgba(255, 92, 120, 0.064);
-  --gel-edge-g: rgba(64, 200, 150, 0.032);
-  --gel-edge-b: rgba(80, 110, 255, 0.064);
-  --focus-ring: var(--site-accent);
-}
-
 /* ── Curated themes (Apple-consistent) ──────────────────────────────────────
    Same token contract as the base three; each is a self-contained palette so a
    theme block can never silently drift. Kept tasteful/minimal on purpose. */
@@ -1205,306 +1118,6 @@
   --focus-ring: var(--site-accent);
 }
 
-/* Sepia Glass — warm parchment gradients, warm-white frost, amber accent,
-   golden rim. Book-like reading warmth with the glass material on top. */
-.style-sepia {
-  color-scheme: light;
-  --site-bg: #efe4cf;
-  --site-bg-subtle: rgba(120, 90, 50, 0.08);
-  --site-surface: rgba(255, 250, 238, 0.3);
-  --site-surface-hover: rgba(255, 250, 238, 0.48);
-  --site-surface-active: rgba(255, 250, 238, 0.62);
-  --site-surface-opaque: #fbf4e5;
-  --site-border: rgba(90, 62, 32, 0.18);
-  --site-border-bright: rgba(90, 62, 32, 0.3);
-  --site-text: #3a2e1e;
-  --site-text-muted: rgba(70, 54, 34, 0.82);
-  --site-text-dim: rgba(70, 54, 34, 0.72);
-  --site-accent: #a2592e;
-  --site-accent-fg: #fff;
-  --site-accent-hover: #8e4c26;
-  --site-accent-dim: rgba(162, 89, 46, 0.14);
-  --site-success: #4f7d3a;
-  --site-success-fg: #ffffff;
-  --site-danger: #b23a2f;
-  --site-danger-fg: #ffffff;
-  --site-warning: #a8730a;
-  --site-warning-fg: #100b00;
-  --site-glass-tint: rgba(255, 250, 238, 0.3);
-  --site-glass-tint-strong: rgba(255, 250, 238, 0.48);
-  --site-glass-pane-tint: var(--site-glass-tint);
-  --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 98%, transparent);
-  --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
-  --site-glass-ink: rgba(240, 232, 214, 0.6);
-  --site-glass-rim: rgba(255, 248, 230, 0.85);
-  --site-glass-rim-soft: rgba(255, 248, 230, 0.45);
-  --site-glass-light: rgba(255, 240, 210, 0.5);
-  --site-glass-depth: 0 0 0 0 transparent;
-  --site-glass-depth-sm: 0 0 0 0 transparent;
-  --site-glass-saturate: 150%;
-  /* §4.35: bright rims on bright frost need less light to read as an edge. */
-  --glass-glint-opacity: 0.5;
-  --site-radius: 26px;
-  --site-radius-sm: 20px;
-  --site-canvas:
-    radial-gradient(110% 85% at 10% -5%, rgba(220, 180, 120, 0.32), transparent 60%),
-    radial-gradient(95% 78% at 94% 4%, rgba(210, 160, 90, 0.22), transparent 60%),
-    radial-gradient(115% 95% at 86% 104%, rgba(235, 205, 150, 0.24), transparent 64%),
-    linear-gradient(180deg, #f4ead6 0%, #efe4cf 50%, #ece0c8 100%);
-  --site-aurora-far-1: rgba(220, 180, 120, 0.12);
-  --site-aurora-far-2: rgba(210, 160, 90, 0.09);
-  /* Sepia is a light theme — keep the light OSM map tiles. */
-  --site-map-filter: none;
-  --background: #efe4cf;
-  --foreground: #3a2e1e;
-
-  /* Plasmatic Jelly material + arcs (meanings: the :root block). */
-  --site-jelly-haze: #fff6e6;
-  --site-jelly-haze-strong: #fffaf0;
-  --site-jelly-haze-fill: 0.014;
-  --site-jelly-haze-inset: 0.0055;
-  --site-jelly-haze-pane: 0.019;
-  --site-jelly-haze-chrome: 0.025;
-  --site-jelly-haze-overlay: 0.0085;
-  --site-jelly-plasma-a: #f0c48c;
-  --site-jelly-plasma-b: #eaa79e;
-  --site-jelly-plasma: 0.138;
-  --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.15;
-  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
-  --site-arc-core: color-mix(in oklch, var(--site-accent) 70%, #3a1d6e);
-  --site-arc-glow: color-mix(in oklch, var(--site-accent) 40%, transparent);
-  /* #989 gel layers (meanings: the :root block). Warm daylight. */
-  --gel-body: rgba(255, 250, 238, 0.05);
-  --gel-depth: rgba(90, 62, 32, 0.045);
-  --gel-ink: var(--site-accent);
-  --on-ink: var(--site-accent-fg);
-  --gel-fresnel: rgba(255, 248, 230, 0.6);
-  --gel-specular: rgba(255, 250, 236, 0.95);
-  --gel-edge-r: rgba(230, 90, 70, 0.064);
-  --gel-edge-g: rgba(120, 170, 90, 0.032);
-  --gel-edge-b: rgba(90, 110, 210, 0.056);
-  --focus-ring: var(--site-accent);
-}
-
-/* Nocturne Glass — deep-navy nightscape with a sky-blue aurora; cool
-   blue-shifted tint and rims. A calmer alternative to Glass Dark. */
-.style-nocturne {
-  color-scheme: dark;
-  --site-bg: #0a1424;
-  --site-bg-subtle: rgba(150, 185, 255, 0.08);
-  --site-surface: rgba(150, 185, 255, 0.09);
-  --site-surface-hover: rgba(150, 185, 255, 0.15);
-  --site-surface-active: rgba(150, 185, 255, 0.21);
-  --site-surface-opaque: #16233e;
-  --site-border: rgba(180, 205, 255, 0.14);
-  --site-border-bright: rgba(180, 205, 255, 0.26);
-  --site-text: #eaeef7;
-  --site-text-muted: rgba(208, 220, 246, 0.88);
-  --site-text-dim: rgba(202, 216, 245, 0.7);
-  --site-accent: #5e9dff;
-  --site-accent-fg: #001227;
-  --site-accent-hover: #7db0ff;
-  --site-accent-dim: rgba(94, 157, 255, 0.16);
-  --site-success: #30d158;
-  --site-success-fg: #08120c;
-  --site-danger: #ff6961;
-  --site-danger-fg: #1a0a0c;
-  --site-warning: #ffd60a;
-  --site-warning-fg: #100b00;
-  --site-glass-tint: rgba(150, 185, 255, 0.09);
-  --site-glass-tint-strong: rgba(150, 185, 255, 0.15);
-  --site-glass-pane-tint: var(--site-glass-tint);
-  --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 98%, transparent);
-  --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
-  /* Nocturne declared the whole glass contract EXCEPT this one, so it fell
-     through to the light theme's `rgba(255, 255, 255, 0.9)` at :root — and
-     `.glass-inset` is `background: var(--site-glass-ink)`, which made every
-     recessed well on this theme a white slab carrying near-white text: every
-     Input, every Textarea, the Select trigger, the profile progress track. A
-     well is a hole in the sheet, so like the other dark themes it is a darkened
-     cut of this theme's own ground (#0a1424), not a lightened one. */
-  --site-glass-ink: rgba(4, 10, 22, 0.58);
-  --site-glass-rim: rgba(200, 220, 255, 0.28);
-  --site-glass-rim-soft: rgba(200, 220, 255, 0.1);
-  --site-glass-light: rgba(180, 210, 255, 0.14);
-  --site-glass-depth: 0 0 0 0 transparent;
-  --site-glass-depth-sm: 0 0 0 0 transparent;
-  --site-radius: 26px;
-  --site-radius-sm: 20px;
-  --row-glow-strength: 20%;
-  --site-canvas:
-    radial-gradient(110% 85% at 12% -6%, rgba(70, 120, 220, 0.32), transparent 62%),
-    radial-gradient(95% 78% at 94% 2%, rgba(90, 150, 255, 0.24), transparent 60%),
-    radial-gradient(120% 95% at 84% 104%, rgba(60, 190, 210, 0.18), transparent 64%),
-    linear-gradient(180deg, #0a1424 0%, #0e1c34 50%, #081120 100%);
-  --site-aurora-far-1: rgba(70, 120, 220, 0.13);
-  --site-aurora-far-2: rgba(90, 150, 255, 0.1);
-  --background: #0a1424;
-  --foreground: #eaeef7;
-
-  /* Plasmatic Jelly material + arcs (meanings: the :root block). */
-  --site-jelly-haze: #b4c8ff;
-  --site-jelly-haze-strong: #cbd9ff;
-  --site-jelly-haze-fill: 0.0095;
-  --site-jelly-haze-inset: 0.0055;
-  --site-jelly-haze-pane: 0.014;
-  --site-jelly-haze-chrome: 0.019;
-  --site-jelly-haze-overlay: 0.007;
-  --site-jelly-plasma-a: #6f9bff;
-  --site-jelly-plasma-b: #47d1c4;
-  --site-jelly-plasma: 0.22;
-  --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.125;
-  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
-  --site-arc-core: color-mix(in oklch, white 70%, var(--site-accent));
-  --site-arc-glow: color-mix(in oklch, var(--site-accent) 55%, transparent);
-  /* #989 gel layers (meanings: the :root block). Dark: the base sinks toward the void. */
-  --gel-body: rgba(200, 220, 255, 0.025);
-  --gel-depth: rgba(2, 6, 16, 0.16);
-  --gel-ink: var(--site-accent);
-  --on-ink: var(--site-accent-fg);
-  --gel-fresnel: rgba(200, 220, 255, 0.18);
-  --gel-well-shade: rgba(0, 0, 0, 0.5);
-  --gel-specular: rgba(225, 236, 255, 0.85);
-  --gel-edge-r: rgba(255, 110, 140, 0.08);
-  --gel-edge-g: rgba(80, 220, 190, 0.04);
-  --gel-edge-b: rgba(94, 157, 255, 0.104);
-  --focus-ring: var(--site-accent);
-}
-
-/* Ultra — the precision interface. Near-black spectral depth, ice-cyan signal
-   colour, sharp geometry and restrained violet energy trade the default's soft
-   oceanic atmosphere for a denser, instrument-grade feel. It still fulfills
-   the complete glass contract, so accessibility preferences and every shared
-   primitive continue to compose without theme-specific component patches. */
-.style-ultra {
-  color-scheme: dark;
-  --site-bg: #07090f;
-  --site-bg-subtle: rgba(129, 231, 255, 0.055);
-  --site-surface: rgba(202, 241, 255, 0.065);
-  --site-surface-hover: rgba(202, 241, 255, 0.115);
-  --site-surface-active: rgba(202, 241, 255, 0.17);
-  --site-surface-opaque: #111722;
-  --site-border: rgba(178, 230, 255, 0.14);
-  --site-border-bright: rgba(182, 239, 255, 0.36);
-  --site-text: #f5f9ff;
-  --site-text-muted: rgba(226, 237, 249, 0.88);
-  --site-text-dim: rgba(207, 224, 242, 0.74);
-  --site-accent: #76f7ff;
-  --site-accent-fg: #031214;
-  --site-accent-hover: #a1fbff;
-  --site-accent-dim: rgba(118, 247, 255, 0.14);
-  --site-success: #62f6b8;
-  --site-success-fg: #08120c;
-  --site-danger: #ff668f;
-  --site-danger-fg: #210711;
-  --site-warning: #ffd166;
-  --site-warning-fg: #100b00;
-
-  /* Clearer, colder material with a narrow high-energy edge. */
-  --site-glass-tint: rgba(169, 224, 255, 0.065);
-  --site-glass-tint-strong: rgba(177, 232, 255, 0.12);
-  --site-glass-pane-tint: var(--site-glass-tint);
-  --site-glass-chrome-tint: color-mix(in srgb, var(--site-bg) 42%, transparent);
-  --site-glass-overlay-tint: color-mix(in srgb, var(--site-bg) 98%, transparent);
-  --site-glass-mobile-tint: color-mix(in srgb, var(--site-bg) 26%, transparent);
-  --site-glass-ink: rgba(2, 6, 14, 0.58);
-  --site-glass-rim: rgba(191, 244, 255, 0.42);
-  --site-glass-rim-soft: rgba(157, 223, 255, 0.12);
-  --site-glass-light: rgba(118, 247, 255, 0.18);
-  --site-glass-blur-pane: 14px;
-  --site-glass-blur-chrome: 11px;
-  --site-glass-blur-chrome-scrolled: 13px;
-  --site-glass-blur-overlay: 22px;
-  --site-glass-saturate: 175%;
-  --site-glass-depth: 0 0 0 0 transparent;
-  --site-glass-depth-sm: 0 0 0 0 transparent;
-  --site-shadow: 0 0 0 0 transparent;
-  --site-shadow-sm: 0 0 0 0 transparent;
-  --glass-bevel: 8px;
-  --glass-glint-size: 260px;
-  --glass-glint-opacity: 1;
-  --site-glass-noise: none;
-
-  /* Tighter geometry and faster response give every tokenized primitive the
-     same technical silhouette without coupling the theme to data-slot rules. */
-  --site-radius: 24px;
-  --site-radius-sm: 18px;
-  --row-glow-strength: 20%;
-  --site-control-radius: 18px;
-  --site-font-display: var(--font-playfair), 'Playfair Display', Georgia, serif;
-  --site-font-body:
-    var(--font-geist), -apple-system, BlinkMacSystemFont, 'SF Pro Text', var(--font-inter),
-    system-ui, sans-serif;
-  --site-font-mono:
-    var(--font-geist-mono), var(--font-jetbrains-mono), 'SF Mono', 'Cascadia Code', monospace;
-  --site-card-transform: translateY(-3px);
-  --site-transition-speed: 150ms;
-  --site-press-duration: 180ms;
-  --site-heading-transform: none;
-  --site-letter-spacing: -0.035em;
-  --ease-glass: cubic-bezier(0.3, 0, 0.15, 1.18);
-
-  /* A subtle 64px technical grid sits behind asymmetric cyan/violet energy.
-     Repeating gradients keep the pattern crisp at any viewport size. */
-  --site-canvas:
-    radial-gradient(90% 68% at 8% -4%, rgba(52, 211, 255, 0.26), transparent 58%),
-    radial-gradient(76% 62% at 96% 3%, rgba(127, 92, 255, 0.24), transparent 60%),
-    radial-gradient(88% 72% at 78% 106%, rgba(0, 255, 198, 0.13), transparent 62%),
-    repeating-linear-gradient(
-      90deg,
-      rgba(157, 229, 255, 0.018) 0,
-      rgba(157, 229, 255, 0.018) 1px,
-      transparent 1px,
-      transparent 64px
-    ),
-    repeating-linear-gradient(
-      0deg,
-      rgba(157, 229, 255, 0.014) 0,
-      rgba(157, 229, 255, 0.014) 1px,
-      transparent 1px,
-      transparent 64px
-    ),
-    linear-gradient(160deg, #07090f 0%, #0a0e18 48%, #060810 100%);
-  --site-aurora-far-1: rgba(52, 211, 255, 0.12);
-  --site-aurora-far-2: rgba(127, 92, 255, 0.11);
-  --site-map-filter: invert(1) hue-rotate(165deg) brightness(0.78) contrast(1.08) saturate(0.8);
-  --background: #07090f;
-  --foreground: #f5f9ff;
-
-  /* Plasmatic Jelly material + arcs (meanings: the :root block). */
-  --site-jelly-haze: #bff4ff;
-  --site-jelly-haze-strong: #d6f9ff;
-  --site-jelly-haze-fill: 0.0085;
-  --site-jelly-haze-inset: 0.0055;
-  --site-jelly-haze-pane: 0.0125;
-  --site-jelly-haze-chrome: 0.018;
-  --site-jelly-haze-overlay: 0.007;
-  --site-jelly-plasma-a: #76f7ff;
-  --site-jelly-plasma-b: #c86bff;
-  --site-jelly-plasma: 0.247;
-  --site-jelly-flow-speed: 1;
-  --site-jelly-quiet: 0.125;
-  /* Electric arcs (03-arcs.md §1.3): core filament + glow, per theme. */
-  --site-arc-core: color-mix(in oklch, white 60%, var(--site-accent));
-  --site-arc-glow: color-mix(in oklch, var(--site-accent) 50%, #b46cff 20%);
-  /* #989 gel layers (meanings: the :root block). Dark: the base sinks toward the void. */
-  --gel-body: rgba(191, 244, 255, 0.025);
-  --gel-depth: rgba(0, 2, 8, 0.16);
-  --gel-ink: var(--site-accent);
-  --on-ink: var(--site-accent-fg);
-  --gel-fresnel: rgba(191, 244, 255, 0.22);
-  --gel-well-shade: rgba(0, 0, 0, 0.5);
-  --gel-specular: rgba(214, 250, 255, 0.9);
-  --gel-edge-r: rgba(255, 90, 160, 0.088);
-  --gel-edge-g: rgba(0, 255, 198, 0.04);
-  --gel-edge-b: rgba(118, 160, 255, 0.104);
-  --focus-ring: var(--site-accent);
-}
-
 /* ══════════════════════════════════════════════════════════════════════════
    COLOUR-VISION MODES
    Retints the three SEMANTIC tokens for viewers with a colour-vision
@@ -1536,8 +1149,8 @@ html[data-color-vision='protanopia'] {
 
 /* Same hues lifted for dark surfaces: the light-theme values fall below the
    contrast floor on a near-black background. */
-html[data-color-vision='deuteranopia']:is(.style-graphite, .style-nocturne, .style-ultra),
-html[data-color-vision='protanopia']:is(.style-graphite, .style-nocturne, .style-ultra) {
+html[data-color-vision='deuteranopia']:is(.style-graphite),
+html[data-color-vision='protanopia']:is(.style-graphite) {
   --site-success: #56b4e9;
   --site-success-fg: #08120c;
   --site-danger: #ff9a6b;
@@ -1558,7 +1171,7 @@ html[data-color-vision='tritanopia'] {
   --site-warning-fg: #ffffff;
 }
 
-html[data-color-vision='tritanopia']:is(.style-graphite, .style-nocturne, .style-ultra) {
+html[data-color-vision='tritanopia']:is(.style-graphite) {
   --site-success: #4ade80;
   --site-success-fg: #08120c;
   --site-danger: #ff8080;
@@ -1829,15 +1442,6 @@ html.app-route {
     transform: translate3d(36.9%, 0, 0);
   }
 }
-/* One pass of the same band for .glass-sheen-hover (single background layer). */
-@keyframes glass-sheen-once {
-  from {
-    background-position: 150% 0;
-  }
-  to {
-    background-position: -60% 0;
-  }
-}
 
 /* §5.47 true liquid morphing — the goo underlay. An absolutely-positioned,
    capsule-only layer behind a control's active capsule that carries the
@@ -2009,15 +1613,10 @@ html.readable-font body {
   padding-inline: 1rem;
 }
 
-/* Novelty themes retired in the Apple-style overhaul. The PICKER now ships three
-   (stores/themeStore.ts, SITE_STYLES): Daylight (`default` — the bare :root,
-   restated as .style-default only so the settings gallery can preview it),
-   Midnight (.style-graphite) and High contrast (.style-high-contrast). The other
-   palettes above — .style-light, .style-sepia, .style-nocturne, .style-ultra —
-   are complete, unregistered token sets kept as the reference every USER theme
-   derives from (lib/themes/tokens.ts) and as proof the contract holds outside
-   monochrome. Accent presets layer on top of any of them (lib/appearance.ts).
-   Midnight is DEFAULT_STYLE (what a visitor with nothing stored gets);
+/* The PICKER ships two themes (stores/themeStore.ts, SITE_STYLES): Daylight
+   (`default` — the bare :root, restated as .style-default only so the settings
+   gallery can preview it) and Midnight (.style-graphite). Accent presets layer
+   on top of either (lib/appearance.ts). Midnight is DEFAULT_STYLE (what a visitor with nothing stored gets);
    persisted-but-unknown ids self-heal to it during hydration. */
 
 @theme inline {
@@ -2563,40 +2162,12 @@ html.readable-font body {
      colour there — that is what produces white-on-white / black-on-black titles
      over thumbnails. These utilities guarantee contrast independently of the
      image and of the active theme:
-       • .media-scrim / .media-scrim-full — an absolutely-positioned darkening
-         layer to drop between the media and the text (bottom-anchored, or an
-         even wash for centred overlays). Pointer events pass through.
        • .text-on-media — force a light ink + shadow halo on the text itself, so
-         it stays legible even where the scrim is thin. Use together for belt-
-         and-suspenders contrast on any overlay.
+         it stays legible even where the scrim is thin.
 
-     These are the LAYER half of the media-overlay contract; the `--site-media-*`
-     tokens in `:root` are the CHIP half (the backing behind a control that sits
-     on media). They were written separately and each hardcoded its own blacks —
-     which is exactly the thing the contract exists to prevent, since neither was
-     then reachable by high-contrast. They read the same tokens now: change the
-     scrim once and a chip, a lightbox veil and this wash all move together. */
-  .media-scrim,
-  .media-scrim-full {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  .media-scrim {
-    background: linear-gradient(
-      to top,
-      var(--site-media-scrim-hover) 0%,
-      var(--site-media-scrim) 34%,
-      transparent 64%
-    );
-  }
-
-  .media-scrim-full {
-    background: var(--site-media-scrim);
-  }
-
+     The `--site-media-*` tokens in `:root` are the CHIP half (the backing behind
+     a control that sits on media); `.text-on-media` reads the same tokens, so
+     change the scrim once and a chip and this halo move together. */
   .text-on-media {
     color: var(--site-media-ink);
     text-shadow:
@@ -2810,27 +2381,6 @@ html.readable-font body {
     }
   }
 
-  /* §5.45 / §5.5x A.4 — horizontal scroll track for tab-strip sheets. Standardises
-     the ad-hoc `overflow-x-auto [scrollbar hidden]` wrappers that grew around the
-     LiquidTabs pills (§12.8 drift): scrolls when the pill exceeds the column, never
-     wraps and hides the scrollbar. The visible glass sheet around the viewport
-     provides the containment edge; masking the content itself made the first and
-     last labels look permanently cut off even when the strip was not scrollable.
-     A partially visible next item remains the natural overflow cue. Nothing
-     competes for the horizontal swipe any more — the page-wide drawer gesture
-     that used to have to yield to this went away with the mobile push-drawer. */
-  .tab-sheet-scroll {
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    scroll-padding-inline: 8px;
-    touch-action: pan-x pan-y;
-  }
-  .tab-sheet-scroll::-webkit-scrollbar {
-    display: none;
-  }
-
   .horizontal-scroller__viewport {
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
@@ -2940,54 +2490,6 @@ html.readable-font body {
 
 .glitch-text {
   animation: glitch 2s infinite;
-}
-
-/* SHAKE animation */
-@keyframes shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-
-  10% {
-    transform: translateX(-5px);
-  }
-
-  20% {
-    transform: translateX(5px);
-  }
-
-  30% {
-    transform: translateX(-5px);
-  }
-
-  40% {
-    transform: translateX(5px);
-  }
-
-  50% {
-    transform: translateX(-3px);
-  }
-
-  60% {
-    transform: translateX(3px);
-  }
-
-  70% {
-    transform: translateX(-2px);
-  }
-
-  80% {
-    transform: translateX(2px);
-  }
-
-  90% {
-    transform: translateX(-1px);
-  }
-}
-
-.shake {
-  animation: shake 0.5s ease-in-out infinite;
 }
 
 /* ==================== BASE STYLES ==================== */
@@ -4328,7 +3830,7 @@ html[data-page-leaving] .page-root > * {
  * navigation; on a fresh load the server-rendered page is already there, and
  * fading it in from opacity 0 hid it at first contentful paint — an element
  * painted at opacity 0 is not an LCP candidate, so the home feed's first card
- * never counted (docs/performance-audit-2026-10-21.md §Home LCP).
+ * never counted (docs/archive/2026/performance-audit-2026-10-21.md §Home LCP).
  * `data-navigated` is set on the first client navigation (`app/routes/__root.tsx`),
  * which marks the page then on screen complete first so it never replays. */
 html:not([data-navigated]) .page-root > * {
@@ -5342,18 +4844,14 @@ html.nav-restoring .feed-card-cv {
  * the active theme, so an inverse surface is still glass — just inverted.
  */
 :root,
-.style-default,
-.style-light,
-.style-sepia {
+.style-default {
   --site-inverse-bg: #14151c;
   --site-inverse-text: #ffffff;
   --site-inverse-muted: #c6c8d7;
   --site-inverse-border: rgba(255, 255, 255, 0.22);
 }
 
-.style-graphite,
-.style-nocturne,
-.style-ultra {
+.style-graphite {
   --site-inverse-bg: #f7f7fb;
   --site-inverse-text: #11131c;
   --site-inverse-muted: #5e6170;
@@ -5516,7 +5014,7 @@ body {
    the fail-open property structurally instead of by arming an attribute.
    `--site-reveal-distance` / `-duration` / `-ease` above are KEPT and are what
    the CSS reveals read, so "one curve for the whole site" survives the change.
-   See docs/performance-audit-2026-08-12.md §1.4. */
+   See docs/archive/2026/performance-audit-2026-08-12.md §1.4. */
 
 /* Standalone design-system story. */
 .spatial-design-page {
@@ -6435,8 +5933,7 @@ body {
   .glass-interactive,
   .glass-refract,
   .glass-liquid,
-  .glass-bevel-sm,
-  .glass-sheen-hover {
+  .glass-bevel-sm {
     background: none !important;
     background-image: none !important;
     backdrop-filter: none !important;
@@ -6589,7 +6086,7 @@ video::cue {
 
 /* Bedtime mode: during the member's quiet hours, one dimming layer and one
    desaturating layer over the whole page. Fixed, inert, and skipped entirely by
-   the high-contrast theme and by print. */
+   print. */
 html[data-bedtime]::before,
 html[data-bedtime]::after {
   content: '';

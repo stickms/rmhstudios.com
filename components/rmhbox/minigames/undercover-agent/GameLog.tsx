@@ -49,7 +49,7 @@ export default function GameLog({ redTeam, blueTeam, logEntries }: GameLogProps)
   // `scrollHeight` FORCES a synchronous layout on every new entry, and the old
   // form re-pinned unconditionally — so a reader scrolled up to check an earlier
   // line was yanked back down by the next one. See
-  // docs/performance-audit-2026-08-12.md §1.5.
+  // docs/archive/2026/performance-audit-2026-08-12.md §1.5.
   const { containerRef, contentRef } = useStickToBottom<HTMLDivElement, HTMLDivElement>();
 
   return (

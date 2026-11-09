@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 /**
- * Server HTTP harness (docs/server-perf-2026-10-21/01-method.md §1.1).
+ * Server HTTP harness (docs/archive/2026/server-perf-2026-10-21/01-method.md §1.1).
  *
  *   node scripts/perf/server-bench.mjs --base http://localhost:7105 \
  *     --routes scripts/perf/server-routes.json --auth both \
  *     --warmup 5 --samples 30 --concurrency 16 --duration 5 \
- *     --out docs/server-perf-2026-10-21/results/baseline.json
+ *     --out docs/archive/2026/server-perf-2026-10-21/results/baseline.json
  *   node scripts/perf/server-bench.mjs --compare before.json after.json
  *   node scripts/perf/server-bench.mjs --summary baseline.json
  *   ... --only '/api/leaderboard*,home'      (glob on route id or path; comma list)

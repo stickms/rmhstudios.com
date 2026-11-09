@@ -34,7 +34,7 @@ export function getRouter() {
     // `.preload()`, which is the dynamic import — so Vite's own `__vitePreload`
     // emits the `<link rel="modulepreload">` for the chunk and its deps. A
     // hand-rolled modulepreload on the same intent signal (OPT-03 in
-    // docs/optimization-ideas-2026-08-05.md) would duplicate this, so don't add
+    // docs/archive/2026/optimization-ideas-2026-08-05.md) would duplicate this, so don't add
     // one without first re-checking that the compiled route options still use
     // `lazyRouteComponent`.
     defaultPreload: 'intent',
@@ -57,7 +57,7 @@ export function getRouter() {
     // 400ms the click is already acknowledged — the press state, and
     // `NavigationProgress`'s bar from 90ms — so the old page stays put and the
     // new one replaces it directly, which is how a native app navigates; only a
-    // genuinely slow load shows the skeleton (docs/performance-audit-2026-10-21.md
+    // genuinely slow load shows the skeleton (docs/archive/2026/performance-audit-2026-10-21.md
     // §Instant navigation).
     defaultPendingComponent: RoutePending,
     defaultPendingMs: 400,
@@ -80,7 +80,7 @@ export function getRouter() {
   // a slow phone, and a preload issued before the server's matches are adopted
   // has nothing to reuse — it re-ran the root loader over the network, and
   // hydrate waited on those shared matches (+2.2s to interactive on slow 4G;
-  // docs/performance-audit-2026-10-21.md §Home LCP).
+  // docs/archive/2026/performance-audit-2026-10-21.md §Home LCP).
   if (typeof document !== 'undefined' && !styleTierPreloadInstalled) {
     styleTierPreloadInstalled = true;
     installStyleTierPreload(router, appTierCss);

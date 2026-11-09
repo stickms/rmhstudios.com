@@ -2,7 +2,7 @@
  * Data-lifecycle cleanup — batched purge of unbounded/ephemeral rows.
  *
  * Addresses the "nothing is ever cleaned up" finding in
- * docs/scalability-audit-2026-07-17.md §1.5: `session`/`verification` rows are
+ * docs/archive/2026/scalability-audit-2026-07-17.md §1.5: `session`/`verification` rows are
  * never GC'd, `notification` grows unbounded per user forever,
  * `rmheet_comment_view` accumulates one row per (comment, viewer) forever, and
  * soft-deleted posts (`rmheet.deletedAt`) stay in the hot table indefinitely.

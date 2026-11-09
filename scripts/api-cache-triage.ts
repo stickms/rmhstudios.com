@@ -3,7 +3,7 @@
  * as public-cacheable, private-cacheable or no-store.
  *
  * Why this exists: `auth: 'none'` is NOT proof that a response is anonymous-
- * invariant (docs/loading-audit-2026-08-11/03-api-caching.md §2: 46 of 69
+ * invariant (docs/archive/2026/loading-audit-2026-08-11/03-api-caching.md §2: 46 of 69
  * `auth: 'none'` handlers read the session themselves). A `public` cache on one
  * of those serves the first caller's body to everyone. So the verdict here is
  * computed from what the handler *and the functions it calls* actually touch,
@@ -503,7 +503,7 @@ function routeUrl(file: string): string {
   return '/' + rel;
 }
 
-/** File ownership per docs/server-perf-2026-10-21/04-workstreams.md (WS5 owns no api routes). */
+/** File ownership per docs/archive/2026/server-perf-2026-10-21/04-workstreams.md (WS5 owns no api routes). */
 export function ownerOf(url: string): Row['owner'] {
   const ws6 = [
     /^\/api\/og(\/|$)/,

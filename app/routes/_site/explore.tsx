@@ -45,7 +45,7 @@ export const Route = createFileRoute('/_site/explore')({
   // The defaults never reach the URL. Without this the canonical form of a
   // bare `/explore` — the nav's own link — was `/explore?q=&tab=top`, so every
   // direct visit, reload and shared link answered with a 307 and paid a second
-  // round trip before the first byte of the page (docs/ui-perf-audit-2026-10-09.md,
+  // round trip before the first byte of the page (docs/archive/2026/ui-perf-audit-2026-10-09.md,
   // LOAD-1). Stripping them makes `/explore` its own canonical address.
   search: { middlewares: [stripSearchParams({ q: '', tab: 'top' as SearchTab })] },
   loader: () => fetchExplore(),

@@ -7,7 +7,7 @@
 # unrecoverable loss of all user data. This script is the "stop the bleeding"
 # logical-backup leg; pair it with WAL archiving (see deploy/backup/README.md)
 # for point-in-time recovery. It is the P0 precondition for every schema-
-# touching phase of the rewrite (docs/full-rewrite-design-2026-07-18.md §2.3).
+# touching phase of the rewrite (docs/archive/2026/full-rewrite-design-2026-07-18.md §2.3).
 #
 # It runs OUTSIDE the sandboxed CD deploy (the webhook deploy.sh runs under
 # ProtectSystem=strict and cannot reach host credentials or run long jobs), as a

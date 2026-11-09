@@ -292,4 +292,4 @@ result from quietly expiring.
 
 ## What the audit found
 
-See [`fouc-audit-2026-10-06.md`](./fouc-audit-2026-10-06.md).
+See [`fouc-audit-2026-10-06.md`](./archive/2026/fouc-audit-2026-10-06.md).

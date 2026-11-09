@@ -17,7 +17,7 @@
  * `recoverable` for anything else, so either can be told apart from an uncaught
  * exception), and to `console.error`, where the FOUC audit
  * (`testing/e2e/fouc.mjs`) hears it as a `hydration` finding with the stack
- * attached. See docs/fouc-audit-2026-10-06.md.
+ * attached. See docs/archive/2026/fouc-audit-2026-10-06.md.
  */
 import { StrictMode, startTransition } from 'react';
 import { hydrateRoot } from 'react-dom/client';

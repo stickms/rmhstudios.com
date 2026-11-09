@@ -8,9 +8,9 @@ and deploy pipeline see [`architecture.md`](./architecture.md) §2–3 and
 > tree, `go-services/**/*_test.go`, and the `.github/workflows/*` files. When a
 > doc disagrees with those, the files win.
 >
-> Last verified against the tree on **2026-08-08** (the testing audit): 258
-> `*.test.ts(x)` files — 247 in the main suite, 11 in the epic suite. ~6.0k
-> tests; a full main run is ~20s on 4 cores.
+> File counts are generated, not hand-written: see `testFiles` in
+> [`_generated/facts.json`](./_generated/facts.json) (`pnpm facts:check` keeps it
+> honest). Timings are not recorded here; measure with `time pnpm test`.
 > `lib/__tests__/test-discovery.test.ts` keeps that accounting honest.
 >
 > The suite is deliberately **narrow**: it covers what costs money, data, or
@@ -22,7 +22,7 @@ and deploy pipeline see [`architecture.md`](./architecture.md) §2–3 and
 
 ```bash
 pnpm check:consistency        # the commit gate (guard tests + lint + tsc + docs freshness)
-pnpm test                     # main suite (vitest.config.ts) — ~20s
+pnpm test                     # main suite (vitest.config.ts); measure with `time pnpm test`
 pnpm test lib/slice-it        # one file or directory
 pnpm test:watch               # watch mode
 pnpm test:coverage            # V8 coverage → text + coverage/index.html + lcov
@@ -57,7 +57,7 @@ gate, the game-viewport contract, the filter-cost budget, the theme-token and
 colour-vision contracts, the API-handler adoption backlog, the i18n catalog and
 namespace integrity, the rAF-loop allowlist, the server-bundle copy check, the
 FOUC contract and the test-discovery gate — plus eslint on the changed files,
-`tsc`, and the generated-docs freshness checks. That subset runs in ~3s. It is wired into
+`tsc`, and the generated-docs freshness checks. That subset is deliberately the fast one (measure with `time pnpm check:consistency --fast`). It is wired into
 `git commit` by `.githooks/pre-commit` (`pnpm hooks:install`) and by
 `.claude/hooks/commit-gate.sh` in agent sessions. A new guard test belongs in
 the `GATE_TESTS` list in `scripts/check-consistency.sh`.
@@ -77,15 +77,15 @@ helpers (`MOCK_USERS`, `createPlayer`, default settings, …).
 
 What's in it:
 
-- **`lib/__tests__/`** (149 files) — the bulk of the suite and the executable
+- **`lib/__tests__/`** (`ls lib/__tests__ | wc -l`; total test files in `testFiles` of `_generated/facts.json`) — the bulk of the suite and the executable
   conventions: auth and the API-handler contract, the coin economy and the
   ledger, entitlements and membership tiers, media upload/quota/sweep, storage
   keys and compression, SSRF, rate limits, sessions, migration safety, the
   server-bundle copy check, i18n catalog integrity, sitemap/SEO, and the
   design/theme/colour-vision gates. See `lib/CLAUDE.md` §Testing; these are the
-  authority for `docs/design-language.md` §13 and 16 of them are in the commit
-  gate.
-- **`lib/rmhladder/` + `lib/homes/`** (52 files) — the job/listing discovery
+  authority for `docs/design-language.md` §13 and a subset of them are in the commit
+  gate (the list in `scripts/check-consistency.sh` is authoritative).
+- **`lib/rmhladder/` + `lib/homes/`** — the job/listing discovery
   pipelines. Kept whole: they fetch third-party sites (robots compliance, URL
   allowlists) and write to the database, and `lib/CLAUDE.md` calls this suite
   the contract for the pipeline.
@@ -114,8 +114,9 @@ way: a file that should not run should not be named `*.test.ts`.
 
 #### Speed
 
-~20s for 247 files / ~6.0k tests on 4 cores, down from ~50s. What moved it, in
-order:
+Historically (2026-08-08 audit: 247 files / ~6.0k tests on 4 cores) this came
+down from ~50s to ~20s; the suite has since grown several-fold and the figure is
+not re-measured here (`time pnpm test`). What moved it, in order:
 
 | Change                                         | Why                                                                                                                                                               |
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -292,7 +293,7 @@ Absolute fps here is SwiftShader's, so compare builds and routes, not devices.
 Its commit-time half is `lib/__tests__/static-backdrop.test.ts` (in
 `GATE_TESTS`: the backdrop stays completely still — jelly moves, the room does
 not). Findings and the measured before/after:
-[`performance-audit-2026-10-08.md`](./performance-audit-2026-10-08.md) (its 2 fps
+[`performance-audit-2026-10-08.md`](./archive/2026/performance-audit-2026-10-08.md) (its 2 fps
 rest limit is superseded as above).
 
 **Page switches.** Its sibling `testing/e2e/page-switch.mjs` times the other
@@ -320,7 +321,7 @@ the outgoing page's own `main h1` is still mounted when the URL flips, and
 counting it made every h1 destination look ready a frame after the click.
 
 Findings and the measured before/after:
-[`performance-audit-2026-10-21.md`](./performance-audit-2026-10-21.md) §Navigation commit and
+[`performance-audit-2026-10-21.md`](./archive/2026/performance-audit-2026-10-21.md) §Navigation commit and
 §Instant navigation.
 
 ### 7. Globe eversion suites (`lib/eversion/`, `testing/e2e/eversion-*.mjs`)
@@ -506,7 +507,7 @@ Details, what it proved and what loopback cannot prove: [`hearthworks-multiplaye
 
 ### Server perf harness (not in CI)
 
-The server-side performance program ([`docs/server-perf-2026-10-21/`](server-perf-2026-10-21/index.md))
+The server-side performance program ([`docs/archive/2026/server-perf-2026-10-21/`](./archive/2026/server-perf-2026-10-21/index.md))
 measures the production build against a seeded dataset. Like the integration suite above it boots the built app (`.output/server/index.mjs`) against a real Postgres, but it measures latency and query counts rather than asserting behaviour, and it is never run in CI. Method, budgets and the
 agent procedure are in that folder; the instruments live in `scripts/perf/`:
 
@@ -523,7 +524,7 @@ node scripts/perf/cold-start.mjs --port 71<N>5                          # restar
 
 Raw bench output (`--out *.json`, ~9k lines per run) stays out of the repo: `--compare` and `--summary` take any paths, so
 no checked-in baseline is needed. Commit the derived table (`--compare … > compare.md`) and the report instead. The program's
-own raw runs are in git history at `1b437552d` (`docs/server-perf-2026-10-21/results/{baseline,after,after-run2}.json`).
+own raw runs are in git history at `1b437552d` (`docs/archive/2026/server-perf-2026-10-21/results/{baseline,after,after-run2}.json`).
 
 `RMH_PERF_HEADERS=1` adds `x-rmh-queries: <n>` to every response (off by
 default; `lib/__tests__/perf-headers.test.ts` pins that). `Server-Timing` is
@@ -547,7 +548,7 @@ a target to farm.
 
 ## CI
 
-Quality workflows live in `.github/workflows/`. The release graph and operator activation are documented in [deployment-speed-implementation-2026-10-24.md](./deployment-speed-implementation-2026-10-24.md). The ones that touch tests/quality (every web job sets up through `.github/actions/setup-deps`, which restores `node_modules` from a cache keyed on the lockfile + Prisma schema and only installs on a miss):
+Quality workflows live in `.github/workflows/`. The release graph and operator activation are documented in [deployment-speed-implementation-2026-10-24.md](./archive/2026/deployment-speed-implementation-2026-10-24.md). The ones that touch tests/quality (every web job sets up through `.github/actions/setup-deps`, which restores `node_modules` from a cache keyed on the lockfile + Prisma schema and only installs on a miss):
 
 | Workflow                                  | Runs                                                                                    | Gate?                                                                           |
 | ----------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
@@ -609,13 +610,13 @@ The web-ci test step was advisory for a long stretch, for a reason that no
 longer holds: `i18n-catalogs` was permanently red, and the Test step used to sit
 _before_ the build in a single job, so a red test meant the build never ran on
 PRs and build breakage was discovered during production deploys
-(`docs/ci-speed-audit-2026-07-17.md` §2). The build is its own job now and the
+(`docs/archive/2026/ci-speed-audit-2026-07-17.md` §2). The build is its own job now and the
 suite is green, so an advisory test step bought nothing except a suite nobody
 had to keep green — which is how a permanently-red test got to stay that way.
 
 Plus SAST/quality gates that aren't tests but run on PRs: `senior-review.yml`
 (an LLM review gate), `synthetic-perf.yml`, `compose-validate`,
-`prisma-validate`, `prisma-migrate-status`, and `build-vibe-packages`.
+`prisma` (validate + migrate-status jobs), and `build-vibe-packages`.
 
 ## Writing a test
 

@@ -392,7 +392,7 @@
 .rmhp-root :is(a,button,input,textarea,select,.frame,.readout,.entry,.caps li,.chip,.cable-lead,.side-item){border-radius:var(--spatial-radius)}
 
 /* ════ REVEAL ════
-   Scroll-driven, and fail-OPEN. See docs/performance-audit-2026-08-12.md §1.4.
+   Scroll-driven, and fail-OPEN. See docs/archive/2026/performance-audit-2026-08-12.md §1.4.
 
    This used to be `opacity:0` unconditionally, undone by a `.in` class that a
    `useReveal(pathname)` hook in shared.tsx added from an IntersectionObserver.

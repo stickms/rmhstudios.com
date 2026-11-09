@@ -44,62 +44,6 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node .github/scripts/classify-change.mjs
 
-  typecheck:
-    needs: changes
-    if: needs.changes.outputs.checks == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    env:
-      NODE_OPTIONS: --max-old-space-size=8192
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup-deps
-      - name: Restore typecheck cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: .cache/tsc
-          key: tsc-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            tsc-${{ runner.os }}-
-      - name: Typecheck
-        run: |
-          mkdir -p .cache/tsc
-          pnpm run typecheck
-      - name: Restore lint cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: .cache/eslint
-          key: eslint-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            eslint-${{ runner.os }}-
-      - name: Lint
-        run: |
-          mkdir -p .cache/eslint
-          pnpm exec eslint --cache --cache-location .cache/eslint/eslintcache --cache-strategy content
-      - name: Docs freshness
-        run: |
-          pnpm run docs:api:check
-          pnpm run docs:site:check
-          pnpm run sdk:check
-
-  test:
-    needs: changes
-    if: needs.changes.outputs.checks == 'true'
-    name: test (${{ matrix.shard }}/2)
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2]
-    env:
-      NODE_OPTIONS: --max-old-space-size=8192
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup-deps
-      - name: Test
-        run: pnpm test --shard=${{ matrix.shard }}/2
-
   build:
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
@@ -138,75 +82,16 @@ jobs:
           compression-level: 0
           retention-days: 1
 
-  audit:
+  # typecheck / lint / docs freshness / unit shards / audit / integration are
+  # defined once in ci-checks.yml (deploy.yml calls the same file).
+  checks:
     needs: changes
-    if: needs.changes.outputs.checks == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup-deps
-      - name: Production dependency audit
-        run: pnpm audit --prod --audit-level=high
-
-  integration:
-    needs: changes
-    if: needs.changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    env:
-      NODE_OPTIONS: --max-old-space-size=8192
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
-      BETTER_AUTH_SECRET: ci-integration-not-a-real-secret-00000000000
-      BETTER_AUTH_URL: http://localhost:7005
-      PORT: '7005'
-      INTEGRATION_BASE_URL: http://localhost:7005
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Start Postgres (background)
-        run: |
-          nohup sh -c 'docker run -d --name pg -p 127.0.0.1:5432:5432 \
-            -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=rmh \
-            pgvector/pgvector:pg16' > "$RUNNER_TEMP/pg-start.log" 2>&1 &
-      - uses: ./.github/actions/setup-deps
-      - name: Restore image variants
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: public/images/_variants
-          key: image-variants-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/gen-image-variants.ts', 'scripts/media/pnpm-lock.yaml') }}-${{ hashFiles('public/images/**') }}
-          restore-keys: |
-            image-variants-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/gen-image-variants.ts', 'scripts/media/pnpm-lock.yaml') }}-
-      - name: Build
-        run: pnpm run build:frontend
-      - name: Wait for Postgres
-        run: |
-          for i in $(seq 1 60); do
-            if docker exec pg pg_isready -U postgres -h 127.0.0.1 >/dev/null 2>&1; then echo "postgres ready (${i}s into the wait)"; exit 0; fi
-            sleep 1
-          done
-          echo "postgres never became ready"; cat "$RUNNER_TEMP/pg-start.log"; docker logs pg 2>&1 | tail -40 || true
-          exit 1
-      - name: Migrate database
-        run: pnpm exec prisma migrate deploy
-      - name: Start the built server
-        run: |
-          nohup node .output/server/index.mjs > "$RUNNER_TEMP/server.log" 2>&1 &
-          echo $! > "$RUNNER_TEMP/server.pid"
-          for i in $(seq 1 60); do
-            if curl -fsS -o /dev/null "$INTEGRATION_BASE_URL/api/ready"; then echo "server ready after ${i}s"; exit 0; fi
-            sleep 1
-          done
-          echo "server did not become ready"
-          tail -80 "$RUNNER_TEMP/server.log"
-          exit 1
-      - name: Integration tests
-        run: pnpm test:integration
-      - name: Server log (on failure)
-        if: failure()
-        run: tail -200 "$RUNNER_TEMP/server.log" || true
-      - name: Stop the server
-        if: always()
-        run: kill "$(cat "$RUNNER_TEMP/server.pid")" 2>/dev/null || true
+    uses: ./.github/workflows/ci-checks.yml
+    with:
+      checks: ${{ needs.changes.outputs.checks == 'true' }}
+      frontend: ${{ needs.changes.outputs.frontend == 'true' }}
+    permissions:
+      contents: read
 
   eversion-changes:
     if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
@@ -548,7 +433,7 @@ jobs:
         run: node .github/scripts/check-migrations-additive.mjs
 
   required-checks:
-    needs: [changes, typecheck, test, build, audit, integration, jelly-e2e, migrations]
+    needs: [changes, checks, build, jelly-e2e, migrations]
     if: always() && (github.event_name == 'pull_request' || github.event_name == 'merge_group')
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -561,8 +446,9 @@ jobs:
           const needs = JSON.parse(process.env.RESULTS);
           if (needs.changes.result !== 'success') throw new Error('Change classification failed');
           if (needs.migrations.result !== 'success') throw new Error('migrations: ' + needs.migrations.result);
-          for (const name of ['typecheck', 'test', 'audit', 'jelly-e2e', 'build', 'integration']) {
-            const kind = ['build', 'integration'].includes(name) ? 'frontend' : 'checks';
+          // `checks` = ci-checks.yml; its own verdict job enforces per-job expectations.
+          for (const name of ['checks', 'jelly-e2e', 'build']) {
+            const kind = name === 'build' ? 'frontend' : 'checks';
             const expected = needs.changes.outputs[kind] === 'true' ? 'success' : 'skipped';
             if (needs[name].result !== expected) throw new Error(name + ': ' + needs[name].result + ' (expected ' + expected + ')');
           }

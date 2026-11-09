@@ -58,7 +58,7 @@ const SCAN_LIMIT = 40;
  * target route's STYLESHEET into <head> — and a new stylesheet restyles every
  * element on the page. At 100ms (+ the dwell) that recalc landed inside the
  * incoming page's first frames, as a second full-page style pass while it was
- * still settling (docs/ui-perf-audit-2026-10-09.md, NAV-3). A beat after the
+ * still settling (docs/archive/2026/ui-perf-audit-2026-10-09.md, NAV-3). A beat after the
  * page has painted and its entrance has finished, the same work is invisible.
  */
 const REARM_DELAY_MS = 1200;

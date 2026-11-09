@@ -17,7 +17,7 @@
  * This replaces `lib/fonts/deferred.ts`, which appended a Google Fonts
  * stylesheet on idle — guaranteeing that every heading set in one of those
  * faces painted in the fallback first and swapped in front of the reader
- * (docs/fouc-audit-2026-10-06.md §10).
+ * (docs/archive/2026/fouc-audit-2026-10-06.md §10).
  */
 
 /**

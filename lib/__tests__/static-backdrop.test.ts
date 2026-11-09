@@ -20,7 +20,7 @@
  * 63ms/s and a locked 60fps without it. Removing `backdrop-filter` instead
  * changed nothing — the animated layers were the cost, not the blur.
  * (Full table: the note above `.radial-backdrop__field` in radial.css, and
- * docs/performance-audit-2026-10-08.md.)
+ * docs/archive/2026/performance-audit-2026-10-08.md.)
  *
  * Handhelds already had this motion switched off; the fix made desktop match.
  * This gate holds the line in both stylesheets, because a single "subtle"

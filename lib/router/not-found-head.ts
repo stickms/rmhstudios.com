@@ -22,7 +22,7 @@
  * it does, wiping every class, `data-*` attribute and inline style the
  * pre-paint scripts set. The page lost its theme class, its app ground and its
  * `color-scheme` two seconds after it had painted correctly
- * (docs/fouc-audit-2026-10-06.md §7).
+ * (docs/archive/2026/fouc-audit-2026-10-06.md §7).
  *
  * ## The fix
  *

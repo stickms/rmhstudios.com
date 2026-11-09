@@ -41,7 +41,7 @@ export function BrandMark() {
  * hidden start state exists only inside `@supports` + `@media not
  * (prefers-reduced-motion)`. Nothing can be left hidden by a mechanism that
  * never ran, so the net is not needed either. See
- * docs/performance-audit-2026-08-12.md §1.4.
+ * docs/archive/2026/performance-audit-2026-08-12.md §1.4.
  */
 
 type NavItem = { to: string; labelKey: string; labelDefault: string };

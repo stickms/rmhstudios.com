@@ -252,7 +252,7 @@ runtime behavior.
 
 ## 4. CI
 
-**Eleven** workflows live in `.github/workflows/` — the fleet was consolidated in
+The workflows (count: `workflows` in [`_generated/facts.json`](./_generated/facts.json)) live in `.github/workflows/` — the fleet was consolidated in
 the rewrite, and this table used to describe the ~45-workflow one that preceded
 it (`typecheck-server.yml`, `vitest-coverage.yml`, `codeql.yml` and the granular
 linter/scanner set are all gone). `ls .github/workflows/` is the truth; this is
@@ -266,7 +266,7 @@ what each one gates:
 | `go-microservices.yml`   | Go fleet: `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`. (The Postgres-backed e2e + `helm lint` jobs were removed with the Go realtime/Helm topology — design §5.2.) |
 | `senior-review.yml`      | LLM review gate on PRs (Claude Opus over the diff; fails on a FAIL verdict; short-circuits green for non-owner authors)                                                                                        |
 | `synthetic-perf.yml`     | Lighthouse runs against the deployed site, scored by `scripts/ci/synthetic-perf-report.mjs`                                                                                                                     |
-| `build-vibe-packages.yml`, `compose-validate.yml`, `prisma-validate.yml`, `prisma-migrate-status.yml` | Build/deploy guards — the vibe package bundle, `docker compose config`, `prisma validate`, and migration drift                                              |
+| `build-vibe-packages.yml`, `compose-validate.yml`, `prisma.yml` | Build/deploy guards — the vibe package bundle, `docker compose config`, `prisma validate`, and migration drift                                              |
 
 Dependabot (`.github/dependabot.yml`) covers npm (root), gomod (`go-services/`),
 and github-actions weekly. Run at least `pnpm exec tsc --noEmit`, `pnpm lint`,
@@ -313,7 +313,7 @@ realtime topology.)
 ## 7. Data & media
 
 - **PostgreSQL** via Prisma 7 (`@prisma/adapter-pg`) in Node and raw pgx in
-  Go — one shared schema (`prisma/schema.prisma`, 234 models). Go models
+  Go — one shared schema (`prisma/schema.prisma`, model count in [`_generated/facts.json`](./_generated/facts.json)). Go models
   mirror Prisma column casing verbatim.
 - **Media:** R2/S3 via `lib/storage/` (local-FS fallback for dev); MinIO
   provides the bucket locally; the Go `assets` service streams

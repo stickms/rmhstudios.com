@@ -101,7 +101,7 @@ export function ScientificCalculator({ model }: { model: CalcModel }) {
    * The `CSS.supports` guard is the point. This pair of statements is a write
    * that invalidates layout followed by a read that forces it back —
    * synchronously, on every keystroke — so it must not run anywhere the browser
-   * is already doing the work. See docs/performance-audit-2026-08-12.md §1.7.
+   * is already doing the work. See docs/archive/2026/performance-audit-2026-08-12.md §1.7.
    */
   useEffect(() => {
     if (typeof CSS !== 'undefined' && CSS.supports?.('field-sizing', 'content')) return;

@@ -17,7 +17,7 @@ import rmhboxCss from '@/components/rmhbox/rmhbox.css?url';
 // Static, not `lazy()`: Start already splits this route's component into its own
 // chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
 // hydration, and an update reaching the boundary then swaps the server-rendered
-// page for the fallback (docs/fouc-audit-2026-10-06.md §13).
+// page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
 import RMHboxShell from '@/components/rmhbox/RMHboxShell';
 
 // Re-measured 2026-10-07: this used to be lazy because a direct import once put
