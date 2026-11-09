@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { noteLetter } from '../theory/clef';
-import { DECKS, buildSession, cardId, type Deck } from './decks';
+import { DECKS, buildSession, cardId, isKnownCardId, parseCardId, type Deck } from './decks';
 
 /** A small deterministic generator (mulberry32) so a failing shuffle can be replayed. */
 function seeded(seed: number): () => number {
@@ -118,5 +118,37 @@ describe('buildSession', () => {
     for (const c of buildSession(DECKS['bass-all'], 30, seeded(3))) {
       expect(noteLetter(c.midi)).toMatch(/^[A-G]$/);
     }
+  });
+});
+
+describe('isKnownCardId / parseCardId', () => {
+  it('knows every card of every deck', () => {
+    for (const deck of Object.values(DECKS)) {
+      for (const midi of deck.midis) {
+        const id = cardId(deck.clef, midi);
+        expect(isKnownCardId(id)).toBe(true);
+        expect(parseCardId(id)).toEqual({ id, clef: deck.clef, midi });
+      }
+    }
+  });
+
+  it.each([
+    '',
+    'treble',
+    'treble:',
+    'treble:61', // a sharp: no deck has it
+    'treble:100',
+    'bass:64', // E4 is above the bass deck
+    'alto:60',
+    'treble:064',
+    'treble:64 ',
+    ' treble:64',
+    'treble:64.0',
+    'constructor',
+    '__proto__',
+    'x'.repeat(65),
+  ])('rejects %j', (id) => {
+    expect(isKnownCardId(id)).toBe(false);
+    expect(parseCardId(id)).toBeNull();
   });
 });

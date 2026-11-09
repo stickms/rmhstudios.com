@@ -55,8 +55,26 @@ function toCard(deck: Deck, midi: number): Card {
   return { id: cardId(deck.clef, midi), clef: deck.clef, midi };
 }
 
+/** Every card some deck deals, by id: the only ids a remembered card may have. */
+const KNOWN_CARDS: ReadonlyMap<string, Card> = new Map(
+  Object.values(DECKS).flatMap((deck) =>
+    deck.midis.map((midi) => [cardId(deck.clef, midi), toCard(deck, midi)] as const),
+  ),
+);
+
+/** Whether `id` names a card of one of the decks (`treble:64`), exactly as `cardId` spells it. */
+export function isKnownCardId(id: string): boolean {
+  return KNOWN_CARDS.has(id);
+}
+
+/** The card `id` names, or null when no deck has it. */
+export function parseCardId(id: string): Card | null {
+  const card = KNOWN_CARDS.get(id);
+  return card ? { ...card } : null;
+}
+
 /** Fisher-Yates, in place, with an injected `rand` clamped to [0, 1). */
-function shuffle<T>(items: T[], rand: () => number): T[] {
+export function shuffle<T>(items: T[], rand: () => number): T[] {
   for (let i = items.length - 1; i > 0; i--) {
     const r = rand();
     const unit = Number.isFinite(r) ? Math.min(Math.max(r, 0), 1 - Number.EPSILON) : 0;
