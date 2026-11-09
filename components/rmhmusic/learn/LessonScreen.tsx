@@ -189,9 +189,9 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
   if (started) {
     body =
       lesson.mode === 'staff-flashcards' ? (
-        <FlashcardLesson lessonId={lesson.id} paused={setupOpen} />
+        <FlashcardLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : (
-        <FirstNoteLesson lessonId={lesson.id} paused={setupOpen} />
+        <FirstNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       );
   } else if (status === 'error' && error === 'unauthorized') {
     body = (
