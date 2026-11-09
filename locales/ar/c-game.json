@@ -355,5 +355,7 @@
   "end-of-side": "End of side",
   "pressed-by-you": "Pressed by you",
   "record-details": "Modifiers, scores and comments",
-  "now-playing": "Now playing"
+  "now-playing": "Now playing",
+  "search-tracks": "Search {{count}} tracks…",
+  "library-options": "Library options"
 }

@@ -496,7 +496,6 @@ export function SideWaves({
         ctx.fillStyle = paper;
         ctx.globalAlpha = 0.6;
         const textX = dir === -1 ? outer + 14 : outer - 14;
-        ctx.fillText(dir === -1 ? 'SIDE A · 33⅓ RPM' : 'SIDE B · 33⅓ RPM', textX, top - 10);
         if (now - readoutAt > 160) {
           readoutAt = now;
           const db = energy > 0.002 ? 20 * Math.log10(Math.min(1, energy)) : -60;

@@ -702,20 +702,6 @@ a.neumorphic-sm:hover,
   color: var(--slice-text);
 }
 
-.slice-results__line {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  min-height: calc(36px + var(--safe-top, 0px));
-  padding: var(--safe-top, 0px) max(28px, var(--safe-right, 0px)) 0 max(28px, var(--safe-left, 0px));
-  border-bottom: 1px solid var(--slice-border);
-}
-
-.slice-results__line .slice-label i {
-  font-style: normal;
-  padding: 0 4px;
-}
-
 .slice-results__grid {
   display: grid;
   gap: 24px;
@@ -1062,4 +1048,25 @@ a.neumorphic-sm:hover,
   display: flex;
   align-items: center;
   gap: 18px;
+}
+
+/* ─── Menus portalled out of the game ───────────────────────────────────────
+ *
+ * `AnchoredMenu` mounts its panel under <body> so it can escape stacking contexts,
+ * which puts it outside `.slice-theme`: it would arrive in the site's pale glass.
+ * A panel given `slice-tokens slice-menu-panel` carries the game's tokens itself,
+ * is the same flat label-black slab as every other panel in here, and re-points the
+ * site ink the shared menu rows read at the game's paper and ink.
+ */
+.slice-menu-panel.slice-menu-panel {
+  --site-text: var(--slice-paper);
+  --site-text-dim: var(--slice-text-muted);
+  --site-border: var(--slice-border);
+  --site-accent: var(--slice-primary);
+  background-color: var(--slice-label);
+  background-image: none;
+  border: 1px solid var(--slice-border);
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--slice-paper);
 }
