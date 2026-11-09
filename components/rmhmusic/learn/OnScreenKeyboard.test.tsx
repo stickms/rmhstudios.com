@@ -48,3 +48,21 @@ describe('OnScreenKeyboard letters', () => {
     expect(html).toContain('aria-label="D4"');
   });
 });
+
+/**
+ * The right/wrong marker is a notehead wider than a black key, so it spills over the white keys
+ * beside it; at large text sizes it sat over the middle of the next white key and took that key's
+ * taps. The marker is decoration: it must let every press through to the key underneath.
+ */
+describe('OnScreenKeyboard markers', () => {
+  it.each([
+    ['right', { rightKey: 61 }],
+    ['wrong', { wrongKey: 61 }],
+    ['right on a white key', { rightKey: 62 }],
+  ])('lets presses through the %s marker', (_name, props) => {
+    const html = render(props);
+    const markers = [...html.matchAll(/<svg[^>]*viewBox="0 0 16 12"[^>]*>/g)].map((m) => m[0]);
+    expect(markers).toHaveLength(1);
+    expect(markers[0]).toContain('pointer-events-none');
+  });
+});

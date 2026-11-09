@@ -328,7 +328,8 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
                 <Notehead
                   kind={rightKey === key.midi ? 'filled' : 'open'}
                   className={cn(
-                    'absolute left-1/2 h-4 w-5 -translate-x-1/2',
+                    // Wider than a black key, so it must not take the neighbouring keys' presses.
+                    'pointer-events-none absolute left-1/2 h-4 w-5 -translate-x-1/2',
                     key.black ? 'bottom-3' : 'bottom-8',
                     rightKey === key.midi
                       ? 'text-(--app-accent)'
