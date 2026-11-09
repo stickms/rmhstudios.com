@@ -201,8 +201,8 @@ const ALLOW = new Set<string>([
   // RMH Music's paper backdrop (notes drifting on staff paper). Same bounds as the Kowloon one: the
   // effect cancels the frame on unmount, a hidden tab cancels it and `visibilitychange` restarts it,
   // the band scrolling out of view stops it (IntersectionObserver), Jelly motion Still draws one
-  // frame and stops (a MutationObserver restarts it), and it is capped at 30 fps (15 on the lite and
-  // handheld tiers) with a buffer sized per layout (no per-frame canvas reallocation).
+  // frame and stops (a MutationObserver restarts it), and it is capped at 30 fps (15 on handhelds and
+  // low-end devices) with a buffer sized per layout (no per-frame canvas reallocation).
   'components/rmhmusic/learn/PaperBackdrop.tsx',
   // The ONE jelly frame (#989). The engine, the soft body, the arc renderer and
   // the fallback cursor light are drivers on it (`drive(fn, { order })`) and call

@@ -15,7 +15,7 @@ const ctx = {
 };
 vi.mock('@/lib/shared/platform', () => ({ getAudioContext: () => ctx }));
 
-import { AUDIO_START_ERROR, createMicInput } from './mic';
+import { AUDIO_START_ERROR, createMicInput, fftSizeFor } from './mic';
 import { RESUME_TIMEOUT_MS } from '../audio/resume';
 
 function fakeStream() {
@@ -146,5 +146,21 @@ describe('createMicInput when sound never resumes', () => {
     expect(getUserMedia).not.toHaveBeenCalled();
     mic.stop();
     expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+describe('fftSizeFor', () => {
+  it('keeps 2048 up to the rate where it still holds two 60 Hz periods', () => {
+    expect(fftSizeFor(44100)).toBe(2048);
+    expect(fftSizeFor(48000)).toBe(2048);
+  });
+
+  it('grows for 88.2 and 96 kHz devices, which 2048 samples would leave without a pitch', () => {
+    expect(fftSizeFor(88200)).toBe(4096);
+    expect(fftSizeFor(96000)).toBe(4096);
+  });
+
+  it('never asks for more than the Web Audio maximum', () => {
+    expect(fftSizeFor(1e7)).toBe(32768);
   });
 });

@@ -22,8 +22,19 @@ export const AUDIO_START_ERROR = 'AudioStartError';
 
 /** Analysis rate. A timer, not requestAnimationFrame: the repo gates rAF loops. */
 const POLL_MS = 25;
-/** YIN needs two periods of the lowest pitch (60 Hz); 2048 covers that at 48 kHz. */
-const FFT_SIZE = 2048;
+/** YIN needs two periods of the lowest pitch (60 Hz): 2048 samples cover that up to 61.4 kHz. */
+const MIN_FFT_SIZE = 2048;
+/** The Web Audio limit for an analyser. */
+const MAX_FFT_SIZE = 32768;
+const LOWEST_HZ = 60;
+
+/** The analyser size that holds two periods of the lowest pitch at this rate (88.2/96 kHz devices need 4096). */
+export function fftSizeFor(sampleRate: number): number {
+  const need = 2 * Math.ceil(sampleRate / LOWEST_HZ);
+  let size = MIN_FFT_SIZE;
+  while (size < need && size < MAX_FFT_SIZE) size *= 2;
+  return size;
+}
 
 export function createMicInput(opts: { onLevel?: (rms: number) => void } = {}): InputAdapter {
   const listeners = new Set<NoteListener>();
@@ -80,7 +91,7 @@ export function createMicInput(opts: { onLevel?: (rms: number) => void } = {}): 
     try {
       source = ctx.createMediaStreamSource(media);
       analyser = ctx.createAnalyser();
-      analyser.fftSize = FFT_SIZE;
+      analyser.fftSize = fftSizeFor(ctx.sampleRate);
       source.connect(analyser);
       segmenter = createSegmenter();
 
