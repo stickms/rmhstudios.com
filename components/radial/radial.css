@@ -1167,6 +1167,18 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
    open/centering/closing phase for the CSS state machine below. */
 .radial-hub {
   display: contents;
+  /* Where the orb's bottom edge sits above the VISIBLE bottom: clear of the home indicator, plus the site's orb inset.
+     Declared here, not on the orb, because the docked globe and its sun (siblings of the orb) are posed against the
+     same number in CSS (`.radial-hub__dock` below) — nothing measures it. */
+  --orb-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--site-hub-orb-inset));
+  /* Half of the VISIBLE height (`dvh` follows iOS Safari's toolbar; `vh` where it does not exist, and there the
+     toolbar does not resize the layout). */
+  --hub-half-vh: 50vh;
+}
+@supports (height: 100dvh) {
+  .radial-hub {
+    --hub-half-vh: 50dvh;
+  }
 }
 
 /* ── The RMH hub orb (persistent nav trigger) ─────────────────────────── */
@@ -1181,9 +1193,10 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
      the compose FAB beside it, which has always been safe-area-aware.
      Size/inset come from globals.css so the floating-bottom stack (§5.5x A.1)
      can reserve exactly this footprint. */
-  --orb-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--site-hub-orb-inset));
-  /* `--vv-shift`: where iOS Safari's changing toolbar has left the fixed container (hooks/useViewportShift). */
-  bottom: calc(var(--orb-bottom) - var(--vv-shift, 0px));
+  /* `--orb-bottom` (on `.radial-hub`) is the gap above the visible bottom; `--vv-follow` is where iOS Safari's changing
+     toolbar has left the fixed container (`100% - 100dvh`, app/globals.css), so the orb stays on the visible area
+     in the same style recalc as the toolbar, with no script. */
+  bottom: calc(var(--orb-bottom) + var(--vv-follow, 0px));
   z-index: var(--z-floating);
   transform: translateX(-50%);
   display: grid;
@@ -1352,7 +1365,14 @@ html[data-jelly-motion='still'] .radial-feed__empty .radial-core {
      a fixed layer that wide and that near an edge is what iOS Safari fills its status bar and tab bar strips
      from, and with the globe open that was a solid band under it. The veil below paints out to the screen's
      edges (it takes no pointer, so Safari does not see it); the drag surface is the overlay's own box. */
-  inset: 1.5rem 10%;
+  top: 1.5rem;
+  right: 10%;
+  left: 10%;
+  /* Its bottom edge is 1.5rem above the VISIBLE bottom, not the fixed container's: `--vv-follow` (app/globals.css)
+     is where iOS Safari's changing toolbar has left the container, so the overlay, the foot capsule inside it and
+     the drag surface follow the toolbar in layout with no script. A percentage in this `bottom` is a percentage of
+     the viewport container, which is what `--vv-follow` is measured in. */
+  bottom: calc(1.5rem + var(--vv-follow, 0px));
   z-index: var(--z-hub-overlay);
   display: grid;
   place-items: center;
@@ -2383,10 +2403,9 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
      sign-out and close, so it cannot sit under the home indicator. */
   /* Where it always sat on the screen: the overlay is 1.5rem in from the bottom edge now. */
   /* At least 1.75rem off the screen's edge: a fixed element near the bottom centre is what iOS Safari can fill
-     its tab bar strip from while the menu is open (the overlay is 1.5rem in, so subtract that). */
-  bottom: calc(
-    env(safe-area-inset-bottom, 0px) + clamp(1.75rem, 5vw, 2.25rem) - 1.5rem - var(--vv-shift, 0px)
-  );
+     its tab bar strip from while the menu is open (the overlay is 1.5rem in, so subtract that). The overlay's own
+     bottom edge follows Safari's toolbar (`.radial-hub__overlay`), so this pill does too, with nothing of its own. */
+  bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(1.75rem, 5vw, 2.25rem) - 1.5rem);
   z-index: 2;
   display: inline-flex;
   align-items: center;
@@ -2439,8 +2458,10 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
 
 /* ── PHONES: the one docked globe ─────────────────────────────────────────────────────────────────
    RadialHub renders the real globe once (`.radial-hub__dock`), laid out at its full size in the middle of the
-   screen and held SMALL on the orb's footprint by two individual properties, `translate` and `scale`, whose values
-   the hub measures (`--dock-dx/dy/scale`, origin `--dock-ox/oy`: the sphere's centre, so it scales about itself).
+   VISIBLE area and held SMALL on the orb's footprint by two individual properties, `translate` and `scale`.
+   The hub measures only what layout fixes (`--dock-dx`, `--dock-kc`, `--dock-scale`, origin `--dock-ox/oy`: the
+   sphere's centre, so it scales about itself); the vertical offset also depends on the visible height, which iOS
+   Safari's toolbar changes, so that part is CSS (see `translate` below) and nothing is re-measured when it moves.
    Open is the same element with both set to rest, so a touch only moves and grows it, and what it shows is sharp
    because it is drawn at full size. `scale` is the property LiquidGlobe waits on to re-place the page it refracts.
 
@@ -2453,11 +2474,10 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
      what iOS Safari can read as the page's edge (it shifts fixed layers by about 10px while its toolbar collapses),
      and it filled the strip behind its tab bar with one flat colour. This is under 90% of the width and far from
      both edges. */
-  /* `--vv-shift` (written on `.radial-hub` by useViewportShift) is the orb's own correction for Safari's toolbar:
-     the orb's `bottom` takes all of it, the centre of the container takes half. Applying it here too means the dock
-     and the orb change in the same style recalc, so the globe cannot trail the tab bar by the frame a re-measure
-     would take (`--dock-dy` is the same number at every shift). */
-  top: calc(50% + var(--vv-shift, 0px) / 2);
+  /* The box is centred on the VISIBLE area: the container's middle (50%) less half of `--vv-follow`, the amount iOS
+     Safari's changing toolbar has left the fixed container taller than the visible area (app/globals.css), so
+     it moves with the toolbar in layout and the open globe stays centred on what can be seen. */
+  top: calc(50% - var(--vv-follow, 0px) / 2);
   left: 50%;
   width: min(86vw, 48svh, 30rem);
   translate: -50% -50%;
@@ -2473,12 +2493,19 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
 }
 .radial-hub[data-phase] .radial-hub__dock .radial-globe {
   transform-origin: var(--dock-ox, 50%) var(--dock-oy, 50%);
-  translate: var(--dock-dx, 0px) var(--dock-dy, 0px);
+  /* The sphere's centre is moved onto the orb's. The orb is fixed to the visible bottom and the dock box is centred
+     on the visible area, so the orb's centre is `--hub-half-vh - --orb-bottom - orb/2` BELOW the box's centre
+     whatever the toolbar is doing, and that is the whole of the vertical travel, plus `--dock-kc`: how far the
+     sphere's centre sits above the box's own centre in layout (measured; fixed until the dock or the globe is
+     resized). `--hub-half-vh` is half the visible height, so the toolbar moving changes this length in the same
+     style recalc as the orb's `bottom`. */
+  translate: var(--dock-dx, 0px)
+    calc(var(--hub-half-vh) - var(--orb-bottom) - var(--site-hub-orb-size) / 2 + var(--dock-kc, 0px));
   scale: var(--dock-scale, 0.2);
   /* The overlay's keyframe open/close is for the wider screens; here the same element just moves. */
   animation: none;
   pointer-events: none;
-  /* Docked, the pose follows the orb at once (the orb follows Safari's toolbar, hooks/useViewportShift): a
+  /* Docked, the pose follows the orb at once (both follow Safari's toolbar in CSS, `--vv-follow` / `dvh`): a
      transition on `translate` here would be the globe lagging behind the tab bar. It only moves smoothly between
      docked and open (the two rules below). */
   transition: opacity 0.4s var(--ease-smooth);
@@ -2518,8 +2545,10 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
    only: it fades out as the globe opens and comes back as it lands. */
 .radial-hub__sun {
   position: absolute;
-  left: var(--sun-x, 50%);
-  top: var(--sun-y, 50%);
+  /* The orb's centre inside the dock box, in CSS like the globe's pose (the box's middle, then down to the orb by
+     the visible half-height less the orb's own distance from the bottom). Nothing is measured. */
+  left: 50%;
+  top: calc(50% + var(--hub-half-vh) - var(--orb-bottom) - var(--site-hub-orb-size) / 2);
   width: calc(var(--site-hub-orb-size) * 1.6);
   aspect-ratio: 1;
   translate: -50% -50%;

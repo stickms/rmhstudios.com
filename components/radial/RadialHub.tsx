@@ -38,7 +38,6 @@ import { inShell } from './eversion/eversion-nav';
 import { createHandOff, type HandOffHow } from './hub-handoff';
 import { whenQuiet } from './quiet';
 import { GLOBE_EVERT_EVENT, SELF_EVERT_MS } from './self-evert-timing';
-import { useViewportShift } from '@/hooks/useViewportShift';
 import { RmhLogo } from './RmhLogo';
 import { isGlobeDocked, useGlobeDestinations } from './globe-dock';
 
@@ -434,8 +433,13 @@ export function RadialHub() {
   /**
    * Where the docked globe sits when it is closed: its sphere on the orb's footprint. The globe is laid out at its
    * full size in the middle of the screen (so it is sharp when it opens) and CSS holds it at this pose with
-   * `translate` and `scale` (radial.css `.radial-hub__dock`). Measured from layout offsets, which transforms do not
-   * touch, so it is right whether the globe is docked, moving or open; re-measured on resize.
+   * `translate` and `scale` (radial.css `.radial-hub__dock`).
+   *
+   * Only what LAYOUT fixes is measured here, from offsets (which transforms do not touch, so it is right whether the
+   * globe is docked, moving or open): where the sphere sits inside the dock box and how big it is. Where the orb is
+   * on the screen is not measured at all. The orb and the dock follow iOS Safari's toolbar in CSS (`--vv-follow`),
+   * and the vertical travel between them is a CSS function of the visible height, so the toolbar growing or
+   * shrinking changes the pose in the same style recalc, with nothing to re-measure.
    */
   const measureDock = useCallback(() => {
     const hub = hubRef.current;
@@ -444,7 +448,6 @@ export function RadialHub() {
     const globe = globeRef.current;
     const stage = globe?.querySelector<HTMLElement>('.radial-globe__stage');
     if (!hub || !orb || !dock || !globe || !stage || stage.offsetWidth === 0) return;
-    const box = dock.getBoundingClientRect();
     let x = 0;
     let y = 0;
     for (
@@ -456,25 +459,16 @@ export function RadialHub() {
       y += el.offsetTop;
     }
     const half = stage.offsetWidth / 2;
-    const rect = orb.getBoundingClientRect();
-    if (rect.width === 0) return;
+    if (orb.offsetWidth === 0) return;
     // Horizontally the orb and the dock are both centred on the screen (`left: 50%`), so the globe is moved only by
-    // where its sphere sits inside the dock's own layout. Taken from the orb's live rect, any transient offset (a
-    // press, a transition, a neighbour) would be held until the next resize.
+    // where its sphere sits inside the dock's own layout.
     hub.style.setProperty('--dock-dx', `${dock.offsetWidth / 2 - (x + half)}px`);
-    hub.style.setProperty('--dock-dy', `${rect.top + rect.height / 2 - (box.top + y + half)}px`);
-    hub.style.setProperty('--dock-scale', String(rect.width / stage.offsetWidth));
+    // How far the sphere's centre is above the dock box's centre; the rest of the vertical travel is CSS.
+    hub.style.setProperty('--dock-kc', `${dock.getBoundingClientRect().height / 2 - (y + half)}px`);
+    hub.style.setProperty('--dock-scale', String(orb.offsetWidth / stage.offsetWidth));
     hub.style.setProperty('--dock-ox', `${stage.offsetLeft + half}px`);
-    // The orb's centre inside the dock's box: where the sun behind the docked globe is centred.
-    hub.style.setProperty('--sun-x', `${dock.offsetWidth / 2}px`);
-    hub.style.setProperty('--sun-y', `${rect.top + rect.height / 2 - box.top}px`);
     hub.style.setProperty('--dock-oy', `${stage.offsetTop + half}px`);
   }, []);
-  // The orb follows Safari's toolbar as it grows and shrinks; the docked globe is measured onto it again each time.
-  const onViewportShift = useCallback(() => {
-    if (inPlace && phaseRef.current === 'closed') measureDock();
-  }, [inPlace, measureDock]);
-  useViewportShift(hubRef, onViewportShift);
   useEffect(() => {
     if (!inPlace || !dockReady) return;
     const raf = requestAnimationFrame(measureDock);
@@ -576,20 +570,23 @@ export function RadialHub() {
   // ref means it fires exactly when the node actually exists, in both the warm
   // (already imported) and cold cases. `LiquidGlobe` takes `rootRef` as a plain
   // `Ref`, so a callback is a valid thing to hand it.
-  const attachGlobe = useCallback((node: HTMLDivElement | null) => {
-    globeRef.current = node;
-    if (!node) return;
-    requestAnimationFrame(() => {
-      if (globeRef.current !== node) return;
-      // Suspense may mount the globe after the dock's effects have already
-      // measured an empty container. Fit it to the mobile orb as soon as its
-      // real stage exists, rather than leaving the closed globe at screen centre.
-      measureDock();
-      // Re-check: a fast open→close can retire the menu before this frame runs,
-      // and focusing a globe that is on its way out would steal it back.
-      if (phaseRef.current === 'open') node.focus();
-    });
-  }, [measureDock]);
+  const attachGlobe = useCallback(
+    (node: HTMLDivElement | null) => {
+      globeRef.current = node;
+      if (!node) return;
+      requestAnimationFrame(() => {
+        if (globeRef.current !== node) return;
+        // Suspense may mount the globe after the dock's effects have already
+        // measured an empty container. Fit it to the mobile orb as soon as its
+        // real stage exists, rather than leaving the closed globe at screen centre.
+        measureDock();
+        // Re-check: a fast open→close can retire the menu before this frame runs,
+        // and focusing a globe that is on its way out would steal it back.
+        if (phaseRef.current === 'open') node.focus();
+      });
+    },
+    [measureDock],
+  );
 
   // The orb leaves the tab order while the menu is up (it has become the globe),
   // so hand focus back to it when the menu is dismissed rather than navigated.
