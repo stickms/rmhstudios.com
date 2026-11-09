@@ -1,8 +1,8 @@
 /**
  * Media Session glue — lock-screen, media-key and OS "Now Playing" controls.
  *
- * Without this the OS shows a blank "rmhstudios.com" tile for RMHMusic and
- * RMHTube, and keyboard media keys / AirPods taps do nothing. With it, the
+ * Without this the OS shows a blank "rmhstudios.com" tile for RMHTube, and
+ * keyboard media keys / AirPods taps do nothing. With it, the
  * same handlers the in-page buttons use are reachable from the OS.
  *
  * Deliberately small and framework-free:

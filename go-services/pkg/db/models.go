@@ -149,15 +149,3 @@ type RmhTubeRoom struct {
 	UpdatedAt  time.Time
 	ClosedAt   *time.Time
 }
-
-// RmhMusicRoom mirrors "rmh_music_room".
-type RmhMusicRoom struct {
-	ID         string
-	Code       string
-	Name       string
-	HostID     string
-	IsPublic   bool
-	MaxMembers int32
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-}

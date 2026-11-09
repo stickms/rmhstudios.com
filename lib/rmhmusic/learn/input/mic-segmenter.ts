@@ -20,11 +20,18 @@ export interface PitchFrame {
 }
 
 export interface Segmenter {
-  /** Feed one analysis frame (null = no clear pitch); returns events it caused. */
-  push(frame: PitchFrame | null, time: number): NoteEvent[];
+  /**
+   * Feed one analysis frame (null = no clear pitch); returns events it caused.
+   * The frame is read, never kept, so the caller may reuse one object; the
+   * common "nothing happened" answer is one shared empty array (no allocation
+   * per frame at the 25 ms poll).
+   */
+  push(frame: PitchFrame | null, time: number): readonly NoteEvent[];
   /** Release the sounding note, if any (used when the mic is switched off). */
-  flush(time: number): NoteEvent[];
+  flush(time: number): readonly NoteEvent[];
 }
+
+const NONE: readonly NoteEvent[] = Object.freeze([]);
 
 export function createSegmenter(): Segmenter {
   let active: number | null = null;
@@ -45,9 +52,9 @@ export function createSegmenter(): Segmenter {
       if (frame === null) {
         candidate = null;
         candidateCount = 0;
-        if (active === null) return [];
+        if (active === null) return NONE;
         silentCount++;
-        if (silentCount < OFF_FRAMES) return [];
+        if (silentCount < OFF_FRAMES) return NONE;
         const ended = active;
         active = null;
         silentCount = 0;
@@ -58,7 +65,7 @@ export function createSegmenter(): Segmenter {
       if (frame.midi === active) {
         candidate = null;
         candidateCount = 0;
-        return [];
+        return NONE;
       }
 
       if (frame.midi === candidate) candidateCount++;
@@ -66,7 +73,7 @@ export function createSegmenter(): Segmenter {
         candidate = frame.midi;
         candidateCount = 1;
       }
-      if (candidateCount < ON_FRAMES) return [];
+      if (candidateCount < ON_FRAMES) return NONE;
 
       const events: NoteEvent[] = [];
       if (active !== null) events.push(off(active, time));
@@ -90,7 +97,7 @@ export function createSegmenter(): Segmenter {
       candidate = null;
       candidateCount = 0;
       silentCount = 0;
-      return ended === null ? [] : [off(ended, time)];
+      return ended === null ? NONE : [off(ended, time)];
     },
   };
 }

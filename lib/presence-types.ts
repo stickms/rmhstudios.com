@@ -13,7 +13,6 @@ export type { PresencePrivacyInput } from './presence-types-schema';
 /** What a friend is doing right now, if anything. `label` is precomputed for display. */
 export type PresenceActivity =
   | { kind: 'game'; gameId: string; label: string }
-  | { kind: 'music_room'; roomId: string; label: string }
   | { kind: 'tube_room'; roomId: string; label: string }
   | { kind: 'space'; spaceId: string; label: string };
 
@@ -75,8 +74,6 @@ export function joinTargetFor(activity: PresenceActivity | null): JoinTarget | n
   switch (activity.kind) {
     case 'game':
       return { kind: 'game', id: activity.gameId, href: `/arcade/${activity.gameId}` };
-    case 'music_room':
-      return { kind: 'music_room', id: activity.roomId, href: `/rmhmusic/${activity.roomId}` };
     case 'tube_room':
       return { kind: 'tube_room', id: activity.roomId, href: `/rmhtube/${activity.roomId}` };
     case 'space':
@@ -93,7 +90,6 @@ export function contextVerb(kind: PresenceActivityKind): string {
       return 'Join';
     case 'space':
       return 'Hop in';
-    case 'music_room':
     case 'tube_room':
       return 'Watch';
     default:

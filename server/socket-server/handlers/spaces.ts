@@ -1,7 +1,7 @@
 /**
  * Live Spaces (§4 Phase 1) — socket handler for the unified games hub.
  *
- * Mirrors the other room-based handlers (rmhstudy / rmhmusic): module-level
+ * Mirrors the other room-based handlers (rmhstudy / studio-jam): module-level
  * in-memory Maps for ephemeral live state (audience, pinned, status), keyed by
  * spaceId. The DB is the source of truth for lifecycle (host/status/recordChat)
  * and for the chat transcript when `recordChat` is set — chat is persisted
@@ -29,7 +29,7 @@ import { logger } from '../logger';
 import { checkRateLimit } from '../rate-limit';
 import { sanitizeString } from '../utils';
 import { SPACE_C2S, SPACE_S2C } from '../../../lib/spaces/events';
-import type { SpacePinned } from '../../../lib/spaces/types';
+import { parseSpacePinned, type SpacePinned } from '../../../lib/spaces/types';
 import { RoomSlowMode } from '../../shared/room-slow-mode';
 import { slowModeEvents } from '../../../lib/safety/slow-mode-events';
 
@@ -67,17 +67,6 @@ const socketToSpace = new Map<string, string>(); // socketId -> spaceId
 
 function roomName(spaceId: string): string {
   return `space:${spaceId}`;
-}
-
-function isPinned(value: unknown): value is SpacePinned {
-  if (!value || typeof value !== 'object') return false;
-  const v = value as Record<string, unknown>;
-  return (
-    typeof v.ref === 'string' &&
-    v.ref.length > 0 &&
-    v.ref.length <= 500 &&
-    (v.kind === 'post' || v.kind === 'url' || v.kind === 'music_room' || v.kind === 'tube_room')
-  );
 }
 
 function emitState(io: Server, space: LiveSpace): void {
@@ -122,7 +111,7 @@ async function ensureSpace(spaceId: string): Promise<LiveSpace | null> {
     hostId: row.hostId,
     status: row.status as LiveSpace['status'],
     recordChat: row.recordChat,
-    pinned: isPinned(row.pinned) ? (row.pinned as SpacePinned) : null,
+    pinned: parseSpacePinned(row.pinned),
     members: new Map(),
   };
   spaces.set(spaceId, space);
@@ -297,8 +286,7 @@ export function registerSpacesHandlers(io: Server, socket: Socket, _ctx?: unknow
       return;
     }
 
-    const pinned =
-      payload?.pinned == null ? null : isPinned(payload.pinned) ? payload.pinned : undefined;
+    const pinned = payload?.pinned == null ? null : (parseSpacePinned(payload.pinned) ?? undefined);
     if (pinned === undefined) return; // invalid shape
     space.pinned = pinned;
 

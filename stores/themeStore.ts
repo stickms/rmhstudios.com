@@ -178,6 +178,18 @@ export const APP_ROUTE_THEME_BG: Record<
     light: '#f2f3f5',
     system: true,
   },
+  // RMH Music. Grounds mirror `--app-bg` in `components/rmhmusic/rmhmusic.css` —
+  // cream notebook paper by day, the deep ink-navy "night manuscript" by night.
+  // `system: true`: a first visit follows `prefers-color-scheme`; the header
+  // toggle stores `{"dark":true|false}` under this key
+  // (`lib/rmhmusic/learn/mode.ts`), and the boolean wins once it is there.
+  '/rmhmusic': {
+    key: 'rmhmusic-mode',
+    darkFlag: 'dark',
+    dark: '#0f182b',
+    light: '#f6f0e1',
+    system: true,
+  },
   // Temple of Joy. Grounds mirror `--toj-ground` in
   // `components/temple-of-joy/temple-of-joy.css` — Dawn's cream page and
   // Vespers' near-black one.

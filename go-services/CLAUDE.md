@@ -21,8 +21,8 @@ Production is a **hybrid** (see `docker-compose.yml` at repo root):
   as goroutines in one `supervisor` binary (metrics :9090); the `status`
   dashboard (7008); and `assets` (7007, off the main user path under Compose).
 - **Node is authoritative for:** web SSR (7005) and the realtime hubs —
-  socket-server (7001), rmhbox (7676), rmhtube (7003), rmhmusic (inside
-  socket-server) — plus ladder-worker + homes-worker. Apache routes all user
+  socket-server (7001), rmhbox (7676), rmhtube (7003) — plus ladder-worker +
+  homes-worker. Apache routes all user
   traffic to Node ports.
 - **The full-Go realtime topology was REMOVED in the rewrite (design §5.2):**
   the `gateway`, the Go hubs (gamehub/rmhbox/rmhtube/rmhmusic), `pkg/realtime`/

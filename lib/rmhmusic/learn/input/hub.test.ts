@@ -267,4 +267,49 @@ describe('createInputHub', () => {
       expect(mic.listenerCount()).toBe(0);
     });
   });
+
+  describe('phases', () => {
+    it('reports each source moving through its lifecycle and notifies on change only', async () => {
+      const gate = deferred();
+      const mic = fakeAdapter('mic', { gate: gate.promise });
+      const hub = createInputHub([mic.adapter]);
+      let changes = 0;
+      hub.onChange(() => changes++);
+      const before = hub.phases();
+      expect(hub.phase('mic')).toBe('idle');
+      const started = hub.start('mic');
+      expect(hub.phase('mic')).toBe('starting');
+      expect(hub.phases()).not.toBe(before);
+      // A second start while pending changes nothing.
+      void hub.start('mic');
+      expect(changes).toBe(1);
+      gate.resolve();
+      await started;
+      expect(hub.phase('mic')).toBe('active');
+      const snapshot = hub.phases();
+      expect(hub.phases()).toBe(snapshot);
+      hub.stop('mic');
+      expect(hub.phase('mic')).toBe('idle');
+      expect(changes).toBe(3);
+    });
+
+    it('a stop during a pending start reads as stopping until the start settles', async () => {
+      const gate = deferred();
+      const mic = fakeAdapter('mic', { gate: gate.promise });
+      const hub = createInputHub([mic.adapter]);
+      const started = hub.start('mic');
+      hub.stop('mic');
+      expect(hub.phase('mic')).toBe('stopping');
+      void hub.start('mic');
+      expect(hub.phase('mic')).toBe('starting');
+      hub.stop('mic');
+      gate.resolve();
+      await started;
+      expect(hub.phase('mic')).toBe('idle');
+    });
+
+    it('sources without an adapter are idle', () => {
+      expect(createInputHub([]).phase('midi')).toBe('idle');
+    });
+  });
 });

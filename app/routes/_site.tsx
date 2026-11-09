@@ -48,9 +48,6 @@ const TargetedNoticeBanner = lazy(() =>
     default: m.TargetedNoticeBanner,
   })),
 );
-const MiniPlayer = lazy(() =>
-  import('@/components/rmhmusic/MiniPlayer').then((m) => ({ default: m.MiniPlayer })),
-);
 
 export const Route = createFileRoute('/_site')({
   component: SiteLayout,
@@ -82,9 +79,9 @@ function SiteLayout() {
     <SiteShell
       overlays={
         // These overlays are non-critical chrome (first-run/promo modals, the
-        // cookie notice, global shortcuts, the music mini-player). Isolate them
-        // so a throw in any one is reported and swallowed instead of bubbling to
-        // the route errorComponent and blanking the whole shell + feed.
+        // cookie notice, global shortcuts). Isolate them so a throw in any one is
+        // reported and swallowed instead of bubbling to the route errorComponent
+        // and blanking the whole shell + feed.
         <SilentErrorBoundary label="shell-overlays">
           <CookieConsent />
           <Suspense fallback={null}>
@@ -93,7 +90,6 @@ function SiteLayout() {
             <WhatsNewModal />
             <FreeMonthModal />
             <KeyboardShortcuts />
-            <MiniPlayer />
             <TargetedNoticeBanner />
           </Suspense>
         </SilentErrorBoundary>

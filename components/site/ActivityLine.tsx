@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import { Gamepad2, Music, MonitorPlay, Radio, Circle, type LucideIcon } from 'lucide-react';
+import { Gamepad2, MonitorPlay, Radio, Circle, type LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import type { PresenceActivity, PresenceActivityKind } from '@/lib/presence-types';
@@ -14,7 +14,6 @@ import type { PresenceActivity, PresenceActivityKind } from '@/lib/presence-type
 
 const ACTIVITY_ICON: Record<PresenceActivityKind, LucideIcon> = {
   game: Gamepad2,
-  music_room: Music,
   tube_room: MonitorPlay,
   space: Radio,
 };

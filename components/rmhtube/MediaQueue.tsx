@@ -222,7 +222,6 @@ export default function MediaQueue() {
         item={playlistItem}
         open={!!playlistItem}
         onOpenChange={(o) => { if (!o) setPlaylistItem(null); }}
-        kind="video"
       />
     </div>
   );

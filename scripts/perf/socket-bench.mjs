@@ -17,7 +17,7 @@
  *   # 2. seed users + sessions into the hub DB once:
  *   node scripts/perf/socket-bench.mjs --seed 400
  *   # 3. run a load mix
- *   node scripts/perf/socket-bench.mjs --hubs tube,music,box,casino --duration 20 \
+ *   node scripts/perf/socket-bench.mjs --hubs tube,box,casino --duration 20 \
  *       --out docs/server-perf-2026-10-21/results/ws5-before.json
  *   # 4. compare two runs
  *   node scripts/perf/socket-bench.mjs --compare before.json after.json
@@ -50,10 +50,10 @@ if (flag('compare', false)) {
 }
 
 const opts = {
-  hubs: String(flag('hubs', 'tube,music,box,casino')).split(','),
+  hubs: String(flag('hubs', 'tube,box,casino')).split(','),
   duration: num('duration', 20),
   warmup: num('warmup', 3),
-  // tube / music
+  // tube
   rooms: num('rooms', 10),
   members: num('members', 12),
   chatEveryMs: num('chat-every', 4000),
@@ -345,50 +345,6 @@ async function setupTube(users) {
   return { sockets };
 }
 
-// ── rmhmusic (mounted on the socket-server): host play + periodic seek,
-// members chat. Heartbeat (5s) is the broadcast under test.
-async function setupMusic(users) {
-  const path = '/socket/';
-  const sockets = [];
-  let u = 0;
-  for (let r = 0; r < opts.rooms; r++) {
-    const room = users.slice(u, u + opts.members);
-    u += opts.members;
-    const socks = await inBatches(room, 6, (x) => connect(opts.socketUrl, path, x));
-    sockets.push(...socks);
-    const host = socks[0];
-    const created = once(host, 'rmhmusic:room:created');
-    host.emit('rmhmusic:room:create', { name: `perf-${r}`, isPublic: false });
-    const { code } = await created;
-    for (const s of socks.slice(1)) s.emit('rmhmusic:room:join', { code });
-    await sleep(150);
-    host.emit('rmhmusic:music:play', {
-      trackUri: 'spotify:track:perf',
-      positionMs: 0,
-      track: {
-        spotifyUri: 'spotify:track:perf',
-        title: 'Perf Track',
-        artist: 'Bench',
-        albumArt: 'https://example.invalid/a.png',
-        durationMs: 240000,
-      },
-    });
-    for (const s of socks) {
-      s.on('rmhmusic:sync:heartbeat', () => metrics.count('music.heartbeat_in'));
-      s.on('rmhmusic:room:action', (a) => {
-        metrics.count('music.action_in');
-        if (a.type === 'CHAT_MESSAGE' && a.payload.content.startsWith('b:')) {
-          lat('music.chat_broadcast_ms', now() - Number(a.payload.content.slice(2)));
-        }
-      });
-      s.on('rmhmusic:music:seek', () => metrics.count('music.seek_in'));
-    }
-    every(3000, () => host.emit('rmhmusic:music:seek', { positionMs: Math.floor(now()) % 200000 }));
-    for (const s of socks) every(opts.chatEveryMs, () => s.emit('rmhmusic:room:chat', { content: `b:${now()}` }));
-  }
-  return { sockets };
-}
-
 // ── rmhbox: lobbies with N players; chat + a picked minigame driven through
 // settings/instructions/preload/countdown to PLAYING, then game inputs.
 async function setupBox(users) {
@@ -597,7 +553,6 @@ async function microEmit() {
 
 const SCENARIOS = {
   tube: { url: () => opts.tubeUrl, need: () => opts.rooms * opts.members, setup: setupTube },
-  music: { url: () => opts.socketUrl, need: () => opts.rooms * opts.members, setup: setupMusic },
   box: { url: () => opts.boxUrl, need: () => opts.lobbies * opts.lobbyPlayers, setup: setupBox },
   casino: { url: () => opts.socketUrl, need: () => opts.tables * opts.seatsPerTable, setup: setupCasino },
 };
@@ -626,15 +581,16 @@ async function main() {
     return;
   }
 
+  const unknown = opts.hubs.filter((h) => !SCENARIOS[h]);
+  if (unknown.length) throw new Error(`unknown hub(s): ${unknown.join(', ')} (have ${Object.keys(SCENARIOS).join(', ')})`);
   const need = opts.hubs.reduce((n, h) => n + SCENARIOS[h].need(), 0);
   const users = await loadTokens(Math.max(need, 1));
 
   // Each hub gets its own slice of users so one user is never in two hubs'
-  // tables at once (socket-server hosts music + casino together, so they must
-  // not share users).
+  // tables at once.
   const results = { label: opts.label, at: new Date().toISOString(), opts: { ...opts, db: undefined }, hubs: {} };
   const allSockets = [];
-  const hubUrls = { tube: opts.tubeUrl, music: opts.socketUrl, box: opts.boxUrl, casino: opts.socketUrl };
+  const hubUrls = { tube: opts.tubeUrl, box: opts.boxUrl, casino: opts.socketUrl };
 
   let offset = 0;
   for (const hub of opts.hubs) {

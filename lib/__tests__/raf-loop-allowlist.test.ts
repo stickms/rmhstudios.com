@@ -198,6 +198,12 @@ const ALLOW = new Set<string>([
   // motion Still draws one frame and stops (a MutationObserver restarts it), and it is capped at 30 fps
   // (15 on the Low graphics preference) with a fixed-size buffer (no per-frame canvas reallocation).
   'components/kowloon-knockout/MenuBackdrop.tsx',
+  // RMH Music's paper backdrop (notes drifting on staff paper). Same bounds as the Kowloon one: the
+  // effect cancels the frame on unmount, a hidden tab cancels it and `visibilitychange` restarts it,
+  // the band scrolling out of view stops it (IntersectionObserver), Jelly motion Still draws one
+  // frame and stops (a MutationObserver restarts it), and it is capped at 30 fps (15 on handhelds and
+  // low-end devices) with a buffer sized per layout (no per-frame canvas reallocation).
+  'components/rmhmusic/learn/PaperBackdrop.tsx',
   // The ONE jelly frame (#989). The engine, the soft body, the arc renderer and
   // the fallback cursor light are drivers on it (`drive(fn, { order })`) and call
   // no rAF themselves. No frame is requested while no driver is awake; `stop()`
@@ -365,7 +371,6 @@ const ALLOW = new Set<string>([
   // runs only on pages that mount a governed Canvas, and writes nothing to the
   // DOM.
   'lib/render/refresh-rate.ts',
-  'lib/rmhmusic/spotify-player.ts',
   'lib/rmhvibe/vibe.server.ts',
   'lib/vega/VegaGame.ts',
   // The browser TF2 / Half-Life 2 / Portal clients' ONE frame loop (`GameLoop`). Every

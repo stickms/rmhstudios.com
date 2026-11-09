@@ -13,6 +13,8 @@ import { checkRateLimit } from '../rate-limit';
 import { logger } from '../logger';
 import {
   JAM_C2S,
+  JAM_CODE_ALPHABET,
+  JAM_CODE_LENGTH,
   JAM_MAX_MEMBERS,
   JAM_MAX_PATTERNS,
   JAM_MAX_PROJECT_CHARS,
@@ -31,7 +33,6 @@ import {
   type JamPeer,
   type JamProject,
 } from '../../../lib/studio/jam/shared';
-import { ROOM_CODE_ALPHABET } from '../../../lib/rmhmusic/constants';
 
 interface JamRoom {
   code: string;
@@ -47,8 +48,8 @@ const socketRoom = new Map<string, string>(); // socket.id → code
 function makeCode(): string {
   for (;;) {
     let code = '';
-    for (let i = 0; i < 6; i++)
-      code += ROOM_CODE_ALPHABET[Math.floor(Math.random() * ROOM_CODE_ALPHABET.length)];
+    for (let i = 0; i < JAM_CODE_LENGTH; i++)
+      code += JAM_CODE_ALPHABET[Math.floor(Math.random() * JAM_CODE_ALPHABET.length)];
     if (!rooms.has(code)) return code;
   }
 }

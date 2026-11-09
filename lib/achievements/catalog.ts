@@ -61,7 +61,6 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   // ─── Games ───────────────────────────────────────────────────────────────
   // RMHBox
   { id: 'game.first_ranked', name: 'Challenger', description: 'Finish your first ranked match.', icon: '⚔️', category: 'games', tier: 'silver', coinReward: 25, target: 1 },
-  { id: 'game.first_music_guess', name: 'Name That Tune', description: 'Solve a Guess the Song puzzle.', icon: '🎵', category: 'games', tier: 'bronze', coinReward: 10, target: 1 },
   { id: 'game.rmhbox.first_game', name: 'Party Starter', description: 'Play your first RMHBox game.', icon: '🎉', category: 'games', tier: 'bronze', coinReward: 10, target: 1, group: 'RMHBox' },
   { id: 'game.rmhbox.first_win', name: 'Winner Winner', description: 'Win an RMHBox game.', icon: '🥇', category: 'games', tier: 'silver', coinReward: 25, target: 1, group: 'RMHBox' },
   { id: 'game.rmhbox.wins_25', name: 'Box Champion', description: 'Win 25 RMHBox games.', icon: '👑', category: 'games', tier: 'gold', coinReward: 100, target: 25, group: 'RMHBox' },
@@ -146,7 +145,6 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'game.slice_it.centurion', name: 'Centurion', description: 'Play 100 different songs.', icon: '💯', category: 'games', tier: 'gold', coinReward: 75, target: 100, group: 'Slice It!' },
   { id: 'game.slice_it.charted', name: 'Charter', description: 'Publish a hand-edited chart.', icon: '✏️', category: 'games', tier: 'silver', coinReward: 40, target: 1, group: 'Slice It!' },
   { id: 'game.rmhtube.host_room', name: 'Now Showing', description: 'Host an RMHTube watch room.', icon: '📺', category: 'games', tier: 'bronze', coinReward: 10, target: 1, group: 'RMHTube' },
-  { id: 'game.rmhmusic.host_room', name: 'On the Decks', description: 'Host an RMHMusic listening room.', icon: '🎚️', category: 'games', tier: 'bronze', coinReward: 10, target: 1, group: 'RMHMusic' },
   { id: 'game.rmhstudy.session', name: 'Study Buddy', description: 'Complete a focus session in RMHStudy.', icon: '📖', category: 'games', tier: 'bronze', coinReward: 10, target: 1, group: 'RMHStudy' },
 ];
 

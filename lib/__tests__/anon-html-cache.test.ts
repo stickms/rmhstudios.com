@@ -562,7 +562,8 @@ describe('no static-asset cache rule may capture an HTML route', () => {
   });
 
   it('static-media prefixes end in a slash, so they cannot swallow a sibling route', () => {
-    // `/music` matches `/music-trivia`; `/music/` cannot. This is the whole fix,
+    // `/music` matches a sibling route such as `/music-trivia` (one existed when
+    // this was written); `/music/` cannot. This is the whole fix,
     // so it is asserted directly rather than left implicit in the collision
     // checks above — a future prefix pointing at a directory with no sibling
     // route today would otherwise be free to omit it.

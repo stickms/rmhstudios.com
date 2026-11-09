@@ -652,13 +652,14 @@
       "title": "RMHMusic",
       "tags": [
         "Music",
-        "Spotify",
-        "Real-time",
+        "Learning",
+        "Piano",
+        "Guitar",
         "Beta"
       ],
       "route": "/rmhmusic",
-      "players": "multiplayer / playable with friends",
-      "text": "Listen to Spotify together. Create rooms, share queues, vibe with friends, and play Guess the Song. RMHMusic is a social music player powered by Spotify. Connect your Premium account, create a listening room, and enjoy synced playback with friends. Features a mesmerizing WebGL particle visualizer, shared queues, real-time chat, and Guess the Song — create a…"
+      "players": "single-player",
+      "text": "Learn piano and guitar with your microphone or a MIDI keyboard. RMHMusic is a beginner-friendly app for learning piano and guitar. Pick your instrument, connect a microphone or MIDI keyboard (or use the on-screen keys), calibrate its delay and start with a first note lesson, with your progress saved to your account. It is a Beta: read…"
     },
     {
       "id": "app:rmhstudy",

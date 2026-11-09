@@ -27,7 +27,7 @@ Multiplayer games talk to Node hubs over Socket.io, not to the web tier:
 
 | Hub | Port | Serves |
 | --- | ---- | ------ |
-| `socket-server` | 7001 | The general hub, including RMHMusic |
+| `socket-server` | 7001 | The general hub for the games |
 | `rmhbox` | 7676 | RMHBox party games |
 | `rmhtube` | 7003 | Watch-party sync |
 

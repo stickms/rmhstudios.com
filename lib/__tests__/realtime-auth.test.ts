@@ -28,7 +28,6 @@ const CLIENTS = [
   'lib/rmhtype/socket.ts',
   'lib/rmhstudy/socket.ts',
   'lib/rmhtube/socket.ts',
-  'lib/rmhmusic/socket.ts',
   'lib/rmhbox/socket.ts',
   'lib/gabriels-horn/net/client.ts',
   'lib/laundry-sort/net/client.ts',

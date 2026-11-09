@@ -19,6 +19,7 @@ No official Valve / Counter-Strike / Half-Life / Portal files are used in the ca
 | nightrail | Michroma, Jost | as above | Neon glow |
 | portal | Jost | jost/Jost[wght].ttf | "O" replaced with a drawn blue portal ring |
 | rmhbox | Titan One, Fredoka | titanone/TitanOne-Regular.ttf, fredoka/Fredoka[wdth,wght].ttf | Two-colour wordmark, stroke |
+| rmhmusic (2026-11-08) | IM Fell English, Bodoni Moda Italic | scripts/game-art/fonts/IMFellEnglish/ (OFL), bodonimoda/BodoniModa-Italic[wght].ttf | Wordmark in IM Fell English with a drawn note for the dot of the i, fitted to width; hand-copied manuscript (staves, clef, notes and tab drawn as paths, ruled freehand, inked through a displacement filter); no tagline or captions. Generator: `scripts/game-art/rmhmusic.mjs` |
 | slice-it | Archivo, Bodoni Moda, IBM Plex Mono | archivo/Archivo[wdth,wght].ttf, bodonimoda/BodoniModa-Italic[wght].ttf | "SLICE" cut on a diagonal in Archivo (width 125, weight 900) followed on the same baseline by a Bodoni Moda italic "it!" (one line); outlines converted to paths (`public/images/games/logos/slice-it-line.svg`, renamed twice — from `slice-it.svg`, then `slice-it-cut.svg` — so a cached copy of an earlier logo cannot be served at the same URL) |
 | synapse-storm | Exo 2 (Italic), Jost, Orbitron | orbitron/Orbitron[wght].ttf | Neon glow |
 | temple-of-joy | Cinzel, Jost | cinzel/Cinzel[wght].ttf | Gold gradient, stroke, shadow |
@@ -208,7 +209,7 @@ All face imagery is cropped / restyled from the owner's existing cards in `scrat
 - `versecraft.webp`: illustrated figure cut out with GrabCut (banner versecraft)
 - `rmhcode.webp`: photoreal portrait (banner rmhcode as a feathered crop; cut-out with GrabCut for the new cards, then
   restyled as halftone / posterised screenprint / violet duotone)
-- `rmhmusic.webp`: watercolour portrait + palms (banner rmhmusic, multiplied onto generated paper)
+- `rmhmusic.webp`: watercolour portrait + palms (banner rmhmusic, multiplied onto generated paper) (retired 2026-11-08: replaced by the learning-app art, see "RMH Music learning-app art" below)
 - `rmhstudy.webp`: line-art dial; `rmhtype.webp`: line-art key; `rmhtube.webp`: vector portrait (also used as the source
   for the 1-bit LCD dither in rmhcalculator and the attic-window portrait in rmhhomes)
 - `rmhstrategies.webp`: only the "Sahur" wooden-bat character, the clock and the card's text content were reused. The
@@ -292,7 +293,7 @@ Every face is derived from the owner's existing "Marlon Jack" cards (`scratchpad
 `game-art-v2/jack/work/`). Nothing was generated or invented.
 - rmhladder: GrabCut photo cut-out (`face_photo_cut.png`, from the owner's rmhcode card), re-treated as a violet/lime
   halftone (badge, banner) and a 3-level posterised version (icon).
-- rmhmusic: the owner's watercolour portrait from the original rmhmusic card, multiplied onto new paper/wash backgrounds.
+- rmhmusic: the owner's watercolour portrait from the original rmhmusic card, multiplied onto new paper/wash backgrounds. (retired 2026-11-08: replaced by the learning-app art, see "RMH Music learning-app art" below)
 - rmhstudy: the line-art face from the owner's original rmhstudy card, re-extracted (4x, thresholded to a clean ink mask,
   dial ticks removed) and recoloured navy.
 - rmhtype: the line-art face from the owner's original rmhtype card, re-extracted the same way and recoloured black.
@@ -303,10 +304,10 @@ Every face is derived from the owner's existing "Marlon Jack" cards (`scratchpad
 |---|-------|------------------|-----|---------|---------|---------|
 | 1 | "The Ladder" (salted paper print, April 1844) | William Henry Fox Talbot; The Metropolitan Museum of Art, Bequest of Maurice B. Sendak, 2012 (obj. 306335) | https://www.metmuseum.org/art/collection/search/306335 | CC0 (Met Open Access, public domain) | rmhladder card + banner | Cropped to the ladder, converted to a violet tritone duotone with grain; level labels (STAFF ... INTERN) and leader lines added on top. |
 | 2 | "Sailors or Laborers Wanted" for Washington Navy Yard, City of Washington Gazette, 1 Dec 1819 | Newspaper advertisement (1819), Library of Congress scan, via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:%22Sailors_or_Laborers_Wanted%22_for_Washington_Navy_Yard,_City_of_Washington_Gazette_1_Dec_1819.jpg | Public domain (Commons) | rmhladder card | Recoloured to deep violet ink on cream paper; placed as a taped clipping with a new caption. |
-| 3 | "Palm Tree, Nassau" (watercolour, 1898) | Winslow Homer; The Met, Amelia B. Lazarus Fund, 1910 (obj. 11131) | https://www.metmuseum.org/art/collection/search/11131 | CC0 (Met Open Access) | rmhmusic card + banner | Palm crown cut from the sky by darkness mask, slightly saturated, mirrored/rotated and multiplied into the washes. |
-| 4 | Church sonata K. 274, autograph score, f. 1r | Wolfgang Amadeus Mozart; Staatsbibliothek zu Berlin, via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:Mozart_-_Church_sonata_K._274_-_autograph,_Staatsbibliothek_zu_Berlin,_f._1r.png | Public domain (Commons) | rmhmusic card + banner | Cropped, desaturated and lifted to a faint manuscript texture under procedurally generated watercolour washes. |
-| 5 | 12in-Vinyl-LP-Record-Angle.jpg | Evan-Amos, via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:12in-Vinyl-LP-Record-Angle.jpg | Public domain (Commons) | rmhmusic card, banner, icon | Cut out as a disc, recoloured to blue, groove contrast boosted, yellow label repainted; used as a pale record behind the portrait and as the icon's record. |
-| 6 | "Fleurs Tropicales et Palmiers (Tropical Flowers and Palm Trees)" (block-printed cotton, 1787) | Oberkampf Manufactory; The Met, Rogers Fund, 1937 (obj. 226246) | https://www.metmuseum.org/art/collection/search/226246 | CC0 (Met Open Access) | rmhmusic card | Cropped to a strip, mapped to a navy/sky duotone, faded into the bottom edge. |
+| 3 | "Palm Tree, Nassau" (watercolour, 1898) | Winslow Homer; The Met, Amelia B. Lazarus Fund, 1910 (obj. 11131) | https://www.metmuseum.org/art/collection/search/11131 | CC0 (Met Open Access) | rmhmusic card + banner (retired 2026-11-08) | Palm crown cut from the sky by darkness mask, slightly saturated, mirrored/rotated and multiplied into the washes. |
+| 4 | Church sonata K. 274, autograph score, f. 1r | Wolfgang Amadeus Mozart; Staatsbibliothek zu Berlin, via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:Mozart_-_Church_sonata_K._274_-_autograph,_Staatsbibliothek_zu_Berlin,_f._1r.png | Public domain (Commons) | rmhmusic card + banner (retired 2026-11-08) | Cropped, desaturated and lifted to a faint manuscript texture under procedurally generated watercolour washes. |
+| 5 | 12in-Vinyl-LP-Record-Angle.jpg | Evan-Amos, via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:12in-Vinyl-LP-Record-Angle.jpg | Public domain (Commons) | rmhmusic card, banner, icon (retired 2026-11-08) | Cut out as a disc, recoloured to blue, groove contrast boosted, yellow label repainted; used as a pale record behind the portrait and as the icon's record. |
+| 6 | "Fleurs Tropicales et Palmiers (Tropical Flowers and Palm Trees)" (block-printed cotton, 1787) | Oberkampf Manufactory; The Met, Rogers Fund, 1937 (obj. 226246) | https://www.metmuseum.org/art/collection/search/226246 | CC0 (Met Open Access) | rmhmusic card (retired 2026-11-08) | Cropped to a strip, mapped to a navy/sky duotone, faded into the bottom edge. |
 | 7 | Stoppuhr hanhart.jpg (mechanical stopwatch) | Stefan (StefanPohl), via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:Stoppuhr_hanhart.jpg | Public domain (released by the author, Commons) | rmhstudy card + banner | Cut out of its background, mapped to a navy cyanotype tone, case clipped to a circle; the centre of the dial (including the maker's logo) is covered by the owner's face dial; amber second hand added. |
 | 8 | 2ND DECK CASEMATE, ADDITIONAL DECK PROTECTION, 3 DEC. 1925 (blueprint, battleship Texas) | US Navy (Thompson), via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:2ND_DECK_CASEMATE,_ADDITIONAL_DECK_PROTECTION,_3_DEC._1925.jpg | Public domain (Commons) | rmhstudy card + banner | Two crops, recoloured to the app's navy and pale-blue, darkened under a veil so it acts only as texture. |
 | 9 | Underwood Standard Typewriter No. 5 (colored) | Anonymous advertisement illustration (Motion Picture Magazine), via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:Underwood_Standard_Typewriter_No._5_(colored).jpg | Public domain (Commons) | rmhtype card + banner | Cropped to the key rows only (no brand lettering), converted to graphite monochrome, edge-masked. |
@@ -318,11 +319,11 @@ Every face is derived from the owner's existing "Marlon Jack" cards (`scratchpad
 | Big Shoulders Display | Patric King | SIL OFL 1.1 (`ofl/bigshouldersdisplay`) | rmhladder chips, badge role, level labels, logo |
 | Big Shoulders Stencil Display | Patric King | SIL OFL 1.1 (`ofl/bigshouldersstencildisplay`) | rmhstudy "STUDY" and CTA |
 | Anton | Vernon Adams | SIL OFL 1.1 (`ofl/anton`) | rmhladder and rmhstudy card titles |
-| Instrument Serif (Italic) | Rodrigo Fuenzalida, Jordan Egstad | SIL OFL 1.1 (`ofl/instrumentserif`) | rmhmusic tagline |
+| Instrument Serif (Italic) | Rodrigo Fuenzalida, Jordan Egstad | SIL OFL 1.1 (`ofl/instrumentserif`) | rmhmusic tagline (retired 2026-11-08) |
 | IBM Plex Mono | Mike Abbink, Bold Monday | SIL OFL 1.1 (`ofl/ibmplexmono`) | body/data text across the batch |
-| DM Mono | Colophon Foundry | SIL OFL 1.1 (`ofl/dmmono`) | rmhmusic time stamps and sub-line |
+| DM Mono | Colophon Foundry | SIL OFL 1.1 (`ofl/dmmono`) | rmhmusic time stamps and sub-line (retired 2026-11-08) |
 | Tourney | Tyler Finck, ETC | SIL OFL 1.1 (`ofl/tourney`) | rmhstudy logo |
-| Yellowtail | Brian J. Bonislawsky (Astigmatic) | Apache License 2.0 (`apache/yellowtail`) | rmhmusic title and logo |
+| Yellowtail | Brian J. Bonislawsky (Astigmatic) | Apache License 2.0 (`apache/yellowtail`) | rmhmusic title and logo (retired 2026-11-08) |
 | Special Elite | Brian J. Bonislawsky (Astigmatic) | Apache License 2.0 (`apache/specialelite`) | rmhtype title, typed text, key legends, logo |
 
 Yellowtail and Special Elite are published by Google Fonts under Apache 2.0 rather than the OFL; both permit use and
@@ -633,7 +634,7 @@ Every face is derived from the owner's existing "Marlon Jack" cards (`scratchpad
 `game-art-v2/jack/work/`). Nothing was generated or invented.
 - rmhladder: GrabCut photo cut-out (`face_photo_cut.png`, from the owner's rmhcode card), re-treated as a violet/lime
   halftone (badge, banner) and a 3-level posterised version (icon).
-- rmhmusic: the owner's watercolour portrait from the original rmhmusic card, multiplied onto new paper/wash backgrounds.
+- rmhmusic: the owner's watercolour portrait from the original rmhmusic card, multiplied onto new paper/wash backgrounds. (retired 2026-11-08: replaced by the learning-app art, see "RMH Music learning-app art" below)
 - rmhstudy: the line-art face from the owner's original rmhstudy card, re-extracted (4x, thresholded to a clean ink mask,
   dial ticks removed) and recoloured navy.
 - rmhtype: the line-art face from the owner's original rmhtype card, re-extracted the same way and recoloured black.
@@ -644,10 +645,10 @@ Every face is derived from the owner's existing "Marlon Jack" cards (`scratchpad
 |---|-------|------------------|-----|---------|---------|---------|
 | 1 | "The Ladder" (salted paper print, April 1844) | William Henry Fox Talbot; The Metropolitan Museum of Art, Bequest of Maurice B. Sendak, 2012 (obj. 306335) | https://www.metmuseum.org/art/collection/search/306335 | CC0 (Met Open Access, public domain) | rmhladder card + banner | Cropped to the ladder, converted to a violet tritone duotone with grain; level labels (STAFF ... INTERN) and leader lines added on top. |
 | 2 | "Sailors or Laborers Wanted" for Washington Navy Yard, City of Washington Gazette, 1 Dec 1819 | Newspaper advertisement (1819), Library of Congress scan, via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:%22Sailors_or_Laborers_Wanted%22_for_Washington_Navy_Yard,_City_of_Washington_Gazette_1_Dec_1819.jpg | Public domain (Commons) | rmhladder card | Recoloured to deep violet ink on cream paper; placed as a taped clipping with a new caption. |
-| 3 | "Palm Tree, Nassau" (watercolour, 1898) | Winslow Homer; The Met, Amelia B. Lazarus Fund, 1910 (obj. 11131) | https://www.metmuseum.org/art/collection/search/11131 | CC0 (Met Open Access) | rmhmusic card + banner | Palm crown cut from the sky by darkness mask, slightly saturated, mirrored/rotated and multiplied into the washes. |
-| 4 | Church sonata K. 274, autograph score, f. 1r | Wolfgang Amadeus Mozart; Staatsbibliothek zu Berlin, via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:Mozart_-_Church_sonata_K._274_-_autograph,_Staatsbibliothek_zu_Berlin,_f._1r.png | Public domain (Commons) | rmhmusic card + banner | Cropped, desaturated and lifted to a faint manuscript texture under procedurally generated watercolour washes. |
-| 5 | 12in-Vinyl-LP-Record-Angle.jpg | Evan-Amos, via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:12in-Vinyl-LP-Record-Angle.jpg | Public domain (Commons) | rmhmusic card, banner, icon | Cut out as a disc, recoloured to blue, groove contrast boosted, yellow label repainted; used as a pale record behind the portrait and as the icon's record. |
-| 6 | "Fleurs Tropicales et Palmiers (Tropical Flowers and Palm Trees)" (block-printed cotton, 1787) | Oberkampf Manufactory; The Met, Rogers Fund, 1937 (obj. 226246) | https://www.metmuseum.org/art/collection/search/226246 | CC0 (Met Open Access) | rmhmusic card | Cropped to a strip, mapped to a navy/sky duotone, faded into the bottom edge. |
+| 3 | "Palm Tree, Nassau" (watercolour, 1898) | Winslow Homer; The Met, Amelia B. Lazarus Fund, 1910 (obj. 11131) | https://www.metmuseum.org/art/collection/search/11131 | CC0 (Met Open Access) | rmhmusic card + banner (retired 2026-11-08) | Palm crown cut from the sky by darkness mask, slightly saturated, mirrored/rotated and multiplied into the washes. |
+| 4 | Church sonata K. 274, autograph score, f. 1r | Wolfgang Amadeus Mozart; Staatsbibliothek zu Berlin, via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:Mozart_-_Church_sonata_K._274_-_autograph,_Staatsbibliothek_zu_Berlin,_f._1r.png | Public domain (Commons) | rmhmusic card + banner (retired 2026-11-08) | Cropped, desaturated and lifted to a faint manuscript texture under procedurally generated watercolour washes. |
+| 5 | 12in-Vinyl-LP-Record-Angle.jpg | Evan-Amos, via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:12in-Vinyl-LP-Record-Angle.jpg | Public domain (Commons) | rmhmusic card, banner, icon (retired 2026-11-08) | Cut out as a disc, recoloured to blue, groove contrast boosted, yellow label repainted; used as a pale record behind the portrait and as the icon's record. |
+| 6 | "Fleurs Tropicales et Palmiers (Tropical Flowers and Palm Trees)" (block-printed cotton, 1787) | Oberkampf Manufactory; The Met, Rogers Fund, 1937 (obj. 226246) | https://www.metmuseum.org/art/collection/search/226246 | CC0 (Met Open Access) | rmhmusic card (retired 2026-11-08) | Cropped to a strip, mapped to a navy/sky duotone, faded into the bottom edge. |
 | 7 | Stoppuhr hanhart.jpg (mechanical stopwatch) | Stefan (StefanPohl), via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:Stoppuhr_hanhart.jpg | Public domain (released by the author, Commons) | rmhstudy card + banner | Cut out of its background, mapped to a navy cyanotype tone, case clipped to a circle; the centre of the dial (including the maker's logo) is covered by the owner's face dial; amber second hand added. |
 | 8 | 2ND DECK CASEMATE, ADDITIONAL DECK PROTECTION, 3 DEC. 1925 (blueprint, battleship Texas) | US Navy (Thompson), via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:2ND_DECK_CASEMATE,_ADDITIONAL_DECK_PROTECTION,_3_DEC._1925.jpg | Public domain (Commons) | rmhstudy card + banner | Two crops, recoloured to the app's navy and pale-blue, darkened under a veil so it acts only as texture. |
 | 9 | Underwood Standard Typewriter No. 5 (colored) | Anonymous advertisement illustration (Motion Picture Magazine), via Wikimedia Commons | https://commons.wikimedia.org/wiki/File:Underwood_Standard_Typewriter_No._5_(colored).jpg | Public domain (Commons) | rmhtype card + banner | Cropped to the key rows only (no brand lettering), converted to graphite monochrome, edge-masked. |
@@ -659,11 +660,11 @@ Every face is derived from the owner's existing "Marlon Jack" cards (`scratchpad
 | Big Shoulders Display | Patric King | SIL OFL 1.1 (`ofl/bigshouldersdisplay`) | rmhladder chips, badge role, level labels, logo |
 | Big Shoulders Stencil Display | Patric King | SIL OFL 1.1 (`ofl/bigshouldersstencildisplay`) | rmhstudy "STUDY" and CTA |
 | Anton | Vernon Adams | SIL OFL 1.1 (`ofl/anton`) | rmhladder and rmhstudy card titles |
-| Instrument Serif (Italic) | Rodrigo Fuenzalida, Jordan Egstad | SIL OFL 1.1 (`ofl/instrumentserif`) | rmhmusic tagline |
+| Instrument Serif (Italic) | Rodrigo Fuenzalida, Jordan Egstad | SIL OFL 1.1 (`ofl/instrumentserif`) | rmhmusic tagline (retired 2026-11-08) |
 | IBM Plex Mono | Mike Abbink, Bold Monday | SIL OFL 1.1 (`ofl/ibmplexmono`) | body/data text across the batch |
-| DM Mono | Colophon Foundry | SIL OFL 1.1 (`ofl/dmmono`) | rmhmusic time stamps and sub-line |
+| DM Mono | Colophon Foundry | SIL OFL 1.1 (`ofl/dmmono`) | rmhmusic time stamps and sub-line (retired 2026-11-08) |
 | Tourney | Tyler Finck, ETC | SIL OFL 1.1 (`ofl/tourney`) | rmhstudy logo |
-| Yellowtail | Brian J. Bonislawsky (Astigmatic) | Apache License 2.0 (`apache/yellowtail`) | rmhmusic title and logo |
+| Yellowtail | Brian J. Bonislawsky (Astigmatic) | Apache License 2.0 (`apache/yellowtail`) | rmhmusic title and logo (retired 2026-11-08) |
 | Special Elite | Brian J. Bonislawsky (Astigmatic) | Apache License 2.0 (`apache/specialelite`) | rmhtype title, typed text, key legends, logo |
 
 Yellowtail and Special Elite are published by Google Fonts under Apache 2.0 rather than the OFL; both permit use and
@@ -785,3 +786,43 @@ The main-menu backdrop is original work with no third-party art: `lib/altair/men
 ### Altair player characters, enemies, bosses and the Echo ally (original)
 
 The eight player-character sheets in `public/sprites/altair/characters/`, the sixteen enemy sheets in `public/sprites/altair/enemies/`, the four boss sheets in `public/sprites/altair/bosses/` (32x32 frames) and the Echo ally sheet (`characters/echo.png`) are original: they are generated by `scripts/altair/sprites/` (one shared 16x16 figure with a four-frame walk cycle in four directions, plus per-class palette and silhouette accessories) and contain no third-party pixels. The earlier CC0-derived character and enemy sources were removed from `scripts/altair/sprite-src/`, along with the boss sources; tiles, props, pickups, projectiles and icons are still the graded CC0 sheets. Regenerate with `pnpm exec tsx scripts/altair/sprites/build-characters.ts`; output is deterministic.
+
+---
+
+## RMH Music learning-app art (2026-11-08)
+
+RMH Music stopped being a Spotify listening-party app and became a beginner piano and guitar learning app, so its
+card, banner, logo and icon were redrawn to say so. They replace the watercolour portrait, palm, vinyl-record and
+player-bar artwork credited in the Marlon Jack and batch B entries above (marked retired there); none of those
+sources (the owner's portrait, Winslow Homer's palm, the Mozart autograph, the LP photo, the Oberkampf print) or the
+Yellowtail / Instrument Serif / DM Mono type is in the new files.
+
+All four files are **original vector artwork drawn in SVG** by `scripts/game-art/rmhmusic.mjs` and rendered with
+headless Chromium (Playwright) at 2x, then downscaled with sharp (Lanczos) and encoded to WebP. No third-party image is
+used. The art is one page of hand-copied manuscript paper, the way a teacher writes out a first tune: the app's notebook
+paper (`components/rmhmusic/rmhmusic.css`: cream paper with a seeded `feTurbulence` grain, pre-printed faint staves, a
+red-pencil margin rule, navy ink) with "Ode to Joy" (Beethoven, public domain) in C on the staff and the same notes as
+guitar tab beneath it, so piano and guitar are both there with no caption. It carries no tagline, annotation, badge
+or footer text. It is made to look drawn by a person: every staff line is ruled freehand (a seeded PRNG bows each line
+and leans each system a fraction of a degree), noteheads and stems are not quite level or plumb, and the inked layer
+goes through an SVG displacement-and-density filter so edges wander and ink density varies. The first card system
+carries a teacher's pencil fingering (3 3 4 5 | 5 4 3 2 | 1 1 2 3 | 3 2 2). One simplification for a first reader: the
+dotted quarter and eighth in bars 4 and 8 are written as two quarters. The treble clef (one calligraphic stroke),
+noteheads, stems, ledger lines, bar lines, the common-time "4" and the note that dots the i of the wordmark are
+geometry, not font glyphs. The card has the first eight bars in two systems; the banner is one system running off the
+right edge (seven bars, text-free, as the other library banners are, because the logo is laid over its lower edge);
+the logo is the wordmark alone with a thin paper-coloured halo so it reads on dark and light grounds; the icon is a
+hand-ruled staff with a treble clef and two beamed eighths. The output is deterministic: re-running the script
+reproduces the same files.
+
+| Asset | Font(s) used | Source | Changes |
+|---|---|---|---|
+| card (`rmhmusic.webp`) | IM Fell English (Regular), Bodoni Moda Italic | IM Fell English: `scripts/game-art/fonts/IMFellEnglish/` (SIL OFL 1.1, Igino Marini's digitisation of the 17th-century Fell types, from Fontsource `@fontsource/im-fell-english` 5.3.0); Bodoni Moda: `components/shared/game-fonts/BodoniModa/` | Wordmark in IM Fell English (i dotted with a drawn note) with the "T A B" of the tab clef; fret numbers and pencil fingerings in Bodoni Moda Italic, whose figures are lining (Fell's are old-style) |
+| banner (`banners/rmhmusic.webp`) | IM Fell English, Bodoni Moda Italic | as above | No wordmark; "T A B" and fret numbers only |
+| logo (`logos/rmhmusic.webp`) | IM Fell English | as above | Wordmark only, thin paper-coloured halo, transparent background |
+| icon (`icons/rmhmusic.webp`) | none | — | Treble clef and two beamed eighth notes on a hand-ruled staff, cream page in a navy frame |
+
+IM Fell English is vendored beside the generator (`scripts/game-art/fonts/IMFellEnglish/`, woff2 plus its `OFL.txt`);
+Bodoni Moda is the self-hosted copy in `components/shared/game-fonts/` (see "Logos, design schemes and fonts" above).
+Both are loaded by the generator through `file://` URLs. Regenerate with `node scripts/game-art/rmhmusic.mjs` (pass
+`--chromium <path>` or `PW_CHROMIUM` if Playwright's own browser build is not installed), then `pnpm images:variants`.

@@ -539,7 +539,7 @@ describe('FOUC contract: hydration', () => {
    */
   const LAZY_IN_ROUTE_ALLOWED: Record<string, string> = {
     'app/routes/_site.tsx':
-      'first-run/welcome modals, cookie consent, shortcuts and the mini player — mounted on the client after an interaction or a stored flag, never server-rendered',
+      'first-run/welcome modals, cookie consent and shortcuts — mounted on the client after an interaction or a stored flag, never server-rendered',
     'app/routes/_site/admin/blog/$slug/edit.tsx':
       'admin-only MDX editor, behind auth: not in the audit, nothing public to swap',
     'app/routes/_site/admin/blog/new.tsx': 'admin-only MDX editor, behind auth',
@@ -564,7 +564,6 @@ describe('FOUC contract: hydration', () => {
     'app/routes/hearthworks.tsx': 'client-only 3D scene: the server renders the fallback',
     'app/routes/library.$slug.tsx': 'the book and EPUB readers open from the page on demand',
     'app/routes/rmhcode/index.tsx': 'the token generator opens on demand from the page',
-    'app/routes/rmhmusic/$roomId.tsx': 'the visualizer mounts once audio is playing',
     'app/routes/slice-it/edit.$songId.tsx': 'the chart editor, behind auth, client-only canvas',
     'app/routes/synapse-storm.tsx': 'client-only WebGL game: the server renders the fallback',
     'app/routes/temple-of-joy/index.tsx': 'client-only game gate: the server renders the fallback',
