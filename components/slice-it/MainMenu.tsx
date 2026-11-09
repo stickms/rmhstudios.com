@@ -14,7 +14,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem, MenuLabel } from '@/components/ui/menu';
 import { LogOut, Menu as MenuIcon, Settings } from 'lucide-react';
-import { useSliceItStore } from '@/lib/slice-it/store';
+import { musicGain, useSliceItStore } from '@/lib/slice-it/store';
 import { GameEngine } from '@/lib/slice-it/engine';
 import { hitSoundPath, hitSoundPreloadList } from '@/lib/slice-it/hit-sound-pool';
 import { asset } from '@/lib/storage/asset';
@@ -54,9 +54,8 @@ interface MainMenuProps {
 export function MainMenu({ engine: propEngine }: MainMenuProps) {
   const { t } = useTranslation('c-game');
   const { t: ts } = useTranslation('r-slice-it');
-  const setUserName = useSliceItStore((state) => state.setUserName);
-  const userName = useSliceItStore((state) => state.userName);
   const volume = useSliceItStore((state) => state.volume);
+  const musicVolume = useSliceItStore((state) => state.musicVolume);
   const hitSound = useSliceItStore((state) => state.hitSound);
   const setSongId = useSliceItStore((state) => state.setSongId);
   const setIsMultiplayer = useSliceItStore((state) => state.setIsMultiplayer);
@@ -98,8 +97,8 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
 
   // Apply volume on mount
   React.useEffect(() => {
-    AudioManager.getInstance().setVolume(volume / 100);
-  }, [volume]);
+    AudioManager.getInstance().setVolume(musicGain(volume, musicVolume));
+  }, [volume, musicVolume]);
 
   // Preload persisted hit sound on mount — the whole pool if it is Shuffle.
   React.useEffect(() => {
@@ -122,16 +121,13 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
   // Ref to stop SongLibrary preview audio from outside
   const stopPreviewRef = React.useRef<(() => void) | null>(null);
 
-  // Side effect to set username
-  React.useEffect(() => {
-    if (session.data?.user && !userName) {
-      const user = session.data.user as { name?: string | null; username?: string | null };
-      const name = user.name || user.username || 'OPERATOR';
-      setUserName(name);
-    }
-  }, [session.data, userName, setUserName]);
-
   const avatarUrl = (session.data?.user as { image?: string | null } | undefined)?.image ?? null;
+  // The operator is whoever is signed in — there is nothing to type. (A name field
+  // in Settings used to shadow it, which only ever let the two disagree.)
+  const sessionUser = session.data?.user as
+    | { name?: string | null; username?: string | null }
+    | undefined;
+  const userName = sessionUser ? sessionUser.name || sessionUser.username || 'OPERATOR' : '';
 
   /**
    * Open a track's details panel.
@@ -352,10 +348,10 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             <h1 className="slice-bar__title">
               <img
                 className="slice-bar__logo"
-                src="/images/games/logos/slice-it-cut.svg"
+                src="/images/games/logos/slice-it-line.svg"
                 alt={t('game-title', { defaultValue: 'Slice It!' })}
-                width={1015}
-                height={504}
+                width={1395}
+                height={282}
                 decoding="async"
                 fetchPriority="high"
               />
@@ -460,11 +456,11 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   animate="animate"
                 >
                   <img
-                    className="mx-auto h-24 w-auto"
-                    src="/images/games/logos/slice-it-cut.svg"
+                    className="mx-auto h-auto w-full max-w-[17rem]"
+                    src="/images/games/logos/slice-it-line.svg"
                     alt=""
-                    width={1015}
-                    height={504}
+                    width={1395}
+                    height={282}
                     decoding="async"
                   />
                   <hr className="slice-slash" />
@@ -500,10 +496,10 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                   <h1 className="slice-sleeve__title">
                     <img
                       className="slice-sleeve__logo"
-                      src="/images/games/logos/slice-it-cut.svg"
+                      src="/images/games/logos/slice-it-line.svg"
                       alt={t('game-title', { defaultValue: 'Slice It!' })}
-                      width={1015}
-                      height={504}
+                      width={1395}
+                      height={282}
                       decoding="async"
                       fetchPriority="high"
                     />

@@ -37,7 +37,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useSession } from '@/components/Providers';
-import { useSliceItStore } from '@/lib/slice-it/store';
+import { musicGain, useSliceItStore } from '@/lib/slice-it/store';
 import { PREVIEW_SECONDS, previewFragment } from '@/lib/slice-it/preview';
 import { timeAgoShort } from '@/lib/utils';
 import {
@@ -158,6 +158,7 @@ export function SongLibrary({
   const { t: ts } = useTranslation('r-slice-it');
   const { data: session } = useSession();
   const volume = useSliceItStore((s) => s.volume);
+  const musicVolume = useSliceItStore((s) => s.musicVolume);
   // A phone gets one compact row — a search field and an options menu — in place of
   // the heading, the sort, the view toggle, the tool buttons and the artist chips.
   const isPhone = useMediaQuery('(max-width: 639px)');
@@ -435,8 +436,8 @@ export function SongLibrary({
   }, [stopPreview]);
 
   React.useEffect(() => {
-    if (previewRef.current) previewRef.current.volume = volume / 100;
-  }, [volume]);
+    if (previewRef.current) previewRef.current.volume = musicGain(volume, musicVolume);
+  }, [volume, musicVolume]);
 
   const togglePreview = (song: SliceSong) => {
     if (previewId === song.id && previewRef.current) {
@@ -458,7 +459,7 @@ export function SongLibrary({
     // That is what makes previewing a 6 MB track affordable at all.
     const start = song.previewStart ?? 0;
     const audio = new Audio(previewFragment(song.audioUrl, start));
-    audio.volume = volume / 100;
+    audio.volume = musicGain(volume, musicVolume);
     audio.onended = () => setPreviewId(null);
     // The fragment's END bound is honoured inconsistently across browsers, so
     // the stop is enforced here too. Without it a preview on an engine that

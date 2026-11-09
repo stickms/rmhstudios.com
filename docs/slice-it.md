@@ -231,6 +231,28 @@ is what makes "is this score believable?" answerable at all.
   worth meaningfully more than one but not six times more.
 - Accuracy is `Σ weight / (notes × 100)`, so a full MARVELOUS run is exactly 1.0.
 
+### What is chosen where, and what reaches the board
+
+Everything that changes a run is chosen **per song**, in the song's own settings
+(the sleeve panel under the chart's difficulty), and each row shows what it is
+worth: Health Gauge, Perfectionist, Invisible, Bombs, Switching, Spin, Strict
+Timing, One Track and S-Random show their addend from `MODIFIER_BONUSES`.
+Settings holds only what is personal and constant: volumes, keys, offsets, skin,
+backdrop, HUD and accessibility. There is no operator-name field (the name is the
+signed-in account's) and no Mirror.
+
+A run is **not uploaded** when `unrankedReason(modifiers, practiceAids)`
+(`lib/slice-it/modifiers.ts`) returns anything: playback below 1.0x, Lenient
+Timing, the assists (No Fail, Assist, Taps Only), or either practice aid
+(Metronome, Assist Tick). The results label, the client's submit guard
+(`useSubmitScore`) and the score endpoint all call that one function. The
+endpoint cannot see the guide sounds, since they change neither the chart nor
+the windows, so for those the client is the only gate.
+
+Volume is three sliders: **Master** scales both **Music** and **Effects**
+(`musicGain` / `sfxGain` in `lib/slice-it/store.ts`). Hit sounds, guide ticks and
+cues are effects; the song and the library preview are music.
+
 `maxPlausibleScore(duration, modifiers)` is the server's ceiling. It is
 deliberately loose — the line between an exceptional run and a number typed into
 a `fetch` call, not a simulation. The previous endpoint's only check was "a

@@ -357,5 +357,19 @@
   "record-details": "Modifiers, scores and comments",
   "now-playing": "Now playing",
   "search-tracks": "Search {{count}} tracks…",
-  "library-options": "Library options"
+  "library-options": "Library options",
+  "music": "Music",
+  "not-uploaded": "Score not uploaded",
+  "not-uploaded-tag": "Not uploaded",
+  "unranked-lenient": "Lenient timing",
+  "unranked-assist": "Assists on",
+  "unranked-practice": "Practice aids on",
+  "mod-health-gauge": "Health Gauge",
+  "mod-perfectionist": "Perfectionist",
+  "mod-lenient-timing": "Lenient Timing",
+  "practice-aids": "Practice Aids",
+  "practice-aids-hint": "Guide sounds for learning a chart. A run played with either one is not uploaded.",
+  "metronome": "Metronome",
+  "assist-tick": "Assist Tick",
+  "assists-not-uploaded-hint": "Free, with no score penalty — but a run played with any of these is not uploaded."
 }

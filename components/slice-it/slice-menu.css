@@ -545,6 +545,25 @@
   text-transform: uppercase;
 }
 
+.slice-mod__text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* What the row is worth: its score bonus, or that it keeps a run off the board. */
+.slice-mod__tag {
+  font-family: var(--slice-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--slice-primary);
+}
+
+.slice-mod__tag--off {
+  color: var(--slice-text-muted);
+}
+
 /* ── The tracklist ────────────────────────────────────────── */
 
 /* One grid for the heads, the rows and the skeleton, so they line up. */

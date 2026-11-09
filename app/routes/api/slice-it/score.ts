@@ -6,7 +6,7 @@ import { recordGamePlay } from '@/lib/quests/engine.server';
 import { reportGameResult } from '@/lib/game/results.server';
 import { ScoreSubmissionZ } from '@/lib/slice-it/api-schemas';
 import { RANKED_MIN_SPEED } from '@/lib/slice-it/constants';
-import { applyExclusions } from '@/lib/slice-it/modifiers';
+import { applyExclusions, unrankedReason } from '@/lib/slice-it/modifiers';
 import { maxPlausibleCombo, maxPlausibleScore } from '@/lib/slice-it/scoring';
 import {
   checkConsistency,
@@ -99,6 +99,16 @@ export const Route = createFileRoute('/api/slice-it/score')({
           if (modifiers.speed < RANKED_MIN_SPEED) {
             return Response.json(
               { error: 'Runs below 1.0x speed are unranked.', ranked: false },
+              { status: 400 },
+            );
+          }
+
+          // Lenient timing and the assists (No Fail, Assist, Taps Only) are free
+          // and unranked: a run on wider windows or without a fail state is not
+          // comparable to one without. `unrankedReason` is the one definition.
+          if (unrankedReason(modifiers, false) !== null) {
+            return Response.json(
+              { error: 'Runs with assists or lenient timing are unranked.', ranked: false },
               { status: 400 },
             );
           }

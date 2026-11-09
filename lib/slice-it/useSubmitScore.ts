@@ -16,7 +16,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { RANKED_MIN_SPEED } from './constants';
+import { unrankedReason } from './modifiers';
 import type { GameEngine } from './engine';
 import { useSliceItStore } from './store';
 import type { Modifiers } from './types';
@@ -62,6 +62,11 @@ export interface RunSummary {
   accuracy: number;
   modifiers: Modifiers;
   multiplayer: boolean;
+  /**
+   * True when a guide sound (metronome / assist tick) was on. Client-only: it is
+   * stripped before the POST, because the server cannot verify audio.
+   */
+  practiceAids?: boolean;
   /** Notes the engine actually resolved — cross-checked against the chart. */
   notesResolved?: number;
   /** Signed receipt from the song read; see `run-token.server.ts`. */
@@ -116,7 +121,8 @@ export function useSubmitScore(run: RunSummary | null): SubmitResult {
     setResult({ status: 'submitting', isNewBest: false, previousBest: null });
     // The log never travels with the score. Splitting it out here rather than at
     // the call site is what makes that true for every caller, present and future.
-    const { getReplay, ...scoreBody } = summary;
+    const { getReplay, practiceAids: _practiceAids, ...scoreBody } = summary;
+    void _practiceAids;
     try {
       const response = await fetch('/api/slice-it/score', {
         method: 'POST',
@@ -170,9 +176,11 @@ export function useSubmitScore(run: RunSummary | null): SubmitResult {
     const key = `${run.songId}:${run.score}:${run.multiplayer}`;
     const isNewRun = submittedKey.current !== key;
 
-    // Below 1.0x is unranked, which the server also enforces — checked here too
-    // so an unranked run does not spend a rate-limit slot to be told so.
-    if (run.modifiers.speed < RANKED_MIN_SPEED) {
+    // Unranked runs (slow, lenient, assists, practice aids) never upload. The
+    // server refuses the first three as well — checked here too so an unranked
+    // run does not spend a rate-limit slot to be told so — but it cannot see
+    // the guide sounds, so for those this is the only gate.
+    if (unrankedReason(run.modifiers, Boolean(run.practiceAids)) !== null) {
       submittedKey.current = key;
       setResult({ status: 'unranked', isNewBest: false, previousBest: null });
       return;
@@ -195,6 +203,7 @@ export function useRunSummary(multiplayer: boolean, engine?: GameEngine | null):
   const accuracy = useSliceItStore((s) => s.accuracy);
   const modifiers = useSliceItStore((s) => s.modifiers);
   const runToken = useSliceItStore((s) => s.runToken);
+  const practiceAids = useSliceItStore((s) => s.metronome || s.assistTick);
 
   if (status !== 'FINISHED' || !songId) return null;
 
@@ -213,6 +222,7 @@ export function useRunSummary(multiplayer: boolean, engine?: GameEngine | null):
     accuracy,
     modifiers,
     multiplayer,
+    ...(practiceAids ? { practiceAids } : {}),
     ...(runToken ? { runToken } : {}),
     // The engine is the only thing that knows these; a caller without one
     // submits without them and the server simply has less to check.
