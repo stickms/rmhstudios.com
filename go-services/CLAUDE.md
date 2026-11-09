@@ -16,8 +16,8 @@ the newer services.
 
 Production is a **hybrid** (see `docker-compose.yml` at repo root):
 
-- **Go is authoritative for:** the six background workers — discord-bot,
-  recap, doctrine-worker, vibe-worker, bot-worker, streak-saver — consolidated
+- **Go is authoritative for:** the five background workers — discord-bot,
+  recap, doctrine-worker, vibe-worker, bot-worker — consolidated
   as goroutines in one `supervisor` binary (metrics :9090); the `status`
   dashboard (7008); and `assets` (7007, off the main user path under Compose).
 - **Node is authoritative for:** web SSR (7005) and the realtime hubs —
@@ -56,12 +56,12 @@ go-services/
 | `bot-worker` | — | worker | bot-worker | ported; idles without `DEEPSEEK_API_KEY` |
 | `assets` | `ASSETS_PORT` 7007 | HTTP | Apache off-disk CDN | range-aware S3/R2 streaming for `/library /music /models /sprites` |
 | `status` | `STATUS_PORT` 7008 | HTTP | server/status | `/api/status` is byte-compatible with the Node original; the dashboard is the site's own liquid-globe design (`internal/status/dashboard.go`); incidents, maintenance, the admin API, feeds, badges, `/metrics` and a Statuspage-compatible `/api/v2` are documented in [`docs/status-page.md`](../docs/status-page.md) |
-| `supervisor` | `METRICS_ADDR` :9090 | — | (consolidation) | runs the 6 workers (discord-bot, recap, doctrine-worker, vibe-worker, bot-worker, streak-saver) as goroutines under an errgroup |
+| `supervisor` | `METRICS_ADDR` :9090 | — | (consolidation) | runs the 5 workers (discord-bot, recap, doctrine-worker, vibe-worker, bot-worker) as goroutines under an errgroup |
 
-The **6 supervised workers** are the five worker `cmd/` binaries (bot-worker,
-discord-bot, doctrine-worker, recap, vibe-worker) plus `streak-saver` — which
-has **no** standalone `cmd/`: it lives only in `internal/streaksaver` and runs
-inside the supervisor. (`status`, `assets`, and `supervisor` are the three
+The **5 supervised workers** are the five worker `cmd/` binaries (bot-worker,
+discord-bot, doctrine-worker, recap, vibe-worker). The streak-saver was ported
+to the Node `jobs` worker (`lib/streak-reminders.server.ts`, D3); `status` reads
+its freshness from pg-boss's job table (B06). (`status`, `assets`, and `supervisor` are the three
 non-worker `cmd/` binaries.) `internal/ledger`
 (a Go artifact/provenance store, `LEDGER_ADDR :7100` in docs only) is also
 `internal/`-only — implemented but wired into no binary, not built, not

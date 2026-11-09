@@ -130,10 +130,10 @@ var (
 // rather than left dead with only a log line).
 //
 // Without this, a panic in any worker's Run goroutine crashed the whole process
-// and took all six workers down with it. discord-bot and streak-saver have no
+// and took all five workers down with it. discord-bot has no
 // recover of their own. Now the panic is logged with its stack and counted in
 // rmh_worker_panics_total, and only that worker restarts after a backoff while
-// the other five keep running. Errors keep their old meaning: a returned error
+// the other four keep running. Errors keep their old meaning: a returned error
 // still unwinds the group so the supervisor exits non-zero.
 //
 // Only panics on the Run goroutine itself are caught. A panic in a goroutine the

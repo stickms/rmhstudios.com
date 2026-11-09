@@ -60,6 +60,10 @@ type Config struct {
 	// SupervisorMetricsURL is read once a minute for Go worker health alarms
 	// (workers.go); empty, or Oncall nil, disables them.
 	SupervisorMetricsURL string
+	// JobLastSuccess reports the last completed run per pg-boss queue (names from
+	// NodeJobQueues) for jobs that run in the Node `jobs` worker. Nil disables
+	// those freshness alarms. See workers.go.
+	JobLastSuccess func(ctx context.Context) (map[string]time.Time, error)
 	// Announcement is an optional static banner (STATUS_ANNOUNCEMENT).
 	Announcement      string
 	AnnouncementLevel string
@@ -165,7 +169,7 @@ func New(cfg Config) *Service {
 	}
 	return &Service{
 		cfg: cfg, prober: p, store: store, notifier: notifier, oncall: oncallNotifier, heartbeat: hb, diag: diagnoser,
-		workers:   newWorkerWatch(cfg.SupervisorMetricsURL, cfg.Oncall, cfg.Logger),
+		workers:   newWorkerWatch(cfg.SupervisorMetricsURL, cfg.Oncall, cfg.Logger, cfg.JobLastSuccess),
 		startedAt: time.Now(),
 	}
 }

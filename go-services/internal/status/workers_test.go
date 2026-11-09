@@ -38,7 +38,7 @@ func TestParsePromText(t *testing.T) {
 }
 
 func TestWorkerRules(t *testing.T) {
-	w := newWorkerWatch("http://x", nil, nil)
+	w := newWorkerWatch("http://x", nil, nil, nil)
 	if w != nil {
 		t.Fatal("no on-call client should mean no watcher")
 	}
@@ -114,5 +114,28 @@ func TestWorkerStepDebounces(t *testing.T) {
 	w.step(c, t0.Add(3*time.Minute))
 	if got := w.step(c, t0.Add(4*time.Minute)); len(got) != 1 || got[0].State != "resolved" {
 		t.Fatalf("two good checks resolve: %+v", got)
+	}
+}
+
+func TestNodeJobFreshness(t *testing.T) {
+	now := time.Unix(1_800_000_000, 0)
+	at := func(ago time.Duration) map[string]time.Time {
+		return map[string]time.Time{JobQueueStreak: now.Add(-ago)}
+	}
+	if c := cond(evaluateNodeJobs(at(2*time.Hour), now), "B06", "streak_sweep"); c == nil || c.active || c.alert.Sev != 3 {
+		t.Fatalf("2h old is fresh (limit 3h): %+v", c)
+	}
+	if c := cond(evaluateNodeJobs(at(3*time.Hour+time.Minute), now), "B06", "streak_sweep"); c == nil || !c.active {
+		t.Fatalf("over 3h is a Sev3 B06: %+v", c)
+	}
+	if len(evaluateNodeJobs(map[string]time.Time{}, now)) != 0 {
+		t.Fatal("a job with no completed run (disabled/new) must not alarm")
+	}
+	// The supervisor no longer owns streak_sweep.
+	if _, ok := staleLimits["streak_sweep"]; ok {
+		t.Fatal("streak_sweep must not be watched via supervisor metrics any more")
+	}
+	if q := NodeJobQueues(); len(q) != 1 || q[0] != "streak.reminder-sweep" {
+		t.Fatalf("queues: %v", q)
 	}
 }

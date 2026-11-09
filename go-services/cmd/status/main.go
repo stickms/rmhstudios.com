@@ -78,7 +78,7 @@ func main() {
 		RMHBox:  config.GetString("STATUS_RMHBOX_URL", hubHealthURL("rmhbox", "RMHBOX_PORT", "7676")),
 		RMHTube: config.GetString("STATUS_RMHTUBE_URL", hubHealthURL("rmhtube", "RMHTUBE_PORT", "7003")),
 		// The five background workers (recap, discord-bot, doctrine, vibe,
-		// bot-worker) plus streak-saver are consolidated as goroutines inside the
+		// bot-worker) are consolidated as goroutines inside the
 		// supervisor process, which serves /health on its METRICS_ADDR
 		// (default :9090). There is no standalone recap:7004.
 		Supervisor: config.GetString("STATUS_SUPERVISOR_URL", "http://supervisor:9090/health"),
@@ -142,9 +142,12 @@ func main() {
 		// Go worker health alarms read the supervisor's metrics (same host as its
 		// /health probe above).
 		SupervisorMetricsURL: config.GetString("STATUS_SUPERVISOR_METRICS_URL", strings.TrimSuffix(urls.Supervisor, "/health")+"/metrics"),
-		Announcement:         config.GetString("STATUS_ANNOUNCEMENT", ""),
-		AnnouncementLevel:    config.GetString("STATUS_ANNOUNCEMENT_LEVEL", "info"),
-		AnnouncementLink:     config.GetString("STATUS_ANNOUNCEMENT_LINK", ""),
+		// Jobs that moved to the Node `jobs` worker (D3) report freshness through
+		// pg-boss's own job table (needs DATABASE_URL; unset = those B06 alarms are off).
+		JobLastSuccess:    jobFreshness(os.Getenv("DATABASE_URL"), probeTimeout),
+		Announcement:      config.GetString("STATUS_ANNOUNCEMENT", ""),
+		AnnouncementLevel: config.GetString("STATUS_ANNOUNCEMENT_LEVEL", "info"),
+		AnnouncementLink:  config.GetString("STATUS_ANNOUNCEMENT_LINK", ""),
 	}
 
 	svc := status.New(cfg)
@@ -313,7 +316,7 @@ func buildTargets(u probeURLs, probeTimeout time.Duration) []status.Target {
 		// process — probe its shared /health.
 		status.Target{
 			Name:        "Background workers",
-			Description: "Supervisor: discord-bot, recap, doctrine, vibe, bot-worker, streak-saver",
+			Description: "Supervisor: discord-bot, recap, doctrine, vibe, bot-worker",
 			Group:       "Platform",
 			URL:         u.Supervisor,
 		},

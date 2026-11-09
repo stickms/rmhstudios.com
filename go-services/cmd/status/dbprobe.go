@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"os"
+	"regexp"
 	"sync"
 	"time"
 
@@ -69,4 +71,51 @@ func (d *dbProbe) probe(ctx context.Context) status.ProbeResult {
 	}
 	latency := time.Since(start).Milliseconds()
 	return status.ProbeResult{Status: status.StatusUp, LatencyMs: &latency, Detail: "SELECT 1 ok"}
+}
+
+var pgbossSchemaRE = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+
+// jobFreshness returns a reader for status.Config.JobLastSuccess: the latest
+// COMPLETED run per pg-boss queue (status.NodeJobQueues), straight from the
+// queue's own job table. A sweep that failed is state 'failed', so it does not
+// count. Nil when there is no DATABASE_URL. The schema is PGBOSS_SCHEMA
+// (default "pgboss"), the same setting lib/jobs/boss.server.ts reads.
+func jobFreshness(dsn string, timeout time.Duration) func(ctx context.Context) (map[string]time.Time, error) {
+	if dsn == "" {
+		return nil
+	}
+	schema := os.Getenv("PGBOSS_SCHEMA")
+	if schema == "" {
+		schema = "pgboss"
+	}
+	if !pgbossSchemaRE.MatchString(schema) {
+		return nil
+	}
+	d := &dbProbe{dsn: dsn, timeout: timeout}
+	query := `SELECT name, max(completed_on) FROM ` + schema + `.job WHERE name = ANY($1) AND state = 'completed' GROUP BY name`
+	return func(ctx context.Context) (map[string]time.Time, error) {
+		pool, err := d.ensurePool(ctx)
+		if err != nil {
+			return nil, err
+		}
+		qctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+		rows, err := pool.Query(qctx, query, status.NodeJobQueues())
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		out := map[string]time.Time{}
+		for rows.Next() {
+			var name string
+			var t *time.Time
+			if err := rows.Scan(&name, &t); err != nil {
+				return nil, err
+			}
+			if t != nil {
+				out[name] = *t
+			}
+		}
+		return out, rows.Err()
+	}
 }
