@@ -22,8 +22,13 @@ const CLEF_OFFSET: Record<Clef, number> = {
   bass: -staffStep(BOTTOM_LINE_MIDI.bass),
 };
 
-/** Diatonic steps above the clef's bottom line; negative below the staff. */
+/**
+ * Diatonic steps above the clef's bottom line; negative below the staff. Throws RangeError for a
+ * non-finite `midi` (it has no position, and NaN would otherwise leak into SVG attributes), like
+ * `noteLetter`. Every deck pitch is finite, so the card path never reaches the throw.
+ */
 export function clefStep(clef: Clef, midi: number): number {
+  if (!Number.isFinite(midi)) throw new RangeError(`midi must be a finite number, got ${midi}`);
   return staffStep(midi) + CLEF_OFFSET[clef];
 }
 

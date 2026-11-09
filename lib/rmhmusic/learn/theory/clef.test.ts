@@ -14,6 +14,13 @@ describe('clefStep', () => {
   ] as const)('%s clef, midi %i → step %i', (clef, midi, step) => {
     expect(clefStep(clef, midi)).toBe(step);
   });
+
+  it('throws RangeError for a non-finite midi, like noteLetter', () => {
+    for (const bad of [NaN, Infinity, -Infinity]) {
+      expect(() => clefStep('treble', bad)).toThrow(RangeError);
+      expect(() => clefStep('bass', bad)).toThrow(RangeError);
+    }
+  });
 });
 
 describe('ledgerSteps', () => {
