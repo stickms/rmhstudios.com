@@ -361,5 +361,6 @@
   "practice-aids-hint": "Guide sounds for learning a chart. A run played with either one is not uploaded.",
   "metronome": "Metronome",
   "assist-tick": "Assist Tick",
-  "assists-not-uploaded-hint": "Free, with no score penalty — but a run played with any of these is not uploaded."
+  "assists-not-uploaded-hint": "Free, with no score penalty — but a run played with any of these is not uploaded.",
+  "chart-on-play": "Chart on play"
 }

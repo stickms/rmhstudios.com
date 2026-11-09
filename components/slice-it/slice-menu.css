@@ -548,10 +548,14 @@
 
 /* ── The tracklist ────────────────────────────────────────── */
 
-/* One grid for the heads, the rows and the skeleton, so they line up. */
+/* One grid for the heads, the rows and the skeleton, so they line up. The actions
+   column is a fixed width, not `auto`: the heading row's last cell is empty, so an
+   `auto` track collapsed there and was ~150px wide in every other row, which slid the
+   density, tempo and time columns out from under their own headings. */
 .slice-trow {
+  --slice-acts-w: 156px;
   display: grid;
-  grid-template-columns: 44px 44px minmax(0, 1fr) minmax(0, 170px) 56px 52px auto;
+  grid-template-columns: 44px 44px minmax(0, 1fr) minmax(0, 170px) 56px 52px var(--slice-acts-w);
   align-items: center;
   column-gap: 14px;
   min-height: 62px;
@@ -664,6 +668,9 @@
 }
 
 .slice-trow__artist {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
   overflow: hidden;
   margin-top: 3px;
   font-family: var(--slice-serif);
@@ -675,25 +682,56 @@
   white-space: nowrap;
 }
 
-.slice-trow__note {
-  margin-top: 3px;
+.slice-trow__artist-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A label on the artist line (never a line of its own, so every row is one height). */
+.slice-trow__tag {
+  flex: none;
   font-family: var(--slice-mono);
+  font-style: normal;
+  font-weight: 500;
   font-size: 10px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--slice-text-muted);
 }
 
-.slice-trow__note--live {
-  color: var(--slice-primary);
-}
-
-.slice-trow__note--own {
+.slice-trow__tag--own {
   color: var(--slice-accent);
 }
 
-.slice-trow:hover .slice-trow__note,
-.slice-trow.is-sel .slice-trow__note {
+.slice-trow__tag--live {
+  color: var(--slice-primary);
+}
+
+/* The chart's state in the density column, where a chartless song has no strip. */
+.slice-trow__state {
+  display: block;
+  font-family: var(--slice-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-align: right;
+  text-transform: uppercase;
+  color: var(--slice-text-muted);
+}
+
+.slice-trow__state--live {
+  color: var(--slice-primary);
+}
+
+/* The inline copy is for rows whose density column is hidden. */
+.slice-trow__tag--inline {
+  display: none;
+}
+
+.slice-trow:hover .slice-trow__tag,
+.slice-trow:hover .slice-trow__state,
+.slice-trow.is-sel .slice-trow__tag,
+.slice-trow.is-sel .slice-trow__state {
   color: #46508f;
 }
 
@@ -773,11 +811,15 @@
    sleeve is gone, and the range between has neither. */
 @media (min-width: 1024px) and (max-width: 1279px) {
   .slice-trow {
-    grid-template-columns: 40px 44px minmax(0, 1fr) 56px 52px auto;
+    grid-template-columns: 40px 44px minmax(0, 1fr) 56px 52px var(--slice-acts-w);
   }
 
   .slice-trow__dens-col {
     display: none;
+  }
+
+  .slice-trow__tag--inline {
+    display: inline;
   }
 }
 
@@ -795,6 +837,10 @@
   .slice-trow__dens-col,
   .slice-trow__num-col {
     display: none;
+  }
+
+  .slice-trow__tag--inline {
+    display: inline;
   }
 }
 

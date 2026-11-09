@@ -291,6 +291,21 @@ nothing draws, and the record only draws from 150px, where it does not sit on th
 The judgement stamp is centred on the gap between the two lanes (the lanes are at 40% and
 62% of the field, so its middle is 51%, not 50%).
 
+### Library rows are one height
+
+A row never grows a line for a label. "YOUR TRACK" sits on the artist line, and a song's
+chart state sits in the density column, where a song with no chart has no strip to show
+(on a narrow screen, where that column is hidden, it rides the artist line instead). The
+heading row and every data row share one grid, with a fixed-width actions column: an
+`auto` track there collapsed in the heading row and slid BPM and Time out from under
+their headings.
+
+"Charting…" is only shown while the job can be alive (`rowChartState` in
+`lib/slice-it/song-status.ts`: a `pending` song under ten minutes old). A song still
+`pending` after that has no live job, so the row stops claiming it is charting (it is
+playable; a chart is generated on play), and the hourly sweep
+(`requeueFailedAnalyses`) re-queues it alongside the `failed` ones.
+
 ### A struck note breaks
 
 A struck disc is not a fade: it is cut along a line **rolled for that strike**
