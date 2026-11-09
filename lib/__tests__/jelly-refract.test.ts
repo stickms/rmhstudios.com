@@ -61,6 +61,10 @@ describe('the refraction sheet', () => {
     expect(CSS).toContain(`var(--rf-pad, ${REFRACT.padPx}px)`);
   });
 
+  it('lays the page ground under the picture, so the dispersion never draws a one-colour stripe at the picture’s edge', () => {
+    expect(CSS).toMatch(/linear-gradient\(var\(--rf-ground, transparent\) 0 0\)/);
+  });
+
   it('has no box of its own on the span: it carries properties, the pseudo-elements draw', () => {
     expect(CSS).toMatch(/\.jelly-refract\s*\{\s*display:\s*contents;\s*\}/);
   });

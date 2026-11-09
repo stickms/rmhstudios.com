@@ -35,6 +35,8 @@ export interface LayerView {
    * picture, because the band hides the host's own background. `null` for a host the picture already holds.
    */
   tint: string | null;
+  /** The page's own ground colour, laid under the picture so no channel of the dispersion can fall off its edge. */
+  ground: string;
   /** 0..1 */
   cover: number;
 }
@@ -78,6 +80,7 @@ export function createLayer(host: Element, doc: Document): RefractLayer {
       set('--rf-pos', `${v.offsetX.toFixed(2)}px ${v.offsetY.toFixed(2)}px`);
       set('--rf-r', `${Math.max(0, v.radius).toFixed(2)}px`);
       set('--rf-tint', v.tint ?? 'transparent');
+      set('--rf-ground', v.ground);
       if (v.tint !== null && !span.hasAttribute('data-tint')) span.setAttribute('data-tint', '');
       if (v.tint === null && span.hasAttribute('data-tint')) span.removeAttribute('data-tint');
       const cover = v.filterId && v.url ? Math.max(0, Math.min(1, v.cover)) : 0;

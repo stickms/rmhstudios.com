@@ -48,13 +48,19 @@
     inset: calc(-1 * var(--rf-pad, 10px));
     pointer-events: none;
     user-select: none;
-    background-image: var(--rf-img, none);
+    background-image: var(--rf-img, none), linear-gradient(var(--rf-ground, transparent) 0 0);
     background-repeat: no-repeat;
-    background-size: var(--rf-size, 0 0);
-    background-position: var(--rf-pos, 0 0);
+    background-size:
+      var(--rf-size, 0 0),
+      100% 100%;
+    background-position:
+      var(--rf-pos, 0 0),
+      0 0;
     background-origin: border-box;
-    /* No mask and no radius: the filter's map is the band (its blue channel is the band's opacity, 0 outside the host box and
-       in the interior), so nothing outside the rim is ever drawn. */
+    /* No radius and no mask: the filter's map is the band (its blue channel is the band's opacity, 0 outside the host box and in
+       the interior), so nothing outside the rim is ever drawn. Under the picture sits the page's own ground colour: the displaced
+       red, green and blue images sample at slightly different offsets, and where the picture ends (the page's top edge, a host at
+       the viewport's edge) one channel can fall off it while another does not, which draws a stripe of a single colour. */
     filter: var(--rf-flt, none);
     opacity: var(--rf-cover, 0);
     transition: opacity 240ms var(--ease-smooth);
@@ -65,18 +71,20 @@
   .jelly-refract[data-tint]::before {
     background-image:
       var(--jelly-floor, none), var(--liquid-coat, none), linear-gradient(var(--rf-tint) 0 0),
-      var(--rf-img, none);
-    background-repeat: repeat, no-repeat, no-repeat, no-repeat;
+      var(--rf-img, none), linear-gradient(var(--rf-ground, transparent) 0 0);
+    background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat;
     background-size:
       var(--jelly-floor-size, auto),
       100% 100%,
       100% 100%,
-      var(--rf-size, 0 0);
+      var(--rf-size, 0 0),
+      100% 100%;
     background-position:
       0 0,
       0 0,
       0 0,
-      var(--rf-pos, 0 0);
+      var(--rf-pos, 0 0),
+      0 0;
   }
   @starting-style {
     .jelly-refract::before {

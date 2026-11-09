@@ -121,6 +121,7 @@ function rig(opts: { tier?: 'full' | 'coarse' | 'handheld' | 'off' } = {}) {
         disconnect() {}
       },
       matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }),
+      getComputedStyle: () => ({ backgroundColor: 'rgb(0, 0, 0)' }),
     },
     documentElement: { scrollHeight: 3000 } as unknown as HTMLElement,
     addEventListener: (type: string, fn: () => void) => {
@@ -516,6 +517,13 @@ describe('installRefraction', () => {
     r.notifyRegistry();
     expect(r.queued.length).toBe(0);
     r.stop(); // idempotent
+  });
+
+  it('lays the page ground under the picture', () => {
+    const r = rig();
+    const h = r.add('card');
+    r.flush();
+    expect(r.layers.get(h)!.last.ground).toBe('rgb(0, 0, 0)');
   });
 
   it('hands a host the picture does not hold its own tint to paint, and a host it holds none', () => {

@@ -226,6 +226,9 @@ export function installRefraction(doc: Document = document, deps: RefractionDeps
     }, LAYOUT_SETTLE_MS);
   };
 
+  const groundColor = () =>
+    win.getComputedStyle(doc.documentElement).backgroundColor || 'transparent';
+
   const run = () => {
     cancelRun = null;
     if (disposed) return;
@@ -266,6 +269,7 @@ export function installRefraction(doc: Document = document, deps: RefractionDeps
 
     // One read pass, then the writes.
     const scroll = scrollNow();
+    const ground = groundColor();
     const measured = new Map<Element, HostMeasure>();
     for (const el of wanted) {
       const m = measure(el);
@@ -338,6 +342,7 @@ export function installRefraction(doc: Document = document, deps: RefractionDeps
         offsetY: place.offsetY,
         radius: m.radius,
         tint: m.tint,
+        ground,
         cover: drifted ? 0 : place.cover,
       };
       h.layer.apply(h.view);
