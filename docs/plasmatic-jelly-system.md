@@ -268,9 +268,10 @@ other (woken haze, soft body, click arcs). `jellyTier()` never returns `'lite'` 
 device weakness; `lib/__tests__/no-perf-lite.test.ts` fails if the name comes back. What survives is a capability read
 that the material never consults (`lib/low-end.ts`): games, the app tier, RUM and the eversion's mesh tier ask
 `isLowEndCapability()`, and the liquid globe keeps its CSS glass (no second GL context) for a remembered software
-renderer. The radial shell settles that finding once at idle (`settleSoftRender()`: the throwaway-context probe the
-games use, `lib/render/probe.ts`, cached in `localStorage` as `rmh-soft-render` for 12 h), and does not start the page
-snapshot feed for it, since the CSS globe refracts nothing.
+renderer. `Providers` settles that finding once per load at idle, on every route (`hooks/useSoftRenderSettle.ts` →
+`settleSoftRender()`: the throwaway-context probe the games use, `lib/render/probe.ts`, cached in `localStorage` as
+`rmh-soft-render` for 12 h); the jelly mount hook never probes. The radial shell does not start the page snapshot feed
+for it, since the CSS globe refracts nothing.
 
 Ambient bounds (`AMBIENT_BOUNDS`): drift ≤ 12 px/s, feature size ≥ 120 px, luminance period ≥ 6 s, no luminance
 modulation above 3 Hz; ambient motion never moves a host's position.
