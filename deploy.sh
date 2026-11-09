@@ -1225,8 +1225,12 @@ check_http() {
     return 1
 }
 
-# The cron/queue workers have no port: healthy = still running, with no new
-# restarts, after a settle window (a crash-loop shows up as RestartCount moving).
+# The cron/queue workers have no port: healthy = still running, and not crash-looping, after a settle window.
+# A crash-loop shows up as RestartCount moving, but ONE restart that left the worker running is a transient kill (an
+# OOM at a cron-tick minute, a host blip), not a bad release: it used to roll back the whole non-web fleet
+# (2026-11-09, `jobs`). Up to WORKER_RESTARTS_TOLERATED restarts since the baseline are logged as a warning;
+# more than that, or a worker that is not running, fails the release. 1 is the default; 0 restores the strict rule.
+WORKER_RESTARTS_TOLERATED="${WORKER_RESTARTS_TOLERATED:-1}"
 WORKER_SERVICES="jobs ladder-worker homes-worker"
 worker_state() { # → "<running> <restartCount>" or "missing"
     local id
@@ -1235,7 +1239,7 @@ worker_state() { # → "<running> <restartCount>" or "missing"
     "$DOCKER_BIN" inspect -f '{{.State.Running}} {{.RestartCount}}' "$id" 2>/dev/null || echo missing
 }
 check_workers() {
-    local svc before after failed="" base=""
+    local svc before after failed="" base="" a b
     if [ -f "${HEALTH_RESULT_FILE}.workers" ]; then
         base=$(cat "${HEALTH_RESULT_FILE}.workers")
     else
@@ -1246,7 +1250,17 @@ check_workers() {
     for svc in $WORKER_SERVICES; do
         before=$(printf '%s' "$base" | grep "^${svc}|" | cut -d'|' -f2-); after=$(worker_state "$svc")
         case "$after" in
-            "true "*) [ "$after" = "$before" ] || failed="$failed $svc" ;;
+            "true "*)
+                if [ "$after" != "$before" ]; then
+                    a="${after#true }"; b=""
+                    case "$before" in "true "*) b="${before#true }" ;; esac
+                    if [[ "$a" =~ ^[0-9]+$ && "$b" =~ ^[0-9]+$ ]] && [ $((a - b)) -le "$WORKER_RESTARTS_TOLERATED" ]; then
+                        # stderr: stdout of this function is the failed-service list
+                        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$ENVIRONMENT] WARNING: ${svc} restarted $((a - b))x during the deploy window but is running; not treated as a failed release (WORKER_RESTARTS_TOLERATED=${WORKER_RESTARTS_TOLERATED})" >&2
+                    else
+                        failed="$failed $svc"
+                    fi
+                fi ;;
             *) failed="$failed $svc" ;;
         esac
     done
