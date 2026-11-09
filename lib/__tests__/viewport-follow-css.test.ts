@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -6,8 +6,10 @@ import { describe, expect, it } from 'vitest';
  * iOS Safari lays `position: fixed` elements out against a container it resizes late while its toolbar grows and shrinks.
  * The floating stack (cookie bar, mini-player, party bar, back-to-top, the compose button, the theme preview bar) follows
  * the visible bottom in CSS alone: `bottom: calc(… + var(--vv-follow, 0px))`, where `--vv-follow` is
- * `100% - 100dvh` on iOS WebKit and `0px` everywhere else. No script is in that loop. The hub orb and the globe dock
- * keep the measured `--vv-shift` (lib/viewport-shift.ts): their docking animation re-measures on it.
+ * `100% - 100dvh` on iOS WebKit and `0px` everywhere else. No script is in that loop, and the hub is no exception: the
+ * orb, the open menu's overlay (and the foot pill inside it) and the globe dock follow in CSS too, and the docked
+ * globe's pose is a CSS function of the visible height, so nothing measures the toolbar. The earlier script path
+ * (`--vv-shift`, a 1px probe read in a rAF loop) trailed the toolbar by at least a frame and is gone.
  */
 const read = (p: string) => readFileSync(join(__dirname, '../..', p), 'utf8');
 const globals = read('app/globals.css');
@@ -40,8 +42,32 @@ describe('--vv-follow', () => {
     expect(radial).not.toContain('var(--site-fab-row-bottom) - var(--vv-shift');
   });
 
-  it('the hub orb and the globe dock still use the measured shift', () => {
-    expect(radial).toContain('bottom: calc(var(--orb-bottom) - var(--vv-shift, 0px));');
-    expect(radial).toContain('top: calc(50% + var(--vv-shift, 0px) / 2);');
+  it('the hub orb, the open menu and the globe dock follow in CSS as well, with no script in the loop', () => {
+    // The orb's bottom edge and the overlay's (which carries the foot pill) both add the follow to their offsets.
+    expect(radial).toContain('bottom: calc(var(--orb-bottom) + var(--vv-follow, 0px));');
+    expect(rule(radial, '.radial-hub__overlay {')).toContain('bottom: calc(1.5rem + var(--vv-follow, 0px));');
+    // The dock box is centred on the VISIBLE area (container middle less half the follow) ...
+    expect(rule(radial, '.radial-hub__dock {')).toContain('top: calc(50% - var(--vv-follow, 0px) / 2);');
+    // ... and the docked globe's vertical travel is a CSS length of the visible height, not a measured one.
+    const pose = rule(radial, '.radial-hub[data-phase] .radial-hub__dock .radial-globe {');
+    expect(pose).toContain(
+      'calc(var(--hub-half-vh) - var(--orb-bottom) - var(--site-hub-orb-size) / 2 + var(--dock-kc, 0px))',
+    );
+    expect(rule(radial, '.radial-hub {')).toContain('--orb-bottom:');
+    expect(radial).toMatch(/@supports \(height: 100dvh\) \{\s*\.radial-hub \{\s*--hub-half-vh: 50dvh;/);
+  });
+
+  it('nothing measures the toolbar any more: --vv-shift, its hook and its probe are gone', () => {
+    expect(globals).not.toContain('--vv-shift');
+    expect(radial).not.toContain('--vv-shift');
+    expect(radial).not.toContain('--dock-dy');
+    expect(radial).not.toContain('--sun-y');
+    expect(existsSync(join(__dirname, '../viewport-shift.ts'))).toBe(false);
+    expect(existsSync(join(__dirname, '../../hooks/useViewportShift.ts'))).toBe(false);
+    const hub = read('components/radial/RadialHub.tsx');
+    expect(hub).not.toContain('useViewportShift');
+    expect(hub).not.toContain('--vv-shift');
+    expect(hub).not.toContain('--dock-dy');
+    expect(hub).not.toContain('--sun-y');
   });
 });

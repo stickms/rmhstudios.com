@@ -166,8 +166,10 @@ cannot see, and it is the half that decides whether the change looks native:
       (app/globals.css, "Bottom-anchored fixed UI that follows Safari's toolbar, in CSS only"), never a bare
       `bottom: <offset>`. `--vv-follow` is `100% - 100dvh` on iOS WebKit and `0px` elsewhere, so the element stays on the
       visible area while the toolbar resizes, resolved by layout with no script. Don't add a script that measures and
-      writes the position: it runs on the main thread and trails the toolbar. (The hub orb and globe dock are the one
-      exception and keep the measured `--vv-shift`.)
+      writes the position: it runs on the main thread and trails the toolbar. There is no exception: the hub orb,
+      the open menu's overlay (and its foot pill) and the docked globe follow the same way
+      (`components/radial/radial.css`), the globe's pose being a CSS length of `dvh` rather than a measured one;
+      `--vv-shift` and its probe are gone (`lib/__tests__/viewport-follow-css.test.ts`).
 - [ ] **Keyboard + screen reader**: icon-only controls named, decorative icons
       `aria-hidden`, focus ring visible against the surface it lands on, no new
       jsx-a11y warnings.
