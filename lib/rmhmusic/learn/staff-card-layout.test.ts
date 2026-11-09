@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { DECKS } from './content/decks';
+import { findNotePool, targetStaff } from './machines/find-note';
 import {
   CARD_H,
+  CARD_LOW_H,
+  CARD_LOW_MIN_STEP,
   CARD_MAX_STEP,
   CARD_MIN_STEP,
   CARD_W,
@@ -36,6 +39,33 @@ describe('flashcard staff layout', () => {
         }
       }
     }
+  });
+
+  it('fits every note-finder target on the low card, unclamped, on both instruments', () => {
+    for (const mode of ['keyboard-map', 'fretboard'] as const) {
+      for (const instrument of ['piano', 'guitar'] as const) {
+        for (const sounding of findNotePool(mode, instrument)) {
+          const { clef, midi } = targetStaff(sounding, instrument);
+          const raw = clefStep(clef, midi);
+          expect(raw, `${instrument}:${sounding}`).toBeGreaterThanOrEqual(CARD_LOW_MIN_STEP);
+          expect(raw, `${instrument}:${sounding}`).toBeLessThanOrEqual(CARD_MAX_STEP);
+          const l = cardLayout(clef, midi, CARD_LOW_MIN_STEP);
+          expect(l.step).toBe(raw);
+          for (const y of [l.noteY - HEAD_RX, l.noteY + HEAD_RX, l.stem.y2, ...l.ledgerYs]) {
+            expect(y).toBeGreaterThan(0);
+            expect(y).toBeLessThan(CARD_LOW_H);
+          }
+        }
+      }
+    }
+  });
+
+  it('writes the open low E (written E3) under three ledger lines of the treble staff', () => {
+    const l = cardLayout('treble', 52, CARD_LOW_MIN_STEP);
+    expect(l.step).toBe(-7);
+    expect(l.ledgerYs).toEqual([cardY(-2), cardY(-4), cardY(-6)]);
+    // The deck card would have clamped it to two ledger lines: the low card is needed.
+    expect(cardLayout('treble', 52).step).toBe(CARD_MIN_STEP);
   });
 
   it('puts middle C on one ledger line below the treble staff and above the bass staff', () => {

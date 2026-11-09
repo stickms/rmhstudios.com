@@ -603,3 +603,153 @@
   text-decoration-color: var(--app-danger);
   text-decoration-thickness: 2px;
 }
+
+/* ── The note finder (FindNoteLesson.tsx, FretboardView.tsx, LessonScreen's FindNoteSkeleton) ──
+   Below the target's sheet: the board — the fretboard on guitar, the piano on piano, one box of
+   the same height for both, since the placeholder is drawn before the learner's instrument is
+   known — then one line for the input (listening, or a button to start it). Both are fixed, the
+   same in the placeholder, so nothing moves from loading to asking to answering; the result takes
+   the whole of both boxes. The board's height is the fretboard's: six 2.75rem strings and a
+   1.25rem row of fret numbers. The piano fills it with taller keys (`.rmm-keys__bed--tall`). */
+.rmm-find__answers {
+  --rmm-board-h: calc(6 * 2.75rem + 1.25rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: calc(var(--rmm-board-h) + 1rem + 2.75rem);
+}
+.rmm-find__board {
+  flex: none;
+  height: var(--rmm-board-h);
+}
+.rmm-find__device {
+  flex: none;
+  height: 2.75rem;
+}
+/* ── The pitch match (MatchNoteLesson.tsx, LessonScreen's MatchNoteSkeleton) ──────────
+   Below the target's sheet: the on-screen keys (`.rmm-input-region`, the first lesson's box), then
+   one line for the input. Fixed, and the same in the placeholder; the result takes both. */
+.rmm-match__answers {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: calc(2.75rem + 0.5rem + 10rem + 1rem + 2.75rem);
+}
+@media (min-width: 640px) {
+  .rmm-match__answers {
+    height: calc(2.75rem + 0.5rem + 12rem + 1rem + 2.75rem);
+  }
+}
+.rmm-match__answers > .rmm-input-region {
+  flex: none;
+}
+
+/* ── Ear training (EarLesson.tsx, LessonScreen's EarSkeleton) ─────────────────────────
+   Below the listening sheet: the answers, one plain word each, stacked in a column no wider than a
+   phone (up to three at 2.75rem), then — in the same box — the result, which takes all of it. The
+   box is tall enough for the failed-save block (a sentence, Try again, Back to your lessons), and
+   the same in the placeholder, so nothing moves from loading to asking to the result. */
+.rmm-ear__answers {
+  display: flex;
+  flex-direction: column;
+  height: 11.5rem;
+}
+.rmm-ear__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 24rem;
+  margin-inline: auto;
+}
+/* A tile of the sheet's paper, so the backdrop's staves never show through; while the question is
+   being heard they read as waiting by their ink and edge (EarLesson), never by opacity, so their
+   words keep 4.5:1 in every theme; the buttons stay focusable and `aria-describedby` says why. */
+.rmm-ear__choices > button {
+  background-color: var(--app-surface);
+}
+.rmm-ear__choices > button:hover:not([aria-disabled='true']) {
+  background-color: var(--app-surface-hover);
+}
+
+/* The octave bar (2.75rem) and its gap (0.5rem) above the keys. */
+.rmm-keys__bed--tall {
+  height: calc(var(--rmm-board-h, 17.75rem) - 3.25rem);
+}
+
+/* The fretboard: a sheet of the page's paper, strings ruled across in ink (thicker toward the low
+   E), fret wires in the ruled-line blue, the nut a double rule. Columns are at least 44px and a
+   little narrower up the neck; if six do not fit (very large text) the board scrolls sideways
+   inside its own box. */
+.rmm-fret {
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+}
+.rmm-fret__grid {
+  display: grid;
+  grid-template-columns:
+    1.5rem minmax(44px, 0.85fr) minmax(44px, 1fr) minmax(44px, 0.95fr) minmax(44px, 0.9fr)
+    minmax(44px, 0.86fr) minmax(44px, 0.82fr);
+  grid-template-rows: repeat(6, 2.75rem) minmax(0, 1fr);
+  height: 100%;
+}
+.rmm-fret__name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--app-text-muted);
+}
+.rmm-fret__cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  background-color: transparent;
+  border-inline-end: 1px solid var(--app-border-bright);
+  transition: background-color 120ms var(--ease-smooth, ease);
+}
+/* The string, ruled through the middle of its row. */
+.rmm-fret__cell::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: calc(50% - var(--rmm-gauge, 1px) / 2);
+  height: var(--rmm-gauge, 1px);
+  background-color: var(--app-text);
+  opacity: 0.72;
+  pointer-events: none;
+}
+/* The nut: a double rule after the open strings. */
+.rmm-fret__cell[data-fret='0'] {
+  border-inline-end: 4px double var(--app-text-muted);
+}
+.rmm-fret__cell[data-fret='5'] {
+  border-inline-end-color: transparent;
+}
+.rmm-fret__cell:hover:not([aria-disabled='true']) {
+  background-color: var(--app-surface-hover);
+}
+.rmhmusic-theme .rmm-fret__cell:focus-visible {
+  outline-offset: -3px;
+}
+.rmm-fret__inlay {
+  grid-row: 1 / 7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--app-border-bright);
+  pointer-events: none;
+}
+.rmm-fret__number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  line-height: 1;
+  color: var(--app-text-dim);
+}

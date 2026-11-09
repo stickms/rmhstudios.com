@@ -9,7 +9,15 @@
  */
 
 export type LessonMode =
-  'staff-flashcards' | 'keyboard-map' | 'fretboard' | 'rhythm-basics' | 'play-note';
+  | 'staff-flashcards'
+  | 'keyboard-map'
+  | 'fretboard'
+  | 'rhythm-basics'
+  | 'play-note'
+  | 'match-note'
+  | 'ear-interval'
+  | 'ear-chord'
+  | 'play-chord';
 
 export interface Lesson {
   id: string;
@@ -22,6 +30,12 @@ export interface Lesson {
   available: boolean;
   /** A `staff-flashcards` lesson's deck: a key of `DECKS` in `decks.ts` (path.test.ts checks it). */
   deck?: string;
+  /**
+   * An `ear-interval` / `ear-chord` lesson's answer names, narrowest first: its questions are
+   * drawn from them and its buttons offer them. Interval names for `ear-interval`, chord
+   * qualities for `ear-chord` (path.test.ts checks both).
+   */
+  pool?: string[];
 }
 
 export interface Unit {
@@ -68,7 +82,15 @@ export const PATH: Unit[] = [
         title: 'Keyboard layout & open strings',
         summary: 'Learn the pattern of black and white keys, and the six open guitar strings.',
         mode: 'keyboard-map',
-        available: false,
+        available: true,
+      },
+      {
+        id: 'fretboard-first-frets',
+        unit: 'meet-staff-and-keys',
+        title: 'First frets & two octaves',
+        summary: 'Find natural notes on the first five frets, or across two octaves of keys.',
+        mode: 'fretboard',
+        available: true,
       },
       {
         id: 'play-first-note',
@@ -76,6 +98,69 @@ export const PATH: Unit[] = [
         title: 'First note played',
         summary: 'Play your first note on your own instrument.',
         mode: 'play-note',
+        available: true,
+      },
+    ],
+  },
+  {
+    id: 'play-it-back',
+    title: 'Play it back',
+    lessons: [
+      {
+        id: 'match-c',
+        unit: 'play-it-back',
+        title: 'Match middle C',
+        summary: 'Play the note you see, from middle C up to G. Hear it first if you like.',
+        mode: 'match-note',
+        available: true,
+      },
+      {
+        id: 'match-white-keys',
+        unit: 'play-it-back',
+        title: 'Match white keys',
+        summary: 'Play the natural notes from middle C up to the next C.',
+        mode: 'match-note',
+        available: true,
+      },
+    ],
+  },
+  {
+    id: 'train-your-ear',
+    title: 'Train your ear',
+    lessons: [
+      {
+        id: 'ear-second-third',
+        unit: 'train-your-ear',
+        title: 'Seconds and thirds',
+        summary: 'Hear two notes and tell a step from a skip: a second from a third.',
+        mode: 'ear-interval',
+        available: true,
+        pool: ['second', 'third'],
+      },
+      {
+        id: 'ear-fifth-octave',
+        unit: 'train-your-ear',
+        title: 'Fifths and octaves',
+        summary: 'Tell a fifth and an octave from a third, by ear alone.',
+        mode: 'ear-interval',
+        available: true,
+        pool: ['third', 'fifth', 'octave'],
+      },
+      {
+        id: 'ear-major-minor',
+        unit: 'train-your-ear',
+        title: 'Major and minor chords',
+        summary: 'Hear three notes together and tell a bright major chord from a darker minor one.',
+        mode: 'ear-chord',
+        available: true,
+        pool: ['major', 'minor'],
+      },
+      {
+        id: 'chord-play-c-major',
+        unit: 'train-your-ear',
+        title: 'Play a C major chord',
+        summary: 'Play C, E and G together, then F major and G major.',
+        mode: 'play-chord',
         available: true,
       },
     ],

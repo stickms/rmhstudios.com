@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { playNote, MAX_VOICES } from '@/lib/rmhmusic/learn/audio/voice';
+import { playNote, MAX_VOICES, type PlayOptions } from '@/lib/rmhmusic/learn/audio/voice';
 import type { InputSource, NoteEvent } from '@/lib/rmhmusic/learn/input/events';
 import type { InputPhases } from '@/lib/rmhmusic/learn/input/hub';
 import { bindMicRelease, startMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
@@ -62,9 +62,11 @@ export function useLastNote(source?: InputSource): NoteEvent | null {
  * Sound the notes played on the on-screen and computer keys (a MIDI keyboard
  * has its own sound; the mic is the learner's own instrument). Everything
  * still sounding is released on unmount. `enabled: false` (e.g. while the
- * timing check's pad is in use) starts no new notes.
+ * timing check's pad is in use) starts no new notes. `options` is how the notes
+ * are voiced (`PlayOptions`: the instrument, once instruments exist); the
+ * event's own velocity is always the note's velocity.
  */
-export function useNoteSound(enabled = true): void {
+export function useNoteSound(enabled = true, options?: PlayOptions): void {
   const releases = useRef(new Map<string, () => void>());
   useNoteEvents((e) => {
     if (e.source !== 'screen' && e.source !== 'keys') return;
@@ -75,7 +77,7 @@ export function useNoteSound(enabled = true): void {
     map.get(key)?.();
     map.delete(key);
     if (e.type === 'on') {
-      map.set(key, playNote(e.midi, e.velocity));
+      map.set(key, playNote(e.midi, { ...options, velocity: e.velocity }));
       // The voice drops its oldest note past the cap; forget ours too.
       while (map.size > MAX_VOICES) {
         const oldest = map.keys().next().value as string;
@@ -213,14 +215,15 @@ export function useInputRelease(onRelease?: () => void): void {
  * chooser, and its click starts them. Switching inputs mid-lesson goes through `chooseInput`,
  * which stops the old one; leaving the lesson is `useInputRelease`.
  */
-export function useLessonInputStart(): void {
+export function useLessonInputStart(opts: { mic?: boolean } = {}): void {
+  const withMic = opts.mic ?? true;
   const hub = useLearnStore((s) => s.hub);
   const input = useLearnStore((s) => s.profile?.input ?? 'screen');
   useEffect(() => {
     if (!hub) return;
     let cancelled = false;
     if (input === 'keys') void hub.start('keys').catch(() => {});
-    if (input === 'mic' || input === 'midi') {
+    if ((input === 'mic' && withMic) || input === 'midi') {
       void (async () => {
         if (hub.phase(input) !== 'idle' || !(await permissionGranted(input))) return;
         if (input === 'mic' && getAudioContext()?.state !== 'running') return;
@@ -231,5 +234,5 @@ export function useLessonInputStart(): void {
     return () => {
       cancelled = true;
     };
-  }, [hub, input]);
+  }, [hub, input, withMic]);
 }
