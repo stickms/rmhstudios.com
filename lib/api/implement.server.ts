@@ -17,10 +17,10 @@
  * it is cheap; production skips the parse.
  *
  * ```ts
- * export const Route = createFileRoute('/api/wallet/transfer')({
+ * export const Route = createFileRoute('/api/widgets')({
  *   server: { handlers: {
- *     POST: implement(walletTransfer, { rateLimit: 'write', body: transferBody },
- *       async ({ userId, body }) => transferCoins(userId, body)),
+ *     POST: implement(createWidget, { rateLimit: 'write', body: widgetBody },
+ *       async ({ userId, body }) => saveWidget(userId, body)),
  *   } },
  * });
  * ```

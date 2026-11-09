@@ -63,7 +63,7 @@ const js = await bundle({
             <Tabs tabs={tabs.slice(0,3)} value="latest" aria-label="Sections"
               renderTab={(tab,{active,...props})=><a {...props} href={'#'+tab.id} />} />
             <button id="circle" className="rounded-full" aria-label="Circular action">+</button>
-            <button id="opt-out" data-jelly="off">Gesture control</button>
+            <button id="opt-out" data-fluid-press="none">Gesture control</button>
             <div data-gesture="drag"><button id="drag">Drag handle</button></div>
           </main>
         </MotionConfig></LazyMotion>;
