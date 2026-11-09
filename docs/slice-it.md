@@ -275,9 +275,55 @@ behind it not rendered. A run keeps the fixed viewport.
 
 Nothing in the menu is sticky or fixed on a phone (the library's search bar is sticky
 from 640px up only), because a layer flush to an edge is what makes Safari paint a band.
-The four places (Library, Daily, Setlists, Versus) are one 34px row under the bar, at
-the top, instead of a 52px bar at the foot. The one fixed layer left is the full-screen
-"loading a track" cover, which exists for a moment.
+The four places (Library, Daily, Setlists, Versus) are one 34px row under the bar, at the
+top, showing only their names. The one fixed layer left is the full-screen "loading a
+track" cover, which exists for a moment.
+
+### The margin keeps clear of the field
+
+Nothing in a side margin touches the field or the readouts above and below it. From the
+field outward: a clear strip (up to 16px), the kick's slam column at its widest (up to
+19px), a gap (up to 10px), then the bars. The bars start beyond the slam at its full
+width, so a kick never reaches them. All three scale down with a narrow margin
+(`SideWaves.tsx`), so a 72px margin keeps its clear strip in less room. Below 72px
+nothing draws, and the record only draws from 150px, where it does not sit on the bars.
+
+The judgement stamp is centred on the gap between the two lanes (the lanes are at 40% and
+62% of the field, so its middle is 51%, not 50%).
+
+### Library rows are one height
+
+A row never grows a line for a label. "YOUR TRACK" sits on the artist line, and a song's
+chart state sits in the density column, where a song with no chart has no strip to show
+(on a narrow screen, where that column is hidden, it rides the artist line instead). The
+heading row and every data row share one grid, with a fixed-width actions column: an
+`auto` track there collapsed in the heading row and slid BPM and Time out from under
+their headings.
+
+"Charting…" is only shown while the job can be alive (`rowChartState` in
+`lib/slice-it/song-status.ts`: a `pending` song under ten minutes old). A song still
+`pending` after that has no live job, so the row stops claiming it is charting (it is
+playable; a chart is generated on play), and the hourly sweep
+(`requeueFailedAnalyses`) re-queues it alongside the `failed` ones.
+
+### The live leaderboard (multiplayer)
+
+The column beside the field is a leaderboard, not a list of opponents: **you are in it**,
+and the rows are in score order. When someone passes someone the rows swap places on a
+spring (framer `layout` with the shared `transition`) and the row that moved shows a short
+▲ or ▼ that clears itself after about a second and a half. Opponents come from the
+server's score tick; your own row is read from your own run, because the server's echo of
+it is a quarter of a second behind your hands. Ties break on the socket id so equal scores
+keep one order. Below 1024px it is one scrollable strip of chips above the field, in the
+same order, with your chip pinned to the right edge.
+
+Everything else on the multiplayer screen is the singleplayer one: the margin waves, the
+readouts above and below the field and the shattering notes. The waves stop where the
+leaderboard starts (`SideWaves` takes it as `rightLimitRef`), and the field and the waves
+re-measure when it mounts (`layoutKey`), because it re-centres a field of the same width
+and neither resize observer fires for a move. The match results and the loading screen are
+the same hard-edged sleeve as the solo results: the standings are a tracklist with the
+place as its number, and the row that is you is cut in paper.
 
 ### A struck note breaks
 
@@ -292,7 +338,7 @@ throws more and harder (`strengthOf`).
 
 The burst is gated like every other flash: **Effect Intensity** scales its size (0 keeps
 the cut and drops the rest), **Reduced Flash** removes the crack line, the sparks and the
-ring (shards and dust stay), and `perf-lite` gets a smaller burst with no flash pieces.
+ring (shards and dust stay), and a low-end device (`canvasGlowEnabled()` false) gets a smaller burst with no flash pieces.
 Pieces are integrated against wall-clock time, capped at `MAX_FX`, and nothing is
 blurred. Only the groove skins (Circle, Pixel, Record) cut notes; the older skins keep
 their own bursts.

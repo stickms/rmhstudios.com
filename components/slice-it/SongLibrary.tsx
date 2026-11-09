@@ -39,6 +39,7 @@ import {
 import { useSession } from '@/components/Providers';
 import { musicGain, useSliceItStore } from '@/lib/slice-it/store';
 import { PREVIEW_SECONDS, previewFragment } from '@/lib/slice-it/preview';
+import { rowChartState } from '@/lib/slice-it/song-status';
 import { timeAgoShort } from '@/lib/utils';
 import {
   AUDIO_MAX_BYTES,
@@ -293,7 +294,7 @@ export function SongLibrary({
   // So: back off, and give up. Ten attempts over about three minutes, then
   // stop and leave the badge — a reload picks it up, and a chart that has not
   // landed in three minutes is a worker problem that polling cannot fix.
-  const hasPending = songs.some((song) => song.analysisState === 'pending');
+  const hasPending = songs.some((song) => rowChartState(song) === 'charting');
   React.useEffect(() => {
     if (!hasPending) return;
     let attempts = 0;
@@ -1055,6 +1056,7 @@ export function SongLibrary({
           <ul>
             {visibleSongs.map((song, index) => {
               const previewing = previewId === song.id && !previewRef.current?.paused;
+              const chart = rowChartState(song);
               return (
                 <li key={song.id}>
                   {/* The row is one grid: number, cover (which is also the
@@ -1109,45 +1111,61 @@ export function SongLibrary({
                             track they liked. `artistKey` comes off the row, so
                             the client never re-derives it. `stopPropagation`
                             because the whole row is also a button. */}
-                        {song.artistKey ? (
-                          <a
-                            href={artistPath(song.artistKey)}
-                            onClick={(e) => e.stopPropagation()}
-                            className="hover:underline"
-                          >
-                            {song.artist}
-                          </a>
-                        ) : (
-                          song.artist
+                        <span className="slice-trow__artist-name">
+                          {song.artistKey ? (
+                            <a
+                              href={artistPath(song.artistKey)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="hover:underline"
+                            >
+                              {song.artist}
+                            </a>
+                          ) : (
+                            song.artist
+                          )}
+                        </span>
+                        {/* Ownership and a chart's state are labels on the ARTIST
+                            line, never lines of their own: a row that grows a line
+                            when it has a label makes the list ragged. Where the
+                            density column is hidden the chart state rides here too. */}
+                        {song.isOwner && (
+                          <span className="slice-trow__tag slice-trow__tag--own">
+                            {t('your-track', { defaultValue: 'YOUR TRACK' })}
+                          </span>
+                        )}
+                        {chart === 'charting' && (
+                          <span className="slice-trow__tag slice-trow__tag--live slice-trow__tag--inline">
+                            {t('charting', { defaultValue: 'Charting…' })}
+                          </span>
+                        )}
+                        {chart === 'failed' && (
+                          <span className="slice-trow__tag slice-trow__tag--inline">
+                            {t('chart-on-play', { defaultValue: 'Chart on play' })}
+                          </span>
                         )}
                       </div>
-                      {/* O3 — the row stays visible while the worker charts it.
-                          Hiding a pending song would read as a failed upload,
-                          and it is playable either way: with no stored chart
-                          the client generates one locally and patches it back,
-                          which is exactly what a `failed` state falls through
-                          to as well. */}
-                      {song.analysisState === 'pending' && (
-                        <div className="slice-trow__note slice-trow__note--live">
-                          {t('charting', { defaultValue: 'Charting…' })}
-                        </div>
-                      )}
-                      {song.analysisState === 'failed' && (
-                        <div className="slice-trow__note">
-                          {t('charting-failed', {
-                            defaultValue: 'Charting failed — a chart is generated on play',
-                          })}
-                        </div>
-                      )}
-                      {song.isOwner && (
-                        <div className="slice-trow__note slice-trow__note--own">
-                          {t('your-track', { defaultValue: 'YOUR TRACK' })}
-                        </div>
-                      )}
                     </div>
 
+                    {/* O3 — the row stays visible while the worker charts it.
+                        Hiding a pending song would read as a failed upload, and
+                        it is playable either way: with no stored chart the client
+                        generates one locally and patches it back. The state sits
+                        where the density strip would be — a song with no chart has
+                        no strip, so the cell is free and the row keeps its height.
+                        "Charting…" is shown only while the job can still be alive
+                        (`rowChartState`), not for ever. */}
                     <span className="slice-trow__dens-col">
-                      <DensityStrip density={song.densityStrip} />
+                      {chart === 'charting' ? (
+                        <span className="slice-trow__state slice-trow__state--live">
+                          {t('charting', { defaultValue: 'Charting…' })}
+                        </span>
+                      ) : chart === 'failed' ? (
+                        <span className="slice-trow__state">
+                          {t('chart-on-play', { defaultValue: 'Chart on play' })}
+                        </span>
+                      ) : (
+                        <DensityStrip density={song.densityStrip} />
+                      )}
                     </span>
                     <span className="slice-trow__num slice-trow__num-col">
                       {song.bpm > 0 ? Math.round(song.bpm) : '—'}
