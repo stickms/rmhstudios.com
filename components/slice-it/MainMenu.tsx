@@ -322,10 +322,6 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             <header className="slice-line">
               <div className="slice-line__l">
                 <span className="slice-chip">RMH-050</span>
-                <span className="slice-label">
-                  {t('menu-rpm', { defaultValue: '33 1/3 RPM' })} <i>/</i>{' '}
-                  {t('side-a', { defaultValue: 'Side A' })}
-                </span>
               </div>
               <div className="slice-line__r">
                 <span className="slice-label">

@@ -461,7 +461,6 @@ export function SongDetailsPanel({
             ) : (
               <span className="slice-rec__ph slice-dots-cyan" aria-hidden />
             )}
-            <span className="slice-rec__tag">{t('side-a', { defaultValue: 'Side A' })}</span>
           </div>
 
           <div className="slice-rec__head">

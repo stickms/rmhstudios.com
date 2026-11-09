@@ -770,14 +770,6 @@ export function SongLibrary({
           scrollsAsOneColumn ? 'sticky top-0 z-20' : ''
         }`}
       >
-        {/* The side's heading, as the sleeve prints it. */}
-        <div className="slice-lib-head">
-          <h2 className="slice-display">{t('side-a', { defaultValue: 'Side A' })}</h2>
-          <span className="slice-label">
-            {t('library-tracks', { defaultValue: 'Library · {{count}} tracks', count: total })}
-          </span>
-        </div>
-
         <div className="relative flex-1 min-w-[10rem]">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slice-text-light w-4 h-4"
@@ -788,7 +780,7 @@ export function SongLibrary({
               `<input>` nor a `<select>` renders one. These two controls can be
               44px, so on a coarse pointer they are. */}
           <Input
-            placeholder={t('search-placeholder', { defaultValue: 'Search songs, artists...' })}
+            placeholder={t('search-tracks', { defaultValue: 'Search {{count}} tracks…', count: total })}
             className="pl-9 bg-slice-card-bg border border-slice-shadow-dark/50 rounded-lg h-9 pointer-coarse:h-11 text-sm text-slice-text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}

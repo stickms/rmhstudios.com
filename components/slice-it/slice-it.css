@@ -702,20 +702,6 @@ a.neumorphic-sm:hover,
   color: var(--slice-text);
 }
 
-.slice-results__line {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  min-height: calc(36px + var(--safe-top, 0px));
-  padding: var(--safe-top, 0px) max(28px, var(--safe-right, 0px)) 0 max(28px, var(--safe-left, 0px));
-  border-bottom: 1px solid var(--slice-border);
-}
-
-.slice-results__line .slice-label i {
-  font-style: normal;
-  padding: 0 4px;
-}
-
 .slice-results__grid {
   display: grid;
   gap: 24px;

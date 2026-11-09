@@ -330,19 +330,6 @@
   inset: 0;
 }
 
-/* The catalogue tag printed on the corner of the cover. */
-.slice-rec__tag {
-  position: absolute;
-  inset: 0 auto auto 0;
-  padding: 5px 9px;
-  background: var(--slice-label);
-  color: var(--slice-paper);
-  font-family: var(--slice-mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .slice-rec__head {
   display: flex;
   align-items: flex-start;
@@ -559,19 +546,6 @@
 }
 
 /* ── The tracklist ────────────────────────────────────────── */
-
-.slice-lib-head {
-  display: flex;
-  flex: 1 0 100%;
-  align-items: baseline;
-  gap: 14px;
-  padding: 6px 8px 2px;
-}
-
-.slice-lib-head h2 {
-  margin: 0;
-  font-size: 26px;
-}
 
 /* One grid for the heads, the rows and the skeleton, so they line up. */
 .slice-trow {

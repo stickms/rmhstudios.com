@@ -73,14 +73,6 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
 
   return (
     <div className="slice-results absolute inset-0 z-50 overflow-y-auto overscroll-contain bg-slice-bg">
-      <div className="slice-results__line">
-        <span className="slice-chip">RMH-050</span>
-        <span className="slice-label">
-          {t('side-a', { defaultValue: 'Side A' })} <i>/</i>{' '}
-          {t('end-of-side', { defaultValue: 'End of side' })}
-        </span>
-      </div>
-
       <div className="slice-results__grid">
         {/* The grade, cut on the slice. Two clips of the same letter, the lower one
             shifted along the cut; the real grade is read out by the label. */}
@@ -108,10 +100,6 @@ export function GameOver({ onRetry, engine }: GameOverProps) {
 
         {/* The liner notes. */}
         <div className="slice-results__notes">
-          <div className="slice-label">
-            {t('side-a', { defaultValue: 'Side A' })} ·{' '}
-            {t('pressed-by-you', { defaultValue: 'Pressed by you' })}
-          </div>
           <h2 className="slice-display slice-results__title">
             {failedTitle ?? songTitle ?? t('complete', { defaultValue: 'COMPLETE' })}
           </h2>
