@@ -693,7 +693,7 @@ Methods are read from each file's `server.handlers` block. A route with no metho
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
-| `/api/email/unsubscribe` | `GET` | `app/routes/api/email/unsubscribe.ts` |
+| `/api/email/unsubscribe` | `GET` `POST` | `app/routes/api/email/unsubscribe.ts` |
 
 ## `/api/embed`
 
