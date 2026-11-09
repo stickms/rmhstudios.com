@@ -100,3 +100,143 @@ browser pass (Playwright harness in the session scratchpad, not in the repo) →
 merge. SDD ledger: `.superpowers/sdd/2026-11-09-rmhmusic-phase2-training/` (briefs, reports,
 review diffs). Plans: `docs/superpowers/plans/2026-11-09-rmhmusic-*.md`. Commit-gate hook:
 `.claude/hooks/commit-gate.sh` → `pnpm check:consistency --fast`.
+
+## 6. Implementation stubs (sketches for whoever picks this up)
+
+These are design sketches in plain TypeScript/SQL/JSON, **not compiled and not in the code tree**.
+Check them against the real files named in each heading before using them; where they differ,
+the code and the two plan files win. Task order for each feature is in its plan.
+
+### 6.1 Sampler engine (instrument sounds, plan §3 and §6)
+
+Already real and tested: `lib/rmhmusic/learn/audio/instruments/types.ts` (`Instrument`,
+`InstrumentMeta`, `Zone`, `ZoneMap`, `PlayOpts`, `NoteHandle`, `INSTRUMENT_IDS`), `catalog.ts`
+(per-instrument meta), `zones.ts` (nearest zone + detune maths), `voice-pool.ts`, `load-machine.ts`
+(`LoadState`: idle → loading → ready | failed), `loader.ts`, `chord.ts`. Still to write:
+
+```ts
+// lib/rmhmusic/learn/audio/instruments/sampler.ts  (NEW)
+// One class implementing Instrument over the shared AudioContext from voice.ts.
+//  - load(): single-flight; fetch zones JSON + each MP3 (fetch + decodeAudioData, never at page
+//    load), drive load-machine events; resolve with the settled state.
+//  - play(midi, opts): zone = pickZone(zones, midi) -> AudioBufferSourceNode with
+//    playbackRate = 2 ** ((midi - zone.keyCenter) * 100 + zone.tuneCents) / 1200), gain from
+//    velocity * 10 ** (zone.gainDb / 20) * busGain / sqrt(opts.chordOf ?? 1), optional one-pole
+//    low-pass when meta.softLowpass and velocity < ~0.4; steal the oldest voice via voice-pool
+//    when meta.maxVoices is reached (mono => legato handover). stop(when) ramps gain to 0 over
+//    meta.releaseMs and disconnects on 'ended'.
+//  - A not-ready instrument returns a silent NoteHandle (never throws); callers fall back to synth.
+export function createSampler(meta: InstrumentMeta, zones: ZoneMap, ctx: () => AudioContext): Instrument;
+
+// lib/rmhmusic/learn/audio/voice.ts  (EDIT)
+//  - PlayOptions gains `instrument?: InstrumentId`; playNote() asks the registry for that
+//    instrument, uses it when state === 'ready' && canPlay(midi), else the existing synth.
+//  - soundStatus() already allows 'loading' | 'failed'; map the active instrument's LoadState.
+//  - soundReleaseMs(opts) returns the instrument's releaseMs (the mic echo guard in
+//    input/echo-window.ts and MatchNoteLesson wait this long after a note ends).
+//  - A lesson waits at most 2.5 s for 'loading', then uses the synth for the rest of the session
+//    (do not flip timbre mid-lesson). Chord lessons: only meta.polyphony === 'chord' instruments.
+```
+
+Build script (`scripts/rmhmusic/build-instruments.ts`, NEW) driven by `sources.json`:
+
+```jsonc
+{
+  "piano": {
+    "source": { "url": "https://raw.githubusercontent.com/<repo>/<commit>/<path>", "sha256": "…" },
+    "licence": "CC-BY-3.0", "credit": "salamander",
+    "zones": [{ "src": "A2v8.flac", "keyCenter": 45, "tuneCents": -12, "gainDb": -1.5 }]
+  },
+  "guitar": { "source": { "url": "<Google Drive RAR, see plan §2.4>", "sha256": "…" },
+              "restorePitch": "asetrate=16000*2^(fret/12)", "layer": "mf" }
+}
+// Steps: fetch (verify SHA-256, fail on zero-byte files) -> decode -> trim pre-roll -> restore
+// pitch where flagged -> measure pitch with lib/rmhmusic/learn/pitch YIN and FAIL if it is not
+// within 15 cents of keyCenter (VSCO wind file names are an octave low) -> mono 64 kbps MP3 ->
+// write public/music/rmhmusic/instruments/<id>/*.mp3 and generated zones JSON
+// (lib/rmhmusic/learn/audio/instruments/zones-data.ts) with durations and SHA-256s.
+```
+
+Learner setting, credits and wiring:
+
+```prisma
+// prisma/schema.prisma — additive, nullable (null = follow the learner's instrument)
+model MusicLearnProfile { /* …existing… */ sound String? @db.VarChar(16) }
+```
+
+```ts
+// app/routes/api/rmhmusic/learn/profile.ts (EDIT): zod z.enum(INSTRUMENT_IDS).nullable() in the
+// body schema, via defineHandler({ rateLimit: 'write', body }, …). Client: store.ts `sound`,
+// resolveSound(profile) = profile.sound ?? (profile.instrument === 'guitar' ? 'guitar' : 'piano').
+// UI: components/rmhmusic/learn/SoundDialog.tsx — plain text rows (no chips), opened from
+// LearnHome; picking one calls load() (prefetch) and plays one note. Credits route
+// app/routes/rmhmusic/credits.tsx + lib/rmhmusic/credits.ts (Salamander CC BY 3.0 attribution
+// text and the full MIT text for the guitar; plan §2.2). Then pass { instrument } from
+// EarLesson / PlayChordLesson / MatchNoteLesson / FindNoteLesson via useNoteSound(enabled, opts).
+```
+
+Owner audition after it works (nobody has listened): one note and one interval per instrument,
+chords on piano and guitar, the steel guitar's brightness (16 kHz source), Safari/iPhone silent switch.
+
+### 6.2 Sight reading game — Sprint (plan: `2026-11-09-rmhmusic-note-sprint.md`)
+
+```ts
+// lib/rmhmusic/learn/sprint/levels.ts
+export type SprintLevel = 'note' | 'accidental' | 'chord' | 'bar';
+export interface SprintPrompt {
+  level: SprintLevel;
+  notes: readonly number[];   // sounding MIDI; 1 for note/accidental, 3 for chord, 4 in order for bar
+  clef: 'treble' | 'bass';
+}
+export const PAR_MS: Record<SprintLevel, number> = { note: 1200, accidental: 1600, chord: 2400, bar: 2000 };
+// bar par = 2000 + 700 * (notes.length - 1)
+
+// lib/rmhmusic/learn/sprint/scoring.ts
+// promptPoints(level, elapsedMs, correct, noteCount?) -> 0..100: 100 at or under par, linear to 0
+// at 4x par, 0 if wrong. runScore = mean; stars via starsFor().
+
+// lib/rmhmusic/learn/sprint/generate.ts
+// makePrompt(level, rand: () => number, opts): SprintPrompt   // seeded, inside ledger-line limit
+// dailySeed(utcDate: string): number                          // e.g. FNV-1a of "2026-11-09"
+// dailyRun(utcDate): readonly SprintPrompt[]                  // 6 levels x 5 prompts, escalating
+// utcDate(now: number): string                                // the ONLY place "the day" is decided
+
+// lib/rmhmusic/learn/sprint/machine.ts — explicit {initial, step}, like machines/match-note.ts
+export type SprintState =
+  | { kind: 'ready' } | { kind: 'countdown'; beat: 0 | 1 | 2 }
+  | { kind: 'asking'; index: number; shownAt: number; got: readonly number[] }
+  | { kind: 'feedback'; index: number; correct: boolean }
+  | { kind: 'complete'; points: readonly number[] }
+  | { kind: 'saving' } | { kind: 'saved' } | { kind: 'failed' } | { kind: 'signed-out' };
+// Events: start, tick, shown{at}, note{midi, time}, next, complete{outcome}, retry.
+// Rules: a prompt cannot be answered before it is drawn; note-offs and held keys from the previous
+// prompt are ignored; chord = pitch classes inside a 600 ms window (reuse input/chord-window.ts);
+// bar = notes in order, per-note time from the previous note; a wrong note ends the prompt (no
+// retry); exactly one `complete` per run; times come from NoteEvent.time, never Date.now().
+```
+
+```prisma
+model MusicSprintBest { id String @id @default(cuid()); userId String; level String;
+  best Int; bestAvgMs Int; updatedAt DateTime @updatedAt; user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, level]) @@map("music_sprint_best") }
+model MusicSprintDaily { id String @id @default(cuid()); userId String; date String @db.VarChar(10);
+  score Int; avgMs Int; createdAt DateTime @default(now()); user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, date]) @@map("music_sprint_daily") }
+// Server recomputes the date, rejects a second scored daily result (a retried POST returns the stored one).
+```
+
+UI: `components/rmhmusic/learn/sprint/*` + `app/routes/rmhmusic/sprint.tsx` (auth-gated like
+`practice.tsx`, listed in `EXCLUDED_ROUTES` as `'personal'` in the sitemap test). Needs `StaffCard`
+(+ `staff-card-layout.ts`) extended for accidentals, stacked chord noteheads (second-interval
+offset) and a bar of notes with a "now" mark; keep `direction="ltr"` on all SVG text and a
+fixed-height sheet per level (skeleton equals loaded height). Mic is offered for note / accidental /
+bar only; for chords say once that the microphone hears one note at a time and never mark it wrong.
+
+### 6.3 Phase 3 starter (tuner and note reader)
+
+Reuse `lib/rmhmusic/learn/pitch/` (YIN + `centsOff` from `scoring/pitch.ts`) and `input/mic.ts`
+(`echoCancellation: false`). A tuner is a pure `tunerStep(state, frame)` machine
+(`silent → listening → locked(note, cents)`) with hysteresis so the needle does not flicker; draw a
+static dial and update it from the hub's mic events (no rAF at rest; one `drive(fn)` while the
+microphone is live and the tab visible). Open question: instrument tuning presets (guitar standard
+tuning is `STANDARD_TUNING` in `theory/fretboard.ts`).
