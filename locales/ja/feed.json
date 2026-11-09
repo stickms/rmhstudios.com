@@ -888,7 +888,7 @@
   "playlists-empty-title": "プレイリストはまだありません",
   "playlists-search-empty-desc-name": "Try a different playlist name.",
   "playlists-search-empty-title": "No matching playlists",
-  "playlists-signin-desc": "トラックや動画を自分専用の永続的なプレイリストに保存できます。",
+  "playlists-signin-desc-video": "Save videos into your own persistent playlists.",
   "playlists-signin-title": "サインインしてプレイリストを作成",
   "playlists-title": "プレイリスト",
   "poll": "投票",

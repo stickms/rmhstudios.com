@@ -934,7 +934,7 @@
   "playlists-empty-title": "Aún no hay listas de reproducción",
   "playlists-search-empty-desc-name": "Try a different playlist name.",
   "playlists-search-empty-title": "No matching playlists",
-  "playlists-signin-desc": "Guarda pistas y videos en tus propias listas de reproducción persistentes.",
+  "playlists-signin-desc-video": "Save videos into your own persistent playlists.",
   "playlists-signin-title": "Inicia sesión para crear listas de reproducción",
   "playlists-title": "Listas de reproducción",
   "poll": "Encuesta",

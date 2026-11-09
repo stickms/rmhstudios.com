@@ -111,6 +111,11 @@ Phase 1 removes all routes, components, socket handler and references. **The old
 dropped table can't be restored, and the owner hasn't confirmed what history to keep. A separate
 cleanup migration comes later, only on the owner's say-so.
 
+**Update 2026-11-09:** the owner approved the drop. The seven old tables (`rmh_music_room`,
+`rmh_music_room_member`, `rmh_music_queue_item`, `rmh_music_chat_message`,
+`rmh_music_track_comment`, `music_guess_puzzle`, `music_guess_attempt`) are removed by
+`prisma/migrations/20261109120000_drop_rmhmusic_legacy`; achievement and coin history is untouched.
+
 ## Left to the builder
 
 Pitch-detector choice and tuning (YIN vs MPM), piano/guitar sound source (samples vs synth,

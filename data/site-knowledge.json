@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-19T23:36:58.512Z",
+  "generatedAt": "2026-11-09T04:16:56.444Z",
   "entries": [
     {
       "id": "help:coins",
@@ -97,12 +97,13 @@
         "subscription",
         "stripe",
         "pro",
+        "hard-r",
         "starter",
         "enterprise",
         "billing"
       ],
       "route": "/membership",
-      "text": "Paid memberships (Starter, Pro, Enterprise) unlock perks like the developer API, a profile badge, and higher limits. Manage or upgrade your plan on the membership page; billing is handled by Stripe.",
+      "text": "Paid memberships (HARD-R, Pro, Enterprise) unlock perks like the developer API, a profile badge, and higher limits. Manage or upgrade your plan on the membership page; billing is handled by Stripe.",
       "kind": "help"
     },
     {
@@ -333,7 +334,7 @@
         "integration"
       ],
       "route": "/developer",
-      "text": "Members on Starter and above get a scoped developer API with API keys and webhooks. Manage keys and read the docs in the developer area.",
+      "text": "Members on HARD-R and above get a scoped developer API with API keys and webhooks. Manage keys and read the docs in the developer area.",
       "kind": "help"
     },
     {
@@ -432,6 +433,20 @@
       "kind": "help"
     },
     {
+      "id": "game:hearthworks",
+      "kind": "game",
+      "title": "Hearthworks",
+      "tags": [
+        "City Builder",
+        "Farming",
+        "Cooking",
+        "Relaxing"
+      ],
+      "route": "/hearthworks",
+      "players": "single-player",
+      "text": "Build a cozy town, farm and forage, cook and sell — in one world you plan from above. Found a town on a floating island. Lay roads, raise cottages and market stalls, plant and harvest crops, cook what you grow and sell it to your neighbours. Everything lives in one world: plan it from an isometric bird’s-eye view, and soon walk it on foot, build machines to…"
+    },
+    {
       "id": "game:rmhbox",
       "kind": "game",
       "title": "RMHbox",
@@ -442,7 +457,7 @@
       ],
       "route": "/rmhbox",
       "players": "multiplayer / playable with friends",
-      "text": "Party game madness! Join a lobby and play 16+ minigames with friends. Create or join a lobby, vote on minigames, and compete with friends in real-time. Features 16+ unique minigames across word, trivia, action, and creative categories with live leaderboards and match history."
+      "text": "Join a lobby and play 16+ party minigames with friends. Create or join a lobby, vote on minigames, and compete with friends in real-time. Features 16+ unique minigames across word, trivia, action, and creative categories with live leaderboards and match history."
     },
     {
       "id": "game:altair",
@@ -455,7 +470,7 @@
       ],
       "route": "/altair",
       "players": "single-player",
-      "text": "A narrative-driven extraction thriller set on a fragmented deep space mining rig. Navigate Outpost 13, a reality-glitched mining station overrun by \"Echoes.\" Use your neural link to piece together fragmented memories, manage cryo-sickness, and survive the shadows in this narrative-heavy survival experience."
+      "text": "A narrative extraction thriller on a fragmented deep-space mining rig. Navigate Outpost 13, a reality-glitched mining station overrun by \"Echoes.\" Use your neural link to piece together fragmented memories, manage cryo-sickness, and survive the shadows in this narrative-heavy survival experience."
     },
     {
       "id": "game:daily-puzzles",
@@ -468,7 +483,7 @@
       ],
       "route": "/daily",
       "players": "single-player",
-      "text": "Six daily brain games: Lights Out, Alibi, Spectrum, Outcast, Chainlink, and Impostor. New puzzles every day at midnight EST. A suite of six daily brain games. Toggle lights in Lights Out, solve crime scenarios in Alibi, rank items in Spectrum, spot the odd one out in Outcast, build word chains in Chainlink, and detect lies in Impostor. Share your results wi…"
+      "text": "Seven daily brain games, fresh at midnight EST: Lights Out, Alibi, Spectrum and more. A suite of seven daily brain games. Toggle lights in Lights Out, solve crime scenarios in Alibi, rank items in Spectrum, spot the odd one out in Outcast, build word chains in Chainlink, detect lies in Impostor, and turn a glass globe to find sets in GlobeSet. Share your re…"
     },
     {
       "id": "game:versecraft",
@@ -482,7 +497,7 @@
       ],
       "route": "/versecraft",
       "players": "single-player",
-      "text": "A visual novel that writes a brand-new emotional story every time — your cast, your bonds, your seed to share. Every playthrough is generated from a seed: a unique anime cast, setting, and a multi-act, character-driven story you steer through choices and poem-writing. Prompt the kind of experience you want or roll the dice, deepen bonds with the cast, and s…"
+      "text": "A visual novel that writes a new emotional story every time. Share your seed. Every playthrough is generated from a seed: a unique anime cast, setting, and a multi-act, character-driven story you steer through choices and poem-writing. Prompt the kind of experience you want or roll the dice, deepen bonds with the cast, and share your seed so anyone can repl…"
     },
     {
       "id": "game:slice-it",
@@ -495,7 +510,7 @@
       ],
       "route": "/slice-it",
       "players": "single-player",
-      "text": "A high-octane neon rhythm game where you slice through beats in a pulse-pounding world. Test your reflexes as you slice through beat sequences and dodge obstacles in a vibrant, neon-soaked environment. Feature-rich with global leaderboards, multiplayer lobbies, and support for custom track uploads."
+      "text": "A neon rhythm game where you slice through every beat. Test your reflexes as you slice through beat sequences and dodge obstacles in a vibrant, neon-soaked environment. Feature-rich with global leaderboards, multiplayer lobbies, and support for custom track uploads."
     },
     {
       "id": "game:velum2099",
@@ -509,7 +524,7 @@
       ],
       "route": "/velum2099",
       "players": "single-player",
-      "text": "A cyberpunk courier driver: run timed deliveries and outrun the police across a procedural neon city. Run courier deliveries through the neon-lit streets of a procedurally generated cyberpunk city — pick up cargo, race it to the drop-off before the timer runs out, and bank credits with a combo multiplier. Cause chaos and the police give chase: shake them of…"
+      "text": "Run timed deliveries across a neon city and outrun the police. Run courier deliveries through the neon-lit streets of a procedurally generated cyberpunk city — pick up cargo, race it to the drop-off before the timer runs out, and bank credits with a combo multiplier. Cause chaos and the police give chase: shake them off to escape, or get boxed in and busted…"
     },
     {
       "id": "game:synapse-storm",
@@ -531,11 +546,12 @@
       "tags": [
         "Idle",
         "Clicker",
-        "Prestige"
+        "Prestige",
+        "Minigames"
       ],
       "route": "/temple-of-joy",
       "players": "single-player",
-      "text": "An advanced idle clicker exploring the pursuit of bliss through spiritual and carnal indulgence. Accumulate Happiness to construct a sprawling temple of delights. Balance the Hedonic Treadmill, earn Karma through pilgrimages, and Transcend the Wheel of Samsara in a deep idle game featuring relics, rituals, and philosophical choices."
+      "text": "A golden idle clicker about building an unreasonable amount of gladness. Twenty-four sources of joy, four hundred trophies, and four minigames that keep running while the tab is shut: a garden that grows overnight, a market that moves without you, a choir of saints, and a book of prayers that sometimes go wrong. Catch halos, invite the Rapture and let its S…"
     },
     {
       "id": "game:neon-driftway",
@@ -549,20 +565,20 @@
       ],
       "route": "/neon-driftway",
       "players": "single-player",
-      "text": "A first-person 3D highway survival racer. You drive from inside the cockpit across three levels: Sunset Freeway, Rainline, and Night Circuit. On phones the gyroscope drives the camera in real time, so you can look around the cabin and into bends while you drive, and a side-by-side split-screen mode works with a Cardboard-style viewer. Devices with no motion sensor get a locked forward camera and the same game. Rack up multipliers with daring close calls, manage grip in the rain, and dodge aggressive traffic."
+      "text": "A first-person 3D highway racer, steered from the driver’s seat. Drive from inside the cockpit across three levels: Sunset Freeway, Rainline, and Night Circuit. On a phone the gyroscope moves the camera in real time, so you can glance into a bend or check the lane beside you while you drive — and there is a side-by-side mode for a Cardboard-style viewer. Wi…"
     },
     {
       "id": "game:laundry-sort",
       "kind": "game",
       "title": "Laundry Sort",
       "tags": [
-        "Casual",
+        "Multiplayer",
         "Physics",
-        "Puzzle"
+        "3D"
       ],
       "route": "/laundry-sort",
-      "players": "single-player",
-      "text": "A frantic physics-based arcade game where gravity and color matching are your only tools. Sort falling laundry into color-coded bins using ragdoll physics. Watch clothes tumble and bounce through complex dividers as you chase high scores in a race against the clock. Simple controls, chaotic physics."
+      "players": "multiplayer / playable with friends",
+      "text": "Catch simulated cloth garments mid-air and sort them by wash. Every garment is actual cloth: a mass of particles solved with position-based dynamics, so a shirt drapes over a bin rim, a towel planes as it falls, and a sock you flick across the room tumbles like one. Play solo against the clock or race up to seven other people on the same seeded laundry, wit…"
     },
     {
       "id": "game:void-breaker",
@@ -576,7 +592,7 @@
       ],
       "route": "/void-breaker",
       "players": "single-player",
-      "text": "Obsidian and gold arena shooter. Collect void shards, dash, slow time with Focus, detonate when overwhelmed. Survive waves of enemies in a dark arena. Collect void shards that orbit you as a shield and score multiplier. Activate Focus for bullet-time. Dash to dodge. Detonate your shard ring for a devastating Void Burst. Boss fights every 5 waves."
+      "text": "An obsidian-and-gold arena shooter. Collect shards, dash, slow time, detonate. Survive waves of enemies in a dark arena. Collect void shards that orbit you as a shield and score multiplier. Activate Focus for bullet-time. Dash to dodge. Detonate your shard ring for a devastating Void Burst. Boss fights every 5 waves."
     },
     {
       "id": "game:kowloon-knockout",
@@ -589,7 +605,7 @@
       ],
       "route": "/kowloon-knockout",
       "players": "multiplayer / playable with friends",
-      "text": "A neon 3D brawler set in 90s Hong Kong — pixel-shaded stick fighters, combos, and up to 4-player FFA or team battles. Step into the neon-lit rooftops of Kowloon, 1997, rendered in fully animated 3D stick fighters with a retro pixel-art filter. Pick from nine fighter classes, master devastating combos and counter-strikes, and brawl across an open arena. Batt…"
+      "text": "A neon 3D brawler in 90s Hong Kong. Combos, and up to 4-player free-for-all or teams. Step into the neon-lit rooftops of Kowloon, 1997, and brawl in a fully animated 3D arena with a retro pixel-art filter. Pick from nine fighter classes and choose your look: the animated Y-Bot or a Source-engine character from Team Fortress 2, Counter-Strike or Half-Life 2,…"
     },
     {
       "id": "game:house-always-wins",
@@ -603,7 +619,7 @@
       ],
       "route": "/house-always-wins",
       "players": "single-player",
-      "text": "A dark casino metroidvania: explore the abandoned Mirage Royale, talk your way past its ghosts, unlock new moves, and outwit The House. A narrative pixel-art metroidvania set inside a decaying casino. Explore six interconnected wings — Lobby, Poker Hall, Slot Vault, Security Wing, Maintenance shafts and the Vault — gating your progress behind three unlockab…"
+      "text": "A dark casino metroidvania. Explore the abandoned Mirage Royale and outwit The House. A narrative pixel-art metroidvania set inside a decaying casino. Explore six interconnected wings — Lobby, Poker Hall, Slot Vault, Security Wing, Maintenance shafts and the Vault — gating your progress behind three unlockable abilities: the Lucky Coin (double jump), the Al…"
     },
     {
       "id": "game:dream-rift",
@@ -617,7 +633,77 @@
       ],
       "route": "/dream-rift",
       "players": "multiplayer / playable with friends",
-      "text": "A danmaku bullet hell — dodge gorgeous bullet curtains solo or in up to 4-player co-op across three dream worlds. A vertical bullet-hell shoot-’em-up: weave a tiny pinpoint hitbox through dense, beautiful danmaku curtains, graze bullets for score, bomb to survive, and capture each boss’s spell cards before the timer runs out. Four playable dreamers — the sh…"
+      "text": "A danmaku bullet hell across three dream worlds, solo or up to 4-player co-op. A vertical bullet-hell shoot-’em-up: weave a tiny pinpoint hitbox through dense, beautiful danmaku curtains, graze bullets for score, bomb to survive, and capture each boss’s spell cards before the timer runs out. Four playable dreamers — the shrine maiden Reika, the star-thief w…"
+    },
+    {
+      "id": "game:gabriels-horn",
+      "kind": "game",
+      "title": "Gabriel's Horn",
+      "tags": [
+        "Multiplayer",
+        "Card Game",
+        "Bluffing",
+        "Party"
+      ],
+      "route": "/gabriels-horn",
+      "players": "multiplayer / playable with friends",
+      "text": "A bluffing card game where you can’t see your own dice. Spot the liar, hold the fewest cards. Three dice are rolled at the start of your turn and everyone at the table can see them except you. They each tell you a total — truthfully or not — and you pick one of them and call it: truth, or lie. Get it right and they draw three cards; get it wrong and you do.…"
+    },
+    {
+      "id": "game:nightrail",
+      "kind": "game",
+      "title": "Nightrail",
+      "tags": [
+        "Arcade",
+        "Racing",
+        "3D",
+        "Trick Scoring"
+      ],
+      "route": "/nightrail",
+      "players": "single-player",
+      "text": "An on-rails trick racer. Your courier train never slows: drift, land tricks, deliver. You run night freight on a self-propelling courier train, and it will not slow down for you. Every bend scrubs speed off the railhead unless you drift it, so the game is less about going faster than about refusing to give back what you already have. Switch between parallel…"
+    },
+    {
+      "id": "game:half-life-2",
+      "kind": "game",
+      "title": "Half-Life 2",
+      "tags": [
+        "Valve",
+        "FPS",
+        "Single-player",
+        "Beta"
+      ],
+      "route": "/half-life-2",
+      "players": "single-player",
+      "text": "The opening of Half-Life 2, Point Insertion, on a clean-room browser engine. Step off the train into City 17. The Half-Life 2 demo’s two Point Insertion maps run on an independent browser engine: Source-accurate movement, rigid-body physics you can pick up and throw, scripted sequences, doors and lifts, soundscapes and closed captions. Your progress is save…"
+    },
+    {
+      "id": "game:portal",
+      "kind": "game",
+      "title": "Portal",
+      "tags": [
+        "Valve",
+        "FPS",
+        "Single-player",
+        "Beta"
+      ],
+      "route": "/portal",
+      "players": "single-player",
+      "text": "Portal’s first test chambers, in your browser. Place linked portals and walk through them. Portal’s opening test chambers, 00 to 10, on an independent browser engine. Fire the blue and orange portals onto walls and floors, look and walk through them (momentum is conserved), carry cubes onto buttons and dodge energy balls. Portals render the view through the…"
+    },
+    {
+      "id": "game:csgo",
+      "kind": "game",
+      "title": "Counter-Strike: Global Offensive",
+      "tags": [
+        "Valve",
+        "FPS",
+        "Multiplayer",
+        "Beta"
+      ],
+      "route": "/csgo",
+      "players": "multiplayer / playable with friends",
+      "text": "Counter-Strike: Global Offensive in your browser: bomb defusal or deathmatch on Dust II, against bots or friends. Counter-Strike: Global Offensive’s Dust II on an independent browser engine, with default loadouts and plain weapons. Play bomb defusal (freeze time, a buy period, the money system, planting and defusing, first to 16) or deathmatch (instant resp…"
     },
     {
       "id": "app:rmhtube",
@@ -630,7 +716,7 @@
       ],
       "route": "/rmhtube",
       "players": "multiplayer / playable with friends",
-      "text": "Watch videos together in sync. Create rooms, queue media, and chat in real-time. RMHTube is a real-time watch party platform. Create a room, share the code, and watch YouTube, Twitch, or direct videos in perfect sync with friends. Queue up media, vote to skip, react live, and chat — all powered by WebSocket magic."
+      "text": "Watch videos together in sync. Make a room, queue media, chat. RMHTube is a real-time watch party platform. Create a room, share the code, and watch YouTube, Twitch, or direct videos in perfect sync with friends. Queue up media, vote to skip, react live, and chat — all powered by WebSocket magic."
     },
     {
       "id": "app:rmhtype",
@@ -644,7 +730,7 @@
       ],
       "route": "/rmhtype",
       "players": "multiplayer / playable with friends",
-      "text": "Test your typing speed solo or race against friends in real-time multiplayer. RMH Type is a competitive typing platform. Practice solo to improve your WPM, or create a room to race friends on the same passage simultaneously. Track your progress on the global leaderboard and climb the ranks."
+      "text": "Test your typing speed solo or race friends in real time. RMH Type is a competitive typing platform. Practice solo to improve your WPM, or create a room to race friends on the same passage simultaneously. Track your progress on the global leaderboard and climb the ranks."
     },
     {
       "id": "app:rmhmusic",
@@ -659,7 +745,7 @@
       ],
       "route": "/rmhmusic",
       "players": "single-player",
-      "text": "Learn piano and guitar with your microphone or a MIDI keyboard. RMHMusic is a beginner-friendly app for learning piano and guitar. Pick your instrument, connect a microphone or MIDI keyboard (or use the on-screen keys), calibrate its delay and start with a first note lesson, with your progress saved to your account. It is a Beta: read…"
+      "text": "Learn piano and guitar with your microphone or a MIDI keyboard. RMHMusic is a beginner-friendly app for learning piano and guitar. Pick your instrument, connect a microphone or MIDI keyboard (or use the on-screen keys), calibrate its delay and start with a first note lesson, with your progress saved to your account. It is a Beta: reading notes on a staff, p…"
     },
     {
       "id": "app:rmhstudy",
@@ -673,7 +759,21 @@
       ],
       "route": "/rmhstudy",
       "players": "single-player",
-      "text": "Study together with synced Pomodoro timers, focus tracking, and flashcards. RMH Study brings the Pomodoro technique to a social setting. Create a study room, invite friends, and stay focused together with synced timers. Track your focus time, set session goals, climb the study leaderboard, and drill solo with flashcard decks and an AI tutor."
+      "text": "Study together with synced Pomodoro timers, focus tracking and flashcards. RMH Study brings the Pomodoro technique to a social setting. Create a study room, invite friends, and stay focused together with synced timers. Track your focus time, set session goals, climb the study leaderboard, and drill solo with flashcard decks and an AI tutor."
+    },
+    {
+      "id": "app:rmh-tf2-hud",
+      "kind": "app",
+      "title": "RMH TF2 Hub",
+      "tags": [
+        "TF2",
+        "HUD",
+        "Loadout",
+        "Beta"
+      ],
+      "route": "/tf2",
+      "players": "single-player",
+      "text": "Play TF2 in your browser, build HUDs and loadouts, and share them in the workshop. RMH TF2 Hub brings Team Fortress 2 to the browser. Play is the game itself on a clean-room engine: join a server or host your own room with bots on the games hub, or practise offline against bots that run on your own machine, with every class, the stock arsenal and the classi…"
     },
     {
       "id": "app:studio",
@@ -686,7 +786,7 @@
       ],
       "route": "/studio",
       "players": "single-player",
-      "text": "Make beats in your browser. Multi-track DAW with synths, drums, effects, and samples. RMH Studio is a fully-featured digital audio workstation that runs entirely in your browser. Create multi-track arrangements with built-in synths, drum machines, effects, and samples. Record audio, edit MIDI, mix, and export — no downloads required."
+      "text": "Make beats in your browser: multi-track DAW with synths, drums, effects and samples. RMH Studio is a fully-featured digital audio workstation that runs entirely in your browser. Create multi-track arrangements with built-in synths, drum machines, effects, and samples. Record audio, edit MIDI, mix, and export — no downloads required."
     },
     {
       "id": "app:rmhcode",
@@ -700,7 +800,7 @@
       ],
       "route": "/rmhcode",
       "players": "single-player",
-      "text": "AI-powered coding assistant. Build projects with Claude and publish to User Builds. rmhcode is a CLI wrapper around Claude Code with RMH integrations. Sign in with your rmhstudios.com account, build projects with AI assistance, and publish your creations to the User Builds showcase."
+      "text": "An AI coding assistant. Build with Claude and publish to User Builds. rmhcode is a CLI wrapper around Claude Code with RMH integrations. Sign in with your rmhstudios.com account, build projects with AI assistance, and publish your creations to the User Builds showcase."
     },
     {
       "id": "app:rmh-strategies",
@@ -714,7 +814,7 @@
       ],
       "route": "/strategies",
       "players": "single-player",
-      "text": "The coalition command center. Daily puzzles, tiered safehouse, reputation system, and Sahur Mode. RMH Strategies is the unified platform layer for the RMH ecosystem. Earn XP across all RMH products with a single reputation system, compete on daily puzzle leaderboards across five modes (Alibi, Spectrum, Outcast, Chainlink, Impostor), access tiered Safehouse …"
+      "text": "The coalition command center: daily puzzles, a tiered safehouse, reputation, Sahur Mode. RMH Strategies is the unified platform layer for the RMH ecosystem. Earn XP across all RMH products with a single reputation system, compete on daily puzzle leaderboards across five modes (Alibi, Spectrum, Outcast, Chainlink, Impostor), access tiered Safehouse intellige…"
     },
     {
       "id": "app:rmhladder",
@@ -729,7 +829,22 @@
       ],
       "route": "/rmhladder",
       "players": "single-player",
-      "text": "Discover verified internships, new-grad programs, and early-career roles from official company sources. RMH Ladder automatically checks official company job boards every four hours, filters for verified early-career opportunities, and helps you save roles, track applications, and compare your resume with the jobs that fit."
+      "text": "Verified internships, new-grad programs and early-career roles, from official sources. RMH Ladder automatically checks official company job boards every four hours, filters for verified early-career opportunities, and helps you save roles, track applications, and compare your resume with the jobs that fit."
+    },
+    {
+      "id": "app:rmhcalculator",
+      "kind": "app",
+      "title": "RMHCalculator",
+      "tags": [
+        "Calculator",
+        "Graphing",
+        "AI",
+        "DeepSeek",
+        "Beta"
+      ],
+      "route": "/rmhcalculator",
+      "players": "single-player",
+      "text": "A graphing and scientific calculator where DeepSeek does the math, graphs included. RMHCalculator is a graphing and scientific calculator powered entirely by the DeepSeek API — it performs no arithmetic of its own. Every scientific evaluation and every plotted graph point is computed by the model, which also decides how to frame and plot each curve for good…"
     },
     {
       "id": "app:rmhhomes",
@@ -743,7 +858,20 @@
       ],
       "route": "/homes",
       "players": "single-player",
-      "text": "A housing marketplace — browse member posts plus real listings aggregated from across the web on a map, filter, and save favorites. RMHHomes is a housing marketplace that blends member-posted rentals and houses with real apartment/home postings aggregated from public feeds across the web. Browse everything on an interactive map, filter by price, beds, baths…"
+      "text": "A housing marketplace: member posts and real listings on one map. Filter and save. RMHHomes is a housing marketplace that blends member-posted rentals and houses with real apartment/home postings aggregated from public feeds across the web. Browse everything on an interactive map, filter by price, beds, baths, property type and source, save favorites, and s…"
+    },
+    {
+      "id": "app:dunesday",
+      "kind": "app",
+      "title": "Dunesday",
+      "tags": [
+        "Planner",
+        "Movies",
+        "AI"
+      ],
+      "route": "/dunesday",
+      "players": "single-player",
+      "text": "Plan an MCU + Dune marathon that ends before Doomsday and Dune: Part Three. Every MCU film and series plus Dune, scheduled night by night before 18 Dec 2026 — with calendar, RSS, Discord and an AI buddy."
     }
   ]
 }

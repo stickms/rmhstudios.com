@@ -41,7 +41,7 @@
   "cat-all": "All",
   "cat-books": "Books",
   "cat-collections": "Collections",
-  "cat-music": "Music",
+  "cat-playlists": "Playlists",
   "cat-reads": "Reads",
   "clear-search": "Clear search",
   "close": "إغلاق",
@@ -105,7 +105,7 @@
   "section-collections": "المجموعات",
   "section-community": "تحميلات المجتمع",
   "section-curated": "مختارة",
-  "section-music": "Music",
+  "section-playlists": "Playlists",
   "sections-label": "Library sections",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"

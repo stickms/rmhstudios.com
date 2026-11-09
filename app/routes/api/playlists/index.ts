@@ -1,28 +1,24 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { listPlaylists, createPlaylist, type PlaylistKind } from '@/lib/playlists.server';
+import { listPlaylists, createPlaylist } from '@/lib/playlists.server';
 
 const createSchema = z.object({
   name: z.string().min(1).max(100),
-  // Only video playlists can be created; `music` ones belonged to the retired
-  // RMHMusic listening-party app and are read-only legacy rows.
+  // Every playlist is a video playlist; the field is accepted for older clients.
   kind: z.literal('video').optional(),
 });
 
 /**
- * GET  /api/playlists?kind= — the caller's playlists.
+ * GET  /api/playlists — the caller's (video) playlists. A `?kind=` param is ignored.
  * POST /api/playlists — create a (video) playlist.
  */
 export const Route = createFileRoute('/api/playlists/')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ request, session }) => {
-        const kindParam = new URL(request.url).searchParams.get('kind');
-        const kind: PlaylistKind | undefined =
-          kindParam === 'music' || kindParam === 'video' ? kindParam : undefined;
-        return Response.json({ playlists: await listPlaylists(session.user.id, kind) });
-      }),
+      GET: defineHandler({}, async ({ session }) =>
+        Response.json({ playlists: await listPlaylists(session.user.id) }),
+      ),
 
       POST: defineHandler(
         {

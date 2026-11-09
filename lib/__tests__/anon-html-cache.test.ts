@@ -315,7 +315,7 @@ describe('anon-html-cache — the request-shape gates', () => {
     // Cloudflare keys on the full query string, so distinct params are distinct
     // entries; what matters here is that a param can neither smuggle a path onto
     // the allowlist nor smuggle one off it.
-    expect(cacheControl(runPlugin({ path: '/library?view=music' }))).toContain('public');
+    expect(cacheControl(runPlugin({ path: '/library?view=playlists' }))).toContain('public');
     expect(runPlugin({ path: '/wallet?from=/' }).get('Cache-Control')).toBeNull();
   });
 });

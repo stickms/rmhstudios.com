@@ -911,7 +911,7 @@
   "playlists-empty-title": "Henüz çalma listesi yok",
   "playlists-search-empty-desc-name": "Try a different playlist name.",
   "playlists-search-empty-title": "No matching playlists",
-  "playlists-signin-desc": "Parçaları ve videoları kendi kalıcı çalma listelerinize kaydedin.",
+  "playlists-signin-desc-video": "Save videos into your own persistent playlists.",
   "playlists-signin-title": "Çalma listeleri oluşturmak için giriş yapın",
   "playlists-title": "Çalma listeleri",
   "poll": "Anket",

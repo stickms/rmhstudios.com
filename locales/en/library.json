@@ -37,7 +37,7 @@
   "cat-all": "Everything",
   "cat-books": "Books",
   "cat-collections": "Collections",
-  "cat-music": "Music",
+  "cat-playlists": "Playlists",
   "cat-reads": "Reads",
   "clear-search": "Clear search",
   "close": "Close",
@@ -93,7 +93,7 @@
   "section-collections": "Collections",
   "section-community": "Community uploads",
   "section-curated": "Curated",
-  "section-music": "Music",
+  "section-playlists": "Playlists",
   "sections-label": "Library sections",
   "upload-button": "Add a book",
   "upload-label": "Upload a PDF"

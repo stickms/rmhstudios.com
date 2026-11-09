@@ -31,7 +31,7 @@ Branch is always `claude/hopeful-bohr-99d1vw`. After a PR merges: `git fetch ori
 - Server-only code in `*.server.ts`; API routes only via `defineHandler`; zod-validate input.
 - Mobile first: usable at 360px wide, tap targets ≥44px, `.app-page`/`.app-screen` viewport primitives, safe-area insets (components/CLAUDE.md "Full-screen games/apps").
 - Tests: colocated `*.test.ts`, only for pure non-obvious logic (docs/testing.md scope). Run `pnpm exec vitest run <path>`.
-- Old Prisma tables (`RmhMusic*`, `MusicGuess*`) are **NOT dropped or altered**; existing achievements definitions are left untouched.
+- Old Prisma tables (`RmhMusic*`, `MusicGuess*`) are **NOT dropped or altered**; existing achievements definitions are left untouched. (Phase 1 only: the owner approved the drop on 2026-11-09 — `prisma/migrations/20261109120000_drop_rmhmusic_legacy`.)
 - Toolchain: run every command with `PATH=/opt/node24/bin:$PATH` (the repo needs Node ≥24.18; the default `node` is v22). Dependencies are already installed.
 - Every commit passes `pnpm check:consistency` (a failing gate is fixed, never bypassed). Commit messages end with the two attribution trailer lines from the session reminder.
 
