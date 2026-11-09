@@ -68,7 +68,7 @@ What draws what:
   `:has(:focus-visible)`), fading in from `@starting-style`. A page at rest therefore has no running
   animation and no extra compositor layer. It pauses while scrolling and while a game is in play,
   and is absent under `still`, print, the app high-contrast theme, native-material routes
-  (`/games*`, `/tf2*`), fields, ghost / link buttons and every opt-out. Streaks, plasma blob and
+  (`/games*`, `/tf2*`, `/rmhmusic*`), fields, ghost / link buttons and every opt-out. Streaks, plasma blob and
   current are tokens (`--jelly-haze-a`, `--jelly-plasma-k`, `--site-jelly-*`), so a theme re-tints it.
 - **Dormant plasma** — invisible at rest; the hover wake is a radial gradient at the pointer
   (`--px` / `--py`) at `--plasma-wake` strength, brighter on press and focus. It is the accent
@@ -291,7 +291,9 @@ modulation above 3 Hz; ambient motion never moves a host's position.
 | hidden tab                                                          | —                     | —               | off, layer cleared | 0           | —               |
 | game playing                                                        | paused                | none            | off                | 0           | —               |
 | `[data-jelly-zone="playfield"]`, `[data-jelly-scope="off"]` subtree | no                    | none            | none               | —           | —               |
-| native-material route (`/games*`, `/tf2*`)                          | no                    | none            | none               | —           | own scheme      |
+| native-material route (`/games*`, `/tf2*`, `/rmhmusic*`)            | no                    | none            | none               | —           | own scheme      |
+
+The native-material routes are listed once, in `lib/native-material-routes.ts`. RMH Music (`/rmhmusic*`, a notebook of manuscript paper) joined them in 2026-11: no arcs, soft body or woken haze. The floor, coat and rim of the shared roles it still wears (Button, Dialog, LiquidTabs) are not scoped to `html.native-material`, so `components/rmhmusic/rmhmusic.css` sets their knobs (`--app-gel-*`, `--liquid-coat`, `--jelly-tile`, `--gel-well-shade`) to nothing.
 
 Per-element opt-outs (`OPT_OUT_SELECTOR`): `data-jelly="off"` and the accepted aliases `data-liquid-material="off"`,
 `data-liquid-glass="off"`, `data-liquid-motion="off"`, `data-fluid-press="off|none"`; `data-jelly-flow="off"` also

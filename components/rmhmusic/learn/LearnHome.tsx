@@ -167,8 +167,6 @@ export function LearnHome() {
             ref={setupButton}
             type="button"
             onClick={() => onSetupChange(true)}
-            // Ink on the page, not a slab: no jelly body behind it.
-            data-liquid-material="off"
             className={`${TEXT_BUTTON} ${INPUT_BUTTON}`}
           >
             <span className="truncate">{t('setup-input', { defaultValue: 'Set up input' })}</span>

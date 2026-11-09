@@ -13,8 +13,10 @@
  * thin strip above the keys, never on the keys themselves — move the window an octave at a time;
  * no key is reachable only by scrolling. Keys out of view are taken out of the tab order.
  *
- * The keys are a play-field (`data-jelly-zone="playfield"`): no jelly body or arcs on them, and
- * `touch-action: none` so a press is never taken for a scroll.
+ * The keys are a play-field (`data-jelly-zone="playfield"`) and `touch-action: none`, so a press is
+ * never taken for a scroll. The route is native-material (no arcs, no soft body), so the marker is
+ * belt and braces: a key press is latency-critical input and must never reach a jelly service,
+ * even in the frame before `html.native-material` is stamped on a client navigation.
  */
 
 import { memo, useEffect, useRef, useState } from 'react';

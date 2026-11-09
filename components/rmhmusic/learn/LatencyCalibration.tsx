@@ -161,7 +161,7 @@ export function LatencyCalibration({ onDone }: { onDone: () => void }) {
 
       <button
         type="button"
-        className="glass-inset flex min-h-28 w-full items-center justify-center rounded-(--app-radius) text-lg font-semibold text-(--app-text) select-none"
+        className="glass-inset flex min-h-28 w-full items-center justify-center rounded-(--app-radius) border border-(--app-border-bright) text-lg font-semibold text-(--app-text) select-none"
         style={{ touchAction: 'none' }}
         onPointerDown={(e) => {
           e.preventDefault();
