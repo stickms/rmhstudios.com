@@ -19,7 +19,7 @@ No official Valve / Counter-Strike / Half-Life / Portal files are used in the ca
 | nightrail | Michroma, Jost | as above | Neon glow |
 | portal | Jost | jost/Jost[wght].ttf | "O" replaced with a drawn blue portal ring |
 | rmhbox | Titan One, Fredoka | titanone/TitanOne-Regular.ttf, fredoka/Fredoka[wdth,wght].ttf | Two-colour wordmark, stroke |
-| rmhmusic (2026-11-08) | Great Vibes, Cormorant Garamond (upright and Italic), IBM Plex Mono | greatvibes/GreatVibes-Regular.ttf, cormorantgaramond/CormorantGaramond[wght].ttf, cormorantgaramond/CormorantGaramond-Italic[wght].ttf, ibmplexmono/IBMPlexMono-Medium.ttf | Wordmark fitted to width, thickened with a hairline ink stroke, cream halo on the logo; treble clef, notes and "4" drawn as paths, not glyphs. Generator: `scripts/game-art/rmhmusic.mjs` |
+| rmhmusic (2026-11-08) | Cormorant Garamond (upright and Italic), IBM Plex Mono | cormorantgaramond/CormorantGaramond[wght].ttf, cormorantgaramond/CormorantGaramond-Italic[wght].ttf, ibmplexmono/IBMPlexMono-Medium.ttf | Wordmark in Cormorant Garamond bold italic fitted to width, cream halo on the logo; treble clef, notes and "4" drawn as paths, not glyphs. Generator: `scripts/game-art/rmhmusic.mjs` |
 | slice-it | Archivo, Bodoni Moda, IBM Plex Mono | archivo/Archivo[wdth,wght].ttf, bodonimoda/BodoniModa-Italic[wght].ttf | "SLICE" cut on a diagonal in Archivo (width 125, weight 900) with a Bodoni Moda italic "it!"; outlines converted to paths (`public/images/games/logos/slice-it.svg`) |
 | synapse-storm | Exo 2 (Italic), Jost, Orbitron | orbitron/Orbitron[wght].ttf | Neon glow |
 | temple-of-joy | Cinzel, Jost | cinzel/Cinzel[wght].ttf | Gold gradient, stroke, shadow |
@@ -811,9 +811,9 @@ deterministic: re-running the script reproduces the same files.
 
 | Asset | Font(s) used (Google Fonts, OFL 1.1) | Source path (google/fonts `ofl/`) | Changes |
 |---|---|---|---|
-| card (`rmhmusic.webp`) | Great Vibes, Cormorant Garamond (upright and Italic), IBM Plex Mono | greatvibes/GreatVibes-Regular.ttf, cormorantgaramond/CormorantGaramond[wght].ttf, cormorantgaramond/CormorantGaramond-Italic[wght].ttf, ibmplexmono/IBMPlexMono-Medium.ttf | Wordmark fitted to width and thickened with a hairline ink stroke; Cormorant for the tagline and the pen annotations; Plex Mono for fingerings and string names |
+| card (`rmhmusic.webp`) | Cormorant Garamond (upright and Italic), IBM Plex Mono | cormorantgaramond/CormorantGaramond[wght].ttf, cormorantgaramond/CormorantGaramond-Italic[wght].ttf, ibmplexmono/IBMPlexMono-Medium.ttf | Wordmark (bold italic) fitted to width; Cormorant for the tagline and the pen annotations; Plex Mono for fingerings and string names |
 | banner (`banners/rmhmusic.webp`) | Cormorant Garamond (upright and Italic), IBM Plex Mono | as above | Text-free apart from note names, fingerings and the "piano" / "guitar" labels |
-| logo (`logos/rmhmusic.webp`) | Great Vibes | greatvibes/GreatVibes-Regular.ttf | Navy ink with a cream halo round the lettering and the indigo swash, so it reads on dark and light grounds; transparent background |
+| logo (`logos/rmhmusic.webp`) | Cormorant Garamond Italic | cormorantgaramond/CormorantGaramond-Italic[wght].ttf | Navy ink with a cream halo round the lettering and the indigo swash, so it reads on dark and light grounds; transparent background |
 | icon (`icons/rmhmusic.webp`) | none | — | Treble clef and two beamed eighth notes on a cream page in a navy frame |
 
 The fonts are the self-hosted copies in `components/shared/game-fonts/` (woff2 with their `OFL.txt`; see "Logos,

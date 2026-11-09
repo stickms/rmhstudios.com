@@ -13,7 +13,7 @@
  * and a guitar chord box, all showing C major. Everything is original vector artwork drawn here as
  * SVG; the treble clef, noteheads, time signature and instruments are geometry, not font glyphs.
  * The only third-party inputs are the bundled OFL fonts in components/shared/game-fonts/
- * (Great Vibes for the wordmark, Cormorant Garamond for the pen annotations and tagline, IBM Plex
+ * (Cormorant Garamond for the wordmark, the pen annotations and the tagline, IBM Plex
  * Mono for string names). See docs/game-art-credits.md.
  *
  * Pipeline: SVG → an HTML page in a temp dir (fonts via file:// URLs) → headless Chromium
@@ -61,6 +61,9 @@ const FONT_CSS = `
 @font-face{font-family:'Cormorant Garamond';src:url('${fontUrl('CormorantGaramond/CormorantGaramond-Variable.woff2')}') format('woff2');font-weight:300 700;font-style:normal}
 @font-face{font-family:'Cormorant Garamond';src:url('${fontUrl('CormorantGaramond/CormorantGaramond-Italic-Variable.woff2')}') format('woff2');font-weight:300 700;font-style:italic}
 @font-face{font-family:'IBM Plex Mono';src:url('${fontUrl('IBMPlexMono/IBMPlexMono-Medium.woff2')}') format('woff2');font-weight:500}
+@font-face{font-family:'Bodoni Moda';src:url('${fontUrl('BodoniModa/BodoniModa-Italic-wght.woff2')}') format('woff2');font-weight:400 900;font-style:italic}
+@font-face{font-family:'Cinzel';src:url('${fontUrl('Cinzel/Cinzel-Variable.woff2')}') format('woff2');font-weight:400 900;font-style:normal}
+@font-face{font-family:'Jost';src:url('${fontUrl('Jost/Jost-Variable.woff2')}') format('woff2');font-weight:100 900;font-style:normal}
 `;
 const FONT_CHECKS = [
   "400 40px 'Great Vibes'",
@@ -411,24 +414,53 @@ const finger = (x, y, size, text, color = C.inkMuted) =>
   `<text x="${f(x)}" y="${f(y)}" text-anchor="middle" font-family="IBM Plex Mono" font-weight="500" font-size="${f(size)}" fill="${color}">${text}</text>`;
 
 /**
- * Ink metrics of the wordmark in Great Vibes at 1px, measured in Chromium before drawing (see
- * main), so the script lettering can be fitted to a width and the swash hung under its real ink.
+ * Ink metrics of the wordmark at 1px, measured in Chromium before drawing (see main), so the
+ * lettering can be fitted to a width and the swash hung under its real ink.
  */
 const WORD = 'RMH Music';
 let WM = { left: 0, right: 0, ascent: 0, descent: 0 };
 
 /**
- * Great Vibes' capital H is a wide, looped letter: set in one run it dwarfs the R and M and its
- * left loop crowds the M. So the word is laid out piece by piece — each piece's advance and ink
- * measured in Chromium — with the H narrowed horizontally and the joins spaced by hand (em/1000
- * of the font size). `sx` scales a piece about its pen origin; `gap` follows it.
+ * The wordmark's typeface, picked with `--wordmark-font <key>` (default below). Every entry is a
+ * bundled OFL face from components/shared/game-fonts/. `pieces` is the word laid out piece by
+ * piece — each piece's advance and ink measured in Chromium — so a face with one awkward capital
+ * can be corrected by hand: `sx` scales a piece horizontally about its pen origin and `gap`
+ * (em/1000) follows it. Great Vibes' looped capital H is wide enough to dwarf the R and M and
+ * crowd the M, so it is narrowed and the word space is set by hand; the other faces set the word
+ * as one run. `swashDrop` (em) hangs the swash under the baseline for the upright faces, whose
+ * letters it would otherwise cut through (a script's long descenders hide it). `stroke` is a hairline of ink round the fill (em), which gives a thin script a
+ * fountain pen's weight.
  */
-const PIECES_OF_WORD = [
-  { text: 'R', sx: 1, gap: 20 },
-  { text: 'M', sx: 1, gap: 30 },
-  { text: 'H', sx: 0.8, gap: 170 },
-  { text: 'Music', sx: 1, gap: 0 },
-];
+const WORDMARKS = {
+  'great-vibes': {
+    family: 'Great Vibes',
+    weight: 400,
+    style: 'normal',
+    stroke: 0.012,
+    swashDrop: 0,
+    pieces: [
+      { text: 'R', sx: 1, gap: 20 },
+      { text: 'M', sx: 1, gap: 30 },
+      { text: 'H', sx: 0.8, gap: 170 },
+      { text: 'Music', sx: 1, gap: 0 },
+    ],
+  },
+  cormorant: {
+    family: 'Cormorant Garamond',
+    weight: 700,
+    style: 'italic',
+    stroke: 0.004,
+    swashDrop: 0.1,
+  },
+  bodoni: { family: 'Bodoni Moda', weight: 700, style: 'italic', stroke: 0, swashDrop: 0.1 },
+  cinzel: { family: 'Cinzel', weight: 700, style: 'normal', stroke: 0, swashDrop: 0.1 },
+  jost: { family: 'Jost', weight: 600, style: 'normal', stroke: 0, swashDrop: 0.1 },
+};
+const WORDMARK_FONT = arg('--wordmark-font') ?? 'cormorant';
+if (!WORDMARKS[WORDMARK_FONT]) throw new Error(`unknown wordmark font: ${WORDMARK_FONT}`);
+const WORDMARK = WORDMARKS[WORDMARK_FONT];
+const PIECES_OF_WORD = WORDMARK.pieces ?? [{ text: WORD, sx: 1, gap: 0 }];
+const wordmarkFont = (px) => `${WORDMARK.style} ${WORDMARK.weight} ${px}px '${WORDMARK.family}'`;
 /** Filled by main(): [{ text, x, sx }] in em, plus the ink box. */
 let LAYOUT = [];
 
@@ -463,10 +495,9 @@ function wordmark(cx, y, width, { halo = 0 } = {}) {
         p.sx === 1
           ? ''
           : ` transform="translate(${f(px)} 0) scale(${p.sx} 1) translate(${f(-px)} 0)"`;
-      return `<text x="${f(px)}" y="${f(y)}"${tf} font-family="Great Vibes" font-size="${f(size)}" ${extra}>${p.text}</text>`;
+      return `<text x="${f(px)}" y="${f(y)}"${tf} font-family="${WORDMARK.family}" font-weight="${WORDMARK.weight}" font-style="${WORDMARK.style}" font-size="${f(size)}" ${extra}>${p.text}</text>`;
     }).join('');
-  // A hairline of ink round the fill gives the thin script a fountain pen's weight.
-  const weight = size * 0.012;
+  const weight = size * WORDMARK.stroke;
   const haloSvg = halo
     ? t(
         `fill="${C.sheet}" stroke="${C.sheet}" stroke-width="${f(halo + weight)}" stroke-linejoin="round"`,
@@ -484,6 +515,8 @@ function wordmark(cx, y, width, { halo = 0 } = {}) {
     x2: cx + width / 2,
     top: y - WM.ascent * size,
     bottom: y + WM.descent * size,
+    /** How far the swash hangs below where a script's descenders would hide it. */
+    drop: WORDMARK.swashDrop * size,
   };
 }
 
@@ -525,7 +558,7 @@ function cardSvg() {
   ${manuscript(M, W, 110, band[0], 24, 110)}
   ${manuscript(M, W, band[1] + 70, H - 60, 24, 110)}
   <rect x="${M - 1.5}" y="0" width="3" height="${H}" fill="${C.margin}" opacity="0.85"/>
-  ${swash(wm.x1 + 70, wm.bottom + 4, wm.x2 - 30, wm.bottom - 10, 18, 12)}
+  ${swash(wm.x1 + 70, wm.bottom + 4 + wm.drop, wm.x2 - 30, wm.bottom - 10 + wm.drop, 18, 12)}
   ${wm.svg}
   ${pen(W / 2 + M / 2 - 10, wm.bottom + 150, 100, 'Learn piano &amp; guitar', { color: C.ink, italic: false, weight: 600 })}
   ${staffLines(xs, xe, y0, s, C.staffInk, 3.4)}
@@ -585,12 +618,13 @@ function logoSvg() {
   const H = 270;
   const wm = wordmark(W / 2, 0, W - 60, { halo: 16 });
   // Centre the ink box vertically: shift the whole group so top/bottom sit inside the canvas.
-  const dy = (H - (wm.bottom - wm.top)) / 2 - wm.top;
+  const sy = wm.bottom - 22 + wm.drop; // the swash's left end; its underside is ~14px lower
+  const dy = (H - (Math.max(wm.bottom, sy + 14) - wm.top)) / 2 - wm.top;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <g transform="translate(0 ${f(dy)})">
     ${wm.halo}
-    ${swashHalo(wm.x1 + 60, wm.bottom - 22, wm.x2 - 40, wm.bottom - 34, 14, 12, 14)}
-    ${swash(wm.x1 + 60, wm.bottom - 22, wm.x2 - 40, wm.bottom - 34, 14, 12)}
+    ${swashHalo(wm.x1 + 60, sy, wm.x2 - 40, sy - 12, 14, 12, 14)}
+    ${swash(wm.x1 + 60, sy, wm.x2 - 40, sy - 12, 14, 12)}
     ${wm.ink}
   </g>
 </svg>`;
@@ -625,7 +659,7 @@ function arg(name) {
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
-/** The wordmark's ink box in Great Vibes, per 1px of font size. */
+/** The wordmark's ink box in the chosen typeface, per 1px of font size. */
 async function measureWordmark(browser, tmp) {
   const file = join(tmp, 'measure.html');
   writeFileSync(
@@ -635,10 +669,10 @@ async function measureWordmark(browser, tmp) {
   const page = await browser.newPage();
   await page.goto(pathToFileURL(file).href);
   const m = await page.evaluate(
-    async ({ word, pieces }) => {
-      await document.fonts.load("400 1000px 'Great Vibes'");
+    async ({ word, pieces, font }) => {
+      await document.fonts.load(font);
       const ctx = document.createElement('canvas').getContext('2d');
-      ctx.font = "400 1000px 'Great Vibes'";
+      ctx.font = font;
       const t = ctx.measureText(word);
       return {
         ascent: t.actualBoundingBoxAscent / 1000,
@@ -653,7 +687,7 @@ async function measureWordmark(browser, tmp) {
         }),
       };
     },
-    { word: WORD, pieces: PIECES_OF_WORD.map((p) => p.text) },
+    { word: WORD, pieces: PIECES_OF_WORD.map((p) => p.text), font: wordmarkFont(1000) },
   );
   await page.close();
   const ink = layoutWord(m.pieces);
@@ -687,12 +721,12 @@ async function main() {
       // Load every face up front (a face is otherwise only fetched once text uses it), then check.
       await page.evaluate(
         (checks) => Promise.all(checks.map((c) => document.fonts.load(c))),
-        FONT_CHECKS,
+        [...FONT_CHECKS, wordmarkFont(40)],
       );
       await page.evaluate(() => document.fonts.ready);
       const missing = await page.evaluate(
         (checks) => checks.filter((c) => !document.fonts.check(c)),
-        FONT_CHECKS,
+        [...FONT_CHECKS, wordmarkFont(40)],
       );
       if (missing.length) throw new Error(`fonts not loaded: ${missing.join(', ')}`);
       const png = await page.screenshot({ omitBackground: p.alpha, fullPage: false });
