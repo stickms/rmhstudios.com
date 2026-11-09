@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CARD_LOW_MIN_STEP, CARD_MAX_STEP } from '../staff-card-layout';
+import { CARD_MAX_STEP, CARD_MIN_STEP } from '../staff-card-layout';
 import { clefStep } from '../theory/clef';
 import { createRunner } from './runner';
 import { targetStaff } from './find-note';
@@ -295,13 +295,13 @@ describe('matchNotePool', () => {
     expect(matchNotePool('anything-else')).toEqual([60, 62, 64, 65, 67]);
   });
 
-  it('every target fits the low staff card on both instruments without clamping', () => {
+  it('every target fits the decks staff card (two ledger lines each way) on both instruments', () => {
     for (const id of ['match-c', 'match-white-keys']) {
       for (const instrument of ['piano', 'guitar'] as const) {
         for (const midi of matchNotePool(id)) {
           const staff = targetStaff(midi, instrument);
           const s = clefStep(staff.clef, staff.midi);
-          expect(s, `${id} ${instrument} ${midi}`).toBeGreaterThanOrEqual(CARD_LOW_MIN_STEP);
+          expect(s, `${id} ${instrument} ${midi}`).toBeGreaterThanOrEqual(CARD_MIN_STEP);
           expect(s, `${id} ${instrument} ${midi}`).toBeLessThanOrEqual(CARD_MAX_STEP);
         }
       }

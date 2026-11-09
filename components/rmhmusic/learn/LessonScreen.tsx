@@ -4,7 +4,7 @@
  * LessonScreen — the page around one lesson (`/rmhmusic/lesson/<id>`): a way
  * back to the path, "Change input", and the lesson's activity, chosen by its mode
  * (`play-note` → FirstNoteLesson, `staff-flashcards` → FlashcardLesson with the lesson's deck,
- * `keyboard-map` and `fretboard` → FindNoteLesson), each behind a placeholder of exactly its own
+ * `keyboard-map` and `fretboard` → FindNoteLesson, `match-note` → MatchNoteLesson), each behind a placeholder of exactly its own
  * boxes. An unknown id,
  * or a lesson that has not shipped yet, gets a friendly "not available yet"
  * page with a link home — never a crash or a blank. A document (`.app-page`).
@@ -23,6 +23,7 @@ import { FirstNoteLesson } from './FirstNoteLesson';
 import { FindNoteLesson, FindNoteStaffBox } from './FindNoteLesson';
 import { FlashcardLesson } from './FlashcardLesson';
 import { InputSetup } from './InputSetup';
+import { MatchNoteLesson, MatchStaffBox } from './MatchNoteLesson';
 import { ModeToggle } from './ModeToggle';
 import { STAFF_BOX } from './StaffCard';
 import { useInputRelease } from './useLearnInput';
@@ -32,6 +33,7 @@ function isPlayable(lesson: Lesson | undefined): lesson is Lesson {
   if (!lesson?.available) return false;
   if (lesson.mode === 'play-note') return true;
   if (lesson.mode === 'keyboard-map' || lesson.mode === 'fretboard') return true;
+  if (lesson.mode === 'match-note') return true;
   return lesson.mode === 'staff-flashcards' && !!lesson.deck && lesson.deck in DECKS;
 }
 
@@ -175,6 +177,34 @@ function FindNoteSkeleton() {
   );
 }
 
+/**
+ * The pitch match's placeholder: its boxes exactly — the target's sheet (title line, the staff card,
+ * the Hear-it row, the sentence line), then the keys and the input line
+ * (`.rmm-match__answers`).
+ */
+function MatchNoteSkeleton() {
+  return (
+    <div aria-hidden="true" className="rmm-match space-y-4">
+      <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
+        <div className="h-8">
+          <div className="app-skeleton mx-auto h-8 w-40" />
+        </div>
+        <MatchStaffBox skeleton />
+        <div className="h-11" />
+        <div className="flex h-11 items-center">
+          <div className="app-skeleton h-5 w-56 max-w-full" />
+        </div>
+      </section>
+      <div className="rmm-match__answers">
+        <div className="rmm-input-region">
+          <div className="app-skeleton h-full w-full" />
+        </div>
+        <div className="rmm-find__device" />
+      </div>
+    </div>
+  );
+}
+
 export function LessonScreen({ lessonId }: { lessonId: string }) {
   const { t } = useTranslation('c-rmhmusic');
   const status = useLearnStore((s) => s.status);
@@ -222,6 +252,8 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
         <FlashcardLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : lesson.mode === 'keyboard-map' || lesson.mode === 'fretboard' ? (
         <FindNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
+      ) : lesson.mode === 'match-note' ? (
+        <MatchNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : (
         <FirstNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       );
@@ -265,6 +297,8 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
         <FlashcardSkeleton />
       ) : lesson.mode === 'keyboard-map' || lesson.mode === 'fretboard' ? (
         <FindNoteSkeleton />
+      ) : lesson.mode === 'match-note' ? (
+        <MatchNoteSkeleton />
       ) : (
         <LessonSkeleton />
       );

@@ -26,7 +26,7 @@ describe('learning path', () => {
     expect(getLesson('play-first-note')?.mode).toBe('play-note');
     expect(getLesson('nope')).toBeUndefined();
   });
-  it('ships the first-note lesson, the three staff-reading lessons and the two note finders', () => {
+  it('ships the first-note lesson, the staff-reading lessons, the note finders and the pitch match', () => {
     const available = lessons.filter((l) => l.available);
     expect(available.map((l) => l.id)).toEqual([
       'staff-what-is-a-staff',
@@ -35,10 +35,27 @@ describe('learning path', () => {
       'keys-layout-and-strings',
       'fretboard-first-frets',
       'play-first-note',
+      'match-c',
+      'match-white-keys',
     ]);
     expect(getLesson('keys-layout-and-strings')?.mode).toBe('keyboard-map');
     expect(getLesson('fretboard-first-frets')?.mode).toBe('fretboard');
     expect(getLesson('fretboard-first-frets')?.unit).toBe('meet-staff-and-keys');
+    expect(getLesson('match-c')?.mode).toBe('match-note');
+    expect(getLesson('match-white-keys')?.mode).toBe('match-note');
+    expect(getLesson('match-c')?.unit).toBe('play-it-back');
+  });
+  it('wires every available lesson to an activity the lesson screen runs', () => {
+    const handled = new Set([
+      'play-note',
+      'staff-flashcards',
+      'keyboard-map',
+      'fretboard',
+      'match-note',
+    ]);
+    for (const l of lessons.filter((x) => x.available)) {
+      expect(handled.has(l.mode), `${l.id} (${l.mode})`).toBe(true);
+    }
   });
   it('names an existing deck for every staff-flashcards lesson', () => {
     const flash = lessons.filter((l) => l.mode === 'staff-flashcards');

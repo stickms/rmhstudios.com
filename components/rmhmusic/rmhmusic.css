@@ -626,6 +626,24 @@
   flex: none;
   height: 2.75rem;
 }
+/* ── The pitch match (MatchNoteLesson.tsx, LessonScreen's MatchNoteSkeleton) ──────────
+   Below the target's sheet: the on-screen keys (`.rmm-input-region`, the first lesson's box), then
+   one line for the input. Fixed, and the same in the placeholder; the result takes both. */
+.rmm-match__answers {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: calc(2.75rem + 0.5rem + 10rem + 1rem + 2.75rem);
+}
+@media (min-width: 640px) {
+  .rmm-match__answers {
+    height: calc(2.75rem + 0.5rem + 12rem + 1rem + 2.75rem);
+  }
+}
+.rmm-match__answers > .rmm-input-region {
+  flex: none;
+}
+
 /* The octave bar (2.75rem) and its gap (0.5rem) above the keys. */
 .rmm-keys__bed--tall {
   height: calc(var(--rmm-board-h, 17.75rem) - 3.25rem);

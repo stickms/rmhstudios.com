@@ -9,7 +9,7 @@
  */
 
 export type LessonMode =
-  'staff-flashcards' | 'keyboard-map' | 'fretboard' | 'rhythm-basics' | 'play-note';
+  'staff-flashcards' | 'keyboard-map' | 'fretboard' | 'rhythm-basics' | 'play-note' | 'match-note';
 
 export interface Lesson {
   id: string;
@@ -84,6 +84,28 @@ export const PATH: Unit[] = [
         title: 'First note played',
         summary: 'Play your first note on your own instrument.',
         mode: 'play-note',
+        available: true,
+      },
+    ],
+  },
+  {
+    id: 'play-it-back',
+    title: 'Play it back',
+    lessons: [
+      {
+        id: 'match-c',
+        unit: 'play-it-back',
+        title: 'Match middle C',
+        summary: 'Play the note you see, from middle C up to G. Hear it first if you like.',
+        mode: 'match-note',
+        available: true,
+      },
+      {
+        id: 'match-white-keys',
+        unit: 'play-it-back',
+        title: 'Match white keys',
+        summary: 'Play the natural notes from middle C up to the next C.',
+        mode: 'match-note',
         available: true,
       },
     ],

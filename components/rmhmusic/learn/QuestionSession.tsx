@@ -42,8 +42,13 @@ export interface AnsweredQuestion<C> {
   right: boolean;
 }
 
-export interface QuestionSession<C, A> {
-  lesson: SessionState<C, A>;
+export interface QuestionSession<
+  C,
+  A,
+  S extends SessionState<C, A> = SessionState<C, A>,
+  X = never,
+> {
+  lesson: S;
   /** The question on screen, or once the session is over the last one answered. */
   card: C | null;
   /** Whether that last question was right (meaningful once the session is over). */
@@ -54,6 +59,8 @@ export interface QuestionSession<C, A> {
   answer: (a: A) => void;
   next: () => void;
   retry: () => void;
+  /** Send one of the machine's own events (the pitch match's `hear`). */
+  send: (e: X) => void;
   /** True once the learner has moved on by Next or Retry: only then is a new question announced. */
   announce: boolean;
   nextButton: RefObject<HTMLButtonElement | null>;
@@ -63,22 +70,38 @@ export interface QuestionSession<C, A> {
   answersBox: RefObject<HTMLDivElement | null>;
 }
 
-export function useQuestionSession<C, A>({
+/**
+ * `S`, `X` and `F` let a machine whose states extend the session's (the pitch match: tries and
+ * points) add its own events (`X`, sent with `send`) and effects (`F`, handed to `onEffect`); the
+ * defaults are the plain session machine.
+ */
+export function useQuestionSession<
+  C,
+  A,
+  S extends SessionState<C, A> = SessionState<C, A>,
+  X = never,
+  F extends { type: string } = never,
+>({
   machine: makeMachine,
   save,
   paused,
   focusFirst = 'button',
+  onEffect,
 }: {
   /** Called once, on mount. */
-  machine: () => Machine<SessionState<C, A>, SessionEvent<A>, SessionEffect>;
+  machine: () => Machine<S, SessionEvent<A> | X, SessionEffect | F>;
   save: (fx: SessionEffect, answered: readonly AnsweredQuestion<C>[]) => Promise<CompleteOutcome>;
   paused: boolean;
   /** The control inside `answerGroup` that takes focus after Next. */
   focusFirst?: string;
-}): QuestionSession<C, A> {
+  /** Carries out the machine's own effects (anything but `complete`). */
+  onEffect?: (fx: F) => void;
+}): QuestionSession<C, A, S, X> {
   const hub = useLearnStore((s) => s.hub);
   const [machine] = useState(makeMachine);
-  const [lesson, send] = useMachine(machine);
+  const [state, send] = useMachine(machine);
+  // Read through the session's own union, which `S` extends, so the checks below narrow it.
+  const lesson: SessionState<C, A> = state;
   // Every question's result by its index, written on Next (once per question: the machine leaves
   // `feedback` on the first Next, and a repeat rewrites the same slot).
   const answered = useRef<AnsweredQuestion<C>[]>([]);
@@ -89,8 +112,12 @@ export function useQuestionSession<C, A>({
   const answersBox = useRef<HTMLDivElement>(null);
   const movedOn = useRef(false);
 
-  const perform = (effects: SessionEffect[]) => {
+  const perform = (effects: (SessionEffect | F)[]) => {
     for (const fx of effects) {
+      if (!isComplete(fx)) {
+        onEffect?.(fx);
+        continue;
+      }
       // The session is over: the result needs no microphone.
       if (hub) releaseMic(hub);
       void save(fx, answered.current.filter(Boolean)).then((outcome) =>
@@ -118,6 +145,11 @@ export function useQuestionSession<C, A>({
   const retry = () => {
     setAnnounce(true);
     perform(send({ type: 'retry' }));
+  };
+
+  const sendOwn = (e: X) => {
+    if (paused) return;
+    perform(send(e));
   };
 
   // Next is inert and hidden in the same commit that leaves `feedback`, but the browser has not yet
@@ -152,7 +184,7 @@ export function useQuestionSession<C, A>({
 
   const inSession = lesson.kind === 'asking' || lesson.kind === 'feedback';
   return {
-    lesson,
+    lesson: state,
     card: inSession ? (lesson.cards[lesson.index] ?? null) : (last?.card ?? null),
     lastRight: last?.right ?? false,
     inSession,
@@ -160,11 +192,16 @@ export function useQuestionSession<C, A>({
     answer,
     next,
     retry,
+    send: sendOwn,
     announce,
     nextButton,
     answerGroup,
     answersBox,
   };
+}
+
+function isComplete<F extends { type: string }>(fx: SessionEffect | F): fx is SessionEffect {
+  return fx.type === 'complete';
 }
 
 /** The question's state as its staff card shows it. */

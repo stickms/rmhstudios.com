@@ -80,8 +80,8 @@ export type State =
       right: boolean;
       /** The best try's points. */
       best: number;
-      /** The last try. */
-      answer: Try;
+      /** The note of the last try (as `SessionState` keeps the answer). */
+      answer: Played;
     }
   | { kind: 'saving'; correct: number; total: number; score: number; attempt: number }
   | { kind: 'saved'; correct: number; total: number; score: number; stars: Stars }
@@ -144,7 +144,7 @@ export function step(s: State, e: Event): { state: State; effects: Effect[] } {
           tries,
           right,
           best,
-          answer: attempt,
+          answer: note,
         },
         effects: [],
       };

@@ -336,7 +336,7 @@ export function FindNoteStaffBox({ skeleton = false }: { skeleton?: boolean }) {
  * The line under the board: what is being listened to, or a button that starts the mic or MIDI
  * (a click, which iOS needs to grant them). Nothing for the on-screen keys: the board is the input.
  */
-function DeviceLine({
+export function DeviceLine({
   input,
   phase,
 }: {
