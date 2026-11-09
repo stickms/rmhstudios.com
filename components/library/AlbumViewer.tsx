@@ -37,6 +37,7 @@ import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { CaptionFileButton } from '@/components/access/CaptionFileButton';
 import './album-viewer.css';
+import { clamp } from '@/lib/core/math';
 
 const MAX_SCALE = 6;
 const SWIPE_THRESHOLD = 60; // px before a horizontal drag counts as a swipe
@@ -50,8 +51,6 @@ function shuffledOrder(n: number): number[] {
   }
   return order;
 }
-
-const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
 
 export function AlbumViewer({ album }: { album: Album }) {
   const { t } = useTranslation('library');

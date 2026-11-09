@@ -54,6 +54,7 @@ import type {
     Vec2,
     BossState,
 } from '../types';
+import { clamp } from '@/lib/core/math';
 
 export type SimEventKind =
     | 'graze'
@@ -756,9 +757,6 @@ function spawnPlayerShots(w: World, p: PlayerShip, dmg: number, tier: number): v
     }
 }
 
-function clamp(v: number, lo: number, hi: number): number {
-    return v < lo ? lo : v > hi ? hi : v;
-}
 function angDiff(a: number, b: number): number {
     let d = a - b;
     while (d > Math.PI) d -= TAU;

@@ -22,6 +22,7 @@ import { cameraRelativeMove, createRuntime } from '@/lib/hearthworks/runtime';
 import { runtime } from '@/lib/hearthworks/runtime-instance';
 import { hearthworksStore } from '@/lib/hearthworks/store';
 import { interactAt, tileInFront } from '@/lib/hearthworks/tools';
+import { clamp } from '@/lib/core/math';
 
 const MIN_DISTANCE = 40;
 const MAX_DISTANCE = 330;
@@ -32,7 +33,6 @@ const ISO_ELEVATION_SIN = 19 / Math.hypot(22, 19, 22);
 const POINTER_SLOP = 6;
 const MOVE_SYNC_MS = 100;
 
-const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 const isTyping = (t: EventTarget | null) =>
   t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
 

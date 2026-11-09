@@ -16,6 +16,7 @@ import {
   laneCenter, laneAt, roadHalf, LANE_WIDTH,
 } from './constants';
 import { SeededRNG } from './rng';
+import { clamp } from '@/lib/core/math';
 
 /** Paint jobs handed out to traffic so the road isn't monochrome. */
 const TRAFFIC_PAINT = [
@@ -24,12 +25,9 @@ const TRAFFIC_PAINT = [
 ];
 const TRUCK_PAINT = ['#aaaacc', '#8f9aa8', '#c2b48a', '#7a8fa6'];
 
+// eslint-disable-next-line no-restricted-syntax -- lerp clamps t to <= 1
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * Math.min(t, 1);
-}
-
-function clamp(v: number, min: number, max: number): number {
-  return v < min ? min : v > max ? max : v;
 }
 
 /**

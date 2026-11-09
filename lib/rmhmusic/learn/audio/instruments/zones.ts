@@ -7,6 +7,7 @@ import type { Zone } from './types';
 /** The velocity a tap sends when nothing says otherwise. */
 export const DEFAULT_VELOCITY = 0.8;
 
+// eslint-disable-next-line no-restricted-syntax -- clamp01 with a 0.05 floor and a non-finite default
 const clamp01 = (v: number): number =>
   Number.isFinite(v) ? Math.min(1, Math.max(0.05, v)) : DEFAULT_VELOCITY;
 

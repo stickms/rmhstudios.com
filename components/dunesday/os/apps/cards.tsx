@@ -29,6 +29,8 @@ import { PopupMenu, type MenuItem } from '../Menu';
 import { useOs } from '../store';
 import { sfx } from '../../sound';
 import './cards.css';
+import { formatClockSeconds } from '@/lib/core/format';
+import { shuffle } from '@/lib/core/rng';
 
 /* ------------------------------------------------------------------ model */
 
@@ -52,15 +54,8 @@ export function topOf<T>(pile: T[]): T | undefined {
   return pile[pile.length - 1];
 }
 
-/** Fisher–Yates; returns a new array. */
-export function shuffle<T>(list: T[]): T[] {
-  const a = list.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
+/** Fisher–Yates; returns a new array (the shared implementation, re-exported for the apps). */
+export { shuffle };
 
 /** `copies` × (every suit in `suits` × 13 ranks), all face down, ids 0…n-1. */
 export function makeDeck(suits: Suit[], copies: number): Card[] {
@@ -637,11 +632,7 @@ export function useAnnouncer() {
   return [msg, announce] as const;
 }
 
-export function formatTime(sec: number): string {
-  const s = Math.max(0, Math.floor(sec));
-  const m = Math.floor(s / 60);
-  return `${m}:${String(s % 60).padStart(2, '0')}`;
-}
+export { formatClockSeconds as formatTime };
 
 /* ----------------------------------------------------------------- chrome */
 

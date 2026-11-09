@@ -25,6 +25,7 @@ import {
   BEATS, IMPACT_DELAY, J, LOOP_SECONDS, POSES, createFighterSample, sampleFighter, sparkSpot, standingX,
   type FighterSample,
 } from './choreography';
+import { clamp01 } from '@/lib/core/math';
 
 const pack = (r: number, g: number, b: number): number => ((0xff << 24) | (b << 16) | (g << 8) | r) >>> 0;
 const hex = (h: string): number => pack(parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16));
@@ -68,7 +69,6 @@ function hash01(n: number): number {
 const hash2 = (a: number, b: number): number => hash01(Math.imul(a | 0, 0x9e3779b1) ^ Math.imul(b | 0, 0x85ebca6b));
 
 const frac = (v: number): number => v - Math.floor(v);
-const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 function mix(a: number, b: number, t: number): number {
   const r = (a & 255) + ((b & 255) - (a & 255)) * t;

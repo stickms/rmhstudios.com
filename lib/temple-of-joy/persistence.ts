@@ -161,6 +161,7 @@ function num(v: unknown): number {
   return typeof v === 'number' && Number.isFinite(v) ? v : 0;
 }
 
+// eslint-disable-next-line no-restricted-syntax -- clamp01 coerces through num() first
 function clamp01(v: number): number {
   return Math.max(0, Math.min(1, num(v)));
 }

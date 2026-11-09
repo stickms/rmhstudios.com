@@ -9,6 +9,7 @@
 
 import type { GridShape } from './shapes';
 import { isActiveCell } from './shapes';
+import { shuffle } from '@/lib/core/rng';
 
 export type Grid = boolean[][];
 
@@ -129,14 +130,6 @@ export function getOptimalMoves(grid: Grid, shape: GridShape): number | null {
 /**
  * Fisher-Yates shuffle using seeded RNG
  */
-function shuffle<T>(arr: T[], random: () => number): T[] {
-    const out = [...arr];
-    for (let i = out.length - 1; i > 0; i--) {
-        const j = Math.floor(random() * (i + 1));
-        [out[i], out[j]] = [out[j], out[i]];
-    }
-    return out;
-}
 
 /**
  * Generate a solvable puzzle by selecting UNIQUE random cells to toggle.

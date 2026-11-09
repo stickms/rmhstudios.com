@@ -38,6 +38,7 @@ const PEAK_PRECISION = 2;
  * it clamps to 1 like any other out-of-range value — mapping it to 0 would let
  * one garbage sample blank a bucket that also contains real speech.
  */
+// eslint-disable-next-line no-restricted-syntax -- clamp01 maps NaN to 0
 function clamp01(value: number): number {
   if (Number.isNaN(value)) return 0;
   if (value <= 0) return 0;

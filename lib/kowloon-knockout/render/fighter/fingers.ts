@@ -27,6 +27,7 @@ import { AnimationClip, Quaternion, QuaternionKeyframeTrack, Vector3, type Objec
 import { CLIPS, type ClipKey } from './clips';
 import { normalizeBoneName } from './boneMaps';
 import type { BoneFamily } from './models';
+import { clamp01 } from '@/lib/core/math';
 
 type Side = 'l' | 'r';
 const FINGERS = ['index', 'middle', 'ring', 'pinky'] as const;
@@ -139,7 +140,6 @@ const STRIKE: Partial<Record<ClipKey, { peak: number; hand: Side }>> = {
     uppercut: { peak: 0.55, hand: 'r' },
 };
 
-const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const smooth = (v: number) => { const c = clamp01(v); return c * c * (3 - 2 * c); };
 
 /**

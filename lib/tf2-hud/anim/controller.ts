@@ -125,6 +125,7 @@ export function parseTarget(
   return out;
 }
 
+// eslint-disable-next-line no-restricted-syntax -- lerp over animation values (numbers, booleans, rgba)
 function lerp(from: AnimValue, to: AnimValue, w: number): AnimValue {
   if (typeof from === 'number' && typeof to === 'number') return from + (to - from) * w;
   if (typeof to === 'boolean') return w >= 1 ? to : from;

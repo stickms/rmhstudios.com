@@ -12,6 +12,7 @@ import type { ReactElement } from 'react';
 type Pt = [number, number];
 
 const pts = (...p: Pt[]) => p.map((q) => `${q[0]},${q[1]}`).join(' ');
+// eslint-disable-next-line no-restricted-syntax -- lerp on [x, y] tuples, not numbers
 const lerp = (a: Pt, b: Pt, t: number): Pt => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 
 interface Geom {

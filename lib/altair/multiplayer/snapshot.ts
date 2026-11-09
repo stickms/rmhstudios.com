@@ -18,6 +18,7 @@ import {
 } from './types';
 import { ENEMIES } from '../data/enemies';
 import { BOSSES } from '../data/bosses';
+import { lerp } from '@/lib/core/math';
 
 // ---- Id tables (identical on host and guest: same build, same data) ---------
 
@@ -351,10 +352,6 @@ export function snapshotAlpha(renderTime: number, aTime: number, bTime: number):
   const alpha = (renderTime - aTime) / span;
   if (!(alpha >= 0)) return 0; // also catches NaN
   return alpha > MAX_ALPHA ? MAX_ALPHA : alpha;
-}
-
-function lerp(from: number, to: number, alpha: number): number {
-  return from + (to - from) * alpha;
 }
 
 function glide(from: { x: number; y: number }, to: { x: number; y: number }, alpha: number): [number, number] {

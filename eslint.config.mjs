@@ -250,6 +250,38 @@ export default tseslint.config(
     },
   },
 
+  // ── One copy of the numeric / RNG primitives (redesign audit A4) ──────────
+  // `clamp`, `clamp01`, `lerp`, `mulberry32` and `shuffle` live in `lib/core/`
+  // (math.ts, rng.ts). A module-level re-definition is the drift this prevents:
+  // ~100 copies had accumulated, some subtly different (NaN handling, in-place
+  // vs copying shuffle). A helper that genuinely differs (extra arguments, a
+  // fallback, rounding) must say so with
+  //   // eslint-disable-next-line no-restricted-syntax -- <why it differs>
+  // and should ideally get a different name. Tests are exempt.
+  //
+  // This block is the ONLY `no-restricted-syntax` entry; if another is added
+  // for the same files, merge the selectors here (flat config replaces, it
+  // does not concatenate, rule options for the same files).
+  {
+    files: ['**/*.{ts,tsx}'],
+    ignores: ['lib/core/**', '**/*.test.{ts,tsx}', '**/__tests__/**', 'testing/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...['FunctionDeclaration', 'VariableDeclarator'].flatMap((type) => [
+          {
+            selector: `Program > ${type === 'FunctionDeclaration' ? '' : 'VariableDeclaration > '}${type}[id.name=/^(clamp|clamp01|lerp|mulberry32|shuffle)$/]`,
+            message: 'Import this from `@/lib/core/math` / `@/lib/core/rng` instead of redefining it (redesign audit A4).',
+          },
+          {
+            selector: `Program > ExportNamedDeclaration > ${type === 'FunctionDeclaration' ? '' : 'VariableDeclaration > '}${type}[id.name=/^(clamp|clamp01|lerp|mulberry32|shuffle)$/]`,
+            message: 'Import this from `@/lib/core/math` / `@/lib/core/rng` instead of redefining it (redesign audit A4).',
+          },
+        ]),
+      ],
+    },
+  },
+
   // ── Tests may hold the whole icon set ─────────────────────────────────────
   // `local/no-lucide-namespace-import` is about BUNDLE SIZE, and a test is never
   // bundled — nothing a `*.test.ts` imports reaches a browser. Meanwhile

@@ -3,6 +3,8 @@
 // always produces the same world, cast, and procedural choices — this is what
 // makes a "version" shareable and replayable. Pure, no globals, SSR-safe.
 
+import { mulberry32 } from '@/lib/core/rng';
+
 /** Hash an arbitrary string into a 32-bit integer seed (xmur3). */
 export function xmur3(str: string): number {
   let h = 1779033703 ^ str.length;
@@ -13,17 +15,6 @@ export function xmur3(str: string): number {
   h = Math.imul(h ^ (h >>> 16), 2246822507);
   h = Math.imul(h ^ (h >>> 13), 3266489909);
   return (h ^= h >>> 16) >>> 0;
-}
-
-/** Mulberry32 PRNG: fast, decent quality, fully deterministic from a 32-bit seed. */
-function mulberry32(a: number): () => number {
-  return function () {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
 }
 
 /**

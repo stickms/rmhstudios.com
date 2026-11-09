@@ -39,6 +39,7 @@ import { AsyncReveal } from '@/components/motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { cn } from '@/lib/utils';
 import type { ResumeCard, ResumeKind, ResumeState } from '@/lib/history/resume.server';
+import { clamp01 } from '@/lib/core/math';
 
 const KIND_ICONS: Record<ResumeKind, LucideIcon> = {
   game: Gamepad2,
@@ -153,10 +154,6 @@ export function ResumeRail({ initial }: ResumeRailProps) {
       </HorizontalScroller>
     </AsyncReveal>
   );
-}
-
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }
 
 interface ResumeLink {

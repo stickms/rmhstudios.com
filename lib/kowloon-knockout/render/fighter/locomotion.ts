@@ -11,6 +11,8 @@
 // Pure, so it is tested without a renderer.
 // ============================================================
 
+import { clamp } from '@/lib/core/math';
+
 /** Ground speed (m/s) at which the walk and strafe clips' own feet-speed matches the floor. */
 export const WALK_REF_SPEED = 2.4;
 export const STRAFE_REF_SPEED = 1.9;
@@ -26,7 +28,6 @@ export interface Locomotion {
     timeScale: number;
 }
 
-const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
 const cadence = (speed: number, ref: number) => clamp(speed / ref, MIN_CADENCE, MAX_CADENCE);
 
 /**

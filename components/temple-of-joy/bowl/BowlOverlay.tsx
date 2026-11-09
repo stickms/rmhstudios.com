@@ -59,6 +59,7 @@ import { createSwing, feedSwing, resetSwing } from '@/lib/temple-of-joy/swing';
 import { useTempleValue } from '../hooks';
 import { TempleButton, Glyph } from '../ui';
 import type { LaneControls, LanePalette } from './BowlLane';
+import { clamp } from '@/lib/core/math';
 
 const BowlLane = lazy(() => import('./BowlLane'));
 
@@ -812,7 +813,3 @@ const FALLBACK_PALETTE: LanePalette = {
   gold: '#b8912a',
   goldBright: '#e0bb54',
 };
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}

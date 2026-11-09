@@ -13,6 +13,7 @@
  */
 
 import type { CallEndReason } from '@/lib/call/events';
+import { formatClockSeconds } from '@/lib/core/format';
 
 export type CallPhase =
   /** Nothing happening. */
@@ -198,16 +199,7 @@ export function durationSeconds(connectedAt: number | null, endedAt: number): nu
 }
 
 /** `m:ss` / `h:mm:ss` for the in-call timer. */
-export function formatDuration(totalSeconds: number): string {
-  const s = Math.max(0, Math.floor(totalSeconds));
-  const hours = Math.floor(s / 3600);
-  const minutes = Math.floor((s % 3600) / 60);
-  const seconds = s % 60;
-  const mm = hours > 0 ? String(minutes).padStart(2, '0') : String(minutes);
-  return hours > 0
-    ? `${hours}:${mm}:${String(seconds).padStart(2, '0')}`
-    : `${mm}:${String(seconds).padStart(2, '0')}`;
-}
+export const formatDuration = (totalSeconds: number): string => formatClockSeconds(totalSeconds, { hours: true });
 
 /* -------------------------------------------------------------------------- */
 /* Who may call whom                                                          */

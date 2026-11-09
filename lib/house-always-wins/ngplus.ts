@@ -3,6 +3,7 @@
 // Pure logic + a tiny localStorage record; the zustand store picks its slot
 // from here at creation time.
 import type { EntitySpec } from './types';
+import { mulberry32 } from '@/lib/core/rng';
 
 const META_KEY = 'haw-meta-v1';
 
@@ -86,17 +87,6 @@ export function switchSlot(slot: Slot): void {
   const m = readMeta();
   if (slot === 'ngplus' && !m.cleared) return;
   writeMeta({ ...m, slot });
-}
-
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
 }
 
 function hash(str: string): number {

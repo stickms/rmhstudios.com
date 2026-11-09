@@ -16,8 +16,8 @@ import { newDrive } from '@/lib/hearthworks/skins/animator';
 import { hearthworksStore, useHearthworks } from '@/lib/hearthworks/store';
 import { TICK_MS, type Worker } from '@/lib/hearthworks/world';
 import { SkinFigure } from './SkinFigure';
+import { lerp } from '@/lib/core/math';
 
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 /** Smoothing toward a target at `rate` per second, independent of frame rate. */
 const ease = (dt: number, rate: number) => 1 - Math.exp(-rate * dt);
 const wrapAngle = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));

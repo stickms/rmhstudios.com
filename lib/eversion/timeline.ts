@@ -168,6 +168,7 @@ import {
   type TimelineSnapshot,
   type Viewport,
 } from './types';
+import { clamp01 } from '@/lib/core/math';
 
 const DEG = Math.PI / 180;
 
@@ -297,10 +298,6 @@ export type ReplanProbe = (
 function clampSpeed(degPerS: number): number {
   const c = Math.max(-HUB_MAX_ANGULAR_SPEED_DEG, Math.min(HUB_MAX_ANGULAR_SPEED_DEG, degPerS));
   return (c * DEG) / 1000;
-}
-
-function clamp01(x: number): number {
-  return x < 0 ? 0 : x > 1 ? 1 : x;
 }
 
 /**

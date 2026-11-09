@@ -80,6 +80,7 @@ import {
   rotvecOf,
   type Quat,
 } from '@/lib/trackball';
+import { clamp, clamp01 } from '@/lib/core/math';
 
 /**
  * The **liquid globe** navigator — the site's navigation as a glass sphere you
@@ -291,8 +292,6 @@ const RETICLE_PCT = RETICLE * kAt(1) * 100;
 /** Golden angle — the classic even-ish spherical distribution. */
 const GOLDEN_DEG = 180 * (3 - Math.sqrt(5));
 
-const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
-
 /**
  * Make each boolean ref wake the frame loop whenever it is raised. `dirty` and `jellyDirty` are raised from a dozen
  * handlers (resize, scene, theme, pointer, keyboard, route), and the loop sleeps when nothing moves (step 6), so
@@ -317,7 +316,6 @@ function wakeOnRaise(
   }
   return true;
 }
-const clamp01 = (v: number) => clamp(v, 0, 1);
 
 /* Trackball scratch. Every globe's work on these is synchronous and never spans
    a frame, so two mounted globes (the dock and the hub) can share them. */

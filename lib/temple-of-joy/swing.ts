@@ -33,6 +33,8 @@
  * driven from a test with a made-up swing.
  */
 
+import { clamp, clamp01 } from '@/lib/core/math';
+
 /** Below this, in m/s², nothing is happening. A hand at rest reads ~0.3. */
 const ARM_THRESHOLD = 5.5;
 /** A swing has to reach this to count as a throw rather than a fidget. */
@@ -199,14 +201,6 @@ export function resetSwing(state: SwingState): void {
   state.swinging = false;
   state.peak = 0;
   state.peakTwist = 0;
-}
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
 }
 
 /** Exported for the tests and for the readout that explains the scale. */

@@ -9,6 +9,7 @@
  */
 
 import type { ChamberControl, Race, Rating } from './types';
+import { clamp } from '@/lib/core/math';
 
 /** Prior chance a Democrat wins, from the rating alone. */
 export const RATING_PRIOR: Record<Rating, number> = {
@@ -21,7 +22,6 @@ export const RATING_PRIOR: Record<Rating, number> = {
   'solid-rep': 0.02,
 };
 
-const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 const logit = (p: number) => Math.log(p / (1 - p));
 const sigmoid = (x: number) => 1 / (1 + Math.exp(-x));
 

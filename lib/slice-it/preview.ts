@@ -10,6 +10,7 @@
  */
 
 import type { Section } from './beatmap/sections';
+import { clamp } from '@/lib/core/math';
 
 /** How long a preview plays. */
 export const PREVIEW_SECONDS = 20;
@@ -65,8 +66,4 @@ export function resolvePreviewStart(stored: number | null | undefined, duration:
 export function previewFragment(streamUrl: string, start: number): string {
   const from = Math.max(0, Math.round(start * 100) / 100);
   return `${streamUrl}#t=${from},${from + PREVIEW_SECONDS}`;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }

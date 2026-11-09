@@ -13,6 +13,7 @@
 // Pure and dependency-free: time comes in as `now` (ms) and `dt` (s), so every behaviour is testable.
 // ============================================================
 
+import { clamp01, lerp } from '@/lib/core/math';
 export type ImpactKind = 'hit' | 'block' | 'ko';
 
 export interface ImpactEvent {
@@ -52,9 +53,6 @@ export interface ImpactProfile {
     sparks: number;
     fovKick: number;
 }
-
-const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /** Damage → 0..1 weight. A jab is ~4-8, a fully comboed uppercut ~40+. */
 export function powerWeight(power: number): number {

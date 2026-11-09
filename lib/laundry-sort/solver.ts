@@ -32,6 +32,7 @@
 import { ARENA } from './constants';
 import { pointInBox, type ArenaLayout, type Box } from './arena';
 import { GARMENT_KINDS, PATTERNS, type GarmentKind, type PatternTopology } from './patterns';
+import { clamp } from '@/lib/core/math';
 
 // ─── Tuning ─────────────────────────────────────────────────────────────────
 
@@ -1163,10 +1164,6 @@ export class ClothWorld {
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
 
 /** Teschner et al.'s spatial hash, masked to the table size. */
 function hashCell(ix: number, iy: number, iz: number): number {

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { clamp } from '@/lib/core/math';
 
 /**
  * Makes the aurora canvas reactive to movement — the only motion the site's
@@ -89,10 +90,6 @@ const MAX_SHIFT = 24;
 const AURORA_HOST = '.site-aurora';
 /** localStorage consent flag for the iOS motion-permission gate (§5.5x C.3). */
 const MOTION_OK_KEY = 'rmh-motion-ok';
-
-function clamp(n: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, n));
-}
 
 export function useLiquidBackground(): void {
   useEffect(() => {
