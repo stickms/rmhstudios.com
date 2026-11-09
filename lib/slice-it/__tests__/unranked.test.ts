@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_MODIFIERS, unrankedReason } from '../modifiers';
 import { musicGain, sfxGain } from '../store';
+import type { Modifiers } from '../types';
 
 /**
  * What keeps a run off the leaderboard. One function decides it for the results
@@ -8,7 +9,7 @@ import { musicGain, sfxGain } from '../store';
  * the whole contract.
  */
 describe('unrankedReason', () => {
-  const mods = (patch: Partial<typeof DEFAULT_MODIFIERS>) => ({ ...DEFAULT_MODIFIERS, ...patch });
+  const mods = (patch: Partial<Modifiers>): Modifiers => ({ ...DEFAULT_MODIFIERS, ...patch });
 
   it('lets a plain run through', () => {
     expect(unrankedReason(mods({}), false)).toBeNull();
