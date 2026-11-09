@@ -48,6 +48,8 @@
   font-style: normal;
   font-display: swap;
 }
+/* The metric overrides below apply only when one of these local() faces is installed; otherwise
+   the named serifs in the stack are used without them (a negligible shift). */
 @font-face {
   font-family: 'RMM Book Serif';
   src:
@@ -210,8 +212,9 @@
 /* The document's own ground (the scrollbar gutter, the overscroll area) and scheme. The pre-paint
    script paints them on <html> inline when script runs; with JavaScript off only these rules can,
    so the page no longer shows a white strip and a light scrollbar beside the paper. The colours are
-   `--app-bg` above (theme-parity.test.ts pins them) and the `/rmhmusic` entry of
-   APP_ROUTE_THEME_BG. A browser without `:has()` keeps the browser's white, as before. */
+   `--app-bg` above, and the `/rmhmusic` entry of APP_ROUTE_THEME_BG has the same two:
+   theme-parity.test.ts pins these rules and that entry to `--app-bg` (light and dark).
+   A browser without `:has()` keeps the browser's white, as before. */
 :root:has(.rmhmusic-theme) {
   background-color: #f6f0e1;
 }
@@ -313,7 +316,13 @@
 /* ── Paper things ─────────────────────────────────────────────────────────────
    The hero's art, the path and the lesson's instruction page are sheets of paper lying on the
    ground: barely rounded corners, a hairline edge, no shadow. Controls keep the app's rounder
-   radius; paper is not a control. Not a palette token, so it lives outside the palette blocks. */
+   radius; paper is not a control. Not a palette token, so it lives outside the palette blocks.
+
+   This 4px is the sanctioned paper-corner exception to the site's radius rule, from the owner's
+   "notebook paper" directive for this app: the CLAUDE.md radius rule (tokens, `--site-radius`)
+   governs the site tier, and the full-screen app tier owns its look. It is written as a custom
+   property, which is how it passes the CSS_RADIUS design gate: the gate is not what allows it,
+   the directive is, so use the property for paper and the `--app-radius*` tokens for controls. */
 .rmhmusic-theme {
   --rmm-paper-radius: 4px;
 }
@@ -394,7 +403,7 @@
 .rmm-unit__staff::after {
   content: '';
   position: absolute;
-  inset-block: 0 -1px;
+  inset-block: 0;
 }
 /* The opening bar line. */
 .rmm-unit__staff::before {

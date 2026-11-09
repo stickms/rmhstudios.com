@@ -52,12 +52,13 @@ export function PathUnit({ unit, progress, onOpenLesson, placeholder = false }: 
     >
       <div className="rmm-unit__head">
         {/* Unit and lesson titles are English catalogue strings for now; they are localised in a later phase.
-            On a phone the title box is two lines tall whatever it holds, the words sitting on the
-            staff: a title that fits one line in Fell may need two in the fallback face, and the
-            swap must not move the page. */}
+            At every width the title box is two lines tall whatever it holds (72px at 36px leading,
+            80px at 40px), the words sitting on the staff: a title that fits one line in Fell may
+            need two in the fallback face, or the other way round, and the swap must not move the
+            page. The placeholder renders this same box. */}
         <h2
           id={headingId}
-          className={`rmm-display flex min-h-18 items-end text-[1.75rem] leading-9 text-(--app-text) sm:min-h-10 sm:text-[2rem] sm:leading-10${hidden}`}
+          className={`rmm-display flex min-h-18 items-end text-[1.75rem] leading-9 text-(--app-text) sm:min-h-20 sm:text-[2rem] sm:leading-10${hidden}`}
         >
           {unit.title}
         </h2>

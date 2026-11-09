@@ -10,6 +10,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { APP_ROUTE_THEME_BG } from '@/stores/themeStore';
 
 const CSS = readFileSync(join(__dirname, '../../../components/rmhmusic/rmhmusic.css'), 'utf8');
 
@@ -119,6 +120,19 @@ describe('rmhmusic.css: the document ground matches the paper', () => {
     const rule = ground(":root:not([data-app-dark='0']):has(.rmhmusic-theme)");
     expect(rule.get('background-color')).toBe(systemDark.get('--app-bg'));
     expect(rule.get('color-scheme')).toBe('dark');
+  });
+});
+
+describe('rmhmusic.css: the pre-paint script paints the same grounds', () => {
+  const { light, systemDark, toggleDark } = palettes(CSS);
+  const entry = APP_ROUTE_THEME_BG['/rmhmusic'];
+
+  // The inline script in `app/routes/__root.tsx` paints this map's colours before the stylesheet
+  // matters; if they differ from `--app-bg` the page flashes from one to the other.
+  it("the '/rmhmusic' entry's light and dark grounds are the palettes' --app-bg", () => {
+    expect(entry.light).toBe(light.get('--app-bg'));
+    expect(entry.dark).toBe(systemDark.get('--app-bg'));
+    expect(entry.dark).toBe(toggleDark.get('--app-bg'));
   });
 });
 
