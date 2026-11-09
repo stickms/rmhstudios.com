@@ -213,14 +213,15 @@ export function useInputRelease(onRelease?: () => void): void {
  * chooser, and its click starts them. Switching inputs mid-lesson goes through `chooseInput`,
  * which stops the old one; leaving the lesson is `useInputRelease`.
  */
-export function useLessonInputStart(): void {
+export function useLessonInputStart(opts: { mic?: boolean } = {}): void {
+  const withMic = opts.mic ?? true;
   const hub = useLearnStore((s) => s.hub);
   const input = useLearnStore((s) => s.profile?.input ?? 'screen');
   useEffect(() => {
     if (!hub) return;
     let cancelled = false;
     if (input === 'keys') void hub.start('keys').catch(() => {});
-    if (input === 'mic' || input === 'midi') {
+    if ((input === 'mic' && withMic) || input === 'midi') {
       void (async () => {
         if (hub.phase(input) !== 'idle' || !(await permissionGranted(input))) return;
         if (input === 'mic' && getAudioContext()?.state !== 'running') return;
@@ -231,5 +232,5 @@ export function useLessonInputStart(): void {
     return () => {
       cancelled = true;
     };
-  }, [hub, input]);
+  }, [hub, input, withMic]);
 }

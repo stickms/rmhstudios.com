@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import { chordQuality, type ChordQuality } from '../theory/chords';
 import { intervalOf, type IntervalName } from '../theory/intervals';
 import {
   EAR_QUESTIONS,
   createEarMachine,
   dealQuestions,
+  earKind,
   earMachine,
   earPool,
   makeQuestion,
   step,
+  type EarName,
   type Effect,
   type Event,
   type Question,
@@ -28,13 +31,14 @@ function seeded(seed: number): () => number {
 }
 
 const question = (answer: IntervalName, root = 60): Question => ({
+  kind: 'interval',
   notes: [root, root + (answer === 'fifth' ? 7 : answer === 'third' ? 4 : 2)],
   answer,
 });
 const POOL: IntervalName[] = ['second', 'third', 'fifth'];
 const ten: Question[] = Array.from({ length: 10 }, (_, i) => question(POOL[i % 3]));
 
-const answer = (name: IntervalName): Event => ({ type: 'answer', answer: { name } });
+const answer = (name: EarName): Event => ({ type: 'answer', answer: { name } });
 const played = (index: number): Event => ({ type: 'played', index });
 const next: Event = { type: 'next' };
 const replay: Event = { type: 'replay' };
@@ -63,14 +67,14 @@ function play(right: number): { state: State; effects: Effect[] } {
 
 describe('makeQuestion', () => {
   it('is deterministic for a seeded rand', () => {
-    const a = makeQuestion(POOL, seeded(7));
-    const b = makeQuestion(POOL, seeded(7));
+    const a = makeQuestion('interval', POOL, seeded(7));
+    const b = makeQuestion('interval', POOL, seeded(7));
     expect(a).toEqual(b);
   });
   it('asks an interval of the pool, ascending, that intervalOf names back', () => {
     const rand = seeded(1);
     for (let i = 0; i < 300; i++) {
-      const q = makeQuestion(POOL, rand);
+      const q = makeQuestion('interval', POOL, rand);
       expect(POOL).toContain(q.answer);
       expect(q.notes[1]).toBeGreaterThan(q.notes[0]);
       expect(intervalOf(q.notes[0], q.notes[1])).toBe(q.answer);
@@ -79,7 +83,7 @@ describe('makeQuestion', () => {
   it('keeps the root in C3 to C5 and both notes in C2 to C6', () => {
     const rand = seeded(2);
     for (let i = 0; i < 500; i++) {
-      const q = makeQuestion(['second', 'third', 'fifth', 'octave'], rand);
+      const q = makeQuestion('interval', ['second', 'third', 'fifth', 'octave'], rand);
       expect(q.notes[0]).toBeGreaterThanOrEqual(48);
       expect(q.notes[0]).toBeLessThanOrEqual(72);
       expect(q.notes[0]).toBeGreaterThanOrEqual(36);
@@ -87,46 +91,46 @@ describe('makeQuestion', () => {
     }
   });
   it('reaches both ends of the root range with the extreme values of rand', () => {
-    expect(makeQuestion(['octave'], () => 0).notes[0]).toBe(48);
-    expect(makeQuestion(['octave'], () => 0.999999).notes[0]).toBe(72);
-    expect(makeQuestion(['octave'], () => 1).notes[0]).toBe(72);
+    expect(makeQuestion('interval', ['octave'], () => 0).notes[0]).toBe(48);
+    expect(makeQuestion('interval', ['octave'], () => 0.999999).notes[0]).toBe(72);
+    expect(makeQuestion('interval', ['octave'], () => 1).notes[0]).toBe(72);
   });
   it('treats a rand that is not a number as 0', () => {
-    expect(makeQuestion(['fifth'], () => Number.NaN).notes).toEqual([48, 55]);
+    expect(makeQuestion('interval', ['fifth'], () => Number.NaN).notes).toEqual([48, 55]);
   });
   it('uses a given root, kept inside C2 to C6 with room for the interval', () => {
-    expect(makeQuestion(['fifth'], seeded(3), 62).notes).toEqual([62, 69]);
-    expect(makeQuestion(['octave'], seeded(3), 100).notes).toEqual([72, 84]);
-    expect(makeQuestion(['octave'], seeded(3), 0).notes).toEqual([36, 48]);
+    expect(makeQuestion('interval', ['fifth'], seeded(3), 62).notes).toEqual([62, 69]);
+    expect(makeQuestion('interval', ['octave'], seeded(3), 100).notes).toEqual([72, 84]);
+    expect(makeQuestion('interval', ['octave'], seeded(3), 0).notes).toEqual([36, 48]);
   });
   it('picks either size of a third', () => {
     const sizes = new Set<number>();
     const rand = seeded(5);
     for (let i = 0; i < 100; i++) {
-      const q = makeQuestion(['third'], rand);
+      const q = makeQuestion('interval', ['third'], rand);
       sizes.add(q.notes[1] - q.notes[0]);
     }
     expect([...sizes].sort()).toEqual([3, 4]);
   });
   it('throws on an empty pool', () => {
-    expect(() => makeQuestion([], seeded(1))).toThrow(RangeError);
+    expect(() => makeQuestion('interval', [], seeded(1))).toThrow(RangeError);
   });
 });
 
 describe('dealQuestions', () => {
   it('deals the count asked, each name about as often, and is deterministic', () => {
-    const qs = dealQuestions(['second', 'third'], 10, seeded(9));
+    const qs = dealQuestions('interval', ['second', 'third'], 10, seeded(9));
     expect(qs).toHaveLength(10);
     const seconds = qs.filter((q) => q.answer === 'second').length;
     expect(seconds).toBe(5);
-    expect(dealQuestions(['second', 'third'], 10, seeded(9))).toEqual(qs);
+    expect(dealQuestions('interval', ['second', 'third'], 10, seeded(9))).toEqual(qs);
   });
   it('does not alternate a two-name pool in a fixed order', () => {
     // A pattern the learner could answer without listening would be a bug.
     const orders = new Set<string>();
     for (let seed = 1; seed <= 20; seed++) {
       orders.add(
-        dealQuestions(['second', 'third'], 10, seeded(seed))
+        dealQuestions('interval', ['second', 'third'], 10, seeded(seed))
           .map((q) => q.answer[0])
           .join(''),
       );
@@ -134,8 +138,8 @@ describe('dealQuestions', () => {
     expect(orders.size).toBeGreaterThan(10);
   });
   it('is empty for a count of 0 or less', () => {
-    expect(dealQuestions(POOL, 0, seeded(1))).toEqual([]);
-    expect(dealQuestions(POOL, Number.NaN, seeded(1))).toEqual([]);
+    expect(dealQuestions('interval', POOL, 0, seeded(1))).toEqual([]);
+    expect(dealQuestions('interval', POOL, Number.NaN, seeded(1))).toEqual([]);
   });
 });
 
@@ -144,6 +148,64 @@ describe('earPool', () => {
     expect(earPool('ear-second-third')).toEqual(['second', 'third']);
     expect(earPool('ear-fifth-octave')).toEqual(['third', 'fifth', 'octave']);
     expect(earPool('nope').length).toBeGreaterThan(0);
+    expect(earPool('ear-major-minor')).toEqual(['major', 'minor']);
+  });
+  it('says whether a lesson asks about intervals or chords', () => {
+    expect(earKind('ear-second-third')).toBe('interval');
+    expect(earKind('ear-fifth-octave')).toBe('interval');
+    expect(earKind('ear-major-minor')).toBe('chord');
+  });
+});
+
+describe("chord questions (the same machine and generator, kind 'chord')", () => {
+  const QUALITIES: ChordQuality[] = ['major', 'minor'];
+
+  it('asks a root-position triad of the pool that chordQuality names back', () => {
+    const rand = seeded(11);
+    for (let i = 0; i < 300; i++) {
+      const q = makeQuestion('chord', QUALITIES, rand);
+      expect(q.kind).toBe('chord');
+      expect(q.notes).toHaveLength(3);
+      expect(QUALITIES).toContain(q.answer);
+      expect(chordQuality(q.notes)).toBe(q.answer);
+    }
+  });
+  it('keeps the root in C3 to C5 and every note in C2 to C6, whatever the quality', () => {
+    const rand = seeded(12);
+    for (let i = 0; i < 500; i++) {
+      const q = makeQuestion('chord', ['major', 'minor', 'diminished', 'augmented'], rand);
+      expect(q.notes[0]).toBeGreaterThanOrEqual(48);
+      expect(q.notes[0]).toBeLessThanOrEqual(72);
+      expect(q.notes[2]).toBeLessThanOrEqual(84);
+    }
+    expect(makeQuestion('chord', ['augmented'], () => 1, 100).notes).toEqual([76, 80, 84]);
+  });
+  it('is deterministic for a seeded rand, and deals each quality equally', () => {
+    expect(makeQuestion('chord', QUALITIES, seeded(4))).toEqual(
+      makeQuestion('chord', QUALITIES, seeded(4)),
+    );
+    const qs = dealQuestions('chord', QUALITIES, 10, seeded(6));
+    expect(qs.filter((q) => q.answer === 'major')).toHaveLength(5);
+    expect(qs.every((q) => q.kind === 'chord')).toBe(true);
+  });
+  it('does not mix the kinds: an interval name is not a chord quality', () => {
+    expect(() => makeQuestion('chord', ['fifth'] as never, seeded(1))).toThrow(RangeError);
+    expect(() => makeQuestion('interval', ['major'] as never, seeded(1))).toThrow(RangeError);
+  });
+  it('the machine runs a chord session: hear, answer by quality, replay plays all three notes', () => {
+    const qs = dealQuestions('chord', QUALITIES, 10, seeded(8));
+    let s = earMachine.initial(qs);
+    expect(step(s, { type: 'answer', answer: { name: qs[0].answer } }).state).toBe(s);
+    const r = step(s, replay);
+    expect(r.effects).toEqual([{ type: 'play', index: 0, kind: 'chord', notes: qs[0].notes }]);
+    s = step(s, played(0)).state;
+    const right = step(s, { type: 'answer', answer: { name: qs[0].answer } });
+    expect(right.state).toMatchObject({ kind: 'feedback', right: true, correct: 1 });
+    const other = qs[0].answer === 'major' ? 'minor' : 'major';
+    expect(step(s, { type: 'answer', answer: { name: other } }).state).toMatchObject({
+      kind: 'feedback',
+      right: false,
+    });
   });
 });
 
@@ -211,7 +273,7 @@ describe('ear machine: replay', () => {
     const s = step(earMachine.initial(ten), played(0)).state;
     const r = step(s, replay);
     expect(r.state).toBe(s);
-    expect(r.effects).toEqual([{ type: 'play', index: 0, notes: ten[0].notes }]);
+    expect(r.effects).toEqual([{ type: 'play', index: 0, kind: 'interval', notes: ten[0].notes }]);
   });
 
   it('plays the question before it has been heard (that is how it is heard)', () => {
@@ -232,7 +294,7 @@ describe('ear machine: replay', () => {
     s = step(s, answer('third')).state;
     const r = step(s, replay);
     expect(r.state).toBe(s);
-    expect(r.effects).toEqual([{ type: 'play', index: 0, notes: ten[0].notes }]);
+    expect(r.effects).toEqual([{ type: 'play', index: 0, kind: 'interval', notes: ten[0].notes }]);
   });
 
   it('does nothing once the session is over', () => {

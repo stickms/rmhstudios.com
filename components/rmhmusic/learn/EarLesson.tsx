@@ -1,9 +1,10 @@
 'use client';
 
 /**
- * EarLesson — ear training (`ear-interval`): ten questions, each a sound the learner hears (two
- * notes one after the other) and names with a button. It needs no input device: the answer buttons
- * are plain interval words, and a lesson with no microphone, MIDI or keys works the same.
+ * EarLesson — ear training (`ear-interval`: two notes one after the other, named as an interval;
+ * `ear-chord`: three notes together, named as a chord quality): ten questions, each a sound the
+ * learner hears and names with a button. It needs no input device: the answer buttons are plain
+ * words, and a lesson with no microphone, MIDI or keys works the same.
  *
  * The ask → feedback → next → saving → saved / failed / signed-out lifecycle is the pure machine
  * in `machines/ear.ts`. Its rule that matters here: a question can be answered only once its sound
@@ -11,7 +12,7 @@
  *
  * Sound:
  * - Every sound goes through `audio/voice.ts` and `audio/sequence.ts`; this file says what to play
- *   (the question's notes), never how it sounds.
+ *   (the question's notes, in turn or together), never how it sounds.
  * - A question sounds by itself when sound is ready (after Next, or on entry when the browser has
  *   already allowed sound). "Hear it again" plays it again as often as wanted; it changes no state
  *   and no score (the machine's `replay`).
@@ -32,24 +33,28 @@ import type { ReactNode } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { hearStillWanted } from '@/lib/rmhmusic/learn/input/echo-window';
-import { playSequence, type PlayingSequence } from '@/lib/rmhmusic/learn/audio/sequence';
+import { playChord, playSequence, type PlayingSequence } from '@/lib/rmhmusic/learn/audio/sequence';
 import { onSoundChange, soundStatus, wakeSound } from '@/lib/rmhmusic/learn/audio/voice';
 import {
   EAR_QUESTIONS,
   createEarMachine,
   dealQuestions,
+  earKind,
   earPool,
   type Answer,
   type Effect,
+  type EarName,
   type Question,
   type State,
 } from '@/lib/rmhmusic/learn/machines/ear';
 import { starsFor, scoreFrom } from '@/lib/rmhmusic/learn/scoring/stars';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
+import { CHORD_QUALITIES, type ChordQuality } from '@/lib/rmhmusic/learn/theory/chords';
 import { INTERVAL_NAMES, type IntervalName } from '@/lib/rmhmusic/learn/theory/intervals';
 import { cn } from '@/lib/utils';
 import { TEXT_BUTTON } from './buttons';
 import { LessonResult } from './LessonParts';
+import { qualityName } from './PlayChordLesson';
 import { SessionFrame, SessionSheet, sessionTitle, useQuestionSession } from './QuestionSession';
 
 /** Between the two notes of an interval (ms). */
@@ -69,8 +74,9 @@ export function EarLesson({
   paused?: boolean;
 }) {
   const { t } = useTranslation('c-rmhmusic');
+  const kind = earKind(lessonId);
   const pool = earPool(lessonId);
-  const [questions] = useState(() => dealQuestions(pool, EAR_QUESTIONS, Math.random));
+  const [questions] = useState(() => dealQuestions(kind, pool, EAR_QUESTIONS, Math.random));
   // The lesson is rendered only once the store has loaded in the browser (never on the server), so
   // the audio state can be read at once: the sound row is right from its first paint.
   const [status, setStatus] = useState<Exclude<Sound, 'waking' | 'failed'>>(readStatus);
@@ -89,7 +95,8 @@ export function EarLesson({
     onEffect: (fx) => {
       if (fx.type !== 'play') return;
       playing.current?.cancel();
-      const seq = playSequence(fx.notes, INTERVAL_GAP_MS);
+      const seq =
+        fx.kind === 'chord' ? playChord(fx.notes) : playSequence(fx.notes, INTERVAL_GAP_MS);
       playing.current = seq;
       if (seq.started) sendRef.current({ type: 'played', index: fx.index });
       else refresh();
@@ -179,22 +186,27 @@ export function EarLesson({
     t('lesson-not-saved', { defaultValue: 'Not saved yet' }),
   );
 
-  const nameOf = (name: IntervalName) => intervalName(t, name);
+  const nameOf = (name: EarName) =>
+    kind === 'chord' ? qualityName(t, name as ChordQuality) : intervalName(t, name as IntervalName);
 
   // The sentence line: the instruction while asking; after a wrong answer what it was; the score.
   let line = '';
   let lineKey = 'hint';
   let wrong = false;
   if (lesson.kind === 'asking') {
-    line = t('ear-hint-interval', { defaultValue: 'Listen, then pick the interval.' });
+    line =
+      kind === 'chord'
+        ? t('ear-hint-chord', { defaultValue: 'Listen, then pick the chord.' })
+        : t('ear-hint-interval', { defaultValue: 'Listen, then pick the interval.' });
   } else if (lesson.kind === 'feedback') {
     lineKey = `fb-${lesson.index}`;
     if (!lesson.right) {
       wrong = true;
-      line = t('ear-that-was-interval', {
-        name: nameOf(lesson.cards[lesson.index].answer),
-        defaultValue: 'That was the {{name}}.',
-      });
+      const was = nameOf(lesson.cards[lesson.index].answer);
+      line =
+        kind === 'chord'
+          ? t('ear-that-was-chord', { name: was, defaultValue: 'That was the {{name}} chord.' })
+          : t('ear-that-was-interval', { name: was, defaultValue: 'That was the {{name}}.' });
     }
   } else {
     lineKey = 'score';
@@ -223,6 +235,11 @@ export function EarLesson({
   const correctName = lesson.kind === 'feedback' ? lesson.cards[lesson.index].answer : null;
   const givenName = lesson.kind === 'feedback' && wrong ? lesson.answer.name : null;
 
+  // The answer buttons: the lesson's names, narrowest or plainest first.
+  const choices: readonly EarName[] = (kind === 'chord' ? CHORD_QUALITIES : INTERVAL_NAMES).filter(
+    (name) => pool.includes(name),
+  );
+
   let answers: ReactNode;
   if (!inSession) {
     const stars =
@@ -241,10 +258,14 @@ export function EarLesson({
       <div
         ref={answerGroup}
         role="group"
-        aria-label={t('ear-choices-interval', { defaultValue: 'Intervals' })}
+        aria-label={
+          kind === 'chord'
+            ? t('ear-choices-chord', { defaultValue: 'Chords' })
+            : t('ear-choices-interval', { defaultValue: 'Intervals' })
+        }
         className="rmm-ear__choices"
       >
-        {INTERVAL_NAMES.filter((name) => pool.includes(name)).map((name) => {
+        {choices.map((name) => {
           const isCorrect = name === correctName;
           const isGiven = name === givenName;
           return (

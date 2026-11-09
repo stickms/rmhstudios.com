@@ -15,7 +15,9 @@ export type LessonMode =
   | 'rhythm-basics'
   | 'play-note'
   | 'match-note'
-  | 'ear-interval';
+  | 'ear-interval'
+  | 'ear-chord'
+  | 'play-chord';
 
 export interface Lesson {
   id: string;
@@ -134,6 +136,22 @@ export const PATH: Unit[] = [
         title: 'Fifths and octaves',
         summary: 'Tell a fifth and an octave from a third, by ear alone.',
         mode: 'ear-interval',
+        available: true,
+      },
+      {
+        id: 'ear-major-minor',
+        unit: 'train-your-ear',
+        title: 'Major and minor chords',
+        summary: 'Hear three notes together and tell a bright major chord from a darker minor one.',
+        mode: 'ear-chord',
+        available: true,
+      },
+      {
+        id: 'chord-play-c-major',
+        unit: 'train-your-ear',
+        title: 'Play a C major chord',
+        summary: 'Play C, E and G together, then F major and G major.',
+        mode: 'play-chord',
         available: true,
       },
     ],

@@ -23,6 +23,7 @@ import { FlashcardLesson } from './FlashcardLesson';
 import { InputSetup } from './InputSetup';
 import { MatchNoteLesson, MatchStaffBox } from './MatchNoteLesson';
 import { ModeToggle } from './ModeToggle';
+import { ChordNameBox, PlayChordLesson } from './PlayChordLesson';
 import { STAFF_BOX } from './StaffCard';
 import { useInputRelease } from './useLearnInput';
 
@@ -32,7 +33,8 @@ function isPlayable(lesson: Lesson | undefined): lesson is Lesson {
   if (lesson.mode === 'play-note') return true;
   if (lesson.mode === 'keyboard-map' || lesson.mode === 'fretboard') return true;
   if (lesson.mode === 'match-note') return true;
-  if (lesson.mode === 'ear-interval') return true;
+  if (lesson.mode === 'ear-interval' || lesson.mode === 'ear-chord') return true;
+  if (lesson.mode === 'play-chord') return true;
   return lesson.mode === 'staff-flashcards' && !!lesson.deck && lesson.deck in DECKS;
 }
 
@@ -227,6 +229,29 @@ function EarSkeleton() {
   );
 }
 
+/**
+ * The chord-playing lesson's placeholder: its boxes exactly — the sheet (title line, the chord's
+ * name, the sentence line) and the input region below it.
+ */
+function PlayChordSkeleton() {
+  return (
+    <div aria-hidden="true" className="rmm-chord space-y-4">
+      <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
+        <div className="h-8">
+          <div className="app-skeleton mx-auto h-8 w-40" />
+        </div>
+        <ChordNameBox skeleton />
+        <div className="flex h-11 items-center">
+          <div className="app-skeleton h-5 w-56 max-w-full" />
+        </div>
+      </section>
+      <div className="rmm-input-region">
+        <div className="app-skeleton h-full w-full" />
+      </div>
+    </div>
+  );
+}
+
 export function LessonScreen({ lessonId }: { lessonId: string }) {
   const { t } = useTranslation('c-rmhmusic');
   const status = useLearnStore((s) => s.status);
@@ -276,8 +301,15 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
         <FindNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       ) : lesson.mode === 'match-note' ? (
         <MatchNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
-      ) : lesson.mode === 'ear-interval' ? (
+      ) : lesson.mode === 'ear-interval' || lesson.mode === 'ear-chord' ? (
         <EarLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
+      ) : lesson.mode === 'play-chord' ? (
+        <PlayChordLesson
+          key={lesson.id}
+          lessonId={lesson.id}
+          paused={setupOpen}
+          onChangeInput={() => setSetupOpen(true)}
+        />
       ) : (
         <FirstNoteLesson key={lesson.id} lessonId={lesson.id} paused={setupOpen} />
       );
@@ -323,8 +355,10 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
         <FindNoteSkeleton />
       ) : lesson.mode === 'match-note' ? (
         <MatchNoteSkeleton />
-      ) : lesson.mode === 'ear-interval' ? (
+      ) : lesson.mode === 'ear-interval' || lesson.mode === 'ear-chord' ? (
         <EarSkeleton />
+      ) : lesson.mode === 'play-chord' ? (
+        <PlayChordSkeleton />
       ) : (
         <LessonSkeleton />
       );

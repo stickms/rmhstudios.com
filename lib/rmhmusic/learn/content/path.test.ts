@@ -26,7 +26,7 @@ describe('learning path', () => {
     expect(getLesson('play-first-note')?.mode).toBe('play-note');
     expect(getLesson('nope')).toBeUndefined();
   });
-  it('ships the first-note lesson, the staff-reading lessons, the note finders, the pitch match and the interval ear training', () => {
+  it('ships the first-note lesson, the staff-reading lessons, the note finders, the pitch match, the ear training and playing a chord', () => {
     const available = lessons.filter((l) => l.available);
     expect(available.map((l) => l.id)).toEqual([
       'staff-what-is-a-staff',
@@ -39,6 +39,8 @@ describe('learning path', () => {
       'match-white-keys',
       'ear-second-third',
       'ear-fifth-octave',
+      'ear-major-minor',
+      'chord-play-c-major',
     ]);
     expect(getLesson('keys-layout-and-strings')?.mode).toBe('keyboard-map');
     expect(getLesson('fretboard-first-frets')?.mode).toBe('fretboard');
@@ -48,6 +50,9 @@ describe('learning path', () => {
     expect(getLesson('match-c')?.unit).toBe('play-it-back');
     expect(getLesson('ear-second-third')?.mode).toBe('ear-interval');
     expect(getLesson('ear-fifth-octave')?.unit).toBe('train-your-ear');
+    expect(getLesson('ear-major-minor')?.mode).toBe('ear-chord');
+    expect(getLesson('chord-play-c-major')?.mode).toBe('play-chord');
+    expect(getLesson('chord-play-c-major')?.unit).toBe('train-your-ear');
   });
   it('wires every available lesson to an activity the lesson screen runs', () => {
     const handled = new Set([
@@ -57,6 +62,8 @@ describe('learning path', () => {
       'fretboard',
       'match-note',
       'ear-interval',
+      'ear-chord',
+      'play-chord',
     ]);
     for (const l of lessons.filter((x) => x.available)) {
       expect(handled.has(l.mode), `${l.id} (${l.mode})`).toBe(true);
