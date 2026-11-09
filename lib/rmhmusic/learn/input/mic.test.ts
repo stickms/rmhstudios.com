@@ -16,6 +16,7 @@ const ctx = {
 vi.mock('@/lib/shared/platform', () => ({ getAudioContext: () => ctx }));
 
 import { createMicInput } from './mic';
+import { RESUME_TIMEOUT_MS } from '../audio/resume';
 
 function fakeStream() {
   const track = { stop: vi.fn() };
@@ -111,5 +112,34 @@ describe('createMicInput with no microphone API', () => {
     const mic = createMicInput();
     await expect(mic.start()).rejects.toMatchObject({ name: 'NotSupportedError' });
     mic.stop();
+  });
+});
+
+// Sound that never resumes (an iOS audio interruption, no output device) must end the start with
+// an error the row can show, not leave it "Starting…" forever, and must not open the mic.
+describe('createMicInput when sound never resumes', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    ctx.state = 'suspended';
+    ctx.resume.mockImplementation(() => new Promise<void>(() => {}));
+  });
+  afterEach(() => {
+    ctx.state = 'running';
+    ctx.resume.mockReset();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it('rejects after the resume timeout without asking for the microphone', async () => {
+    const getUserMedia = vi.fn();
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+    const mic = createMicInput();
+    const started = mic.start();
+    const failed = expect(started).rejects.toThrow();
+    await vi.advanceTimersByTimeAsync(RESUME_TIMEOUT_MS);
+    await failed;
+    expect(getUserMedia).not.toHaveBeenCalled();
+    mic.stop();
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

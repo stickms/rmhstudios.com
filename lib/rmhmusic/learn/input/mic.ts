@@ -10,6 +10,7 @@
  * level of a sustained instrument tone.
  */
 import { getAudioContext } from '@/lib/shared/platform';
+import { resumeAudio } from '../audio/resume';
 import { freqToMidi } from '../pitch/notes';
 import { DEFAULT_MIN_RMS, detectPitch } from '../pitch/yin';
 import type { InputAdapter, NoteEvent, NoteListener } from './events';
@@ -54,9 +55,11 @@ export function createMicInput(opts: { onLevel?: (rms: number) => void } = {}): 
       throw unsupported('Microphone access is not available in this browser.');
     }
     // iOS Safari starts suspended; start() runs from a user click, which is
-    // what allows the resume. Do it before the (possibly slow) permission prompt.
-    if (ctx.state === 'suspended') await ctx.resume();
+    // what allows the resume. Do it before the (possibly slow) permission prompt,
+    // and never wait on it forever (an audio interruption, no output device).
+    const running = await resumeAudio(ctx);
     if (!wanted()) return;
+    if (!running) throw new Error('Sound could not start in this browser.');
 
     // Rejections keep their original `name` (NotAllowedError, NotFoundError).
     const media = await navigator.mediaDevices.getUserMedia({

@@ -18,6 +18,7 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { scheduleClicks, type ScheduledClicks } from '@/lib/rmhmusic/learn/audio/clicks';
+import { resumeAudio } from '@/lib/rmhmusic/learn/audio/resume';
 import { calibrationMachine, shown, type Effect } from '@/lib/rmhmusic/learn/machines/calibration';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { getAudioContext } from '@/lib/shared/platform';
@@ -83,9 +84,8 @@ export function LatencyCalibration({ onDone }: { onDone: () => void }) {
       perform(send({ type: 'prepared', token, ok: false }));
       return;
     }
-    try {
-      if (ctx.state === 'suspended') await ctx.resume();
-    } catch {
+    // Bounded: a resume that never settles shows "Sound can't play" instead of hanging here.
+    if (!(await resumeAudio(ctx))) {
       perform(send({ type: 'prepared', token, ok: false }));
       return;
     }
