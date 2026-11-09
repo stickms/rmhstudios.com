@@ -4,6 +4,7 @@ import { CHORDS } from '../theory/chords';
 import { INTERVALS } from '../theory/intervals';
 import { rhythmActivity } from '../machines/rhythm';
 import { PATH, getLesson, isKnownLesson } from './path';
+import { ROUTED_MODES, isPlayable } from './routing';
 
 const lessons = PATH.flatMap((unit) => unit.lessons);
 
@@ -65,20 +66,26 @@ describe('learning path', () => {
     }
   });
   it('wires every available lesson to an activity the lesson screen runs', () => {
-    const handled = new Set([
-      'play-note',
-      'staff-flashcards',
-      'keyboard-map',
-      'fretboard',
-      'match-note',
-      'ear-interval',
-      'ear-chord',
-      'play-chord',
-      'rhythm-basics',
-    ]);
     for (const l of lessons.filter((x) => x.available)) {
-      expect(handled.has(l.mode), `${l.id} (${l.mode})`).toBe(true);
+      expect(ROUTED_MODES.has(l.mode), `${l.id} (${l.mode})`).toBe(true);
+      expect(isPlayable(l), l.id).toBe(true);
     }
+  });
+  it('never lets a lesson without a handler be playable', () => {
+    for (const l of lessons) {
+      if (!ROUTED_MODES.has(l.mode)) expect(isPlayable(l), l.id).toBe(false);
+    }
+    expect(isPlayable(undefined)).toBe(false);
+    const base = getLesson('staff-treble-notes');
+    if (!base) throw new Error('missing lesson');
+    expect(isPlayable({ ...base, available: false })).toBe(false);
+    expect(isPlayable({ ...base, deck: 'nope' })).toBe(false);
+    expect(isPlayable({ ...base, deck: undefined })).toBe(false);
+    expect(isPlayable({ ...base, mode: 'sight-reading' as never })).toBe(false);
+  });
+  it('has no routed mode that no lesson uses', () => {
+    const used = new Set(lessons.map((l) => l.mode));
+    for (const m of ROUTED_MODES) expect(used.has(m), m).toBe(true);
   });
   it('gives every rhythm lesson an activity the rhythm screen runs', () => {
     const rhythm = lessons.filter((l) => l.mode === 'rhythm-basics');

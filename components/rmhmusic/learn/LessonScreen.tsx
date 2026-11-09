@@ -12,9 +12,8 @@ import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { DECKS } from '@/lib/rmhmusic/learn/content/decks';
-import { getLesson, type Lesson } from '@/lib/rmhmusic/learn/content/path';
-import { rhythmActivity } from '@/lib/rmhmusic/learn/machines/rhythm';
+import { getLesson } from '@/lib/rmhmusic/learn/content/path';
+import { isPlayable } from '@/lib/rmhmusic/learn/content/routing';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from './buttons';
 import { EarLesson, EarListenBox } from './EarLesson';
@@ -28,18 +27,6 @@ import { ChordNameBox, PlayChordLesson } from './PlayChordLesson';
 import { RhythmLesson } from './RhythmLesson';
 import { STAFF_BOX } from './StaffCard';
 import { useInputRelease } from './useLearnInput';
-
-/** Whether this screen can run the lesson: it has shipped and its activity is wired here. */
-function isPlayable(lesson: Lesson | undefined): lesson is Lesson {
-  if (!lesson?.available) return false;
-  if (lesson.mode === 'play-note') return true;
-  if (lesson.mode === 'keyboard-map' || lesson.mode === 'fretboard') return true;
-  if (lesson.mode === 'match-note') return true;
-  if (lesson.mode === 'ear-interval' || lesson.mode === 'ear-chord') return true;
-  if (lesson.mode === 'play-chord') return true;
-  if (lesson.mode === 'rhythm-basics') return rhythmActivity(lesson.id) !== null;
-  return lesson.mode === 'staff-flashcards' && !!lesson.deck && lesson.deck in DECKS;
-}
 
 export function Shell({
   title,

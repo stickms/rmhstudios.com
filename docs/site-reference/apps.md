@@ -50,7 +50,7 @@ RMH Type is a competitive typing platform. Practice solo to improve your WPM, or
 
 ### RMH Music
 
-RMH Music teaches piano and guitar from the first note. Pick an instrument and play into a microphone, a MIDI keyboard, your computer keyboard or the on-screen keys; the app calibrates the delay of your input and hears what you play. The path of lessons starts with playing your first note, and your progress is saved to your account. It is a Beta and the path is being added in stages: note-reading flashcards, a fretboard and keyboard trainer, ear training for pitch, intervals and chords, and rhythm are planned next.
+RMH Music teaches piano and guitar from the first note. Pick an instrument and play into a microphone, a MIDI keyboard, your computer keyboard or the on-screen keys; the app calibrates the delay of your input and hears what you play. The path has lessons for reading notes on the staff with spaced-repetition flashcards, finding notes on the fretboard and the keyboard, matching a pitch you see or hear, telling intervals and chords apart by ear, playing a chord, and keeping time with a metronome and rhythm exercises. Your progress is saved to your account. It is a Beta and more lessons are still to come.
 
 **Route:** `/rmhmusic` · **Catalog id:** `rmhmusic` · **Status:** Beta · **Sign-in:** required
 
