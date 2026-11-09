@@ -92,8 +92,11 @@ pnpm check:consistency:full     # + the complete vitest suite
 ```
 
 `scripts/check-consistency.sh` runs, in order: a scan of the **added lines**
-for the rules CI already fails on (raw palette colours, hardcoded radii,
-`transition-all`, dead `tailwindcss-animate` classes, hand-rolled tab strips) ·
+for the rules CI already fails on (hand-rolled tab strips and the like; raw
+palette colours, hardcoded radii, `transition-all` and dead `tailwindcss-animate`
+classes are eslint `local/no-raw-palette-color`, `local/no-hardcoded-radius`,
+`local/no-transition-all`, `local/no-dead-animate-classes`, scoped by
+`eslint-local-rules/design-scope.js`) ·
 the executable gates in `lib/__tests__/` that are the **authority** for
 `docs/design-language.md` §13 · eslint on the changed files · `tsc --noEmit` ·
 the generated-docs freshness checks. Then it prints the handful of things no
@@ -118,8 +121,8 @@ Two rules about the gate itself:
    `RMH_SKIP_COMMIT_GATE=1` exist for emergencies and leave a trace — if you
    use one, say why in the commit message.
 2. **If a rule is genuinely wrong for your change, change the rule** in the
-   same commit (the allowlists in `lib/__tests__/design-consistency.test.ts`
-   are documented and one-directional — entries come out, they do not go in),
+   same commit (the allowlists in `lib/__tests__/design-consistency.test.ts` and
+   `eslint-local-rules/design-scope.js` are documented and one-directional — entries come out, they do not go in),
    and say so in the message. Silently working around a gate is how the
    inconsistency it prevents comes back.
 
@@ -188,9 +191,11 @@ _why_.
    done) and the checklist in
    [`docs/page-consistency.md`](docs/page-consistency.md). Part of this is
    CI-enforced — `lib/__tests__/design-consistency.test.ts` fails the build on
-   hand-rolled tab strips, raw palette colours, hardcoded radii, floating UI
-   below L4, `transition-all`, and `tailwindcss-animate` classes (that plugin
-   is not installed, so they compile to nothing) — and `pnpm check:consistency`
+   hand-rolled tab strips and floating UI below L4, and the eslint rules
+   `local/no-raw-palette-color`, `local/no-hardcoded-radius`,
+   `local/no-transition-all` and `local/no-dead-animate-classes` fail it on raw
+   palette colours, hardcoded radii, `transition-all` and `tailwindcss-animate`
+   classes (that plugin is not installed, so they compile to nothing) — and `pnpm check:consistency`
    is how you find that out **before** you commit rather than in CI.
 5. **i18n:** all user-facing strings through `t("key", { defaultValue })`;
    then `pnpm i18n:extract`. English is authoritative. Two silent failure modes

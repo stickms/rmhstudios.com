@@ -21,6 +21,7 @@
  *
  * The runtime counterpart, which finds what static scanning cannot see, is `pnpm audit:pages --edges`.
  */
+import { FULLSCREEN_TIER_DIRS } from '../../eslint-local-rules/design-scope.js';
 import { readFileSync, readdirSync, statSync, writeFileSync, existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -79,10 +80,14 @@ describe('iOS edge contract: invariants', () => {
   // stays exactly that: one bar, narrow screens only, inset-aware — not a licence for other flush layers (the ratchet
   // below still counts those).
   it('below 640px the top bar is a full-bleed, inset-aware bar (the one flush top layer, by design)', () => {
-    const m = /@media \(max-width: 639\.98px\) \{\s*:root \{[^}]*--rad-topbar-h:[^;]*safe-area-inset-top[^;]*;[^}]*\}\s*\.radial-topbar\.glass-chrome \{([^}]*)\}/.exec(
-      radial,
-    );
-    expect(m, 'a narrow-screen block that adds the inset to --rad-topbar-h and restyles the bar').toBeTruthy();
+    const m =
+      /@media \(max-width: 639\.98px\) \{\s*:root \{[^}]*--rad-topbar-h:[^;]*safe-area-inset-top[^;]*;[^}]*\}\s*\.radial-topbar\.glass-chrome \{([^}]*)\}/.exec(
+        radial,
+      );
+    expect(
+      m,
+      'a narrow-screen block that adds the inset to --rad-topbar-h and restyles the bar',
+    ).toBeTruthy();
     const rule = m![1];
     expect(rule).toMatch(/\btop:\s*0\b/);
     expect(rule).toMatch(/\bmargin:\s*0\b/);
@@ -128,15 +133,7 @@ describe('iOS edge contract: the scanner', () => {
 
 // ── 2. The ratchet ─────────────────────────────────────────────────────────────────────────────────────────────
 
-const fullscreenDirs = (() => {
-  const src = read('lib/__tests__/design-consistency.test.ts');
-  const start = src.indexOf('const FULLSCREEN_TIER_DIRS = new Set([');
-  return new Set(
-    [...src.slice(start, src.indexOf(']);', start)).matchAll(/^\s*'([a-z0-9-]+)'/gm)].map(
-      (m) => m[1],
-    ),
-  );
-})();
+const fullscreenDirs = FULLSCREEN_TIER_DIRS;
 
 /** Site tier = not a full-screen game/app directory, not the app-tier shared kit, not a test. */
 const inSiteTier = (rel: string) => {
@@ -244,7 +241,10 @@ function measure(): Record<string, number> {
     if (n > 0) counts[rel] = n;
   };
   for (const abs of cssFiles) {
-    add(relative(ROOT, abs).replaceAll('\\', '/'), cssFindings(readFileSync(abs, 'utf8'), hidden).length);
+    add(
+      relative(ROOT, abs).replaceAll('\\', '/'),
+      cssFindings(readFileSync(abs, 'utf8'), hidden).length,
+    );
   }
   for (const abs of [
     ...walk(join(ROOT, 'components'), /\.tsx$/),

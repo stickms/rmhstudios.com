@@ -3,6 +3,12 @@ import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import local from './eslint-local-rules/index.js';
+import {
+  ALL_TIER_FILES,
+  CLASS_RULE_IGNORES,
+  FULLSCREEN_IGNORES,
+  RAW_COLOR_ALLOW,
+} from './eslint-local-rules/design-scope.js';
 
 export default tseslint.config(
   // ── Global ignores ────────────────────────────────────────────────────────
@@ -280,6 +286,35 @@ export default tseslint.config(
         ]),
       ],
     },
+  },
+  // ── Class-string conventions (design-language.md §13 rules 5, 6, 8, 9) ─────
+  // The exemption lists live in `eslint-local-rules/design-scope.js` — the one
+  // place; the vitest gates and scripts/check-consistency.sh read the same file.
+  // Site tier = `components/**` + `app/routes/**` minus the full-screen game/app
+  // tier. `transition-all` and the dead tailwindcss-animate classes are not a
+  // palette question, so they run over the whole tree.
+  {
+    files: ALL_TIER_FILES,
+    ignores: CLASS_RULE_IGNORES,
+    plugins: { local },
+    rules: {
+      'local/no-transition-all': 'error',
+      'local/no-dead-animate-classes': 'error',
+    },
+  },
+  {
+    files: ALL_TIER_FILES,
+    ignores: [...CLASS_RULE_IGNORES, ...FULLSCREEN_IGNORES],
+    plugins: { local },
+    rules: {
+      'local/no-hardcoded-radius': 'error',
+      'local/no-raw-palette-color': 'error',
+    },
+  },
+  // /login renders third-party sign-in buttons in their brand colours.
+  {
+    files: RAW_COLOR_ALLOW,
+    rules: { 'local/no-raw-palette-color': 'off' },
   },
 
   // ── Tests may hold the whole icon set ─────────────────────────────────────
