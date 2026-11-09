@@ -276,7 +276,7 @@
   --site-surface-active: rgba(255, 255, 255, 0.66);
   --site-surface-opaque: #ffffff;
   --site-border: rgba(0, 0, 0, 0.16);
-  --site-border-bright: rgba(0, 0, 0, 0.38);
+  --site-border-bright: rgba(0, 0, 0, 0.45);
   --site-text: #000000;
   --site-text-muted: #565656;
   --site-text-dim: #767676;
@@ -940,7 +940,7 @@
   --site-surface-active: rgba(255, 255, 255, 0.66);
   --site-surface-opaque: #ffffff;
   --site-border: rgba(0, 0, 0, 0.16);
-  --site-border-bright: rgba(0, 0, 0, 0.38);
+  --site-border-bright: rgba(0, 0, 0, 0.45);
   --site-text: #000000;
   --site-text-muted: #565656;
   --site-text-dim: #767676;
