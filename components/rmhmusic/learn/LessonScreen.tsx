@@ -36,7 +36,9 @@ function Shell({
   return (
     <div className="app-page">
       <div className="rmm-column mx-auto flex w-full max-w-3xl flex-1 flex-col pr-[max(1.25rem,var(--safe-right))] pl-[max(1.25rem,var(--safe-left))]">
-        <header className="flex items-center justify-between gap-2 pt-[calc(0.5rem+var(--safe-top))]">
+        {/* With large text the toggle and "Change input" wrap below the back link (kept at the
+            end), and below each other if they must, rather than widen the page. */}
+        <header className="flex flex-wrap items-center justify-between gap-2 pt-[calc(0.5rem+var(--safe-top))]">
           <Link
             to="/rmhmusic"
             className="-ms-3 flex min-h-11 min-w-0 items-center gap-1.5 rounded-(--app-radius-sm) px-3 text-sm font-medium text-(--app-text-muted) transition-colors hover:text-(--app-text)"
@@ -46,7 +48,7 @@ function Shell({
               {t('back-to-lessons', { defaultValue: 'Back to lessons' })}
             </span>
           </Link>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
             <ModeToggle />
             {action}
           </div>
