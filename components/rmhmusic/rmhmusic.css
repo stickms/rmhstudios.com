@@ -654,7 +654,8 @@
   flex-direction: column;
   height: 11.5rem;
 }
-.rmm-ear__choices {
+.rmm-ear__choices,
+.rmm-rhythm__choices {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -665,11 +666,38 @@
 /* A tile of the sheet's paper, so the backdrop's staves never show through; while the question is
    being heard they read as waiting by their ink and edge (EarLesson), never by opacity, so their
    words keep 4.5:1 in every theme; the buttons stay focusable and `aria-describedby` says why. */
-.rmm-ear__choices > button {
+.rmm-ear__choices > button,
+.rmm-rhythm__choices > button {
   background-color: var(--app-surface);
 }
-.rmm-ear__choices > button:hover:not([aria-disabled='true']) {
+.rmm-ear__choices > button:hover:not([aria-disabled='true']),
+.rmm-rhythm__choices > button:hover:not([aria-disabled='true']) {
   background-color: var(--app-surface-hover);
+}
+
+/* ── Rhythm (RhythmLesson.tsx, TapBeatLesson.tsx, LessonScreen's RhythmSkeleton) ─────────
+   Every rhythm lesson has the same two boxes under its title line: the question box (8rem: the four
+   note values with their names and counts, the sound row, or the bar of four beats) and, below the
+   sheet, the answers box (12.5rem: four 2.75rem buttons with their gaps, the tap pad, or the
+   result, which takes all of it). The same in the placeholder, so nothing moves from loading to
+   asking to the result. */
+.rmm-values {
+  height: 8rem;
+}
+.rmm-rhythm__answers {
+  display: flex;
+  flex-direction: column;
+  height: 12.5rem;
+}
+/* The beat marker moves between four fixed positions, once per beat, by a transition: no loop. With
+   Jelly motion on Still it jumps. */
+.rmm-beat__mark {
+  transition:
+    transform 120ms var(--ease-smooth, ease),
+    opacity 120ms var(--ease-smooth, ease);
+}
+html[data-jelly-motion='still'] .rmm-beat__mark {
+  transition: none;
 }
 
 /* The octave bar (2.75rem) and its gap (0.5rem) above the keys. */

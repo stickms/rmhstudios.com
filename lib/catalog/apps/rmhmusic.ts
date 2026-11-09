@@ -5,9 +5,9 @@ const entry: AppInfo = {
   order: 40,
   title: 'RMH Music',
   description:
-    'Learn piano and guitar by playing into a microphone, MIDI keyboard, computer keyboard or on-screen keys. Lessons are being added in stages.',
+    'Learn piano and guitar by playing into a microphone, MIDI keyboard, computer keyboard or on-screen keys. Read notes with spaced repetition, find them on the fretboard and keyboard, match pitch, train your ear for intervals and chords, play chords, and practise rhythm with a metronome.',
   longDescription:
-    'RMH Music teaches piano and guitar from the first note. Pick an instrument and play into a microphone, a MIDI keyboard, your computer keyboard or the on-screen keys; the app calibrates the delay of your input and hears what you play. The path of lessons starts with playing your first note, and your progress is saved to your account. It is a Beta and the path is being added in stages: note-reading flashcards, a fretboard and keyboard trainer, ear training for pitch, intervals and chords, and rhythm are planned next.',
+    'RMH Music teaches piano and guitar from the first note. Pick an instrument and play into a microphone, a MIDI keyboard, your computer keyboard or the on-screen keys; the app calibrates the delay of your input and hears what you play. The path has lessons for reading notes on the staff with spaced-repetition flashcards, finding notes on the fretboard and the keyboard, matching a pitch you see or hear, telling intervals and chords apart by ear, playing a chord, and keeping time with a metronome and rhythm exercises. Your progress is saved to your account. It is a Beta and more lessons are still to come.',
   href: '/rmhmusic',
   status: 'Beta',
   cta: 'Start Learning',

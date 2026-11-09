@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-09T05:36:05.424Z",
+  "generatedAt": "2026-11-09T20:19:51.747Z",
   "entries": [
     {
       "id": "help:coins",
@@ -746,7 +746,7 @@
       ],
       "route": "/rmhmusic",
       "players": "single-player",
-      "text": "Learn piano and guitar by playing into a microphone, MIDI keyboard, computer keyboard or on-screen keys. Lessons are being added in stages. RMH Music teaches piano and guitar from the first note. Pick an instrument and play into a microphone, a MIDI keyboard, your computer keyboard or the on-screen keys; the app calibrates the delay of your input and hears …"
+      "text": "Learn piano and guitar by playing into a microphone, MIDI keyboard, computer keyboard or on-screen keys. Read notes with spaced repetition, find them on the fretboard and keyboard, match pitch, train your ear for intervals and chords, play chords, and practise rhythm with a metronome. RMH Music teaches piano and guitar from the first note. Pick an instrumen…"
     },
     {
       "id": "app:rmhstudy",
