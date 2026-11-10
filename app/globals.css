@@ -693,6 +693,14 @@
   --z-arcs: 45;
   --z-arcs-modal: 55;
   --z-skip: 200;
+  /* The ordinary modal band — what `Dialog` / `Sheet` (Tailwind `z-50`) paint at. Library overlays
+     that portal to <body> name it instead of repeating the number. */
+  --z-dialog: 50;
+  /* A pointer-anchored context menu portalled to <body> (library): above every dialog and the
+     shell, below tooltips. */
+  --z-context-menu: 1000;
+  /* Bedtime mode's dimming / desaturating layers: the top of the whole page, above the tooltip. */
+  --z-bedtime: 2147483000;
   /* Tooltips portal to <body> and must clear the z-50 dialogs/sheets they can
      be triggered from inside, so they sit above the whole stack. */
   --z-tooltip: 9999;
@@ -6171,7 +6179,7 @@ html[data-bedtime]::after {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 2147483000;
+  z-index: var(--z-bedtime);
 }
 html[data-bedtime]::before {
   background: gray;

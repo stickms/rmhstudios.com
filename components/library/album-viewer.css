@@ -9,7 +9,7 @@
   /* Body-level — the component portals. 60 used to be here on the theory that
      it cleared the shell's top bar; it did not, because it was measured inside
      `.radial-frame`'s stacking context. At <body> the dialog band is correct. */
-  z-index: 50;
+  z-index: var(--z-dialog);
   display: flex;
   flex-direction: column;
   background: #050505;
