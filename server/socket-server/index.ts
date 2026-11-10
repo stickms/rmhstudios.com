@@ -39,7 +39,6 @@ import { registerStudioJamHandlers } from './handlers/studio-jam';
 import { initializeCasino, listCasinoRooms, CASINO_SHUTDOWN_REFUNDS, CASINO_SHUTDOWN_DEADLINE_MS } from '../../features/casino/server';
 import { registerLightsOutHandlers, handleLightsOutDisconnect } from './handlers/lights-out';
 import { registerVelumHandlers, handleVelumDisconnect } from './handlers/velum';
-import { registerDreamRiftHandlers, handleDreamRiftDisconnect } from './handlers/dream-rift';
 import { registerLaundrySortHandlers, handleLaundrySortDisconnect } from './handlers/laundry-sort';
 import {
   registerGabrielsHornHandlers,
@@ -398,7 +397,7 @@ io.on('connection', (socket) => {
   registerLightsOutHandlers(io, socket);
   registerFeatureHandlers(io, socket, 'doctrine');
   registerVelumHandlers(io, socket);
-  registerDreamRiftHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'dream-rift');
   registerLaundrySortHandlers(io, socket);
   registerGabrielsHornHandlers(io, socket);
   registerGlobeSetHandlers(io, socket);
@@ -446,7 +445,7 @@ io.on('connection', (socket) => {
     handleLightsOutDisconnect(io, socket);
     handleFeatureDisconnects(io, socket, 'doctrine');
     handleVelumDisconnect(io, socket);
-    handleDreamRiftDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'dream-rift');
     handleLaundrySortDisconnect(io, socket);
     handleGabrielsHornDisconnect(io, socket);
     handleGlobeSetDisconnect(io, socket);

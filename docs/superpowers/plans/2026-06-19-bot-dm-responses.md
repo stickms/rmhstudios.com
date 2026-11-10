@@ -51,7 +51,7 @@ In `vitest.config.ts`, change the `include` array:
 ```ts
     include: [
       'testing/**/*.test.ts',
-      'lib/dream-rift/__tests__/**/*.test.ts',
+      'features/dream-rift/engine/__tests__/**/*.test.ts',
       'lib/rmhark-ai/__tests__/**/*.test.ts',
     ],
 ```

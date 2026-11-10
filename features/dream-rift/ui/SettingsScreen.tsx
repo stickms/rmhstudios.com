@@ -5,8 +5,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useDreamRift } from '@/lib/dream-rift/store';
-import { BIND_ACTIONS, BIND_LABELS, DEFAULT_BINDINGS, keyLabel, normalizeKey, rebind, type BindAction } from '@/lib/dream-rift/keybinds';
+import { useDreamRift } from '@features/dream-rift/engine/store';
+import { BIND_ACTIONS, BIND_LABELS, DEFAULT_BINDINGS, keyLabel, normalizeKey, rebind, type BindAction } from '@features/dream-rift/engine/keybinds';
 import { useRuntime } from './runtime';
 import { Switch } from '@/components/ui/switch';
 

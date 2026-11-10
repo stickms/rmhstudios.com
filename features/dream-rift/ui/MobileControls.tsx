@@ -10,8 +10,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pause } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useDreamRift } from '@/lib/dream-rift/store';
-import type { InputManager } from '@/lib/dream-rift/input';
+import { useDreamRift } from '@features/dream-rift/engine/store';
+import type { InputManager } from '@features/dream-rift/engine/input';
 
 export function MobileControls({ input }: { input: InputManager }) {
     const { t } = useTranslation('c-dream-rift');

@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { STAGES } from '@/lib/dream-rift/data/stages';
-import { DIFFICULTIES } from '@/lib/dream-rift/constants';
-import { useDreamRift } from '@/lib/dream-rift/store';
+import { STAGES } from '@features/dream-rift/engine/data/stages';
+import { DIFFICULTIES } from '@features/dream-rift/engine/constants';
+import { useDreamRift } from '@features/dream-rift/engine/store';
 import {
   loadPractice,
   practiceId,
   type PracticeOutcome,
   type PracticeTarget,
-} from '@/lib/dream-rift/practice';
+} from '@features/dream-rift/engine/practice';
 import { useRuntime } from './runtime';
 
 const btn =

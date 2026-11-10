@@ -340,7 +340,7 @@ const ALLOW = new Set<string>([
   // stop(); the phone keyboard's key queue is a one-shot chain that ends when the queue is empty.
   'features/balatro/engine/runtime.ts',
   'features/balatro/engine/text-input.ts',
-  'lib/dream-rift/net/session.ts',
+  'features/dream-rift/engine/net/session.ts',
   'lib/emoji/use-emoji-insert.ts',
   'lib/emoji/use-emoji-shortcodes.tsx',
   'lib/house-always-wins/engine/GameEngine.ts',

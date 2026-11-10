@@ -6,9 +6,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useSession } from '@/components/Providers';
-import { useDreamRift } from '@/lib/dream-rift/store';
-import { CHARACTERS } from '@/lib/dream-rift/render/sprites';
-import { saveHiScore } from '@/lib/dream-rift/highscore';
+import { useDreamRift } from '@features/dream-rift/engine/store';
+import { CHARACTERS } from '@features/dream-rift/engine/render/sprites';
+import { saveHiScore } from '@features/dream-rift/engine/highscore';
 import { RunPanel } from '@/components/arcade/RunPanel';
 import { formatClockSeconds } from '@/lib/core/format';
 

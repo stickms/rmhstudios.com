@@ -1,7 +1,7 @@
 /**
  * Dream Rift menus: Title, Character Select (singleplayer launch), the public/
  * private Lobby Browser, the Lobby Room, and the end-of-run Result screen.
- * Lobby actions go through lib/dream-rift/net/connection; the store mirrors
+ * Lobby actions go through features/dream-rift/engine/net/connection; the store mirrors
  * server lobby state.
  *
  * Skin: pixel-art danmaku (docs/game-design-schemes/dream-rift.json), carried by
@@ -12,10 +12,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLobbyInviteJoin, useLobbyLink } from '@/hooks/useLobbyLink';
-import { useDreamRift } from '@/lib/dream-rift/store';
-import { CHARACTERS, PLAYER_IDS } from '@/lib/dream-rift/render/sprites';
-import { DIFFICULTIES } from '@/lib/dream-rift/constants';
-import type { Difficulty, PlayerId } from '@/lib/dream-rift/types';
+import { useDreamRift } from '@features/dream-rift/engine/store';
+import { CHARACTERS, PLAYER_IDS } from '@features/dream-rift/engine/render/sprites';
+import { DIFFICULTIES } from '@features/dream-rift/engine/constants';
+import type { Difficulty, PlayerId } from '@features/dream-rift/engine/types';
 import {
     browseLobbies,
     connectDreamRift,
@@ -28,7 +28,7 @@ import {
     setLobbyReady,
     setLobbySettings,
     startLobby,
-} from '@/lib/dream-rift/net/connection';
+} from '@features/dream-rift/engine/net/connection';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useFocusReturn } from '@/components/shared/useFocusReturn';
 import { SheetPortrait } from './SheetPortrait';

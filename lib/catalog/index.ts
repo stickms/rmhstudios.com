@@ -79,6 +79,7 @@ import type { AppInfo, GameInfo } from './types';
 // ── Entries owned by a feature (features/<id>/catalog.ts, named by the manifest's `catalog`) ──
 import altair from '@features/altair/catalog';
 import doctrine from '@features/doctrine/catalog';
+import dreamRift from '@features/dream-rift/catalog';
 import hearthworks from '@features/hearthworks/catalog';
 import nightrail from '@features/nightrail/catalog';
 import sliceIt from '@features/slice-it/catalog';
@@ -86,7 +87,6 @@ import voidBreaker from '@features/void-breaker/catalog';
 
 // ── Games not yet in a feature folder ─────────────────────────────────────
 import dailyPuzzles from './games/daily-puzzles';
-import dreamRift from './games/dream-rift';
 import gabrielsHorn from './games/gabriels-horn';
 import halfLife2 from './games/half-life-2';
 import houseAlwaysWins from './games/house-always-wins';

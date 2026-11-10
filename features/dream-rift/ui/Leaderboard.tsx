@@ -8,10 +8,10 @@
  */
 
 import { useEffect, useState } from 'react';
-import { DIFFICULTIES } from '@/lib/dream-rift/constants';
-import type { Difficulty } from '@/lib/dream-rift/types';
-import { CHARACTERS } from '@/lib/dream-rift/render/sprites';
-import type { PlayerId } from '@/lib/dream-rift/types';
+import { DIFFICULTIES } from '@features/dream-rift/engine/constants';
+import type { Difficulty } from '@features/dream-rift/engine/types';
+import { CHARACTERS } from '@features/dream-rift/engine/render/sprites';
+import type { PlayerId } from '@features/dream-rift/engine/types';
 import { formatClockSeconds } from '@/lib/core/format';
 
 interface Account {

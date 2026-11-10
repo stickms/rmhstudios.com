@@ -8,7 +8,7 @@ import {
   __setResumeGraceMs,
   handleDreamRiftDisconnect,
   registerDreamRiftHandlers,
-} from '../../../server/socket-server/handlers/dream-rift';
+} from '../../server/handlers';
 import { C2S, S2C, type JoinedPayload } from './events';
 
 /**
@@ -89,7 +89,7 @@ describe('dream rift hub: a dropped player resumes the same seat', () => {
     expect(JSON.stringify(host.log.filter((e) => e.ev === S2C.LOBBY))).not.toContain(guestJoin.resumeToken);
 
     const oldId = guest.s.id;
-    // What lib/dream-rift/net/connection.ts does on every (re)connect.
+    // What features/dream-rift/engine/net/connection.ts does on every (re)connect.
     guest.s.on('connect', () => guest.s.emit(C2S.RESUME, { code, token: guestJoin.resumeToken }));
     dropTransport(guest);
 

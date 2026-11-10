@@ -578,7 +578,7 @@ depends: []
 | `clamp` | 40 | `components/radial/LiquidGlobe.tsx:290`, `hooks/useLiquidBackground.ts:95`, `lib/altair/engine/enemy-navigation.ts:56` |
 | `clamp01` | 32 | |
 | `lerp` | 15 | |
-| `mulberry32` seeded RNG | 8 | `lib/dream-rift/rng.ts`, `lib/jelly/arcs/rng.ts`, `lib/versecraft/gen/rng.ts`, `lib/plinko.ts`, `lib/shop/daily-shop.ts`, `lib/doctrine/puzzle-engine.ts`, … |
+| `mulberry32` seeded RNG | 8 | `features/dream-rift/engine/rng.ts`, `lib/jelly/arcs/rng.ts`, `lib/versecraft/gen/rng.ts`, `lib/plinko.ts`, `lib/shop/daily-shop.ts`, `lib/doctrine/puzzle-engine.ts`, … |
 | `shuffle` | 9 | |
 | `formatTime` | 15 | 5 in altair alone |
 | `formatDuration` | 12 | lib/call, delight, globeset, rideshare, rmhtube, … |

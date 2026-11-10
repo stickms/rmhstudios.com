@@ -1,6 +1,6 @@
 /**
  * Dream Rift netcode protocol — shared by the browser client and the socket
- * relay handler (server/socket-server/handlers/dream-rift.ts).
+ * relay handler (features/dream-rift/server/handlers.ts).
  *
  * The server is a thin lobby manager + message relay; it does not simulate the
  * game. Authority lives on the host client. This file is intentionally free of

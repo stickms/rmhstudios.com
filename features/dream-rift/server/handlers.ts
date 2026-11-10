@@ -13,16 +13,16 @@
 
 import { randomBytes } from 'node:crypto';
 import type { Server, Socket } from 'socket.io';
-import { generateRoomCode, sanitizeUserName } from '../utils';
-import { checkRateLimit } from '../rate-limit';
-import { logger } from '../logger';
+import { generateRoomCode, sanitizeUserName } from '../../../server/socket-server/utils';
+import { checkRateLimit } from '../../../server/socket-server/rate-limit';
+import { logger } from '../../../server/socket-server/logger';
 import { PEER_GRACE_MS } from '../../../lib/shared/realtime/types';
 import {
   C2S,
   S2C,
   ROOM_PREFIX,
   MAX_LOBBY_PLAYERS,
-} from '../../../lib/dream-rift/net/events';
+} from '../engine/net/events';
 import type {
   DrPlayerId,
   DrDifficulty,
@@ -33,7 +33,7 @@ import type {
   PublicLobbyInfo,
   StartPayload,
   RelayMsg,
-} from '../../../lib/dream-rift/net/events';
+} from '../engine/net/events';
 
 // ─── Constants ──────────────────────────────────────────────────────
 

@@ -6,14 +6,14 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { GameSession, type RosterEntry } from '@/lib/dream-rift/net/session';
-import { loadHiScore } from '@/lib/dream-rift/highscore';
-import type { Transport } from '@/lib/dream-rift/net/transport';
-import type { Difficulty } from '@/lib/dream-rift/types';
-import type { PracticeOutcome, PracticeTarget } from '@/lib/dream-rift/practice';
-import { useDreamRift } from '@/lib/dream-rift/store';
+import { GameSession, type RosterEntry } from '@features/dream-rift/engine/net/session';
+import { loadHiScore } from '@features/dream-rift/engine/highscore';
+import type { Transport } from '@features/dream-rift/engine/net/transport';
+import type { Difficulty } from '@features/dream-rift/engine/types';
+import type { PracticeOutcome, PracticeTarget } from '@features/dream-rift/engine/practice';
+import { useDreamRift } from '@features/dream-rift/engine/store';
 import { useGameSession } from '@/hooks/useGameSession';
-import { setPeerLeftHandler, setResumeHandlers } from '@/lib/dream-rift/net/connection';
+import { setPeerLeftHandler, setResumeHandlers } from '@features/dream-rift/engine/net/connection';
 import { PEER_GRACE_MS } from '@/lib/shared/realtime/types';
 import { useRuntime } from './runtime';
 import { MobileControls } from './MobileControls';

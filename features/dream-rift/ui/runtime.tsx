@@ -6,11 +6,11 @@
  */
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { MusicController } from '@/lib/dream-rift/sound/musicController';
-import { Sfx } from '@/lib/dream-rift/sound/sfx';
-import { InputManager } from '@/lib/dream-rift/input';
-import { loadManifest, loadSpriteAssets, type LoadedSpriteAssets } from '@/lib/dream-rift/assets';
-import { useDreamRift } from '@/lib/dream-rift/store';
+import { MusicController } from '@features/dream-rift/engine/sound/musicController';
+import { Sfx } from '@features/dream-rift/engine/sound/sfx';
+import { InputManager } from '@features/dream-rift/engine/input';
+import { loadManifest, loadSpriteAssets, type LoadedSpriteAssets } from '@features/dream-rift/engine/assets';
+import { useDreamRift } from '@features/dream-rift/engine/store';
 
 export interface DreamRiftRuntime {
     music: MusicController;

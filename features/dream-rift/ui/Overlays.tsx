@@ -3,9 +3,9 @@
  * procedurally-drawn portraits), the pause menu and the end-of-run results.
  */
 
-import { useDreamRift } from '@/lib/dream-rift/store';
-import { CHARACTERS } from '@/lib/dream-rift/render/sprites';
-import type { PlayerId } from '@/lib/dream-rift/types';
+import { useDreamRift } from '@features/dream-rift/engine/store';
+import { CHARACTERS } from '@features/dream-rift/engine/render/sprites';
+import type { PlayerId } from '@features/dream-rift/engine/types';
 import { useRuntime } from './runtime';
 import { SheetPortrait } from './SheetPortrait';
 

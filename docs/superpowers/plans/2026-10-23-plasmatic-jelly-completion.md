@@ -192,7 +192,7 @@ Directories: `components/feed`, `components/calendar`, `components/daily-puzzles
 
 ### Task D4: Games (branch `jelly/coverage-games`)
 
-Directories: `components/bums-rush`, `components/cookgame`, `components/cursed-logic`, `components/dream-rift`, `components/dunesday`, `components/gabriels-horn`, `components/games`, `components/pf2ecal`, `components/temple-of-joy`, `components/massive-march`, `components/globe-cursor`. Debts: 17 dialogs and 6 switches. Full-screen tier: keep each game's palette (`--app-*`), keep pause/resume wiring in the game's own state, and verify Escape, focus return and pointer lock by hand (Review Focus 5). Where `Dialog` cannot host a window that is part of the game's fiction (`dunesday/os/Window.tsx`, `Taskbar.tsx`, `StartMenu7.tsx`), leave the entry in the shard and say why in the PR body; that is an explained debt, not a regression.
+Directories: `components/bums-rush`, `components/cookgame`, `components/cursed-logic`, `features/dream-rift/ui`, `components/dunesday`, `components/gabriels-horn`, `components/games`, `components/pf2ecal`, `components/temple-of-joy`, `components/massive-march`, `components/globe-cursor`. Debts: 17 dialogs and 6 switches. Full-screen tier: keep each game's palette (`--app-*`), keep pause/resume wiring in the game's own state, and verify Escape, focus return and pointer lock by hand (Review Focus 5). Where `Dialog` cannot host a window that is part of the game's fiction (`dunesday/os/Window.tsx`, `Taskbar.tsx`, `StartMenu7.tsx`), leave the entry in the shard and say why in the PR body; that is an explained debt, not a regression.
 
 ---
 
