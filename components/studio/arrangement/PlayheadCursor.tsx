@@ -75,7 +75,7 @@ export function PlayheadCursor({ width, height }: PlayheadCursorProps) {
   return (
     <canvas
       ref={canvasRef}
-      className="pointer-events-none sticky left-0 top-0"
+      className="pointer-events-none"
       style={{ position: 'absolute', left: 0, top: 0, width, height }}
     />
   );

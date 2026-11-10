@@ -1,3 +1,4 @@
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon: <Spinner> renders role="status" and would join the button accessible name */
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Key, Check, RefreshCw, Trash2, Clock, AlertCircle } from 'lucide-react';

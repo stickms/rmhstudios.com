@@ -81,7 +81,7 @@ export function KeybindSettings() {
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-(--app-border)">
         {Object.entries(categories).map(([category, actions]) => (
           <div key={category}>
-            <div className="sticky top-0 bg-app-surface px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-app-text-muted">
+            <div className="bg-app-surface px-4 py-1.5 text-xs font-semibold text-app-text-muted">
               {category}
             </div>
             {actions.map((action) => {

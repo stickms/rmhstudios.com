@@ -70,7 +70,7 @@ export default function JamPanel({
               </p>
               <div className="flex gap-2">
                 <Input
-                  className="glass-inset font-mono uppercase tracking-widest"
+                  className="glass-inset font-mono uppercase"
                   maxLength={10}
                   placeholder={t('jam-code', { defaultValue: 'Room code' })}
                   value={code}
