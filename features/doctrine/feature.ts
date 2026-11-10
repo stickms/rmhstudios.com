@@ -45,6 +45,6 @@ export default defineFeature({
     'app/routes/strategies/sahur.tsx',
   ],
   namespaces: ['c-doctrine'],
-  catalog: 'lib/catalog/apps/rmh-strategies.ts',
+  catalog: 'features/doctrine/catalog.ts',
   listed: true,
 });

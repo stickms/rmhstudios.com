@@ -8,7 +8,7 @@ import { fitText } from '@/lib/og/chrome.server';
 import { MAX_COLLAGE_TILES, collageTiles } from '@/lib/og/collage';
 import { postCardShowsContent } from '@/lib/og/post-visibility';
 import { appHubHead, appRouteHead } from '@/lib/seo-catalog';
-import { apps } from '@/lib/apps';
+import { apps } from '@/lib/catalog';
 
 /**
  * The Open Graph card system, as a gate.

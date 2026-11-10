@@ -19,8 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BuildDetail } from '@/components/user-builds';
 import { BlurImage, blurImagePreload } from '@/components/ui/BlurImage';
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 import { getPublicBuildDetail } from '@/lib/user-builds-detail.server';
 import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 

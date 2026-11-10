@@ -68,7 +68,7 @@ export interface AppProfileStat {
 }
 
 export interface AppProfileCard {
-  /** Catalog id (`lib/apps.ts` / `lib/games.ts`), for icons and grouping. */
+  /** Catalog id (`lib/catalog`), for icons and grouping. */
   appId: string;
   /** The one number worth reading at a glance. */
   headline: AppProfileText;

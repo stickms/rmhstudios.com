@@ -13,6 +13,6 @@ export default defineFeature({
   ],
   // The catalog card's strings; the game itself has no namespace of its own.
   namespaces: ['c-void-breaker'],
-  catalog: 'lib/catalog/games/void-breaker.ts',
+  catalog: 'features/void-breaker/catalog.ts',
   listed: true,
 });

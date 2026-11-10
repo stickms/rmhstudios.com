@@ -4,7 +4,7 @@ import { implement } from '@/lib/api/implement.server';
 import { getPatchNoteApi, publishPatchNoteApi } from '@/lib/arcade/arcade.contract';
 import { prisma } from '@/lib/prisma.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 
 const getQuery = z.object({ path: z.string().max(80) });
 const postBody = z.object({

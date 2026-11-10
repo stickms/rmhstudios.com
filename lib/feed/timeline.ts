@@ -443,8 +443,7 @@ async function getStaticAnnouncementItems(filter: FeedFilter): Promise<FeedItem[
 }
 
 async function buildStaticAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
-  const { games } = await import('../games');
-  const { apps } = await import('../apps');
+  const { games, apps } = await import('../catalog');
   const items: FeedItem[] = [];
 
   if (filter === 'all' || filter === 'app' || filter === 'game') {

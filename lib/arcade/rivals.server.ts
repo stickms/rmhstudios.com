@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import { getGameAdapter, adapterGameIds, type LeaderboardRow } from '@/lib/game/adapters.server';
 import { createNotification } from '@/lib/notifications.server';
 import { nextRivalState, type RivalState } from '@/lib/arcade/rivals';

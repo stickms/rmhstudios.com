@@ -2,11 +2,11 @@
  * Feature manifest (redesign audit A1). Every folder under `features/<id>/`
  * carries a `feature.ts` that default-exports `defineFeature({...})`: what the
  * feature is, which URL prefix it owns, which i18n namespaces it loads, and
- * which catalog entry (`lib/games.ts` / `lib/apps.ts` / `lib/game/registry.ts`)
- * describes it. The manifest is the structured answer to "where does this
- * feature live and what does it own" — later steps (B1 islands, A1 step 7's
- * generated catalog) read it; today it is checked by
- * `lib/__tests__/feature-manifests.test.ts` and changes no runtime behaviour.
+ * where its catalog entry (the card and scoring rules
+ * `lib/games.ts` / `lib/apps.ts` serve) lives. The manifest is the structured
+ * answer to "where does this feature live and what does it own" — B1 islands
+ * read it; it is checked by `lib/__tests__/feature-manifests.test.ts` and changes
+ * no runtime behaviour.
  *
  * Server/test-side only: it imports zod at runtime, so client code must not
  * import a `feature.ts` (the manifest is not part of any browser bundle).
@@ -25,7 +25,7 @@ export const FeatureManifestSchema = z.object({
   routes: z.array(z.string()),
   /** i18n namespaces this feature loads (must be registered in lib/i18n/config.ts NAMESPACES). */
   namespaces: z.array(z.string()),
-  /** Where the user-facing catalog entry lives, e.g. `lib/catalog/games/void-breaker.ts`. */
+  /** The feature's own catalog entry, `features/<id>/catalog.ts` (composed by `lib/catalog/index.ts`). */
   catalog: z.string().optional(),
   /** Hidden/unlisted features say so explicitly (audit Appendix 3). */
   listed: z.boolean().default(true),

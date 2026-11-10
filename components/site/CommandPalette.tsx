@@ -63,8 +63,7 @@ import {
   AppWindow,
   type LucideIcon,
 } from 'lucide-react';
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 import { SITE_DESTINATIONS } from '@/lib/search/catalog';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SITE_STYLES, useThemeStore, type SiteStyle } from '@/stores/themeStore';

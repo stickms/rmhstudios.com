@@ -13,8 +13,7 @@ import {
   chunkPath,
   SITEMAP_CHUNK_SIZE,
 } from '@/lib/sitemap';
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 
 /**
  * The sitemap, as a gate.

@@ -11,8 +11,7 @@
  * module stays free of React imports.
  */
 
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 import { confidenceOf, scoreRecord, MATCH_FLOOR } from './score';
 import type { SearchHit, SearchKind } from './types';
 

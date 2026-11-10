@@ -4,8 +4,7 @@
  * Split from `live-stats.server.ts` so the card generator script (and the test that keeps the committed literals in
  * `static-cards.ts` honest) can read them without importing a database client.
  */
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 import { LOCALES } from '@/lib/i18n/config';
 import type { Stat } from '@/lib/og/chrome.server';
 

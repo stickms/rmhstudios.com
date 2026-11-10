@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 
 import { GameHero, GamePlayBar } from '@/components/steam/GameHero';
 import { SteamPane } from '@/components/steam/SteamPane';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import { hueFromString } from '@/lib/builds/curated';
 import { GAMES_INDEX_PATH } from '@/lib/seo-catalog';
 import { breadcrumbSchema, jsonLdScript, videoGameSchema } from '@/lib/schema';

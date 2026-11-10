@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 
 /** Publish a short patch note; players see it once on their next launch of that game. */
 export function AdminPatchNotes() {

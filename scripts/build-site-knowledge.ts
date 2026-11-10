@@ -2,8 +2,8 @@
  * Generate `data/site-knowledge.json` — the corpus the site-wide AI Concierge
  * (§11) retrieves over. It combines:
  *
- *   - every listed game (from `lib/games.ts`)
- *   - every listed app (from `lib/apps.ts`, minus hidden entries)
+ *   - every listed game (from `lib/catalog`)
+ *   - every listed app (from `lib/catalog`, minus hidden entries)
  *   - a hand-written set of "how the platform works" help snippets
  *
  * The concierge does simple server-side keyword ranking over these entries
@@ -19,8 +19,7 @@
 
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 
 export interface KnowledgeEntry {
   id: string;

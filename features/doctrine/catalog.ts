@@ -1,4 +1,4 @@
-import type { AppInfo } from '../types';
+import type { AppInfo } from '@/lib/catalog/types';
 
 const entry: AppInfo = {
   id: 'rmh-strategies',

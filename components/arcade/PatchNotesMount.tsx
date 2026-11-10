@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { useLocation } from '@tanstack/react-router';
 import { api } from '@/lib/contract/client';
 import { getPatchNoteApi } from '@/lib/arcade/arcade.contract';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 
 const PatchNotesDialog = lazy(() =>
   import('./PatchNotesDialog').then((m) => ({ default: m.PatchNotesDialog })),

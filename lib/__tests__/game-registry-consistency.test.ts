@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 // read its id list, so stub the client rather than requiring a live DATABASE_URL.
 vi.mock('@/lib/prisma.server', () => ({ prisma: {} }));
 
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import {
   GAME_SCORE_RULES,
   getGameScoreRules,

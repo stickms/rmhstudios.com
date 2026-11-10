@@ -1,4 +1,4 @@
-import type { GameInfo } from '../types';
+import type { GameInfo } from '@/lib/catalog/types';
 
 const entry: GameInfo = {
   id: 'nightrail',
@@ -20,6 +20,17 @@ const entry: GameInfo = {
   bannerPath: '/images/games/banners/nightrail.webp',
   logoPath: '/images/games/logos/nightrail.webp',
   authGate: true,
+  scoring: {
+    // A perfect skybridge run banks combos at a x20 cap on top of the delivery
+    // and par-time bonuses, so the honest ceiling is high. These numbers reject
+    // the impossible rather than policing the excellent.
+    maxScore: 4_000_000,
+    maxScorePerSecond: 12_000,
+    minDurationMs: 5_000,
+    direction: 'higher-is-better',
+    progressLabel: 'Distance',
+    maxProgress: 50_000,
+  },
 };
 
 export default entry;

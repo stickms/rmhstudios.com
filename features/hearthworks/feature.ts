@@ -13,6 +13,6 @@ export default defineFeature({
   delivery: 'island',
   routes: ['app/routes/hearthworks.tsx'],
   namespaces: ['c-hearthworks'],
-  catalog: 'lib/catalog/games/hearthworks.ts',
+  catalog: 'features/hearthworks/catalog.ts',
   listed: true,
 });

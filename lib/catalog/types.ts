@@ -1,6 +1,6 @@
 /**
- * The catalog entry contracts — the shape every file under `lib/catalog/games/`
- * and `lib/catalog/apps/` must satisfy.
+ * The catalog entry contracts — the shape every entry file under `lib/catalog/games/`,
+ * `lib/catalog/apps/` and `features/<id>/catalog.ts` must satisfy.
  *
  * These are **zod schemas first and TypeScript types second** on purpose. The
  * catalog is the single source of truth for what the site ships, and its
@@ -16,9 +16,8 @@
  * otherwise just never render.
  *
  * The types are derived with `z.infer` so there is exactly one declaration of
- * the shape. `GameInfo`/`AppInfo` keep their names and their mutable-array
- * exports so every existing consumer of `@/lib/games` and `@/lib/apps` compiles
- * unchanged.
+ * the shape. `GameInfo`/`AppInfo` are the names every consumer of `@/lib/catalog`
+ * imports.
  */
 
 import { z } from 'zod';
@@ -76,7 +75,31 @@ const catalogEntryShape = {
   unlisted: z.boolean().optional(),
 } as const;
 
-export const gameEntrySchema = z.strictObject(catalogEntryShape);
+/**
+ * How a game's primary score is validated — the half of a game record that the
+ * score endpoints read (`lib/game/registry.ts` derives its rules from this).
+ * Ceilings are deliberately generous: the goal is to reject the impossible, not
+ * to police the excellent.
+ */
+export const scoringSchema = z.strictObject({
+  /** Largest score that is even theoretically reachable; above it is rejected, not clamped. */
+  maxScore: z.number().positive(),
+  /** Highest defensible score-per-second of play (the cheap "huge number instantly" check). */
+  maxScorePerSecond: z.number().positive().optional(),
+  /** Shortest run that can legitimately produce a score, in ms. */
+  minDurationMs: z.number().positive().optional(),
+  direction: z.enum(['higher-is-better', 'lower-is-better']),
+  /** Secondary progress metric a run can report (waves, floors, distance...). */
+  progressLabel: z.string().min(1).optional(),
+  /** Ceiling for that metric. Required with `progressLabel`. */
+  maxProgress: z.number().positive().optional(),
+});
+
+export const gameEntrySchema = z.strictObject({
+  ...catalogEntryShape,
+  /** Present on games that accept a score submission; absent otherwise. */
+  scoring: scoringSchema.optional(),
+});
 
 export const appEntrySchema = z.strictObject({
   ...catalogEntryShape,
@@ -93,5 +116,6 @@ export const appEntrySchema = z.strictObject({
   ogImageAlt: z.string().min(1).optional(),
 });
 
+export type GameScoring = z.infer<typeof scoringSchema>;
 export type GameInfo = z.infer<typeof gameEntrySchema>;
 export type AppInfo = z.infer<typeof appEntrySchema>;

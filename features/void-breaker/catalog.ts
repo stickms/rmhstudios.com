@@ -1,4 +1,4 @@
-import type { GameInfo } from '../types';
+import type { GameInfo } from '@/lib/catalog/types';
 
 const entry: GameInfo = {
   id: 'void-breaker',
@@ -19,6 +19,14 @@ const entry: GameInfo = {
   bannerPath: '/images/games/banners/void-breaker.webp',
   logoPath: '/images/games/logos/void-breaker.webp',
   authGate: true,
+  scoring: {
+    maxScore: 10_000_000,
+    maxScorePerSecond: 5_000,
+    minDurationMs: 3_000,
+    direction: 'higher-is-better',
+    progressLabel: 'Wave',
+    maxProgress: 500,
+  },
 };
 
 export default entry;

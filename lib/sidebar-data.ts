@@ -3,8 +3,7 @@ import { resolveUserDisplay } from '@/lib/user-display';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getFollowingIds } from '@/lib/social/follow-graph.server';
 import { cached } from '@/lib/cached.server';
-import { games } from './games';
-import { apps } from './apps';
+import { games, apps } from './catalog';
 
 // The sidebar (top builds, blog, recommended users) is on the home page's
 // blocking loader — and the page component (and therefore the feed's first
