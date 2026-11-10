@@ -2,13 +2,12 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
-
-interface Notice {
-  id: string;
-  title: string;
-  body: string;
-  linkUrl: string | null;
-}
+import { api } from '@/lib/contract/client';
+import {
+  dismissNoticeApi,
+  getActiveNoticeApi,
+  type NoticeView as Notice,
+} from '@/lib/ops/notices.contract';
 
 /**
  * An admin-targeted notice, fetched on idle for signed-in members and shown as a
@@ -24,12 +23,11 @@ export function TargetedNoticeBanner() {
     if (!signedIn) return;
     const ctrl = new AbortController();
     const run = () =>
-      fetch(`/api/notices/active?locale=${encodeURIComponent(i18n.language.slice(0, 2))}`, {
-        credentials: 'include',
+      api(getActiveNoticeApi, {
+        query: { locale: i18n.language.slice(0, 2) },
         signal: ctrl.signal,
       })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((j: { notice: Notice | null } | null) => setNotice(j?.notice ?? null))
+        .then((j) => setNotice(j.notice))
         .catch(() => {});
     const id = window.setTimeout(run, 4000);
     return () => {
@@ -40,12 +38,7 @@ export function TargetedNoticeBanner() {
 
   if (!notice) return null;
   const dismiss = () => {
-    void fetch('/api/notices/dismiss', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id: notice.id }),
-    }).catch(() => {});
+    void api(dismissNoticeApi, { body: { id: notice.id } }).catch(() => {});
     setNotice(null);
   };
   return (

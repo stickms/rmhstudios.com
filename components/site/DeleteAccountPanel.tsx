@@ -9,6 +9,9 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { TriangleAlert } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { deleteAccountApi } from '@/lib/account/account.contract';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,15 +33,10 @@ export function DeleteAccountPanel() {
     if (!matches) return;
     setBusy(true);
     try {
-      const res = await fetch('/api/account/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ confirm: confirm.trim() }),
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error || t('delete-failed', { defaultValue: 'Could not delete your account.' }));
+      try {
+        await api(deleteAccountApi, { body: { confirm: confirm.trim() } });
+      } catch (e) {
+        toast.error(serverError(e) || t('delete-failed', { defaultValue: 'Could not delete your account.' }));
         return;
       }
       toast.success(t('delete-done', { defaultValue: 'Your account has been deleted.' }));

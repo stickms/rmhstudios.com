@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { ShoppingBasket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { armBasket } from '@/lib/arcade/run-client';
+import { api } from '@/lib/contract/client';
+import { getBasketApi } from '@/lib/arcade/arcade.contract';
 
 interface BasketData {
   basket: { day: string };
@@ -20,8 +22,7 @@ export function BasketCard({ signedIn, onPlay }: { signedIn: boolean; onPlay: ()
   const { t } = useTranslation('f-party');
   const [data, setData] = useState<BasketData | null>(null);
   useEffect(() => {
-    fetch('/api/arcade/basket')
-      .then((r) => (r.ok ? r.json() : null))
+    api(getBasketApi)
       .then(setData)
       .catch(() => null);
   }, [signedIn]);

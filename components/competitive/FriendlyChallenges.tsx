@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { gameName, RANKED_GAMES } from '@/lib/ranked/elo';
 import { HANDICAP_HOOKS } from '@/lib/ranked/handicap';
+import { api } from '@/lib/contract/client';
+import { listFriendlyApi } from '@/lib/competitive/friendly.contract';
 
 interface Row {
   id: string;
@@ -27,8 +29,8 @@ export default function FriendlyChallenges() {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/friendly');
-    if (res.ok) setRows((await res.json()).challenges ?? []);
+    const res = await api(listFriendlyApi).catch(() => null);
+    if (res) setRows((res.challenges ?? []) as Row[]);
   }, []);
   useEffect(() => {
     void load();

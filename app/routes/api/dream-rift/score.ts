@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { auth } from '@/lib/auth';
 import { recordGamePlay } from '@/lib/quests/engine.server';
 
 const DIFFICULTY_FIELDS = {
@@ -45,21 +44,14 @@ export const Route = createFileRoute('/api/dream-rift/score')({
   server: {
     handlers: {
       POST: defineHandler(
-        { auth: 'none', rateLimit: { limit: 5, windowMs: 60_000, prefix: 'dream-rift-score' } },
-        async ({ request }) => {
+        { rateLimit: { limit: 5, windowMs: 60_000, prefix: 'dream-rift-score' } },
+        async ({ request, userId }) => {
           try {
             const { score, difficulty, stage, character, graze, spellsCaptured } =
               await request.json();
 
             if (typeof score !== 'number' || score < 0 || score > 10_000_000) {
               return Response.json({ error: 'Invalid score' }, { status: 400 });
-            }
-
-            // Scores are tied to the signed-in account — guests cannot post.
-            const session = await auth.api.getSession({ headers: request.headers });
-            const userId = session?.user?.id;
-            if (!userId) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
             }
 
             const difficultyKey: Difficulty =

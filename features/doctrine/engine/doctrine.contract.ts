@@ -86,3 +86,20 @@ export const getDoctrineReplayPuzzleApi = endpoint<{
   query: { mode?: string | undefined };
   res: DoctrinePuzzleView;
 }>()({ method: 'GET', path: '/api/doctrine/puzzles/replay' });
+
+/** React to a safehouse, disclosure or incident (exactly one target id). */
+export const doctrineReactApi = endpoint<{
+  body: {
+    reaction: string;
+    safehouseId?: string | undefined;
+    disclosureId?: string | undefined;
+    incidentId?: string | undefined;
+  };
+  res: { success: true };
+}>()({ method: 'POST', path: '/api/doctrine/reactions' });
+
+/** Mint a recruitment code (403 when the caller may not recruit). */
+export const createRecruitmentApi = endpoint<{
+  body: { personalMessage: string; targetSkills: string[]; maxUses: number };
+  res: { success: true; code: string; expiresAt: string; maxUses: number };
+}>()({ method: 'POST', path: '/api/doctrine/recruitment/create' });

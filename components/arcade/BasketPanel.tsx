@@ -5,6 +5,8 @@ import { Share2, ShoppingBasket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useArcadeRun } from '@/lib/arcade/run-client';
 import { basketShareText } from '@/lib/arcade/basket';
+import { api } from '@/lib/contract/client';
+import { finishBasketApi, getBasketApi } from '@/lib/arcade/arcade.contract';
 
 interface Stats {
   sorted: number;
@@ -40,13 +42,14 @@ export function BasketPanel({
     sent.current = true;
     void (async () => {
       if (run.counted) {
-        const res = await fetch('/api/arcade/basket/finish', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ score: Math.round(score), detail: stats }),
-        }).catch(() => null);
+        const saved = await api(finishBasketApi, {
+          body: { score: Math.round(score), detail: stats },
+        }).then(
+          () => true,
+          () => false,
+        );
         setNote(
-          res?.ok
+          saved
             ? t('basket-saved', { defaultValue: 'Saved to today’s basket leaderboard.' })
             : t('basket-failed', { defaultValue: 'Couldn’t save the basket result.' }),
         );
@@ -55,8 +58,8 @@ export function BasketPanel({
           t('basket-used', { defaultValue: 'Practice run: today’s attempt was already used.' }),
         );
       }
-      const b = await fetch('/api/arcade/basket').catch(() => null);
-      if (b?.ok) setBoard(((await b.json()) as { board: Row[] }).board);
+      const b = await api(getBasketApi).catch(() => null);
+      if (b) setBoard(b.board);
     })();
   }, [run, signedIn, score, stats, t]);
 

@@ -25,6 +25,8 @@ import { isTradable, minPriceFor, MAX_PRICE } from '@/lib/market/tradable';
 import { MarketItemPreview } from './ListingCard';
 import { getShopApi } from '@/lib/shop/shop.contract';
 import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createListingApi } from '@/lib/market/market.contract';
 
 interface OwnedItem {
   id: string;
@@ -94,22 +96,12 @@ export function SellSheet({
     if (busy !== null) return;
     setBusy(item.id);
     try {
-      const res = await fetch('/api/market/listings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ itemId: item.id, priceCoins: price }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        toast.success(t('market-listed', { name: item.name, defaultValue: 'Listed {{name}}!' }));
-        setItems((prev) => (prev ? prev.filter((i) => i.id !== item.id) : prev));
-        onListed?.();
-      } else {
-        toast.error(
-          data.error || t('market-list-failed', { defaultValue: "Couldn't list that item" }),
-        );
-      }
+      await api(createListingApi, { body: { itemId: item.id, priceCoins: price } });
+      toast.success(t('market-listed', { name: item.name, defaultValue: 'Listed {{name}}!' }));
+      setItems((prev) => (prev ? prev.filter((i) => i.id !== item.id) : prev));
+      onListed?.();
+    } catch (e) {
+      toast.error(serverError(e) || t('market-list-failed', { defaultValue: "Couldn't list that item" }));
     } finally {
       setBusy(null);
     }

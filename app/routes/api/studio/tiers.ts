@@ -1,8 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import {
   listTiers,
   saveTiers,
@@ -34,31 +32,25 @@ export const Route = createFileRoute('/api/studio/tiers')({
         return Response.json({ tiers: await listTiers(session.user.id) });
       }),
 
-      PUT: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const { allowed } = rateLimit(getClientIp(request), {
-            limit: 20,
-            windowMs: 60_000,
-            prefix: 'studio-tiers',
-          });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
-          const parsed = putSchema.safeParse(await request.json().catch(() => ({})));
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-          const tiers = await saveTiers(session.user.id, parsed.data.tiers);
-          return Response.json({ tiers });
-        } catch (error) {
-          if (error instanceof TierError) {
-            return Response.json({ error: error.message }, { status: 400 });
+      PUT: defineHandler(
+        {
+          rateLimit: { limit: 20, windowMs: 60_000, prefix: 'studio-tiers' },
+          body: putSchema,
+          allowEmptyBody: true,
+          invalid: () => Response.json({ error: 'Invalid input' }, { status: 400 }),
+        },
+        async ({ session, body }) => {
+          try {
+            const tiers = await saveTiers(session.user.id, body.tiers);
+            return Response.json({ tiers });
+          } catch (error) {
+            if (error instanceof TierError) {
+              return Response.json({ error: error.message }, { status: 400 });
+            }
+            throw error;
           }
-          console.error('Studio tiers save error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

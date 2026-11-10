@@ -14,6 +14,8 @@ import { Swords, ChevronDown, ArrowUpRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/contract/client';
+import { getRankedOverviewApi } from '@/lib/ranked/ranked.contract';
 
 interface Rating {
   game: string;
@@ -42,9 +44,7 @@ export function RankedSummary() {
     let active = true;
     (async () => {
       try {
-        const res = await fetch('/api/ranked', { credentials: 'include' });
-        if (!res.ok || !active) return;
-        const data = await res.json();
+        const data = await api(getRankedOverviewApi);
         if (!active) return;
         setGames(data.games ?? []);
         setRatings(data.ratings ?? []);
