@@ -5,7 +5,7 @@
  * dedicated getter.
  */
 import { prisma } from '@/lib/prisma.server';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import type { HistoryEntityType } from '@/lib/history/constants';
 
 export interface HistoryView {

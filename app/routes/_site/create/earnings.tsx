@@ -7,6 +7,8 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { creatorRedemptionsQuery, studioOverviewQuery } from '@/lib/creator/earnings.queries';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { StudioDashboard } from '@/components/creator-studio/StudioDashboard';
 import { EarningsTab } from '@/components/creator-studio/EarningsTab';
@@ -23,6 +25,14 @@ export const Route = createFileRoute('/_site/create/earnings')({
     ],
     links: [buildCanonical('/create/earnings')],
   }),
+  // The dashboard and the redemption form read their data here (SSR + intent preload).
+  loader: async ({ context }) => {
+    await Promise.all([
+      prefetchRouteQuery(context.queryClient, studioOverviewQuery()),
+      prefetchRouteQuery(context.queryClient, creatorRedemptionsQuery()),
+    ]);
+    return undefined;
+  },
   component: CreateEarningsTab,
 });
 

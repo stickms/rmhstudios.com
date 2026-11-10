@@ -14,8 +14,7 @@
  * `lib/sitemap.server.ts`.
  */
 
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 
 /** One `<url>` in a sitemap. */
 import { VERTICALS, verticalPriority } from '@/lib/verticals';

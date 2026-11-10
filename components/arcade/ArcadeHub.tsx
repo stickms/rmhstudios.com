@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import { APPLE_SPRING } from '@/lib/motion';
 import type { ArcadeState, ArcadeChallengeView } from '@/lib/quests/arcade';
 

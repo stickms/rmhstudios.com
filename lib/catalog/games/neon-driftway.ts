@@ -20,6 +20,14 @@ const entry: GameInfo = {
   bannerPath: '/images/games/banners/neon-driftway.webp',
   logoPath: '/images/games/logos/neon-driftway.webp',
   authGate: true,
+  scoring: {
+    maxScore: 5_000_000,
+    maxScorePerSecond: 4_000,
+    minDurationMs: 3_000,
+    direction: 'higher-is-better',
+    progressLabel: 'Distance',
+    maxProgress: 1_000_000,
+  },
 };
 
 export default entry;

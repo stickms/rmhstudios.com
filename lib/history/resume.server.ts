@@ -41,7 +41,7 @@
 
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import { shouldResume, progressRatio, RESUME_MAX_RATIO } from '@/lib/history/constants';
 
 /* -------------------------------------------------------------------------- */

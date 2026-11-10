@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Gamepad2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -6,7 +7,8 @@ import { toast } from 'sonner';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { PLAYTIME_PRIVACY_VALUES, type PlaytimePrivacy } from '@/lib/playtime/privacy';
 import { api } from '@/lib/contract/client';
-import { getPlaytimeSettingsApi, setPlaytimePrivacyApi } from '@/lib/playtime/playtime.contract';
+import { setPlaytimePrivacyApi } from '@/lib/playtime/playtime.contract';
+import { playtimeSettingsQuery } from '@/lib/settings/privacy.queries';
 
 /**
  * Who may see how long this account has played each game and app: shown in the
@@ -16,15 +18,12 @@ import { getPlaytimeSettingsApi, setPlaytimePrivacyApi } from '@/lib/playtime/pl
  */
 export function PlaytimePrivacyControls() {
   const { t } = useTranslation('site');
-  const [value, setValue] = useState<PlaytimePrivacy>('public');
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    api(getPlaytimeSettingsApi)
-      .then((d) => setValue(d.playtimePrivacy))
-      .catch(() => {})
-      .finally(() => setLoaded(true));
-  }, []);
+  const { data, isPending } = useQuery(playtimeSettingsQuery());
+  // The server's value until the member picks one here.
+  const [picked, setPicked] = useState<PlaytimePrivacy | null>(null);
+  const value: PlaytimePrivacy = picked ?? data?.playtimePrivacy ?? 'public';
+  const setValue = setPicked;
+  const loaded = !isPending;
 
   function choose(next: PlaytimePrivacy) {
     const previous = value;

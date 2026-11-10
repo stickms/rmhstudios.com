@@ -1,7 +1,7 @@
 /**
  * Curated (official) builds — the RMH-made games and apps.
  *
- * Flattens the two code-defined sources (lib/games.ts + lib/apps.ts) into one
+ * Flattens the code-defined catalog (lib/catalog: games and apps) into one
  * common shape the /builds bookshelf and detail page can render uniformly. These
  * are the "Curated / Official" side of the builds switch; community submissions
  * are the "User" side (fetched from /api/user-builds).
@@ -9,8 +9,7 @@
  * Pure/static — safe to import on both server and client.
  */
 
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 
 export type CuratedKind = 'game' | 'app';
 

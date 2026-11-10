@@ -7,12 +7,11 @@
  * finds the thing from the search page; the ⌘K palette uses it so both surfaces
  * rank identically instead of each having its own idea of what matches.
  *
- * Client-safe. Icons are Lucide *names* (like `lib/games.ts` does) so this
+ * Client-safe. Icons are Lucide *names* (like the catalog (`lib/catalog`) does) so this
  * module stays free of React imports.
  */
 
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 import { confidenceOf, scoreRecord, MATCH_FLOOR } from './score';
 import type { SearchHit, SearchKind } from './types';
 

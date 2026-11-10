@@ -18,6 +18,14 @@ const entry: GameInfo = {
   bannerPath: '/images/games/banners/synapse-storm.webp',
   logoPath: '/images/games/logos/synapse-storm.webp',
   authGate: true,
+  scoring: {
+    maxScore: 5_000_000,
+    maxScorePerSecond: 3_000,
+    minDurationMs: 3_000,
+    direction: 'higher-is-better',
+    progressLabel: 'Combo',
+    maxProgress: 10_000,
+  },
 };
 
 export default entry;

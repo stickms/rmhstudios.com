@@ -1,6 +1,6 @@
 /**
  * P1 — Top Four: resolving a pinned (kind, id) pair against the game and app
- * catalogs. The catalogs (`lib/games.ts`, `lib/apps.ts`) are the single source
+ * catalogs. The catalog (`lib/catalog`) is the single source
  * of truth for what exists, so a stored id that has since been removed or hidden
  * simply stops resolving and is dropped — nothing is copied into the profile.
  *
@@ -8,8 +8,7 @@
  * per-member private storage and albums are an admin-curated set with no public
  * picker, so neither has anything a visitor could be sent to.
  */
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 import { TOP_FOUR_SIZE, type TopFourItem } from '@/lib/profile/modules';
 
 export interface TopFourEntry {

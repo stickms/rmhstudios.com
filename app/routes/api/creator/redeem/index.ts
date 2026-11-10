@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { implement } from '@/lib/api/implement.server';
+import { requestRedemptionApi } from '@/lib/creator/earnings.contract';
 import { requestRedemptionSchema } from '@/lib/creator/redemption-schema';
 import { assertNoRecoveryHold } from '@/lib/recovery/hold.server';
 import {
@@ -21,46 +21,36 @@ export const Route = createFileRoute('/api/creator/redeem/')({
         ]);
         return Response.json({ earnings, requests });
       }),
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session?.user?.id) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-          const { allowed } = rateLimit(getClientIp(request), {
-            limit: 10,
-            windowMs: 60_000,
-            prefix: 'creator-redeem',
-          });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
+      POST: implement(
+        requestRedemptionApi,
+        {
+          rateLimit: { limit: 10, windowMs: 60_000, prefix: 'creator-redeem' },
+          body: requestRedemptionSchema,
+          invalid: (e) =>
+            Response.json({ error: e.issues[0]?.message ?? 'Invalid input' }, { status: 400 }),
+        },
+        async ({ session, body }) => {
+          try {
+            // A recovered account is held for 72h before it can move value. Without
+            // this the hold is reported and not enforced, and account recovery
+            // becomes the cheapest route into the economy.
+            const held = await assertNoRecoveryHold(session.user.id);
+            if (held) return held;
 
-          const parsed = requestRedemptionSchema.safeParse(await request.json().catch(() => ({})));
-          if (!parsed.success) {
-            return Response.json(
-              { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-              { status: 400 },
-            );
+            const req = await requestRedemption({
+              userId: session.user.id,
+              input: body,
+              isVerified: (session.user as { isVerified?: boolean }).isVerified,
+            });
+            return { ok: true as const, id: req.id };
+          } catch (error) {
+            if (error instanceof RedemptionError) {
+              return Response.json({ error: error.message }, { status: error.status });
+            }
+            throw error;
           }
-          // A recovered account is held for 72h before it can move value. Without
-          // this the hold is reported and not enforced, and account recovery
-          // becomes the cheapest route into the economy.
-          const held = await assertNoRecoveryHold(session.user.id);
-          if (held) return held;
-
-          const req = await requestRedemption({
-            userId: session.user.id,
-            input: parsed.data,
-            isVerified: (session.user as { isVerified?: boolean }).isVerified,
-          });
-          return Response.json({ ok: true, id: req.id });
-        } catch (error) {
-          if (error instanceof RedemptionError) {
-            return Response.json({ error: error.message }, { status: error.status });
-          }
-          console.error('Creator redeem error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

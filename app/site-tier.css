@@ -33,10 +33,18 @@
 @import './globals.css';
 
 /* Full-screen games and apps — components/ and lib/ directories no site page imports. */
-@source not "../features/altair";
-@source not "../features/balatro";
-@source not "../features/doctrine";
-@source not "../features/hearthworks";
+@source not "../features/altair/engine";
+@source not "../features/altair/ui";
+@source not "../features/altair/server";
+@source not "../features/balatro/engine";
+@source not "../features/balatro/ui";
+@source not "../features/balatro/server";
+@source not "../features/doctrine/engine";
+@source not "../features/doctrine/ui";
+@source not "../features/doctrine/server";
+@source not "../features/hearthworks/engine";
+@source not "../features/hearthworks/ui";
+@source not "../features/hearthworks/server";
 @source not "../components/blm";
 @source not "../components/breaches";
 @source not "../components/covid";
@@ -55,7 +63,8 @@
 @source not "../components/lights-out";
 @source not "../components/lockdown";
 @source not "../components/neon-driftway";
-@source not "../features/nightrail";
+@source not "../features/nightrail/engine";
+@source not "../features/nightrail/ui";
 @source not "../components/optimization";
 @source not "../components/pf2ecal";
 @source not "../components/rebar-rutabaga";
@@ -87,7 +96,8 @@
 @source not "../components/vega";
 @source not "../components/velum2099";
 @source not "../components/versecraft";
-@source not "../features/void-breaker";
+@source not "../features/void-breaker/engine";
+@source not "../features/void-breaker/ui";
 @source not "../lib/audio";
 @source not "../lib/cards";
 @source not "../lib/controller";

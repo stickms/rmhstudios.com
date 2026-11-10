@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from "@/lib/auth";
+import { implement } from '@/lib/api/implement.server';
+import { messagesSidebarApi } from '@/lib/messages/messages-sidebar.contract';
 import { prisma } from "@/lib/prisma.server";
 import { resolveUserDisplay } from "@/lib/user-display";
 
@@ -8,14 +9,11 @@ import { resolveUserDisplay } from "@/lib/user-display";
 export const Route = createFileRoute('/api/messages/sidebar')({
   server: {
     handlers: {
-  GET: async ({ request }) => {
+  GET: implement(messagesSidebarApi, { auth: 'optional' }, async ({ userId }) => {
   try {
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (!session) {
+    if (!userId) {
       return Response.json({ recent: [], suggested: [] });
     }
-
-    const userId = session.user.id;
 
     // Previously messaged: users from recent conversations
     const conversations = await prisma.conversation.findMany({
@@ -104,7 +102,7 @@ export const Route = createFileRoute('/api/messages/sidebar')({
     console.error("Messages sidebar error:", error);
     return Response.json({ recent: [], suggested: [] });
   }
-},
+}),
     },
   },
 });

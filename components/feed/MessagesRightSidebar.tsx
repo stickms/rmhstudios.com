@@ -4,13 +4,10 @@ import { MessageCircle, UserPlus } from'lucide-react';
 import { useTranslation } from'react-i18next';
 import { UserAvatar } from'@/components/ui/UserAvatar';
 import { useSession } from'@/components/Providers';
+import { api } from '@/lib/contract/client';
+import { messagesSidebarApi, type MessagesSidebarUser } from '@/lib/messages/messages-sidebar.contract';
 
-interface SidebarUser {
- id: string;
- name: string | null;
- image: string | null;
- username: string | null;
-}
+type SidebarUser = MessagesSidebarUser;
 
 function UserRow({ user }: { user: SidebarUser }) {
  const { t } = useTranslation("feed");
@@ -41,8 +38,7 @@ export function MessagesRightSidebar() {
 
  useEffect(() => {
  if (!session) return;
- fetch('/api/messages/sidebar')
- .then((res) => res.json())
+ api(messagesSidebarApi)
  .then((data) => {
  setRecent(data.recent ?? []);
  setSuggested(data.suggested ?? []);

@@ -8,7 +8,7 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import type { RatingAgg, ReviewView, GuideSummary } from '@/lib/games/reviews';
 import { canViewPlaytime, isPlaytimePrivacy } from '@/lib/playtime/privacy';

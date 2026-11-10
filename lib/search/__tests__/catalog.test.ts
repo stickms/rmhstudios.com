@@ -2,8 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { searchCatalog, SITE_DESTINATIONS } from '../catalog';
 import { normalizeQuery } from '../normalize';
 import { CONFIDENCE, MATCH_FLOOR } from '../score';
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 
 const q = normalizeQuery;
 

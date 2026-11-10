@@ -1,6 +1,6 @@
 <!--
   GENERATED FILE — do not edit by hand.
-  Source: app/routes/, lib/games.ts, lib/apps.ts.
+  Source: app/routes/, lib/catalog.
   Regenerate with `pnpm docs:site`.
 -->
 
@@ -8,7 +8,7 @@
 
 The full applications that sit alongside the games — synced media, learning and productivity tools, and the creator surfaces.
 
-Generated from `lib/apps.ts`, the single source of truth every card on the site reads from.
+Generated from `lib/catalog`, the single source of truth every card on the site reads from.
 
 | | Route | Status | Auth | Tags |
 | --- | ----- | ------ | ---- | ---- |

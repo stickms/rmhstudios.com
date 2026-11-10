@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/contract/client';
 import { subscribePushApi, unsubscribePushApi } from '@/lib/push/push.contract';
+import { pushPublicKeyApi } from '@/lib/push/public-key.contract';
 
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
@@ -43,10 +44,10 @@ export function usePushSubscription(enabled: boolean) {
       // Server must have keys configured, and the SW must be registered
       // (production only) for push to be possible at all.
       const [keyRes, registration] = await Promise.all([
-        fetch('/api/push/public-key').catch(() => null),
+        api(pushPublicKeyApi).catch(() => null),
         navigator.serviceWorker.getRegistration(),
       ]);
-      if (cancelled || !keyRes?.ok || !registration) return;
+      if (cancelled || !keyRes || !registration) return;
       setSupported(true);
       setDenied(Notification.permission === 'denied');
       const sub = await registration.pushManager.getSubscription();
@@ -66,9 +67,7 @@ export function usePushSubscription(enabled: boolean) {
       setDenied(permission === 'denied');
       if (permission !== 'granted') return false;
 
-      const keyRes = await fetch('/api/push/public-key');
-      if (!keyRes.ok) return false;
-      const { key } = (await keyRes.json()) as { key: string };
+      const { key } = await api(pushPublicKeyApi);
 
       const registration = await navigator.serviceWorker.ready;
       const sub = await registration.pushManager.subscribe({

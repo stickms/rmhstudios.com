@@ -1,15 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import { exploreApi } from '@/lib/discovery/explore.contract';
 import { listExplore } from '@/lib/explore.server';
 
 /** GET /api/explore — trending tags, hot posts, and people to follow. */
 export const Route = createFileRoute('/api/explore')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      GET: implement(exploreApi, { auth: 'optional' }, async ({ userId: viewerId }) => {
         try {
-          const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-          const viewerId = session?.user?.id ?? null;
           const result = await listExplore(viewerId);
 
           return Response.json(
@@ -23,7 +22,7 @@ export const Route = createFileRoute('/api/explore')({
           console.error('Explore error:', error);
           return Response.json({ trendingTags: [], hotPosts: [], suggestedUsers: [], communities: [], libraryDocs: [] });
         }
-      },
+      }),
     },
   },
 });

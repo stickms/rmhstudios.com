@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { games } from '@/lib/catalog';
 
 /**
  * The full-screen tier's viewport contract, as an EXECUTABLE gate.
@@ -325,7 +326,7 @@ function viewportUnitViolations(): Violation[] {
  * (`OPT_OUT_SCOPE_SELECTOR` in lib/jelly/tiers.ts). HUDs and menus stay jelly;
  * held-control regions add `data-jelly-scope="off"`.
  *
- * Keyed by the catalog (`lib/catalog/games/<id>.ts`), so a new game cannot ship
+ * Keyed by the catalog (`lib/catalog`), so a new game cannot ship
  * without one. A game's runtime lives in `components/<id>` unless listed here.
  */
 const GAME_DIRS: Record<string, string[]> = {
@@ -336,9 +337,7 @@ const GAME_DIRS: Record<string, string[]> = {
 };
 
 function catalogGameIds(): string[] {
-  return readdirSync(join(ROOT, 'lib', 'catalog', 'games'))
-    .filter((f) => f.endsWith('.ts'))
-    .map((f) => f.replace(/\.ts$/, ''));
+  return games.map((g) => g.id);
 }
 
 function gamesWithoutPlayfield(): string[] {

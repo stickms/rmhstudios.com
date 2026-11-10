@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { implement } from '@/lib/api/implement.server';
+import { cancelListingApi } from '@/lib/market/market.contract';
 import { cancelListing, MarketError } from '@/lib/market/market.server';
 
 /**
@@ -9,32 +9,24 @@ import { cancelListing, MarketError } from '@/lib/market/market.server';
 export const Route = createFileRoute('/api/market/listings/$id/')({
   server: {
     handlers: {
-      DELETE: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, {
-            limit: 20,
-            windowMs: 60_000,
-            prefix: 'market-cancel',
-          });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
-          await cancelListing(params.id, session.user.id);
-          return Response.json({ success: true });
-        } catch (error) {
-          if (error instanceof MarketError) {
-            return Response.json(
-              { error: error.message, code: error.code },
-              { status: error.status },
-            );
+      DELETE: implement(
+        cancelListingApi,
+        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'market-cancel' } },
+        async ({ userId, params }) => {
+          try {
+            await cancelListing(params.id, userId);
+            return { success: true as const };
+          } catch (error) {
+            if (error instanceof MarketError) {
+              return Response.json(
+                { error: error.message, code: error.code },
+                { status: error.status },
+              );
+            }
+            throw error;
           }
-          console.error('market cancel error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

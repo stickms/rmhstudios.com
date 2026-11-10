@@ -35,7 +35,7 @@ export interface ShareEntity {
   text?: string;
   /**
    * Canonical site-relative path, overriding the derived one. Needed for apps
-   * (each owns a bespoke top-level route — see `lib/apps.ts`) and useful for
+   * (each owns a bespoke top-level route — see `lib/catalog`) and useful for
    * anything whose URL the caller already knows.
    */
   path?: string;

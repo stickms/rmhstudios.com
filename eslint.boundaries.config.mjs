@@ -10,7 +10,7 @@ import importX, { createNodeResolver } from 'eslint-plugin-import-x';
 
 /**
  * Game / app feature directories (the per-feature dirs under components/ and
- * lib/; catalogs live in lib/games.ts and lib/apps.ts). Shared code must not
+ * lib/; the catalog is lib/catalog). Shared code must not
  * reach into these. Add a new game/app here when it is added to the catalog.
  */
 export const FEATURE_DIRS = [

@@ -1,6 +1,8 @@
 import { useEffect, useState } from'react';
 import { Gift, Check, Sparkles } from'lucide-react';
 import { useTranslation } from'react-i18next';
+import { api } from '@/lib/contract/client';
+import { claimFreeMonthApi, getFreeMonthApi } from '@/lib/promo.contract';
 import { useSession } from'@/components/Providers';
 import { Button } from'@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from'@/components/ui/dialog';
@@ -34,9 +36,7 @@ export function FreeMonthModal() {
  const snooze = Number(localStorage.getItem(COOLDOWN_KEY) ||'0');
  if (snooze && Date.now() < snooze) return;
 
- const res = await fetch('/api/promo/free-month', { credentials:'include'});
- if (!res.ok) return;
- const data = await res.json();
+ const data = await api(getFreeMonthApi);
  if (!cancelled && data.eligible) setOpen(true);
  } catch {
  // ignore
@@ -59,8 +59,8 @@ export function FreeMonthModal() {
  const claim = async () => {
  setClaiming(true);
  try {
- const res = await fetch('/api/promo/free-month', { method:'POST', credentials:'include'});
- if (res.ok) {
+ const claimedOk = await api(claimFreeMonthApi).then(() => true, () => false);
+ if (claimedOk) {
  setClaimed(true);
  try {
  // Never offer again once claimed.

@@ -1,7 +1,7 @@
 // Client-safe registry of games that can back a coin-staked wager match or a
 // tournament. This is intentionally a small, curated allowlist rather than a
-// flag on every `GameInfo` — most games in `lib/games.ts` have no head-to-head
-// "winner" outcome, and RMHType lives in `lib/apps.ts`, not the games catalog.
+// flag on every `GameInfo` — most games in the catalog (`lib/catalog`) have no head-to-head
+// "winner" outcome, and RMHType lives in the apps catalog, not the games one.
 //
 // `authoritative: true` means the game reports a server-validated result to
 // `/api/internal/match-result` (the winner cannot be forged). Non-authoritative

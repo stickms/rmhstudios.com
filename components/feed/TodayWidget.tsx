@@ -12,15 +12,12 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { buyStreakFreezeApi, getTodayApi, type TodaySummary } from '@/lib/today.contract';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useIdleReady } from '@/hooks/useIdleReady';
 
-interface TodaySummary {
-  streak: { current: number; checkedInToday: boolean; freezeTokens: number };
-  wheel: { spunToday: boolean };
-  puzzles: Array<{ mode: string; done: boolean }>;
-  quests: { total: number; completed: number; claimable: number };
-}
 
 const PUZZLE_LABEL: Record<string, string> = {
   'lights-out': 'Lights Out',
@@ -85,8 +82,7 @@ export function TodayWidget({ onSettled }: { onSettled?: () => void } = {}) {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/today', { credentials: 'include' });
-      if (res.ok) setData(await res.json());
+      setData(await api(getTodayApi));
     } catch {
       // decorative — leave empty
     } finally {
@@ -113,23 +109,16 @@ export function TodayWidget({ onSettled }: { onSettled?: () => void } = {}) {
   const buyFreeze = async () => {
     setBuying(true);
     try {
-      const res = await fetch('/api/streak/freeze', { method: 'POST', credentials: 'include' });
-      const body = await res.json().catch(() => ({}));
-      if (res.ok) {
-        toast.success(
-          t('freeze-bought', {
-            defaultValue: 'Streak freeze bought! You now hold {{count}}.',
-            count: body.freezeTokens,
-          }),
-        );
-        setData((d) =>
-          d ? { ...d, streak: { ...d.streak, freezeTokens: body.freezeTokens } } : d,
-        );
-      } else {
-        toast.error(body.error ?? t('freeze-failed', { defaultValue: 'Could not buy a freeze.' }));
-      }
-    } catch {
-      toast.error(t('freeze-failed', { defaultValue: 'Could not buy a freeze.' }));
+      const body = await api(buyStreakFreezeApi);
+      toast.success(
+        t('freeze-bought', {
+          defaultValue: 'Streak freeze bought! You now hold {{count}}.',
+          count: body.freezeTokens,
+        }),
+      );
+      setData((d) => (d ? { ...d, streak: { ...d.streak, freezeTokens: body.freezeTokens } } : d));
+    } catch (e) {
+      toast.error(serverError(e) ?? t('freeze-failed', { defaultValue: 'Could not buy a freeze.' }));
     } finally {
       setBuying(false);
     }

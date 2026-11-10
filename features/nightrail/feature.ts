@@ -12,6 +12,6 @@ export default defineFeature({
     'app/routes/api/nightrail/tricks/vote.ts',
   ],
   namespaces: ['c-nightrail'],
-  catalog: 'lib/catalog/games/nightrail.ts',
+  catalog: 'features/nightrail/catalog.ts',
   listed: true,
 });

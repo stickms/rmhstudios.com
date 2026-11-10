@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { unreadCountApi } from '@/lib/messages/messages-sidebar.contract';
 import { useIdleReady } from '@/hooks/useIdleReady';
 
 /**
@@ -77,21 +80,16 @@ function stopPolling() {
 function startPolling() {
   if (fallbackInterval) return;
   const fetchUnread = () => {
-    fetch('/api/messages/unread-count')
-      .then((res) => {
-        if (res.status === 401 || res.status === 403) {
+    api(unreadCountApi)
+      .then((data) => broadcastCount(data.count ?? 0))
+      .catch((e: unknown) => {
+        if (e instanceof HttpError && (e.status === 401 || e.status === 403)) {
           // Signed out (or session expired): stop the stream and the probe.
           stop();
           signedOut = true;
           broadcastCount(0);
-          return null;
         }
-        return res.json();
-      })
-      .then((data) => {
-        if (data) broadcastCount(data.count ?? 0);
-      })
-      .catch(() => {});
+      });
   };
   fetchUnread();
   fallbackInterval = setInterval(fetchUnread, 15_000);

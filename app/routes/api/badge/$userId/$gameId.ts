@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import { getGameAdapter } from '@/lib/game/adapters.server';
 import { renderBadge } from '@/lib/devplatform/badge';
 

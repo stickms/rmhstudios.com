@@ -20,6 +20,7 @@ import {
  deleteStorefrontProductApi,
  getStorefrontApi,
  updateStorefrontProductApi,
+  buyStorefrontProductApi,
 } from'@/lib/storefront/storefront.contract';
 
 interface Product {
@@ -130,13 +131,11 @@ export function StorefrontColumn({
  if (busy !== null) return;
  setBusy(`buy:${id}`);
  try {
- const res = await fetch(`/api/storefront/products/${id}/buy`, {
- method:'POST',
- credentials:'include',
- });
- const data = await res.json().catch(() => ({}));
- if (!res.ok) {
- if (data?.error) alert(data.error);
+ try {
+ await api(buyStorefrontProductApi, { params: { id } });
+ } catch (e) {
+ const msg = serverError(e);
+ if (msg) alert(msg);
  return;
  }
  await load();

@@ -23,7 +23,7 @@ import {
 } from '@/lib/quests/arcade';
 
 export interface GameResultPayload {
-  /** Game id — must match an `id` in `lib/games.ts`. */
+  /** Game id — must match an `id` in the catalog (`lib/catalog`). */
   game: string;
   score?: number;
   won?: boolean;

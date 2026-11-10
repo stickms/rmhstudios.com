@@ -7,14 +7,13 @@
  * indistinguishable from every other, and a link to one unfurled as "RMH
  * Studios" with the generic card.
  *
- * The copy already exists, in `lib/games.ts` / `lib/apps.ts`, which is the
+ * The copy already exists, in `lib/catalog`, which is the
  * catalog these pages are listed from. Deriving the head from that entry rather
  * than retyping it per route means the two can't drift, and adding a game to
  * the catalog gives its page a correct head for free.
  */
 
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 import { buildCanonical, buildMeta, ogCardPath, SITE_URL } from '@/lib/seo';
 import { breadcrumbSchema, jsonLdScript, videoGameSchema } from '@/lib/schema';
 import { preloadFont } from '@/lib/fonts/self-hosted';

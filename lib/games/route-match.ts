@@ -6,8 +6,7 @@
  * Pure and client-safe (reads the static catalogs only).
  */
 
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 
 export type CatalogRoute = {
   id: string;

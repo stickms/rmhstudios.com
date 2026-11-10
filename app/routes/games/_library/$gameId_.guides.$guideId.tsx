@@ -4,7 +4,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { SteamPane } from '@/components/steam/SteamPane';
 import { GuideView, type GuideData } from '@/components/games/GuideView';
 import { getRequestSession } from '@/lib/auth-session.server';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import { getGuide } from '@/lib/games/meta.server';
 import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 import { articleSchema, breadcrumbSchema, jsonLdScript } from '@/lib/schema';

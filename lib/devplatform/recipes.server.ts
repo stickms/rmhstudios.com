@@ -13,7 +13,7 @@ import { createNotification } from '@/lib/notifications.server';
 import { rateLimit } from '@/lib/rate-limit';
 import { getShopItem, SHOP_ITEMS } from '@/lib/shop/catalog';
 import { getGameAdapter } from '@/lib/game/adapters.server';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import {
   MAX_RECIPES,
   type CreateRecipeInput,

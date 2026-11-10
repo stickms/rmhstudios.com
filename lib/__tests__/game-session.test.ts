@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { games } from '@/lib/catalog';
 
 /**
  * The game session contract (plan U3), as an executable gate.
@@ -39,9 +40,7 @@ const EXEMPT: Record<string, string> = {
 };
 
 function catalogIds(): string[] {
-  return readdirSync(join(ROOT, 'lib/catalog/games'))
-    .filter((f) => f.endsWith('.ts'))
-    .map((f) => f.replace(/\.ts$/, ''));
+  return games.map((g) => g.id);
 }
 
 function walk(dir: string, out: string[] = []): string[] {

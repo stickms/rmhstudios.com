@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import { FINISH_STATUSES } from '@/lib/arcade/backlog';
 
 export const isKnownGame = (id: string) => games.some((g) => g.id === id);
