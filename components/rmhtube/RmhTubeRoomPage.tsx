@@ -35,7 +35,8 @@ import MemberList from '@/components/rmhtube/MemberList';
 import ReactionOverlay from '@/components/rmhtube/ReactionOverlay';
 import VoteSkipIndicator from '@/components/rmhtube/VoteSkipIndicator';
 import ShortcutsOverlay from '@/components/rmhtube/ShortcutsOverlay';
-import BanListModal from '@/components/rmhtube/BanListModal';
+import BanListModal from '@/components/shared/BanListModal';
+import { formatRelativeTime } from '@/lib/rmhtube/utils';
 import InviteLinkModal from '@/components/rmhtube/InviteLinkModal';
 import OnboardingTour from '@/components/rmhtube/OnboardingTour';
 import PartyLauncher, { PartyOverlaySlot } from '@/components/rmhtube/party/PartyLauncher';
@@ -523,7 +524,7 @@ export default function RmhTubeRoomPage() {
         </PopOutPortal>
       )}
       {showShortcuts && <ShortcutsOverlay onClose={() => setShowShortcuts(false)} />}
-      {showBanList && <BanListModal onClose={() => setShowBanList(false)} />}
+      {showBanList && <BanListModal bannedUsers={room?.bannedUsers} onUnban={(userId) => emit(C2S.ROOM_UNBAN, { targetUserId: userId })} onClose={() => setShowBanList(false)} labels={{ title: t("banned-users", { defaultValue: "Banned Users" }), empty: t("no-banned-users", { defaultValue: "No banned users" }), bannedAt: (time) => t("banned-at", { defaultValue: "Banned {{time}}", time }), unbanTitle: t("unban-user-title", { defaultValue: "Unban user" }), unban: t("unban", { defaultValue: "Unban" }) }} formatTime={formatRelativeTime} />}
       {showInviteModal && <InviteLinkModal roomId={roomId} onClose={() => setShowInviteModal(false)} />}
       <OnboardingTour />
     </div>

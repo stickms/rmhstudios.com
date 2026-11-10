@@ -20,9 +20,10 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { Loader2, LogIn, Users } from 'lucide-react';
+import { LogIn, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Spinner } from '@/components/ui/spinner';
 
 export type CasinoGame = 'blackjack' | 'holdem' | 'baccarat' | 'roulette';
 /** Plinko is single-player — it has no lobby, so it gets the prompt alone. */
@@ -104,7 +105,7 @@ export function SignedOutLobby({ game }: { game: PreviewGame }) {
 
         {rooms === null ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-5 w-5 animate-spin text-site-accent" aria-hidden />
+            <Spinner size={20} />
           </div>
         ) : rooms.length === 0 ? (
           <EmptyState

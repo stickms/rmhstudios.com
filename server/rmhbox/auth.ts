@@ -1,30 +1,17 @@
-import { Pool } from 'pg';
 import { config } from './config';
-import { guardPool } from '../../lib/perf/process-guards';
 import { TRANSIENT_DISCORD_ID_PREFIX } from '../../lib/rmhbox/utils';
+import { createAuthCache, createSessionAuth } from '../shared/session-auth';
 import type { Socket } from 'socket.io';
 import type { ExtendedError } from 'socket.io';
 
-// ─── Database connection pool ────────────────────────────────────
-
-let pool: Pool | null = null;
-
-function getPool(): Pool {
-  if (!pool) {
-    // guardPool: an idle client dropped by a Postgres restart must not crash the hub.
-    pool = guardPool(
-      new Pool({
-        connectionString: config.DATABASE_URL,
-        // perf: one session lookup per connect, 4 is plenty; override with AUTH_DB_POOL_SIZE.
-        max: Number(process.env.AUTH_DB_POOL_SIZE) || 4,
-        idleTimeoutMillis: 30_000,
-        connectionTimeoutMillis: 5_000,
-      }),
-      { service: 'rmhbox', pool: 'auth' },
-    );
-  }
-  return pool;
-}
+// The Better Auth session check (token -> session JOIN user, expiry, cache) is
+// shared by every hub: server/shared/session-auth.ts. The Discord Activity path
+// below is a different credential and stays here.
+const sessionAuth = createSessionAuth({
+  service: 'rmhbox',
+  databaseUrl: config.DATABASE_URL,
+  defaultName: 'Player',
+});
 
 // ─── Identity resolution ─────────────────────────────────────────
 
@@ -32,39 +19,6 @@ interface ValidatedIdentity {
   userId: string;
   userName: string;
   avatarUrl: string | null;
-}
-
-// Distinct outcomes so the middleware can surface an expired session as
-// SESSION_EXPIRED (a valid row past its expiry) vs AUTH_FAILED (no such token).
-// On success the session's own expiry is returned alongside the identity so the
-// auth cache can honour it (see below).
-async function validateSessionToken(
-  token: string,
-): Promise<{ identity: ValidatedIdentity; expiresAt: number } | 'expired' | null> {
-  const db = getPool();
-  const result = await db.query(
-    `SELECT s."userId", s."expiresAt", u."name", u."image"
-     FROM "session" s
-     JOIN "user" u ON u."id" = s."userId"
-     WHERE s."token" = $1
-     LIMIT 1`,
-    [token],
-  );
-
-  if (result.rows.length === 0) return null;
-
-  const row = result.rows[0];
-  const expiresAt = new Date(row.expiresAt);
-  if (expiresAt < new Date()) return 'expired';
-
-  return {
-    identity: {
-      userId: row.userId,
-      userName: row.name || 'Player',
-      avatarUrl: row.image || null,
-    },
-    expiresAt: expiresAt.getTime(),
-  };
 }
 
 /**
@@ -87,7 +41,8 @@ async function validateDiscordToken(discordToken: string): Promise<ValidatedIden
     : null;
 
   // Check if this Discord account is linked to a site user
-  const db = getPool();
+  const db = sessionAuth.getPool();
+  if (!db) throw new Error('DATABASE_URL is not configured');
   const result = await db.query(
     `SELECT a."userId", u."name", u."image"
      FROM "account" a
@@ -116,56 +71,13 @@ async function validateDiscordToken(discordToken: string): Promise<ValidatedIden
   };
 }
 
-// ─── Identity auth cache ─────────────────────────────────────────
+// ─── Discord identity cache ──────────────────────────────────────
 //
-// Hard auth validates every connection: the session path runs a `SELECT ...
-// FROM session` and the Discord path makes an outbound Discord API call plus an
-// `account` lookup — per socket. A reconnection storm (deploy, network blip)
-// would fan out N of these on the max-10 pool (and N Discord calls). Cache
-// positive validations for a short TTL in a bounded Map (same discipline as
-// server/socket-server/index.ts) so repeated reconnects from the same clients
-// reuse the result. Keys are namespaced by auth kind ("s:" session, "d:"
-// Discord) so the two token spaces never collide. Only successful validations
-// are cached; missing / failed / expired tokens fall through and keep their
-// exact accept/reject outcome. A revoked session/token is honoured for at most
-// AUTH_CACHE_TTL_MS.
-const AUTH_CACHE_TTL_MS = 60_000;
-const AUTH_CACHE_MAX_ENTRIES = 10_000;
-// expiresAt: ms epoch for sessions; POSITIVE_INFINITY for Discord identities
-// (their staleness is bounded solely by the TTL, not a session-row expiry).
-interface CachedIdentity {
-  identity: ValidatedIdentity;
-  expiresAt: number;
-  cachedAt: number;
-}
-const authCache = new Map<string, CachedIdentity>();
-
-const authCacheGc = setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of authCache) {
-    if (now - entry.cachedAt >= AUTH_CACHE_TTL_MS || entry.expiresAt <= now) {
-      authCache.delete(key);
-    }
-  }
-}, 30_000);
-authCacheGc.unref();
-
-function getCachedIdentity(key: string): ValidatedIdentity | null {
-  const now = Date.now();
-  const cached = authCache.get(key);
-  if (cached && now - cached.cachedAt < AUTH_CACHE_TTL_MS && cached.expiresAt > now) {
-    return cached.identity;
-  }
-  return null;
-}
-
-function cacheIdentity(key: string, identity: ValidatedIdentity, expiresAt: number): void {
-  if (authCache.size >= AUTH_CACHE_MAX_ENTRIES) {
-    const oldest = authCache.keys().next().value;
-    if (oldest !== undefined) authCache.delete(oldest);
-  }
-  authCache.set(key, { identity, expiresAt, cachedAt: Date.now() });
-}
+// The Discord path makes an outbound Discord API call plus an `account` lookup
+// per socket; cache positive validations for the shared short TTL. Keyed "d:"
+// (the session cache lives in sessionAuth). Only successes are cached; the
+// entry never expires on its own (POSITIVE_INFINITY) — the TTL alone bounds it.
+const discordCache = createAuthCache<ValidatedIdentity>();
 
 /**
  * Test-only: clear the in-process auth cache. The cache is a module-level
@@ -173,7 +85,8 @@ function cacheIdentity(key: string, identity: ValidatedIdentity, expiresAt: numb
  * cases (otherwise a prior test's cached success short-circuits the DB call).
  */
 export function __resetAuthCache(): void {
-  authCache.clear();
+  discordCache.clear();
+  sessionAuth.resetCache();
 }
 
 // ─── Socket.io middleware ────────────────────────────────────────
@@ -182,16 +95,16 @@ export async function authMiddleware(
   socket: Socket,
   next: (err?: ExtendedError) => void,
 ): Promise<void> {
-  const { token, discordToken, channelId, guildId } = socket.handshake.auth ?? {};
+  const { discordToken, channelId, guildId } = socket.handshake.auth ?? {};
 
   try {
     // Discord Activity path: validate the OAuth2 access token from the Discord SDK
     if (discordToken && typeof discordToken === 'string') {
-      let identity = getCachedIdentity(`d:${discordToken}`);
+      let identity = discordCache.get(`d:${discordToken}`);
       if (!identity) {
         identity = await validateDiscordToken(discordToken);
         if (!identity) return next(new Error('AUTH_FAILED'));
-        cacheIdentity(`d:${discordToken}`, identity, Number.POSITIVE_INFINITY);
+        discordCache.set(`d:${discordToken}`, identity, Number.POSITIVE_INFINITY);
       }
 
       socket.data.userId = identity.userId;
@@ -204,29 +117,15 @@ export async function authMiddleware(
     }
 
     // Better Auth session token path (site-login users)
-    if (!token || typeof token !== 'string') {
-      return next(new Error('AUTH_REQUIRED'));
-    }
+    const result = await sessionAuth.resolveSocketSession(socket.handshake);
+    if (result.status === 'no_token') return next(new Error('AUTH_REQUIRED'));
+    if (result.status === 'expired') return next(new Error('SESSION_EXPIRED'));
+    if (result.status !== 'ok') return next(new Error('AUTH_FAILED'));
 
-    // Cache hit: reuse a recently-validated, still-unexpired session, skip the DB.
-    const cachedIdentity = getCachedIdentity(`s:${token}`);
-    if (cachedIdentity) {
-      socket.data.userId = cachedIdentity.userId;
-      socket.data.userName = cachedIdentity.userName;
-      socket.data.avatarUrl = cachedIdentity.avatarUrl;
-      socket.data.sessionToken = token;
-      return next();
-    }
-
-    const result = await validateSessionToken(token);
-    if (result === 'expired') return next(new Error('SESSION_EXPIRED'));
-    if (!result) return next(new Error('AUTH_FAILED'));
-
-    socket.data.userId = result.identity.userId;
-    socket.data.userName = result.identity.userName;
-    socket.data.avatarUrl = result.identity.avatarUrl;
-    socket.data.sessionToken = token;
-    cacheIdentity(`s:${token}`, result.identity, result.expiresAt);
+    socket.data.userId = result.session.userId;
+    socket.data.userName = result.session.name;
+    socket.data.avatarUrl = result.session.image;
+    socket.data.sessionToken = result.session.token;
     next();
   } catch (err) {
     console.error(
@@ -244,8 +143,5 @@ export async function authMiddleware(
 // ─── Cleanup ─────────────────────────────────────────────────────
 
 export async function closePool(): Promise<void> {
-  if (pool) {
-    await pool.end();
-    pool = null;
-  }
+  await sessionAuth.close();
 }

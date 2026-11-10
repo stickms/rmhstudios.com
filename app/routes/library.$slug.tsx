@@ -14,6 +14,7 @@ import { buildCanonical } from '@/lib/seo';
 import { bookSchema, jsonLdScript } from '@/lib/schema';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
 import { LibraryStyles } from '@/components/library/LibraryStyles';
+import { Spinner } from '@/components/ui/spinner';
 
 // The reader components pull in three.js / @react-three/fiber (the 3D book-flip
 // canvas + the epub rasteriser) — ~1.3 MB of vendor JS. They MUST stay lazy:
@@ -75,7 +76,7 @@ export const Route = createFileRoute('/library/$slug')({
 function ReaderFallback() {
   return (
     <div className="flex h-screen w-full items-center justify-center bg-site-bg">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-site-border border-t-site-accent" />
+      <Spinner size={32} />
     </div>
   );
 }

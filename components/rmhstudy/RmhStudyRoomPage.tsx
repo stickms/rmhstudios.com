@@ -14,7 +14,7 @@ import { useRmhStudyStore } from '@/lib/rmhstudy/store';
 import { C2S } from '@/lib/rmhstudy/events';
 import { toast } from '@/lib/rmhstudy/toast-store';
 import RmhStudyHeader from '@/components/rmhstudy/RmhStudyHeader';
-import BanListModal from '@/components/rmhstudy/BanListModal';
+import BanListModal from '@/components/shared/BanListModal';
 import RmhStudyFlashcards from '@/components/rmhstudy/RmhStudyFlashcards';
 import ChatPanel from '@/components/shared/ChatPanel';
 import type { ChatPanelMessage } from '@/components/shared/ChatPanel';
@@ -755,7 +755,7 @@ export default function RmhStudyRoom() {
       )}
 
       {/* Ban list modal */}
-      {showBanList && <BanListModal onClose={() => setShowBanList(false)} />}
+      {showBanList && <BanListModal bannedUsers={room?.bannedUsers} onUnban={(userId) => emit(C2S.ROOM_UNBAN, { roomCode: room?.roomCode, targetUserId: userId })} onClose={() => setShowBanList(false)} labels={{ title: t("banned-users", { defaultValue: "Banned Users" }), empty: t("no-banned-users", { defaultValue: "No banned users" }), bannedAt: (time) => t("banned-at", { defaultValue: "Banned {{time}}", time }), unbanTitle: t("unban-user", { defaultValue: "Unban user" }), unban: t("unban", { defaultValue: "Unban" }) }} />}
     </div>
   );
 }

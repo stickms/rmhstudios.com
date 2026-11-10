@@ -17,7 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ClipboardList, ExternalLink, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ClipboardList, ExternalLink, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   atsPlatformLabel,
@@ -32,6 +32,7 @@ import { EMPTY_ANSWER_BANK, type AnswerBank } from '@/lib/rmhladder/answer-bank'
 import { safeHref } from '@/lib/url-safety';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
+import { Spinner } from '@/components/ui/spinner';
 
 export interface ApplicationPacketProps {
   applicant: PacketApplicant;
@@ -105,8 +106,7 @@ export function ApplicationPacket({
   if (loading) {
     return (
       <section className="glass-pane flex min-h-32 items-center justify-center p-5">
-        <Loader2 className="size-5 animate-spin text-site-text-dim" aria-hidden />
-        <span className="sr-only">{t('ladder.packetLoading', { defaultValue: 'Loading…' })}</span>
+        <Spinner size={20} className="text-site-text-dim" label={t('ladder.packetLoading', { defaultValue: 'Loading…' })} />
       </section>
     );
   }

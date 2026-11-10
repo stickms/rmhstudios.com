@@ -2935,7 +2935,7 @@ C2: done (unsubscribe GET is read-only + RFC 8058 POST; remaining GET writers ar
 C3: open
 C4: open
 D1: declined (owner, 2026-11-09: no data moves off the box)
-D2: open
+D2: in-progress (steps 1-2 landed on wip/d2-session: one shared session check server/shared/session-auth.ts, opt-in REDIS_URL Socket.IO adapter in all three hubs; durable rooms, drain and hub merge pending; two replicas NOT yet safe)
 D3: open
 D4: open
 D5: open

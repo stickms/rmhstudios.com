@@ -11,7 +11,7 @@ import { useRmhTypeStore } from '@/lib/rmhtype/store';
 import { C2S } from '@/lib/rmhtype/events';
 import { toast } from '@/lib/rmhtype/toast-store';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
-import BanListModal from '@/components/rmhtype/BanListModal';
+import BanListModal from '@/components/shared/BanListModal';
 import ChatPanel from '@/components/shared/ChatPanel';
 import type { ChatPanelMessage } from '@/components/shared/ChatPanel';
 import type { Difficulty, PassageLength } from '@/lib/rmhtype/types';
@@ -576,7 +576,7 @@ export default function RmhTypeRoom() {
       )}
 
       {/* Ban list modal */}
-      {showBanList && <BanListModal onClose={() => setShowBanList(false)} />}
+      {showBanList && <BanListModal bannedUsers={room?.bannedUsers} onUnban={(userId) => emit(C2S.ROOM_UNBAN, { targetUserId: userId })} onClose={() => setShowBanList(false)} labels={{ title: t("banned-users", { defaultValue: "Banned Users" }), empty: t("no-banned-users", { defaultValue: "No banned users" }), bannedAt: (time) => t("banned-time", { defaultValue: "Banned {{time}}", time }), unbanTitle: t("unban-user", { defaultValue: "Unban user" }), unban: t("unban", { defaultValue: "Unban" }) }} />}
     </div>
   );
 }

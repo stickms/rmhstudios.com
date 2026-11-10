@@ -452,13 +452,14 @@ also written to the job summary (`GITHUB_STEP_SUMMARY`) and every failure is an
 built** app and a **real** Postgres — the layer the main suite deliberately never
 touches. Blocking on every PR (the `integration` job in `web-ci.yml`).
 
-| File                    | Covers                                                                                                                                                       |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `auth.test.ts`          | email sign-up → session → handle assigned; sign-out revokes the session; wrong password sets no session; writes need a session                               |
-| `posts.test.ts`         | create + read back; invalid body → 400 and nothing written; another user's like (toggle) and comment; only the author can delete (soft delete → tombstone)   |
-| `coins.test.ts`         | a tip moves exactly the amount and writes one ledger row; overdraft and self-tip are refused with every balance unchanged                                    |
-| `developer-api.test.ts` | free accounts cannot mint keys; a paid key authenticates `/api/v1/me`; revoked and made-up keys → 401; scopes (read-only key cannot post, `write:posts` can) |
-| `public.test.ts`        | `/api/ready`, the OpenAPI 3.1 spec, `/` SSR and the sitemap — the deploy smoke probes, run before merge                                                      |
+| File                     | Covers                                                                                                                                                                                                                                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `auth.test.ts`           | email sign-up → session → handle assigned; sign-out revokes the session; wrong password sets no session; writes need a session                                                                                                                                                                                                        |
+| `posts.test.ts`          | create + read back; invalid body → 400 and nothing written; another user's like (toggle) and comment; only the author can delete (soft delete → tombstone)                                                                                                                                                                            |
+| `coins.test.ts`          | a tip moves exactly the amount and writes one ledger row; overdraft and self-tip are refused with every balance unchanged                                                                                                                                                                                                             |
+| `developer-api.test.ts`  | free accounts cannot mint keys; a paid key authenticates `/api/v1/me`; revoked and made-up keys → 401; scopes (read-only key cannot post, `write:posts` can)                                                                                                                                                                          |
+| `stripe-webhook.test.ts` | signed `customer.subscription.created/updated/deleted` events POSTed to `/api/auth/stripe/webhook`: bad/forged/missing signature gives 4xx and no row; created grants the tier (visible in the session's `tier`); replays are idempotent (one row); updated changes plan; deleted downgrades to free; unknown customer grants nothing |
+| `public.test.ts`         | `/api/ready`, the OpenAPI 3.1 spec, `/` SSR and the sitemap — the deploy smoke probes, run before merge                                                                                                                                                                                                                               |
 
 How it works: `global-setup.ts` waits for `/api/ready`, then signs up the shared
 cast (`alice`, `bob`, `carol`) once and hands their cookies to the files via
@@ -489,7 +490,17 @@ signed cookie without reading the (deleted) session row. Fixed by forcing
 `disableCookieCache` on non-GET requests (the wrapper at the bottom of
 `lib/auth.ts`); `auth.test.ts` › _a revoked session cookie cannot write_ pins it.
 
-Out of scope (each needs external services): Stripe checkout/webhooks, OAuth
+**Stripe is simulated, not mocked.** The CI `integration` job sets placeholder
+`STRIPE_WEBHOOK_SECRET`, `STRIPE_STARTER_PRICE_ID` and `STRIPE_PRO_PRICE_ID` (no
+`STRIPE_SECRET_KEY`, so nothing can reach api.stripe.com). The test signs payloads
+with `stripe.webhooks.generateTestHeaderString` and the server verifies them as in
+production. Only events the Better Auth plugin handles from the payload alone are
+covered; `checkout.session.completed` (the plugin calls `subscriptions.retrieve`) and
+checkout-session creation need a live or mocked Stripe API and are not. Locally, export
+the same three variables for both the server and the test run. The tip endpoint has no
+`Idempotency-Key` support, so replay protection is covered for the webhook only.
+
+Out of scope (each needs external services): live Stripe checkout, OAuth
 providers, the Socket.IO hubs, email delivery.
 
 ### 9. Hearthworks real-WebRTC e2e (not in CI)
@@ -550,19 +561,19 @@ a target to farm.
 
 Quality workflows live in `.github/workflows/`. The release graph and operator activation are documented in [deployment-speed-implementation-2026-10-24.md](./archive/2026/deployment-speed-implementation-2026-10-24.md). The ones that touch tests/quality (every web job sets up through `.github/actions/setup-deps`, which restores `node_modules` from a cache keyed on the lockfile + Prisma schema and only installs on a miss):
 
-| Workflow                                  | Runs                                                                                    | Gate?                                                                           |
-| ----------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `web-ci.yml` (`typecheck`)                | `tsc --noEmit` → `eslint` → docs freshness                                              | **all block**                                                                   |
-| `web-ci.yml` (`test (1/2)`, `test (2/2)`) | `pnpm test --shard=N/2` — the unit suite split across two parallel jobs                 | **blocks**, tests included (as of 2026-08-08)                                   |
-| `web-ci.yml` (`build` job)                | `build:frontend:sourcemap` → bundle budget → entry composition                          | build + both size gates block                                                   |
-| `web-ci.yml` (`audit` job)                | `pnpm audit --prod --audit-level=high`                                                  | blocks on high-severity prod advisories                                         |
-| `web-ci.yml` (`integration`)              | build → Postgres service → migrate → boot `.output/server` → `pnpm test:integration`    | **blocks**; see §8                                                              |
-| `epic-tests.yml`                          | `playwright install chromium` → `pnpm test:epic`                                        | blocks; **path-filtered** to `scripts/epic/**`                                  |
-| `deploy.yml` (`ci` job)                   | typecheck → lint → production dependency audit                                          | all block the deployment                                                        |
+| Workflow                                  | Runs                                                                                    | Gate?                                                                                                                                 |
+| ----------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `web-ci.yml` (`typecheck`)                | `tsc --noEmit` → `eslint` → docs freshness                                              | **all block**                                                                                                                         |
+| `web-ci.yml` (`test (1/2)`, `test (2/2)`) | `pnpm test --shard=N/2` — the unit suite split across two parallel jobs                 | **blocks**, tests included (as of 2026-08-08)                                                                                         |
+| `web-ci.yml` (`build` job)                | `build:frontend:sourcemap` → bundle budget → entry composition                          | build + both size gates block                                                                                                         |
+| `web-ci.yml` (`audit` job)                | `pnpm audit --prod --audit-level=high`                                                  | blocks on high-severity prod advisories                                                                                               |
+| `web-ci.yml` (`integration`)              | build → Postgres service → migrate → boot `.output/server` → `pnpm test:integration`    | **blocks**; see §8                                                                                                                    |
+| `epic-tests.yml`                          | `playwright install chromium` → `pnpm test:epic`                                        | blocks; **path-filtered** to `scripts/epic/**`                                                                                        |
+| `deploy.yml` (`ci` job)                   | typecheck → lint → production dependency audit                                          | all block the deployment                                                                                                              |
 | `deploy.yml` (`integration`)              | same as web-ci's `integration`, on the **merged** commit                                | **verifies after the deploy**: a failure triggers `post-deploy-verify`, which rolls production back via the webhook `rollback` action |
-| `web-ci.yml` (`eversion-e2e`)             | build with sourcemaps → serve → every `eversion-*.mjs` (hub per profile x theme)        | non-blocking until T37; **nightly + manual dispatch only** (not on PRs); see §7 |
-| `web-ci.yml` (`jelly-e2e`)                | `jelly-interaction.mjs` fixture, without a database or frontend build                   | blocks on relevant PRs and scheduled/manual runs                                |
-| `go-microservices.yml`                    | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks                                                                          |
+| `web-ci.yml` (`eversion-e2e`)             | build with sourcemaps → serve → every `eversion-*.mjs` (hub per profile x theme)        | non-blocking until T37; **nightly + manual dispatch only** (not on PRs); see §7                                                       |
+| `web-ci.yml` (`jelly-e2e`)                | `jelly-interaction.mjs` fixture, without a database or frontend build                   | blocks on relevant PRs and scheduled/manual runs                                                                                      |
+| `go-microservices.yml`                    | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks                                                                                                                                |
 
 The deploy `test` job runs two isolated unit-suite shards in parallel with `ci`. The ARM64 `build` job enforces critical JS/CSS budgets and smoke-tests both production image digests. `candidate-image.yml` checks production-shaped containers on PRs; `required-checks` aggregates every applicable web check. `build-cache.yml` maintains reusable stages outside the trigger prerequisites.
 
