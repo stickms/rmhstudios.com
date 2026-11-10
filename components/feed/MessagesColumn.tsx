@@ -19,6 +19,7 @@ import { SavedMessagesRow } from'@/components/chat-plus/SavedMessagesRow';
 import { SavedMessagesLabel } from'@/components/chat-plus/MessageBadges';
 import { AutomatedBadge } from'@/components/feed/AutomatedBadge';
 import { api } from '@/lib/contract/client';
+import { searchUsersApi } from '@/lib/discovery/explore.contract';
 import { HttpError, serverError } from '@/lib/http';
 import {
  listConversationsApi,
@@ -568,8 +569,10 @@ function NewChatDialog({
  setLoading(true);
  debounce.current = setTimeout(async () => {
  try {
- const res = await fetch(`/api/users/search?q=${encodeURIComponent(term)}`);
- if (res.ok) setUsers((await res.json()).users);
+ const res = await api(searchUsersApi, { query: { q: term } });
+ setUsers(res.users);
+ } catch {
+ // typeahead: keep the previous results
  } finally {
  setLoading(false);
  }

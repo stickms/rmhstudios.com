@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
@@ -7,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { api } from '@/lib/contract/client';
-import { getPlayLimitsApi, setPlayLimitsApi } from '@/lib/economy/play-limits.contract';
+import { setPlayLimitsApi } from '@/lib/economy/play-limits.contract';
+import { playLimitsQuery } from '@/lib/settings/privacy.queries';
 import type { PlayLimitsView } from '@/lib/economy/play-limits.server';
 import { MAX_COOL_OFF_DAYS, MAX_DAILY_CAP } from '@/lib/economy/play-limits';
 import { SettingsSection } from '@/components/settings/SettingsSection';
@@ -42,28 +44,22 @@ export function PlayLimitsPanel() {
   const confirm = useConfirm();
   const when = useWhen();
 
-  const [view, setView] = useState<PlayLimitsView | null>(null);
-  const [capInput, setCapInput] = useState('');
+  // A failed read renders the empty state; it is not worth a toast.
+  const { data } = useQuery(playLimitsQuery());
+  const [saved, setSaved] = useState<PlayLimitsView | null>(null);
+  const view = saved ?? data ?? null;
+  const [capDraft, setCapDraft] = useState<string | null>(null);
+  const capInput = capDraft ?? (view && view.dailyCoinCap !== null ? String(view.dailyCoinCap) : '');
+  const setCapInput = setCapDraft;
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    api(getPlayLimitsApi, { retries: 0 })
-      .then((d) => {
-        setView(d);
-        setCapInput(d.dailyCoinCap === null ? '' : String(d.dailyCoinCap));
-      })
-      .catch(() => {
-        /* The panel renders its empty state; a failed read is not worth a toast. */
-      });
-  }, []);
 
   const save = useCallback(
     async (body: { dailyCoinCap?: number | null; excludeForDays?: number; coolOffForDays?: number }) => {
       setSaving(true);
       try {
         const next = await api(setPlayLimitsApi, { body });
-        setView(next);
-        setCapInput(next.dailyCoinCap === null ? '' : String(next.dailyCoinCap));
+        setSaved(next);
+        setCapDraft(null);
         if (next.pendingCapAt) {
           toast.success(
             t('play-limits-deferred', {

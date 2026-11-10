@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, Suspense, lazy } from 'react';
 import { BadgeCheck, Search, ShieldCheck, X } from 'lucide-react';
+import { api } from '@/lib/contract/client';
+import { searchUsersApi } from '@/lib/discovery/explore.contract';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { FeedTabs } from './FeedTabs';
 import { ComposeBoxLazy } from './ComposeBoxLazy';
@@ -97,8 +99,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
     userDebounceRef.current = setTimeout(() => {
       const controller = new AbortController();
       userRequestRef.current = controller;
-      fetch(`/api/users/search?q=${encodeURIComponent(trimmed)}`, { signal: controller.signal })
-        .then((res) => res.json())
+      api(searchUsersApi, { query: { q: trimmed }, signal: controller.signal })
         .then((data) => {
           if (!controller.signal.aborted) setUserResults(data.users ?? []);
         })

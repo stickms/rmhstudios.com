@@ -12,6 +12,12 @@ import { formatDistanceToNow } from 'date-fns';
 import { Check, Inbox, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  adminQuotaDecideApi,
+  adminQuotaRequestsApi,
+} from '@/lib/library/admin-library.contract';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -38,10 +44,11 @@ export function QuotaAppealsPanel() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch('/api/admin/library/quota-requests').catch(() => null);
-    if (res?.ok) {
-      const data = await res.json().catch(() => null);
-      if (data?.requests) setRequests(data.requests as QuotaRequest[]);
+    try {
+      const data = await api(adminQuotaRequestsApi);
+      if (data.requests) setRequests(data.requests);
+    } catch {
+      // keep the previous queue
     }
     setLoading(false);
   }, []);
@@ -67,13 +74,14 @@ export function QuotaAppealsPanel() {
         grantedTotal = Math.floor(n);
       }
       setBusy(req.id);
-      const res = await fetch('/api/admin/library/quota-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: req.id, approve, grantedTotal }),
-      }).catch(() => null);
+      let failure: unknown = null;
+      try {
+        await api(adminQuotaDecideApi, { body: { id: req.id, approve, grantedTotal } });
+      } catch (e) {
+        failure = e ?? new Error('failed');
+      }
       setBusy(null);
-      if (res?.ok) {
+      if (!failure) {
         toast.success(
           approve
             ? t('quota-approved', {
@@ -84,9 +92,8 @@ export function QuotaAppealsPanel() {
         );
         setRequests((prev) => prev.filter((r) => r.id !== req.id));
       } else {
-        const err = await res?.json().catch(() => null);
         toast.error(
-          err?.error ?? t('quota-decide-failed', { defaultValue: 'Could not update the request.' }),
+          serverError(failure) ?? t('quota-decide-failed', { defaultValue: 'Could not update the request.' }),
         );
       }
     },

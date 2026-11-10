@@ -1,8 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { X, Plus } from 'lucide-react';
 
+import { api } from '@/lib/contract/client';
+import { addFeedSignalApi, removeFeedSignalApi } from '@/lib/feed/signals.contract';
+import { feedSignalsQuery } from '@/lib/feed/signals.queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
@@ -10,10 +14,8 @@ import { normalizeTag, type FeedSignalKind, type FeedSignalsView } from '@/lib/f
 import { SettingsSection } from '@/components/settings/SettingsSection';
 
 async function mutate(method: 'POST' | 'DELETE', kind: FeedSignalKind, targetId: string) {
-  await fetch('/api/feed/signal', {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ kind, targetId }),
+  await api(method === 'POST' ? addFeedSignalApi : removeFeedSignalApi, {
+    body: { kind, targetId },
   });
 }
 
@@ -23,14 +25,11 @@ async function mutate(method: 'POST' | 'DELETE', kind: FeedSignalKind, targetId:
  */
 export function FeedControlsSettings() {
   const { t } = useTranslation('settings-content');
-  const [signals, setSignals] = useState<FeedSignalsView | null>(null);
-
-  useEffect(() => {
-    fetch('/api/feed/signal')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: FeedSignalsView | null) => data && setSignals(data))
-      .catch(() => {});
-  }, []);
+  const qc = useQueryClient();
+  const { data: signals } = useQuery(feedSignalsQuery());
+  // Optimistic edits go straight into the query cache, where the next read finds them.
+  const setSignals = (update: (s: FeedSignalsView | undefined) => FeedSignalsView | undefined) =>
+    qc.setQueryData<FeedSignalsView>(feedSignalsQuery().queryKey, update);
 
   if (!signals) {
     return (

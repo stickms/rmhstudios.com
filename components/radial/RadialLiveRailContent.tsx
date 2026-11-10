@@ -25,6 +25,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { ArrowRight, Hash, UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { exploreApi } from '@/lib/discovery/explore.contract';
+import { onlineCountApi } from '@/lib/presence/online-count.contract';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { TodayWidget } from '@/components/feed/TodayWidget';
@@ -58,15 +61,7 @@ function useExplorePeek(active: boolean, onSettled: () => void) {
     const controller = new AbortController();
     (async () => {
       try {
-        const res = await fetch('/api/explore', {
-          credentials: 'include',
-          signal: controller.signal,
-        });
-        if (!res.ok) {
-          onSettled();
-          return;
-        }
-        const body = (await res.json()) as ExplorePeek;
+        const body = await api(exploreApi, { signal: controller.signal });
         explorePeek = {
           trendingTags: body.trendingTags ?? [],
           suggestedUsers: body.suggestedUsers ?? [],
@@ -95,9 +90,7 @@ function LivePulse({ active, onSettled }: { active: boolean; onSettled: () => vo
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await fetch('/api/presence/online-count');
-        if (!res.ok) return;
-        const data = await res.json();
+        const data = await api(onlineCountApi);
         if (!cancelled) setCount(data.count ?? 0);
       } catch {
         // decorative — ignore

@@ -6,6 +6,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { buyListingApi, cancelListingApi } from '@/lib/market/market.contract';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -100,21 +103,17 @@ export function ListingCard({
   const buy = async () => {
     setBusy(true);
     try {
-      const res = await fetch(`/api/market/listings/${listing.id}/buy`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.status === 202) {
+      const data = await api(buyListingApi, { params: { id: listing.id } });
+      if (data.status === 'HELD') {
         toast.info(
           data.message || t('market-held', { defaultValue: 'This listing is under review.' }),
         );
-      } else if (res.ok) {
+      } else {
         toast.success(t('market-bought', { name, defaultValue: 'Bought {{name}}!' }));
         onDone(listing.id);
-      } else {
-        toast.error(data.error || t('market-buy-failed', { defaultValue: 'Purchase failed' }));
       }
+    } catch (e) {
+      toast.error(serverError(e) ?? t('market-buy-failed', { defaultValue: 'Purchase failed' }));
     } finally {
       setBusy(false);
     }
@@ -123,17 +122,11 @@ export function ListingCard({
   const cancel = async () => {
     setBusy(true);
     try {
-      const res = await fetch(`/api/market/listings/${listing.id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        toast.success(t('market-canceled', { defaultValue: 'Listing canceled' }));
-        onDone(listing.id);
-      } else {
-        toast.error(data.error || t('market-cancel-failed', { defaultValue: "Couldn't cancel" }));
-      }
+      await api(cancelListingApi, { params: { id: listing.id } });
+      toast.success(t('market-canceled', { defaultValue: 'Listing canceled' }));
+      onDone(listing.id);
+    } catch (e) {
+      toast.error(serverError(e) ?? t('market-cancel-failed', { defaultValue: "Couldn't cancel" }));
     } finally {
       setBusy(false);
     }

@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import { unreadCountApi } from '@/lib/messages/messages-sidebar.contract';
 import { prisma } from '@/lib/prisma.server';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { redisEnabled, redisGetJSON, redisSetJSON } from '@/lib/redis.server';
@@ -28,14 +29,11 @@ function countUnreadFromDb(userId: string): Promise<number> {
 export const Route = createFileRoute('/api/messages/unread-count')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      GET: implement(unreadCountApi, { auth: 'optional' }, async ({ userId }) => {
         try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
+          if (!userId) {
             return Response.json({ count: 0 });
           }
-
-          const userId = session.user.id;
 
           // This endpoint is polled every 15s per active client (lib/useUnreadCount.ts).
           // Read the denormalized Redis counter (kept warm by message-send/mark-read),
@@ -60,7 +58,7 @@ export const Route = createFileRoute('/api/messages/unread-count')({
           console.error('Unread count error:', error);
           return Response.json({ count: 0 });
         }
-      },
+      }),
     },
   },
 });

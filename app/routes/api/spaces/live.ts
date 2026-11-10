@@ -1,4 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { implement } from '@/lib/api/implement.server';
+import { listLiveSpacesApi } from '@/lib/spaces/spaces.contract';
 import { listLiveSpaces } from '@/lib/spaces.server';
 
 /**
@@ -8,13 +10,13 @@ import { listLiveSpaces } from '@/lib/spaces.server';
 export const Route = createFileRoute('/api/spaces/live')({
   server: {
     handlers: {
-      GET: async () => {
+      GET: implement(listLiveSpacesApi, { auth: 'none' }, async () => {
         const spaces = await listLiveSpaces();
         return Response.json(
           { spaces },
           { headers: { 'Cache-Control': 'public, max-age=5, stale-while-revalidate=20' } },
         );
-      },
+      }),
     },
   },
 });

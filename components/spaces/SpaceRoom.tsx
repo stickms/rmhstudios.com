@@ -12,6 +12,9 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { authClient } from '@/lib/auth-client';
 import { ensureTrailingSlash } from '@/lib/url';
 import { SPACE_C2S, SPACE_S2C } from '@/lib/spaces/events';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { startSpaceApi } from '@/lib/spaces/spaces.contract';
 import type { SpacePinned, SpaceStatus, SpaceView } from '@/lib/spaces/types';
 import { SlowModeBar, useSlowModeBlock } from '@/components/safety/SlowModeBar';
 import { bindSlowModeEvents } from '@/lib/safety/slow-mode-store';
@@ -247,15 +250,11 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
     if (startingLive) return;
     setStartingLive(true);
     try {
-      const res = await fetch(`/api/spaces/${initialSpace.id}/start`, { method: 'POST' });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? 'Failed to start');
-      }
+      await api(startSpaceApi, { params: { id: initialSpace.id } });
       setStatus('LIVE');
       toast.success(t('space-now-live', { defaultValue: 'You are live' }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to start');
+      toast.error(serverError(err) ?? 'Failed to start');
     } finally {
       setStartingLive(false);
     }

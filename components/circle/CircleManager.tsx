@@ -1,5 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { setCircleApi } from '@/lib/circle.contract';
+import { circleQuery } from '@/lib/circle.queries';
 import { toast } from 'sonner';
 import { Star } from 'lucide-react';
 
@@ -20,27 +24,17 @@ const MAX_CIRCLE = 150;
  */
 export function CircleManager() {
   const { t } = useTranslation('c-circle');
-  const [candidates, setCandidates] = useState<ResolvedUser[]>([]);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch('/api/circle')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { members: ResolvedUser[]; candidates: ResolvedUser[] } | null) => {
-        if (cancelled || !data) return;
-        setCandidates(data.candidates);
-        setSelected(new Set(data.members.map((m) => m.id)));
-      })
-      .catch(() => {})
-      .finally(() => !cancelled && setLoading(false));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data, isPending: loading } = useQuery(circleQuery());
+  const candidates = useMemo(() => data?.candidates ?? [], [data]);
+  // The member set is the server's until the owner edits it.
+  const [edited, setEdited] = useState<Set<string> | null>(null);
+  const selected = useMemo(
+    () => edited ?? new Set((data?.members ?? []).map((m) => m.id)),
+    [edited, data],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -54,13 +48,14 @@ export function CircleManager() {
   }, [candidates, query]);
 
   function toggle(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
+    setEdited((prev) => {
+      const base = prev ?? selected;
+      const next = new Set(base);
       if (next.has(id)) next.delete(id);
       else {
         if (next.size >= MAX_CIRCLE) {
           toast.error(t('limit', { max: MAX_CIRCLE, defaultValue: 'Up to {{max}} close friends' }));
-          return prev;
+          return base;
         }
         next.add(id);
       }
@@ -71,12 +66,7 @@ export function CircleManager() {
   async function save() {
     setSaving(true);
     try {
-      const res = await fetch('/api/circle', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userIds: Array.from(selected) }),
-      });
-      if (!res.ok) throw new Error('save failed');
+      await api(setCircleApi, { body: { userIds: Array.from(selected) } });
       toast.success(t('saved', { defaultValue: 'Close friends updated' }));
     } catch {
       toast.error(t('error', { defaultValue: "Couldn't save your circle" }));

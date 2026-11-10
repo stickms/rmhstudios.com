@@ -42,3 +42,9 @@ export const deleteStorefrontProductApi = endpoint<{
   params: { id: string };
   res: { success: true };
 }>()({ method: 'DELETE', path: '/api/storefront/products/$id' });
+
+/** Buy a product with coins; answers the deliverable and the new balance. */
+export const buyStorefrontProductApi = endpoint<{
+  params: { id: string };
+  res: { success: true; deliverable: string | null; balance: number };
+}>()({ method: 'POST', path: '/api/storefront/products/$id/buy' });

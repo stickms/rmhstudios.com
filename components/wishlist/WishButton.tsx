@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Heart } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { addWishApi, removeWishApi } from '@/lib/wishlist/wishlist.contract';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -34,12 +36,7 @@ export function WishButton({
     setBusy(true);
     setWished(next);
     try {
-      const res = await fetch('/api/wishlist', {
-        method: next ? 'POST' : 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entityType, entityId }),
-      });
-      if (!res.ok) throw new Error('wishlist failed');
+      await api(next ? addWishApi : removeWishApi, { body: { entityType, entityId } });
       if (next) toast.success(t('added', { defaultValue: 'Added to wishlist' }));
     } catch {
       setWished(!next);

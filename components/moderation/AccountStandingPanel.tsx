@@ -8,12 +8,17 @@
  * a support email.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ShieldCheck, ShieldAlert, ShieldX, Gavel, ExternalLink } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { appealStrikeApi } from '@/lib/moderation/standing.contract';
+import { accountStandingQuery } from '@/lib/moderation/standing.queries';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -64,41 +69,15 @@ function entityHref(s: Strike): string | null {
 
 export function AccountStandingPanel() {
   const { t } = useTranslation('feed');
-  const [standing, setStanding] = useState<Standing | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: standing, isPending: loading, refetch } = useQuery(accountStandingQuery());
   const [openId, setOpenId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch('/api/account/standing', { credentials: 'include' });
-      if (res.ok) setStanding(await res.json());
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
   const submitAppeal = async (id: string) => {
     setBusy(true);
     try {
-      const res = await fetch(`/api/account/strikes/${id}/appeal`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ text: draft.trim() }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(
-          data.error ?? t('appeal-failed', { defaultValue: 'Could not submit your appeal.' })
-        );
-        return;
-      }
+      await api(appealStrikeApi, { params: { id }, body: { text: draft.trim() } });
       toast.success(
         t('appeal-submitted', {
           defaultValue: 'Appeal submitted. A moderator will review it.',
@@ -106,9 +85,11 @@ export function AccountStandingPanel() {
       );
       setOpenId(null);
       setDraft('');
-      load();
-    } catch {
-      toast.error(t('appeal-failed', { defaultValue: 'Could not submit your appeal.' }));
+      void refetch();
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('appeal-failed', { defaultValue: 'Could not submit your appeal.' }),
+      );
     } finally {
       setBusy(false);
     }

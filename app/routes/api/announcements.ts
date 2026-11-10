@@ -1,16 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import { listAnnouncementsApi } from '@/lib/announcements.contract';
 import { prisma } from '@/lib/prisma.server';
 
 /** GET /api/announcements — active, non-expired feed announcements for everyone. */
 export const Route = createFileRoute('/api/announcements')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      GET: implement(listAnnouncementsApi, { auth: 'optional' }, async ({ userId: viewerId }) => {
         try {
           const now = new Date();
-          const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-          const viewerId = session?.user?.id;
 
           const rows = await prisma.feedAnnouncement.findMany({
             where: {
@@ -92,7 +91,7 @@ export const Route = createFileRoute('/api/announcements')({
           console.error('Announcements fetch error:', error);
           return Response.json({ announcements: [] });
         }
-      },
+      }),
     },
   },
 });

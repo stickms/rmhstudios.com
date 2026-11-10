@@ -17,6 +17,8 @@ import {
   Library,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { adminStorageHealthApi } from '@/lib/library/admin-library.contract';
 import { StatTile } from '@/components/admin/StatTile';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -45,8 +47,11 @@ export function StorageHealthPanel({
   const load = useCallback(async () => {
     setLoading(true);
     onRefreshStateChange?.(true);
-    const res = await fetch('/api/admin/library/storage-health').catch(() => null);
-    if (res?.ok) setHealth((await res.json().catch(() => null)) as Health | null);
+    try {
+      setHealth(await api(adminStorageHealthApi));
+    } catch {
+      // keep the previous reading
+    }
     setLoading(false);
     onRefreshStateChange?.(false);
   }, [onRefreshStateChange]);

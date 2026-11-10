@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Coins, Users, Sparkles } from 'lucide-react';
+import { studioOverviewQuery } from '@/lib/creator/earnings.queries';
 import { Card } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { timeAgoShort } from '@/lib/utils';
@@ -15,24 +16,8 @@ import type { StudioOverview } from '@/lib/creator/studio.server';
  * (below) the membership tier editor.
  */
 export function StudioDashboard() {
-  const [overview, setOverview] = useState<StudioOverview | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await fetch('/api/creator/studio-overview');
-        const data = await res.json().catch(() => ({}));
-        if (!cancelled && res.ok) setOverview(data.overview ?? null);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data, isPending: loading } = useQuery(studioOverviewQuery());
+  const overview = data?.overview ?? null;
 
   if (loading) {
     return (
