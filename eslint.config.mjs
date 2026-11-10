@@ -221,6 +221,9 @@ export default tseslint.config(
       // Next.js/RSC directive with no effect here, and it misleads readers into
       // thinking the files without it are server components. Autofixable.
       'local/no-use-client-directive': 'error',
+      // E6 (2026-11-10): site-tier waits use components/ui/spinner. Backlog is zero:
+      // the remaining in-button busy icons carry a file-level disable with a reason.
+      'local/no-adhoc-spinner': 'error',
       // Same shape as the rule above, same reason for "error": the backlog is
       // zero as of 2026-08-12, and the failure is invisible.
       //

@@ -8,7 +8,7 @@
  */
 
 import 'dotenv/config';
-import { guardPool, installProcessGuards } from '../../lib/perf/process-guards';
+import { installProcessGuards } from '../../lib/perf/process-guards';
 
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { Server } from 'socket.io';
@@ -17,6 +17,7 @@ import { logger } from './logger';
 import { disconnectPrisma, getPrismaClient } from './prisma-client';
 import { warmPrismaClient } from '../shared/prisma-client';
 import { cleanupRateLimits } from './rate-limit';
+import { attachRedisAdapter } from '../shared/redis-adapter';
 import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
 
 // ─── Game Handlers ──────────────────────────────────────────────
@@ -108,130 +109,40 @@ if (!config.CORS_ORIGIN) {
 
 // ─── Auth middleware (soft — authenticates if token present) ─────
 
-import { Pool } from 'pg';
+import { createAuthCache, createSessionAuth } from '../shared/session-auth';
 
-let authPool: Pool | null = null;
+// The Better Auth session check (token -> session JOIN user, expiry, bounded
+// 60 s positive cache, pool) is shared by every hub: server/shared/session-auth.ts.
+// Soft-auth semantics stay here: any non-`ok` outcome leaves the socket anonymous.
+const sessionAuth = createSessionAuth({
+  service: 'socket-server',
+  databaseUrl: config.DATABASE_URL,
+  defaultName: 'Player',
+});
 
-function getAuthPool(): Pool | null {
-  if (!config.DATABASE_URL) return null;
-  if (!authPool) {
-    // guardPool: an idle client dropped by a Postgres restart must not crash the hub.
-    authPool = guardPool(
-      new Pool({
-        connectionString: config.DATABASE_URL,
-        // perf: one session lookup per connect, 4 is plenty; override with AUTH_DB_POOL_SIZE.
-        max: Number(process.env.AUTH_DB_POOL_SIZE) || 4,
-        idleTimeoutMillis: 30_000,
-        connectionTimeoutMillis: 5_000,
-      }),
-      { service: 'socket-server', pool: 'auth' },
-    );
-  }
-  return authPool;
+/** The shared auth pool (null without DATABASE_URL); also serves the Discord account lookup. */
+function getAuthPool() {
+  return sessionAuth.getPool();
 }
 
-// ─── Session-token auth cache ────────────────────────────────────
-//
-// softAuthMiddleware validates the Better Auth session token against Postgres
-// on every connection. A reconnection storm (deploy, network blip, tab wake)
-// would otherwise fire one `SELECT ... FROM session` per socket on the max-10
-// auth pool. Cache validated tokens for a short TTL in a bounded Map (same
-// bounded-map discipline as server/shared/rate-limit.ts) so repeated reconnects
-// from the same clients don't hammer the pool. Only positive validations are
-// cached; tokenless connections skip the cache entirely, so soft-auth semantics
-// (anonymous connections still allowed) are unchanged. A revoked session is
-// honoured for at most AUTH_CACHE_TTL_MS.
+// Discord Activity identity cache (positive results only, same TTL/bound as sessions).
 interface CachedAuth {
   userId: string;
   userName: string;
   avatarUrl: string | null;
-  sessionExpiresAt: number; // ms epoch — the session row's own expiry
-  cachedAt: number; // ms epoch — when we validated it
 }
-
-const AUTH_CACHE_TTL_MS = 60_000;
-const AUTH_CACHE_MAX_ENTRIES = 10_000;
-const authCache = new Map<string, CachedAuth>();
-
-const authCacheGc = setInterval(() => {
-  const now = Date.now();
-  for (const [token, entry] of authCache) {
-    if (now - entry.cachedAt >= AUTH_CACHE_TTL_MS || entry.sessionExpiresAt <= now) {
-      authCache.delete(token);
-    }
-  }
-}, 30_000);
-authCacheGc.unref();
-
-function cacheAuth(key: string, entry: CachedAuth): void {
-  // Bounded, same discipline as server/shared/rate-limit.ts: evict oldest at
-  // capacity rather than letting a token space nobody controls grow forever.
-  if (authCache.size >= AUTH_CACHE_MAX_ENTRIES) {
-    const oldest = authCache.keys().next().value;
-    if (oldest !== undefined) authCache.delete(oldest);
-  }
-  authCache.set(key, entry);
-}
-
-function readCachedAuth(key: string): CachedAuth | null {
-  const now = Date.now();
-  const cached = authCache.get(key);
-  if (cached && now - cached.cachedAt < AUTH_CACHE_TTL_MS && cached.sessionExpiresAt > now) {
-    return cached;
-  }
-  return null;
-}
+const discordAuthCache = createAuthCache<CachedAuth>();
 
 /**
  * Better Auth session token → `socket.data`. Returns true when it authenticated.
- *
- * Unchanged behaviour, lifted out of the middleware so the Discord path below
- * can be a peer rather than a special case bolted onto it.
  */
-async function applySessionToken(
-  socket: import('socket.io').Socket,
-  token: string,
-): Promise<boolean> {
-  const cached = readCachedAuth(`s:${token}`);
-  if (cached) {
-    socket.data.userId = cached.userId;
-    socket.data.userName = cached.userName;
-    socket.data.avatarUrl = cached.avatarUrl;
-    socket.data.sessionToken = token;
-    return true;
-  }
-
-  const pool = getAuthPool();
-  if (!pool) return false;
-
-  const result = await pool.query(
-    `SELECT s."userId", s."expiresAt", u."name", u."image"
-     FROM "session" s
-     JOIN "user" u ON u."id" = s."userId"
-     WHERE s."token" = $1
-     LIMIT 1`,
-    [token],
-  );
-
-  if (result.rows.length === 0) return false;
-
-  const row = result.rows[0];
-  const expiresAt = new Date(row.expiresAt);
-  if (expiresAt <= new Date()) return false;
-
-  const userName = row.name || 'Player';
-  const avatarUrl = row.image || null;
-  socket.data.userId = row.userId;
-  socket.data.userName = userName;
-  socket.data.avatarUrl = avatarUrl;
-  socket.data.sessionToken = token;
-  cacheAuth(`s:${token}`, {
-    userId: row.userId,
-    userName,
-    avatarUrl,
-    sessionExpiresAt: expiresAt.getTime(),
-    cachedAt: Date.now(),
-  });
+async function applySessionToken(socket: import('socket.io').Socket): Promise<boolean> {
+  const result = await sessionAuth.resolveSocketSession(socket.handshake);
+  if (result.status !== 'ok') return false;
+  socket.data.userId = result.session.userId;
+  socket.data.userName = result.session.name;
+  socket.data.avatarUrl = result.session.image;
+  socket.data.sessionToken = result.session.token;
   return true;
 }
 
@@ -256,7 +167,7 @@ const DISCORD_VERIFY_TIMEOUT_MS = 5_000;
  * `userId` is a real site user id when the Discord account is linked, and
  * `null` for a guest — which is the whole distinction `X10` draws. A guest's
  * name and avatar URL live in this object, in memory, for at most
- * {@link AUTH_CACHE_TTL_MS} plus the life of the socket. They are never written
+ * the shared auth-cache TTL (60 s) plus the life of the socket. They are never written
  * to a table, and the avatar is referenced at Discord's CDN rather than copied
  * into our storage.
  */
@@ -363,7 +274,7 @@ async function applyDiscordActivityToken(
   socket: import('socket.io').Socket,
   token: string,
 ): Promise<boolean> {
-  const cached = readCachedAuth(`d:${token}`);
+  const cached = discordAuthCache.get(`d:${token}`);
   if (cached) {
     if (cached.userId) {
       socket.data.userId = cached.userId;
@@ -389,17 +300,13 @@ async function applyDiscordActivityToken(
     socket.data.discordGuest = { name: identity.name, avatarUrl: identity.avatarUrl };
   }
 
-  cacheAuth(`d:${token}`, {
-    // A cache row for a guest carries a null userId; `readCachedAuth` above
-    // replays it as a guest rather than as an account.
-    userId: identity.userId as string,
-    userName: identity.name,
-    avatarUrl: identity.avatarUrl,
-    // The token's own expiry, absolute — the cache never outlives the
-    // credential it was derived from.
-    sessionExpiresAt: identity.expiresAt,
-    cachedAt: Date.now(),
-  });
+  // A guest carries a null userId; the cache replays it as a guest rather than
+  // as an account. The cache never outlives the Discord token's own expiry.
+  discordAuthCache.set(
+    `d:${token}`,
+    { userId: identity.userId as string, userName: identity.name, avatarUrl: identity.avatarUrl },
+    identity.expiresAt,
+  );
   return true;
 }
 
@@ -419,13 +326,10 @@ async function softAuthMiddleware(
   socket: import('socket.io').Socket,
   next: (err?: import('socket.io').ExtendedError) => void,
 ): Promise<void> {
-  const token = socket.handshake.auth?.token;
   const discordToken = socket.handshake.auth?.discordToken;
 
   try {
-    if (typeof token === 'string' && token) {
-      await applySessionToken(socket, token);
-    }
+    await applySessionToken(socket);
     if (!socket.data.userId && typeof discordToken === 'string' && discordToken) {
       await applyDiscordActivityToken(socket, discordToken);
     }
@@ -501,6 +405,9 @@ const io = new Server(httpServer, {
   // did not, so every blip forced a fresh connection + auth round-trip.
   connectionStateRecovery: {},
 });
+
+// Opt-in Redis backplane (REDIS_URL); in-memory adapter otherwise. Awaited before listen().
+const adapterReady = attachRedisAdapter(io, logger);
 
 // Metrics: connection/room gauges + inbound-event counters (lib/perf/hub.ts).
 instrumentHub(io, 'socket');
@@ -654,7 +561,7 @@ function shutdown(signal: string): void {
   // Prisma closes only after the refunds have landed (or hit their deadline).
   void Promise.all([casinoRefunds, httpClosed])
     .then(() =>
-      Promise.all([disconnectPrisma(), authPool ? authPool.end() : Promise.resolve()]),
+      Promise.all([disconnectPrisma(), sessionAuth.close()]),
     )
     .catch((err: unknown) => logger.error({ event: 'shutdown_cleanup_error', error: String(err) }))
     .finally(() => process.exit(0));
@@ -669,14 +576,14 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 // left behind from rooms this one opens while the sweep is still running.
 const bootedAt = new Date();
 
-httpServer.listen(config.PORT, () => {
+void adapterReady.then(() => httpServer.listen(config.PORT, () => {
   logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
   if (config.DATABASE_URL) void warmPrismaClient(getPrismaClient(), logger);
   initializeBlackjackPublicTable(io);
   initializeHoldem(io);
   initializeBaccarat(io);
   initializeRoulette(io);
-});
+}));
 
 // Close group-call rows a previous process died holding. History hygiene only:
 // it runs after `listen` and never fails the boot, because every other feature

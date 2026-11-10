@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
-import { Circle, Loader2 } from 'lucide-react';
+import { Circle } from 'lucide-react';
 import { connectToBlackjack, disconnectFromBlackjack, getBlackjackSocket, onBalanceUpdate } from '@/lib/blackjack/socket';
 import { useBlackjackStore } from '@/lib/blackjack/store';
 import { C2S } from '@/lib/blackjack/events';
@@ -10,6 +10,7 @@ import { TableInvite } from './TableInvite';
 import { BlackjackTable } from './BlackjackTable';
 import { BlackjackControls } from './BlackjackControls';
 import { BlackjackSessionStats } from './BlackjackSessionStats';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Props {
   coins: number;
@@ -64,7 +65,7 @@ export function BlackjackGame({ coins, setCoins }: Props) {
   if (connectionStatus === 'connecting') {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
+        <Spinner size={24} />
         <span className="ml-2 text-sm text-site-text-dim">{t("connecting", { defaultValue: "Connecting..." })}</span>
       </div>
     );

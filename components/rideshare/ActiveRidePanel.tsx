@@ -1,17 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion } from 'framer-motion';
-import {
-  Loader2,
-  Car,
-  Star,
-  Navigation,
-  Flag,
-  CheckCircle2,
-  XCircle,
-  MapPin,
-  Crosshair,
-} from 'lucide-react';
+import { Car, Star, Navigation, Flag, CheckCircle2, XCircle, MapPin, Crosshair } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { RideMap } from './RideMap';
@@ -24,6 +14,7 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { rideClassName } from '@/lib/rideshare/classes';
 import { formatDistance, formatDuration, type LatLng } from '@/lib/rideshare/geo';
 import { useDriverLocationShare } from '@/lib/rideshare/useDriverLocationShare';
+import { Spinner } from '@/components/ui/spinner';
 
 type RideStatus = 'REQUESTED' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
@@ -250,7 +241,7 @@ export function ActiveRidePanel({
   if (loading) {
     return (
       <div className="flex justify-center glass-fill rounded-site py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-site-text-muted" />
+        <Spinner size={24} className="text-site-text-muted" />
       </div>
     );
   }

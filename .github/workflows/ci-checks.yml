@@ -97,6 +97,12 @@ jobs:
       BETTER_AUTH_URL: http://localhost:7005
       PORT: '7005'
       INTEGRATION_BASE_URL: http://localhost:7005
+      # Placeholders, not secrets: the Stripe webhook test signs events with this
+      # secret and the server verifies them with it. No Stripe key is set, so
+      # neither the app nor a test can reach api.stripe.com.
+      STRIPE_WEBHOOK_SECRET: whsec_ci_integration_not_a_real_secret
+      STRIPE_STARTER_PRICE_ID: price_ci_starter
+      STRIPE_PRO_PRICE_ID: price_ci_pro
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Start Postgres (background)

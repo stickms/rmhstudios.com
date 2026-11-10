@@ -8,24 +8,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import {
-  ArrowLeft,
-  Bath,
-  BedDouble,
-  CalendarClock,
-  ExternalLink,
-  Eye,
-  Globe,
-  Home,
-  Loader2,
-  MapPin,
-  MessageCircle,
-  PawPrint,
-  Pencil,
-  Ruler,
-  Sparkles,
-  Trash2,
-} from 'lucide-react';
+import { ArrowLeft, Bath, BedDouble, CalendarClock, ExternalLink, Eye, Globe, Home, MapPin, MessageCircle, PawPrint, Pencil, Ruler, Sparkles, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
@@ -52,6 +35,7 @@ import {
   statusLabel,
 } from '@/lib/homes/format';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
+import { Spinner } from '@/components/ui/spinner';
 
 export function ListingDetailView({ id }: { id: string }) {
   const goBack = useBackOrFallback();
@@ -156,7 +140,7 @@ export function ListingDetailView({ id }: { id: string }) {
     return (
       <PageLayout title="Listing" backTo="/homes" wide>
         <div className="grid place-items-center py-24 text-site-text-muted">
-          <Loader2 className="h-8 w-8 animate-spin" />
+          <Spinner size={32} className="text-site-text-muted" />
         </div>
       </PageLayout>
     );

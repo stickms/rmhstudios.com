@@ -27,6 +27,7 @@ import { StateSyncService } from './state-sync';
 import { cleanupRateLimits } from './rate-limit';
 import { disconnectPrisma } from './prisma-client';
 import { logger } from './logger';
+import { attachRedisAdapter } from '../shared/redis-adapter';
 import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
 
 // Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
@@ -71,6 +72,9 @@ const io = new Server(httpServer, {
     skipMiddlewares: false,
   },
 });
+
+// Opt-in Redis backplane (REDIS_URL); in-memory adapter otherwise. Awaited before listen().
+const adapterReady = attachRedisAdapter(io, logger);
 
 // Metrics: connection/room gauges + inbound-event counters (lib/perf/hub.ts).
 instrumentHub(io, 'rmhbox');
@@ -176,6 +180,8 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 // ─── Start listening ────────────────────────────────────────────
 
-httpServer.listen(config.PORT, () => {
-  logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
-});
+void adapterReady.then(() =>
+  httpServer.listen(config.PORT, () => {
+    logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
+  }),
+);
