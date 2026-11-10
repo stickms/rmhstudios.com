@@ -96,6 +96,11 @@ export default function AppShell({
         .filter(Boolean)
         .join(' ')}
       data-app-theme={appearance}
+      // The tier marker (redesign E1): on this root the `--app-*` tokens resolve
+      // to the site's own tokens — Midnight scoped on for the dark appearance,
+      // Daylight inherited for the light one (components/shared/app-theme.css,
+      // "The AppShell tier reads the site contract").
+      data-tier="app"
       // Historic claim on the app subtree for the old press layer. The CSS soft
       // body (app/jelly-material.css §8) now presses every button, tab
       // and menu item everywhere by default, so the attribute is a no-op alias

@@ -45,8 +45,8 @@ presets, 32 locales) alongside real-time multiplayer.
 
 Production is a **hybrid runtime** (Docker Compose on a VPS behind
 Apache/Cloudflare). **Node** runs the web SSR tier, every user-facing realtime
-hub, and three background workers; **Go** runs the background-worker supervisor,
-the status dashboard, and the asset streamer. All container ports bind to
+hub, and every background worker (the `jobs` worker also hosts the Discord
+bot); **Go** runs the status dashboard and the asset streamer. All container ports bind to
 `127.0.0.1`; Apache is the only front door. See
 [`docs/architecture.md`](docs/architecture.md) for the full picture.
 
@@ -60,13 +60,12 @@ the status dashboard, and the asset streamer. All container ports bind to
 | `rmhtube` | 7003 | Watch-together hub (Socket.IO) |
 | `ladder-worker` | — | RMHLadder job-discovery cron (pg-boss queue `ladder.pipeline`) |
 | `homes-worker` | — | RMHHomes listings-scraper cron (pg-boss queue `homes.scrape`) |
-| `jobs` | — | Durable async backbone (pg-boss): progression, event reminders, weekly digest |
+| `jobs` | — | Durable async backbone (pg-boss): progression, event reminders, weekly digest, the ported Go workers and the Discord bot |
 
 **Go services** (`go-services/`)
 
 | Service | Port | Role |
 |---|---|---|
-| `supervisor` | 9090 (metrics) | Runs the discord-bot background worker as a goroutine |
 | `status` | 7008 | Standalone health dashboard (`/`, `/api/status`); survives outages |
 | `assets` | 7007 | Range-aware S3/R2 streaming for `/library` `/music` `/models` `/sprites` |
 
@@ -106,7 +105,7 @@ streams from locally.
 ├── components/           # React components organized by feature (~860 files)
 ├── lib/                  # Utility functions, schemas, and shared logic (~950 files; *.server.ts = server-only)
 ├── server/               # Node service tier (Nitro plugins, WebSocket hubs, cron/async workers)
-├── go-services/          # Go worker fleet: supervisor + status + assets (Bazel + gazelle)
+├── go-services/          # Go services: status + assets (Bazel + gazelle)
 ├── stores/               # Zustand state management
 ├── hooks/                # Custom React hooks
 ├── prisma/               # Database schema (234 models) and migrations

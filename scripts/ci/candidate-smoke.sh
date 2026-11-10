@@ -34,8 +34,10 @@ for _ in $(seq 1 60); do
 done
 if [ "$ready" != true ]; then docker logs "$name"; exit 1; fi
 BASE_URL=http://127.0.0.1:7005 ORIGIN_HOST= bash deploy/smoke-test.sh
+# The full image carries the two Go services. The supervisor and the Go discord-bot were deleted
+# (the bot runs in the Node jobs worker, D3); a binary of either here means a stale build.
 docker run --rm --entrypoint sh "$full_ref" -ec \
-  'test -x /app/bin/supervisor && test -x /app/bin/status && test -x /app/bin/assets'
+  'test -x /app/bin/status && test -x /app/bin/assets && test ! -e /app/bin/supervisor && test ! -e /app/bin/discord-bot'
 # Chromium lives in the slim image now: the Node `jobs` worker renders vibe thumbnails with
 # Playwright against the OS Chromium (D3). Launch it the way lib/rmhvibe/vibe-screenshot.server.ts
 # does, under the jobs service's runtime (read-only root, /tmp tmpfs, HOME=/tmp), and take a real

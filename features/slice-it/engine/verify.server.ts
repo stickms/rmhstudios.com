@@ -340,7 +340,7 @@ export async function verifyStoredReplay(replayId: string): Promise<VerifyResult
  * a log line. A verification that threw and took a submission's 200 with it
  * would be a worse outcome than never verifying at all.
  *
- * The production home for this is a pg-boss job or the Go supervisor (`R8` says
+ * The production home for this is a pg-boss job in the jobs worker (`R8` says
  * so), which survives a deploy mid-verification and can retry. This is the
  * in-process version: correct, immediate, and honest about being best-effort.
  * See `docs/_handoff/replay-requests.md`.

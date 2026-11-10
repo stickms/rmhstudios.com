@@ -12,9 +12,9 @@ when Alex is hungry or out getting boba.
 He uses the existing **DeepSeek** persona for conversation and **xAI (Grok)** image
 generation to show what he looks like right now.
 
-> Implementation: `go-services/internal/discordbot/pet*.go` (the production Go
-> bot, run by the supervisor). The old `/rmhbot` website-editor commands have been
-> removed.
+> Implementation: `server/discord-bot/pet*.ts` in the Node `jobs` worker (the Go
+> original and its supervisor were deleted after the port, D3). The old `/rmhbot`
+> website-editor commands have been removed.
 
 ## Commands
 

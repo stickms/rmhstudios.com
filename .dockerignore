@@ -24,7 +24,7 @@ dist-server
 # Deploy state written on the HOST by deploy.sh (the content-hash file + the
 # build-timing progress log). Not part of the image — and critically, the
 # progress log is appended DURING the build via `tee`, so leaving .deploy/ in the
-# context makes the sequential supervisor→web builds see DIFFERENT contexts,
+# context makes the sequential full→web image builds see DIFFERENT contexts,
 # busting the `COPY --exclude=go-services . .` cache and rebuilding the expensive
 # vite stage a second time. (`deploy` further down excludes the deploy/ SOURCE
 # dir — a different name; this dot-prefixed state dir needs its own entry.)
@@ -120,8 +120,8 @@ docs
 !README.md
 
 # ─── Go microservices fleet + new infra ──────────────────────────────
-# go-services is included so the go-builder stage can compile supervisor,
-# status, and assets into /app/bin. Only deploy/ and .github/ are
+# go-services is included so the go-builder stage can compile status and
+# assets into /app/bin. Only deploy/ and .github/ are
 # excluded from the context (they are never needed inside the image).
 deploy
 .github

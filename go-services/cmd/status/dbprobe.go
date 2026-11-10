@@ -81,14 +81,8 @@ var pgbossSchemaRE = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 // count. Nil when there is no DATABASE_URL. The schema is PGBOSS_SCHEMA
 // (default "pgboss"), the same setting lib/jobs/boss.server.ts reads.
 func jobFreshness(dsn string, timeout time.Duration) func(ctx context.Context) (map[string]time.Time, error) {
-	if dsn == "" {
-		return nil
-	}
-	schema := os.Getenv("PGBOSS_SCHEMA")
-	if schema == "" {
-		schema = "pgboss"
-	}
-	if !pgbossSchemaRE.MatchString(schema) {
+	schema := pgbossSchema()
+	if dsn == "" || schema == "" {
 		return nil
 	}
 	d := &dbProbe{dsn: dsn, timeout: timeout}
@@ -117,6 +111,56 @@ func jobFreshness(dsn string, timeout time.Duration) func(ctx context.Context) (
 			}
 		}
 		return out, rows.Err()
+	}
+}
+
+// pgbossSchema is the pg-boss schema (PGBOSS_SCHEMA, default "pgboss", the
+// setting lib/jobs/boss.server.ts reads); "" when the value is not a plain
+// identifier, which disables the readers that would interpolate it.
+func pgbossSchema() string {
+	schema := os.Getenv("PGBOSS_SCHEMA")
+	if schema == "" {
+		schema = "pgboss"
+	}
+	if !pgbossSchemaRE.MatchString(schema) {
+		return ""
+	}
+	return schema
+}
+
+// discordHeartbeatQuery reads the Discord bot's heartbeat queue: whether its
+// cron is scheduled (the bot has a token and means to be online) and the newest
+// COMPLETED heartbeat job (a failed one is a minute the gateway was not READY).
+func discordHeartbeatQuery(schema string) string {
+	return `SELECT EXISTS (SELECT 1 FROM ` + schema + `.schedule WHERE name = $1),
+		(SELECT max(completed_on) FROM ` + schema + `.job WHERE name = $1 AND state = 'completed')`
+}
+
+// discordHeartbeat returns a reader for status.Config.DiscordGateway (B07).
+// Nil when there is no DATABASE_URL.
+func discordHeartbeat(dsn string, timeout time.Duration) func(ctx context.Context) (status.GatewayHeartbeat, error) {
+	schema := pgbossSchema()
+	if dsn == "" || schema == "" {
+		return nil
+	}
+	d := &dbProbe{dsn: dsn, timeout: timeout}
+	query := discordHeartbeatQuery(schema)
+	return func(ctx context.Context) (status.GatewayHeartbeat, error) {
+		pool, err := d.ensurePool(ctx)
+		if err != nil {
+			return status.GatewayHeartbeat{}, err
+		}
+		qctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+		var hb status.GatewayHeartbeat
+		var last *time.Time
+		if err := pool.QueryRow(qctx, query, status.JobQueueDiscordHeartbeat).Scan(&hb.Scheduled, &last); err != nil {
+			return status.GatewayHeartbeat{}, err
+		}
+		if last != nil {
+			hb.LastCompleted = *last
+		}
+		return hb, nil
 	}
 }
 

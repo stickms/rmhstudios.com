@@ -1570,7 +1570,10 @@ and deliberate degradation for `backdrop-filter` and print.
 
 **An app ships only its palette.** Each app's CSS is a class
 (`rmhbox-theme`, …) that redefines the `--app-*` values — RMHbox's is ~30 lines.
-Components read `--app-*` directly; there is no per-app alias layer.
+Components read `--app-*` directly; there is no per-app alias layer. Under
+`AppShell` (`data-tier="app"`) the `--app-*` defaults are themselves written in
+`--site-*` terms, so the site's Midnight and Daylight token sets drive the tier
+(§12.2).
 
 The shared pieces, all in `components/shared/`:
 
@@ -1670,6 +1673,86 @@ Rules 2–4's checkable parts, plus the `dvh` fallback pair, are enforced by
 manual — `absolute top-3 right-3` is correct inside a card and wrong on the
 window, and whether a shell ever hosts a text field is a question about its
 subtree, not about the rule that sizes it.
+
+### 12.2 How `--app-*` resolves to `--site-*` (redesign E1)
+
+`AppShell` stamps `data-tier="app"` on its root. On that root the tier's
+defaults are aliases or fixed derivations of site tokens
+(`components/shared/app-theme.css`, "The AppShell tier reads the site
+contract"). The theme each appearance resolves against:
+
+- **dark** and **high contrast**: Midnight. The `.style-graphite` token block in
+  `app/globals/tokens-themes.css` carries the dark shell as a second,
+  zero-specificity selector (and so do the Midnight colour-vision blocks and the
+  `html.app-route` opaque-surface rule), so the shell holds Midnight's tokens
+  even though an app route's `<html>` carries no theme class.
+- **light**: Daylight, inherited from `<html>` (the `:root` tokens).
+
+The site's theme _choice_ does not pick the appearance yet: each app still
+persists its own `dark` / `light` (`theme` in `lib/<app>/store.ts`), and the
+pre-paint ground follows that value (`APP_ROUTE_THEME_BG`). What the tier gains
+is that it is drawn from the site's two token sets, so a change to Midnight or
+Daylight, or a site setting that retunes a shared token (type, radius,
+transition speed), reaches every AppShell app.
+
+**Neutral ramp: `--site-surface-opaque` stepped toward `--site-text`.** Each
+step is `color-mix(in srgb, var(--site-text) N%, var(--site-surface-opaque))`.
+In the dark tier the ground is the opaque surface and every raised step takes
+more ink; in the light tier the card is the opaque surface and the ground and
+lines sit below it. The shares reproduce the old hex ramps; the only loss is a
+faint cool cast in the blue channel, which the site's neutral tokens do not
+have.
+
+| Token                  | Dark: share of ink | Midnight value (was)  | Light: share of ink | Daylight value (was)  |
+| ---------------------- | ------------------ | --------------------- | ------------------- | --------------------- |
+| `--app-bg`             | 0% (the surface)   | `#1c1c1e` (`#1a1b1e`) | 4%                  | `#f5f5f5` (`#f5f5f7`) |
+| `--app-bg-subtle`      | 2.5%               | `#212123` (`#202124`) | 7%                  | `#ededed` (`#ededf0`) |
+| `--app-surface`        | 6%                 | `#28282b` (`#27282c`) | 0% (the surface)    | `#ffffff` (`#ffffff`) |
+| `--app-surface-hover`  | 11%                | `#323335` (`#313238`) | 6%                  | `#f0f0f0` (`#f0f0f4`) |
+| `--app-surface-active` | 15%                | `#3a3b3d` (`#3a3b42`) | 10%                 | `#e6e6e6` (`#e6e6ec`) |
+| `--app-border`         | 15%                | `#3a3b3d` (`#3a3b42`) | 17%                 | `#d4d4d4` (`#d4d4da`) |
+| `--app-border-bright`  | 23%                | `#4b4b4e` (`#4a4b54`) | 25%                 | `#bfbfbf` (`#bfbfc8`) |
+| `--app-text`           | `var(--site-text)` | `#e7e9ef` (`#e8e8ec`) | 83.5%               | `#2a2a2a` (`#2a2b30`) |
+| `--app-text-muted`     | 62%                | `#9a9ba0` (`#9a9ba4`) | 58.5%               | `#6a6a6a` (`#6a6b74`) |
+| `--app-text-dim`       | 38.5%              | `#6a6b6e` (`#6a6b74`) | 39.5%               | `#9a9a9a` (`#9a9ba4`) |
+
+The derived tints (`--app-*-dim`, `--app-glass-bg`, `--app-toast-bg`,
+`--app-scrim`, the `--app-jelly-*` haze and plasma) were already mixes of the
+tokens above, so they follow without a line of their own.
+
+**Equal-value aliases** (no visual change by construction):
+
+| Token                                    | Resolves to                                                                                  |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `--app-accent` / `-fg` / `-hover`        | `--site-accent` / `-fg` / `-hover` (only a default: every AppShell palette declares its own) |
+| `--app-font-display` / `-body` / `-mono` | `--site-font-display` / `-body` / `-mono`                                                    |
+| `--app-radius-lg`                        | `--site-radius` (32px)                                                                       |
+| `--app-radius`                           | `--site-radius-sm` (24px)                                                                    |
+| `--app-radius-sm`                        | `calc(var(--site-radius-sm) * 0.75)` (18px)                                                  |
+| `--app-shadow` / `-sm`                   | `--site-shadow` / `-sm` (both zero)                                                          |
+| `--app-duration`                         | `--site-transition-speed` (160ms)                                                            |
+| `--app-duration-fast`                    | `calc(var(--site-transition-speed) * 0.75)` (120ms)                                          |
+| `--app-duration-slow`                    | `calc(var(--site-transition-speed) * 1.375)` (220ms)                                         |
+| `--app-ease`                             | `--ease-morph` (the same curve)                                                              |
+
+**Deliberately not aliased:**
+
+- `--app-success` / `-danger` / `-warning` / `-info` / `-rare`. The site's status
+  colours are tuned for its own grounds (Midnight's are saturated system hues,
+  Daylight's are dark inks) and the site has no `info` or `rare`; aliasing them
+  would visibly repaint every win/loss and badge in the apps.
+- The `--app-gel-*` / `--app-jelly-*` material mirrors and `--app-focus-ring`.
+  The shell points the site's `--gel-*` and `--focus-ring` AT them, so an alias
+  in the other direction would be a cycle; their values are the app palette's,
+  not the theme's.
+- Density, scrollbar, glass-blur and `--app-safe-*`: no site counterpart.
+- Every per-app palette (`.rmhtube-theme`, `.rmhtype-theme`, `.rmhstudy-theme`,
+  `.studio-theme`, `.rmhmusic-theme`, `.rmhbox-theme`) and the high-contrast
+  ramp, which stay literal: they are the app's identity and the tier's opaque
+  solid-edge mode.
+- A bare `.app-theme` without `data-tier` (TF2 HUD, CS, Source, Gabriel's Horn,
+  which wear the chrome without `AppShell`) keeps the literal ramp: games keep
+  their own scheme.
 
 ---
 

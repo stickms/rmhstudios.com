@@ -14,7 +14,7 @@ import {
  * inside the server's real `max_connections`. The committed budget assumes the
  * tuned host (200), but applying that tuning is a manual root action the
  * sandboxed deploy cannot perform, so a stock host (100) runs a fleet whose
- * blue/green peak is ~160 connections. Past the limit Postgres refuses new
+ * blue/green peak is 162 connections. Past the limit Postgres refuses new
  * connections outright ("sorry, too many clients already") and every service —
  * web, hubs, auth lookups — fails at once. This takes a deploy down in the most
  * literal sense, so the arithmetic is pinned here:
@@ -28,17 +28,16 @@ import {
 const tuned = { maxConnections: 200, reserved: 3, webWorkers: 2, current: { ...DEFAULTS } };
 const stock = { ...tuned, maxConnections: 100 };
 
-describe('Go supervisor pool accounting', () => {
-  it('counts the default supervisor pool (3) in the documented compose sum', () => {
-    // docker-compose.yml: 88 + 27 + 24 + 6 + 3 + (3 + 2 + 2 slack) + 10
-    expect(peakConnections(DEFAULTS, 2)).toBe(165);
+describe('documented compose sum', () => {
+  it('matches the arithmetic in docker-compose.yml (no Go supervisor pool since D3)', () => {
+    // docker-compose.yml: 88 + 27 + 24 + 6 + 3 + (2 + 2 slack) + 10
+    expect(peakConnections(DEFAULTS, 2)).toBe(162);
   });
 
-  it('counts an operator-raised GO_DB_POOL_SIZE and still fits a stock host', () => {
-    expect(peakConnections(DEFAULTS, 2, 6)).toBe(peakConnections(DEFAULTS, 2) + 3);
-    const plan = planPools({ ...stock, goPool: 6 });
-    expect(plan.fits).toBe(true);
-    expect(peakConnections(plan.pools, 2, 6)).toBeLessThanOrEqual(plan.usable);
+  it('keeps the compose comment in step with the sum', () => {
+    const compose = readFileSync(join(__dirname, '../../docker-compose.yml'), 'utf8');
+    expect(compose).toContain('88 + 27 + 24 + 6 + 3 + 4 + 10 = 162');
+    expect(compose).not.toContain('GO_DB_POOL_SIZE=');
   });
 });
 

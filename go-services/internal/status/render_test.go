@@ -24,7 +24,7 @@ func fixtureProber(t *testing.T) (*Prober, Snapshot) {
 		{Name: "RMHtube", Description: "Watch-together WebSocket server", Group: "Realtime"},
 		{Name: "Content feed", Description: "Public blog RSS — proves the database-backed render path", Group: "Content"},
 		{Name: "Sitemap", Description: "Generated sitemap.xml — the discovery surface search engines read", Group: "Content"},
-		{Name: "Background workers", Description: "Supervisor: discord-bot", Group: "Platform"},
+		{Name: "Background jobs", Description: "Queue worker", Group: "Platform"},
 	}
 	p := NewProber(targets)
 

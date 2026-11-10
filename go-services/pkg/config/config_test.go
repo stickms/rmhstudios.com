@@ -2,36 +2,25 @@ package config
 
 import "testing"
 
-func TestDBPoolSizeDefaultAndCap(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
-	cases := map[string]int32{
-		"":    DefaultGoDBPoolSize, // unset -> production default
-		"1":   1,
-		"4":   4,
-		"6":   MaxGoDBPoolSize,
-		"50":  MaxGoDBPoolSize, // capped at the workers' concurrency
-		"0":   1,               // never zero
-		"-3":  1,
-		"abc": DefaultGoDBPoolSize, // unparsable -> default
+func TestLoadCommonRequiresDatabaseURL(t *testing.T) {
+	t.Setenv("DATABASE_URL", "")
+	if _, err := LoadCommon("assets"); err == nil {
+		t.Fatal("DATABASE_URL unset must be an error")
 	}
-	for env, want := range cases {
-		t.Setenv("GO_DB_POOL_SIZE", env)
-		c, err := LoadCommon("supervisor")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if c.DBPoolSize != want {
-			t.Errorf("GO_DB_POOL_SIZE=%q: DBPoolSize = %d, want %d", env, c.DBPoolSize, want)
-		}
+	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("METRICS_ADDR", "")
+	c, err := LoadCommon("assets")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.ServiceName != "assets" || c.DatabaseURL != "postgres://x" || c.MetricsAddr != ":9090" {
+		t.Fatalf("LoadCommon: %+v", c)
 	}
 }
 
-func TestNodeHubPoolVariableIsNotRead(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://x")
-	t.Setenv("GO_DB_POOL_SIZE", "")
-	t.Setenv("SERVER_DB_POOL_SIZE", "5")
-	c, _ := LoadCommon("supervisor")
-	if c.DBPoolSize != DefaultGoDBPoolSize {
-		t.Fatalf("SERVER_DB_POOL_SIZE leaked into the Go pool: %d", c.DBPoolSize)
+func TestGetDurationFallsBackOnGarbage(t *testing.T) {
+	t.Setenv("X_GRACE", "soon")
+	if got := GetDuration("X_GRACE", 5); got != 5 {
+		t.Fatalf("unparsable duration must fall back: %v", got)
 	}
 }

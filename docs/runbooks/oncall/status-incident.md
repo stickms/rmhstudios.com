@@ -10,8 +10,6 @@ The alert links to the incident page with its timeline. By component:
   then `docker compose -p rmhstudios-prod --env-file .env.production restart <service>`.
   Players lose their in-progress game on restart; rmhtube restores rooms.
 - **Database**: as [A02](A02.md).
-- **Background workers** (the Go supervisor): `docker logs <supervisor> --tail 200`;
-  look for `worker panic` / `worker exited before shutdown`.
 - **Content feed / Sitemap**: render-path failures; check web logs and recent deploys.
 
 Website / App readiness are not forwarded here; the watchdog pages for those

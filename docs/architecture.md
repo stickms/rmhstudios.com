@@ -21,9 +21,7 @@
    │  ladder-worker · homes-worker · jobs              │
    │     (Node crons + pg-boss backbone, no port)      │
    │                                                   │
-   │  supervisor:9090 (Go: discord-bot, unless         │
-   │    DISCORD_BOT_RUNTIME=node moves it to jobs)     │
-   │                                                  │
+   │    (jobs also holds the Discord bot's gateway)    │
    │                                                   │
    │  status:7008 (Go)   assets:7007 (Go)              │
    │  redis / redis-state (infra; minio = local-s3)    │
@@ -32,8 +30,9 @@
 ```
 
 **Production is a hybrid runtime.** Node is authoritative for the web SSR and
-every user-facing realtime hub; Go is authoritative for the background-worker
-tier, the status dashboard, and asset streaming. All container ports bind to
+every user-facing realtime hub and every background worker (the jobs worker
+holds the Discord bot too); Go runs only the status dashboard and asset
+streaming. All container ports bind to
 `127.0.0.1`; Apache is the only front door. RMHMusic (the piano & guitar
 learning app) has no hub or socket handler: it is web tier only, over HTTP routes.
 
@@ -41,32 +40,38 @@ The former **full-Go topology** — a `gateway` fronting Go hubs
 (gamehub/rmhbox/rmhtube and the old listening-party rmhmusic hub) with a Redis backplane, plus its Helm chart
 and k8s manifests — was **removed in the rewrite** (design §5.2): it never
 served a production request and duplicated the Node hubs. Go now runs only what
-production uses — the `supervisor` (background workers), `status`, and
-`assets`. The Node hubs are the realtime tier. Recover the deleted topology from
+production uses — `status` and `assets` (the `supervisor` and its last
+worker, the Discord bot, went to the Node `jobs` worker, D3). The Node hubs are the realtime tier. Recover the deleted topology from
 git history (tag `pre-rewrite-go-realtime`) if it is ever revived.
 
-### The Discord bot's runtime switch (D3)
+### The Discord bot (D3)
 
-The Discord bot (Alex + `/sohumtracker`) exists twice: the Go original in the `supervisor`
-(`go-services/internal/discordbot/`) and the Node port in the `jobs` worker (`server/discord-bot/`).
-`DISCORD_BOT_RUNTIME` picks one, and docker-compose passes the same value to `jobs`, `supervisor` and
-`status`:
+The Discord bot (Alex `/chat`, the tamagotchi and `/sohumtracker`) runs in the Node `jobs` worker
+(`server/discord-bot/`) whenever `DISCORD_BOT_TOKEN` (or `DISCORD_ACTIVITY_BOT_TOKEN`) is set, and logs
+`discord_bot.disabled` otherwise. It is the only copy: the Go original (`go-services/internal/discordbot/`),
+its standalone `cmd/discord-bot`, the `supervisor` process that ran it, `pkg/worker`, `pkg/db` and the git
+base image were deleted once the port shipped. Its periodic work is pg-boss crons in `jobs`
+(`discord-bot.care-tick`, `.watch-flush`, `.watch-identity`, `.watch-summary`), plus
+`discord-bot.gateway-heartbeat`, a per-minute job that completes only while the gateway is READY; the
+Go `status` service reads that queue from pg-boss and raises B07 when the last completed heartbeat is
+over 5 minutes old (`go-services/internal/status/workers.go`). Outside `NODE_ENV=production` the bot
+also needs `DISCORD_BOT_GUILD_ALLOWLIST` (`server/discord-bot/guard.ts`), so a dev `.env` carrying the
+shared token never opens a second production session.
 
-- **unset** (production today): the Go supervisor connects; the jobs worker registers nothing for the
-  bot (and unschedules any `discord-bot.*` crons a previous run left).
-- **`node`**: the jobs worker opens the gateway and schedules `discord-bot.care-tick`,
-  `discord-bot.watch-flush`, `discord-bot.watch-identity` and `discord-bot.watch-summary`; the Go
-  `discordbot.Run` idles (the supervisor stays healthy, it just runs nothing); status stops reading B07
-  from the supervisor's gateway gauge.
+**No double bot on deploy.** Deleting the `supervisor` service from `docker-compose.yml` does not stop a
+supervisor container an earlier release left running, and that container would hold a second gateway
+session on the same token as the new `jobs`. `deploy.sh` therefore runs `retire_supervisor` right before
+`docker compose up -d --no-build --remove-orphans --scale web=0`: it finds the container by its compose
+labels (`com.docker.compose.project=<project>`, `com.docker.compose.service=supervisor`) or its
+`<project>-supervisor` name, `docker stop -t 90` (the Go bot's old drain grace), `docker rm -f`, and fails
+the deploy before anything starts if it is still there. It is a no-op once the container is gone.
+`--remove-orphans` on that `up` (and on the non-web rollback's) would remove it as well. Nothing else ever
+started the supervisor (no systemd unit or cron), and the web hotswap never touched it.
 
-To flip: set `DISCORD_BOT_RUNTIME=node` in `.env.production` and recreate `jobs`, `supervisor` and
-`status` together, so the Go session closes as the Node one opens — either by deploying, or by hand
-with `docker compose -p <project> --env-file .env.production up -d jobs supervisor status`. The
-`--env-file` matters: the three services read the value through compose interpolation
-(`${DISCORD_BOT_RUNTIME:-}`), which `deploy.sh` feeds from `.env.production`; a bare `docker compose up`
-would interpolate it as empty and silently keep the Go bot. To roll back, unset it and recreate the same three. Once the Node bot has run in
-production for a while, the supervisor (and with it `internal/discordbot`, `pkg/db`'s raw-SQL mirror
-and the Bazel test gate) can be retired.
+A non-web rollback past this change restores the previous `jobs` image, which only ran the bot with
+`DISCORD_BOT_RUNTIME=node`; compose no longer passes that variable and there is no supervisor to bring
+back, so the bot stays offline until the roll-forward. If that rollback has to last, put
+`DISCORD_BOT_RUNTIME=node` in `.env.production` (`jobs` reads its `env_file`) and recreate `jobs`.
 
 ### Diagrams
 
@@ -98,13 +103,12 @@ flowchart LR
       SOCK["socket :7001<br/>games"]
       BOX["rmhbox :7676<br/>party games"]
       TUBE["rmhtube :7003<br/>watch-together"]
-      JOBS["jobs<br/>pg-boss queues"]
+      JOBS["jobs<br/>pg-boss queues<br/>+ Discord bot gateway"]
       LAD["ladder-worker<br/>pg-boss consumer"]
       HOM["homes-worker<br/>pg-boss consumer"]
     end
 
     subgraph Go["Go tier (Bazel)"]
-      SUP["supervisor :9090<br/>discord-bot (Go runtime)"]
       STAT["status :7008<br/>uptime dashboard"]
       ASSET["assets :7007<br/>range-aware R2 streaming"]
     end
@@ -151,7 +155,6 @@ flowchart LR
   JOBS --> PG
   LAD --> PG
   HOM --> PG
-  SUP --> PG
   ASSET --> R2
   WEB --> R2
 
@@ -159,8 +162,8 @@ flowchart LR
   WEB --> OAUTH
   WEB --> AI
   WEB --> MISC
-  SUP --> DISC
-  SUP --> AI
+  JOBS --> DISC
+  JOBS --> AI
   STAT -->|probes| AP
 
   WD -->|"probes / and /api/ready"| CF
@@ -215,7 +218,7 @@ The root `Dockerfile` builds both production images; `vite build` runs once:
 | Image                   | Target        | Contents                                                                                                                              | Runs                                        |
 | ----------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | `rmhstudios-app` (slim) | `runner`      | Node app: `.output/` (Nitro) + `dist-server/*.cjs` bundles                                                                            | web, socket, rmhbox, rmhtube, ladder-worker, homes-worker, jobs |
-| `rmhstudios-app-full`   | `runner-full` | shared runtime base + Chromium + Go binaries in `/app/bin/` (built by the Dockerfile's `go-builder` stage — plain `go build`, not Bazel); no Node app layers | supervisor, status, assets                  |
+| `rmhstudios-app-full`   | `runner-full` | shared runtime base + Go binaries in `/app/bin/` (built by the Dockerfile's `go-builder` stage — plain `go build`, not Bazel); no Node app layers | status, assets                              |
 
 ## 3. Deploy pipeline (push → production)
 
@@ -309,7 +312,6 @@ runs the changed-file subset of all three. Test suites and what gates them:
 | 7003      | rmhtube                          | Node               | Apache `/rmhtube-ws/`       |
 | 7007      | assets                           | Go                 | internal (Apache off-disk CDN path) |
 | 7008      | status                           | Go                 | dashboard                   |
-| 9090      | supervisor metrics               | Go                 | internal (Prometheus)       |
 | 6379      | redis (LRU cache) · redis-state (durable, dormant) | infra | internal        |
 | 9000/9001 | MinIO                            | infra              | internal                    |
 
@@ -373,16 +375,17 @@ realtime topology.)
   `/api/client-error` (installed in `app/routes/__root.tsx`).
 - **Server:** structured JSON logs everywhere (Node `server/shared/logger.ts`,
   Go `pkg/log` with matching field names). Go services expose Prometheus
-  metrics (`pkg/telemetry`); supervisor merges its workers' registries
-  on :9090.
+  metrics (`pkg/telemetry`, `assets` /metrics).
 - **Status page:** the Go `status` service (7008) keeps uptime history on disk
   and is designed to survive platform outages — its dashboard is one
   self-contained document that fetches nothing, not even a font. Two kinds of
   probe: the **web-facing** ones (`/`, `/api/ready`, `/blog/rss.xml`,
   `/sitemap.xml`) go through the public origin, so they traverse the real user
   path and assert on response CONTENT — a 200 serving an empty shell reads as
-  degraded, not operational; the **internal** ones (the three Node hubs, the
-  supervisor) hit each container's own `/health` over compose DNS. The hubs are
+  degraded, not operational; the **internal** ones (the three Node hubs) hit each
+  container's own `/health` over compose DNS. The jobs worker has no port: its
+  liveness is the A16 check-in, its jobs' freshness B06 and the Discord bot's
+  gateway B07, read from pg-boss. The hubs are
   deliberately NOT probed at `<origin>/socket/health` etc: those paths exist only
   as rewrites in the hand-installed Apache vhost, so probing them reported a
   permanent 404 outage for hubs that were serving traffic normally.

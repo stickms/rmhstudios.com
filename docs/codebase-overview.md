@@ -58,7 +58,7 @@ lib/                Utilities, schemas, server helpers (~950 files); seo.ts, sch
                     client-errors.ts, rate-limit.ts, auth.ts, prisma.server.ts, i18n/
 server/             Node service tier (socket-server, rmhbox, rmhtube, ladder-worker,
                     homes-worker, jobs, nitro/ plugins, shared/) — see §3
-go-services/        Go worker fleet: supervisor + status + assets (Bazel + gazelle) — see §4
+go-services/        Go services: status + assets (Bazel + gazelle) — see §4
 stores/             Zustand stores (theme, locale, feed, …)
 hooks/              Custom hooks (useReducedMotion, useCelebration, useIsMobile, …)
 prisma/             schema/ (234 models, one file per domain) + migrations
@@ -96,9 +96,10 @@ there is no Go edge/gateway in front of them. See
 ## 4. Go microservice fleet (`go-services/`)
 
 The backend service layer has a Go implementation (built with Bazel +
-gazelle). **Production today is a hybrid:** Go runs the background workers
-(one `supervisor` process), `status`, and `assets`; Node runs the web SSR and
-every realtime hub. The old full-Go realtime topology (a `gateway` fronting Go
+gazelle). **Production today is a hybrid:** Go runs `status` and `assets`;
+Node runs the web SSR, every realtime hub and every background worker (the Go
+workers, the Discord bot last, were ported to the `jobs` worker and deleted
+with their `supervisor`, D3). The old full-Go realtime topology (a `gateway` fronting Go
 `gamehub`/`rmhbox`/`rmhtube` hubs with a Redis backplane, plus its
 Helm/k3s charts) was **removed in the rewrite** — it never served production.
 Details: [`architecture.md`](./architecture.md) and
@@ -106,7 +107,6 @@ Details: [`architecture.md`](./architecture.md) and
 
 | Service      | Port           | Role                                                                                                                  |
 | ------------ | -------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `supervisor` | 9090 (metrics) | Runs the discord-bot background worker as a goroutine |
 | `status`     | 7008           | Standalone health dashboard (`/`, `/api/status`); survives outages                                                    |
 | `assets`     | 7007           | Range-aware S3/R2 asset streaming (`/library` `/music` `/models` `/sprites`)                                          |
 
