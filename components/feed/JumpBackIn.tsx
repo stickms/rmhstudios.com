@@ -74,7 +74,7 @@ export function JumpBackIn() {
  className="flex h-16 w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-site border border-dashed border-site-border text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
  >
  <ArrowRight className="h-4 w-4"aria-hidden />
- <span className="text-[10px] font-medium">
+ <span className="text-micro font-medium">
  {t('jump-back-all-label', { defaultValue:'All'})}
  </span>
  </button>

@@ -236,8 +236,8 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
         <DialogContent
           ref={incomingCardRef}
           tabIndex={-1}
-          className="z-[121] max-w-sm p-6 outline-none"
-          overlayClassName="z-[120]"
+          className="z-call-dialog max-w-sm p-6 outline-none"
+          overlayClassName="z-call"
           aria-labelledby={incomingTitleId}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
@@ -348,7 +348,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
 
   return createPortal(
     <div
-      className="call-banner pointer-events-none fixed inset-x-0 top-3 z-[120] flex justify-center px-2"
+      className="call-banner pointer-events-none fixed inset-x-0 top-3 z-call flex justify-center px-2"
       style={{ paddingTop: 'max(0.5rem, var(--safe-top, 0px))' }}
     >
       <div className="pointer-events-auto w-full max-w-lg">

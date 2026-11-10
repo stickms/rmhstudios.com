@@ -360,7 +360,7 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
                 // in the theme's own material. `glass-overlay` is the shared
                 // floating-panel tier (globals.css §5.1). z-60 clears the z-50
                 // dialogs a select can be opened from inside.
-                'z-[60] max-h-[min(22rem,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden py-1.5',
+                'z-topbar max-h-[min(22rem,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden py-1.5',
                 styles.content,
               )}
             >

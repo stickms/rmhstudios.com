@@ -18,7 +18,7 @@ function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?:
   }, [delay]);
 
   const w = small ? 'w-7 h-10 sm:w-8 sm:h-11' : 'w-9 h-13 sm:w-10 sm:h-14';
-  const textSize = small ? 'text-[9px] sm:text-[10px]' : 'text-[11px] sm:text-xs';
+  const textSize = small ? 'text-tiny sm:text-micro' : 'text-caption sm:text-xs';
 
   return (
     <div className={`${w} perspective-500 shrink-0`}>
@@ -83,11 +83,11 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
         <span className={`text-xs font-bold truncate max-w-14 sm:max-w-20 ${isMe ? 'text-site-accent' : 'text-site-text'}`}>
           {isMe ? t("you", { defaultValue: "You" }) : player.userName}
         </span>
-        {player.isDealer && <span className="text-[8px] sm:text-[9px] font-bold bg-site-accent-dim text-site-accent px-1 rounded">D</span>}
-        {player.isSmallBlind && <span className="text-[8px] sm:text-[9px] font-bold bg-casino-seat-1/30 text-casino-seat-1 px-1 rounded">SB</span>}
-        {player.isBigBlind && <span className="text-[8px] sm:text-[9px] font-bold bg-casino-seat-2/30 text-casino-seat-2 px-1 rounded">BB</span>}
+        {player.isDealer && <span className="text-nano sm:text-tiny font-bold bg-site-accent-dim text-site-accent px-1 rounded">D</span>}
+        {player.isSmallBlind && <span className="text-nano sm:text-tiny font-bold bg-casino-seat-1/30 text-casino-seat-1 px-1 rounded">SB</span>}
+        {player.isBigBlind && <span className="text-nano sm:text-tiny font-bold bg-casino-seat-2/30 text-casino-seat-2 px-1 rounded">BB</span>}
         {isCurrentTurn && turnSeconds != null && (
-          <span className={`text-[8px] sm:text-[9px] font-bold tabular-nums px-1 rounded ${
+          <span className={`text-nano sm:text-tiny font-bold tabular-nums px-1 rounded ${
             turnSeconds <= 5 ? 'bg-site-danger/30 text-site-danger animate-pulse' : 'bg-site-accent-dim text-site-accent'
           }`}>
             {turnSeconds}s
@@ -116,24 +116,24 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
       {/* Chips */}
       <div className="flex items-center gap-0.5">
         <CoinIcon className="w-3 h-3" />
-        <span className="text-[10px] text-site-text font-bold">{player.totalChips}</span>
+        <span className="text-micro text-site-text font-bold">{player.totalChips}</span>
       </div>
 
       {/* Current bet */}
       {player.currentBet > 0 && (
-        <span className="text-[10px] text-site-warning font-bold">{t("bet-amount-holdem-table", { defaultValue: "Bet: {{amount}}", amount: player.currentBet })}</span>
+        <span className="text-micro text-site-warning font-bold">{t("bet-amount-holdem-table", { defaultValue: "Bet: {{amount}}", amount: player.currentBet })}</span>
       )}
 
       {/* Last action */}
       {player.lastAction && !player.folded && (
-        <span className={`text-[10px] font-bold ${actionLabels[player.lastAction]?.color ?? ''}`}>
+        <span className={`text-micro font-bold ${actionLabels[player.lastAction]?.color ?? ''}`}>
           {actionLabels[player.lastAction]?.label}
         </span>
       )}
 
-      {player.sittingOut && <span className="text-[10px] text-casino-seat-3 font-bold">{t("sitting-out", { defaultValue: "Sitting Out" })}</span>}
-      {player.folded && !player.sittingOut && <span className="text-[10px] text-site-text-dim font-bold">{t("folded", { defaultValue: "Folded" })}</span>}
-      {player.allIn && <span className="text-[10px] text-site-danger font-bold animate-pulse">{t("action-all-in", { defaultValue: "ALL IN" })}</span>}
+      {player.sittingOut && <span className="text-micro text-casino-seat-3 font-bold">{t("sitting-out", { defaultValue: "Sitting Out" })}</span>}
+      {player.folded && !player.sittingOut && <span className="text-micro text-site-text-dim font-bold">{t("folded", { defaultValue: "Folded" })}</span>}
+      {player.allIn && <span className="text-micro text-site-danger font-bold animate-pulse">{t("action-all-in", { defaultValue: "ALL IN" })}</span>}
     </div>
   );
 }

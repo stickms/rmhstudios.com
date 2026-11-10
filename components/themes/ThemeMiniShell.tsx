@@ -34,8 +34,8 @@ export function ThemeMiniShell({
   // stays L1 (no backdrop-filter) so a card grid is cheap.
   const feature = heavy ? 'glass-pane' : 'glass-fill';
 
-  const t = size === 'lg' ? 'text-[11px]' : 'text-[8px]';
-  const tSm = size === 'lg' ? 'text-[9px]' : 'text-[7px]';
+  const t = size === 'lg' ? 'text-caption' : 'text-nano';
+  const tSm = size === 'lg' ? 'text-tiny' : 'text-pico';
 
   return (
     <div

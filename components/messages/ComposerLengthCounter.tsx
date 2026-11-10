@@ -17,7 +17,7 @@ export function ComposerLengthCounter({ used }: { used: number }) {
       role="status"
       aria-live="polite"
       className={cn(
-        'mt-1 text-right font-mono text-[11px]',
+        'mt-1 text-right font-mono text-caption',
         state === 'full' ? 'text-site-danger' : 'text-site-text-muted',
       )}
     >

@@ -49,7 +49,7 @@ interface DocEditorProps {
 
 /** Shared markdown reader styling, so a doc reads the same wherever it renders. */
 export const DOC_PROSE_CLASS =
-  'space-y-3 text-[15px] leading-relaxed text-site-text [&_a]:text-site-accent [&_code]:font-mono [&_h2]:mt-5 [&_h2]:font-semibold [&_h3]:mt-4 [&_h3]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_pre]:overflow-x-auto [&_pre]:rounded-site [&_pre]:bg-site-surface [&_pre]:p-3';
+  'space-y-3 text-body leading-relaxed text-site-text [&_a]:text-site-accent [&_code]:font-mono [&_h2]:mt-5 [&_h2]:font-semibold [&_h3]:mt-4 [&_h3]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_pre]:overflow-x-auto [&_pre]:rounded-site [&_pre]:bg-site-surface [&_pre]:p-3';
 
 export function DocBody({ body, className }: { body: string; className?: string }) {
   return (

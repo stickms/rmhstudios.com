@@ -24,7 +24,7 @@ export function MessageBadges({
   return (
     <div
       className={cn(
-        'mb-0.5 flex items-center gap-2 px-1 text-[11px] text-site-text-dim',
+        'mb-0.5 flex items-center gap-2 px-1 text-caption text-site-text-dim',
         className,
       )}
     >
@@ -80,7 +80,7 @@ export function ThreadChip({
 export function SeenIndicator({ className }: { className?: string }) {
   const { t } = useTranslation('f-messaging');
   return (
-    <p className={cn('mt-0.5 px-1 text-right text-[10px] text-site-text-dim', className)}>
+    <p className={cn('mt-0.5 px-1 text-right text-micro text-site-text-dim', className)}>
       {t('seen', { defaultValue: 'Seen' })}
     </p>
   );

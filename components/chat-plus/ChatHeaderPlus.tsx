@@ -28,7 +28,7 @@ export function ChatHeaderPlus({ chat, className }: { chat: ChatRef; className?:
     <div className={`flex items-center gap-1 ${className ?? ''}`}>
       {timer && (
         <span
-          className="inline-flex items-center gap-1 rounded-full bg-site-accent-dim px-2 py-1 text-[11px] font-medium text-site-accent"
+          className="inline-flex items-center gap-1 rounded-full bg-site-accent-dim px-2 py-1 text-caption font-medium text-site-accent"
           title={t('timer-chip-title', {
             duration: timerLabel,
             defaultValue: 'Messages disappear after {{duration}}',

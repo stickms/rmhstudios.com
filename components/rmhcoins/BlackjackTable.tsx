@@ -60,7 +60,7 @@ function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?:
   }, [delay]);
 
   const w = small ? 'w-7 h-10 sm:w-8 sm:h-11' : 'w-9 h-13 sm:w-10 sm:h-14';
-  const textSize = small ? 'text-[9px] sm:text-[10px]' : 'text-[11px] sm:text-xs';
+  const textSize = small ? 'text-tiny sm:text-micro' : 'text-caption sm:text-xs';
 
   return (
     <div className={`${w} perspective-500 shrink-0`}>
@@ -111,23 +111,23 @@ function SplitHandView({ sh, idx, active }: {
 
   return (
     <div className={`flex flex-col items-center gap-0.5 ${active ? 'ring-1 ring-site-accent rounded p-0.5' : ''}`}>
-      <span className="text-[8px] text-site-text-dim uppercase">{t("hand-n", { defaultValue: "Hand {{n}}", n: idx + 2 })}</span>
+      <span className="text-nano text-site-text-dim uppercase">{t("hand-n", { defaultValue: "Hand {{n}}", n: idx + 2 })}</span>
       <div className="flex gap-0.5">
         {sh.hand.map((card, i) => (
           <CardFace key={`s${idx}-${card.rank}${card.suit}${i}`} card={card} small delay={i * 300 + 100} />
         ))}
       </div>
-      <span className="text-[10px] text-site-text-dim font-mono min-h-3">
+      <span className="text-micro text-site-text-dim font-mono min-h-3">
         {settled && sh.hand.length > 0 ? formatHandValue(sh.hand) : ''}
       </span>
       {sh.bet > 0 && (
         <div className="flex items-center gap-0.5">
           <CoinIcon className="w-2.5 h-2.5" />
-          <span className="text-[9px] text-site-warning font-bold">{sh.bet}</span>
+          <span className="text-tiny text-site-warning font-bold">{sh.bet}</span>
         </div>
       )}
       {sh.result && (
-        <span className={`text-[9px] font-bold px-1 py-0.5 rounded-full ${
+        <span className={`text-tiny font-bold px-1 py-0.5 rounded-full ${
           sh.result === 'win' ? 'bg-site-success/25 text-site-success'
           : sh.result === 'blackjack' ? 'bg-site-accent-dim text-site-accent'
           : sh.result === 'push' ? 'bg-casino-seat-1/30 text-casino-seat-1'
@@ -136,7 +136,7 @@ function SplitHandView({ sh, idx, active }: {
           {sh.result === 'blackjack' ? t("bj-short", { defaultValue: "BJ!" }) : sh.result.toUpperCase()}
         </span>
       )}
-      {sh.payout > 0 && <span className="text-[9px] text-site-success font-bold">+{sh.payout}</span>}
+      {sh.payout > 0 && <span className="text-tiny text-site-success font-bold">+{sh.payout}</span>}
     </div>
   );
 }
@@ -187,7 +187,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
           {isMe ? t("you", { defaultValue: "You" }) : player.userName}
         </span>
         {isCurrentTurn && turnSeconds != null && (
-          <span className={`text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full ${
+          <span className={`text-micro font-bold tabular-nums px-1.5 py-0.5 rounded-full ${
             turnSeconds <= 5 ? 'bg-site-danger/30 text-site-danger animate-pulse' : 'bg-site-accent-dim text-site-accent'
           }`}>
             {turnSeconds}s
@@ -198,13 +198,13 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
       {/* Main hand */}
       {player.hand.length > 0 ? (
         <div className={`flex flex-col items-center gap-0.5 ${player.hasSplit && player.activeSplitIndex === -1 && isCurrentTurn ? 'ring-1 ring-site-accent rounded p-0.5' : ''}`}>
-          {player.hasSplit && <span className="text-[8px] text-site-text-dim uppercase">{t("hand-1", { defaultValue: "Hand 1" })}</span>}
+          {player.hasSplit && <span className="text-nano text-site-text-dim uppercase">{t("hand-1", { defaultValue: "Hand 1" })}</span>}
           <div className="flex gap-0.5">
             {player.hand.map((card, i) => (
               <CardFace key={`${card.rank}${card.suit}${i}`} card={card} small delay={i * 300 + 100} />
             ))}
           </div>
-          <span className="text-[10px] text-site-text-dim font-mono min-h-3">
+          <span className="text-micro text-site-text-dim font-mono min-h-3">
             {mainSettled ? formatHandValue(player.hand) : ''}
           </span>
         </div>
@@ -224,14 +224,14 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
       {player.bet > 0 && (
         <div className="flex items-center gap-0.5">
           <CoinIcon className="w-3 h-3" />
-          <span className="text-[10px] text-site-warning font-bold">{player.bet}</span>
+          <span className="text-micro text-site-warning font-bold">{player.bet}</span>
         </div>
       )}
 
       {/* Insurance indicator */}
       {player.insuranceBet > 0 && (
         <div className="flex items-center gap-0.5">
-          <span className="text-[10px] text-casino-seat-1 font-bold">
+          <span className="text-micro text-casino-seat-1 font-bold">
             INS: {player.insuranceBet}
             {player.insuranceResult === 'won' && ' +' + player.insuranceBet * 2}
             {player.insuranceResult === 'lost' && ' ' + t("insurance-lost", { defaultValue: "lost" })}
@@ -241,14 +241,14 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
 
       {/* Status/Result badge */}
       {badge?.label && (
-        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${badge.color}`}>
+        <span className={`text-micro font-bold px-1.5 py-0.5 rounded-full ${badge.color}`}>
           {badge.label}
         </span>
       )}
 
       {/* Payout */}
       {player.result && player.payout > 0 && (
-        <span className="text-[10px] text-site-success font-bold animate-bounce">+{player.payout}</span>
+        <span className="text-micro text-site-success font-bold animate-bounce">+{player.payout}</span>
       )}
     </div>
   );
@@ -283,7 +283,7 @@ export function BlackjackTable() {
       <div className={`flex flex-col items-center gap-1 p-2.5 sm:p-3 rounded-site bg-site-bg-subtle border border-site-border min-h-18 sm:min-h-20 w-full transition ${
         tablePhase === 'dealer_turn' ? 'ring-2 ring-site-accent/50' : ''
       }`}>
-        <span className="text-[10px] sm:text-xs text-site-text-dim font-bold uppercase tracking-wider">{t("dealer", { defaultValue: "Dealer" })}</span>
+        <span className="text-micro sm:text-xs text-site-text-dim font-bold uppercase tracking-wider">{t("dealer", { defaultValue: "Dealer" })}</span>
         {dealerHand.length > 0 ? (
           <div className="flex flex-col items-center gap-1">
             <Hand cards={dealerHand} hidden={showDealerHidden} />

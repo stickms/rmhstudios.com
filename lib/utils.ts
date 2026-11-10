@@ -8,12 +8,29 @@ import { hydratedNumberFormat } from "@/lib/access/prefs"
  * namespaces, so without this `cn('rounded-xl', 'rounded-app')` would keep both
  * (the old `rounded-(--app-radius)` arbitrary form was recognised and deduped).
  * Colour utilities (`bg-app-surface`, …) need nothing: any colour value is accepted.
+ *
+ * The same holds for E2's named steps (app/globals.css, "E2 type scale"): `text-micro` must
+ * dedupe against `text-sm` as a font size (not be read as a colour, which would drop an earlier
+ * `text-white`), and `z-popover` must replace a dialog's `z-50`, exactly as `text-[10px]` and
+ * `z-[100]` did. `lib/__tests__/type-scale-merge.test.ts` keeps these lists equal to the CSS.
  */
+export const TYPE_SCALE_STEPS = [
+  "pico", "nano", "tiny", "micro", "caption", "body", "body-rem",
+  "rem-60", "rem-62", "rem-64", "rem-65", "rem-68", "rem-70", "rem-72",
+] as const
+export const Z_LAYER_NAMES = [
+  "content", "topbar", "hub-overlay", "palette", "popover", "call", "call-dialog",
+] as const
+
 const twMerge = extendTailwindMerge({
   extend: {
     theme: {
       radius: ["app", "app-sm", "app-lg"],
       shadow: ["app", "app-sm"],
+      text: [...TYPE_SCALE_STEPS],
+    },
+    classGroups: {
+      z: [{ z: [...Z_LAYER_NAMES] }],
     },
   },
 })

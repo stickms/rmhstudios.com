@@ -396,7 +396,7 @@ export function PostDetail({ postId }: PostDetailProps) {
 
         {/* Translation (toggled from the overflow menu) */}
         {showTranslated && translatedText && (
-          <div className="mb-3 rounded-site glass-fill px-4 py-3 text-[15px] leading-relaxed text-site-text whitespace-pre-wrap break-words">
+          <div className="mb-3 rounded-site glass-fill px-4 py-3 text-body leading-relaxed text-site-text whitespace-pre-wrap break-words">
             {translatedText}
           </div>
         )}

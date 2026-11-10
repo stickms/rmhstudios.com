@@ -118,12 +118,12 @@ export function BaccaratControls({ coins }: Props) {
               className={`flex flex-col items-center justify-center gap-1 min-h-13 p-3 rounded-site-sm ${opt.color} ${opt.hoverColor} text-casino-ink font-bold transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               <span className="text-sm leading-tight">{opt.label}</span>
-              <span className="text-[10px] opacity-75 leading-tight">{opt.payout}</span>
+              <span className="text-micro opacity-75 leading-tight">{opt.payout}</span>
             </button>
           ))}
         </div>
 
-        <p className="text-[10px] text-center text-site-text-dim -mt-1">
+        <p className="text-micro text-center text-site-text-dim -mt-1">
           {t("no-commission-note", { defaultValue: "No commission \xB7 Banker win on 6 pays \xBD" })}
         </p>
 
@@ -138,7 +138,7 @@ export function BaccaratControls({ coins }: Props) {
               className="h-auto min-h-11 flex-col gap-0.5 p-2.5 has-[>svg]:px-2.5"
             >
               <span className="text-xs font-bold leading-tight">{opt.label}</span>
-              <span className="text-[10px] text-site-text-dim leading-tight">{opt.payout}</span>
+              <span className="text-micro text-site-text-dim leading-tight">{opt.payout}</span>
             </Button>
           ))}
         </div>
@@ -179,7 +179,7 @@ export function BaccaratControls({ coins }: Props) {
                 .map(([type, amount]) => (
                   <span
                     key={type}
-                    className="text-[11px] font-bold px-2 py-1 rounded-full bg-site-accent-dim text-site-accent"
+                    className="text-caption font-bold px-2 py-1 rounded-full bg-site-accent-dim text-site-accent"
                   >
                     {type}: {amount}
                   </span>

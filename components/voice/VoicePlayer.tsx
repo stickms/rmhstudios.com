@@ -171,14 +171,14 @@ export function VoicePlayer({
         />
       </div>
 
-      <span className="shrink-0 text-[11px] tabular-nums opacity-70">
+      <span className="shrink-0 text-caption tabular-nums opacity-70">
         {failed ? t('voice-unavailable', { defaultValue: 'Unavailable' }) : remainingLabel}
       </span>
 
       <button
         type="button"
         onClick={cycleSpeed}
-        className="flex h-11 min-w-11 shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-semibold tabular-nums transition-opacity hover:opacity-80"
+        className="flex h-11 min-w-11 shrink-0 items-center justify-center rounded-full px-2 text-caption font-semibold tabular-nums transition-opacity hover:opacity-80"
         aria-label={t('voice-speed', { defaultValue: 'Playback speed' })}
       >
         {SPEEDS[speedIndex]}&times;

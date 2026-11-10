@@ -13,6 +13,7 @@ import noUseClientDirective from './no-use-client-directive.js';
 import noRawPaletteColor from './no-raw-palette-color.js';
 import noHardcodedRadius from './no-hardcoded-radius.js';
 import noTransitionAll from './no-transition-all.js';
+import noArbitraryTypeSize from './no-arbitrary-type-size.js';
 import noInlineMotion from './no-inline-motion.js';
 import noDeadAnimateClasses from './no-dead-animate-classes.js';
 import routeNeedsHead from './route-needs-head.js';
@@ -28,6 +29,7 @@ const plugin = {
     'no-raw-palette-color': noRawPaletteColor,
     'no-hardcoded-radius': noHardcodedRadius,
     'no-transition-all': noTransitionAll,
+    'no-arbitrary-type-size': noArbitraryTypeSize,
     'no-inline-motion': noInlineMotion,
     'no-dead-animate-classes': noDeadAnimateClasses,
     'route-needs-head': routeNeedsHead,

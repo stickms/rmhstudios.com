@@ -84,8 +84,8 @@ export function VinylRecord({ albumArt, title, artist, isPlaying, onToggle }: Vi
 
  {/* Song info */}
  <div className="text-center max-w-[72px]">
- <p className="text-[10px] text-site-text font-medium truncate leading-tight">{title}</p>
- <p className="text-[9px] text-site-text-dim truncate leading-tight">{artist}</p>
+ <p className="text-micro text-site-text font-medium truncate leading-tight">{title}</p>
+ <p className="text-tiny text-site-text-dim truncate leading-tight">{artist}</p>
  </div>
  </div>
  );
