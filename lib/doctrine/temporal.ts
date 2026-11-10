@@ -10,9 +10,8 @@ import type { SahurStatus, SahurModeConfig } from './types';
 /**
  * Check if Sahur Mode is currently active for a given timezone.
  */
-export function isSahurActive(timezone: string): boolean {
+export function isSahurActive(timezone: string, now: Date = new Date()): boolean {
   try {
-    const now = new Date();
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
       hour: 'numeric',

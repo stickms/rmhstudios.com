@@ -77,8 +77,7 @@ func main() {
 		Socket:  config.GetString("STATUS_SOCKET_URL", hubHealthURL("socket", "SOCKET_PORT", "7001")),
 		RMHBox:  config.GetString("STATUS_RMHBOX_URL", hubHealthURL("rmhbox", "RMHBOX_PORT", "7676")),
 		RMHTube: config.GetString("STATUS_RMHTUBE_URL", hubHealthURL("rmhtube", "RMHTUBE_PORT", "7003")),
-		// The five background workers (recap, discord-bot, doctrine, vibe,
-		// bot-worker) are consolidated as goroutines inside the
+		// The three background workers (discord-bot, vibe, bot-worker) are consolidated as goroutines inside the
 		// supervisor process, which serves /health on its METRICS_ADDR
 		// (default :9090). There is no standalone recap:7004.
 		Supervisor: config.GetString("STATUS_SUPERVISOR_URL", "http://supervisor:9090/health"),
@@ -145,6 +144,7 @@ func main() {
 		// Jobs that moved to the Node `jobs` worker (D3) report freshness through
 		// pg-boss's own job table (needs DATABASE_URL; unset = those B06 alarms are off).
 		JobLastSuccess:    jobFreshness(os.Getenv("DATABASE_URL"), probeTimeout),
+		PuzzlesReadyFor:   puzzlesReadyFor(os.Getenv("DATABASE_URL"), probeTimeout),
 		Announcement:      config.GetString("STATUS_ANNOUNCEMENT", ""),
 		AnnouncementLevel: config.GetString("STATUS_ANNOUNCEMENT_LEVEL", "info"),
 		AnnouncementLink:  config.GetString("STATUS_ANNOUNCEMENT_LINK", ""),
@@ -316,7 +316,7 @@ func buildTargets(u probeURLs, probeTimeout time.Duration) []status.Target {
 		// process — probe its shared /health.
 		status.Target{
 			Name:        "Background workers",
-			Description: "Supervisor: discord-bot, recap, doctrine, vibe, bot-worker",
+			Description: "Supervisor: discord-bot, vibe, bot-worker",
 			Group:       "Platform",
 			URL:         u.Supervisor,
 		},

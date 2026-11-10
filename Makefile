@@ -6,10 +6,10 @@
 BAZEL    ?= bazelisk
 PLATFORM ?= linux_amd64   # target arch for images; override with PLATFORM=linux_arm64
 # Realtime hubs (gateway/gamehub/rmhmusic/rmhtube/rmhbox) + the Helm/k8s deploy
-# path were removed in the rewrite (design §5.2). Production Go is the four
+# path were removed in the rewrite (design §5.2). Production Go is the three
 # background workers, built into the app-full image; the Node hubs serve
 # realtime. What remains here builds/pushes the standalone worker images.
-SERVICES := recap doctrine-worker vibe-worker discord-bot
+SERVICES := vibe-worker discord-bot
 SHA      := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 REGISTRY ?=
 GUARD    := ./scripts/preflight.sh --guard

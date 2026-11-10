@@ -483,8 +483,8 @@ services:
       - RMHTUBE_INTERNAL_URL=http://rmhtube:${PORT_RMHTUBE:-7003}
     command: ['node', 'dist-server/server/jobs/index.cjs']
 
-  # ─── Go Supervisor (discord-bot + recap + doctrine-worker + vibe-worker + bot-worker) ─
-  # Runs the five background workers as goroutines in a single Go process.
+  # ─── Go Supervisor (discord-bot + vibe-worker + bot-worker) ─
+  # Runs the three background workers as goroutines in a single Go process.
   # Env union: every variable the five old Node services needed is carried here.
   # The active Go discord-bot does not perform Git operations and needs no host
   # repository access. The shared db/ mount from *common is sufficient.
@@ -513,9 +513,7 @@ services:
     cpu_shares: 256
     env_file: ${ENV_FILE:-.env.production}
     environment:
-      # recap worker's internal HTTP port (doctrine / vibe-worker idles if absent)
-      - RECAP_PORT=${PORT_RECAP:-7004}
-      # Merged /metrics + /health endpoint for all five workers (httpx.ServeMetrics).
+      # Merged /metrics + /health endpoint for all three workers (httpx.ServeMetrics).
       # Templated so the healthcheck below stays in sync with the bind port.
       - METRICS_ADDR=:${PORT_SUPERVISOR_METRICS:-9090}
     command: ['/app/bin/supervisor']

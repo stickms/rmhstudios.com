@@ -348,11 +348,11 @@ func (b *Bot) Run(ctx context.Context) error {
 	b.lifecycleCtx = ctx
 	b.ctxMu.Unlock()
 
-	// Retried rather than fatal. This worker shares a process with five others
+	// Retried rather than fatal. This worker shares a process with two others
 	// under an errgroup, and returning here cancels the group and exits non-zero
 	// (cmd/supervisor) — so before this, Discord being unreachable for thirty
-	// seconds at container start took down recap, doctrine, vibe, bot-worker and
-	// streak-saver with it. discordgo handles reconnection AFTER a successful
+	// seconds at container start took down vibe and bot-worker
+	// with it. discordgo handles reconnection AFTER a successful
 	// open; this covers the one gap it does not, which is never getting one.
 	//
 	// Still bounded: a genuinely bad token, or intents the application has not

@@ -17,12 +17,11 @@ the **Bazel workspace root is the repo root** (`MODULE.bazel` at `/`).
 
 | Binary (`cmd/`) | Port | Role |
 |---|---|---|
-| `supervisor` | 9090 (metrics) | Runs five background workers as goroutines under an errgroup: `discord-bot`, `recap`, `doctrine-worker`, `vibe-worker`, `bot-worker` |
+| `supervisor` | 9090 (metrics) | Runs three background workers as goroutines under an errgroup: `discord-bot`, `vibe-worker`, `bot-worker` |
 | `status` | 7008 | Standalone health dashboard (`/`, `/api/status`) that probes every service; designed to survive outages |
 | `assets` | 7007 | Range-aware S3/R2 streaming CDN for `/library` `/music` `/models` `/sprites` |
 
-The other `cmd/` binaries (`bot-worker`, `discord-bot`, `doctrine-worker`,
-`recap`, `vibe-worker`) exist so a worker can be run standalone, but in
+The other `cmd/` binaries (`bot-worker`, `discord-bot`, `vibe-worker`) exist so a worker can be run standalone, but in
 production they run **inside `supervisor`**. `internal/ledger` is implemented but
 wired into no binary — not built, not deployed.
 
