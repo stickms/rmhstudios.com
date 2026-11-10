@@ -24,5 +24,7 @@
 /* Islands (separately built, separately styled). */
 @source not "../features/nightrail/engine";
 @source not "../features/nightrail/ui";
+@source not "../features/vega/engine";
+@source not "../features/vega/ui";
 @source not "../features/void-breaker/engine";
 @source not "../features/void-breaker/ui";

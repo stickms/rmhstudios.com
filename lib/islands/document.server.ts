@@ -12,7 +12,8 @@
  *   });
  *
  * Everything else comes from the feature manifest (`features/<id>/feature.ts`):
- * the head is the catalog's (`gameRouteHead` / `appRouteHead`, by `kind`) and the
+ * the head is the catalog's (`gameRouteHead` / `appRouteHead`, by `kind`; a page
+ * the catalog does not describe passes its own `heads`) and the
  * first render's catalogs are the manifest's `namespaces`. The route module
  * imports only this `.server` module, which the client build stubs, so the
  * island's head costs the site's entry nothing.
@@ -212,6 +213,13 @@ async function localeResources(
 }
 
 export interface IslandDocumentOptions {
+  /**
+   * The route's own heads, outermost first, in place of the catalog head — for a
+   * page the catalog does not describe (an unlisted game) or one nested under a
+   * parent route whose `head()` the router merged in. They are merged under the
+   * site-wide head exactly as the router merges a match chain.
+   */
+  heads?: readonly HeadInput[];
   /** i18n namespaces the first screen renders beyond the manifest's own. */
   namespaces?: readonly string[];
   /** The loading frame's ground and ink (GameLoadingFallback's defaults: black / white). */
@@ -227,7 +235,9 @@ export async function renderIslandDocument(
 ): Promise<Response> {
   const feature = FEATURES.get(id);
   if (!feature) throw new Error(`island "${id}" has no features/${id}/feature.ts`);
-  const head: HeadInput = feature.kind === 'app' ? appRouteHead(id) : gameRouteHead(id);
+  const heads: readonly HeadInput[] = options.heads ?? [
+    feature.kind === 'app' ? appRouteHead(id) : gameRouteHead(id),
+  ];
   const namespaces = [
     ...new Set([...feature.namespaces, ...SHARED_NAMESPACES, ...(options.namespaces ?? [])]),
   ];
@@ -267,7 +277,7 @@ export async function renderIslandDocument(
     '<!DOCTYPE html>' +
     `<html${attrs({ lang: locale, dir: dirFor(locale) })}>` +
     '<head>' +
-    renderHead([rootHead, head], nonce) +
+    renderHead([rootHead, ...heads], nonce) +
     islandAssetTags(id, BUILD_MANIFEST, dev, nonce) +
     '</head>' +
     '<body class="font-body antialiased">' +

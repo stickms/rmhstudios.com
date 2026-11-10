@@ -44,12 +44,13 @@ describe('islands', () => {
     const mod = (await import(`@features/${id}/feature`)) as { default: unknown };
     const manifest = FeatureManifestSchema.parse(mod.default);
     expect(manifest.delivery).toBe('island');
-    const route = join(
-      ROOT,
-      'app',
-      'routes',
-      `${manifest.basePath.slice(1).replace(/\//g, '.')}.tsx`,
-    );
+    // `/secret/vega` is `secret.vega.tsx` (flat) or `secret/vega.tsx` (nested): either spelling.
+    const segments = manifest.basePath.slice(1);
+    const candidates = [
+      join(ROOT, 'app', 'routes', `${segments.replace(/\//g, '.')}.tsx`),
+      join(ROOT, 'app', 'routes', `${segments}.tsx`),
+    ];
+    const route = candidates.find((f) => existsSync(f)) ?? candidates[0]!;
     expect(existsSync(route), relative(ROOT, route)).toBe(true);
     const src = readFileSync(route, 'utf8');
     expect(src, 'the route serves the island document').toMatch(

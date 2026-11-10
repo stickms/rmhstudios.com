@@ -62,6 +62,12 @@ bare document instead of the router. Void Breaker was the first.
   `renderIslandDocument('<id>', request)` (`lib/islands/document.server.ts`), which emits the site-wide
   head (`lib/root-head.ts`) under the catalog head for the manifest's `kind`, the pre-paint script, the
   session seed, the locale's catalogs for the manifest's `namespaces`, and a loading frame.
+  A page the catalog does not describe (an unlisted game) or one nested under a parent route with a
+  `head()` passes `heads` (outermost first) — e.g. `app/routes/secret/vega.tsx` hands over the `/secret`
+  layout's `noindexHead('Secret')` and its own title. A parent layout's frame is the island's to render
+  (the Vault's scroller is in `features/vega/ui/VegaPage.tsx`); a link out to a site page is a plain `<a>`.
+  Keep a page's one-off utilities out of `island.tsx` (put the page in `ui/`, as vega and signal-forge
+  do): the site sheets skip `features/<id>/ui`, not the entry, so they would land in both site sheets.
 - **Entry:** `island.tsx` calls `mountIsland(<tree />)` (`components/island/mount.tsx`); its providers
   (`IslandProviders`) are i18n, the session (`components/session/session-context.tsx`), the app-tier
   flag, motion, `SiteToaster`, the jelly pointer, error/RUM reporting, Recents and the playtime heartbeat.
@@ -71,4 +77,4 @@ bare document instead of the router. Void Breaker was the first.
 - `lib/__tests__/islands.test.ts` holds it together: manifest ↔ route, no site-shell import in the
   island graph, every reached component scanned by the island sheet.
 
-Islands so far: `void-breaker` and `nightrail`. The B1 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.
+Islands so far: `void-breaker`, `nightrail` and `vega` (the last under the `/secret` layout). The B1 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.
