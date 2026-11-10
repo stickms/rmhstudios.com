@@ -22,7 +22,7 @@
    │     (Node crons + pg-boss backbone, no port)      │
    │                                                   │
    │  supervisor:9090 (Go: discord-bot +               │
-   │     vibe-worker + bot-worker)                    │
+   │     vibe-worker)                                 │
    │                                                   │
    │  status:7008 (Go)   assets:7007 (Go)              │
    │  redis / redis-state (infra; minio = local-s3)    │
@@ -80,7 +80,7 @@ flowchart LR
     end
 
     subgraph Go["Go tier (Bazel)"]
-      SUP["supervisor :9090<br/>discord-bot · vibe<br/>bot-worker"]
+      SUP["supervisor :9090<br/>discord-bot · vibe"]
       STAT["status :7008<br/>uptime dashboard"]
       ASSET["assets :7007<br/>range-aware R2 streaming"]
     end

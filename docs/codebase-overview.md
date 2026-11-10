@@ -106,7 +106,7 @@ Details: [`architecture.md`](./architecture.md) and
 
 | Service      | Port           | Role                                                                                                                  |
 | ------------ | -------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `supervisor` | 9090 (metrics) | Runs three background workers as goroutines: discord-bot, vibe-worker, bot-worker |
+| `supervisor` | 9090 (metrics) | Runs two background workers as goroutines: discord-bot, vibe-worker |
 | `status`     | 7008           | Standalone health dashboard (`/`, `/api/status`); survives outages                                                    |
 | `assets`     | 7007           | Range-aware S3/R2 asset streaming (`/library` `/music` `/models` `/sprites`)                                          |
 

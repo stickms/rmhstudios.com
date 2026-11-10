@@ -1235,7 +1235,7 @@ func jsonStrings(v []string) any {
 
 // newWatchID generates a Prisma-cuid-shaped id. These tables' id columns have no
 // DB default (Prisma generates cuids in JS), so every insert from Go supplies
-// one — same approach as internal/botworker.
+// one — same approach as the Node bot-worker (lib/rmhark-ai/bot-worker.server.ts).
 func newWatchID() string {
 	var b [4]byte
 	if _, err := rand.Read(b[:]); err != nil {

@@ -419,9 +419,9 @@ full-viewport layer.
 
 Production is Docker Compose on a VPS behind Apache/Cloudflare — **hybrid
 runtime**: Node runs web SSR + all realtime hubs + the ladder/homes/jobs
-workers; **Go** runs the three background workers as one `supervisor` process
-(`vibe-worker`, `discord-bot`, `bot-worker`),
-plus `status` and `assets` (the streak-saver, recap and doctrine workers moved to the Node `jobs` worker, D3). The old full-Go gateway/hub
+workers; **Go** runs the two background workers as one `supervisor` process
+(`vibe-worker`, `discord-bot`),
+plus `status` and `assets` (the streak-saver, recap, doctrine and RMHark bot workers moved to the Node `jobs` worker, D3). The old full-Go gateway/hub
 topology (and its Helm/k3s charts) was **removed** in the rewrite — the Node
 hubs are the realtime tier.
 

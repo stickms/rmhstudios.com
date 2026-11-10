@@ -38,8 +38,8 @@ go_service_image(
     binary = "//go-services/cmd/status:status",
 )
 
-# supervisor: runs ALL THREE background workers (vibe-worker, discord-bot,
-# bot-worker) as goroutines in one process. Its base
+# supervisor: runs BOTH background workers (vibe-worker, discord-bot) as
+# goroutines in one process. Its base
 # must satisfy the union of their runtime needs:
 #   - vibe-worker → headless Chromium + PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
 #   - discord-bot → git + openssh-client (rmhbot worktree/PR feature)

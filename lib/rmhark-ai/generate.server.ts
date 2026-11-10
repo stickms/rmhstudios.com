@@ -51,13 +51,14 @@ export function isRmharkAIConfigured(): boolean {
 
 async function chat(
   messages: { role: 'system' | 'user'; content: string }[],
-  opts: { maxTokens: number; temperature?: number },
+  opts: { maxTokens: number; temperature?: number; model?: string },
 ): Promise<string> {
   if (!isRmharkAIConfigured()) {
     throw new RmharkAIError('DEEPSEEK_API_KEY is not configured');
   }
   const res = await deepseek.chat.completions.create({
-    model: RMHARK_AI_MODEL,
+    // `opts.model`: the bot-worker's own knob (BOT_AI_MODEL), so retuning RMHARK_AI_MODEL never moves the bots.
+    model: opts.model ?? RMHARK_AI_MODEL,
     messages,
     max_tokens: opts.maxTokens,
     temperature: opts.temperature ?? 1.0,
@@ -92,6 +93,8 @@ export async function generatePost(
   opts: {
     persona?: string;
     draft?: string;
+    /** Override the chat model (the bot-worker passes BOT_AI_MODEL). */
+    model?: string;
   } = {},
 ): Promise<string> {
   const shape = randomItem(POST_SHAPES);
@@ -129,7 +132,7 @@ export async function generatePost(
       { role: 'system', content: system },
       { role: 'user', content: userMsg },
     ],
-    { maxTokens: 200, temperature: 1.05 },
+    { maxTokens: 200, temperature: 1.05, model: opts.model },
   );
   return cleanGeneratedText(raw, MAX_POST_CHARS);
 }
@@ -356,7 +359,10 @@ export async function generateGifQuery(opts: { text: string }): Promise<string> 
  * image model. Kept deliberately safe and brand/person-free to minimize
  * provider refusals. Used by lib/rmhark-ai/image.server.ts.
  */
-export async function generateImagePrompt(postText: string): Promise<string> {
+export async function generateImagePrompt(
+  postText: string,
+  opts: { model?: string } = {},
+): Promise<string> {
   const text = postText.trim().slice(0, 600);
 
   const system = [
@@ -377,7 +383,7 @@ export async function generateImagePrompt(postText: string): Promise<string> {
       { role: 'system', content: system },
       { role: 'user', content: user },
     ],
-    { maxTokens: 120, temperature: 0.9 },
+    { maxTokens: 120, temperature: 0.9, model: opts.model },
   );
   return cleanGeneratedText(raw, 300);
 }
@@ -446,6 +452,8 @@ export async function generateReply(opts: {
   thread?: string[];
   persona?: string;
   draft?: string;
+  /** Override the chat model (the bot-worker passes BOT_AI_MODEL). */
+  model?: string;
 }): Promise<string> {
   const draft = opts.draft?.trim();
   const quoted = opts.quotedPostContent?.trim();
@@ -488,7 +496,7 @@ export async function generateReply(opts: {
       { role: 'system', content: system },
       { role: 'user', content: context },
     ],
-    { maxTokens: 300, temperature: 1.0 },
+    { maxTokens: 300, temperature: 1.0, model: opts.model },
   );
   return cleanGeneratedText(raw, MAX_REPLY_CHARS);
 }
@@ -609,7 +617,14 @@ function sanitizeHandle(raw: string): string {
  * its rolled persona. Returns sanitized fields; the worker still guarantees
  * handle uniqueness against the DB.
  */
-export async function generateBotProfile(spec: BotPersonaSpec): Promise<GeneratedBotProfile> {
+export async function generateBotProfile(
+  spec: BotPersonaSpec,
+  /**
+   * `model`: the bot-worker's BOT_AI_MODEL. `strict`: throw when the model call or its JSON fails instead of
+   * falling back to a random first name, so the bot-worker mints no bot rather than a placeholder one.
+   */
+  opts: { model?: string; strict?: boolean } = {},
+): Promise<GeneratedBotProfile> {
   const system = [
     'You invent realistic social-media account identities. Output STRICT JSON only — no prose, no markdown fences.',
     'The person must NOT look like a bot or brand. No "official", no "AI", no "bot" in any field.',
@@ -634,10 +649,11 @@ export async function generateBotProfile(spec: BotPersonaSpec): Promise<Generate
         { role: 'system', content: system },
         { role: 'user', content: user },
       ],
-      { maxTokens: 200, temperature: 1.1 },
+      { maxTokens: 200, temperature: 1.1, model: opts.model },
     );
     parsed = JSON.parse(stripJson(raw));
-  } catch {
+  } catch (e) {
+    if (opts.strict) throw e;
     // Fall through to deterministic fallbacks below.
   }
 
@@ -705,6 +721,8 @@ function dmPersonaSystem(persona: string): string {
 export async function generateDirectMessageReply(opts: {
   persona: string;
   history: { from: 'them' | 'you'; text: string }[];
+  /** Override the chat model (the bot-worker passes BOT_AI_MODEL). */
+  model?: string;
 }): Promise<string> {
   const transcript = opts.history
     .map((t) => `${t.from === 'you' ? 'You' : 'Them'}: ${t.text}`)
@@ -721,13 +739,17 @@ export async function generateDirectMessageReply(opts: {
       { role: 'system', content: dmPersonaSystem(opts.persona) },
       { role: 'user', content: user },
     ],
-    { maxTokens: 300, temperature: 1.0 },
+    { maxTokens: 300, temperature: 1.0, model: opts.model },
   );
   return cleanGeneratedText(raw, MAX_REPLY_CHARS);
 }
 
 /** Generate a short, natural opening DM in the bot's voice (no prior context). */
-export async function generateDirectMessageOpener(opts: { persona: string }): Promise<string> {
+export async function generateDirectMessageOpener(opts: {
+  persona: string;
+  /** Override the chat model (the bot-worker passes BOT_AI_MODEL). */
+  model?: string;
+}): Promise<string> {
   const user = [
     'Start a new private conversation with someone on the same social platform.',
     'Open naturally and briefly — a friendly hello, a small question, or a light comment in your voice.',
@@ -739,7 +761,7 @@ export async function generateDirectMessageOpener(opts: { persona: string }): Pr
       { role: 'system', content: dmPersonaSystem(opts.persona) },
       { role: 'user', content: user },
     ],
-    { maxTokens: 200, temperature: 1.1 },
+    { maxTokens: 200, temperature: 1.1, model: opts.model },
   );
   return cleanGeneratedText(raw, MAX_REPLY_CHARS);
 }

@@ -351,7 +351,7 @@ func (b *Bot) Run(ctx context.Context) error {
 	// Retried rather than fatal. This worker shares a process with two others
 	// under an errgroup, and returning here cancels the group and exits non-zero
 	// (cmd/supervisor) — so before this, Discord being unreachable for thirty
-	// seconds at container start took down vibe and bot-worker
+	// seconds at container start took down vibe
 	// with it. discordgo handles reconnection AFTER a successful
 	// open; this covers the one gap it does not, which is never getting one.
 	//

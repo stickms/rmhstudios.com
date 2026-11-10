@@ -18,7 +18,7 @@ const settingsSchema = z.object({
 
 /**
  * GET /api/admin/bots — the bot-worker's settings plus live bot/post counts.
- * PUT /api/admin/bots — save settings; the Go worker picks them up within a minute.
+ * PUT /api/admin/bots — save settings; the bot-worker picks them up within a minute.
  */
 export const Route = createFileRoute('/api/admin/bots/')({
   server: {

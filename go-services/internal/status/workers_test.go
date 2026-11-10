@@ -15,7 +15,7 @@ rmh_worker_up{service="recap"} 1
 rmh_worker_up{service="streak-saver"} 0
 rmh_worker_panics_total{service="recap"} 2
 rmh_job_last_success_timestamp_seconds{job="recap",service="recap"} 1.8e+09
-rmh_job_last_success_timestamp_seconds{job="bot-post",service="bot-worker"} 1
+rmh_job_last_success_timestamp_seconds{job="thumbnail",service="vibe-worker"} 1
 rmh_discord_gateway_connected{service="recap"} 0
 `
 
@@ -56,7 +56,7 @@ func TestWorkerRules(t *testing.T) {
 	if c := cond(cs, "B06", "recap"); c == nil || !c.active {
 		t.Fatalf("recap 30m stale (limit 20m) should be active: %+v", c)
 	}
-	if cond(cs, "B06", "bot-post") != nil {
+	if cond(cs, "B06", "thumbnail") != nil {
 		t.Fatal("jobs without a cadence limit are never stale")
 	}
 	if cond(cs, "A19", "") != nil || cond(cs, "B07", "") != nil {

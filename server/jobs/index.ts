@@ -54,6 +54,7 @@ import {
 } from '@/lib/streak-reminders.server';
 import { RECAP_QUEUE, registerRecapCron } from '@/lib/lights-out/recap.server';
 import { registerDoctrineJobs } from '@/lib/doctrine/jobs.server';
+import { registerBotWorkerJobs } from '@/lib/rmhark-ai/bot-worker.server';
 import {
   PROFILE_VISIT_SWEEP_QUEUE,
   registerProfileVisitSweepCron,
@@ -148,6 +149,9 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // D3: Doctrine Engine (ported from the Go worker): tomorrow's puzzles at 00:00 UTC (A19 watches the
   // table), Sahur activation every minute (B06 `sahur_activation`), Monday reputation decay.
   { queue: 'doctrine', register: registerDoctrineJobs },
+  // D3: RMHark bot-worker (ported from the Go worker): pool top-up (every minute, interval-gated), post / reply /
+  // DM ticks (BOT_*_TICK_MS). Idles without DEEPSEEK_API_KEY.
+  { queue: 'bot-worker', register: registerBotWorkerJobs },
   // M3 disappearing messages: expiry is enforced at read time; this only deletes the rows.
   { queue: CHAT_EXPIRY_QUEUE, register: registerChatExpiryCron },
   // F5: expire unmatched study-buddy requests and tell their owners.

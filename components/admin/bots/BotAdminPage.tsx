@@ -75,7 +75,7 @@ function parseDraft(d: Draft): BotWorkerSettingsInput | null {
 const fmt = (n: number) => Math.round(n).toLocaleString();
 
 /**
- * /admin/bots — tune the Go bot-worker's pool size, mint rate and posting
+ * /admin/bots — tune the bot-worker's pool size, mint rate and posting
  * rate, and watch what the bots are actually producing. Saves land in the
  * bot_worker_settings row, which the worker re-reads every minute.
  */

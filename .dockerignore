@@ -121,7 +121,7 @@ docs
 
 # ─── Go microservices fleet + new infra ──────────────────────────────
 # go-services is included so the go-builder stage can compile supervisor,
-# status, and bot-worker into /app/bin. Only deploy/ and .github/ are
+# status, and assets into /app/bin. Only deploy/ and .github/ are
 # excluded from the context (they are never needed inside the image).
 deploy
 .github

@@ -9,7 +9,6 @@ go_library(
     importpath = "github.com/rmhstudios/rmh-go/cmd/supervisor",
     visibility = ["//visibility:private"],
     deps = [
-        "//go-services/internal/botworker",
         "//go-services/internal/discordbot",
         "//go-services/internal/vibeworker",
         "//go-services/pkg/config",
@@ -30,17 +29,9 @@ go_binary(
 
 go_test(
     name = "supervisor_test",
-    srcs = [
-        "main_test.go",
-        "poolload_test.go",
-    ],
+    srcs = ["main_test.go"],
     embed = [":supervisor_lib"],
     deps = [
-        "//go-services/internal/botworker",
-        "//go-services/internal/discordbot",
-        "//go-services/internal/vibeworker",
-        "//go-services/pkg/config",
-        "//go-services/pkg/db",
         "//go-services/pkg/log",
         "//go-services/pkg/telemetry",
         "//go-services/pkg/worker",
