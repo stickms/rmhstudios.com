@@ -7,6 +7,7 @@ import { useMessageSuggestion } from '@/lib/useMessageSuggestion';
 import { yieldToMain } from '@/lib/scheduler';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
+import { uploadImagesApi } from '@/lib/media/upload.contract';
 import { sendToConversationApi } from '@/lib/messages/message-actions.contract';
 import { useSlashCommands } from '@/components/chat-plus/useSlashCommands';
 import type { SentVoiceMessage } from '@/components/voice/VoiceComposer';
@@ -114,20 +115,14 @@ export function useDmComposer({
       Array.from(files)
         .slice(0, remaining)
         .forEach((f) => form.append('images', f));
-      const res = await fetch('/api/rmharks/image', { method: 'POST', body: form });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(
-          data.error || t('failed-to-upload-image', { defaultValue: 'Failed to upload image' }),
-        );
-        return;
-      }
-      const data = await res.json();
+      const data = await api(uploadImagesApi, { body: form });
       if (Array.isArray(data.urls)) {
         setImageUrls((prev) => [...prev, ...data.urls].slice(0, MAX_DM_IMAGES));
       }
-    } catch {
-      setError(t('failed-to-upload-image', { defaultValue: 'Failed to upload image' }));
+    } catch (e) {
+      setError(
+        serverError(e) || t('failed-to-upload-image', { defaultValue: 'Failed to upload image' }),
+      );
     } finally {
       setUploading(false);
       if (imageInputRef.current) imageInputRef.current.value = '';

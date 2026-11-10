@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getGroupChatApi } from '@/lib/group-chat/group-chat.contract';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { groupMessageSelect, serializeGroupMessages } from '@/lib/group-chat/serialize.server';
@@ -9,7 +10,7 @@ import { liveMessages } from '@/lib/chat-plus/expiry.server';
 export const Route = createFileRoute('/api/group-chats/$id/')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ params, session }) => {
+      GET: implement(getGroupChatApi, {}, async ({ params, session }) => {
         const userId = session.user.id;
 
         const membership = await prisma.groupChatMember.findUnique({

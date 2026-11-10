@@ -8,7 +8,8 @@ import {
   reactGroupMessageApi,
   voteGroupPollApi,
 } from '@/lib/group-chat/group-chat.contract';
-import { applyOptimisticVote, toggleReactionRow, type Msg } from './group-chat-state';
+import { applyOptimisticVote, toggleReactionRow } from './group-chat-state';
+import type { Msg } from '@/lib/group-chat/types';
 
 /** Per-message actions: reactions, poll votes, and leaving the group. */
 export function useGroupMessageActions({

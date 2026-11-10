@@ -27,6 +27,7 @@ import {
 import { toast } from 'sonner';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
+import { uploadImagesApi } from '@/lib/media/upload.contract';
 import {
   adminAnnouncementCreate,
   adminAnnouncementDelete,
@@ -139,22 +140,11 @@ function AdminAnnouncementsPage() {
     const epoch = uploadEpochRef.current;
     setUploadingCount((n) => n + 1);
     try {
-      const res = await fetch('/api/rmharks/image', {
-        method: 'POST',
-        body: form,
-        credentials: 'include',
-      });
-      if (epoch !== uploadEpochRef.current) return;
-      if (!res.ok) {
-        const { error } = await res.json().catch(() => ({ error: 'Upload failed' }));
-        setImageError(error ?? 'Upload failed');
-        return;
-      }
-      const { urls } = await res.json();
+      const { urls } = await api(uploadImagesApi, { body: form });
       if (epoch !== uploadEpochRef.current) return;
       setImageUrls((prev) => [...prev, ...urls].slice(0, MAX_ANNOUNCEMENT_IMAGES));
-    } catch {
-      if (epoch === uploadEpochRef.current) setImageError('Upload failed');
+    } catch (e) {
+      if (epoch === uploadEpochRef.current) setImageError(serverError(e) ?? 'Upload failed');
     } finally {
       setUploadingCount((n) => Math.max(0, n - 1));
     }

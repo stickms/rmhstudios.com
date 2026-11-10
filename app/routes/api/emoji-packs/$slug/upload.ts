@@ -10,7 +10,8 @@
  * Gated on `sticker-packs`: only members build packs.
  */
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { uploadPackItemImageApi } from '@/lib/emoji/packs.contract';
 import { prisma } from '@/lib/prisma.server';
 import { putObject } from '@/lib/storage/s3.server';
 import { optimizeImage } from '@/lib/image-optimize';
@@ -21,7 +22,8 @@ import { EMOJI_MAX_DIMENSION, STICKER_MAX_DIMENSION, ITEM_MAX_BYTES } from '@/li
 export const Route = createFileRoute('/api/emoji-packs/$slug/upload')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        uploadPackItemImageApi,
         { feature: 'sticker-packs', rateLimit: 'upload' },
         async ({ request, userId }) => {
           const form = await request.formData();

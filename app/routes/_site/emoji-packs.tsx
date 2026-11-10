@@ -31,6 +31,7 @@ import {
   installedPacksApi,
   subscribePackApi,
   unsubscribePackApi,
+  uploadPackItemImageApi,
 } from '@/lib/emoji/packs.contract';
 
 export const Route = createFileRoute('/_site/emoji-packs')({
@@ -191,9 +192,7 @@ function EmojiPacksPage() {
 
         {/* ── Your packs ───────────────────────────────────────────── */}
         <section className="mt-[var(--site-section-gap)]">
-          <h2 className="site-section-label">
-            {t('your-packs', { defaultValue: 'Your packs' })}
-          </h2>
+          <h2 className="site-section-label">{t('your-packs', { defaultValue: 'Your packs' })}</h2>
 
           {/* `.glass-pane` — a singular panel, not a repeated card. */}
           <div className="glass-pane mt-3 flex flex-col gap-3 rounded-site px-4 py-3 sm:flex-row sm:items-center">
@@ -306,18 +305,20 @@ function OwnedPackCard({ pack, onChanged }: { pack: PackSummary; onChanged: () =
         const form = new FormData();
         form.append('image', file);
         form.append('kind', pack.kind === 'sticker' ? 'sticker' : 'emoji');
-        const up = await fetch(`/api/emoji-packs/${pack.slug}/upload`, {
-          method: 'POST',
+        const { mediaId } = await api(uploadPackItemImageApi, {
+          params: { slug: pack.slug },
           body: form,
+        }).catch((e: unknown) => {
+          if (e instanceof HttpError && e.status === 402) {
+            toast.error(
+              t('pack-needs-membership', { defaultValue: 'Building packs needs a membership.' }),
+            );
+            return { mediaId: null };
+          }
+          if (e instanceof HttpError) throw new Error(String(e.status));
+          throw e;
         });
-        if (up.status === 402) {
-          toast.error(
-            t('pack-needs-membership', { defaultValue: 'Building packs needs a membership.' }),
-          );
-          return;
-        }
-        if (!up.ok) throw new Error(String(up.status));
-        const { mediaId } = (await up.json()) as { mediaId: string };
+        if (mediaId === null) return;
 
         await api(addPackItemApi, {
           params: { slug: pack.slug },

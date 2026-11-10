@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { recordHistoryBeatApi } from '@/lib/history/history.contract';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { historyBeatSchema } from '@/lib/history/schema';
 import { recordBeat } from '@/lib/history/history.server';
@@ -11,7 +12,8 @@ import { recordBeat } from '@/lib/history/history.server';
 export const Route = createFileRoute('/api/history/beat')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        recordHistoryBeatApi,
         { auth: 'optional', body: historyBeatSchema },
         async ({ request, session, body }) => {
           if (!session) return Response.json({ ok: false }, { status: 401 });

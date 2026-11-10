@@ -4,7 +4,7 @@ import { ArrowLeft, LogOut, Users } from 'lucide-react';
 import { FindATimeLink } from '@/components/calendar/FindATimeLink';
 import { ChatHeaderPlus } from '@/components/chat-plus/ChatHeaderPlus';
 import type { ChatRef } from '@/lib/chat-plus/types';
-import type { Group } from './group-chat-state';
+import type { Group } from '@/lib/group-chat/types';
 
 export function GroupHeader({
   group,

@@ -82,7 +82,8 @@ export const Route = createFileRoute('/api/slice-it/songs/$id')({
         },
       ),
 
-      PATCH: defineHandler(
+      PATCH: implement(
+        C.updateSongApi,
         { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'slice-patch', scope: 'user' } },
         async ({ request, params, userId, isAdmin }) => {
           // Before `formData()`, which buffers the whole body. Only a cover can

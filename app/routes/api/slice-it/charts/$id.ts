@@ -14,6 +14,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { saveChartApi } from '@features/slice-it/engine/charts.contract';
 import { prisma } from '@/lib/prisma.server';
 import type { Difficulty } from '@features/slice-it/engine/constants';
 import type { LintNote } from '@features/slice-it/engine/beatmap/lint';
@@ -60,7 +62,8 @@ export const Route = createFileRoute('/api/slice-it/charts/$id')({
         return Response.json(toChartDto(chart, { includeNotes: true }));
       }),
 
-      PATCH: defineHandler(
+      PATCH: implement(
+        saveChartApi,
         {
           body: ChartPatchZ,
           // Autosave fires every 20s per open editor; a session is ~90 writes an

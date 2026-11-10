@@ -6,7 +6,9 @@
  * try/catch → cache order, written once in `handler.server.ts` — plus three
  * compile-time checks the bare wrapper cannot make:
  *
- *  1. the `body` schema must parse to exactly the contract's `body` type;
+ *  1. the `body` schema must parse to exactly the contract's `body` type (a `FormData`
+ *     body, i.e. a multipart upload, takes no schema: the handler reads
+ *     `request.formData()` and validates the parts itself);
  *  2. the `query` schema must parse to exactly the contract's `query` type;
  *  3. the handler must return the contract's `res` type (or a `Response`, for
  *     the error paths and anything streamed).
@@ -40,7 +42,7 @@ type Equals<A, B> =
   (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 
 /** `S` if its parsed type is exactly `T`, else a readable compile error. */
-type SchemaFor<T, S extends z.ZodType | undefined> = [T] extends [undefined]
+type SchemaFor<T, S extends z.ZodType | undefined> = [T] extends [undefined | FormData]
   ? undefined
   : S extends z.ZodType
     ? Equals<z.infer<S>, T> extends true

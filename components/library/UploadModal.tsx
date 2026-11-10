@@ -29,6 +29,7 @@ import {
   getLibraryQuotaApi,
   type LibraryQuota,
   requestLibraryQuotaApi,
+  uploadLibraryBookApi,
 } from '@/lib/library/upload.contract';
 type ItemStatus = 'queued' | 'analyzing' | 'drafting' | 'ready' | 'uploading' | 'done' | 'error';
 
@@ -306,17 +307,11 @@ export function UploadModal({
       form.set('description', it.description.trim());
       form.set('pages', String(it.pages));
       try {
-        const res = await fetch('/api/library/upload', { method: 'POST', body: form });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          patch(it.id, { status: 'error', error: data.error ?? t('error-upload-failed', { defaultValue: 'Upload failed, nothing was saved.' }) });
-          results.push({ slug: null, ok: false });
-          return;
-        }
+        const data = await api(uploadLibraryBookApi, { body: form });
         patch(it.id, { status: 'done', slug: data.slug });
         results.push({ slug: data.slug ?? null, ok: true });
-      } catch {
-        patch(it.id, { status: 'error', error: t('error-upload-failed', { defaultValue: 'Upload failed, nothing was saved.' }) });
+      } catch (e) {
+        patch(it.id, { status: 'error', error: serverError(e) ?? t('error-upload-failed', { defaultValue: 'Upload failed, nothing was saved.' }) });
         results.push({ slug: null, ok: false });
       }
     };

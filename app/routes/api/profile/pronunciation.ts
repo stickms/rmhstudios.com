@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { uploadPronunciationApi } from '@/lib/profile/pronunciation.contract';
 import { PRONUNCIATION_MAX_BYTES, pronunciationUrl } from '@/lib/profile/plus';
 import { removePronunciation, savePronunciation } from '@/lib/profile/plus.server';
 import { prisma } from '@/lib/prisma.server';
@@ -15,7 +17,8 @@ import { prisma } from '@/lib/prisma.server';
 export const Route = createFileRoute('/api/profile/pronunciation')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        uploadPronunciationApi,
         {
           rateLimit: {
             limit: 6,

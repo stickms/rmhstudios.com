@@ -1,6 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MediaRejection } from '@/hooks/useSmartPaste';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { uploadImagesApi } from '@/lib/media/upload.contract';
 import { MAX_IMAGES, appendImages } from './compose-state';
 
 /**
@@ -31,18 +34,11 @@ export function useComposeUploads() {
     files.forEach((f) => form.append('images', f));
     setUploadingCount((n) => n + 1);
     try {
-      const res = await fetch('/api/rmharks/image', { method: 'POST', body: form });
-      if (epoch !== uploadEpochRef.current) return;
-      if (!res.ok) {
-        const { error } = await res.json().catch(() => ({ error: 'Upload failed' }));
-        setImageError(error ?? 'Upload failed');
-        return;
-      }
-      const { urls } = await res.json();
+      const { urls } = await api(uploadImagesApi, { body: form });
       if (epoch !== uploadEpochRef.current) return;
       setImageUrls((prev) => appendImages(prev, urls));
-    } catch {
-      if (epoch === uploadEpochRef.current) setImageError('Upload failed');
+    } catch (e) {
+      if (epoch === uploadEpochRef.current) setImageError(serverError(e) ?? 'Upload failed');
     } finally {
       setUploadingCount((n) => Math.max(0, n - 1));
     }

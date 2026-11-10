@@ -6,6 +6,24 @@
 import { endpoint } from '@/lib/contract/endpoint';
 import type { ForwardInput } from '@/lib/chat-plus/forward.server';
 import type { ChatRef } from '@/lib/chat-plus/types-schema';
+import type { Group, Msg } from '@/lib/group-chat/types';
+
+/** One group with its first 200 messages; marks it read. 404 for a non-member. */
+export const getGroupChatApi = endpoint<{ res: { group: Group } }>()({
+  method: 'GET',
+  path: '/api/group-chats/$id',
+});
+
+/** Send a message (text, a GIF, up to 4 images or an inline poll); answers 201. */
+export const sendGroupMessageApi = endpoint<{
+  body: {
+    content?: string;
+    gifUrl?: string;
+    imageUrls?: string[];
+    poll?: { question: string; options: string[] };
+  };
+  res: { message: Msg };
+}>()({ method: 'POST', path: '/api/group-chats/$id/messages' });
 
 export const reactGroupMessageApi = endpoint<{
   body: { messageId: string; emoji: string };

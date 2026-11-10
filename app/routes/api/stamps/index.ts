@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
-import { browseStampsApi } from '@/lib/profile/stamps.contract';
+import { browseStampsApi, createStampApi } from '@/lib/profile/stamps.contract';
 import { browseStampsQuery, STAMP_MAX_UPLOAD_BYTES, stampNameSchema } from '@/lib/profile/stamps';
 import { browseStamps, createStamp } from '@/lib/profile/stamps.server';
 
@@ -30,7 +29,8 @@ export const Route = createFileRoute('/api/stamps/')({
             { headers: { 'Cache-Control': 'private, no-store' } },
           ),
       ),
-      POST: defineHandler(
+      POST: implement(
+        createStampApi,
         {
           rateLimit: {
             limit: 6,

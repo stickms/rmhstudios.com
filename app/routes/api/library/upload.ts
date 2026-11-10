@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { uploadLibraryBookApi } from '@/lib/library/upload.contract';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { prisma } from '@/lib/prisma.server';
 import { putObject, deleteObject, objectExists, s3Configured } from '@/lib/storage/s3.server';
@@ -18,7 +19,7 @@ const COVER_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
 export const Route = createFileRoute('/api/library/upload')({
   server: {
     handlers: {
-      POST: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
+      POST: implement(uploadLibraryBookApi, { auth: 'optional' }, async ({ request, session }) => {
         if (!session) {
           return Response.json({ error: 'You must be signed in to upload.' }, { status: 401 });
         }

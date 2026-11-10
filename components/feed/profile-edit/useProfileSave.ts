@@ -2,7 +2,12 @@ import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import type { UpdateProfileInput } from '@/lib/profile-schema';
-import { removeProfileBannerApi, updateProfileApi } from '@/lib/profile.contract';
+import {
+  removeProfileBannerApi,
+  updateProfileApi,
+  uploadAvatarApi,
+  uploadBannerApi,
+} from '@/lib/profile.contract';
 import {
   buildProfilePatch,
   type ProfileEditInitial,
@@ -45,16 +50,14 @@ export function useProfileSave(
       if (avatarFile) {
         const formData = new FormData();
         formData.append('avatar', avatarFile);
-        const avatarRes = await fetch('/api/profile/avatar', { method: 'POST', body: formData });
-        const avatarData = (await avatarRes.json().catch(() => ({}))) as {
-          image?: string;
-          error?: string;
-        };
-        if (!avatarRes.ok || !avatarData.image) {
+        const avatarData = await api(uploadAvatarApi, { body: formData }).catch((e: unknown) => {
           throw new Error(
-            avatarData.error ||
+            serverError(e) ||
               t('failed-upload-avatar', { defaultValue: 'Failed to upload avatar' }),
           );
+        });
+        if (!avatarData.image) {
+          throw new Error(t('failed-upload-avatar', { defaultValue: 'Failed to upload avatar' }));
         }
         newImageUrl = avatarData.image;
       }
@@ -63,16 +66,14 @@ export function useProfileSave(
       if (bannerFile) {
         const bannerForm = new FormData();
         bannerForm.append('banner', bannerFile);
-        const bannerRes = await fetch('/api/profile/banner', { method: 'POST', body: bannerForm });
-        const bannerData = (await bannerRes.json().catch(() => ({}))) as {
-          bannerUrl?: string;
-          error?: string;
-        };
-        if (!bannerRes.ok || !bannerData.bannerUrl) {
+        const bannerData = await api(uploadBannerApi, { body: bannerForm }).catch((e: unknown) => {
           throw new Error(
-            bannerData.error ||
+            serverError(e) ||
               t('failed-upload-banner', { defaultValue: 'Failed to upload banner' }),
           );
+        });
+        if (!bannerData.bannerUrl) {
+          throw new Error(t('failed-upload-banner', { defaultValue: 'Failed to upload banner' }));
         }
         newBannerUrl = bannerData.bannerUrl;
       } else if (bannerRemoved && initial.bannerUrl) {
