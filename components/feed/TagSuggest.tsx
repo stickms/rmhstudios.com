@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Hash, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { suggestTagsApi } from '@/lib/feed/compose-assist.contract';
 /** Below this a draft is too thin to tag honestly, and the endpoint rejects it. */
 const MIN_CHARS = 12;
 
@@ -41,15 +43,9 @@ export function TagSuggest({
       lastQueried.current = text;
       setLoading(true);
       try {
-        const res = await fetch('/api/ai/suggest-tags', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ text }),
-        });
+        const data = await api(suggestTagsApi, { body: { text }, timeoutMs: AI_TIMEOUT_MS });
         if (cancelled) return;
-        const data = await res.json().catch(() => ({}));
-        setTags(res.ok && Array.isArray(data.tags) ? data.tags : []);
+        setTags(Array.isArray(data.tags) ? data.tags : []);
       } catch {
         if (!cancelled) setTags([]);
       } finally {

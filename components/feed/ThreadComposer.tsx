@@ -1,3 +1,6 @@
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createThreadApi } from '@/lib/feed/compose-assist.contract';
 import { useState } from'react';
 import { useTranslation } from'react-i18next';
 import { toast } from'sonner';
@@ -13,7 +16,6 @@ import {
 import { Button } from'@/components/ui/button';
 import { Textarea } from'@/components/ui/textarea';
 import { useFeedStore } from'@/stores/feedStore';
-import type { FeedItem } from'@/lib/feed-types';
 
 const MAX_LEN = 280;
 const MAX_SEGMENTS = 25;
@@ -45,23 +47,15 @@ export function ThreadComposer() {
  if (!canPost || busy) return;
  setBusy(true);
  try {
- const res = await fetch('/api/rmharks/thread', {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ segments: segments.map((s) => s.trim()).filter(Boolean) }),
+ const item = await api(createThreadApi, {
+ body: { segments: segments.map((s) => s.trim()).filter(Boolean) },
  });
- const data = await res.json().catch(() => ({}));
- if (!res.ok) {
- toast.error(data.error ?? t('thread-failed', { defaultValue:'Could not post thread.'}));
- return;
- }
- prependItem(data as FeedItem);
+ prependItem(item);
  toast.success(t('thread-posted', { defaultValue:'Thread posted!'}));
  reset();
  setOpen(false);
- } catch {
- toast.error(t('thread-failed', { defaultValue:'Could not post thread.'}));
+ } catch (e) {
+ toast.error(serverError(e) ?? t('thread-failed', { defaultValue:'Could not post thread.'}));
  } finally {
  setBusy(false);
  }

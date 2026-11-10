@@ -2,13 +2,15 @@
  * Contracts for the per-post actions under /api/rmharks/$id/** (redesign audit
  * C1, batch 2). Client-safe: types only, by `import type`.
  *
- * Not covered here on purpose: image uploads (multipart), the comment POSTs
- * (`useReconsider` reads the raw 409 `Response`), the AI routes, and the
- * post PATCH/GET that carry the whole `FeedItem` shape.
+ * Not covered here on purpose: image uploads (multipart), the AI routes (see
+ * `compose-assist.contract.ts`), and the post GET that carries the whole
+ * `FeedItem` shape.
  */
 import type { CodeEmbed } from '@/lib/code-embed/shared';
+import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { FeedItem } from '@/lib/feed-types';
+import type { createCommentSchema } from '@/lib/rmhark-schema';
 import type { QuotesPage } from '@/lib/feed/quotes';
 import type { TakeState, TakeVote } from '@/lib/feed/take';
 import type { PostVersion } from '@/lib/feed/word-diff';
@@ -135,3 +137,14 @@ export const hideCommentApi = endpoint<{ body: { hidden: boolean }; res: { hidde
   method: 'POST',
   path: '/api/rmharks/$id/comment/$commentId/hide',
 });
+
+/**
+ * Reply to a post or a comment. The server answers 409 `{ code: 'reconsider' }`
+ * until the author confirms a hostile-sounding reply (`useReconsider`). A
+ * community-held comment comes back with a `held_` id. The full shape is the
+ * client's `Comment` (a component type), so only the id is declared here.
+ */
+export const createCommentApi = endpoint<{
+  body: z.infer<typeof createCommentSchema>;
+  res: { id: string };
+}>()({ method: 'POST', path: '/api/rmharks/$id/comment' });

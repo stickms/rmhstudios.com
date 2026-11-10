@@ -6,10 +6,13 @@ import { pingIndexNow } from '@/lib/seo/indexnow.server';
 import { Prisma } from '@prisma/client';
 import { blogPostSchema } from '@/lib/admin/schemas';
 
+import { implement } from '@/lib/api/implement.server';
+import { saveBlogPostApi } from '@/lib/admin/admin-tools.contract';
 export const Route = createFileRoute('/api/admin/blog')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        saveBlogPostApi,
         { auth: 'admin', rateLimit: { policy: 'write', scope: 'user' }, body: blogPostSchema },
         async ({ body, session }) => {
           const user = session.user;

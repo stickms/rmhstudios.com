@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button';
 import { splitThread } from '@/lib/feed/thread-splitter';
 import type { FeedItem } from '@/lib/feed-types';
 
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createThreadApi } from '@/lib/feed/compose-assist.contract';
 /** Mirrors MAX_SEGMENTS in app/routes/api/rmharks/thread.ts. */
 const MAX_THREAD_POSTS = 25;
 
@@ -43,23 +46,11 @@ export default function ThreadPostPanel({ content, blockedBy, onPosted }: Thread
     if (!canPost) return;
     setBusy(true);
     try {
-      const res = await fetch('/api/rmharks/thread', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ segments: posts }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(
-          data.error ?? t('thread-failed', { defaultValue: 'Could not post the thread' }),
-        );
-        return;
-      }
+      const item = await api(createThreadApi, { body: { segments: posts } });
       toast.success(t('thread-posted', { defaultValue: 'Thread posted' }));
-      onPosted(data as FeedItem);
-    } catch {
-      toast.error(t('thread-failed', { defaultValue: 'Could not post the thread' }));
+      onPosted(item);
+    } catch (e) {
+      toast.error(serverError(e) ?? t('thread-failed', { defaultValue: 'Could not post the thread' }));
     } finally {
       setBusy(false);
     }

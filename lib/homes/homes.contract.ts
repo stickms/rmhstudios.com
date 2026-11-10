@@ -2,12 +2,13 @@
  * Contracts for the bodyless /api/homes/** calls (redesign audit C1, batch 6):
  * the watch list, listing read / delete and the favorite toggle. The writes that
  * hand-parse their bodies (listing create / edit, watch create / patch), the
- * filtered search and the geocoder stay raw fetches. Client-safe.
+ * filtered search and the geocoder stay raw fetches. Client-safe. Batch 8 adds the
+listing status change and the AI listing-image calls.
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { GeocodeResult } from '@/lib/homes/geo.server';
-import type { Listing, Watch } from '@/lib/homes/types';
+import type { Listing, ListingStatus, Watch } from '@/lib/homes/types';
 import type { createWatchBody, deleteWatchQuery, patchWatchBody } from './watch-schema';
 
 export const listHomeWatchesApi = endpoint<{ res: { watches: Watch[] } }>()({
@@ -65,3 +66,21 @@ export const homesGeocodeApi = endpoint<{
   query: { q: string };
   res: { results: GeocodeResult[] };
 }>()({ method: 'GET', path: '/api/homes/geocode' });
+
+/** Owner only: mark a listing active, rented, sold or removed. 404 when it is not theirs. */
+export const setHomeListingStatusApi = endpoint<{
+  body: { status: ListingStatus };
+  res: { ok: true };
+}>()({ method: 'PATCH', path: '/api/homes/listings/$id' });
+
+/** Whether AI listing-image generation is configured. */
+export const getHomeAiImageAvailabilityApi = endpoint<{ res: { available: boolean } }>()({
+  method: 'GET',
+  path: '/api/homes/ai-image',
+});
+
+/** Generate a listing photo from a prompt (paid, rate-limited). */
+export const generateHomeAiImageApi = endpoint<{
+  body: { prompt: string };
+  res: { url: string };
+}>()({ method: 'POST', path: '/api/homes/ai-image' });

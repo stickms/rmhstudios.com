@@ -32,24 +32,14 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { formatCount } from '@/lib/utils';
 
-interface Dashboard {
-  storage: { usedBytes: number; limitBytes: number; headroom: number; unmeasured: number };
-  topUploaders: { uploaderId: string; songs: number; bytes: number }[];
-  staleCharts: number;
-  uploadRate: { day: string; count: number }[];
-  totals: { songs: number; charts: number; runs: number };
-}
-
-interface BrokenChart {
-  chartId: string;
-  songId: string;
-  title: string;
-  reasons: string[];
-  dip: number;
-  clearRate: number;
-  sampleSize: number;
-  spikes: number;
-}
+import { api } from '@/lib/contract/client';
+import {
+  getBrokenChartsApi,
+  getContentDashboardApi,
+  getOrphanKeysApi,
+  type BrokenChart,
+  type ContentDashboard as ContentDashboardData,
+} from '@features/slice-it/engine/admin.contract';
 
 function gib(bytes: number): string {
   return `${(bytes / 1024 ** 3).toFixed(2)} GiB`;
@@ -57,7 +47,7 @@ function gib(bytes: number): string {
 
 export function ContentDashboard() {
   const { t } = useTranslation('r-slice-it');
-  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [dashboard, setDashboard] = useState<ContentDashboardData | null>(null);
   const [broken, setBroken] = useState<BrokenChart[] | null>(null);
   const [orphans, setOrphans] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,12 +58,12 @@ export function ContentDashboard() {
     void (async () => {
       try {
         const [dash, bad] = await Promise.all([
-          fetch('/api/slice-it/admin/content?view=dashboard').then((r) => r.json()),
-          fetch('/api/slice-it/admin/content?view=broken').then((r) => r.json()),
+          api(getContentDashboardApi, { query: { view: 'dashboard' } }),
+          api(getBrokenChartsApi, { query: { view: 'broken' } }),
         ]);
         if (cancelled) return;
-        setDashboard(dash as Dashboard);
-        setBroken((bad as { charts: BrokenChart[] }).charts ?? []);
+        setDashboard(dash);
+        setBroken(bad.charts ?? []);
       } catch {
         if (!cancelled) {
           toast.error(t('admin-content-failed', { defaultValue: 'Could not read the library.' }));
@@ -90,8 +80,7 @@ export function ContentDashboard() {
   const scanOrphans = useCallback(async () => {
     setScanning(true);
     try {
-      const res = await fetch('/api/slice-it/admin/content?view=orphans');
-      const data = (await res.json()) as { keys: string[] };
+      const data = await api(getOrphanKeysApi, { query: { view: 'orphans' } });
       setOrphans(data.keys ?? []);
     } catch {
       toast.error(t('admin-content-scan-failed', { defaultValue: 'The scan did not finish.' }));

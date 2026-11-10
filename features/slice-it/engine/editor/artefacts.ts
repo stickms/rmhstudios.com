@@ -23,6 +23,8 @@ import type { Onset } from '@features/slice-it/engine/beatmap/onsets';
 import { syntheticBeats } from '@features/slice-it/engine/beatmap/tempo';
 import type { BeatMap, Difficulty, Slice } from '@features/slice-it/engine/types';
 
+import { api } from '@/lib/contract/client';
+import { getSliceSongApi } from '@features/slice-it/engine/play.contract';
 /**
  * A detected onset the editor can draw and promote (§6).
  *
@@ -140,15 +142,10 @@ export async function loadArtefacts(input: LoadArtefactsInput): Promise<EditorAr
   const hit = cache.get(input.songId);
   if (hit) return hit;
 
-  let analysis: StoredAnalysis | null = null;
+  let analysis: StoredAnalysis | null;
   try {
-    const response = await fetch(`/api/slice-it/songs/${encodeURIComponent(input.songId)}`, {
-      headers: { accept: 'application/json' },
-    });
-    if (response.ok) {
-      const body = (await response.json()) as SongResponse;
-      analysis = body.analysisData ?? null;
-    }
+    const body = (await api(getSliceSongApi, { params: { id: input.songId } })) as SongResponse;
+    analysis = body.analysisData ?? null;
   } catch {
     // Offline, or the song read failed: the chart fallback below still produces
     // a usable pool, and a regenerate the author can preview is worth more than

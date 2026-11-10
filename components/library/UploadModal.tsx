@@ -21,6 +21,15 @@ import { analyzeBook, isEpubFile } from '@/lib/library/pdf-client';
 import { libraryPdfMaxBytes } from '@/lib/library/upload-validation';
 import '@/components/library/library.css';
 
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  deleteLibraryUploadApi,
+  draftLibraryMetadataApi,
+  getLibraryQuotaApi,
+  type LibraryQuota,
+  requestLibraryQuotaApi,
+} from '@/lib/library/upload.contract';
 type ItemStatus = 'queued' | 'analyzing' | 'drafting' | 'ready' | 'uploading' | 'done' | 'error';
 
 type UploadItem = {
@@ -84,16 +93,13 @@ export function UploadModal({
   const [items, setItems] = useState<UploadItem[]>([]);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [quota, setQuota] = useState<QuotaInfo | null>(null);
+  const [quota, setQuota] = useState<LibraryQuota | null>(null);
   const [gateBusy, setGateBusy] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const fetchQuota = useCallback(async () => {
-    const res = await fetch('/api/library/quota').catch(() => null);
-    if (res?.ok) {
-      const data = (await res.json().catch(() => null)) as QuotaInfo | null;
-      if (data) setQuota(data);
-    }
+    const data = await api(getLibraryQuotaApi).catch(() => null);
+    if (data) setQuota(data);
   }, []);
   useEffect(() => {
     void fetchQuota();
@@ -103,9 +109,9 @@ export function UploadModal({
     async (slug: string) => {
       if (!(await confirm({ title: t('confirm-delete-upload', { defaultValue: 'Delete this upload? This cannot be undone.' }), danger: true }))) return;
       setGateBusy(slug);
-      const res = await fetch(`/api/library/${slug}`, { method: 'DELETE' }).catch(() => null);
+      const deleted = await api(deleteLibraryUploadApi, { params: { slug } }).catch(() => null);
       setGateBusy(null);
-      if (res?.ok) {
+      if (deleted) {
         onUploaded?.();
         await fetchQuota();
       }
@@ -115,18 +121,14 @@ export function UploadModal({
 
   const appeal = useCallback(
     async (requestedTotal: number, reason: string): Promise<boolean> => {
-      const res = await fetch('/api/library/quota', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestedTotal, reason }),
-      }).catch(() => null);
-      if (res?.ok) {
-        await fetchQuota();
-        return true;
+      try {
+        await api(requestLibraryQuotaApi, { body: { requestedTotal, reason } });
+      } catch (error) {
+        setError(serverError(error) ?? t('error-generic', { defaultValue: 'Something went wrong.' }));
+        return false;
       }
-      const err = await res?.json().catch(() => null);
-      setError(err?.error ?? t('error-generic', { defaultValue: 'Something went wrong.' }));
-      return false;
+      await fetchQuota();
+      return true;
     },
     [fetchQuota, t],
   );
@@ -189,16 +191,9 @@ export function UploadModal({
         status: 'drafting',
       });
       try {
-        const res = await fetch('/api/library/draft', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: analysis.text }),
-        });
-        if (res.ok) {
-          const draft = await res.json();
-          if (!isLive(item.id)) return;
-          patch(item.id, { title: draft.title || humanizeFilename(item.file.name), description: draft.description || '' });
-        }
+        const draft = await api(draftLibraryMetadataApi, { body: { text: analysis.text }, timeoutMs: AI_TIMEOUT_MS });
+        if (!isLive(item.id)) return;
+        patch(item.id, { title: draft.title || humanizeFilename(item.file.name), description: draft.description || '' });
       } catch {
         /* keep the filename-derived title */
       }
@@ -452,15 +447,6 @@ export function UploadModal({
   );
 }
 
-type QuotaInfo = {
-  used: number;
-  quota: number;
-  isAdmin: boolean;
-  pending: boolean;
-  storageDurable: boolean;
-  mine: { slug: string; title: string; coverUrl: string | null }[];
-};
-
 /** Shown when a regular user is at their cap: delete an upload, or appeal. */
 function QuotaGate({
   quota,
@@ -469,7 +455,7 @@ function QuotaGate({
   onAppeal,
   t,
 }: {
-  quota: QuotaInfo;
+  quota: LibraryQuota;
   busy: string | null;
   onDelete: (slug: string) => void;
   onAppeal: (requestedTotal: number, reason: string) => Promise<boolean>;

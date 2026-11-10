@@ -42,6 +42,7 @@ import { useTranslation } from 'react-i18next';
 import { isHeicCover, normalizeCover } from '@features/slice-it/engine/cover-image';
 import { whenIdle } from '@/lib/shared/platform';
 
+import { toggleSongLikeApi } from '@features/slice-it/engine/slice-it.contract';
 /**
  * Holds a deferred section's height while it is still deferred.
  *
@@ -221,9 +222,8 @@ export function SongDetailsPanel({
       apply: () =>
         onSongUpdated?.({ isLiked: !wasLiked, likeCount: baseCount + (wasLiked ? -1 : 1) }),
       rollback: () => onSongUpdated?.({ isLiked: wasLiked, likeCount: baseCount }),
-      commit: () => fetch(`/api/slice-it/songs/${song.id}/like`, { method: 'POST' }),
-      reconcile: async (res) => {
-        const data = await res.json().catch(() => ({}));
+      commit: async () => {
+        const data = await api(toggleSongLikeApi, { params: { id: song.id } });
         onSongUpdated?.({
           isLiked: data.liked,
           // The server returns the resulting count; deriving it from a

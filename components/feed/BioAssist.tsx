@@ -4,6 +4,9 @@ import { Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { draftBioApi } from '@/lib/feed/compose-assist.contract';
 type Tone = 'friendly' | 'professional' | 'funny';
 
 const TONES: Tone[] = ['friendly', 'professional', 'funny'];
@@ -41,21 +44,7 @@ export function BioAssist({
   const run = async (tone: Tone) => {
     setBusy(tone);
     try {
-      const res = await fetch('/api/ai/bio', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ tone, maxChars }),
-      });
-      if (res.status === 503) {
-        toast.error(t('ai-unavailable', { defaultValue: 'AI assist is unavailable right now.' }));
-        return;
-      }
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error || t('bio-failed', { defaultValue: 'Could not write a bio' }));
-        return;
-      }
+      const data = await api(draftBioApi, { body: { tone, maxChars }, timeoutMs: AI_TIMEOUT_MS });
       if (!data.bio) {
         // Nothing to write from — an honest empty result, not a failure.
         toast.info(
@@ -67,8 +56,12 @@ export function BioAssist({
       }
       setPrevious(value);
       onChange(data.bio);
-    } catch {
-      toast.error(t('bio-failed', { defaultValue: 'Could not write a bio' }));
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 503) {
+        toast.error(t('ai-unavailable', { defaultValue: 'AI assist is unavailable right now.' }));
+      } else {
+        toast.error(serverError(e) || t('bio-failed', { defaultValue: 'Could not write a bio' }));
+      }
     } finally {
       setBusy(null);
     }

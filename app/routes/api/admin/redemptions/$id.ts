@@ -1,32 +1,36 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { reviewRedemptionApi } from '@/lib/admin/admin-tools.contract';
 import { reviewRedemptionSchema } from '@/lib/creator/redemption-schema';
 import { reviewRedemption, RedemptionError } from '@/lib/creator/earnings.server';
 
 export const Route = createFileRoute('/api/admin/redemptions/$id')({
   server: {
     handlers: {
-      POST: defineHandler(
-        { auth: 'admin', rateLimit: { policy: 'write', scope: 'user' } },
-        async ({ request, params, session }) => {
+      POST: implement(
+        reviewRedemptionApi,
+        {
+          auth: 'admin',
+          rateLimit: { policy: 'write', scope: 'user' },
+          body: reviewRedemptionSchema,
+          allowEmptyBody: true,
+          invalid: () => Response.json({ error: 'Invalid input' }, { status: 400 }),
+        },
+        async ({ params, session, body }) => {
           try {
-            const parsed = reviewRedemptionSchema.safeParse(await request.json().catch(() => ({})));
-            if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
             const result = await reviewRedemption({
               id: params.id,
-              action: parsed.data.action,
+              action: body.action,
               adminId: session.user.id,
-              note: parsed.data.note,
-              externalRef: parsed.data.externalRef,
+              note: body.note,
+              externalRef: body.externalRef,
             });
-            return Response.json({ ok: true, ...result });
+            return { ok: true as const, ...result };
           } catch (error) {
             if (error instanceof RedemptionError) {
               return Response.json({ error: error.message }, { status: error.status });
             }
-            console.error('Admin redemption review error:', error);
-            return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+            throw error;
           }
         },
       ),

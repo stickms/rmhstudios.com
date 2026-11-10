@@ -21,6 +21,14 @@ import {
 } from './types';
 import { sortNotes } from './commands';
 
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { getSliceSongApi } from '@features/slice-it/engine/play.contract';
+import {
+  listChartRevisionsApi,
+  publishChartApi,
+  seedChartsApi,
+} from '@features/slice-it/engine/charts.contract';
 export class ChartApiError extends Error {
   constructor(
     message: string,
@@ -39,6 +47,21 @@ async function json<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
+/** Run a contract call, surfacing a failure as the editor's own {@link ChartApiError}. */
+async function asChartApiError<T>(call: () => Promise<T>): Promise<T> {
+  try {
+    return await call();
+  } catch (error) {
+    if (error instanceof HttpError) {
+      throw new ChartApiError(
+        serverError(error) ?? `Request failed (${error.status})`,
+        error.status,
+      );
+    }
+    throw error;
+  }
+}
+
 /**
  * Open a song in the editor.
  *
@@ -48,19 +71,9 @@ async function json<T>(response: Response): Promise<T> {
  * prefetch for a surface that is otherwise a page.
  */
 export async function loadEditorDocument(songId: string): Promise<EditorLoadPayload> {
-  const song = await json<SliceSong>(
-    await fetch(`/api/slice-it/songs/${encodeURIComponent(songId)}`, {
-      headers: { accept: 'application/json' },
-    }),
-  );
+  const song = await asChartApiError(() => api(getSliceSongApi, { params: { id: songId } }));
 
-  const seeded = await json<{ charts: ChartDto[] }>(
-    await fetch('/api/slice-it/charts', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ songId, keys: 2 }),
-    }),
-  );
+  const seeded = await asChartApiError(() => api(seedChartsApi, { body: { songId, keys: 2 } }));
 
   return toLoadPayload(song, seeded.charts);
 }
@@ -122,13 +135,7 @@ export function toLoadPayload(song: SliceSong, dtos: readonly ChartDto[]): Edito
  * runs on a debounce that a fast click can outrun.
  */
 export async function publishChart(chartId: string, status: 'public' | 'draft'): Promise<ChartDto> {
-  return json<ChartDto>(
-    await fetch(`/api/slice-it/charts/${encodeURIComponent(chartId)}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ status }),
-    }),
-  );
+  return asChartApiError(() => api(publishChartApi, { params: { id: chartId }, body: { status } }));
 }
 
 export interface SaveChartInput {
@@ -171,8 +178,8 @@ export async function saveChart(input: SaveChartInput): Promise<ChartDto> {
 }
 
 export async function listRevisions(chartId: string): Promise<ChartRevisionDto[]> {
-  const body = await json<{ revisions: ChartRevisionDto[] }>(
-    await fetch(`/api/slice-it/charts/${encodeURIComponent(chartId)}/revisions`),
+  const body = await asChartApiError(() =>
+    api(listChartRevisionsApi, { params: { id: chartId } }),
   );
   return body.revisions;
 }

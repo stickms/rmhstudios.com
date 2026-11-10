@@ -5,6 +5,8 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { askFeedApi, aiSearchApi } from '@/lib/feed/compose-assist.contract';
 /**
  * The Explore page's AI slot — one place, directly under the search field, in
  * two forms.
@@ -93,14 +95,7 @@ function AskTheFeed() {
     setError(false);
     setAnswer(null);
     try {
-      const res = await fetch('/api/ai/ask-feed', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ question: q }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(String(res.status));
+      const data = await api(askFeedApi, { body: { question: q }, timeoutMs: AI_TIMEOUT_MS });
       setAnswer(typeof data.answer === 'string' ? data.answer : '');
     } catch {
       setError(true);
@@ -186,15 +181,7 @@ function AskAboutQuery({ query }: { query: string }) {
     setLoading(true);
     setError(false);
     try {
-      const res = await fetch('/api/ai/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ q: query }),
-        signal: abort.signal,
-      });
-      if (!res.ok) throw new Error(String(res.status));
-      const data = await res.json();
+      const data = await api(aiSearchApi, { body: { q: query }, signal: abort.signal, timeoutMs: AI_TIMEOUT_MS });
       if (abort.signal.aborted) return;
       setAnswer(typeof data.answer === 'string' ? data.answer : '');
       setSourceCount(typeof data.sourceCount === 'number' ? data.sourceCount : 0);

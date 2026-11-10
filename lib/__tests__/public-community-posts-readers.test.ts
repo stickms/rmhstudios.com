@@ -93,6 +93,7 @@ describe('public-community posts are not excluded wholesale', () => {
     }).options.server.handlers.POST;
     await handler({
       request: new Request('http://x/api/ai/ask-feed', { method: 'POST' }),
+      userId: 'viewer-1',
       body: { question: 'what is happening with spheres today' },
     });
     expect(h.rmharkFindMany).toHaveBeenCalledTimes(2); // keyword pass, then fallback

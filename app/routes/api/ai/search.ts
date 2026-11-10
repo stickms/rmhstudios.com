@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { implement } from '@/lib/api/implement.server';
+import { aiSearchApi } from '@/lib/feed/compose-assist.contract';
 import { z } from 'zod';
 import { answerSearch, isAITextConfigured, type AISearchSource } from '@/lib/ai/text.server';
 import { universalSearch } from '@/lib/search/universal.server';
@@ -25,17 +24,16 @@ const MAX_SOURCES = 30;
 export const Route = createFileRoute('/api/ai/search')({
   server: {
     handlers: {
-      POST: defineHandler(
-        { auth: 'none', body: schema, allowEmptyBody: true },
-        async ({ request, body }) => {
+      POST: implement(
+        aiSearchApi,
+        {
+          rateLimit: { limit: 15, windowMs: 60_000, prefix: 'ai-search' },
+          body: schema,
+          allowEmptyBody: true,
+        },
+        async ({ userId, body }) => {
           if (!isAITextConfigured())
             return Response.json({ error: 'AI is unavailable' }, { status: 503 });
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, { limit: 15, windowMs: 60_000, prefix: 'ai-search' });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
           const q = body.q.trim();
 
@@ -44,7 +42,7 @@ export const Route = createFileRoute('/api/ai/search')({
           const results = await universalSearch({
             query: q,
             tab: 'top',
-            viewerId: session.user.id,
+            viewerId: userId,
             signedIn: true,
             assist: true,
           });
@@ -56,19 +54,19 @@ export const Route = createFileRoute('/api/ai/search')({
           }));
 
           if (sources.length === 0) {
-            return Response.json({
+            return {
               answer: `I couldn't find anything matching "${q}". Try a more specific search.`,
               sourceCount: 0,
               ...(results.meta.suggestion ? { suggestion: results.meta.suggestion } : {}),
-            });
+            };
           }
 
           const answer = await answerSearch(q, sources);
-          return Response.json({
+          return {
             answer,
             sourceCount: sources.length,
             confidence: results.meta.confidence,
-          });
+          };
         },
       ),
     },

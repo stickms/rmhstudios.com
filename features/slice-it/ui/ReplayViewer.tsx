@@ -44,19 +44,10 @@ import { GameEngine } from '@features/slice-it/engine/engine';
 import { modsFromReplay } from '@features/slice-it/engine/replay';
 import { useSliceItStore } from '@features/slice-it/engine/store';
 import type { SliceItReplay } from '@/lib/game/replay';
-import type { BeatMap, SliceSong } from '@features/slice-it/engine/types';
 import { formatClockSeconds } from '@/lib/core/format';
 
-interface ReplayResponse {
-  id: string;
-  version: string;
-  versionMatch: boolean;
-  durationMs: number;
-  createdAt: string;
-  author: { id: string; name: string | null; image: string | null; handle: string | null };
-  data: unknown;
-}
-
+import { api } from '@/lib/contract/client';
+import { getReplayApi, getSliceSongApi, type ReplayResponse } from '@features/slice-it/engine/play.contract';
 interface ReplayViewerProps {
   /** `GameReplay.id` — what the leaderboard row links to. */
   replayId: string;
@@ -100,11 +91,10 @@ export function ReplayViewer({ replayId, onClose }: ReplayViewerProps) {
 
     const load = async () => {
       try {
-        const response = await fetch(`/api/slice-it/replay/${replayId}`, {
+        const body = await api(getReplayApi, {
+          params: { id: replayId },
           signal: controller.signal,
         });
-        if (!response.ok) throw new Error('replay');
-        const body = (await response.json()) as ReplayResponse;
         if (disposed) return;
         setReplay(body);
       } catch (cause) {
@@ -137,11 +127,10 @@ export function ReplayViewer({ replayId, onClose }: ReplayViewerProps) {
 
     const load = async () => {
       try {
-        const response = await fetch(`/api/slice-it/songs/${payload.track}`, {
+        const song = await api(getSliceSongApi, {
+          params: { id: payload.track },
           signal: controller.signal,
         });
-        if (!response.ok) throw new Error('song');
-        const song = (await response.json()) as SliceSong & { analysisData?: BeatMap | null };
         const map = song.analysisData;
         if (!map) throw new Error('chart');
         if (disposed) return;

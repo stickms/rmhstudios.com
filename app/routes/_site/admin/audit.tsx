@@ -11,6 +11,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useTranslation } from 'react-i18next';
 
+import { api } from '@/lib/contract/client';
+import { listAuditLogApi, type AuditLogEntry } from '@/lib/admin/admin-tools.contract';
 export const Route = createFileRoute('/_site/admin/audit')({
   head: () => ({ meta: [{ title: 'Audit Log | RMH Studios' }] }),
   component: AuditLogPage,
@@ -51,8 +53,10 @@ function AuditLogPage() {
     // Wait a beat after typing so we do not fire a request per keystroke.
     const timer = setTimeout(() => {
       setLoading(true);
-      fetch(`/api/admin/audit-log${query ? `?${query}` : ''}`, { credentials: 'include' })
-        .then((r) => (r.ok ? r.json() : { items: [] }))
+      // `query` is the filters as a query string (also the CSV link), so the effect
+      // re-runs exactly when a filter changes.
+      api(listAuditLogApi, { query: Object.fromEntries(new URLSearchParams(query)) })
+        .catch(() => ({ items: [] as AuditLogEntry[] }))
         .then((d) => setItems(d.items ?? []))
         .finally(() => setLoading(false));
     }, 250);
