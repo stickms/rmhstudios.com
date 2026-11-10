@@ -815,6 +815,15 @@
   background-image: none;
   box-shadow: none;
 }
+/* Every button is repainted onto the opaque surface above, so its own ink has to follow: a
+   primary button kept its accent-fg (dark) text on the now-dark surface and read as blank
+   (RMHTube's Create Room / Join). Text takes the high-contrast ink, and the button gets an
+   inset solid edge so it still reads as a control; inset, so layout never moves. Two classes
+   (0,2,1) so it outranks the :is() rule above, whose attribute arm makes it (0,2,0). */
+.app-theme.app-high-contrast button {
+  color: var(--app-text);
+  box-shadow: inset 0 0 0 1px var(--app-border-bright);
+}
 @media (prefers-reduced-transparency: reduce), (forced-colors: active) {
   .app-glass,
   .app-theme :is([class~='bg-app-surface'], [data-liquid-surface]) {
