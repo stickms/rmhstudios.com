@@ -42,7 +42,11 @@ describe('coins', () => {
     const bobBefore = await balance(bob());
     const ledgerBefore = await tipsFromAliceToBob();
 
-    const tip = await alice().post('/api/coins/tip', { recipientId: inject('bob').id, amount: 25, note: 'thanks' });
+    const tip = await alice().post('/api/coins/tip', {
+      recipientId: inject('bob').id,
+      amount: 25,
+      note: 'thanks',
+    });
     expect(tip.status).toBe(200);
     expect(Number(tip.body.newBalance)).toBe(START - 25);
 
@@ -53,16 +57,42 @@ describe('coins', () => {
     expect(ledgerAfter.total).toBe(ledgerBefore.total + 25);
   });
 
+  it('conserves coins and records the ledger row with its type, note and parties', async () => {
+    const total = async () => (await balance(alice())) + (await balance(bob()));
+    const before = await total();
+
+    const tip = await alice().post('/api/coins/tip', {
+      recipientId: inject('bob').id,
+      amount: 3,
+      note: 'ledger shape',
+    });
+    expect(tip.status).toBe(200);
+
+    expect(await total()).toBe(before); // nothing minted, nothing burned
+    const { rows } = await db().query(
+      `select type::text as type, amount::int as amount, note from coin_transaction
+       where "senderId" = $1 and "recipientId" = $2 and note = 'ledger shape'`,
+      [inject('alice').id, inject('bob').id],
+    );
+    expect(rows).toEqual([{ type: 'TIP', amount: 3, note: 'ledger shape' }]);
+  });
+
   it('refuses an overdraft and a self-tip, changing nothing', async () => {
     const aliceBefore = await balance(alice());
     const bobBefore = await balance(bob());
     const ledgerBefore = await tipsFromAliceToBob();
 
-    const overdraft = await alice().post('/api/coins/tip', { recipientId: inject('bob').id, amount: aliceBefore + 1 });
+    const overdraft = await alice().post('/api/coins/tip', {
+      recipientId: inject('bob').id,
+      amount: aliceBefore + 1,
+    });
     expect(overdraft.status).toBe(400);
     expect(overdraft.body.error).toMatch(/not enough/i);
 
-    const self = await alice().post('/api/coins/tip', { recipientId: inject('alice').id, amount: 1 });
+    const self = await alice().post('/api/coins/tip', {
+      recipientId: inject('alice').id,
+      amount: 1,
+    });
     expect(self.status).toBe(400);
 
     expect(await balance(alice())).toBe(aliceBefore);
