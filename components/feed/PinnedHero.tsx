@@ -21,6 +21,7 @@ import { m as motion, useTransform } from 'framer-motion';
 import type { MotionValue, MotionStyle } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { ScrollScene } from '@/components/motion';
+import { LOOP_CUE } from '@/lib/motion';
 
 export interface PinnedHeroProps {
   /**
@@ -138,7 +139,7 @@ function HeroFrame({
           <span className="text-sm font-medium">{scrollCue}</span>
           <motion.span
             animate={{ y: [0, 5, 0] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+            transition={LOOP_CUE}
           >
             <ChevronDown className="h-4 w-4" />
           </motion.span>

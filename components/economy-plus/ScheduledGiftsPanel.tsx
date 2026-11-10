@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { SPRING } from '@/lib/motion';
+import { LOOP_WIGGLE, SPRING } from '@/lib/motion';
 import type {
   ReceivedGiftView,
   ScheduledGiftsPayload,
@@ -160,7 +160,7 @@ function WrappedGift({ gift }: { gift: ReceivedGiftView }) {
     <li className="glass-pane flex items-center gap-4 p-4">
       <motion.div
         animate={reduce ? undefined : { rotate: [0, -4, 4, -3, 0] }}
-        transition={{ duration: 1.2, repeat: 2, repeatDelay: 2.5 }}
+        transition={LOOP_WIGGLE}
         className="glass-fill flex size-14 shrink-0 items-center justify-center rounded-site"
         aria-hidden
       >

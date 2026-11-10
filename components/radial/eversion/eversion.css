@@ -338,7 +338,7 @@ html[data-eversion-settle] *:not(.radial-hub, .radial-hub *, .evert-popup, .ever
   transform-origin: 50% 50%;
   animation:
     evert-popup-swell var(--eversion-wrap, 700ms) var(--eversion-ease-wrap) both,
-    evert-popup-dissolve calc(var(--eversion-wrap, 700ms) * 0.45) cubic-bezier(0.4, 0, 1, 1)
+    evert-popup-dissolve calc(var(--eversion-wrap, 700ms) * 0.45) var(--ease-exit-in)
       calc(var(--eversion-wrap, 700ms) * 0.45) both;
 }
 @keyframes evert-popup-swell {
@@ -357,7 +357,7 @@ html[data-eversion-settle] *:not(.radial-hub, .radial-hub *, .evert-popup, .ever
 }
 /* No run after all: back into the press point it came out of. */
 .evert-popup[data-leaving] {
-  animation: evert-popup-out 0.32s cubic-bezier(0.4, 0, 1, 1) both;
+  animation: evert-popup-out 0.32s var(--ease-exit-in) both;
 }
 @keyframes evert-popup-out {
   from {
