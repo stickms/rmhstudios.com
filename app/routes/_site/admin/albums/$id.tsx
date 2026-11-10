@@ -19,6 +19,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  adminAlbumDelete,
+  adminAlbumPatch,
+  adminAlbumReorder,
+  adminAlbumsList,
+} from '@/lib/admin/albums.contract';
 import { deleteAdminAlbumSlideApi } from '@/lib/admin/admin-ops.contract';
 
 export const Route = createFileRoute('/_site/admin/albums/$id')({
@@ -49,10 +56,9 @@ function ManageAlbumPage() {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   async function load() {
-    const res = await fetch('/api/admin/albums').catch(() => null);
-    if (res?.ok) {
-      const data = await res.json().catch(() => null);
-      const found = (data?.albums as AdminAlbum[] | undefined)?.find((a) => a.id === id) ?? null;
+    const data = await api(adminAlbumsList).catch(() => null);
+    if (data) {
+      const found = (data.albums as AdminAlbum[] | undefined)?.find((a) => a.id === id) ?? null;
       setAlbum(found);
       if (found) {
         setTitle(found.title);
@@ -77,14 +83,12 @@ function ManageAlbumPage() {
     if (!album || !title.trim()) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/admin/albums/${album.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), description }),
+      const data = await api(adminAlbumPatch, {
+        params: { id: album.id },
+        body: { title: title.trim(), description },
+      }).catch((e: unknown) => {
+        throw new Error(serverError(e) || t('album-save-failed', { defaultValue: 'Save failed' }));
       });
-      const data = await res.json().catch(() => null);
-      if (!res.ok)
-        throw new Error(data?.error || t('album-save-failed', { defaultValue: 'Save failed' }));
       setAlbum((prev) =>
         prev ? { ...prev, title: data.album.title, description: data.album.description } : prev,
       );
@@ -122,12 +126,14 @@ function ManageAlbumPage() {
   async function persistOrder(next: AdminSlide[]) {
     if (!album) return;
     setAlbum({ ...album, slides: next });
-    const res = await fetch(`/api/admin/albums/${album.id}/reorder`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: next.map((s) => s.id) }),
-    }).catch(() => null);
-    if (!res?.ok) {
+    const ok = await api(adminAlbumReorder, {
+      params: { id: album.id },
+      body: { ids: next.map((s) => s.id) },
+    }).then(
+      () => true,
+      () => false,
+    );
+    if (!ok) {
       toast.error(t('order-save-failed', { defaultValue: 'Failed to save order.' }));
       void load();
     }
@@ -159,10 +165,11 @@ function ManageAlbumPage() {
       }))
     )
       return;
-    const res = await fetch(`/api/admin/albums/${album.id}`, { method: 'DELETE' }).catch(
-      () => null,
+    const ok = await api(adminAlbumDelete, { params: { id: album.id } }).then(
+      () => true,
+      () => false,
     );
-    if (res?.ok) {
+    if (ok) {
       toast.success(t('album-deleted', { defaultValue: 'Album deleted.' }));
       navigate({ to: '/admin/albums' });
     } else {

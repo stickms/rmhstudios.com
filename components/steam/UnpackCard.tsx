@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { api, errorField } from '@/lib/contract/client';
+import { unpackGemsApi } from '@/lib/cards/steam.contract';
 import { gemValue } from '@/lib/cards/gems';
 import { gemsErrorText } from './gems-errors';
 
@@ -16,20 +18,11 @@ export function UnpackCard({ gameId, cardIndex, foil }: { gameId: string; cardIn
   async function go() {
     setBusy(true);
     try {
-      const res = await fetch('/api/games/gems/unpack', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ gameId, cardIndex, foil, qty: 1 }),
-      });
-      if (res.ok) {
-        toast.success(t('steam-gems-unpacked', { defaultValue: 'Turned into {{n}} gems.', n: gems }));
-        await router.invalidate();
-      } else {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(gemsErrorText(body.error, t));
-      }
-    } catch {
-      toast.error(gemsErrorText(undefined, t));
+      await api(unpackGemsApi, { body: { gameId, cardIndex, foil, qty: 1 } });
+      toast.success(t('steam-gems-unpacked', { defaultValue: 'Turned into {{n}} gems.', n: gems }));
+      await router.invalidate();
+    } catch (e) {
+      toast.error(gemsErrorText(errorField<string>(e, 'error'), t));
     } finally {
       setBusy(false);
       setConfirm(false);

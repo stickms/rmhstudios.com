@@ -1,4 +1,8 @@
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import type { UpdateProfileInput } from '@/lib/profile-schema';
+import { removeProfileBannerApi, updateProfileApi } from '@/lib/profile.contract';
 import {
   buildProfilePatch,
   type ProfileEditInitial,
@@ -72,25 +76,24 @@ export function useProfileSave(
         }
         newBannerUrl = bannerData.bannerUrl;
       } else if (bannerRemoved && initial.bannerUrl) {
-        const bannerRes = await fetch('/api/profile/banner', { method: 'DELETE' });
-        if (!bannerRes.ok) {
-          const bannerData = (await bannerRes.json().catch(() => ({}))) as { error?: string };
+        await api(removeProfileBannerApi).catch((e: unknown) => {
           throw new Error(
-            bannerData.error ||
+            serverError(e) ||
               t('failed-remove-banner', { defaultValue: 'Failed to remove banner' }),
           );
-        }
+        });
         newBannerUrl = null;
       }
 
-      const res = await fetch('/api/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildProfilePatch(draft, handleChanged)),
+      const data = await api(updateProfileApi, {
+        body: {
+          ...buildProfilePatch(draft, handleChanged),
+          // The draft keeps the radio value as a string; the server validates the enum.
+          dmPrivacy: draft.dmPrivacy as UpdateProfileInput['dmPrivacy'],
+        },
+      }).catch((e: unknown) => {
+        throw new Error(serverError(e) || t('failed-save', { defaultValue: 'Failed to save' }));
       });
-      const data = (await res.json().catch(() => ({}))) as SavedProfileData & { error?: string };
-      if (!res.ok)
-        throw new Error(data.error || t('failed-save', { defaultValue: 'Failed to save' }));
 
       onSaved({
         ...data,

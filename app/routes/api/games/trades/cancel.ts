@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { cancelTradeApi } from '@/lib/cards/steam.contract';
+import { tradeActionBody } from '@/lib/cards/steam-schema';
 import { cancelTrade } from '@/lib/cards/trades.server';
 import { tradeResponse } from '@/lib/cards/trade-api.server';
 
@@ -8,8 +9,9 @@ import { tradeResponse } from '@/lib/cards/trade-api.server';
 export const Route = createFileRoute('/api/games/trades/cancel')({
   server: {
     handlers: {
-      POST: defineHandler(
-        { rateLimit: 'write', body: z.object({ tradeId: z.string().min(1).max(64) }) },
+      POST: implement(
+        cancelTradeApi,
+        { rateLimit: 'write', body: tradeActionBody },
         ({ userId, body }) =>
           tradeResponse(async () => {
             await cancelTrade({ userId, tradeId: body.tradeId });

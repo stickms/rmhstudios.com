@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import { adminReorderBooksSchema } from '@/lib/library/admin-library-schema';
+import { adminLibraryReorderApi } from '@/lib/library/admin-library.contract';
 import { prisma } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { isSafeLibraryId } from '@/lib/library/keys';
@@ -9,21 +11,18 @@ import { isSafeLibraryId } from '@/lib/library/keys';
  *   { ids: string[] } — LibraryDocument ids in their desired order; each row's
  *   `position` is set to its index. Admin only.
  */
-async function requireAdmin(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) return null;
-  return session;
-}
-
 export const Route = createFileRoute('/api/admin/library/reorder')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        const session = await requireAdmin(request);
-        if (!session) return Response.json({ error: 'Forbidden' }, { status: 403 });
-
-        const body = (await request.json().catch(() => ({}))) as { ids?: unknown };
-        const ids = Array.isArray(body.ids) ? body.ids.filter((x): x is string => typeof x === 'string') : [];
+      POST: implement(
+        adminLibraryReorderApi,
+        {
+          auth: 'admin',
+          body: adminReorderBooksSchema,
+          invalid: () => Response.json({ error: 'Invalid order.' }, { status: 400 }),
+        },
+        async ({ userId, body }) => {
+        const { ids } = body;
         if (ids.length === 0 || ids.length > 5000 || !ids.every(isSafeLibraryId)) {
           return Response.json({ error: 'Invalid order.' }, { status: 400 });
         }
@@ -33,12 +32,13 @@ export const Route = createFileRoute('/api/admin/library/reorder')({
             prisma.libraryDocument.update({ where: { id }, data: { position: index } })
           )
         );
-        await logAdminAction(session.user.id, 'library.reorder', {
+        await logAdminAction(userId, 'library.reorder', {
           targetType: 'LibraryDocument',
           detail: `${ids.length} books`,
         });
-        return Response.json({ ok: true });
-      },
+        return { ok: true as const };
+        },
+      ),
     },
   },
 });

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { saveShowcaseApi } from '@/lib/cards/steam.contract';
 import { MAX_SHOWCASE } from '@/lib/games/showcase';
 import type { ShowcaseEditorData } from '@/lib/games/community-types';
 
@@ -20,18 +22,10 @@ export function ShowcaseEditor({ data }: { data: ShowcaseEditorData }) {
   async function save(next: { achievements: string[]; badges: string[] }) {
     setBusy(true);
     try {
-      const res = await fetch('/api/games/showcase', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(next),
-      });
-      if (res.ok) {
-        toast.success(t('steam-showcase-saved', { defaultValue: 'Showcase saved.' }));
-        setOpen(false);
-        await router.invalidate();
-      } else {
-        toast.error(t('steam-showcase-err', { defaultValue: 'Could not save your showcase.' }));
-      }
+      await api(saveShowcaseApi, { body: next });
+      toast.success(t('steam-showcase-saved', { defaultValue: 'Showcase saved.' }));
+      setOpen(false);
+      await router.invalidate();
     } catch {
       toast.error(t('steam-showcase-err', { defaultValue: 'Could not save your showcase.' }));
     } finally {

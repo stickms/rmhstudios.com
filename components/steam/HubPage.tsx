@@ -3,6 +3,8 @@ import { Link, useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { Lock, MessageSquare, Pin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { api, errorField } from '@/lib/contract/client';
+import { createHubThreadApi } from '@/lib/cards/steam.contract';
 import { MAX_POST, MAX_THREAD_BODY, MAX_TITLE } from '@/lib/games/hub-rules';
 import type { HubData } from '@/lib/games/hub-types';
 import { formatPlaytime } from '@/lib/games/format-playtime';
@@ -26,22 +28,13 @@ function NewThread({ gameId, emoteTitles }: { gameId: string; emoteTitles: strin
     e.preventDefault();
     setBusy(true);
     try {
-      const res = await fetch('/api/games/hub/thread', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ gameId, title, body }),
+      const data = await api(createHubThreadApi, { body: { gameId, title, body } });
+      await router.navigate({
+        to: '/games/hub/$gameId/t/$threadId',
+        params: { gameId, threadId: data.id },
       });
-      const data = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
-      if (res.ok && data.id) {
-        await router.navigate({
-          to: '/games/hub/$gameId/t/$threadId',
-          params: { gameId, threadId: data.id },
-        });
-      } else {
-        toast.error(hubErrorText(data.error, t));
-      }
-    } catch {
-      toast.error(hubErrorText(undefined, t));
+    } catch (e) {
+      toast.error(hubErrorText(errorField<string>(e, 'error'), t));
     } finally {
       setBusy(false);
     }

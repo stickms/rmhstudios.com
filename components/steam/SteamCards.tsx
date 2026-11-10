@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { craftBadgeApi } from '@/lib/cards/steam.contract';
 import { SET_SIZE, BADGE_XP, MAX_BADGE_LEVEL } from '@/lib/cards/cards';
 import type { TitleCards } from '@/lib/cards/types';
 import { CardArt } from './CardArt';
@@ -26,15 +28,7 @@ export function SteamCards({
   async function craft(foil: boolean) {
     setBusy(true);
     try {
-      const res = await fetch('/api/games/cards/craft', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ gameId, foil }),
-      });
-      if (!res.ok) {
-        toast.error(t('steam-craft-failed', { defaultValue: 'Could not craft the badge.' }));
-        return;
-      }
+      await api(craftBadgeApi, { body: { gameId, foil } });
       toast.success(t('steam-craft-done', { defaultValue: 'Badge crafted.' }));
       await router.invalidate();
     } catch {

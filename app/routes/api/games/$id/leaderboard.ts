@@ -7,14 +7,16 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getGameLeaderboardApi } from '@/lib/game/leaderboard.contract';
 import { getGameAdapter } from '@/lib/game/adapters.server';
 import { getGameScoreRules } from '@/lib/game/registry';
 
 export const Route = createFileRoute('/api/games/$id/leaderboard')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        getGameLeaderboardApi,
         {
           auth: 'none',
           // Anonymous-invariant: the handler has no session and branches only on
@@ -40,14 +42,14 @@ export const Route = createFileRoute('/api/games/$id/leaderboard')({
 
           const rows = await adapter.leaderboard(limit);
 
-          return Response.json({
+          return {
             game: {
               id: rules.id,
               label: rules.label,
               progressLabel: rules.progressLabel ?? null,
             },
             entries: rows,
-          });
+          };
         },
       ),
     },

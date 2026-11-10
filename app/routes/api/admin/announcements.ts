@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import { adminAnnouncementCreate, adminAnnouncementsList } from '@/lib/admin/announcements.contract';
 import { prisma } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { createAnnouncementSchema } from '@/lib/announcement-schema';
@@ -13,24 +14,16 @@ import { createNotification } from '@/lib/notifications.server';
  *      images, GIF, and poll; `@mentions`/`#hashtags` live inline in the body).
  */
 
-async function requireAdmin(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) return null;
-  return session;
-}
-
 export const Route = createFileRoute('/api/admin/announcements')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const session = await requireAdmin(request);
-        if (!session) return Response.json({ error: 'Forbidden' }, { status: 403 });
+      GET: implement(adminAnnouncementsList, { auth: 'admin' }, async () => {
         const rows = await prisma.feedAnnouncement.findMany({
           orderBy: { createdAt: 'desc' },
           take: 100,
           include: { poll: { include: { options: { orderBy: { position: 'asc' } } } } },
         });
-        return Response.json({
+        return {
           announcements: rows.map((r) => ({
             ...r,
             createdAt: r.createdAt.toISOString(),
@@ -45,21 +38,18 @@ export const Route = createFileRoute('/api/admin/announcements')({
                 }
               : null,
           })),
-        });
-      },
-      POST: async ({ request }) => {
-        const session = await requireAdmin(request);
-        if (!session) return Response.json({ error: 'Forbidden' }, { status: 403 });
-        try {
-          const body = await request.json().catch(() => ({}));
-          const parsed = createAnnouncementSchema.safeParse(body);
-          if (!parsed.success) {
-            return Response.json(
-              { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-              { status: 400 }
-            );
-          }
-          const d = parsed.data;
+        };
+      }),
+      POST: implement(
+        adminAnnouncementCreate,
+        {
+          auth: 'admin',
+          body: createAnnouncementSchema,
+          allowEmptyBody: true,
+          invalid: (err) =>
+            Response.json({ error: err.issues[0]?.message ?? 'Invalid input' }, { status: 400 }),
+        },
+        async ({ userId, body: d }) => {
 
           const created = await prisma.feedAnnouncement.create({
             data: {
@@ -70,7 +60,7 @@ export const Route = createFileRoute('/api/admin/announcements')({
               variant: d.variant,
               pinned: d.pinned,
               expiresAt: d.expiresAt ? new Date(d.expiresAt) : null,
-              createdById: session.user.id,
+              createdById: userId,
               imageUrls: d.imageUrls ?? [],
               gifUrl: d.gifUrl || null,
               ...(d.poll
@@ -94,7 +84,7 @@ export const Route = createFileRoute('/api/admin/announcements')({
             },
           });
 
-          await logAdminAction(session.user.id, 'announcement.create', {
+          await logAdminAction(userId, 'announcement.create', {
             targetType: 'announcement',
             targetId: created.id,
             detail: d.title,
@@ -107,7 +97,7 @@ export const Route = createFileRoute('/api/admin/announcements')({
             if (handles.length > 0) {
               const mentioned = await prisma.user.findMany({
                 where: {
-                  id: { not: session.user.id },
+                  id: { not: userId },
                   OR: handles.map((h) => ({ handle: { equals: h, mode: 'insensitive' as const } })),
                 },
                 select: { id: true },
@@ -116,7 +106,7 @@ export const Route = createFileRoute('/api/admin/announcements')({
                 mentioned.map((m) =>
                   createNotification({
                     userId: m.id,
-                    actorId: session.user.id,
+                    actorId: userId,
                     type: 'MENTION',
                     entityType: 'announcement',
                     entityId: created.id,
@@ -131,11 +121,8 @@ export const Route = createFileRoute('/api/admin/announcements')({
           }
 
           return Response.json({ success: true, id: created.id }, { status: 201 });
-        } catch (error) {
-          console.error('Create announcement error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

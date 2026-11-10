@@ -9,7 +9,9 @@ import { endpoint } from '@/lib/contract/endpoint';
 import type { addComment, commentSchema, listComments } from '@/lib/forecasting/forecasting.server';
 import type {
   createPredictionSchema,
+  moderateSchema,
   predictionListQuery,
+  resolveSchema,
 } from '@/lib/predictions/predictions-schema';
 import type { SerializedMarket } from '@/lib/predictions/predictions.server';
 
@@ -37,3 +39,22 @@ export const addPredictionCommentApi = endpoint<{
   body: z.infer<typeof commentSchema>;
   res: { comment: NewComment };
 }>()({ method: 'POST', path: '/api/predictions/$id/comments' });
+
+/* ---------------------------- admin moderation ---------------------------- */
+
+/** Admin: PENDING submissions plus OPEN markets, for one moderation page. */
+export const adminPredictionQueueApi = endpoint<{
+  res: { pending: SerializedMarket[]; open: SerializedMarket[] };
+}>()({ method: 'GET', path: '/api/admin/predictions' });
+
+/** Admin: approve or deny a pending submission. */
+export const adminModeratePredictionApi = endpoint<{
+  body: z.infer<typeof moderateSchema>;
+  res: { ok: true; status: string };
+}>()({ method: 'POST', path: '/api/admin/predictions/$id/moderate' });
+
+/** Admin: settle an open market to YES or NO. */
+export const adminResolvePredictionApi = endpoint<{
+  body: z.infer<typeof resolveSchema>;
+  res: { ok: true; resolved: boolean; payouts: number };
+}>()({ method: 'POST', path: '/api/admin/predictions/$id/resolve' });
