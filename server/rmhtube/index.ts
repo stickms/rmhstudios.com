@@ -24,6 +24,7 @@ import { ReconnectionHandler } from './reconnection';
 import { cleanupRateLimits } from './rate-limit';
 import { disconnectPrisma } from './prisma-client';
 import { logger } from './logger';
+import { protocolGuard, protocolLogger } from '../shared/protocol';
 import { boundedFlush } from './shutdown';
 import { attachRedisAdapter } from '../shared/redis-adapter';
 import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
@@ -79,6 +80,10 @@ instrumentHub(io, 'rmhtube');
 
 // ─── Auth middleware ──────────────────────────────────────────────
 
+// Protocol version first (no DB round-trip): an outdated tab is told so instead of
+// silently no-op'ing mid-match (server/shared/protocol.ts, E2). Lenient: a client that
+// sends no version still gets in.
+io.use(protocolGuard(protocolLogger(logger)));
 io.use(authMiddleware);
 
 // ─── Service layer bootstrap ─────────────────────────────────────

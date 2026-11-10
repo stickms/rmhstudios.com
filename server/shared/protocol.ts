@@ -118,3 +118,30 @@ export function protocolGuard(logger?: GuardLogger, expected = PROTOCOL_VERSION)
     next(error);
   };
 }
+
+/**
+ * The logger the hubs hand `protocolGuard`. Rejections (`protocol_outdated`) are logged as
+ * they happen; `protocol_absent` (a bare `io()` client, allowed while the guard is lenient)
+ * would otherwise log once per connection from every legacy game client, so it is folded
+ * into one line per window with a count. When that line stops appearing,
+ * SOCKET_PROTOCOL_STRICT=1 is safe to turn on.
+ */
+export function protocolLogger(
+  logger: GuardLogger,
+  windowMs = 60_000,
+  now: () => number = Date.now,
+): GuardLogger {
+  let absent = 0;
+  let windowStart = -Infinity;
+  return {
+    warn(entry) {
+      if (entry.event !== 'protocol_absent') return logger.warn(entry);
+      absent += 1;
+      const t = now();
+      if (t - windowStart < windowMs) return;
+      logger.warn({ ...entry, count: absent, windowMs });
+      absent = 0;
+      windowStart = t;
+    },
+  };
+}
