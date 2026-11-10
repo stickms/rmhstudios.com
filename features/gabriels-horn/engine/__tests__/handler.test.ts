@@ -41,7 +41,7 @@ vi.mock('../../../server/socket-server/prisma-client', () => ({
 import {
   registerGabrielsHornHandlers,
   handleGabrielsHornDisconnect,
-} from '../../../server/socket-server/handlers/gabriels-horn';
+} from '../../server/handlers';
 import {
   PENALTY_DRAW,
   PHASE_MS,

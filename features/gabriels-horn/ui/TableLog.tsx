@@ -9,7 +9,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { LogEntry } from '@/lib/gabriels-horn/net/events';
+import type { LogEntry } from '@features/gabriels-horn/engine/net/events';
 import { useEffectLabel } from './CardFace';
 
 export function TableLog({ log }: { log: LogEntry[] }) {

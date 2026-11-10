@@ -46,7 +46,7 @@ const cases: [string, () => Promise<() => Promise<unknown>>][] = [
   ['holdem', async () => (await import('@features/casino/engine/holdem/socket')).connectToHoldem],
   ['blackjack', async () => (await import('@features/casino/engine/blackjack/socket')).connectToBlackjack],
   ['laundry-sort', async () => (await import('@/lib/laundry-sort/net/client')).connectLaundry],
-  ['gabriels-horn', async () => (await import('@/lib/gabriels-horn/net/client')).connectHorn],
+  ['gabriels-horn', async () => (await import('@features/gabriels-horn/engine/net/client')).connectHorn],
   ['slice-it', async () => (await import('@features/slice-it/engine/net/client')).connectSliceIt],
 ];
 

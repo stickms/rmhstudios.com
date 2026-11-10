@@ -40,10 +40,6 @@ import { initializeCasino, listCasinoRooms, CASINO_SHUTDOWN_REFUNDS, CASINO_SHUT
 import { registerLightsOutHandlers, handleLightsOutDisconnect } from './handlers/lights-out';
 import { registerVelumHandlers, handleVelumDisconnect } from './handlers/velum';
 import { registerLaundrySortHandlers, handleLaundrySortDisconnect } from './handlers/laundry-sort';
-import {
-  registerGabrielsHornHandlers,
-  handleGabrielsHornDisconnect,
-} from './handlers/gabriels-horn';
 import { registerGlobeSetHandlers, handleGlobeSetDisconnect } from './handlers/globeset';
 import { registerTf2GameHandlers, handleTf2GameDisconnect } from './handlers/tf2-game';
 import { registerTf2P2pHandlers, handleTf2P2pDisconnect } from './handlers/tf2-p2p';
@@ -399,7 +395,7 @@ io.on('connection', (socket) => {
   registerVelumHandlers(io, socket);
   registerFeatureHandlers(io, socket, 'dream-rift');
   registerLaundrySortHandlers(io, socket);
-  registerGabrielsHornHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'gabriels-horn');
   registerGlobeSetHandlers(io, socket);
   // TF2: the server browser and P2P signaling — every match runs in a player's browser.
   registerTf2GameHandlers(io, socket);
@@ -447,7 +443,7 @@ io.on('connection', (socket) => {
     handleVelumDisconnect(io, socket);
     handleFeatureDisconnects(io, socket, 'dream-rift');
     handleLaundrySortDisconnect(io, socket);
-    handleGabrielsHornDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'gabriels-horn');
     handleGlobeSetDisconnect(io, socket);
     handleTf2GameDisconnect(io, socket);
     handleTf2P2pDisconnect(io, socket);

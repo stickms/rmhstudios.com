@@ -10,9 +10,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Send } from 'lucide-react';
-import { CHAT_MAX_LENGTH } from '@/lib/gabriels-horn/constants';
-import { hornNet } from '@/lib/gabriels-horn/net/client';
-import { useHornStore } from '@/lib/gabriels-horn/store';
+import { CHAT_MAX_LENGTH } from '@features/gabriels-horn/engine/constants';
+import { hornNet } from '@features/gabriels-horn/engine/net/client';
+import { useHornStore } from '@features/gabriels-horn/engine/store';
 import { HornButton } from './ui';
 
 export function TableChat() {

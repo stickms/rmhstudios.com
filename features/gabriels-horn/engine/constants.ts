@@ -2,7 +2,7 @@
  * Gabriel's Horn — the rulebook, as constants.
  *
  * Imported by **both** the browser and
- * `server/socket-server/handlers/gabriels-horn.ts`, so every number the rules
+ * `features/gabriels-horn/server/handlers.ts`, so every number the rules
  * depend on has exactly one home. Deliberately free of browser and Node
  * imports: the esbuild server bundle pulls this file in verbatim.
  *

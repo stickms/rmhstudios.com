@@ -25,7 +25,7 @@ import {
   RECONNECT_GRACE_MS,
   STARTING_HAND,
   SWAP_RANK,
-} from '@/lib/gabriels-horn/constants';
+} from '@features/gabriels-horn/engine/constants';
 
 const DECK_SIZE = COLORS.length * RANKS.length;
 import { HornButton } from './ui';

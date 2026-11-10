@@ -13,14 +13,14 @@ import { toast } from 'sonner';
 import AppShell from '@/components/shared/AppShell';
 import { useSession } from '@/components/Providers';
 import { useLobbyInvite, useLobbyInviteJoin } from '@/hooks/useLobbyLink';
-import { useHornStore } from '@/lib/gabriels-horn/store';
+import { useHornStore } from '@features/gabriels-horn/engine/store';
 import {
   connectHorn,
   disconnectHorn,
   hornNet,
   reconnectNow,
   storedTableCode,
-} from '@/lib/gabriels-horn/net/client';
+} from '@features/gabriels-horn/engine/net/client';
 import type { PartyTicketMsg } from '@/lib/party/types';
 import { BrowsePanel, LobbyPanel, useLobbyErrorMessage } from './LobbyPanel';
 import { MainMenu } from './MainMenu';

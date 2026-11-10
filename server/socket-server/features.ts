@@ -22,6 +22,7 @@ import balatro from '../../features/balatro/server';
 import casino from '../../features/casino/server';
 import dreamRift from '../../features/dream-rift/server';
 import doctrine from '../../features/doctrine/server';
+import gabrielsHorn from '../../features/gabriels-horn/server';
 import hearthworks from '../../features/hearthworks/server';
 import sliceIt from '../../features/slice-it/server';
 
@@ -44,7 +45,7 @@ export interface FeatureSocketServer {
   onDisconnect?(io: Server, socket: Socket): void;
 }
 
-export const FEATURE_SOCKET_SERVERS: readonly FeatureSocketServer[] = [altair, balatro, casino, doctrine, dreamRift, hearthworks, sliceIt];
+export const FEATURE_SOCKET_SERVERS: readonly FeatureSocketServer[] = [altair, balatro, casino, doctrine, dreamRift, gabrielsHorn, hearthworks, sliceIt];
 
 const inSlot = (f: FeatureSocketServer, slot: string): boolean => (f.slot ?? SHARED_SLOT) === slot;
 

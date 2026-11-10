@@ -2,7 +2,7 @@
  * Gabriel's Horn — multiplayer protocol.
  *
  * Imported by **both** the browser client and
- * `server/socket-server/handlers/gabriels-horn.ts`, so the two can never drift
+ * `features/gabriels-horn/server/handlers.ts`, so the two can never drift
  * on an event name or a payload shape. No browser and no Node imports: the
  * server bundle takes this file verbatim.
  *

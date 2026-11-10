@@ -12,9 +12,9 @@ import { ArrowLeft, Check, Copy, Crown, Link2, LogOut, Play, RefreshCw, UserX } 
 import { toast } from 'sonner';
 import { useLobbyLink } from '@/hooks/useLobbyLink';
 import { useClipboard } from '@/hooks/useClipboard';
-import { MAX_PLAYERS, MIN_PLAYERS } from '@/lib/gabriels-horn/constants';
-import { useHornStore } from '@/lib/gabriels-horn/store';
-import { hornNet } from '@/lib/gabriels-horn/net/client';
+import { MAX_PLAYERS, MIN_PLAYERS } from '@features/gabriels-horn/engine/constants';
+import { useHornStore } from '@features/gabriels-horn/engine/store';
+import { hornNet } from '@features/gabriels-horn/engine/net/client';
 import { HouseRulesPanel, HouseRulesSummary } from './HouseRulesPanel';
 import { HornButton, Panel, SeatAvatar } from './ui';
 import { MenuBackdrop } from './MenuScene';

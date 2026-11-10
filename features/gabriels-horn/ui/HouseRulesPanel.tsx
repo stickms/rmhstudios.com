@@ -20,13 +20,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, Sparkles, Wand2, X } from 'lucide-react';
-import type { HouseRules, RuleChange } from '@/lib/gabriels-horn/house-rules';
+import type { HouseRules, RuleChange } from '@features/gabriels-horn/engine/house-rules';
 import {
   DEFAULT_HOUSE_RULES,
   clampHouseRules,
   diffHouseRules,
-} from '@/lib/gabriels-horn/house-rules';
-import { hornNet } from '@/lib/gabriels-horn/net/client';
+} from '@features/gabriels-horn/engine/house-rules';
+import { hornNet } from '@features/gabriels-horn/engine/net/client';
 import { HornButton, Panel } from './ui';
 
 interface Proposal {

@@ -17,7 +17,7 @@ import {
   type Card,
   type CardColor,
   type CardEffect,
-} from '@/lib/gabriels-horn/constants';
+} from '@features/gabriels-horn/engine/constants';
 
 const COLOR_VAR: Record<CardColor, string> = {
   azure: 'var(--gh-azure)',

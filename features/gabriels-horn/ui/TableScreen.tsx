@@ -5,7 +5,7 @@
  * sent to THIS seat and nothing else. There is no local model of the game to
  * disagree with it, and in particular no local decision about what the player
  * may see: the dice arrive as `null` when they are hidden, and a hand that is
- * not yours arrives as a number. See `lib/gabriels-horn/net/events.ts`.
+ * not yours arrives as a number. See `features/gabriels-horn/engine/net/events.ts`.
  *
  * The screen is a document — a column you read top to bottom — so it uses
  * `.app-page` and scrolls the DOCUMENT rather than an inner box, which is what
@@ -20,11 +20,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BookOpen, Hand, LogOut, Megaphone, ScanEye, Shield, WifiOff } from 'lucide-react';
-import { PHASE_MS, effectOf, needsTarget } from '@/lib/gabriels-horn/constants';
-import { clampHouseRules } from '@/lib/gabriels-horn/house-rules';
-import type { GameView, TablePlayer } from '@/lib/gabriels-horn/net/events';
-import { hornNet } from '@/lib/gabriels-horn/net/client';
-import { useHornStore } from '@/lib/gabriels-horn/store';
+import { PHASE_MS, effectOf, needsTarget } from '@features/gabriels-horn/engine/constants';
+import { clampHouseRules } from '@features/gabriels-horn/engine/house-rules';
+import type { GameView, TablePlayer } from '@features/gabriels-horn/engine/net/events';
+import { hornNet } from '@features/gabriels-horn/engine/net/client';
+import { useHornStore } from '@features/gabriels-horn/engine/store';
 import { CardFace, CardRow, useEffectDescription, useEffectLabel } from './CardFace';
 import { HouseRulesSummary } from './HouseRulesPanel';
 import { Dice } from './Dice';

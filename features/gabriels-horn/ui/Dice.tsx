@@ -6,7 +6,7 @@
  * everybody except the person who rolled.
  *
  * `faces` being `null` is not a loading state, it is **the rule**: the player
- * whose turn it is never receives the numbers (see `lib/gabriels-horn/net/
+ * whose turn it is never receives the numbers (see `features/gabriels-horn/engine/net/
  * events.ts`). So the hidden form is a visibly empty well rather than a face
  * that has not arrived — otherwise the first round of every game is spent
  * wondering whether something is broken.
@@ -14,7 +14,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { Eye } from 'lucide-react';
-import { DICE_COUNT } from '@/lib/gabriels-horn/constants';
+import { DICE_COUNT } from '@features/gabriels-horn/engine/constants';
 import { cn } from '@/lib/utils';
 
 /**

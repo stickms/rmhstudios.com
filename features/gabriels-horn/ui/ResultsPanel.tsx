@@ -10,7 +10,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { Megaphone, Trophy } from 'lucide-react';
-import type { GameResults } from '@/lib/gabriels-horn/net/events';
+import type { GameResults } from '@features/gabriels-horn/engine/net/events';
 import { HornButton, Panel, SeatAvatar } from './ui';
 import { TableReadPanel } from './TableReadPanel';
 

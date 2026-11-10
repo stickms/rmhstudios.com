@@ -23,7 +23,7 @@ import { Link } from '@tanstack/react-router';
 import { BookOpen, Dices, ListOrdered, LogOut, Plus, Users } from 'lucide-react';
 import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import { lobbyReturnPath } from '@/lib/lobby-link';
-import { MAX_PLAYERS, MIN_PLAYERS, MIRROR_NAME } from '@/lib/gabriels-horn/constants';
+import { MAX_PLAYERS, MIN_PLAYERS, MIRROR_NAME } from '@features/gabriels-horn/engine/constants';
 import { HornLeaderboard } from './Leaderboard';
 import { HornButton, Panel } from './ui';
 import { useQuitGame } from '@/hooks/useQuitGame';

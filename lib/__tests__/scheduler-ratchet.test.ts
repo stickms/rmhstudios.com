@@ -116,7 +116,7 @@ const ALLOWED: Readonly<Record<string, { count: number; reason: string }>> = {
   'features/balatro/server/queue.ts': { count: 1, reason: HUB_HOUSEKEEPING },
   'server/socket-server/handlers/controller.ts': { count: 1, reason: HUB_HOUSEKEEPING },
   'features/dream-rift/server/handlers.ts': { count: 1, reason: GAME_TICK },
-  'server/socket-server/handlers/gabriels-horn.ts': { count: 2, reason: GAME_TICK },
+  'features/gabriels-horn/server/handlers.ts': { count: 2, reason: GAME_TICK },
   'server/socket-server/handlers/globeset.ts': { count: 2, reason: GAME_TICK },
   'server/socket-server/handlers/group-call.ts': { count: 1, reason: HUB_HOUSEKEEPING },
   'server/socket-server/handlers/laundry-sort.ts': { count: 3, reason: GAME_TICK },

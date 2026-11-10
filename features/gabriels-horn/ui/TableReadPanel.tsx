@@ -5,13 +5,13 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GameResults } from '@/lib/gabriels-horn/net/events';
+import type { GameResults } from '@features/gabriels-horn/engine/net/events';
 import {
   summarize,
   tableAverage,
   type ReadAcc,
   type ReadSummary,
-} from '@/lib/gabriels-horn/table-read';
+} from '@features/gabriels-horn/engine/table-read';
 import { Panel } from './ui';
 
 type Career = (ReadAcc & { games: number }) | null;

@@ -9,7 +9,7 @@ import {
   diffHouseRules,
   heuristicHouseRules,
   type HouseRules,
-} from '@/lib/gabriels-horn/house-rules';
+} from '@features/gabriels-horn/engine/house-rules';
 
 /**
  * Gabriel's Horn — "change the rules by asking".
@@ -20,7 +20,7 @@ import {
  * ── The two guarantees ─────────────────────────────────────────────────────
  *
  * **It cannot make up a rule.** The model only ever fills in the fixed knob
- * schema in `lib/gabriels-horn/house-rules.ts`, and whatever it returns goes
+ * schema in `features/gabriels-horn/engine/house-rules.ts`, and whatever it returns goes
  * through `clampHouseRules` before anyone sees it. A hallucinated key is
  * dropped; an out-of-range number is pinned; a prompt-injected instruction in
  * the wish (or in the table chat the wish quotes) has no field to express

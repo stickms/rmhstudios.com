@@ -34,12 +34,12 @@
  */
 
 import type { Server, Socket } from 'socket.io';
-import { generateRoomCode, sanitizeString, sanitizeUserName } from '../utils';
-import { checkRateLimit } from '../rate-limit';
-import { logger } from '../logger';
-import { getPrismaClient } from '../prisma-client';
-import { registerPartyGame, verifyPartyTicket, PARTY_ROOM_GRACE_MS } from '../party-contract';
-import type { PartyMember, PartyTicket } from '../party-contract';
+import { generateRoomCode, sanitizeString, sanitizeUserName } from '../../../server/socket-server/utils';
+import { checkRateLimit } from '../../../server/socket-server/rate-limit';
+import { logger } from '../../../server/socket-server/logger';
+import { getPrismaClient } from '../../../server/socket-server/prisma-client';
+import { registerPartyGame, verifyPartyTicket, PARTY_ROOM_GRACE_MS } from '../../../server/socket-server/party-contract';
+import type { PartyMember, PartyTicket } from '../../../server/socket-server/party-contract';
 import {
   CHAT_HISTORY,
   CHAT_MAX_LENGTH,
@@ -56,21 +56,21 @@ import {
   COLOR_EFFECT,
   type Card,
   type Phase,
-} from '../../../lib/gabriels-horn/constants';
-import { buildDeck, shuffle, sortHand } from '../../../lib/gabriels-horn/deck';
+} from '../engine/constants';
+import { buildDeck, shuffle, sortHand } from '../engine/deck';
 import {
   DEFAULT_HOUSE_RULES,
   clampHouseRules,
   diffHouseRules,
   type HouseRules,
-} from '../../../lib/gabriels-horn/house-rules';
+} from '../engine/house-rules';
 import {
   emptyAcc,
   recordCall,
   recordClaim,
   type ReadAcc,
   type TableReadRow,
-} from '../../../lib/gabriels-horn/table-read';
+} from '../engine/table-read';
 import {
   C2S,
   ROOM_PREFIX,
@@ -86,7 +86,7 @@ import {
   type LogKind,
   type PublicLobbyInfo,
   type TablePlayer,
-} from '../../../lib/gabriels-horn/net/events';
+} from '../engine/net/events';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
