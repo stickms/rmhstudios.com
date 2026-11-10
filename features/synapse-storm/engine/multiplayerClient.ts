@@ -6,6 +6,7 @@
 import type { Socket } from 'socket.io-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import type { RealtimeStatus } from '@/lib/shared/realtime/types';
+import { authClient } from '@/lib/auth-client';
 
 export interface SSPlayer {
     id: string;
@@ -143,13 +144,18 @@ export class SynapseStormMultiplayerClient {
             return;
         }
 
-        // No credential is sent today (as before the move to the shared client),
-        // so the hub's soft auth seats every player as a guest.
+        // The session token is what the hub's soft auth seats a signed-in player by;
+        // without it every player was a guest and no match was recorded to an account.
+        // Signed out (or a failed session read) still connects, as a guest.
         this.client = createRealtimeClient({
             name: 'SynapseStorm',
             url: import.meta.env.VITE_SOCKET_URL,
             path: '/socket/',
-            auth: () => ({}),
+            auth: async () => {
+                const session = await authClient.getSession().catch(() => null);
+                const token = session?.data?.session?.token;
+                return token ? { token } : {};
+            },
             onStatus: (status) => {
                 this._connectionStatus = toConnectionStatus(status);
                 this.handlers.onConnectionChange?.(this._connectionStatus);
