@@ -168,14 +168,14 @@ GATE_TEST="eslint-local-rules/design-scope.js"
 # the candidate set narrows to the unambiguously-site directories rather than
 # guessing — a narrower scan misses things the vitest gate still catches; a
 # wider one would block commits on files that are exempt by design.
-SITE_CANDIDATES='^(components/|app/routes/)'
+SITE_CANDIDATES='^(components/|features/[^/]+/ui/|app/routes/)'
 DIRS=$(awk '/const FULLSCREEN_TIER_DIRS/,/\]\);/' "$GATE_TEST" 2>/dev/null |
   grep -oE "^ *'[a-z0-9-]+'" | tr -d " '" | paste -sd'|' -)
 SEGS=$(awk '/const FULLSCREEN_ROUTE_SEGMENTS/,/\]\);/' "$GATE_TEST" 2>/dev/null |
   grep -oE "^ *'[a-z0-9-]+'" | tr -d " '" | paste -sd'|' -)
 if [ -n "$DIRS" ] && [ -n "$SEGS" ]; then
   # Unanchored on purpose: it is matched against the scan's indented output.
-  SITE_EXEMPT="(components/($DIRS)/|app/routes/($SEGS)[/.]|app/routes/login\.tsx)"
+  SITE_EXEMPT="((components|features)/($DIRS)/|app/routes/($SEGS)[/.]|app/routes/login\.tsx)"
 else
   SITE_CANDIDATES='^(components/(ui|feed|site|errors|admin|moderation|developer|security)/|app/routes/_site/)'
   SITE_EXEMPT='__never__'

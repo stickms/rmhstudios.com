@@ -1,6 +1,6 @@
 /**
  * The bot-peer page (PLAN §4 WS14, §6.3 E2E-22): the real multiplayer session runtime
- * (lib/balatro/mp/lobby/runtime.ts, the games-hub client, WebRTC) with a scripted
+ * (features/balatro/engine/mp/lobby/runtime.ts, the games-hub client, WebRTC) with a scripted
  * virtual player in place of the game — no love.wasm, no WebGL — so one machine can
  * fill a lobby of up to 16 with a couple of real browsers and a dozen bots.
  *
@@ -15,19 +15,19 @@
  *
  *   window.__balatroBot = { ui(type, data), state(), sent(type?), outcomes(), setScore(n), stop() }
  */
-import pack from '../../../lib/balatro/game-pack.json';
-import { MP_PROTOCOL_VERSION } from '../../../lib/balatro/net/limits';
-import { createHubClient } from '../../../lib/balatro/mp/hub-client';
-import { webrtcConnector } from '../../../lib/balatro/mp/transport/connector';
-import { realScheduler, type BridgeLike } from '../../../lib/balatro/mp/transport/types';
-import { memoryKv } from '../../../lib/balatro/mp/history';
-import { memorySnapshotStore } from '../../../lib/balatro/mp/rejoin/rejoin-store';
-import { cryptoSeed, cryptoSeedString } from '../../../lib/balatro/mp/rng';
-import { MpRuntime } from '../../../lib/balatro/mp/lobby/runtime';
-import { attach as attachQueue } from '../../../lib/balatro/mp/queue/attach';
-import { attach as attachReplay } from '../../../lib/balatro/mp/replay/attach';
-import type { J2LData, J2LType, L2JData, L2JType } from '../../../lib/balatro/mp/bridge-protocol';
-import type { RefMsg } from '../../../lib/balatro/mp/types';
+import pack from '../../../features/balatro/engine/game-pack.json';
+import { MP_PROTOCOL_VERSION } from '../../../features/balatro/engine/net/limits';
+import { createHubClient } from '../../../features/balatro/engine/mp/hub-client';
+import { webrtcConnector } from '../../../features/balatro/engine/mp/transport/connector';
+import { realScheduler, type BridgeLike } from '../../../features/balatro/engine/mp/transport/types';
+import { memoryKv } from '../../../features/balatro/engine/mp/history';
+import { memorySnapshotStore } from '../../../features/balatro/engine/mp/rejoin/rejoin-store';
+import { cryptoSeed, cryptoSeedString } from '../../../features/balatro/engine/mp/rng';
+import { MpRuntime } from '../../../features/balatro/engine/mp/lobby/runtime';
+import { attach as attachQueue } from '../../../features/balatro/engine/mp/queue/attach';
+import { attach as attachReplay } from '../../../features/balatro/engine/mp/replay/attach';
+import type { J2LData, J2LType, L2JData, L2JType } from '../../../features/balatro/engine/mp/bridge-protocol';
+import type { RefMsg } from '../../../features/balatro/engine/mp/types';
 
 type Handler = (d: unknown) => void;
 
@@ -173,7 +173,7 @@ const runtime = new MpRuntime(
   { intent: 'menu', invite: null },
 );
 
-// The same extensions lib/balatro/mp/index.ts loads (matchmaking/party/invites; replays and
+// The same extensions features/balatro/engine/mp/index.ts loads (matchmaking/party/invites; replays and
 // spectating), so a bot can queue, party up and be watched.
 const detach = [attachQueue(runtime), attachReplay(runtime)];
 

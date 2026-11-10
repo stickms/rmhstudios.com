@@ -2,7 +2,7 @@
  * The engine-spec harness's tiny static server (PLAN §4 WS14: "a static page with
  * no DB/hub that boots core+mp packs from data/balatro-pack").
  *
- * It serves exactly what lib/balatro/runtime.ts fetches, at the paths it fetches
+ * It serves exactly what features/balatro/engine/runtime.ts fetches, at the paths it fetches
  * them from, plus the harness page:
  *
  *   /                          the harness page (HARNESS_HTML)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Builds the Balatro game packs that /balatro downloads, from data/balatro (and
-the multiplayer pack from lib/balatro/lua/mp + data/balatro-mp).
+the multiplayer pack from features/balatro/engine/lua/mp + data/balatro-mp).
 
     pip install fonttools pyoxipng
     python3 -I scripts/balatro/build-game-pack.py            # rebuild every pack + the manifest
@@ -13,15 +13,15 @@ Output (committed; zip names are content-addressed, so they can be cached
 forever). The packs are NOT under public/: /balatro is signed-in only, so they
 are served by app/routes/api/balatro/pack.$file.ts behind the session check.
     data/balatro-pack/core-<sha12>.zip      everything but the audio, plus the web
-                                            platform Lua (PLATFORM_LUA, lib/balatro/lua)
+                                            platform Lua (PLATFORM_LUA, features/balatro/engine/lua)
     data/balatro-pack/audio-<sha12>.zip     resources/sounds
     data/balatro-pack/mp-<sha12>.zip        the multiplayer pack (rmh_mp/**), loaded lazily
     data/balatro-pack/release-<sha12>.zip   the Release ruleset's art (EX-14), an optional pack
                                             fetched only when a lobby picks that ruleset
-    lib/balatro/game-pack.json              {version, core: {file, bytes, sha256}, audio: {…}, mp: {…}, release: {…}}
+    features/balatro/engine/game-pack.json              {version, core: {file, bytes, sha256}, audio: {…}, mp: {…}, release: {…}}
 
 The game boots on the core pack alone. The audio pack follows in the background,
-and lib/balatro/lua/rmh_web.lua starts Balatro's sound thread once it lands, so
+and features/balatro/engine/lua/rmh_web.lua starts Balatro's sound thread once it lands, so
 the first-play download is the core, not all of it. The mp pack is fetched only
 when multiplayer is opened (docs/balatro-mp.md).
 
@@ -48,7 +48,7 @@ the pack is about a fifth of that:
   deflated at level 9, already-compressed OGG and PNG stored.
 
 The mp pack (all under rmh_mp/, extracted to /Balatro/rmh_mp/):
-    rmh_mp/**.lua                 lib/balatro/lua/mp/rmh_mp/** (no *_spec.lua)
+    rmh_mp/**.lua                 features/balatro/engine/lua/mp/rmh_mp/** (no *_spec.lua)
     rmh_mp/assets/{1x,2x}/*.png   data/balatro-mp/{1x,2x}/
     rmh_mp/data/atlases.lua       data/balatro-mp/atlases.json as a Lua table
     rmh_mp/loc/<lang>.lua         generated Lua tables (see build_loc)
@@ -79,10 +79,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / 'data' / 'balatro'
 OUT_DIR = ROOT / 'data' / 'balatro-pack'
-MANIFEST = ROOT / 'lib' / 'balatro' / 'game-pack.json'
+MANIFEST = ROOT / 'features' / 'balatro' / 'engine' / 'game-pack.json'
 MP_DATA = ROOT / 'data' / 'balatro-mp'
-MP_LUA = ROOT / 'lib' / 'balatro' / 'lua' / 'mp' / 'rmh_mp'
-PLATFORM_LUA_DIR = ROOT / 'lib' / 'balatro' / 'lua'
+MP_LUA = ROOT / 'features' / 'balatro' / 'engine' / 'lua' / 'mp' / 'rmh_mp'
+PLATFORM_LUA_DIR = ROOT / 'features' / 'balatro' / 'engine' / 'lua'
 BUDGET = MP_DATA / 'pack-budget.json'
 OPTIONAL_PACKS = ('release',)
 
@@ -109,7 +109,7 @@ BASE_RANGES = [
 # or the build fails, as does a patch whose file is not in the source. The list is
 # data (scripts/balatro/core-patches.json, each entry with its id and why) so the
 # L1 Lua specs load the base game through exactly the same patches
-# (lib/balatro/lua/spec/core_patches.lua). It holds WS6's MP eval-row hook and the
+# (features/balatro/engine/lua/spec/core_patches.lua). It holds WS6's MP eval-row hook and the
 # owner's balance changes (Blue Stake, Blue Seal, Gold Seal) with their text in
 # every shipped language.
 CORE_PATCHES_JSON = Path(__file__).resolve().parent / 'core-patches.json'
@@ -126,7 +126,7 @@ def read_core_patches(path: Path = CORE_PATCHES_JSON) -> list[tuple[str, str, st
 CORE_PATCHES: list[tuple[str, str, str]] = read_core_patches()
 
 # The web platform layer, added to the core pack at these paths under /Balatro
-# (lib/balatro/runtime.ts only prefixes `require "rmh_web";` onto main.lua). It used
+# (features/balatro/engine/runtime.ts only prefixes `require "rmh_web";` onto main.lua). It used
 # to be bundled into the page as `?raw` strings; in the pack it is cached in
 # IndexedDB and SHA-verified with the game, and the single-player route chunk does
 # not carry ~45 KB of Lua. Editing any of these files therefore changes the core

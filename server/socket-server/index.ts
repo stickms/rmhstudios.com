@@ -79,8 +79,7 @@ import {
 import { registerGlobeSetHandlers, handleGlobeSetDisconnect } from './handlers/globeset';
 import { registerTf2GameHandlers, handleTf2GameDisconnect } from './handlers/tf2-game';
 import { registerTf2P2pHandlers, handleTf2P2pDisconnect } from './handlers/tf2-p2p';
-import { registerBalatroP2pHandlers, handleBalatroP2pDisconnect } from './handlers/balatro-p2p';
-import { registerBalatroQueueHandlers, handleBalatroQueueDisconnect } from './handlers/balatro-queue';
+import { registerFeatureHandlers, handleFeatureDisconnects } from './features';
 import { registerHearthworksP2pHandlers, handleHearthworksP2pDisconnect } from './handlers/hearthworks-p2p';
 import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/spaces';
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
@@ -447,10 +446,9 @@ io.on('connection', (socket) => {
   registerTf2GameHandlers(io, socket);
   // TF2 peer-to-peer rooms: signaling (and a capped relay fallback) only — the match runs in the host's browser.
   registerTf2P2pHandlers(io, socket);
-  // Balatro multiplayer: signalling, relay fallback and the seat directory — the lobby runs in the host's browser.
-  registerBalatroP2pHandlers(io, socket);
-  // Balatro matchmaking / party / invites / spectate list.
-  registerBalatroQueueHandlers(io, socket);
+  // Feature-sliced handlers (redesign A1 step 3; features/<id>/server/, listed in ./features.ts):
+  // Balatro multiplayer — signalling, relay fallback, the seat directory, matchmaking/party/invites.
+  registerFeatureHandlers(io, socket);
   // Hearthworks multiplayer: room list, signalling, relay fallback and host migration — the world runs in the host's browser.
   registerHearthworksP2pHandlers(io, socket);
 
@@ -498,8 +496,7 @@ io.on('connection', (socket) => {
     handleGlobeSetDisconnect(io, socket);
     handleTf2GameDisconnect(io, socket);
     handleTf2P2pDisconnect(io, socket);
-    handleBalatroP2pDisconnect(io, socket);
-    handleBalatroQueueDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket);
     handleHearthworksP2pDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);

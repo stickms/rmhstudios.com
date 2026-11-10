@@ -14,7 +14,8 @@
     "jsx": "react-jsx",
     "incremental": true,
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@features/*": ["./features/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", "**/*.mts", "app/routeTree.gen.ts"],

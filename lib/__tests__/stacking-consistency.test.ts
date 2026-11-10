@@ -171,7 +171,7 @@ function escapesTheFrame(src: string): boolean {
   );
 }
 
-const TSX = listSourceFiles(['components', 'app/routes/_site'], ['.tsx']).filter(isSiteTier);
+const TSX = listSourceFiles(['components', 'features', 'app/routes/_site'], ['.tsx']).filter(isSiteTier);
 
 /**
  * Mounted OUTSIDE `.radial-frame`, so their numbers are body-level and real.
@@ -214,7 +214,7 @@ describe('§5.6 — a full-viewport overlay has to leave the frame (R1)', () => 
   it('site-tier stylesheets declare no un-portalled full-viewport overlay', () => {
     // The .tsx scan cannot see a class like `.b3d` or `.lib-upload__overlay`
     // whose geometry lives entirely in CSS.
-    const sheets = listSourceFiles(['components', 'app'], ['.css']).filter(
+    const sheets = listSourceFiles(['components', 'features', 'app'], ['.css']).filter(
       (f) => isSiteTier(f) || f === 'app/globals.css',
     );
     const offenders: string[] = [];
@@ -345,7 +345,7 @@ describe('§5.6 — the shell stacking scale stays one scale (R4)', () => {
   });
 
   it('every --z-* token has a consumer', () => {
-    const corpus = listSourceFiles(['components', 'app', 'lib', 'hooks'], ['.css', '.tsx', '.ts'])
+    const corpus = listSourceFiles(['components', 'app', 'lib', 'hooks', 'features'], ['.css', '.tsx', '.ts'])
       .map((f) => readFileSync(join(ROOT, f), 'utf8'))
       .join('\n');
     const dead = tokens.filter(([name]) => !corpus.includes(`var(${name}`)).map(([n]) => n);
@@ -373,7 +373,7 @@ describe('§5.6 — the shell stacking scale stays one scale (R4)', () => {
   });
 
   it('the scale is declared only in globals.css', () => {
-    const elsewhere = listSourceFiles(['components', 'app'], ['.css'])
+    const elsewhere = listSourceFiles(['components', 'features', 'app'], ['.css'])
       .filter((f) => f !== 'app/globals.css' && !f.startsWith('app/globals/'))
       .filter((f) => /^\s*--z-[a-z-]+:\s*\d+;/m.test(readFileSync(join(ROOT, f), 'utf8')));
     expect(

@@ -47,7 +47,7 @@ const code = (f: string) =>
     .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
 
 // Only the trees that could import it.
-const FILES = ['lib', 'components', 'app', 'hooks', 'stores', 'server'].flatMap((d) =>
+const FILES = ['lib', 'components', 'app', 'hooks', 'stores', 'server', 'features'].flatMap((d) =>
   sources(join(REPO, d)),
 );
 

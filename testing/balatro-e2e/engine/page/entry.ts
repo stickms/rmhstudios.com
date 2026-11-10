@@ -1,12 +1,12 @@
 /**
  * The engine-spec harness page (PLAN §4 WS14, §6.1 "Lua L2 in-engine").
  *
- * Boots the real game exactly as /balatro does — lib/balatro/runtime.ts, the
+ * Boots the real game exactly as /balatro does — features/balatro/engine/runtime.ts, the
  * core pack from data/balatro-pack, love.wasm from public/balatro/engine — with
  * no account, hub or database (cloud saves off). On top it:
  *   1. captures the Emscripten module through a `window.Love` accessor, and adds
  *      one preRun step after the runtime's own: the test driver and the specs
- *      (lib/balatro/lua/mp_test/**) go to /Balatro/rmh_mp_test, the marker
+ *      (features/balatro/engine/lua/mp_test/**) go to /Balatro/rmh_mp_test, the marker
  *      /rmh/test/enabled is written, and main.lua gets
  *      `require "rmh_mp_test.harness"` appended (after its last line, so no line
  *      number moves);
@@ -20,7 +20,7 @@
  *      Release ruleset's art is fetched and mounted exactly as in a lobby.
  * Built by testing/balatro-e2e/lib/build-harness.ts, served by static-server.ts.
  */
-import pack from '../../../../lib/balatro/game-pack.json';
+import pack from '../../../../features/balatro/engine/game-pack.json';
 import {
   bootBalatro,
   loadPack,
@@ -28,10 +28,10 @@ import {
   optionalPackInfo,
   optionalPackMarker,
   unpackPack,
-} from '../../../../lib/balatro/runtime';
-import { createOptionalPacks } from '../../../../lib/balatro/mp/optional-packs';
-import { attachTextInput, TEXT_FILE } from '../../../../lib/balatro/text-input';
-import { extractEntry, readZip } from '../../../../lib/balatro/zip';
+} from '../../../../features/balatro/engine/runtime';
+import { createOptionalPacks } from '../../../../features/balatro/engine/mp/optional-packs';
+import { attachTextInput, TEXT_FILE } from '../../../../features/balatro/engine/text-input';
+import { extractEntry, readZip } from '../../../../features/balatro/engine/zip';
 import luaFiles from 'virtual:balatro-mp-test-lua';
 import {
   CHANNEL,
@@ -102,7 +102,7 @@ let mpFiles: Array<{ path: string; data: Uint8Array }> = [];
 async function loadMpPack(): Promise<void> {
   const info = (pack as Record<string, unknown>).mp as { file?: string } | undefined;
   if (params.get('mp') !== '1') return;
-  if (!info?.file) throw new Error('mp=1 but lib/balatro/game-pack.json has no mp pack yet');
+  if (!info?.file) throw new Error('mp=1 but features/balatro/engine/game-pack.json has no mp pack yet');
   const res = await fetch(`/api/balatro/pack/${info.file}`);
   if (!res.ok) throw new Error(`mp pack HTTP ${res.status}`);
   const zip = readZip(new Uint8Array(await res.arrayBuffer()));
@@ -200,7 +200,7 @@ const optionalPacks = createOptionalPacks({
   mounted: (kind) => !!fs?.analyzePath(optionalPackMarker(kind)).exists,
   fetch: async (kind) => {
     const info = optionalPackInfo(kind);
-    if (!info) throw new Error(`lib/balatro/game-pack.json has no ${kind} pack`);
+    if (!info) throw new Error(`features/balatro/engine/game-pack.json has no ${kind} pack`);
     return unpackPack(await loadPack(kind, info));
   },
   mount: (kind, files) => {
@@ -253,7 +253,7 @@ const drain = () => {
   fresh = [];
   return out;
 };
-/** What Lua published for the phone keyboard (lib/balatro/text-input.ts). */
+/** What Lua published for the phone keyboard (features/balatro/engine/text-input.ts). */
 const text = () =>
   fs && fs.analyzePath(TEXT_FILE).exists ? (fs.readFile(TEXT_FILE, { encoding: 'utf8' }) as string) : null;
 const api = { state, call, drain, text };

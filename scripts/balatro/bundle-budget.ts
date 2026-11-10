@@ -10,21 +10,21 @@
  *       # itself is meant to move (say so in the commit message)
  *
  * What is measured:
- * 1. The single-player route chunk: an esbuild build of components/balatro/BalatroPage.tsx
+ * 1. The single-player route chunk: an esbuild build of features/balatro/ui/BalatroPage.tsx
  *    (shell packages external — SHELL_EXTERNALS —, code splitting, minified, `@/` resolved, CSS ignored) — the
  *    entry chunk plus every chunk it imports statically, gzipped. Its delta vs the
  *    recorded pre-MP baseline must be ≤ 2.5 KB for multiplayer, plus 2.5 KB for the
  *    single-player features added since (680cb73a: render governor and the phone
- *    keyboard — not MP code). No module under lib/balatro/mp/ or
+ *    keyboard — not MP code). No module under features/balatro/engine/mp/ or
  *    lib/shared/p2p/ may be in that static closure (type-only imports vanish).
  * 2. The MP JS chunk: every chunk reachable from the entry only through dynamic
  *    `import()` (the MP toolbar, the pack loader and everything behind them), gzipped
  *    per chunk and summed: ≤ 70 KB; of which lib/shared/p2p ≤ 15 KB (apportioned by
  *    each module's share of its chunk's bytes — an estimate, since gzip is per chunk).
  * 3. The test surface never ships: with VITE_BALATRO_MP_TEST unset, no output
- *    contains `__balatroMp` (lib/balatro/mp/test-hooks.ts must sit behind an
+ *    contains `__balatroMp` (features/balatro/engine/mp/test-hooks.ts must sit behind an
  *    `import.meta.env.VITE_BALATRO_MP_TEST === '1'` dynamic import).
- * 4. Packs (lib/balatro/game-pack.json + data/balatro-pack): core ≤ baseline
+ * 4. Packs (features/balatro/engine/game-pack.json + data/balatro-pack): core ≤ baseline
  *    4 930 572 B + BUDGETS.coreGrowth; mp ≤ BUDGETS.mpPackBytes compressed and ≤ 8 MiB
  *    extracted (from the zip's central directory). The manifest's byte counts must
  *    match the files.
@@ -36,11 +36,16 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { build, type Loader, type Metafile, type Plugin } from 'esbuild';
-import { readZip } from '../../lib/balatro/zip';
+import { readZip } from '../../features/balatro/engine/zip';
 
 export const ROOT = path.resolve(import.meta.dirname, '../..');
 export const BASELINE_FILE = path.join(ROOT, 'scripts/balatro/bundle-budget.json');
-export const ENTRY_REL = 'components/balatro/BalatroPage.tsx';
+export const ENTRY_REL = 'features/balatro/ui/BalatroPage.tsx';
+
+/** The pack builder's budgets (build-game-pack.py reads the same file). */
+const PACK_BUDGET = JSON.parse(
+  readFileSync(path.join(ROOT, 'data/balatro-mp/pack-budget.json'), 'utf8'),
+) as { coreBaselineBytes: number; coreGrowthMaxBytes: number };
 
 const KB = 1024;
 const MB = 1024 * KB;
@@ -49,15 +54,11 @@ export const BUDGETS = {
   spEntryDeltaGzip: (2.5 + 2.5) * KB,
   mpChunksGzip: 70 * KB,
   p2pGzip: 15 * KB,
-  // Raised at merge point M1 (orchestrator): the core grows ~37 KB for the
-  // CJK glyphs each language's MP text needs (folded per language, WS2), and
-  // the kept MP art alone is ~1.25 MB after lossless recompression. These match
-  // data/balatro-mp/pack-budget.json, which the pack builder enforces.
-  // +2 000 B: platform Lua since (signalled mailbox, phone keyboard / smoother frames).
-  // M1b: +16 422 B, exactly the compressed web platform Lua (rmh_web.lua,
-  // rmh/*.lua, rmh_mp_entry.lua) that moved out of the page bundle's `?raw`
-  // imports and into the core pack (build-game-pack.py PLATFORM_LUA).
-  coreGrowth: 40_000 + 16_422 + 2_000,
+  // Read from data/balatro-mp/pack-budget.json, the budget the pack builder enforces, so the
+  // two cannot drift: #1474 raised that file by 2 000 B for the Options → QUIT Lua and this
+  // hand-kept copy stayed at 58 422 B, so every balatro-mp-tests run since failed on a pack the
+  // builder itself accepts. The history of the number lives in that file's $comment.
+  coreGrowth: PACK_BUDGET.coreGrowthMaxBytes,
   mpPackBytes: 1_800_000,
   mpPackExtracted: 8 * MB,
   // EX-14: the optional Release pack (release_jokers.png at 1x + 2x, ~688 KB after lossless
@@ -283,9 +284,9 @@ export interface BundleReport {
 }
 
 const isP2p = (input: string) => input.startsWith('lib/shared/p2p/');
-const isMp = (input: string) => input.startsWith('lib/balatro/mp/');
+const isMp = (input: string) => input.startsWith('features/balatro/engine/mp/');
 const isBalatroSource = (input: string) =>
-  input.startsWith('lib/balatro/') || input.startsWith('components/balatro/') || isP2p(input);
+  input.startsWith('features/balatro/engine/') || input.startsWith('features/balatro/ui/') || isP2p(input);
 
 /** Splits a metafile into the entry's static closure and the dynamically reached rest (pure). */
 export function classifyChunks(
@@ -304,7 +305,7 @@ export function classifyChunks(
   };
   visitStatic(entry);
   // Only the page's own lazy code is the MP budget: a dynamic import() edge is followed when a
-  // Balatro module (lib/balatro/, components/balatro/, lib/shared/p2p/) makes it. The site
+  // Balatro module (features/balatro/engine/, features/balatro/ui/, lib/shared/p2p/) makes it. The site
   // shell's lazy chunks (the per-locale i18n catalogs, …) are not Multiplayer code. A metafile
   // without input data (unit fixtures) follows every edge.
   const ownTargets = new Set<string>();
@@ -596,14 +597,14 @@ async function main(): Promise<number> {
   const argv = process.argv.slice(2);
   const refAt = argv.indexOf('--ref');
   const manifest = JSON.parse(
-    readFileSync(path.join(ROOT, 'lib/balatro/game-pack.json'), 'utf8'),
+    readFileSync(path.join(ROOT, 'features/balatro/engine/game-pack.json'), 'utf8'),
   ) as Record<string, unknown>;
 
   if (argv.includes('--record')) {
     const ref = refAt >= 0 ? argv[refAt + 1] : 'HEAD';
     const sha = execFileSync('git', ['rev-parse', ref], { cwd: ROOT, encoding: 'utf8' }).trim();
     const atRef = await measureBundle({ ref: sha });
-    const refManifest = JSON.parse(gitShow(sha, 'lib/balatro/game-pack.json')) as {
+    const refManifest = JSON.parse(gitShow(sha, 'features/balatro/engine/game-pack.json')) as {
       core: PackInfo;
     };
     const baseline: Baseline = {

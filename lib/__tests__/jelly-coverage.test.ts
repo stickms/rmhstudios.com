@@ -64,7 +64,7 @@ function collectTsx(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-const FILES = ['components', 'app'].flatMap((d) => collectTsx(d)).sort();
+const FILES = ['components', 'features', 'app'].flatMap((d) => collectTsx(d)).sort();
 
 // ── Detection: kept byte-for-byte in step with scripts/codemods/jelly-roles.mjs ──────────────────────────────────
 const CLASS_ATTR =

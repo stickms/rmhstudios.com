@@ -23,7 +23,7 @@ const BASELINE = 376;
 const RAW = /fetch\(\s*['"`]\/api\//g;
 
 function count(): { total: number; top: [string, number][] } {
-  const files = globSync('{app,components,lib,hooks,stores}/**/*.{ts,tsx}', {
+  const files = globSync('{app,components,lib,hooks,stores,features}/**/*.{ts,tsx}', {
     exclude: (f) => /node_modules|__tests__|\.test\.|routeTree\.gen/.test(String(f)),
   });
   let total = 0;
