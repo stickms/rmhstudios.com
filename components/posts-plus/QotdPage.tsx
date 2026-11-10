@@ -1,3 +1,5 @@
+import { useQuery } from '@tanstack/react-query';
+import { qotdArchiveQuery } from '@/lib/posts-plus/qotd.queries';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -46,7 +48,9 @@ function formatDay(dayKey: string, locale?: string): string {
 export function QotdPage({ day }: { day?: string }) {
   const { t, i18n } = useTranslation('f-posts-plus');
   const { data: session } = useSession();
-  const [archive, setArchive] = useState<ArchiveDay[] | null>(null);
+  // Seeded by the route loader. A failed fetch reads as an empty archive, as before.
+  const archiveQ = useQuery({ ...qotdArchiveQuery(), retry: false });
+  const archive: ArchiveDay[] | null = archiveQ.data ? archiveQ.data.days : archiveQ.isError ? [] : null;
   const [page, setPage] = useState<AnswersPage | null>(null);
   const [items, setItems] = useState<FeedItem[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -55,20 +59,6 @@ export function QotdPage({ day }: { day?: string }) {
   const start = useQotdAnswering((s) => s.start);
   const clear = useQotdAnswering((s) => s.clear);
   const composerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    api(getQotdArchiveApi, { retries: 0 })
-      .then((d) => {
-        if (!cancelled) setArchive(d.days);
-      })
-      .catch(() => {
-        if (!cancelled) setArchive([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const today = archive?.[0] ?? null;
   const selected = day && archive ? (archive.find((d) => d.dayKey === day) ?? today) : today;

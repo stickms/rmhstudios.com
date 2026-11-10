@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef } from'react';
+import { useQuery } from '@tanstack/react-query';
+import { fetchJson } from '@/lib/http';
 import { Trophy, Users, Gamepad2, Coins, Hammer, Sparkles, Lock } from'lucide-react';
 import { useTranslation } from'react-i18next';
 import { Spinner } from'@/components/ui/spinner';
@@ -54,28 +55,14 @@ export function AchievementsColumn({
  initialData?: Payload | null;
 }) {
  const { t } = useTranslation('feed');
- // Seed from the loader when provided so the grid paints immediately.
- const seeded = useRef(initialData != null);
- const [data, setData] = useState<Payload | null>(initialData ?? null);
- const [loading, setLoading] = useState(!initialData);
-
- useEffect(() => {
- if (seeded.current) return;
- let active = true;
- (async () => {
- try {
- const res = await fetch(`/api/achievements/${encodeURIComponent(userId)}`, {
- credentials:'include',
+ // The route loader's payload seeds the cache so the grid paints immediately; otherwise
+ // (another tab, another user) it is fetched like any query.
+ const { data, isPending: loading } = useQuery({
+ queryKey: ['achievements', userId],
+ queryFn: () => fetchJson<Payload>(`/api/achievements/${encodeURIComponent(userId)}`),
+ ...(initialData ? { initialData } : {}),
+ staleTime: 15_000,
  });
- if (res.ok && active) setData(await res.json());
- } finally {
- if (active) setLoading(false);
- }
- })();
- return () => {
- active = false;
- };
- }, [userId]);
 
  if (loading) {
  return (

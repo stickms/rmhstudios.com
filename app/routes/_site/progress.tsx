@@ -6,10 +6,20 @@ import { JourneyColumn } from '@/components/feed/JourneyColumn';
 import { useSession } from '@/components/Providers';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from 'react-i18next';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { battlepassQuery, progressSummaryQuery } from '@/lib/progress.queries';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 
 export const Route = createFileRoute('/_site/progress')({
   head: () => ({ meta: [{ title: 'Progress | RMH Studios' }] }),
+  // Signed out the progress fetch fails quietly and the page shows its sign-in prompt.
+  loader: async ({ context }) => {
+    await Promise.all([
+      prefetchRouteQuery(context.queryClient, progressSummaryQuery()),
+      prefetchRouteQuery(context.queryClient, battlepassQuery()),
+    ]);
+    return undefined;
+  },
   component: ProgressPage });
 
 function ProgressPage() {
