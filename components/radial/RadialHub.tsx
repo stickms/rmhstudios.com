@@ -1,6 +1,7 @@
 import {
   Suspense,
   lazy,
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -10,7 +11,8 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { Link, useLocation, useNavigate, useRouter } from '@tanstack/react-router';
+import { Link, useNavigate, useRouter } from '@tanstack/react-router';
+import { usePathname } from './shell-router-state';
 import { LogOut, Settings, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
@@ -142,9 +144,9 @@ function clearHandover(hub: HTMLElement | null): void {
   hub.removeAttribute('data-eversion-swell');
 }
 
-export function RadialHub() {
+export const RadialHub = memo(function RadialHub() {
   const { t } = useTranslation('feed');
-  const { pathname } = useLocation();
+  const pathname = usePathname();
   const navigate = useNavigate();
   const router = useRouter();
   const { data: session } = useSession();
@@ -954,4 +956,4 @@ export function RadialHub() {
       )}
     </div>
   );
-}
+});

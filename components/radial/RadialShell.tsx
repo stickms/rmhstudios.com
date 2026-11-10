@@ -1,13 +1,15 @@
 import {
   Suspense,
   lazy,
+  memo,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
 } from 'react';
-import { Link, useLocation, useRouterState } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { Bell, MessageCircle, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useResolvedUser, useSession } from '@/components/Providers';
@@ -21,6 +23,7 @@ import { RadialNavRail } from './RadialNavRail';
 import { RadialGlobeDock } from './RadialGlobeDock';
 import { RadialLiveRail } from './RadialLiveRail';
 import { RailSlotContext } from './rail-slot';
+import { usePathname, useRenderedHref, useRenderedPathname } from './shell-router-state';
 import type { SceneFeed } from '@/lib/liquid/glass/scene-feed';
 import { settleSoftRender } from '@/lib/low-end';
 import { TabBadge } from '@/components/site/TabBadge';
@@ -118,7 +121,7 @@ const panelIntentProps = {
  * is open (perf audit 2026-10-08; the measured table is above
  * `.radial-backdrop__field` in radial.css).
  */
-function RadialBackdrop() {
+const RadialBackdrop = memo(function RadialBackdrop() {
   return (
     <div className="radial-backdrop" aria-hidden>
       <div className="radial-backdrop__rings">
@@ -137,7 +140,7 @@ function RadialBackdrop() {
       </div>
     </div>
   );
-}
+});
 
 type QuickPanelId = 'notifications' | 'messages' | 'profile';
 
@@ -150,11 +153,11 @@ type QuickPanelId = 'notifications' | 'messages' | 'profile';
  * a footer link through to the full route, so nothing is hidden behind the
  * preview — it just saves a navigation for the common case.
  */
-function RadialTopBar() {
+const RadialTopBar = memo(function RadialTopBar() {
   const { t } = useTranslation('feed');
   const { data: session, isPending: sessionUnknown } = useSession();
   const { resolved } = useResolvedUser();
-  const { pathname } = useLocation();
+  const pathname = usePathname();
   const signedIn = Boolean(session);
 
   const [panel, setPanel] = useState<QuickPanelId | null>(null);
@@ -323,7 +326,7 @@ function RadialTopBar() {
       </div>
     </header>
   );
-}
+});
 
 interface RadialShellProps {
   children: ReactNode;
@@ -357,12 +360,8 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
   // visible feed and jolted it 14px for a frame on every switch away from Home
   // (docs/archive/2026/ui-perf-audit-2026-10-09.md, SLOW-3). `resolvedLocation` moves with
   // the commit; it is unset only before the first resolve, where the two agree.
-  const renderedPathname = useRouterState({
-    select: (s) => (s.resolvedLocation ?? s.location).pathname,
-  });
-  const renderedHref = useRouterState({
-    select: (s) => (s.resolvedLocation ?? s.location).href,
-  });
+  const renderedPathname = useRenderedPathname();
+  const renderedHref = useRenderedHref();
   const isHome = renderedPathname === '/';
   const layout = shellLayoutFor(renderedPathname);
   const shellRef = useRef<HTMLDivElement | null>(null);
@@ -426,6 +425,8 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
 
   const [railSlot, setRailSlot] = useState<HTMLElement | null>(null);
   const railSlotRef = useRef<HTMLDivElement | null>(null);
+  // Stable element identity: the rail is memoised, and a fresh `children` element per render would defeat it.
+  const railSlotNode = useMemo(() => <div ref={railSlotRef} className="rad-rail__page-slot" />, []);
 
   // Each committed page: finish the one-shot entrance animations it just mounted with (title rise, card rises, feed
   // item enters) so they never paint, leaving only the shared quick swap (globals.css, `page-swap-in`), and end the
@@ -491,9 +492,7 @@ export function RadialShell({ children, overlays }: RadialShellProps) {
             {children}
           </main>
 
-          <RadialLiveRail>
-            <div ref={railSlotRef} className="rad-rail__page-slot" />
-          </RadialLiveRail>
+          <RadialLiveRail>{railSlotNode}</RadialLiveRail>
         </div>
       </RailSlotContext.Provider>
 
