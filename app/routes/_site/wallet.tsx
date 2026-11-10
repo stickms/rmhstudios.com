@@ -12,6 +12,8 @@ import { useCallback } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { definePage } from '@/lib/route/define-page';
 import { WalletPage } from '@/components/economy-plus/WalletPage';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { walletBalanceQuery } from '@/lib/economy/wallet.queries';
 import { WALLET_TABS, type WalletTab } from '@/lib/economy/wallet-tabs';
 
 export const Route = createFileRoute('/_site/wallet')({
@@ -23,6 +25,9 @@ export const Route = createFileRoute('/_site/wallet')({
   validateSearch: (search: Record<string, unknown>): { tab?: WalletTab } => ({
     ...(WALLET_TABS.includes(search.tab as WalletTab) ? { tab: search.tab as WalletTab } : {}),
   }),
+  // The balance is seeded here (SSR + intent preload); signed out, the fetch fails quietly and
+  // the page shows its sign-in prompt as before.
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, walletBalanceQuery()),
   component: Wallet,
 });
 

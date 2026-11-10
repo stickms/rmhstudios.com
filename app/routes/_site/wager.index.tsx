@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Swords, Plus } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -12,6 +13,8 @@ import { useSession } from '@/components/Providers';
 import { WagerCard } from '@/components/wager/WagerCard';
 import { CreateWagerDialog } from '@/components/wager/CreateWagerDialog';
 import type { SerializedWager } from '@/lib/wager/wager.server';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { wagersQuery } from '@/lib/wager/wager.queries';
 
 export const Route = createFileRoute('/_site/wager/')({
   head: () => ({
@@ -22,6 +25,8 @@ export const Route = createFileRoute('/_site/wager/')({
     }),
     links: [buildCanonical('/wager')],
   }),
+  // The open tab is public and fetched here (SSR + intent preload); "mine" loads on demand.
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, wagersQuery('open')),
   component: WagerPage,
 });
 
@@ -30,27 +35,15 @@ function WagerPage() {
   const { data: session } = useSession();
   const viewerId = session?.user?.id ?? null;
   const [tab, setTab] = useState<'open' | 'mine'>('open');
-  const [wagers, setWagers] = useState<SerializedWager[]>([]);
-  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/wager?filter=${tab}`);
-      const data = await res.json().catch(() => ({ wagers: [] }));
-      setWagers(res.ok ? (data.wagers ?? []) : []);
-    } finally {
-      setLoading(false);
-    }
-  }, [tab]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const queryClient = useQueryClient();
+  const listOptions = wagersQuery(tab);
+  const list = useQuery({ ...listOptions, retry: false });
+  const loading = list.isPending;
+  const wagers = list.data ?? [];
 
   const onCardChange = (id: string) => (next: SerializedWager | null) => {
-    setWagers((prev) =>
+    queryClient.setQueryData<SerializedWager[]>(listOptions.queryKey, (prev = []) =>
       next ? prev.map((w) => (w.id === id ? next : w)) : prev.filter((w) => w.id !== id),
     );
   };
@@ -122,9 +115,9 @@ function WagerPage() {
         <CreateWagerDialog
           open={creating}
           onClose={() => setCreating(false)}
-          onCreated={(w) => {
+          onCreated={() => {
             setTab('mine');
-            setWagers((prev) => [w, ...prev]);
+            void queryClient.invalidateQueries({ queryKey: wagersQuery('mine').queryKey });
           }}
         />
       )}

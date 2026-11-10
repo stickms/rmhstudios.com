@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import { placePlinkoBetApi } from '@/lib/coins.contract';
 import { prisma } from '@/lib/prisma.server';
 import { creditCoins, debitCoins, getBalance } from '@/lib/economy/ledger.server';
 import { betSchema } from '@/lib/coins-schema';
@@ -9,26 +9,17 @@ import { simulatePlinko } from '@/lib/plinko';
 export const Route = createFileRoute('/api/coins/bet')({
   server: {
     handlers: {
-      POST: defineHandler(
-        { auth: 'none', rateLimit: { limit: 300, windowMs: 60_000, prefix: 'coins-bet' } },
-        async ({ request }) => {
+      POST: implement(
+        placePlinkoBetApi,
+        {
+          rateLimit: { limit: 300, windowMs: 60_000, prefix: 'coins-bet' },
+          body: betSchema,
+          // The old route answered with the first zod issue's own message.
+          verboseValidationErrors: true,
+        },
+        async ({ userId, body }) => {
           try {
-            const session = await auth.api.getSession({ headers: request.headers });
-            if (!session?.user?.id) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-
-            const body = await request.json();
-            const parsed = betSchema.safeParse(body);
-            if (!parsed.success) {
-              return Response.json(
-                { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-                { status: 400 },
-              );
-            }
-
-            const { bin, amount } = parsed.data;
-            const userId = session.user.id;
+            const { bin, amount } = body;
 
             const seed = (Date.now() ^ ((Math.random() * 0xffffffff) >>> 0)) >>> 0;
             const plinkoResult = simulatePlinko(seed);
@@ -75,8 +66,7 @@ export const Route = createFileRoute('/api/coins/bet')({
             if (error instanceof Error && error.message === 'INSUFFICIENT_COINS') {
               return Response.json({ error: 'Insufficient coins' }, { status: 400 });
             }
-            console.error('Coins bet error:', error);
-            return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+            throw error;
           }
         },
       ),

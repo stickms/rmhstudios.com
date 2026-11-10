@@ -18,6 +18,9 @@ import { Input } from '@/components/ui/input';
 import { useSession } from '@/components/Providers';
 import { propertyTypeLabel } from '@/lib/homes/format';
 import type { SearchCenter, SearchFilters, WatchInput } from '@/lib/homes/types';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createHomeWatchApi } from '@/lib/homes/homes.contract';
 
 interface WatchButtonProps {
   filters: SearchFilters;
@@ -80,18 +83,12 @@ export function WatchButton({ filters, center }: WatchButtonProps) {
         minBaths: filters.minBaths ?? null,
         petsRequired: Boolean(filters.petsAllowed),
       };
-      const res = await fetch('/api/homes/watches', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Could not create alert');
+      await api(createHomeWatchApi, { body: input });
       toast.success('Alert created — we’ll notify you on new matches');
       setOpen(false);
       setLabel('');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not create alert');
+      toast.error(serverError(err) ?? 'Could not create alert');
     } finally {
       setSaving(false);
     }

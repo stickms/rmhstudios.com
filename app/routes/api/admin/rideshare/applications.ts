@@ -1,62 +1,63 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/rideshare/rideshare.contract';
+import { adminApplicationsQuery, adminDecisionBody } from '@/lib/rideshare/rideshare-schema';
 import { prisma } from '@/lib/prisma.server';
-
-const decisionSchema = z.object({
-  id: z.string().min(1),
-  action: z.enum(['approve', 'reject']),
-  rejectionReason: z.string().trim().max(500).optional(),
-});
 
 export const Route = createFileRoute('/api/admin/rideshare/applications')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'admin' }, async ({ request }) => {
-        const statusParam = new URL(request.url).searchParams.get('status') ?? 'PENDING';
-        const status = ['PENDING', 'APPROVED', 'REJECTED'].includes(statusParam)
-          ? (statusParam as 'PENDING' | 'APPROVED' | 'REJECTED')
-          : 'PENDING';
+      GET: implement(
+        C.adminListDriverApplicationsApi,
+        { auth: 'admin', query: adminApplicationsQuery },
+        async ({ request }) => {
+          const statusParam = new URL(request.url).searchParams.get('status') ?? 'PENDING';
+          const status = ['PENDING', 'APPROVED', 'REJECTED'].includes(statusParam)
+            ? (statusParam as 'PENDING' | 'APPROVED' | 'REJECTED')
+            : 'PENDING';
 
-        const drivers = await prisma.rideshareDriver.findMany({
-          where: { status },
-          orderBy: { createdAt: status === 'PENDING' ? 'asc' : 'desc' },
-          take: 100,
-          include: {
-            user: { select: { id: true, name: true, handle: true, image: true, email: true } },
-          },
-        });
+          const drivers = await prisma.rideshareDriver.findMany({
+            where: { status },
+            orderBy: { createdAt: status === 'PENDING' ? 'asc' : 'desc' },
+            take: 100,
+            include: {
+              user: { select: { id: true, name: true, handle: true, image: true, email: true } },
+            },
+          });
 
-        const items = drivers.map((d) => ({
-          id: d.id,
-          status: d.status,
-          user: d.user,
-          vehicleMake: d.vehicleMake,
-          vehicleModel: d.vehicleModel,
-          vehicleYear: d.vehicleYear,
-          vehicleColor: d.vehicleColor,
-          licensePlate: d.licensePlate,
-          vehicleClass: d.vehicleClass,
-          seats: d.seats,
-          licenseNumber: d.licenseNumber,
-          rejectionReason: d.rejectionReason,
-          createdAt: d.createdAt,
-          reviewedAt: d.reviewedAt,
-        }));
+          const items = drivers.map((d) => ({
+            id: d.id,
+            status: d.status,
+            user: d.user,
+            vehicleMake: d.vehicleMake,
+            vehicleModel: d.vehicleModel,
+            vehicleYear: d.vehicleYear,
+            vehicleColor: d.vehicleColor,
+            licensePlate: d.licensePlate,
+            vehicleClass: d.vehicleClass,
+            seats: d.seats,
+            licenseNumber: d.licenseNumber,
+            rejectionReason: d.rejectionReason,
+            createdAt: d.createdAt,
+            reviewedAt: d.reviewedAt,
+          }));
 
-        return Response.json({ items });
-      }),
+          return Response.json({ items });
+        },
+      ),
 
-      PATCH: defineHandler(
-        { auth: 'admin', rateLimit: { policy: 'write', scope: 'user' } },
-        async ({ request, session }) => {
+      PATCH: implement(
+        C.adminDecideDriverApplicationApi,
+        {
+          auth: 'admin',
+          rateLimit: { policy: 'write', scope: 'user' },
+          body: adminDecisionBody,
+          invalid: () => Response.json({ error: 'Invalid request' }, { status: 400 }),
+        },
+        async ({ session, body }) => {
           const adminId = session.user.id;
 
-          const parsed = decisionSchema.safeParse(await request.json());
-          if (!parsed.success) {
-            return Response.json({ error: 'Invalid request' }, { status: 400 });
-          }
-          const { id, action, rejectionReason } = parsed.data;
+          const { id, action, rejectionReason } = body;
 
           const driver = await prisma.rideshareDriver.findUnique({ where: { id } });
           if (!driver) {

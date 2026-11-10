@@ -10,7 +10,7 @@ import type { GameState } from './GameTypes';
 import { serializeGameState, deserializeGameState } from './serialization';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
-import { loadSignalForgeRunApi } from './signal-forge.contract';
+import { abandonSignalForgeRunApi, loadSignalForgeRunApi } from './signal-forge.contract';
 
 /** Save the current game state to the server. */
 export async function saveRunToServer(state: GameState): Promise<boolean> {
@@ -31,7 +31,10 @@ export async function saveRunToServer(state: GameState): Promise<boolean> {
 /** Clear (abandon) the saved run on the server. */
 export async function clearSavedRunOnServer(): Promise<boolean> {
   try {
-    await fetch('/api/signal-forge/abandon', { method: 'POST' });
+    // Any answer from the server (even a refusal) counted as cleared; only a transport failure did not.
+    await api(abandonSignalForgeRunApi).catch((e: unknown) => {
+      if (!(e instanceof HttpError)) throw e;
+    });
     return true;
   } catch (e) {
     console.error('Failed to clear save:', e);

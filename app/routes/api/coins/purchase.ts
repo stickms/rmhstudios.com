@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { debitCoins, getBalance } from '@/lib/economy/ledger.server';
 import { purchaseSchema } from '@/lib/coins-schema';
@@ -11,26 +10,16 @@ export const Route = createFileRoute('/api/coins/purchase')({
   server: {
     handlers: {
       POST: defineHandler(
-        { auth: 'none', rateLimit: { limit: 5, windowMs: 60_000, prefix: 'coins-purchase' } },
-        async ({ request }) => {
+        {
+          rateLimit: { limit: 5, windowMs: 60_000, prefix: 'coins-purchase' },
+          body: purchaseSchema,
+          // The old route answered with the first zod issue's own message.
+          verboseValidationErrors: true,
+        },
+        async ({ userId, body }) => {
           try {
-            const session = await auth.api.getSession({ headers: request.headers });
-            if (!session?.user?.id) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-
-            const body = await request.json();
-            const parsed = purchaseSchema.safeParse(body);
-            if (!parsed.success) {
-              return Response.json(
-                { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-                { status: 400 },
-              );
-            }
-
-            const { item } = parsed.data;
+            const { item } = body;
             const price = PRICES[item];
-            const userId = session.user.id;
 
             const result = await prisma.$transaction(async (tx) => {
               await tx.userProfile.upsert({
@@ -82,8 +71,7 @@ export const Route = createFileRoute('/api/coins/purchase')({
                 return Response.json({ error: 'You already own this item' }, { status: 409 });
               }
             }
-            console.error('Coins purchase error:', error);
-            return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+            throw error;
           }
         },
       ),

@@ -8,9 +8,9 @@ import {
   useCallback,
   useMemo,
 } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { setSharedQueryClient } from '@/lib/query-client-ref';
-import { useLocation, useRouterState } from '@tanstack/react-router';
+import { useLocation, useRouter, useRouterState } from '@tanstack/react-router';
 import { MotionConfig, LazyMotion } from 'framer-motion';
 import { Toaster } from 'sonner';
 import { authClient } from '@/lib/auth-client';
@@ -80,42 +80,14 @@ import { recoverViewTransition } from '@/lib/view-transition';
 import { AppTierContext } from '@/components/ui/app-tier-context';
 import { installScrollbarReveal } from '@/lib/scrollbar-reveal';
 import { installSwapReveal } from '@/lib/swap-reveal';
-import { HttpError, isRetryable, maxRetries, retryDelayMs } from '@/lib/http';
+import { HttpError } from '@/lib/http';
 import {
   getAppearancePrefsApi,
   setAppearancePrefsApi,
 } from '@/lib/preferences/preferences.contract';
 import { api } from '@/lib/contract/client';
+import { claimReferralApi } from '@/lib/referrals.contract';
 import { getMyProfileDisplayApi } from '@/lib/profile/profile-extras.contract';
-
-// perf audit §4.3: build the QueryClient PER component instance (via useState
-// below), not once at module scope. A module-scope client is shared by every
-// concurrent SSR request on the server — it accumulates entries (gcTime holds
-// them 10 min) across all users and is a latent cross-request cache-bleed
-// hazard. useState(() => makeQueryClient()) gives a fresh client per server
-// request while staying stable across client re-renders (the standard TanStack
-// SSR pattern).
-function makeQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 60_000, // 1 minute — serve cached data before refetching
-        gcTime: 10 * 60_000, // keep unused data 10 min so back-nav doesn't refetch
-        // Retry only what retrying can fix — a dropped connection, a timeout, a
-        // 429 or a 5xx — never a 4xx the user needs to see now. One more attempt
-        // on a 2G-class link, exponential backoff with jitter, and a server's
-        // Retry-After honoured (lib/http). Offline, React Query's default
-        // `networkMode: 'online'` pauses queries and resumes them on reconnect.
-        retry: (failureCount, error) => failureCount < maxRetries() && isRetryable(error),
-        retryDelay: (attempt, error) => retryDelayMs(attempt, error),
-        // Slow-WiFi friendly: don't re-hit the network just because the user
-        // tab-switched. Reconnects still revalidate stale data.
-        refetchOnWindowFocus: false,
-        refetchOnReconnect: true,
-      },
-    },
-  });
-}
 
 /* ------------------------------------------------------------------ */
 /*  Session context – single useSession() call shared across the app  */
@@ -294,8 +266,9 @@ export function Providers({
   locale = 'en',
   i18nResources = null,
 }: ProvidersProps) {
-  // Per-request/per-mount QueryClient (perf audit §4.3) — see makeQueryClient.
-  const [queryClient] = useState(makeQueryClient);
+  // The router's QueryClient (lib/query/make-query-client.ts): built once per SSR request and once
+  // per page load in getRouter(), so route loaders seed the same cache the components read.
+  const queryClient = useRouter().options.context.queryClient;
   // Lets the globe eversion's AFTER readiness gate ask whether the destination still has queries
   // loading (lib/query-client-ref.ts: a variable and a type, nothing to bundle).
   useEffect(() => {
@@ -497,16 +470,19 @@ export function Providers({
       return;
     }
     if (!code) return;
-    fetch('/api/referrals/claim', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ code }),
-    })
-      .then((res) => {
-        if (res.status !== 429) localStorage.removeItem('rmh-ref');
-      })
-      .catch(() => {});
+    api(claimReferralApi, { body: { code } })
+      .then(() => localStorage.removeItem('rmh-ref'))
+      .catch((err: unknown) => {
+        // Any answer but 429 settles the code (claimed, already claimed, invalid);
+        // a dropped connection or a 429 keeps it for the next load.
+        if (err instanceof HttpError && err.status !== 429) {
+          try {
+            localStorage.removeItem('rmh-ref');
+          } catch {
+            /* storage unavailable */
+          }
+        }
+      });
   }, [userId]);
 
   // A 404 the ROOT renders is a site page whatever its URL: `NotFound` is drawn

@@ -12,6 +12,7 @@ import { Reveal } from'@/components/motion';
 import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
+import { reviewCardApi } from '@/lib/study/decks.contract';
 import {
  addDeckCardApi,
  deckReviewQueueApi,
@@ -143,11 +144,9 @@ export function DeckStudyColumn({
  reviewBusyRef.current = true;
  setReviewBusy(true);
  try {
- await fetch(`/api/study/cards/${card.id}/review`, {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ grade: g }),
+ // A refused grade (non-2xx) never interrupted the session; keep that.
+ await api(reviewCardApi, { params: { id: card.id }, body: { grade: g } }).catch((e: unknown) => {
+ if (!(e instanceof HttpError)) throw e;
  });
  if (session !== reviewSession.current) return;
  if (idx + 1 >= queue.length) {

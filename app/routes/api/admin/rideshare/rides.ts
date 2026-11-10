@@ -7,7 +7,9 @@
  * and the pickup/drop-off labels.
  */
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/rideshare/rideshare.contract';
+import { adminRidesQuery } from '@/lib/rideshare/rideshare-schema';
 import { prisma } from '@/lib/prisma.server';
 import type { Prisma } from '@prisma/client';
 
@@ -41,34 +43,38 @@ const rideSelect = {
 export const Route = createFileRoute('/api/admin/rideshare/rides')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'admin' }, async ({ request }) => {
-        const params = new URL(request.url).searchParams;
-        const statusParam = params.get('status');
-        const q = params.get('q')?.trim();
+      GET: implement(
+        C.adminListRidesApi,
+        { auth: 'admin', query: adminRidesQuery },
+        async ({ request }) => {
+          const params = new URL(request.url).searchParams;
+          const statusParam = params.get('status');
+          const q = params.get('q')?.trim();
 
-        const where: Prisma.RideWhereInput = {};
-        if (statusParam && (STATUSES as readonly string[]).includes(statusParam)) {
-          where.status = statusParam as (typeof STATUSES)[number];
-        }
-        if (q) {
-          where.OR = [
-            { pickupLabel: { contains: q, mode: 'insensitive' } },
-            { dropoffLabel: { contains: q, mode: 'insensitive' } },
-            { rider: { name: { contains: q, mode: 'insensitive' } } },
-            { rider: { handle: { contains: q, mode: 'insensitive' } } },
-            { driver: { name: { contains: q, mode: 'insensitive' } } },
-          ];
-        }
+          const where: Prisma.RideWhereInput = {};
+          if (statusParam && (STATUSES as readonly string[]).includes(statusParam)) {
+            where.status = statusParam as (typeof STATUSES)[number];
+          }
+          if (q) {
+            where.OR = [
+              { pickupLabel: { contains: q, mode: 'insensitive' } },
+              { dropoffLabel: { contains: q, mode: 'insensitive' } },
+              { rider: { name: { contains: q, mode: 'insensitive' } } },
+              { rider: { handle: { contains: q, mode: 'insensitive' } } },
+              { driver: { name: { contains: q, mode: 'insensitive' } } },
+            ];
+          }
 
-        const rides = await prisma.ride.findMany({
-          where,
-          orderBy: { requestedAt: 'desc' },
-          take: 100,
-          select: rideSelect,
-        });
+          const rides = await prisma.ride.findMany({
+            where,
+            orderBy: { requestedAt: 'desc' },
+            take: 100,
+            select: rideSelect,
+          });
 
-        return Response.json({ rides });
-      }),
+          return Response.json({ rides });
+        },
+      ),
     },
   },
 });

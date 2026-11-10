@@ -37,7 +37,14 @@ import { estimateFareCents, formatDistance, formatUsd, type RidePlace } from '@/
 import { RIDE_CLASSES, rideClassName, type RideClassId } from '@/lib/rideshare/classes';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { api } from '@/lib/contract/client';
-import { listSavedPlacesApi } from '@/lib/rideshare/rideshare.contract';
+import { HttpError, serverError } from '@/lib/http';
+import {
+  createRideApi,
+  listRidesApi,
+  listSavedPlacesApi,
+  rideActionApi,
+  rideDirectionsApi,
+} from '@/lib/rideshare/rideshare.contract';
 
 export const Route = createFileRoute('/_site/rideshare/ride')({
   head: () => ({ meta: [{ title: 'Request a ride — RMH Rideshare' }] }),
@@ -115,11 +122,10 @@ function RequestRidePage() {
 
   const loadRides = useCallback(async () => {
     try {
-      const res = await fetch('/api/rideshare/rides?scope=mine');
-      if (res.ok) {
-        const data = await res.json();
-        setRides(data.rides ?? []);
-      }
+      const data = await api(listRidesApi, { query: { scope: 'mine' }, retries: 0 });
+      setRides(data.rides ?? []);
+    } catch {
+      /* a failed load leaves the list as it was */
     } finally {
       setLoadingRides(false);
     }
@@ -168,8 +174,11 @@ function RequestRidePage() {
       toLat: String(dropoff.lat),
       toLng: String(dropoff.lng),
     });
-    fetch(`/api/rideshare/directions?${params}`, { signal: abort.signal })
-      .then((r) => r.json())
+    api(rideDirectionsApi, {
+      query: Object.fromEntries(params),
+      signal: abort.signal,
+      retries: 0,
+    })
       .then((data) => {
         if (cancelled) return;
         if (typeof data.distanceMeters === 'number') {
@@ -225,10 +234,8 @@ function RequestRidePage() {
     }
     setSubmitting(true);
     try {
-      const res = await fetch('/api/rideshare/rides', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await api(createRideApi, {
+        body: {
           rideClass,
           pickupLabel: pickup.label,
           pickupLat: pickup.lat,
@@ -239,15 +246,8 @@ function RequestRidePage() {
           notes: notes.trim() || undefined,
           scheduledFor:
             scheduleMode && scheduledFor ? new Date(scheduledFor).toISOString() : undefined,
-        }),
+        },
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(
-          data.error || t('error-request-failed', { defaultValue: 'Could not request your ride.' }),
-        );
-        return;
-      }
       toast.success(
         scheduleMode
           ? t('success-ride-scheduled', {
@@ -264,25 +264,26 @@ function RequestRidePage() {
       setScheduleMode(false);
       setScheduledFor('');
       loadRides();
-    } catch {
-      toast.error(t('error-generic', { defaultValue: 'Something went wrong. Please try again.' }));
+    } catch (e) {
+      if (e instanceof HttpError) {
+        toast.error(
+          serverError(e) || t('error-request-failed', { defaultValue: 'Could not request your ride.' }),
+        );
+      } else {
+        toast.error(t('error-generic', { defaultValue: 'Something went wrong. Please try again.' }));
+      }
     } finally {
       setSubmitting(false);
     }
   }
 
   async function cancelScheduled(id: string) {
-    const res = await fetch(`/api/rideshare/rides/${id}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'cancel' }),
-    });
-    if (res.ok) {
+    try {
+      await api(rideActionApi, { params: { id }, body: { action: 'cancel' } });
       toast.success(t('success-ride-cancelled', { defaultValue: 'Scheduled ride cancelled.' }));
       loadRides();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      toast.error(data.error || t('error-cancel-failed', { defaultValue: 'Could not cancel.' }));
+    } catch (e) {
+      toast.error(serverError(e) || t('error-cancel-failed', { defaultValue: 'Could not cancel.' }));
     }
   }
 

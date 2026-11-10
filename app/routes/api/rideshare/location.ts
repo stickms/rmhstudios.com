@@ -1,14 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/rideshare/rideshare.contract';
+import { driverLocationBody } from '@/lib/rideshare/rideshare-schema';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { isValidLatLng } from '@/lib/rideshare/geo';
-
-const locationSchema = z.object({
-  lat: z.number(),
-  lng: z.number(),
-});
 
 /**
  * Driver location heartbeat. Approved drivers post their position while on an
@@ -17,38 +13,44 @@ const locationSchema = z.object({
 export const Route = createFileRoute('/api/rideshare/location')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ request, session }) => {
-        const userId = session.user.id;
+      POST: implement(
+        C.shareDriverLocationApi,
+        {
+          body: driverLocationBody,
+          invalid: () => Response.json({ error: 'Invalid coordinates' }, { status: 400 }),
+        },
+        async ({ request, session, body }) => {
+          const userId = session.user.id;
 
-        const ip = getClientIp(request);
-        const { allowed } = rateLimit(ip, {
-          limit: 20,
-          windowMs: 60_000,
-          prefix: 'rideshare-location',
-        });
-        if (!allowed) {
-          return Response.json({ ok: true, throttled: true });
-        }
+          const ip = getClientIp(request);
+          const { allowed } = rateLimit(ip, {
+            limit: 20,
+            windowMs: 60_000,
+            prefix: 'rideshare-location',
+          });
+          if (!allowed) {
+            return Response.json({ ok: true, throttled: true });
+          }
 
-        const parsed = locationSchema.safeParse(await request.json());
-        if (!parsed.success || !isValidLatLng(parsed.data)) {
-          return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
-        }
+          if (!isValidLatLng(body)) {
+            return Response.json({ error: 'Invalid coordinates' }, { status: 400 });
+          }
 
-        const result = await prisma.rideshareDriver.updateMany({
-          where: { userId, status: 'APPROVED' },
-          data: {
-            lastLat: parsed.data.lat,
-            lastLng: parsed.data.lng,
-            locationUpdatedAt: new Date(),
-          },
-        });
-        if (result.count === 0) {
-          return Response.json({ error: 'Not an approved driver.' }, { status: 403 });
-        }
+          const result = await prisma.rideshareDriver.updateMany({
+            where: { userId, status: 'APPROVED' },
+            data: {
+              lastLat: body.lat,
+              lastLng: body.lng,
+              locationUpdatedAt: new Date(),
+            },
+          });
+          if (result.count === 0) {
+            return Response.json({ error: 'Not an approved driver.' }, { status: 403 });
+          }
 
-        return Response.json({ ok: true });
-      }),
+          return Response.json({ ok: true });
+        },
+      ),
     },
   },
 });

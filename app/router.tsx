@@ -1,4 +1,6 @@
 import { createRouter as createTanStackRouter } from '@tanstack/react-router';
+import { dehydrate, hydrate, type DehydratedState } from '@tanstack/react-query';
+import { makeQueryClient } from '@/lib/query/make-query-client';
 import { routeTree } from './routeTree.gen';
 import { RoutePending } from '@/components/ui/RoutePending';
 import { installNotFoundHeadGuard } from '@/lib/router/not-found-head';
@@ -32,8 +34,20 @@ let historyTrailInstalled = false;
 
 export function getRouter() {
   const nonce = cspNonce();
+  // One QueryClient per router: getRouter() runs per SSR request (so a request never
+  // sees another's cache) and once per page load in the browser. Loaders seed it; the
+  // router carries it across the wire (dehydrate/hydrate below).
+  const queryClient = makeQueryClient();
   const router = createTanStackRouter({
     routeTree,
+    context: { queryClient },
+    // `as never`: Start's serializability check reads `mutationKey: unknown[]` as possibly
+    // unserializable. Query and mutation keys here are plain JSON arrays, and only queries are
+    // dehydrated (paused mutations never exist during SSR), so the wire value is plain data.
+    dehydrate: () => ({ queryState: dehydrate(queryClient) as never }),
+    hydrate: (dehydrated: { queryState: DehydratedState }) => {
+      hydrate(queryClient, dehydrated.queryState);
+    },
     ...(nonce ? { ssr: { nonce } } : {}),
     scrollRestoration: true,
     // Jump, don't animate. globals.css sets `html { scroll-behavior: smooth }`

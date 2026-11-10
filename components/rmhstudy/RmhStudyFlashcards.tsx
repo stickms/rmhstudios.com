@@ -15,6 +15,8 @@ import { useTranslation } from 'react-i18next';
 import { Layers, Loader2, ArrowLeft, ExternalLink, RotateCw } from 'lucide-react';
 import { toast } from '@/lib/rmhstudy/toast-store';
 import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { reviewCardApi } from '@/lib/study/decks.contract';
 import { deckReviewQueueApi, listDecksApi } from '@/lib/study/decks.contract';
 
 interface DeckRow {
@@ -110,11 +112,9 @@ export default function RmhStudyFlashcards() {
     setGrading(true);
     setGrades((prev) => [...prev, g]);
     try {
-      await fetch(`/api/study/cards/${card.id}/review`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ grade: g }),
+      // A refused grade (non-2xx) never interrupted the session; keep that.
+      await api(reviewCardApi, { params: { id: card.id }, body: { grade: g } }).catch((e: unknown) => {
+        if (!(e instanceof HttpError)) throw e;
       });
     } catch {
       /* keep going — the card stays in this local session */

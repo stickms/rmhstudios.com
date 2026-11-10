@@ -14,55 +14,42 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import { submitSynapseStormScoreApi } from '@/lib/game/score.contract';
+import { synapseStormScoreBody } from '@/lib/synapse-storm/score-schema';
 import { submitGameScore } from '@/lib/game/submit.server';
-
-const scoreSchema = z
-  .object({
-    score: z.number().int().min(0).max(10_000_000),
-    puzzlesSolved: z.number().int().min(0).max(10_000),
-    maxCombo: z.number().int().min(0).max(10_000),
-    // The game tracks difficulty as a float (the leaderboard shows it as "Lv.1.6"); the adapter rounds it.
-    peakDifficulty: z.number().finite().min(1).max(100),
-    totalTime: z.number().finite().min(0).max(86_400),
-  })
-  .strict()
-  .superRefine((value, ctx) => {
-    if (value.puzzlesSolved === 0 && value.score > 0)
-      ctx.addIssue({ code: 'custom', message: 'Score requires solved puzzles' });
-    if (value.maxCombo > value.puzzlesSolved)
-      ctx.addIssue({ code: 'custom', message: 'Combo exceeds solved puzzles' });
-  });
 
 export const Route = createFileRoute('/api/games/synapse-storm/score')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ request, session }) => {
-        const parsed = scoreSchema.safeParse(await request.json().catch(() => null));
-        if (!parsed.success) {
-          return Response.json({ error: 'Invalid score data' }, { status: 400 });
-        }
-        const { score, puzzlesSolved, maxCombo, peakDifficulty, totalTime } = parsed.data;
+      POST: implement(
+        submitSynapseStormScoreApi,
+        {
+          body: synapseStormScoreBody,
+          invalid: () => Response.json({ error: 'Invalid score data' }, { status: 400 }),
+        },
+        async ({ session, body }) => {
+          const { score, puzzlesSolved, maxCombo, peakDifficulty, totalTime } = body;
 
-        const result = await submitGameScore({
-          gameId: 'synapse-storm',
-          userId: session.user.id,
-          score,
-          progress: maxCombo,
-          // The client reports seconds; the pipeline works in milliseconds.
-          durationMs: Math.round(totalTime * 1000),
-          meta: { puzzlesSolved, peakDifficulty },
-        });
+          const result = await submitGameScore({
+            gameId: 'synapse-storm',
+            userId: session.user.id,
+            score,
+            progress: maxCombo,
+            // The client reports seconds; the pipeline works in milliseconds.
+            durationMs: Math.round(totalTime * 1000),
+            meta: { puzzlesSolved, peakDifficulty },
+          });
 
-        if (!result.ok) {
-          return Response.json(
-            { error: result.error, reason: result.reason },
-            { status: result.status },
-          );
-        }
-        return Response.json({ success: true, moment: result.moment ?? null });
-      }),
+          if (!result.ok) {
+            return Response.json(
+              { error: result.error, reason: result.reason },
+              { status: result.status },
+            );
+          }
+          return Response.json({ success: true, moment: result.moment ?? null });
+        },
+      ),
     },
   },
 });

@@ -1,5 +1,8 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { placePlinkoBetApi } from '@/lib/coins.contract';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from './CoinIcon';
 import {
@@ -336,15 +339,12 @@ export function PlinkoGame({ coins, setCoins }: Props) {
     setResultMessage(null);
 
     try {
-      const res = await fetch('/api/coins/bet', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bin: selectedBin, amount }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setResultMessage(data.error || t('error-generic', { defaultValue: 'Something went wrong' }));
+      let data;
+      try {
+        data = await api(placePlinkoBetApi, { body: { bin: selectedBin, amount } });
+      } catch (e) {
+        if (!(e instanceof HttpError)) throw e;
+        setResultMessage(serverError(e) ?? t('error-generic', { defaultValue: 'Something went wrong' }));
         setResultWon(false);
         setGameState('result');
         setTimeout(() => {
@@ -354,7 +354,6 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         return;
       }
 
-      const data = await res.json();
       animateBall(
         data.startX,
         data.landedBin,

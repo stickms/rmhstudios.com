@@ -1,7 +1,8 @@
 import { SwissLabel } from '@/components/competitive/SwissStandings';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Trophy, Plus, Coins, Users } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -13,9 +14,8 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useSession } from '@/components/Providers';
 import { CreateTournamentDialog } from '@/components/tournaments/CreateTournamentDialog';
-import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
-import { api } from '@/lib/contract/client';
-import { listTournamentsApi } from '@/lib/tournaments/tournaments.contract';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { tournamentsQuery, type TournamentStatus } from '@/lib/tournaments/tournaments.queries';
 
 export const Route = createFileRoute('/_site/tournaments/')({
   head: () => ({
@@ -26,35 +26,20 @@ export const Route = createFileRoute('/_site/tournaments/')({
     }),
     links: [buildCanonical('/tournaments')],
   }),
+  // The first tab is fetched here (SSR + intent preload); the other tabs load on demand.
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, tournamentsQuery('REGISTRATION')),
   component: TournamentsPage,
 });
-
-type TournamentStatus = 'REGISTRATION' | 'LIVE' | 'COMPLETE';
 
 function TournamentsPage() {
   const { t } = useTranslation('c-tournaments');
   const { data: session } = useSession();
   const viewerId = session?.user?.id ?? null;
   const [status, setStatus] = useState<TournamentStatus>('REGISTRATION');
-  const [items, setItems] = useState<SerializedTournament[]>([]);
-  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await api(listTournamentsApi, { query: { status }, retries: 0 });
-      setItems(data.tournaments ?? []);
-    } catch {
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [status]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const list = useQuery({ ...tournamentsQuery(status), retry: false });
+  const loading = list.isPending;
+  const items = list.data?.tournaments ?? [];
 
   return (
     <PageLayout

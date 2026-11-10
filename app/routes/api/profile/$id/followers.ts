@@ -1,7 +1,6 @@
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import {
   encodeFollowCursor,
@@ -14,7 +13,7 @@ import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 export const Route = createFileRoute('/api/profile/$id/followers')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+      GET: defineHandler({ auth: 'optional' }, async ({ request, params, userId: viewerId }) => {
         const { id: idOrHandle } = params;
         const resolvedUser = await prisma.user.findUnique({
           where: { handle: idOrHandle },
@@ -26,13 +25,6 @@ export const Route = createFileRoute('/api/profile/$id/followers')({
         const limit = pageSize(searchParams.get('limit'), 20, 50);
 
         // Get current viewer session for isFollowing status
-        let viewerId: string | null = null;
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          viewerId = session?.user?.id ?? null;
-        } catch {
-          // Not logged in
-        }
 
         const followRecords = await prisma.follow.findMany({
           where: {

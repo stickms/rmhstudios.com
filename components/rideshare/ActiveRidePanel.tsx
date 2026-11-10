@@ -15,6 +15,14 @@ import { rideClassName } from '@/lib/rideshare/classes';
 import { formatDistance, formatDuration, type LatLng } from '@/lib/rideshare/geo';
 import { useDriverLocationShare } from '@/lib/rideshare/useDriverLocationShare';
 import { Spinner } from '@/components/ui/spinner';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  rateRideApi,
+  rideActionApi,
+  sendRideMessageApi,
+  syncRideApi,
+} from '@/lib/rideshare/rideshare.contract';
 
 type RideStatus = 'REQUESTED' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
@@ -119,22 +127,20 @@ export function ActiveRidePanel({
   const sync = useCallback(async () => {
     const seq = ++syncSeq.current;
     try {
-      const res = await fetch(`/api/rideshare/rides/${rideId}/sync`);
+      const data = await api(syncRideApi, { params: { id: rideId }, retries: 0 });
       if (seq !== syncSeq.current) return;
-      if (res.ok) {
-        const data = await res.json();
-        if (seq !== syncSeq.current) return;
-        setRide(data.ride);
-        setRole(data.role);
-        if (lastStatus.current && lastStatus.current !== data.ride.status) {
-          onChange?.();
-        }
-        lastStatus.current = data.ride.status;
-        // Stop polling once the trip is over — nothing else will change.
-        if ((data.ride.status === 'COMPLETED' || data.ride.status === 'CANCELLED') && intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
+      // The panel only renders matched trips, so the SCHEDULED state the wire type
+      // allows never reaches it.
+      setRide(data.ride as SyncRide);
+      setRole(data.role);
+      if (lastStatus.current && lastStatus.current !== data.ride.status) {
+        onChange?.();
+      }
+      lastStatus.current = data.ride.status as RideStatus;
+      // Stop polling once the trip is over — nothing else will change.
+      if ((data.ride.status === 'COMPLETED' || data.ride.status === 'CANCELLED') && intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     } catch {
       /* transient — the next poll retries */
@@ -165,20 +171,11 @@ export function ActiveRidePanel({
     actingRef.current = true;
     setBusy(true);
     try {
-      const res = await fetch(`/api/rideshare/rides/${rideId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error || t("action-failed", { defaultValue: "Action failed." }));
-        return;
-      }
+      await api(rideActionApi, { params: { id: rideId }, body: { action } });
       await sync();
       onChange?.();
-    } catch {
-      toast.error(t("action-failed", { defaultValue: "Action failed." }));
+    } catch (e) {
+      toast.error(serverError(e) || t("action-failed", { defaultValue: "Action failed." }));
     } finally {
       actingRef.current = false;
       setBusy(false);
@@ -186,14 +183,10 @@ export function ActiveRidePanel({
   }
 
   async function sendMessage(content: string) {
-    const res = await fetch(`/api/rideshare/rides/${rideId}/messages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content }),
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      toast.error(data.error || t("could-not-send-message", { defaultValue: "Could not send message." }));
+    try {
+      await api(sendRideMessageApi, { params: { id: rideId }, body: { content } });
+    } catch (e) {
+      toast.error(serverError(e) || t("could-not-send-message", { defaultValue: "Could not send message." }));
       return;
     }
     sync();
@@ -203,35 +196,21 @@ export function ActiveRidePanel({
     if (rating !== null) return;
     setRating(value);
     try {
-      const res = await fetch(`/api/rideshare/rides/${rideId}/rate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating: value }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setRating(null);
-        toast.error(data.error || t("could-not-submit-rating", { defaultValue: "Could not submit rating." }));
-        return;
-      }
+      await api(rateRideApi, { params: { id: rideId }, body: { rating: value } });
       // Stays read-only at the submitted value until sync reports it.
       toast.success(t("thanks-for-rating", { defaultValue: "Thanks for your rating!" }));
       sync();
-    } catch {
+    } catch (e) {
       setRating(null);
-      toast.error(t("could-not-submit-rating", { defaultValue: "Could not submit rating." }));
+      toast.error(serverError(e) || t("could-not-submit-rating", { defaultValue: "Could not submit rating." }));
     }
   }
 
   async function tip(cents: number) {
-    const res = await fetch(`/api/rideshare/rides/${rideId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'tip', tipCents: cents }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      toast.error(data.error || t("could-not-add-tip", { defaultValue: "Could not add your tip." }));
+    try {
+      await api(rideActionApi, { params: { id: rideId }, body: { action: 'tip', tipCents: cents } });
+    } catch (e) {
+      toast.error(serverError(e) || t("could-not-add-tip", { defaultValue: "Could not add your tip." }));
       return;
     }
     toast.success(t("tip-sent", { defaultValue: "Tip sent — thank you!" }));

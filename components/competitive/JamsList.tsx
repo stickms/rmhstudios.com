@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { jamsQuery } from '@/lib/competitive/jams.queries';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -13,7 +15,7 @@ import { useSession } from '@/components/Providers';
 import { Hammer } from 'lucide-react';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
-import { createJamApi, listJamsApi } from '@/lib/competitive/jams.contract';
+import { createJamApi } from '@/lib/competitive/jams.contract';
 
 interface JamSummary {
   slug: string;
@@ -115,20 +117,14 @@ export function JamsList() {
   const { t } = useTranslation('f-competitive');
   const { data: session } = useSession();
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin ?? false;
-  const [jams, setJams] = useState<JamSummary[] | null>(null);
   const [showForm, setShowForm] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      const data = await api(listJamsApi, { retries: 0 });
-      setJams(data.jams);
-    } catch {
-      setJams([]);
-    }
-  }, []);
-  useEffect(() => {
-    void load();
-  }, [load]);
+  // Seeded by the /jams loader. A failed load shows the empty list, as before.
+  const list = useQuery({ ...jamsQuery(), retry: false });
+  const jams: JamSummary[] | null = list.isPending ? null : (list.data?.jams ?? []);
+  const load = async () => {
+    await list.refetch();
+  };
 
   return (
     <div className="space-y-4 max-w-3xl">

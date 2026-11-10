@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { auth } from '@/lib/auth';
 import { setUserTier } from '@/lib/doctrine/tiers';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import type { TierId } from '@/lib/doctrine/types';
@@ -12,14 +11,9 @@ export const Route = createFileRoute('/api/doctrine/admin/tiers')({
   server: {
     handlers: {
       POST: defineHandler(
-        { auth: 'none', rateLimit: { limit: 10, windowMs: 60_000, prefix: 'doctrine-admin-tier' } },
-        async ({ request }) => {
+        { rateLimit: { limit: 10, windowMs: 60_000, prefix: 'doctrine-admin-tier' } },
+        async ({ request, session }) => {
           try {
-            const session = await auth.api.getSession({ headers: request.headers });
-            if (!session?.user?.id) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-
             // Check admin
             const admin = await prisma.user.findUnique({
               where: { id: session.user.id },

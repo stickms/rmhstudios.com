@@ -33,6 +33,15 @@ import { DriverEarnings } from '@/components/rideshare/DriverEarnings';
 import { RIDE_CLASSES, rideClassName, type RideClassId } from '@/lib/rideshare/classes';
 import { formatDistance, formatDuration, formatUsd, payoutBreakdown } from '@/lib/rideshare/geo';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import {
+  applyToDriveApi,
+  getDriverApi,
+  listRidesApi,
+  rideActionApi,
+  setDriverOnlineApi,
+} from '@/lib/rideshare/rideshare.contract';
 
 export const Route = createFileRoute('/_site/rideshare/drive')({
   head: () => ({ meta: [{ title: 'Drive with RMH Rideshare' }] }),
@@ -82,11 +91,10 @@ function DrivePage() {
 
   const loadDriver = useCallback(async () => {
     try {
-      const res = await fetch('/api/rideshare/driver');
-      if (res.ok) {
-        const data = await res.json();
-        setDriver(data.driver);
-      }
+      const data = await api(getDriverApi, { retries: 0 });
+      setDriver(data.driver);
+    } catch {
+      /* a failed load leaves the driver record as it was */
     } finally {
       setLoading(false);
     }
@@ -194,20 +202,15 @@ function ApplicationForm({
     }
     setSubmitting(true);
     try {
-      const res = await fetch('/api/rideshare/driver', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, vehicleClass }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || t('error-submit-application', { defaultValue: 'Could not submit your application.' }));
-        return;
-      }
+      await api(applyToDriveApi, { body: { ...form, vehicleClass } });
       toast.success(t('application-submitted', { defaultValue: "Application submitted! We'll review it shortly." }));
       onApplied();
-    } catch {
-      toast.error(t('error-generic-retry', { defaultValue: 'Something went wrong. Please try again.' }));
+    } catch (e) {
+      if (e instanceof HttpError) {
+        toast.error(serverError(e) || t('error-submit-application', { defaultValue: 'Could not submit your application.' }));
+      } else {
+        toast.error(t('error-generic-retry', { defaultValue: 'Something went wrong. Please try again.' }));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -314,8 +317,8 @@ function DriverDashboard({
   const load = useCallback(async () => {
     try {
       const [a, d] = await Promise.all([
-        fetch('/api/rideshare/rides?scope=available').then((r) => (r.ok ? r.json() : { rides: [] })),
-        fetch('/api/rideshare/rides?scope=driving').then((r) => (r.ok ? r.json() : { rides: [] })),
+        api(listRidesApi, { query: { scope: 'available' }, retries: 0 }).catch(() => ({ rides: [] })),
+        api(listRidesApi, { query: { scope: 'driving' }, retries: 0 }).catch(() => ({ rides: [] })),
       ]);
       setAvailable(a.rides ?? []);
       setDriving(d.rides ?? []);
@@ -342,19 +345,13 @@ function DriverDashboard({
     setTogglingOnline(true);
     setOnline(next); // optimistic
     try {
-      const res = await fetch('/api/rideshare/driver', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isOnline: next }),
-      });
-      if (!res.ok) {
-        setOnline(!next);
-        toast.error(t('error-update-availability', { defaultValue: 'Could not update availability.' }));
-      } else {
-        onDriverChange();
-      }
-    } catch {
+      await api(setDriverOnlineApi, { body: { isOnline: next } });
+      onDriverChange();
+    } catch (e) {
       setOnline(!next);
+      if (e instanceof HttpError) {
+        toast.error(t('error-update-availability', { defaultValue: 'Could not update availability.' }));
+      }
     } finally {
       setTogglingOnline(false);
     }
@@ -363,20 +360,15 @@ function DriverDashboard({
   async function accept(rideId: string) {
     setBusy(rideId);
     try {
-      const res = await fetch(`/api/rideshare/rides/${rideId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'accept' }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error || t('error-action-failed', { defaultValue: 'Action failed.' }));
-        return;
-      }
+      await api(rideActionApi, { params: { id: rideId }, body: { action: 'accept' } });
       toast.success(t('ride-accepted', { defaultValue: 'Ride accepted — head to the pickup!' }));
       load();
-    } catch {
-      toast.error(t('error-generic', { defaultValue: 'Something went wrong. Please try again.' }));
+    } catch (e) {
+      if (e instanceof HttpError) {
+        toast.error(serverError(e) || t('error-action-failed', { defaultValue: 'Action failed.' }));
+      } else {
+        toast.error(t('error-generic', { defaultValue: 'Something went wrong. Please try again.' }));
+      }
     } finally {
       setBusy(null);
     }

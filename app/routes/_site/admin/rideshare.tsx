@@ -23,6 +23,13 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { rideClassName } from '@/lib/rideshare/classes';
 import { formatDistance, formatUsd } from '@/lib/rideshare/geo';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import {
+  adminDecideDriverApplicationApi,
+  adminListDriverApplicationsApi,
+  adminListRidesApi,
+} from '@/lib/rideshare/rideshare.contract';
 
 export const Route = createFileRoute('/_site/admin/rideshare')({
   head: () => ({ meta: [{ title: 'Rideshare Applications | RMH Studios' }] }),
@@ -128,11 +135,10 @@ function AdminRidesharePage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/rideshare/applications?status=${status}`);
-      if (res.ok) {
-        const data = await res.json();
-        setItems(data.items ?? []);
-      }
+      const data = await api(adminListDriverApplicationsApi, { query: { status }, retries: 0 });
+      setItems(data.items ?? []);
+    } catch {
+      /* a failed load leaves the list as it was */
     } finally {
       setLoading(false);
     }
@@ -151,14 +157,16 @@ function AdminRidesharePage() {
   const loadRides = useCallback(async () => {
     setRidesLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (rideStatus !== 'ALL') params.set('status', rideStatus);
-      if (query.trim()) params.set('q', query.trim());
-      const res = await fetch(`/api/admin/rideshare/rides?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setRides(data.rides ?? []);
-      }
+      const data = await api(adminListRidesApi, {
+        query: {
+          ...(rideStatus !== 'ALL' ? { status: rideStatus } : {}),
+          ...(query.trim() ? { q: query.trim() } : {}),
+        },
+        retries: 0,
+      });
+      setRides(data.rides ?? []);
+    } catch {
+      /* a failed load leaves the list as it was */
     } finally {
       setRidesLoading(false);
     }
@@ -173,22 +181,17 @@ function AdminRidesharePage() {
   async function decide(id: string, action: 'approve' | 'reject', rejectionReason?: string) {
     setBusy(id);
     try {
-      const res = await fetch('/api/admin/rideshare/applications', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, action, rejectionReason }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error || t('action-failed', { defaultValue: 'Action failed.' }));
-        return;
-      }
+      await api(adminDecideDriverApplicationApi, { body: { id, action, rejectionReason } });
       toast.success(action === 'approve' ? t('driver-approved', { defaultValue: 'Driver approved.' }) : t('application-rejected', { defaultValue: 'Application rejected.' }));
       setRejecting(null);
       setReason('');
       setItems((prev) => prev.filter((i) => i.id !== id));
-    } catch {
-      toast.error(t('something-went-wrong', { defaultValue: 'Something went wrong.' }));
+    } catch (e) {
+      toast.error(
+        e instanceof HttpError
+          ? serverError(e) || t('action-failed', { defaultValue: 'Action failed.' })
+          : t('something-went-wrong', { defaultValue: 'Something went wrong.' }),
+      );
     } finally {
       setBusy(null);
     }

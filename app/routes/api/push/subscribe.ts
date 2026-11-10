@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import { subscribePushApi, unsubscribePushApi } from '@/lib/push/push.contract';
+import { subscribePushBody, unsubscribePushBody } from '@/lib/push/push-schema';
 import { prisma } from '@/lib/prisma.server';
 
 /**
@@ -11,31 +12,18 @@ import { prisma } from '@/lib/prisma.server';
  * (e.g. after a permission reset) idempotent and re-homes an endpoint if it
  * somehow appears under a different account.
  */
-const subscribeSchema = z.object({
-  endpoint: z.string().url().max(1024),
-  keys: z.object({
-    p256dh: z.string().min(1).max(512),
-    auth: z.string().min(1).max(512),
-  }),
-});
-
-const unsubscribeSchema = z.object({
-  endpoint: z.string().url().max(1024),
-});
-
 export const Route = createFileRoute('/api/push/subscribe')({
   server: {
     handlers: {
-      POST: defineHandler(
-        { rateLimit: { limit: 10, windowMs: 60_000, prefix: 'push-subscribe' } },
-        async ({ request, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = subscribeSchema.safeParse(body);
-          if (!parsed.success) {
-            return Response.json({ error: 'Invalid subscription' }, { status: 400 });
-          }
-
-          const { endpoint, keys } = parsed.data;
+      POST: implement(
+        subscribePushApi,
+        {
+          rateLimit: { limit: 10, windowMs: 60_000, prefix: 'push-subscribe' },
+          body: subscribePushBody,
+          invalid: () => Response.json({ error: 'Invalid subscription' }, { status: 400 }),
+        },
+        async ({ request, session, body }) => {
+          const { endpoint, keys } = body;
           await prisma.pushSubscription.upsert({
             where: { endpoint },
             create: {
@@ -56,13 +44,17 @@ export const Route = createFileRoute('/api/push/subscribe')({
         },
       ),
 
-      DELETE: defineHandler({ body: unsubscribeSchema }, async ({ session, body }) => {
-        await prisma.pushSubscription.deleteMany({
-          where: { endpoint: body.endpoint, userId: session.user.id },
-        });
+      DELETE: implement(
+        unsubscribePushApi,
+        { body: unsubscribePushBody },
+        async ({ session, body }) => {
+          await prisma.pushSubscription.deleteMany({
+            where: { endpoint: body.endpoint, userId: session.user.id },
+          });
 
-        return Response.json({ success: true });
-      }),
+          return Response.json({ success: true });
+        },
+      ),
     },
   },
 });

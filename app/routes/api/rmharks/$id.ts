@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { feedEventBus } from '@/lib/feed-sse';
@@ -18,16 +17,9 @@ import { deletePostApi } from '@/lib/feed/rmhark-actions.contract';
 export const Route = createFileRoute('/api/rmharks/$id')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+      GET: defineHandler({ auth: 'optional' }, async ({ params, userId }) => {
         const { id } = params;
 
-        let userId: string | null = null;
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          userId = session?.user?.id ?? null;
-        } catch {
-          // Not logged in
-        }
 
         const rmhark: any = await prisma.rMHark.findUnique({
           where: { id },

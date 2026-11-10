@@ -9,30 +9,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/homes/homes.contract';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
-import { PROPERTY_TYPES } from '@/lib/homes/types';
+import { createWatchBody, deleteWatchQuery, patchWatchBody } from '@/lib/homes/watch-schema';
 import { listWatches, createWatch, setWatchActive, deleteWatch } from '@/lib/homes/watches.server';
-
-const createSchema = z.object({
-  label: z.string().trim().min(1).max(120),
-  listingType: z.enum(['RENT', 'SALE']).nullish(),
-  propertyTypes: z
-    .array(z.enum(PROPERTY_TYPES as [string, ...string[]]))
-    .max(6)
-    .default([]),
-  locationLabel: z.string().max(200).nullish(),
-  lat: z.number().min(-90).max(90).nullish(),
-  lng: z.number().min(-180).max(180).nullish(),
-  radiusKm: z.number().min(1).max(500).nullish(),
-  minPrice: z.number().min(0).max(100_000_000).nullish(),
-  maxPrice: z.number().min(0).max(100_000_000).nullish(),
-  minBeds: z.number().int().min(0).max(50).nullish(),
-  minBaths: z.number().min(0).max(50).nullish(),
-  petsRequired: z.boolean().default(false),
-});
-
-const patchSchema = z.object({ id: z.string().min(1).max(64), active: z.boolean() });
 
 export const Route = createFileRoute('/api/homes/watches')({
   server: {
@@ -42,7 +20,8 @@ export const Route = createFileRoute('/api/homes/watches')({
         return Response.json({ watches });
       }),
 
-      POST: defineHandler(
+      POST: implement(
+        C.createHomeWatchApi,
         {
           rateLimit: {
             limit: 20,
@@ -50,12 +29,12 @@ export const Route = createFileRoute('/api/homes/watches')({
             prefix: 'homes-watch',
             message: 'Too many requests.',
           },
+          body: createWatchBody,
+          invalid: () =>
+            Response.json({ error: 'Please check the watch details.' }, { status: 400 }),
         },
-        async ({ request, session }) => {
-          const parsed = createSchema.safeParse(await request.json());
-          if (!parsed.success) {
-            return Response.json({ error: 'Please check the watch details.' }, { status: 400 });
-          }
+        async ({ session, body }) => {
+          const parsed = { data: body };
           const result = await createWatch(session.user.id, {
             label: parsed.data.label,
             listingType: parsed.data.listingType ?? null,
@@ -75,20 +54,27 @@ export const Route = createFileRoute('/api/homes/watches')({
         },
       ),
 
-      PATCH: defineHandler(
-        { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:homes/watches' } },
-        async ({ request, session }) => {
-          const parsed = patchSchema.safeParse(await request.json());
-          if (!parsed.success) return Response.json({ error: 'Invalid request' }, { status: 400 });
-          await setWatchActive(session.user.id, parsed.data.id, parsed.data.active);
+      PATCH: implement(
+        C.setHomeWatchActiveApi,
+        {
+          rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:homes/watches' },
+          body: patchWatchBody,
+          invalid: () => Response.json({ error: 'Invalid request' }, { status: 400 }),
+        },
+        async ({ session, body }) => {
+          await setWatchActive(session.user.id, body.id, body.active);
           return Response.json({ ok: true });
         },
       ),
 
-      DELETE: defineHandler(
-        { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:homes/watches' } },
-        async ({ request, session }) => {
-          const id = new URL(request.url).searchParams.get('id')?.trim();
+      DELETE: implement(
+        C.deleteHomeWatchApi,
+        {
+          rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:homes/watches' },
+          query: deleteWatchQuery,
+        },
+        async ({ query, session }) => {
+          const id = query.id?.trim();
           if (!id) return Response.json({ error: 'Missing id' }, { status: 400 });
           await deleteWatch(session.user.id, id);
           return Response.json({ ok: true });

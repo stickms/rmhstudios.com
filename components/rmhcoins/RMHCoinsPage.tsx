@@ -7,6 +7,9 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { claimCoinsApi } from '@/lib/coins.contract';
 import { CoinIcon } from './CoinIcon';
 import { PlayTab } from './PlayTab';
 import { PredictionsMarketTab } from '@/components/predictions/PredictionsMarketTab';
@@ -59,16 +62,16 @@ export function RMHCoinsPage() {
     if (claiming || coins >= 10) return;
     setClaiming(true);
     try {
-      const res = await fetch('/api/coins/claim', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || t("claim-failed", { defaultValue: "Claim failed" }));
-        return;
-      }
+      const data = await api(claimCoinsApi);
       setCoins(data.newBalance);
       toast.success(t("coins-added", { defaultValue: "+10 coins added!" }));
-    } catch {
-      toast.error(t("network-error", { defaultValue: "Network error" }));
+    } catch (e) {
+      // A refusal carries the server's own message; anything else is a transport failure.
+      if (e instanceof HttpError) {
+        toast.error(serverError(e) ?? t("claim-failed", { defaultValue: "Claim failed" }));
+      } else {
+        toast.error(t("network-error", { defaultValue: "Network error" }));
+      }
     } finally {
       setClaiming(false);
     }

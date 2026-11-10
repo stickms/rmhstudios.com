@@ -6,6 +6,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { api } from '@/lib/contract/client';
+import { subscribePushApi, unsubscribePushApi } from '@/lib/push/push.contract';
 
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
@@ -75,13 +77,11 @@ export function usePushSubscription(enabled: boolean) {
       });
 
       const json = sub.toJSON();
-      const res = await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ endpoint: sub.endpoint, keys: json.keys }),
-      });
-      if (!res.ok) {
+      try {
+        await api(subscribePushApi, {
+          body: { endpoint: sub.endpoint, keys: json.keys as { p256dh: string; auth: string } },
+        });
+      } catch {
         await sub.unsubscribe().catch(() => {});
         return false;
       }
@@ -103,12 +103,7 @@ export function usePushSubscription(enabled: boolean) {
       const registration = await navigator.serviceWorker.getRegistration();
       const sub = await registration?.pushManager.getSubscription();
       if (sub) {
-        await fetch('/api/push/subscribe', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ endpoint: sub.endpoint }),
-        }).catch(() => {});
+        await api(unsubscribePushApi, { body: { endpoint: sub.endpoint } }).catch(() => {});
         await sub.unsubscribe().catch(() => {});
       }
       setSubscribed(false);

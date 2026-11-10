@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { feedbackSchema } from '@/lib/feedback-schema';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -41,15 +40,7 @@ export const Route = createFileRoute('/api/feedback')({
 
         return Response.json(formatted);
       }),
-      POST: defineHandler({ auth: 'none' }, async ({ request }) => {
-        const session = await auth.api.getSession({
-          headers: request.headers,
-        });
-
-        if (!session) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
+      POST: defineHandler({}, async ({ request, session }) => {
         const ip = getClientIp(request);
         const { allowed, retryAfter } = rateLimit(ip, {
           limit: 3,

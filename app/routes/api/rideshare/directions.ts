@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/rideshare/rideshare.contract';
+import { directionsQuery } from '@/lib/rideshare/rideshare-schema';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { isValidLatLng } from '@/lib/rideshare/geo';
 import { routeEstimate } from '@/lib/rideshare/osm.server';
@@ -9,13 +11,8 @@ import { isRideClassId } from '@/lib/rideshare/classes';
 export const Route = createFileRoute('/api/rideshare/directions')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      GET: implement(C.rideDirectionsApi, { query: directionsQuery }, async ({ request }) => {
         try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-
           const ip = getClientIp(request);
           const { allowed, retryAfter } = rateLimit(ip, {
             limit: 40,
@@ -58,12 +55,9 @@ export const Route = createFileRoute('/api/rideshare/directions')({
           });
         } catch (error) {
           console.error('Rideshare directions error:', error);
-          return Response.json(
-            { error: 'Routing is unavailable right now.' },
-            { status: 502 },
-          );
+          return Response.json({ error: 'Routing is unavailable right now.' }, { status: 502 });
         }
-      },
+      }),
     },
   },
 });
