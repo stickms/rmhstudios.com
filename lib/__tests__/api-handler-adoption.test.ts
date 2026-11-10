@@ -147,8 +147,6 @@ const KNOWN_UNWRAPPED: readonly string[] = [
   // Permanent: the Better Auth catch-all. It forwards the raw Request to the
   // library's own handler; there is no session/validation step to delegate.
   'app/routes/api/auth/$.ts',
-  'app/routes/api/battlepass/claim.ts',
-  'app/routes/api/battlepass/unlock.ts',
   'app/routes/api/builds/cover/$file.ts',
   'app/routes/api/client-error.ts',
   'app/routes/api/coins/gift.ts',
@@ -161,7 +159,6 @@ const KNOWN_UNWRAPPED: readonly string[] = [
   'app/routes/api/explore.ts',
   'app/routes/api/feed/image/$filename.ts',
   'app/routes/api/feed/stream.ts',
-  'app/routes/api/games/synapse-storm/save.ts',
   'app/routes/api/gif/search.ts',
   'app/routes/api/gift-sub.ts',
   'app/routes/api/health.ts',

@@ -12,7 +12,17 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DunesdayState } from '@/lib/dunesday/state';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
 import { TOKEN_HEADER } from '@/lib/dunesday/sync-schema';
+import {
+  createDunesdaySyncApi,
+  deleteDunesdaySyncApi,
+  getDunesdaySyncApi,
+  saveDunesdayDiscordApi,
+  saveDunesdaySyncApi,
+  testDunesdayDiscordApi,
+} from '@/lib/dunesday/sync.contract';
 
 const SLOT = 'dunesday:sync';
 const DEBOUNCE_MS = 1500;
@@ -75,7 +85,7 @@ export function useCloudSync(
   lostRef.current = onLost;
 
   const headers = useCallback(
-    (s: SyncSlot) => ({ 'Content-Type': 'application/json', [TOKEN_HEADER]: s.token }),
+    (s: SyncSlot) => ({ [TOKEN_HEADER]: s.token }),
     [],
   );
 
@@ -89,13 +99,13 @@ export function useCloudSync(
 
   const load = useCallback(
     async (s: SyncSlot, adopt: boolean) => {
-      const res = await fetch(`/api/dunesday/sync/${s.feedId}`, { headers: headers(s) });
-      if (res.status === 404) {
-        lose();
+      let view;
+      try {
+        view = await api(getDunesdaySyncApi, { params: { feedId: s.feedId }, headers: headers(s) });
+      } catch (e) {
+        if (e instanceof HttpError && e.status === 404) lose();
         return;
       }
-      if (!res.ok) return;
-      const view = (await res.json()) as { state: unknown; discord: DiscordView };
       setDiscord(view.discord);
       if (adopt) {
         skipNextSave.current = true;
@@ -136,14 +146,14 @@ export function useCloudSync(
     setStatus('saving');
     const id = window.setTimeout(async () => {
       try {
-        const res = await fetch(`/api/dunesday/sync/${slot.feedId}`, {
-          method: 'PUT',
+        await api(saveDunesdaySyncApi, {
+          params: { feedId: slot.feedId },
           headers: headers(slot),
-          body: JSON.stringify({ state, timeZone: zone() }),
+          body: { state, timeZone: zone() },
         });
-        if (res.status === 404) return lose();
-        setStatus(res.ok ? 'saved' : 'error');
-      } catch {
+        setStatus('saved');
+      } catch (e) {
+        if (e instanceof HttpError && e.status === 404) return lose();
         setStatus('error');
       }
     }, DEBOUNCE_MS);
@@ -153,16 +163,10 @@ export function useCloudSync(
   const enable = useCallback(async (): Promise<boolean> => {
     setStatus('saving');
     try {
-      const res = await fetch('/api/dunesday/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ state, timeZone: zone() }),
+      const { feedId, token } = await api(createDunesdaySyncApi, {
+        body: { state, timeZone: zone() },
       });
-      if (!res.ok) {
-        setStatus('error');
-        return false;
-      }
-      const s = (await res.json()) as SyncSlot;
+      const s: SyncSlot = { feedId, token };
       writeSlot(s);
       skipNextSave.current = true;
       setSlot(s);
@@ -178,10 +182,9 @@ export function useCloudSync(
   const disable = useCallback(async () => {
     if (!slot) return;
     try {
-      await fetch(`/api/dunesday/sync/${slot.feedId}`, {
-        method: 'DELETE',
-        headers: headers(slot),
-      });
+      await api(deleteDunesdaySyncApi, { params: { feedId: slot.feedId }, headers: headers(slot) });
+    } catch {
+      // Stopping is local either way; a refused or unreachable server must not keep sync on.
     } finally {
       writeSlot(null);
       setSlot(null);
@@ -198,18 +201,17 @@ export function useCloudSync(
       name: string | null;
     }) => {
       if (!slot) return { ok: false, error: 'Sync is off.' };
-      const res = await fetch(`/api/dunesday/sync/${slot.feedId}/discord`, {
-        method: 'PUT',
-        headers: headers(slot),
-        body: JSON.stringify(input),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        discord?: DiscordView;
-      };
-      if (!res.ok) return { ok: false, error: data.error ?? 'Could not save.' };
-      if (data.discord) setDiscord(data.discord);
-      return { ok: true };
+      try {
+        const view = await api(saveDunesdayDiscordApi, {
+          params: { feedId: slot.feedId },
+          headers: headers(slot),
+          body: input,
+        });
+        if (view.discord) setDiscord(view.discord);
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, error: serverError(e) ?? 'Could not save.' };
+      }
     },
     [slot, headers],
   );
@@ -217,15 +219,16 @@ export function useCloudSync(
   const testDiscord = useCallback(
     async (webhookUrl?: string) => {
       if (!slot) return { ok: false, error: 'Sync is off.' };
-      const res = await fetch(`/api/dunesday/sync/${slot.feedId}/discord`, {
-        method: 'POST',
-        headers: headers(slot),
-        body: JSON.stringify({ webhookUrl: webhookUrl || null }),
-      });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
-      return res.ok
-        ? { ok: true }
-        : { ok: false, error: data.error ?? 'Discord rejected the message.' };
+      try {
+        await api(testDunesdayDiscordApi, {
+          params: { feedId: slot.feedId },
+          headers: headers(slot),
+          body: { webhookUrl: webhookUrl || null },
+        });
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, error: serverError(e) ?? 'Discord rejected the message.' };
+      }
     },
     [slot, headers],
   );

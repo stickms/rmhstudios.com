@@ -4,6 +4,9 @@ import { toast } from 'sonner';
 import { Award } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { getAwardsApi, giveAwardApi } from '@/lib/awards/awards.contract';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -52,9 +55,8 @@ export function PostAwards({
   useEffect(() => {
     if (initial) return;
     let cancelled = false;
-    fetch(`/api/awards?entityType=${entityType}&entityId=${encodeURIComponent(entityId)}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: Summary | null) => {
+    api(getAwardsApi, { query: { entityType, entityId } })
+      .then((data) => {
         if (!cancelled && data) setSummary(data);
       })
       .catch(() => {});
@@ -66,14 +68,10 @@ export function PostAwards({
   async function give(awardId: string) {
     setBusy(awardId);
     try {
-      const res = await fetch('/api/awards', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ awardId, entityType, entityId, anonymous }),
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error ?? 'give failed');
+      try {
+        await api(giveAwardApi, { body: { awardId, entityType, entityId, anonymous } });
+      } catch (err) {
+        throw new Error(serverError(err) ?? 'give failed');
       }
       // Optimistically bump the local summary.
       setSummary((prev) => {
