@@ -1,48 +1,32 @@
-/**
- * Project Vega Route
- */
+import { createFileRoute } from '@tanstack/react-router';
+import { renderIslandDocument } from '@/lib/islands/document.server';
+import { islandBeforeLoad } from '@/lib/islands/route';
+import { noindexHead } from '@/lib/seo';
 
-import { Suspense } from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { ArrowLeft } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
-import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
-
-// Static, not `lazy()`: Start already splits this route's component into its own
-// chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
-// hydration, and an update reaching the boundary then swaps the server-rendered
-// page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
-import GameCanvas from '@features/vega/ui/GameCanvas';
-
+// Project Vega is an island (redesign audit B1): its page is built separately
+// (features/vega/island.tsx, vite.islands.config.ts) and served as a bare
+// document instead of being rendered by the site's router. A client navigation
+// here (the Vault's card) reloads the document (islandBeforeLoad).
+//
+// Vega is unlisted, so the catalog has no head for it: the document carries the
+// heads the router merged for this URL before — the `/secret` layout's
+// `noindexHead('Secret')`, then this page's title and description.
 export const Route = createFileRoute('/secret/vega')({
-  head: () => ({
-    meta: [
-      { title: 'Project Vega | RMH Studios' },
-      { name: 'description', content: 'The Recursion Defense System' },
-    ],
-  }),
-  component: VegaPage,
+  beforeLoad: islandBeforeLoad,
+  server: {
+    handlers: {
+      GET: ({ request }) =>
+        renderIslandDocument('vega', request, {
+          heads: [
+            noindexHead('Secret'),
+            {
+              meta: [
+                { title: 'Project Vega | RMH Studios' },
+                { name: 'description', content: 'The Recursion Defense System' },
+              ],
+            },
+          ],
+        }),
+    },
+  },
 });
-
-function VegaPage() {
-  const { t } = useTranslation('r-secret');
-  return (
-    <main className="min-h-dvh bg-[#050505] flex flex-col relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full p-4 pt-[calc(1rem+var(--safe-top,0px))] z-50 flex justify-between items-center pointer-events-none">
-        <Link to="/secret" aria-label={t("back-to-vault", { defaultValue: "Back to the Vault" })} className="pointer-events-auto flex items-center justify-center gap-2 min-h-11 min-w-11 text-slate-400 hover:text-white transition-colors group bg-slate-900/50 p-2 rounded-lg backdrop-blur-sm border border-slate-700/50 hover:border-slate-500">
-          <ArrowLeft aria-hidden className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          <span className="font-mono text-sm tracking-widest hidden sm:inline">RMH STUDIOS</span>
-        </Link>
-      </div>
-
-      <div className="flex-1 flex items-center justify-center relative">
-        <GameErrorBoundary gameName="Project Vega">
-          <Suspense fallback={<GameLoadingFallback />}>
-            <GameCanvas />
-          </Suspense>
-        </GameErrorBoundary>
-      </div>
-    </main>
-  );
-}

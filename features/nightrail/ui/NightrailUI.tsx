@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from '@tanstack/react-router';
+import { useSiteNavigate } from '@/hooks/useSiteNavigate';
 import { useQuitGame } from '@/hooks/useQuitGame';
 import {
   ArrowDown,
@@ -39,7 +39,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TrickSubmit } from './TrickSubmit';
-import { useSession } from '@/components/Providers';
+import { useSession } from '@/components/session/session-context';
 import { TRICK_LIST } from '@features/nightrail/engine/constants';
 import { LEVELS, LEVEL_ORDER } from '@features/nightrail/engine/levels';
 import type { LevelId, RunStats, TrickDirection } from '@features/nightrail/engine/types';
@@ -130,7 +130,7 @@ export function NightrailUI({
   onRestart,
 }: Props) {
   const { t } = useTranslation('c-nightrail');
-  const navigate = useNavigate();
+  const navigate = useSiteNavigate();
   const quit = useQuitGame();
   const session = useSession();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -200,7 +200,7 @@ export function NightrailUI({
   if (uiState === 'playing') return null;
 
   const signedIn = Boolean(session.data);
-  const goLogin = () => navigate({ to: '/login', search: { callbackURL: undefined } });
+  const goLogin = () => navigate('/login');
 
   const leaderboardPanel = (limit: number, title: string) =>
     leaderboard.length > 0 ? (

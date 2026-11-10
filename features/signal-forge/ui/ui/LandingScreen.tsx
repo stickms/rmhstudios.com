@@ -6,10 +6,10 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useSiteNavigate } from '@/hooks/useSiteNavigate';
 import { useTranslation } from "react-i18next";
 import { Button } from '@/components/ui/button';
-import { useSession } from '@/components/Providers';
+import { useSession } from '@/components/session/session-context';
 import { HowToPlayContent } from './HowToPlayContent';
 import { LeaderboardPanel } from './LeaderboardPanel';
 
@@ -22,7 +22,7 @@ interface Props {
 export function LandingScreen({ onStartGame, hasSavedRun, onLoadSavedRun }: Props) {
   const { t } = useTranslation("c-signal-forge");
   const session = useSession();
-  const navigate = useNavigate();
+  const navigate = useSiteNavigate();
   const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   // If how-to-play is open, render it fullscreen and return (don't render landing screen)
@@ -44,7 +44,7 @@ export function LandingScreen({ onStartGame, hasSavedRun, onLoadSavedRun }: Prop
           <div className="flex flex-col items-center gap-4">
             <p className="text-red-400 font-mono text-sm uppercase tracking-widest">{t("auth-required", { defaultValue: "Authentication Required" })}</p>
             <Button
-              onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
+              onClick={() => navigate('/login')}
               className="w-full bg-white text-black hover:bg-zinc-200 font-bold py-3 rounded-lg"
             >
               {t("sign-in-to-play", { defaultValue: "Sign In to Play" })}
