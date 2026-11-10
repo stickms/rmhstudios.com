@@ -8,17 +8,11 @@
  * Both halves declare the same event contract, hash it to a short version, and
  * exchange it in the socket.io handshake. `protocolGuard` refuses a mismatched
  * client, but emits `protocol:outdated` FIRST so the client has something to
- * render. See `lib/shared/realtime/protocol.ts` for the client half and for why
- * the declaration below is duplicated rather than imported (short version: the
- * `server-builder` stage used to copy a curated subset of `lib/` that excluded
- * this module — `server/CLAUDE.md` gotchas 7 and 8 explain what importing an
- * uncopied `lib/` module does to a bundle). That stage now copies `lib/`
- * wholesale, so the duplication is no longer forced and can be collapsed; see
- * the note in `lib/__tests__/protocol-version.test.ts`.
- *
- * `lib/__tests__/protocol-version.test.ts` fails the build if the two copies
- * drift, which is the property that matters: a silent divergence would reject
- * every client on the planet.
+ * render. The contract itself (the event list, the revision, the hash and the
+ * wire constants) is declared once, in `lib/shared/realtime/protocol.ts`, and
+ * imported here, so the two halves cannot drift. The import is relative
+ * (`server/CLAUDE.md` gotcha 7); the `server-builder` stage copies `lib/`
+ * wholesale, so it is in every hub's build context.
  *
  * ## Rollout posture: lenient by default
  *
@@ -34,105 +28,12 @@
  * also reject absent, once `createRealtimeClient` is the only way in.
  */
 
-/**
- * The events whose payload shape both halves must agree on.
- *
- * MIRROR OF `lib/shared/realtime/protocol.ts` — keep the two identical and
- * SORTED. Cross-app contract events only; per-game names are namespaced by
- * prefix and isolated by room, so adding a game cannot break a tab playing a
- * different one, and folding them in would churn the version on every additive
- * change until nobody read the reload prompt.
- */
-export const PROTOCOL_EVENTS: readonly string[] = [
-  'call:accept',
-  'call:accepted',
-  'call:cancel',
-  'call:decline',
-  'call:ended',
-  'call:hangup',
-  'call:ice',
-  'call:incoming',
-  'call:invite',
-  'call:mute',
-  'call:rejected',
-  'call:ringing',
-  'call:signal',
-  'party:accept',
-  'party:create',
-  'party:disbanded',
-  'party:error',
-  'party:invite',
-  'party:invited',
-  'party:kick',
-  'party:leave',
-  'party:queue',
-  'party:state',
-  'party:ticket',
-  'party:transfer',
-  'protocol:outdated',
-  'space:chat',
-  'space:end',
-  'space:ended',
-  'space:error',
-  'space:join',
-  'space:leave',
-  'space:message',
-  'space:pin',
-  'space:pinned',
-  'space:react',
-  'space:reaction',
-  'space:state',
-];
-
-/**
- * Bump when a PAYLOAD shape changes without an event name changing.
- *
- * MIRROR OF `lib/shared/realtime/protocol.ts`. The name hash catches added,
- * removed and renamed events for free; it cannot see `{ userId }` becoming
- * `{ user: { id } }`, which is the mismatch that actually produces the silent
- * mid-match no-op.
- */
-export const PROTOCOL_REVISION = 1;
-
-/**
- * A stable, dependency-free hash of the declared contract.
- *
- * MIRROR OF `lib/shared/realtime/protocol.ts` — must stay byte-identical, or
- * the two halves compute different versions from the same contract and every
- * client is rejected. FNV-1a twice with different offset bases (64 bits, 16 hex
- * chars) rather than `node:crypto`, because the browser half has to compute the
- * same value without shipping a crypto polyfill. This is a change detector, not
- * a security boundary — a forged version only buys a client a connection it
- * will then fail against, i.e. the pre-E2 behaviour.
- */
-export function hashEvents(events: readonly string[], revision: number): string {
-  const input = `v${revision}\n${events.join('\n')}`;
-  return fnv1a(input, 0x811c9dc5) + fnv1a(input, 0x01000193);
-}
-
-/** One 32-bit FNV-1a pass, returned as 8 lowercase hex chars. */
-function fnv1a(input: string, offsetBasis: number): string {
-  let hash = offsetBasis >>> 0;
-  for (let i = 0; i < input.length; i++) {
-    hash ^= input.charCodeAt(i);
-    // The FNV prime (16777619) via shifts — `hash * 16777619` overflows the
-    // float53 mantissa and silently loses the low bits.
-    hash = (hash + (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24)) >>> 0;
-  }
-  return hash.toString(16).padStart(8, '0');
-}
-
-/** The version this hub speaks. */
-export const PROTOCOL_VERSION = hashEvents(PROTOCOL_EVENTS, PROTOCOL_REVISION);
-
-/** The handshake `auth` key the version travels under. */
-export const PROTOCOL_AUTH_KEY = 'protocol';
-
-/** The event emitted before an out-of-date client is refused. */
-export const PROTOCOL_OUTDATED_EVENT = 'protocol:outdated';
-
-/** The `connect_error` message that accompanies it. */
-export const PROTOCOL_OUTDATED_REASON = 'protocol-outdated';
+import {
+  PROTOCOL_AUTH_KEY,
+  PROTOCOL_OUTDATED_EVENT,
+  PROTOCOL_OUTDATED_REASON,
+  PROTOCOL_VERSION,
+} from '../../lib/shared/realtime/protocol';
 
 /** What the guard decided about one handshake. */
 export type ProtocolVerdict = 'match' | 'absent' | 'mismatch';
