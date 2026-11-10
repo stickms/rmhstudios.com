@@ -588,30 +588,6 @@ model GameStat {
   @@map("game_stat")
 }
 
-/// Seasonal aggregates for the app tier (F17).
-///
-/// The games have `UserSeasonProgress`; RMHType, RMHStudy and RMHTube have
-/// all-time stats only, so a user who peaked eight months ago has nothing to
-/// play for — the exact case seasons exist to solve. All-time boards stay:
-/// replacing them would erase people's best results.
-model AppSeasonStat {
-  seasonId  String   @db.VarChar(40)
-  appId     String   @db.VarChar(24)
-  userId    String
-  /// App-defined: WPM peak, cards reviewed, minutes watched.
-  primary   Int      @default(0)
-  secondary Int      @default(0)
-  /// Materialised nightly, not computed per request.
-  rank      Int?
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([seasonId, appId, userId])
-  @@index([seasonId, appId, primary(sort: Desc)])
-  @@map("app_season_stat")
-}
-
 // ─── Rebar & Rutabaga — reservations (W1, 2026-09-19) ─────────────────────
 // The first piece of state behind any of the eleven /services and /ventures
 // microsites. Before this the whole section was brochureware: a signed-in
@@ -942,39 +918,6 @@ model VelumContract {
   @@index([creatorId])
   @@index([holderId])
   @@map("velum_contract")
-}
-
-// R18: a templated hint left at a puzzle site. `template` is a fixed id; `param`
-// is a glyph id or a small number, never free text.
-model MarchSignal {
-  id        String   @id @default(cuid())
-  siteId    String   @db.VarChar(40)
-  authorId  String
-  template  String   @db.VarChar(24)
-  param     String   @default("") @db.VarChar(16)
-  score     Int      @default(0)
-  createdAt DateTime @default(now())
-
-  author User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  votes  MarchSignalVote[]
-
-  @@unique([siteId, authorId, template, param])
-  @@index([siteId, score(sort: Desc)])
-  @@index([authorId])
-  @@map("march_signal")
-}
-
-model MarchSignalVote {
-  signalId String
-  userId   String
-  value    Int
-
-  signal MarchSignal @relation(fields: [signalId], references: [id], onDelete: Cascade)
-  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([signalId, userId])
-  @@index([userId])
-  @@map("march_signal_vote")
 }
 
 // R21: a Nightrail trick submitted for the week's vote. Nightrail records no

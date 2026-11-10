@@ -12,6 +12,7 @@
  */
 
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
+import { noindexHead } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start'
 import { getRequestSession } from '@/lib/auth-session.server';
 
@@ -28,6 +29,7 @@ function AltairMultiplayerLayout() {
 }
 
 export const Route = createFileRoute('/altair/multiplayer')({
+  head: () => noindexHead('Altair Multiplayer'),
   beforeLoad: () => checkAuth(),
   component: AltairMultiplayerLayout,
 })

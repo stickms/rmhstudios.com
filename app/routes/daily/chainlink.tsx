@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
 
@@ -20,5 +21,9 @@ function ChainlinkPage() {
 }
 
 export const Route = createFileRoute('/daily/chainlink')({
+  head: () => ({
+    meta: buildMeta({ title: 'Chainlink | Daily Puzzles | RMH Studios', description: "Link the words together in today's daily Chainlink puzzle.", path: '/daily/chainlink' }),
+    links: [buildCanonical('/daily/chainlink')],
+  }),
     component: ChainlinkPage,
 })

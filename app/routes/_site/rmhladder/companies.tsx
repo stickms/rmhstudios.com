@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import {
@@ -78,6 +79,7 @@ interface CompaniesSearch {
 }
 
 export const Route = createFileRoute('/_site/rmhladder/companies')({
+  head: () => noindexHead('Companies | RMH Ladder'),
   validateSearch: (search: Record<string, unknown>): CompaniesSearch => ({
     q: typeof search.q === 'string' && search.q ? search.q : undefined,
   }),

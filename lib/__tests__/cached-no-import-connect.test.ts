@@ -3,7 +3,7 @@
  *
  * It used to subscribe at module load, which opened two ioredis connections in every process that merely
  * imported it, so short-lived scripts and jobs never exited. The bridge now installs lazily (first
- * `cached*()` / `invalidateCached*()` / `apiCache.invalidate*`) or from server start-up
+ * `cached*()` / `invalidate*()`) or from server start-up
  * (`startCacheBridge`, called by server/nitro/cache-bridge.ts so a read-only worker still receives
  * invalidations).
  */
@@ -67,13 +67,12 @@ describe('cached.server import is connection-free', () => {
     expect(created.count).toBe(2);
   });
 
-  it('the first apiCache.invalidate installs the bridge lazily', async () => {
-    const { apiCache } = await import('@/lib/cache');
-    await import('@/lib/cached.server');
+  it('the first invalidateTag installs the bridge lazily', async () => {
+    const mod = await import('@/lib/cached.server');
     expect(created.count).toBe(0);
-    apiCache.set('k', 1, 60_000);
+    mod.putL1('k', 1, 60_000);
     expect(created.count).toBe(0);
-    apiCache.invalidate('k');
+    await mod.invalidateTag('t').catch(() => {});
     expect(created.count).toBe(2);
   });
 

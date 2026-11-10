@@ -16,12 +16,12 @@ export const Route = createFileRoute('/api/doctrine/incidents/')({
           auth: 'none',
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-incidents' },
           // Recent-incident list keyed by ?limit=. A report or reaction clears the
-          // in-process apiCache copy (15 s TTL), but NOT browser/CDN copies
+          // in-process cached() copy (15 s TTL), but NOT browser/CDN copies
           // (CACHE_POLICY.liveList: 15 s browser, 30 s CDN, +60 s while stale is
           // revalidated), so a client can lag a report by up to ~90 s. Acceptable:
           // a public, display-only feed no decision reads (rule 1.2). The server's
           // own per-worker micro-cache is off (`microCache: false`) because
-          // apiCache.invalidatePrefix does not reach it. The single-incident route
+          // invalidateCachedPrefix does not reach it. The single-incident route
           // ($id.ts) is separate.
           microCache: false,
           cache: CACHE_POLICY.liveList,

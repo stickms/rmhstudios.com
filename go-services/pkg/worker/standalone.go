@@ -16,8 +16,7 @@ import (
 //
 // metricsAddr is the host:port for /health and /metrics. Pass "" to use the
 // default derived from cfg.MetricsAddr (i.e. the METRICS_ADDR env var, default
-// ":9090"). Pass an explicit address for services with a custom port (e.g.
-// recap uses ":"+config.GetString("RECAP_PORT","7004")).
+// ":9090"). Pass an explicit address for services with a custom port.
 func RunStandalone(name string, metricsAddr string, run RunFunc) {
 	cfg, err := config.LoadCommon(name)
 	logger := log.New(name, cfg.LogLevel)

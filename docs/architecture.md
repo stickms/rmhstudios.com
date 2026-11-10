@@ -21,8 +21,8 @@
    │  ladder-worker · homes-worker · jobs              │
    │     (Node crons + pg-boss backbone, no port)      │
    │                                                   │
-   │  supervisor:9090 (Go: discord-bot + recap +       │
-   │     doctrine-worker + vibe-worker + bot-worker)  │
+   │  supervisor:9090 (Go: discord-bot +               │
+   │     vibe-worker + bot-worker)                    │
    │                                                   │
    │  status:7008 (Go)   assets:7007 (Go)              │
    │  redis / redis-state (infra; minio = local-s3)    │
@@ -80,7 +80,7 @@ flowchart LR
     end
 
     subgraph Go["Go tier (Bazel)"]
-      SUP["supervisor :9090<br/>discord-bot · recap · doctrine<br/>vibe · bot-worker"]
+      SUP["supervisor :9090<br/>discord-bot · vibe<br/>bot-worker"]
       STAT["status :7008<br/>uptime dashboard"]
       ASSET["assets :7007<br/>range-aware R2 streaming"]
     end
@@ -283,10 +283,8 @@ runs the changed-file subset of all three. Test suites and what gates them:
 | 7001      | socket-server (games)            | Node               | Apache `/socket/`           |
 | 7676      | rmhbox                           | Node               | Apache `/rmhbox-ws/`        |
 | 7003      | rmhtube                          | Node               | Apache `/rmhtube-ws/`       |
-| 7004      | recap health                     | Go (in supervisor) | internal                    |
 | 7007      | assets                           | Go                 | internal (Apache off-disk CDN path) |
 | 7008      | status                           | Go                 | dashboard                   |
-| 7100      | ledger                           | Go                 | not deployed (internal/ledger, no binary) |
 | 9090      | supervisor metrics               | Go                 | internal (Prometheus)       |
 | 6379      | redis (LRU cache) · redis-state (durable, dormant) | infra | internal        |
 | 9000/9001 | MinIO                            | infra              | internal                    |

@@ -4,6 +4,7 @@
 
 import { Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
+import { appRouteHead } from '@/lib/seo-catalog';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 
@@ -14,6 +15,7 @@ import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import RmhTubePage from '@/components/rmhtube/RmhTubeLanding';
 
 export const Route = createFileRoute('/rmhtube/')({
+  head: () => appRouteHead('rmhtube'),
   component: RmhTubeRoute,
 });
 

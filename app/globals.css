@@ -556,7 +556,9 @@
   --site-sticky-secondary-top: calc(
     var(--site-sticky-edge) + var(--site-sticky-primary-height) + var(--site-section-gap)
   );
-  --site-touch-target: 2.75rem;
+  /* Minimum hit box on a coarse pointer (WCAG 2.5.8 target is 24px; we hold the 44px platform floor). */
+  --hit-min: 44px;
+  --site-touch-target: var(--hit-min);
   /* Smallest font-size a text-entry control may compute to. Zero on a pointer
      device — desktop density is nobody's accessibility problem — and 16px on a
      touch screen, where anything smaller makes mobile Safari zoom the whole page
@@ -2755,7 +2757,8 @@ html:not(.app-route) body {
    in `radial.css` per element, so nothing outside that file could reuse it and
    the profile hero's links measured 89×21 to 89×38 on a phone.
 
-   This is that technique as one class. Put it on any control whose visual size
+   This is that technique as one class (`.hit-slop`; `.touch-target` is the
+   older spelling of the same rule). Put it on any control whose visual size
    is deliberately under 44px. It needs no `position: relative` of its own —
    the rule supplies it — and it is inert on fine pointers.
 
@@ -2764,9 +2767,11 @@ html:not(.app-route) body {
    controls that sit less than 44px apart.
    ========================================================================== */
 @media (pointer: coarse) {
+  .hit-slop,
   .touch-target {
     position: relative;
   }
+  .hit-slop::after,
   .touch-target::after {
     content: '';
     position: absolute;
@@ -2775,8 +2780,8 @@ html:not(.app-route) body {
     translate: -50% -50%;
     width: 100%;
     height: 100%;
-    min-width: var(--site-touch-target);
-    min-height: var(--site-touch-target);
+    min-width: var(--hit-min);
+    min-height: var(--hit-min);
   }
 }
 

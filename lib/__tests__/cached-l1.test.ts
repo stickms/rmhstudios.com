@@ -1,18 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  ApiCache,
-  apiCache,
+  LruL1,
+  lruL1,
+  peekL1,
+  putL1,
+  invalidateCachedPrefix,
   estimateBytes,
   heapShare,
   MAIN_CACHE_HEAP_SHARE,
   VIEWER_FEED_CACHE_HEAP_SHARE,
-} from '@/lib/cache';
+} from '@/lib/cached.server';
 
-describe('ApiCache LRU', () => {
+describe('LruL1 LRU', () => {
   it('expires at the TTL boundary', () => {
     const now = vi.spyOn(Date, 'now').mockReturnValue(1_000);
     try {
-      const cache = new ApiCache();
+      const cache = new LruL1();
       cache.set('key', 'old', 100);
       now.mockReturnValue(1_099);
       expect(cache.get('key')).toBe('old');
@@ -25,7 +28,7 @@ describe('ApiCache LRU', () => {
   });
 
   it('does not allow invalid TTLs or sizes to bypass eviction', () => {
-    const cache = new ApiCache({ maxBytes: 100 });
+    const cache = new LruL1({ maxBytes: 100 });
     for (const ttl of [NaN, Infinity, -1, 0]) cache.set('key', 'old', ttl);
     for (const size of [NaN, Infinity, -100]) cache.set('key', 'old', 1000, size);
     expect(cache.size).toBe(0);
@@ -38,7 +41,7 @@ describe('ApiCache LRU', () => {
 
   it('supports a disabled cache and rejects budgets that defeat its limits', () => {
     for (const options of [{ maxEntries: 0 }, { maxBytes: 0 }]) {
-      const cache = new ApiCache(options);
+      const cache = new LruL1(options);
       cache.set('key', 'value', 1000);
       expect(cache.size).toBe(0);
     }
@@ -48,7 +51,7 @@ describe('ApiCache LRU', () => {
       { maxBytes: NaN },
       { maxBytes: Infinity },
     ]) {
-      expect(() => new ApiCache(options)).toThrow(RangeError);
+      expect(() => new LruL1(options)).toThrow(RangeError);
     }
   });
 
@@ -57,7 +60,7 @@ describe('ApiCache LRU', () => {
     const view = new Uint8Array(backing, 8, 8);
     expect(estimateBytes(view)).toBeGreaterThanOrEqual(4096);
     expect(estimateBytes([view, new DataView(backing)])).toBeLessThan(5000);
-    const cache = new ApiCache({ maxBytes: 1024 });
+    const cache = new LruL1({ maxBytes: 1024 });
     cache.set('buffer', view, 1000);
     expect(cache.size).toBe(0);
     const cyclic: { self?: unknown; value: string } = { value: 'hello' };
@@ -66,7 +69,7 @@ describe('ApiCache LRU', () => {
     expect(estimateBytes(cyclic)).toBeLessThan(1000);
   });
   it('evicts the least-recently-used key, not the oldest-inserted', () => {
-    const c = new ApiCache({ maxEntries: 3 });
+    const c = new LruL1({ maxEntries: 3 });
     c.set('a', 1, 1000);
     c.set('b', 2, 1000);
     c.set('c', 3, 1000);
@@ -79,7 +82,7 @@ describe('ApiCache LRU', () => {
   });
 
   it('overwriting an existing key does not evict another key', () => {
-    const c = new ApiCache({ maxEntries: 2 });
+    const c = new LruL1({ maxEntries: 2 });
     c.set('a', 1, 1000);
     c.set('b', 2, 1000);
     c.set('b', 3, 1000);
@@ -89,14 +92,14 @@ describe('ApiCache LRU', () => {
   });
 
   it('expires entries and tracks bytes', () => {
-    const c = new ApiCache({ maxEntries: 10 });
+    const c = new LruL1({ maxEntries: 10 });
     c.set('a', 'x'.repeat(100), -1);
     expect(c.get('a')).toBeUndefined();
     expect(c.bytes).toBe(0);
   });
 
   it('enforces the byte budget by evicting LRU entries', () => {
-    const c = new ApiCache({ maxEntries: 100, maxBytes: 1000 });
+    const c = new LruL1({ maxEntries: 100, maxBytes: 1000 });
     c.set('a', 'a', 1000, 400);
     c.set('b', 'b', 1000, 400);
     c.get('a');
@@ -105,12 +108,12 @@ describe('ApiCache LRU', () => {
     expect(c.get('a')).toBe('a');
     expect(c.get('c')).toBe('c');
     expect(c.bytes).toBe(800);
-    c.invalidate('a');
+    c.delete('a');
     expect(c.bytes).toBe(400);
   });
 
   it('skips values larger than the whole budget', () => {
-    const c = new ApiCache({ maxBytes: 100 });
+    const c = new LruL1({ maxBytes: 100 });
     c.set('big', 'x', 1000, 500);
     expect(c.size).toBe(0);
   });
@@ -121,13 +124,27 @@ describe('ApiCache LRU', () => {
     expect(estimateBytes(big)).toBeGreaterThan(estimateBytes(big.slice(0, 10)));
   });
 
-  it('routes viewer feed keys separately but invalidatePrefix hits both', () => {
-    apiCache.set('feed:v3:foryou:all:u1:20', 1, 1000);
-    apiCache.set('other:k', 2, 1000);
-    expect(apiCache.get('feed:v3:foryou:all:u1:20')).toBe(1);
-    apiCache.invalidatePrefix('feed:v3:');
-    expect(apiCache.get('feed:v3:foryou:all:u1:20')).toBeUndefined();
-    expect(apiCache.get('other:k')).toBe(2);
+  it('lruL1 instances are private and bounded', () => {
+    const a = lruL1('a', { maxEntries: 2 });
+    const b = lruL1('b');
+    a.set('k', 1, 1000);
+    b.set('k', 2, 1000);
+    expect(a.get('k')).toBe(1);
+    expect(b.get('k')).toBe(2);
+    expect(peekL1('k')).toBeUndefined();
+    a.set('x', 1, 1000);
+    a.set('y', 1, 1000);
+    expect(a.size).toBe(2);
+    expect(a.has('k')).toBe(false);
+  });
+
+  it('routes viewer feed keys separately but a prefix invalidation hits both', async () => {
+    putL1('feed:v3:foryou:all:u1:20', 1, 1000);
+    putL1('other:k', 2, 1000);
+    expect(peekL1('feed:v3:foryou:all:u1:20')).toBe(1);
+    await invalidateCachedPrefix('feed:v3:');
+    expect(peekL1('feed:v3:foryou:all:u1:20')).toBeUndefined();
+    expect(peekL1('other:k')).toBe(2);
   });
 
   // 2026-10-21: web workers died with "JavaScript heap out of memory" at --max-old-space-size=384. The caches'

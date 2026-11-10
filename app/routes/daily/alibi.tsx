@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
 
@@ -20,5 +21,9 @@ function AlibiPage() {
 }
 
 export const Route = createFileRoute('/daily/alibi')({
+  head: () => ({
+    meta: buildMeta({ title: 'Alibi | Daily Puzzles | RMH Studios', description: "Question the suspects and spot the lie in today's daily alibi puzzle.", path: '/daily/alibi' }),
+    links: [buildCanonical('/daily/alibi')],
+  }),
     component: AlibiPage,
 })

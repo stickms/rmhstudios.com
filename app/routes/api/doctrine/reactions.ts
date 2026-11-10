@@ -3,7 +3,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { awardXp } from '@/lib/doctrine/reputation';
-import { apiCache } from '@/lib/cache';
+import { invalidateCachedPrefix } from '@/lib/cached.server';
 
 const VALID_REACTIONS = ['FIRE', 'BASED', 'MID', 'CRINGE', 'TRASH', 'TUNG'] as const;
 
@@ -59,9 +59,9 @@ export const Route = createFileRoute('/api/doctrine/reactions')({
             }
 
             // Invalidate caches
-            apiCache.invalidatePrefix('doctrine:incidents');
-            apiCache.invalidatePrefix('doctrine:safehouse');
-            apiCache.invalidatePrefix('doctrine:disclosures');
+            await invalidateCachedPrefix('doctrine:incidents');
+            await invalidateCachedPrefix('doctrine:safehouse');
+            await invalidateCachedPrefix('doctrine:disclosures');
 
             return Response.json({ success: true });
           } catch (e) {

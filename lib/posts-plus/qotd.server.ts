@@ -13,7 +13,7 @@ import { pageSize } from '@/lib/pagination';
 
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached, invalidateCachedPrefix } from '@/lib/cached.server';
 import { checkIn } from '@/lib/streak.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { mapRmharksWithBoundedReactions, rmharkIncludeLite } from '@/lib/feed/map-feed-item.server';
@@ -91,15 +91,18 @@ export interface QotdToday extends QotdPromptView {
 export async function getToday(viewerId: string | null): Promise<QotdToday> {
   const dayKey = utcDayKey();
   const cacheKey = `qotd:today:${dayKey}`;
-  let base = apiCache.get<QotdPromptView & { answerCount: number }>(cacheKey);
-  if (!base) {
-    const [prompt, answerCount] = await Promise.all([
-      getPromptForDay(dayKey),
-      prisma.qotdAnswer.count({ where: { dayKey } }),
-    ]);
-    base = { ...prompt, answerCount };
-    apiCache.set(cacheKey, base, PROMPT_CACHE_MS);
-  }
+  const base = await cached(
+    cacheKey,
+    PROMPT_CACHE_MS,
+    async () => {
+      const [prompt, answerCount] = await Promise.all([
+        getPromptForDay(dayKey),
+        prisma.qotdAnswer.count({ where: { dayKey } }),
+      ]);
+      return { ...prompt, answerCount } as QotdPromptView & { answerCount: number };
+    },
+    { l2: false },
+  );
   const myAnswers = viewerId
     ? await prisma.qotdAnswer.count({ where: { userId: viewerId, dayKey } })
     : 0;
@@ -125,7 +128,7 @@ export async function recordQotdAnswer(
   dayKey: string,
 ): Promise<void> {
   await tx.qotdAnswer.create({ data: { postId, userId, dayKey } });
-  apiCache.invalidate(`qotd:today:${dayKey}`);
+  void invalidateCached(`qotd:today:${dayKey}`);
 }
 
 /**
@@ -194,40 +197,44 @@ export interface QotdArchiveRow extends QotdPromptView {
  */
 export async function listArchive(): Promise<QotdArchiveRow[]> {
   const cacheKey = `qotd:archive:${utcDayKey()}`;
-  const cached = apiCache.get<QotdArchiveRow[]>(cacheKey);
-  if (cached) return cached;
+  return cached(
+    cacheKey,
+    PROMPT_CACHE_MS,
+    async () => {
+      const today = utcDayKey();
+      // Make sure today's prompt is claimed before reading the window.
+      await getPromptForDay(today);
+      const keys: string[] = [];
+      const startMs = Date.parse(`${today}T00:00:00Z`);
+      for (let i = 0; i < QOTD_ARCHIVE_DAYS; i++)
+        keys.push(utcDayKey(new Date(startMs - i * DAY_MS)));
 
-  const today = utcDayKey();
-  // Make sure today's prompt is claimed before reading the window.
-  await getPromptForDay(today);
-  const keys: string[] = [];
-  const startMs = Date.parse(`${today}T00:00:00Z`);
-  for (let i = 0; i < QOTD_ARCHIVE_DAYS; i++) keys.push(utcDayKey(new Date(startMs - i * DAY_MS)));
-
-  const [curated, counts] = await Promise.all([
-    prisma.qotdPrompt.findMany({
-      where: { dayKey: { in: keys } },
-      select: { dayKey: true, text: true },
-    }),
-    prisma.qotdAnswer.groupBy({
-      by: ['dayKey'],
-      where: { dayKey: { in: keys } },
-      _count: { _all: true },
-    }),
-  ]);
-  const curatedBy = new Map(curated.map((c) => [c.dayKey as string, c.text]));
-  const countBy = new Map(counts.map((c) => [c.dayKey, c._count._all]));
-  const rows = keys.map<QotdArchiveRow>((dayKey) => {
-    const text = curatedBy.get(dayKey);
-    return {
-      dayKey,
-      text: text ?? builtinPromptFor(dayKey),
-      source: text ? 'curated' : 'builtin',
-      answerCount: countBy.get(dayKey) ?? 0,
-    };
-  });
-  apiCache.set(cacheKey, rows, PROMPT_CACHE_MS);
-  return rows;
+      const [curated, counts] = await Promise.all([
+        prisma.qotdPrompt.findMany({
+          where: { dayKey: { in: keys } },
+          select: { dayKey: true, text: true },
+        }),
+        prisma.qotdAnswer.groupBy({
+          by: ['dayKey'],
+          where: { dayKey: { in: keys } },
+          _count: { _all: true },
+        }),
+      ]);
+      const curatedBy = new Map(curated.map((c) => [c.dayKey as string, c.text]));
+      const countBy = new Map(counts.map((c) => [c.dayKey, c._count._all]));
+      const rows = keys.map<QotdArchiveRow>((dayKey) => {
+        const text = curatedBy.get(dayKey);
+        return {
+          dayKey,
+          text: text ?? builtinPromptFor(dayKey),
+          source: text ? 'curated' : 'builtin',
+          answerCount: countBy.get(dayKey) ?? 0,
+        };
+      });
+      return rows;
+    },
+    { l2: false },
+  );
 }
 
 /** Prompt text for one archived day (any valid day inside the archive window). */
@@ -310,7 +317,7 @@ export async function adminAdd(
       data: { text: input.text.trim(), dayKey: input.dayKey ?? null, createdById: adminId },
       select: { id: true },
     });
-    apiCache.invalidatePrefix('qotd:');
+    void invalidateCachedPrefix('qotd:');
     return { ok: true, id: row.id };
   } catch (e) {
     if (isUniqueViolation(e))
@@ -330,6 +337,6 @@ export async function adminRemove(id: string): Promise<AdminQotdResult> {
     return { ok: false, status: 409, error: 'That prompt has already run' };
   }
   await prisma.qotdPrompt.delete({ where: { id } });
-  apiCache.invalidatePrefix('qotd:');
+  void invalidateCachedPrefix('qotd:');
   return { ok: true, id };
 }

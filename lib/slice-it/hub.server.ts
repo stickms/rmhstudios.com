@@ -11,7 +11,7 @@
  * what lets the whole payload be cached and served to a crawler.
  */
 
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser, type ResolvedUser } from '@/lib/user-display';
 
@@ -60,29 +60,32 @@ const HUB_TTL_MS = 5 * 60 * 1000;
 const HUB_CACHE_KEY = 'slice-it:hub';
 
 export function invalidateSliceItHub(): void {
-  apiCache.invalidate(HUB_CACHE_KEY);
+  void invalidateCached(HUB_CACHE_KEY);
 }
 
 export async function sliceItHub(): Promise<HubPayload> {
-  const cached = apiCache.get<HubPayload>(HUB_CACHE_KEY);
-  if (cached) return cached;
+  return cached(
+    HUB_CACHE_KEY,
+    HUB_TTL_MS,
+    async () => {
+      const [topCharts, recentRecords, featuredCharters, songs, runs] = await Promise.all([
+        fetchTopCharts(12),
+        fetchRecentRecords(10),
+        fetchFeaturedCharters(6),
+        prisma.song.count({ where: { isPublic: true } }),
+        prisma.songLeaderboard.count(),
+      ]);
 
-  const [topCharts, recentRecords, featuredCharters, songs, runs] = await Promise.all([
-    fetchTopCharts(12),
-    fetchRecentRecords(10),
-    fetchFeaturedCharters(6),
-    prisma.song.count({ where: { isPublic: true } }),
-    prisma.songLeaderboard.count(),
-  ]);
-
-  const payload: HubPayload = {
-    topCharts,
-    recentRecords,
-    featuredCharters,
-    totals: { songs, runs },
-  };
-  apiCache.set(HUB_CACHE_KEY, payload, HUB_TTL_MS);
-  return payload;
+      const payload: HubPayload = {
+        topCharts,
+        recentRecords,
+        featuredCharters,
+        totals: { songs, runs },
+      };
+      return payload;
+    },
+    { l2: false },
+  );
 }
 
 async function fetchTopCharts(take: number): Promise<HubChart[]> {

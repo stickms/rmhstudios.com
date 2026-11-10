@@ -3,6 +3,7 @@ import { useTranslation } from'react-i18next';
 import { Trophy, Coins, Zap } from'lucide-react';
 import { UserAvatar } from'./UserAvatar';
 import { ColumnHeader } from'./ColumnHeader';
+import { EmptyState } from'@/components/ui/empty-state';
 import { Spinner } from'@/components/ui/spinner';
 import { Tabs, type TabItem } from'@/components/ui/tabs';
 import { Reveal } from'@/components/motion';
@@ -114,13 +115,16 @@ export function LeaderboardColumn({
  <Spinner />
  </div>
  ) : entries.length === 0 ? (
- <p className="py-16 text-center text-sm text-site-text-muted">
- {scope ==='friends'
+ <EmptyState
+ icon={Trophy}
+ title={
+ scope ==='friends'
  ? t('leaderboard-empty-friends', {
  defaultValue:'Follow some people to see how you stack up.',
  })
- : t('leaderboard-empty', { defaultValue:'No ranked players yet.'})}
- </p>
+ : t('leaderboard-empty', { defaultValue:'No ranked players yet.'})
+ }
+ />
  ) : (
  <div className="space-y-1">
  {entries.map((e) => (

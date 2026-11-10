@@ -35,9 +35,6 @@ type Metrics struct {
 	JobLastSuccess *prometheus.GaugeVec
 	// GatewayConnected is 1 while a Discord gateway session is connected.
 	GatewayConnected prometheus.Gauge
-	// PuzzlesReadyFor is the unix time (UTC midnight) of the latest day whose
-	// daily puzzles the doctrine worker has confirmed exist.
-	PuzzlesReadyFor prometheus.Gauge
 }
 
 // RecordJob counts one job run; an "ok" run also stamps JobLastSuccess. Safe
@@ -83,9 +80,6 @@ func New(service string) *Metrics {
 		}, []string{"job"}),
 		GatewayConnected: factory.NewGauge(prometheus.GaugeOpts{
 			Name: "rmh_discord_gateway_connected", Help: "1 while the Discord gateway is connected.", ConstLabels: labels,
-		}),
-		PuzzlesReadyFor: factory.NewGauge(prometheus.GaugeOpts{
-			Name: "rmh_doctrine_puzzles_ready_for_timestamp_seconds", Help: "UTC midnight of the latest day with its daily puzzles in place.", ConstLabels: labels,
 		}),
 	}
 }

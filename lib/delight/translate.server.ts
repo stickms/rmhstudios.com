@@ -5,7 +5,7 @@
  * locales/.
  */
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached } from '@/lib/cached.server';
 import { LOCALES } from '@/lib/i18n/config';
 import { LOCALE_LOADERS, type LocaleBundle } from '@/lib/i18n/resources';
 
@@ -52,22 +52,21 @@ export interface NsSummary {
 
 export async function summary(locale: string): Promise<NsSummary[]> {
   const key = `delight:tr-summary:${locale}`;
-  const hit = apiCache.get<NsSummary[]>(key);
-  if (hit) return hit;
-  const out: NsSummary[] = [];
-  for (const ns of await nsNames()) {
-    const [en, cur] = await Promise.all([flatNs('en', ns), flatNs(locale, ns)]);
-    let missing = 0;
-    let weak = 0;
-    for (const [k, v] of en) {
-      const c = cur.get(k);
-      if (c === undefined) missing++;
-      else if (isWeak(v, c)) weak++;
+  return cached(key, 60 * 60_000, async () => {
+    const out: NsSummary[] = [];
+    for (const ns of await nsNames()) {
+      const [en, cur] = await Promise.all([flatNs('en', ns), flatNs(locale, ns)]);
+      let missing = 0;
+      let weak = 0;
+      for (const [k, v] of en) {
+        const c = cur.get(k);
+        if (c === undefined) missing++;
+        else if (isWeak(v, c)) weak++;
+      }
+      if (missing + weak > 0) out.push({ ns, missing, weak });
     }
-    if (missing + weak > 0) out.push({ ns, missing, weak });
-  }
-  apiCache.set(key, out, 60 * 60_000);
-  return out;
+    return out;
+  });
 }
 
 export interface StringItem {

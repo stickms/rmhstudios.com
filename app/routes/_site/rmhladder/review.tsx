@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import {
@@ -62,6 +63,7 @@ interface ReviewSearch {
 }
 
 export const Route = createFileRoute('/_site/rmhladder/review')({
+  head: () => noindexHead('Review queue | RMH Ladder'),
   validateSearch: (search: Record<string, unknown>): ReviewSearch => ({
     tab: search.tab === 'resolved' ? 'resolved' : undefined,
   }),

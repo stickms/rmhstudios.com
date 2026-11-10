@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { CACHE_POLICY } from '@/lib/api/cache-policies';
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached } from '@/lib/cached.server';
 
 export const Route = createFileRoute('/api/doctrine/puzzles/leaderboard')({
   server: {
@@ -13,7 +13,7 @@ export const Route = createFileRoute('/api/doctrine/puzzles/leaderboard')({
           auth: 'none',
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-lb' },
           // (mode, date, limit) are all query params, hence part of the key.
-          // Opt out of the 30 s micro-cache: puzzles/submit invalidates the board in apiCache.
+          // Opt out of the 30 s micro-cache: puzzles/submit invalidates the board's cache tag.
           microCache: false,
           cache: CACHE_POLICY.leaderboard,
         },
@@ -25,34 +25,38 @@ export const Route = createFileRoute('/api/doctrine/puzzles/leaderboard')({
             const limit = pageSize(url.searchParams.get('limit'), 50, 100);
 
             const cacheKey = `doctrine:leaderboard:${mode}:${date}:${limit}`;
-            const cached = apiCache.get(cacheKey);
-            if (cached) return Response.json(cached);
+            // Tagged per (mode, date) so puzzles/submit can drop every `limit` variant at once
+            // (tags are L1-only and broadcast to every process).
+            const result = await cached(
+              cacheKey,
+              30_000,
+              async () => {
+                const entries = await prisma.doctrinePuzzleSubmission.findMany({
+                  where: {
+                    puzzle: {
+                      mode: mode as 'ALIBI' | 'SPECTRUM' | 'OUTCAST' | 'CHAINLINK' | 'IMPOSTOR',
+                      date: new Date(date + 'T00:00:00Z'),
+                    },
+                    correct: true,
+                  },
+                  orderBy: { score: 'desc' },
+                  take: limit,
+                  include: {
+                    user: { select: { id: true, name: true, handle: true, image: true } },
+                  },
+                });
 
-            const entries = await prisma.doctrinePuzzleSubmission.findMany({
-              where: {
-                puzzle: {
-                  mode: mode as 'ALIBI' | 'SPECTRUM' | 'OUTCAST' | 'CHAINLINK' | 'IMPOSTOR',
-                  date: new Date(date + 'T00:00:00Z'),
-                },
-                correct: true,
+                return entries.map((entry, index) => ({
+                  rank: index + 1,
+                  userId: entry.userId,
+                  user: entry.user,
+                  score: entry.score,
+                  timeMs: entry.timeMs,
+                  attempts: entry.attempts,
+                }));
               },
-              orderBy: { score: 'desc' },
-              take: limit,
-              include: {
-                user: { select: { id: true, name: true, handle: true, image: true } },
-              },
-            });
-
-            const result = entries.map((entry, index) => ({
-              rank: index + 1,
-              userId: entry.userId,
-              user: entry.user,
-              score: entry.score,
-              timeMs: entry.timeMs,
-              attempts: entry.attempts,
-            }));
-
-            apiCache.set(cacheKey, result, 30_000); // 30s cache
+              { tags: [`doctrine:leaderboard:${mode}:${date}`] },
+            );
             return Response.json(result);
           } catch (e) {
             console.error('Doctrine leaderboard failed:', e);

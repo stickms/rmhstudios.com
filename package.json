@@ -34,6 +34,7 @@
     "homes-worker:dev": "pnpm exec tsx watch --include \"server/homes-worker/**/*\" --include \"lib/homes/**/*\" server/homes-worker/index.ts",
     "jobs:dev": "pnpm exec tsx watch --include \"server/jobs/**/*\" --include \"lib/jobs/**/*\" --include \"lib/social/engagement-effects.server.ts\" server/jobs/index.ts",
     "lint": "eslint",
+    "a11y:ratchet": "node scripts/count-jsx-a11y.mjs --check",
     "lint:ratchet": "pnpm exec tsx scripts/check-lint-ratchet.ts",
     "lint:ratchet:update": "pnpm exec tsx scripts/check-lint-ratchet.ts --update",
     "format": "prettier --write .",

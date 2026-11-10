@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { doUpdateApplicationSchema } from '@/lib/rmhladder/server-fn-schemas.server';
@@ -85,6 +86,7 @@ const doUpdateApplication = createServerFn({ method: 'POST' })
   });
 
 export const Route = createFileRoute('/_site/rmhladder/pipeline')({
+  head: () => noindexHead('Pipeline | RMH Ladder'),
   loader: () => fetchApplications(),
   component: PipelinePage,
 });

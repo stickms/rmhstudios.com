@@ -14,7 +14,7 @@
 // no worse. Imports are RELATIVE (not `@/` aliased) because Nitro plugin modules
 // don't reliably resolve the tsconfig path aliases; they still resolve to the
 // same absolute files as the request handlers, so the warmed singletons
-// (apiCache / cachedSWR L1, the Prisma pool) are the ones requests read.
+// (the cached() L1, the Prisma pool) are the ones requests read.
 
 export default function warmupPlugin() {
   // Do NOT await — let the worker start serving immediately. Warming races the

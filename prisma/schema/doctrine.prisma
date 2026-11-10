@@ -286,30 +286,14 @@ model DoctrineReaction {
 // ─── SAHUR MODE ─────────────────────────────────────────────────────────────
 
 model DoctrineSahurSession {
-  id               String                       @id @default(cuid())
+  id               String    @id @default(cuid())
   dateKey          String
   timezone         String
-  activatedAt      DateTime                     @default(now())
+  activatedAt      DateTime  @default(now())
   deactivatedAt    DateTime?
-  participantCount Int                          @default(0)
-  participants     DoctrineSahurParticipation[]
+  participantCount Int       @default(0)
 
   @@unique([dateKey, timezone])
   @@index([dateKey])
   @@map("doctrine_sahur_session")
-}
-
-/// DEAD (rewrite R0-T7): zero code references. Drop scheduled R1-T3; do not add writers.
-model DoctrineSahurParticipation {
-  id               String               @id @default(cuid())
-  sessionId        String
-  session          DoctrineSahurSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  userId           String
-  user             User                 @relation(fields: [userId], references: [id])
-  joinedAt         DateTime             @default(now())
-  puzzlesCompleted Int                  @default(0)
-  xpEarned         Int                  @default(0)
-
-  @@unique([sessionId, userId])
-  @@map("doctrine_sahur_participation")
 }

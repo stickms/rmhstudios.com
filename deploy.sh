@@ -1388,12 +1388,12 @@ step_done
 # NOTE: web is intentionally NOT checked here — the hotswap in Step 4b already
 # proved the new web container serves traffic before flipping Apache to it, and
 # web now listens on the blue/green port, not the fixed $PORT_WEB.
-# The supervisor /health gate (the five Go background workers) can take up to
+# The supervisor /health gate (the three Go background workers) can take up to
 # ~120s (it covers the DB WaitForReachable before the metrics server binds). It
 # used to run AFTER the port checks, serializing the two waits. Run it as one
 # more background job in the same wave so its long poll OVERLAPS the port checks —
 # total health time becomes max(port, supervisor), not their sum.
-# discord-bot / recap / doctrine-worker / vibe-worker / bot-worker run as
+# discord-bot / vibe-worker / bot-worker run as
 # goroutines inside the single `supervisor` process; it serves a MERGED
 # /health + /metrics on METRICS_ADDR (:9090), NOT host-published, so we probe it
 # from INSIDE the container with `dc exec`.
@@ -1419,12 +1419,12 @@ if [ -n "$failed_services" ]; then
     exit 1
 fi
 
-# Confirm the merged metrics registry exposes all five workers. A missing label
+# Confirm the merged metrics registry exposes all three workers. A missing label
 # means one worker silently failed to register inside the shared process (not
 # that the process is down) — log it for the post-deploy watch rather than
 # blocking the deploy.
 SUP_METRICS=$(dc exec -T supervisor curl -fsS "http://localhost:${SUPERVISOR_METRICS_PORT}/metrics" 2>/dev/null || echo "")
-for w in discord-bot recap doctrine-worker vibe-worker bot-worker; do
+for w in discord-bot vibe-worker bot-worker; do
     printf '%s' "$SUP_METRICS" | grep -q "service=\"$w\"" || \
         log "WARNING: supervisor /metrics missing service=\"$w\" label — check that worker."
 done

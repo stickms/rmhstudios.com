@@ -23,13 +23,13 @@
  *  - **What is stored.** Only a 200 with no `Set-Cookie`, no encoding, no stream,
  *    and at most 64 KB. Errors and redirects are never cached.
  *  - **Memory.** Its own LRU of `API_RESPONSE_CACHE_ENTRIES` (default 500, 0
- *    disables), NOT the shared `apiCache`: the key space includes arbitrary query
+ *    disables), NOT the shared `cached()` L1: the key space includes arbitrary query
  *    strings, and sharing would let a scan of unique URLs evict every per-user
  *    cache. At 500 entries and a typical 2-10 KB body that is 1-5 MB per worker;
  *    the hard ceiling is 500 x 64 KB = 32 MB.
  *  - **Stampede.** Concurrent misses for one key share one handler run.
- *  - **Invalidation.** TTL only, which the 30 s cap states: `apiCache.invalidate*`
- *    does not reach this cache (it is keyed by URL, not by apiCache key). A public
+ *  - **Invalidation.** TTL only, which the 30 s cap states: `invalidateCached*`
+ *    does not reach this cache (it is keyed by URL, not by cache key). A public
  *    route whose data has a write path that invalidates, or whose visibility can be
  *    flipped (a private wishlist), must pass `microCache: false` to `defineHandler`;
  *    `lib/__tests__/api-micro-cache-optout.test.ts` pins the set.
@@ -37,7 +37,7 @@
  *    cached, so a `?x=1..N` sweep cannot flush the LRU. The byte budget is a share
  *    of the heap (`heapShare`), like the other caches.
  */
-import { ApiCache, heapShare } from '@/lib/cache';
+import { heapShare, lruL1 } from '@/lib/cached.server';
 
 const MAX_BODY_BYTES = 64 * 1024;
 const MAX_TTL_MS = 30_000;
@@ -79,7 +79,7 @@ function configuredEntries(): number {
 const entries = configuredEntries();
 const store =
   entries > 0
-    ? new ApiCache({
+    ? lruL1('api-response-cache', {
         maxEntries: entries,
         maxBytes: heapShare(RESPONSE_CACHE_HEAP_SHARE, 16 * 1024 * 1024),
       })
@@ -175,6 +175,6 @@ export async function withResponseCache(
 
 /** Test hook: drop everything. */
 export function clearResponseCache(): void {
-  store?.invalidatePrefix('');
+  store?.clear();
   inflight.clear();
 }

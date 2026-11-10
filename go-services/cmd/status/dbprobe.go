@@ -119,3 +119,35 @@ func jobFreshness(dsn string, timeout time.Duration) func(ctx context.Context) (
 		return out, rows.Err()
 	}
 }
+
+// puzzlesReadyFor returns a reader for status.Config.PuzzlesReadyFor (A19): the
+// latest UTC day for which every doctrine puzzle mode (6, SAHUR_SPECIAL included)
+// exists, looked at straight in doctrine_puzzle so it does not depend on which
+// process generated them. Zero time when no day in the window is complete. Nil
+// when there is no DATABASE_URL.
+func puzzlesReadyFor(dsn string, timeout time.Duration) func(ctx context.Context) (time.Time, error) {
+	if dsn == "" {
+		return nil
+	}
+	d := &dbProbe{dsn: dsn, timeout: timeout}
+	const query = `SELECT max("date") FROM (
+		SELECT "date" FROM doctrine_puzzle
+		WHERE "date" >= ((now() AT TIME ZONE 'utc')::date - 2)
+		GROUP BY "date" HAVING count(DISTINCT "mode") >= 6) d`
+	return func(ctx context.Context) (time.Time, error) {
+		pool, err := d.ensurePool(ctx)
+		if err != nil {
+			return time.Time{}, err
+		}
+		qctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+		var day *time.Time
+		if err := pool.QueryRow(qctx, query).Scan(&day); err != nil {
+			return time.Time{}, err
+		}
+		if day == nil {
+			return time.Time{}, nil
+		}
+		return time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, time.UTC), nil
+	}
+}

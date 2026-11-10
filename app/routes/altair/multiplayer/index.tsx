@@ -6,6 +6,7 @@
  */
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { noindexHead } from '@/lib/seo';
 import { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Users, Zap, UserPlus, RefreshCw, Globe, Lock, Eye } from 'lucide-react'
@@ -346,5 +347,6 @@ function AltairMultiplayerLanding() {
 }
 
 export const Route = createFileRoute('/altair/multiplayer/')({
+  head: () => noindexHead('Altair Multiplayer'),
   component: AltairMultiplayerLanding,
 })

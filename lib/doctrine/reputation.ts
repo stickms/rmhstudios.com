@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached, invalidateCachedPrefix } from '@/lib/cached.server';
 import { RANKS, WEEKLY_DECAY_RATE, XP_ACTIONS } from './constants';
 import type { RankDefinition } from './types';
 
@@ -74,8 +74,8 @@ export async function awardXp(
   });
 
   // Invalidate cache
-  apiCache.invalidate(`doctrine:rep:${userId}`);
-  apiCache.invalidatePrefix('doctrine:leaderboard');
+  void invalidateCached(`doctrine:rep:${userId}`);
+  void invalidateCachedPrefix('doctrine:leaderboard');
 
   const rank = getRank(reputation.totalXp);
   return { totalXp: reputation.totalXp, rank };
@@ -86,12 +86,15 @@ export async function awardXp(
  */
 export async function getReputation(userId: string) {
   const cacheKey = `doctrine:rep:${userId}`;
-  const cached = apiCache.get<Awaited<ReturnType<typeof fetchReputation>>>(cacheKey);
-  if (cached) return cached;
-
-  const result = await fetchReputation(userId);
-  apiCache.set(cacheKey, result, 60_000); // 1 minute TTL
-  return result;
+  return cached(
+    cacheKey,
+    60_000,
+    async () => {
+      const result = await fetchReputation(userId);
+      return result;
+    },
+    { l2: false },
+  );
 }
 
 async function fetchReputation(userId: string) {
@@ -156,7 +159,7 @@ export async function updateStreak(userId: string): Promise<number> {
     },
   });
 
-  apiCache.invalidate(`doctrine:rep:${userId}`);
+  void invalidateCached(`doctrine:rep:${userId}`);
   return newStreak;
 }
 
@@ -165,12 +168,15 @@ export async function updateStreak(userId: string): Promise<number> {
  */
 export async function getReputationLeaderboard(limit = 50) {
   const cacheKey = `doctrine:leaderboard:rep:${limit}`;
-  const cached = apiCache.get<Awaited<ReturnType<typeof fetchLeaderboard>>>(cacheKey);
-  if (cached) return cached;
-
-  const result = await fetchLeaderboard(limit);
-  apiCache.set(cacheKey, result, 30_000); // 30s TTL
-  return result;
+  return cached(
+    cacheKey,
+    30_000,
+    async () => {
+      const result = await fetchLeaderboard(limit);
+      return result;
+    },
+    { l2: false },
+  );
 }
 
 async function fetchLeaderboard(limit: number) {
@@ -206,8 +212,9 @@ export async function calculateCoalitionScore(userId: string): Promise<number> {
     prisma.doctrineAccessLog.findFirst({ where: { userId }, select: { id: true } }),
   ]);
 
-  const activeProducts = [hasAltair, hasPuzzles, hasSliceIt, hasRmhbox, hasSafehouse]
-    .filter(Boolean).length;
+  const activeProducts = [hasAltair, hasPuzzles, hasSliceIt, hasRmhbox, hasSafehouse].filter(
+    Boolean,
+  ).length;
 
   // 1.0x base, +0.15x per additional product, max 2.0x
   return Math.min(2.0, 1.0 + (activeProducts - 1) * 0.15);

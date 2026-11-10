@@ -12,6 +12,7 @@
  */
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { gameRouteHead } from '@/lib/seo-catalog';
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Gamepad2, LogOut } from 'lucide-react';
@@ -261,5 +262,6 @@ function RMHboxLanding() {
 }
 
 export const Route = createFileRoute('/rmhbox/')({
+  head: () => gameRouteHead('rmhbox'),
   component: RMHboxLanding,
 });

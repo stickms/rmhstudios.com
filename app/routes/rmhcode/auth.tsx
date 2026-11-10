@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { Link } from '@tanstack/react-router';
 import { useState, useEffect, Suspense } from 'react';
 import { m as motion } from 'framer-motion';
@@ -161,6 +162,7 @@ function RmhCodeAuthPage() {
 }
 
 export const Route = createFileRoute('/rmhcode/auth')({
+  head: () => noindexHead('RMHCode Sign-in'),
   validateSearch: (search: Record<string, unknown>) => ({
     callback: (search.callback as string) || '',
     session: (search.session as string) || '',

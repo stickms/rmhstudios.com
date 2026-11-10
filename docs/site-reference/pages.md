@@ -238,13 +238,13 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/covid` | — | public | `app/routes/covid.tsx` |
 | `/csgo` | — | public | `app/routes/csgo.tsx` |
 | `/daily` | Daily Puzzles | public | `app/routes/daily/index.tsx` |
-| `/daily/alibi` | — | public | `app/routes/daily/alibi.tsx` |
-| `/daily/chainlink` | — | public | `app/routes/daily/chainlink.tsx` |
+| `/daily/alibi` | Alibi \| Daily Puzzles | public | `app/routes/daily/alibi.tsx` |
+| `/daily/chainlink` | Chainlink \| Daily Puzzles | public | `app/routes/daily/chainlink.tsx` |
 | `/daily/globeset` | GlobeSet | public | `app/routes/daily/globeset.tsx` |
-| `/daily/impostor` | — | public | `app/routes/daily/impostor.tsx` |
-| `/daily/lights-out` | — | public | `app/routes/daily/lights-out.tsx` |
-| `/daily/outcast` | — | public | `app/routes/daily/outcast.tsx` |
-| `/daily/spectrum` | — | public | `app/routes/daily/spectrum.tsx` |
+| `/daily/impostor` | Impostor \| Daily Puzzles | public | `app/routes/daily/impostor.tsx` |
+| `/daily/lights-out` | Lights Out \| Daily Puzzles | public | `app/routes/daily/lights-out.tsx` |
+| `/daily/outcast` | Outcast \| Daily Puzzles | public | `app/routes/daily/outcast.tsx` |
+| `/daily/spectrum` | Spectrum \| Daily Puzzles | public | `app/routes/daily/spectrum.tsx` |
 | `/deeplink` | — | public | `app/routes/deeplink.ts` |
 | `/deeplink/:page` | — | public | `app/routes/deeplink.$page.ts` |
 | `/design` | Spatial Minimalism | public | `app/routes/design.tsx` |
@@ -355,18 +355,18 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/sohumtracker/month/:month` | — | public | `app/routes/sohumtracker/month.$month.tsx` |
 | `/sohumtracker/week/:week` | — | public | `app/routes/sohumtracker/week.$week.tsx` |
 | `/strategies` | — | public | `app/routes/strategies/index.tsx` |
-| `/strategies/incidents` | — | public | `app/routes/strategies/incidents.tsx` |
+| `/strategies/incidents` | Incidents \| RMH Strategies | public | `app/routes/strategies/incidents.tsx` |
 | `/strategies/profile` | — | public | `app/routes/strategies/profile/index.tsx` |
 | `/strategies/profile/reputation` | — | public | `app/routes/strategies/profile/reputation.tsx` |
 | `/strategies/profile/settings` | — | public | `app/routes/strategies/profile/settings.tsx` |
-| `/strategies/puzzles` | — | public | `app/routes/strategies/puzzles/index.tsx` |
+| `/strategies/puzzles` | Puzzles \| RMH Strategies | public | `app/routes/strategies/puzzles/index.tsx` |
 | `/strategies/puzzles/:mode` | — | public | `app/routes/strategies/puzzles/$mode.tsx` |
-| `/strategies/puzzles/archive` | — | public | `app/routes/strategies/puzzles/archive.tsx` |
-| `/strategies/puzzles/leaderboard` | — | public | `app/routes/strategies/puzzles/leaderboard.tsx` |
+| `/strategies/puzzles/archive` | Puzzle Archive \| RMH Strategies | public | `app/routes/strategies/puzzles/archive.tsx` |
+| `/strategies/puzzles/leaderboard` | Puzzle Leaderboard \| RMH Strategies | public | `app/routes/strategies/puzzles/leaderboard.tsx` |
 | `/strategies/safehouse` | — | public | `app/routes/strategies/safehouse/index.tsx` |
 | `/strategies/safehouse/drops` | — | public | `app/routes/strategies/safehouse/drops.tsx` |
 | `/strategies/safehouse/recruit` | — | public | `app/routes/strategies/safehouse/recruit.tsx` |
-| `/strategies/sahur` | — | public | `app/routes/strategies/sahur.tsx` |
+| `/strategies/sahur` | Sahur \| RMH Strategies | public | `app/routes/strategies/sahur.tsx` |
 | `/studio` | — | sign-in | `app/routes/studio/index.tsx` |
 | `/synapse-storm` | — | public | `app/routes/synapse-storm.tsx` |
 | `/tag/:tag/rss.xml` | — | public | `app/routes/tag.$tag.rss[.]xml.ts` |

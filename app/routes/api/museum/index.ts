@@ -10,7 +10,7 @@ export const Route = createFileRoute('/api/museum/')({
         {
           auth: 'none',
           rateLimit: 'read',
-          // Opt out of the 30 s micro-cache: writes clear apiCache (museum.server) and must show at once.
+          // Opt out of the 30 s micro-cache: writes clear the shared cache (museum.server) and must show at once.
           microCache: false,
           cache: { visibility: 'public', maxAge: 60, sMaxAge: 300 },
         },

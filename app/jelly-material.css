@@ -360,6 +360,7 @@
       [contenteditable=''],
       [data-evert~='select'],
       .touch-target,
+      .hit-slop,
       :is(
           [data-jelly-scope='off'],
           [data-jelly-zone='playfield'],
@@ -393,6 +394,7 @@
       [contenteditable=''],
       [data-evert~='select'],
       .touch-target,
+      .hit-slop,
       :is(
           [data-jelly-scope='off'],
           [data-jelly-zone='playfield'],
@@ -517,6 +519,7 @@
       [contenteditable=''],
       [data-evert~='select'],
       .touch-target,
+      .hit-slop,
       :is(
           [data-jelly-scope='off'],
           [data-jelly-zone='playfield'],
@@ -548,6 +551,7 @@
       [contenteditable=''],
       [data-evert~='select'],
       .touch-target,
+      .hit-slop,
       :is(
           [data-jelly-scope='off'],
           [data-jelly-zone='playfield'],
@@ -585,6 +589,7 @@
         [contenteditable=''],
         [data-evert~='select'],
         .touch-target,
+        .hit-slop,
         :is(
             [data-jelly-scope='off'],
             [data-jelly-zone='playfield'],
@@ -616,6 +621,7 @@
         [contenteditable=''],
         [data-evert~='select'],
         .touch-target,
+        .hit-slop,
         :is(
             [data-jelly-scope='off'],
             [data-jelly-zone='playfield'],
@@ -712,6 +718,7 @@ html[data-scrolling]
     [contenteditable=''],
     [data-evert~='select'],
     .touch-target,
+    .hit-slop,
     :is(
         [data-jelly-scope='off'],
         [data-jelly-zone='playfield'],
@@ -743,6 +750,7 @@ html[data-game-state='playing']
     [contenteditable=''],
     [data-evert~='select'],
     .touch-target,
+    .hit-slop,
     :is(
         [data-jelly-scope='off'],
         [data-jelly-zone='playfield'],
@@ -773,6 +781,7 @@ html[data-game-state='playing']
     [contenteditable=''],
     [data-evert~='select'],
     .touch-target,
+    .hit-slop,
     :is(
         [data-jelly-scope='off'],
         [data-jelly-zone='playfield'],
@@ -809,6 +818,7 @@ html[data-jelly-motion='still']
     [contenteditable=''],
     [data-evert~='select'],
     .touch-target,
+    .hit-slop,
     :is(
         [data-jelly-scope='off'],
         [data-jelly-zone='playfield'],
@@ -842,6 +852,7 @@ html[data-jelly-motion='still']
       [contenteditable=''],
       [data-evert~='select'],
       .touch-target,
+      .hit-slop,
       :is(
           [data-jelly-scope='off'],
           [data-jelly-zone='playfield'],
@@ -881,6 +892,7 @@ html[data-jelly-motion='still']
     [contenteditable=''],
     [data-evert~='select'],
     .touch-target,
+    .hit-slop,
     :is(
         [data-jelly-scope='off'],
         [data-jelly-zone='playfield'],
@@ -913,6 +925,7 @@ html[data-game-state='playing']
     [contenteditable=''],
     [data-evert~='select'],
     .touch-target,
+    .hit-slop,
     :is(
         [data-jelly-scope='off'],
         [data-jelly-zone='playfield'],
@@ -960,6 +973,7 @@ html[data-game-state='playing']
       [contenteditable=''],
       [data-evert~='select'],
       .touch-target,
+      .hit-slop,
       :is(
           [data-jelly-scope='off'],
           [data-jelly-zone='playfield'],
@@ -1659,6 +1673,7 @@ html[data-game-state='playing']
         [contenteditable=''],
         [data-evert~='select'],
         .touch-target,
+        .hit-slop,
         :is(
             [data-jelly-scope='off'],
             [data-jelly-zone='playfield'],
@@ -1715,6 +1730,7 @@ html[data-game-state='playing']
         [contenteditable=''],
         [data-evert~='select'],
         .touch-target,
+        .hit-slop,
         :is(
             [data-jelly-scope='off'],
             [data-jelly-zone='playfield'],

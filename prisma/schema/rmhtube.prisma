@@ -91,38 +91,6 @@ model RmhTubeQueueItem {
   @@map("rmhtube_queue_item")
 }
 
-/// DEAD (rewrite R0-T7): zero code references. Drop scheduled R1-T3; do not add writers.
-model RmhTubePlaylist {
-  id        String   @id @default(cuid())
-  name      String
-  userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user  User                  @relation(fields: [userId], references: [id])
-  items RmhTubePlaylistItem[]
-
-  @@index([userId])
-  @@map("rmhtube_playlist")
-}
-
-/// DEAD (rewrite R0-T7): zero code references. Drop scheduled R1-T3; do not add writers.
-model RmhTubePlaylistItem {
-  id           String  @id @default(cuid())
-  playlistId   String
-  url          String
-  mediaType    String
-  title        String
-  duration     Int?
-  thumbnailUrl String?
-  position     Int
-
-  playlist RmhTubePlaylist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
-
-  @@index([playlistId, position])
-  @@map("rmhtube_playlist_item")
-}
-
 /// Channel subscription — subscribe to another user's RMHTube activity (#32).
 model RmhTubeSubscription {
   id           String   @id @default(cuid())
@@ -138,7 +106,7 @@ model RmhTubeSubscription {
   @@map("rmhtube_subscription")
 }
 
-/// DEAD (rewrite R0-T7): zero code references. Drop scheduled R1-T3; do not add writers.
+/// (Formerly marked DEAD; it is read by lib/profile/app-profiles.server.ts, so it stays.)
 model RmhTubeUserStats {
   userId                String   @id
   totalWatchTimeMinutes Int      @default(0)

@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +8,10 @@ import { aggregateReactions } from '@/lib/doctrine/divisiveness';
 import { EMPTY_REACTIONS } from '@/lib/doctrine/types';
 
 export const Route = createFileRoute('/strategies/incidents')({
+  head: () => ({
+    meta: buildMeta({ title: 'Incidents | RMH Strategies | RMH Studios', description: 'Live incident reports and community notices for RMH Strategies.', path: '/strategies/incidents' }),
+    links: [buildCanonical('/strategies/incidents')],
+  }),
   component: IncidentsPage,
 });
 

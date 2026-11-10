@@ -3,6 +3,7 @@
  */
 
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { ShopModal } from '@/components/cursed-logic/ShopModal';
 import { useShopStore } from '@/lib/cursed-logic/shopState';
 
 export const Route = createFileRoute('/secret/cursed-logic/')({
+  head: () => noindexHead('Cursed Logic'),
   component: CursedLogicPage,
 });
 

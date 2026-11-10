@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { TriangleAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useDiscordSdk } from '@/lib/discord-sdk';
@@ -54,5 +55,6 @@ function DiscordLightsOutPage() {
 }
 
 export const Route = createFileRoute('/discord/lights-out')({
+  head: () => noindexHead('Lights Out (Discord Activity)'),
     component: DiscordLightsOutPage,
 });

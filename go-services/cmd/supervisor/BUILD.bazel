@@ -11,8 +11,6 @@ go_library(
     deps = [
         "//go-services/internal/botworker",
         "//go-services/internal/discordbot",
-        "//go-services/internal/doctrine",
-        "//go-services/internal/recap",
         "//go-services/internal/vibeworker",
         "//go-services/pkg/config",
         "//go-services/pkg/db",
@@ -40,8 +38,6 @@ go_test(
     deps = [
         "//go-services/internal/botworker",
         "//go-services/internal/discordbot",
-        "//go-services/internal/doctrine",
-        "//go-services/internal/recap",
         "//go-services/internal/vibeworker",
         "//go-services/pkg/config",
         "//go-services/pkg/db",

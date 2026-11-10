@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { appRouteHead } from '@/lib/seo-catalog';
 import { Link } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -363,5 +364,6 @@ function RmhCodePage() {
 }
 
 export const Route = createFileRoute('/rmhcode/')({
+  head: () => appRouteHead('rmhcode'),
   component: RmhCodePage,
 });

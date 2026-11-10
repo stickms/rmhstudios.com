@@ -40,7 +40,7 @@ function createRng(seed: number) {
  * Generate a deterministic seed from a date string and mode.
  * Same date + mode always produces the same seed.
  */
-export function getSeedForDate(date: string, mode: PuzzleMode): number {
+export function getSeedForDate(date: string, mode: PuzzleMode | 'sahur_special'): number {
   let hash = 0;
   const input = `${date}:${mode}:doctrine`;
   for (let i = 0; i < input.length; i++) {
@@ -54,7 +54,7 @@ export function getSeedForDate(date: string, mode: PuzzleMode): number {
  * Calculate difficulty based on the day of week.
  * Monday=1 (easiest) → Friday=3 (medium) → Sunday=5 (hardest)
  */
-function getDifficulty(date: string): 1 | 2 | 3 | 4 | 5 {
+export function getDifficulty(date: string): 1 | 2 | 3 | 4 | 5 {
   const day = new Date(date + 'T12:00:00Z').getUTCDay(); // 0=Sun, 6=Sat
   const map: Record<number, 1 | 2 | 3 | 4 | 5> = {
     1: 1, 2: 2, 3: 3, 4: 3, 5: 4, 6: 4, 0: 5,

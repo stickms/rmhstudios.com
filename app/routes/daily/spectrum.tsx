@@ -1,6 +1,7 @@
 // app/routes/daily/spectrum.tsx
 import { Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 
@@ -21,5 +22,9 @@ function SpectrumPage() {
 }
 
 export const Route = createFileRoute('/daily/spectrum')({
+  head: () => ({
+    meta: buildMeta({ title: 'Spectrum | Daily Puzzles | RMH Studios', description: "Place the clue on the spectrum in today's daily Spectrum puzzle.", path: '/daily/spectrum' }),
+    links: [buildCanonical('/daily/spectrum')],
+  }),
   component: SpectrumPage,
 });

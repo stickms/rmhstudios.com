@@ -30,8 +30,7 @@ Current production (Docker Compose on the VPS):
 
 Consequences:
 
-- `server/doctrine-worker/`, `server/vibe-worker/`, `server/bot-worker/`,
-  `server/recap/`, `server/status/` were **replaced by Go** (they run as
+- `server/vibe-worker/`, `server/bot-worker/`, `server/status/` were **replaced by Go** (they run as
   goroutines inside the Go `supervisor`, or as the Go `status` binary) and their
   dead Node source was **deleted in the rewrite reap (R0-T5)** — recover from
   git history (or the `pre-rewrite-*` tags) if a rollback ever needs them.
@@ -103,7 +102,11 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   consumer that drains queues and runs background work that used to block
   request handlers: `engagement.progression` (achievements/XP/quests/webhooks),
   `event.reminder` (T-24h/T-15m RSVP reminders), and the `email.weekly-digest`
-  cron. Hourly `ops.deepseek-balance` (`:05` UTC, `lib/jobs/maintenance.server.ts`)
+  cron. D3 ports from the Go supervisor: `streak.reminder-sweep` (hourly),
+  `lights-out.recap` (Lights Out → Discord recap, every 5 min; REST only, no gateway presence),
+  and `doctrine.*` (`daily-puzzles` 00:00 UTC + at boot, `sahur-activation` every minute,
+  `reputation-decay` hourly on Mondays; `lib/doctrine/jobs.server.ts`). The status service
+  watches the recap and sahur queues in pg-boss (B06) and `doctrine_puzzle` itself (A19). Hourly `ops.deepseek-balance` (`:05` UTC, `lib/jobs/maintenance.server.ts`)
   samples the DeepSeek account balance into `deepseek_balance_snapshot` for
   `/admin/deepseek` and prunes rows older than 400 days; it skips silently when
   `DEEPSEEK_API_KEY` is unset.
@@ -149,9 +152,8 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
 
 ### Deleted (replaced by Go)
 
-The dead Node fallbacks — `doctrine-worker/` (daily puzzle gen, reputation
-decay), `vibe-worker/` (Playwright thumbnail renderer), `bot-worker/` (synthetic
-AI feed users), `recap/` (Lights Out Discord recaps), `status/` (status page) —
+The dead Node fallbacks — `vibe-worker/` (Playwright thumbnail renderer), `bot-worker/` (synthetic
+AI feed users), `status/` (status page) —
 were removed in the rewrite reap (R0-T5). These behaviors live in
 `go-services/internal/<svc>/` (run by the Go `supervisor`, or the Go `status`
 binary) — see `go-services/CLAUDE.md`. Recover the old Node source from git
@@ -161,7 +163,7 @@ history if a rollback ever needs it.
 
 - **Dev:** `pnpm dev` = concurrently Vite (7005) + socket-server + rmhbox +
   rmhtube + ladder-worker + homes-worker + jobs, each under `tsx watch`. The
-  Go-replaced workers (doctrine/vibe/bot/recap/status) do not run in dev.
+  Go-replaced workers (vibe/bot/status) do not run in dev. The recap and doctrine crons run in `jobs` (D3), so they do.
 - **Build order is load-bearing:** `pnpm build` = build-vibe-packages →
   `vite build` → esbuild bundles exactly **6 entrypoints**
   (socket-server, rmhbox, rmhtube, ladder-worker, homes-worker, jobs) into

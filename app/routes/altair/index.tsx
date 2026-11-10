@@ -5,6 +5,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router'
+import { gameRouteHead } from '@/lib/seo-catalog';
 import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
@@ -355,5 +356,6 @@ function AltairPage() {
 }
 
 export const Route = createFileRoute('/altair/')({
+  head: () => gameRouteHead('altair'),
   component: AltairPage,
 })

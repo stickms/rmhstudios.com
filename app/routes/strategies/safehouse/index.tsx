@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +9,7 @@ import { AccessGate } from '@/components/doctrine/safehouse/access-gate';
 import { Shield } from 'lucide-react';
 
 export const Route = createFileRoute('/strategies/safehouse/')({
+  head: () => noindexHead('Safehouse'),
   component: SafehouseFeed,
 });
 
