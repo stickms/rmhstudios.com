@@ -20,16 +20,16 @@ permission.
 
 | Layer                | Where                                                  | Owner     |
 | -------------------- | ------------------------------------------------------ | --------- |
-| Signalling contract  | `lib/balatro/net/{events,limits}.ts`                   | WS0       |
+| Signalling contract  | `features/balatro/engine/net/{events,limits}.ts`                   | WS0       |
 | Hub handlers         | `server/socket-server/handlers/balatro-{p2p,queue}.ts` | WS1, WS12 |
 | Shared P2P transport | `lib/shared/p2p/`                                      | WS1       |
-| Domain types         | `lib/balatro/mp/types.ts`                              | WS0       |
-| P2P wire catalogue   | `lib/balatro/mp/wire.ts`                               | WS0       |
-| Lua↔JS mailbox       | `lib/balatro/mp/bridge-protocol.ts` · `bridge.ts`      | WS0 · WS3 |
-| Referee, timers      | `lib/balatro/mp/{referee,timer,rulesets,setup}/`       | WS4       |
-| Session runtime      | `lib/balatro/mp/{index,transport,lobby,match,…}.ts`    | WS5       |
-| Lua MP pack          | `lib/balatro/lua/mp/rmh_mp/**`                         | WS6–WS13  |
-| Generated protocol   | `lib/balatro/lua/mp/rmh_mp/protocol.lua`               | WS0 (gen) |
+| Domain types         | `features/balatro/engine/mp/types.ts`                              | WS0       |
+| P2P wire catalogue   | `features/balatro/engine/mp/wire.ts`                               | WS0       |
+| Lua↔JS mailbox       | `features/balatro/engine/mp/bridge-protocol.ts` · `bridge.ts`      | WS0 · WS3 |
+| Referee, timers      | `features/balatro/engine/mp/{referee,timer,rulesets,setup}/`       | WS4       |
+| Session runtime      | `features/balatro/engine/mp/{index,transport,lobby,match,…}.ts`    | WS5       |
+| Lua MP pack          | `features/balatro/engine/lua/mp/rmh_mp/**`                         | WS6–WS13  |
+| Generated protocol   | `features/balatro/engine/lua/mp/rmh_mp/protocol.lua`               | WS0 (gen) |
 | MP assets, loc       | `data/balatro-mp/**`                                   | WS2       |
 
 **Topology.** A star around the lobby host. `transport/host-star.ts` holds one
@@ -57,7 +57,7 @@ Late results (`balatro/results.ts`, HUD-24): the room's current host reports a f
 (`balatro:match:result`); each roster player no longer in the room gets their own line, pushed to
 pages that asked (`balatro:match:pending`) or queued 10 min (≤ 4 per account).
 
-**Host migration** (`lib/balatro/mp/migration.ts`, `lobby/lobby-host.ts` `adopt`). The host
+**Host migration** (`features/balatro/engine/mp/migration.ts`, `lobby/lobby-host.ts` `adopt`). The host
 names a successor in every `balatro:p2p:state` (`successorOf`: the earliest-joined connected,
 non-away, non-forfeited seated player). When the host's socket drops, the hub waits
 `MIGRATE_GRACE_MS` (2 s) if a player can succeed, else `HOST_GRACE_MS` (30 s), then sends
@@ -92,7 +92,7 @@ then imports `pack-loader.ts`, which fetches and writes the MP pack and starts `
 **Content isolation.** MP prototypes enter vanilla's tables and pools only while a session is
 mounted (`MP.registry.mount`), and `unmount()` (on `go_to_menu` or New Run) restores every pool in
 place (§7 "Isolation"). Saves, unlocks and profile tallies never see MP content (§7 "Save
-guards"). `lib/balatro/lua/mp_test/specs/sp_invariance_spec.lua` proves it in the real engine:
+guards"). `features/balatro/engine/lua/mp_test/specs/sp_invariance_spec.lua` proves it in the real engine:
 golden single-player digests (first three shops, Small/Big tags and bosses for antes 1 and 2, three
 seeds) are equal with no MP pack, with `rmh_mp` loaded after sessions mounted and unmounted, and
 after one more practice mount/unmount (E2E-20).
@@ -101,7 +101,7 @@ after one more practice mount/unmount (E2E-20).
 
 All four are zod schemas with types from `z.infer`. They use only `zod` and
 relative imports, so the socket server's esbuild bundle can pull them in as they are.
-`lib/balatro/mp/__tests__/contracts.test.ts` enforces this. Changing one is a plan
+`features/balatro/engine/mp/__tests__/contracts.test.ts` enforces this. Changing one is a plan
 amendment.
 
 - **Signalling** (`net/events.ts`): `BALATRO_C2S` / `BALATRO_S2C` are
@@ -147,8 +147,8 @@ The Lua validator checks types, required fields, enums, ranges, lengths (in code
 points) and records. It skips regex patterns and zod refinements, which TypeScript
 checks.
 
-The same run writes `lib/balatro/mp/bridge-schema.gen.ts`, the same descriptors as a
-TypeScript table (plus regex patterns). `lib/balatro/mp/bridge-codec.ts` walks it,
+The same run writes `features/balatro/engine/mp/bridge-schema.gen.ts`, the same descriptors as a
+TypeScript table (plus regex patterns). `features/balatro/engine/mp/bridge-codec.ts` walks it,
 and the mailbox (`bridge.ts`) validates with it instead of zod. zod v4 classic does
 not tree-shake, and it cost the lazy MP chunk about 80 KB gzip against a 70 KB budget.
 `bridge-protocol.ts` stays the source. `bridge-codec.test.ts` holds the codec to the
@@ -164,15 +164,15 @@ pnpm balatro:gen-protocol --check   # CI freshness check (protocol-lua.test.ts a
 
 | Suite           | Command                 | What                                                                                                         |
 | --------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Balatro         | `pnpm test:balatro`     | `lib/balatro/mp`, `lib/shared/p2p`, `server/socket-server/balatro`, `scripts/balatro`, plus the Lua L1 specs |
-| Lua L1 only     | `pnpm test:balatro:lua` | `lua5.1 lib/balatro/lua/spec/runner.lua [--filter text] [files…]` (TAP output)                               |
+| Balatro         | `pnpm test:balatro`     | `features/balatro/engine/mp`, `lib/shared/p2p`, `server/socket-server/balatro`, `scripts/balatro`, plus the Lua L1 specs |
+| Lua L1 only     | `pnpm test:balatro:lua` | `lua5.1 features/balatro/engine/lua/spec/runner.lua [--filter text] [files…]` (TAP output)                               |
 | E2E (WS14)      | `pnpm test:balatro:e2e` | `harness` · `engine` (L2 specs in love.wasm) · `match` (real browsers + bot peers; needs Postgres)           |
 | Main (critical) | `pnpm test`             | hub auth walk, rate-limit coverage, save-path safety, pack manifest                                          |
 
 The Lua specs need **PUC Lua 5.1** (`apt-get install lua5.1`, or set `LUA51=`).
 `lua-specs.test.ts` fails with an install hint without it and never skips.
 
-Lua specs live in `lib/balatro/lua/spec/*_spec.lua`. The runner provides
+Lua specs live in `features/balatro/engine/lua/spec/*_spec.lua`. The runner provides
 `describe` / `it` / `xit` / `before_each` / `after_each` and these matchers:
 
 ```lua
@@ -180,7 +180,7 @@ expect(v).eq(x)        -- also .ne / .near(x, eps) / .truthy() / .falsy() / .typ
 expect(fn).error(s)
 ```
 
-It also sets `package.path` (`lib/balatro/lua/?.lua;lib/balatro/lua/mp/?.lua`) and
+It also sets `package.path` (`features/balatro/engine/lua/?.lua;features/balatro/engine/lua/mp/?.lua`) and
 `RMH_SPEC.{root,fixtures}`. Globals and modules a spec file adds are removed after
 it runs. `spec/fake_g.lua` installs a vanilla-shaped `G` with:
 
@@ -188,7 +188,7 @@ it runs. `spec/fake_g.lua` installs a vanilla-shaped `G` with:
 - the vanilla event manager rules;
 - deterministic `pseudoseed`/`pseudorandom` stand-ins.
 
-Shared fixtures live in `lib/balatro/mp/__fixtures__/*.json`.
+Shared fixtures live in `features/balatro/engine/mp/__fixtures__/*.json`.
 `contracts.test.ts` (TypeScript) and `spec/protocol_spec.lua` (Lua) read the same
 files. In them, `{ "$ref": "name" }` points into `types.json` → `objects`, and
 `tsOnly` marks an invalid case that only TypeScript can reject.
@@ -300,14 +300,14 @@ if any shipped MP string is missing from its language's bitmap.
 The Release ruleset's art, `release_jokers.png` (the whole 1.0.0 Joker sheet, ~1.45 MB raw,
 688 000 B after lossless oxipng at 1x + 2x), does not fit what is left of the MP pack's budget.
 It is its own content-addressed pack, `data/balatro-pack/release-<sha12>.zip`
-(`lib/balatro/game-pack.json` → `release`), built with the MP pack (also by `--mp-only`), with
+(`features/balatro/engine/game-pack.json` → `release`), built with the MP pack (also by `--mp-only`), with
 its own budget (`releaseMaxBytes` / `releaseMaxExtractedBytes` in `pack-budget.json`,
 `releasePackBytes` in `scripts/balatro/bundle-budget.ts`). It holds the files at the MP pack's
 own paths (`rmh_mp/assets/{1x,2x}/release_jokers.png`). The MP pack carries
 `rmh_mp/data/packs.lua` (`{release = {file, sha256}}`), so a change to the Release art changes
 the MP pack's hash and with it the lobby content hash (D-36): peers on different art never meet.
 
-Loading (`lib/balatro/mp/optional-packs.ts`, wired in `index.ts`):
+Loading (`features/balatro/engine/mp/optional-packs.ts`, wired in `index.ts`):
 
 1. Nothing fetches it until a ruleset lists it (`RulesetDef.packs`, `requiredPacks()`): the
    lobby's ruleset (each lobby view) or a Practice run's.
@@ -459,7 +459,7 @@ WS6 (Lua core):
 
 ### Hub limits
 
-`lib/balatro/net/limits.ts` (frozen; a change is a plan amendment):
+`features/balatro/engine/net/limits.ts` (frozen; a change is a plan amendment):
 
 | `BALATRO_LIMITS`                          | Value                                                                 |
 | ----------------------------------------- | --------------------------------------------------------------------- |
@@ -518,7 +518,7 @@ A pair with no direct path moves to the hub relay after 8 s without TURN, 12 s w
 | ----------------------------------- | ------------------------------------------------------------------------- |
 | Single-player route chunk (gzip)    | baseline + 5 KB (2.5 KB for MP's hooks + 2.5 KB of later SP features)     |
 | MP lazy chunks (gzip, summed)       | 70 KB, of which `lib/shared/p2p` ≤ 15 KB                                  |
-| Static closure of `BalatroPage.tsx` | no module under `lib/balatro/mp/` or `lib/shared/p2p/`                    |
+| Static closure of `BalatroPage.tsx` | no module under `features/balatro/engine/mp/` or `lib/shared/p2p/`                    |
 | Test surface                        | no `__balatroMp` in any output without `VITE_BALATRO_MP_TEST`             |
 | Packs                               | as `pack-budget.json` (below); the manifest's byte counts match the files |
 
@@ -531,7 +531,7 @@ socket.io-client is counted is in §3.
 
 ```bash
 pip install fonttools pyoxipng
-python3 -I scripts/balatro/build-game-pack.py            # every pack + lib/balatro/game-pack.json
+python3 -I scripts/balatro/build-game-pack.py            # every pack + features/balatro/engine/game-pack.json
 pnpm balatro:mp-pack                                     # = --mp-only: only mp-<sha>.zip (Lua edits)
 python3 -I scripts/balatro/build-game-pack.py --check    # CI freshness: rebuild in memory, write nothing
 python3 -I scripts/balatro/build-game-pack.py --check --mp-only   # the fast half (pack.test.ts runs it)
@@ -539,7 +539,7 @@ python3 -I scripts/balatro/build-game-pack.py --check --mp-only   # the fast hal
 
 The mp pack holds the following:
 
-- `lib/balatro/lua/mp/rmh_mp/**.lua`, without `*_spec.lua`;
+- `features/balatro/engine/lua/mp/rmh_mp/**.lua`, without `*_spec.lua`;
 - the art;
 - the generated localization and atlas tables;
 - the glyph bitmap.
@@ -567,7 +567,7 @@ because it subsets about 60 MB of fonts.
 `CORE_PATCHES` in the builder is the anchored patch list for data/balatro Lua, as
 `(path, anchor, replacement)`, read from `scripts/balatro/core-patches.json` (each
 entry has an `id` and a `why`). Each anchor must occur exactly once. The L1 specs load
-the base game through the same list (`lib/balatro/lua/spec/core_patches.lua`, used by
+the base game through the same list (`features/balatro/engine/lua/spec/core_patches.lua`, used by
 `spec/mp_vanilla.lua`), so they test what ships. It holds WS6's eval-row label hook in
 `functions/common_events.lua` (same line, `RMH_MP.eval_row_label`, nil outside
 multiplayer) and the owner's balance changes, which apply to single player and
@@ -576,7 +576,7 @@ A stream requests further entries through WS2.
 
 ## 7. Lua MP core (WS6)
 
-Sources are in `lib/balatro/lua/mp/rmh_mp/`. `require 'rmh_mp'` runs `init.lua`
+Sources are in `features/balatro/engine/lua/mp/rmh_mp/`. `require 'rmh_mp'` runs `init.lua`
 once. It loads the core, then the content modules in a fixed order (registry
 `order` = 1000 + definition index, which must match on every peer), then the
 reference content (`j_mp_pacifist`, `bl_mp_nemesis`) for any key no stream
@@ -629,7 +629,7 @@ after start_run                layer post hooks; set_ante 0
 go_to_menu / New Run           MP.session.unmount() (after delete_run)
 ```
 
-Applying the bundle follows WS4's conventions (`lib/balatro/mp/rulesets/layers.ts`):
+Applying the bundle follows WS4's conventions (`features/balatro/engine/mp/rulesets/layers.ts`):
 
 - `gameModifiers` go into `G.GAME.modifiers`; a dotted key is a nested path
   (`no_blind_reward.Small` sets `modifiers.no_blind_reward.Small`).
@@ -642,8 +642,8 @@ Applying the bundle follows WS4's conventions (`lib/balatro/mp/rulesets/layers.t
 - The isolation gate is `multiplayerContent && options.multiplayerJokers`
   (`mpContentPooled`). `practice_start` carries no options, so practice mounts with
   `multiplayerJokers = true`, the default the practice bundle was resolved with.
-- `lib/balatro/lua/spec/mp_rulesets_spec.lua` applies every real bundle in
-  `lib/balatro/mp/__fixtures__/rulesets-resolved.json`;
+- `features/balatro/engine/lua/spec/mp_rulesets_spec.lua` applies every real bundle in
+  `features/balatro/engine/mp/__fixtures__/rulesets-resolved.json`;
   `rulesets-lua-fixture.test.ts` keeps that file equal to `resolveRuleset()` output
   (`RMH_UPDATE_FIXTURES=1` regenerates it).
 
@@ -709,8 +709,8 @@ vanilla loads the save. A fresh single-player run deletes the sidecar.
 
 ## 8. Mailbox, lazy loading and the page (WS3)
 
-**Mailbox.** Lua (`lib/balatro/lua/rmh/net.lua`, exposed as `RMH.net`; the codec is
-`rmh/json.lua`) and JS (`lib/balatro/mp/bridge.ts`, `Mailbox`) trade NDJSON under
+**Mailbox.** Lua (`features/balatro/engine/lua/rmh/net.lua`, exposed as `RMH.net`; the codec is
+`rmh/json.lua`) and JS (`features/balatro/engine/mp/bridge.ts`, `Mailbox`) trade NDJSON under
 `/rmh/net`, framed per `bridge-protocol.ts`.
 
 - Lua pumps once per frame from `rmh_web.lua` §9, after `RMH.frame_hooks` (each called
@@ -745,11 +745,11 @@ boot are visible to LÖVE's `require` (`?.lua` and `?/init.lua`), `love.filesyst
 and `newImage`, verified in-engine, so no loader fallback exists.
 
 **Lazy JS.** `BalatroPage.tsx` holds a stub that scans Lua's batches for `mp_open`. It
-then imports `lib/balatro/mp/pack-loader.ts`, which takes the mailbox over (last seq
+then imports `features/balatro/engine/mp/pack-loader.ts`, which takes the mailbox over (last seq
 plus backlog), fetches the MP pack (IndexedDB kind `mp`, then the network), and writes
 it under `rmh_mp/` directories only (`mpPackPath`). It then sends `mp_pack`, and starts
 `index.ts` `startMultiplayer` (WS5; found through `import.meta.glob`, so the chunk
-builds before it exists). Nothing under `lib/balatro/mp/` is in the initial chunk.
+builds before it exists). Nothing under `features/balatro/engine/mp/` is in the initial chunk.
 
 **Boot autoload.** An invite (`?lobby=`), a rejoin hint (localStorage
 `rmh-balatro-mp-rejoin`, set by the session runtime while seated) or a
@@ -760,10 +760,10 @@ loads `rmh_mp` right after `G:start_up`. The login redirect keeps `?lobby=`
 
 ## 9. Session runtime (WS5)
 
-`lib/balatro/mp/index.ts` `startMultiplayer` wires the browser seams (the hub client
+`features/balatro/engine/mp/index.ts` `startMultiplayer` wires the browser seams (the hub client
 `hub-client.ts` on the shared realtime client, WebRTC, IndexedDB, localStorage, the
 engine FS, the CSPRNG) into `lobby/runtime.ts`, which is browser-free: the
-`lib/balatro/mp/__tests__/session/` suite runs whole lobbies on FakeNet channels against
+`features/balatro/engine/mp/__tests__/session/` suite runs whole lobbies on FakeNet channels against
 the real hub handler (`world.test-support.ts`).
 
 | Module                                                 | Role                                                                                                                                                                                                                                                                                                     |
@@ -791,10 +791,10 @@ runtime (types only). The generator lowers their schemas into descriptor tables,
 ## 10. Matchmaking, party, invites, spectate list (WS12)
 
 Hub: `server/socket-server/handlers/balatro-queue.ts` (events) over the pure book in
-`server/socket-server/balatro/queue.ts`. Client: `lib/balatro/mp/queue/attach.ts`, loaded by
+`server/socket-server/balatro/queue.ts`. Client: `features/balatro/engine/mp/queue/attach.ts`, loaded by
 `index.ts` as an extension of the session runtime, plus `queue/{queue-client,casual,party}.ts`,
 `setup/host-driver.ts` and `invites.ts`; the React friends list is
-`components/balatro/mp/InviteFriends.tsx` in the Invite popover's `friends` slot.
+`features/balatro/ui/mp/InviteFriends.tsx` in the Invite popover's `friends` slot.
 
 **Casual queue (MM-01/02).** Lua's FIND GAME sends `ui_queue {op:'join'}`; the hub buckets the
 ticket by `queueMode` and content hash and reports `queue:status searching {waiting}` (mirrored to
@@ -867,8 +867,8 @@ searching cancels the search.
 Lua: `rmh_mp/replay/{init,recorder,player}.lua` (loaded by `rmh_mp/init.lua` after every other
 session installer, so the recorder's wraps are the outermost), `rmh_mp/ui/{replay,spectate}.lua`
 (loaded on first use through `MP.ui.replay_open`, the menu's REPLAYS button). TS:
-`lib/balatro/mp/replay/{log,canonical-hash,store,player-feed,service,tap,attach}.ts` and
-`lib/balatro/mp/spectate.ts`, attached to the session like WS12's queue module (the
+`features/balatro/engine/mp/replay/{log,canonical-hash,store,player-feed,service,tap,attach}.ts` and
+`features/balatro/engine/mp/spectate.ts`, attached to the session like WS12's queue module (the
 `import.meta.glob` in `index.ts`); the lobby roles reach it only through `RoleCtx.replayTap()`.
 
 **Recording (REP-01/02, D-34).** While a match or practice session is mounted, every input the

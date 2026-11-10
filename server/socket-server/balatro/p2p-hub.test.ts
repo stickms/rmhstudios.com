@@ -12,8 +12,8 @@ import { handleBalatroP2pDisconnect, registerBalatroP2pHandlers, resetBalatroP2p
 import { registerBalatroQueueHandlers, resetBalatroQueueForTests } from '../handlers/balatro-queue';
 import { balatroHub } from './directory';
 import { all, last, makeWorld, type FakeSocket } from '../test-support/fake-world';
-import { BALATRO_S2C, type BalatroS2CPayload } from '@/lib/balatro/net/events';
-import { BALATRO_LIMITS, BALATRO_RELAY_LIMITS } from '@/lib/balatro/net/limits';
+import { BALATRO_S2C, type BalatroS2CPayload } from '@features/balatro/engine/net/events';
+import { BALATRO_LIMITS, BALATRO_RELAY_LIMITS } from '@features/balatro/engine/net/limits';
 import { decodeRelay, encodeRelay, relaySlotOf } from '@/lib/shared/p2p/relay';
 import { PROTOCOL_ERROR_EVENT } from '@/lib/shared/realtime/contract';
 

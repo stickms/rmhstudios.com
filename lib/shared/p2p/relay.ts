@@ -9,7 +9,7 @@
  *
  * ## Relay slots in peer ids (hub resolution, Balatro)
  *
- * The Balatro contract (lib/balatro/net/events.ts) has no "relay ready" event
+ * The Balatro contract (features/balatro/engine/net/events.ts) has no "relay ready" event
  * that tells the host which slot a member relays on, so the hub encodes the
  * slot in the peer id it issues: the last two characters of a 12-character
  * peer id are the slot as two lowercase hex digits (`…01` … `…7f`). The host

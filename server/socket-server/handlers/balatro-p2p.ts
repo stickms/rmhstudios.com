@@ -1,7 +1,7 @@
 /**
  * Balatro multiplayer — signalling, the relay fallback and the seat directory
  * on the games hub (`balatro:p2p:*`, `balatro:seat:query`; contract:
- * lib/balatro/net/events.ts, PLAN §3.a, WS1).
+ * features/balatro/engine/net/events.ts, PLAN §3.a, WS1).
  *
  * A Balatro lobby runs in its host's browser; members connect to it over
  * WebRTC DataChannels (lib/shared/p2p). This handler carries no game traffic.
@@ -46,14 +46,14 @@ import { sanitizeString } from '../utils';
 import { bindEvents, type Handlers } from '../../shared/typed-socket';
 import { buildIceServers } from '../../../lib/call/ice';
 import { clampIceServers, type IceServerConfig } from '../../../lib/shared/p2p/ice';
-import { BALATRO_LIMITS } from '../../../lib/balatro/net/limits';
+import { BALATRO_LIMITS } from '../../../features/balatro/engine/net/limits';
 import {
   BALATRO_EVENTS,
   BALATRO_S2C_EVENTS,
   type BalatroHubErrorCode,
   type BalatroS2CEvent,
   type BalatroS2CPayload,
-} from '../../../lib/balatro/net/events';
+} from '../../../features/balatro/engine/net/events';
 import type { HubAccount } from '../p2p/signal-hub';
 import {
   balatroHub,

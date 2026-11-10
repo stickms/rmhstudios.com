@@ -10,8 +10,8 @@
  * suite. `vitest.config.ts` excludes exactly the globs included here, and
  * lib/__tests__/test-discovery.test.ts checks that the two never overlap.
  *
- * The Lua L1 specs (lib/balatro/lua/spec/*_spec.lua) run inside this suite via
- * lib/balatro/mp/__tests__/lua-specs.test.ts, which needs `lua5.1` on PATH
+ * The Lua L1 specs (features/balatro/engine/lua/spec/*_spec.lua) run inside this suite via
+ * features/balatro/engine/mp/__tests__/lua-specs.test.ts, which needs `lua5.1` on PATH
  * (or `LUA51=/path/to/lua5.1`) and fails, rather than skips, without it.
  * CI: .github/workflows/balatro-mp-tests.yml.
  */
@@ -19,7 +19,7 @@ import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
 export const BALATRO_SUITE_GLOBS = [
-  'lib/balatro/mp/**/*.test.ts',
+  'features/balatro/engine/mp/**/*.test.ts',
   'lib/shared/p2p/**/*.test.ts',
   'server/socket-server/balatro/**/*.test.ts',
   'scripts/balatro/**/*.test.ts',

@@ -1,5 +1,5 @@
 /**
- * The autopilot's turbo (lib/balatro/lua/mp_test/autopilot.lua `turbo`) for every engine
+ * The autopilot's turbo (features/balatro/engine/lua/mp_test/autopilot.lua `turbo`) for every engine
  * page of the e2e suite: the harness page (engine project) and real players (match project).
  *
  * Software WebGL spends nearly all of a ~100 ms frame drawing, and Balatro advances at most

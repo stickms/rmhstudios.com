@@ -21,8 +21,8 @@
 import type { z } from 'zod';
 import { SignalHub, type HubMember, type HubRoom } from '../p2p/signal-hub';
 import { generateRoomCode } from '../utils';
-import { BALATRO_LIMITS, BALATRO_RELAY_LIMITS } from '../../../lib/balatro/net/limits';
-import type { BALATRO_C2S, BALATRO_S2C, LobbyKind, QueueMode } from '../../../lib/balatro/net/events';
+import { BALATRO_LIMITS, BALATRO_RELAY_LIMITS } from '../../../features/balatro/engine/net/limits';
+import type { BALATRO_C2S, BALATRO_S2C, LobbyKind, QueueMode } from '../../../features/balatro/engine/net/events';
 
 export type BalatroHostState = z.infer<(typeof BALATRO_C2S)['balatro:p2p:state']>;
 export type BalatroLobbyListing = z.infer<(typeof BALATRO_S2C)['balatro:spectate:lobbies']>['lobbies'][number];
@@ -70,7 +70,7 @@ export function setBalatroHostTimeoutHandler(fn: ((room: BalatroRoom) => void) |
   onHostTimeout = fn;
 }
 
-/** The registry: limits from lib/balatro/net/limits.ts (frozen). */
+/** The registry: limits from features/balatro/engine/net/limits.ts (frozen). */
 export const balatroHub = new SignalHub<BalatroRoomMeta, BalatroMemberMeta>({
   limits: {
     PEER_ID_LENGTH: BALATRO_LIMITS.PEER_ID_LENGTH,

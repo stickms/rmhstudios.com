@@ -16,7 +16,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { registerBalatroP2pHandlers, resetBalatroP2pForTests } from '../balatro-p2p';
 import { registerBalatroQueueHandlers, resetBalatroQueueForTests } from '../balatro-queue';
-import { BALATRO_C2S, BALATRO_C2S_EVENTS, BALATRO_S2C_EVENTS } from '@/lib/balatro/net/events';
+import { BALATRO_C2S, BALATRO_C2S_EVENTS, BALATRO_S2C_EVENTS } from '@features/balatro/engine/net/events';
 import { encodeRelay } from '@/lib/shared/p2p/relay';
 import { all, makeWorld } from '../../test-support/fake-world';
 

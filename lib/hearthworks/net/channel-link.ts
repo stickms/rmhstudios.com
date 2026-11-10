@@ -25,7 +25,7 @@ import type { Link } from './protocol';
 
 export type ConnKind = 'direct' | 'turn' | 'relay';
 
-/** The silence after which a link on the hub relay closes (see lib/balatro/mp/transport/wire-link.ts). */
+/** The silence after which a link on the hub relay closes (see features/balatro/engine/mp/transport/wire-link.ts). */
 export const RELAY_LINK_TIMEOUT_MS = 60_000;
 /** Messages held for a listener that is not there yet. */
 const EARLY_MAX = 256;

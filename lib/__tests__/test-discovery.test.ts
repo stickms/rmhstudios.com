@@ -146,12 +146,12 @@ describe('test discovery', () => {
     // again. A file collected by two suites runs twice and, worse, means the
     // main suite's mission-critical scope has quietly grown.
     const balatroRoots = [
-      'lib/balatro/mp/',
+      'features/balatro/engine/mp/',
       'lib/shared/p2p/',
       'server/socket-server/balatro/',
       'scripts/balatro/',
     ];
-    expect(balatro).toContain('lib/balatro/mp/__tests__/lua-specs.test.ts');
+    expect(balatro).toContain('features/balatro/engine/mp/__tests__/lua-specs.test.ts');
     expect(balatro.every((file) => balatroRoots.some((root) => file.startsWith(root)))).toBe(true);
     expect(main.filter((file) => balatroRoots.some((root) => file.startsWith(root)))).toEqual([]);
     expect(balatroE2e.every((file) => file.startsWith('testing/balatro-e2e/'))).toBe(true);

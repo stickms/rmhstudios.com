@@ -31,7 +31,7 @@ import path from 'node:path';
 export function defaultEngineQuery(): string {
   try {
     const manifest = JSON.parse(
-      readFileSync(path.join(REPO_ROOT, 'lib/balatro/game-pack.json'), 'utf8'),
+      readFileSync(path.join(REPO_ROOT, 'features/balatro/engine/game-pack.json'), 'utf8'),
     ) as { mp?: { file?: string } };
     return manifest.mp?.file ? 'mp=1' : '';
   } catch {

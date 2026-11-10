@@ -21,8 +21,8 @@
  * (server/CLAUDE.md gotcha 1). Relative imports only (gotcha 7).
  */
 
-import { BALATRO_LIMITS } from '../../../lib/balatro/net/limits';
-import type { QueueMode } from '../../../lib/balatro/net/events';
+import { BALATRO_LIMITS } from '../../../features/balatro/engine/net/limits';
+import type { QueueMode } from '../../../features/balatro/engine/net/events';
 
 export const QUEUE_TIMING = {
   /** A short group (≥2, below the maximum) matches after its oldest ticket waited this long. */

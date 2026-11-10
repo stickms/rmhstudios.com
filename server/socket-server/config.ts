@@ -306,7 +306,7 @@ export const config = {
     'tf2:p2p:relay': { max: 30_000, windowMs: 60_000 },
     // Host migration: the host names its successor when the best candidate changes (a few a minute).
     'tf2:p2p:successor': { max: 30, windowMs: 60_000 },
-    // Balatro multiplayer (docs/balatro-mp.md; contract lib/balatro/net/events.ts):
+    // Balatro multiplayer (docs/balatro-mp.md; contract features/balatro/engine/net/events.ts):
     // the hub signals, relays as a fallback and keeps the seat directory.
     // `host` includes resumes after a socket blip. `admit`, `signal` and
     // `state` scale with a 16-seat lobby (a host answers 15 players and 8

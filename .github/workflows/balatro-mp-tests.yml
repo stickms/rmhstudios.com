@@ -3,9 +3,9 @@
 #
 # Job `test` (no browser):
 #   - the Lua L1 specs under PUC Lua 5.1 (`pnpm test:balatro:lua`; also inside
-#     `pnpm test:balatro` through lib/balatro/mp/__tests__/lua-specs.test.ts, which
+#     `pnpm test:balatro` through features/balatro/engine/mp/__tests__/lua-specs.test.ts, which
 #     FAILS without lua5.1, so this job installs it);
-#   - `pnpm test:balatro` (vitest.balatro.config.ts: lib/balatro/mp, the shared P2P
+#   - `pnpm test:balatro` (vitest.balatro.config.ts: features/balatro/engine/mp, the shared P2P
 #     transport lib/shared/p2p, the hub's Balatro directory, scripts/balatro);
 #   - `pnpm test:tf2` (the P2P primitives are shared with TF2, PLAN §0.12);
 #   - generated-protocol and game-pack freshness, and the bundle/pack budget (§6.4).
@@ -16,7 +16,7 @@
 # runner, alongside `test` rather than after it (the wall clock is the slowest job, not
 # the sum of all of them):
 #   - e2e-engine: the harness project (unit tests of the e2e machinery, no browser), then
-#     the engine project — Lua L2, every lib/balatro/lua/mp_test/specs/*_spec.lua inside
+#     the engine project — Lua L2, every features/balatro/engine/lua/mp_test/specs/*_spec.lua inside
 #     the real love.wasm in headless Chromium (SwiftShader) on a static harness page, no
 #     DB or hub; one boot for all files plus a second boot without the MP pack
 #     (single-player golden seeds). A hard gate. It stays ONE job on purpose: every spec
@@ -48,7 +48,7 @@ name: balatro-mp-tests
 on:
   pull_request:
     paths:
-      - 'lib/balatro/**'
+      - 'features/balatro/engine/**'
       - 'scripts/balatro/**'
       - 'server/socket-server/handlers/balatro-*'
       - 'server/socket-server/balatro/**'
@@ -58,12 +58,12 @@ on:
       - 'data/balatro-pack/**'
       - 'vitest.balatro*'
       - 'testing/balatro-e2e/**'
-      - 'components/balatro/**'
+      - 'features/balatro/ui/**'
       - '.github/workflows/balatro-mp-tests.yml'
   push:
     branches: [main]
     paths:
-      - 'lib/balatro/**'
+      - 'features/balatro/engine/**'
       - 'scripts/balatro/**'
       - 'server/socket-server/handlers/balatro-*'
       - 'server/socket-server/balatro/**'
@@ -73,7 +73,7 @@ on:
       - 'data/balatro-pack/**'
       - 'vitest.balatro*'
       - 'testing/balatro-e2e/**'
-      - 'components/balatro/**'
+      - 'features/balatro/ui/**'
   schedule:
     - cron: '17 9 * * *'
   workflow_dispatch:
@@ -173,7 +173,7 @@ jobs:
           BALATRO_E2E_ISOLATE: ${{ env.LONG == 'true' && '1' || '' }}
         run: pnpm test:balatro:e2e --project engine
 
-  # The full in-engine UI sweep (lib/balatro/lua/mp_test/specs/ui_sweep_full.lua: every
+  # The full in-engine UI sweep (features/balatro/engine/lua/mp_test/specs/ui_sweep_full.lua: every
   # Collection card hovered, every button of every MP screen and overlay clicked, every MP item
   # given and used), nightly and on a `long` dispatch only: it never blocks a PR (the PR run has
   # its quick form, ui_sweep_spec, in e2e-engine). One engine boot cannot hold the whole sweep

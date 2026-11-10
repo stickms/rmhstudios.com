@@ -16,9 +16,9 @@ import {
 import { balatroHub, seatOf } from './directory';
 import { InviteBudget, NotifyDedupe, QUEUE_TIMING, QueueBook, queueModeMax } from './queue';
 import { all, last, makeWorld, type FakeSocket } from '../test-support/fake-world';
-import { BALATRO_S2C, type BalatroS2CPayload } from '@/lib/balatro/net/events';
-import { BALATRO_LIMITS } from '@/lib/balatro/net/limits';
-import { maxPlayersFor } from '@/lib/balatro/mp/rulesets/options';
+import { BALATRO_S2C, type BalatroS2CPayload } from '@features/balatro/engine/net/events';
+import { BALATRO_LIMITS } from '@features/balatro/engine/net/limits';
+import { maxPlayersFor } from '@features/balatro/engine/mp/rulesets/options';
 
 process.env.LOG_LEVEL = 'silent';
 

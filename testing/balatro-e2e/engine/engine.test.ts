@@ -4,7 +4,7 @@
  *   pnpm test:balatro:e2e --project engine
  *
  * Boots the harness page (no DB, no hub; testing/balatro-e2e/engine/page) against
- * the committed packs and runs every lib/balatro/lua/mp_test/specs/*_spec.lua inside
+ * the committed packs and runs every features/balatro/engine/lua/mp_test/specs/*_spec.lua inside
  * ONE engine boot, one vitest test per spec file in name order (the harness returns to
  * the main menu between files). Then it boots a second, fresh browser context WITHOUT
  * the MP pack and checks the reports that must be identical across boots: a vanilla

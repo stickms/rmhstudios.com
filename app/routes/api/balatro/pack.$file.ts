@@ -4,7 +4,7 @@
  * /balatro is gated behind sign-in, so the packs it downloads cannot be static
  * files under public/ (anyone could fetch those). They live in data/balatro-pack/
  * (built by scripts/balatro/build-game-pack.py) and only the names in
- * lib/balatro/game-pack.json are served: the core and audio packs, and the
+ * features/balatro/engine/game-pack.json are served: the core and audio packs, and the
  * multiplayer pack (`mp-<sha>.zip`), which the page fetches only when
  * multiplayer is opened, and the optional `release-<sha>.zip`, fetched only
  * when a lobby picks the Release ruleset (docs/balatro-mp.md).
@@ -19,7 +19,7 @@ import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import pack from '@/lib/balatro/game-pack.json';
+import pack from '@features/balatro/engine/game-pack.json';
 
 const PACK_DIR = join(process.cwd(), 'data', 'balatro-pack');
 // The optional packs (EX-14: `release`, the Release ruleset's art) are served the same way.

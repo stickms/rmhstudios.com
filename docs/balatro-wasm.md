@@ -13,13 +13,13 @@ title, to WebAssembly without changing a line of the game.
 | Vendor script  | `scripts/balatro/vendor-lovejs.sh`                        | downloads, verifies and patches the engine (re-run to update)                                    |
 | Game source    | `data/balatro/`                                           | the original Lua source and assets (kept out of the Docker image by `.dockerignore`)             |
 | Pack builder   | `scripts/balatro/build-game-pack.py`                      | builds the two game packs from the source (section 6)                                            |
-| Packs          | `data/balatro-pack/` · `lib/balatro/game-pack.json`       | `core-<sha>.zip` (~5 MB), `audio-<sha>.zip` (~17 MB) and the lazily loaded multiplayer `mp-<sha>.zip` (~1.5 MB; [balatro-mp.md](./balatro-mp.md) §4, §6), content-addressed |
+| Packs          | `data/balatro-pack/` · `features/balatro/engine/game-pack.json`       | `core-<sha>.zip` (~5 MB), `audio-<sha>.zip` (~17 MB) and the lazily loaded multiplayer `mp-<sha>.zip` (~1.5 MB; [balatro-mp.md](./balatro-mp.md) §4, §6), content-addressed |
 | Pack route     | `app/routes/api/balatro/pack.$file.ts`                    | serves the packs to a session only, `Cache-Control: private, immutable`                          |
-| Loader         | `lib/balatro/runtime.ts`                                  | downloads/caches the packs, fills the virtual filesystem, boots LÖVE, syncs saves                |
-| Cloud saves    | `lib/balatro/cloud-saves.ts`                              | the save directory as one snapshot on the shared `GameSave` table (gameId `balatro`)             |
-| Platform layer | `lib/balatro/lua/rmh_web.lua`                             | runs before the game: threads, deferred audio, window, shaders, images, saves, platform flags    |
-| LuaJIT ports   | `lib/balatro/lua/*.lua`                                   | `bit` and LuaJIT's `math.random`, bit-exact                                                      |
-| Page           | `components/balatro/BalatroPage.tsx` · `app/routes/balatro.tsx` | sign-in gate, boot progress, toolbar (fullscreen, save export/import)                      |
+| Loader         | `features/balatro/engine/runtime.ts`                                  | downloads/caches the packs, fills the virtual filesystem, boots LÖVE, syncs saves                |
+| Cloud saves    | `features/balatro/engine/cloud-saves.ts`                              | the save directory as one snapshot on the shared `GameSave` table (gameId `balatro`)             |
+| Platform layer | `features/balatro/engine/lua/rmh_web.lua`                             | runs before the game: threads, deferred audio, window, shaders, images, saves, platform flags    |
+| LuaJIT ports   | `features/balatro/engine/lua/*.lua`                                   | `bit` and LuaJIT's `math.random`, bit-exact                                                      |
+| Page           | `features/balatro/ui/BalatroPage.tsx` · `app/routes/balatro.tsx` | sign-in gate, boot progress, toolbar (fullscreen, save export/import)                      |
 
 **Access and search.** The route's `beforeLoad` redirects a signed-out visitor to
 `/login`. The packs are not under `public/`: only the auth-checked pack route serves
@@ -190,7 +190,7 @@ stays untouched) and apply to single player and multiplayer alike:
 
 The odds and the payout live on the seal prototypes (`G.P_SEALS.Blue.config.odds`,
 `G.P_SEALS.Gold.config.dollars`). Every shipped language (15) gets the new text, and the
-Blue Seal tooltip shows the chance. `lib/balatro/lua/spec/balance_spec.lua` checks all
+Blue Seal tooltip shows the chance. `features/balatro/engine/lua/spec/balance_spec.lua` checks all
 three on the real game code and the text in every language.
 
 ## 5. Save persistence
@@ -208,7 +208,7 @@ loader flushes (`FS.syncfs(false)`):
 `Balatro/1/save.jkr`, …). **Import** takes a zip of a desktop save folder, or of its
 contents, keeps only `.jkr` files at the root or in profile folders `1`–`3`,
 replaces the directory, flushes and reloads. The path rules are unit-tested
-(`lib/balatro/__tests__/saves.test.ts`). The `.jkr` files are the game's own
+(`features/balatro/engine/__tests__/saves.test.ts`). The `.jkr` files are the game's own
 deflated Lua tables, so saves move between desktop and browser unchanged.
 
 The page also calls `navigator.storage.persist()`, so the browser is less likely
@@ -260,7 +260,7 @@ near 15 ms. What the page does about it:
   froze the game for the whole load. `rmh_web.lua` now lets each `love.audio.newSource`
   spend about 4 ms and hand the frame back (`pace_audio_loading`). A few single big files
   still cost 60–80 ms in one frame.
-- *The render governor* (`lib/balatro/render-governor.ts`): if the median frame stays over
+- *The render governor* (`features/balatro/engine/render-governor.ts`): if the median frame stays over
   22.5 ms for two seconds, the pixel ratio steps down (20 %, or straight to the floor when
   frames take over 80 ms), snapped to quarter steps, never below 1. Downscale-only: a change
   rebuilds the canvas. It matters for hi-DPI screens and does nothing at ratio 1. A frame
@@ -283,7 +283,7 @@ near 15 ms. What the page does about it:
 
 - **Keyboard.** Balatro types into a field through `keypressed` events and never asks the
   OS for a keyboard, and SDL on Emscripten has no text-input element, so a tap on a field
-  showed no keyboard on iOS and Android. `lib/balatro/text-input.ts` owns a hidden `<input>`;
+  showed no keyboard on iOS and Android. `features/balatro/engine/text-input.ts` owns a hidden `<input>`;
   iOS only raises its keyboard for a `focus()` inside the tap's own handler, which Lua cannot
   have seen yet, so `rmh_web.lua` §10 publishes the open menu's field rectangle (and whether
   a field is hooked) to `/rmh/text`, and the `touchend` handler focuses the input when the
@@ -324,15 +324,15 @@ python3 -I scripts/balatro/build-game-pack.py
 The vendor script applies three anchored engine patches: export `FS`, page-owned
 fullscreen, and the page's pixel ratio. It fails if an anchor is missing.
 
-It also writes `lib/balatro/engine.json` (size and SHA-256 of `love.js` and
+It also writes `features/balatro/engine/engine.json` (size and SHA-256 of `love.js` and
 `love.wasm`), and the page requests both as `?v=<sha>`. The engine paths are not
 content-hashed and Cloudflare keeps them for hours, so before this a re-vendored
 engine (the fullscreen patch, for one) was not what players ran: the edge served
 the previous `love.js` until it expired. `saves.test.ts` fails if the manifest
 and the files disagree.
 
-The pack builder rewrites `data/balatro-pack/` and `lib/balatro/game-pack.json`
-together. `lib/balatro/__tests__/saves.test.ts` fails if they disagree.
+The pack builder rewrites `data/balatro-pack/` and `features/balatro/engine/game-pack.json`
+together. `features/balatro/engine/__tests__/saves.test.ts` fails if they disagree.
 
 To verify the LuaJIT ports after editing them (needs `luajit` and `lua5.1`): run
 one script of `math.random`/`bit` calls under both interpreters, loading the ports

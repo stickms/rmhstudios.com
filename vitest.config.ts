@@ -80,9 +80,9 @@ export default defineConfig({
       // Multiplayer Balatro is gameplay too: its own suite, `pnpm test:balatro`
       // (vitest.balatro.config.ts, which includes exactly these globs), gated by
       // .github/workflows/balatro-mp-tests.yml. The mission-critical Balatro
-      // tests (lib/balatro/__tests__/saves.test.ts, the hub auth walk under
+      // tests (features/balatro/engine/__tests__/saves.test.ts, the hub auth walk under
       // server/socket-server/handlers/__tests__/) stay here.
-      'lib/balatro/mp/**',
+      'features/balatro/engine/mp/**',
       'lib/shared/p2p/**',
       'server/socket-server/balatro/**',
       'scripts/balatro/**',

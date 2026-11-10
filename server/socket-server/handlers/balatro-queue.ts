@@ -2,7 +2,7 @@
  * Balatro multiplayer — casual matchmaking, party queueing, lobby invites and
  * the spectate directory on the games hub (`balatro:queue:*`,
  * `balatro:party:queue`, `balatro:invite`, `balatro:spectate:list`; contract:
- * lib/balatro/net/events.ts, PLAN §3.a; MM-01…07, LOB-04, D-33; WS12).
+ * features/balatro/engine/net/events.ts, PLAN §3.a; MM-01…07, LOB-04, D-33; WS12).
  *
  * Every event needs a signed-in account (`auth-required`) and is rate limited
  * (config.ts). The lobby itself still runs in its host's browser; the hub only
@@ -53,8 +53,8 @@ import {
   type BalatroS2CPayload,
   type QueueMode,
   zQueueMode,
-} from '../../../lib/balatro/net/events';
-import { BALATRO_LIMITS } from '../../../lib/balatro/net/limits';
+} from '../../../features/balatro/engine/net/events';
+import { BALATRO_LIMITS } from '../../../features/balatro/engine/net/limits';
 import { LOBBY_LINK_PARAM } from '../../../lib/lobby-link';
 import { balatroAccount, pickBalatroEvents } from './balatro-p2p';
 import { balatroHub, casualSeatsByMode, listSpectatableLobbies, seatOf, unseatAll, type BalatroRoom } from '../balatro/directory';
