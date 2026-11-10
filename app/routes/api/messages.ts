@@ -1,20 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { listConversationsApi, sendMessageApi } from '@/lib/messages/messages.contract';
+import { sendMessageSchema } from '@/lib/messages/messages-schema';
 import { prisma } from '@/lib/prisma.server';
 import { notifyUser } from '@/lib/message-events';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
-import { gifUrlSchema, feedImageUrlSchema } from '@/lib/rmhark-schema';
 import { listConversations } from '@/lib/messages.server';
-import { z } from 'zod';
 import { adjustDmUnread } from '@/lib/chat-plus/unread.server';
 import { messageStamp } from '@/lib/chat-plus/post.server';
-
-const sendMessageSchema = z.object({
-  recipientId: z.string().min(1),
-  content: z.string().max(2000).optional(),
-  gifUrl: gifUrlSchema.optional(),
-  imageUrls: z.array(feedImageUrlSchema).max(4).optional(),
-});
 
 /** GET /api/messages — list conversations for current user */
 
@@ -23,7 +16,7 @@ const sendMessageSchema = z.object({
 export const Route = createFileRoute('/api/messages')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ request, session }) => {
+      GET: implement(listConversationsApi, {}, async ({ request, session }) => {
         const url = new URL(request.url);
         const cursor = url.searchParams.get('cursor');
         // M1: `?folder=<id>` or `?filter=unread` narrow the list server-side so
@@ -31,9 +24,10 @@ export const Route = createFileRoute('/api/messages')({
         const folderId = url.searchParams.get('folder');
         const unreadOnly = url.searchParams.get('filter') === 'unread';
         const result = await listConversations(session.user.id, { cursor, folderId, unreadOnly });
-        return Response.json(result);
+        return result;
       }),
-      POST: defineHandler(
+      POST: implement(
+        sendMessageApi,
         { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'send-message' } },
         async ({ request, session }) => {
           const body = await request.json();
@@ -162,14 +156,14 @@ export const Route = createFileRoute('/api/messages')({
               message: messagePayload,
             });
 
-            return Response.json({
+            return {
               conversationId: conversation.id,
               message: messagePayload,
-            });
+            };
           }
 
           // No content — just return the conversation ID
-          return Response.json({ conversationId: conversation.id });
+          return { conversationId: conversation.id };
         },
       ),
     },

@@ -25,6 +25,11 @@ import { useShelvesTab } from'@/components/reading/useShelvesTab';
 import { useKudosTabLabel } from'@/components/gifting/useKudosTabLabel';
 import { profilePostsFirstPageUrl } from '@/lib/feed/profile-prefetch';
 import { takeOrFetch } from '@/lib/route/intent-fetch';
+import { api } from '@/lib/contract/client';
+import { toggleFollowApi } from '@/lib/profile/follow.contract';
+import { getProfileApi } from '@/lib/profile/profile.contract';
+import { HttpError, serverError } from '@/lib/http';
+import { sendMessageApi } from '@/lib/messages/messages.contract';
 
 type ProfileTab ='rmharks'|'likes'|'achievements'|'guestbook'|'shelves'|'kudos';
 
@@ -134,13 +139,8 @@ export function ProfileColumn({
  }
  setLoading(true);
  setNotFound(false);
- fetch(`/api/profile/${encodeURIComponent(userId)}`)
- .then(async (res) => {
- if (!res.ok) {
- setNotFound(true);
- return;
- }
- const data = await res.json();
+ api(getProfileApi, { params: { id: userId } })
+ .then((data) => {
  // Seed user display cache with profile data
  useUserDisplayStore.getState().setUsers([
  {
@@ -155,7 +155,11 @@ export function ProfileColumn({
  ]);
  setProfile(data);
  })
- .catch(console.error)
+ .catch((err: unknown) => {
+ // A non-2xx answer (404 or otherwise) is the not-found state; transport failures only log.
+ if (err instanceof HttpError) setNotFound(true);
+ else console.error(err);
+ })
  .finally(() => setLoading(false));
  }, [initialProfile, userId]);
 
@@ -311,7 +315,7 @@ export function ProfileColumn({
  }
  : prev,
  ),
- commit: () => fetch(`/api/profile/${encodeURIComponent(userId)}/follow`, { method:'POST'}),
+ commit: () => api(toggleFollowApi, { params: { id: userId } }),
  });
  };
 
@@ -348,25 +352,11 @@ export function ProfileColumn({
  setMessageError(null);
 
  try {
- const res = await fetch('/api/messages', {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ recipientId: profile.id }),
- });
-
- if (!res.ok) {
- const data = await res.json();
- setMessageError(
- data.error ||
- t('failed-to-start-conversation', { defaultValue:'Failed to start conversation'}),
- );
- return;
- }
-
- const data = await res.json();
+ const data = await api(sendMessageApi, { body: { recipientId: profile.id } });
  navigate({ to: `/messages/${data.conversationId}`});
- } catch {
+ } catch (err) {
  setMessageError(
+ serverError(err) ||
  t('failed-to-start-conversation', { defaultValue:'Failed to start conversation'}),
  );
  } finally {

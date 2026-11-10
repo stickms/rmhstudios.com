@@ -1,9 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import {
+  deletePlaylistApi,
+  getPlaylistApi,
+  renamePlaylistApi,
+} from '@/lib/playlists/playlists.contract';
+import { renamePlaylistBody } from '@/lib/playlists/playlists-schema';
 import { getPlaylist, renamePlaylist, deletePlaylist } from '@/lib/playlists.server';
-
-const renameSchema = z.object({ name: z.string().min(1).max(100) });
 
 /**
  * GET    /api/playlists/$id — playlist detail (with items), owner only.
@@ -13,31 +16,33 @@ const renameSchema = z.object({ name: z.string().min(1).max(100) });
 export const Route = createFileRoute('/api/playlists/$id/')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ params, session }) => {
+      GET: implement(getPlaylistApi, {}, async ({ params, session }) => {
         const pl = await getPlaylist(params.id, session.user.id);
         if (!pl) return Response.json({ error: 'Not found' }, { status: 404 });
-        return Response.json(pl);
+        return pl;
       }),
 
-      PATCH: defineHandler(
+      PATCH: implement(
+        renamePlaylistApi,
         {
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'playlist-rename' },
-          body: renameSchema,
+          body: renamePlaylistBody,
           allowEmptyBody: true,
         },
         async ({ params, session, body }) => {
           const ok = await renamePlaylist(params.id, session.user.id, body.name);
           if (!ok) return Response.json({ error: 'Not found' }, { status: 404 });
-          return Response.json({ success: true });
+          return { success: true as const };
         },
       ),
 
-      DELETE: defineHandler(
+      DELETE: implement(
+        deletePlaylistApi,
         { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:playlists/:id/index' } },
         async ({ params, session }) => {
           const ok = await deletePlaylist(params.id, session.user.id);
           if (!ok) return Response.json({ error: 'Not found' }, { status: 404 });
-          return Response.json({ success: true });
+          return { success: true as const };
         },
       ),
     },

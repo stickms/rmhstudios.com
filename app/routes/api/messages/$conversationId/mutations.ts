@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { messageMutationsApi } from '@/lib/messages/message-actions.contract';
+import { mutationsQuery } from '@/lib/messages/message-actions-schema';
 import { listMutationsSince } from '@/lib/messages/mutations.server';
 
 /**
@@ -20,15 +21,12 @@ import { listMutationsSince } from '@/lib/messages/mutations.server';
  * revalidates against this endpoint when it sees one.
  */
 
-const querySchema = z.object({
-  since: z.string().datetime(),
-});
-
 export const Route = createFileRoute('/api/messages/$conversationId/mutations')({
   server: {
     handlers: {
-      GET: defineHandler(
-        { rateLimit: 'read', query: querySchema },
+      GET: implement(
+        messageMutationsApi,
+        { rateLimit: 'read', query: mutationsQuery },
         async ({ params, userId, query }) => {
           const since = new Date(query.since);
           if (Number.isNaN(since.getTime())) {
@@ -42,7 +40,7 @@ export const Route = createFileRoute('/api/messages/$conversationId/mutations')(
           });
           if (!result) return Response.json({ error: 'Conversation not found' }, { status: 404 });
 
-          return Response.json({ ...result, now: new Date().toISOString() });
+          return { ...result, now: new Date().toISOString() };
         },
       ),
     },

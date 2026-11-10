@@ -5,6 +5,8 @@ import { Spinner } from'@/components/ui/spinner';
 import { Dialog, DialogContent, DialogTitle } from'@/components/ui/dialog';
 import { Link } from'@tanstack/react-router';
 import { useSession } from'@/components/Providers';
+import { api } from '@/lib/contract/client';
+import { toggleFollowApi } from '@/lib/profile/follow.contract';
 
 interface SocialUser {
  id: string;
@@ -110,17 +112,8 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  );
 
  try {
- const res = await fetch(`/api/profile/${encodeURIComponent(targetUser.id)}/follow`, {
- method:'POST',
- });
- if (!res.ok) {
- // Revert
- setUsers((prev) =>
- prev.map((u) =>
- u.id === targetUser.id ? { ...u, isFollowing: wasFollowing } : u
- )
- );
- }
+ // A non-2xx throws HttpError, so the catch below is the revert path.
+ await api(toggleFollowApi, { params: { id: targetUser.id } });
  } catch {
  setUsers((prev) =>
  prev.map((u) =>

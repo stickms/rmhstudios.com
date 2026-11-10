@@ -133,6 +133,7 @@ import { Route as ApiAssistantRouteImport } from './routes/api/assistant'
 import { Route as ApiBookmarksRouteImport } from './routes/api/bookmarks'
 import { Route as ApiCircleRouteImport } from './routes/api/circle'
 import { Route as ApiClientErrorRouteImport } from './routes/api/client-error'
+import { Route as ApiCspReportRouteImport } from './routes/api/csp-report'
 import { Route as ApiExploreRouteImport } from './routes/api/explore'
 import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
 import { Route as ApiFlagsRouteImport } from './routes/api/flags'
@@ -2011,6 +2012,11 @@ const ApiCircleRoute = ApiCircleRouteImport.update({
 const ApiClientErrorRoute = ApiClientErrorRouteImport.update({
   id: '/api/client-error',
   path: '/api/client-error',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCspReportRoute = ApiCspReportRouteImport.update({
+  id: '/api/csp-report',
+  path: '/api/csp-report',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiExploreRoute = ApiExploreRouteImport.update({
@@ -8672,6 +8678,7 @@ export interface FileRoutesByFullPath {
   '/api/bookmarks': typeof ApiBookmarksRoute
   '/api/circle': typeof ApiCircleRoute
   '/api/client-error': typeof ApiClientErrorRoute
+  '/api/csp-report': typeof ApiCspReportRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/flags': typeof ApiFlagsRoute
@@ -10029,6 +10036,7 @@ export interface FileRoutesByTo {
   '/api/bookmarks': typeof ApiBookmarksRoute
   '/api/circle': typeof ApiCircleRoute
   '/api/client-error': typeof ApiClientErrorRoute
+  '/api/csp-report': typeof ApiCspReportRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/flags': typeof ApiFlagsRoute
@@ -11411,6 +11419,7 @@ export interface FileRoutesById {
   '/api/bookmarks': typeof ApiBookmarksRoute
   '/api/circle': typeof ApiCircleRoute
   '/api/client-error': typeof ApiClientErrorRoute
+  '/api/csp-report': typeof ApiCspReportRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/flags': typeof ApiFlagsRoute
@@ -12797,6 +12806,7 @@ export interface FileRouteTypes {
     | '/api/bookmarks'
     | '/api/circle'
     | '/api/client-error'
+    | '/api/csp-report'
     | '/api/explore'
     | '/api/feedback'
     | '/api/flags'
@@ -14154,6 +14164,7 @@ export interface FileRouteTypes {
     | '/api/bookmarks'
     | '/api/circle'
     | '/api/client-error'
+    | '/api/csp-report'
     | '/api/explore'
     | '/api/feedback'
     | '/api/flags'
@@ -15535,6 +15546,7 @@ export interface FileRouteTypes {
     | '/api/bookmarks'
     | '/api/circle'
     | '/api/client-error'
+    | '/api/csp-report'
     | '/api/explore'
     | '/api/feedback'
     | '/api/flags'
@@ -16867,6 +16879,7 @@ export interface RootRouteChildren {
   ApiBookmarksRoute: typeof ApiBookmarksRoute
   ApiCircleRoute: typeof ApiCircleRoute
   ApiClientErrorRoute: typeof ApiClientErrorRoute
+  ApiCspReportRoute: typeof ApiCspReportRoute
   ApiExploreRoute: typeof ApiExploreRoute
   ApiFeedbackRoute: typeof ApiFeedbackRoute
   ApiFlagsRoute: typeof ApiFlagsRoute
@@ -18527,6 +18540,13 @@ declare module '@tanstack/react-router' {
       path: '/api/client-error'
       fullPath: '/api/client-error'
       preLoaderRoute: typeof ApiClientErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/csp-report': {
+      id: '/api/csp-report'
+      path: '/api/csp-report'
+      fullPath: '/api/csp-report'
+      preLoaderRoute: typeof ApiCspReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/explore': {
@@ -29695,6 +29715,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiBookmarksRoute: ApiBookmarksRoute,
   ApiCircleRoute: ApiCircleRoute,
   ApiClientErrorRoute: ApiClientErrorRoute,
+  ApiCspReportRoute: ApiCspReportRoute,
   ApiExploreRoute: ApiExploreRoute,
   ApiFeedbackRoute: ApiFeedbackRoute,
   ApiFlagsRoute: ApiFlagsRoute,

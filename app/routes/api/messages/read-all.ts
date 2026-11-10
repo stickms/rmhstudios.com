@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { markAllMessagesReadApi } from '@/lib/messages/messages.contract';
 import { prisma } from '@/lib/prisma.server';
 import { notifyUser } from '@/lib/message-events';
 import { redisDel } from '@/lib/redis.server';
@@ -9,7 +10,7 @@ import { redisDel } from '@/lib/redis.server';
 export const Route = createFileRoute('/api/messages/read-all')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ session }) => {
+      POST: implement(markAllMessagesReadApi, {}, async ({ session }) => {
         const userId = session.user.id;
 
         // One statement: Postgres joins through the conversation relation instead
@@ -32,7 +33,7 @@ export const Route = createFileRoute('/api/messages/read-all')({
         // Notify the current user so their unread count updates.
         notifyUser(userId);
 
-        return Response.json({ success: true });
+        return { success: true as const };
       }),
     },
   },

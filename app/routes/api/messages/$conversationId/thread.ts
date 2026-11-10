@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { messageThreadApi } from '@/lib/messages/message-actions.contract';
+import { threadQuery } from '@/lib/messages/message-actions-schema';
 import { loadThreadPage } from '@/lib/messages/mutations.server';
 
 /**
@@ -16,16 +17,12 @@ import { loadThreadPage } from '@/lib/messages/mutations.server';
  * The old route is left in place untouched for any consumer still on it.
  */
 
-const querySchema = z.object({
-  cursor: z.string().min(1).max(64).optional(),
-  limit: z.coerce.number().int().min(1).max(100).optional(),
-});
-
 export const Route = createFileRoute('/api/messages/$conversationId/thread')({
   server: {
     handlers: {
-      GET: defineHandler(
-        { rateLimit: 'read', query: querySchema },
+      GET: implement(
+        messageThreadApi,
+        { rateLimit: 'read', query: threadQuery },
         async ({ params, userId, query }) => {
           const page = await loadThreadPage({
             conversationId: params.conversationId,
@@ -34,7 +31,7 @@ export const Route = createFileRoute('/api/messages/$conversationId/thread')({
             limit: query.limit,
           });
           if (!page) return Response.json({ error: 'Conversation not found' }, { status: 404 });
-          return Response.json(page);
+          return page;
         },
       ),
     },

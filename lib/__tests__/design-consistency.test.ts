@@ -455,6 +455,43 @@ const SITE_CSS = collectCss('components').filter((f) => {
   return !FULLSCREEN_TIER_DIRS.has(parts[1] ?? '');
 });
 
+/**
+ * E7 — one motion source. A site-tier stylesheet never writes its own
+ * `cubic-bezier(`: it names `var(--ease-smooth)` or one of the curve tokens
+ * defined beside it in `app/globals.css` (`--ease-reveal`, `--ease-pop`, …).
+ * The only raw curves left are those token definitions, so a new curve is a
+ * new token there plus a bump of this one number — and the count may only go
+ * DOWN anywhere else. The jelly material's `--spring-*` `linear()` curves are
+ * not `cubic-bezier` and are governed by their own test.
+ */
+const CUBIC_BEZIER_BASELINE: Record<string, number> = { 'app/globals.css': 14 };
+
+describe('one motion source in CSS (E7)', () => {
+  const files = [
+    ...SITE_CSS,
+    ...readdirSync(join(ROOT, 'app'))
+      .filter((f) => f.endsWith('.css'))
+      .map((f) => join('app', f)),
+  ].map((f) => f.split(/[\\/]/).join('/'));
+  const count = (file: string) =>
+    (
+      readFileSync(join(ROOT, file), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .match(/cubic-bezier\(/g) ?? []
+    ).length;
+
+  it('writes no raw cubic-bezier beyond the token definitions', () => {
+    const over = files
+      .filter((f) => count(f) > (CUBIC_BEZIER_BASELINE[f] ?? 0))
+      .map((f) => `${f} — ${CUBIC_BEZIER_BASELINE[f] ?? 0} → ${count(f)}`);
+    expect(
+      over,
+      'Raw cubic-bezier( in site-tier CSS. Use var(--ease-smooth) or a named curve token from app/globals.css; ' +
+        'if a genuinely new curve is needed, define it there as a token (and mirror it in lib/motion.ts if TS needs it).',
+    ).toEqual([]);
+  });
+});
+
 describe('the token contract holds in CSS too', () => {
   const measured = SITE_CSS.map((file) => ({
     file: file.split(/[\\/]/).join('/'),

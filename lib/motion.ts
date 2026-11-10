@@ -57,6 +57,8 @@ export const EASE = {
   standard: SMOOTH,
   emphasized: SMOOTH,
   inOut: [0.65, 0, 0.35, 1] as Bezier,
+  /** Long decelerating settle for slow, read-not-operated reveals (CSS twin `--ease-out-expo`). */
+  outExpo: [0.16, 1, 0.3, 1] as Bezier,
   /**
    * Spatial spring physics (press-release flex, dock grow, tab-capsule settle).
    */
@@ -126,6 +128,40 @@ export const APPLE_SPRING = {
   /** Jelly neighbour nudge — twin of `SPRINGS.jellyNudge` (ζ 0.5). */
   jellyNudge: { type: 'spring', duration: 0.4, bounce: 0.5 },
 } as const satisfies Record<string, Transition>;
+
+/**
+ * Named one-offs for the few motions that are not a state enter/exit (E7: a
+ * component never writes its own ease or duration). Each keeps the exact value
+ * its first caller shipped; reuse before adding another.
+ */
+
+/** A slow looping nudge (a scroll cue bobbing). Seconds. */
+export const LOOP_CUE: Transition = { duration: 1.8, repeat: Infinity, ease: 'easeInOut' };
+
+/** A gentle attention wiggle that repeats twice, then rests. */
+export const LOOP_WIGGLE: Transition = { duration: 1.2, repeat: 2, repeatDelay: 2.5 };
+
+/** Layout reflow of grid items (cards reordering/filtering) — pass as `transition`. */
+export const LAYOUT_SPRING: Transition = {
+  layout: { type: 'spring', stiffness: 300, damping: 30 },
+};
+
+/** A bare start delay, in seconds, on top of the default behaviour. */
+export const delayed = (seconds: number): Transition => ({ delay: seconds });
+
+/** Confetti piece `index` flying out: a slow ease-out, staggered 20 ms apiece. */
+export const burstTransition = (index: number): Transition => ({
+  duration: 1.4,
+  ease: 'easeOut',
+  delay: index * 0.02,
+});
+
+/** A slow editorial tween on the expo curve (restaurant page, long reveals). */
+export const editorialTransition = (duration: number, delay = 0): Transition => ({
+  duration,
+  ease: EASE.outExpo,
+  delay,
+});
 
 /**
  * Press feedback, Apple-style: a small scale-down that springs back on release.

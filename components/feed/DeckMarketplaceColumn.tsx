@@ -7,6 +7,9 @@ import { Library, Search, Plus, Check, Loader2 } from'lucide-react';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { StudyTabs } from'@/components/study/StudyTabs';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { cloneDeckApi } from '@/lib/study/decks.contract';
 
 interface MarketplaceDeck {
  id: string;
@@ -60,29 +63,16 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  }
  setStatus((s) => ({ ...s, [deck.id]:'cloning'}));
  try {
- const res = await fetch(`/api/study/decks/${deck.id}/clone`, {
- method:'POST',
- credentials:'include',
- });
- const data = await res.json().catch(() => ({}));
- if (!res.ok) {
- setStatus((s) => {
- const next = { ...s };
- delete next[deck.id];
- return next;
- });
- toast.error(data.error ?? t('deck-clone-failed', { defaultValue:'Could not add deck.'}));
- return;
- }
+ await api(cloneDeckApi, { params: { id: deck.id } });
  setStatus((s) => ({ ...s, [deck.id]:'done'}));
  toast.success(t('deck-clone-added', { defaultValue:'Added to your decks.'}));
- } catch {
+ } catch (err) {
  setStatus((s) => {
  const next = { ...s };
  delete next[deck.id];
  return next;
  });
- toast.error(t('deck-clone-failed', { defaultValue:'Could not add deck.'}));
+ toast.error(serverError(err) ?? t('deck-clone-failed', { defaultValue:'Could not add deck.'}));
  }
  };
 

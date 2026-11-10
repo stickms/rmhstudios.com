@@ -1,13 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { sendToConversationApi } from '@/lib/messages/message-actions.contract';
+import { sendToConversationBody } from '@/lib/messages/message-actions-schema';
 import { prisma } from '@/lib/prisma.server';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit.server';
 import { redisEnabled, redisGetJSON, redisIncrBy } from '@/lib/redis.server';
 import { readJsonLimited, RequestTooLargeError } from '@/lib/request-limits';
 import { notifyUser } from '@/lib/message-events';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
-import { gifUrlSchema, feedImageUrlSchema } from '@/lib/rmhark-schema';
-import { z } from 'zod';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { messageStamp } from '@/lib/chat-plus/post.server';
 import { getPairPrivacy, maskReceipts } from '@/lib/chat-plus/receipts.server';
@@ -38,16 +39,6 @@ async function adjustDmUnread(userId: string, delta: number): Promise<void> {
     /* best-effort — the counter self-heals from COUNT on TTL expiry */
   }
 }
-
-const sendSchema = z
-  .object({
-    content: z.string().max(2000).optional().default(''),
-    gifUrl: gifUrlSchema.optional(),
-    imageUrls: z.array(feedImageUrlSchema).max(4).optional(),
-  })
-  .refine((d) => d.content.trim().length > 0 || !!d.gifUrl || (d.imageUrls?.length ?? 0) > 0, {
-    message: 'Message must have text, an image, or a GIF',
-  });
 
 /** GET /api/messages/[conversationId] — get messages in a conversation */
 
@@ -149,7 +140,7 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
           hasMore,
         });
       }),
-      POST: defineHandler({}, async ({ request, params, session }) => {
+      POST: implement(sendToConversationApi, {}, async ({ request, params, session }) => {
         const { conversationId } = params;
         const userId = session.user.id;
 
@@ -210,7 +201,7 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
           }
           return Response.json({ error: 'Invalid input' }, { status: 400 });
         }
-        const parsed = sendSchema.safeParse(body);
+        const parsed = sendToConversationBody.safeParse(body);
         if (!parsed.success) {
           return Response.json(
             { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
@@ -322,9 +313,7 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
           });
         }
 
-        return Response.json({
-          message: messagePayload,
-        });
+        return { message: messagePayload };
       }),
     },
   },

@@ -4,6 +4,7 @@
  * confetti plays once and is skipped entirely under reduced motion.
  */
 import { m as motion } from 'framer-motion';
+import { burstTransition } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
 import { PartyPopper } from 'lucide-react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -32,7 +33,7 @@ export default function BirthdayBadge() {
               className={`absolute left-1/2 top-1/2 size-1.5 rounded-site-sm ${p.tone}`}
               initial={{ x: 0, y: 0, opacity: 1, rotate: 0 }}
               animate={{ x: p.x * 2, y: p.y * 2, opacity: 0, rotate: p.r }}
-              transition={{ duration: 1.4, ease: 'easeOut', delay: i * 0.02 }}
+              transition={burstTransition(i)}
             />
           ))}
         </span>

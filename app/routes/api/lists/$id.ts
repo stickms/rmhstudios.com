@@ -1,5 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import {
+  deleteListApi,
+  getListDetailApi,
+  updateListApi,
+} from '@/lib/lists/lists.contract';
 import { listUpdateSchema } from '@/lib/lists/constants';
 import { getListDetail, updateList, deleteList, ListError } from '@/lib/lists/lists.server';
 
@@ -11,12 +16,13 @@ import { getListDetail, updateList, deleteList, ListError } from '@/lib/lists/li
 export const Route = createFileRoute('/api/lists/$id')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ params, session }) => {
+      GET: implement(getListDetailApi, { auth: 'optional' }, async ({ params, session }) => {
         const detail = await getListDetail(params.id, session?.user.id ?? null);
         if (!detail) return Response.json({ error: 'Not found' }, { status: 404 });
-        return Response.json(detail);
+        return detail;
       }),
-      PATCH: defineHandler(
+      PATCH: implement(
+        updateListApi,
         { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'lists' }, body: listUpdateSchema },
         async ({ params, session, body }) => {
           try {
@@ -30,10 +36,11 @@ export const Route = createFileRoute('/api/lists/$id')({
             }
             throw e;
           }
-          return Response.json({ ok: true });
+          return { ok: true as const };
         },
       ),
-      DELETE: defineHandler(
+      DELETE: implement(
+        deleteListApi,
         { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:lists/:id' } },
         async ({ params, session }) => {
           try {
@@ -42,7 +49,7 @@ export const Route = createFileRoute('/api/lists/$id')({
             if (e instanceof ListError) return Response.json({ error: e.message }, { status: 404 });
             throw e;
           }
-          return Response.json({ ok: true });
+          return { ok: true as const };
         },
       ),
     },

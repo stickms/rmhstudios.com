@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import { api } from '@/lib/contract/client';
+import { getSavedMessagesApi, openSavedMessagesApi } from '@/lib/messages/messages.contract';
 import { Bookmark } from 'lucide-react';
 import { toast } from 'sonner';
 import { useIdleReady } from '@/hooks/useIdleReady';
@@ -21,11 +23,7 @@ export function SavedMessagesRow() {
     enabled: idle,
     staleTime: 30_000,
     queryFn: async () => {
-      const res = await fetch('/api/messages/saved', { credentials: 'include' });
-      if (!res.ok) throw new Error('saved failed');
-      return (await res.json()) as {
-        saved: { conversationId: string; preview: string; previewKind: string } | null;
-      };
+      return api(getSavedMessagesApi);
     },
   });
   const saved = data?.saved ?? null;
@@ -36,9 +34,7 @@ export function SavedMessagesRow() {
     try {
       let id = saved?.conversationId;
       if (!id) {
-        const res = await fetch('/api/messages/saved', { method: 'POST', credentials: 'include' });
-        if (!res.ok) throw new Error('open failed');
-        id = (await res.json()).conversationId as string;
+        id = (await api(openSavedMessagesApi)).conversationId;
       }
       void navigate({ to: `/messages/${id}` as string });
     } catch {

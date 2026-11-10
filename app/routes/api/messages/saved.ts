@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getSavedMessagesApi, openSavedMessagesApi } from '@/lib/messages/messages.contract';
 import { ensureSavedConversation, getSavedSummary } from '@/lib/chat-plus/saved.server';
 
 /**
@@ -11,14 +12,16 @@ import { ensureSavedConversation, getSavedSummary } from '@/lib/chat-plus/saved.
 export const Route = createFileRoute('/api/messages/saved')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) =>
+      GET: implement(getSavedMessagesApi, { rateLimit: 'read' }, async ({ userId }) =>
         Response.json(
           { saved: await getSavedSummary(userId) },
           { headers: { 'Cache-Control': 'private, no-store' } },
         ),
       ),
-      POST: defineHandler({ rateLimit: 'write', allowEmptyBody: true }, async ({ userId }) =>
-        Response.json({ conversationId: await ensureSavedConversation(userId) }),
+      POST: implement(
+        openSavedMessagesApi,
+        { rateLimit: 'write', allowEmptyBody: true },
+        async ({ userId }) => ({ conversationId: await ensureSavedConversation(userId) }),
       ),
     },
   },

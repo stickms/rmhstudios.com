@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { SearchField } from '@/components/ui/search-field';
 import { Select } from '@/components/ui/select';
 import { Reveal } from '@/components/motion';
-import { APPLE_SPRING } from '@/lib/motion';
+import { APPLE_SPRING, delayed } from '@/lib/motion';
 import { NewsCard } from './NewsCard';
 import { NewsHero } from './NewsHero';
 import { NewsCategoryTabs } from './NewsCategoryTabs';
@@ -297,7 +297,7 @@ export function NewsList({
           className="mt-[var(--site-section-gap)]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
+          transition={delayed(0.3)}
         >
           <Pagination page={safePage} totalPages={totalPages} onPageChange={goToPage} />
         </motion.div>

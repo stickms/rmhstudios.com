@@ -19,6 +19,19 @@ import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { ColumnHeader } from './ColumnHeader';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  addPlaylistCollaboratorApi,
+  createPlaylistApi,
+  deletePlaylistApi,
+  getPlaylistApi,
+  listPlaylistCollaboratorsApi,
+  listPlaylistsApi,
+  removePlaylistCollaboratorApi,
+  removePlaylistItemApi,
+  renamePlaylistApi,
+} from '@/lib/playlists/playlists.contract';
 import '@/components/library/library.css';
 
 interface Summary {
@@ -79,8 +92,11 @@ export function PlaylistsColumn({
     : playlists;
 
   const refresh = useCallback(async () => {
-    const res = await fetch('/api/playlists', { credentials: 'include' });
-    if (res.ok) setPlaylists((await res.json()).playlists ?? []);
+    try {
+      setPlaylists((await api(listPlaylistsApi)).playlists ?? []);
+    } catch {
+      /* keep the current list */
+    }
   }, []);
 
   const create = async () => {
@@ -88,21 +104,14 @@ export function PlaylistsColumn({
     if (!name) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/playlists', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, kind: 'video' }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(
-          data.error ?? t('playlist-create-failed', { defaultValue: 'Could not create playlist.' }),
-        );
-        return;
-      }
+      await api(createPlaylistApi, { body: { name, kind: 'video' } });
       setNewName('');
       await refresh();
+    } catch (err) {
+      toast.error(
+        serverError(err) ??
+          t('playlist-create-failed', { defaultValue: 'Could not create playlist.' }),
+      );
     } finally {
       setCreating(false);
     }
@@ -116,21 +125,19 @@ export function PlaylistsColumn({
     setOpenId(id);
     setCollabHandle('');
     if (playlists.find((p) => p.id === id)?.role === 'owner' && !collaborators[id]) {
-      fetch(`/api/playlists/${id}/collaborators`, { credentials: 'include' })
-        .then((r) => (r.ok ? r.json() : null))
+      api(listPlaylistCollaboratorsApi, { params: { id } })
         .then((d) => {
-          if (d) setCollaborators((m) => ({ ...m, [id]: d.collaborators ?? [] }));
+          setCollaborators((m) => ({ ...m, [id]: d.collaborators ?? [] }));
         })
         .catch(() => {});
     }
     if (!items[id]) {
       setLoadingItems(true);
       try {
-        const res = await fetch(`/api/playlists/${id}`, { credentials: 'include' });
-        if (res.ok) {
-          const data = await res.json();
-          setItems((m) => ({ ...m, [id]: data.items ?? [] }));
-        }
+        const data = await api(getPlaylistApi, { params: { id } });
+        setItems((m) => ({ ...m, [id]: data.items ?? [] }));
+      } catch {
+        /* leave the item list unloaded */
       } finally {
         setLoadingItems(false);
       }
@@ -145,14 +152,12 @@ export function PlaylistsColumn({
     if (name == null) return;
     const trimmed = name.trim();
     if (!trimmed || trimmed === pl.name) return;
-    const res = await fetch(`/api/playlists/${pl.id}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: trimmed }),
-    });
-    if (res.ok) setPlaylists((ps) => ps.map((p) => (p.id === pl.id ? { ...p, name: trimmed } : p)));
-    else toast.error(t('playlist-rename-failed', { defaultValue: 'Could not rename.' }));
+    try {
+      await api(renamePlaylistApi, { params: { id: pl.id }, body: { name: trimmed } });
+      setPlaylists((ps) => ps.map((p) => (p.id === pl.id ? { ...p, name: trimmed } : p)));
+    } catch {
+      toast.error(t('playlist-rename-failed', { defaultValue: 'Could not rename.' }));
+    }
   };
 
   const remove = async (pl: Summary) => {
@@ -162,14 +167,11 @@ export function PlaylistsColumn({
       danger: true,
     });
     if (!ok) return;
-    const res = await fetch(`/api/playlists/${pl.id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    if (res.ok) {
+    try {
+      await api(deletePlaylistApi, { params: { id: pl.id } });
       setPlaylists((ps) => ps.filter((p) => p.id !== pl.id));
       if (openId === pl.id) setOpenId(null);
-    } else {
+    } catch {
       toast.error(t('playlist-delete-failed', { defaultValue: 'Could not delete.' }));
     }
   };
@@ -179,27 +181,21 @@ export function PlaylistsColumn({
     if (!handle) return;
     setAddingCollab(true);
     try {
-      const res = await fetch(`/api/playlists/${playlistId}/collaborators`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ handle }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      try {
+        await api(addPlaylistCollaboratorApi, { params: { id: playlistId }, body: { handle } });
+      } catch (err) {
         toast.error(
-          data.error ??
+          serverError(err) ??
             t('playlist-collab-add-failed', { defaultValue: 'Could not add collaborator.' }),
         );
         return;
       }
       setCollabHandle('');
-      const list = await fetch(`/api/playlists/${playlistId}/collaborators`, {
-        credentials: 'include',
-      });
-      if (list.ok) {
-        const d = await list.json();
+      try {
+        const d = await api(listPlaylistCollaboratorsApi, { params: { id: playlistId } });
         setCollaborators((m) => ({ ...m, [playlistId]: d.collaborators ?? [] }));
+      } catch {
+        /* the list refreshes next time the playlist is opened */
       }
     } finally {
       setAddingCollab(false);
@@ -207,16 +203,13 @@ export function PlaylistsColumn({
   };
 
   const removeCollaborator = async (playlistId: string, userId: string) => {
-    const res = await fetch(`/api/playlists/${playlistId}/collaborators/${userId}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    if (res.ok) {
+    try {
+      await api(removePlaylistCollaboratorApi, { params: { id: playlistId, userId } });
       setCollaborators((m) => ({
         ...m,
         [playlistId]: (m[playlistId] ?? []).filter((c) => c.userId !== userId),
       }));
-    } else {
+    } catch {
       toast.error(
         t('playlist-collab-remove-failed', { defaultValue: 'Could not remove collaborator.' }),
       );
@@ -224,11 +217,8 @@ export function PlaylistsColumn({
   };
 
   const removeItem = async (playlistId: string, itemId: string) => {
-    const res = await fetch(`/api/playlists/${playlistId}/items/${itemId}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    if (res.ok) {
+    try {
+      await api(removePlaylistItemApi, { params: { id: playlistId, itemId } });
       setItems((m) => ({
         ...m,
         [playlistId]: (m[playlistId] ?? []).filter((i) => i.id !== itemId),
@@ -238,7 +228,7 @@ export function PlaylistsColumn({
           p.id === playlistId ? { ...p, itemCount: Math.max(0, p.itemCount - 1) } : p,
         ),
       );
-    } else {
+    } catch {
       toast.error(t('playlist-item-remove-failed', { defaultValue: 'Could not remove item.' }));
     }
   };

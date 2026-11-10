@@ -18,6 +18,14 @@ import { ChatFolderBar } from'@/components/chat-plus/ChatFolderBar';
 import { SavedMessagesRow } from'@/components/chat-plus/SavedMessagesRow';
 import { SavedMessagesLabel } from'@/components/chat-plus/MessageBadges';
 import { AutomatedBadge } from'@/components/feed/AutomatedBadge';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import {
+ listConversationsApi,
+ markAllMessagesReadApi,
+ searchConversationsApi,
+ sendMessageApi,
+} from '@/lib/messages/messages.contract';
 
 export interface ConversationItem {
  id: string;
@@ -85,13 +93,15 @@ export function MessagesColumn({
  if (!isInitial) setLoadingMore(true);
 
  try {
- const params = new URLSearchParams();
- if (cursor && !isInitial) params.set('cursor', cursor);
- if (folderRef.current === 'unread') params.set('filter', 'unread');
- else if (folderRef.current !== 'all') params.set('folder', folderRef.current);
- const res = await fetch(`/api/messages?${params}`);
- if (!res.ok) return;
- const data = await res.json();
+ const data = await api(listConversationsApi, {
+ query: {
+ cursor: cursor && !isInitial ? cursor : undefined,
+ filter: folderRef.current === 'unread' ? 'unread' : undefined,
+ folder:
+ folderRef.current !== 'unread' && folderRef.current !== 'all' ? folderRef.current : undefined,
+ },
+ retries: 0,
+ });
 
  if (isInitial) {
  setConversations(data.conversations);
@@ -101,7 +111,8 @@ export function MessagesColumn({
  setCursor(data.nextCursor);
  setHasMore(data.hasMore);
  } catch (error) {
- console.error('Fetch conversations error:', error);
+ // A non-2xx answer used to return quietly; only transport failures log.
+ if (!(error instanceof HttpError)) console.error('Fetch conversations error:', error);
  } finally {
  setLoading(false);
  setLoadingMore(false);
@@ -116,13 +127,10 @@ export function MessagesColumn({
  // Optimistically clear unread badges.
  setConversations((prev) => prev.map((c) => (c.unreadCount > 0 ? { ...c, unreadCount: 0 } : c)));
  try {
- const res = await fetch('/api/messages/read-all', { method:'POST'});
- if (!res.ok) {
- // Roll back by refetching the authoritative list.
- fetchConversations(true);
- }
+ await api(markAllMessagesReadApi);
  } catch (error) {
- console.error('Mark all as read error:', error);
+ // A non-2xx answer rolls back by refetching the authoritative list; only transport failures log.
+ if (!(error instanceof HttpError)) console.error('Mark all as read error:', error);
  fetchConversations(true);
  } finally {
  setMarkingAll(false);
@@ -162,8 +170,8 @@ export function MessagesColumn({
  setSearching(true);
  searchDebounce.current = setTimeout(async () => {
  try {
- const res = await fetch(`/api/messages/search?q=${encodeURIComponent(q)}`);
- if (res.ok) setSearchResults((await res.json()).conversations);
+ const res = await api(searchConversationsApi, { query: { q } });
+ setSearchResults(res.conversations);
  } catch {
  /* ignore */
  } finally {
@@ -574,17 +582,11 @@ function NewChatDialog({
  const start = async (userId: string) => {
  setStarting(userId);
  try {
- const res = await fetch('/api/messages', {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ recipientId: userId }),
- });
- const data = await res.json().catch(() => ({}));
- if (res.ok && data.conversationId) onStarted(data.conversationId);
- else
- toast.error(
- data.error || t('could-not-start-chat', { defaultValue:'Could not start chat'}),
- );
+ const data = await api(sendMessageApi, { body: { recipientId: userId } });
+ if (data.conversationId) onStarted(data.conversationId);
+ else toast.error(t('could-not-start-chat', { defaultValue:'Could not start chat'}));
+ } catch (err) {
+ toast.error(serverError(err) || t('could-not-start-chat', { defaultValue:'Could not start chat'}));
  } finally {
  setStarting(null);
  }

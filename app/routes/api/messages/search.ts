@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { searchConversationsApi } from '@/lib/messages/messages.contract';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
@@ -15,12 +16,13 @@ import { resolveUserDisplay } from '@/lib/user-display';
 export const Route = createFileRoute('/api/messages/search')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        searchConversationsApi,
         { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'messages-search' } },
         async ({ request, session }) => {
           const userId = session.user.id;
           const q = new URL(request.url).searchParams.get('q')?.trim();
-          if (!q) return Response.json({ conversations: [] });
+          if (!q) return { conversations: [] };
 
           const nameMatch = {
             OR: [
@@ -141,7 +143,7 @@ export const Route = createFileRoute('/api/messages/search')({
             };
           });
 
-          return Response.json({ conversations: result });
+          return { conversations: result };
         },
       ),
     },

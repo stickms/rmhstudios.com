@@ -15,6 +15,9 @@ import { Button } from'@/components/ui/button';
 import { useSession } from'@/components/Providers';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import { AnimatedCount } from'@/components/ui/AnimatedCount';
+import { api } from '@/lib/contract/client';
+import { toggleFollowApi } from '@/lib/profile/follow.contract';
+import { getProfileApi } from '@/lib/profile/profile.contract';
 
 interface HoverProfile {
  id: string;
@@ -49,10 +52,7 @@ export function ProfileHoverCard({
  async (open: boolean) => {
  if (!open || profile) return;
  try {
- const res = await fetch(`/api/profile/${encodeURIComponent(userId)}`, {
- credentials:'include',
- });
- if (res.ok) setProfile(await res.json());
+ setProfile(await api(getProfileApi, { params: { id: userId } }));
  } catch {
  // Hover preview is best-effort.
  }
@@ -81,11 +81,7 @@ export function ProfileHoverCard({
  ? { ...p, isFollowing: wasFollowing, followerCount: p.followerCount + (wasFollowing ? 1 : -1) }
  : p
  ),
- commit: () =>
- fetch(`/api/profile/${encodeURIComponent(followId)}/follow`, {
- method:'POST',
- credentials:'include',
- }),
+ commit: () => api(toggleFollowApi, { params: { id: followId } }),
  });
  };
 

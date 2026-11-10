@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
-import { MESSAGE_MAX_LENGTH } from '@/lib/messages/edit-policy';
+import { implement } from '@/lib/api/implement.server';
+import { editMessageApi } from '@/lib/messages/message-actions.contract';
+import { editMessageBody } from '@/lib/messages/message-actions-schema';
 import { editDirectMessage } from '@/lib/messages/mutations.server';
 
 /**
@@ -17,18 +17,14 @@ import { editDirectMessage } from '@/lib/messages/mutations.server';
  * participant check has one shape everywhere.
  */
 
-const bodySchema = z.object({
-  messageId: z.string().min(1).max(64),
-  content: z.string().max(MESSAGE_MAX_LENGTH),
-});
-
 export const Route = createFileRoute('/api/messages/$conversationId/edit')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        editMessageApi,
         {
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'dm:edit', scope: 'user' },
-          body: bodySchema,
+          body: editMessageBody,
         },
         async ({ params, userId, body }) => {
           const result = await editDirectMessage({
@@ -42,7 +38,7 @@ export const Route = createFileRoute('/api/messages/$conversationId/edit')({
             return Response.json({ error: result.error }, { status: result.status });
           }
 
-          return Response.json({ success: true, message: result.message });
+          return { success: true as const, message: result.message };
         },
       ),
     },

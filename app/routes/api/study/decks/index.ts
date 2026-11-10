@@ -1,18 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createDeckApi, listDecksApi } from '@/lib/study/decks.contract';
+import { createDeckBody } from '@/lib/study/decks-schema';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { z } from 'zod';
 import { generateCards } from '@/lib/rmhstudy/tutor.server';
 import { listDecks } from '@/lib/study.server';
-
-const createSchema = z.object({
-  title: z.string().min(1).max(100),
-  description: z.string().max(500).optional(),
-  isPublic: z.boolean().optional(),
-  // Optional AI seed: generate starter cards for this topic.
-  generateTopic: z.string().max(200).optional(),
-});
 
 const MAX_DECKS = 200;
 
@@ -23,12 +16,13 @@ const MAX_DECKS = 200;
 export const Route = createFileRoute('/api/study/decks/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ session }) => {
-        return Response.json(await listDecks(session?.user.id ?? null));
+      GET: implement(listDecksApi, { auth: 'optional' }, async ({ session }) => {
+        return await listDecks(session?.user.id ?? null);
       }),
 
-      POST: defineHandler(
-        { body: createSchema, allowEmptyBody: true, verboseValidationErrors: true },
+      POST: implement(
+        createDeckApi,
+        { body: createDeckBody, allowEmptyBody: true, verboseValidationErrors: true },
         async ({ request, session, body }) => {
           const userId = session.user.id;
 

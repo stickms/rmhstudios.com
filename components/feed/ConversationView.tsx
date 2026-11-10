@@ -60,6 +60,20 @@ import {
 import { applyChatUpdate } from '@/lib/chat-plus/apply-update';
 import { isCardKind, isLineKind, type PollView } from '@/lib/chat-plus/types';
 import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
+import { api } from '@/lib/contract/client';
+import { listConversationsApi } from '@/lib/messages/messages.contract';
+import { HttpError, serverError } from '@/lib/http';
+import {
+  editMessageApi,
+  hideMessageApi,
+  markConversationReadApi,
+  messageMutationsApi,
+  messageThreadApi,
+  reactMessageApi,
+  sendToConversationApi,
+  typingApi,
+  unsendMessageApi,
+} from '@/lib/messages/message-actions.contract';
 
 // P4 — "It's 2:14 AM for Ana": a tiny lazy chunk, fetched after the header is idle.
 const DmLocalTime = lazy(() => import('@/components/profile/plus/LocalTime'));
@@ -271,10 +285,8 @@ export function ConversationView({
   // Fetch conversation info (other user) from conversations list
   const fetchConversationInfo = useCallback(async () => {
     try {
-      const res = await fetch('/api/messages');
-      if (!res.ok) return;
-      const data = await res.json();
-      const conv = data.conversations.find((c: { id: string }) => c.id === conversationId);
+      const data = await api(listConversationsApi);
+      const conv = data.conversations.find((c) => c.id === conversationId);
       if (conv) {
         setOtherUser(conv.otherUser);
       }
@@ -286,21 +298,20 @@ export function ConversationView({
   const fetchMessages = useCallback(
     async (isInitial = false) => {
       try {
-        const params = new URLSearchParams();
-        if (!isInitial && olderCursor) params.set('cursor', olderCursor);
         // `/thread`, not the older `/api/messages/$conversationId`: that route
         // predates edit/unsend/hide and returns raw columns, so it would hand
         // back the text of an unsent message and resurrect anything the viewer
         // deleted for themselves.
-        const res = await fetch(
-          `/api/messages/${encodeURIComponent(conversationId)}/thread?${params}`,
-        );
-        if (res.status === 404) {
-          setNotFound(true);
-          return;
-        }
-        if (!res.ok) return;
-        const data = await res.json();
+        const data = await api(messageThreadApi, {
+          params: { conversationId },
+          query: { cursor: !isInitial && olderCursor ? olderCursor : undefined },
+        }).catch((e: unknown) => {
+          // Any non-2xx answer ends quietly; a 404 is the not-found state.
+          if (!(e instanceof HttpError)) throw e;
+          if (e.status === 404) setNotFound(true);
+          return null;
+        });
+        if (!data) return;
 
         // Everything fetched here is existing history — mark it so it renders
         // in place without an entrance animation.
@@ -330,9 +341,7 @@ export function ConversationView({
   );
 
   const markAsRead = useCallback(() => {
-    fetch(`/api/messages/${encodeURIComponent(conversationId)}/read`, {
-      method: 'POST',
-    }).catch(() => {});
+    api(markConversationReadApi, { params: { conversationId } }).catch(() => {});
   }, [conversationId]);
 
   /* ---------------------------------------------------------------- */
@@ -380,15 +389,10 @@ export function ConversationView({
     syncingRef.current = true;
     try {
       const since = lastSyncRef.current;
-      const res = await fetch(
-        `/api/messages/${encodeURIComponent(conversationId)}/mutations?since=${encodeURIComponent(since)}`,
-      );
-      if (!res.ok) return;
-      const data = (await res.json()) as {
-        messages: Message[];
-        hiddenIds: string[];
-        now?: string;
-      };
+      const data = await api(messageMutationsApi, {
+        params: { conversationId },
+        query: { since },
+      });
       lastSyncRef.current = data.now ?? since;
       if (data.messages.length === 0 && data.hiddenIds.length === 0) return;
 
@@ -462,35 +466,21 @@ export function ConversationView({
         ),
       );
       try {
-        const res = await fetch(`/api/messages/${encodeURIComponent(conversationId)}/edit`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messageId, content: nextContent }),
+        await api(editMessageApi, {
+          params: { conversationId },
+          body: { messageId, content: nextContent },
         });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === messageId
-                ? { ...m, content: previous, editedAt: target.editedAt ?? null }
-                : m,
-            ),
-          );
-          toast.error(
-            data.error ||
-              t('message-edit-failed', { defaultValue: 'Could not edit that message.' }),
-          );
-          return;
-        }
         setEditingId(null);
-      } catch {
+      } catch (err) {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === messageId ? { ...m, content: previous, editedAt: target.editedAt ?? null } : m,
           ),
         );
-        toast.error(t('message-edit-failed', { defaultValue: 'Could not edit that message.' }));
+        toast.error(
+          serverError(err) ||
+            t('message-edit-failed', { defaultValue: 'Could not edit that message.' }),
+        );
       } finally {
         setSavingEdit(false);
       }
@@ -512,30 +502,23 @@ export function ConversationView({
       if (!ok) return;
 
       try {
-        const res = await fetch(`/api/messages/${encodeURIComponent(conversationId)}/unsend`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messageId }),
+        const data = await api(unsendMessageApi, {
+          params: { conversationId },
+          body: { messageId },
         });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          toast.error(
-            data.error ||
-              t('message-unsend-failed', { defaultValue: 'Could not unsend that message.' }),
-          );
-          return;
-        }
         applyMutation({
           conversationId,
           messageId,
           content: '',
-          editedAt: data.message?.editedAt ?? null,
-          deletedAt: data.message?.deletedAt ?? new Date().toISOString(),
-          deletedBy: data.message?.deletedBy ?? 'sender',
+          editedAt: data.message.editedAt ?? null,
+          deletedAt: data.message.deletedAt ?? new Date().toISOString(),
+          deletedBy: data.message.deletedBy ?? 'sender',
         });
-      } catch {
-        toast.error(t('message-unsend-failed', { defaultValue: 'Could not unsend that message.' }));
+      } catch (err) {
+        toast.error(
+          serverError(err) ||
+            t('message-unsend-failed', { defaultValue: 'Could not unsend that message.' }),
+        );
       }
     },
     [applyMutation, confirm, conversationId, t],
@@ -546,24 +529,19 @@ export function ConversationView({
       const removed = messages.find((m) => m.id === messageId);
       setMessages((prev) => prev.filter((m) => m.id !== messageId));
       try {
-        const res = await fetch(`/api/messages/${encodeURIComponent(conversationId)}/hide`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messageId, hidden: true }),
+        await api(hideMessageApi, {
+          params: { conversationId },
+          body: { messageId, hidden: true },
         });
-        if (!res.ok) throw new Error('hide failed');
         toast.success(
           t('message-hidden', { defaultValue: 'Removed from your copy of this conversation' }),
           {
             action: {
               label: t('undo', { defaultValue: 'Undo' }),
               onClick: () => {
-                void fetch(`/api/messages/${encodeURIComponent(conversationId)}/hide`, {
-                  method: 'POST',
-                  credentials: 'include',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ messageId, hidden: false }),
+                void api(hideMessageApi, {
+                  params: { conversationId },
+                  body: { messageId, hidden: false },
                 }).then(() => {
                   if (removed) {
                     historyIds.current.add(removed.id);
@@ -623,11 +601,7 @@ export function ConversationView({
   // POST our own typing state to the other participant (debounced stop).
   const sendTyping = useCallback(
     (isTyping: boolean) => {
-      fetch(`/api/messages/${encodeURIComponent(conversationId)}/typing`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isTyping }),
-      }).catch(() => {});
+      api(typingApi, { params: { conversationId }, body: { isTyping } }).catch(() => {});
     },
     [conversationId],
   );
@@ -679,13 +653,7 @@ export function ConversationView({
       if (!session) return;
       applyRowToggle(messageId, emoji);
       try {
-        const res = await fetch(`/api/messages/${encodeURIComponent(conversationId)}/react`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messageId, emoji }),
-        });
-        if (!res.ok) throw new Error('react failed');
+        await api(reactMessageApi, { params: { conversationId }, body: { messageId, emoji } });
       } catch {
         // Roll back the optimistic toggle (toggling again is its own inverse).
         applyRowToggle(messageId, emoji);
@@ -921,37 +889,24 @@ export function ConversationView({
     await yieldToMain();
 
     try {
-      const res = await fetch(`/api/messages/${encodeURIComponent(conversationId)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await api(sendToConversationApi, {
+        params: { conversationId },
+        body: {
           content,
           ...(pendingGif ? { gifUrl: pendingGif } : {}),
           ...(pendingImages.length ? { imageUrls: pendingImages } : {}),
-        }),
+        },
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setError(
-          data.error || t('failed-to-send-message', { defaultValue: 'Failed to send message' }),
-        );
-        // Remove optimistic message and restore the draft + media.
-        setMessages((prev) => prev.filter((m) => m.id !== tempId));
-        setInput(content);
-        setGifUrl(pendingGif);
-        setImageUrls(pendingImages);
-        return;
-      }
-
-      const data = await res.json();
       // The optimistic bubble already animated in; the temp→real id swap
       // remounts it, so mark the real id as history to avoid a second entrance.
       historyIds.current.add(data.message.id);
       // Replace optimistic message with real one
       setMessages((prev) => prev.map((m) => (m.id === tempId ? data.message : m)));
-    } catch {
-      setError(t('failed-to-send-message', { defaultValue: 'Failed to send message' }));
+    } catch (err) {
+      // Remove the optimistic message and restore the draft + media.
+      setError(
+        serverError(err) || t('failed-to-send-message', { defaultValue: 'Failed to send message' }),
+      );
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setInput(content);
       setGifUrl(pendingGif);

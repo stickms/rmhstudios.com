@@ -1,12 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getProfileApi } from '@/lib/profile/profile.contract';
 import { auth } from '@/lib/auth';
 import { getProfile } from '@/lib/profile.server';
 
 export const Route = createFileRoute('/api/profile/$id')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        getProfileApi,
         {
           auth: 'none',
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'profile', message: 'Rate limited' },
@@ -26,7 +28,7 @@ export const Route = createFileRoute('/api/profile/$id')({
 
             const payload = await getProfile(params.id, { id: viewerId, isAdmin: viewerIsAdmin });
             if (!payload) return Response.json({ error: 'User not found' }, { status: 404 });
-            return Response.json(payload);
+            return payload;
           } catch (error) {
             console.error('Profile fetch error:', error);
             return Response.json({ error: 'Internal Server Error' }, { status: 500 });

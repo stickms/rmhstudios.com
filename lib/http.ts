@@ -35,6 +35,17 @@ export class HttpError extends Error {
   }
 }
 
+/**
+ * The server's own `{ error }` text from a failed call, or `undefined` when the
+ * error is not an {@link HttpError} or the server sent no message (the default
+ * `HTTP <status>` text is not user copy). Replaces `data.error || fallback` on
+ * a response that used to be read by hand: `toast.error(serverError(e) ?? t(…))`.
+ */
+export function serverError(error: unknown): string | undefined {
+  if (!(error instanceof HttpError)) return undefined;
+  return error.message && error.message !== `HTTP ${error.status}` ? error.message : undefined;
+}
+
 /** A request we aborted because it outlived its timeout. */
 export class TimeoutError extends Error {
   constructor(ms: number) {

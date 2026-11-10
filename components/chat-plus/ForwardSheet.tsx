@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 import { forwardLabel, maxForwardTargets } from '@/lib/chat-plus/flags';
 import type { ChatRef } from '@/lib/chat-plus/types';
 import { useChatPlusUi, type ForwardTarget } from '@/lib/chat-plus/ui-store';
+import { api } from '@/lib/contract/client';
+import { getSavedMessagesApi, listConversationsApi } from '@/lib/messages/messages.contract';
 
 interface Destination {
   ref: ChatRef;
@@ -31,18 +33,14 @@ function useDestinations() {
     staleTime: 30_000,
     queryFn: async (): Promise<Destination[]> => {
       const [dms, groups] = await Promise.all([
-        fetch('/api/messages', { credentials: 'include' }).then((r) =>
-          r.ok ? r.json() : { conversations: [] },
-        ),
+        api(listConversationsApi).catch(() => ({ conversations: [] })),
         fetch('/api/group-chats', { credentials: 'include' }).then((r) =>
           r.ok ? r.json() : { groups: [] },
         ),
       ]);
       const out: Destination[] = [];
       // Saved Messages first: forwarding to yourself is the most common reason.
-      const saved = await fetch('/api/messages/saved', { credentials: 'include' })
-        .then((r) => (r.ok ? r.json() : { saved: null }))
-        .catch(() => ({ saved: null }));
+      const saved = await api(getSavedMessagesApi).catch(() => ({ saved: null }));
       if (saved.saved) {
         out.push({
           ref: { kind: 'dm', id: saved.saved.conversationId },
