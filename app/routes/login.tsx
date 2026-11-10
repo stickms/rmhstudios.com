@@ -1,3 +1,4 @@
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 /**
  * Login Page Route — a full-screen Liquid Glass sign-in card floating on the
  * theme aurora. Sign-in leads with the fastest paths (passkey + a compact

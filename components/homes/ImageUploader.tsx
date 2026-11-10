@@ -1,3 +1,4 @@
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Loader2, Sparkles, Star, Wand2, X } from 'lucide-react';
 import { toast } from 'sonner';

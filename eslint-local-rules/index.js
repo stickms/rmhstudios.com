@@ -6,6 +6,7 @@
  * in `eslint.config.mjs`.
  */
 
+import noAdhocSpinner from './no-adhoc-spinner.js';
 import noAdhocUserSelect from './no-adhoc-user-select.js';
 import noLucideNamespaceImport from './no-lucide-namespace-import.js';
 import noUseClientDirective from './no-use-client-directive.js';
@@ -18,6 +19,7 @@ import noDeadAnimateClasses from './no-dead-animate-classes.js';
 const plugin = {
   meta: { name: 'eslint-plugin-local', version: '1.0.0' },
   rules: {
+    'no-adhoc-spinner': noAdhocSpinner,
     'no-adhoc-user-select': noAdhocUserSelect,
     'no-lucide-namespace-import': noLucideNamespaceImport,
     'no-use-client-directive': noUseClientDirective,

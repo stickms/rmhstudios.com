@@ -18,7 +18,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Plus, Save, ShieldAlert, Trash2 } from 'lucide-react';
+import { Plus, Save, ShieldAlert, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   answerBankCompleteness,
@@ -36,6 +36,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Spinner } from '@/components/ui/spinner';
 
 const EMPTY_ESSAY: EssayAnswer = { question: '', answer: '' };
 const EMPTY_STORY: StarStory = { title: '', situation: '', task: '', action: '', result: '' };
@@ -114,8 +115,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
   if (loading) {
     return (
       <section className="glass-pane flex min-h-32 items-center justify-center p-5">
-        <Loader2 className="size-5 animate-spin text-site-text-dim" aria-hidden />
-        <span className="sr-only">{t('ladder.answersLoading', { defaultValue: 'Loading…' })}</span>
+        <Spinner size={20} className="text-site-text-dim" label={t('ladder.answersLoading', { defaultValue: 'Loading…' })} />
       </section>
     );
   }

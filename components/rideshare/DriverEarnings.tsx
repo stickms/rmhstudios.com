@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Wallet, Car, Star, TrendingUp, Gift, Building2, ShieldCheck } from 'lucide-react';
+import { Wallet, Car, Star, TrendingUp, Gift, Building2, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { formatUsd, formatDistance } from '@/lib/rideshare/geo';
 import { rideClassName } from '@/lib/rideshare/classes';
+import { Spinner } from '@/components/ui/spinner';
 
 interface RecentTrip {
   id: string;
@@ -46,7 +47,7 @@ export function DriverEarnings() {
   if (loading) {
     return (
       <div className="flex justify-center glass-fill rounded-site py-10">
-        <Loader2 className="h-5 w-5 animate-spin text-site-text-muted" />
+        <Spinner size={20} className="text-site-text-muted" />
       </div>
     );
   }

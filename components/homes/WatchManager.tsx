@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Bell, BellOff, Loader2, MapPin, Search, Trash2 } from 'lucide-react';
+import { Bell, BellOff, MapPin, Search, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { propertyTypeLabel } from '@/lib/homes/format';
 import type { Watch } from '@/lib/homes/types';
+import { Spinner } from '@/components/ui/spinner';
 
 /** One-line summary of a watch's criteria. */
 function summarize(w: Watch): string {
@@ -69,7 +70,7 @@ export function WatchManager() {
   if (loading) {
     return (
       <div className="grid place-items-center py-20 text-site-text-muted">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <Spinner size={32} className="text-site-text-muted" />
       </div>
     );
   }

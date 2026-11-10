@@ -1,3 +1,4 @@
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useEffect, useState, useCallback, useRef } from'react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from'@tanstack/react-router';
