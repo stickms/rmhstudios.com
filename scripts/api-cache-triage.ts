@@ -740,7 +740,7 @@ function classify(
 
 /** Count references to each `/api/...` URL in client + server source. */
 function countClientRefs(urls: string[]): Map<string, number> {
-  const dirs = ['app', 'components', 'hooks', 'lib', 'stores', 'server'].map((d) =>
+  const dirs = ['app', 'components', 'hooks', 'lib', 'stores', 'server', 'features'].map((d) =>
     path.join(ROOT, d),
   );
   const refs: string[] = [];

@@ -355,3 +355,12 @@ realtime topology.)
 ## Feature flags
 
 `feature_flag` (Prisma `FeatureFlag`) holds runtime flags so deploy and release are separate: code ships dark, an admin turns it on (optionally for a percentage of users), and turning it off is a row update, not a rollback or a migration question. Server code asks `isFeatureEnabled(key, userId)` (`lib/flags/flags.server.ts`, 15 s per-process cache, fails closed); clients read `GET /api/flags`. Admins manage flags with `GET/PUT/DELETE /api/admin/flags`. Percentage rollouts bucket per `(key, userId)` and are monotonic (raising 10% → 50% never switches anyone off); anonymous callers only see fully rolled-out flags.
+
+## Feature-sliced code (`features/`)
+
+Redesign audit A1 moves each game/app into one folder, `features/<id>/{engine,ui,server}`
+plus a `feature.ts` manifest (`lib/core/feature.ts`), imported as `@features/<id>/...`.
+Routes stay thin in `app/routes/`. Socket handlers live in `features/<id>/server/` and the
+socket hub registers them from `server/socket-server/features.ts`; the esbuild server
+bundle follows those imports and the Dockerfile `server-builder` stage copies `features/`.
+Moved so far: `balatro`, `void-breaker`. Details: [`features/CLAUDE.md`](../features/CLAUDE.md).

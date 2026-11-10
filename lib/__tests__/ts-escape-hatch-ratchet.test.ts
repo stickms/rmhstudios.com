@@ -37,7 +37,7 @@ const PATTERNS: Record<Key, RegExp> = {
 const KEYS = Object.keys(BASELINE) as Key[];
 
 function count(): Record<Key, number> {
-  const files = globSync('{app,components,lib,server,hooks,stores}/**/*.{ts,tsx}', {
+  const files = globSync('{app,components,lib,server,hooks,stores,features}/**/*.{ts,tsx}', {
     exclude: (f) => /node_modules|__tests__|\.test\.|routeTree\.gen|generated/.test(String(f)),
   });
   const totals: Record<Key, number> = { colonAny: 0, asAny: 0, tsIgnore: 0, tsExpectError: 0, tsNocheck: 0 };

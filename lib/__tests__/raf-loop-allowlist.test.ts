@@ -171,7 +171,7 @@ import { join, posix } from 'node:path';
  */
 
 const ROOT = process.cwd();
-const SCAN_DIRS = ['components', 'app', 'hooks', 'lib', 'stores'];
+const SCAN_DIRS = ['components', 'app', 'hooks', 'lib', 'stores', 'features'];
 
 /** Files permitted to call requestAnimationFrame (see the doc block above). */
 const ALLOW = new Set<string>([
@@ -329,7 +329,7 @@ const ALLOW = new Set<string>([
   'components/ui/anchored-menu.tsx',
   'components/ui/tabs.tsx',
   'components/velum2099/game/main.ts',
-  'components/void-breaker/VoidBreakerGame.tsx',
+  'features/void-breaker/ui/VoidBreakerGame.tsx',
   'hooks/useCelebration.ts',
   'hooks/useDeviceAttitude.ts',
   'hooks/useLiquidBackground.ts',
@@ -338,8 +338,8 @@ const ALLOW = new Set<string>([
   'lib/altair/engine/game-loop.ts',
   // Balatro: the render governor's frame sampler runs while the engine does and is cancelled in
   // stop(); the phone keyboard's key queue is a one-shot chain that ends when the queue is empty.
-  'lib/balatro/runtime.ts',
-  'lib/balatro/text-input.ts',
+  'features/balatro/engine/runtime.ts',
+  'features/balatro/engine/text-input.ts',
   'lib/dream-rift/net/session.ts',
   'lib/emoji/use-emoji-insert.ts',
   'lib/emoji/use-emoji-shortcodes.tsx',

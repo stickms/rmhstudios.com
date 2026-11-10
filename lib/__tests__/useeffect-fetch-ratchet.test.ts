@@ -26,7 +26,7 @@ const USE_EFFECT = /\buseEffect\b/;
 const API_CALL = /fetch\(\s*['"`]\/api\/|(?<![\w.])api\(\s*[A-Za-z_]\w*Api\b/;
 
 function count(): { total: number; files: string[] } {
-  const files = globSync('{app/routes,components}/**/*.tsx', {
+  const files = globSync('{app/routes,components,features}/**/*.tsx', {
     exclude: (f) => /node_modules|__tests__|\.test\.|routeTree\.gen/.test(String(f)),
   });
   const hits: string[] = [];

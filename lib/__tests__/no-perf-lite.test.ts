@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest';
 const ROOT = join(__dirname, '..', '..');
 /** Spelled in two halves so this file does not trip its own scan. */
 const RETIRED = ['perf', 'lite'].join('-');
-const ROOTS = ['app', 'components', 'lib', 'hooks', 'stores'];
+const ROOTS = ['app', 'components', 'lib', 'hooks', 'stores', 'features'];
 const EXT = /\.(css|ts|tsx|mjs|cjs|js|json)$/;
 const SKIP_DIR = new Set(['node_modules', '.git', 'generated']);
 

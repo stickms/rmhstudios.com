@@ -6,18 +6,18 @@
  * (2x exactly twice 1x, whole cells of the entry's px × py), and present in the generated
  * rmh_mp/data/atlases.lua — a missing file or entry makes the Lua alias the vanilla placeholder
  * sheet at {0,0}, which draws every MP joker as the plain Joker. Per-definition positions are
- * checked in Lua (lib/balatro/lua/spec/mp_atlas_art_spec.lua), where the definitions live.
+ * checked in Lua (features/balatro/engine/lua/spec/mp_atlas_art_spec.lua), where the definitions live.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import pack from '@/lib/balatro/game-pack.json';
-import { extractEntry, readZip } from '@/lib/balatro/zip';
+import pack from '@features/balatro/engine/game-pack.json';
+import { extractEntry, readZip } from '@features/balatro/engine/zip';
 
 const ROOT = join(import.meta.dirname, '../../..');
 const MP_DATA = join(ROOT, 'data', 'balatro-mp');
-const LUA_ROOT = join(ROOT, 'lib', 'balatro', 'lua', 'mp', 'rmh_mp');
+const LUA_ROOT = join(ROOT, 'features', 'balatro', 'engine', 'lua', 'mp', 'rmh_mp');
 
 interface Atlas {
   file: string;

@@ -1,6 +1,6 @@
 /**
- * Generates `lib/balatro/lua/mp/rmh_mp/protocol.lua` from the zod schemas in
- * `lib/balatro/mp/bridge-protocol.ts` (PLAN §3.c, WS0).
+ * Generates `features/balatro/engine/lua/mp/rmh_mp/protocol.lua` from the zod schemas in
+ * `features/balatro/engine/mp/bridge-protocol.ts` (PLAN §3.c, WS0).
  *
  *     pnpm balatro:gen-protocol            # rewrite protocol.lua
  *     pnpm balatro:gen-protocol --check    # exit 1 if it is stale
@@ -30,16 +30,16 @@ import {
   J2L_ENTRY,
   L2J,
   L2J_ENTRY,
-} from '../../lib/balatro/mp/bridge-protocol';
-import { MP_PROTOCOL_VERSION } from '../../lib/balatro/net/limits';
-import { zQueueMode } from '../../lib/balatro/net/events';
+} from '../../features/balatro/engine/mp/bridge-protocol';
+import { MP_PROTOCOL_VERSION } from '../../features/balatro/engine/net/limits';
+import { zQueueMode } from '../../features/balatro/engine/net/events';
 import {
   LOBBY_OPTION_KEYS,
   zGameEvent,
   zRefMsg,
   zReplayOp,
   zTeam,
-} from '../../lib/balatro/mp/types';
+} from '../../features/balatro/engine/mp/types';
 import {
   LOCAL_ONLY_KINDS,
   PEER_KINDS,
@@ -49,23 +49,23 @@ import {
   WIRE_META,
   WIRE_PROTOCOL,
   zEnvelope,
-} from '../../lib/balatro/mp/wire';
-import { BALATRO_S2C } from '../../lib/balatro/net/events';
+} from '../../features/balatro/engine/mp/wire';
+import { BALATRO_S2C } from '../../features/balatro/engine/net/events';
 import {
   zLobbyOptions,
   zRefCheckpoint,
   zResolvedRuleset,
-} from '../../lib/balatro/mp/types';
+} from '../../features/balatro/engine/mp/types';
 import { zIceServers } from '../../lib/shared/p2p/ice';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-export const PROTOCOL_LUA_PATH = join(ROOT, 'lib/balatro/lua/mp/rmh_mp/protocol.lua');
+export const PROTOCOL_LUA_PATH = join(ROOT, 'features/balatro/engine/lua/mp/rmh_mp/protocol.lua');
 /**
- * The same descriptors for the browser: `lib/balatro/mp/bridge-codec.ts` walks them
+ * The same descriptors for the browser: `features/balatro/engine/mp/bridge-codec.ts` walks them
  * so the lazy MP chunk validates the mailbox without bundling zod (~80 KB gzip of
  * zod v4 classic). bridge-protocol.ts stays the source; this file is derived.
  */
-export const PROTOCOL_TS_PATH = join(ROOT, 'lib/balatro/mp/bridge-schema.gen.ts');
+export const PROTOCOL_TS_PATH = join(ROOT, 'features/balatro/engine/mp/bridge-schema.gen.ts');
 /** S2C events carried as bytes: validated by hand in wire-codec.ts (zod's `instanceof` has no JSON Schema). */
 export const BINARY_S2C = ['balatro:p2p:relay'] as const;
 
@@ -370,6 +370,7 @@ export function generateProtocolLua(): string {
   const out: string[] = [];
   out.push(
     '-- GENERATED FILE — do not edit by hand.',
+    // Header text kept verbatim: protocol.lua is packed into the mp pack, so rewording it would change the pack hash.
     '-- Source: lib/balatro/mp/bridge-protocol.ts (PLAN §3.c), via scripts/balatro/gen-lua-protocol.ts.',
     '-- Regenerate with `pnpm balatro:gen-protocol`; lib/balatro/mp/__tests__/protocol-lua.test.ts fails when stale.',
     '--',
@@ -515,9 +516,9 @@ export function generateProtocolTs(): string {
   ];
   return [
     '// GENERATED FILE — do not edit by hand.',
-    '// Source: lib/balatro/mp/bridge-protocol.ts (PLAN §3.c), via scripts/balatro/gen-lua-protocol.ts,',
+    '// Source: features/balatro/engine/mp/bridge-protocol.ts (PLAN §3.c), via scripts/balatro/gen-lua-protocol.ts,',
     '// which writes the same descriptors to rmh_mp/protocol.lua. Regenerate with',
-    '// `pnpm balatro:gen-protocol`; lib/balatro/mp/__tests__/protocol-lua.test.ts fails when stale.',
+    '// `pnpm balatro:gen-protocol`; features/balatro/engine/mp/__tests__/protocol-lua.test.ts fails when stale.',
     '// Walked by bridge-codec.ts, the zod-free validator the lazy MP chunk uses. Unlike Lua it',
     '// also checks regex patterns (`pat`).',
     '',

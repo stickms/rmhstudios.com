@@ -17,7 +17,7 @@ import { join } from 'node:path';
 import { COIN_FLOWS, flowsOfKind, supplyShape } from '@/lib/economy/flows';
 
 const ROOT = process.cwd();
-const SCAN = ['lib', 'app', 'server'];
+const SCAN = ['lib', 'app', 'server', 'features'];
 
 /** Files that call the ledger, by which verb they use. */
 function ledgerCallSites(): { faucet: Set<string>; sink: Set<string>; transfer: Set<string> } {

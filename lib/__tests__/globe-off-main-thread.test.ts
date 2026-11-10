@@ -74,7 +74,7 @@ describe('the globe draws off the main thread', () => {
   });
 
   it('only the worker entry imports the render modules', () => {
-    const importers = ['components', 'app', 'hooks', 'lib', 'stores']
+    const importers = ['components', 'app', 'hooks', 'lib', 'stores', 'features']
       .flatMap((d) => collect(d))
       .filter((f) => RENDER_IMPORT.test(code(f)))
       .map((f) => relative(ROOT, join(ROOT, f)))

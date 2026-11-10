@@ -37,6 +37,9 @@ export default defineConfig({
     pool: 'forks',
   },
   resolve: {
-    alias: { '@': path.resolve(__dirname, '.') },
+    alias: {
+      '@': path.resolve(__dirname, '.'),
+      '@features': path.resolve(__dirname, 'features'),
+    },
   },
 });

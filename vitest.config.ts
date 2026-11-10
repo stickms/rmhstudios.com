@@ -80,11 +80,11 @@ export default defineConfig({
       // Multiplayer Balatro is gameplay too: its own suite, `pnpm test:balatro`
       // (vitest.balatro.config.ts, which includes exactly these globs), gated by
       // .github/workflows/balatro-mp-tests.yml. The mission-critical Balatro
-      // tests (lib/balatro/__tests__/saves.test.ts, the hub auth walk under
+      // tests (features/balatro/engine/__tests__/saves.test.ts, the hub auth walk under
       // server/socket-server/handlers/__tests__/) stay here.
-      'lib/balatro/mp/**',
+      'features/balatro/engine/mp/**',
       'lib/shared/p2p/**',
-      'server/socket-server/balatro/**',
+      'features/balatro/server/hub/**',
       'scripts/balatro/**',
       // Its browser end-to-end suite: `pnpm test:balatro:e2e` (vitest.balatro-e2e.config.ts).
       'testing/balatro-e2e/**',
@@ -133,6 +133,7 @@ export default defineConfig({
         'components/**/*.{ts,tsx}',
         'hooks/**/*.{ts,tsx}',
         'stores/**/*.{ts,tsx}',
+        'features/**/*.{ts,tsx}',
       ],
       exclude: [
         '**/__tests__/**',
@@ -150,6 +151,8 @@ export default defineConfig({
       // warns on the CJS global and will drop it when `configLoader: 'native'`
       // becomes the default.
       '@': path.resolve(import.meta.dirname),
+      // Feature-sliced workspace (redesign A1): features/<id>/{engine,ui,net,server,api}.
+      '@features': path.resolve(import.meta.dirname, 'features'),
     },
   },
 });

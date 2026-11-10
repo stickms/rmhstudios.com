@@ -6,7 +6,7 @@ import { lobbyReturnPath, sanitizeLobbyCode } from '@/lib/lobby-link';
 
 // Static, not `lazy()`: Start already splits this route's component into its own
 // chunk and loads it BEFORE hydrating (docs/archive/2026/fouc-audit-2026-10-06.md §13).
-import BalatroPage from '@/components/balatro/BalatroPage';
+import BalatroPage from '@features/balatro/ui/BalatroPage';
 
 /**
  * /balatro — Balatro on LÖVE compiled to WebAssembly.
@@ -16,7 +16,7 @@ import BalatroPage from '@/components/balatro/BalatroPage';
  * `noindex, nofollow` here. The game packs themselves are served only to a
  * session (app/routes/api/balatro/pack.$file.ts).
  *
- * `?lobby=CODE` is a multiplayer invite (components/balatro/BalatroPage.tsx joins
+ * `?lobby=CODE` is a multiplayer invite (features/balatro/ui/BalatroPage.tsx joins
  * it). It is most often opened by someone who is not signed in yet, so the login
  * redirect carries it through (`lobbyReturnPath`).
  */

@@ -180,7 +180,7 @@ function scan(): Call[] {
       }
     }
   };
-  for (const root of ['app', 'components', 'lib', 'hooks']) walk(join(REPO, root));
+  for (const root of ['app', 'components', 'lib', 'hooks', 'features']) walk(join(REPO, root));
   return calls;
 }
 
@@ -255,7 +255,7 @@ describe('i18n: defaults agree with the English catalog', () => {
         }
       }
     };
-    for (const root of ['app', 'components', 'lib', 'hooks']) walk(join(REPO, root));
+    for (const root of ['app', 'components', 'lib', 'hooks', 'features']) walk(join(REPO, root));
     expect(
       offenders,
       'i18next ≥21 ignores defaultValue_plural — use defaultValue_one + defaultValue',

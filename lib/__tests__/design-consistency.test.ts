@@ -43,7 +43,7 @@ import { readCss } from './css-source';
  */
 
 const ROOT = process.cwd();
-const SCAN_DIRS = ['components', join('app', 'routes')];
+const SCAN_DIRS = ['components', 'features', join('app', 'routes')];
 const POINTER =
   'Use the shared <Tabs> renderer (components/ui/tabs.tsx). See the ' +
   'liquid-glass v2 plan §16.2 (one tablist renderer + enforcement).';

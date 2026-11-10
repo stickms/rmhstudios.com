@@ -107,7 +107,7 @@ const ALLOWED: Readonly<Record<string, { count: number; reason: string }>> = {
     reason: 'matchmaking queue tick over in-memory queues',
   },
   'server/socket-server/handlers/altair.ts': { count: 2, reason: GAME_TICK },
-  'server/socket-server/handlers/balatro-queue.ts': { count: 1, reason: HUB_HOUSEKEEPING },
+  'features/balatro/server/queue.ts': { count: 1, reason: HUB_HOUSEKEEPING },
   'server/socket-server/handlers/controller.ts': { count: 1, reason: HUB_HOUSEKEEPING },
   'server/socket-server/handlers/dream-rift.ts': { count: 1, reason: GAME_TICK },
   'server/socket-server/handlers/gabriels-horn.ts': { count: 2, reason: GAME_TICK },
@@ -157,6 +157,8 @@ function rel(file: string): string {
 function inScope(path: string): boolean {
   if (path.startsWith('server/')) return true;
   if (path.startsWith('app/routes/api/')) return true;
+  // A feature's socket handlers (features/<id>/server/) are hub code like server/socket-server/handlers/.
+  if (/^features\/[^/]+\/server\//.test(path)) return true;
   if (path.startsWith('lib/') && /\.server\.(ts|mts|cts|js|mjs|cjs)$/.test(path)) return true;
   return EXTRA_FILES.includes(path);
 }
@@ -173,7 +175,7 @@ function countIntervals(file: string): number {
   return codeLines(readFileSync(file, 'utf8')).filter((l) => /\bsetInterval\(/.test(l)).length;
 }
 
-const files = ['server', 'app/routes/api', 'lib']
+const files = ['server', 'app/routes/api', 'lib', 'features']
   .flatMap((d) => walk(join(ROOT, d)))
   .filter(isSource)
   .map((f) => ({ file: f, path: rel(f) }))

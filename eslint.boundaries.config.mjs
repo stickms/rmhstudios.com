@@ -70,7 +70,7 @@ export const FEATURE_DIRS = [
 // NOTE: flat config does not merge `no-restricted-imports` options across
 // blocks (the last matching block wins), so each block lists its full set.
 const featurePattern = {
-  regex: `^@/(components|lib)/(${FEATURE_DIRS.join('|')})(/|$)`,
+  regex: `^(@/(components|lib)/(${FEATURE_DIRS.join('|')})|@features)(/|$)`,
   message:
     'Shared code (ui/shared/hooks/stores/utils) must not import a game/app feature directory. Move the shared piece into ui/ or shared/.',
 };
@@ -136,14 +136,29 @@ export default tseslint.config(
   // Import cycles, scoped to the client/shared trees to keep the run fast
   // (the node tier in server/ is covered by tsc and its bundles).
   {
-    files: [`components/**/${ts}`, `lib/**/${ts}`, `hooks/**/${ts}`, `stores/**/${ts}`],
+    files: [
+      `components/**/${ts}`,
+      `lib/**/${ts}`,
+      `hooks/**/${ts}`,
+      `stores/**/${ts}`,
+      `features/**/${ts}`,
+    ],
     rules: { 'import-x/no-cycle': ['error', { maxDepth: 4, ignoreExternal: true }] },
   },
   // lib/ is below components/ in the layering.
-  { files: [`lib/**/${ts}`], rules: { 'no-restricted-imports': restrict(libLayerPattern) } },
+  // A feature's engine/ (and server/, net/, api/) is the lib half of the feature; its ui/ is the components half.
+  {
+    files: [
+      `lib/**/${ts}`,
+      `features/*/engine/**/${ts}`,
+      `features/*/server/**/${ts}`,
+      `features/*/net/**/${ts}`,
+    ],
+    rules: { 'no-restricted-imports': restrict(libLayerPattern) },
+  },
   // Client trees: no value imports of .server modules.
   {
-    files: [`components/**/${ts}`, `hooks/**/${ts}`, `stores/**/${ts}`],
+    files: [`components/**/${ts}`, `hooks/**/${ts}`, `stores/**/${ts}`, `features/*/ui/**/${ts}`],
     rules: { 'no-restricted-imports': restrict(serverPattern) },
   },
   // Shared dirs must not import feature dirs.

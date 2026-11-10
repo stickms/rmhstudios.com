@@ -6,7 +6,7 @@ Plan: PLAN §4 WS14 and §6 (the multiplayer project plan). CI: the `e2e` job in
 | Project   | Runs                                                                      | Needs                           |
 | --------- | ------------------------------------------------------------------------- | ------------------------------- |
 | `harness` | `**/*.unit.test.ts`: the e2e machinery itself                             | nothing                         |
-| `engine`  | Lua L2: `lib/balatro/lua/mp_test/specs/*_spec.lua` in the real love.wasm  | Chromium                        |
+| `engine`  | Lua L2: `features/balatro/engine/lua/mp_test/specs/*_spec.lua` in the real love.wasm  | Chromium                        |
 | `match`   | multi-browser matches and bot-peer lobbies (E2E-01…24, `match/*.test.ts`) | Chromium + Postgres (see below) |
 
 ```bash
@@ -45,9 +45,9 @@ CI sets `BALATRO_E2E_SOAK=1` on every run: the 12-ante soak takes about 2 minute
 
 ## Engine-spec harness
 
-`engine/page/entry.ts` boots the game exactly as `/balatro` does (`lib/balatro/runtime.ts`,
+`engine/page/entry.ts` boots the game exactly as `/balatro` does (`features/balatro/engine/runtime.ts`,
 the committed packs in `data/balatro-pack`, `public/balatro/engine`) from a static server
-(`lib/static-server.ts`) — no account, hub or database. It writes `lib/balatro/lua/mp_test/**`
+(`lib/static-server.ts`) — no account, hub or database. It writes `features/balatro/engine/lua/mp_test/**`
 to `/Balatro/rmh_mp_test`, the marker `/rmh/test/enabled`, and appends
 `require "rmh_mp_test.harness"` to `main.lua`. The page and Lua talk over `/rmh/test/{cmd,res}`
 (`lib/channel.ts` ↔ `mp_test/harness.lua`). `?mp=1` (the default whenever the pack manifest
@@ -84,7 +84,7 @@ blocking error screen).
 
 ## Autopilot (test-only)
 
-`lib/balatro/lua/mp_test/autopilot.lua`: `start_run`, `select_blind`, `skip_blind`, `play`,
+`features/balatro/engine/lua/mp_test/autopilot.lua`: `start_run`, `select_blind`, `skip_blind`, `play`,
 `discard`, `set_chips`, `win_blind`, `cash_out`, `shop_digest`, `buy`, `reroll`, `open_pack`,
 `pick`, `skip_pack`, `leave_shop`, `use`, `give`, `set_ante`, `state`, `wait_state`; MP:
 `mp_open`, `mp_send{t,d}` (a `ui_*` message as a screen sends it), `mp_inbox{t?}` (what the
@@ -92,7 +92,7 @@ session told Lua), `mp_state`, `pvp_play{chips?,hands?}`, `pvp_wait_end`, `pvp_r
 `mp_ante{chips}` (a whole ante of a match), `mp{fn,args}` (any `MP.test.<fn>`), and the UI
 actions routed to `MP.test` (`ready`, `unready`, `timer_press`, `pause_menu`, `forfeit`,
 `vote`). It installs only when `/rmh/test/enabled` exists and ships in no pack. In a test build
-(`VITE_BALATRO_MP_TEST=1`) `lib/balatro/mp/test-hooks.ts` writes it and exposes
+(`VITE_BALATRO_MP_TEST=1`) `features/balatro/engine/mp/test-hooks.ts` writes it and exposes
 `window.__balatroMp.cmd(…)` (`test_cmd`/`test_res` over the mailbox; the MP pack's `init.lua`
 installs the autopilot on the first `test_cmd`); the page exposes `window.__rmhBalatroOpenMp`
 to open Multiplayer as the MULTIPLAYER button does. `scripts/balatro/bundle-budget.ts` fails if

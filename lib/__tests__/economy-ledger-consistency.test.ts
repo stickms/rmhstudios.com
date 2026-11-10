@@ -29,7 +29,7 @@ import { join, relative } from 'node:path';
  */
 
 const ROOT = process.cwd();
-const SCAN_DIRS = ['lib', join('app', 'routes'), 'server'];
+const SCAN_DIRS = ['lib', join('app', 'routes'), 'server', 'features'];
 const POINTER =
   'Move coin movement into lib/economy/ledger.server.ts (creditCoins / debitCoins / ' +
   'transferCoins). It keeps the balance guard inside the UPDATE, writes the ledger row, ' +
