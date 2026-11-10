@@ -15,7 +15,9 @@
     "lib/core/**/*.ts",
     "lib/contract/**/*.ts",
     "lib/api/implement.server.ts",
-    "lib/streak-reminders.server.ts"
+    "lib/streak-reminders.server.ts",
+    "server/shared/session-auth.ts",
+    "server/shared/redis-adapter.ts"
   ],
   "exclude": ["node_modules", "**/__tests__/**", "**/*.test.ts"]
 }
