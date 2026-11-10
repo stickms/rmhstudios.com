@@ -22,6 +22,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useSession } from '@/components/Providers';
 import { usePushSubscription } from '@/lib/usePushSubscription';
+import { api } from '@/lib/contract/client';
+import { getSohumAlertApi, setSohumAlertApi } from '@/lib/sohumtracker/alert.contract';
 
 export function AlertToggle() {
   const { t } = useTranslation('r-sohumtracker');
@@ -40,10 +42,9 @@ export function AlertToggle() {
       return;
     }
     let cancelled = false;
-    fetch('/api/sohumtracker/alert', { credentials: 'include' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { enabled: boolean } | null) => {
-        if (!cancelled && data) setEnabled(data.enabled);
+    api(getSohumAlertApi, { retries: 0 })
+      .then((data) => {
+        if (!cancelled) setEnabled(data.enabled);
       })
       .catch(() => {
         // A failed read leaves the button in its "unknown" state, which renders
@@ -73,13 +74,7 @@ export function AlertToggle() {
           return;
         }
       }
-      const res = await fetch('/api/sohumtracker/alert', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ enabled: next }),
-      });
-      if (!res.ok) throw new Error(String(res.status));
+      await api(setSohumAlertApi, { body: { enabled: next } });
       setEnabled(next);
       toast.success(
         next

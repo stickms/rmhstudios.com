@@ -1,11 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getSignalForgeLeaderboardApi } from '@/lib/signal-forge/signal-forge.contract';
 import { prisma } from '@/lib/prisma.server';
 
 export const Route = createFileRoute('/api/signal-forge/leaderboard')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        getSignalForgeLeaderboardApi,
         {
           auth: 'none',
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'signal-forge-leaderboard' },

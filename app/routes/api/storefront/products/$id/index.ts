@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { deleteStorefrontProductApi, updateStorefrontProductApi } from '@/lib/storefront/storefront.contract';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 
@@ -15,7 +16,8 @@ const patchSchema = z.object({
 export const Route = createFileRoute('/api/storefront/products/$id/')({
   server: {
     handlers: {
-      PATCH: defineHandler(
+      PATCH: implement(
+        updateStorefrontProductApi,
         { body: patchSchema, allowEmptyBody: true, verboseValidationErrors: true },
         async ({ params, session, body }) => {
           const existing = await prisma.storefrontProduct.findUnique({
@@ -46,7 +48,7 @@ export const Route = createFileRoute('/api/storefront/products/$id/')({
         },
       ),
 
-      DELETE: defineHandler({}, async ({ params, session }) => {
+      DELETE: implement(deleteStorefrontProductApi, {}, async ({ params, session }) => {
         const existing = await prisma.storefrontProduct.findUnique({
           where: { id: params.id },
           select: { creatorId: true },

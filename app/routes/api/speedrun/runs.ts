@@ -10,6 +10,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import {
+  submitSpeedrunRunApi,
+} from '@/lib/speedrun/speedrun.contract';
 import {
   getRunsForUser,
   submitRun,
@@ -46,7 +50,8 @@ export const Route = createFileRoute('/api/speedrun/runs')({
         return Response.json({ runs: await getRunsForUser(userId) });
       }),
 
-      POST: defineHandler(
+      POST: implement(
+        submitSpeedrunRunApi,
         {
           rateLimit: { policy: 'write', scope: 'user', prefix: 'speedrun-submit', limit: 20 },
           body: bodySchema,

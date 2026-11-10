@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { listRmhCodeTokensApi } from '@/lib/rmhcode/tokens.contract';
 /**
  * List all active tokens for the authenticated user.
  * GET /api/rmhcode/auth/list
@@ -10,7 +11,7 @@ import { prisma } from '@/lib/prisma.server';
 export const Route = createFileRoute('/api/rmhcode/auth/list')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
+      GET: implement(listRmhCodeTokensApi, {}, async ({ session }) => {
         const tokens = await prisma.rmhCodeToken.findMany({
           where: {
             userId: session.user.id,

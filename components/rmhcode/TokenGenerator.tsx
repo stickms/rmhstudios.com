@@ -5,6 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CopyButton } from '@/components/ui/copy-button';
 import { tokenExpiry } from '@/lib/rmhcode/token-expiry';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import {
+  generateRmhCodeTokenApi,
+  listRmhCodeTokensApi,
+  revokeRmhCodeTokenApi,
+} from '@/lib/rmhcode/tokens.contract';
 
 interface Token {
   id: string;
@@ -29,11 +36,8 @@ export default function TokenGenerator() {
 
   async function fetchTokens() {
     try {
-      const res = await fetch('/api/rmhcode/auth/list');
-      if (res.ok) {
-        const data = await res.json();
-        setTokens(data.tokens);
-      }
+      const data = await api(listRmhCodeTokensApi, { retries: 0 });
+      setTokens(data.tokens);
     } catch (e) {
       console.error('Failed to fetch tokens:', e);
     } finally {
@@ -45,23 +49,17 @@ export default function TokenGenerator() {
     setGenerating(true);
     setError(null);
     try {
-      const res = await fetch('/api/rmhcode/auth/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: tokenName || undefined }),
+      const data = await api(generateRmhCodeTokenApi, {
+        body: { name: tokenName || undefined },
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to generate token');
-      }
-
-      const data = await res.json();
       setNewToken(data.token);
       setTokenName('');
       fetchTokens();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to generate token');
+      setError(
+        serverError(e) ??
+          (e instanceof Error && !(e instanceof HttpError) ? e.message : 'Failed to generate token'),
+      );
     } finally {
       setGenerating(false);
     }
@@ -69,15 +67,8 @@ export default function TokenGenerator() {
 
   async function revokeToken(tokenId: string) {
     try {
-      const res = await fetch('/api/rmhcode/auth/revoke', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tokenId }),
-      });
-
-      if (res.ok) {
-        setTokens((prev) => prev.filter((t) => t.id !== tokenId));
-      }
+      await api(revokeRmhCodeTokenApi, { body: { tokenId } });
+      setTokens((prev) => prev.filter((t) => t.id !== tokenId));
     } catch (e) {
       console.error('Failed to revoke token:', e);
     }

@@ -12,6 +12,15 @@ import { ColumnHeader } from'./ColumnHeader';
 import { Reveal } from'@/components/motion';
 import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import type { RankTier } from'@/lib/ranked/tiers';
+import { api } from'@/lib/contract/client';
+import { serverError } from'@/lib/http';
+import {
+ actOnRankedChallengeApi,
+ createRankedChallengeApi,
+ getRankedLadderApi,
+ getRankedOverviewApi,
+ type RankedChallengeAction,
+} from'@/lib/ranked/ranked.contract';
 
 interface Rating {
  game: string;
@@ -95,9 +104,8 @@ export function RankedColumn({
  const [lbLoading, setLbLoading] = useState(false);
 
  const load = useCallback(async () => {
- const res = await fetch('/api/ranked', { credentials:'include'});
- if (res.ok) {
- const data = await res.json();
+ try {
+ const data = await api(getRankedOverviewApi, { retries: 0 });
  setGames(data.games ?? []);
  setRatings(data.ratings ?? []);
  setIncoming(data.incoming ?? []);
@@ -105,6 +113,8 @@ export function RankedColumn({
  setSignedIn(!!data.signedIn);
  if (!game && data.games?.[0]) setGame(data.games[0].id);
  if (!lbGame && data.games?.[0]) setLbGame(data.games[0].id);
+ } catch {
+ // A failed read keeps what was on screen.
  }
  }, [game, lbGame]);
 
@@ -128,13 +138,15 @@ export function RankedColumn({
  if (!g) return;
  setLbLoading(true);
  try {
- const res = await fetch(`/api/ranked/${encodeURIComponent(g)}/leaderboard`, {
- credentials:'include',
+ // `scope: 'season'` is the route's own default, spelled out for the contract.
+ const data = await api(getRankedLadderApi, {
+ params: { game: g },
+ query: { scope:'season'},
+ retries: 0,
  });
- if (res.ok) {
- const data = await res.json();
  setLb(data.leaderboard ?? []);
- }
+ } catch {
+ // A failed read keeps the previous ladder.
  } finally {
  setLbLoading(false);
  }
@@ -150,15 +162,12 @@ export function RankedColumn({
  setBusy('send');
  setFormMsg(null);
  try {
- const res = await fetch('/api/ranked', {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ game, opponent: opponent.trim().replace(/^@/,'') }),
+ try {
+ await api(createRankedChallengeApi, {
+ body: { game, opponent: opponent.trim().replace(/^@/,'') },
  });
- const data = await res.json().catch(() => ({}));
- if (!res.ok) {
- setFormMsg(data.error ?? t('could-not-send', { defaultValue:'Could not send'}));
+ } catch (e) {
+ setFormMsg(serverError(e) ?? t('could-not-send', { defaultValue:'Could not send'}));
  return;
  }
  setOpponent('');
@@ -169,21 +178,18 @@ export function RankedColumn({
  }
  }
 
- async function act(id: string, body: object, key: string) {
+ async function act(id: string, body: RankedChallengeAction, key: string) {
  if (busy !== null) return;
  setBusy(key);
  try {
- const res = await fetch(`/api/ranked/challenge/${id}`, {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify(body),
- });
- if (res.ok) await load();
- else {
- const b = await res.json().catch(() => ({}));
- if (b?.error) toast.error(b.error);
+ try {
+ await api(actOnRankedChallengeApi, { params: { id }, body });
+ } catch (e) {
+ const message = serverError(e);
+ if (message) toast.error(message);
+ return;
  }
+ await load();
  } finally {
  setBusy(null);
  }
@@ -427,7 +433,7 @@ function ReportButtons({
 }: {
  id: string;
  busy: string | null;
- act: (id: string, body: object, key: string) => void;
+ act: (id: string, body: RankedChallengeAction, key: string) => void;
 }) {
  const { t } = useTranslation('feed');
  return (

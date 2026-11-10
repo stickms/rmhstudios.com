@@ -19,6 +19,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ClipboardList, ExternalLink, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { api } from '@/lib/contract/client';
+import { getLadderAnswersApi } from '@/lib/rmhladder/answers.contract';
 import {
   atsPlatformLabel,
   buildApplicationPacket,
@@ -65,10 +67,8 @@ export function ApplicationPacket({
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/rmhladder/answers');
-        if (!res.ok) throw new Error('load failed');
-        const data = await res.json();
-        if (!cancelled) setBank((data?.answers as AnswerBank) ?? EMPTY_ANSWER_BANK);
+        const data = await api(getLadderAnswersApi, { retries: 0 });
+        if (!cancelled) setBank(data?.answers ?? EMPTY_ANSWER_BANK);
       } catch {
         if (!cancelled) {
           setBank(EMPTY_ANSWER_BANK);

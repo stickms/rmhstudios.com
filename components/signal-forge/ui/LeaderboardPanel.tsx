@@ -7,6 +7,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from "react-i18next";
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/contract/client';
+import { getSignalForgeLeaderboardApi } from '@/lib/signal-forge/signal-forge.contract';
 
 export interface LeaderboardEntry {
   username: string;
@@ -24,8 +26,7 @@ interface Props {
 /** Fetch leaderboard entries from the API. */
 export async function fetchLeaderboardData(): Promise<LeaderboardEntry[]> {
   try {
-    const res = await fetch('/api/signal-forge/leaderboard');
-    if (res.ok) return await res.json();
+    return await api(getSignalForgeLeaderboardApi, { retries: 0 });
   } catch (error) {
     console.error('Failed to fetch leaderboard:', error);
   }

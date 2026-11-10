@@ -13,6 +13,14 @@ import { UserAvatar } from'./UserAvatar';
 import { PinnedHero } from'./PinnedHero';
 import { ColumnHeader } from'./ColumnHeader';
 import { Reveal } from'@/components/motion';
+import { api } from'@/lib/contract/client';
+import { HttpError, serverError } from'@/lib/http';
+import {
+ createStorefrontProductApi,
+ deleteStorefrontProductApi,
+ getStorefrontApi,
+ updateStorefrontProductApi,
+} from'@/lib/storefront/storefront.contract';
 
 interface Product {
  id: string;
@@ -63,19 +71,14 @@ export function StorefrontColumn({
  const [error, setError] = useState<string | null>(null);
 
  const load = useCallback(async () => {
- const res = await fetch(`/api/storefront/creator/${encodeURIComponent(userid)}`, {
- credentials:'include',
- });
- if (res.status === 404) {
- setNotFound(true);
- return;
- }
- if (res.ok) {
- const data = await res.json();
+ try {
+ const data = await api(getStorefrontApi, { params: { userid }, retries: 0 });
  setCreator(data.creator);
  setProducts(data.products ?? []);
  setIsOwner(!!data.isOwner);
  setSignedIn(!!data.signedIn);
+ } catch (e) {
+ if (e instanceof HttpError && e.status === 404) setNotFound(true);
  }
  }, [userid]);
 
@@ -102,20 +105,17 @@ export function StorefrontColumn({
  setError(null);
  try {
  const price = parseInt(form.price, 10);
- const res = await fetch('/api/storefront/products', {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({
+ try {
+ await api(createStorefrontProductApi, {
+ body: {
  title: form.title.trim(),
  description: form.description.trim() || undefined,
  price,
  deliverable: form.deliverable.trim() || undefined,
- }),
+ },
  });
- const data = await res.json().catch(() => ({}));
- if (!res.ok) {
- setError(data.error ?? t('could-not-create', { defaultValue:'Could not create'}));
+ } catch (e) {
+ setError(serverError(e) ?? t('could-not-create', { defaultValue:'Could not create'}));
  return;
  }
  setForm({ title:'', description:'', price:'', deliverable:''});
@@ -149,13 +149,12 @@ export function StorefrontColumn({
  if (busy !== null) return;
  setBusy(`tog:${p.id}`);
  try {
- const res = await fetch(`/api/storefront/products/${p.id}`, {
- method:'PATCH',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ active: !p.active }),
- });
- if (res.ok) await load();
+ try {
+ await api(updateStorefrontProductApi, { params: { id: p.id }, body: { active: !p.active } });
+ } catch {
+ return;
+ }
+ await load();
  } finally {
  setBusy(null);
  }
@@ -165,11 +164,12 @@ export function StorefrontColumn({
  if (busy !== null) return;
  setBusy(`del:${id}`);
  try {
- const res = await fetch(`/api/storefront/products/${id}`, {
- method:'DELETE',
- credentials:'include',
- });
- if (res.ok) await load();
+ try {
+ await api(deleteStorefrontProductApi, { params: { id } });
+ } catch {
+ return;
+ }
+ await load();
  } finally {
  setBusy(null);
  }
