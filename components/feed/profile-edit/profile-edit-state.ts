@@ -128,7 +128,7 @@ export function remoteHandleStatus(data: { available?: boolean; reason?: string 
 
 export function isDirty(draft: ProfileDraft, initial: ProfileEditInitial): boolean {
   const handleChanged = draft.handle !== (initial.handle ?? '');
-  const songChanged = draft.selectedSong?.id !== initial.profileSongSpotifyId;
+  const songChanged = (draft.selectedSong?.id ?? null) !== initial.profileSongSpotifyId;
   const linksChanged = JSON.stringify(draft.links) !== JSON.stringify(initial.links ?? []);
   return (
     draft.displayName !== (initial.name ?? '') ||

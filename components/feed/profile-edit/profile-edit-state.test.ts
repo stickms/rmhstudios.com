@@ -102,10 +102,15 @@ describe('songFromInitial', () => {
 });
 
 describe('isDirty', () => {
-  // With no song on either side the comparison is `undefined !== null`, which
-  // reads as changed; the editor has always behaved so (kept as-is by the split).
-  it('treats "no song" on both sides as changed (pre-existing quirk)', () => {
-    expect(isDirty(draft(), INITIAL)).toBe(true);
+  // Regression: with no song on either side this used to compare `undefined !== null`,
+  // so an untouched editor always claimed unsaved changes and prompted on close.
+  it('is clean when neither side has a song', () => {
+    expect(isDirty(draft(), INITIAL)).toBe(false);
+  });
+  it('notices a song being added or removed', () => {
+    expect(isDirty(draft({ selectedSong: SONG }), INITIAL)).toBe(true);
+    const initial = { ...INITIAL, profileSongSpotifyId: 's1' };
+    expect(isDirty(draft({ selectedSong: null }), initial)).toBe(true);
   });
   it('is clean once the song matches', () => {
     const initial = { ...INITIAL, profileSongSpotifyId: 's1' };
