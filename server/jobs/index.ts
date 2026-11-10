@@ -48,13 +48,15 @@ import { VERIFY_COOP_QUEUE } from '@/lib/altair/verify/job';
 import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
 import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
 import { registerRecipeJobs } from '@/lib/devplatform/recipes.server';
-import {
-  STREAK_REMINDER_QUEUE,
-  registerStreakReminderCron,
-} from '@/lib/streak-reminders.server';
+import { STREAK_REMINDER_QUEUE, registerStreakReminderCron } from '@/lib/streak-reminders.server';
 import { RECAP_QUEUE, registerRecapCron } from '@/lib/lights-out/recap.server';
 import { registerDoctrineJobs } from '@/lib/doctrine/jobs.server';
 import { registerBotWorkerJobs } from '@/lib/rmhark-ai/bot-worker.server';
+import {
+  VIBE_THUMB_QUEUE,
+  closeVibeThumbnailBrowser,
+  registerVibeThumbnailCron,
+} from '@/lib/rmhvibe/thumbnail-worker.server';
 import {
   PROFILE_VISIT_SWEEP_QUEUE,
   registerProfileVisitSweepCron,
@@ -152,6 +154,9 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // D3: RMHark bot-worker (ported from the Go worker): pool top-up (every minute, interval-gated), post / reply /
   // DM ticks (BOT_*_TICK_MS). Idles without DEEPSEEK_API_KEY.
   { queue: 'bot-worker', register: registerBotWorkerJobs },
+  // D3: RMHVibe gallery thumbnails (ported from the Go worker): every minute, render up to 5 stale pages
+  // in headless Chromium (PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH, in this image) and upload to object storage.
+  { queue: VIBE_THUMB_QUEUE, register: registerVibeThumbnailCron },
   // M3 disappearing messages: expiry is enforced at read time; this only deletes the rows.
   { queue: CHAT_EXPIRY_QUEUE, register: registerChatExpiryCron },
   // F5: expire unmatched study-buddy requests and tell their owners.
@@ -219,6 +224,8 @@ async function main() {
   // /admin/alarms graphs (lib/ops/metrics-store.server.ts). Runs regardless of
   // on-call being configured.
   stoppers.push(startMetricsRollup());
+  // Close the shared thumbnail browser (a no-op if nothing was rendered) so Chromium does not outlive us.
+  stoppers.push(() => void closeVibeThumbnailBrowser().catch(() => undefined));
 }
 
 main().catch((e) => {

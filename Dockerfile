@@ -3,10 +3,10 @@
 # rmhstudios.com — Multi-stage Docker build (cache-optimized)
 #
 # Produces TWO runner images from one shared build graph:
-#   - runner       (slim): web, socket, rmhbox, rmhtube, Node workers — Node only
-#   - runner-full         : supervisor, status, assets — Go bins + Chromium, no app layers
-# Each service overrides the CMD via docker-compose.yml. Splitting keeps Chromium
-# (~300-400 MB) and the Go binaries off the user-facing services, and makes each
+#   - runner       (slim): web, socket, rmhbox, rmhtube, Node workers — Node + Chromium (the jobs
+#                           worker renders vibe thumbnails; D3)
+#   - runner-full         : supervisor, status, assets — Go bins, no app layers, no Chromium
+# Each service overrides the CMD via docker-compose.yml. Splitting keeps the Go binaries off the user-facing services, and makes each
 # image invariant to the other's inputs: a Go-only change leaves the slim image
 # byte-identical (so the web hotswap is skipped), and a web-only change leaves the
 # full image's layers untouched (so the VPS pulls nothing new for it).
@@ -19,8 +19,8 @@
 #          └──→ prisma-generate ──┬──→ server-builder (esbuild, env-agnostic)
 #                                 └──→ vite-builder   (vite build, env-specific)
 #
-#   runtime-base + server-builder + vite-builder + prod-deps → runner (slim)
-#   runtime-base + apk(chromium) + go-builder                → runner-full
+#   runtime-chromium(runtime-base + apk chromium) + server/vite/prod-deps → runner (slim)
+#   runtime-base + go-builder                                  → runner-full
 #
 # Cache strategy:
 #   - pnpm store mount  → avoids re-downloading packages between builds
@@ -111,9 +111,9 @@ COPY lib ./lib/
 
 # Only the Node services still served by compose (socket/rmhbox/rmhtube +
 # ladder-worker + homes-worker + jobs) are bundled here.
-# status, discord-bot and vibe-worker were migrated to the Go supervisor/status binaries
-# (built in the go-builder stage); recap, doctrine, the streak-saver and the bot-worker
-# live in the jobs bundle above (D3).
+# status and discord-bot were migrated to the Go supervisor/status binaries
+# (built in the go-builder stage); recap, doctrine, the streak-saver, the bot-worker and the
+# vibe thumbnail worker live in the jobs bundle above (D3).
 RUN pnpm exec esbuild \
     server/socket-server/index.ts \
     server/rmhbox/index.ts \
@@ -405,16 +405,16 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
     go build -trimpath -ldflags="-s -w" -o /app/bin/ ./cmd/...
 
 # ── Stage 4: Slim production runner (web, socket, rmhbox, rmhtube) ────────────
+# EXCEPT Chromium (D3): the Node `jobs` worker renders vibe gallery thumbnails with Playwright
+# against the OS Chromium (it replaced the Go vibe-worker). The one image is shared by every Node
+# service, so Chromium rides in it, in its own cached `runtime-chromium` layer below; only the jobs
+# service ever launches it, and the web /api/vibe/thumb route stays Playwright-free.
 # The four user-facing Node services need only the Node runtime, node_modules,
 # the Nitro/.output bundle, and the esbuild server bundles. They do NOT need:
-#   - Chromium — the vibe-worker captures thumbnails via Go chromedp (in the
-#     supervisor), and the web /api/vibe/thumb route only readFile()s a
-#     pre-rendered PNG (lib/rmhvibe/vibe-thumbs.ts is deliberately Playwright-free).
 #   - git — only the discord-bot worker (in the supervisor) shells out to git.
 #   - the Go binaries — supervisor/status run them, the Node services don't.
 # Keeping those OUT of this image:
-#   - drops ~300-400 MB (Chromium + fonts) from the four services → faster pulls,
-#     less disk, smaller SHA-tagged rollback images;
+#   - less disk, smaller SHA-tagged rollback images;
 #   - makes this image INVARIANT to go-services changes, so a Go-only or
 #     supervisor-only deploy leaves it byte-for-byte identical — which lets
 #     deploy/hotswap-web.sh skip the web hotswap entirely (no second container,
@@ -458,7 +458,19 @@ RUN addgroup --system --gid 1001 nodejs && \
 #
 # `--chown` is numeric because a `--link` copy cannot read this image's
 # /etc/passwd: 1001:1001 is app:nodejs from runtime-base above.
-FROM runtime-base AS runner
+# ── Chromium layer (slim image, for the jobs worker's vibe thumbnails) ────────
+# Sits on runtime-base, below every per-commit layer, so it is cached and only re-pulled when
+# CHROMIUM_REFRESH rolls (docker-bake.hcl passes the year-month: Alpine security updates, ~monthly).
+# musl Alpine cannot run Playwright's own browser download: point it at the OS Chromium.
+FROM runtime-base AS runtime-chromium
+ARG CHROMIUM_REFRESH=
+RUN echo "chromium refresh: ${CHROMIUM_REFRESH:-unset}" \
+    && apk add --no-cache \
+    chromium nss freetype harfbuzz ttf-freefont font-noto-emoji
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
+FROM runtime-chromium AS runner
 ARG STATIC_ASSET_VERSIONS={}
 ARG PUBLIC_BUILD_CONFIG_HASH
 LABEL io.rmh.static-asset-versions=${STATIC_ASSET_VERSIONS}
@@ -517,46 +529,23 @@ CMD ["node", "server/web-cluster.mjs"]
 
 # ── Stage 4b: Full runtime (Go supervisor + status + assets) ─────────────────
 # Everything ONLY the background fleet needs:
-#   - Go binaries: supervisor runs the workers as goroutines; status is the Go
+#   - Go binaries: supervisor runs the discord-bot worker; status is the Go
 #     status page server; assets serves the R2-backed static paths.
-#   - Chromium + fonts: the vibe-worker captures gallery thumbnails via Go
-#     chromedp, which drives the system Chromium (musl Alpine can't run
-#     Playwright's own download — point it at the OS Chromium below).
+#   No Chromium any more: the vibe-worker's thumbnails render in the Node jobs
+#   worker (slim image, `runtime-chromium`).
 # Used ONLY by the `supervisor`, `status` and `assets` compose services.
 #
 # FROM runtime-base, NOT FROM runner. Those three services are Go binaries: they
-# never read node_modules, .output, dist-server or scripts/ (vibe-worker renders
-# from a data: URL; the only path any of them touches is the /app/db volume). The
-# image used to be built FROM the slim runner anyway, which put Chromium ABOVE the
-# per-commit .output layer — so although this stage was meant to isolate "the
-# slow apk layer", every web change re-ran it (deploy run 37999110833: apk 7.4s,
-# then 14.5s re-compressing ~400 MB of Chromium, then a push), and the VPS
-# re-pulled and re-extracted Chromium on every single deploy. It also made this
-# image wait for the whole vite build, though it uses nothing from it.
+# never read node_modules, .output, dist-server or scripts/ (the only path any of them
+# touches is the /app/db volume). Keeping the Node app layers out means a web-only commit
+# gives this image no new layers at all.
 #
-# From runtime-base, Chromium sits on layers that never change with app source,
-# so it is cached (inline cache on this image — see docker-bake.hcl) and a
-# web-only commit gives this image no new layers at all. It still shares
-# runtime-base with the slim image on the VPS, so splitting costs no disk.
-#
-# CHROMIUM_REFRESH busts the apk layer on a schedule (docker-bake.hcl passes the
-# year-month), so Chromium keeps picking up Alpine's security updates — roughly
-# monthly, where it used to happen per commit only as a side effect of the bug
-# above.
+# It shares runtime-base with the slim image on the VPS, so splitting costs no disk.
 FROM runtime-base AS runner-full
-
-ARG CHROMIUM_REFRESH=
-RUN echo "chromium refresh: ${CHROMIUM_REFRESH:-unset}" \
-    && apk add --no-cache \
-    chromium nss freetype harfbuzz ttf-freefont font-noto-emoji
-
-# Reuse the system Chromium for chromedp/Playwright instead of a (musl-incompatible) download.
-ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 # ─── Go binaries (supervisor, status, assets, workers) ──────────────────
 # Compiled in the go-builder stage (CGO_ENABLED=0, fully static). `--link` so the
-# cached Chromium layer below stays a remote reference (see Stage 4).
+# base layers stay a remote reference (see Stage 4).
 COPY --link --from=go-builder --chown=1001:1001 /app/bin/ /app/bin/
 
 USER app

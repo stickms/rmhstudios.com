@@ -2,7 +2,7 @@ load("//bazel:defs.bzl", "go_service_image")
 
 # Per-service OCI images. Kept in a dedicated package so the gazelle-managed
 # cmd/*/BUILD.bazel files stay untouched. Standard services use the distroless
-# static base; vibe-worker/discord-bot use special bases (see below).
+# static base; discord-bot and the supervisor use the git base (see below).
 
 # ── Standard services (distroless static) ────────────────────────────────────
 # The realtime hubs (gateway/gamehub/rmhbox/rmhmusic/rmhtube) were removed in the
@@ -16,14 +16,7 @@ go_service_image(
 )
 
 # ── Special bases ────────────────────────────────────────────────────────────
-# vibe-worker needs headless Chromium; discord-bot needs git/ssh.
-go_service_image(
-    name = "vibe-worker",
-    base = "@base_chromium",
-    binary = "//go-services/cmd/vibe-worker:vibe-worker",
-    env = {"PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH": "/usr/bin/chromium-browser"},
-)
-
+# discord-bot needs git/ssh. (The vibe-worker, which needed Chromium, moved to the Node jobs worker.)
 go_service_image(
     name = "discord-bot",
     base = "@base_git",
@@ -38,17 +31,11 @@ go_service_image(
     binary = "//go-services/cmd/status:status",
 )
 
-# supervisor: runs BOTH background workers (vibe-worker, discord-bot) as
-# goroutines in one process. Its base
-# must satisfy the union of their runtime needs:
-#   - vibe-worker → headless Chromium + PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
-#   - discord-bot → git + openssh-client (rmhbot worktree/PR feature)
-#   - others      → pure Go (no special runtime)
-# @base_chromium_git = ghcr.io/rmhstudios/rmhstudios-go-base-chromium-git
-# (Alpine 3.20 + chromium + git/ssh). See deploy/docker/base-chromium-git.Dockerfile.
+# supervisor: runs the discord-bot worker as a goroutine. Its base needs git +
+# openssh-client (rmhbot worktree/PR feature); no Chromium any more (D3: the
+# vibe-worker's thumbnails render in the Node jobs worker).
 go_service_image(
     name = "supervisor",
-    base = "@base_chromium_git",
+    base = "@base_git",
     binary = "//go-services/cmd/supervisor:supervisor",
-    env = {"PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH": "/usr/bin/chromium-browser"},
 )
