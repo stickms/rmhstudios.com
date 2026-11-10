@@ -44,8 +44,12 @@ export interface OptimisticRun {
   apply: () => void;
   /** Revert `apply`. Runs on any failure. */
   rollback: () => void;
-  /** The network request; must resolve to a fetch `Response`. */
-  commit: () => Promise<Response>;
+  /**
+   * The network request. Resolves to a fetch `Response` (a non-ok status is a
+   * failure) OR to anything else — e.g. a typed `api(contract)` call, which
+   * throws `HttpError` on a bad status; any resolved non-Response value is success.
+   */
+  commit: () => Promise<unknown>;
   /** Reconcile the UI with the authoritative server payload (response was ok). */
   reconcile?: (res: Response) => void | Promise<void>;
   /** Runs after rollback on failure — e.g. show a toast. `res` present on a bad status. */
@@ -67,12 +71,13 @@ export function useOptimisticAction() {
         // Let the optimistic update paint before the request is assembled.
         await yieldToMain();
         const res = await commit();
-        if (!res.ok) {
+        const isResponse = res instanceof Response;
+        if (isResponse && !res.ok) {
           rollback();
           onError?.(new Error(`Request failed with ${res.status}`), res);
           return false;
         }
-        if (reconcile) await reconcile(res);
+        if (reconcile && isResponse) await reconcile(res);
         return true;
       } catch (error) {
         rollback();

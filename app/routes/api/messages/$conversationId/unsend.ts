@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { unsendMessageApi } from '@/lib/messages/message-actions.contract';
+import { unsendMessageBody } from '@/lib/messages/message-actions-schema';
 import { unsendDirectMessage } from '@/lib/messages/mutations.server';
 
 /**
@@ -13,17 +14,14 @@ import { unsendDirectMessage } from '@/lib/messages/mutations.server';
  * than preferences.
  */
 
-const bodySchema = z.object({
-  messageId: z.string().min(1).max(64),
-});
-
 export const Route = createFileRoute('/api/messages/$conversationId/unsend')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        unsendMessageApi,
         {
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'dm:unsend', scope: 'user' },
-          body: bodySchema,
+          body: unsendMessageBody,
         },
         async ({ params, userId, body }) => {
           const result = await unsendDirectMessage({
@@ -36,7 +34,7 @@ export const Route = createFileRoute('/api/messages/$conversationId/unsend')({
             return Response.json({ error: result.error }, { status: result.status });
           }
 
-          return Response.json({ success: true, message: result.message });
+          return { success: true as const, message: result.message };
         },
       ),
     },

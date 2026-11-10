@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { markConversationReadApi } from '@/lib/messages/message-actions.contract';
 import { prisma } from '@/lib/prisma.server';
 import { notifyUser } from '@/lib/message-events';
 import { redisDel } from '@/lib/redis.server';
@@ -10,7 +11,7 @@ import { getPairPrivacy } from '@/lib/chat-plus/receipts.server';
 export const Route = createFileRoute('/api/messages/$conversationId/read')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ params, session }) => {
+      POST: implement(markConversationReadApi, {}, async ({ params, session }) => {
         const { conversationId } = params;
         const userId = session.user.id;
 
@@ -63,7 +64,7 @@ export const Route = createFileRoute('/api/messages/$conversationId/read')({
           }
         }
 
-        return Response.json({ success: true });
+        return { success: true as const };
       }),
     },
   },

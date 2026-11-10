@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { hideMessageApi } from '@/lib/messages/message-actions.contract';
+import { hideMessageBody } from '@/lib/messages/message-actions-schema';
 import { setMessageHidden } from '@/lib/messages/mutations.server';
 
 /**
@@ -15,19 +16,14 @@ import { setMessageHidden } from '@/lib/messages/mutations.server';
  * changed for the other participant.
  */
 
-const bodySchema = z.object({
-  messageId: z.string().min(1).max(64),
-  /** `false` restores it, so an accidental hide is recoverable. */
-  hidden: z.boolean().default(true),
-});
-
 export const Route = createFileRoute('/api/messages/$conversationId/hide')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        hideMessageApi,
         {
           rateLimit: { limit: 60, windowMs: 60_000, prefix: 'dm:hide', scope: 'user' },
-          body: bodySchema,
+          body: hideMessageBody,
         },
         async ({ params, userId, body }) => {
           const result = await setMessageHidden({
@@ -41,7 +37,7 @@ export const Route = createFileRoute('/api/messages/$conversationId/hide')({
             return Response.json({ error: result.error }, { status: result.status });
           }
 
-          return Response.json({ success: true, hidden: result.hidden });
+          return { success: true as const, hidden: result.hidden };
         },
       ),
     },
