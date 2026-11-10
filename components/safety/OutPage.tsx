@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { hostOfUrl, type LinkRisk } from '@/lib/safety/link-risk';
+import { api } from '@/lib/contract/client';
+import { linksCheckApi } from '@/lib/safety/safety.contract';
 
 /** S6: the interstitial for links to denylisted or newly seen domains. */
 export default function OutPage({ url }: { url: string }) {
@@ -13,13 +15,8 @@ export default function OutPage({ url }: { url: string }) {
 
   useEffect(() => {
     if (!host) return;
-    fetch('/api/links/check', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hosts: [host] }),
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { risk?: Record<string, LinkRisk> } | null) => setRisk(d?.risk?.[host] ?? 'ok'))
+    api(linksCheckApi, { body: { hosts: [host] } })
+      .then((d) => setRisk(d.risk?.[host] ?? 'ok'))
       .catch(() => setRisk('ok'));
   }, [host]);
 

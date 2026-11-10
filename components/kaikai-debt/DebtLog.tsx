@@ -8,6 +8,8 @@ import { useLiveNow } from '@/components/ui/RelativeTime';
 import { formatDebt, type DebtEntryDto, type DebtLedgerPage } from '@/lib/kaikai-debt/debt';
 import { playLedgerExtended } from '@/lib/kaikai-debt/sound';
 import { DebtLogRow } from './DebtLogRow';
+import { api } from '@/lib/contract/client';
+import { debtLedgerApi } from '@/lib/kaikai-debt/kaikai-debt.contract';
 
 interface DebtLogProps {
   initialEntries: DebtEntryDto[];
@@ -110,12 +112,13 @@ export function DebtLog({
     setError(null);
 
     try {
-      const res = await fetch(`/api/kaikai-debt/ledger?cursor=${encodeURIComponent(cursor)}`);
-      if (!res.ok) {
+      let page: DebtLedgerPage;
+      try {
+        page = await api(debtLedgerApi, { query: { cursor } });
+      } catch {
         setError(t('log.loadFailed', { defaultValue: 'Could not read any further back.' }));
         return;
       }
-      const page = (await res.json()) as DebtLedgerPage;
 
       let added = 0;
       setEntries((prev) => {

@@ -4,7 +4,21 @@
  * through `TournamentError` with bespoke bodies and stay raw. Client-safe.
  */
 import { endpoint } from '@/lib/contract/endpoint';
+import type { CreateTournamentInput, ReportMatchInput } from '@/lib/tournaments/tournament-schema';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
+
+/** Create a tournament; answers the new id. Errors carry `TournamentError`'s message and status. */
+export const createTournamentApi = endpoint<{
+  body: CreateTournamentInput;
+  res: { id: string };
+}>()({ method: 'POST', path: '/api/tournaments' });
+
+/** Report a match result (a participant or an admin). */
+export const reportTournamentMatchApi = endpoint<{
+  params: { id: string; matchId: string };
+  body: ReportMatchInput;
+  res: { ok: true; settled: boolean; tournamentComplete: boolean };
+}>()({ method: 'POST', path: '/api/tournaments/$id/matches/$matchId/report' });
 
 /** Same list for everyone, keyed by `?status=` (REGISTRATION, LIVE or COMPLETE; anything else lists all but cancelled). */
 export const listTournamentsApi = endpoint<{

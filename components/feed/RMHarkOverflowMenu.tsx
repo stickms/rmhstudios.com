@@ -38,6 +38,7 @@ import { cn } from'@/lib/utils';
 import type { FeedItem } from'@/lib/feed-types';
 import { bookmarkPostApi, pinPostApi, deletePostApi } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
+import { toggleBlockApi, toggleMuteApi } from '@/lib/moderation/moderation.contract';
 import { HttpError, serverError } from '@/lib/http';
 
 // These dialogs render only after a menu action — code-split so they stay out of
@@ -216,25 +217,15 @@ export function RMHarkOverflowMenu({
  setMenuOpen(false);
  if (!targetUserId) return;
  try {
- const res = await fetch('/api/moderation/block', {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- credentials:'include',
- body: JSON.stringify({ targetUserId }),
- });
- const data = await res.json().catch(() => ({}));
- if (res.ok) {
+ const data = await api(toggleBlockApi, { body: { targetUserId } });
  toast.success(
  data.blocked
  ? t('user-blocked', { defaultValue:'User blocked'})
  : t('user-unblocked', { defaultValue:'User unblocked'}),
  );
  if (data.blocked) onRemove?.();
- } else {
- toast.error(data.error || t('block-error', { defaultValue:'Could not block user'}));
- }
- } catch {
- toast.error(t('block-error', { defaultValue:'Could not block user'}));
+ } catch (e) {
+ toast.error(serverError(e) || t('block-error', { defaultValue:'Could not block user'}));
  }
  };
 
@@ -242,25 +233,15 @@ export function RMHarkOverflowMenu({
  setMenuOpen(false);
  if (!targetUserId) return;
  try {
- const res = await fetch('/api/moderation/mute', {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- credentials:'include',
- body: JSON.stringify({ targetUserId }),
- });
- const data = await res.json().catch(() => ({}));
- if (res.ok) {
+ const data = await api(toggleMuteApi, { body: { targetUserId } });
  toast.success(
  data.muted
  ? t('user-muted', { defaultValue:'User muted'})
  : t('user-unmuted', { defaultValue:'User unmuted'}),
  );
  if (data.muted) onRemove?.();
- } else {
- toast.error(data.error || t('mute-error', { defaultValue:'Could not mute user'}));
- }
- } catch {
- toast.error(t('mute-error', { defaultValue:'Could not mute user'}));
+ } catch (e) {
+ toast.error(serverError(e) || t('mute-error', { defaultValue:'Could not mute user'}));
  }
  };
 

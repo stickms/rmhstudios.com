@@ -4,6 +4,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { reportContentApi } from '@/lib/moderation/moderation.contract';
 import {
   REPORT_DETAILS_MAX,
   REPORT_REASONS,
@@ -69,23 +72,16 @@ export function ReportDialog({ open, onOpenChange, entityType, entityId }: Repor
     }
     setSubmitting(true);
     try {
-      const res = await fetch('/api/moderation/report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(parsed.data),
-      });
-      if (res.ok) {
-        toast.success(t("toast-success", { defaultValue: "Thanks — our team will review this." }));
-        onOpenChange(false);
-        reset();
-      } else if (res.status === 401) {
+      await api(reportContentApi, { body: parsed.data });
+      toast.success(t("toast-success", { defaultValue: "Thanks — our team will review this." }));
+      onOpenChange(false);
+      reset();
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 401) {
         toast.error(t("toast-sign-in", { defaultValue: "Please sign in to report content." }));
       } else {
         toast.error(t("toast-error", { defaultValue: "Could not submit report. Please try again." }));
       }
-    } catch {
-      toast.error(t("toast-error", { defaultValue: "Could not submit report. Please try again." }));
     } finally {
       setSubmitting(false);
     }

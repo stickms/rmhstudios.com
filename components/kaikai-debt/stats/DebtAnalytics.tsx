@@ -63,6 +63,8 @@ import { DebtSurface3D } from './DebtSurface3D';
 import { HyperCube4D } from './HyperCube4D';
 import { DebtGlobe } from './DebtGlobe';
 import { CreditScore } from './CreditScore';
+import { api } from '@/lib/contract/client';
+import { debtStatsApi } from '@/lib/kaikai-debt/kaikai-debt.contract';
 
 type TabId = 'overview' | 'composition' | 'rhythm' | 'terrain' | 'hyper' | 'globe' | 'table';
 
@@ -85,11 +87,7 @@ export function DebtAnalytics({ snapshot }: { snapshot: DebtSnapshot }) {
    */
   const query = useQuery<DebtStats>({
     queryKey: ['kaikai-debt', 'stats'],
-    queryFn: async () => {
-      const response = await fetch('/api/kaikai-debt/stats');
-      if (!response.ok) throw new Error(`stats ${response.status}`);
-      return (await response.json()) as DebtStats;
-    },
+    queryFn: () => api(debtStatsApi),
     staleTime: 30_000,
     refetchInterval: 120_000,
     refetchOnWindowFocus: false,

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { hostOfUrl, outHref, type LinkRisk } from '@/lib/safety/link-risk';
+import { api } from '@/lib/contract/client';
+import { linksCheckApi } from '@/lib/safety/safety.contract';
 
 // Module-level batcher: every link on a page asks once, in one request.
 const known = new Map<string, LinkRisk>();
@@ -11,14 +13,9 @@ function flush() {
   const hosts = [...waiting.keys()].slice(0, 20);
   const batch = new Map(hosts.map((h) => [h, waiting.get(h)!]));
   hosts.forEach((h) => waiting.delete(h));
-  fetch('/api/links/check', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ hosts }),
-  })
-    .then((r) => (r.ok ? r.json() : { risk: {} }))
-    .catch(() => ({ risk: {} }))
-    .then((d: { risk?: Record<string, LinkRisk> }) => {
+  api(linksCheckApi, { body: { hosts } })
+    .catch((): { risk: Record<string, LinkRisk> } => ({ risk: {} }))
+    .then((d) => {
       for (const [h, cbs] of batch) {
         const risk = d.risk?.[h] ?? 'ok';
         known.set(h, risk);

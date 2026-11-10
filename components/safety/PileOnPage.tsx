@@ -6,8 +6,13 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
+import { api } from '@/lib/contract/client';
+import { pileOnActApi, pileOnGetApi, type PileOnState } from '@/lib/safety/safety.contract';
 
-type State = { status: 'OFFERED' | 'ACTIVE' | 'REVERTED' | 'DISMISSED'; expiresAt: string | null };
+type State = PileOnState;
+
+const pileOnAct = (postId: string, action: 'accept' | 'dismiss' | 'undo') =>
+  api(pileOnActApi, { body: { postId, action } });
 
 /** S7: the one-tap page behind the "burst of replies" notification. */
 export default function PileOnPage({ postId }: { postId: string }) {
@@ -17,25 +22,22 @@ export default function PileOnPage({ postId }: { postId: string }) {
 
   useEffect(() => {
     if (!postId) return setState('missing');
-    fetch(`/api/safety/pile-on?post=${encodeURIComponent(postId)}`, { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: State | null) => setState(d ?? 'missing'))
+    api(pileOnGetApi, { query: { post: postId } })
+      .then((d) => setState(d ?? 'missing'))
       .catch(() => setState('missing'));
   }, [postId]);
 
   const act = useCallback(
     async (action: 'accept' | 'dismiss' | 'undo') => {
       setBusy(true);
-      const res = await fetch('/api/safety/pile-on', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId, action }),
-      });
-      setBusy(false);
-      if (!res.ok)
+      let d: Awaited<ReturnType<typeof pileOnAct>>;
+      try {
+        d = await pileOnAct(postId, action);
+      } catch {
+        setBusy(false);
         return toast.error(t('pileon-failed', { defaultValue: 'That did not work. Try again.' }));
-      const d = (await res.json()) as State;
+      }
+      setBusy(false);
       setState({ status: d.status, expiresAt: d.expiresAt ?? null });
     },
     [postId, t],

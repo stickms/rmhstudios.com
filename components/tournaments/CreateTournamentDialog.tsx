@@ -17,6 +17,9 @@ import { Select } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { WAGER_ELIGIBLE_GAMES } from '@/lib/wager/eligible-games';
 import { MAX_TOURNAMENT_PLAYERS, MIN_TOURNAMENT_PLAYERS } from '@/lib/wager/constants';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createTournamentApi } from '@/lib/tournaments/tournaments.contract';
 
 interface Props {
   open: boolean;
@@ -39,30 +42,23 @@ export function CreateTournamentDialog({ open, onClose }: Props) {
   const submit = async () => {
     setSubmitting(true);
     try {
-      const res = await fetch('/api/tournaments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await api(createTournamentApi, {
+        body: {
           name,
           gameId,
           format,
           entryFeeCoins: entryFee,
           seedPoolCoins: seedPool,
           maxPlayers,
-        }),
+        },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(
-          data.error ?? t('create-failed', { defaultValue: 'Could not create tournament' }),
-        );
-        return;
-      }
       toast.success(t('created', { defaultValue: 'Tournament created!' }));
       onClose();
       if (data.id) navigate({ to: '/tournaments/$id', params: { id: data.id } });
-    } catch {
-      toast.error(t('create-failed', { defaultValue: 'Could not create tournament' }));
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('create-failed', { defaultValue: 'Could not create tournament' }),
+      );
     } finally {
       setSubmitting(false);
     }

@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { joinCreatorTierApi } from '@/lib/creator/join.contract';
 import { Coins, Heart, Check } from 'lucide-react';
 import {
   Dialog,
@@ -46,16 +49,10 @@ export function SupportTierPicker({
   const join = async (tierId: string) => {
     setJoining(tierId);
     try {
-      const res = await fetch(`/api/creators/${creatorId}/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tierId }),
+      const data = await api(joinCreatorTierApi, {
+        params: { id: creatorId },
+        body: { tierId },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error ?? t('join-failed', { defaultValue: 'Could not join' }));
-        return;
-      }
       toast.success(
         t('join-success', {
           defaultValue: "You're now a {{tier}} supporter!",
@@ -64,6 +61,8 @@ export function SupportTierPicker({
       );
       onJoined?.({ tierId, expiresAt: data.expiresAt });
       setOpen(false);
+    } catch (e) {
+      toast.error(serverError(e) ?? t('join-failed', { defaultValue: 'Could not join' }));
     } finally {
       setJoining(null);
     }

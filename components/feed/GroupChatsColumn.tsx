@@ -11,15 +11,9 @@ import { ColumnHeader } from'./ColumnHeader';
 import { useTranslation } from'react-i18next';
 import { SearchField } from'@/components/ui/search-field';
 import { ChatFolderBar } from'@/components/chat-plus/ChatFolderBar';
-
-interface GroupRow {
- id: string;
- name: string;
- memberCount: number;
- lastMessage: string | null;
- lastMessageAt: string;
- unread: boolean;
-}
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createGroupChatApi, listGroupChatsApi, type GroupRow } from '@/lib/group-chat/group-chat.contract';
 
 export function GroupChatsColumn({
  embedded = false,
@@ -47,17 +41,18 @@ export function GroupChatsColumn({
  folderRef.current = folder;
 
  const load = useCallback(async () => {
- const qs =
+ const query =
  folderRef.current === 'all'
- ? ''
+ ? {}
  : folderRef.current === 'unread'
- ? '?filter=unread'
- : `?folder=${encodeURIComponent(folderRef.current)}`;
- const res = await fetch(`/api/group-chats${qs}`, { credentials:'include'});
- if (res.ok) {
- const data = await res.json();
+ ? { filter: 'unread' as const }
+ : { folder: folderRef.current };
+ try {
+ const data = await api(listGroupChatsApi, { query });
  setGroups(data.groups ?? []);
  setSignedIn(!!data.signedIn);
+ } catch {
+ // keep the list we already have
  }
  }, []);
 
@@ -94,18 +89,12 @@ export function GroupChatsColumn({
  .split(/[\s,]+/)
  .map((m) => m.trim().replace(/^@/,''))
  .filter(Boolean);
- const res = await fetch('/api/group-chats', {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ name: name.trim(), members: memberList }),
+ const data = await api(createGroupChatApi, {
+ body: { name: name.trim(), members: memberList },
  });
- const data = await res.json().catch(() => ({}));
- if (!res.ok) {
- setError(data.error ?? t('could-not-create', { defaultValue:'Could not create'}));
- return;
- }
  navigate({ to: `/groups/${data.id}`as string });
+ } catch (e) {
+ setError(serverError(e) ?? t('could-not-create', { defaultValue:'Could not create'}));
  } finally {
  setBusy(false);
  }

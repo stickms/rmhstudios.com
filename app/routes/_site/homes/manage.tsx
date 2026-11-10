@@ -32,6 +32,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { ListingGrid } from '@/components/homes/ListingGrid';
 import { WatchManager } from '@/components/homes/WatchManager';
 import type { Listing } from '@/lib/homes/types';
+import { api } from '@/lib/contract/client';
+import { listMyHomeListingsApi } from '@/lib/homes/homes.contract';
 
 const HOMES_TABS = ['listings', 'saved', 'alerts'] as const;
 type HomesTab = (typeof HOMES_TABS)[number];
@@ -69,9 +71,8 @@ function ListingShelf({
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/homes/listings?scope=${scope}`)
-      .then((res) => (res.ok ? res.json() : { listings: [] }))
-      .catch(() => ({ listings: [] }))
+    api(listMyHomeListingsApi, { query: { scope } })
+      .catch(() => ({ listings: [] as Listing[] }))
       .then((data) => {
         if (cancelled) return;
         setListings(data.listings ?? []);

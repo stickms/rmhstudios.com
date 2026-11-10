@@ -40,6 +40,8 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { cn } from '@/lib/utils';
 import type { ResumeCard, ResumeKind, ResumeState } from '@/lib/history/resume.server';
 import { clamp01 } from '@/lib/core/math';
+import { api } from '@/lib/contract/client';
+import { resumeCardsApi } from '@/lib/site-reads.contract';
 
 const KIND_ICONS: Record<ResumeKind, LucideIcon> = {
   game: Gamepad2,
@@ -67,9 +69,8 @@ export function ResumeRail({ initial }: ResumeRailProps) {
   useEffect(() => {
     if (initial || !session?.user) return;
     const controller = new AbortController();
-    fetch('/api/history/resume', { signal: controller.signal, credentials: 'same-origin' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { cards?: ResumeCard[] } | null) => setCards(data?.cards ?? []))
+    api(resumeCardsApi, { signal: controller.signal })
+      .then((data) => setCards(data.cards ?? []))
       .catch(() => {
         // Aborted, offline, or signed out between render and fetch. The rail is
         // an accelerator, never the only path to any of this content.

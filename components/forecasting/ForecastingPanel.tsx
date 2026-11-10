@@ -3,39 +3,18 @@ import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { Spinner } from '@/components/ui/spinner';
 import { SeasonAdminForm } from './SeasonAdminForm';
+import { api } from '@/lib/contract/client';
+import {
+  calibrationApi,
+  seasonsApi,
+  type Calibration,
+  type CalibrationBucket,
+  type SeasonBoard,
+  type SeasonSummary,
+} from '@/lib/forecasting/forecasting.contract';
 
-interface Bucket {
-  from: number;
-  to: number;
-  count: number;
-  meanForecast: number;
-  observed: number;
-}
-interface Calibration {
-  n: number;
-  brier: number;
-  skill: number;
-  buckets: Bucket[];
-  enough: boolean;
-}
-interface SeasonSummary {
-  id: string;
-  title: string;
-  startsAt: string;
-  endsAt: string;
-  marketCount: number;
-}
-interface Board {
-  season: SeasonSummary;
-  resolvedCount: number;
-  leaderboard: {
-    userId: string;
-    points: number;
-    scored: number;
-    brier: number;
-    user: { name: string | null; handle: string | null } | null;
-  }[];
-}
+type Bucket = CalibrationBucket;
+type Board = SeasonBoard;
 
 const MIN_FOR_PROFILE = 20;
 
@@ -75,8 +54,7 @@ function CalibrationCard() {
   const { t } = useTranslation('f-forecasting');
   const [cal, setCal] = useState<Calibration | null>(null);
   useEffect(() => {
-    fetch('/api/forecasting/calibration')
-      .then((r) => r.json())
+    api(calibrationApi)
       .then((d) => setCal(d.calibration ?? null))
       .catch(() => setCal(null));
   }, []);
@@ -116,8 +94,7 @@ function SeasonCard({ isAdmin }: { isAdmin: boolean }) {
   const { t } = useTranslation('f-forecasting');
   const [data, setData] = useState<{ seasons: SeasonSummary[]; board: Board | null } | null>(null);
   const load = () =>
-    fetch('/api/forecasting/seasons')
-      .then((r) => r.json())
+    api(seasonsApi)
       .then(setData)
       .catch(() => setData({ seasons: [], board: null }));
   useEffect(() => {

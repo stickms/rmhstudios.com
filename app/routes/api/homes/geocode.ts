@@ -7,48 +7,39 @@
  * by the location search box.
  */
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { implement } from '@/lib/api/implement.server';
 import { geocode } from '@/lib/homes/geo.server';
+import { homesGeocodeApi } from '@/lib/homes/homes.contract';
 
 export const Route = createFileRoute('/api/homes/geocode')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-
-          const ip = getClientIp(request);
-          const { allowed, retryAfter } = rateLimit(ip, {
+      GET: implement(
+        homesGeocodeApi,
+        {
+          rateLimit: {
             limit: 30,
             windowMs: 60_000,
             prefix: 'homes-geocode',
-          });
-          if (!allowed) {
-            return Response.json(
-              { error: 'Too many searches. Please slow down.' },
-              { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-            );
-          }
-
+            message: 'Too many searches. Please slow down.',
+          },
+        },
+        async ({ request }) => {
           const q = new URL(request.url).searchParams.get('q')?.trim() ?? '';
           if (q.length < 3) {
-            return Response.json({ results: [] });
+            return { results: [] };
           }
-
-          const results = await geocode(q, 5);
-          return Response.json({ results });
-        } catch (error) {
-          console.error('Homes geocode error:', error);
-          return Response.json(
-            { error: 'Location search is unavailable right now.' },
-            { status: 502 },
-          );
-        }
-      },
+          try {
+            return { results: await geocode(q, 5) };
+          } catch (error) {
+            console.error('Homes geocode error:', error);
+            return Response.json(
+              { error: 'Location search is unavailable right now.' },
+              { status: 502 },
+            );
+          }
+        },
+      ),
     },
   },
 });

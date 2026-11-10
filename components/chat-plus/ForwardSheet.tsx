@@ -19,6 +19,8 @@ import type { ChatRef } from '@/lib/chat-plus/types';
 import { useChatPlusUi, type ForwardTarget } from '@/lib/chat-plus/ui-store';
 import { api } from '@/lib/contract/client';
 import { getSavedMessagesApi, listConversationsApi } from '@/lib/messages/messages.contract';
+import { serverError } from '@/lib/http';
+import { forwardChatMessageApi, listGroupChatsApi } from '@/lib/group-chat/group-chat.contract';
 
 interface Destination {
   ref: ChatRef;
@@ -34,9 +36,7 @@ function useDestinations() {
     queryFn: async (): Promise<Destination[]> => {
       const [dms, groups] = await Promise.all([
         api(listConversationsApi).catch(() => ({ conversations: [] })),
-        fetch('/api/group-chats', { credentials: 'include' }).then((r) =>
-          r.ok ? r.json() : { groups: [] },
-        ),
+        api(listGroupChatsApi, { query: {} }).catch(() => ({ groups: [] })),
       ]);
       const out: Destination[] = [];
       // Saved Messages first: forwarding to yourself is the most common reason.
@@ -87,23 +87,13 @@ export default function ForwardSheet({ target }: { target: ForwardTarget }) {
   const send = async () => {
     setSending(true);
     try {
-      const res = await fetch('/api/chats/forward', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const body = await api(forwardChatMessageApi, {
+        body: {
           source: target.source,
           messageId: target.messageId,
           targets: picked.map((k) => byKey.get(k)!.ref),
-        }),
+        },
       });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(
-          body.error || t('forward-failed', { defaultValue: 'Could not forward that message' }),
-        );
-        return;
-      }
       const failed = (body.failed ?? []).length;
       if (failed > 0) {
         toast.warning(
@@ -116,8 +106,10 @@ export default function ForwardSheet({ target }: { target: ForwardTarget }) {
         toast.success(t('forward-sent', { defaultValue: 'Forwarded' }));
       }
       close();
-    } catch {
-      toast.error(t('forward-failed', { defaultValue: 'Could not forward that message' }));
+    } catch (e) {
+      toast.error(
+        serverError(e) || t('forward-failed', { defaultValue: 'Could not forward that message' }),
+      );
     } finally {
       setSending(false);
     }

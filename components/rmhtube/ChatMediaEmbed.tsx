@@ -21,6 +21,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { ImageOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { safeHref } from '@/lib/url-safety';
+import { api } from '@/lib/contract/client';
+import { gifOembedApi } from '@/lib/unfurl/oembed.contract';
 
 // ─── URL extraction & classification ─────────────────────────────
 
@@ -166,8 +168,7 @@ function useTenorResolve(url: string | null): { src: string | null; loading: boo
     setLoading(true);
     let cancelled = false;
 
-    fetch(`/api/oembed?url=${encodeURIComponent(url)}`)
-      .then((res) => (res.ok ? res.json() : null))
+    api(gifOembedApi, { query: { url } })
       .then((data) => {
         if (cancelled) return;
         const gifUrl = data?.gifUrl ?? null;
