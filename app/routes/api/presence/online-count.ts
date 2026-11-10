@@ -1,4 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { implement } from '@/lib/api/implement.server';
+import { onlineCountApi } from '@/lib/presence/online-count.contract';
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
 import { getOnlinePresenceCount } from '@/lib/hot-counters.server';
@@ -14,7 +16,7 @@ import { getOnlinePresenceCount } from '@/lib/hot-counters.server';
 export const Route = createFileRoute('/api/presence/online-count')({
   server: {
     handlers: {
-      GET: async () => {
+      GET: implement(onlineCountApi, { auth: 'none' }, async () => {
         try {
           // perf: SUNION over the presence buckets ran on every request; the count
           // is explicitly approximate, so share one result for 15s per instance.
@@ -35,7 +37,7 @@ export const Route = createFileRoute('/api/presence/online-count')({
           console.error('Online count error:', error);
           return Response.json({ count: 0 }, { status: 200 });
         }
-      },
+      }),
     },
   },
 });

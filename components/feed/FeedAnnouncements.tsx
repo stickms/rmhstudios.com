@@ -5,23 +5,14 @@ import { RMHarkContent } from'./RMHarkContent';
 import { GifEmbed } from'./GifEmbed';
 import { PostImageGrid } from'./PostImageGrid';
 import { PollDisplay } from'./PollDisplay';
+import { api } from '@/lib/contract/client';
+import { listAnnouncementsApi, type FeedAnnouncementItem } from '@/lib/announcements.contract';
 import { useIdleReady } from'@/hooks/useIdleReady';
 import type { FeedPoll } from'@/lib/feed-types';
 import { AsyncReveal } from'@/components/motion';
 import { useStableListMotion } from'@/hooks/useStableListMotion';
 
-interface Announcement {
- id: string;
- title: string;
- body: string;
- linkUrl: string | null;
- linkLabel: string | null;
- variant: string;
- createdAt: string;
- imageUrls?: string[];
- gifUrl?: string | null;
- poll?: FeedPoll | null;
-}
+type Announcement = FeedAnnouncementItem;
 
 const VARIANT_STYLES: Record<string, string> = {
  info:'border-site-accent/40 bg-site-accent-dim',
@@ -55,8 +46,7 @@ export function FeedAnnouncements() {
 
  useEffect(() => {
  if (!idle) return;
- fetch('/api/announcements')
- .then((r) => (r.ok ? r.json() : { announcements: [] }))
+ api(listAnnouncementsApi)
  .then((d) => setItems(d.announcements ?? []))
  .catch(() => {});
  }, [idle]);

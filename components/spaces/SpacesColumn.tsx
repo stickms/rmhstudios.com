@@ -20,6 +20,9 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createSpaceApi, listLiveSpacesApi } from '@/lib/spaces/spaces.contract';
 import type { LiveSpaceSummary } from '@/lib/spaces/types';
 
 export function SpacesColumn() {
@@ -35,8 +38,7 @@ export function SpacesColumn() {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    fetch('/api/spaces/live', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : { spaces: [] }))
+    api(listLiveSpacesApi)
       .then((d) => {
         if (active) setSpaces(d.spaces ?? []);
       })
@@ -56,21 +58,12 @@ export function SpacesColumn() {
     if (!trimmed) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/spaces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: trimmed }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(
-          data.error ?? t('space-create-failed', { defaultValue: 'Could not start the Space.' }),
-        );
-        return;
-      }
+      const data = await api(createSpaceApi, { body: { title: trimmed } });
       navigate({ to: '/spaces/$id', params: { id: data.space.id } });
-    } catch {
-      toast.error(t('space-create-failed', { defaultValue: 'Could not start the Space.' }));
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('space-create-failed', { defaultValue: 'Could not start the Space.' }),
+      );
     } finally {
       setCreating(false);
     }

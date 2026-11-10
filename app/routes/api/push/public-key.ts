@@ -1,4 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { implement } from '@/lib/api/implement.server';
+import { pushPublicKeyApi } from '@/lib/push/public-key.contract';
 import { pushConfigured } from '@/lib/push/send.server';
 
 /**
@@ -9,15 +11,15 @@ import { pushConfigured } from '@/lib/push/send.server';
 export const Route = createFileRoute('/api/push/public-key')({
   server: {
     handlers: {
-      GET: async () => {
+      GET: implement(pushPublicKeyApi, { auth: 'none' }, async () => {
         if (!pushConfigured() || !process.env.VAPID_PUBLIC_KEY) {
           return Response.json({ error: 'Push not configured' }, { status: 404 });
         }
         return Response.json(
           { key: process.env.VAPID_PUBLIC_KEY },
-          { headers: { 'Cache-Control': 'public, max-age=3600' } }
+          { headers: { 'Cache-Control': 'public, max-age=3600' } },
         );
-      },
+      }),
     },
   },
 });

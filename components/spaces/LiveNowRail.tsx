@@ -3,6 +3,8 @@ import { Link } from '@tanstack/react-router';
 import { Radio } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/contract/client';
+import { listLiveSpacesApi } from '@/lib/spaces/spaces.contract';
 import type { LiveSpaceSummary } from '@/lib/spaces/types';
 import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
 import { AsyncReveal } from '@/components/motion';
@@ -24,9 +26,8 @@ export function LiveNowRail({ className }: { className?: string }) {
   useEffect(() => {
     let active = true;
     const load = () => {
-      fetch('/api/spaces/live')
-        .then((r) => (r.ok ? r.json() : { spaces: [] }))
-        .then((data: { spaces?: LiveSpaceSummary[] }) => {
+      api(listLiveSpacesApi)
+        .then((data) => {
           if (active) setSpaces(data.spaces ?? []);
         })
         .catch(() => {});

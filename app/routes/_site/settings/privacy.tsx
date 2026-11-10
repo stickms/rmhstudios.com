@@ -6,6 +6,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { playLimitsQuery, playtimeSettingsQuery } from '@/lib/settings/privacy.queries';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { DataExportPanel } from '@/components/site/DataExportPanel';
 import { DeleteAccountPanel } from '@/components/site/DeleteAccountPanel';
@@ -24,6 +26,13 @@ export const Route = createFileRoute('/_site/settings/privacy')({
   head: () => ({
     meta: [{ title: 'Privacy & data | RMH Studios' }],
   }),
+  loader: async ({ context }) => {
+    await Promise.all([
+      prefetchRouteQuery(context.queryClient, playtimeSettingsQuery()),
+      prefetchRouteQuery(context.queryClient, playLimitsQuery()),
+    ]);
+    return undefined;
+  },
   component: PrivacySettingsPage,
 });
 

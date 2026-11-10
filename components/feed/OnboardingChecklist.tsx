@@ -8,6 +8,8 @@
 import { useCallback, useEffect, useState } from'react';
 import { Link } from'@tanstack/react-router';
 import { useTranslation } from'react-i18next';
+import { api } from '@/lib/contract/client';
+import { claimOnboardingApi, getOnboardingApi } from '@/lib/onboarding.contract';
 import { toast } from'sonner';
 import {
  CheckCircle2,
@@ -57,8 +59,7 @@ export function OnboardingChecklist() {
 
  const refresh = useCallback(async () => {
  try {
- const res = await fetch('/api/onboarding', { credentials:'include'});
- if (res.ok) setStatus(await res.json());
+ setStatus(await api(getOnboardingApi));
  } catch {
  // silent — the card just won't render
  }
@@ -139,9 +140,8 @@ export function OnboardingChecklist() {
  const claim = async () => {
  setClaiming(true);
  try {
- const res = await fetch('/api/onboarding', { method:'POST', credentials:'include'});
- const data = await res.json().catch(() => ({}));
- if (res.ok && data.claimed) {
+ const data = await api(claimOnboardingApi).catch(() => null);
+ if (data?.claimed) {
  void celebrate({ kind:'confetti'});
  toast.success(
  t('onboarding-claimed', {

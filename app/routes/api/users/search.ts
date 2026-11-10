@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import { searchUsersApi } from '@/lib/discovery/explore.contract';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit.server';
 import { searchPeople } from '@/lib/search/people.server';
 
@@ -17,7 +18,7 @@ const TAKE = 5;
 export const Route = createFileRoute('/api/users/search')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      GET: implement(searchUsersApi, { auth: 'optional' }, async ({ request, userId: selfId }) => {
         const ip = getClientIp(request);
         // This is a typeahead endpoint — it fires on (debounced) keystrokes, so
         // the limit is deliberately generous. checkRateLimit applies the global
@@ -35,9 +36,6 @@ export const Route = createFileRoute('/api/users/search')({
         if (!q) return Response.json({ users: [] });
 
         // Exclude the viewer themselves — you can't message/mention yourself.
-        const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-        const selfId = session?.user?.id ?? null;
-
         try {
           const results = await searchPeople(q.slice(0, 100), {
             limit: TAKE,
@@ -49,7 +47,7 @@ export const Route = createFileRoute('/api/users/search')({
           // A typeahead that errors is worse than one that quietly finds nothing.
           return Response.json({ users: [] });
         }
-      },
+      }),
     },
   },
 });

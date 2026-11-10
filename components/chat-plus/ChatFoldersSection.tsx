@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createChatFolderApi, setChatFolderMemberApi } from '@/lib/chat-plus/folders.contract';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FolderPlus } from 'lucide-react';
 import { toast } from 'sonner';
@@ -18,31 +21,18 @@ export function ChatFoldersSection({ chat }: { chat: ChatRef }) {
 
   const setMember = useMutation({
     mutationFn: async ({ folderId, member }: { folderId: string; member: boolean }) => {
-      const res = await fetch(`/api/chat-folders/${encodeURIComponent(folderId)}/items`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat, member }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'failed');
+      await api(setChatFolderMemberApi, { params: { id: folderId }, body: { chat, member } });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: CHAT_FOLDERS_KEY }),
     onError: (e: Error) =>
-      toast.error(e.message || t('folder-failed', { defaultValue: 'Could not update the folder' })),
+      toast.error(
+        serverError(e) || t('folder-failed', { defaultValue: 'Could not update the folder' }),
+      ),
   });
 
   const create = useMutation({
     mutationFn: async (folderName: string) => {
-      const res = await fetch('/api/chat-folders', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: folderName }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'failed');
-      return data.folder as { id: string };
+      return (await api(createChatFolderApi, { body: { name: folderName } })).folder;
     },
     onSuccess: async (folder) => {
       setName('');
@@ -50,7 +40,9 @@ export function ChatFoldersSection({ chat }: { chat: ChatRef }) {
       await setMember.mutateAsync({ folderId: folder.id, member: true });
     },
     onError: (e: Error) =>
-      toast.error(e.message || t('folder-failed', { defaultValue: 'Could not update the folder' })),
+      toast.error(
+        serverError(e) || t('folder-failed', { defaultValue: 'Could not update the folder' }),
+      ),
   });
 
   return (

@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import { adminQuotaDecisionSchema } from '@/lib/library/admin-library-schema';
+import { adminQuotaDecideApi, adminQuotaRequestsApi } from '@/lib/library/admin-library.contract';
 import { listPendingQuotaRequests, decideQuotaRequest } from '@/lib/library/quota.server';
 
 /**
@@ -7,35 +9,25 @@ import { listPendingQuotaRequests, decideQuotaRequest } from '@/lib/library/quot
  *   GET  — list pending appeals.
  *   POST — decide one ({ id, approve, grantedTotal? }).
  */
-async function requireAdmin(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) return null;
-  return session;
-}
-
 export const Route = createFileRoute('/api/admin/library/quota-requests')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const session = await requireAdmin(request);
-        if (!session) return Response.json({ error: 'Forbidden' }, { status: 403 });
-        const requests = await listPendingQuotaRequests();
-        return Response.json({ requests });
-      },
-      POST: async ({ request }) => {
-        const session = await requireAdmin(request);
-        if (!session) return Response.json({ error: 'Forbidden' }, { status: 403 });
-        const body = (await request.json().catch(() => ({}))) as {
-          id?: unknown;
-          approve?: unknown;
-          grantedTotal?: unknown;
-        };
-        if (typeof body.id !== 'string') return Response.json({ error: 'Missing request id.' }, { status: 400 });
-        const granted = body.grantedTotal === undefined ? undefined : Number(body.grantedTotal);
-        const result = await decideQuotaRequest(session.user.id, body.id, Boolean(body.approve), granted);
-        if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
-        return Response.json({ ok: true });
-      },
+      GET: implement(adminQuotaRequestsApi, { auth: 'admin' }, async () => ({
+        requests: await listPendingQuotaRequests(),
+      })),
+      POST: implement(
+        adminQuotaDecideApi,
+        {
+          auth: 'admin',
+          body: adminQuotaDecisionSchema,
+          invalid: () => Response.json({ error: 'Missing request id.' }, { status: 400 }),
+        },
+        async ({ userId, body }) => {
+          const result = await decideQuotaRequest(userId, body.id, body.approve, body.grantedTotal);
+          if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+          return { ok: true as const };
+        },
+      ),
     },
   },
 });

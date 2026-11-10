@@ -1,4 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { implement } from '@/lib/api/implement.server';
+import { tipsLeaderboardApi } from '@/lib/discovery/explore.contract';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 
@@ -6,7 +8,7 @@ import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 export const Route = createFileRoute('/api/tips/leaderboard')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      GET: implement(tipsLeaderboardApi, { auth: 'none' }, async ({ request }) => {
         try {
           const range = new URL(request.url).searchParams.get('range') === 'all' ? 'all' : 'week';
           const since = range === 'week' ? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) : undefined;
@@ -41,7 +43,7 @@ export const Route = createFileRoute('/api/tips/leaderboard')({
               if (!u) return null;
               return { user: resolveUser(u), total: g._sum.amount ?? 0 };
             })
-            .filter(Boolean);
+            .filter((l): l is NonNullable<typeof l> => l !== null);
 
           return Response.json(
             { range, leaders },
@@ -51,7 +53,7 @@ export const Route = createFileRoute('/api/tips/leaderboard')({
           console.error('Tip leaderboard error:', error);
           return Response.json({ range: 'week', leaders: [] });
         }
-      },
+      }),
     },
   },
 });

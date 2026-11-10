@@ -17,6 +17,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { listVelumContractsApi, submitVelumContractApi } from '@/lib/velum2099/velum.contract';
 import { legLength, type ContractRoute, type ContractView } from '@/lib/velum2099/contracts';
 
 interface Delivered extends ContractRoute {
@@ -37,26 +40,15 @@ export function ContractDock() {
   const submit = useCallback(
     async (run: Delivered) => {
       try {
-        const res = await fetch('/api/velum2099/contracts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        const body = await api(submitVelumContractApi, {
+          body: {
             pickupX: run.pickupX,
             pickupZ: run.pickupZ,
             dropX: run.dropX,
             dropZ: run.dropZ,
             seconds: Math.round(run.seconds * 100) / 100,
-          }),
+          },
         });
-        if (res.status === 401) {
-          toast(t('contract-sign-in', { defaultValue: 'Sign in to post contract times.' }));
-          return;
-        }
-        if (!res.ok) throw new Error(String(res.status));
-        const body = (await res.json()) as {
-          result: 'posted' | 'record' | 'slower';
-          previousSeconds?: number;
-        };
         if (body.result === 'posted') {
           toast.success(
             t('contract-posted', {
@@ -81,7 +73,11 @@ export function ContractDock() {
           );
         }
         setBoard(null);
-      } catch {
+      } catch (e) {
+        if (e instanceof HttpError && e.status === 401) {
+          toast(t('contract-sign-in', { defaultValue: 'Sign in to post contract times.' }));
+          return;
+        }
         toast.error(t('contract-error', { defaultValue: 'Could not reach the contract board.' }));
       }
     },
@@ -133,9 +129,8 @@ export function ContractDock() {
     if (!open) return;
     let live = true;
     setFailed(false);
-    fetch('/api/velum2099/contracts')
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((b: { contracts: ContractView[] }) => live && setBoard(b.contracts))
+    api(listVelumContractsApi)
+      .then((b) => live && setBoard(b.contracts))
       .catch(() => live && setFailed(true));
     return () => {
       live = false;

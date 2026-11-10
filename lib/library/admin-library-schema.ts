@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+/** Body of POST /api/admin/library/quota-requests: decide one upload-quota appeal. */
+export const adminQuotaDecisionSchema = z.object({
+  id: z.string(),
+  approve: z.boolean(),
+  grantedTotal: z.number().optional(),
+});
+
 /** Body of POST /api/admin/library/reorder: LibraryDocument ids in their desired order. */
 export const adminReorderBooksSchema = z.object({ ids: z.array(z.string()) });
 

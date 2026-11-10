@@ -11,6 +11,8 @@ import {
  type LucideIcon,
 } from'lucide-react';
 import { useTranslation } from'react-i18next';
+import { api } from '@/lib/contract/client';
+import { exploreApi, tipsLeaderboardApi } from '@/lib/discovery/explore.contract';
 import { RMHarkCard } from'./RMHarkCard';
 import { WhyTrending } from'@/components/discovery/WhyTrending';
 import { listCuratedBuilds } from'@/lib/builds/curated';
@@ -138,15 +140,14 @@ export function ExploreRecommendations({
  // Only the client fallback path fetches: with a loader-seeded payload this
  // request would re-ask for what is already on screen.
  if (!seeded.current) {
- fetch('/api/explore', { credentials:'include'})
- .then((r) => (r.ok ? r.json() : null))
+ api(exploreApi)
  .then((d) => active && setData(d))
+ .catch(() => {})
  .finally(() => active && setLoading(false));
  }
  // The tips leaderboard is its own endpoint and stays client-fetched — it is
  // below the fold and must not hold up the page's blocking loader.
- fetch('/api/tips/leaderboard?range=week')
- .then((r) => (r.ok ? r.json() : { leaders: [] }))
+ api(tipsLeaderboardApi, { query: { range:'week'} })
  .then((d) => active && setTipLeaders(d.leaders ?? []))
  .catch(() => {});
  return () => {

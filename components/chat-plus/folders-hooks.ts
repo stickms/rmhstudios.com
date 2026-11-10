@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/contract/client';
+import { listChatFoldersApi } from '@/lib/chat-plus/folders.contract';
 
 export interface ChatFolder {
   id: string;
@@ -15,9 +17,7 @@ export function useChatFolders(enabled = true) {
     enabled,
     staleTime: 60_000,
     queryFn: async (): Promise<ChatFolder[]> => {
-      const res = await fetch('/api/chat-folders', { credentials: 'include' });
-      if (!res.ok) throw new Error('folders failed');
-      return (await res.json()).folders;
+      return (await api(listChatFoldersApi)).folders;
     },
   });
 }

@@ -1,7 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Coins, Gift, Package, Banknote } from 'lucide-react';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { creatorRedemptionsQuery } from '@/lib/creator/earnings.queries';
+import { requestRedemptionApi, type RedemptionRow } from '@/lib/creator/earnings.contract';
 import { Card } from '@/components/ui/card';
 import { Tabs } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -15,51 +20,17 @@ import {
   MIN_REDEMPTION_COINS,
 } from '@/lib/creator/redemption';
 
-interface Earnings {
-  lifetimeEarned: number;
-  redeemed: number;
-  redeemable: number;
-  spendable: number;
-}
-interface RedemptionRow {
-  id: string;
-  kind: 'SUB_CREDIT' | 'MERCH' | 'PAYOUT';
-  amountCoins: number;
-  status: 'PENDING' | 'APPROVED' | 'FULFILLED' | 'REJECTED';
-  tierGranted: string | null;
-  monthsGranted: number | null;
-  createdAt: string;
-}
-
 export function EarningsTab() {
   const { t } = useTranslation('c-creator');
-  const [earnings, setEarnings] = useState<Earnings | null>(null);
-  const [requests, setRequests] = useState<RedemptionRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isPending: loading, refetch } = useQuery(creatorRedemptionsQuery());
+  const earnings = data?.earnings ?? null;
+  const requests: RedemptionRow[] = data?.requests ?? [];
   const [kind, setKind] = useState<'SUB_CREDIT' | 'MERCH' | 'PAYOUT'>('SUB_CREDIT');
   const [tier, setTier] = useState<'starter' | 'pro'>('starter');
   const [months, setMonths] = useState(1);
   const [amount, setAmount] = useState(MIN_REDEMPTION_COINS);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/creator/redeem');
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setEarnings(data.earnings);
-        setRequests(data.requests ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   const cost = kind === 'SUB_CREDIT' ? COINS_PER_SUB_MONTH[tier] * months : amount;
 
@@ -70,21 +41,16 @@ export function EarningsTab() {
         kind === 'SUB_CREDIT'
           ? { kind, tier, months }
           : { kind, amountCoins: amount, note: note || undefined };
-      const res = await fetch('/api/creator/redeem', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error ?? t('redeem-failed', { defaultValue: 'Could not submit request' }));
-        return;
-      }
+      await api(requestRedemptionApi, { body });
       toast.success(
         t('redeem-submitted', { defaultValue: 'Redemption requested — an admin will review it' }),
       );
       setNote('');
-      await load();
+      await refetch();
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('redeem-failed', { defaultValue: 'Could not submit request' }),
+      );
     } finally {
       setSubmitting(false);
     }
