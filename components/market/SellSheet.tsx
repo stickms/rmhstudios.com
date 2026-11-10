@@ -23,6 +23,8 @@ import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { RARITY_COLORS, type Rarity, type ShopItemKind } from '@/lib/shop/catalog';
 import { isTradable, minPriceFor, MAX_PRICE } from '@/lib/market/tradable';
 import { MarketItemPreview } from './ListingCard';
+import { getShopApi } from '@/lib/shop/shop.contract';
+import { api } from '@/lib/contract/client';
 
 interface OwnedItem {
   id: string;
@@ -55,12 +57,11 @@ export function SellSheet({
     setItems(null);
     (async () => {
       try {
-        const res = await fetch('/api/shop', { credentials: 'include' });
-        const data = await res.json().catch(() => ({ items: [] }));
-        if (cancelled) return;
-        const owned: OwnedItem[] = (data.items ?? []).filter(
-          (i: OwnedItem) => i.owned && !i.equipped && isTradable(i.id),
-        );
+        const data = await api(getShopApi);
+ if (cancelled) return;
+ const owned: OwnedItem[] = (data.items ?? []).filter(
+ (i: OwnedItem) => i.owned && !i.equipped && isTradable(i.id),
+ );
         setItems(owned);
       } catch {
         if (!cancelled) setItems([]);

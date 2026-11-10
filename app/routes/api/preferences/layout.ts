@@ -1,8 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { parseLayoutPref } from '@/lib/home-widgets';
 import { layoutPrefsSchema } from '@/lib/home-widgets-schema';
+import { getLayoutPrefsApi } from '@/lib/preferences/preferences.contract';
+import { setLayoutPrefsApi } from '@/lib/preferences/preferences.contract';
 
 /**
  * GET  /api/preferences/layout — the caller's sidebar pin/hide + home widget
@@ -16,14 +18,15 @@ import { layoutPrefsSchema } from '@/lib/home-widgets-schema';
 export const Route = createFileRoute('/api/preferences/layout')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
+      GET: implement(getLayoutPrefsApi, {}, async ({ session }) => {
         const row = await prisma.layoutPreference.findUnique({
           where: { userId: session.user.id },
           select: { sidebar: true, homeStack: true },
         });
         return Response.json(parseLayoutPref(row));
       }),
-      PUT: defineHandler(
+      PUT: implement(
+        setLayoutPrefsApi,
         { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'layout' }, body: layoutPrefsSchema },
         async ({ session, body }) => {
           const data = {

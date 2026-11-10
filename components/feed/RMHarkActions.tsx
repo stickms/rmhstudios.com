@@ -22,6 +22,8 @@ import { EngagementCount, engagementPill } from'./EngagementCount';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
 import { cn } from '@/lib/utils';
+import { likePostApi, repostPostApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
 
 interface RMHarkActionsProps {
  item: FeedItem;
@@ -90,7 +92,7 @@ export function RMHarkActions({ item, onUpdate, className }: RMHarkActionsProps)
  likeCount: (item.likeCount ?? 0) + (wasLiked ? -1 : 1),
  }),
  rollback: () => updateItem(item.id, { liked: wasLiked, likeCount: prevCount }),
- commit: () => fetch(`/api/rmharks/${actualId}/like`, { method:'POST'}),
+ commit: () => api(likePostApi, { params: { id: actualId } }),
  });
  };
 
@@ -109,7 +111,7 @@ export function RMHarkActions({ item, onUpdate, className }: RMHarkActionsProps)
  repostCount: (item.repostCount ?? 0) + (wasReposted ? -1 : 1),
  }),
  rollback: () => updateItem(item.id, { reposted: wasReposted, repostCount: prevCount }),
- commit: () => fetch(`/api/rmharks/${actualId}/repost`, { method:'POST'}),
+ commit: () => api(repostPostApi, { params: { id: actualId } }),
  });
  };
 

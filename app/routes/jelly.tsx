@@ -22,6 +22,8 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Tabs } from '@/components/ui/tabs';
+import { setAppearancePrefsApi } from '@/lib/preferences/preferences.contract';
+import { api } from '@/lib/contract/client';
 
 const PATH = '/jelly';
 const TITLE = 'Plasmatic Jelly — Design Lab | RMH Studios';
@@ -86,12 +88,7 @@ function Section({
 
 /** Persist a material preference the same way Settings → Appearance and the quick panel do. */
 function persistPreference(body: { jellyMotion?: JellyMotion; electricArcs?: ElectricArcs }) {
-  void fetch('/api/preferences/appearance', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(body),
-  }).catch(() => {});
+  void api(setAppearancePrefsApi, { body }).catch(() => {});
 }
 
 function JellyLab() {

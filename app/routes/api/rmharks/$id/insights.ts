@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
+import { postInsightsApi } from '@/lib/feed/rmhark-actions.contract';
 
 /**
  * GET /api/rmharks/$id/insights — author-only analytics for one post.
@@ -10,7 +11,7 @@ import { prisma } from '@/lib/prisma.server';
 export const Route = createFileRoute('/api/rmharks/$id/insights')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ params, session }) => {
+      GET: implement(postInsightsApi, {}, async ({ params, session }) => {
         const { id } = params;
         const post = await prisma.rMHark.findUnique({
           where: { id },

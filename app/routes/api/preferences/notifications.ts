@@ -1,8 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { invalidateNotificationPrefs } from '@/lib/notifications.server';
 import { notifPrefsSchema } from '@/lib/notify/categories-schema';
+import { getNotificationMatrixApi } from '@/lib/preferences/preferences.contract';
+import { setNotificationMatrixApi } from '@/lib/preferences/preferences.contract';
 
 /**
  * GET /api/preferences/notifications — the caller's category×channel matrix +
@@ -12,7 +14,7 @@ import { notifPrefsSchema } from '@/lib/notify/categories-schema';
 export const Route = createFileRoute('/api/preferences/notifications')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
+      GET: implement(getNotificationMatrixApi, {}, async ({ session }) => {
         const row = await prisma.notificationPreference.findUnique({
           where: { userId: session.user.id },
           select: { matrix: true, quietStart: true, quietEnd: true, tz: true, emailDigest: true },
@@ -25,7 +27,8 @@ export const Route = createFileRoute('/api/preferences/notifications')({
           emailDigest: row?.emailDigest ?? false,
         });
       }),
-      PUT: defineHandler(
+      PUT: implement(
+        setNotificationMatrixApi,
         {
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'notif-prefs' },
           body: notifPrefsSchema,

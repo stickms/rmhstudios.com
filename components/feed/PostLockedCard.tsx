@@ -5,6 +5,9 @@ import { Button } from'@/components/ui/button';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
 import { toast } from'sonner';
 import { useTranslation } from'react-i18next';
+import { unlockPostApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
 
 /** Paywall card shown in place of a locked post's content. */
 export function PostLockedCard({
@@ -22,15 +25,14 @@ export function PostLockedCard({
  const unlock = async () => {
  setLoading(true);
  try {
- const res = await fetch(`/api/rmharks/${postId}/unlock`, { method:'POST', credentials:'include'});
- const data = await res.json().catch(() => ({}));
- if (res.ok) {
+ const data = await api(unlockPostApi, { params: { id: postId } });
  onUnlocked(data.content ??'');
  toast.success(t('unlocked', { defaultValue:'Unlocked!'}));
- } else if (res.status === 401) {
+ } catch (e) {
+ if (e instanceof HttpError && e.status === 401) {
  toast.error(t('sign-in-to-unlock', { defaultValue:'Sign in to unlock this post.'}));
  } else {
- toast.error(data.error || t('could-not-unlock', { defaultValue:'Could not unlock'}));
+ toast.error(serverError(e) || t('could-not-unlock', { defaultValue:'Could not unlock'}));
  }
  } finally {
  setLoading(false);

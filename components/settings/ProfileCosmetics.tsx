@@ -27,6 +27,8 @@ import {
 } from '@/lib/shop/catalog';
 import { getPremiumTheme } from '@/lib/shop/themes';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { getShopApi, equipShopItemApi } from '@/lib/shop/shop.contract';
+import { api } from '@/lib/contract/client';
 
 interface CosmeticItem {
   id: string;
@@ -91,23 +93,14 @@ export function ProfileCosmetics() {
   const { data, isPending, isError } = useQuery({
     queryKey: ['shop'],
     queryFn: async (): Promise<{ items: CosmeticItem[]; signedIn: boolean }> => {
-      const res = await fetch('/api/shop', { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to load cosmetics');
-      return res.json();
+      return api(getShopApi);
     },
     staleTime: 30_000,
   });
 
   const equipMutation = useMutation({
     mutationFn: async ({ item, equipped }: { item: CosmeticItem; equipped: boolean }) => {
-      const res = await fetch('/api/shop/equip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ itemId: item.id, equipped }),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error || 'Request failed');
+      await api(equipShopItemApi, { body: { itemId: item.id, equipped } });
       return { item, equipped };
     },
     onSuccess: ({ item, equipped }) => {

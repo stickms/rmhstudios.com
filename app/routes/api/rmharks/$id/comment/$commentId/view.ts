@@ -1,14 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { getClientIp } from '@/lib/rate-limit';
 import crypto from 'crypto';
 import { canReadCommentThread } from '@/lib/feed/audience.server';
+import { viewCommentApi } from '@/lib/feed/rmhark-actions.contract';
 
 export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId/view')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        viewCommentApi,
         {
           // perf: auth 'optional' lets the wrapper resolve the session once
           // (was a hand-rolled getSession); the bucket stops one client from

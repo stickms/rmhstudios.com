@@ -33,14 +33,11 @@ import { TiltEffectsRow } from '@/components/settings/TiltEffectsRow';
 import { Tabs } from '@/components/ui/tabs';
 import { JellyGroup } from '@/components/ui/jelly-group';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { setAppearancePrefsApi, type AppearancePrefsInput } from '@/lib/preferences/preferences.contract';
+import { api } from '@/lib/contract/client';
 
-async function persist(body: Record<string, unknown>) {
-  await fetch('/api/preferences/appearance', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(body),
-  }).catch(() => {});
+async function persist(body: AppearancePrefsInput) {
+  await api(setAppearancePrefsApi, { body }).catch(() => {});
 }
 
 const FONT_LABELS: Record<FontScale, string> = {
