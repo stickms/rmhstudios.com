@@ -8,7 +8,7 @@ import { logAdminAction } from '@/lib/admin-audit.server';
  * ready vibe page. Admin only.
  *
  * Rather than render inline (the web container has no headless browser), this
- * simply flags all ready pages `thumbnailStale`. The vibe-worker (Go) already
+ * simply flags all ready pages `thumbnailStale`. The vibe thumbnail worker (jobs) already
  * polls for stale pages and renders them — so flagging is the whole job and the
  * thumbnails fill back in as the worker churns through the queue. Idempotent and
  * safe to re-run; it never clears an existing thumbnail, only marks it for a fresh

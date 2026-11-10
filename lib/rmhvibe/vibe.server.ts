@@ -886,7 +886,7 @@ export async function* generateVibeStream(opts: {
       const [, version] = await prisma.$transaction([
         prisma.vibePage.update({
           where: { id: existingPageId },
-          // Mark the thumbnail stale so the vibe-worker re-renders it for the new content.
+          // Mark the thumbnail stale so the jobs thumbnail worker re-renders it for the new content.
           data: { html, title: cleanTitle, description: cleanDescription, conversationHistory, thumbnailStale: true },
         }),
         prisma.vibePageVersion.create({
@@ -912,7 +912,7 @@ export async function* generateVibeStream(opts: {
       // "ready", and seed its first version snapshot — atomically, so the page and
       // its history land together. We keep the slug we reserved up front (the client
       // may already be viewing /v/<slug>), ignoring the model's SLUG suggestion.
-      // thumbnailStale: true → the vibe-worker now renders the screenshot.
+      // thumbnailStale: true → the jobs thumbnail worker now renders the screenshot.
       const [, version] = await prisma.$transaction([
         prisma.vibePage.update({
           where: { id: newPageId },

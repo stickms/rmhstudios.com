@@ -21,8 +21,8 @@
    │  ladder-worker · homes-worker · jobs              │
    │     (Node crons + pg-boss backbone, no port)      │
    │                                                   │
-   │  supervisor:9090 (Go: discord-bot +               │
-   │     vibe-worker)                                 │
+   │  supervisor:9090 (Go: discord-bot)                │
+   │                                                  │
    │                                                   │
    │  status:7008 (Go)   assets:7007 (Go)              │
    │  redis / redis-state (infra; minio = local-s3)    │
