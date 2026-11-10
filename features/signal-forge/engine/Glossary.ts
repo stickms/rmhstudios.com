@@ -1,4 +1,4 @@
-// lib/signal-forge/Glossary.ts — Single source of truth for keyword/system explanations
+// features/signal-forge/engine/Glossary.ts — Single source of truth for keyword/system explanations
 
 /** Tooltip-length explanation for every keyword, status, and system. */
 export const KEYWORD_GLOSSARY: Record<string, string> = {

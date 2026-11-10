@@ -11,7 +11,7 @@ import { api } from '@/lib/contract/client';
 import {
   getSignalForgeLeaderboardApi,
   submitSignalForgeScoreApi,
-} from '@/lib/signal-forge/signal-forge.contract';
+} from '@features/signal-forge/engine/signal-forge.contract';
 
 export interface LeaderboardEntry {
   username: string;

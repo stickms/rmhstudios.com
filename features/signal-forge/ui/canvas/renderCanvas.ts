@@ -15,9 +15,9 @@
  * to the provided `out` object so the caller can wire up click handlers.
  */
 
-import type { GameState } from '@/lib/signal-forge/GameTypes';
-import { hasRelic, countRelic, getHandSize } from '@/lib/signal-forge/gameHelpers';
-import { getRelevantTooltips } from '@/lib/signal-forge';
+import type { GameState } from '@features/signal-forge/engine/GameTypes';
+import { hasRelic, countRelic, getHandSize } from '@features/signal-forge/engine/gameHelpers';
+import { getRelevantTooltips } from '@features/signal-forge/engine';
 import {
   drawOutlinedText, drawRoundRect, drawCard, drawPanel,
   type TooltipZone, type CardRect,

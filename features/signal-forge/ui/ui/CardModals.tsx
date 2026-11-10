@@ -8,7 +8,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import type { Card } from '@/lib/signal-forge';
+import type { Card } from '@features/signal-forge/engine';
 import { cardKeywordTags, keywordColor, typeColor, rarityBorder } from './uiHelpers';
 
 /* ────────────────────────── Card Removal ────────────────────────── */

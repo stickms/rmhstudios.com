@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import { getSignalForgeLeaderboardApi } from '@/lib/signal-forge/signal-forge.contract';
+import { getSignalForgeLeaderboardApi } from '@features/signal-forge/engine/signal-forge.contract';
 import { prisma } from '@/lib/prisma.server';
 
 export const Route = createFileRoute('/api/signal-forge/leaderboard')({

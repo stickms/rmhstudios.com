@@ -1,4 +1,4 @@
-// lib/signal-forge/Zone.ts — Random combat zone modifiers
+// features/signal-forge/engine/Zone.ts — Random combat zone modifiers
 
 export interface CombatZone {
   id: string;

@@ -3,7 +3,7 @@
  *
  * Re-exports all entity classes and game-logic modules from a single
  * barrel file so consumers can do:
- *   import { Card, GameState, computeEndTurn } from '@/lib/signal-forge';
+ *   import { Card, GameState, computeEndTurn } from '@features/signal-forge/engine';
  */
 
 // ── Entity classes ──

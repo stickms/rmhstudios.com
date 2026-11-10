@@ -8,7 +8,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import type { Relic } from '@/lib/signal-forge';
+import type { Relic } from '@features/signal-forge/engine';
 
 interface Props {
   floor: number;

@@ -3,20 +3,20 @@
  * ─────────────────────────────────────────────────────────────────────
  * This component owns the GameState, wires up the canvas renderer,
  * handles mouse/keyboard input, and delegates all game logic to pure
- * state-transform functions in lib/signal-forge/*.
+ * state-transform functions in features/signal-forge/engine/*.
  *
  * All heavy logic (combat resolution, card actions, game flow, etc.)
  * lives in dedicated modules — this file is purely orchestration.
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { SignalForgeUI } from '@/components/signal-forge/SignalForgeUI';
-import { createEnemies } from '@/lib/signal-forge';
-import type { Card, RelicTemplate } from '@/lib/signal-forge';
-import type { GameState } from '@/lib/signal-forge/GameTypes';
-import { createFreshGameState } from '@/lib/signal-forge/GameTypes';
-import { computePlayCard, computeUnplayCard } from '@/lib/signal-forge/cardActions';
-import { computeEndTurn } from '@/lib/signal-forge/endTurn';
+import { SignalForgeUI } from '@features/signal-forge/ui/SignalForgeUI';
+import { createEnemies } from '@features/signal-forge/engine';
+import type { Card, RelicTemplate } from '@features/signal-forge/engine';
+import type { GameState } from '@features/signal-forge/engine/GameTypes';
+import { createFreshGameState } from '@features/signal-forge/engine/GameTypes';
+import { computePlayCard, computeUnplayCard } from '@features/signal-forge/engine/cardActions';
+import { computeEndTurn } from '@features/signal-forge/engine/endTurn';
 import {
   computeStartGame,
   computeSelectStarterRelic,
@@ -38,15 +38,15 @@ import {
   computeChooseShop,
   computeToggleViewPile,
   computeCycleSortMode,
-} from '@/lib/signal-forge/gameFlow';
-import { computeResolveEventChoice } from '@/lib/signal-forge/eventResolution';
+} from '@features/signal-forge/engine/gameFlow';
+import { computeResolveEventChoice } from '@features/signal-forge/engine/eventResolution';
 import {
   saveRunToServer,
   clearSavedRunOnServer,
   loadSavedRunFromServer,
   checkSavedRunOnServer,
-} from '@/lib/signal-forge/persistence';
-import { renderCanvas, type RenderOutput } from '@/components/signal-forge/canvas/renderCanvas';
+} from '@features/signal-forge/engine/persistence';
+import { renderCanvas, type RenderOutput } from '@features/signal-forge/ui/canvas/renderCanvas';
 
 // ─── Component ───────────────────────────────────────────────────────
 

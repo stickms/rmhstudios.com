@@ -5,8 +5,8 @@
  * every sub-component that renders cards or relics.
  */
 
-import type { Card } from '@/lib/signal-forge/Card';
-import { KEYWORD_GLOSSARY } from '@/lib/signal-forge/Glossary';
+import type { Card } from '@features/signal-forge/engine/Card';
+import { KEYWORD_GLOSSARY } from '@features/signal-forge/engine/Glossary';
 
 /** Build a structured list of keyword/ability tags for a card. */
 export function cardKeywordTags(card: Card): string[] {

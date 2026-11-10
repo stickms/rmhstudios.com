@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import { submitSignalForgeScoreApi } from '@/lib/signal-forge/signal-forge.contract';
-import { signalForgeScoreBody, signalForgeScoreMessage } from '@/lib/signal-forge/score-schema';
+import { submitSignalForgeScoreApi } from '@features/signal-forge/engine/signal-forge.contract';
+import { signalForgeScoreBody, signalForgeScoreMessage } from '@features/signal-forge/engine/score-schema';
 import { prisma } from '@/lib/prisma.server';
 import { recordGamePlay } from '@/lib/quests/engine.server';
 

@@ -8,8 +8,8 @@
 
 import React from 'react';
 import { useTranslation } from "react-i18next";
-import type { Card } from '@/lib/signal-forge';
-import { CARD_CATALOG } from '@/lib/signal-forge';
+import type { Card } from '@features/signal-forge/engine';
+import { CARD_CATALOG } from '@features/signal-forge/engine';
 
 interface Props {
   hand: Card[];

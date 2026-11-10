@@ -6,7 +6,7 @@
  * so they're pure/stateless and easy to test.
  */
 
-import type { Card } from '@/lib/signal-forge/Card';
+import type { Card } from '@features/signal-forge/engine/Card';
 
 /** Tooltip hover zone tracked during rendering. */
 export interface TooltipZone {

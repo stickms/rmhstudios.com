@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { useTranslation } from "react-i18next";
-import type { RelicTemplate } from '@/lib/signal-forge';
+import type { RelicTemplate } from '@features/signal-forge/engine';
 import { relicRarityBorder } from './uiHelpers';
 
 interface Props {

@@ -86,7 +86,7 @@
 @source not "../components/csgo-game";
 @source not "../components/security";
 @source not "../components/share";
-@source not "../components/signal-forge";
+@source not "../features/signal-forge/ui";
 @source not "../components/sohumbum";
 @source not "../components/sohumtracker";
 @source not "../components/steam";
@@ -131,7 +131,7 @@
 @source not "../lib/csgo-game";
 @source not "../lib/tf2-loadout";
 @source not "../lib/shortcuts";
-@source not "../lib/signal-forge";
+@source not "../features/signal-forge/engine";
 @source not "../lib/sohumtracker";
 @source not "../lib/store";
 @source not "../lib/studio";

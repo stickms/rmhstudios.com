@@ -307,7 +307,7 @@ const ALLOW = new Set<string>([
   'components/radial/QuickPanel.tsx',
   'components/radial/RadialHub.tsx',
   'components/rmhtech/RmhtechLanding.tsx',
-  'components/signal-forge/SignalForgeGame.tsx',
+  'features/signal-forge/ui/SignalForgeGame.tsx',
   'components/site/LanguageSwitcher.tsx',
   'components/studio/arrangement/PlayheadCursor.tsx',
   'components/studio/mixer/VUMeter.tsx',

@@ -7,7 +7,7 @@
 
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Card } from '@/lib/signal-forge';
+import type { Card } from '@features/signal-forge/engine';
 import { cardKeywordTags, keywordColor, keywordTooltip, typeColor } from './uiHelpers';
 
 interface Props {

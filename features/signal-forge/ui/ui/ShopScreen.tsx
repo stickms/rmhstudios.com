@@ -9,9 +9,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import type { Card, Relic } from '@/lib/signal-forge';
+import type { Card, Relic } from '@features/signal-forge/engine';
 import { cardKeywordTags, keywordColor, keywordTooltip, typeColor } from './uiHelpers';
-import type { GameState } from '@/lib/signal-forge/GameTypes';
+import type { GameState } from '@features/signal-forge/engine/GameTypes';
 
 interface Props {
   gameState: GameState;

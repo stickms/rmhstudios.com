@@ -8,7 +8,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import type { GameState } from '@/lib/signal-forge/GameTypes';
+import type { GameState } from '@features/signal-forge/engine/GameTypes';
 import { cardKeywordTags, keywordColor, typeColor, rarityBorder, relicRarityBorder } from './uiHelpers';
 
 interface Props {

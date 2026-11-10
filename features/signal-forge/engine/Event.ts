@@ -1,4 +1,4 @@
-// lib/signal-forge/Event.ts — Random between-floor events
+// features/signal-forge/engine/Event.ts — Random between-floor events
 
 export interface GameEvent {
   id: string;

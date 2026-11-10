@@ -3,14 +3,14 @@
  * ──────────────────────────────────────────────────────────────
  * Renders the correct overlay / screen based on the current game phase.
  * All phase-specific rendering is delegated to dedicated sub-components
- * in components/signal-forge/ui/. This file handles shared local state
+ * in features/signal-forge/ui/ui/. This file handles shared local state
  * (modals, collection viewer) and the Escape-key pause toggle.
  */
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Card, RelicTemplate } from '@/lib/signal-forge';
-import type { GameState } from '@/lib/signal-forge/GameTypes';
+import type { Card, RelicTemplate } from '@features/signal-forge/engine';
+import type { GameState } from '@features/signal-forge/engine/GameTypes';
 
 // UI sub-components
 import { LandingScreen } from './ui/LandingScreen';

@@ -277,7 +277,7 @@ These add mechanical vocabulary that every subsequent feature builds on.
 
 **What:** A general-purpose status effect system that tracks buffs/debuffs on both player and enemies with turn-based duration.
 
-**New types** (add to a new file `lib/signal-forge/StatusEffect.ts`):
+**New types** (add to a new file `features/signal-forge/engine/StatusEffect.ts`):
 ```typescript
 export type StatusType = 'vulnerable' | 'weak' | 'bleed' | 'freeze' | 'marked';
 
@@ -366,7 +366,7 @@ this.state.enemies.forEach(e => {
 ### 2.2 — New Keywords: Piercing, Chain, Growing, Retain, Multihit, Innate, Ethereal, Siphon
 - [x] **Extend `CardData` interface with new keyword properties**
 
-**Where:** `lib/signal-forge/Card.ts` — add to `CardData` interface:
+**Where:** `features/signal-forge/engine/Card.ts` — add to `CardData` interface:
 
 ```typescript
 // New keyword fields:
@@ -1822,7 +1822,7 @@ shopRefreshesUsed: number; // reset to 0 each shop visit
 
 **Flow change:** `combat (victory)` → `'card-reward'` → (40% chance) `'event'` → `'reward'` → `'shop'`
 
-**Event data structure** (new file `lib/signal-forge/Event.ts`):
+**Event data structure** (new file `features/signal-forge/engine/Event.ts`):
 ```typescript
 export interface GameEvent {
   id: string;
@@ -2166,10 +2166,10 @@ The current tooltip system shows bare stats (`💢8 🛡️0`) and the `effect` 
 
 #### 8.3a — Keyword & System Glossary
 
-**Where:** Create `lib/signal-forge/Glossary.ts` — single source of truth for every keyword and system explanation.
+**Where:** Create `features/signal-forge/engine/Glossary.ts` — single source of truth for every keyword and system explanation.
 
 ```typescript
-// lib/signal-forge/Glossary.ts
+// features/signal-forge/engine/Glossary.ts
 
 /** Tooltip-length explanation for every keyword, status, and system. */
 export const KEYWORD_GLOSSARY: Record<string, string> = {
@@ -2310,7 +2310,7 @@ Currently, hovering over cards in combat shows nothing (no tooltip zone is regis
 4. Card effect text
 
 ```typescript
-import { getRelevantTooltips } from '@/lib/signal-forge/Glossary';
+import { getRelevantTooltips } from '@features/signal-forge/engine/Glossary';
 
 // After each card is rendered in the hand or played area:
 const tipLines: string[] = [];
@@ -2364,9 +2364,9 @@ The shop already shows keyword badges (e.g. `Echo`, `Sustain`), but they're tiny
 **Implementation — reusable `<KeywordTooltips>` component:**
 
 ```tsx
-// Add to SignalForgeUI.tsx (or extract to components/signal-forge/KeywordTooltips.tsx):
+// Add to SignalForgeUI.tsx (or extract to features/signal-forge/ui/KeywordTooltips.tsx):
 
-import { getRelevantTooltips, KEYWORD_GLOSSARY } from '@/lib/signal-forge/Glossary';
+import { getRelevantTooltips, KEYWORD_GLOSSARY } from '@features/signal-forge/engine/Glossary';
 
 /** Inline keyword explanations — renders below badges when item is hovered */
 function KeywordTooltips({ item }: {
@@ -2735,7 +2735,7 @@ timeEaterCharged, bossPhase, immuneToType
 
 **What:** Each floor has a random "zone" that modifies combat for both sides. Displayed prominently at the top of the combat screen.
 
-**New type** (add to `lib/signal-forge/Zone.ts`):
+**New type** (add to `features/signal-forge/engine/Zone.ts`):
 ```typescript
 export interface CombatZone {
   id: string;
