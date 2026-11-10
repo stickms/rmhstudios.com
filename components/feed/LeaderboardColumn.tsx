@@ -1,4 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from'react';
+import { useState } from'react';
+import { useQuery } from '@tanstack/react-query';
+import { fetchJson } from '@/lib/http';
 import { useTranslation } from'react-i18next';
 import { Trophy, Coins, Zap } from'lucide-react';
 import { UserAvatar } from'./UserAvatar';
@@ -48,34 +50,15 @@ export function LeaderboardColumn({
 }) {
  const { t } = useTranslation('feed');
  const [scope, setScope] = useState<Scope>('global');
- const [entries, setEntries] = useState<Entry[]>(initialData.entries);
- const [loading, setLoading] = useState(false);
- // Cache the global scope from the loader so toggling back is instant.
- const cache = useRef<Partial<Record<Scope, Entry[]>>>({ global: initialData.entries });
-
- const load = useCallback(async (next: Scope) => {
- if (cache.current[next]) {
- setEntries(cache.current[next]!);
- return;
- }
- setLoading(true);
- try {
- const res = await fetch(`/api/leaderboards/players?scope=${next}`, {
- credentials:'include',
+ // The global board is seeded by the route loader; the Friends scope is fetched on demand.
+ const board = useQuery({
+ queryKey: ['leaderboards', 'players', scope],
+ queryFn: () => fetchJson<LeaderboardData>(`/api/leaderboards/players?scope=${scope}`),
+ ...(scope === 'global' ? { initialData } : {}),
+ staleTime: 30_000,
  });
- if (res.ok) {
- const data = (await res.json()) as LeaderboardData;
- cache.current[next] = data.entries;
- setEntries(data.entries);
- }
- } finally {
- setLoading(false);
- }
- }, []);
-
- useEffect(() => {
- void load(scope);
- }, [scope, load]);
+ const entries = board.data?.entries ?? [];
+ const loading = board.isPending;
 
  // §17.5 sweep: this Global/Friends scope toggle was a hand-rolled underline strip
  // with no tab semantics (invisible to the §16.2 design-lint gate) — migrated to

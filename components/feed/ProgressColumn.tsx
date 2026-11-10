@@ -1,5 +1,7 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
-import { useEffect, useState, useCallback } from'react';
+import { useState, useCallback } from'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { battlepassQuery, progressSummaryQuery } from '@/lib/progress.queries';
 import { useTranslation } from'react-i18next';
 import {
  Loader2,
@@ -83,33 +85,19 @@ interface BattlePassPayload {
 
 export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } = {}) {
  const { t } = useTranslation('feed');
- const [data, setData] = useState<ProgressPayload | null>(null);
- const [pass, setPass] = useState<BattlePassPayload | null>(null);
- const [loading, setLoading] = useState(true);
+ const queryClient = useQueryClient();
+ const progressQ = useQuery(progressSummaryQuery<ProgressPayload>());
+ const passQ = useQuery(battlepassQuery<BattlePassPayload>());
+ const data = progressQ.data ?? null;
+ const pass = passQ.data ?? null;
+ const loading = progressQ.isPending || passQ.isPending;
  const [busy, setBusy] = useState<string | null>(null);
 
- const load = useCallback(async () => {
- const [pRes, bRes] = await Promise.all([
- fetch('/api/progress', { credentials:'include'}),
- fetch('/api/battlepass', { credentials:'include'}),
- ]);
- if (pRes.ok) setData(await pRes.json());
- if (bRes.ok) setPass(await bRes.json());
- }, []);
-
- useEffect(() => {
- let active = true;
- (async () => {
- try {
- await load();
- } finally {
- if (active) setLoading(false);
- }
- })();
- return () => {
- active = false;
- };
- }, [load]);
+ // After a claim: refetch both from the API.
+ const load = useCallback(
+ () => queryClient.invalidateQueries({ queryKey: ['progress'] }),
+ [queryClient],
+ );
 
  async function claimQuest(id: string) {
  setBusy(`q:${id}`);

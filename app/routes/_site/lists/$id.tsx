@@ -2,6 +2,8 @@ import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { ListDetailView } from '@/components/lists/ListDetailView';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { listFeedQuery } from '@/lib/lists/list-feed.queries';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getListDetail, type ListDetail } from '@/lib/lists/lists.server';
 
@@ -16,7 +18,12 @@ const fetchList = createServerFn({ method: 'GET' })
 
 export const Route = createFileRoute('/_site/lists/$id')({
   head: () => ({ meta: [{ title: 'List | RMH Studios' }, { name: 'robots', content: 'noindex' }] }),
-  loader: ({ params }) => fetchList({ data: params.id }),
+  loader: async ({ context, params }) => {
+    const detail = await fetchList({ data: params.id });
+    // The timeline's first page is seeded alongside the list header.
+    await prefetchRouteQuery(context.queryClient, listFeedQuery(params.id));
+    return detail;
+  },
   component: ListPage,
 });
 
