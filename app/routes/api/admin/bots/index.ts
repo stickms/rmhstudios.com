@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import {
   getBotActivityStats,
   getBotWorkerSettings,
@@ -23,12 +24,13 @@ const settingsSchema = z.object({
 export const Route = createFileRoute('/api/admin/bots/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'admin', rateLimit: 'read' }, async () => {
+      GET: implement(C.getAdminBotsApi, { auth: 'admin', rateLimit: 'read' }, async () => {
         const settings = await getBotWorkerSettings();
         const stats = await getBotActivityStats(settings);
         return Response.json({ settings, stats });
       }),
-      PUT: defineHandler(
+      PUT: implement(
+        C.saveAdminBotsApi,
         { auth: 'admin', rateLimit: 'write', body: settingsSchema },
         async ({ userId, body }) => {
           const settings = await saveBotWorkerSettings(userId, body);

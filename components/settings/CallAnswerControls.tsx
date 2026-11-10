@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { Textarea } from '@/components/ui/textarea';
+import { api } from '@/lib/contract/client';
+import { getCallAnswerApi, setCallAnswerApi } from '@/lib/call/calls.contract';
 import {
   CALL_ANSWER_MODES,
   CALL_BUSY_NOTE_MAX,
@@ -31,8 +33,8 @@ export function CallAnswerControls() {
   const savedNote = useRef('');
 
   useEffect(() => {
-    fetch('/api/calls/answer', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
+    api(getCallAnswerApi, { retries: 0 })
+      .catch(() => null)
       .then((d: { mode?: unknown; note?: unknown } | null) => {
         if (d && isCallAnswerMode(d.mode)) setMode(d.mode);
         if (d && typeof d.note === 'string') {
@@ -45,15 +47,7 @@ export function CallAnswerControls() {
   }, []);
 
   function save(body: { mode: CallAnswerMode; note?: string }, onFail: () => void) {
-    fetch('/api/calls/answer', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(body),
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error(String(r.status));
-      })
+    api(setCallAnswerApi, { body })
       .catch(() => {
         onFail();
         toast.error(t('call-privacy-save-error', { defaultValue: 'Could not save' }));

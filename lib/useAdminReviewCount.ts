@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { api } from '@/lib/contract/client';
+import { getAdminReviewCountsApi } from '@/lib/admin/admin-ops.contract';
 
 export interface AdminReviewCounts {
   reports: number;
@@ -24,9 +26,7 @@ export function useAdminReviewCount(isAdmin: boolean, intervalMs = 60_000) {
 
   const fetchCounts = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/review-counts', { credentials: 'include' });
-      if (!res.ok) return;
-      const data = await res.json();
+      const data = await api(getAdminReviewCountsApi, { retries: 0 });
       if (!cancelled.current && typeof data.total === 'number') {
         setCounts({
           reports: data.reports ?? 0,

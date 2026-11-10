@@ -13,6 +13,13 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { MacroField } from '@/components/safety/MacroField';
+import { api } from '@/lib/contract/client';
+import {
+  actOnAdminReportApi,
+  banAdminUserApi,
+  getAdminReportsApi,
+  strikeAdminUserApi,
+} from '@/lib/admin/admin-ops.contract';
 
 export const Route = createFileRoute('/_site/admin/reports')({
   head: () => ({ meta: [{ title: 'Moderation Queue | RMH Studios' }] }),
@@ -67,12 +74,11 @@ function AdminReportsPage() {
   const load = useCallback(async (s: Status) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/reports?status=${s}`, { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setReports(data.items);
-        setCounts(data.counts ?? {});
-      }
+      const data = await api(getAdminReportsApi, { query: { status: s }, retries: 0 });
+      setReports(data.items);
+      setCounts(data.counts ?? {});
+    } catch {
+      // A failed load leaves the queue as it was (the old code ignored non-2xx).
     } finally {
       setLoading(false);
     }
@@ -85,17 +91,15 @@ function AdminReportsPage() {
   const act = async (id: string, action: 'review' | 'resolve' | 'dismiss', deleteContent = false) => {
     setBusyId(id);
     try {
-      const res = await fetch(`/api/admin/reports/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ action, deleteContent, message: messages[id]?.trim() || undefined }),
+      await api(actOnAdminReportApi, {
+        params: { id },
+        body: { action, deleteContent, message: messages[id]?.trim() || undefined },
       });
-      if (res.ok) {
-        // Remove from the current view when it leaves this status bucket.
-        setReports((prev) => prev.filter((r) => r.id !== id));
-        load(status);
-      }
+      // Remove from the current view when it leaves this status bucket.
+      setReports((prev) => prev.filter((r) => r.id !== id));
+      load(status);
+    } catch {
+      // A refused action (409, 500) leaves the row where it is.
     } finally {
       setBusyId(null);
     }
@@ -104,19 +108,18 @@ function AdminReportsPage() {
   const moderateUser = async (userId: string, kind: 'strike' | 'ban') => {
     const reason = prompt(kind === 'ban' ? t('ban-reason-prompt', { defaultValue: 'Ban reason:' }) : t('strike-reason-prompt', { defaultValue: 'Strike reason:' }));
     if (!reason) return;
-    const url = `/api/admin/users/${userId}/${kind}`;
-    const body =
-      kind === 'ban'
-        ? { reason, durationDays: parseInt(prompt(t('ban-length-prompt', { defaultValue: 'Ban length in days (blank = permanent):' })) || '', 10) || null }
-        : { reason };
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(body),
-    });
-    if (res.ok) toast.success(kind === 'ban' ? t('user-banned', { defaultValue: 'User banned' }) : t('strike-issued', { defaultValue: 'Strike issued' }));
-    else toast.error(t('action-failed-appeals', { defaultValue: 'Action failed' }));
+    try {
+      if (kind === 'ban') {
+        const durationDays = parseInt(prompt(t('ban-length-prompt', { defaultValue: 'Ban length in days (blank = permanent):' })) || '', 10) || null;
+        await api(banAdminUserApi, { params: { id: userId }, body: { reason, durationDays } });
+        toast.success(t('user-banned', { defaultValue: 'User banned' }));
+      } else {
+        await api(strikeAdminUserApi, { params: { id: userId }, body: { reason } });
+        toast.success(t('strike-issued', { defaultValue: 'Strike issued' }));
+      }
+    } catch {
+      toast.error(t('action-failed-appeals', { defaultValue: 'Action failed' }));
+    }
   };
 
   return (

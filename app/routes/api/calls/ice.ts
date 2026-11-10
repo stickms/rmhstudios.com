@@ -11,13 +11,14 @@
  */
 import { createFileRoute } from '@tanstack/react-router';
 import { createHmac } from 'node:crypto';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/call/calls.contract';
 import { buildIceServers, hasTurn } from '@/lib/call/ice';
 
 export const Route = createFileRoute('/api/calls/ice')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) =>
+      GET: implement(C.getCallIceApi, { rateLimit: 'read' }, async ({ userId }) =>
         Response.json({
           iceServers: buildIceServers({
             userId,

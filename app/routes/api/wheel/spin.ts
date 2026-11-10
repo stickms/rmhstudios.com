@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/wheel/wheel.contract';
 import { prisma } from '@/lib/prisma.server';
 import { creditCoins, getBalance } from '@/lib/economy/ledger.server';
 import { WHEEL_SEGMENTS, pickSegment, wheelDateKey } from '@/lib/wheel/wheel';
@@ -10,7 +11,8 @@ import { grantAchievement } from '@/lib/achievements/engine.server';
 export const Route = createFileRoute('/api/wheel/spin')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        C.spinWheelApi,
         { rateLimit: { limit: 10, windowMs: 60_000, prefix: 'wheel-spin' } },
         async ({ session }) => {
           const userId = session.user.id;

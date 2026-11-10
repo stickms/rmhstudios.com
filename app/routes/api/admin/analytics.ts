@@ -1,12 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { prisma } from '@/lib/prisma.server';
 
 /** GET /api/admin/analytics — platform stats for the admin dashboard. */
 export const Route = createFileRoute('/api/admin/analytics')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'admin' }, async () => {
+      GET: implement(C.getAdminAnalyticsApi, { auth: 'admin' }, async () => {
         const now = Date.now();
         const d7 = new Date(now - 7 * 24 * 60 * 60 * 1000);
         const d30 = new Date(now - 30 * 24 * 60 * 60 * 1000);

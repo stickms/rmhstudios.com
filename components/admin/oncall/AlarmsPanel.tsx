@@ -17,6 +17,8 @@ import {
   type OncallApiResponse,
 } from '@/lib/oncall/dashboard';
 import { formatRelativeTime } from '@/lib/utils';
+import { api } from '@/lib/contract/client';
+import { getAdminOncallApi } from '@/lib/admin/admin-ops.contract';
 
 const POLL_MS = 30_000;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -27,10 +29,7 @@ function useOncall() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/oncall', { credentials: 'include', cache: 'no-store' });
-      setData(
-        res.ok ? ((await res.json()) as OncallApiResponse) : { ok: false, error: 'unreachable' },
-      );
+      setData(await api(getAdminOncallApi, { retries: 0 }));
     } catch {
       setData({ ok: false, error: 'unreachable' });
     } finally {

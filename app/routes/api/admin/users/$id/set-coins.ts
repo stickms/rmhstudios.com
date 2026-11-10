@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import { logAdminAction } from '@/lib/admin-audit.server';
@@ -15,7 +16,8 @@ const schema = z.object({ coins: z.number().int().min(0).max(1_000_000_000) });
 export const Route = createFileRoute('/api/admin/users/$id/set-coins')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        C.setAdminUserCoinsApi,
         {
           auth: 'admin',
           rateLimit: { policy: 'write', scope: 'user' },

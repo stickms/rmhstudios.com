@@ -6,6 +6,8 @@ import { Select } from '@/components/ui/select';
 import { useSession } from '@/components/Providers';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import type { WatchKind, WatchLevel } from '@/lib/discovery/schema';
+import { api } from '@/lib/contract/client';
+import { getDiscoveryWatchApi, setDiscoveryWatchApi } from '@/lib/discovery/discovery.contract';
 
 /** A7 · Watch level picker (Not watching / Important only / Everything). Signed-in only, after idle. */
 export function WatchControl({ kind, targetId }: { kind: WatchKind; targetId: string }) {
@@ -18,11 +20,8 @@ export function WatchControl({ kind, targetId }: { kind: WatchKind; targetId: st
   useEffect(() => {
     if (!on) return;
     let live = true;
-    fetch(`/api/discovery/watch?kind=${kind}&targetId=${encodeURIComponent(targetId)}`, {
-      credentials: 'include',
-    })
-      .then((r) => (r.ok ? (r.json() as Promise<{ level: WatchLevel }>) : null))
-      .then((d) => live && d && setLevel(d.level))
+    api(getDiscoveryWatchApi, { query: { kind, targetId }, retries: 0 })
+      .then((d) => live && setLevel(d.level))
       .catch(() => {});
     return () => {
       live = false;
@@ -34,13 +33,11 @@ export function WatchControl({ kind, targetId }: { kind: WatchKind; targetId: st
   const change = async (next: WatchLevel) => {
     const prev = level;
     setLevel(next);
-    const res = await fetch('/api/discovery/watch', {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kind, targetId, level: next }),
-    }).catch(() => null);
-    if (!res?.ok) {
+    const ok = await api(setDiscoveryWatchApi, { body: { kind, targetId, level: next } }).then(
+      () => true,
+      () => false,
+    );
+    if (!ok) {
       setLevel(prev);
       toast.error(t('watch-failed', { defaultValue: 'Could not change your watch setting.' }));
     }

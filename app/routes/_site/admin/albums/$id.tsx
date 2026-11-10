@@ -18,6 +18,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
+import { api } from '@/lib/contract/client';
+import { deleteAdminAlbumSlideApi } from '@/lib/admin/admin-ops.contract';
 
 export const Route = createFileRoute('/_site/admin/albums/$id')({
   head: () => ({ meta: [{ title: 'Manage Album | Admin' }] }),
@@ -107,10 +109,11 @@ function ManageAlbumPage() {
     if (!album) return;
     const prev = album.slides;
     setAlbum({ ...album, slides: prev.filter((s) => s.id !== slideId) });
-    const res = await fetch(`/api/admin/albums/${album.id}/slides/${slideId}`, {
-      method: 'DELETE',
-    }).catch(() => null);
-    if (!res?.ok) {
+    const ok = await api(deleteAdminAlbumSlideApi, { params: { id: album.id, slideId } }).then(
+      () => true,
+      () => false,
+    );
+    if (!ok) {
       setAlbum((a) => (a ? { ...a, slides: prev } : a));
       toast.error(t('slide-delete-failed', { defaultValue: 'Failed to delete slide.' }));
     }

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { deleteLinkRule, listLinkRules, upsertLinkRule } from '@/lib/safety/link-risk.server';
 
@@ -8,10 +9,11 @@ import { deleteLinkRule, listLinkRules, upsertLinkRule } from '@/lib/safety/link
 export const Route = createFileRoute('/api/admin/link-rules')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'admin', rateLimit: 'read' }, async () =>
+      GET: implement(C.listAdminLinkRulesApi, { auth: 'admin', rateLimit: 'read' }, async () =>
         Response.json({ items: await listLinkRules() }),
       ),
-      POST: defineHandler(
+      POST: implement(
+        C.addAdminLinkRuleApi,
         {
           auth: 'admin',
           rateLimit: 'write',
@@ -35,7 +37,8 @@ export const Route = createFileRoute('/api/admin/link-rules')({
           return Response.json({ success: true }, { status: 201 });
         },
       ),
-      DELETE: defineHandler(
+      DELETE: implement(
+        C.deleteAdminLinkRuleApi,
         {
           auth: 'admin',
           rateLimit: 'write',

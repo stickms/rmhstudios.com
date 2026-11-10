@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { relativeTimeShort } from '@/lib/utils';
+import { api } from '@/lib/contract/client';
+import { getAdminBotsApi, saveAdminBotsApi } from '@/lib/admin/admin-ops.contract';
 import {
   AVERAGE_HABIT_POSTS_PER_DAY,
   BOT_SETTINGS_BOUNDS,
@@ -101,8 +103,7 @@ export function BotAdminPage() {
   }, []);
 
   useEffect(() => {
-    fetch('/api/admin/bots', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+    api(getAdminBotsApi, { retries: 0 })
       .then(apply)
       .catch(() => setFailed(true))
       .finally(() => setLoading(false));
@@ -131,14 +132,7 @@ export function BotAdminPage() {
     if (!parsed) return;
     setSaving(true);
     try {
-      const res = await fetch('/api/admin/bots', {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(parsed),
-      });
-      if (!res.ok) throw new Error(String(res.status));
-      apply(await res.json());
+      apply(await api(saveAdminBotsApi, { body: parsed }));
       toast.success(
         t('bots-saved', { defaultValue: 'Saved — the bot worker applies it within a minute.' }),
       );

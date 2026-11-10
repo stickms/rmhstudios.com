@@ -10,6 +10,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/call/calls.contract';
 import { prisma } from '@/lib/prisma.server';
 import { userChipSelect } from '@/lib/user-display';
 import { CALL_MUTE_DURATION_KEYS, muteUntil, type CallMuteDuration } from '@/lib/call/mute';
@@ -20,7 +22,7 @@ export const Route = createFileRoute('/api/calls/mute')({
   server: {
     handlers: {
       // Active mutes only: a lapsed row is inert, so listing it would just be noise.
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId: me }) => {
+      GET: implement(C.listCallMutesApi, { rateLimit: 'read' }, async ({ userId: me }) => {
         const rows = await prisma.callMute.findMany({
           where: { userId: me, until: { gt: new Date() } },
           orderBy: { until: 'asc' },
@@ -62,7 +64,8 @@ export const Route = createFileRoute('/api/calls/mute')({
         },
       ),
 
-      DELETE: defineHandler(
+      DELETE: implement(
+        C.unmuteCallerApi,
         {
           rateLimit: 'write',
           body: z.object({ targetUserId: userId }),

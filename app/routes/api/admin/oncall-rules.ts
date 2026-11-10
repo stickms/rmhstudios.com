@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { effectiveRules } from '@/lib/ops/alarm-rules';
 import {
   KNOWN_RULE_KEYS,
@@ -26,7 +27,8 @@ const patchSchema = z.object({
 export const Route = createFileRoute('/api/admin/oncall-rules')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        C.getAdminOncallRulesApi,
         { auth: 'admin', rateLimit: 'read', label: 'admin-oncall-rules' },
         async () => {
           const [overrides, evaluations] = await Promise.all([
@@ -42,7 +44,8 @@ export const Route = createFileRoute('/api/admin/oncall-rules')({
           return Response.json({ rules }, { headers: { 'Cache-Control': 'no-store' } });
         },
       ),
-      PATCH: defineHandler(
+      PATCH: implement(
+        C.patchAdminOncallRuleApi,
         { auth: 'admin', rateLimit: 'write', body: patchSchema, label: 'admin-oncall-rules-patch' },
         async ({ userId, body }) => {
           if (!KNOWN_RULE_KEYS.has(body.key)) {

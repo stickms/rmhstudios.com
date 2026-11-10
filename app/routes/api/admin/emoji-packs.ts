@@ -5,13 +5,14 @@
  * items. Decisions go to `POST /api/admin/emoji-packs/$id`.
  */
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { listPendingPacks } from '@/lib/emoji/packs.server';
 
 export const Route = createFileRoute('/api/admin/emoji-packs')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'admin' }, async () =>
+      GET: implement(C.listAdminEmojiPacksApi, { auth: 'admin' }, async () =>
         Response.json({ packs: await listPendingPacks() }),
       ),
     },

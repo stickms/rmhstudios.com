@@ -4,6 +4,8 @@ import { Tabs } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
 import type { ChartSeries, DeployMarker, RangeId } from '@/lib/ops/series';
 import { MetricChart } from './MetricChart';
+import { api } from '@/lib/contract/client';
+import { getAdminOncallSeriesApi } from '@/lib/admin/admin-ops.contract';
 
 /** The metrics history behind every threshold alarm, one chart per metric. */
 export function MetricsSection() {
@@ -17,10 +19,8 @@ export function MetricsSection() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/admin/oncall-series?range=${range}`, { credentials: 'include', cache: 'no-store' })
-      .then(async (res) => {
-        if (!res.ok) throw new Error(String(res.status));
-        const body = (await res.json()) as { series: ChartSeries[]; deploys?: DeployMarker[] };
+    api(getAdminOncallSeriesApi, { query: { range }, retries: 0 })
+      .then((body) => {
         if (!cancelled) {
           setSeries(body.series);
           setDeploys(body.deploys ?? []);

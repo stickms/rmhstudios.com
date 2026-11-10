@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { resolveHeldListing, MarketError } from '@/lib/market/market.server';
 
 const resolveHeldSchema = z.object({ action: z.enum(['release', 'cancel']) });
@@ -14,7 +15,8 @@ const resolveHeldSchema = z.object({ action: z.enum(['release', 'cancel']) });
 export const Route = createFileRoute('/api/admin/market/$id')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        C.resolveAdminHeldListingApi,
         { auth: 'admin', rateLimit: 'write', body: resolveHeldSchema },
         async ({ params, body, userId }) => {
           try {

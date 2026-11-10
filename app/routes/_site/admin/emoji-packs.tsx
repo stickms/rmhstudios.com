@@ -21,6 +21,9 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { listAdminEmojiPacksApi, moderateAdminEmojiPackApi } from '@/lib/admin/admin-ops.contract';
 
 export const Route = createFileRoute('/_site/admin/emoji-packs')({
   head: () => ({ meta: [{ title: 'Emoji Pack Review | RMH Studios' }] }),
@@ -55,9 +58,10 @@ function AdminEmojiPacksPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/emoji-packs', { credentials: 'include' });
-      const data = await res.json().catch(() => ({ packs: [] }));
-      setRows(res.ok ? (data.packs ?? []) : []);
+      const data = await api(listAdminEmojiPacksApi, { retries: 0 });
+      setRows(data.packs ?? []);
+    } catch {
+      setRows([]);
     } finally {
       setLoading(false);
     }
@@ -71,25 +75,23 @@ function AdminEmojiPacksPage() {
     if (busy) return;
     setBusy({ id: pack.id, action });
     try {
-      const res = await fetch(`/api/admin/emoji-packs/${pack.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          action,
-          reason: reasons[pack.id]?.trim() || undefined,
-          version: pack.updatedAt,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      try {
+        await api(moderateAdminEmojiPackApi, {
+          params: { id: pack.id },
+          body: {
+            action,
+            reason: reasons[pack.id]?.trim() || undefined,
+            version: pack.updatedAt,
+          },
+        });
+      } catch (e) {
         toast.error(
-          data.error ??
+          serverError(e) ??
             t('emoji-pack-action-failed', { defaultValue: 'Could not update that pack.' }),
         );
         // A 409 means the pack changed or was decided elsewhere: show the
         // queue as it is now rather than the stale copy.
-        if (res.status === 409) void load();
+        if (e instanceof HttpError && e.status === 409) void load();
         return;
       }
       toast.success(
