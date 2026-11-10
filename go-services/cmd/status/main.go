@@ -141,6 +141,7 @@ func main() {
 		// Go worker health alarms read the supervisor's metrics (same host as its
 		// /health probe above).
 		SupervisorMetricsURL: config.GetString("STATUS_SUPERVISOR_METRICS_URL", strings.TrimSuffix(urls.Supervisor, "/health")+"/metrics"),
+		NodeDiscordBot:       strings.EqualFold(strings.TrimSpace(config.GetString("DISCORD_BOT_RUNTIME", "")), "node"),
 		// Jobs that moved to the Node `jobs` worker (D3) report freshness through
 		// pg-boss's own job table (needs DATABASE_URL; unset = those B06 alarms are off).
 		JobLastSuccess:    jobFreshness(os.Getenv("DATABASE_URL"), probeTimeout),

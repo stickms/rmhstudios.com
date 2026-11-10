@@ -108,6 +108,24 @@ func TestGatewayRule(t *testing.T) {
 	}
 }
 
+// With the bot on Node the supervisor idles its discord-bot, so a gauge that
+// once read 1 (before the flip) and now reads 0 must not page.
+func TestGatewayRuleSkippedWhenNodeRunsTheBot(t *testing.T) {
+	w := (&workerWatch{tracks: map[string]*workerTrack{}, lastPanics: map[string]float64{}, panicWindow: map[string][]float64{}}).withNodeDiscordBot(true)
+	day := time.Date(2026, 10, 22, 0, 0, 0, 0, time.UTC)
+	gw := func(v string) []workerCondition {
+		return w.evaluate(parsePromText(strings.NewReader(`rmh_discord_gateway_connected{service="discord-bot"} `+v)), day)
+	}
+	gw("1")
+	if cond(gw("0"), "B07", "") != nil {
+		t.Fatal("B07 must not be evaluated from the supervisor while DISCORD_BOT_RUNTIME=node")
+	}
+	var nilWatch *workerWatch
+	if nilWatch.withNodeDiscordBot(true) != nil {
+		t.Fatal("withNodeDiscordBot must be nil-safe")
+	}
+}
+
 func TestWorkerStepDebounces(t *testing.T) {
 	w := &workerWatch{tracks: map[string]*workerTrack{}}
 	c := []workerCondition{{active: true, forChecks: 2, clearCk: 2}}
