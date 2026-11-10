@@ -143,8 +143,9 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
 - **`shared/`** — `createLogger(service)` (structured JSON lines),
   `createServerPrismaClient(logger)` (`@prisma/adapter-pg`, pool
   `SERVER_DB_POOL_SIZE` default 5), `createRateLimiter(rules)` (per
-  `socketId:event` sliding window). **Auth and room/lobby abstractions are NOT
-  shared** — each hub owns its own.
+  `socketId:event` sliding window), `session-auth.ts` (the ONE Better Auth session
+  check — see Auth below) and `redis-adapter.ts` (opt-in Socket.IO Redis
+  adapter). **Room/lobby abstractions are NOT shared** — each hub owns its own.
 
 ### Deleted (replaced by Go)
 
@@ -195,11 +196,22 @@ history if a rollback ever needs it.
 
 ## Gotchas
 
-1. **Single-instance assumption.** All hub state is process-local; there is no
-   socket.io Redis adapter. Don't design for horizontal scaling here — that's
-   what the Go fleet's Redis backplane is for.
-2. Auth strictness differs by hub: socket-server soft, rmhbox/rmhtube
-   hard.
+1. **Single-instance assumption.** All hub state is process-local. The
+   `@socket.io/redis-adapter` is wired in each hub behind `REDIS_URL`
+   (`shared/redis-adapter.ts`; unset or unreachable at boot -> logged, in-memory
+   adapter, hub still starts) but that only lays the backplane: **room/lobby/
+   stake state still lives in process memory** (durable rooms are the next D2
+   slice), so running two replicas is NOT yet safe. Do not raise replica counts.
+2. **Auth.** Every hub validates a Better Auth session through
+   `shared/session-auth.ts` (`createSessionAuth().resolveSocketSession`): the
+   credential is the raw token in socket.io `handshake.auth.token` (no hub
+   reads cookie/bearer/`?token=`; widening that is a deliberate security change
+   in `extractSessionToken`), a `session JOIN user` lookup, expiry check, and a
+   bounded 60 s positive cache (`createAuthCache`). Hubs only adapt the result:
+   socket-server soft (non-ok = anonymous), rmhbox/rmhtube hard
+   (`AUTH_REQUIRED` / `AUTH_FAILED` / `SESSION_EXPIRED`). Discord Activity OAuth
+   (rmhbox `discordToken`, socket-server `discordToken`) is a different
+   credential and stays in the hubs.
 3. rmhtube persists rooms; rmhbox doesn't.
 4. Leaderboard/match writes are fire-and-forget — never block gameplay on DB
    success.
