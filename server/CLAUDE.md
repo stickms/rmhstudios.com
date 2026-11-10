@@ -197,9 +197,10 @@ history if a rollback ever needs it.
 ## Gotchas
 
 1. **Single-instance assumption.** All hub state is process-local. The
-   `@socket.io/redis-adapter` is wired in each hub behind `REDIS_URL`
-   (`shared/redis-adapter.ts`; unset or unreachable at boot -> logged, in-memory
-   adapter, hub still starts) but that only lays the backplane: **room/lobby/
+   `@socket.io/redis-adapter` is wired in each hub but OFF unless
+   `REALTIME_REDIS_ADAPTER=1` (and `REDIS_URL` reachable at boot;
+   `shared/redis-adapter.ts`; otherwise logged, in-memory adapter, hub still
+   starts) but that only lays the backplane: **room/lobby/
    stake state still lives in process memory** (durable rooms are the next D2
    slice), so running two replicas is NOT yet safe. Do not raise replica counts.
 2. **Auth.** Every hub validates a Better Auth session through

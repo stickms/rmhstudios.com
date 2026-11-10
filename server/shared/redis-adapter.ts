@@ -1,10 +1,12 @@
 /**
  * Opt-in Socket.IO Redis adapter (audit D2, step 2).
  *
- * Lays the cross-instance backplane only: with `REDIS_URL` set and reachable at
- * boot, room broadcasts / `io.to(room).emit` fan out through Redis pub/sub.
- * With it unset, or if the connection fails, the hub logs once and keeps the
- * default in-memory adapter — the hub must always start.
+ * Lays the cross-instance backplane only. It is OFF unless
+ * `REALTIME_REDIS_ADAPTER=1` is set (and `REDIS_URL` reachable at boot): with a
+ * single hub instance the adapter buys nothing and would put a Redis hop on
+ * every broadcast, so production keeps the in-memory adapter until a second
+ * replica is actually safe. When enabled but unreachable, the hub logs once
+ * and keeps the default in-memory adapter — the hub must always start.
  *
  * This does NOT make a second replica safe. Room/lobby state still lives in
  * process memory (durable rooms are the next D2 slice), so do not raise
@@ -37,6 +39,10 @@ export async function attachRedisAdapter(
   logger: AdapterLogger,
   url: string | undefined = process.env.REDIS_URL || process.env.REDIS_CONNECTION_STRING,
 ): Promise<RedisAdapterHandle> {
+  if (process.env.REALTIME_REDIS_ADAPTER !== '1') {
+    logger.info({ event: 'redis_adapter_disabled', reason: 'REALTIME_REDIS_ADAPTER is not 1' });
+    return DISABLED;
+  }
   if (!url) {
     logger.info({ event: 'redis_adapter_disabled', reason: 'REDIS_URL unset' });
     return DISABLED;
