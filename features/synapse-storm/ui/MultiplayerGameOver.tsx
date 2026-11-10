@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from "react-i18next";
-import { GameState } from '../../lib/synapse-storm/types';
-import type { SSLeaderboardEntry } from '../../lib/synapse-storm/multiplayerClient';
+import { GameState } from '../engine/types';
+import type { SSLeaderboardEntry } from '../engine/multiplayerClient';
 import { MultiplayerLeaderboard } from './MultiplayerLeaderboard';
 
 interface MultiplayerGameOverProps {

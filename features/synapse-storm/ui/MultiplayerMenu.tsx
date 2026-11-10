@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useMultiplayer } from '../../lib/synapse-storm/MultiplayerProvider';
+import { useMultiplayer } from '../engine/MultiplayerProvider';
 import { useLobbyInvite, useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 import { MenuBackdrop } from './MenuBackdrop';
 import './SynapseStormMenu.css';

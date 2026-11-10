@@ -959,7 +959,7 @@ if (!allowed) return NextResponse.json({ error: 'Too many exports' }, { status: 
 **Affected Files:**
 - `lib/rmhtube/store.ts`
 - `lib/rmhbox/store.ts`
-- `lib/synapse-storm/settings.ts`
+- `features/synapse-storm/engine/settings.ts`
 - `components/rmh-code/SettingsContext.tsx`
 
 **Description:**

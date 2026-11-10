@@ -91,7 +91,7 @@
 @source not "../components/sohumtracker";
 @source not "../components/steam";
 @source not "../components/studio";
-@source not "../components/synapse-storm";
+@source not "../features/synapse-storm/ui";
 @source not "../components/temple-of-joy";
 @source not "../features/vega/ui";
 @source not "../components/velum2099";
@@ -135,7 +135,7 @@
 @source not "../lib/sohumtracker";
 @source not "../lib/store";
 @source not "../lib/studio";
-@source not "../lib/synapse-storm";
+@source not "../features/synapse-storm/engine";
 @source not "../lib/temple-of-joy";
 @source not "../lib/trick-week";
 @source not "../features/vega/engine";

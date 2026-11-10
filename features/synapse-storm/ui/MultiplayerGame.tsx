@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useMultiplayer } from '../../lib/synapse-storm/MultiplayerProvider';
-import { useGameEngine } from '../../lib/synapse-storm/engine';
-import type { MultiplayerConfig } from '../../lib/synapse-storm/engine';
+import { useMultiplayer } from '../engine/MultiplayerProvider';
+import { useGameEngine } from '../engine/engine';
+import type { MultiplayerConfig } from '../engine/engine';
 import { MultiplayerMenu } from './MultiplayerMenu';
 import { Lobby } from './Lobby';
 import { GameBoard } from './GameBoard';

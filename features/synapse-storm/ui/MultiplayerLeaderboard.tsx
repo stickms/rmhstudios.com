@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from "react-i18next";
-import type { SSLeaderboardEntry } from '../../lib/synapse-storm/multiplayerClient';
+import type { SSLeaderboardEntry } from '../engine/multiplayerClient';
 
 interface MultiplayerLeaderboardProps {
     leaderboard: SSLeaderboardEntry[];

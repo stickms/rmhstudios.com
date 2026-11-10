@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { fetchGlobalLeaderboard, type LeaderboardEntry } from '../../lib/synapse-storm/persistence';
+import { fetchGlobalLeaderboard, type LeaderboardEntry } from '../engine/persistence';
 import { Trophy, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface GlobalLeaderboardProps {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useMultiplayer } from '../../lib/synapse-storm/MultiplayerProvider';
+import { useMultiplayer } from '../engine/MultiplayerProvider';
 import { useLobbyLink } from '@/hooks/useLobbyLink';
 import { Copy, Check, Crown, Circle, CheckCircle, Link2 } from 'lucide-react';
 import { MenuBackdrop } from './MenuBackdrop';

@@ -406,7 +406,7 @@
  * Cards are placed inside the playfield, not merely near it.
  *
  * This was `position: absolute; width: 280px; left: x%` with x spawning up to
- * 76 (`findNonOverlappingPosition` in `lib/synapse-storm/engine.ts`). A
+ * 76 (`findNonOverlappingPosition` in `features/synapse-storm/engine/engine.ts`). A
  * percentage `left` positions the card's LEFT edge, so on a ~358px-wide phone
  * playfield a card at 76% started at 272px and ran to 552px — nearly 200px past
  * the edge, clipped away by `.playfield { overflow: hidden }`, taking its answer

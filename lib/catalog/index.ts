@@ -84,6 +84,7 @@ import gabrielsHorn from '@features/gabriels-horn/catalog';
 import hearthworks from '@features/hearthworks/catalog';
 import nightrail from '@features/nightrail/catalog';
 import sliceIt from '@features/slice-it/catalog';
+import synapseStorm from '@features/synapse-storm/catalog';
 import voidBreaker from '@features/void-breaker/catalog';
 
 // ── Games not yet in a feature folder ─────────────────────────────────────
@@ -96,7 +97,6 @@ import neonDriftway from './games/neon-driftway';
 import portal from './games/portal';
 import csgo from './games/csgo';
 import rmhbox from './games/rmhbox';
-import synapseStorm from './games/synapse-storm';
 import templeOfJoy from './games/temple-of-joy';
 import velum2099 from './games/velum2099';
 import versecraft from './games/versecraft';

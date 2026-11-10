@@ -311,7 +311,7 @@ const ALLOW = new Set<string>([
   'components/site/LanguageSwitcher.tsx',
   'components/studio/arrangement/PlayheadCursor.tsx',
   'components/studio/mixer/VUMeter.tsx',
-  'components/synapse-storm/PuzzleCard.tsx',
+  'features/synapse-storm/ui/PuzzleCard.tsx',
   'components/temple-of-joy/TempleGlobes.tsx',
   // Globe eversion (T25): bounded by the navigation — the loop starts at `start` and stops at
   // `done`/`abort`/`context-lost`; no loop runs at rest.

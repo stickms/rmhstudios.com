@@ -5,7 +5,7 @@ import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 
 const SynapseStormGate = lazy(() =>
-  import('@/components/synapse-storm/SynapseStormGate').then((m) => ({
+  import('@features/synapse-storm/ui/SynapseStormGate').then((m) => ({
     default: m.SynapseStormGate,
   })),
 );

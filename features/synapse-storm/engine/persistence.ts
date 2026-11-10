@@ -1,4 +1,4 @@
-import { authClient } from '../auth-client';
+import { authClient } from '../../../lib/auth-client';
 import { api } from '@/lib/contract/client';
 import { submitSynapseStormScoreApi } from '@/lib/game/score.contract';
 import { HttpError } from '@/lib/http';

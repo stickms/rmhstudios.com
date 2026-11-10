@@ -1,4 +1,4 @@
-import type { GameInfo } from '../types';
+import type { GameInfo } from '@/lib/catalog/types';
 
 const entry: GameInfo = {
   id: 'synapse-storm',

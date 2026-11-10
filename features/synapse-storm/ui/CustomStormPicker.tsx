@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SlidersHorizontal } from 'lucide-react';
-import type { PuzzleCategory } from '@/lib/synapse-storm/types';
+import type { PuzzleCategory } from '@features/synapse-storm/engine/types';
 
 /** Every category a custom storm can draw from, in the order the menu lists them. */
 export const CUSTOM_STORM_CATEGORIES: PuzzleCategory[] = [

@@ -16,7 +16,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
 import { submitSynapseStormScoreApi } from '@/lib/game/score.contract';
-import { synapseStormScoreBody } from '@/lib/synapse-storm/score-schema';
+import { synapseStormScoreBody } from '@features/synapse-storm/engine/score-schema';
 import { submitGameScore } from '@/lib/game/submit.server';
 
 export const Route = createFileRoute('/api/games/synapse-storm/score')({

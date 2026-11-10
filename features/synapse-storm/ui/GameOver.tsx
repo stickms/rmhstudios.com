@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { GameState } from '../../lib/synapse-storm/types';
+import { GameState } from '../engine/types';
 import { GlobalLeaderboard } from './GlobalLeaderboard';
 import { TrainingNote } from './CustomStormPicker';
 

@@ -25,10 +25,6 @@ import {
   registerNeonDriftwayHandlers,
   handleNeonDriftwayDisconnect,
 } from './handlers/neon-driftway';
-import {
-  registerSynapseStormHandlers,
-  handleSynapseStormDisconnect,
-} from './handlers/synapse-storm';
 import { registerRmhTypeHandlers, handleRmhTypeDisconnect } from './handlers/rmhtype';
 import { registerRmhStudyHandlers, handleRmhStudyDisconnect } from './handlers/rmhstudy';
 import {
@@ -383,7 +379,7 @@ io.on('connection', (socket) => {
   // Register all game handlers
   registerFeatureHandlers(io, socket, 'slice-it');
   registerNeonDriftwayHandlers(io, socket);
-  registerSynapseStormHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'synapse-storm');
   registerRmhTypeHandlers(io, socket);
   registerRmhStudyHandlers(io, socket);
   registerFeatureHandlers(io, socket, 'altair');
@@ -430,7 +426,7 @@ io.on('connection', (socket) => {
     void handleCallDisconnect(io, socket);
     void handleGroupCallDisconnect(io, socket);
     handleControllerDisconnect(io, socket);
-    if (!shuttingDown) handleSynapseStormDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'synapse-storm', shuttingDown);
     handleFeatureDisconnects(io, socket, 'slice-it');
     if (!shuttingDown) handleNeonDriftwayDisconnect(io, socket);
     if (!shuttingDown) handleRmhTypeDisconnect(io, socket);

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useGameEngine } from '../../lib/synapse-storm/engine';
+import { useGameEngine } from '../engine/engine';
 import { MainMenu } from './MainMenu';
 import { GameBoard } from './GameBoard';
 import { GameOver } from './GameOver';
 import { MultiplayerGame } from './MultiplayerGame';
-import { MultiplayerProvider } from '../../lib/synapse-storm/MultiplayerProvider';
-import type { ScoreSaveData } from '../../lib/synapse-storm/persistence';
-import type { PuzzleCategory } from '../../lib/synapse-storm/types';
+import { MultiplayerProvider } from '../engine/MultiplayerProvider';
+import type { ScoreSaveData } from '../engine/persistence';
+import type { PuzzleCategory } from '../engine/types';
 import { useKeyboardInset } from '@/hooks/useKeyboardInset';
 import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import './SynapseStorm.css';

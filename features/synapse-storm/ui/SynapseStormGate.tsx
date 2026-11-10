@@ -18,7 +18,7 @@ import {
   loadSynapseStormSave,
   saveSynapseStormScore,
   type ScoreSaveData,
-} from '@/lib/synapse-storm/persistence';
+} from '@features/synapse-storm/engine/persistence';
 import { SynapseStormGame } from './SynapseStormGame';
 
 export function SynapseStormGate() {

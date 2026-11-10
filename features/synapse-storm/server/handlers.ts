@@ -7,9 +7,9 @@
  */
 
 import type { Server, Socket } from 'socket.io';
-import { sanitizeUserName } from '../utils';
-import { getPrismaClient } from '../prisma-client';
-import { logger } from '../logger';
+import { sanitizeUserName } from '../../../server/socket-server/utils';
+import { getPrismaClient } from '../../../server/socket-server/prisma-client';
+import { logger } from '../../../server/socket-server/logger';
 
 // ─── Interfaces ───
 
@@ -674,7 +674,7 @@ export function handleSynapseStormDisconnect(io: Server, socket: Socket): void {
 // the ordinary join path, so nothing about seating, readying or the match
 // lifecycle has a second implementation to keep in step.
 
-import { registerPartyGame, type PartyMember, type RoomRef } from '../party-contract';
+import { registerPartyGame, type PartyMember, type RoomRef } from '../../../server/socket-server/party-contract';
 
 registerPartyGame('synapse-storm', {
   maxPartySize: MAX_SS_PLAYERS,

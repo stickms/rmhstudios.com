@@ -15,8 +15,8 @@ import {
     CATEGORY_COLORS,
     CATEGORY_LABELS,
     ShapeInfo,
-} from '../../lib/synapse-storm/types';
-import { soundManager } from '../../lib/synapse-storm/sounds';
+} from '../engine/types';
+import { soundManager } from '../engine/sounds';
 import { useTranslation } from 'react-i18next';
 
 interface PuzzleCardProps {

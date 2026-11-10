@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
-import { loadSynapseStormSaveApi } from '@/lib/synapse-storm/synapse-storm.contract';
+import { loadSynapseStormSaveApi } from '@features/synapse-storm/engine/synapse-storm.contract';
 
 export const Route = createFileRoute('/api/games/synapse-storm/save')({
   server: {

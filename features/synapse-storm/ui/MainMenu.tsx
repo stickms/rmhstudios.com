@@ -6,10 +6,10 @@ import { GlobalLeaderboard } from './GlobalLeaderboard';
 import { MenuBackdrop } from './MenuBackdrop';
 import './SynapseStormMenu.css';
 import { CustomStormPicker } from './CustomStormPicker';
-import type { PuzzleCategory } from '@/lib/synapse-storm/types';
-import { getSettings, setMusicVolume, setSfxVolume } from '@/lib/synapse-storm/settings';
-import { soundManager } from '@/lib/synapse-storm/sounds';
-import { synapseStormMusic } from '@/lib/synapse-storm/music';
+import type { PuzzleCategory } from '@features/synapse-storm/engine/types';
+import { getSettings, setMusicVolume, setSfxVolume } from '@features/synapse-storm/engine/settings';
+import { soundManager } from '@features/synapse-storm/engine/sounds';
+import { synapseStormMusic } from '@features/synapse-storm/engine/music';
 
 interface MainMenuProps {
     onStart: () => void;
