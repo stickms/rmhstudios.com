@@ -79,7 +79,8 @@ const isSurface = (v: string) =>
 
 /** Site tier = not a full-screen game/app dir (the policy lives in eslint-local-rules/design-scope.js). */
 const isGameOrApp = (f: string) =>
-  f.startsWith('components/') && FULLSCREEN_TIER_DIRS.has(f.split('/')[1]);
+  (f.startsWith('components/') || f.startsWith('features/')) &&
+  FULLSCREEN_TIER_DIRS.has(f.split('/')[1]);
 
 /**
  * Site-tier `data-jelly="off"` that is genuinely right. One-directional; every entry says why the surface must not
