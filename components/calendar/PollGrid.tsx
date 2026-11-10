@@ -321,7 +321,7 @@ function PollGridImpl(props: PollGridProps) {
         <div
           key="label"
           role="rowheader"
-          className="sticky left-0 z-10 flex items-start justify-end bg-site-surface pr-2 text-[0.65rem] leading-none text-site-text-muted tabular-nums"
+          className="sticky left-0 z-10 flex items-start justify-end bg-site-surface pr-2 text-rem-65 leading-none text-site-text-muted tabular-nums"
         >
           {onHour || slotMin >= 60 ? fmt.time.format(new Date(Date.UTC(2000, 0, 1, 0, tod))) : ''}
         </div>,
@@ -355,11 +355,11 @@ function PollGridImpl(props: PollGridProps) {
               nodes.current[i] = el;
             }}
             className={cn(
-              'glass-inset border border-transparent group relative flex h-7 min-w-11 cursor-pointer select-none items-center justify-center rounded-site-sm text-[0.65rem] tabular-nums text-site-text outline-none',
+              'glass-inset border border-transparent group relative flex h-7 min-w-11 cursor-pointer select-none items-center justify-center rounded-site-sm text-rem-65 tabular-nums text-site-text outline-none',
               'focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-site-accent',
               "data-[a='1']:border-site-success data-[a='2']:border-site-warning",
               mode === 'paint' &&
-                "data-[a='1']:after:content-['✓'] data-[a='2']:after:content-['?'] after:absolute after:right-0.5 after:top-0 after:text-[0.6rem] after:font-bold",
+                "data-[a='1']:after:content-['✓'] data-[a='2']:after:content-['?'] after:absolute after:right-0.5 after:top-0 after:text-rem-60 after:font-bold",
               highlight?.has(i) && 'outline outline-2 -outline-offset-2 outline-site-accent',
               lockedSlots?.has(i) && 'bg-site-accent-dim',
             )}
@@ -372,7 +372,7 @@ function PollGridImpl(props: PollGridProps) {
               />
             ) : null}
             {mode === 'view' && h && h.yes + h.maybe > 0 ? (
-              <span className="relative z-[1] font-semibold text-site-text">{h.yes + h.maybe}</span>
+              <span className="relative z-content font-semibold text-site-text">{h.yes + h.maybe}</span>
             ) : null}
             <span className="sr-only" />
           </div>,

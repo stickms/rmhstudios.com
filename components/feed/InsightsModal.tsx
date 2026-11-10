@@ -131,7 +131,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  title={t('bar-likes-count', { count: d.count, defaultValue:'{{count}} likes'})}
  />
  </div>
- <span className="text-[9px] text-site-text-dim">
+ <span className="text-tiny text-site-text-dim">
  {new Date(d.date).toLocaleDateString(undefined, { weekday:'narrow'})}
  </span>
  </div>

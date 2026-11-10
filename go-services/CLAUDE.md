@@ -16,8 +16,8 @@ the newer services.
 
 Production is a **hybrid** (see `docker-compose.yml` at repo root):
 
-- **Go is authoritative for:** the three background workers — discord-bot,
-  vibe-worker, bot-worker — consolidated
+- **Go is authoritative for:** the two background workers — discord-bot,
+  vibe-worker — consolidated
   as goroutines in one `supervisor` binary (metrics :9090); the `status`
   dashboard (7008); and `assets` (7007, off the main user path under Compose).
 - **Node is authoritative for:** web SSR (7005) and the realtime hubs —
@@ -51,15 +51,15 @@ go-services/
 |---|---|---|---|---|
 | `vibe-worker` | — | worker | vibe-worker | fully ported (chromedp thumbnails; needs Chromium in image) |
 | `discord-bot` | — | worker | discord-bot | `/chat` + full Alex tamagotchi; idles without token |
-| `bot-worker` | — | worker | bot-worker | ported; idles without `DEEPSEEK_API_KEY` |
 | `assets` | `ASSETS_PORT` 7007 | HTTP | Apache off-disk CDN | range-aware S3/R2 streaming for `/library /music /models /sprites` |
 | `status` | `STATUS_PORT` 7008 | HTTP | server/status | `/api/status` is byte-compatible with the Node original; the dashboard is the site's own liquid-globe design (`internal/status/dashboard.go`); incidents, maintenance, the admin API, feeds, badges, `/metrics` and a Statuspage-compatible `/api/v2` are documented in [`docs/status-page.md`](../docs/status-page.md) |
-| `supervisor` | `METRICS_ADDR` :9090 | — | (consolidation) | runs the 3 workers (discord-bot, vibe-worker, bot-worker) as goroutines under an errgroup |
+| `supervisor` | `METRICS_ADDR` :9090 | — | (consolidation) | runs the 2 workers (discord-bot, vibe-worker) as goroutines under an errgroup |
 
-The **3 supervised workers** are the three worker `cmd/` binaries (bot-worker,
-discord-bot, vibe-worker). The streak-saver, recap and doctrine workers were
+The **2 supervised workers** are the two worker `cmd/` binaries (discord-bot,
+vibe-worker). The streak-saver, recap, doctrine and bot-worker workers were
 ported to the Node `jobs` worker (`lib/streak-reminders.server.ts`,
-`lib/lights-out/recap.server.ts`, `lib/doctrine/jobs.server.ts`, D3); `status`
+`lib/lights-out/recap.server.ts`, `lib/doctrine/jobs.server.ts`,
+`lib/rmhark-ai/bot-worker.server.ts`, D3); `status`
 reads their freshness from pg-boss's job table (B06) and the daily-puzzle alarm
 (A19) straight from `doctrine_puzzle`. (`status`, `assets`, and `supervisor` are the three
 non-worker `cmd/` binaries.) The dead `internal/ledger` artifact store and its
@@ -141,7 +141,7 @@ make images         # build + load every service image into Docker (Bazel)
 - Images: `bazel/defs.bzl#go_service_image` → `<svc>_image/_load/_push`
   targets in `images/BUILD.bazel`; distroless base, except vibe-worker
   (chromium), discord-bot (git), supervisor (chromium+git). No image for
-  bot-worker (lives in supervisor) or ledger.
+  the workers (they live in supervisor) or ledger.
 - **Production Compose path (what actually ships):** root `Dockerfile`
   `go-builder` stage (`go build ./cmd/...`) → binaries in the
   `rmhstudios-app-full` image (see `docs/architecture.md`). The k3s/Helm deploy
@@ -152,8 +152,8 @@ make images         # build + load every service image into Docker (Bazel)
 
 1. `go-services/README.md` and `FOUNDATION.md` were written for the original
    9-service Helm/realtime design and still mention the removed hubs/gateway and
-   `pkg/events`/`pkg/realtime` — the real fleet is **6 binaries** under `cmd/`
-   (assets, bot-worker, discord-bot, status, supervisor, vibe-worker). Trust the code + this file.
+   `pkg/events`/`pkg/realtime` — the real fleet is **5 binaries** under `cmd/`
+   (assets, discord-bot, status, supervisor, vibe-worker). Trust the code + this file.
 2. The legacy `go-services/Makefile` `SERVICES` list and the root `Makefile`
    image loop both lag the real service set — check `images/BUILD.bazel` for
    what's actually buildable.

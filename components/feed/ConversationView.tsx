@@ -1,56 +1,12 @@
-/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
-import { lazy, Suspense, useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { m as motion } from 'framer-motion';
-import { Loader2, ArrowLeft, Send, ImagePlus, ImagePlay, X, Plus, Reply } from 'lucide-react';
-import { SwipeRow } from '@/components/ui/swipe-row';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { APPLE_SPRING } from '@/lib/motion';
-import { Spinner } from '@/components/ui/spinner';
+import { useCallback, useMemo, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
-import { UserAvatar } from '@/components/ui/UserAvatar';
-import { CallButton } from '@/components/call/CallButton';
-import { GroupCallButton } from '@/components/groupcall/GroupCallButton';
-import { useSession, useResolvedUser } from '@/components/Providers';
-import { Button } from '@/components/ui/button';
-import { useConfirm } from '@/components/ui/confirm-dialog';
-import { AnchoredMenu } from '@/components/ui/anchored-menu';
-import { MenuItem } from '@/components/ui/menu';
-import { toast } from 'sonner';
-import { GhostTextArea } from './GhostTextArea';
-import { SmartReplies } from './SmartReplies';
-import { PostImageGrid } from './PostImageGrid';
-import { useMessageSuggestion } from '@/lib/useMessageSuggestion';
 import { useTranslation } from 'react-i18next';
-import ChatMediaEmbed, {
-  stripEmbedUrls,
-  extractMediaEmbeds,
-} from '@/components/shared/ChatMediaEmbed';
-import { GifPicker } from '@/components/feed/GifPicker';
-import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
-import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
-import { useEmojiShortcodes } from '@/lib/emoji/use-emoji-shortcodes';
+import { Spinner } from '@/components/ui/spinner';
+import { Button } from '@/components/ui/button';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useSession, useResolvedUser } from '@/components/Providers';
 import { ReactionMenu } from '@/components/shared/ReactionMenu';
-import { ReactionChips } from '@/components/shared/ReactionChips';
-import { groupReactions, type ReactionRow } from '@/lib/social/reactions';
-import { useItemReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
-import { subscribeMessageStream } from '@/lib/useUnreadCount';
-import { yieldToMain } from '@/lib/scheduler';
-import { MessageActions } from '@/components/messages/MessageActions';
-import { MessageEditor } from '@/components/messages/MessageEditor';
-import { ComposerLengthCounter } from '@/components/messages/ComposerLengthCounter';
-import { DeletedMessage } from '@/components/messages/DeletedMessage';
-import { VoiceComposer, type SentVoiceMessage } from '@/components/voice/VoiceComposer';
-import { VoicePlayer } from '@/components/voice/VoicePlayer';
-import { ChatHeaderPlus } from '@/components/chat-plus/ChatHeaderPlus';
-import { ChatPinnedBar } from '@/components/chat-plus/ChatPinnedBar';
 import { ChatPlusHost } from '@/components/chat-plus/ChatPlusHost';
-import { ChatSystemLine } from '@/components/chat-plus/ChatSystemLine';
-import { ChatRichBody } from '@/components/chat-plus/ChatRichBody';
-import { ChecklistComposer } from '@/components/chat-plus/ChecklistComposer';
-import { MessageBadges, SeenIndicator } from '@/components/chat-plus/MessageBadges';
-import { MessagePlusItems } from '@/components/chat-plus/MessagePlusItems';
-import { SavedMessagesHeader } from '@/components/chat-plus/SavedMessagesRow';
-import { useSlashCommands } from '@/components/chat-plus/useSlashCommands';
 import {
   useChatMeta,
   useChatTheme,
@@ -58,82 +14,15 @@ import {
   useExpiring,
 } from '@/components/chat-plus/hooks';
 import { applyChatUpdate } from '@/lib/chat-plus/apply-update';
-import { isCardKind, isLineKind, type PollView } from '@/lib/chat-plus/types';
-import { AutomatedBadge } from '@/components/feed/AutomatedBadge';
-import { api } from '@/lib/contract/client';
-import { listConversationsApi } from '@/lib/messages/messages.contract';
-import { HttpError, serverError } from '@/lib/http';
-import {
-  editMessageApi,
-  hideMessageApi,
-  markConversationReadApi,
-  messageMutationsApi,
-  messageThreadApi,
-  reactMessageApi,
-  sendToConversationApi,
-  typingApi,
-  unsendMessageApi,
-} from '@/lib/messages/message-actions.contract';
-
-// P4 — "It's 2:14 AM for Ana": a tiny lazy chunk, fetched after the header is idle.
-const DmLocalTime = lazy(() => import('@/components/profile/plus/LocalTime'));
-
-interface Message {
-  id: string;
-  content: string;
-  senderId: string;
-  read: boolean;
-  createdAt: string;
-  gifUrl?: string | null;
-  imageUrls?: string[];
-  reactions?: ReactionRow[];
-  /** H1 — non-null once edited; the bubble renders an "edited" marker. */
-  editedAt?: string | null;
-  /** H1 — non-null once unsent; the bubble becomes a tombstone. */
-  deletedAt?: string | null;
-  deletedBy?: string | null;
-  /** H2 — voice note. */
-  audioUrl?: string | null;
-  audioDurationMs?: number | null;
-  audioPeaks?: number[];
-  /** P04 — message kind (text when absent), structured payload, forward hops, expiry, DM poll. */
-  kind?: string;
-  meta?: unknown;
-  forwardCount?: number;
-  expiresAt?: string | null;
-  poll?: PollView | null;
-}
-
-/** The shape `message-edited` / `message-deleted` carry on the DM bus. */
-interface MessageMutation {
-  conversationId: string;
-  messageId: string;
-  content: string;
-  editedAt: string | null;
-  deletedAt: string | null;
-  deletedBy: string | null;
-}
-
-const MAX_DM_IMAGES = 4;
-
-/**
- * Floor between catch-up syncs.
- *
- * The shared SSE stream emits an unread pulse for every DM notification —
- * including the edit/unsend ones — so that pulse is the signal that *something*
- * changed. Reacting to it directly would mean a request per delivered message,
- * hence the floor: mutations are rare, and a second of latency on an edit is
- * invisible next to the event path that normally carries it.
- */
-const MUTATION_SYNC_INTERVAL_MS = 1200;
-
-interface OtherUser {
-  id: string;
-  name: string | null;
-  image: string | null;
-  username: string | null;
-  isBot?: boolean;
-}
+import { ConversationHeader } from './conversation/ConversationHeader';
+import { MessageRow } from './conversation/MessageRow';
+import { TypingBubble } from './conversation/TypingBubble';
+import { ComposerBar } from './conversation/ComposerBar';
+import { useTypingIndicator } from './conversation/useTypingIndicator';
+import { useConversationThread } from './conversation/useConversationThread';
+import { useMessageActions } from './conversation/useMessageActions';
+import { useDmComposer } from './conversation/useDmComposer';
+import { lastOwnMessageId, replyTargetId, type OtherUser } from './conversation/conversation-state';
 
 export function ConversationView({
   conversationId,
@@ -144,105 +33,65 @@ export function ConversationView({
    * entire inbox client-side just to find them). */
   initialOtherUser?: OtherUser | null;
 }) {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [olderCursor, setOlderCursor] = useState<string | null>(null);
-  const [hasOlder, setHasOlder] = useState(false);
-  const [loadingOlder, setLoadingOlder] = useState(false);
-  const [otherUser, setOtherUser] = useState<OtherUser | null>(initialOtherUser ?? null);
-  const [input, setInput] = useState('');
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [notFound, setNotFound] = useState(false);
-  const [otherTyping, setOtherTyping] = useState(false);
-  const [showGifPicker, setShowGifPicker] = useState(false);
-  const [attachOpen, setAttachOpen] = useState(false);
-  // Pending rich media to attach to the next message.
-  const [gifUrl, setGifUrl] = useState<string | null>(null);
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [reactionMenu, setReactionMenu] = useState<{
-    x: number;
-    y: number;
-    messageId: string;
-  } | null>(null);
-  // H1 — the message currently being edited in place, and whether its save is
-  // in flight.
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [savingEdit, setSavingEdit] = useState(false);
-  // H2 — the voice composer takes over the whole composer row while it is open.
-  const [voiceActive, setVoiceActive] = useState(false);
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const attachBtnRef = useRef<HTMLButtonElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const initialFetched = useRef(false);
-  // IDs of messages that should NOT animate in: the initial page and any
-  // "load older" pages are history — only genuinely new (sent / received)
-  // messages get the entrance. Populated as those pages arrive.
-  const historyIds = useRef<Set<string>>(new Set());
   const reducedMotion = useReducedMotion();
-  // Typing-indicator bookkeeping
-  const typingActiveRef = useRef(false);
-  const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const otherTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Catch-up bookkeeping for edits/unsends (see MUTATION_SYNC_INTERVAL_MS).
-  const lastSyncRef = useRef<string>(new Date().toISOString());
-  const syncingRef = useRef(false);
-  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
   const { resolved: resolvedUser } = useResolvedUser();
-  const confirm = useConfirm();
-  const insertEmoji = useEmojiInsert(inputRef, input, setInput);
-  const shortcodes = useEmojiShortcodes({ ref: inputRef, value: input, onChange: setInput });
-  const reactionTriggerFor = useItemReactionTrigger((x, y, messageId) =>
-    setReactionMenu({ x, y, messageId }),
-  );
 
-  // The attach (+) menu's outside-press dismissal, Escape, focus return, roving
-  // arrow keys and close animation all live in AnchoredMenu now. Its panel was an
-  // in-place `absolute bottom-full … z-30`, measured inside `.radial-frame`'s
-  // stacking context (pinned at z-index 1), so it painted under the shell's own
-  // chrome; AnchoredMenu portals to <body>.
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
 
-  // AI inline autocomplete, grounded in the recent DM conversation. Tombstoned
-  // and voice-only messages contribute nothing, so a retracted line cannot be
-  // fed back to the model that suggests the next one.
-  const { suggestion, clear: clearSuggestion } = useMessageSuggestion({
-    draft: input,
-    context: messages
-      .filter((m) => !m.deletedAt && m.content.trim().length > 0)
-      .map((m) => ({
-        author: m.senderId === session?.user.id ? 'Me' : otherUser?.name || 'Them',
-        content: m.content,
-      })),
+  const { otherTyping, clearOtherTyping, handleTypingEvent, handleTyping, stopTyping } =
+    useTypingIndicator({ conversationId, scrollToBottom });
+
+  const {
+    messages,
+    setMessages,
+    loading,
+    hasOlder,
+    loadingOlder,
+    otherUser,
+    notFound,
+    historyIds,
+    applyMutation,
+    handleLoadOlder,
+  } = useConversationThread({
+    conversationId,
+    initialOtherUser,
+    session,
+    scrollToBottom,
+    clearOtherTyping,
+    handleTypingEvent,
+  });
+
+  const {
+    reactionMenu,
+    setReactionMenu,
+    reactionTriggerFor,
+    editingId,
+    setEditingId,
+    savingEdit,
+    handleSaveEdit,
+    handleUnsend,
+    handleHide,
+    toggleReaction,
+  } = useMessageActions({
+    conversationId,
+    session,
+    messages,
+    setMessages,
+    historyIds,
+    applyMutation,
   });
 
   // The message suggested replies would answer: the newest one, only when it is
   // theirs, carries text, and has not been unsent. Null (the common case)
   // renders no chips at all.
-  const newest = messages[messages.length - 1];
-  const replyToMessageId =
-    newest && newest.senderId !== session?.user.id && !newest.deletedAt && newest.content.trim()
-      ? newest.id
-      : null;
-
-  // Swipe-to-reply (U11). DMs have no threaded replies, so a reply quotes the
-  // message into the composer — the same thing people already did by hand.
-  const quoteReply = useCallback((content: string) => {
-    const line = content.replace(/\s+/g, ' ').trim();
-    const quoted = line.length > 80 ? `${line.slice(0, 80)}…` : line;
-    setInput((prev) => `> ${quoted}\n${prev}`);
-    setTimeout(() => inputRef.current?.focus(), 0);
-  }, []);
-
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
+  const replyToMessageId = replyTargetId(messages, session?.user.id);
 
   // P04 — per-chat extras (see components/chat-plus): theme, pins, live ticks and
   // read receipts, slash commands, disappearing messages.
@@ -256,697 +105,25 @@ export function ConversationView({
   useChatUpdates(chatRef, (u) =>
     setMessages((prev) => applyChatUpdate(prev, u, session?.user.id ?? '')),
   );
-  const appendPosted = useCallback(
-    (raw: unknown) => {
-      const posted = raw as Message;
-      historyIds.current.add(posted.id);
-      setMessages((prev) => (prev.some((m) => m.id === posted.id) ? prev : [...prev, posted]));
-      setTimeout(scrollToBottom, 50);
-    },
-    [scrollToBottom],
-  );
-  const slash = useSlashCommands({
-    chat: chatRef,
-    draft: input,
-    setDraft: setInput,
-    inputRef,
-    onPosted: appendPosted,
-    onPickGif: (url) => {
-      setGifUrl(url);
-      setTimeout(() => inputRef.current?.focus(), 0);
-    },
+
+  const composer = useDmComposer({
+    conversationId,
+    session,
+    messages,
+    setMessages,
+    historyIds,
+    otherUser,
+    scrollToBottom,
+    chatRef,
+    handleTyping,
+    stopTyping,
   });
+
   const shownMessages = useExpiring(messages);
   // M2: a conversation with yourself is Saved Messages.
   const isSavedChat = !!otherUser && otherUser.id === session?.user.id;
   // M8: the viewer's latest message, which is the one that carries "Seen".
-  const lastOwnId = [...shownMessages].reverse().find((m) => m.senderId === session?.user.id)?.id;
-
-  // Fetch conversation info (other user) from conversations list
-  const fetchConversationInfo = useCallback(async () => {
-    try {
-      const data = await api(listConversationsApi);
-      const conv = data.conversations.find((c) => c.id === conversationId);
-      if (conv) {
-        setOtherUser(conv.otherUser);
-      }
-    } catch {
-      // Ignore
-    }
-  }, [conversationId]);
-
-  const fetchMessages = useCallback(
-    async (isInitial = false) => {
-      try {
-        // `/thread`, not the older `/api/messages/$conversationId`: that route
-        // predates edit/unsend/hide and returns raw columns, so it would hand
-        // back the text of an unsent message and resurrect anything the viewer
-        // deleted for themselves.
-        const data = await api(messageThreadApi, {
-          params: { conversationId },
-          query: { cursor: !isInitial && olderCursor ? olderCursor : undefined },
-        }).catch((e: unknown) => {
-          // Any non-2xx answer ends quietly; a 404 is the not-found state.
-          if (!(e instanceof HttpError)) throw e;
-          if (e.status === 404) setNotFound(true);
-          return null;
-        });
-        if (!data) return;
-
-        // Everything fetched here is existing history — mark it so it renders
-        // in place without an entrance animation.
-        for (const m of data.messages as Message[]) historyIds.current.add(m.id);
-
-        if (isInitial) {
-          setMessages(data.messages);
-          setHasOlder(data.hasMore);
-          setOlderCursor(data.nextCursor);
-          lastSyncRef.current = new Date().toISOString();
-          // Scroll to bottom after initial load
-          setTimeout(scrollToBottom, 100);
-        } else {
-          // Prepend older messages
-          setMessages((prev) => [...data.messages, ...prev]);
-          setHasOlder(data.hasMore);
-          setOlderCursor(data.nextCursor);
-        }
-      } catch (err) {
-        console.error('Fetch messages error:', err);
-      } finally {
-        setLoading(false);
-        setLoadingOlder(false);
-      }
-    },
-    [conversationId, olderCursor, scrollToBottom],
-  );
-
-  const markAsRead = useCallback(() => {
-    api(markConversationReadApi, { params: { conversationId } }).catch(() => {});
-  }, [conversationId]);
-
-  /* ---------------------------------------------------------------- */
-  /*  H1 — edit / unsend / delete-for-me                              */
-  /* ---------------------------------------------------------------- */
-
-  /** Apply an edit or a tombstone to the local copy of one message. */
-  const applyMutation = useCallback((mutation: MessageMutation) => {
-    setMessages((prev) =>
-      prev.map((m) => {
-        if (m.id !== mutation.messageId) return m;
-        const tombstoned = !!mutation.deletedAt;
-        return {
-          ...m,
-          content: mutation.content,
-          editedAt: mutation.editedAt,
-          deletedAt: mutation.deletedAt,
-          deletedBy: mutation.deletedBy,
-          // A tombstone drops its media and its reactions — they refer to
-          // something the viewer can no longer see.
-          ...(tombstoned
-            ? {
-                gifUrl: null,
-                imageUrls: [],
-                audioUrl: null,
-                audioDurationMs: null,
-                audioPeaks: [],
-                reactions: [],
-              }
-            : {}),
-        };
-      }),
-    );
-  }, []);
-
-  /**
-   * Pull anything this client missed.
-   *
-   * Runs on the unread pulse and on tab focus. It is what makes edit/unsend
-   * correct across a backgrounded tab, a slept phone, and the ~30-minute SSE
-   * recycle — none of which the event path alone survives.
-   */
-  const syncMutations = useCallback(async () => {
-    if (syncingRef.current) return;
-    syncingRef.current = true;
-    try {
-      const since = lastSyncRef.current;
-      const data = await api(messageMutationsApi, {
-        params: { conversationId },
-        query: { since },
-      });
-      lastSyncRef.current = data.now ?? since;
-      if (data.messages.length === 0 && data.hiddenIds.length === 0) return;
-
-      const hidden = new Set(data.hiddenIds ?? []);
-      const patches = new Map(data.messages.map((m) => [m.id, m]));
-      setMessages((prev) =>
-        prev
-          .filter((m) => !hidden.has(m.id))
-          .map((m) => {
-            const patch = patches.get(m.id);
-            if (!patch) return m;
-            return {
-              ...m,
-              content: patch.content,
-              editedAt: patch.editedAt ?? null,
-              deletedAt: patch.deletedAt ?? null,
-              deletedBy: patch.deletedBy ?? null,
-              gifUrl: patch.gifUrl ?? null,
-              imageUrls: patch.imageUrls ?? [],
-              audioUrl: patch.audioUrl ?? null,
-              audioDurationMs: patch.audioDurationMs ?? null,
-              audioPeaks: patch.audioPeaks ?? [],
-              // Reactions are not part of a mutation payload; keep the ones we
-              // have unless the message became a tombstone.
-              ...(patch.deletedAt ? { reactions: [] } : {}),
-            };
-          }),
-      );
-    } catch {
-      // Best-effort: the next pulse or focus retries.
-    } finally {
-      syncingRef.current = false;
-    }
-  }, [conversationId]);
-
-  const scheduleMutationSync = useCallback(() => {
-    if (syncTimer.current) return;
-    syncTimer.current = setTimeout(() => {
-      syncTimer.current = null;
-      void syncMutations();
-    }, MUTATION_SYNC_INTERVAL_MS);
-  }, [syncMutations]);
-
-  useEffect(() => {
-    return () => {
-      if (syncTimer.current) clearTimeout(syncTimer.current);
-      syncTimer.current = null;
-    };
-  }, [conversationId]);
-
-  const handleSaveEdit = useCallback(
-    async (messageId: string, value: string) => {
-      const target = messages.find((m) => m.id === messageId);
-      if (!target) return;
-      const nextContent = value.trim();
-      if (nextContent === target.content.trim()) {
-        setEditingId(null);
-        return;
-      }
-
-      setSavingEdit(true);
-      const previous = target.content;
-      // Optimistic: the window is 15 minutes wide, so the request almost never
-      // fails for a reason the user could have predicted — showing the new text
-      // immediately and rolling back is the honest trade.
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === messageId
-            ? { ...m, content: nextContent, editedAt: new Date().toISOString() }
-            : m,
-        ),
-      );
-      try {
-        await api(editMessageApi, {
-          params: { conversationId },
-          body: { messageId, content: nextContent },
-        });
-        setEditingId(null);
-      } catch (err) {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === messageId ? { ...m, content: previous, editedAt: target.editedAt ?? null } : m,
-          ),
-        );
-        toast.error(
-          serverError(err) ||
-            t('message-edit-failed', { defaultValue: 'Could not edit that message.' }),
-        );
-      } finally {
-        setSavingEdit(false);
-      }
-    },
-    [conversationId, messages, t],
-  );
-
-  const handleUnsend = useCallback(
-    async (messageId: string) => {
-      const ok = await confirm({
-        title: t('message-unsend-title', { defaultValue: 'Unsend this message?' }),
-        description: t('message-unsend-description', {
-          defaultValue:
-            'It will be removed for both of you. A note saying the message was deleted stays in the conversation.',
-        }),
-        confirmLabel: t('message-unsend-confirm', { defaultValue: 'Unsend' }),
-        danger: true,
-      });
-      if (!ok) return;
-
-      try {
-        const data = await api(unsendMessageApi, {
-          params: { conversationId },
-          body: { messageId },
-        });
-        applyMutation({
-          conversationId,
-          messageId,
-          content: '',
-          editedAt: data.message.editedAt ?? null,
-          deletedAt: data.message.deletedAt ?? new Date().toISOString(),
-          deletedBy: data.message.deletedBy ?? 'sender',
-        });
-      } catch (err) {
-        toast.error(
-          serverError(err) ||
-            t('message-unsend-failed', { defaultValue: 'Could not unsend that message.' }),
-        );
-      }
-    },
-    [applyMutation, confirm, conversationId, t],
-  );
-
-  const handleHide = useCallback(
-    async (messageId: string) => {
-      const removed = messages.find((m) => m.id === messageId);
-      setMessages((prev) => prev.filter((m) => m.id !== messageId));
-      try {
-        await api(hideMessageApi, {
-          params: { conversationId },
-          body: { messageId, hidden: true },
-        });
-        toast.success(
-          t('message-hidden', { defaultValue: 'Removed from your copy of this conversation' }),
-          {
-            action: {
-              label: t('undo', { defaultValue: 'Undo' }),
-              onClick: () => {
-                void api(hideMessageApi, {
-                  params: { conversationId },
-                  body: { messageId, hidden: false },
-                }).then(() => {
-                  if (removed) {
-                    historyIds.current.add(removed.id);
-                    setMessages((prev) =>
-                      [...prev, removed].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
-                    );
-                  }
-                });
-              },
-            },
-          },
-        );
-      } catch {
-        if (removed) {
-          setMessages((prev) =>
-            [...prev, removed].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
-          );
-        }
-        toast.error(t('message-hide-failed', { defaultValue: 'Could not remove that message.' }));
-      }
-    },
-    [conversationId, messages, t],
-  );
-
-  // Handle incoming SSE message
-  const handleIncomingMessage = useCallback(
-    (msg: Message) => {
-      // A delivered message means the other side is no longer typing.
-      setOtherTyping(false);
-      if (otherTypingTimer.current) clearTimeout(otherTypingTimer.current);
-      setMessages((prev) => {
-        // Skip if we already have this message (e.g. optimistic send)
-        if (prev.some((m) => m.id === msg.id)) return prev;
-        setTimeout(scrollToBottom, 100);
-        return [...prev, msg];
-      });
-      // Mark as read since the conversation is open
-      markAsRead();
-    },
-    [scrollToBottom, markAsRead],
-  );
-
-  // Show/hide the other participant's typing indicator (with a safety timeout
-  // in case the matching "stopped typing" event never arrives).
-  const handleTypingEvent = useCallback(
-    (isTyping: boolean) => {
-      if (otherTypingTimer.current) clearTimeout(otherTypingTimer.current);
-      setOtherTyping(isTyping);
-      if (isTyping) {
-        setTimeout(scrollToBottom, 100);
-        otherTypingTimer.current = setTimeout(() => setOtherTyping(false), 10000);
-      }
-    },
-    [scrollToBottom],
-  );
-
-  // POST our own typing state to the other participant (debounced stop).
-  const sendTyping = useCallback(
-    (isTyping: boolean) => {
-      api(typingApi, { params: { conversationId }, body: { isTyping } }).catch(() => {});
-    },
-    [conversationId],
-  );
-
-  const handleTyping = useCallback(() => {
-    if (!typingActiveRef.current) {
-      typingActiveRef.current = true;
-      sendTyping(true);
-    }
-    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
-    typingStopTimer.current = setTimeout(() => {
-      typingActiveRef.current = false;
-      sendTyping(false);
-    }, 3000);
-  }, [sendTyping]);
-
-  const stopTyping = useCallback(() => {
-    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
-    if (typingActiveRef.current) {
-      typingActiveRef.current = false;
-      sendTyping(false);
-    }
-  }, [sendTyping]);
-
-  // Toggle the viewer's reaction row on a message (optimistic on raw rows).
-  const applyRowToggle = useCallback(
-    (messageId: string, emoji: string) => {
-      const myId = session?.user.id;
-      if (!myId) return;
-      setMessages((prev) =>
-        prev.map((m) => {
-          if (m.id !== messageId) return m;
-          const rows = m.reactions ?? [];
-          const mine = rows.some((r) => r.emoji === emoji && r.userId === myId);
-          return {
-            ...m,
-            reactions: mine
-              ? rows.filter((r) => !(r.emoji === emoji && r.userId === myId))
-              : [...rows, { emoji, userId: myId }],
-          };
-        }),
-      );
-    },
-    [session?.user.id],
-  );
-
-  const toggleReaction = useCallback(
-    async (messageId: string, emoji: string) => {
-      if (!session) return;
-      applyRowToggle(messageId, emoji);
-      try {
-        await api(reactMessageApi, { params: { conversationId }, body: { messageId, emoji } });
-      } catch {
-        // Roll back the optimistic toggle (toggling again is its own inverse).
-        applyRowToggle(messageId, emoji);
-      }
-    },
-    [session, conversationId, applyRowToggle],
-  );
-
-  useEffect(() => {
-    if (!initialFetched.current && session) {
-      initialFetched.current = true;
-      fetchMessages(true);
-      // Loader already provided the other participant — only fall back to the
-      // (previously whole-inbox) lookup when it didn't.
-      if (!otherUser) fetchConversationInfo();
-    }
-  }, [session, fetchMessages, fetchConversationInfo, otherUser]);
-
-  // Mark as read on mount and when tab regains focus
-  useEffect(() => {
-    if (!session) return;
-    markAsRead();
-
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        markAsRead();
-        // A tab that was hidden may have missed the edit/unsend events entirely.
-        void syncMutations();
-      }
-    };
-    document.addEventListener('visibilitychange', onVisibilityChange);
-
-    const onFocus = () => markAsRead();
-    window.addEventListener('focus', onFocus);
-
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      window.removeEventListener('focus', onFocus);
-    };
-  }, [conversationId, session, markAsRead, syncMutations]);
-
-  // Real-time incoming messages ride the ONE shared message stream
-  // (see lib/useUnreadCount) instead of this view opening its own EventSource.
-  useEffect(() => {
-    if (!session) return;
-    return subscribeMessageStream((type, data) => {
-      // `message-edited` / `message-deleted` are part of the shared stream
-      // union now, so this needs no widening cast.
-      const eventType = type;
-
-      if (eventType === 'new-message') {
-        const msg = data as Message & { conversationId: string };
-        // Only handle messages for this conversation
-        // System lines (timer, theme, pin, tip) are written under the actor's own
-        // id, so the actor's other tab needs them too.
-        const isLine = msg.kind === 'system' || msg.kind === 'tip';
-        if (msg.conversationId === conversationId && (msg.senderId !== session.user.id || isLine)) {
-          handleIncomingMessage({
-            id: msg.id,
-            content: msg.content,
-            senderId: msg.senderId,
-            read: msg.read,
-            createdAt: msg.createdAt,
-            gifUrl: msg.gifUrl,
-            imageUrls: msg.imageUrls,
-            editedAt: msg.editedAt ?? null,
-            deletedAt: msg.deletedAt ?? null,
-            audioUrl: msg.audioUrl ?? null,
-            audioDurationMs: msg.audioDurationMs ?? null,
-            audioPeaks: msg.audioPeaks ?? [],
-            kind: msg.kind,
-            meta: msg.meta,
-            forwardCount: msg.forwardCount,
-            expiresAt: msg.expiresAt ?? null,
-            poll: msg.poll ?? null,
-          });
-        }
-      } else if (eventType === 'message-edited' || eventType === 'message-deleted') {
-        const payload = data as { mutation?: MessageMutation } & Partial<MessageMutation>;
-        const mutation = payload.mutation ?? (payload as MessageMutation);
-        if (mutation?.conversationId === conversationId) {
-          applyMutation(mutation);
-          lastSyncRef.current = new Date().toISOString();
-        }
-      } else if (eventType === 'unread') {
-        // Every DM notification produces one of these, including the edit and
-        // unsend ones — which is why a client on a deployment whose stream does
-        // not yet forward the two events above still converges within a second.
-        scheduleMutationSync();
-      } else if (eventType === 'message-reaction') {
-        // Payload is { conversationId, messageId, reactions } — the named SSE
-        // event already scopes it, matching the new-message/typing payloads.
-        const d = data as { conversationId: string; messageId: string; reactions: ReactionRow[] };
-        if (d.conversationId === conversationId) {
-          setMessages((prev) =>
-            prev.map((m) => (m.id === d.messageId ? { ...m, reactions: d.reactions } : m)),
-          );
-        }
-      } else if (eventType === 'typing') {
-        const d = data as { conversationId: string; senderId: string; isTyping?: boolean };
-        if (d.conversationId === conversationId && d.senderId !== session.user.id) {
-          handleTypingEvent(Boolean(d.isTyping));
-        }
-      }
-    });
-  }, [
-    session,
-    conversationId,
-    handleIncomingMessage,
-    handleTypingEvent,
-    applyMutation,
-    scheduleMutationSync,
-  ]);
-
-  // Reset the typing indicator and tell the other side we stopped when the
-  // conversation changes or the component unmounts.
-  useEffect(() => {
-    return () => {
-      stopTyping();
-      if (otherTypingTimer.current) clearTimeout(otherTypingTimer.current);
-      setOtherTyping(false);
-    };
-  }, [conversationId, stopTyping]);
-
-  const handleLoadOlder = () => {
-    if (loadingOlder || !hasOlder) return;
-    setLoadingOlder(true);
-    fetchMessages(false);
-  };
-
-  const handleImageFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const remaining = MAX_DM_IMAGES - imageUrls.length;
-    if (remaining <= 0) return;
-    setUploading(true);
-    setError(null);
-    try {
-      const form = new FormData();
-      Array.from(files)
-        .slice(0, remaining)
-        .forEach((f) => form.append('images', f));
-      const res = await fetch('/api/rmharks/image', { method: 'POST', body: form });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(
-          data.error || t('failed-to-upload-image', { defaultValue: 'Failed to upload image' }),
-        );
-        return;
-      }
-      const data = await res.json();
-      if (Array.isArray(data.urls)) {
-        setImageUrls((prev) => [...prev, ...data.urls].slice(0, MAX_DM_IMAGES));
-      }
-    } catch {
-      setError(t('failed-to-upload-image', { defaultValue: 'Failed to upload image' }));
-    } finally {
-      setUploading(false);
-      if (imageInputRef.current) imageInputRef.current.value = '';
-    }
-  };
-
-  const handleVoiceSent = useCallback(
-    (message: SentVoiceMessage) => {
-      historyIds.current.add(message.id);
-      setMessages((prev) =>
-        prev.some((m) => m.id === message.id)
-          ? prev
-          : [
-              ...prev,
-              {
-                id: message.id,
-                content: message.content,
-                senderId: message.senderId,
-                read: message.read,
-                createdAt: message.createdAt,
-                audioUrl: message.audioUrl,
-                audioDurationMs: message.audioDurationMs,
-                audioPeaks: message.audioPeaks ?? [],
-                imageUrls: [],
-                reactions: [],
-              },
-            ],
-      );
-      setTimeout(scrollToBottom, 50);
-    },
-    [scrollToBottom],
-  );
-
-  const handleSend = async () => {
-    const content = input.trim();
-    const pendingGif = gifUrl;
-    const pendingImages = imageUrls;
-    if ((!content && !pendingGif && pendingImages.length === 0) || sending || uploading) return;
-
-    // M4: a slash command is run (by the server, or locally for /remind and
-    // /gif) instead of being sent as text.
-    if (content.startsWith('/') && !pendingGif && pendingImages.length === 0) {
-      if (await slash.tryRun(content)) return;
-    }
-
-    setSending(true);
-    setError(null);
-
-    // Optimistic add
-    const tempId = `temp-${Date.now()}`;
-    const optimisticMsg: Message = {
-      id: tempId,
-      content,
-      senderId: session!.user.id,
-      read: false,
-      createdAt: new Date().toISOString(),
-      gifUrl: pendingGif,
-      imageUrls: pendingImages,
-    };
-    setMessages((prev) => [...prev, optimisticMsg]);
-    setInput('');
-    shortcodes.dismiss();
-    setGifUrl(null);
-    setImageUrls([]);
-    clearSuggestion();
-    stopTyping();
-    setTimeout(scrollToBottom, 50);
-
-    // OPT-34. Everything above is the bubble appearing and the composer
-    // emptying — eight state updates plus a typing-stop emit, one React commit,
-    // and the only thing the sender is waiting to see. Everything below is a
-    // POST whose body has to be stringified first (a message can carry several
-    // image URLs). Yielding here puts the render in its own task so the bubble
-    // lands, then sends. The scroll-to-bottom is left on its own 50ms timer, so
-    // no layout read moves across this boundary; the Enter-to-send path calls
-    // `preventDefault()` in `handleKeyDown` *before* invoking this function, so
-    // the yield cannot cost it its cancelability.
-    await yieldToMain();
-
-    try {
-      const data = await api(sendToConversationApi, {
-        params: { conversationId },
-        body: {
-          content,
-          ...(pendingGif ? { gifUrl: pendingGif } : {}),
-          ...(pendingImages.length ? { imageUrls: pendingImages } : {}),
-        },
-      });
-      // The optimistic bubble already animated in; the temp→real id swap
-      // remounts it, so mark the real id as history to avoid a second entrance.
-      historyIds.current.add(data.message.id);
-      // Replace optimistic message with real one
-      setMessages((prev) => prev.map((m) => (m.id === tempId ? data.message : m)));
-    } catch (err) {
-      // Remove the optimistic message and restore the draft + media.
-      setError(
-        serverError(err) || t('failed-to-send-message', { defaultValue: 'Failed to send message' }),
-      );
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
-      setInput(content);
-      setGifUrl(pendingGif);
-      setImageUrls(pendingImages);
-    } finally {
-      setSending(false);
-      inputRef.current?.focus();
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const formatTime = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  };
-
-  const formatDateSeparator = (dateStr: string) => {
-    const d = new Date(dateStr);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    if (d.toDateString() === today.toDateString()) return t('today', { defaultValue: 'Today' });
-    if (d.toDateString() === yesterday.toDateString())
-      return t('yesterday', { defaultValue: 'Yesterday' });
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const shouldShowDateSeparator = (msg: Message, prevMsg: Message | null) => {
-    if (!prevMsg) return true;
-    const d1 = new Date(msg.createdAt).toDateString();
-    const d2 = new Date(prevMsg.createdAt).toDateString();
-    return d1 !== d2;
-  };
+  const lastOwnId = lastOwnMessageId(shownMessages, session?.user.id);
 
   if (!session) {
     return (
@@ -1001,79 +178,12 @@ export function ConversationView({
       className="flex flex-col h-[calc(100svh-var(--rad-topbar-h,3.5rem)-var(--rad-top,0px)-var(--rad-bottom,0px))]"
       style={chatTheme.rootStyle}
     >
-      {/* Header */}
-      <div className="glass-chrome site-sticky-chrome shrink-0">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <Link
-            to="/messages"
-            aria-label={t('back', { defaultValue: 'Back' })}
-            className="p-2 -ml-2 rounded-site-sm hover:bg-site-surface-hover transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-site-text" aria-hidden />
-          </Link>
-          {isSavedChat && <SavedMessagesHeader />}
-          {otherUser && !isSavedChat && (
-            <Link
-              to={
-                `/u/${(otherUser as { handle?: string | null }).handle || otherUser.id}` as string
-              }
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-            >
-              <UserAvatar
-                src={otherUser.image ?? undefined}
-                alt={otherUser.name || 'User'}
-                size={32}
-                fallbackName={otherUser.name ?? undefined}
-                className="ring-2 ring-site-bg"
-              />
-              <div>
-                <p className="flex items-center gap-2 font-display font-bold text-sm text-site-text">
-                  {otherUser.name || 'Unknown'}
-                  {otherUser.isBot && <AutomatedBadge />}
-                </p>
-                {otherUser.username && (
-                  <p className="text-xs text-site-text-dim">@{otherUser.username}</p>
-                )}
-                <Suspense fallback={null}>
-                  <DmLocalTime userId={otherUser.id} name={otherUser.name || 'Unknown'} />
-                </Suspense>
-              </div>
-            </Link>
-          )}
-          {/* Voice call. Renders nothing when a call can't be placed (signed out,
-              no WebRTC); the server is still the authority on whether this person
-              accepts calls from you. */}
-          {otherUser && !isSavedChat && (
-            <div className="ml-auto flex gap-2">
-              <CallButton
-                user={{
-                  id: otherUser.id,
-                  name: otherUser.name ?? null,
-                  image: otherUser.image ?? null,
-                  handle: (otherUser as { handle?: string | null }).handle ?? null,
-                }}
-                conversationId={conversationId}
-                viewerId={session?.user?.id ?? null}
-              />
-              <GroupCallButton
-                conversationId={conversationId}
-                viewerId={session?.user?.id ?? null}
-                seedUser={{
-                  id: otherUser.id,
-                  name: otherUser.name ?? null,
-                  handle: (otherUser as { handle?: string | null }).handle ?? null,
-                  image: otherUser.image ?? null,
-                }}
-              />
-            </div>
-          )}
-          <ChatHeaderPlus chat={chatRef} className={isSavedChat || !otherUser ? 'ml-auto' : ''} />
-        </div>
-      </div>
-      <ChatPinnedBar
-        chat={chatRef}
+      <ConversationHeader
+        conversationId={conversationId}
+        chatRef={chatRef}
+        otherUser={otherUser}
+        isSavedChat={isSavedChat}
         viewerId={session.user.id}
-        names={otherUser ? { [otherUser.id]: otherUser.name } : {}}
       />
 
       {/* Messages */}
@@ -1112,463 +222,49 @@ export function ConversationView({
               </div>
             )}
 
-            {shownMessages.map((msg, i) => {
-              const isSelf = msg.senderId === session.user.id;
-              const prevMsg = i > 0 ? shownMessages[i - 1] : null;
-              const nextMsg = i < shownMessages.length - 1 ? shownMessages[i + 1] : null;
-              const showDate = shouldShowDateSeparator(msg, prevMsg);
-              // Show avatar on the last message in a consecutive group from the same sender
-              const isFirstInGroup = !prevMsg || prevMsg.senderId !== msg.senderId || showDate;
-              const isLastInGroup =
-                !nextMsg ||
-                nextMsg.senderId !== msg.senderId ||
-                shouldShowDateSeparator(nextMsg, msg);
+            {shownMessages.map((msg, i) => (
+              <MessageRow
+                key={msg.id}
+                msg={msg}
+                prevMsg={i > 0 ? shownMessages[i - 1] : null}
+                nextMsg={i < shownMessages.length - 1 ? shownMessages[i + 1] : null}
+                viewerId={session.user.id}
+                selfAvatar={{
+                  image: resolvedUser?.image || session.user.image,
+                  name: resolvedUser?.name || session.user.name,
+                }}
+                otherUser={otherUser}
+                isSavedChat={isSavedChat}
+                isLastOwn={msg.id === lastOwnId}
+                // New (sent/received) messages rise in; history renders in place.
+                animateIn={!reducedMotion && !historyIds.current.has(msg.id)}
+                pinned={pinnedIds.has(msg.id)}
+                chatRef={chatRef}
+                isEditing={editingId === msg.id}
+                savingEdit={savingEdit}
+                reactionTriggerFor={reactionTriggerFor}
+                quoteReply={composer.quoteReply}
+                onSaveEdit={handleSaveEdit}
+                setEditingId={setEditingId}
+                onUnsend={handleUnsend}
+                onHide={handleHide}
+                onToggleReaction={toggleReaction}
+              />
+            ))}
 
-              const avatarUser = isSelf
-                ? {
-                    image: resolvedUser?.image || session.user.image,
-                    name: resolvedUser?.name || session.user.name,
-                  }
-                : { image: otherUser?.image, name: otherUser?.name };
-
-              // Build per-corner rounding for grouped bubbles
-              // Fully rounded = rounded-site (16px). Tight side = rounded-site-sm (6px).
-              // The "inner" side (facing own messages) gets tightened when grouped.
-              let bubbleRounding: string;
-              if (isSelf) {
-                // Right-aligned: inner side is right
-                const tl = 'rounded-tl-site';
-                const bl = 'rounded-bl-site';
-                const tr = isFirstInGroup ? 'rounded-tr-site' : 'rounded-tr-site-sm';
-                const br = isLastInGroup ? 'rounded-br-site-sm' : 'rounded-br-site-sm';
-                bubbleRounding = `${tl} ${tr} ${bl} ${br}`;
-              } else {
-                // Left-aligned: inner side is left
-                const tr = 'rounded-tr-site';
-                const br = 'rounded-br-site';
-                const tl = isFirstInGroup ? 'rounded-tl-site' : 'rounded-tl-site-sm';
-                const bl = isLastInGroup ? 'rounded-bl-site-sm' : 'rounded-bl-site-sm';
-                bubbleRounding = `${tl} ${tr} ${bl} ${br}`;
-              }
-
-              // New (sent/received) messages rise in; history renders in place.
-              const animateIn = !reducedMotion && !historyIds.current.has(msg.id);
-              const deleted = !!msg.deletedAt;
-              const isVoice = !!msg.audioUrl && !deleted;
-              const isEditing = editingId === msg.id;
-              // A tombstone has nothing to react to, and an optimistic bubble has
-              // no server id yet — neither takes the long-press/right-click menu.
-              const canReact = !deleted && !msg.id.startsWith('temp-');
-              // P04: centred lines (timer, pin, tip…) and card kinds (dice, checklist…).
-              const isLine = isLineKind(msg.kind);
-              const isCard = !deleted && isCardKind(msg.kind);
-              const authorName = isSelf
-                ? t('you-label', { defaultValue: 'You' })
-                : (otherUser?.name ?? t('user-fallback', { defaultValue: 'User' }));
-
-              return (
-                <motion.div
-                  key={msg.id}
-                  initial={animateIn ? { opacity: 0, y: 8 } : false}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={APPLE_SPRING.snappy}
-                >
-                  {showDate && (
-                    <div className="flex items-center justify-center my-4">
-                      <span className="glass-fill text-xs text-site-text-dim px-3 py-1 rounded-full">
-                        {formatDateSeparator(msg.createdAt)}
-                      </span>
-                    </div>
-                  )}
-                  {isLine ? (
-                    <ChatSystemLine
-                      meta={msg.meta}
-                      fallback={msg.content}
-                      viewerId={session.user.id}
-                      nameOf={(id) => (otherUser && id === otherUser.id ? otherUser.name : null)}
-                    />
-                  ) : (
-                  <SwipeRow
-                    leading={
-                      canReact && !isEditing && !isVoice && msg.content.trim()
-                        ? {
-                            icon: Reply,
-                            label: t('dm-reply', { defaultValue: 'Reply' }),
-                            onAction: () => quoteReply(msg.content),
-                          }
-                        : undefined
-                    }
-                  >
-                  <div
-                    className={`group flex items-end gap-2 ${isLastInGroup ? 'mb-3' : 'mb-0.5'} ${isSelf ? 'flex-row-reverse' : ''}`}
-                  >
-                    {/* Avatar — visible only on last message in group */}
-                    {isLastInGroup ? (
-                      <UserAvatar
-                        src={avatarUser.image ?? undefined}
-                        alt={avatarUser.name || 'User'}
-                        size={28}
-                        fallbackName={avatarUser.name ?? undefined}
-                      />
-                    ) : (
-                      <div className="w-7 shrink-0" />
-                    )}
-
-                    {isEditing ? (
-                      <div className="w-full max-w-[85%]">
-                        <MessageEditor
-                          initialValue={msg.content}
-                          saving={savingEdit}
-                          onSave={(value) => handleSaveEdit(msg.id, value)}
-                          onCancel={() => setEditingId(null)}
-                        />
-                      </div>
-                    ) : isCard ? (
-                      <div className="max-w-[85%]">
-                        <MessageBadges
-                          forwardCount={msg.forwardCount}
-                          pinned={pinnedIds.has(msg.id)}
-                        />
-                        <ChatRichBody
-                          chat={chatRef}
-                          messageId={msg.id}
-                          kind={msg.kind ?? 'text'}
-                          meta={msg.meta}
-                          poll={msg.poll}
-                          authorName={authorName}
-                          disabled={msg.id.startsWith('temp-')}
-                        />
-                      </div>
-                    ) : (
-                      <div
-                        className={`${isVoice ? 'w-[85%] max-w-[22rem]' : 'max-w-[75%]'} ${bubbleRounding} px-4 py-2.5 text-sm break-words ${
-                          isSelf ? 'bg-site-accent text-site-bg' : 'bg-site-text text-site-bg'
-                        }`}
-                        {...(canReact ? reactionTriggerFor(msg.id) : {})}
-                      >
-                        {deleted ? (
-                          <DeletedMessage deletedBy={msg.deletedBy} />
-                        ) : (
-                          <>
-                            <MessageBadges
-                              forwardCount={msg.forwardCount}
-                              pinned={pinnedIds.has(msg.id)}
-                              className="text-current opacity-70"
-                            />
-                            {isVoice && (
-                              <VoicePlayer
-                                src={msg.audioUrl as string}
-                                durationMs={msg.audioDurationMs ?? null}
-                                peaks={msg.audioPeaks ?? []}
-                                className="mb-1"
-                              />
-                            )}
-                            {stripEmbedUrls(msg.content).trim() && (
-                              <p className="whitespace-pre-wrap">{stripEmbedUrls(msg.content)}</p>
-                            )}
-                            {/* Legacy: media embedded as URLs inside the text. */}
-                            {extractMediaEmbeds(msg.content).length > 0 && (
-                              <ChatMediaEmbed content={msg.content} themePrefix="site" />
-                            )}
-                            {/* Structured rich media. */}
-                            {msg.imageUrls && msg.imageUrls.length > 0 && (
-                              <PostImageGrid
-                                urls={msg.imageUrls}
-                                className="mt-2 rounded-site-sm overflow-hidden"
-                              />
-                            )}
-                            {msg.gifUrl && (
-                              <img
-                                src={msg.gifUrl}
-                                alt=""
-                                className="mt-2 max-h-60 w-auto rounded-site-sm"
-                                loading="lazy"
-                              />
-                            )}
-                          </>
-                        )}
-                        <p
-                          className={`text-[10px] mt-1 ${isSelf ? 'text-site-bg/60' : 'text-site-bg/55'}`}
-                        >
-                          {formatTime(msg.createdAt)}
-                          {msg.editedAt && !deleted && (
-                            <> · {t('edited', { defaultValue: 'edited' })}</>
-                          )}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Edit / unsend / delete-for-me. Always present on touch (no
-                        hover to reveal it); fades in on pointer devices. */}
-                    {!isEditing && !msg.id.startsWith('temp-') && (
-                      <MessageActions
-                        message={{
-                          id: msg.id,
-                          senderId: msg.senderId,
-                          content: msg.content,
-                          createdAt: msg.createdAt,
-                          deletedAt: msg.deletedAt ?? null,
-                        }}
-                        viewerId={session.user.id}
-                        onEdit={() => setEditingId(msg.id)}
-                        onUnsend={() => handleUnsend(msg.id)}
-                        onHide={() => handleHide(msg.id)}
-                        onReply={isVoice ? undefined : () => quoteReply(msg.content)}
-                        extra={(close) => (
-                          <MessagePlusItems
-                            chat={chatRef}
-                            message={{
-                              id: msg.id,
-                              content: msg.content,
-                              kind: msg.kind,
-                              forwardCount: msg.forwardCount,
-                              hasAudio: isVoice,
-                            }}
-                            onDone={close}
-                          />
-                        )}
-                        className="md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
-                      />
-                    )}
-                  </div>
-                  </SwipeRow>
-                  )}
-                  {(msg.reactions?.length ?? 0) > 0 && (
-                    <ReactionChips
-                      reactions={groupReactions(msg.reactions ?? [], session.user.id)}
-                      onToggle={(emoji) => toggleReaction(msg.id, emoji)}
-                      className={`mt-1 ${isSelf ? 'justify-end' : ''}`}
-                    />
-                  )}
-                  {isSelf && msg.id === lastOwnId && msg.read && !isSavedChat && !deleted && (
-                    <SeenIndicator />
-                  )}
-                </motion.div>
-              );
-            })}
-
-            {otherTyping && (
-              <div className="flex items-end gap-2 mb-3">
-                <UserAvatar
-                  src={otherUser?.image ?? undefined}
-                  alt={otherUser?.name || 'User'}
-                  size={28}
-                  fallbackName={otherUser?.name ?? undefined}
-                />
-                <div className="bg-site-text text-site-bg rounded-tl-site-sm rounded-tr-site rounded-br-site rounded-bl-site-sm px-4 py-3">
-                  <div
-                    className="flex items-center gap-1"
-                    aria-label={t('user-is-typing', {
-                      name: otherUser?.name || t('user-fallback', { defaultValue: 'User' }),
-                      defaultValue: '{{name}} is typing',
-                    })}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-site-bg/50 animate-bounce [animation-delay:-0.3s]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-site-bg/50 animate-bounce [animation-delay:-0.15s]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-site-bg/50 animate-bounce" />
-                  </div>
-                </div>
-              </div>
-            )}
+            {otherTyping && <TypingBubble otherUser={otherUser} />}
 
             <div ref={messagesEndRef} />
           </>
         )}
       </div>
 
-      {/* Error banner */}
-      {error && (
-        <div className="px-4 py-2 bg-site-danger/10 border-t border-site-danger/20">
-          <p className="text-sm text-site-danger">{error}</p>
-        </div>
-      )}
-
-      {/* Input. `--safe-bottom` keeps the send row clear of the home indicator and
-          iOS Safari's floating tab bar — this row is the bottom edge of the column
-          now that the column stops at the viewport. */}
-      <div className="shrink-0 border-t border-site-border bg-site-bg px-4 pt-3 pb-[calc(0.75rem+var(--safe-bottom,0px))]">
-        {showGifPicker && !voiceActive && (
-          <GifPicker
-            className="mx-2 mb-2"
-            onClose={() => setShowGifPicker(false)}
-            onSelect={(u) => {
-              setGifUrl(u);
-              setShowGifPicker(false);
-              setTimeout(() => inputRef.current?.focus(), 0);
-            }}
-          />
-        )}
-
-        {/* Pending media preview */}
-        {!voiceActive && (imageUrls.length > 0 || gifUrl) && (
-          <div className="mb-2 flex flex-wrap gap-2">
-            {imageUrls.map((url) => (
-              <div key={url} className="relative">
-                <img src={url} alt="" className="h-20 w-20 rounded-site-sm object-cover" />
-                <button
-                  type="button"
-                  aria-label={t('remove-image', { defaultValue: 'Remove image' })}
-                  onClick={() => setImageUrls((prev) => prev.filter((u) => u !== url))}
-                  className="absolute -right-1.5 -top-1.5 rounded-full bg-site-media-scrim-strong p-0.5 text-site-media-ink hover:bg-site-media-scrim-hover"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-            {gifUrl && (
-              <div className="relative">
-                <img src={gifUrl} alt="" className="h-20 w-auto rounded-site-sm" />
-                <button
-                  type="button"
-                  aria-label={t('remove-gif', { defaultValue: 'Remove GIF' })}
-                  onClick={() => setGifUrl(null)}
-                  className="absolute -right-1.5 -top-1.5 rounded-full bg-site-media-scrim-strong p-0.5 text-site-media-ink hover:bg-site-media-scrim-hover"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        <input
-          ref={imageInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={(e) => handleImageFiles(e.currentTarget.files)}
-        />
-        {/* Suggested replies. Gated on the thread ending with THEIR message: a
-            thread waiting on them has nothing to suggest a reply to, and a
-            media-only or unsent message has no text to answer. Hidden while the
-            voice composer is open — these chips fill the text field, which is
-            not on screen then. */}
-        {!voiceActive && (
-          <SmartReplies
-            conversationId={conversationId}
-            replyToMessageId={replyToMessageId}
-            draft={input}
-            onPick={(reply) => {
-              setInput(reply);
-              inputRef.current?.focus();
-            }}
-          />
-        )}
-
-        <div className="flex items-end gap-2">
-          {/* While recording or reviewing, the voice composer IS the composer —
-              a text field beside a live recording is a second thing to look at
-              and does not fit at 360px anyway. */}
-          {!voiceActive && (
-            <>
-              <div className="relative flex-1">
-                <GhostTextArea
-                  ref={inputRef}
-                  value={input}
-                  suggestion={suggestion}
-                  onAcceptSuggestion={() => {
-                    setInput((v) => v + suggestion);
-                    clearSuggestion();
-                  }}
-                  onChange={(e) => {
-                    shortcodes.onValueChange(e.target.value);
-                    if (e.target.value.trim()) handleTyping();
-                    else stopTyping();
-                  }}
-                  onBlur={stopTyping}
-                  onKeyDown={(e) => {
-                    if (slash.onKeyDown(e)) return;
-                    if (shortcodes.onKeyDown(e)) return;
-                    handleKeyDown(e);
-                  }}
-                  placeholder={t('type-a-message', { defaultValue: 'Type a message...' })}
-                  rows={1}
-                  maxLength={2000}
-                  className="glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site px-3 py-2 outline-none focus:border-site-accent transition-colors resize-none max-h-32 overflow-y-auto"
-                  style={{ minHeight: '42px' }}
-                />
-                {shortcodes.menu}
-                {slash.popover}
-                <ComposerLengthCounter used={input.length} />
-              </div>
-              <ChecklistComposer chat={chatRef} onPosted={appendPosted} disabled={sending} />
-              <EmojiPickerButton
-                direction="up"
-                onSelect={insertEmoji}
-                className="flex h-[42px] shrink-0 items-center"
-              />
-              {/* Attach (+) menu — image, GIF. Mirrors the rmhark composer. */}
-              <div className="relative shrink-0">
-                <button
-                  ref={attachBtnRef}
-                  type="button"
-                  aria-label={t('add-to-message', { defaultValue: 'Add to message' })}
-                  aria-haspopup="menu"
-                  aria-expanded={attachOpen}
-                  onClick={() => setAttachOpen((v) => !v)}
-                  disabled={uploading}
-                  className="h-[42px] rounded-site px-3 text-site-text-dim transition-colors hover:bg-site-surface-hover hover:text-site-accent disabled:opacity-50"
-                >
-                  {uploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Plus className="h-5 w-5" />
-                  )}
-                </button>
-                <AnchoredMenu
-                  open={attachOpen}
-                  onClose={() => setAttachOpen(false)}
-                  anchorRef={attachBtnRef}
-                  label={t('add-to-message', { defaultValue: 'Add to message' })}
-                  side="top"
-                  className="w-40"
-                >
-                  <MenuItem
-                    icon={ImagePlus}
-                    disabled={imageUrls.length >= MAX_DM_IMAGES}
-                    onSelect={() => {
-                      setAttachOpen(false);
-                      imageInputRef.current?.click();
-                    }}
-                  >
-                    {t('menu-add-image', { defaultValue: 'Add Image' })}
-                  </MenuItem>
-                  <MenuItem
-                    icon={ImagePlay}
-                    onSelect={() => {
-                      setAttachOpen(false);
-                      setShowGifPicker((v) => !v);
-                    }}
-                  >
-                    {t('menu-add-gif', { defaultValue: 'Add GIF' })}
-                  </MenuItem>
-                </AnchoredMenu>
-              </div>
-            </>
-          )}
-
-          <VoiceComposer
-            conversationId={conversationId}
-            onSent={handleVoiceSent}
-            onActiveChange={setVoiceActive}
-            disabled={sending || uploading}
-          />
-
-          {!voiceActive && (
-            <Button
-              variant="accent"
-              size="sm"
-              disabled={(!input.trim() && !gifUrl && imageUrls.length === 0) || sending}
-              onClick={handleSend}
-              className="rounded-site h-[42px] px-3"
-              aria-label={t('send-message', { defaultValue: 'Send message' })}
-            >
-              <Send className="w-4 h-4" aria-hidden />
-            </Button>
-          )}
-        </div>
-      </div>
+      <ComposerBar
+        conversationId={conversationId}
+        chatRef={chatRef}
+        composer={composer}
+        replyToMessageId={replyToMessageId}
+      />
 
       <ChatPlusHost viewerId={session.user.id} />
 

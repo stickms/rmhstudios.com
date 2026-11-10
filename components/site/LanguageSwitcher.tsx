@@ -173,7 +173,7 @@ export function LanguageSwitcher() {
               maxHeight: rect.maxHeight,
               "--motion-origin": rect.openUp ? "bottom center" : "top center",
             } as CSSProperties}
-            className="z-[100] overflow-y-auto overscroll-contain glass-overlay py-1.5"
+            className="z-popover overflow-y-auto overscroll-contain glass-overlay py-1.5"
           >
             {LOCALES.map((l) => {
               const active = l === locale;

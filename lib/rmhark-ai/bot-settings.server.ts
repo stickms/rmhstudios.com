@@ -1,8 +1,8 @@
 /**
  * Bot-worker admin settings + activity stats for /admin/bots.
  *
- * The settings row is read by the Go bot-worker on every tick
- * (go-services/internal/botworker/repo.go `LoadSettings`), so saving here is
+ * The settings row is read by the bot-worker (jobs worker) on every tick
+ * (lib/rmhark-ai/bot-worker.server.ts `prismaBotRepo.loadSettings`), so saving here is
  * how an admin retunes the pool and posting rate without a deploy.
  */
 

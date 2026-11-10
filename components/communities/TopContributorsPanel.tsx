@@ -84,7 +84,7 @@ export default function TopContributorsPanel({ slug }: { slug: string }) {
                     {r.roleTags.map((tag) => (
                       <span
                         key={tag}
-                        className="rounded-full border border-site-border px-1.5 py-px text-[0.65rem] text-site-text-muted"
+                        className="rounded-full border border-site-border px-1.5 py-px text-rem-65 text-site-text-muted"
                       >
                         {tag}
                       </span>

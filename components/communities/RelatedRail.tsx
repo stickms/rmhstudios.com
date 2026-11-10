@@ -26,7 +26,7 @@ export function RelatedRail({ sisters }: { sisters: SisterDTO[] }) {
               <span aria-hidden>{s.icon || '👥'}</span>
               <span className="font-medium">{s.name}</span>
               {s.mutual && (
-                <span className="text-[0.65rem] font-semibold text-site-accent">
+                <span className="text-rem-65 font-semibold text-site-accent">
                   {t('related-mutual', { defaultValue: 'Mutual' })}
                 </span>
               )}

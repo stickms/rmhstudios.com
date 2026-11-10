@@ -21,7 +21,7 @@ export function FlairChip({
       {...(Tag === 'button' ? { type: 'button' as const } : {})}
       {...rest}
       className={cn(
-        'inline-flex max-w-full items-center rounded-full border px-2 py-0.5 text-[0.7rem] font-semibold leading-none',
+        'inline-flex max-w-full items-center rounded-full border px-2 py-0.5 text-rem-70 font-semibold leading-none',
         FLAIR_CHIP_CLASSES[color],
         className,
       )}

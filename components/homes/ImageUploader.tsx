@@ -129,12 +129,12 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
             >
               <img src={url} alt="" className="h-full w-full object-cover" />
               {i === 0 && (
-                <span className="absolute left-1 top-1 inline-flex items-center gap-1 rounded-full bg-site-media-scrim-strong px-1.5 py-0.5 text-[10px] font-medium text-site-media-ink">
+                <span className="absolute left-1 top-1 inline-flex items-center gap-1 rounded-full bg-site-media-scrim-strong px-1.5 py-0.5 text-micro font-medium text-site-media-ink">
                   <Star className="h-3 w-3 fill-current" /> Cover
                 </span>
               )}
               {isAi && (
-                <span className="absolute bottom-1 left-1 inline-flex items-center gap-1 rounded-full bg-site-accent/90 px-1.5 py-0.5 text-[10px] font-semibold text-site-accent-fg">
+                <span className="absolute bottom-1 left-1 inline-flex items-center gap-1 rounded-full bg-site-accent/90 px-1.5 py-0.5 text-micro font-semibold text-site-accent-fg">
                   <Sparkles className="h-3 w-3" /> AI
                 </span>
               )}

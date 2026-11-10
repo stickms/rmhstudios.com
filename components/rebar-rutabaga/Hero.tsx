@@ -75,7 +75,7 @@ export function Hero() {
       <div className="relative mx-auto flex min-h-[86svh] max-w-[86rem] flex-col justify-center px-6 py-24 sm:px-10 sm:py-32">
         <motion.p
           {...rise(0.05)}
-          className="font-mono text-[0.7rem] uppercase tracking-[0.26em] text-rebar-ink-faint"
+          className="font-mono text-rem-70 uppercase tracking-[0.26em] text-rebar-ink-faint"
         >
           {t('hero.eyebrow', {
             defaultValue: 'Molecular gastronomy · Verkstadsgatan 4',
@@ -118,7 +118,7 @@ export function Hero() {
 
         <motion.ul
           {...rise(0.6)}
-          className="mt-14 flex flex-wrap items-center gap-x-8 gap-y-3 font-mono text-[0.72rem] uppercase tracking-[0.18em] text-rebar-ink-soft"
+          className="mt-14 flex flex-wrap items-center gap-x-8 gap-y-3 font-mono text-rem-72 uppercase tracking-[0.18em] text-rebar-ink-soft"
         >
           {meta.map((item, i) => (
             <li key={item} className="flex items-center gap-8">

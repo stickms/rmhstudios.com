@@ -101,12 +101,12 @@ export function AnnouncementCard({ item, variant }: AnnouncementCardProps) {
  {/* Title */}
  {item.href ? (
  <Link to={item.href} className="group">
- <h3 className="font-bold text-site-text group-hover:text-site-accent transition-colors text-[15px]">
+ <h3 className="font-bold text-site-text group-hover:text-site-accent transition-colors text-body">
  {item.title}
  </h3>
  </Link>
  ) : (
- <h3 className="font-bold text-site-text text-[15px]">{item.title}</h3>
+ <h3 className="font-bold text-site-text text-body">{item.title}</h3>
  )}
 
  {/* Description */}

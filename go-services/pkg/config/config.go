@@ -38,8 +38,8 @@ type Common struct {
 
 // Go DB pool sizing.
 //
-// MaxGoDBPoolSize is the cap: the supervisor runs three workers (vibe,
-// discord-bot, bot-worker), each with at least one
+// MaxGoDBPoolSize is the cap: the supervisor runs two workers (vibe,
+// discord-bot), each with at least one
 // goroutine that can be mid-query at the same moment, so six (the cap set when the supervisor ran six workers; kept) is the most
 // connections that can ever be busy at once for the work done today; a pool
 // larger than the concurrency only parks idle connections on the shared server.

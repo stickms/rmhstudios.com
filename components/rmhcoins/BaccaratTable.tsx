@@ -101,7 +101,7 @@ function HandDisplay({ cards, label, value, natural, showValue }: {
 
   return (
     <div className="flex flex-col items-center gap-1.5 sm:gap-2 min-w-0">
-      <span className="text-[10px] sm:text-xs text-site-text-dim font-bold uppercase tracking-wider">{label}</span>
+      <span className="text-micro sm:text-xs text-site-text-dim font-bold uppercase tracking-wider">{label}</span>
       <div className="flex gap-1 sm:gap-1.5">
         {cards.length > 0 ? (
           cards.map((card, i) => (
@@ -121,7 +121,7 @@ function HandDisplay({ cards, label, value, natural, showValue }: {
         <div className="flex flex-col items-center gap-0.5">
           <span className="text-xl sm:text-2xl font-bold text-site-text font-mono">{value}</span>
           {natural && (
-            <span className="text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-site-accent-dim text-site-accent uppercase tracking-wider">
+            <span className="text-tiny sm:text-micro font-bold px-2 py-0.5 rounded-full bg-site-accent-dim text-site-accent uppercase tracking-wider">
               {t("natural", { defaultValue: "Natural" })}
             </span>
           )}
@@ -186,7 +186,7 @@ function HistoryScoreboard({ history }: { history: BaccaratResult[] }) {
           />
         ))}
       </div>
-      <div className="flex items-center justify-center gap-3 text-[10px]">
+      <div className="flex items-center justify-center gap-3 text-micro">
         <span className="text-site-danger font-bold">
           P: {history.filter((r) => r === 'player').length}
         </span>
@@ -269,7 +269,7 @@ export function BaccaratTable() {
 
         <div className="flex flex-col items-center justify-center py-3 sm:py-4">
           <div className="w-px h-8 sm:h-12 bg-site-border" />
-          <span className="text-[10px] text-site-text-dim font-bold my-1">{t("vs", { defaultValue: "VS" })}</span>
+          <span className="text-micro text-site-text-dim font-bold my-1">{t("vs", { defaultValue: "VS" })}</span>
           <div className="w-px h-8 sm:h-12 bg-site-border" />
         </div>
 
@@ -285,7 +285,7 @@ export function BaccaratTable() {
       {/* Players & their bets — scrollable on mobile */}
       {activeBets.length > 0 && (
         <div className="w-full flex flex-col gap-1.5">
-          <span className="text-[10px] text-site-text-dim uppercase tracking-wider font-bold text-center">{t("bets-at-table", { defaultValue: "Bets at Table" })}</span>
+          <span className="text-micro text-site-text-dim uppercase tracking-wider font-bold text-center">{t("bets-at-table", { defaultValue: "Bets at Table" })}</span>
           <div className="flex flex-wrap justify-center gap-2">
             {activeBets.map((p) => {
               const isMe = p.userId === myUserId;
@@ -304,14 +304,14 @@ export function BaccaratTable() {
                     </span>
                     <div className="flex items-center gap-0.5 ml-auto">
                       <CoinIcon className="w-3 h-3" />
-                      <span className="text-[10px] font-bold text-site-warning">{p.totalBetThisRound}</span>
+                      <span className="text-micro font-bold text-site-warning">{p.totalBetThisRound}</span>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {betEntries.map(([type, amount]) => {
                       const cfg = BET_LABELS[type];
                       return (
-                        <span key={type} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${cfg.color}`}>
+                        <span key={type} className={`text-tiny font-bold px-1.5 py-0.5 rounded-full ${cfg.color}`}>
                           {cfg.short} {amount}
                         </span>
                       );

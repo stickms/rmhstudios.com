@@ -105,7 +105,7 @@ export function RouletteControls({ coins }: Props) {
               </Button>
             ))}
           </div>
-          <p className="text-[11px] text-site-text-dim text-center">{t("place-bets-hint", { defaultValue: "Place your bets on the board above" })}</p>
+          <p className="text-caption text-site-text-dim text-center">{t("place-bets-hint", { defaultValue: "Place your bets on the board above" })}</p>
         </div>
 
         {/* Quick bet buttons — 3 columns on mobile, 6 on desktop */}
@@ -140,7 +140,7 @@ export function RouletteControls({ coins }: Props) {
                 {stagedBets.map((bet, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center gap-0.5 text-[10px] bg-site-accent-dim text-site-accent rounded-full px-1.5 py-0.5"
+                    className="inline-flex items-center gap-0.5 text-micro bg-site-accent-dim text-site-accent rounded-full px-1.5 py-0.5"
                   >
                     {bet.type === 'straight' ? `#${numberLabel(bet.numbers[0])}` : bet.type}: {bet.amount}
                   </span>

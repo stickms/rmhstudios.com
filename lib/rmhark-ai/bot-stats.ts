@@ -1,10 +1,10 @@
 /**
  * Bot-worker settings contract + pacing estimate — pure, safe anywhere.
  *
- * The Go bot-worker (go-services/internal/botworker) owns the behaviour; this
+ * The bot-worker (lib/rmhark-ai/bot-worker.server.ts, config in bot-worker-config.ts) owns the behaviour; this
  * file mirrors the two pieces of it the admin page needs: the bounds of each
- * admin knob (settings.go `clamp`) and the per-bot posting rate
- * (worker.go `habitPostsPerDay` / `shouldPost`). Keep them in step.
+ * admin knob (`clampSettings`) and the per-bot posting rate
+ * (`habitPostsPerDay` here, `shouldPost` there). Keep them in step.
  */
 
 import { POSTING_HABITS } from './persona';
@@ -23,7 +23,7 @@ export interface BotWorkerSettingsInput {
   maxPostsPerTick: number;
 }
 
-/** Inclusive bounds — identical to the Go worker's clamp. */
+/** Inclusive bounds — identical to the bot-worker's `clampSettings`. */
 export const BOT_SETTINGS_BOUNDS = {
   targetBotCount: { min: 0, max: 1000 },
   createBatch: { min: 1, max: 50 },
@@ -32,7 +32,7 @@ export const BOT_SETTINGS_BOUNDS = {
   maxPostsPerTick: { min: 1, max: 60 },
 } as const satisfies Record<keyof BotWorkerSettingsInput, { min: number; max: number }>;
 
-/** The worker's built-in defaults (types.go), used until an admin saves. */
+/** The worker built-in defaults, used until an admin saves. */
 export const DEFAULT_BOT_SETTINGS: BotWorkerSettingsInput = {
   targetBotCount: 20,
   createBatch: 6,
@@ -55,7 +55,7 @@ export function habitPostsPerDay(persona: string | null | undefined): number {
   const text = persona ?? '';
   const activity = text.split('\n').find((line) => line.startsWith('ACTIVITY:')) ?? text;
   const lower = activity.toLowerCase();
-  // Same precedence as the Go switch: chatty, lurker, bursty, then default.
+  // Same precedence as the original switch: chatty, lurker, bursty, then default.
   if (/very online|frequently/.test(lower)) return 9;
   if (/rare poster|only chimes in/.test(lower)) return 2;
   if (/flurry|goes quiet/.test(lower)) return 6;

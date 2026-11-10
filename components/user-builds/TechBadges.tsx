@@ -33,7 +33,7 @@ export function TechBadges({ technologies, size = 'md', limit }: TechBadgesProps
   const displayTechs = limit ? parsedTechs.slice(0, limit) : parsedTechs;
   const remaining = limit && parsedTechs.length > limit ? parsedTechs.length - limit : 0;
 
-  const sizeClasses = size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-xs';
+  const sizeClasses = size === 'sm' ? 'px-1.5 py-0.5 text-micro' : 'px-2 py-0.5 text-xs';
 
   return (
     <div className="flex flex-wrap gap-1.5">

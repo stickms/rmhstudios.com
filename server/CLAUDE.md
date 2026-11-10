@@ -23,16 +23,17 @@ Current production (Docker Compose on the VPS):
 | `ladder-worker` (job cron)          | **Node** | —                             | `dist-server/server/ladder-worker/index.cjs` |
 | `homes-worker` (listings cron)      | **Node** | —                             | `dist-server/server/homes-worker/index.cjs`  |
 | `jobs` (pg-boss async backbone)     | **Node** | —                             | `dist-server/server/jobs/index.cjs`          |
-| `supervisor` (6 background workers) | **Go**   | 9090 (metrics)                | `/app/bin/supervisor`                        |
+| `supervisor` (2 background workers) | **Go**   | 9090 (metrics)                | `/app/bin/supervisor`                        |
 | `status`                            | **Go**   | 7008                          | `/app/bin/status`                            |
 | `assets`                            | **Go**   | 7007                          | `/app/bin/assets`                            |
 | `minio`                             | infra    | 9000/9001                     | S3-compatible store                          |
 
 Consequences:
 
-- `server/vibe-worker/`, `server/bot-worker/`, `server/status/` were **replaced by Go** (they run as
+- `server/vibe-worker/`, `server/status/` were **replaced by Go** (they run as
   goroutines inside the Go `supervisor`, or as the Go `status` binary) and their
-  dead Node source was **deleted in the rewrite reap (R0-T5)** — recover from
+  dead Node source was **deleted in the rewrite reap (R0-T5)**; `server/bot-worker/` was deleted too and
+  its Go replacement has since moved to the `jobs` worker (D3, below) — recover from
   git history (or the `pre-rewrite-*` tags) if a rollback ever needs them.
 - The Go realtime hubs (gamehub/rmhbox/rmhtube) and the `gateway` were
   **removed in the rewrite** — they never served production traffic. Apache
@@ -104,6 +105,9 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   `event.reminder` (T-24h/T-15m RSVP reminders), and the `email.weekly-digest`
   cron. D3 ports from the Go supervisor: `streak.reminder-sweep` (hourly),
   `lights-out.recap` (Lights Out → Discord recap, every 5 min; REST only, no gateway presence),
+  `bot-worker.*` (the RMHark synthetic users, `lib/rmhark-ai/bot-worker.server.ts`: `maintain` every minute
+  gated by the admin interval, `post` / `reply` every `BOT_POST_TICK_MS` / `BOT_REPLY_TICK_MS` (default 5 min),
+  `dm` every `BOT_DM_TICK_MS` (default 1 min); registers nothing without `DEEPSEEK_API_KEY`),
   and `doctrine.*` (`daily-puzzles` 00:00 UTC + at boot, `sahur-activation` every minute,
   `reputation-decay` hourly on Mondays; `lib/doctrine/jobs.server.ts`). The status service
   watches the recap and sahur queues in pg-boss (B06) and `doctrine_puzzle` itself (A19). Hourly `ops.deepseek-balance` (`:05` UTC, `lib/jobs/maintenance.server.ts`)
@@ -154,16 +158,16 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
 
 The dead Node fallbacks — `vibe-worker/` (Playwright thumbnail renderer), `bot-worker/` (synthetic
 AI feed users), `status/` (status page) —
-were removed in the rewrite reap (R0-T5). These behaviors live in
+were removed in the rewrite reap (R0-T5). `vibe-worker` and `status` live in
 `go-services/internal/<svc>/` (run by the Go `supervisor`, or the Go `status`
-binary) — see `go-services/CLAUDE.md`. Recover the old Node source from git
+binary) — see `go-services/CLAUDE.md`; the bot-worker now runs in `jobs`. Recover the old Node source from git
 history if a rollback ever needs it.
 
 ## Dev, build, prod
 
 - **Dev:** `pnpm dev` = concurrently Vite (7005) + socket-server + rmhbox +
   rmhtube + ladder-worker + homes-worker + jobs, each under `tsx watch`. The
-  Go-replaced workers (vibe/bot/status) do not run in dev. The recap and doctrine crons run in `jobs` (D3), so they do.
+  Go-replaced workers (vibe/discord-bot/status) do not run in dev. The recap, doctrine and bot-worker crons run in `jobs` (D3), so they do (the bot-worker idles without `DEEPSEEK_API_KEY`).
 - **Build order is load-bearing:** `pnpm build` = build-vibe-packages →
   `vite build` → esbuild bundles exactly **6 entrypoints**
   (socket-server, rmhbox, rmhtube, ladder-worker, homes-worker, jobs) into

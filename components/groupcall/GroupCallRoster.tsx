@@ -359,7 +359,7 @@ export function GroupCallRoster({
           <PeerRow key={userId} userId={userId} layout={layout} reducedMotion={reducedMotion} />
         ))}
         {overflow > 0 && (
-          <li className="glass-fill -ms-2 inline-flex h-[26px] min-w-[26px] items-center justify-center rounded-full px-1.5 text-[0.65rem] font-semibold text-site-text-muted">
+          <li className="glass-fill -ms-2 inline-flex h-[26px] min-w-[26px] items-center justify-center rounded-full px-1.5 text-rem-65 font-semibold text-site-text-muted">
             <span aria-hidden>+{overflow}</span>
             <span className="sr-only">
               {t('more-people', { count: overflow, defaultValue: '{{count}} more' })}

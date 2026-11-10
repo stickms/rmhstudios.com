@@ -1,7 +1,7 @@
 package vibeworker
 
 // storage.go — object storage for rendered vibe thumbnails, mirroring
-// lib/storage/s3.server.ts and go-services/internal/botworker/storage.go.
+// lib/storage/s3.server.ts.
 // Production writes WebP thumbnails to S3 (so the web app serves the key from
 // S3/CDN); local development falls back to the filesystem (.uploads), which the
 // Node proxy route (/api/vibe/thumb/<slug>) streams back via getObject.

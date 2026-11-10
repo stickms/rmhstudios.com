@@ -183,7 +183,7 @@ function JellyLab() {
                     role.cls,
                   )}
                 >
-                  <span className="relative z-[1] text-sm font-medium text-site-text">
+                  <span className="relative z-content text-sm font-medium text-site-text">
                     {role.label}
                   </span>
                 </div>

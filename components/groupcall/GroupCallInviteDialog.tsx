@@ -222,7 +222,7 @@ export function GroupCallInviteDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* Above the in-call bar (z-[120], GroupCallOverlay), which it is opened from. */}
-      <DialogContent className="z-[121] sm:max-w-md" overlayClassName="z-[120]">
+      <DialogContent className="z-call-dialog sm:max-w-md" overlayClassName="z-call">
         <DialogHeader>
           <DialogTitle>{t('invite-title', { defaultValue: 'Invite to the call' })}</DialogTitle>
           <DialogDescription>

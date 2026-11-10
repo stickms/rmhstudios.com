@@ -2924,37 +2924,37 @@ A6: open
 A7: in-progress (#1535: tsconfig.strict.json island + typecheck:strict in CI; escape-hatch ratchet; velum2099 @ts-nocheck held at 26 by the ratchet, quarantine blocked by a dynamic import)
 A8: done (#1529)
 B1: open
-B2: in-progress (generated single pre-paint script lib/prepaint + data block; Providers diet pending)
+B2: done (#1536: one generated pre-paint script from real TypeScript, lib/prepaint + data block, prepaint:check in CI; Providers diet folded into B1)
 B3: done (#1530/#1533: eversion warms on hub open, Speculation Rules removed, English idle backfill removed; docked-globe poster not done)
 B4: open
 B5: open
 B6: done (#1533: per-namespace lazy loading; English renders from defaultValue and loads only namespaces in use)
 B7: open
-C1: in-progress (contract + implement() + api() + raw-fetch ratchet landed with one worked endpoint; migrating call sites)
+C1: in-progress (#1531/#1537: contract + implement() + api() + raw-fetch ratchet; 35 endpoints on typed contracts so far; communities, user-builds and the rest pending)
 C2: done (unsubscribe GET is read-only + RFC 8058 POST; remaining GET writers are authenticated and accepted, see commit)
-C3: in-progress (#1531: schema split into prisma/schema/ (30 files, empty migrate diff) + migrations path pinned; User thinning, index pass, counters pending)
-C4: open
+C3: in-progress (#1531: schema split into prisma/schema/ + migrations path pinned; #1538: 18 unused tables dropped with evidence in docs/_generated/db-drop-candidates.md; retired columns (expand/contract), User thinning, index pass pending)
+C4: done (#1538: lib/cache.ts deleted; one module lib/cached.server.ts with tags, invalidateTag and an LRU L1; adhoc-cache ratchet holds the rest)
 D1: declined (owner, 2026-11-09: no data moves off the box)
 D2: in-progress (#1534: one shared hub session check; Socket.IO Redis adapter wired but off unless REALTIME_REDIS_ADAPTER=1; durable rooms, drain, hub merge pending; two replicas NOT yet safe)
-D3: in-progress (#1533: streak-saver ported to Node jobs; status reads its freshness from pg-boss; recap + doctrine ported too, with A19 read from doctrine_puzzle; vibe, bot-worker, discord-bot pending)
+D3: in-progress (#1533: streak-saver; #1538: recap + doctrine ported to Node jobs, status reads their freshness from pg-boss, A19 from doctrine_puzzle, Go ledger package deleted; phase 8: bot-worker ported (lib/rmhark-ai/bot-worker.server.ts, four pg-boss crons; supervisor runs discord-bot + vibe-worker); vibe-worker and discord-bot pending)
 D4: in-progress (streak sweep, recap and doctrine crons on pg-boss; node-cron and web-tier setInterval consolidation pending)
-D5: in-progress (migration auto-retry already removed on main: a failed migrate stops the deploy; health-gated rollouts for all services pending)
-D6: open
+D5: in-progress (on main: a failed migrate stops the deploy (no auto-retry); every hub, status, the supervisor and the workers are health-checked after up and the non-web fleet rolls back to :rollback images on failure; web has blue/green smoke + bake + auto-rollback; #1538: additive-migration gate with rmh:contract-ok opt-out. Pending: per-service rollback, artifacts not checkouts, vhost from CI, deploy.sh < 300 lines: not done blind, needs a staging run on the VPS)
+D6: blocked (needs the owner to pick a hosted log/metrics/error vendor and provide its keys; the trace module and Prometheus endpoints are ready to export)
 D7: done (dependabot groups @tanstack/* + nitro as one framework bump gated by the integration suite)
 E1: in-progress (#1535: --app-* registered in @theme, ~4,600 escaped utilities codemodded with a compiled-CSS equivalence proof; aliasing --app-* to --site-* pending visual review)
-E2: open
+E2: in-progress (phase 8: 188 arbitrary text sizes and 17 z-[N] replaced by named steps proven byte-identical with Tailwind compile (scripts/probe-type-scale.mjs), local/no-arbitrary-type-size at error on the site tier, tailwind-merge registration; raising sub-11px text, collapsing the rem-NN steps and raw CSS z-index pending)
 E3: open
 E4: in-progress (steps 1-2 done: dead palettes and selectors pruned; split + keyframes pending)
 E5: done (#1531: Tabs, glass-roles.css, useJellyPointer, glass-filter; liquid-morph deleted; press-only alias attributes kept: not exact synonyms)
 E6: in-progress (#1534: one BanListModal, 12 standalone spinners → <Spinner>, local/no-adhoc-spinner; clipboard sites have no clean equivalent)
-E7: open
+E7: done (#1537: one motion source; curves tokenised in app/globals.css with a cubic-bezier ratchet, --ease-shimmer kept byte-exact; local/no-inline-motion)
 E8: open
 F1: in-progress (#1533: 4 class-string rules ported to ESLint with one design-scope.js; CSS checks await Stylelint; GATE_TESTS trim pending)
 F2: in-progress (#1534: Stripe webhook integration tests (signed locally), tier-cache invalidation fix, coin conservation test; browser flow E2E pending)
 F3: in-progress (check jobs defined once in ci-checks.yml, prisma workflows merged, senior-review advisory; asset-sync merge declined: too different)
 F4: done (archive, facts.json + facts:check, drift fixed, AGENTS.md symlink; design-doc merge pending)
-F5: open
+F5: in-progress (#1537: nonce-based CSP minted in getRouter(), shipped Report-Only with /api/csp-report; enforcing after a clean report window)
 F6: open (owner: no history rewrite)
 F7: done (dead scripts and deps removed, knip baseline in docs/_generated)
-F8: open
+F8: done (#1538: local/route-needs-head + 58 route heads, .hit-slop, jsx-a11y count ratchet (pnpm a11y:ratchet) in CI)
 ```

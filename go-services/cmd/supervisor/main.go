@@ -11,7 +11,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/rmhstudios/rmh-go/internal/botworker"
 	"github.com/rmhstudios/rmh-go/internal/discordbot"
 	"github.com/rmhstudios/rmh-go/internal/vibeworker"
 	"github.com/rmhstudios/rmh-go/pkg/config"
@@ -41,7 +40,6 @@ func main() {
 	runs := map[string]worker.RunFunc{
 		"vibe-worker": vibeworker.Run,
 		"discord-bot": discordbot.Run,
-		"bot-worker":  botworker.Run,
 	}
 
 	// One metrics registry per worker so the merged /metrics keeps per-worker

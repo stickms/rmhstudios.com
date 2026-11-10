@@ -22,7 +22,7 @@ export function NotificationBadge({ count, max = 99, className }: NotificationBa
  data-slot="notification-badge"
  className={cn(
  // Danger glass capsule — solid danger core for legibility, plus a top rim.
- "inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-site-danger px-1 text-[10px] font-bold leading-none text-site-danger-fg",
+ "inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-site-danger px-1 text-micro font-bold leading-none text-site-danger-fg",
  className
  )}
  >

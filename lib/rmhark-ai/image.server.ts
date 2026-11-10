@@ -49,11 +49,13 @@ export function isImageGenConfigured(): boolean {
 export async function generatePostImage(opts: {
   text: string;
   userId: string;
+  /** Chat model for the visual prompt (the bot-worker passes BOT_AI_MODEL). */
+  model?: string;
 }): Promise<string | null> {
   if (!isImageGenConfigured()) return null;
 
   try {
-    const prompt = await generateImagePrompt(opts.text);
+    const prompt = await generateImagePrompt(opts.text, { model: opts.model });
     if (!prompt.trim()) return null;
 
     // Reserve budget right before the paid call. If we're at the cap, stop.

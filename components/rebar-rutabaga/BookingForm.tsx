@@ -134,7 +134,7 @@ export function BookingForm() {
     return (
       <Reveal>
         <div className="mt-10 border-t border-rebar-line-strong pt-6">
-          <p className="font-mono text-[0.68rem] uppercase tracking-[0.2em] text-rebar-ink-faint">
+          <p className="font-mono text-rem-68 uppercase tracking-[0.2em] text-rebar-ink-faint">
             {t('book.formDone', { defaultValue: 'The table is yours' })}
           </p>
           <p className="mt-3 font-display text-xl font-light tracking-[-0.02em] text-rebar-ink">
@@ -182,7 +182,7 @@ export function BookingForm() {
   return (
     <Reveal>
       <form onSubmit={submit} className="mt-12">
-        <p className="font-mono text-[0.68rem] uppercase tracking-[0.2em] text-rebar-ink-faint">
+        <p className="font-mono text-rem-68 uppercase tracking-[0.2em] text-rebar-ink-faint">
           {availability
             ? t('book.formMonth', {
                 defaultValue: 'Now taking {{month}}',
@@ -197,7 +197,7 @@ export function BookingForm() {
 
         <div className="mt-6 grid gap-x-10 gap-y-5 sm:grid-cols-2">
           <label className="block">
-            <span className="font-mono text-[0.68rem] uppercase tracking-[0.16em] text-rebar-ink-faint">
+            <span className="font-mono text-rem-68 uppercase tracking-[0.16em] text-rebar-ink-faint">
               {t('book.formDate', { defaultValue: 'Night' })}
             </span>
             <select
@@ -215,7 +215,7 @@ export function BookingForm() {
           </label>
 
           <label className="block">
-            <span className="font-mono text-[0.68rem] uppercase tracking-[0.16em] text-rebar-ink-faint">
+            <span className="font-mono text-rem-68 uppercase tracking-[0.16em] text-rebar-ink-faint">
               {t('book.formGuests', { defaultValue: 'Guests' })}
             </span>
             <select
@@ -233,7 +233,7 @@ export function BookingForm() {
           </label>
 
           <fieldset className="sm:col-span-2">
-            <legend className="font-mono text-[0.68rem] uppercase tracking-[0.16em] text-rebar-ink-faint">
+            <legend className="font-mono text-rem-68 uppercase tracking-[0.16em] text-rebar-ink-faint">
               {t('book.formSeating', { defaultValue: 'Seating' })}
             </legend>
             <div className="mt-2 flex flex-wrap gap-6">
@@ -268,14 +268,14 @@ export function BookingForm() {
           </fieldset>
 
           <label className="block">
-            <span className="font-mono text-[0.68rem] uppercase tracking-[0.16em] text-rebar-ink-faint">
+            <span className="font-mono text-rem-68 uppercase tracking-[0.16em] text-rebar-ink-faint">
               {t('book.formName', { defaultValue: 'Name' })}
             </span>
             <input value={name} onChange={(e) => setName(e.target.value)} className={FIELD} required maxLength={80} />
           </label>
 
           <label className="block">
-            <span className="font-mono text-[0.68rem] uppercase tracking-[0.16em] text-rebar-ink-faint">
+            <span className="font-mono text-rem-68 uppercase tracking-[0.16em] text-rebar-ink-faint">
               {t('book.formEmail', { defaultValue: 'Email' })}
             </span>
             <input
@@ -289,7 +289,7 @@ export function BookingForm() {
           </label>
 
           <label className="block sm:col-span-2">
-            <span className="font-mono text-[0.68rem] uppercase tracking-[0.16em] text-rebar-ink-faint">
+            <span className="font-mono text-rem-68 uppercase tracking-[0.16em] text-rebar-ink-faint">
               {t('book.formNote', { defaultValue: 'Allergies, or anything the kitchen should know' })}
             </span>
             <input value={note} onChange={(e) => setNote(e.target.value)} className={FIELD} maxLength={500} />
