@@ -21,7 +21,8 @@
    │  ladder-worker · homes-worker · jobs              │
    │     (Node crons + pg-boss backbone, no port)      │
    │                                                   │
-   │  supervisor:9090 (Go: discord-bot)                │
+   │  supervisor:9090 (Go: discord-bot, unless         │
+   │    DISCORD_BOT_RUNTIME=node moves it to jobs)     │
    │                                                  │
    │                                                   │
    │  status:7008 (Go)   assets:7007 (Go)              │
@@ -43,6 +44,29 @@ served a production request and duplicated the Node hubs. Go now runs only what
 production uses — the `supervisor` (background workers), `status`, and
 `assets`. The Node hubs are the realtime tier. Recover the deleted topology from
 git history (tag `pre-rewrite-go-realtime`) if it is ever revived.
+
+### The Discord bot's runtime switch (D3)
+
+The Discord bot (Alex + `/sohumtracker`) exists twice: the Go original in the `supervisor`
+(`go-services/internal/discordbot/`) and the Node port in the `jobs` worker (`server/discord-bot/`).
+`DISCORD_BOT_RUNTIME` picks one, and docker-compose passes the same value to `jobs`, `supervisor` and
+`status`:
+
+- **unset** (production today): the Go supervisor connects; the jobs worker registers nothing for the
+  bot (and unschedules any `discord-bot.*` crons a previous run left).
+- **`node`**: the jobs worker opens the gateway and schedules `discord-bot.care-tick`,
+  `discord-bot.watch-flush`, `discord-bot.watch-identity` and `discord-bot.watch-summary`; the Go
+  `discordbot.Run` idles (the supervisor stays healthy, it just runs nothing); status stops reading B07
+  from the supervisor's gateway gauge.
+
+To flip: set `DISCORD_BOT_RUNTIME=node` in `.env.production` and recreate `jobs`, `supervisor` and
+`status` together, so the Go session closes as the Node one opens — either by deploying, or by hand
+with `docker compose -p <project> --env-file .env.production up -d jobs supervisor status`. The
+`--env-file` matters: the three services read the value through compose interpolation
+(`${DISCORD_BOT_RUNTIME:-}`), which `deploy.sh` feeds from `.env.production`; a bare `docker compose up`
+would interpolate it as empty and silently keep the Go bot. To roll back, unset it and recreate the same three. Once the Node bot has run in
+production for a while, the supervisor (and with it `internal/discordbot`, `pkg/db`'s raw-SQL mirror
+and the Bazel test gate) can be retired.
 
 ### Diagrams
 
@@ -80,7 +104,7 @@ flowchart LR
     end
 
     subgraph Go["Go tier (Bazel)"]
-      SUP["supervisor :9090<br/>discord-bot · vibe"]
+      SUP["supervisor :9090<br/>discord-bot (Go runtime)"]
       STAT["status :7008<br/>uptime dashboard"]
       ASSET["assets :7007<br/>range-aware R2 streaming"]
     end

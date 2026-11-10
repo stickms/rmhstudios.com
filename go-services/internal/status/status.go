@@ -60,6 +60,10 @@ type Config struct {
 	// SupervisorMetricsURL is read once a minute for Go worker health alarms
 	// (workers.go); empty, or Oncall nil, disables them.
 	SupervisorMetricsURL string
+	// NodeDiscordBot is true when DISCORD_BOT_RUNTIME=node: the Node jobs worker
+	// holds the Discord gateway and the supervisor's discord-bot idles, so its
+	// rmh_discord_gateway_connected=0 is the expected reading, not an outage (B07).
+	NodeDiscordBot bool
 	// JobLastSuccess reports the last completed run per pg-boss queue (names from
 	// NodeJobQueues) for jobs that run in the Node `jobs` worker. Nil disables
 	// those freshness alarms. See workers.go.
@@ -173,7 +177,7 @@ func New(cfg Config) *Service {
 	}
 	return &Service{
 		cfg: cfg, prober: p, store: store, notifier: notifier, oncall: oncallNotifier, heartbeat: hb, diag: diagnoser,
-		workers:   newWorkerWatch(cfg.SupervisorMetricsURL, cfg.Oncall, cfg.Logger, cfg.JobLastSuccess, cfg.PuzzlesReadyFor),
+		workers:   newWorkerWatch(cfg.SupervisorMetricsURL, cfg.Oncall, cfg.Logger, cfg.JobLastSuccess, cfg.PuzzlesReadyFor).withNodeDiscordBot(cfg.NodeDiscordBot),
 		startedAt: time.Now(),
 	}
 }
