@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useSiteNavigate } from '@/hooks/useSiteNavigate';
 
 /**
  * "Quit this game" — leave a full-screen game for the catalog at `/games`.
@@ -9,11 +9,11 @@ import { useNavigate } from '@tanstack/react-router';
  * score, minimaps). The way out now lives where the player is already looking
  * for options: a Quit / Exit entry on the game's main menu and pause menu.
  *
- * Returns a stable handler. Call it from the menu button's `onClick`.
+ * Returns a stable handler. Call it from the menu button's `onClick`. Inside the
+ * site it is a client navigation; inside an island (redesign audit B1) it is a
+ * document load — see `useSiteNavigate`.
  */
 export function useQuitGame() {
-  const navigate = useNavigate();
-  return useCallback(() => {
-    void navigate({ to: '/games' });
-  }, [navigate]);
+  const navigate = useSiteNavigate();
+  return useCallback(() => navigate('/games'), [navigate]);
 }

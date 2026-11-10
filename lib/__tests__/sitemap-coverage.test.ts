@@ -258,7 +258,9 @@ describe('dynamic routes name a real section', () => {
 describe('every indexable page can be found and described', () => {
   /**
    * A route resolves a head if it declares one or inherits it from an ancestor
-   * layout route — `/rmhtube/$roomId` gets its head from `/rmhtube`.
+   * layout route — `/rmhtube/$roomId` gets its head from `/rmhtube`. An island
+   * route (redesign B1) has no `head()` because the router never renders it: its
+   * document (`renderIslandDocument`) emits the catalog head for its feature.
    */
   function resolvesHead(path: string): boolean {
     const parts = path.split('/').filter(Boolean);
@@ -266,6 +268,7 @@ describe('every indexable page can be found and described', () => {
       const candidate = `/${parts.slice(0, i).join('/')}`;
       for (const file of filesFor(candidate)) {
         if (/^\s*head:/m.test(sourceFor(file))) return true;
+        if (/\brenderIslandDocument\(/.test(sourceFor(file))) return true;
       }
     }
     return false;

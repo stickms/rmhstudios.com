@@ -12,8 +12,8 @@ import { CHARACTERS, getCharacter, type CharacterId } from '@features/void-break
 import { WEAPONS, getWeapon, type WeaponId } from '@features/void-breaker/engine/weapons';
 import { MODIFIERS, combineModifiers, type ModifierId } from '@features/void-breaker/engine/modifiers';
 import { parseHandicap } from '@/lib/ranked/handicap';
-import { useSession } from '@/components/Providers';
-import { useNavigate } from '@tanstack/react-router';
+import { useSession } from '@/components/session/session-context';
+import { useSiteNavigate } from '@/hooks/useSiteNavigate';
 import { useQuitGame } from '@/hooks/useQuitGame';
 import type { RunStats } from '@features/void-breaker/engine/types';
 import { BossRushMenu, BossRushResult } from './BossRush';
@@ -68,7 +68,7 @@ export function VoidBreakerUI({
   const [showHelp, setShowHelp] = useState(false);
   const [showForge, setShowForge] = useState(false);
   const session = useSession();
-  const navigate = useNavigate();
+  const navigate = useSiteNavigate();
   const quit = useQuitGame();
 
   const fetchLb = useCallback(async () => {
@@ -593,7 +593,7 @@ export function VoidBreakerUI({
             )}
 
             {!session.data ? (
-              <Button onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
+              <Button onClick={() => navigate('/login')}
                 className="w-full bg-[#0a0a18] hover:bg-[#14141f] text-[#00f5ff] font-bold py-3 border border-[#00f5ff]/30">
                 {t("sign-in-to-play", { defaultValue: "Sign In to Play" })}
               </Button>
@@ -722,7 +722,7 @@ export function VoidBreakerUI({
           {runStats.bossRush && <BossRushResult runStats={runStats} signedIn={!!session.data} />}
 
           {!session.data ? (
-            <Button onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
+            <Button onClick={() => navigate('/login')}
               className="w-full bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] font-bold border border-[#c9a227]/40">
               {t("sign-in-to-submit", { defaultValue: "Sign In to Submit" })}
             </Button>

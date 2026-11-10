@@ -344,6 +344,10 @@ RUN rm -rf .output \
     # set, so if the files were absent the art would not fall back to the master,
     # it would fail outright. That is why `pnpm build` chains images:variants
     # before `vite build`, and why the COPY above is not removable.
+    # The islands first (redesign audit B1, vite.islands.config.ts): the site build
+    # inlines their manifest into the server bundle and Nitro copies their output
+    # into .output/public/islands, so it must exist before `vite build` starts.
+    && pnpm exec vite build -c vite.islands.config.ts \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && node scripts/fix-ssr-css-hash.mjs \
     && pnpm run check:bundle-budget \

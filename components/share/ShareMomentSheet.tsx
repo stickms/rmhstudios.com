@@ -10,7 +10,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useSiteNavigate } from '@/hooks/useSiteNavigate';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Check, Copy, Download, Link2, Loader2, Send, Share2 } from 'lucide-react';
@@ -40,7 +40,8 @@ interface ShareMomentSheetProps {
 
 export function ShareMomentSheet({ open, onOpenChange, kind, payload }: ShareMomentSheetProps) {
   const { t } = useTranslation('site');
-  const navigate = useNavigate();
+  // Not useNavigate(): the sheet also opens inside game islands, which have no router (redesign B1).
+  const navigate = useSiteNavigate();
   const [creating, setCreating] = useState(false);
   const [moment, setMoment] = useState<{ id: string; url: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -104,7 +105,7 @@ export function ShareMomentSheet({ open, onOpenChange, kind, payload }: ShareMom
     onOpenChange(false);
     // The /share route stitches the fields into a composer draft (it unfurls
     // via the OG image on the feed's own link-preview path).
-    void navigate({ to: '/share', search: { title: '', text: payload.value, url: moment.url } });
+    navigate({ to: '/share', search: { title: '', text: payload.value, url: moment.url } });
   };
 
   const nativeShare = async () => {

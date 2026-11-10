@@ -1,0 +1,34 @@
+/* ==========================================================================
+   VOID BREAKER ISLAND SHEET (redesign audit B1) — the one render-blocking
+   stylesheet of the island document `app/routes/void-breaker.tsx` serves.
+
+   It is the shared design body (`app/globals.css`: tokens, the jelly material,
+   the viewport primitives `components/ui` and the game rely on) plus Tailwind's
+   utilities for THIS island's own module graph and nothing else. The site sheets
+   (`app/site-tier.css`, `app/app-tier.css`) carry utilities for every page; this
+   one is scanned from an explicit list, so no other game's classes ride along.
+
+   THE LIST BELOW IS A MANIFEST: `lib/__tests__/islands.test.ts` walks the import
+   graph from `features/void-breaker/island.tsx` and fails if a reached component
+   file is not covered by an `@source` line here (it would render without its
+   utilities), printing the line to add.
+   ========================================================================== */
+@import 'tailwindcss' source(none);
+@import '../../app/globals.css';
+
+@source "./";
+@source "../../components/games/result-moment-slot.tsx";
+@source "../../components/i18n/AppI18nProvider.tsx";
+@source "../../components/games/ResultMoment.tsx";
+@source "../../components/share/ShareMomentSheet.tsx";
+@source "../../components/shared/GameErrorBoundary.tsx";
+@source "../../components/shared/GameLoadingFallback.tsx";
+@source "../../components/shared/SaveConflictDialog.tsx";
+@source "../../components/ui/button.tsx";
+@source "../../components/ui/dialog.tsx";
+@source "../../components/ui/slider.tsx";
+@source "../../components/ui/site-toaster.tsx";
+@source "../../components/ui/TwemojiProvider.tsx";
+@source "../../components/island";
+@source "../../components/session/session-context.tsx";
+@source "../../hooks/useCloudSave.tsx";

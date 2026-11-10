@@ -43,7 +43,11 @@ describe('iOS edge contract: invariants', () => {
   const theme = read('stores/themeStore.ts');
 
   it('the page paints edge to edge (viewport-fit=cover), so the bars show the page, not a gutter', () => {
-    expect(root.match(/viewport-fit=cover/g)?.length).toBeGreaterThanOrEqual(2);
+    // The Discord head in __root.tsx, and the site-wide head every other document takes
+    // (lib/root-head.ts: __root.tsx and the island document, redesign B1).
+    expect(root.match(/viewport-fit=cover/g)?.length).toBeGreaterThanOrEqual(1);
+    expect(root).toMatch(/meta: ROOT_META/);
+    expect(read('lib/root-head.ts')).toMatch(/viewport-fit=cover/);
   });
 
   it('theme-color is never written on iOS: the pre-paint script and the runtime both skip ios-webkit', () => {

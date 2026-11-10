@@ -371,7 +371,8 @@ if list '^app/routes/(_site/)?[^/]*\.tsx$' | grep -q .; then
   for f in $(list '^app/routes/.*\.tsx$'); do
     [ -f "$f" ] || continue
     case "$f" in *__root.tsx|*route.tsx) continue ;; esac
-    if grep -q 'createFileRoute' "$f" && ! grep -q 'head:' "$f"; then
+    # An island route (redesign B1) is a document handler; its head is rendered by renderIslandDocument.
+    if grep -q 'createFileRoute' "$f" && ! grep -qE 'head:|renderIslandDocument\(' "$f"; then
       warn "Route without head(): $f"
       printf '%s    → At minimum head() returns meta: [{ title: "X | RMH Studios" }]; public pages use buildMeta()/buildCanonical() and let it own the og:* block.%s\n' "$dim" "$off"
     fi

@@ -209,6 +209,59 @@ const BUDGETS = {
 };
 
 /**
+ * ── Islands (redesign audit B1) ──────────────────────────────────────────
+ *
+ * An island (`features/<id>/island.tsx`, built by `vite.islands.config.ts` into
+ * `dist-islands/`) is a whole page's first load on its own: its entry chunk, the
+ * chunks that entry imports statically, and its one stylesheet. None of it is in
+ * the site's critical path above, so each island carries its own line here, and
+ * an island WITHOUT a line fails the gate (a new island is a deliberate budget).
+ *
+ * **2026-11-10 — void-breaker, the first island.** Measured on the build that
+ * moved it (the island's whole JS is one chunk: React, three.js, the game):
+ * JS 1,312,047 B raw / 304,265 B brotli, CSS 210,376 B raw / 27,303 B brotli.
+ * Before the move the same page loaded 2,507,212 B of JS (194 files) and the
+ * 503,615 B app-tier sheet. Budgets are measured + 3.5% (the critical path's
+ * original headroom).
+ */
+export const ISLAND_BUDGETS: Readonly<Record<string, { jsBrotli: number; cssBrotli: number }>> = {
+  'void-breaker': { jsBrotli: 315_000, cssBrotli: 28_300 },
+};
+
+const ISLANDS_DIR = path.join(ROOT, 'dist-islands');
+
+/** Each built island's first-load JS (static closure of its entry) and CSS, brotli. */
+function measureIslands(): Array<{
+  id: string;
+  jsBrotli: number;
+  cssBrotli: number;
+  files: number;
+}> {
+  const manifestPath = path.join(ISLANDS_DIR, '.vite', 'manifest.json');
+  if (!existsSync(manifestPath)) return [];
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as Record<
+    string,
+    { file: string; isEntry?: boolean; src?: string; css?: string[] }
+  >;
+  const out: Array<{ id: string; jsBrotli: number; cssBrotli: number; files: number }> = [];
+  for (const [key, chunk] of Object.entries(manifest)) {
+    const id = /^features\/([^/]+)\/island\.tsx$/.exec(key)?.[1];
+    if (!chunk.isEntry || !id) continue;
+    const { files } = staticClosure(ISLANDS_DIR, chunk.file);
+    const jsBrotli = files.reduce(
+      (n, f) => n + brotliCompressSync(readChunk(ISLANDS_DIR, f)).length,
+      0,
+    );
+    const cssBrotli = (chunk.css ?? []).reduce(
+      (n, f) => n + brotliCompressSync(readFileSync(path.join(ISLANDS_DIR, f))).length,
+      0,
+    );
+    out.push({ id, jsBrotli, cssBrotli, files: files.length });
+  }
+  return out.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/**
  * ── Globe eversion: zero cost to page load (S#39, spec §8.1 / §11.3) ───────
  *
  * The eversion (docs/plans/2026-10-17-globe-eversion.md) is a WebGL2 renderer,
@@ -524,6 +577,16 @@ async function main(): Promise<number> {
         2,
       ),
     );
+  }
+
+  for (const island of measureIslands()) {
+    const budget = ISLAND_BUDGETS[island.id];
+    if (!budget) {
+      rows.push([`island ${island.id}: NO BUDGET`, island.jsBrotli, 0]);
+      continue;
+    }
+    rows.push([`island ${island.id} JS, br`, island.jsBrotli, budget.jsBrotli]);
+    rows.push([`island ${island.id} CSS, br`, island.cssBrotli, budget.cssBrotli]);
   }
 
   const { leaks, mapped } = eversionLeaks(OUT_DIR, files);

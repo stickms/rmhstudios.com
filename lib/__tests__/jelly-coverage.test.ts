@@ -359,9 +359,11 @@ describe('jelly coverage — the primitives adapter (app/jelly-coverage.css) and
   );
 
   it('the toaster style leaves background, backdrop-filter and box-shadow to the adapter', () => {
-    const src = read('components/Providers.tsx');
+    // The site's one <Toaster>, mounted by Providers and by the island providers (B1).
+    const src = read('components/ui/site-toaster.tsx');
+    expect(read('components/Providers.tsx')).toContain('<SiteToaster');
     const at = src.indexOf('toastOptions');
-    expect(at, 'Providers.tsx no longer passes toastOptions to <Toaster>').toBeGreaterThan(0);
+    expect(at, 'site-toaster.tsx no longer passes toastOptions to <Toaster>').toBeGreaterThan(0);
     const styleAt = src.indexOf('style:', at);
     const body = src
       .slice(styleAt, src.indexOf('}', styleAt))
