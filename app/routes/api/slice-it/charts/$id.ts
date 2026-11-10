@@ -15,15 +15,15 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import type { Difficulty } from '@/lib/slice-it/constants';
-import type { LintNote } from '@/lib/slice-it/beatmap/lint';
-import { ChartPatchZ } from '@/lib/slice-it/editor/api-schemas';
-import { lintWireChart } from '@/lib/slice-it/editor/lint';
-import type { TimingPoint } from '@/lib/slice-it/editor/types';
-import { chartHashOf } from '@/lib/slice-it/editor/hash.server';
-import { toChartDto } from '@/lib/slice-it/editor/seed.server';
-import { rateAndStoreChart } from '@/lib/slice-it/rating.server';
-import { recordChartPublished } from '@/lib/slice-it/progression.server';
+import type { Difficulty } from '@features/slice-it/engine/constants';
+import type { LintNote } from '@features/slice-it/engine/beatmap/lint';
+import { ChartPatchZ } from '@features/slice-it/engine/editor/api-schemas';
+import { lintWireChart } from '@features/slice-it/engine/editor/lint';
+import type { TimingPoint } from '@features/slice-it/engine/editor/types';
+import { chartHashOf } from '@features/slice-it/engine/editor/hash.server';
+import { toChartDto } from '@features/slice-it/engine/editor/seed.server';
+import { rateAndStoreChart } from '@features/slice-it/engine/rating.server';
+import { recordChartPublished } from '@features/slice-it/engine/progression.server';
 
 /** `POST /api/slice-it/charts/$id` — the §9 publish gate. */
 const PublishZ = z.object({

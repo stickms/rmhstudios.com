@@ -1,4 +1,4 @@
-import { validateImageBuffer, detectImageExt } from "@/lib/slice-it/upload-validation";
+import { validateImageBuffer, detectImageExt } from "@features/slice-it/engine/upload-validation";
 
 export const MEDIA_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 export const MAX_MEDIA_PER_POST = 4;

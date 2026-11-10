@@ -174,7 +174,7 @@ export const ASSIST_FEATURES = [
  *
  * Two games qualify, and both got there before this file existed:
  *
- *   - **Slice It** — `lib/slice-it/modifiers.ts` implements a nine-setting
+ *   - **Slice It** — `features/slice-it/engine/modifiers.ts` implements a nine-setting
  *     assist family (assist mode, no-fail, colour-blind lane palettes, a
  *     photosensitivity mode independent of the performance tier, adjustable
  *     judgement windows, one-handed play) and already enforces the rule this

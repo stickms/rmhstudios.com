@@ -2,8 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 
 import { apiOptions, withDeveloperApi } from '@/lib/api/with-developer-api.server';
 import { prisma } from '@/lib/prisma.server';
-import { DIFFICULTIES } from '@/lib/slice-it/constants';
-import { MOD_POOLS } from '@/lib/slice-it/pools';
+import { DIFFICULTIES } from '@features/slice-it/engine/constants';
+import { MOD_POOLS } from '@features/slice-it/engine/pools';
 
 /**
  * GET /api/v1/slice-it/leaderboard — one chart's board (`X13`).

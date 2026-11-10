@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { chartReviews, hasClearedChart } from '@/lib/slice-it/library.server';
+import { chartReviews, hasClearedChart } from '@features/slice-it/engine/library.server';
 
 /**
  * L3 — reviews of a chart.

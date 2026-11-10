@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/slice-it/packs.contract';
+import * as C from '@features/slice-it/engine/packs.contract';
 import { prisma } from '@/lib/prisma.server';
-import { PackItemsZ } from '@/lib/slice-it/packs';
-import { addSongsToPack, ownedPack, packSongIds, reorderPack } from '@/lib/slice-it/packs.server';
+import { PackItemsZ } from '@features/slice-it/engine/packs';
+import { addSongsToPack, ownedPack, packSongIds, reorderPack } from '@features/slice-it/engine/packs.server';
 
 /**
  * L16 — add, remove and reorder a pack's members.

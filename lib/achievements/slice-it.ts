@@ -4,7 +4,7 @@
  * Given the facts of one submitted run, decides which one-shot achievement ids
  * (defined in `lib/achievements/catalog.ts`) that run satisfies. No Prisma, no
  * side effects — the actual granting (and the coin reward that comes with it)
- * happens in `lib/slice-it/progression.server.ts`, which calls this first so
+ * happens in `features/slice-it/engine/progression.server.ts`, which calls this first so
  * "did this run qualify" can be unit-tested without a database.
  *
  * Deliberately excludes the achievements that are not decided by a single run:
@@ -13,9 +13,9 @@
  * chart-publish route). Those are granted directly at their own call sites.
  */
 
-import { gradeFor } from '@/lib/slice-it/scoring';
-import type { Difficulty } from '@/lib/slice-it/constants';
-import type { Modifiers } from '@/lib/slice-it/types';
+import { gradeFor } from '@features/slice-it/engine/scoring';
+import type { Difficulty } from '@features/slice-it/engine/constants';
+import type { Modifiers } from '@features/slice-it/engine/types';
 
 export interface SliceItRunFacts {
   difficulty: Difficulty;

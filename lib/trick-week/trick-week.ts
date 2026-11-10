@@ -1,4 +1,4 @@
-/** Trick of the week (R21) — week maths, vote schema and row shapes. Kept out of lib/nightrail so the site-tier hub can import it. */
+/** Trick of the week (R21) — week maths, vote schema and row shapes. Kept out of features/nightrail/engine so the site-tier hub can import it. */
 import { z } from 'zod';
 
 /** The UTC Monday (YYYY-MM-DD) of the week containing `at`. */

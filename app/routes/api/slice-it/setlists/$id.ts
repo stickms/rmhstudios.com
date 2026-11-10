@@ -1,14 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/slice-it/setlists.contract';
-import { SetlistPatchZ } from '@/lib/slice-it/setlist-schema';
+import * as C from '@features/slice-it/engine/setlists.contract';
+import { SetlistPatchZ } from '@features/slice-it/engine/setlist-schema';
 import {
   LIKED_SETLIST_ID,
   deleteSetlist,
   likedSongsSetlist,
   resolveSetlist,
   updateSetlist,
-} from '@/lib/slice-it/setlist.server';
+} from '@features/slice-it/engine/setlist.server';
 
 /**
  * S8 — read, replace or delete one setlist.

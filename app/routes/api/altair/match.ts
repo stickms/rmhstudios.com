@@ -7,14 +7,14 @@ import { defineHandler } from '@/lib/api/handler.server';
  *
  * It does NOT record what it is given. The body is a CoopRunJob: the hub's trusted setup (seed,
  * roster, wall clock) plus the host's run LOG and CLAIMED result. The run is queued for a
- * headless replay (lib/altair/verify); only if the replay reproduces the claim does the worker
+ * headless replay (features/altair/engine/verify); only if the replay reproduces the claim does the worker
  * write the REPLAY's numbers to AltairMatch / AltairMatchPlayer / the co-op profile. The response is
  * 202: the result is not known yet, and a rejected run is not an error the caller can fix.
  */
 
 import { z } from 'zod';
 import { timingSafeStringEqual } from '@/lib/internal-auth';
-import { enqueueCoopRun } from '@/lib/altair/verify/queue.server';
+import { enqueueCoopRun } from '@features/altair/engine/verify/queue.server';
 
 const ALTAIR_SERVER_SECRET = process.env.ALTAIR_SERVER_SECRET;
 

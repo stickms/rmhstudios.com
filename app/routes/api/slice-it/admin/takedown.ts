@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { defineHandler } from '@/lib/api/handler.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
-import { archivableBytes, archiveCandidates, takeDownSong } from '@/lib/slice-it/library.server';
+import { archivableBytes, archiveCandidates, takeDownSong } from '@features/slice-it/engine/library.server';
 
 /**
  * L9 / L12 — take a song down, and see what storage could be reclaimed.

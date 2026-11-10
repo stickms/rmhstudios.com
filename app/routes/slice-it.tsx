@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { gameRouteHead } from '@/lib/seo-catalog';
-import sliceItCss from '@/components/slice-it/slice-it.css?url';
+import sliceItCss from '@features/slice-it/ui/slice-it.css?url';
 // The game's faces, preloaded: Archivo (everything) and IBM Plex Mono (numbers and
 // labels). Bodoni Moda Italic is a single word at a time and loads on demand.
 import archivoFont from '@/components/shared/game-fonts/Archivo/Archivo-wdth-wght.woff2?url';

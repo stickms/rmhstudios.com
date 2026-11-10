@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { randomUUID } from 'node:crypto';
 import { defineHandler } from '@/lib/api/handler.server';
-import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
+import { validateImageBuffer } from '@features/slice-it/engine/upload-validation';
 import { optimizeImage } from '@/lib/image-optimize';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { deleteObject, putObject } from '@/lib/storage/s3.server';

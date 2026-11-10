@@ -45,12 +45,12 @@ starts to matter, the fix is already written" note.
 
 ---
 
-## 2. `lib/slice-it/constants.ts` — not requested
+## 2. `features/slice-it/engine/constants.ts` — not requested
 
 `SONG_SORTS` did **not** need widening for this wave. `L13`'s four extra sort
 keys (`artist`, `bpm`, `plays`, `yourScore`) and `S9`'s random-selection
 constraints are defined entirely in the new
-[`lib/slice-it/library-filters.ts`](../../lib/slice-it/library-filters.ts)
+[`features/slice-it/engine/library-filters.ts`](../../lib/slice-it/library-filters.ts)
 (`LIBRARY_SORTS = [...SONG_SORTS, ...LIBRARY_EXTRA_SORTS]`) and mapped onto real
 `ORDER BY` clauses inside `app/routes/api/slice-it/songs.ts`, per the "define
 your extra sort keys in your own module and map them in the route" guidance.

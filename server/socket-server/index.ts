@@ -21,7 +21,6 @@ import { attachRedisAdapter } from '../shared/redis-adapter';
 import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
 
 // ─── Game Handlers ──────────────────────────────────────────────
-import { registerSliceItHandlers, handleSliceItDisconnect } from './handlers/slice-it';
 import {
   registerNeonDriftwayHandlers,
   handleNeonDriftwayDisconnect,
@@ -32,7 +31,6 @@ import {
 } from './handlers/synapse-storm';
 import { registerRmhTypeHandlers, handleRmhTypeDisconnect } from './handlers/rmhtype';
 import { registerRmhStudyHandlers, handleRmhStudyDisconnect } from './handlers/rmhstudy';
-import { registerAltairHandlers, handleAltairDisconnect } from './handlers/altair';
 import {
   registerKowloonKnockoutHandlers,
   handleKowloonKnockoutDisconnect,
@@ -423,12 +421,12 @@ io.on('connection', (socket) => {
   logger.info({ event: 'connection', userId, userName, socketId: socket.id });
 
   // Register all game handlers
-  registerSliceItHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'slice-it');
   registerNeonDriftwayHandlers(io, socket);
   registerSynapseStormHandlers(io, socket);
   registerRmhTypeHandlers(io, socket);
   registerRmhStudyHandlers(io, socket);
-  registerAltairHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'altair');
   registerKowloonKnockoutHandlers(io, socket);
   registerStudioJamHandlers(io, socket); // F13: self-cleans on disconnect
   registerBlackjackHandlers(io, socket);
@@ -477,11 +475,11 @@ io.on('connection', (socket) => {
     void handleGroupCallDisconnect(io, socket);
     handleControllerDisconnect(io, socket);
     if (!shuttingDown) handleSynapseStormDisconnect(io, socket);
-    handleSliceItDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'slice-it');
     if (!shuttingDown) handleNeonDriftwayDisconnect(io, socket);
     if (!shuttingDown) handleRmhTypeDisconnect(io, socket);
     handleRmhStudyDisconnect(io, socket);
-    handleAltairDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'altair');
     handleKowloonKnockoutDisconnect(io, socket);
     handleBlackjackDisconnect(io, socket);
     handleHoldemDisconnect(io, socket);

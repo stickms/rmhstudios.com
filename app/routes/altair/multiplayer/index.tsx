@@ -10,12 +10,12 @@ import { noindexHead } from '@/lib/seo';
 import { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Users, Zap, UserPlus, RefreshCw, Globe, Lock, Eye } from 'lucide-react'
-import { connectToAltair, getSocket, disconnectFromAltair, emit } from '@/lib/altair/multiplayer/socket'
-import { useAltairMultiplayerStore } from '@/lib/altair/multiplayer/store'
-import { S2C, C2S } from '@/lib/altair/multiplayer/events'
-import { useAltairToastStore } from '@/lib/altair/stores/toast-store'
-import AltairHeader from '@/components/altair/AltairHeader'
-import type { PublicLobbyInfo, AltairLobbySettings } from '@/lib/altair/multiplayer/types'
+import { connectToAltair, getSocket, disconnectFromAltair, emit } from '@features/altair/engine/multiplayer/socket'
+import { useAltairMultiplayerStore } from '@features/altair/engine/multiplayer/store'
+import { S2C, C2S } from '@features/altair/engine/multiplayer/events'
+import { useAltairToastStore } from '@features/altair/engine/stores/toast-store'
+import AltairHeader from '@features/altair/ui/AltairHeader'
+import type { PublicLobbyInfo, AltairLobbySettings } from '@features/altair/engine/multiplayer/types'
 
 const VISIBILITY_LABELS: Record<AltairLobbySettings['visibility'], string> = {
   public: 'Public',

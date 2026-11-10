@@ -2,17 +2,17 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { ARTIST_KEY_MAX } from '@/lib/slice-it/artist';
-import type { LibrarySong } from '@/lib/slice-it/library-filters';
+import { ARTIST_KEY_MAX } from '@features/slice-it/engine/artist';
+import type { LibrarySong } from '@features/slice-it/engine/library-filters';
 import {
   libraryFieldsOf,
   songSelect,
   toSliceSong,
   viewerSongJoins,
-} from '@/lib/slice-it/songs.server';
-import { artistAggregate, type ArtistSummary } from '@/lib/slice-it/library-query.server';
-import { listPacks } from '@/lib/slice-it/packs.server';
-import type { PackSummary } from '@/lib/slice-it/packs';
+} from '@features/slice-it/engine/songs.server';
+import { artistAggregate, type ArtistSummary } from '@features/slice-it/engine/library-query.server';
+import { listPacks } from '@features/slice-it/engine/packs.server';
+import type { PackSummary } from '@features/slice-it/engine/packs';
 
 /**
  * L15 — one artist: aggregate stats, their tracks, and their albums.

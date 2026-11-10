@@ -10,17 +10,17 @@ instead, and what is lost.
 
 ---
 
-## 1. `lib/slice-it/types.ts` — promote `TimingPoint` and `SvPoint`
+## 1. `features/slice-it/engine/types.ts` — promote `TimingPoint` and `SvPoint`
 
 **Why.** The design doc's `snap.ts` imports `TimingPoint` from
-`@/lib/slice-it/types`, and §11's `ChartPatchZ` bounds a `timingPoints` array. No
+`@features/slice-it/engine/types`, and §11's `ChartPatchZ` bounds a `timingPoints` array. No
 such type exists: every chart today is one constant BPM (`Song.bpm`), so nothing
 in the game has ever needed one. They are a shared contract the moment `C6`
 (timing points) or `G10` (SV) lands, because the **engine** will have to read the
 same map the editor writes.
 
 **Change.** Move these two declarations out of
-`lib/slice-it/editor/types.ts` into `lib/slice-it/types.ts` and re-export:
+`features/slice-it/engine/editor/types.ts` into `features/slice-it/engine/types.ts` and re-export:
 
 ```ts
 /** A tempo marker. Charts with none fall back to the song's single `bpm`. */
@@ -39,7 +39,7 @@ export interface SvPoint {
 }
 ```
 
-**Without it.** They live in `lib/slice-it/editor/types.ts` and the editor is the
+**Without it.** They live in `features/slice-it/engine/editor/types.ts` and the editor is the
 only consumer, which is true today. The cost is that when the engine grows tempo
 support it will either import from an `editor/` module or declare a second,
 drifting copy.
@@ -57,7 +57,7 @@ first deploy that ran before the function existed.
 
 **What shipped instead.** The column is
 `@default(dbgenerated("gen_random_uuid()")) @db.Uuid`, and the **value** is minted
-application-side by `uuidv7()` in `lib/slice-it/editor/uuid.ts` — an RFC 9562
+application-side by `uuidv7()` in `features/slice-it/engine/editor/uuid.ts` — an RFC 9562
 UUIDv7, so the insert locality the new-table PK policy (`lib/CLAUDE.md`
 §Database) is after is preserved. The column default is only a fallback for a row
 inserted without one.
@@ -88,7 +88,7 @@ the board. That is exactly today's behaviour, so nothing regresses.
 
 ---
 
-## 4. `lib/slice-it/editor/hash.ts` → `hash.server.ts`
+## 4. `features/slice-it/engine/editor/hash.ts` → `hash.server.ts`
 
 **Deviation, already shipped.** §2 names the file `hash.ts`. It uses
 `node:crypto`, and `lib/CLAUDE.md`'s first rule is that anything touching `node:*`
@@ -100,7 +100,7 @@ write precisely so a client cannot claim an unedited chart's identity.
 
 ---
 
-## 5. `app/routes/slice-it/index.tsx` (or `components/slice-it/SongDetailsPanel.tsx`) — an entry point
+## 5. `app/routes/slice-it/index.tsx` (or `features/slice-it/ui/SongDetailsPanel.tsx`) — an entry point
 
 **Why.** `/slice-it/edit/$songId` exists and works, and nothing links to it. The
 natural place is the song details panel, next to the play button, shown only when
@@ -135,7 +135,7 @@ and carries a `status`, so multiple authors per song are already representable.
 
 ---
 
-## 7. `lib/slice-it/beatmap/index.ts` — persist the analysis artefacts (phase 6)
+## 7. `features/slice-it/engine/beatmap/index.ts` — persist the analysis artefacts (phase 6)
 
 **Why.** §6 wants the waveform envelope, the **rejected** onset candidates and the
 section boundaries kept with the chart. The analyser computes all three and
@@ -152,7 +152,7 @@ separate column is safer).
 
 ---
 
-## 8. `lib/slice-it/engine.ts` — a non-submitting construction flag (phase 4)
+## 8. `features/slice-it/engine/engine.ts` — a non-submitting construction flag (phase 4)
 
 **Why.** §10: playtest is `GameEngine` on the edited chart, and "a run started in
 the editor must not be able to reach the leaderboard" — structurally, not by
@@ -169,8 +169,8 @@ not good enough.
 
 ## 9. `vitest.config.ts` — one line, already applied
 
-`'lib/slice-it/editor/__tests__/**/*.test.ts'` was added next to the existing
-`lib/slice-it/__tests__` entry, as §15 requires. Flagged here only because the
+`'features/slice-it/engine/editor/__tests__/**/*.test.ts'` was added next to the existing
+`features/slice-it/engine/__tests__` entry, as §15 requires. Flagged here only because the
 file is shared: that is the sole edit made to it.
 
 ---

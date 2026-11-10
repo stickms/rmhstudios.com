@@ -10,13 +10,13 @@ itself, because the file belongs to somebody else this wave.
 
 - **H6** — a hold-to-restart key (backtick, 600ms hold, disabled in
   multiplayer) and a skip button for any lead-in longer than 5s, landing 2s
-  before the first note. `GameCanvas.tsx`, `lib/slice-it/engine.ts`
+  before the first note. `GameCanvas.tsx`, `features/slice-it/engine/engine.ts`
   (`GameEngine.seek`), `lib/audio/AudioManager.ts` (`AudioManager.seek` — see
   §1 below).
-- **H5** — section boundaries from `lib/slice-it/beatmap/sections.ts` marked
+- **H5** — section boundaries from `features/slice-it/engine/beatmap/sections.ts` marked
   on the song progress bar in `HUD.tsx`.
 - **V5** — escalating flash + label at 50/100/250/500/1000 combo, fired once
-  per crossing. `lib/slice-it/engine.ts` (`COMBO_MILESTONES`,
+  per crossing. `features/slice-it/engine/engine.ts` (`COMBO_MILESTONES`,
   `getComboMilestone`), drawn in `GameCanvas.tsx`.
 - **A8** — judgement-scaled haptics on every resolved note and hold release,
   with an enabled flag and an intensity value persisted to `localStorage`
@@ -26,7 +26,7 @@ itself, because the file belongs to somebody else this wave.
   actually called: acquired for the duration of `status === 'PLAYING'`,
   released on finish. A `beforeunload` guard warns on browser-level navigation
   during a run — see §3 for the in-app half that could not be built this wave.
-- **V8** — `lib/slice-it/songs.server.ts#densityStrip`/`songDensityStrip`, the
+- **V8** — `features/slice-it/engine/songs.server.ts#densityStrip`/`songDensityStrip`, the
   pure computation, plus a hover-reveal `<DensityStrip>` in `SongLibrary.tsx`
   that renders nothing until a response actually carries the data — see §4.
 
@@ -42,7 +42,7 @@ implementation matches what replay-requests.md already asked for.
 
 ## 2. Haptics has no settings surface
 
-**Owner:** whoever owns `lib/slice-it/store.ts` (persisted state) and
+**Owner:** whoever owns `features/slice-it/engine/store.ts` (persisted state) and
 `MainMenu.tsx` (the settings UI) — both off-limits to this change.
 
 A8 asks for "an intensity setting and an off switch." Both exist and work
@@ -94,7 +94,7 @@ same condition `GameCanvas.tsx`'s own `beforeunload` listener already uses.
 off-limits to this change.
 
 V8 asks for "a 64-value density array on the library card." The computation
-exists and is tested (`lib/slice-it/songs.server.ts#densityStrip`,
+exists and is tested (`features/slice-it/engine/songs.server.ts#densityStrip`,
 `#songDensityStrip`), and `SongLibrary.tsx` already has a `<DensityStrip>`
 that reads an optional `densityStrip: number[]` off a song and reveals it on
 hover — it just never receives one today, so it is currently a no-op.

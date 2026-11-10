@@ -16,7 +16,7 @@ no chart is in the ranked pool because nothing calls the promotion.
 
 Not a request to another agent — a request to whoever ships this to production.
 
-Every constant in `lib/slice-it/rating.ts` (five feature weights, three ratio
+Every constant in `features/slice-it/engine/rating.ts` (five feature weights, three ratio
 scalars, the compression exponent, the 20-point ceiling) and the two in the
 skill weighting (`SKILL_DECAY = 0.95`, `SKILL_ACCURACY_EXPONENT = 12`) was
 chosen by judgement about what makes a chart hard. **None of it is fitted to
@@ -50,11 +50,11 @@ Until then, a rating is a rough ordering within a library, not a claim that a
 
 **What exists.** `Song.chartRating` is a new denormalised column: the highest
 rating among a song's `public` charts, maintained by `syncSongChartRating()` in
-`lib/slice-it/rating.server.ts`, with an index on
+`features/slice-it/engine/rating.server.ts`, with an index on
 `("isPublic", "chartRating" DESC)` sized for exactly this query.
 
-**What is missing.** `SONG_SORTS` lives in `lib/slice-it/constants.ts` and the
-query that consumes it is in `lib/slice-it/songs.server.ts` — both outside this
+**What is missing.** `SONG_SORTS` lives in `features/slice-it/engine/constants.ts` and the
+query that consumes it is in `features/slice-it/engine/songs.server.ts` — both outside this
 agent's ownership. So the column is populated and unreachable: C3's stated gap
 is that the library "offers no way to find something at your level", and that is
 still true.
@@ -62,10 +62,10 @@ still true.
 The change is two lines plus the null handling:
 
 ```ts
-// lib/slice-it/constants.ts
+// features/slice-it/engine/constants.ts
 export const SONG_SORTS = ['recent', 'popular', 'liked', 'title', 'duration', 'difficulty'] as const;
 
-// lib/slice-it/songs.server.ts — wherever the sort switch lives
+// features/slice-it/engine/songs.server.ts — wherever the sort switch lives
 case 'difficulty':
   // NULLS LAST is the whole subtlety. A song with no rated chart is not a
   // trivially easy song, and Postgres sorts NULLs FIRST on DESC by default —
@@ -74,7 +74,7 @@ case 'difficulty':
 ```
 
 `LIBRARY_SORTS` in `library-filters.ts` derives from `SONG_SORTS`, and
-`lib/slice-it/__tests__/library-filters.test.ts` asserts the two agree — so that
+`features/slice-it/engine/__tests__/library-filters.test.ts` asserts the two agree — so that
 file needs nothing, but it will fail until the query supports the new value.
 
 **Also worth having:** a rating badge on the song card and a rating-band filter.
@@ -93,11 +93,11 @@ every row and the library sort in §1 would sort an empty column.
 
 It should be called wherever a chart's notes change: the chart PATCH in
 `app/routes/api/slice-it/charts/$id.ts`, the create in `charts.ts`, and the
-generated seed in `lib/slice-it/editor/seed.server.ts`. All three are outside
+generated seed in `features/slice-it/engine/editor/seed.server.ts`. All three are outside
 this agent's ownership.
 
 ```ts
-import { rateAndStoreChart } from '@/lib/slice-it/rating.server';
+import { rateAndStoreChart } from '@features/slice-it/engine/rating.server';
 // after the notes are written, before the response:
 await rateAndStoreChart(chart.id);
 ```
@@ -116,7 +116,7 @@ until it returns 0.
 ## 3. There is no admin surface for the ranked pool (R10)
 
 `promoteToRanked(chartId, moderatorId)` and `demote(chartId, moderatorId)` in
-`lib/slice-it/ranking.server.ts` are the two human decisions in R10, and they
+`features/slice-it/engine/ranking.server.ts` are the two human decisions in R10, and they
 have **no caller**. Qualification is automatic and already wired — the score
 route calls `evaluateQualification()` on every submission — so charts will
 accumulate in `qualified` and stop there. Until somebody promotes one, no chart

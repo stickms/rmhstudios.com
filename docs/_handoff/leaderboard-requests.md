@@ -13,7 +13,7 @@ this branch merges.
 
 ---
 
-## 1. `server/socket-server/handlers/slice-it.ts` — `persistResults` must use the new board key (**BLOCKING**)
+## 1. `features/slice-it/server/handlers.ts` — `persistResults` must use the new board key (**BLOCKING**)
 
 **Why.** `R1` re-keys `SongLeaderboard` from `@@unique([songId, userId])` to
 `@@unique([songId, difficulty, modPool, userId])`. The old key was one row per
@@ -25,7 +25,7 @@ constraint has to go.
 `persistResults` addresses a row **by that constraint's generated name**:
 
 ```ts
-// server/socket-server/handlers/slice-it.ts:936
+// features/slice-it/server/handlers.ts:936
 const existing = await prisma.songLeaderboard.findUnique({
   where: { songId_userId: { songId, userId: standing.userId } },
   select: { id: true, score: true },
@@ -77,7 +77,7 @@ await prisma.songLeaderboard.upsert({
 });
 ```
 
-`lib/slice-it/pools.ts` is browser-free and Node-free for exactly this reason —
+`features/slice-it/engine/pools.ts` is browser-free and Node-free for exactly this reason —
 it is imported by the engine-side UI, by `/api/slice-it/score` and by the
 esbuild server bundle, the same contract `constants.ts` follows.
 
@@ -134,7 +134,7 @@ could not be added to it. The idea sketch (`H8`) assumes the likes/plays joins
 live in `songSelect` — they do not, and that is the whole reason this is a
 handoff item rather than a line of shipped code.
 
-**Change.** `lib/slice-it/songs.server.ts` exports `viewerSongJoins(viewerId)`,
+**Change.** `features/slice-it/engine/songs.server.ts` exports `viewerSongJoins(viewerId)`,
 which returns the same two joins plus the third. It is a drop-in replacement for
 the block above, in both files:
 
@@ -149,12 +149,12 @@ columns.
 
 **Without it.** `song.lamp` is `'none'` on every song for every viewer, which is
 also the honest answer ("we did not ask"). Nothing renders a lamp yet either —
-`components/slice-it/SongLibrary.tsx` is outside this wave — so today the loss is
+`features/slice-it/ui/SongLibrary.tsx` is outside this wave — so today the loss is
 invisible. It is the data half of `H8` that is blocked, not a broken feature.
 
 ---
 
-## 4. `lib/slice-it/useSubmitScore.ts` — send the lamps and the clear flag
+## 4. `features/slice-it/engine/useSubmitScore.ts` — send the lamps and the clear flag
 
 **Why.** `H7`/`R9`. `ScoreSubmissionZ` now accepts `isFullCombo`, `isPerfect`
 and `cleared`, `SliceRun` and `SongLeaderboard` both store them, and
@@ -194,7 +194,7 @@ it is a change to a file this wave does not own.
 
 ---
 
-## 5. `lib/slice-it/useSubmitScore.ts` — surface the guest response
+## 5. `features/slice-it/engine/useSubmitScore.ts` — surface the guest response
 
 **Why.** `X10`. `/api/slice-it/score` accepts `auth: 'optional'` now and answers
 a guest with `{ success: true, ranked: false, stored: false, score, accuracy,
@@ -230,7 +230,7 @@ skipped the request entirely and there was nothing to misread.
 
 ---
 
-## 6. `components/slice-it/SongLibrary.tsx` — draw the lamp
+## 6. `features/slice-it/ui/SongLibrary.tsx` — draw the lamp
 
 **Why.** `H8`'s render half. Once item 3 lands, `song.lamp` is one of
 `'none' | 'failed' | 'cleared' | 'fc' | 'perfect'` and
@@ -258,7 +258,7 @@ nothing.
 
 ---
 
-## 7. `lib/slice-it/net/events.ts` — a handle on the wire (`X11`)
+## 7. `features/slice-it/engine/net/events.ts` — a handle on the wire (`X11`)
 
 **Why.** Every leaderboard row links to `/slice-it/player/$handle` using
 `LeaderboardEntry.handle`, which the API resolves server-side. The multiplayer

@@ -1,12 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/slice-it/slice-it.contract';
+import * as C from '@features/slice-it/engine/slice-it.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay, userDisplaySelect } from '@/lib/user-display';
-import { CommentBodyZ } from '@/lib/slice-it/api-schemas';
-import { extractTimestamp } from '@/lib/slice-it/taxonomy';
+import { CommentBodyZ } from '@features/slice-it/engine/api-schemas';
+import { extractTimestamp } from '@features/slice-it/engine/taxonomy';
 
 const CommentQueryZ = z.object({
   cursor: z.string().max(64).optional(),

@@ -144,7 +144,7 @@ const POOL: ArcadeChallengeDef[] = [
     // S1. The only entry in this pool that names a *specific* thing to play:
     // the daily challenge is one chart, one difficulty, one modifier set and
     // one attempt, identical for everybody, chosen by hashing the day key in
-    // `lib/slice-it/daily.server.ts`. Top of the reward band because it is the
+    // `features/slice-it/engine/daily.server.ts`. Top of the reward band because it is the
     // only challenge here you cannot re-roll by picking an easier song, and the
     // only one you get exactly one try at.
     game: 'slice-it',

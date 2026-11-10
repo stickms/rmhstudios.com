@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
+import { validateImageBuffer } from '@features/slice-it/engine/upload-validation';
 import { optimizeImage } from '@/lib/image-optimize';
 import { putObject, deleteObject, s3Configured } from '@/lib/storage/s3.server';
 import { userBannerKey, userBannerUrl, userBannerFilename } from '@/lib/storage/keys';

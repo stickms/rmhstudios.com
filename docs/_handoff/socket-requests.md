@@ -14,10 +14,10 @@ none of the server work in this wave is reachable from the product.
 
 ---
 
-## 1. `components/slice-it/SliceItDiscordActivity.tsx` — hand the socket the Discord token (ONE line, blocking)
+## 1. `features/slice-it/ui/SliceItDiscordActivity.tsx` — hand the socket the Discord token (ONE line, blocking)
 
 **Why.** The hub now accepts a Discord Activity token as a second credential
-(`server/socket-server/index.ts`), and `lib/slice-it/net/client.ts` now sends
+(`server/socket-server/index.ts`), and `features/slice-it/engine/net/client.ts` now sends
 one — but only if somebody gives it one. `connectSliceIt()` is called with no
 arguments from this component (line ~169), and the token lives in
 `discord.accessToken`, which only this component has.
@@ -45,7 +45,7 @@ useEffect(() => {
 }, [discord.accessToken, discord.channelId]);
 ```
 
-`setDiscordAuth` is already exported from `lib/slice-it/net/client.ts` and is a
+`setDiscordAuth` is already exported from `features/slice-it/engine/net/client.ts` and is a
 no-op everywhere else, so this cannot affect the standalone `/slice-it` page.
 
 **Without it.** Today's behaviour exactly: every Discord Activity player, linked
@@ -54,7 +54,7 @@ unreachable.
 
 ---
 
-## 2. `components/slice-it/SliceItDiscordActivity.tsx` — pass the derived code to `createLobby` (ONE line)
+## 2. `features/slice-it/ui/SliceItDiscordActivity.tsx` — pass the derived code to `createLobby` (ONE line)
 
 **Why.** `X9`, and the second half of
 [`discord-requests.md`](discord-requests.md) item 3, which is now served:
@@ -132,7 +132,7 @@ hard-auth hub.
 
 ---
 
-## 4. `components/slice-it/MultiplayerSidebar.tsx` + `MultiplayerLobby.tsx` — the spectator view and the guest badge
+## 4. `features/slice-it/ui/MultiplayerSidebar.tsx` + `MultiplayerLobby.tsx` — the spectator view and the guest badge
 
 **Why.** `N1`'s server half shipped: `slice:spectate` seats a watcher in a
 `slice:<code>:spec` room that receives `slice:lobby`, `slice:countdown`,
@@ -194,5 +194,5 @@ what makes that answer honest rather than accidental.
 
 The socket-side equivalent **is** done: `persistResults` skips any standing with
 a null `userId`, and
-`lib/slice-it/__tests__/handler.test.ts` › guests › "writes no leaderboard row
+`features/slice-it/server/__tests__/handler.test.ts` › guests › "writes no leaderboard row
 for a guest" holds it there.

@@ -1,21 +1,21 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/slice-it/slice-it.contract';
+import * as C from '@features/slice-it/engine/slice-it.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { optimizeImage } from '@/lib/image-optimize';
-import { COVER_MAX_BYTES, COVER_SIZE, DIFFICULTIES } from '@/lib/slice-it/constants';
-import { SongPatchZ } from '@/lib/slice-it/api-schemas';
-import { trimToDifficulty } from '@/lib/slice-it/nested-chart';
-import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
+import { COVER_MAX_BYTES, COVER_SIZE, DIFFICULTIES } from '@features/slice-it/engine/constants';
+import { SongPatchZ } from '@features/slice-it/engine/api-schemas';
+import { trimToDifficulty } from '@features/slice-it/engine/nested-chart';
+import { validateImageBuffer } from '@features/slice-it/engine/upload-validation';
 import {
   deleteSongAssets,
   songSelect,
   storeSongCover,
   toSliceSong,
-} from '@/lib/slice-it/songs.server';
-import { issueRunToken } from '@/lib/slice-it/run-token.server';
+} from '@features/slice-it/engine/songs.server';
+import { issueRunToken } from '@features/slice-it/engine/run-token.server';
 
 /**
  * O7 — which single difficulty to send.

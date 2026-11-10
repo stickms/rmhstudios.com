@@ -12,9 +12,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { ChartListQueryZ, ChartSeedZ } from '@/lib/slice-it/editor/api-schemas';
-import { ensureCharts, toChartDto } from '@/lib/slice-it/editor/seed.server';
-import { rateAndStoreChart } from '@/lib/slice-it/rating.server';
+import { ChartListQueryZ, ChartSeedZ } from '@features/slice-it/engine/editor/api-schemas';
+import { ensureCharts, toChartDto } from '@features/slice-it/engine/editor/seed.server';
+import { rateAndStoreChart } from '@features/slice-it/engine/rating.server';
 
 /**
  * Who may author a chart for a song.

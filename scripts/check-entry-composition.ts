@@ -81,7 +81,7 @@ const FORBIDDEN: Record<string, string> = {
  * 2026-10-09 took it out: the last carriers were `lib/game/replay.ts` (read by
  * three route `head()`s for a title map — now `lib/game/replay-meta.ts`) and the
  * `/slice-it/` `validateSearch` schema (now the hand-rolled, zod-free
- * `lib/slice-it/library-search.ts`). Its baseline was deleted; `zod` in the
+ * `features/slice-it/engine/library-search.ts`). Its baseline was deleted; `zod` in the
  * entry is a plain FAIL again.
  */
 const KNOWN_VIOLATIONS: Record<string, { maxBytes: number; note: string }> = {};

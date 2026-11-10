@@ -781,7 +781,7 @@ Candidates checked and rejected for this pass: OpenGameArt "Spacers" (CC0, but s
 
 ## Altair menu scene (2026-11-07)
 
-The main-menu backdrop is original work with no third-party art: `lib/altair/menu/corridor-scene.ts` draws the corridor procedurally, and the Echo and the security drone are hand-authored pixel sprites in `lib/altair/menu/menu-sprites.ts` (text frames over the Outpost 13 palette). Nothing was downloaded for it.
+The main-menu backdrop is original work with no third-party art: `features/altair/engine/menu/corridor-scene.ts` draws the corridor procedurally, and the Echo and the security drone are hand-authored pixel sprites in `features/altair/engine/menu/menu-sprites.ts` (text frames over the Outpost 13 palette). Nothing was downloaded for it.
 
 ### Altair player characters, enemies, bosses and the Echo ally (original)
 
