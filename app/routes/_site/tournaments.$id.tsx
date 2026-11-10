@@ -16,6 +16,8 @@ import { BracketView } from '@/components/tournaments/BracketView';
 import { SwissStandings } from '@/components/competitive/SwissStandings';
 import { PickemPanel } from '@/components/competitive/PickemPanel';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
+import { api } from '@/lib/contract/client';
+import { getTournamentApi } from '@/lib/tournaments/tournaments.contract';
 import { prisma } from '@/lib/prisma.server';
 import { getWagerGame } from '@/lib/wager/eligible-games';
 import { buildCanonical, buildMeta } from '@/lib/seo';
@@ -97,9 +99,12 @@ function TournamentDetailPage() {
   const [reportingId, setReportingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/tournaments/${id}`);
-    const data = await res.json().catch(() => ({}));
-    setTourney(res.ok ? (data.tournament ?? null) : null);
+    try {
+      const data = await api(getTournamentApi, { params: { id }, retries: 0 });
+      setTourney(data.tournament ?? null);
+    } catch {
+      setTourney(null);
+    }
     setLoading(false);
   }, [id]);
 

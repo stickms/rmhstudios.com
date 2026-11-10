@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/discovery/discovery.contract';
 import { alertCreateSchema, alertDeleteQuery } from '@/lib/discovery/schema';
 import { addAlert, listAlerts, removeAlert } from '@/lib/discovery/alerts.server';
 
@@ -7,13 +8,14 @@ import { addAlert, listAlerts, removeAlert } from '@/lib/discovery/alerts.server
 export const Route = createFileRoute('/api/discovery/alerts')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) =>
+      GET: implement(C.listDiscoveryAlertsApi, { rateLimit: 'read' }, async ({ userId }) =>
         Response.json(
           { alerts: await listAlerts(userId) },
           { headers: { 'Cache-Control': 'private, no-store' } },
         ),
       ),
-      POST: defineHandler(
+      POST: implement(
+        C.addDiscoveryAlertApi,
         { rateLimit: 'write', body: alertCreateSchema },
         async ({ userId, body }) => {
           const res = await addAlert(userId, body.query);
@@ -21,7 +23,8 @@ export const Route = createFileRoute('/api/discovery/alerts')({
           return Response.json({ alert: res.alert }, { status: 201 });
         },
       ),
-      DELETE: defineHandler(
+      DELETE: implement(
+        C.removeDiscoveryAlertApi,
         { rateLimit: 'write', query: alertDeleteQuery },
         async ({ userId, query }) => {
           await removeAlert(userId, query.id);

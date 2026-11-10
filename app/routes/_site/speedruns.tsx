@@ -35,6 +35,12 @@ import { SpeedrunBoard, SpeedrunQueue } from '@/components/speedrun/SpeedrunBoar
 import { SubmitRunPanel } from '@/components/speedrun/SubmitRunPanel';
 import { TierNote } from '@/components/speedrun/VerificationBadge';
 import { versionsOf } from '@/lib/speedrun/versions';
+import { api } from '@/lib/contract/client';
+import {
+  getSpeedrunLeaderboardApi,
+  listSpeedrunCategoriesApi,
+  upsertSpeedrunCategoryApi,
+} from '@/lib/speedrun/speedrun.contract';
 // Titles for the games that can record a replay. A board can only exist for one
 // of those, so this map covers every option the picker can show; the id is the
 // fallback rather than a second hardcoded list that would drift from the first.
@@ -83,11 +89,10 @@ function SpeedrunsPage() {
   const loadCategories = useCallback(async () => {
     setLoadingCategories(true);
     try {
-      const res = await fetch('/api/speedrun/categories');
-      const data = (await res.json().catch(() => ({ categories: [] }))) as {
-        categories?: SpeedrunCategoryView[];
-      };
-      setCategories(res.ok ? (data.categories ?? []) : []);
+      const data = await api(listSpeedrunCategoriesApi, { retries: 0 });
+      setCategories(data.categories ?? []);
+    } catch {
+      setCategories([]);
     } finally {
       setLoadingCategories(false);
     }
@@ -124,10 +129,16 @@ function SpeedrunsPage() {
     if (!game || !slug) return;
     setLoadingBoard(true);
     try {
-      const params = new URLSearchParams({ game, slug, version });
-      const res = await fetch(`/api/speedrun/leaderboard?${params.toString()}`);
-      const data = (await res.json().catch(() => null)) as BoardResponse | null;
-      setBoard(res.ok ? data : null);
+      // `limit` is the route's own default (50), spelled out because the contract's
+      // query type is the schema's output.
+      setBoard(
+        await api(getSpeedrunLeaderboardApi, {
+          query: { game, slug, version, limit: 50 },
+          retries: 0,
+        }),
+      );
+    } catch {
+      setBoard(null);
     } finally {
       setLoadingBoard(false);
     }
@@ -146,19 +157,11 @@ function SpeedrunsPage() {
   async function seedDefaults() {
     setSeeding(true);
     try {
-      const res = await fetch('/api/speedrun/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: true }),
-      });
-      if (!res.ok) {
-        toast.error(
-          t('speedrun-seed-failed', { defaultValue: 'Could not open the starter boards' }),
-        );
-        return;
-      }
+      await api(upsertSpeedrunCategoryApi, { body: { seed: true } });
       toast.success(t('speedrun-seed-done', { defaultValue: 'Starter boards opened' }));
       await loadCategories();
+    } catch {
+      toast.error(t('speedrun-seed-failed', { defaultValue: 'Could not open the starter boards' }));
     } finally {
       setSeeding(false);
     }

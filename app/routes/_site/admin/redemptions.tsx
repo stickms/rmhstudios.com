@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { listAdminRedemptionsApi } from '@/lib/admin/admin-ops.contract';
 
 export const Route = createFileRoute('/_site/admin/redemptions')({
   head: () => ({ meta: [{ title: 'Redemption Queue | RMH Studios' }] }),
@@ -38,9 +40,10 @@ function AdminRedemptionsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/redemptions', { credentials: 'include' });
-      const data = await res.json().catch(() => ({ requests: [] }));
-      setRows(res.ok ? (data.requests ?? []) : []);
+      const data = await api(listAdminRedemptionsApi, { retries: 0 });
+      setRows(data.requests ?? []);
+    } catch {
+      setRows([]);
     } finally {
       setLoading(false);
     }

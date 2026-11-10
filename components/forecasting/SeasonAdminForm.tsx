@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api } from '@/lib/contract/client';
 import { listPredictionsApi } from '@/lib/predictions/predictions.contract';
+import { createForecastSeasonApi } from '@/lib/admin/admin-ops.contract';
 
 interface MarketOption {
   id: string;
@@ -30,17 +31,14 @@ export function SeasonAdminForm({ onCreated }: { onCreated: () => void }) {
   async function create() {
     setBusy(true);
     try {
-      const res = await fetch('/api/admin/forecasting/seasons', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await api(createForecastSeasonApi, {
+        body: {
           title,
           startsAt: new Date(startsAt).toISOString(),
           endsAt: new Date(endsAt).toISOString(),
           marketIds: [...picked],
-        }),
+        },
       });
-      if (!res.ok) throw new Error((await res.json()).error);
       toast.success(t('created', { defaultValue: 'Season created' }));
       setTitle('');
       setPicked(new Set());

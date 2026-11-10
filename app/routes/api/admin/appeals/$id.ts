@@ -12,7 +12,8 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
@@ -31,7 +32,8 @@ const schema = z.object({
 export const Route = createFileRoute('/api/admin/appeals/$id')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        C.decideAdminAppealApi,
         {
           auth: 'admin',
           rateLimit: { policy: 'write', scope: 'user' },

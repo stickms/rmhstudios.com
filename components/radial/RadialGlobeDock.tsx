@@ -23,19 +23,19 @@
  * downloads it from here.
  */
 
-import { Suspense, lazy } from 'react';
-import { useLocation } from '@tanstack/react-router';
+import { Suspense, lazy, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGlobeDestinations, useGlobeDocked } from './globe-dock';
+import { usePathname } from './shell-router-state';
 
 /** Same chunk as the hub's globe: whichever asks first fetches it for both. */
 const LiquidGlobe = lazy(() => import('./LiquidGlobe').then((m) => ({ default: m.LiquidGlobe })));
 
 const noop = () => {};
 
-export function RadialGlobeDock() {
+export const RadialGlobeDock = memo(function RadialGlobeDock() {
   const { t } = useTranslation('feed');
-  const { pathname } = useLocation();
+  const pathname = usePathname();
   const docked = useGlobeDocked();
   const items = useGlobeDestinations();
 
@@ -54,4 +54,4 @@ export function RadialGlobeDock() {
       </div>
     </nav>
   );
-}
+});

@@ -11,6 +11,9 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSession } from '@/components/Providers';
 import { Hammer } from 'lucide-react';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createJamApi, listJamsApi } from '@/lib/competitive/jams.contract';
 
 interface JamSummary {
   slug: string;
@@ -44,32 +47,31 @@ function AdminForm({ onCreated }: { onCreated: () => void }) {
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const iso = (k: string) => new Date(String(f.get(k))).toISOString();
+    const text = (k: string) => String(f.get(k) ?? '');
+    // An unparseable date throws here, into the catch below (as `.toISOString()` did).
+    const when = (k: string) => {
+      const d = new Date(text(k));
+      if (Number.isNaN(d.getTime())) throw new RangeError('Invalid time value');
+      return d;
+    };
     setBusy(true);
     try {
-      const res = await fetch('/api/jams', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: f.get('title'),
-          description: f.get('description'),
-          theme: f.get('theme'),
-          startsAt: iso('startsAt'),
-          submitEndsAt: iso('submitEndsAt'),
-          ratingEndsAt: iso('ratingEndsAt'),
-        }),
+      await api(createJamApi, {
+        body: {
+          title: text('title'),
+          description: text('description'),
+          theme: text('theme'),
+          startsAt: when('startsAt'),
+          submitEndsAt: when('submitEndsAt'),
+          ratingEndsAt: when('ratingEndsAt'),
+        },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok)
-        toast.error(
-          data.error ?? t('jam-create-failed', { defaultValue: 'Could not create the jam' }),
-        );
-      else {
-        toast.success(t('jam-created', { defaultValue: 'Jam created' }));
-        onCreated();
-      }
-    } catch {
-      toast.error(t('jam-create-failed', { defaultValue: 'Could not create the jam' }));
+      toast.success(t('jam-created', { defaultValue: 'Jam created' }));
+      onCreated();
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('jam-create-failed', { defaultValue: 'Could not create the jam' }),
+      );
     } finally {
       setBusy(false);
     }
@@ -117,9 +119,12 @@ export function JamsList() {
   const [showForm, setShowForm] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/jams');
-    const data = await res.json().catch(() => ({ jams: [] }));
-    setJams(res.ok ? data.jams : []);
+    try {
+      const data = await api(listJamsApi, { retries: 0 });
+      setJams(data.jams);
+    } catch {
+      setJams([]);
+    }
   }, []);
   useEffect(() => {
     void load();

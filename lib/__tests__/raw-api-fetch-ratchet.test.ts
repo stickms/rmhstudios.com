@@ -18,7 +18,7 @@ import { globSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 /** Lower this when you migrate call sites. Never raise it. */
-const BASELINE = 504;
+const BASELINE = 416;
 
 const RAW = /fetch\(\s*['"`]\/api\//g;
 

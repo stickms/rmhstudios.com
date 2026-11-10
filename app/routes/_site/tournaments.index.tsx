@@ -14,6 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { useSession } from '@/components/Providers';
 import { CreateTournamentDialog } from '@/components/tournaments/CreateTournamentDialog';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
+import { api } from '@/lib/contract/client';
+import { listTournamentsApi } from '@/lib/tournaments/tournaments.contract';
 
 export const Route = createFileRoute('/_site/tournaments/')({
   head: () => ({
@@ -41,9 +43,10 @@ function TournamentsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/tournaments?status=${status}`);
-      const data = await res.json().catch(() => ({ tournaments: [] }));
-      setItems(res.ok ? (data.tournaments ?? []) : []);
+      const data = await api(listTournamentsApi, { query: { status }, retries: 0 });
+      setItems(data.tournaments ?? []);
+    } catch {
+      setItems([]);
     } finally {
       setLoading(false);
     }

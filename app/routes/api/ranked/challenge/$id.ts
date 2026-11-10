@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { actOnRankedChallengeApi } from '@/lib/ranked/ranked.contract';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
@@ -20,7 +21,8 @@ const schema = z.discriminatedUnion('action', [
 export const Route = createFileRoute('/api/ranked/challenge/$id')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        actOnRankedChallengeApi,
         { body: schema, allowEmptyBody: true },
         async ({ request, params, session, body }) => {
           const userId = session.user.id;

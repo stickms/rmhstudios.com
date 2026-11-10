@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { rateJamEntryApi } from '@/lib/competitive/jams.contract';
 import { rateEntry } from '@/lib/competitive/jams.server';
 
 const score = z.number().int().min(1).max(5);
@@ -16,7 +17,8 @@ const schema = z.object({
 export const Route = createFileRoute('/api/jams/$slug/rate')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        rateJamEntryApi,
         { rateLimit: 'write', body: schema },
         async ({ params, userId, body }) => {
           const { entryId, ...scores } = body;

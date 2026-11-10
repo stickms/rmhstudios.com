@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getRankedLadderApi } from '@/lib/ranked/ranked.contract';
 import { prismaRead } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { gameName, isRankedGame } from '@/lib/ranked/elo';
@@ -29,7 +30,8 @@ const querySchema = z.object({
 export const Route = createFileRoute('/api/ranked/$game/leaderboard')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        getRankedLadderApi,
         {
           auth: 'none',
           rateLimit: 'read',

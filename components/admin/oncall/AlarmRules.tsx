@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { formatValue, type EffectiveRule } from '@/lib/ops/alarm-rules';
+import { api } from '@/lib/contract/client';
+import { getAdminOncallRulesApi, patchAdminOncallRuleApi } from '@/lib/admin/admin-ops.contract';
 
 interface RuleView extends EffectiveRule {
   evaluations: { dim: string; current: number | null; samples: number; active: boolean }[];
@@ -24,13 +26,7 @@ function RuleRow({ rule, onSaved }: { rule: RuleView; onSaved: () => void }) {
   const save = async (change: { threshold: number | null; muted: boolean }) => {
     setSaving(true);
     try {
-      const res = await fetch('/api/admin/oncall-rules', {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ key: rule.key, ...change }),
-      });
-      if (!res.ok) throw new Error(String(res.status));
+      await api(patchAdminOncallRuleApi, { body: { key: rule.key, ...change } });
       toast.success(t('rule-saved', { defaultValue: 'Alarm rule saved.' }));
       onSaved();
     } catch {
@@ -149,12 +145,7 @@ export function AlarmRules() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/oncall-rules', {
-        credentials: 'include',
-        cache: 'no-store',
-      });
-      if (!res.ok) throw new Error(String(res.status));
-      setRules(((await res.json()) as { rules: RuleView[] }).rules);
+      setRules((await api(getAdminOncallRulesApi, { retries: 0 })).rules);
       setFailed(false);
     } catch {
       setFailed(true);

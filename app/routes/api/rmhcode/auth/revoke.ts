@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { revokeRmhCodeTokenApi } from '@/lib/rmhcode/tokens.contract';
 /**
  * Revoke a CLI token.
  * POST /api/rmhcode/auth/revoke
@@ -15,7 +16,8 @@ const revokeTokenSchema = z.object({
 export const Route = createFileRoute('/api/rmhcode/auth/revoke')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        revokeRmhCodeTokenApi,
         { body: revokeTokenSchema, allowEmptyBody: true, verboseValidationErrors: true },
         async ({ session, body }) => {
           const { tokenId } = body;

@@ -1,6 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler, notFound } from '@/lib/api/handler.server';
+import { notFound } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import {
+  createGameNightApi,
+  listGameNightsApi,
+  patchGameNightApi,
+} from '@/lib/competitive/game-night.contract';
 import { prisma } from '@/lib/prisma.server';
 import { GAME_IDS, listGameNights } from '@/lib/competitive/game-night.server';
 import { sanitizeLobbyCode } from '@/lib/lobby-link';
@@ -33,20 +39,22 @@ const patchSchema = z.object({
 export const Route = createFileRoute('/api/game-night/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none', rateLimit: 'read' }, async () =>
+      GET: implement(listGameNightsApi, { auth: 'none', rateLimit: 'read' }, async () =>
         Response.json(
           { nights: await listGameNights() },
           { headers: { 'Cache-Control': 'no-store' } },
         ),
       ),
-      POST: defineHandler(
+      POST: implement(
+        createGameNightApi,
         { auth: 'admin', rateLimit: 'write', body: createSchema },
         async ({ body }) => {
           const night = await prisma.gameNight.create({ data: body, select: { id: true } });
           return Response.json({ id: night.id }, { status: 201 });
         },
       ),
-      PATCH: defineHandler(
+      PATCH: implement(
+        patchGameNightApi,
         { auth: 'admin', rateLimit: 'write', body: patchSchema },
         async ({ body }) => {
           const night = await prisma.gameNight.findUnique({ where: { id: body.id } });

@@ -11,6 +11,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { MAX_QOTD_LENGTH, utcDayKey } from '@/lib/posts-plus/constants';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { addAdminQotdApi, getAdminQotdApi, removeAdminQotdApi } from '@/lib/admin/admin-ops.contract';
 
 interface Row {
   id: string;
@@ -38,9 +41,7 @@ export function AdminQotdPanel() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/qotd', { credentials: 'include' });
-      if (!res.ok) throw new Error(String(res.status));
-      setData((await res.json()) as Data);
+      setData(await api(getAdminQotdApi, { retries: 0 }));
     } catch {
       toast.error(t('admin-load-failed', { defaultValue: 'Could not load the prompt queue' }));
     }
@@ -53,17 +54,10 @@ export function AdminQotdPanel() {
   const add = async () => {
     setBusy(true);
     try {
-      const res = await fetch('/api/admin/qotd', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text.trim(), ...(dayKey ? { dayKey } : {}) }),
-      });
-      if (!res.ok) {
-        const err = (await res.json().catch(() => null)) as { error?: string } | null;
-        toast.error(
-          err?.error ?? t('admin-add-failed', { defaultValue: 'Could not add the prompt' }),
-        );
+      try {
+        await api(addAdminQotdApi, { body: { text: text.trim(), ...(dayKey ? { dayKey } : {}) } });
+      } catch (e) {
+        toast.error(serverError(e) ?? t('admin-add-failed', { defaultValue: 'Could not add the prompt' }));
         return;
       }
       setText('');
@@ -76,14 +70,11 @@ export function AdminQotdPanel() {
   };
 
   const remove = async (row: Row) => {
-    const res = await fetch(`/api/admin/qotd/${encodeURIComponent(row.id)}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    if (!res.ok) {
-      const err = (await res.json().catch(() => null)) as { error?: string } | null;
+    try {
+      await api(removeAdminQotdApi, { params: { id: row.id } });
+    } catch (e) {
       toast.error(
-        err?.error ?? t('admin-remove-failed', { defaultValue: 'Could not remove the prompt' }),
+        serverError(e) ?? t('admin-remove-failed', { defaultValue: 'Could not remove the prompt' }),
       );
       return;
     }

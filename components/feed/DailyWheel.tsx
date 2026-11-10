@@ -5,13 +5,10 @@ import { Loader2, Sparkles } from'lucide-react';
 import { Button } from'@/components/ui/button';
 import { Spinner } from'@/components/ui/spinner';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
+import { api } from '@/lib/contract/client';
+import { getWheelApi, spinWheelApi, type WheelStateView } from '@/lib/wheel/wheel.contract';
 
-interface WheelState {
- segments: number[];
- signedIn: boolean;
- canSpin: boolean;
- today: { reward: number; segment: number } | null;
-}
+type WheelState = WheelStateView;
 
 const COLORS = ['#f5a623','#3b82f6','#10b981','#ef4444','#8b5cf6','#ec4899','#14b8a6','#f59e0b'];
 
@@ -23,11 +20,10 @@ export function DailyWheel() {
  const [won, setWon] = useState<number | null>(null);
 
  useEffect(() => {
- fetch('/api/wheel', { credentials:'include'})
- .then((r) => (r.ok ? r.json() : null))
- .then((data: WheelState | null) => {
+ api(getWheelApi, { retries: 0 })
+ .then((data) => {
  setState(data);
- if (data?.today) {
+ if (data.today) {
  setWon(data.today.reward);
  setAngle(restAngleFor(data.today.segment, data.segments.length));
  }
@@ -58,12 +54,7 @@ export function DailyWheel() {
  setSpinning(true);
  setWon(null);
  try {
- const res = await fetch('/api/wheel/spin', { method:'POST', credentials:'include'});
- if (!res.ok) {
- setSpinning(false);
- return;
- }
- const data: { segment: number; reward: number; newBalance: number } = await res.json();
+ const data = await api(spinWheelApi);
  // Several full turns, then settle on the winning segment.
  const rest = restAngleFor(data.segment, n);
  const target = 360 * 5 + rest;

@@ -11,6 +11,13 @@ import {
   isCallPrivacy,
   type CallPrivacy,
 } from '@/lib/call/state';
+import { api } from '@/lib/contract/client';
+import {
+  getCallPrivacyApi,
+  listCallMutesApi,
+  setCallPrivacyApi,
+  unmuteCallerApi,
+} from '@/lib/call/calls.contract';
 
 interface ActiveMute {
   until: string;
@@ -31,9 +38,8 @@ export function CallPrivacyControls() {
   // People muted from the incoming-call banner. Listed here so a mute is never
   // something you can set and then not find again.
   useEffect(() => {
-    fetch('/api/calls/mute', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { mutes?: ActiveMute[] } | null) => {
+    api(listCallMutesApi, { retries: 0 })
+      .then((d) => {
         if (d?.mutes) setMutes(d.mutes);
       })
       .catch(() => {});
@@ -42,15 +48,7 @@ export function CallPrivacyControls() {
   function unmute(targetUserId: string) {
     const previous = mutes;
     setMutes((list) => list.filter((m) => m.user.id !== targetUserId));
-    fetch('/api/calls/mute', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ targetUserId }),
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error(String(r.status));
-      })
+    api(unmuteCallerApi, { body: { targetUserId } })
       .catch(() => {
         setMutes(previous);
         toast.error(t('call-privacy-save-error', { defaultValue: 'Could not save' }));
@@ -58,8 +56,8 @@ export function CallPrivacyControls() {
   }
 
   useEffect(() => {
-    fetch('/api/calls/privacy', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
+    api(getCallPrivacyApi, { retries: 0 })
+      .catch(() => null)
       .then((d: { callPrivacy?: unknown } | null) => {
         if (d && isCallPrivacy(d.callPrivacy)) setValue(d.callPrivacy);
         setLoaded(true);
@@ -70,15 +68,7 @@ export function CallPrivacyControls() {
   function choose(next: CallPrivacy) {
     const previous = value;
     setValue(next);
-    fetch('/api/calls/privacy', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ callPrivacy: next }),
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error(String(r.status));
-      })
+    api(setCallPrivacyApi, { body: { callPrivacy: next } })
       .catch(() => {
         // Put the radio back: showing a setting that did not save is worse than
         // showing the old one.

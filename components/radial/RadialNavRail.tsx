@@ -14,8 +14,9 @@
  * taller than the viewport, so it can never push the frame or overlap the feed.
  */
 
-import { useMemo } from 'react';
-import { Link, useLocation } from '@tanstack/react-router';
+import { memo, useMemo } from 'react';
+import { Link } from '@tanstack/react-router';
+import { usePathname } from './shell-router-state';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { useUnreadCount } from '@/lib/useUnreadCount';
@@ -30,9 +31,9 @@ import {
 
 type RailEntry = { kind: 'leaf'; leaf: NavLeaf } | { kind: 'group'; group: NavGroup };
 
-export function RadialNavRail() {
+export const RadialNavRail = memo(function RadialNavRail() {
   const { t } = useTranslation('feed');
-  const { pathname } = useLocation();
+  const pathname = usePathname();
   const { data: session } = useSession();
   const user = session?.user as { isAdmin?: boolean } | undefined;
   const signedIn = Boolean(session);
@@ -183,4 +184,4 @@ export function RadialNavRail() {
       </nav>
     </aside>
   );
-}
+});

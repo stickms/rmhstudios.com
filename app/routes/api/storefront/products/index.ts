@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createStorefrontProductApi } from '@/lib/storefront/storefront.contract';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
@@ -18,7 +19,8 @@ const MAX_PRODUCTS = 30;
 export const Route = createFileRoute('/api/storefront/products/')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        createStorefrontProductApi,
         { body: schema, allowEmptyBody: true, verboseValidationErrors: true },
         async ({ request, session, body }) => {
           const userId = session.user.id;

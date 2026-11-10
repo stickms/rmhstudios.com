@@ -18,6 +18,12 @@ import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { formatRunTime } from '@/lib/speedrun/versions';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  listSubmittableReplaysApi,
+  submitSpeedrunRunApi,
+} from '@/lib/speedrun/speedrun.contract';
 
 interface SubmittableReplay {
   id: string;
@@ -45,11 +51,13 @@ export function SubmitRunPanel({ game, slug, openVersions, onSubmitted }: Submit
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/speedrun/replays?game=${encodeURIComponent(game)}`);
-      const data = (await res.json().catch(() => ({ replays: [] }))) as {
-        replays?: SubmittableReplay[];
-      };
-      setReplays(res.ok ? (data.replays ?? []) : []);
+      const data = await api(listSubmittableReplaysApi, {
+        query: { game, limit: 20 },
+        retries: 0,
+      });
+      setReplays(data.replays ?? []);
+    } catch {
+      setReplays([]);
     } finally {
       setLoading(false);
     }
@@ -64,18 +72,13 @@ export function SubmitRunPanel({ game, slug, openVersions, onSubmitted }: Submit
     if (!selected) return;
     setSubmitting(true);
     try {
-      const res = await fetch('/api/speedrun/runs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game, slug, replayId: selected }),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        verdict?: { status: string; message: string | null };
-      };
-      if (!res.ok) {
+      let data;
+      try {
+        data = await api(submitSpeedrunRunApi, { body: { game, slug, replayId: selected } });
+      } catch (e) {
         toast.error(
-          data.error ?? t('speedrun-submit-failed', { defaultValue: 'Could not submit that run' }),
+          serverError(e) ??
+            t('speedrun-submit-failed', { defaultValue: 'Could not submit that run' }),
         );
         return;
       }

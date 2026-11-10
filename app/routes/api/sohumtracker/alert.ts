@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getSohumAlertApi, setSohumAlertApi } from '@/lib/sohumtracker/alert.contract';
 import { isAlertEnabled, setAlertEnabled } from '@/lib/sohumtracker/alerts.server';
 
 /**
@@ -22,14 +23,16 @@ import { isAlertEnabled, setAlertEnabled } from '@/lib/sohumtracker/alerts.serve
 export const Route = createFileRoute('/api/sohumtracker/alert')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        getSohumAlertApi,
         // `maxAge: 0` + private: the browser must re-ask, and no shared cache may
         // ever hold one person's answer. The rest of this feature's routes are
         // `public` cached; this one cannot be.
         { rateLimit: 'read', cache: { visibility: 'private', maxAge: 0 } },
         async ({ userId }) => Response.json({ enabled: await isAlertEnabled(userId) }),
       ),
-      POST: defineHandler(
+      POST: implement(
+        setSohumAlertApi,
         {
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'sohumtracker-alert' },
           body: z.object({ enabled: z.boolean() }),

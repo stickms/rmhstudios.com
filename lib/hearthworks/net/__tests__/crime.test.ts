@@ -170,5 +170,5 @@ describe('replicas stay identical through a firefight', () => {
     expect(types.has('shot')).toBe(true);
     expect(types.has('officerHit') || types.has('playerHit')).toBe(true);
     expect(types.has('arrested') || types.has('downed') || types.has('officerDown')).toBe(true);
-  });
+  }, 20_000); // a whole host + peers + late-joiner simulation: ~1.8 s alone, past vitest's 5 s default on a loaded CI shard
 });

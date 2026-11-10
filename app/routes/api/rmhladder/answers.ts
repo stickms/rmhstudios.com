@@ -16,6 +16,8 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getLadderAnswersApi, saveLadderAnswersApi } from '@/lib/rmhladder/answers.contract';
 import { answerBankSchema } from '@/lib/rmhladder/answer-bank';
 import {
   deleteAnswerBank,
@@ -26,12 +28,14 @@ import {
 export const Route = createFileRoute('/api/rmhladder/answers')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) =>
+      GET: implement(getLadderAnswersApi, { rateLimit: 'read' }, async ({ userId }) =>
         Response.json({ answers: await getAnswerBank(userId) }),
       ),
 
-      PUT: defineHandler({ rateLimit: 'write', body: answerBankSchema }, async ({ userId, body }) =>
-        Response.json({ answers: await saveAnswerBank(userId, body) }),
+      PUT: implement(
+        saveLadderAnswersApi,
+        { rateLimit: 'write', body: answerBankSchema },
+        async ({ userId, body }) => Response.json({ answers: await saveAnswerBank(userId, body) }),
       ),
 
       DELETE: defineHandler({ rateLimit: 'write' }, async ({ userId }) => {

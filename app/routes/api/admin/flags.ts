@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { prisma } from '@/lib/prisma.server';
 import { FLAG_KEY_PATTERN } from '@/lib/flags/evaluate';
 import { invalidateFlags } from '@/lib/flags/flags.server';
@@ -24,10 +25,11 @@ const deleteSchema = z.object({ key: z.string().regex(FLAG_KEY_PATTERN) });
 export const Route = createFileRoute('/api/admin/flags')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'admin' }, async () =>
+      GET: implement(C.listAdminFlagsApi, { auth: 'admin' }, async () =>
         Response.json({ flags: await prisma.featureFlag.findMany({ orderBy: { key: 'asc' } }) }),
       ),
-      PUT: defineHandler(
+      PUT: implement(
+        C.upsertAdminFlagApi,
         { auth: 'admin', rateLimit: 'write', body: upsertSchema },
         async ({ userId, body }) => {
           const flag = await prisma.featureFlag.upsert({
@@ -44,12 +46,16 @@ export const Route = createFileRoute('/api/admin/flags')({
           return Response.json({ flag });
         },
       ),
-      DELETE: defineHandler(
+      DELETE: implement(
+        C.deleteAdminFlagApi,
         { auth: 'admin', rateLimit: 'write', body: deleteSchema },
         async ({ userId, body }) => {
           await prisma.featureFlag.deleteMany({ where: { key: body.key } });
           invalidateFlags();
-          await logAdminAction(userId, 'flag.delete', { targetType: 'feature_flag', targetId: body.key });
+          await logAdminAction(userId, 'flag.delete', {
+            targetType: 'feature_flag',
+            targetId: body.key,
+          });
           return Response.json({ ok: true });
         },
       ),

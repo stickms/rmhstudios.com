@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { listPendingRedemptions } from '@/lib/creator/earnings.server';
 
 export const Route = createFileRoute('/api/admin/redemptions/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'admin' }, async () => {
+      GET: implement(C.listAdminRedemptionsApi, { auth: 'admin' }, async () => {
         try {
           const requests = await listPendingRedemptions({});
           return Response.json({ requests });

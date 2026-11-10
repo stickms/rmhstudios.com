@@ -1,5 +1,7 @@
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
@@ -89,7 +91,8 @@ export const Route = createFileRoute('/api/admin/users')({
           hasMore,
         });
       }),
-      PATCH: defineHandler(
+      PATCH: implement(
+        C.updateAdminUserApi,
         {
           auth: 'admin',
           rateLimit: { policy: 'write', scope: 'user' },

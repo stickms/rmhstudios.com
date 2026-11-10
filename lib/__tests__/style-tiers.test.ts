@@ -54,6 +54,11 @@ function deps(file: string): string[] {
   out = [];
   if (EXTS.some((e) => file.endsWith(e))) {
     for (const m of readFileSync(file, 'utf8').matchAll(IMPORT_RE)) {
+      // `import type` / `export type` are erased by the compiler: they bring no code, so no class names, onto the
+      // page. Typed API contracts (`*.contract.ts`) import their response types from `*.server.ts` modules this
+      // way; following those edges reached server code (and through it game logic the site sheet skips) that no
+      // page ever loads. Mixed imports (`import { type A, b }`) are still followed.
+      if (/^(?:import|export)\s+type\s/.test(m[0])) continue;
       const r = resolveImport(file, m[1] ?? m[2] ?? m[3]);
       if (r) out.push(r);
     }

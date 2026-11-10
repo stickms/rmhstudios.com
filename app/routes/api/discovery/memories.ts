@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/discovery/discovery.contract';
 import { memoriesSchema } from '@/lib/discovery/schema';
 import { getMemoriesOptIn, setMemoriesOptIn } from '@/lib/discovery/memories.server';
 
@@ -7,16 +8,20 @@ import { getMemoriesOptIn, setMemoriesOptIn } from '@/lib/discovery/memories.ser
 export const Route = createFileRoute('/api/discovery/memories')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) =>
+      GET: implement(C.getDiscoveryMemoriesApi, { rateLimit: 'read' }, async ({ userId }) =>
         Response.json(
           { enabled: await getMemoriesOptIn(userId) },
           { headers: { 'Cache-Control': 'private, no-store' } },
         ),
       ),
-      PUT: defineHandler({ rateLimit: 'write', body: memoriesSchema }, async ({ userId, body }) => {
-        await setMemoriesOptIn(userId, body.enabled);
-        return Response.json({ enabled: body.enabled });
-      }),
+      PUT: implement(
+        C.setDiscoveryMemoriesApi,
+        { rateLimit: 'write', body: memoriesSchema },
+        async ({ userId, body }) => {
+          await setMemoriesOptIn(userId, body.enabled);
+          return Response.json({ enabled: body.enabled });
+        },
+      ),
     },
   },
 });
