@@ -1,31 +1,42 @@
 /**
- * The per-request CSP nonce (redesign audit F5).
+ * The per-request CSP nonce (redesign audit F5, docs/csp.md).
  *
- * `server/nitro/security-headers.ts` calls {@link enterRequestNonce} from Nitro's
- * `request` hook (the same `enterWith` mechanism `server/nitro/otel.ts` uses for
- * the trace scope), so the router factory — `getRouter()` in app/router.tsx, which
- * runs once per SSR request — can read it with {@link currentRequestNonce} and hand
- * it to `ssr.nonce`. The same value is then put in the response's
- * Content-Security-Policy-Report-Only header by the `response` hook.
+ * Minted INSIDE TanStack Start's request scope: `getRouter()` in app/router.tsx
+ * runs once per SSR request within Start's own request context, calls
+ * {@link mintRequestCspNonce}, hands the value to the router's `ssr.nonce` (which
+ * stamps it on every inline script, the streamed hydration scripts included,
+ * and on `<meta property="csp-nonce">`), and this function puts the SAME value in
+ * the response's Content-Security-Policy-Report-Only header through Start's
+ * `setResponseHeader`. Header and markup therefore come from one call and cannot
+ * disagree.
+ *
+ * (A first version minted the nonce in a Nitro `request` hook and read it back
+ * through AsyncLocalStorage; Start renders outside that async context, so the
+ * header carried a nonce the markup never did. Verified against a production
+ * build before this replaced it.)
  */
-import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomBytes } from 'node:crypto';
-
-const als = new AsyncLocalStorage<{ nonce: string }>();
+import { setResponseHeader } from '@tanstack/react-start/server';
+import { buildCspPolicy, REPORTING_ENDPOINTS } from '@/lib/csp/policy.server';
 
 /** 128 random bits, base64 — the W3C-recommended minimum. */
 export function generateNonce(): string {
   return randomBytes(16).toString('base64');
 }
 
-/** Mint a nonce for the current async context and return it. */
-export function enterRequestNonce(): string {
-  const nonce = generateNonce();
-  als.enterWith({ nonce });
-  return nonce;
-}
-
-/** The nonce of the request being rendered, or undefined outside one. */
-export function currentRequestNonce(): string | undefined {
-  return als.getStore()?.nonce;
+/**
+ * Mint this request's nonce and set the report-only policy that names it.
+ * Returns undefined (and sets nothing) outside a Start request, e.g. in tests.
+ */
+export function mintRequestCspNonce(): string | undefined {
+  try {
+    const nonce = generateNonce();
+    setResponseHeader('Content-Security-Policy-Report-Only', buildCspPolicy({ nonce }));
+    setResponseHeader('Reporting-Endpoints', REPORTING_ENDPOINTS);
+    return nonce;
+  } catch {
+    // Not inside a Start request: no nonce, and the Nitro hook's hash-only
+    // policy covers the response.
+    return undefined;
+  }
 }

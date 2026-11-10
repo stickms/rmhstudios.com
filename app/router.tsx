@@ -6,10 +6,11 @@ import { installStyleTierPreload } from '@/lib/style-tier';
 import { installPageTransitions } from '@/lib/page-transition';
 import { installHistoryTrail } from '@/lib/router/history-trail';
 import appTierCss from '@/app/app-tier.css?url';
-import { currentRequestNonce } from '@/lib/csp/nonce.server';
+import { mintRequestCspNonce } from '@/lib/csp/nonce.server';
 
-// The CSP nonce (redesign audit F5, docs/csp.md). On the server it is the one
-// minted for this request by server/nitro/security-headers.ts; in the browser it is
+// The CSP nonce (redesign audit F5, docs/csp.md). On the server it is minted here,
+// inside Start's request scope, by mintRequestCspNonce (which also sets the
+// report-only header naming it, so header and markup agree); in the browser it is
 // read back from the `<meta property="csp-nonce">` the router emits, so client-side
 // tags carry the same value the server rendered. Browsers hide a script's nonce
 // attribute after parsing, which is why the meta is the source of truth there.
@@ -19,7 +20,7 @@ function cspNonce(): string | undefined {
       document.querySelector<HTMLMetaElement>('meta[property="csp-nonce"]')?.content || undefined
     );
   }
-  return typeof currentRequestNonce === 'function' ? currentRequestNonce() : undefined;
+  return typeof mintRequestCspNonce === 'function' ? mintRequestCspNonce() : undefined;
 }
 
 // `getRouter()` runs once per client page load and once per SSR request. The

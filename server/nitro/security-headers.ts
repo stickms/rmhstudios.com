@@ -18,8 +18,8 @@
 //     Options is intentionally omitted in favour of this, matching the edge)
 //   * Content-Security-Policy-Report-Only: <full policy> (collect violations
 //     for a future enforced policy without breaking anything today). Built by
-//     lib/csp/policy.server.ts with a PER-REQUEST nonce (minted in the `request` hook,
-//     read by getRouter() as `ssr.nonce`) plus the static hashes of the generated
+//     lib/csp/policy.server.ts with a PER-REQUEST nonce (minted in getRouter() inside
+//     Start's request scope, lib/csp/nonce.server.ts) plus the static hashes of the generated
 //     pre-paint scripts. Rollout to enforcement: docs/csp.md.
 //
 // It is written to only ever ADD a header when the handler has not already set
@@ -27,10 +27,7 @@
 // failure is swallowed so header logic can never take a response down.
 
 import { buildCspPolicy, FRAME_ANCESTORS, REPORTING_ENDPOINTS } from '../../lib/csp/policy.server';
-import { enterRequestNonce } from '../../lib/csp/nonce.server';
 
-/** The nonce minted for each in-flight request, keyed by its event. */
-const nonces = new WeakMap<object, string>();
 
 const HSTS = 'max-age=31536000; includeSubDomains';
 
@@ -87,17 +84,6 @@ export function responseHeaders(res: unknown, event: unknown): Headers | null {
 export default function securityHeadersPlugin(nitroApp: {
   hooks: { hook: (name: string, fn: (res: unknown, event: unknown) => void) => void };
 }): void {
-  // Mint the nonce before anything renders. `enterWith` binds it to this request's
-  // async context (the mechanism otel.ts uses), which is where getRouter() reads
-  // it. Never throws: a request without a nonce just gets the hash-only policy.
-  nitroApp.hooks.hook('request', (event: unknown) => {
-    try {
-      const nonce = enterRequestNonce();
-      if (event && typeof event === 'object') nonces.set(event, nonce);
-    } catch {
-      /* header logic must never break a request */
-    }
-  });
   nitroApp.hooks.hook('response', (res: unknown, event: unknown) => {
     try {
       const headers = responseHeaders(res, event);
@@ -109,9 +95,9 @@ export default function securityHeadersPlugin(nitroApp: {
       setIfAbsent(headers, 'Referrer-Policy', 'strict-origin-when-cross-origin');
       setIfAbsent(headers, 'X-Permitted-Cross-Domain-Policies', 'none');
       setIfAbsent(headers, 'Content-Security-Policy', FRAME_ANCESTORS);
-      const isHtml = (headers.get('content-type') ?? '').includes('text/html');
-      const nonce = isHtml && event && typeof event === 'object' ? nonces.get(event) : undefined;
-      setIfAbsent(headers, 'Content-Security-Policy-Report-Only', buildCspPolicy({ nonce }));
+      // A page Start rendered already carries the nonce'd report-only policy (set in
+      // getRouter() via mintRequestCspNonce). Anything else gets the hash-only one.
+      setIfAbsent(headers, 'Content-Security-Policy-Report-Only', buildCspPolicy({}));
       setIfAbsent(headers, 'Reporting-Endpoints', REPORTING_ENDPOINTS);
       if (isHttps(event)) {
         setIfAbsent(headers, 'Strict-Transport-Security', HSTS);
