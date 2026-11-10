@@ -60,6 +60,8 @@ import { BlurImage } from '@/components/ui/BlurImage';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
 import { LibraryStyles } from '@/components/library/LibraryStyles';
 import type { CollectionView } from '@/lib/library/collections';
+import { api } from '@/lib/contract/client';
+import { listLibraryCollectionsApi } from '@/lib/library/collections.contract';
 
 const fetchBooks = createServerFn({ method: 'GET' }).handler(async () => ({
   books: await listAllBooks(),
@@ -326,10 +328,8 @@ function Library() {
   // can hide books that already live in a collection, and stay in sync after edits.
   const refreshCollections = useMemo(
     () => async () => {
-      const res = await fetch('/api/library/collections').catch(() => null);
-      if (!res?.ok) return;
-      const data = await res.json().catch(() => null);
-      if (data?.collections) setCollections(data.collections as CollectionView[]);
+      const data = await api(listLibraryCollectionsApi, { retries: 0 }).catch(() => null);
+      if (data?.collections) setCollections(data.collections);
     },
     [],
   );

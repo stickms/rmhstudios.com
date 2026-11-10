@@ -27,6 +27,12 @@ import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem, MenuLabel, MenuSeparator } from '@/components/ui/menu';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { api } from '@/lib/contract/client';
+import {
+  deleteSongApi,
+  listSliceArtistsApi,
+  toggleSongLikeApi,
+} from '@/lib/slice-it/slice-it.contract';
 import {
   Dialog,
   DialogContent,
@@ -332,9 +338,8 @@ export function SongLibrary({
 
   React.useEffect(() => {
     let cancelled = false;
-    fetch('/api/slice-it/songs/artists?limit=12')
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error())))
-      .then((data: { artists: ArtistChip[] }) => {
+    api(listSliceArtistsApi, { query: { limit: 12 } })
+      .then((data) => {
         if (!cancelled) setArtistFacet(data.artists);
       })
       .catch(() => {
@@ -481,9 +486,7 @@ export function SongLibrary({
     if (!session || likingId) return;
     setLikingId(song.id);
     try {
-      const response = await fetch(`/api/slice-it/songs/${song.id}/like`, { method: 'POST' });
-      if (!response.ok) throw new Error();
-      const body = (await response.json()) as { liked: boolean; likeCount: number };
+      const body = await api(toggleSongLikeApi, { params: { id: song.id } });
       // The server returns the resulting count; the old client incremented its
       // own copy and drifted from the truth on every concurrent like.
       setSongs((previous) =>
@@ -501,8 +504,7 @@ export function SongLibrary({
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
-      const response = await fetch(`/api/slice-it/songs/${deleteId}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error();
+      await api(deleteSongApi, { params: { id: deleteId } });
       setSongs((previous) => previous.filter((s) => s.id !== deleteId));
       setTotal((n) => Math.max(0, n - 1));
       toast.success(t('delete-success', { defaultValue: 'Track purged from system library' }));

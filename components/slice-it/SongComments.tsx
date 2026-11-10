@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSession } from '@/components/Providers';
 import { MessageSquare } from 'lucide-react';
+import { api } from '@/lib/contract/client';
+import { createSongCommentApi, listSongCommentsApi } from '@/lib/slice-it/slice-it.contract';
 
 interface Comment {
   id: string;
@@ -18,7 +20,7 @@ interface Comment {
   user: {
     name: string;
     username?: string;
-    image?: string;
+    image?: string | null;
   };
 }
 
@@ -46,14 +48,13 @@ export function SongComments({ songId }: SongCommentsProps) {
     if (!songId) return;
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/slice-it/songs/${songId}/comments`);
-      if (res.ok) {
+      {
+        const data = await api(listSongCommentsApi, { params: { id: songId }, query: { limit: 25 } });
         // The endpoint answers `{ comments, nextCursor }`, not a bare array.
         // This used to hand the envelope straight to `setComments`, so the
         // render below called `.map` on an object — which threw inside the
         // game's error boundary and took the WHOLE game down the moment a
         // song was selected, not just this panel.
-        const data = (await res.json()) as { comments?: Comment[] };
         setComments(Array.isArray(data.comments) ? data.comments : []);
       }
     } catch (e) {
@@ -67,15 +68,9 @@ export function SongComments({ songId }: SongCommentsProps) {
     if (!newComment.trim() || !songId) return;
     setIsPosting(true);
     try {
-      const res = await fetch(`/api/slice-it/songs/${songId}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newComment }),
-      });
-      if (res.ok) {
-        setNewComment('');
-        fetchComments();
-      }
+      await api(createSongCommentApi, { params: { id: songId }, body: { content: newComment } });
+      setNewComment('');
+      fetchComments();
     } catch (e) {
       console.error(e);
     } finally {

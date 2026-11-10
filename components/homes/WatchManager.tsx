@@ -7,6 +7,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { propertyTypeLabel } from '@/lib/homes/format';
 import type { Watch } from '@/lib/homes/types';
 import { Spinner } from '@/components/ui/spinner';
+import { api } from '@/lib/contract/client';
+import { listHomeWatchesApi } from '@/lib/homes/homes.contract';
 
 /** One-line summary of a watch's criteria. */
 function summarize(w: Watch): string {
@@ -28,8 +30,9 @@ export function WatchManager() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/homes/watches');
-      const data = res.ok ? await res.json() : { watches: [] };
+      const data = await api(listHomeWatchesApi, { retries: 0 }).catch(() => ({
+        watches: [] as Watch[],
+      }));
       setWatches(data.watches ?? []);
     } finally {
       setLoading(false);

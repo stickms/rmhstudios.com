@@ -12,15 +12,15 @@
 
 import { useEffect } from 'react';
 import { useDoctrineStore } from '@/stores/doctrineStore';
+import { api } from '@/lib/contract/client';
+import { getDoctrineSahurStatusApi } from '@/lib/doctrine/doctrine.contract';
 
 let interval: ReturnType<typeof setInterval> | null = null;
 let refCount = 0;
 
 async function checkSahur() {
   try {
-    const res = await fetch('/api/doctrine/sahur/status');
-    if (!res.ok) return;
-    const data = await res.json();
+    const data = await api(getDoctrineSahurStatusApi, { retries: 0 });
     const store = useDoctrineStore.getState();
     store.setSahurActive(data.status.active, data.config);
     store.setSahurCountdown(data.status.minutesRemaining);

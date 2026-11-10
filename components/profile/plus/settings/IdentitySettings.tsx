@@ -18,6 +18,8 @@ import {
 } from '@/lib/profile/plus';
 import { invalidateProfilePlus } from '../useProfilePlus';
 import { PronunciationRecorder } from './PronunciationRecorder';
+import { api } from '@/lib/contract/client';
+import { getOwnProfilePlusApi, updateOwnProfilePlusApi } from '@/lib/profile/profile-extras.contract';
 
 interface OwnView extends ProfilePlusView {
   pronunciationUrl: string | null;
@@ -51,10 +53,9 @@ export default function IdentitySettings({ userId }: { userId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/profile/plus')
-      .then((r) => (r.ok ? (r.json() as Promise<OwnView>) : null))
+    api(getOwnProfilePlusApi, { retries: 0 })
       .then((v) => {
-        if (cancelled || !v) return;
+        if (cancelled) return;
         setView(v);
         setPronouns(v.pronouns ?? '');
         setTimezone(v.timezone ?? '');
@@ -74,19 +75,17 @@ export default function IdentitySettings({ userId }: { userId: string }) {
   async function save() {
     setSaving(true);
     try {
-      const res = await fetch('/api/profile/plus', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          pronouns,
-          timezone,
-          nowText,
-          counterEnabled: counter,
-          endorsementsEnabled: endorse,
+      setView(
+        await api(updateOwnProfilePlusApi, {
+          body: {
+            pronouns,
+            timezone,
+            nowText,
+            counterEnabled: counter,
+            endorsementsEnabled: endorse,
+          },
         }),
-      });
-      if (!res.ok) throw new Error();
-      setView((await res.json()) as OwnView);
+      );
       invalidateProfilePlus(userId);
       toast.success(t('identity-saved', { defaultValue: 'Saved' }));
     } catch {

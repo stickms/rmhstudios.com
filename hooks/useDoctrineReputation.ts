@@ -3,15 +3,16 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/contract/client';
+import {
+  getDoctrineReputationApi,
+  getDoctrineReputationLeaderboardApi,
+} from '@/lib/doctrine/doctrine.contract';
 
 export function useDoctrineReputation() {
   return useQuery({
     queryKey: ['doctrine', 'reputation'],
-    queryFn: async () => {
-      const res = await fetch('/api/doctrine/reputation');
-      if (!res.ok) throw new Error('Failed to fetch reputation');
-      return res.json();
-    },
+    queryFn: () => api(getDoctrineReputationApi, { retries: 0 }),
     staleTime: 60_000,
     refetchInterval: 120_000,
   });
@@ -20,11 +21,8 @@ export function useDoctrineReputation() {
 export function useDoctrineReputationLeaderboard(limit = 50) {
   return useQuery({
     queryKey: ['doctrine', 'reputation', 'leaderboard', limit],
-    queryFn: async () => {
-      const res = await fetch(`/api/doctrine/reputation/leaderboard?limit=${limit}`);
-      if (!res.ok) throw new Error('Failed to fetch leaderboard');
-      return res.json();
-    },
+    queryFn: () =>
+      api(getDoctrineReputationLeaderboardApi, { query: { limit: String(limit) }, retries: 0 }),
     staleTime: 30_000,
   });
 }

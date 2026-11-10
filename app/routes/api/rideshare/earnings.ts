@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/rideshare/rideshare.contract';
 import { prisma } from '@/lib/prisma.server';
 import { PAYOUT_RATES, payoutBreakdown } from '@/lib/rideshare/geo';
 
@@ -33,7 +34,7 @@ function aggregatePayout(grossFaresCents: number, tipsCents: number, trips: numb
 export const Route = createFileRoute('/api/rideshare/earnings')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
+      GET: implement(C.getDriverEarningsApi, {}, async ({ session }) => {
         const userId = session.user.id;
 
         const driver = await prisma.rideshareDriver.findUnique({

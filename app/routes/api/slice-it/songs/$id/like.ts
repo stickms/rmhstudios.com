@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/slice-it/slice-it.contract';
 import { prisma } from '@/lib/prisma.server';
 
 /**
@@ -17,7 +18,8 @@ import { prisma } from '@/lib/prisma.server';
 export const Route = createFileRoute('/api/slice-it/songs/$id/like')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        C.toggleSongLikeApi,
         { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'slice-like', scope: 'user' } },
         async ({ params, userId }) => {
           const { id } = params;

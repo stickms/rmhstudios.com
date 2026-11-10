@@ -9,7 +9,8 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/slice-it/slice-it.contract';
 import { CACHE_POLICY } from '@/lib/api/cache-policies';
 import { sliceItShowcaseStats } from '@/lib/slice-it/showcase.server';
 
@@ -18,7 +19,8 @@ const QueryZ = z.object({ userId: z.string().min(1).max(64) });
 export const Route = createFileRoute('/api/slice-it/showcase')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        C.getSliceItShowcaseApi,
         {
           auth: 'none',
           rateLimit: 'read',

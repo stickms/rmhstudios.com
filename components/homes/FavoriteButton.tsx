@@ -3,6 +3,9 @@ import { useState } from 'react';
 import { Heart, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { favoriteHomeListingApi, unfavoriteHomeListingApi } from '@/lib/homes/homes.contract';
 
 interface FavoriteButtonProps {
   listingId: string;
@@ -28,17 +31,20 @@ export function FavoriteButton({ listingId, favorited, onChange, compact }: Favo
     setIsFav(next);
     setBusy(true);
     try {
-      const res = await fetch(`/api/homes/listings/${encodeURIComponent(listingId)}/favorite`, {
-        method: next ? 'POST' : 'DELETE',
+      await api(next ? favoriteHomeListingApi : unfavoriteHomeListingApi, {
+        params: { id: listingId },
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Could not update favorites');
-      }
       onChange?.(next);
     } catch (err) {
       setIsFav(!next);
-      toast.error(err instanceof Error ? err.message : 'Something went wrong');
+      toast.error(
+        serverError(err) ??
+          (err instanceof HttpError
+            ? 'Could not update favorites'
+            : err instanceof Error
+              ? err.message
+              : 'Something went wrong'),
+      );
     } finally {
       setBusy(false);
     }

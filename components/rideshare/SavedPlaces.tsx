@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LocationSearch, type SavedPlaceOption } from './LocationSearch';
 import type { RidePlace } from '@/lib/rideshare/geo';
+import { api } from '@/lib/contract/client';
+import { deleteSavedPlaceApi } from '@/lib/rideshare/rideshare.contract';
 
 interface SavedPlacesProps {
   places: SavedPlaceOption[];
@@ -47,10 +49,10 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
   }
 
   async function remove(id: string) {
-    const res = await fetch(`/api/rideshare/places/${id}`, { method: 'DELETE' });
-    if (res.ok) {
+    try {
+      await api(deleteSavedPlaceApi, { params: { id } });
       onChanged();
-    } else {
+    } catch {
       toast.error(t("could-not-remove-place", { defaultValue: "Could not remove place." }));
     }
   }

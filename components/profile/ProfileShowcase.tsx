@@ -23,6 +23,8 @@ import {
 import type { UserStatus } from '@/lib/profile/status';
 import type { WishlistItemView } from '@/lib/wishlist/types';
 import { SliceItModule } from '@/components/profile/modules/SliceItModule';
+import { api } from '@/lib/contract/client';
+import { setProfileLayoutApi } from '@/lib/profile/profile-extras.contract';
 
 // P05 (Top Four, /now, stamps, webrings, skills, counter) — fetched only when a
 // profile actually carries one of these modules.
@@ -98,12 +100,7 @@ export function ProfileShowcase({
   async function save() {
     setSaving(true);
     try {
-      const res = await fetch('/api/profile/layout', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ modules }),
-      });
-      if (!res.ok) throw new Error();
+      await api(setProfileLayoutApi, { body: { modules } });
       setOpen(false);
       toast.success(t('saved', { defaultValue: 'Showcase saved' }));
     } catch {

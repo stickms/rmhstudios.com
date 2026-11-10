@@ -7,6 +7,8 @@
  *   DELETE /api/homes/watches?id=...      → delete a watch
  */
 import { createFileRoute } from '@tanstack/react-router';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/homes/homes.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { PROPERTY_TYPES } from '@/lib/homes/types';
@@ -35,7 +37,7 @@ const patchSchema = z.object({ id: z.string().min(1).max(64), active: z.boolean(
 export const Route = createFileRoute('/api/homes/watches')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
+      GET: implement(C.listHomeWatchesApi, {}, async ({ session }) => {
         const watches = await listWatches(session.user.id);
         return Response.json({ watches });
       }),

@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { useDoctrineReputation } from '@/hooks/useDoctrineReputation';
 import { StreakDisplay } from '@/components/doctrine/puzzles/streak-display';
 import { Puzzle } from 'lucide-react';
+import { api } from '@/lib/contract/client';
+import { getDoctrineTodayPuzzlesApi } from '@/lib/doctrine/doctrine.contract';
 
 export const Route = createFileRoute('/strategies/puzzles/')({
   head: () => ({
@@ -28,10 +30,7 @@ function PuzzlesIndex() {
 
   const { data: puzzles, isLoading } = useQuery({
     queryKey: ['doctrine', 'puzzles', 'today'],
-    queryFn: async () => {
-      const res = await fetch('/api/doctrine/puzzles/today');
-      return res.json();
-    },
+    queryFn: () => api(getDoctrineTodayPuzzlesApi, { retries: 0 }),
     staleTime: 60_000,
   });
 

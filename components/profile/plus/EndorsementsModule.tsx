@@ -8,6 +8,9 @@ import { Select } from '@/components/ui/select';
 import { useSession } from '@/components/Providers';
 import { SKILLS } from '@/lib/profile/skills';
 import { useJson } from './useJson';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { setEndorsementApi } from '@/lib/profile/profile-extras.contract';
 
 interface EndorsementData {
   counts: Record<string, number>;
@@ -46,19 +49,13 @@ export default function EndorsementsModule({
     if (!data) return;
     setPending(skill);
     try {
-      const res = await fetch(`/api/profile/${encodeURIComponent(userId)}/endorsements`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ skill, on }),
+      const json = await api(setEndorsementApi, {
+        params: { id: userId },
+        body: { skill, on },
       });
-      const json = (await res.json().catch(() => ({}))) as Partial<EndorsementData> & {
-        error?: string;
-      };
-      if (!res.ok) {
-        toast.error(json.error ?? t('endorse-failed', { defaultValue: "Couldn't save that" }));
-        return;
-      }
       setData({ counts: json.counts ?? {}, mine: json.mine ?? [], open: json.open ?? true });
+    } catch (e) {
+      toast.error(serverError(e) ?? t('endorse-failed', { defaultValue: "Couldn't save that" }));
     } finally {
       setPending(null);
     }

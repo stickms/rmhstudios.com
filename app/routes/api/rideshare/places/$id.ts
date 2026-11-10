@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/rideshare/rideshare.contract';
 import { prisma } from '@/lib/prisma.server';
 
 export const Route = createFileRoute('/api/rideshare/places/$id')({
   server: {
     handlers: {
-      DELETE: defineHandler({}, async ({ params, session }) => {
+      DELETE: implement(C.deleteSavedPlaceApi, {}, async ({ params, session }) => {
         const result = await prisma.rideSavedPlace.deleteMany({
           where: { id: params.id, userId: session.user.id },
         });

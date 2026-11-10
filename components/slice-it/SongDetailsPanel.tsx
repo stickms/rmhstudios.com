@@ -35,6 +35,8 @@ import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { calculateScoreMultiplier } from '@/lib/slice-it/scoring';
 import { MODIFIER_BONUSES } from '@/lib/slice-it/constants';
 import { unrankedReason } from '@/lib/slice-it/modifiers';
+import { api } from '@/lib/contract/client';
+import { listSongChartsApi } from '@/lib/slice-it/slice-it.contract';
 import { ChartPicker, type ChartOption } from './ChartPicker';
 import { useTranslation } from 'react-i18next';
 import { isHeicCover, normalizeCover } from '@/lib/slice-it/cover-image';
@@ -182,9 +184,8 @@ export function SongDetailsPanel({
     // 200 ms is worse than no picker.
     setCharts([]);
     setSelectedChartId(null);
-    void fetch(`/api/slice-it/songs/${songId}/charts`)
-      .then((res) => (res.ok ? res.json() : { charts: [] }))
-      .then((data: { charts?: ChartOption[] }) => {
+    void api(listSongChartsApi, { params: { id: songId } })
+      .then((data) => {
         if (cancelled) return;
         const list = data.charts ?? [];
         setCharts(list);

@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler, apiError } from '@/lib/api/handler.server';
+import { apiError } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/altair/altair.contract';
 import { issueSoloRun } from '@/lib/altair/solo/issue.server';
 
 /**
@@ -18,8 +20,12 @@ const body = z.object({
 export const Route = createFileRoute('/api/altair/run/start')({
   server: {
     handlers: {
-      POST: defineHandler(
-        { rateLimit: { limit: 6, windowMs: 60_000, prefix: 'altair-run-start', scope: 'user' }, body },
+      POST: implement(
+        C.startAltairRunApi,
+        {
+          rateLimit: { limit: 6, windowMs: 60_000, prefix: 'altair-run-start', scope: 'user' },
+          body,
+        },
         async ({ userId, body }) => {
           const out = await issueSoloRun(userId, body.classId, !!body.doubleTime, body.heat ?? 0);
           if (!out.ok) return apiError(out.error, 400);

@@ -4,43 +4,18 @@ import { useTranslation } from 'react-i18next';
 import { formatUsd, formatDistance } from '@/lib/rideshare/geo';
 import { rideClassName } from '@/lib/rideshare/classes';
 import { Spinner } from '@/components/ui/spinner';
-
-interface RecentTrip {
-  id: string;
-  rideClass: string;
-  pickupLabel: string;
-  dropoffLabel: string;
-  distanceMeters: number | null;
-  estimatedFareCents: number;
-  tipCents: number;
-  driverEarningsCents: number;
-  completedAt: string | null;
-  ratingByRider: number | null;
-}
-interface Earnings {
-  totalTrips: number;
-  totalDistanceMeters: number;
-  grossFaresCents: number;
-  tipsCents: number;
-  serviceFeeCents: number;
-  insuranceCents: number;
-  weekTrips: number;
-  weekEarningsCents: number;
-  earningsCents: number;
-  ratingCount: number;
-  ratingAvg: number | null;
-  recent: RecentTrip[];
-}
+import { api } from '@/lib/contract/client';
+import { getDriverEarningsApi, type DriverEarningsView } from '@/lib/rideshare/rideshare.contract';
 
 export function DriverEarnings() {
   const { t: tr } = useTranslation("c-rideshare");
-  const [data, setData] = useState<Earnings | null>(null);
+  const [data, setData] = useState<DriverEarningsView | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/rideshare/earnings')
-      .then((r) => (r.ok ? r.json() : null))
+    api(getDriverEarningsApi, { retries: 0 })
       .then((d) => setData(d))
+      .catch(() => setData(null))
       .finally(() => setLoading(false));
   }, []);
 
