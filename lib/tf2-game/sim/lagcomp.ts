@@ -13,10 +13,10 @@
  * more than 64 units between records) or a death.
  */
 
-import { TICK_INTERVAL, timeToTicks, VEC_DUCK_HULL_MAX, VEC_DUCK_HULL_MIN, VEC_HULL_MAX, VEC_HULL_MIN } from '../core/constants';
+import { MAX_PLAYERS, TICK_INTERVAL, timeToTicks, VEC_DUCK_HULL_MAX, VEC_DUCK_HULL_MIN, VEC_HULL_MAX, VEC_HULL_MIN } from '../core/constants';
 import type { UserCmd } from '../core/types';
 import type { Player } from './player';
-import { MAX_PLAYERS, type GameWorld } from './world';
+import type { GameWorld } from './world';
 
 /** sv_maxunlag. */
 export const SV_MAXUNLAG = 1.0;

@@ -32,7 +32,7 @@ import { NO_ENTITY } from '../../core/types';
 import { remapClamped } from '../../core/vec';
 import { TF_DMG_CUSTOM } from '../../data/damage';
 import { TF_COND } from '../conditions';
-import { createDamageInfo, resetDamageInfo } from '../damage';
+import { createDamageInfo, resetDamageInfo } from '../damage-info';
 import type { MaxSpeedInput } from '../class-speeds';
 import {
   MOVE_COND_CONTROL_STUNNED,

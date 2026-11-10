@@ -47,9 +47,9 @@ import {
 } from 'three';
 import { frameFromAngles, portalTransform, transformAngles, transformPoint, PORTAL_HALF_HEIGHT, PORTAL_HALF_WIDTH, type PortalTransform } from '@/lib/sp-game/portal/portal-math';
 import type { PortalState } from '@/lib/sp-game/portal/portals';
-import { SourceCamera } from '../render/camera';
-import { SOURCE_UNIT, srcDirToThree, srcToThree } from '../render/coords';
-import type { WorldRenderer } from '../render/world-renderer';
+import { SourceCamera } from '@/lib/tf2-game/render/camera';
+import { SOURCE_UNIT, srcDirToThree, srcToThree } from '@/lib/tf2-game/render/coords';
+import type { WorldRenderer } from '@/lib/tf2-game/render/world-renderer';
 
 /** The two portal colours (Portal's defaults), linear-ish sRGB for the rim. */
 export const PORTAL_COLORS: readonly [Color, Color] = [new Color(0.25, 0.63, 1.0), new Color(1.0, 0.6, 0.12)];

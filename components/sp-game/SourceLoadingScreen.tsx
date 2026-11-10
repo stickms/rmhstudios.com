@@ -14,7 +14,7 @@ import {
   menuText,
   type MenuChannel,
 } from '@/lib/tf2-game/client/menus/source-gameui';
-import type { SpGameId } from '@/lib/tf2-game/client/sp-save';
+import type { SpGameId } from '@/lib/sp-game/client/sp-save';
 import type { LoadingView } from '../tf2-game/GameCanvas';
 import { SOURCE_LOGOS, SourceBackdrop, SourceGlyph } from './source-art';
 import './source-menu.css';

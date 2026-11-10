@@ -16,13 +16,13 @@
  * Environment-agnostic.
  */
 
-import { FL_NOTARGET, MASK_SHOT, MOVETYPE_NOCLIP, MOVETYPE_WALK } from '../core/constants';
-import { angleVectors, copy, vec3, type Vec3 } from '../core/vec';
-import { emptyTrace } from '../core/types';
-import { DAMAGE_NO, DAMAGE_YES } from '../sim/entity';
-import type { SpWorld } from '../../sp-game/world/sp-world';
-import type { SpPlayer } from '../../sp-game/player/sp-player';
-import type { ExtraCommandArgs } from '../net/extra-commands';
+import { FL_NOTARGET, MASK_SHOT, MOVETYPE_NOCLIP, MOVETYPE_WALK } from '@/lib/tf2-game/core/constants';
+import { angleVectors, copy, vec3, type Vec3 } from '@/lib/tf2-game/core/vec';
+import { emptyTrace } from '@/lib/tf2-game/core/types';
+import { DAMAGE_NO, DAMAGE_YES } from '@/lib/tf2-game/sim/entity';
+import type { SpWorld } from '@/lib/sp-game/world/sp-world';
+import type { SpPlayer } from '@/lib/sp-game/player/sp-player';
+import type { ExtraCommandArgs } from '@/lib/tf2-game/net/extra-commands';
 import {
   argWords,
   serverCommandSpec,
@@ -33,7 +33,7 @@ import {
   validateCvarValue,
   validateServerArgs,
   isCheat,
-} from './server-commands';
+} from '@/lib/tf2-game/console/server-commands';
 
 export interface SpConsoleHooks {
   print(text: string, level: 'info' | 'warn' | 'error' | 'success'): void;

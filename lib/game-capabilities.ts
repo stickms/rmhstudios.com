@@ -246,7 +246,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     accessibility: ['no-timed-input'],
   },
   // Half-Life 2 demo / Portal: First Slice on the browser engine (lib/sp-game, lib/tf2-game/client).
-  // Saves are level starts in localStorage (lib/tf2-game/client/sp-save.ts); captions are the
+  // Saves are level starts in localStorage (lib/sp-game/client/sp-save.ts); captions are the
   // games' own closed captions; keys are rebindable (lib/tf2-game/client/settings.ts).
   'half-life-2': {
     genre: ['shooter', 'narrative'],

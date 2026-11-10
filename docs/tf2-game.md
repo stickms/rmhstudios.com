@@ -289,7 +289,7 @@ snapshots **10.8 s** after the close (WebRTC again, over TURN), was told "Host m
 | Route          | Page                                    | Client                                                        |
 | -------------- | --------------------------------------- | ------------------------------------------------------------- |
 | `/tf2/play`    | `components/tf2-game/Tf2PlayPage.tsx`   | `lib/tf2-game/client/tf2-client.ts` (online or listen server) |
-| `/half-life-2` | `components/sp-game/Hl2PlayPage.tsx`    | `lib/tf2-game/client/sp-client.ts` (`SpWorld`, main thread)   |
+| `/half-life-2` | `components/sp-game/Hl2PlayPage.tsx`    | `lib/sp-game/client/sp-client.ts` (`SpWorld`, main thread)   |
 | `/portal`      | `components/sp-game/PortalPlayPage.tsx` | `sp-client.ts` + `portal-view.ts` (recursive portal views)    |
 
 All three mount `components/tf2-game/GameCanvas.tsx`: the canvas, the HUD (`GameHud`), loading progress per
@@ -310,11 +310,11 @@ CS:GO's team models, arms and weapons). A TF2 host can turn on instant respawn (
   `WorldRenderer` + `EntityRenderer` + the view model, audio, the HUD at 20 Hz. HUD commands map to match
   commands; build / destroy / disguise / taunt travel as `tf2:extra` (`zExtraCommand`). A new `hello` map
   reloads the level; a reconnect restarts prediction.
-- **Half-Life 2 / Portal** (`sp-client.ts`): the browser `SpAssets` (`client/sp-assets.ts`: model sequences and
+- **Half-Life 2 / Portal** (`sp-client.ts`): the browser `SpAssets` (`lib/sp-game/client/sp-assets.ts`: model sequences and
   bounds from the GLBs' `scene.extras`, hulls from the map's `hulls.bin`, scenes and captions from `snd/`), a
   fixed-step `SpWorld`, level transitions (`trigger_changelevel` loads the next package with the carried
   player; a map that is not published ends the demo), checkpoints (death reloads them inside the world) and
-  Continue (`client/sp-save.ts`: the last level start in localStorage). The manifest has no `%noportal` or
+  Continue (`lib/sp-game/client/sp-save.ts`: the last level start in localStorage). The manifest has no `%noportal` or
   `$surfaceprop` yet, so Portal refuses portals on metal / glass / tool materials by name.
 - **Quality** (`client/quality.ts`): desktop / laptop / mobile from WebGL2, the texture limit, memory, cores,
   the GPU name and touch; each sets resolution scale, DPR cap, texture cap, anisotropy, particle budget, prop
@@ -485,7 +485,7 @@ Client commands run in the browser; server commands are forwarded as `HudCommand
 client's transport (the listen-server worker, or the peer-to-peer host — shaped by `zExtraCommand`) or the single-player client's world, and **validated again on the
 server** (`server-commands.ts`: every argument's type and range, printable text, at most 8 × 64 characters)
 before `console/tf2-server.ts` (in `Tf2MatchHost.onCommand`, between ticks; 20 commands burst, 8/s per
-player) or `console/sp-server.ts` runs them. Replies come back as `console` events and replicated cvars as
+player) or `lib/sp-game/console/sp-server.ts` runs them. Replies come back as `console` events and replicated cvars as
 `cvar` events (also sent to a player who joins late); the client mirrors them.
 
 | Game        | Client (browser)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Server (match host / single-player world)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |

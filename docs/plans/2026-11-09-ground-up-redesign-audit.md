@@ -2917,7 +2917,7 @@ For a coding agent picking up an item from this document:
 # status ledger: agents append here
 A1: open
 A2: done (owner kept every page; redirect stubs stay as routes: they also redirect in-app client navigation, which a server-only redirect rule would not)
-A3: open
+A3: in-progress (phase 17, steps 2-3: lib/tf2-game/sim value-import cycles 10 -> 0 (damage-info / damage-push / items/damage-query leaves; import-x/no-cycle baseline 79 -> 69); tf2 -> sp/csgo imports 16 -> 0 (sp client/console modules moved into lib/sp-game, CS:GO registers its client profile and has its own listen worker), held by lib/__tests__/tf2-engine-boundaries.test.ts. Step 1 (packages/engines/source) waits on A1; step 4 (one Rapier binding) pending)
 A4: in-progress (#1531: lib/core math/rng/format, ~75 copies codemodded, no-restricted-syntax guard; sockets/audio/leaderboards/persist pending)
 A5: done (#1531: pnpm lint:ratchet: import-x no-cycle + layer boundaries against eslint-baseline/boundaries.json, in CI)
 A6: in-progress (#1539: ComposeBox 1,610 -> 634, ConversationView 1,585 -> 281; #1542: ProfileEditModal 1,265 -> 229, GroupChatView 953 -> 164; phase 13: RoadmapSection 1,012 -> 56, OptimizationPage 811 -> 47; each behind characterization snapshots recorded on the unsplit file; phase 16: ProfileColumn 771 -> 195, PostDetail 706 -> 137 (with a fix for a crash when a session has no user). Not characterizable by renderToString and still pending: LiquidGlobe, RadialHub, Providers, the library route, BookReader/BookCanvas)

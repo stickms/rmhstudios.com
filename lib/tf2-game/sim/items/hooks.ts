@@ -6,14 +6,14 @@
  * Environment-agnostic.
  */
 
-import { FL_ONGROUND, TF_CLASS_MEDIC } from '../../core/constants';
-import type { DamageInfo } from '../damage';
+import { TF_CLASS_MEDIC } from '../../core/constants';
+import type { DamageInfo } from '../damage-info';
 import type { Entity } from '../entity';
 import type { Player } from '../player';
 import type { Weapon } from '../weapon-api';
-import type { GameWorld } from '../world';
 import { TF_COND } from '../conditions';
 import { hookInt, hookPlayer, hookWeapon } from './attributes';
+import { damageWeapon } from './damage-query';
 import { isDotDamage, unlockOnHit } from './damage-rules';
 import {
   FEIGN_DEATH_ACTIVATE_DAMAGE_SCALE,
@@ -26,26 +26,8 @@ import { remapClamped } from '../../core/vec';
 /** DMG_BURN (sim/damage.ts), repeated here to keep this module free of the damage module's imports. */
 const DMG_BURN = 1 << 3;
 
-/** info.GetWeapon(): the projectile's launcher, else the attacker's weapon with the hit's defindex. */
-export function damageWeapon(world: GameWorld, info: DamageInfo): Weapon | null {
-  const inflictor = world.entity(info.inflictor) as (Entity & { launcher?: Weapon | null }) | null;
-  if (inflictor?.launcher) return inflictor.launcher;
-  const attacker = world.entity(info.attacker);
-  if (!attacker || !attacker.isPlayer() || info.weaponDefIndex < 0) return null;
-  const p = attacker as Player;
-  const active = p.activeWeapon();
-  if (active && active.defindex === info.weaponDefIndex) return active;
-  for (const w of p.weapons) if (w && w.defindex === info.weaponDefIndex) return w;
-  return null;
-}
-
 /** The player who owns `weapon` (or null). */
 export const weaponOwner = (weapon: Weapon | null): Player | null => weapon?.owner ?? null;
-
-/** SDK: CTFPlayer::InAirDueToExplosion (tf_player.h). */
-export function inAirDueToExplosion(p: Player): boolean {
-  return (p.move.flags & FL_ONGROUND) === 0 && p.move.waterLevel === 0 && p.blastJumpState !== 0;
-}
 
 /**
  * SDK: CTFWeaponBase::ApplyOnHitAttributes — for a hit on an enemy player: health on hit

@@ -42,6 +42,7 @@ import {
   TF_TEAM_RED,
   SV_GRAVITY,
   TICK_INTERVAL,
+  MAX_PLAYERS,
 } from '../core/constants';
 import { angleVectors, copy, normalize, set, vec3, type Vec3 } from '../core/vec';
 import type { BspEntity } from '../formats/keyvalues';
@@ -102,8 +103,8 @@ import './triggers';
 import './pickups';
 import './logic';
 
-/** Player entity ids are 1…MAX_PLAYERS. */
-export const MAX_PLAYERS = 32;
+// MAX_PLAYERS lives in core/constants (the lag compensator needs it without importing this module).
+export { MAX_PLAYERS };
 /** Seconds before a freed entity slot may be reused (handle serial safety). */
 export const ENTITY_SLOT_REUSE_DELAY = 1.0;
 /** coordsize.h DIST_EPSILON. */

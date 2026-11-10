@@ -7,7 +7,7 @@
  * Half-Life 2: the grey smog of City 17 with the Citadel's spire over the skyline and an orange crowbar.
  * Portal: a spotless chamber of white panels with a blue and an orange portal ring at its edges.
  */
-import type { SpGameId } from '@/lib/tf2-game/client/sp-save';
+import type { SpGameId } from '@/lib/sp-game/client/sp-save';
 
 /** The per-game logo (public/images/games/logos); it carries its own outline, so it reads on any ground. */
 export const SOURCE_LOGOS: Record<SpGameId, string> = {
