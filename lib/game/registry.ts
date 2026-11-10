@@ -2,7 +2,7 @@
  * The scoring registry — one declaration per scored game.
  *
  * A game's scoring rules are part of its catalog record (`scoring` on the entry
- * in `lib/games.ts`, see `lib/catalog/types.ts`), so there is one record per
+ * in the catalog, see `lib/catalog/types.ts`), so there is one record per
  * game, not a catalog plus a parallel registry. This module derives the rules
  * from those records and adds the few boards that have no card of their own
  * (`UNCATALOGED_SCORE_BOARDS`). Declaring scoring once matters because each score
@@ -30,7 +30,7 @@ import { games } from '@/lib/catalog';
 export type ScoreDirection = 'higher-is-better' | 'lower-is-better';
 
 export interface GameScoreRules {
-  /** Must match an `id` in `lib/games.ts`. */
+  /** Must match an `id` in the catalog (`lib/catalog`). */
   id: string;
   /** Human label for leaderboards and error copy (already in English). */
   label: string;
@@ -55,7 +55,7 @@ export interface GameScoreRules {
   direction: ScoreDirection;
   /**
    * True for games that are deliberately absent from the public catalog
-   * (`lib/games.ts`) — Signal Forge lives under `/secret/`. They still need
+   * (the catalog (`lib/catalog`)) — Signal Forge lives under `/secret/`. They still need
    * scoring rules; they just aren't listed anywhere a visitor browses.
    */
   unlisted?: boolean;

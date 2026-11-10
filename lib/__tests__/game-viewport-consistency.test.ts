@@ -326,7 +326,7 @@ function viewportUnitViolations(): Violation[] {
  * (`OPT_OUT_SCOPE_SELECTOR` in lib/jelly/tiers.ts). HUDs and menus stay jelly;
  * held-control regions add `data-jelly-scope="off"`.
  *
- * Keyed by the catalog (`lib/games.ts`), so a new game cannot ship
+ * Keyed by the catalog (`lib/catalog`), so a new game cannot ship
  * without one. A game's runtime lives in `components/<id>` unless listed here.
  */
 const GAME_DIRS: Record<string, string[]> = {

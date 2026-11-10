@@ -2,7 +2,7 @@
  * RMHCalculator — a full-featured graphing + scientific calculator whose every
  * answer and every plotted point is computed by DeepSeek (Reasoner or Chat), not
  * by any local math. Full-screen top-level route with an auth gate; keeps the
- * site theme tokens (usesSiteTheme in lib/apps.ts) so all themes work.
+ * site theme tokens (usesSiteTheme in lib/catalog) so all themes work.
  */
 
 import { createFileRoute, redirect } from '@tanstack/react-router';

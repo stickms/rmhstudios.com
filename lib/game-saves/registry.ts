@@ -26,7 +26,7 @@ export const SHARED_SAVE_GAMES = [
 
 /**
  * Games that save on the shared table but are not in the public catalog
- * (`lib/games.ts`), so `GAME_CAPABILITIES` — which mirrors the catalog — does not
+ * (`lib/catalog`), so `GAME_CAPABILITIES` — which mirrors the catalog — does not
  * declare them. Same allowlist duty as above; kept apart so the catalog
  * capability test can stay an exact match.
  *

@@ -27,7 +27,7 @@
 export type ArcadeMetric = 'score' | 'win' | 'plays' | 'clear' | 'daily' | 'accuracy' | 'fullCombo';
 
 export interface ArcadeChallengeDef {
-  /** Game id — must match an `id` in `lib/games.ts`. */
+  /** Game id — must match an `id` in the catalog (`lib/catalog`). */
   game: string;
   /** Human-readable challenge title (English; not run through i18n, like the quest catalog). */
   title: string;
@@ -59,7 +59,7 @@ export interface ArcadeState {
 }
 
 /**
- * Eligible pool. Every `game` id below is verified against `lib/games.ts`.
+ * Eligible pool. Every `game` id below is verified against the catalog (`lib/catalog`).
  * Each entry is a concrete challenge (metric + target + reward); a game may
  * appear more than once so the daily pick can vary the metric it asks for.
  * Rewards stay in the xp 40–70 / coins 10–20 band.

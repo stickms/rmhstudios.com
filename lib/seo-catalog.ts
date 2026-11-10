@@ -7,7 +7,7 @@
  * indistinguishable from every other, and a link to one unfurled as "RMH
  * Studios" with the generic card.
  *
- * The copy already exists, in `lib/games.ts` / `lib/apps.ts`, which is the
+ * The copy already exists, in `lib/catalog`, which is the
  * catalog these pages are listed from. Deriving the head from that entry rather
  * than retyping it per route means the two can't drift, and adding a game to
  * the catalog gives its page a correct head for free.

@@ -17,7 +17,7 @@ import { submittableGameIds } from '@/lib/game/adapters.server';
  * The game layer as an EXECUTABLE gate.
  *
  * Unifying scoring created three lists that describe the same games from
- * different angles — the catalog (`lib/games.ts`), the scoring rules
+ * different angles — the catalog (`lib/catalog`), the scoring rules
  * (`lib/game/registry.ts`) and the storage adapters
  * (`lib/game/adapters.server.ts`). Three lists drift. When they do, the failure
  * is quiet and bad: a game with rules but no adapter 404s on submit, a game
@@ -39,7 +39,7 @@ describe('game registry consistency', () => {
 
     expect(
       orphans,
-      'Scoring rules reference game ids that are not in lib/games.ts. The id is the join key ' +
+      'Scoring rules reference game ids that are not in the catalog (lib/catalog). The id is the join key ' +
         'for arcade challenges and leaderboards, so a mismatch silently disables both.',
     ).toEqual([]);
   });

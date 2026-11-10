@@ -3,7 +3,7 @@
  * carries a `feature.ts` that default-exports `defineFeature({...})`: what the
  * feature is, which URL prefix it owns, which i18n namespaces it loads, and
  * where its catalog entry (the card and scoring rules
- * `lib/games.ts` / `lib/apps.ts` serve) lives. The manifest is the structured
+ * `lib/catalog` serve) lives. The manifest is the structured
  * answer to "where does this feature live and what does it own" — B1 islands
  * read it; it is checked by `lib/__tests__/feature-manifests.test.ts` and changes
  * no runtime behaviour.

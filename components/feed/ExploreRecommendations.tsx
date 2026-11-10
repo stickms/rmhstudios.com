@@ -163,7 +163,7 @@ export function ExploreRecommendations({
  const showLibrary = tab ==='library';
  const showPlaces = tab ==='places';
 
- // The catalog is a pure, static import (lib/games.ts + lib/apps.ts) — no
+ // The catalog is a pure, static import (lib/catalog) — no
  // request, so the Games & Apps tab paints with the rest of the page.
  const catalog = useMemo(() => {
  const all = listCuratedBuilds();
