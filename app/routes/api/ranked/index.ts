@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createRankedChallengeApi, getRankedOverviewApi } from '@/lib/ranked/ranked.contract';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
@@ -19,11 +20,12 @@ const challengeSchema = z.object({
 export const Route = createFileRoute('/api/ranked/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ session }) => {
+      GET: implement(getRankedOverviewApi, { auth: 'optional' }, async ({ session }) => {
         return Response.json(await getRankedOverview(session?.user.id ?? null));
       }),
 
-      POST: defineHandler(
+      POST: implement(
+        createRankedChallengeApi,
         { body: challengeSchema, allowEmptyBody: true },
         async ({ request, session, body }) => {
           const userId = session.user.id;

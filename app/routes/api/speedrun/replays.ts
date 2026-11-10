@@ -9,7 +9,10 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import {
+  listSubmittableReplaysApi,
+} from '@/lib/speedrun/speedrun.contract';
 import { listSubmittableReplays } from '@/lib/speedrun/speedrun.server';
 
 const querySchema = z.object({
@@ -20,10 +23,14 @@ const querySchema = z.object({
 export const Route = createFileRoute('/api/speedrun/replays')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read', query: querySchema }, async ({ userId, query }) => {
-        const replays = await listSubmittableReplays(userId, query.game, query.limit);
-        return Response.json({ replays });
-      }),
+      GET: implement(
+        listSubmittableReplaysApi,
+        { rateLimit: 'read', query: querySchema },
+        async ({ userId, query }) => {
+          const replays = await listSubmittableReplays(userId, query.game, query.limit);
+          return Response.json({ replays });
+        },
+      ),
     },
   },
 });

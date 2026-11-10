@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { generateRmhCodeTokenApi } from '@/lib/rmhcode/tokens.contract';
 /**
  * Generate a new CLI token for the authenticated user.
  * POST /api/rmhcode/auth/generate
@@ -20,7 +21,8 @@ const TOKEN_EXPIRY_MS = 30 * 24 * 60 * 60 * 1000;
 export const Route = createFileRoute('/api/rmhcode/auth/generate')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        generateRmhCodeTokenApi,
         {
           rateLimit: {
             limit: 10,

@@ -12,6 +12,13 @@ import { Gamepad2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { games } from '@/lib/games';
 import { lobbyLink, lobbyPathLink } from '@/lib/lobby-link';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  createGameNightApi,
+  listGameNightsApi,
+  patchGameNightApi,
+} from '@/lib/competitive/game-night.contract';
 
 interface Pick {
   gameId: string;
@@ -66,21 +73,19 @@ function AdminCreate({ onCreated }: { onCreated: () => void }) {
     const [h, m] = String(f.get('time')).split(':').map(Number);
     setBusy(true);
     try {
-      const res = await fetch('/api/game-night', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: f.get('title'),
+      await api(createGameNightApi, {
+        body: {
+          title: String(f.get('title') ?? ''),
           weekday: Number(f.get('weekday')),
           startMinute: h * 60 + m,
           durationMinutes: Number(f.get('duration')),
           minutesPerGame: Number(f.get('per')),
           games: picked,
-        }),
+        },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) toast.error(data.error ?? t('gn-failed', { defaultValue: 'Could not save' }));
-      else onCreated();
+      onCreated();
+    } catch (e) {
+      toast.error(serverError(e) ?? t('gn-failed', { defaultValue: 'Could not save' }));
     } finally {
       setBusy(false);
     }
@@ -167,16 +172,14 @@ function LobbyCodeForm({ night, onSaved }: { night: Night; onSaved: () => void }
   if (!night.nowPlaying) return null;
   const gameId = night.nowPlaying.gameId;
   const save = async () => {
-    const res = await fetch('/api/game-night', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: night.id, lobby: { gameId, code: code.trim() || null } }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) toast.error(data.error ?? t('gn-failed', { defaultValue: 'Could not save' }));
-    else {
+    try {
+      await api(patchGameNightApi, {
+        body: { id: night.id, lobby: { gameId, code: code.trim() || null } },
+      });
       setCode('');
       onSaved();
+    } catch (e) {
+      toast.error(serverError(e) ?? t('gn-failed', { defaultValue: 'Could not save' }));
     }
   };
   return (
@@ -201,9 +204,12 @@ export function GameNightBoard() {
   const [nights, setNights] = useState<Night[] | null>(null);
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/game-night');
-    const data = await res.json().catch(() => ({ nights: [] }));
-    setNights(res.ok ? data.nights : []);
+    try {
+      const data = await api(listGameNightsApi, { retries: 0 });
+      setNights(data.nights);
+    } catch {
+      setNights([]);
+    }
   }, []);
   useEffect(() => {
     void load();

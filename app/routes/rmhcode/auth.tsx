@@ -7,6 +7,9 @@ import { Terminal, Check, X, Loader2, Shield } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { initiateRmhCodeAuthApi } from '@/lib/rmhcode/tokens.contract';
 
 /** True only for a valid URL whose host is localhost (the CLI callback allowlist). */
 function isLocalhostCallback(cb: string): boolean {
@@ -44,9 +47,13 @@ function AuthContent() {
     if (!callback || !sessionId) { setError(t("missing-params", { defaultValue: "Missing callback or session parameters." })); return; }
     setAuthorizing(true); setError(null);
     try {
-      const res = await fetch('/api/rmhcode/auth/initiate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId }) });
-      if (!res.ok) { const data = await res.json(); throw new Error(data.error || t("failed-to-generate-token", { defaultValue: "Failed to generate token" })); }
-      const { token, user } = await res.json();
+      let result;
+      try {
+        result = await api(initiateRmhCodeAuthApi, { body: { sessionId } });
+      } catch (err) {
+        throw new Error(serverError(err) || t("failed-to-generate-token", { defaultValue: "Failed to generate token" }), { cause: err });
+      }
+      const { token, user } = result;
       const callbackUrl = new URL(callback);
       callbackUrl.searchParams.set('token', token);
       callbackUrl.searchParams.set('session', sessionId);

@@ -9,6 +9,9 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Hammer } from 'lucide-react';
 import { useSession } from '@/components/Providers';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { enterJamApi, getJamApi, rateJamEntryApi } from '@/lib/competitive/jams.contract';
 import { JAM_CATEGORIES, type JamCategory } from '@/lib/competitive/jam';
 import { PhaseBadge } from './JamsList';
 
@@ -62,18 +65,14 @@ function RateForm({
   const save = async () => {
     setBusy(true);
     try {
-      const res = await fetch(`/api/jams/${slug}/rate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entryId: entry.id, ...scores }),
+      await api(rateJamEntryApi, {
+        params: { slug },
+        body: { entryId: entry.id, ...(scores as Scores) },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok)
-        toast.error(data.error ?? t('jam-rate-failed', { defaultValue: 'Could not save rating' }));
-      else {
-        toast.success(t('jam-rated', { defaultValue: 'Rating saved' }));
-        onSaved();
-      }
+      toast.success(t('jam-rated', { defaultValue: 'Rating saved' }));
+      onSaved();
+    } catch (e) {
+      toast.error(serverError(e) ?? t('jam-rate-failed', { defaultValue: 'Could not save rating' }));
     } finally {
       setBusy(false);
     }
@@ -112,9 +111,12 @@ export function JamDetail({ slug }: { slug: string }) {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/jams/${slug}`);
-    const data = await res.json().catch(() => ({}));
-    setJam(res.ok ? data.jam : null);
+    try {
+      const data = await api(getJamApi, { params: { slug }, retries: 0 });
+      setJam(data.jam);
+    } catch {
+      setJam(null);
+    }
   }, [slug]);
   useEffect(() => {
     void load();
@@ -133,18 +135,11 @@ export function JamDetail({ slug }: { slug: string }) {
   const enter = async () => {
     setBusy(true);
     try {
-      const res = await fetch(`/api/jams/${slug}/entry`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ buildId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok)
-        toast.error(data.error ?? t('jam-enter-failed', { defaultValue: 'Could not enter' }));
-      else {
-        toast.success(t('jam-entered', { defaultValue: 'Entry saved' }));
-        await load();
-      }
+      await api(enterJamApi, { params: { slug }, body: { buildId } });
+      toast.success(t('jam-entered', { defaultValue: 'Entry saved' }));
+      await load();
+    } catch (e) {
+      toast.error(serverError(e) ?? t('jam-enter-failed', { defaultValue: 'Could not enter' }));
     } finally {
       setBusy(false);
     }

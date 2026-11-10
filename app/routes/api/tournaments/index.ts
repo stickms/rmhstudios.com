@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { listTournamentsApi } from '@/lib/tournaments/tournaments.contract';
 import { CACHE_POLICY } from '@/lib/api/cache-policies';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -15,7 +16,8 @@ export const Route = createFileRoute('/api/tournaments/')({
     handlers: {
       // Same list for everyone, keyed by ?status=. Display-only: joining and paying
       // go through their own routes, which read fresh (CACHE_POLICY.liveList).
-      GET: defineHandler(
+      GET: implement(
+        listTournamentsApi,
         {
           auth: 'none',
           // Opt out of the 30 s micro-cache: creating/registering must show in the list.

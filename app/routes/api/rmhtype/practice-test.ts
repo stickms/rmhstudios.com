@@ -15,7 +15,8 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { buildRmhTypePracticeTestApi } from '@/lib/rmhtype/keystats.contract';
 import { TYPING_LAYOUTS } from '@/lib/rmhtype/keystats';
 import { getKeyAggregates, normalizeLayout } from '@/lib/rmhtype/keystats.server';
 import { buildCustomTest, TEST_LENGTH_BOUNDS } from '@/lib/rmhtype/custom-test';
@@ -32,7 +33,8 @@ const bodySchema = z.object({
 export const Route = createFileRoute('/api/rmhtype/practice-test')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        buildRmhTypePracticeTestApi,
         {
           rateLimit: { policy: 'read', scope: 'user', prefix: 'rmhtype-practice' },
           body: bodySchema,

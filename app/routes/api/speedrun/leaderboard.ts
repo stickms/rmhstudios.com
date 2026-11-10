@@ -9,7 +9,10 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import {
+  getSpeedrunLeaderboardApi,
+} from '@/lib/speedrun/speedrun.contract';
 import { getBoard, SpeedrunError } from '@/lib/speedrun/speedrun.server';
 import { ALL_VERSIONS } from '@/lib/speedrun/types';
 
@@ -24,7 +27,8 @@ const querySchema = z.object({
 export const Route = createFileRoute('/api/speedrun/leaderboard')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        getSpeedrunLeaderboardApi,
         {
           auth: 'none',
           rateLimit: 'read',

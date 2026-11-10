@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createJamApi, listJamsApi } from '@/lib/competitive/jams.contract';
 import { createJam, listJams } from '@/lib/competitive/jams.server';
 
 const createSchema = z.object({
@@ -19,13 +20,14 @@ const createSchema = z.object({
 export const Route = createFileRoute('/api/jams/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none', rateLimit: 'read' }, async () => {
+      GET: implement(listJamsApi, { auth: 'none', rateLimit: 'read' }, async () => {
         return Response.json(
           { jams: await listJams() },
           { headers: { 'Cache-Control': 'no-store' } },
         );
       }),
-      POST: defineHandler(
+      POST: implement(
+        createJamApi,
         { auth: 'admin', rateLimit: 'write', body: createSchema },
         async ({ userId, body }) => {
           const res = await createJam(userId, body);

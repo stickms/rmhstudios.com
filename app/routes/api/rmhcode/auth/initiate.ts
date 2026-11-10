@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { initiateRmhCodeAuthApi } from '@/lib/rmhcode/tokens.contract';
 /**
  * Initiate OAuth flow for CLI authentication.
  * Called when user clicks "Authorize" on the auth page.
@@ -21,7 +22,8 @@ const TOKEN_EXPIRY_MS = 30 * 24 * 60 * 60 * 1000;
 export const Route = createFileRoute('/api/rmhcode/auth/initiate')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        initiateRmhCodeAuthApi,
         {
           rateLimit: {
             limit: 10,

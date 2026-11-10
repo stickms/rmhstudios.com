@@ -40,6 +40,12 @@ import {
   type TypingSummary,
 } from '@/lib/rmhtype/keystats';
 import { buildCustomTest, type GeneratedTest } from '@/lib/rmhtype/custom-test';
+import { api } from '@/lib/contract/client';
+import {
+  buildRmhTypePracticeTestApi,
+  clearRmhTypeKeyStatsApi,
+  getRmhTypeKeyStatsApi,
+} from '@/lib/rmhtype/keystats.contract';
 import { KeyHeatmap } from './KeyHeatmap';
 
 interface KeyStatsResponse {
@@ -68,9 +74,10 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/rmhtype/keystats?layout=${layout}`);
-      const data = (await res.json().catch(() => null)) as { stats?: KeyStatsResponse } | null;
-      setStats(res.ok ? (data?.stats ?? null) : null);
+      const data = await api(getRmhTypeKeyStatsApi, { query: { layout }, retries: 0 });
+      setStats(data.stats ?? null);
+    } catch {
+      setStats(null);
     } finally {
       setLoading(false);
     }
@@ -83,13 +90,13 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
   async function practiceWorstKeys() {
     setGenerating(true);
     try {
-      const res = await fetch('/api/rmhtype/practice-test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ layout, punctuation, numbers }),
-      });
-      const data = (await res.json().catch(() => null)) as { test?: GeneratedTest } | null;
-      if (!res.ok || !data?.test) {
+      let data;
+      try {
+        data = await api(buildRmhTypePracticeTestApi, { body: { layout, punctuation, numbers } });
+      } catch {
+        data = null;
+      }
+      if (!data?.test) {
         toast.error(t('practice-failed', { defaultValue: 'Could not build a practice test' }));
         return;
       }
@@ -111,8 +118,9 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
   }
 
   async function clearStats() {
-    const res = await fetch(`/api/rmhtype/keystats?layout=${layout}`, { method: 'DELETE' });
-    if (!res.ok) {
+    try {
+      await api(clearRmhTypeKeyStatsApi, { query: { layout } });
+    } catch {
       toast.error(t('clear-failed', { defaultValue: 'Could not clear your key stats' }));
       return;
     }

@@ -20,6 +20,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Save, ShieldAlert, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { api } from '@/lib/contract/client';
+import { getLadderAnswersApi, saveLadderAnswersApi } from '@/lib/rmhladder/answers.contract';
 import {
   answerBankCompleteness,
   EMPTY_ANSWER_BANK,
@@ -63,10 +65,8 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/rmhladder/answers');
-        if (!res.ok) throw new Error('load failed');
-        const data = await res.json();
-        if (!cancelled && data?.answers) setBank(data.answers as AnswerBank);
+        const data = await api(getLadderAnswersApi, { retries: 0 });
+        if (!cancelled && data?.answers) setBank(data.answers);
       } catch {
         if (!cancelled) {
           toast.error(
@@ -91,15 +91,9 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
   const save = useCallback(async () => {
     setSaving(true);
     try {
-      const res = await fetch('/api/rmhladder/answers', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bank),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || 'save failed');
-      setBank(data.answers as AnswerBank);
-      onSaved?.(data.answers as AnswerBank);
+      const data = await api(saveLadderAnswersApi, { body: bank });
+      setBank(data.answers);
+      onSaved?.(data.answers);
       toast.success(t('ladder.answersSaved', { defaultValue: 'Answers saved.' }));
     } catch {
       toast.error(

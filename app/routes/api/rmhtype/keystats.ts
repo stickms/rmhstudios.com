@@ -14,6 +14,11 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import {
+  clearRmhTypeKeyStatsApi,
+  getRmhTypeKeyStatsApi,
+} from '@/lib/rmhtype/keystats.contract';
 import { KEYSTAT_LIMITS, TYPING_LAYOUTS } from '@/lib/rmhtype/keystats';
 import {
   clearKeyStats,
@@ -52,8 +57,11 @@ const bodySchema = z.object({
 export const Route = createFileRoute('/api/rmhtype/keystats')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read', query: querySchema }, async ({ userId, query }) =>
-        Response.json({ stats: await getKeyStats(userId, normalizeLayout(query.layout)) }),
+      GET: implement(
+        getRmhTypeKeyStatsApi,
+        { rateLimit: 'read', query: querySchema },
+        async ({ userId, query }) =>
+          Response.json({ stats: await getKeyStats(userId, normalizeLayout(query.layout)) }),
       ),
 
       POST: defineHandler(
@@ -70,7 +78,8 @@ export const Route = createFileRoute('/api/rmhtype/keystats')({
         },
       ),
 
-      DELETE: defineHandler(
+      DELETE: implement(
+        clearRmhTypeKeyStatsApi,
         { rateLimit: 'write', query: querySchema },
         async ({ userId, query }) => {
           const deleted = await clearKeyStats(userId, normalizeLayout(query.layout));

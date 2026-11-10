@@ -8,7 +8,11 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import {
+  listSpeedrunCategoriesApi,
+  upsertSpeedrunCategoryApi,
+} from '@/lib/speedrun/speedrun.contract';
 import { DEFAULT_SPEEDRUN_CATEGORIES } from '@/lib/speedrun/catalog';
 import { listCategories, SpeedrunError, upsertCategory } from '@/lib/speedrun/speedrun.server';
 import { speedrunGameIds } from '@/lib/speedrun/verifier';
@@ -45,7 +49,8 @@ const bodySchema = z.union([
 export const Route = createFileRoute('/api/speedrun/categories')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        listSpeedrunCategoriesApi,
         { auth: 'optional', rateLimit: 'read', query: querySchema },
         async ({ query, isAdmin }) => {
           const categories = await listCategories({
@@ -56,7 +61,8 @@ export const Route = createFileRoute('/api/speedrun/categories')({
         },
       ),
 
-      POST: defineHandler(
+      POST: implement(
+        upsertSpeedrunCategoryApi,
         { auth: 'admin', rateLimit: 'write', body: bodySchema },
         async ({ body }) => {
           try {
