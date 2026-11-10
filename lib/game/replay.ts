@@ -197,7 +197,7 @@ function verifyLightsOut(data: unknown): { score: number } | null {
  * the "shape-validated + bounded" tier.
  *
  * The tier above it now exists and lives where the beat-map does:
- * `lib/slice-it/verify.server.ts` reads `Song.analysisData`, rebuilds the exact
+ * `features/slice-it/engine/verify.server.ts` reads `Song.analysisData`, rebuilds the exact
  * chart from `mods`, and re-judges every input with the game's own `judge()`.
  * It is deliberately NOT wired in here — this module is pure by contract, and
  * the check needs the database — so it runs asynchronously after submission
@@ -211,7 +211,7 @@ const sliceItJudgment = z.enum(['perfect', 'great', 'good', 'miss']);
  * The four-value judgement vocabulary this schema stores.
  *
  * Slice It's engine judges in six (`MARVELOUS … MISS`). It maps down to these
- * four on the way in — see `lib/slice-it/replay.ts`, which owns that mapping and
+ * four on the way in — see `features/slice-it/engine/replay.ts`, which owns that mapping and
  * documents what the narrowing costs. **This enum is a contract**: it is read by
  * the speedrun verifier and by every game-agnostic consumer of a replay, so it
  * does not grow to fit one game's judgement ladder.
@@ -254,7 +254,7 @@ const sliceItSchema = z.object({
    * Fingerprint of the run's chart seed. Slice It's real seed is a string; this
    * is it hashed into the numeric range the cross-game field allows, and is used
    * as a checksum against a chart rebuilt from `mods` — see
-   * `lib/slice-it/replay.ts#replaySeed`.
+   * `features/slice-it/engine/replay.ts#replaySeed`.
    */
   seed: z.number().int().min(0).max(99_999_999).optional(),
   mods: sliceItMods.optional(),

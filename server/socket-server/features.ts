@@ -17,24 +17,37 @@
  * checkable (`lib/__tests__/server-bundle-copies.test.ts`).
  */
 import type { Server, Socket } from 'socket.io';
+import altair from '../../features/altair/server';
 import balatro from '../../features/balatro/server';
+import sliceIt from '../../features/slice-it/server';
+
+const SHARED_SLOT = 'shared';
 
 /** What a feature's `server/index.ts` default-exports. */
 export interface FeatureSocketServer {
   /** The feature id (folder name under `features/`). */
   readonly id: string;
+  /**
+   * Hub slot. Omitted = the shared slot (the `registerFeatureHandlers(io, socket)` call).
+   * A feature whose handlers sat between two other hand-written calls names its own slot,
+   * and `index.ts` calls `registerFeatureHandlers(io, socket, '<slot>')` at that spot, so
+   * the registration order of the whole hub is unchanged by the move.
+   */
+  readonly slot?: string;
   /** Called once per connected socket, in registry order. */
   register(io: Server, socket: Socket): void;
   /** Called when that socket disconnects, in registry order. */
   onDisconnect?(io: Server, socket: Socket): void;
 }
 
-export const FEATURE_SOCKET_SERVERS: readonly FeatureSocketServer[] = [balatro];
+export const FEATURE_SOCKET_SERVERS: readonly FeatureSocketServer[] = [altair, balatro, sliceIt];
 
-export function registerFeatureHandlers(io: Server, socket: Socket): void {
-  for (const f of FEATURE_SOCKET_SERVERS) f.register(io, socket);
+const inSlot = (f: FeatureSocketServer, slot: string): boolean => (f.slot ?? SHARED_SLOT) === slot;
+
+export function registerFeatureHandlers(io: Server, socket: Socket, slot: string = SHARED_SLOT): void {
+  for (const f of FEATURE_SOCKET_SERVERS) if (inSlot(f, slot)) f.register(io, socket);
 }
 
-export function handleFeatureDisconnects(io: Server, socket: Socket): void {
-  for (const f of FEATURE_SOCKET_SERVERS) f.onDisconnect?.(io, socket);
+export function handleFeatureDisconnects(io: Server, socket: Socket, slot: string = SHARED_SLOT): void {
+  for (const f of FEATURE_SOCKET_SERVERS) if (inSlot(f, slot)) f.onDisconnect?.(io, socket);
 }

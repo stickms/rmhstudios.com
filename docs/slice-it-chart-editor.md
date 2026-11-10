@@ -169,12 +169,12 @@ model SongLeaderboard {
 ### 1.2 The editor's own types
 
 These are **client-side only** — they never cross the wire. The wire shape is
-`Slice[]`, unchanged from `lib/slice-it/types.ts`.
+`Slice[]`, unchanged from `features/slice-it/engine/types.ts`.
 
 ```ts
-// lib/slice-it/editor/types.ts
+// features/slice-it/engine/editor/types.ts
 
-import type { Slice, Difficulty, SliceType } from '@/lib/slice-it/types';
+import type { Slice, Difficulty, SliceType } from '@features/slice-it/engine/types';
 
 /** A note plus the editor state that is never persisted. */
 export interface EditorNote extends Slice {
@@ -236,7 +236,7 @@ app/routes/api/slice-it/charts/$id/publish.ts POST — draft → public
 app/routes/api/slice-it/charts/$id/revisions.ts GET history / POST restore
 app/routes/api/slice-it/charts/$id/generate.ts  POST — the auto modes (§8)
 
-components/slice-it/editor/
+features/slice-it/ui/editor/
   ChartEditor.tsx        Shell: layout, keyboard bus, autosave loop
   Timeline.tsx           The canvas. §4.
   TimelineRuler.tsx      Bars/beats/time, section markers
@@ -249,7 +249,7 @@ components/slice-it/editor/
   ShortcutSheet.tsx      The `?` overlay
   MinimapStrip.tsx       Whole-song density strip
 
-lib/slice-it/editor/
+features/slice-it/engine/editor/
   types.ts               Above
   store.ts               Zustand + the command stack. §3.
   commands.ts            Every mutation as an undoable command. §5.
@@ -267,10 +267,10 @@ full-screen surfaces are top-level and intentional.
 // app/routes/slice-it/edit.$songId.tsx
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import sliceItCss from '@/components/slice-it/slice-it.css?url';
+import sliceItCss from '@features/slice-it/ui/slice-it.css?url';
 
 const ChartEditor = lazy(() =>
-  import('@/components/slice-it/editor/ChartEditor').then((m) => ({ default: m.ChartEditor })),
+  import('@features/slice-it/ui/editor/ChartEditor').then((m) => ({ default: m.ChartEditor })),
 );
 
 export const Route = createFileRoute('/slice-it/edit/$songId')({
@@ -302,11 +302,11 @@ and holds run state, and mixing an undo stack into it would put a 50-entry
 command history behind the same `partialize` that writes keybinds to disk.
 
 ```ts
-// lib/slice-it/editor/store.ts
+// features/slice-it/engine/editor/store.ts
 'use client';
 
 import { create } from 'zustand';
-import type { Difficulty } from '@/lib/slice-it/types';
+import type { Difficulty } from '@features/slice-it/engine/types';
 import type { EditorChart, EditorNote, EditorTool, SnapDivision } from './types';
 import type { Command } from './commands';
 
@@ -411,7 +411,7 @@ export const editorState = () => useEditorStore.getState();
 ### 3.1 Autosave
 
 ```ts
-// components/slice-it/editor/ChartEditor.tsx (excerpt)
+// features/slice-it/ui/editor/ChartEditor.tsx (excerpt)
 
 /**
  * Autosave on a timer, not on every change.
@@ -454,7 +454,7 @@ the playfield.
 ### 4.1 Rendering
 
 ```tsx
-// components/slice-it/editor/Timeline.tsx (excerpt)
+// features/slice-it/ui/editor/Timeline.tsx (excerpt)
 
 /**
  * Canvas, for the same reason `GameCanvas.tsx` is: an Expert chart is ~1200
@@ -487,9 +487,9 @@ The grid is drawn from the timing map (`C6`), falling back to the song's single
 BPM when a chart has no timing points — which is every generated chart today.
 
 ```ts
-// lib/slice-it/editor/snap.ts
+// features/slice-it/engine/editor/snap.ts
 
-import type { TimingPoint } from '@/lib/slice-it/types';
+import type { TimingPoint } from '@features/slice-it/engine/types';
 
 /** Beat number at a time, across tempo changes. */
 export function beatAt(time: number, points: TimingPoint[]): number {
@@ -543,7 +543,7 @@ and currently throws it away; the editor needs it, so persisting it pays for
 itself twice.
 
 ```ts
-// components/slice-it/editor/Timeline.tsx (excerpt)
+// features/slice-it/ui/editor/Timeline.tsx (excerpt)
 
 /**
  * Quantisation colouring — the genre standard (StepMania note colours), and the
@@ -681,9 +681,9 @@ author editing one half of a chord can see the other half.
 ### 5.1 The command pattern
 
 ```ts
-// lib/slice-it/editor/commands.ts
+// features/slice-it/engine/editor/commands.ts
 
-import type { Difficulty } from '@/lib/slice-it/types';
+import type { Difficulty } from '@features/slice-it/engine/types';
 import type { EditorChart, EditorNote } from './types';
 
 type Charts = Record<Difficulty, EditorChart>;
@@ -817,7 +817,7 @@ The analyser already computes everything this panel needs and discards it. The
 editor is the reason to keep it.
 
 ```ts
-// lib/slice-it/beatmap/index.ts — additions to the analysis result
+// features/slice-it/engine/beatmap/index.ts — additions to the analysis result
 
 export interface AnalysisArtefacts {
   /** Peak envelope for the waveform, ~200 samples/second. ~48 KB for a
@@ -880,7 +880,7 @@ markup.
 ### 7.2 The nesting invariant
 
 ```ts
-// lib/slice-it/editor/nesting.ts
+// features/slice-it/engine/editor/nesting.ts
 
 /**
  * Easy ⊆ Normal ⊆ Hard ⊆ Expert.
@@ -977,7 +977,7 @@ at four scopes, and it **never touches a note the author has edited** unless
 they ask it to.
 
 ```ts
-// lib/slice-it/editor/generate.ts
+// features/slice-it/engine/editor/generate.ts
 
 export type GenerateScope =
   /** Whole chart, discard everything. The "start over" button. */
@@ -1060,10 +1060,10 @@ and its output is persisted (§6). Re-charting is only the charting pass —
 selection against a density budget — which is milliseconds.
 
 ```ts
-// The charter is already browser-safe: `lib/slice-it/beatmap/charter.ts` has no
+// The charter is already browser-safe: `features/slice-it/engine/beatmap/charter.ts` has no
 // Node imports (the esbuild server bundle compiles this tree directly, per
 // constants.ts's header). Same code, called from the editor.
-import { chartFromOnsets } from '@/lib/slice-it/beatmap/charter';
+import { chartFromOnsets } from '@features/slice-it/engine/beatmap/charter';
 
 async function regenerate(options: GenerateOptions): Promise<EditorNote[]> {
   const artefacts = await loadArtefacts(songId); // cached; see §6
@@ -1112,9 +1112,9 @@ a debounce, not synchronously on every edit — a 1200-note chart is O(n) per
 rule and there are eight rules.
 
 ```ts
-// lib/slice-it/editor/lint.ts
+// features/slice-it/engine/editor/lint.ts
 
-import { INPUT_COOLDOWN_MS, HIT_WINDOWS } from '@/lib/slice-it/constants';
+import { INPUT_COOLDOWN_MS, HIT_WINDOWS } from '@features/slice-it/engine/constants';
 import type { LintIssue } from './types';
 
 const NPS_CEILING: Record<Difficulty, number> = {
@@ -1250,9 +1250,9 @@ place that order is written down in code.
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { ChartPatchZ } from '@/lib/slice-it/editor/api-schemas';
-import { chartHashOf } from '@/lib/slice-it/editor/hash';
-import { lintChart } from '@/lib/slice-it/editor/lint';
+import { ChartPatchZ } from '@features/slice-it/engine/editor/api-schemas';
+import { chartHashOf } from '@features/slice-it/engine/editor/hash';
+import { lintChart } from '@features/slice-it/engine/editor/lint';
 
 export const Route = createFileRoute('/api/slice-it/charts/$id')({
   server: {
@@ -1327,9 +1327,9 @@ The zod schemas bound the payload — a chart is user input reaching a `Json`
 column, and the note cap is what stops a 40 MB array:
 
 ```ts
-// lib/slice-it/editor/api-schemas.ts
+// features/slice-it/engine/editor/api-schemas.ts
 import { z } from 'zod';
-import { SLICE_TYPES, DIFFICULTIES, MAX_SONG_DURATION_SEC } from '@/lib/slice-it/constants';
+import { SLICE_TYPES, DIFFICULTIES, MAX_SONG_DURATION_SEC } from '@features/slice-it/engine/constants';
 
 const SliceZ = z.object({
   id: z.string().max(64),
@@ -1368,7 +1368,7 @@ export const ChartPatchZ = z.object({
 
 **This is not the site's glass design language.** Slice It uses the scoped
 `--slice-*` palette on a `.slice-theme` wrapper with the soft-shadow
-neumorphic treatment defined in `components/slice-it/slice-it.css`. The editor
+neumorphic treatment defined in `features/slice-it/ui/slice-it.css`. The editor
 lives inside that world; a `.glass-pane` in here would look like a bug.
 
 ### 12.1 The two shadow primitives
@@ -1400,7 +1400,7 @@ slides along is `.neumorphic-inset`; a panel holding controls is
 
 ### 12.2 Editor-specific additions
 
-Append to `components/slice-it/slice-it.css` — the editor gets no separate
+Append to `features/slice-it/ui/slice-it.css` — the editor gets no separate
 stylesheet, because a second file means a second set of shadow values that
 drift from these.
 
@@ -1579,7 +1579,7 @@ minimum that makes it usable:
 ## §15 — Testing
 
 ```
-lib/slice-it/editor/__tests__/
+features/slice-it/engine/editor/__tests__/
   commands.test.ts    apply∘invert === identity, for every command, on a
                       generated chart. This is the property that makes undo
                       trustworthy and it is cheap to assert exhaustively.
@@ -1597,7 +1597,7 @@ lib/slice-it/editor/__tests__/
 ```
 
 Add the directory to `vitest.config.ts` alongside the existing
-`lib/slice-it/__tests__/**/*.test.ts` entry.
+`features/slice-it/engine/__tests__/**/*.test.ts` entry.
 
 The load-bearing test is `commands.test.ts`. An editor whose undo is subtly
 wrong loses work, and losing work once is how an editor stops being used.

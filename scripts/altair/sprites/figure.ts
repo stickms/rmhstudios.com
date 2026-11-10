@@ -10,7 +10,7 @@
  * from the top-left: a lit edge where the pixel above or left is empty or another part, a shadow where
  * the pixel below or right is), and an outline pass darkens every empty pixel that touches the figure.
  *
- * Sheet layout, as the engine expects (lib/altair/engine/sprites/sprite-defs.ts): 4 columns = directions
+ * Sheet layout, as the engine expects (features/altair/engine/engine/sprites/sprite-defs.ts): 4 columns = directions
  * DOWN, UP, LEFT, RIGHT; 4 rows = walk frames. Frame index = row * 4 + col. LEFT is RIGHT mirrored.
  */
 

@@ -17,11 +17,11 @@
  *
  * Dev tool only: nothing in the app imports it, so it never reaches a player's bundle.
  */
-import { SoloRun, type SoloResult } from '@/lib/altair/solo/solo-run';
-import type { SoloLoadout } from '@/lib/altair/solo/solo-log';
-import { createInputState } from '@/lib/altair/engine/input';
-import { useAltairGameStore, type UpgradeChoice } from '@/lib/altair/stores/game-store';
-import type { EnemyEntity, PickupEntity, ProjectileEntity } from '@/lib/altair/engine/types';
+import { SoloRun, type SoloResult } from '@features/altair/engine/solo/solo-run';
+import type { SoloLoadout } from '@features/altair/engine/solo/solo-log';
+import { createInputState } from '@features/altair/engine/engine/input';
+import { useAltairGameStore, type UpgradeChoice } from '@features/altair/engine/stores/game-store';
+import type { EnemyEntity, PickupEntity, ProjectileEntity } from '@features/altair/engine/engine/types';
 
 export type BotSkill = 'novice' | 'average' | 'expert';
 
@@ -48,7 +48,7 @@ export interface BotOptions {
   skill?: BotSkill;
   loadout?: SoloLoadout;
   doubleTime?: boolean;
-  /** Heat tier to play at (lib/altair/data/heat.ts). Default 0. */
+  /** Heat tier to play at (features/altair/engine/data/heat.ts). Default 0. */
   heat?: number;
   /** Stop after this many sim steps (60 per second). Default: 30 minutes. */
   maxSteps?: number;

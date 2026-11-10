@@ -11,10 +11,10 @@ import {
   type LibrarySongPage,
   type LibrarySort,
   type SortDirection,
-} from '@/lib/slice-it/library-filters';
-import { libraryFieldsOf, songSelect, toSliceSong } from '@/lib/slice-it/songs.server';
-import { countSearchMatches, searchSongIds } from '@/lib/slice-it/library-query.server';
-import { packSongIds } from '@/lib/slice-it/packs.server';
+} from '@features/slice-it/engine/library-filters';
+import { libraryFieldsOf, songSelect, toSliceSong } from '@features/slice-it/engine/songs.server';
+import { countSearchMatches, searchSongIds } from '@features/slice-it/engine/library-query.server';
+import { packSongIds } from '@features/slice-it/engine/packs.server';
 
 /**
  * The song library — list, random pick, and recently-played shelf.
@@ -38,7 +38,7 @@ import { packSongIds } from '@/lib/slice-it/packs.server';
  * - **A table needs more sorts than a dropdown did.** `artist`, `bpm`, `plays`
  *   and `yourScore` join {@link LibrarySort} on top of the base `SongSort`
  *   vocabulary, each mapped to a real `ORDER BY` here — see
- *   `lib/slice-it/library-filters.ts` for why they live there and not in
+ *   `features/slice-it/engine/library-filters.ts` for why they live there and not in
  *   `constants.ts`. Sorting stays entirely server-side: the client-side-filter
  *   bug this file's history already documents once would be trivial to
  *   reintroduce one virtualized column-click at a time, and this route does not.

@@ -2,14 +2,14 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WidgetFrame } from '@/components/ui/widget-frame';
 import { api } from '@/lib/contract/client';
-import { getSliceItShowcaseApi } from '@/lib/slice-it/slice-it.contract';
-import { DIFFICULTIES, type Difficulty } from '@/lib/slice-it/constants';
+import { getSliceItShowcaseApi } from '@features/slice-it/engine/slice-it.contract';
+import { DIFFICULTIES, type Difficulty } from '@features/slice-it/engine/constants';
 
 /**
  * The Slice It! profile showcase module (X6).
  *
  * One fetch, to `/api/slice-it/showcase` — a cached aggregate (see
- * `lib/slice-it/showcase.server.ts`), not the six-query dedicated player page.
+ * `features/slice-it/engine/showcase.server.ts`), not the six-query dedicated player page.
  * A showcase module renders on every profile view; this one has to be cheap
  * enough that adding it costs the page nothing worth noticing.
  */

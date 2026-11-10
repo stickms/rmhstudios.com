@@ -1,13 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/slice-it/setlists.contract';
-import { SetlistBodyZ } from '@/lib/slice-it/setlist-schema';
+import * as C from '@features/slice-it/engine/setlists.contract';
+import { SetlistBodyZ } from '@features/slice-it/engine/setlist-schema';
 import {
   createSetlist,
   likedSongsSetlist,
   listOwnSetlists,
   listPublicSetlists,
-} from '@/lib/slice-it/setlist.server';
+} from '@features/slice-it/engine/setlist.server';
 
 /**
  * S8 — list and create setlists.

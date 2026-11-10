@@ -3,6 +3,9 @@
  * localStorage for anonymous play; DB for signed-in users (via API).
  */
 
+import { api } from '@/lib/contract/client';
+import { getDailyPuzzleResultApi, getDailyPuzzleResultsApi } from './daily-puzzles.contract';
+
 const STORAGE_KEY = 'rmh-daily-puzzles';
 
 export interface PuzzleResult {
@@ -74,9 +77,7 @@ export async function fetchResultFromServer(
     dateKey: string
 ): Promise<PuzzleResult | null> {
     try {
-        const res = await fetch(`/api/daily-puzzles/results?gameMode=${gameMode}&date=${dateKey}`);
-        if (!res.ok) return null;
-        const data = await res.json();
+        const data = await api(getDailyPuzzleResultApi, { query: { gameMode, date: dateKey } });
         return data.result ?? null;
     } catch {
         return null;
@@ -88,9 +89,7 @@ export async function fetchResultsFromServer(
     gameMode: string
 ): Promise<Record<string, PuzzleResult>> {
     try {
-        const res = await fetch(`/api/daily-puzzles/results?gameMode=${gameMode}`);
-        if (!res.ok) return {};
-        const data = await res.json();
+        const data = await api(getDailyPuzzleResultsApi, { query: { gameMode } });
         return data.results ?? {};
     } catch {
         return {};

@@ -33,18 +33,18 @@ import { registerCommunityCrons } from '@/lib/communities/jobs.server';
 import { registerGiftingCrons } from '@/lib/gifting/jobs.server';
 import { CHAT_EXPIRY_QUEUE, registerChatExpiryCron } from '@/lib/chat-plus/expiry.server';
 import { STUDY_BUDDY_QUEUE, registerStudyBuddyCron } from '@/lib/calendar/study-buddy-jobs.server';
-import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@/lib/slice-it/analysis-queue.server';
-import { REGEN_QUEUE, registerRegenCron } from '@/lib/slice-it/regen.server';
+import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@features/slice-it/engine/analysis-queue.server';
+import { REGEN_QUEUE, registerRegenCron } from '@features/slice-it/engine/regen.server';
 import { PF2E_REMINDER_QUEUE, registerPf2eReminderCron } from '@/lib/pf2ecal/reminders.server';
 import { DUNESDAY_DAILY_QUEUE, registerDunesdayDailyCron } from '@/lib/dunesday/sync.server';
 import {
   SOHUMTRACKER_ALERT_QUEUE,
   registerSohumTrackerAlertCron,
 } from '@/lib/sohumtracker/alerts.server';
-import { registerAltairVerifyWorker } from '@/lib/altair/verify/queue.server';
-import { registerAltairSoloWorker } from '@/lib/altair/solo/queue.server';
-import { VERIFY_SOLO_QUEUE } from '@/lib/altair/solo/job';
-import { VERIFY_COOP_QUEUE } from '@/lib/altair/verify/job';
+import { registerAltairVerifyWorker } from '@features/altair/engine/verify/queue.server';
+import { registerAltairSoloWorker } from '@features/altair/engine/solo/queue.server';
+import { VERIFY_SOLO_QUEUE } from '@features/altair/engine/solo/job';
+import { VERIFY_COOP_QUEUE } from '@features/altair/engine/verify/job';
 import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
 import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
 import { registerRecipeJobs } from '@/lib/devplatform/recipes.server';

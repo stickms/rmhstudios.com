@@ -193,7 +193,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     engine: '2d-canvas',
     demanding: false,
     save: 'none',
-    // The only game wired to a gamepad today (components/slice-it/GameCanvas.tsx).
+    // The only game wired to a gamepad today (features/slice-it/ui/GameCanvas.tsx).
     //
     // A1-A9: assist mode and no-fail (both unranked, both worth no score
     // bonus), colour-blind-safe lane palettes, a photosensitivity mode that is

@@ -3,11 +3,11 @@ import type { Prisma } from '@prisma/client';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
-import { LEADERBOARD_WINDOW_DAYS, LeaderboardQueryZ } from '@/lib/slice-it/api-schemas';
-import type { LeaderboardQuery } from '@/lib/slice-it/api-schemas';
-import { toModPool } from '@/lib/slice-it/pools';
-import type { Difficulty } from '@/lib/slice-it/constants';
-import type { LeaderboardEntry, Modifiers } from '@/lib/slice-it/types';
+import { LEADERBOARD_WINDOW_DAYS, LeaderboardQueryZ } from '@features/slice-it/engine/api-schemas';
+import type { LeaderboardQuery } from '@features/slice-it/engine/api-schemas';
+import { toModPool } from '@features/slice-it/engine/pools';
+import type { Difficulty } from '@features/slice-it/engine/constants';
+import type { LeaderboardEntry, Modifiers } from '@features/slice-it/engine/types';
 
 /**
  * Leaderboards — per song, or the global career board.
@@ -122,7 +122,7 @@ export const Route = createFileRoute('/api/slice-it/leaderboard')({
           //
           // `skillRating` is each player's best per **ranked** chart, weighted
           // by the chart's C3 rating and by accuracy, decayed geometrically
-          // (`lib/slice-it/rating.server.ts`). `totalScore` is still here, still
+          // (`features/slice-it/engine/rating.server.ts`). `totalScore` is still here, still
           // means exactly what it always meant, and is still returned on every
           // row — it moved from being the ranking to being a statistic.
           //

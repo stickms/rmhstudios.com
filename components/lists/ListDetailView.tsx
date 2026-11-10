@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { listFeedQuery } from '@/lib/lists/list-feed.queries';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -23,24 +25,14 @@ export function ListDetailView({ list, members }: { list: ListView; members: Res
   const navigate = useNavigate();
   const confirm = useConfirm();
   const [pinned, setPinned] = useState(list.pinned);
-  const [posts, setPosts] = useState<ListTimelinePost[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    api(listFeedApi, { params: { id: list.id } })
-      .then((data) => {
-        if (cancelled) return;
-        setPosts(data.items);
-        setCursor(data.nextCursor);
-      })
-      .catch(() => {})
-      .finally(() => !cancelled && setLoading(false));
-    return () => {
-      cancelled = true;
-    };
-  }, [list.id]);
+  const firstPage = useQuery({ ...listFeedQuery(list.id), retry: false });
+  // Further pages ("load more") are client-owned and appended after the first.
+  const [more, setMore] = useState<{ posts: ListTimelinePost[]; cursor: string | null } | null>(
+    null,
+  );
+  const posts = [...(firstPage.data?.items ?? []), ...(more?.posts ?? [])];
+  const cursor = more ? more.cursor : (firstPage.data?.nextCursor ?? null);
+  const loading = firstPage.isPending;
 
   async function loadMore() {
     if (!cursor) return;
@@ -50,8 +42,10 @@ export function ListDetailView({ list, members }: { list: ListView; members: Res
     } catch {
       return;
     }
-    setPosts((prev) => [...prev, ...data.items]);
-    setCursor(data.nextCursor);
+    setMore((prev) => ({
+      posts: [...(prev?.posts ?? []), ...data.items],
+      cursor: data.nextCursor,
+    }));
   }
 
   async function togglePin() {

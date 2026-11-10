@@ -9,7 +9,7 @@ degrades rather than breaks without it, and the degradation is stated.
 
 ---
 
-## 1. `components/slice-it/SongDetailsPanel.tsx` — a Health Gauge mod button
+## 1. `features/slice-it/ui/SongDetailsPanel.tsx` — a Health Gauge mod button
 
 **Why.** `Modifiers.healthGauge` is new (`G1`). It is off by default, worth
 `MODIFIER_BONUSES.healthGauge` (0.2) on the score multiplier, and is the only
@@ -35,7 +35,7 @@ per-run choice.
 
 ---
 
-## 2. `components/slice-it/MultiplayerLobby.tsx` — the same toggle for a seat
+## 2. `features/slice-it/ui/MultiplayerLobby.tsx` — the same toggle for a seat
 
 **Why.** `forMultiplayer()` deliberately does **not** strip `healthGauge`
 (see the comment on it in `modifiers.ts`): the engine clamps `failMode` to
@@ -50,7 +50,7 @@ into a lobby (the store is the same), but it is not visible to the room.
 
 ---
 
-## 3. `lib/slice-it/api-schemas.ts` — `SliceZ` should accept `quant`
+## 3. `features/slice-it/engine/api-schemas.ts` — `SliceZ` should accept `quant`
 
 **Why.** `G8` puts `quant` on every note the charter emits (`Slice.quant`, the
 beat subdivision, used to colour notes). `SliceZ` is a plain `z.object`, which
@@ -76,7 +76,7 @@ does anyway. So: a silent, partial loss of a new signal, not a break.
 
 ---
 
-## 4. `lib/slice-it/useSubmitScore.ts` + `/api/slice-it/score` + `SongLeaderboard` — persist the lamps
+## 4. `features/slice-it/engine/useSubmitScore.ts` + `/api/slice-it/score` + `SongLeaderboard` — persist the lamps
 
 **Why.** `H7`. The engine now derives `isFullCombo` / `isPerfect`
 (`GameEngine.getRunStats()`), and the results screen shows them. `H8` (clear
@@ -85,14 +85,14 @@ badge survives without a join back to a run row that may not exist.
 
 **Change, in three places:**
 
-1. `lib/slice-it/useSubmitScore.ts` — add to `RunSummary` and to
+1. `features/slice-it/engine/useSubmitScore.ts` — add to `RunSummary` and to
    `useRunSummary()`'s engine block:
 
    ```ts
    ...(engine ? { isFullCombo: engine.isFullCombo, isPerfect: engine.isPerfect } : {}),
    ```
 
-2. `lib/slice-it/api-schemas.ts` — `ScoreSubmissionZ` gains
+2. `features/slice-it/engine/api-schemas.ts` — `ScoreSubmissionZ` gains
    `isFullCombo: z.boolean().default(false)` and `isPerfect: z.boolean().default(false)`.
 
 3. `prisma/schema.prisma` — `model SongLeaderboard` gains
@@ -112,7 +112,7 @@ happened and are then forgotten. `H8` is blocked; nothing else is.
 
 ---
 
-## 5. `components/slice-it/MatchResults.tsx` — the multiplayer results screen
+## 5. `features/slice-it/ui/MatchResults.tsx` — the multiplayer results screen
 
 **Why.** `H3`/`P6` landed on `GameOver.tsx` only. `MatchResults.tsx` is the
 other results screen and now shows strictly less: no judgement histogram, no
@@ -120,7 +120,7 @@ unstable rate, no offset suggestion, no FC lamp.
 
 **Change.** It already receives (or can receive) the engine the way `GameOver`
 does. The four blocks are copy-paste from `GameOver.tsx`; the natural move is to
-lift them into a shared `components/slice-it/RunBreakdown.tsx` that takes
+lift them into a shared `features/slice-it/ui/RunBreakdown.tsx` that takes
 `{ stats, timing }` and have both screens render it.
 
 **Without it.** Multiplayer players get the pre-existing results card. No

@@ -38,7 +38,7 @@ for (const { userId } of holders) await recomputeSkillRating(userId);
 It belongs in a job and not in the request that flips the flag: it is unbounded
 in the number of players, and the moderator is waiting on an HTTP response.
 
-`recomputeSkillRating` is exported from `lib/slice-it/rating.server.ts`. The
+`recomputeSkillRating` is exported from `features/slice-it/engine/rating.server.ts`. The
 same worker is the right home for the `rerateStaleCharts()` loop (same handoff,
 §2) — loop until it returns 0 — which is the only thing that makes bumping
 `RATING_VERSION` mean anything.
@@ -64,7 +64,7 @@ state name it does not recognise, so this is small — but it is real, and it is
 one move plus a re-export:
 
 ```ts
-// lib/slice-it/constants.ts — beside DIFFICULTIES and MOD_POOLS
+// features/slice-it/engine/constants.ts — beside DIFFICULTIES and MOD_POOLS
 export const RANK_STATUSES = ['unranked', 'qualified', 'ranked'] as const;
 export type RankStatus = (typeof RANK_STATUSES)[number];
 ```
@@ -105,7 +105,7 @@ Chart-native mines are `BOMB` slices stored in the chart with a
 `CHART_MINE_ID_PREFIX` (`'mine:'`) on their `id`. `applyChartModifiers` in
 `chart.ts` strips them when `modifiers.bombs` is off, so a player who did not
 opt in never sees one — that is the whole safety property and it is tested in
-`lib/slice-it/__tests__/chart-mines.test.ts`.
+`features/slice-it/engine/__tests__/chart-mines.test.ts`.
 
 Two files outside this agent's ownership read note lists directly and will
 count a mine as a note. **Both are cosmetic**, and both were checked:
@@ -120,7 +120,7 @@ count a mine as a note. **Both are cosmetic**, and both were checked:
   `ChartResult.noteCounts` or `scorableNoteCount()` will over-count by the
   number of mines. `noteCounts` is already mines-excluded, and
   `scorableNoteCount()` in `chart.ts` is the function for the general case.
-  `components/slice-it/SongLibrary.tsx` and the editor's note-count readouts
+  `features/slice-it/ui/SongLibrary.tsx` and the editor's note-count readouts
   are the places to check.
 
 Nothing here changes a score, a rating or a leaderboard position.

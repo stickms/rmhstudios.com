@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { defineHandler } from '@/lib/api/handler.server';
-import { resolvePathUnder } from '@/lib/slice-it/upload-validation';
+import { resolvePathUnder } from '@features/slice-it/engine/upload-validation';
 import { optimizeImage, parseFormat, negotiateFormat } from '@/lib/image-optimize';
 import { getObject } from '@/lib/storage/s3.server';
 import { curatedBuildImageKey, contentTypeForFilename, isSafeFilename } from '@/lib/storage/keys';

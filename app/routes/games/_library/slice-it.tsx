@@ -9,13 +9,13 @@ import { hueFromString } from '@/lib/builds/curated';
 import { GAMES_INDEX_PATH } from '@/lib/seo-catalog';
 import { breadcrumbSchema, jsonLdScript, videoGameSchema } from '@/lib/schema';
 import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
-import { sliceItHub, type HubPayload } from '@/lib/slice-it/hub.server';
+import { sliceItHub, type HubPayload } from '@features/slice-it/engine/hub.server';
 
 // Static, not `lazy()`: Start already splits this route's component into its own
 // chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
 // hydration, and an update reaching the boundary then swaps the server-rendered
 // page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
-import { SliceItHub } from '@/components/slice-it/SliceItHub';
+import { SliceItHub } from '@features/slice-it/ui/SliceItHub';
 
 /**
  * V12 — Slice It!'s own indexable surface.

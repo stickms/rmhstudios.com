@@ -38,7 +38,7 @@
 
 **Files:**
 - Create: `lib/low-end.ts`, `lib/__tests__/low-end.test.ts`
-- Modify: `lib/perf-tier.ts`, `lib/game-capabilities.ts`, `lib/rum.ts`, `lib/network-quality.ts`, `lib/slice-it/{store,presentation}.ts`, `components/slice-it/GameCanvas.tsx`, `components/void-breaker/VoidBreakerGame.tsx`, `lib/eversion/{gl/governor-tiers,prefetch,constants}.ts`, `components/radial/eversion/detect-tier.ts`, `lib/hearthworks/skins/model-loader.ts`, `components/radial/{globe-protocol,globe-worker-host,LiquidGlobe}.ts*`
+- Modify: `lib/perf-tier.ts`, `lib/game-capabilities.ts`, `lib/rum.ts`, `lib/network-quality.ts`, `features/slice-it/engine/{store,presentation}.ts`, `features/slice-it/ui/GameCanvas.tsx`, `components/void-breaker/VoidBreakerGame.tsx`, `lib/eversion/{gl/governor-tiers,prefetch,constants}.ts`, `components/radial/eversion/detect-tier.ts`, `lib/hearthworks/skins/model-loader.ts`, `components/radial/{globe-protocol,globe-worker-host,LiquidGlobe}.ts*`
 
 **Interfaces:**
 - Produces: `isLowEndCapability(): boolean` — the same reads as today's `isLowEndDevice()` (saveData / 2g, `deviceMemory < 4`, `hardwareConcurrency <= 2`, software renderer stamp); memoised; reads no DOM class and writes none. `markSoftRender(): void` / `softRenderDetected(): boolean` keep the localStorage stamp so the globe fallback still sees software rendering. No `html.perf-lite` is ever set.
@@ -69,7 +69,7 @@
 
 **Files:**
 - (Note, 2026-11-08: Task 5 deleted `testing/e2e/{liquid-glass,liquid-glass-engine,jelly-theme-navigation}.mjs` and `pnpm audit:jelly-clip`; skip those and use `pnpm audit:pages` for the browser sweep.)
-- Modify: `app/{jelly-material,globals,liquid-glass,jelly-coverage,jelly-arcs}.css`, `components/radial/radial.css`, `components/radial/eversion/eversion.css`, `components/shared/app-theme.css`, `components/slice-it/slice-it.css`, `components/kaikai-debt/kaikai-debt.css`, `components/Providers.tsx`, `app/routes/__root.tsx`, `testing/e2e/*.mjs` (jelly-interaction, liquid-glass, liquid-glass-engine, jelly-theme-navigation), `CLAUDE.md`, `lib/CLAUDE.md`, `components/CLAUDE.md`, `docs/plasmatic-jelly-system.md`, `docs/design-language.md`
+- Modify: `app/{jelly-material,globals,liquid-glass,jelly-coverage,jelly-arcs}.css`, `components/radial/radial.css`, `components/radial/eversion/eversion.css`, `components/shared/app-theme.css`, `features/slice-it/ui/slice-it.css`, `components/kaikai-debt/kaikai-debt.css`, `components/Providers.tsx`, `app/routes/__root.tsx`, `testing/e2e/*.mjs` (jelly-interaction, liquid-glass, liquid-glass-engine, jelly-theme-navigation), `CLAUDE.md`, `lib/CLAUDE.md`, `components/CLAUDE.md`, `docs/plasmatic-jelly-system.md`, `docs/design-language.md`
 - Delete: `lib/perf-tier.ts`, `lib/performance-tier.ts`, `lib/__tests__/performance-tier.test.ts`, `lib/__tests__/perf-tier-script.test.ts`
 - Test: `lib/__tests__/{site-infinite-animation,jelly-woken-haze,jelly-contract,fouc-contract,native-material-routes}.test.ts`, `lib/eversion/__tests__/eversion-css.test.ts`
 

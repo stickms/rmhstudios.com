@@ -3,9 +3,9 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Disc3, Loader2, Music, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { SliceThemeWrapper } from '@/components/slice-it/SliceThemeWrapper';
-import { formatSongDuration, type LibrarySong } from '@/lib/slice-it/library-filters';
-import { packLibraryPath, type PackSummary } from '@/lib/slice-it/packs';
+import { SliceThemeWrapper } from '@features/slice-it/ui/SliceThemeWrapper';
+import { formatSongDuration, type LibrarySong } from '@features/slice-it/engine/library-filters';
+import { packLibraryPath, type PackSummary } from '@features/slice-it/engine/packs';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 
 /**

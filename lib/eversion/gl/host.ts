@@ -59,7 +59,7 @@
  *
  * The worker is created with `new Worker(new URL('./worker.ts', import.meta.url),
  * { type: 'module' })`, the pattern Vite supports natively (it is already how
- * `lib/slice-it/editor/lint-runner.ts` loads its worker): the build emits the
+ * `features/slice-it/engine/editor/lint-runner.ts` loads its worker): the build emits the
  * worker as its own chunk and rewrites the URL, in dev and in the production
  * bundle, and no `worker` option is needed in `vite.config.ts`. Nothing else in
  * the app names `worker.ts`, so the chunk is fetched only when this code runs,

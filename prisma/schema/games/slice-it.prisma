@@ -10,7 +10,7 @@ model Song {
   /// `artist` stays the display string the uploader typed; this is the only
   /// thing an equality filter or an index is ever built on. Two columns because
   /// "MOTHER3" and "Mother 3" are one artist and only one of them is what
-  /// should be shown. Computed by `artistKeyOf()` in `lib/slice-it/artist.ts`
+  /// should be shown. Computed by `artistKeyOf()` in `features/slice-it/engine/artist.ts`
   /// at write time — never at read time, or the index is unusable.
   ///
   /// Nullable: an artist tag that is entirely punctuation has no key, and
@@ -26,7 +26,7 @@ model Song {
   /// L1 — a CURATED genre, not free text.
   ///
   /// A facet with four hundred spellings of "drum and bass" is not a facet, so
-  /// the vocabulary is `SONG_GENRES` in `lib/slice-it/taxonomy.ts` and is
+  /// the vocabulary is `SONG_GENRES` in `features/slice-it/engine/taxonomy.ts` and is
   /// validated on the way in. A string rather than an enum so adding one does
   /// not need a migration on a 66-enum schema.
   genre String? @db.VarChar(32)
@@ -87,7 +87,7 @@ model Song {
   /// V8 — a 64-value note-density histogram over the chart's duration.
   ///
   /// Stored rather than derived per request, and stored *separately from*
-  /// `analysisData` on purpose: `songSelect` in `lib/slice-it/songs.server.ts`
+  /// `analysisData` on purpose: `songSelect` in `features/slice-it/engine/songs.server.ts`
   /// deliberately excludes `analysisData` because a chart is hundreds of
   /// kilobytes and the list endpoint returns thirty rows at a time. Sending the
   /// chart just to animate a hover strip would undo exactly that. 64 small
@@ -130,7 +130,7 @@ model Song {
   /// filtered, cursor-sorted read over the whole table: sorting it by an
   /// aggregate over a related table means a join and a GROUP BY on every page
   /// of every browse, and the value changes only when a chart is saved.
-  /// Maintained by `syncSongChartRating()` in `lib/slice-it/rating.server.ts`.
+  /// Maintained by `syncSongChartRating()` in `features/slice-it/engine/rating.server.ts`.
   ///
   /// Null means "no chart of this song has been rated", which is every song
   /// today — the generated `Song.analysisData` fallback is not a `Chart` row and
@@ -145,7 +145,7 @@ model Song {
   /// cannot drift from its source fields. Prisma has no first-class generated
   /// columns, so it is declared `Unsupported` and is invisible to the client —
   /// which is correct, because nothing should ever write it and the only reader
-  /// is the raw query in `lib/slice-it/songs.server.ts#searchSongs`.
+  /// is the raw query in `features/slice-it/engine/songs.server.ts#searchSongs`.
   ///
   /// The weights are the ranking: title A, artist B, album C, description D. A
   /// title match beating a description match is the entire point — before this
@@ -334,7 +334,7 @@ model SongLeaderboard {
   /// `modifiers->>'difficulty'`, defaulting to `normal` exactly as
   /// `ModifiersZ` does for a blob that never carried one.
   difficulty String @default("normal") @db.VarChar(16)
-  /// Board dimension 2: the canonical modifier pool (`lib/slice-it/pools.ts`).
+  /// Board dimension 2: the canonical modifier pool (`features/slice-it/engine/pools.ts`).
   /// Three buckets rather than 2^7 boards of one entry each.
   modPool    String @default("none") @db.VarChar(16)
 
@@ -473,7 +473,7 @@ model Chart {
   /// wants a time-sortable key rather than `cuid()`. The design doc asks for
   /// `uuid_generate_v7()`; that function is not installed in this database and
   /// creating it needs a hand-written migration, so the *value* is generated
-  /// application-side by `uuidv7()` in `lib/slice-it/editor/uuid.ts` (which IS
+  /// application-side by `uuidv7()` in `features/slice-it/engine/editor/uuid.ts` (which IS
   /// time-sortable) and this default is only the fallback for a row inserted
   /// without one.
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -507,7 +507,7 @@ model Chart {
   chartHash String @db.Char(64)
 
   /// Computed difficulty rating (C3), 0–20. Null until the rater has run.
-  /// Produced by `rateChart()` in `lib/slice-it/rating.ts` — read the header of
+  /// Produced by `rateChart()` in `features/slice-it/engine/rating.ts` — read the header of
   /// that file before treating this number as authoritative; the weights behind
   /// it are a starting point awaiting calibration against clear-rate data.
   rating Float?
@@ -540,7 +540,7 @@ model Chart {
   ///
   /// `qualified` is awarded automatically by `evaluateQualification()` and is
   /// reversible; `ranked` is only ever set by a human. See
-  /// `lib/slice-it/ranking.server.ts`.
+  /// `features/slice-it/engine/ranking.server.ts`.
   rankStatus String @default("unranked") @db.VarChar(16)
 
   /// When `rankStatus` last changed, and who changed it — null for the
@@ -653,7 +653,7 @@ model ChartPack {
   ///
   /// A string rather than an enum so a fourth kind does not need a migration on
   /// a 66-enum schema; the vocabulary is `PACK_KINDS` in
-  /// `lib/slice-it/packs.ts` and is validated on the way in.
+  /// `features/slice-it/engine/packs.ts` and is validated on the way in.
   kind String @default("pack") @db.VarChar(16)
 
   isPublic Boolean @default(false)
@@ -700,7 +700,7 @@ model ChartPackItem {
   /// Explicit and **sparse** (10, 20, 30 …), so inserting between two items is
   /// one UPDATE of one row rather than renumbering everything after it. A pack
   /// whose gaps have been used up is renormalised by `resequencePack()` in
-  /// `lib/slice-it/packs.server.ts`, which is the only operation that ever
+  /// `features/slice-it/engine/packs.server.ts`, which is the only operation that ever
   /// rewrites more than one row.
   position Int
 
@@ -716,7 +716,7 @@ model ChartPackItem {
 /// **S1 — one ranked attempt at the daily challenge.**
 ///
 /// The day's song, difficulty and modifier set are NOT stored anywhere: they are
-/// a pure function of the day key (`lib/slice-it/daily.server.ts`), so every web
+/// a pure function of the day key (`features/slice-it/engine/daily.server.ts`), so every web
 /// process, every worker and the client agree on them without a coordinating
 /// table and without a write ever happening at midnight. What has to be stored
 /// is the thing a function cannot derive — who played, what they scored, and

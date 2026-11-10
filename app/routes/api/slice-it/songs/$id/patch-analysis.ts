@@ -2,9 +2,9 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Prisma } from '@prisma/client';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { AnalysisBackfillZ } from '@/lib/slice-it/api-schemas';
-import { BEATMAP_VERSION, isStaleAnalysis } from '@/lib/slice-it/beatmap';
-import { songDensityStrip } from '@/lib/slice-it/songs.server';
+import { AnalysisBackfillZ } from '@features/slice-it/engine/api-schemas';
+import { BEATMAP_VERSION, isStaleAnalysis } from '@features/slice-it/engine/beatmap';
+import { songDensityStrip } from '@features/slice-it/engine/songs.server';
 
 /**
  * Backfill a chart for a song that has none, or upgrade a stale one.

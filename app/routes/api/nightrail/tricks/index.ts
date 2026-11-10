@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { weekKey, type TricksPayload } from '@/lib/trick-week/trick-week';
-import { submitTrickSchema } from '@/lib/nightrail/trick-schema';
+import { submitTrickSchema } from '@features/nightrail/engine/trick-schema';
 import { authorInclude, toTrickView } from '@/lib/trick-week/trick-week.server';
 
 /**

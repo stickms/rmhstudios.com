@@ -28,6 +28,8 @@ import { cleanupRateLimits } from './rate-limit';
 import { disconnectPrisma } from './prisma-client';
 import { logger } from './logger';
 import { attachRedisAdapter } from '../shared/redis-adapter';
+import { openLobbyStore } from './lobby-store';
+import { LobbyPersistence } from './lobby-persistence';
 import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
 
 // Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
@@ -96,6 +98,21 @@ const reconnection    = new ReconnectionHandler(
   (lobbyId, spectatorUserId) => gameCoordinator.getSpectatorTarget(lobbyId, spectatorUserId),
 );
 
+// ─── Durable lobbies (opt-in) ───────────────────────────────────
+// Off unless RMHBOX_DURABLE_LOBBIES=1 and REDIS_STATE_URL is reachable at boot
+// (lobby-store.ts). When on, stored lobbies are restored before listen() and
+// every lobby is written back in shutdown(). Unset: lobbyPersistence stays
+// null, no hook is installed and the hub behaves exactly as before.
+
+let lobbyPersistence: LobbyPersistence | null = null;
+const durableReady = openLobbyStore(logger).then(async (store) => {
+  if (!store) return;
+  const persistence = new LobbyPersistence(store, lobbyManager, logger);
+  lobbyPersistence = persistence;
+  persistence.attach();
+  await persistence.restore();
+});
+
 // ─── Connection handler ─────────────────────────────────────────
 
 io.on('connection', (socket) => {
@@ -143,12 +160,17 @@ function shutdown(signal: string): void {
 
   // Closing the server disconnects every socket: those disconnects must not
   // start grace windows, and running games' timers must not keep firing
-  // (lobbies are in-memory and die with the process anyway).
+  // (lobbies are in-memory and die with the process, unless durable lobbies
+  // are on — then they are written to the store just below).
   lobbyManager.shuttingDown = true;
   for (const lobbyId of Array.from(lobbyManager.getLobbies().keys())) {
     gameCoordinator.teardownLobby(lobbyId);
     voteManager.cancelVote(lobbyId);
   }
+
+  // Durable lobbies: write every lobby now; exit waits for it (bounded by the
+  // forced-shutdown timer below). Null when the feature is off.
+  const lobbiesSaved = lobbyPersistence?.shutdown() ?? null;
 
   // Stop accepting new connections
   io.close(() => {
@@ -163,9 +185,13 @@ function shutdown(signal: string): void {
   httpServer.close(() => {
     logger.info({ event: 'http_server_closed' });
     // Disconnect Prisma client before exiting
-    disconnectPrisma().finally(() => {
-      process.exit(0);
-    });
+    const exit = () => {
+      disconnectPrisma().finally(() => {
+        process.exit(0);
+      });
+    };
+    if (lobbiesSaved) void lobbiesSaved.finally(exit);
+    else exit();
   });
 
   // Force-kill after timeout
@@ -180,7 +206,10 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 // ─── Start listening ────────────────────────────────────────────
 
-void adapterReady.then(() =>
+void Promise.all([adapterReady, durableReady.catch((err: unknown) => {
+  // openLobbyStore and restore never throw; this is belt and braces — the hub must always start.
+  logger.warn({ event: 'durable_lobbies_boot_failed', error: String(err) });
+})]).then(() =>
   httpServer.listen(config.PORT, () => {
     logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
   }),

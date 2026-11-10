@@ -20,7 +20,7 @@ already store image URLs) must keep working with zero migration.
   `/api/feed/image/<filename>` URLs.
 - **Storage** `lib/storage/s3.server.ts` — S3-or-local-filesystem fallback;
   `lib/storage/keys.ts` (`feedImageKey`, `feedImageUrl`, key/format helpers);
-  `lib/slice-it/upload-validation.ts` (`validateImageBuffer`, `detectImageExt`);
+  `features/slice-it/engine/upload-validation.ts` (`validateImageBuffer`, `detectImageExt`);
   `lib/image-optimize.ts` (Sharp, available but unused by the in-app route).
 - **`RMHark`** post model already has `imageUrls String[]` — posts can carry images;
   the v1 endpoint just doesn't accept them yet.

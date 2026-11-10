@@ -16,7 +16,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 
 import { defineHandler } from '@/lib/api/handler.server';
-import { auditLibrary, contentDashboard, orphanedObjects } from '@/lib/slice-it/ops.server';
+import { auditLibrary, contentDashboard, orphanedObjects } from '@features/slice-it/engine/ops.server';
 
 const QueryZ = z.object({
   view: z.enum(['dashboard', 'broken', 'orphans']).default('dashboard'),

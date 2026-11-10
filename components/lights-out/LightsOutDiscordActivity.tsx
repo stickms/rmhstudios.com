@@ -8,6 +8,17 @@ import {
 } from '@/lib/lights-out/seed';
 import { getDailyShape, getShapeLabel, isActiveCell } from '@/lib/lights-out/shapes';
 import { ensureTrailingSlash } from '@/lib/url';
+import { api } from '@/lib/contract/client';
+import {
+    getDiscordDailyProgressApi,
+    getDiscordEmbedCompletionApi,
+    getDiscordEmbedLeaderboardApi,
+    getDiscordRaceLobbyApi,
+    postDiscordEmbedApi,
+    postDiscordRaceApi,
+    saveDiscordDailyProgressApi,
+    syncDiscordScoreApi,
+} from '@/lib/lights-out/discord.contract';
 import {
     generatePuzzle,
     toggleCellInGrid,
@@ -77,12 +88,10 @@ function getDailyCompletion(dateKey: string): DailyCompletion | null {
 /** Fetch completion from server DB (for cross-platform sync). */
 async function fetchDailyCompletion(discordId: string, dateKey: string): Promise<DailyCompletion | null> {
     try {
-        const res = await fetch(`/api/discord/embed?discordId=${encodeURIComponent(discordId)}&dateKey=${encodeURIComponent(dateKey)}`);
-        if (!res.ok) return null;
-        const data = await res.json();
+        const data = await api(getDiscordEmbedCompletionApi, { query: { discordId, dateKey } });
         if (data.completed) {
             const completion: DailyCompletion = {
-                moves: data.moves,
+                moves: data.moves ?? 0,
                 optimalMoves: null, // not stored in DB
                 ratingLabel: data.ratingLabel ?? 'Solved!',
                 ratingEmoji: data.ratingEmoji ?? '\u{1F4A1}',
@@ -110,10 +119,7 @@ function notifyEmbed(
     result?: { moves: number; optimalMoves: number | null; ratingEmoji: string; ratingLabel: string }
 ) {
     // Always send — server handles null guildId/channelId gracefully
-    fetch('/api/discord/embed', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+    api(postDiscordEmbedApi, { body: {
             channelId: discord.channelId ?? null,
             guildId: discord.guildId ?? null,
             action,
@@ -127,8 +133,7 @@ function notifyEmbed(
                 avatar: discord.user.avatar,
             },
             result,
-        }),
-    }).catch(() => {});
+        } }).catch(() => {});
 }
 
 // ─── Props ───────────────────────────────────────────────────────────
@@ -497,10 +502,9 @@ function LeaderboardModal({
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch(`/api/discord/embed?guildId=${encodeURIComponent(guildId)}&dateKey=${encodeURIComponent(dateKey)}&leaderboard=1`)
-            .then(r => r.json())
+        api(getDiscordEmbedLeaderboardApi, { query: { guildId, dateKey, leaderboard: 1 } })
             .then(data => {
-                if (Array.isArray(data.participants)) setEntries(data.participants);
+                if (Array.isArray(data.participants)) setEntries(data.participants as LeaderboardEntry[]);
             })
             .catch(() => {})
             .finally(() => setLoading(false));
@@ -690,12 +694,10 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
 
         async function load() {
             try {
-                const res = await fetch(
-                    `/api/discord/daily-progress?dateKey=${encodeURIComponent(todayKey)}`,
-                    { headers: { Authorization: `Bearer ${discord.accessToken}` } },
-                );
-                if (!res.ok) throw new Error('fetch failed');
-                const data = await res.json();
+                const data = await api(getDiscordDailyProgressApi, {
+                    query: { dateKey: todayKey },
+                    headers: { Authorization: `Bearer ${discord.accessToken}` },
+                });
 
                 if (cancelled) return;
 
@@ -703,7 +705,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
 
                 if (data.completed) {
                     setGrid(createEmptyGrid(shape));
-                    setMoves(data.moves);
+                    setMoves(data.moves ?? 0);
                     setSolved(true);
                     setRatingLabel(data.ratingLabel ?? 'Solved!');
                     setRatingEmoji(data.ratingEmoji ?? '\u{1F4A1}');
@@ -711,7 +713,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
                     setScoreSynced(true);
                     // Notify embed even when revisiting a completed puzzle
                     notifyEmbed(discord, 'completed', todayKey, {
-                        moves: data.moves,
+                        moves: data.moves ?? 0,
                         optimalMoves: opt,
                         ratingEmoji: data.ratingEmoji ?? '\u{1F4A1}',
                         ratingLabel: data.ratingLabel ?? 'Solved!',
@@ -723,7 +725,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
                     } catch {
                         setGrid(initialGrid);
                     }
-                    setMoves(data.moves);
+                    setMoves(data.moves ?? 0);
                 } else {
                     // Fresh puzzle
                     setGrid(initialGrid);
@@ -761,18 +763,14 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
 
     // Save progress to server (fire-and-forget)
     const saveProgress = useCallback((newGrid: Grid, newMoves: number, completed: boolean, label?: string, emoji?: string) => {
-        fetch('/api/discord/daily-progress', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        api(saveDiscordDailyProgressApi, { body: {
                 accessToken: discord.accessToken,
                 dateKey: todayKey,
                 gridJson: JSON.stringify(newGrid),
                 moves: newMoves,
                 completed,
                 ...(completed ? { ratingLabel: label, ratingEmoji: emoji } : {}),
-            }),
-        }).catch(() => {});
+            } }).catch(() => {});
     }, [discord.accessToken, discord.user.id, todayKey]);
 
     // Sync score + notify embed on solve
@@ -787,18 +785,14 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
         });
 
         if (discord.linkedUserId) {
-            fetch('/api/discord/sync-score', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+            api(syncDiscordScoreApi, { body: {
                     accessToken: discord.accessToken,
                     dateKey: todayKey,
                     moves,
                     hintUsed: false,
                     dnf: false,
                     resultJson: { moves, hintUsed: false, dnf: false, optimalMoves },
-                }),
-            }).then(() => setScoreSynced(true)).catch(() => {});
+                } }).then(() => setScoreSynced(true)).catch(() => {});
         }
 
         setScoreSynced(true);
@@ -1016,16 +1010,11 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
         if (!useHttp) return;
 
         // Join via HTTP
-        fetch('/api/discord/race', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ instanceId, action: 'join', discordId, username, avatar: discord.user.avatar }),
-        }).catch(() => {});
+        api(postDiscordRaceApi, { body: { instanceId, action: 'join', discordId, username, avatar: discord.user.avatar } }).catch(() => {});
 
         const poll = async () => {
             try {
-                const res = await fetch(`/api/discord/race?instanceId=${encodeURIComponent(instanceId)}&discordId=${encodeURIComponent(discordId)}`);
-                if (res.ok) setLobby(await res.json());
+                setLobby((await api(getDiscordRaceLobbyApi, { query: { instanceId, discordId } })) as unknown as LobbyState);
             } catch {}
         };
 
@@ -1034,11 +1023,7 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
 
         return () => {
             clearInterval(interval);
-            fetch('/api/discord/race', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ instanceId, action: 'leave', discordId }),
-            }).catch(() => {});
+            api(postDiscordRaceApi, { body: { instanceId, action: 'leave', discordId } }).catch(() => {});
         };
     }, [useHttp, instanceId, discordId, username, discord.user.avatar]);
 
@@ -1056,11 +1041,7 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
             };
             const action = actionMap[event];
             if (action) {
-                fetch('/api/discord/race', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ instanceId, action, discordId, ...data }),
-                }).catch(() => {});
+                api(postDiscordRaceApi, { body: { instanceId, action, discordId, ...data } }).catch(() => {});
             }
         }
     }, [instanceId, discordId]);
@@ -1105,10 +1086,7 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
         // Notify embed API when a race round completes (once per round)
         if (lobby.phase === 'results' && lobby.roundNumber !== notifiedRoundRef.current) {
             notifiedRoundRef.current = lobby.roundNumber;
-            fetch('/api/discord/embed', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+            api(postDiscordEmbedApi, { body: {
                     channelId: discord.channelId ?? null,
                     guildId: discord.guildId ?? null,
                     action: 'race_completed',
@@ -1124,8 +1102,7 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
                         raceStartedAt: lobby.raceStartedAt,
                         participants: playersData,
                     },
-                }),
-            }).catch(() => {});
+                } }).catch(() => {});
         }
     }, [discord.sdk, lobby?.phase, playerCount]); // eslint-disable-line react-hooks/exhaustive-deps
 

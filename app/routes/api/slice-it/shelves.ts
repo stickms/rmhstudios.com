@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 
 import { defineHandler } from '@/lib/api/handler.server';
-import { shelf } from '@/lib/slice-it/library.server';
+import { shelf } from '@features/slice-it/engine/library.server';
 
 /**
  * L2 — the editorial rows above the library grid.

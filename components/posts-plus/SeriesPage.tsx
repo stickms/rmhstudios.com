@@ -1,4 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { seriesDetailQuery } from '@/lib/posts-plus/series-detail.queries';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -19,7 +21,6 @@ import { HttpError, serverError } from '@/lib/http';
 import {
   deleteSeriesApi,
   followSeriesApi,
-  getSeriesApi,
   moveSeriesPostApi,
   removeSeriesPostApi,
   unfollowSeriesApi,
@@ -53,30 +54,31 @@ export function SeriesPage({ id }: { id: string }) {
   const { data: session } = useSession();
   const confirm = useConfirm();
   const navigate = useNavigate();
-  const [view, setView] = useState<View | null>(null);
-  const [missing, setMissing] = useState(false);
+  const queryClient = useQueryClient();
+  const seriesQ = useQuery(seriesDetailQuery(id));
+  const view = (seriesQ.data as View | undefined) ?? null;
+  const missing = seriesQ.error instanceof HttpError && seriesQ.error.status === 404;
   const [renaming, setRenaming] = useState(false);
   const [title, setTitle] = useState('');
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  // Refetch after a mutation; a failed first load keeps the old toast.
   const load = useCallback(async () => {
-    try {
-      const v = await api(getSeriesApi, { params: { id } });
-      setView(v);
-      setTitle(v.series.title);
-    } catch (e) {
-      if (e instanceof HttpError && e.status === 404) {
-        setMissing(true);
-        return;
-      }
-      toast.error(t('series-load-failed', { defaultValue: 'Could not load the series' }));
-    }
-  }, [id, t]);
+    await queryClient.invalidateQueries({ queryKey: seriesDetailQuery(id).queryKey });
+  }, [queryClient, id]);
 
+  const loadFailed = seriesQ.isError && !missing;
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (loadFailed)
+      toast.error(t('series-load-failed', { defaultValue: 'Could not load the series' }));
+  }, [loadFailed, t]);
+
+  // Keep the rename field in step with the loaded title.
+  const loadedTitle = view?.series.title;
+  useEffect(() => {
+    if (loadedTitle !== undefined) setTitle(loadedTitle);
+  }, [loadedTitle]);
 
   const call = async (run: () => Promise<unknown>, failed: string) => {
     setBusy(true);

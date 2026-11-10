@@ -25,7 +25,7 @@ Rules:
   It imports zod, so client code never imports a manifest; `lib/__tests__/feature-manifests.test.ts`
   checks every manifest (id = folder, route files exist, namespaces registered in `lib/i18n/config.ts`).
 - **Server handlers** live in `features/<id>/server/` and are registered by the hub's
-  `server/socket-server/features.ts` list (order = registration order). The esbuild
+  `server/socket-server/features.ts` list (order = registration order). A feature whose handlers sat between other hand-written calls sets `slot` and the hub calls `registerFeatureHandlers(io, socket, '<slot>')` at that spot. The esbuild
   server bundle follows the imports; the Dockerfile `server-builder` stage copies `features/`.
 - **Tier exemptions follow the id.** `features/<id>/ui` is held to the same design tier as the old
   `components/<id>` (`FULLSCREEN_TIER_DIRS` in `eslint-local-rules/design-scope.js`).
@@ -37,4 +37,4 @@ Rules:
   `@source not` lines in `app/site-tier.css`, update test excludes in `vitest.config.ts` and workflow
   path filters that named the old directories.
 
-Moved so far: `balatro` (engine, ui, server) and `void-breaker` (engine, ui). The A1 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.
+Moved so far: `balatro`, `altair`, `slice-it` (engine, ui, server), `void-breaker` and `nightrail` (engine, ui). The A1 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.

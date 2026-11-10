@@ -134,7 +134,7 @@ shared eager chunk):
   data, gate it behind a dynamic import or move it server-side.
 - `components/research/papers/*.tsx` — three files at ~3,000 lines each. These are static
   article content; lazy-load per paper (route is already `research.$slug.tsx`).
-- `lib/temple-of-joy/data/upgrades.ts` (2,991), `lib/altair/engine/*`, `components/velum2099/
+- `lib/temple-of-joy/data/upgrades.ts` (2,991), `features/altair/engine/engine/*`, `components/velum2099/
   game/scene/CyberpunkScene.ts` (2,297). Ensure each is reached only through its route chunk.
 
 ### 1.3 Confirm the existing manual chunks still hold

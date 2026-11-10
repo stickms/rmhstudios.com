@@ -855,7 +855,7 @@
   --sidebar-ring: oklch(0.708 0 0);
 
   /* Slice It's palette is NOT here. It lives on `.slice-theme` in
-     `components/slice-it/slice-it.css`, which is the only definition.
+     `features/slice-it/ui/slice-it.css`, which is the only definition.
      There used to be a second copy in this file, on `:root` and `.dark`, and
      the two had already drifted — different `--slice-text`, a `--slice-shadow-light`
      that stayed opaque white after the scoped one was softened. A token with two

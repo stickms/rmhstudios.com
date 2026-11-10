@@ -6,6 +6,15 @@ import { REVIEW_BODY_MAX, type RatingAgg, type ReviewView } from '@/lib/games/re
 import { AWARD_CATALOG } from '@/lib/awards/catalog';
 import { formatPlaytime } from '@/lib/games/format-playtime';
 import { recommendation, summaryLabel } from '@/lib/games/review-extras';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { giveAwardApi } from '@/lib/awards/awards.contract';
+import {
+  listGameReviewsApi,
+  unvoteReviewApi,
+  upsertGameReviewApi,
+  voteReviewApi,
+} from '@/lib/games/reviews.contract';
 import { PersonAvatar } from './SteamPeople';
 
 function Stars({
@@ -66,11 +75,12 @@ export function SteamReviews({
   const [sort, setSort] = useState<'helpful' | 'recent'>('helpful');
 
   async function refresh(nextSort: 'helpful' | 'recent' = sort) {
-    const res = await fetch(`/api/games/${gameId}/reviews?sort=${nextSort}`);
-    if (res.ok) {
-      const d = (await res.json()) as { reviews: ReviewView[]; agg: RatingAgg };
+    try {
+      const d = await api(listGameReviewsApi, { params: { id: gameId }, query: { sort: nextSort } });
       setReviews(d.reviews);
       setAgg(d.agg);
+    } catch {
+      // A failed refresh keeps the list on screen.
     }
   }
 
@@ -82,12 +92,7 @@ export function SteamReviews({
     setSaving(true);
     setStatus(null);
     try {
-      const res = await fetch(`/api/games/${gameId}/review`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stars, body: body || null }),
-      });
-      if (!res.ok) throw new Error('save failed');
+      await api(upsertGameReviewApi, { params: { id: gameId }, body: { stars, body: body || null } });
       await refresh();
       setStatus(t('review-saved', { defaultValue: 'Review saved' }));
     } catch {
@@ -107,11 +112,10 @@ export function SteamReviews({
           : r,
       ),
     );
-    await fetch(`/api/reviews/${review.id}/vote`, {
-      method: next ? 'POST' : 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: next ? JSON.stringify({ helpful: true }) : undefined,
-    }).catch(() => {});
+    await (next
+      ? api(voteReviewApi, { params: { id: review.id }, body: { helpful: true } })
+      : api(unvoteReviewApi, { params: { id: review.id } })
+    ).catch(() => {});
   }
 
   const ratingLabel = t('rating', { defaultValue: 'Rating' });
@@ -126,24 +130,15 @@ export function SteamReviews({
 
   async function award(review: ReviewView, awardId: string) {
     try {
-      const res = await fetch('/api/awards', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ awardId, entityType: 'review', entityId: review.id }),
-      });
-      if (res.ok) {
-        toast.success(t('steam-rev-award-sent', { defaultValue: 'Award given.' }));
-        await refresh();
-      } else {
-        const b = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(
-          b.error === 'INSUFFICIENT_COINS'
-            ? t('steam-gems-err-coins', { defaultValue: 'You do not have enough coins.' })
-            : t('steam-rev-award-err', { defaultValue: 'Could not give that award.' }),
-        );
-      }
-    } catch {
-      toast.error(t('steam-rev-award-err', { defaultValue: 'Could not give that award.' }));
+      await api(giveAwardApi, { body: { awardId, entityType: 'review', entityId: review.id } });
+      toast.success(t('steam-rev-award-sent', { defaultValue: 'Award given.' }));
+      await refresh();
+    } catch (e) {
+      toast.error(
+        serverError(e) === 'INSUFFICIENT_COINS'
+          ? t('steam-gems-err-coins', { defaultValue: 'You do not have enough coins.' })
+          : t('steam-rev-award-err', { defaultValue: 'Could not give that award.' }),
+      );
     }
   }
 
