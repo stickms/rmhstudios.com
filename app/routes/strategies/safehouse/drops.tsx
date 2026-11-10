@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { DivisivenessBadge } from '@features/doctrine/ui/divisiveness-badge';
 import { ReactionBar } from '@features/doctrine/ui/reaction-bar';
 import { EMPTY_REACTIONS } from '@features/doctrine/engine/types';
+import { api } from '@/lib/contract/client';
+import { getSafehouseDisclosuresApi } from '@features/doctrine/engine/doctrine.contract';
 
 export const Route = createFileRoute('/strategies/safehouse/drops')({
   head: () => noindexHead('Safehouse Drops'),
@@ -17,9 +19,7 @@ function DropsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['doctrine', 'disclosures'],
     queryFn: async () => {
-      const res = await fetch('/api/doctrine/safehouse/disclosures');
-      if (!res.ok) throw new Error('Failed');
-      return res.json();
+      return api(getSafehouseDisclosuresApi);
     },
     staleTime: 60_000,
   });
@@ -44,7 +44,7 @@ function DropsPage() {
       )}
 
       <div className="space-y-3">
-        {data?.map((d: { id: string; codename: string; publicTitle: string; content: string | null; narrative: string | null; status: string; disclosedAt: string | null; reactions: { fire: number; based: number; mid: number; cringe: number; trash: number; tung: number } }) => (
+        {data?.map((d) => (
           <article
             key={d.id}
             className="rounded-lg p-4 space-y-2"

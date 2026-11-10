@@ -27,12 +27,13 @@ import { COUNTDOWN_SECONDS } from './constants';
 import { useSliceItStore } from './store';
 import { api } from '@/lib/contract/client';
 import { recordSongPlayApi } from './slice-it.contract';
+import { getSliceSongApi } from './play.contract';
 import { reportLoaded } from './net/client';
 
 /** How long a song gets to decode before the run is abandoned. */
 const DECODE_TIMEOUT_MS = 20_000;
 import type { GameEngine } from './engine';
-import type { BeatMap, SliceSong } from './types';
+import type { BeatMap } from './types';
 
 import { patchSongAnalysisApi } from '@features/slice-it/engine/play.contract';
 export interface StartRunOptions {
@@ -70,13 +71,12 @@ export function useStartRun(engine: GameEngine | null) {
         // read and `loadMap`: it is chosen in the menu before `startRun`, and
         // `engine.reset()` (H6's restart) reuses the slices it already
         // resolved rather than re-reading the map.
-        const response = await fetch(
-          `/api/slice-it/songs/${songId}?difficulty=${encodeURIComponent(
-            store.modifiers.difficulty,
-          )}`,
-        );
-        if (!response.ok) throw new Error(`Song fetch failed: ${response.status}`);
-        const song = (await response.json()) as SliceSong;
+        // The raw fetch had no timeout; a full chart on a slow link outlives the 15s default.
+        const song = await api(getSliceSongApi, {
+          params: { id: songId },
+          query: { difficulty: store.modifiers.difficulty },
+          timeoutMs: 60_000,
+        });
         // The run's receipt, minted by that read. Null for a signed-out player,
         // whose score is not going on a leaderboard anyway.
         store.setRunToken(song.runToken ?? null);

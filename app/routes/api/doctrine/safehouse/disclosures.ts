@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getSafehouseDisclosuresApi } from '@features/doctrine/engine/doctrine.contract';
 import { getUserTier } from '@features/doctrine/engine/tiers';
 import { getDisclosuresForTier } from '@features/doctrine/engine/narrative';
 import { aggregateReactions, calculateDivisiveness } from '@features/doctrine/engine/divisiveness';
@@ -8,7 +9,8 @@ import type { TierId } from '@features/doctrine/engine/types';
 export const Route = createFileRoute('/api/doctrine/safehouse/disclosures')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        getSafehouseDisclosuresApi,
         {
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'doctrine-disclosures' },
         },

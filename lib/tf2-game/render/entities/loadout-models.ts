@@ -63,6 +63,9 @@ import { bodygroupsOf, classVariant, merge } from '@/lib/tf2-loadout/bodygroups'
 import { modelItemId, type Bodygroups } from '@/lib/tf2-loadout/catalog-types';
 import { modelUrl, pickModel } from '@/lib/tf2-loadout/use-models';
 import { renderWarPaint } from '@/lib/tf2-loadout/warpaint-client';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { listTf2LoadoutModelsApi } from '@/lib/tf2-loadout/models.contract';
 import { TF_TEAM_BLUE, type ClassName } from '../../core/constants';
 import { CLASS_DATA } from '../../data/classes';
 import { VM_ACTIVITY_TABLES } from '../../data/unlock-scripts';
@@ -178,9 +181,12 @@ export interface LoadoutModelSource {
 
 export const LOADOUT_MODEL_API: LoadoutModelSource = {
   async list() {
-    const r = await fetch('/api/tf2-loadout/models');
-    if (!r.ok) return [];
-    return ((await r.json()) as { ids?: string[] }).ids ?? [];
+    // A refusal reads as "no models"; a dropped connection still rejects, as it did.
+    const body = await api(listTf2LoadoutModelsApi).catch((e: unknown) => {
+      if (e instanceof HttpError) return { ids: [] };
+      throw e;
+    });
+    return body.ids ?? [];
   },
   url: modelUrl,
 };

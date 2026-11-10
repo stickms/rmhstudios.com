@@ -1,6 +1,7 @@
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getDailyPuzzleLeaderboardApi } from '@/lib/daily-puzzles/daily-puzzles.contract';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay, userDisplaySelect } from '@/lib/user-display';
 
@@ -38,7 +39,8 @@ function orderByForMode(gameMode: string) {
 export const Route = createFileRoute('/api/daily-puzzles/leaderboard')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        getDailyPuzzleLeaderboardApi,
         {
           auth: 'none',
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'daily-puzzle-leaderboard' },

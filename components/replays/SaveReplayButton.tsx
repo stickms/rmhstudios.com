@@ -19,6 +19,9 @@ import { Save, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/components/Providers';
 import type { ReplayData } from '@/lib/game/replay';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { submitReplayApi } from '@/lib/game/replay.contract';
 
 export interface SaveReplayButtonProps {
   game: string;
@@ -65,18 +68,21 @@ export function SaveReplayButton({
     }
     setSaving(true);
     try {
-      const res = await fetch('/api/replays', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game, data, score: score ?? undefined, durationMs, visibility }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      const json = await api(submitReplayApi, {
+        body: {
+          game,
+          data: data as unknown as Record<string, unknown>,
+          score: score ?? undefined,
+          durationMs,
+          visibility,
+        },
+      }).catch((e: unknown) => {
         toast.error(
-          json?.error ?? t('replay-save-failed', { defaultValue: 'Could not save replay.' }),
+          serverError(e) ?? t('replay-save-failed', { defaultValue: 'Could not save replay.' }),
         );
-        return;
-      }
+        return null;
+      });
+      if (!json) return;
       setSavedId(json.id);
       toast.success(t('replay-saved', { defaultValue: 'Replay saved!' }), {
         action: {

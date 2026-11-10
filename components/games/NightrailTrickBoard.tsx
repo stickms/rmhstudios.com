@@ -9,6 +9,11 @@ import { toast } from 'sonner';
 import { ThumbsUp, Trophy } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/contract/client';
+import {
+  getNightrailTricksApi,
+  voteNightrailTrickApi,
+} from '@/lib/trick-week/nightrail-tricks.contract';
 import type { TrickView, TricksPayload } from '@/lib/trick-week/trick-week';
 
 function TrickLine({ trick }: { trick: TrickView }) {
@@ -43,9 +48,7 @@ export function NightrailTrickBoard({
 
   const load = async () => {
     try {
-      const res = await fetch('/api/nightrail/tricks');
-      if (!res.ok) throw new Error(String(res.status));
-      setData((await res.json()) as TricksPayload);
+      setData(await api(getNightrailTricksApi));
       setFailed(false);
     } catch {
       setFailed(true);
@@ -59,12 +62,9 @@ export function NightrailTrickBoard({
   };
 
   const vote = async (trickId: string) => {
-    const res = await fetch('/api/nightrail/tricks/vote', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ trickId }),
-    });
-    if (!res.ok) {
+    try {
+      await api(voteNightrailTrickApi, { body: { trickId } });
+    } catch {
       toast.error(t('trick-vote-error', { defaultValue: 'Could not save your vote.' }));
       return;
     }

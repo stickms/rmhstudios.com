@@ -13,6 +13,10 @@ import { WEAPONS, getWeapon, type WeaponId } from '@features/void-breaker/engine
 import { MODIFIERS, combineModifiers, type ModifierId } from '@features/void-breaker/engine/modifiers';
 import { parseHandicap } from '@/lib/ranked/handicap';
 import { useSession } from '@/components/session/session-context';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { getVoidBreakerLeaderboardApi } from '@/lib/game/leaderboard.contract';
+import { submitVoidBreakerScoreApi } from '@/lib/game/score.contract';
 import { useSiteNavigate } from '@/hooks/useSiteNavigate';
 import { useQuitGame } from '@/hooks/useQuitGame';
 import type { RunStats } from '@features/void-breaker/engine/types';
@@ -73,9 +77,7 @@ export function VoidBreakerUI({
 
   const fetchLb = useCallback(async () => {
     try {
-      const res = await fetch('/api/void-breaker/leaderboard');
-      if (!res.ok) return;
-      const data = await res.json();
+      const data = await api(getVoidBreakerLeaderboardApi);
       setLb(Array.isArray(data) ? data : []);
     } catch { /* ignore */ }
   }, []);
@@ -99,15 +101,14 @@ export function VoidBreakerUI({
     setSubmitted(true);
     (async () => {
       try {
-        const res = await fetch('/api/void-breaker/score', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username, score: runStats.score, wave: runStats.wave,
-            enemiesKilled: runStats.enemiesKilled, timeMs: runStats.timeSurvivedMs,
-          }),
+        // A refused submit (any non-2xx) used to read as "no moment"; keep that.
+        const body: unknown = await api(submitVoidBreakerScoreApi, {
+          body: { username, score: runStats.score, wave: runStats.wave, timeMs: runStats.timeSurvivedMs },
+        }).catch((e: unknown) => {
+          if (e instanceof HttpError) return null;
+          throw e;
         });
-        void takeScoreMoment(res);
+        void takeScoreMoment(body);
         fetchLb();
       } catch { /* ignore */ }
     })();

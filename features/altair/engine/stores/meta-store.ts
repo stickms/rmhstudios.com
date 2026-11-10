@@ -10,6 +10,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { META_UPGRADES } from '@features/altair/engine/data/meta-upgrades';
 import { FIRST_CLEAR_BONUS } from '@features/altair/engine/solo/loadout';
+import { api } from '@/lib/contract/client';
+import { getAltairMetaApi, saveAltairMetaApi } from '@features/altair/engine/altair.contract';
 
 // ---- DB sync helpers (fire-and-forget, debounced) ---------------------------
 
@@ -41,27 +43,22 @@ export function setFallbackRun(runId: string | null): void {
   fallbackRunId = runId;
 }
 function metaHeaders(): Record<string, string> {
-  const h: Record<string, string> = { 'Content-Type': 'application/json', 'x-altair-verified-runs': '1' };
+  const h: Record<string, string> = { 'x-altair-verified-runs': '1' };
   if (fallbackRunId) h['x-altair-fallback-run'] = fallbackRunId;
   return h;
 }
 
 function doSave(): Promise<boolean> {
-  return fetch('/api/altair/meta', {
-    method: 'POST',
-    headers: metaHeaders(),
-    body: JSON.stringify(getPersistedState()),
-  }).then((res) => res.ok).catch(() => false);
+  return api(saveAltairMetaApi, { headers: metaHeaders(), body: getPersistedState() })
+    .then(() => true)
+    .catch(() => false);
 }
 
 function doSaveKeepalive(): void {
-  const payload = JSON.stringify(getPersistedState());
-
   // keepalive fetch (not sendBeacon): the request must carry the verified-runs header.
-  void fetch('/api/altair/meta', {
-    method: 'POST',
+  void api(saveAltairMetaApi, {
     headers: metaHeaders(),
-    body: payload,
+    body: getPersistedState(),
     keepalive: true,
   }).catch(() => {
     // Best-effort only
@@ -297,11 +294,8 @@ export const useAltairMetaStore = create<AltairMetaState>()(
 
       loadFromServer: async () => {
         try {
-          const res = await fetch('/api/altair/meta', {
-            signal: typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? AbortSignal.timeout(10000) : undefined,
-          });
-          if (!res.ok) return; // not logged in or server error — use localStorage
-          const { data } = await res.json();
+          // Not logged in or a server error throws — use localStorage.
+          const { data } = await api(getAltairMetaApi, { timeoutMs: 10_000, retries: 0 });
           if (!data) return; // no server data yet — first time
 
           // Server wins — override local state entirely

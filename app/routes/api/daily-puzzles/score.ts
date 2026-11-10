@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { submitDailyPuzzleScoreApi } from '@/lib/daily-puzzles/daily-puzzles.contract';
 import { prisma } from '@/lib/prisma.server';
 import { recordGamePlay } from '@/lib/quests/engine.server';
 
@@ -16,7 +17,8 @@ const VALID_MODES = [
 export const Route = createFileRoute('/api/daily-puzzles/score')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        submitDailyPuzzleScoreApi,
         { rateLimit: { limit: 10, windowMs: 60_000, prefix: 'daily-puzzle-score' } },
         async ({ request, session }) => {
           try {

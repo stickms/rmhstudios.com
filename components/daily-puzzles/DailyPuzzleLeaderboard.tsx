@@ -6,16 +6,14 @@ import { Trophy, Lightbulb } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 import { formatDuration } from '@/lib/globeset/game';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import {
+  getDailyPuzzleLeaderboardApi,
+  submitDailyPuzzleScoreApi,
+  type DailyPuzzleLeaderboardEntry as LeaderboardEntry,
+} from '@/lib/daily-puzzles/daily-puzzles.contract';
 
-type LeaderboardEntry = {
-  rank: number;
-  score: number;
-  moves?: number;
-  timeSeconds?: number | null;
-  dnf?: boolean;
-  hintUsed?: boolean;
-  displayName: string;
-};
 
 /**
  * Modes ranked on the CLOCK rather than on points or moves.
@@ -80,11 +78,7 @@ export function DailyPuzzleLeaderboard({
   const fetchLeaderboard = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/daily-puzzles/leaderboard?gameMode=${gameMode}&date=${dateKey}`,
-      );
-      if (!res.ok) return;
-      const data = await res.json();
+      const data = await api(getDailyPuzzleLeaderboardApi, { query: { gameMode, date: dateKey } });
       setLeaderboard(data.leaderboard || []);
     } catch {
       /* ignore */
@@ -131,14 +125,13 @@ export function DailyPuzzleLeaderboard({
             }
           : { gameMode, dateKey, score, resultJson, timeSeconds };
 
-      const res = await fetch('/api/daily-puzzles/score', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      // Server hiccup / rate limit: allow a couple of retries so a flaky mobile
-      // connection does not silently lose the score.
-      if (!res.ok && (res.status >= 500 || res.status === 429)) throw new Error(String(res.status));
+      try {
+        await api(submitDailyPuzzleScoreApi, { body });
+      } catch (e) {
+        // Server hiccup / rate limit: allow a couple of retries so a flaky mobile
+        // connection does not silently lose the score. Any other refusal is final.
+        if (!(e instanceof HttpError) || e.status >= 500 || e.status === 429) throw e;
+      }
       fetchLeaderboard();
     } catch {
       if (retries.current < 3) {

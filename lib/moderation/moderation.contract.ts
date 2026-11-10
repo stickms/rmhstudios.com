@@ -7,6 +7,12 @@ export const reportContentApi = endpoint<{
   res: { success: true; alreadyReported?: true };
 }>()({ method: 'POST', path: '/api/moderation/report' });
 
+/** The ids the caller has blocked, newest first. */
+export const listBlockedUsersApi = endpoint<{ res: { blocked: string[] } }>()({
+  method: 'GET',
+  path: '/api/moderation/block',
+});
+
 export const toggleBlockApi = endpoint<{
   body: { targetUserId: string };
   res: { success: true; blocked: boolean };

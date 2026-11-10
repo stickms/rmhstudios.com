@@ -12,3 +12,13 @@ export const getGameLeaderboardApi = endpoint<{
     entries: LeaderboardRow[];
   };
 }>()({ method: 'GET', path: '/api/games/$id/leaderboard' });
+
+/** Void Breaker's own board: the global top ten by high score. */
+export const getVoidBreakerLeaderboardApi = endpoint<{
+  res: { username: string; highScore: number }[];
+}>()({ method: 'GET', path: '/api/void-breaker/leaderboard' });
+
+/** Vega's own board: the global top ten by loop, then level. */
+export const getVegaLeaderboardApi = endpoint<{
+  res: { username: string; highestLoop: number; highestLevel: number; updatedAt: string }[];
+}>()({ method: 'GET', path: '/api/vega/leaderboard' });

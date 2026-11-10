@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getDailyPuzzleApi } from '@/lib/daily-puzzles/daily-puzzles.contract';
 import { getTodayEST, formatDateKey } from '@/lib/daily-puzzles/seed';
 import { getOrCreateDailyPuzzle, isAIPuzzleMode } from '@/lib/daily-puzzles/generate.server';
 
@@ -11,7 +12,8 @@ const MAX_PAST_DAYS = 60;
 export const Route = createFileRoute('/api/daily-puzzles/puzzle')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        getDailyPuzzleApi,
         {
           auth: 'none',
           rateLimit: { limit: 60, windowMs: 60_000, prefix: 'daily-puzzle-content' },

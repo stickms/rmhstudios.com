@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getGhostApi, saveGhostApi } from '@/lib/game/replay.contract';
+import { getGhostQuery, saveGhostBody } from '@/lib/game/replay-schema';
 import { getGhost, ReplayError, saveGhost } from '@/lib/replays.server';
 
 /**
@@ -9,29 +10,12 @@ import { getGhost, ReplayError, saveGhost } from '@/lib/replays.server';
  * GET  /api/replays/ghost?game=neon-driftway&level=1&vs=pb|top — the trace to race.
  * POST /api/replays/ghost — store the caller's ghost for a level (on a new best).
  */
-const getQuery = z.object({
-  game: z.literal('neon-driftway'),
-  level: z.coerce.number().int().min(1).max(3),
-  vs: z.enum(['pb', 'top']).default('pb'),
-});
-
-const postBody = z.object({
-  game: z.literal('neon-driftway'),
-  level: z.number().int().min(1).max(3),
-  data: z.record(z.string(), z.unknown()),
-  score: z.number().int().min(0).max(100_000_000),
-  durationMs: z
-    .number()
-    .int()
-    .min(0)
-    .max(24 * 60 * 60 * 1000),
-});
-
 export const Route = createFileRoute('/api/replays/ghost')({
   server: {
     handlers: {
-      GET: defineHandler(
-        { auth: 'optional', rateLimit: 'read', query: getQuery },
+      GET: implement(
+        getGhostApi,
+        { auth: 'optional', rateLimit: 'read', query: getGhostQuery },
         async ({ userId, query }) => {
           const ghost = await getGhost({ ...query, viewerId: userId });
           if (!ghost) return Response.json({ ghost: null });
@@ -42,8 +26,9 @@ export const Route = createFileRoute('/api/replays/ghost')({
           );
         },
       ),
-      POST: defineHandler(
-        { rateLimit: { limit: 10, windowMs: 60_000, prefix: 'ghost-save' }, body: postBody },
+      POST: implement(
+        saveGhostApi,
+        { rateLimit: { limit: 10, windowMs: 60_000, prefix: 'ghost-save' }, body: saveGhostBody },
         async ({ userId, body }) => {
           if (body.data.level !== body.level) {
             return Response.json({ error: 'Level mismatch' }, { status: 400 });

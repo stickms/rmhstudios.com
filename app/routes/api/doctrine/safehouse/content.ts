@@ -1,6 +1,7 @@
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getSafehouseContentApi } from '@features/doctrine/engine/doctrine.contract';
 import { prisma } from '@/lib/prisma.server';
 import { getUserTier, checkTierAccess } from '@features/doctrine/engine/tiers';
 import { aggregateReactions, calculateDivisiveness } from '@features/doctrine/engine/divisiveness';
@@ -9,7 +10,8 @@ import type { TierId } from '@features/doctrine/engine/types';
 export const Route = createFileRoute('/api/doctrine/safehouse/content')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        getSafehouseContentApi,
         { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'doctrine-safehouse' } },
         async ({ request, session }) => {
           try {
