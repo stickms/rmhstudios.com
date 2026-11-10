@@ -1,12 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { DiscordSDK, patchUrlMappings } from '@discord/embedded-app-sdk';
 
-// Re-exported for the /discord/* call sites, which load the SDK anyway. Code on
-// a SHARED path (__root.tsx, lib/sw-register.ts, …) must import it from
-// '@/lib/discord-activity' directly — importing it from here would pull the
-// 135 KB SDK into the client entry chunk. See that file's docblock.
-export { isDiscordActivity } from '@/lib/discord-activity';
-
 export interface DiscordUser {
   id: string;
   username: string;

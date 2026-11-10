@@ -8,8 +8,9 @@ under `cmd/<service>/main.go` with its private code under `internal/<service>/`.
 > `pkg/realtime` (WebSocket framework) packages — and the realtime/HTTP-hub
 > service skeleton that used them — were **removed in the rewrite** with the Go
 > gateway/hub topology, and are no longer documented here. Surviving shared
-> packages: `config`, `log`, `auth`, `httpx`, `ratelimit`, `telemetry`,
-> `objectstore`, `oncall` (`db` and `worker` went with the supervisor, D3).
+> packages: `config`, `log`, `httpx`, `telemetry`, `objectstore`, `oncall`
+> (`db` and `worker` went with the supervisor, D3; `auth` and `ratelimit`, whose
+> only users were the gateway and the Go hubs, were deleted after them).
 
 **Rules for service authors**
 - Import shared packages; do **not** edit anything under `pkg/` or `go.mod`.
@@ -50,31 +51,14 @@ rows, err := pool.Query(ctx, `...`); defer rows.Close(); for rows.Next() {...}
 tag, err := pool.Exec(ctx, `UPDATE ...`, args...)
 ```
 
-## auth
-```go
-v := auth.NewValidator(database.Pool)
-id, err := v.ValidateSession(ctx, token)        // auth.Identity{UserID,Name,Image string; IsAdmin bool}
-id, err := v.ResolveDiscordAccount(ctx, discordUserID)
-// err == auth.ErrUnauthenticated for unknown/expired
-```
-
 ## httpx
 ```go
 mux := http.NewServeMux()
 mux.HandleFunc("/health", httpx.Health(cfg.ServiceName, nil)) // ready func optional
 httpx.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
-token := httpx.SessionToken(r) // Bearer header or better-auth cookie
 srv := httpx.NewServer(addr, mux, logger)
 err := srv.Run(30 * time.Second) // blocks until SIGINT/SIGTERM, then drains
 sig := httpx.WaitForSignal()     // workers without HTTP: block until signal
-```
-
-## ratelimit
-```go
-rl := ratelimit.New(map[string]ratelimit.Rule{"chat": {Max: 5, Window: time.Second}}, 50000, 120*time.Second)
-if !rl.Allow(conn.ID, "chat") { return }
-rl.Forget(conn.ID) // on disconnect
-rl.Close()
 ```
 
 ## telemetry

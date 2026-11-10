@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { roundedRectGap, type RoundedRect } from '../geometry';
 import { buildPairs, clickTargets, nearestRimWithin, selectCandidates } from '../pairs';
 import { ARC_BUDGET, pairRate } from '../rate';
-import { mulberry32 } from '../rng';
+import { mulberry32 } from '@/lib/core/rng';
 
 const box = (x: number, y: number, w = 100, h = 40, r = 8): RoundedRect => ({ x, y, w, h, r });
 

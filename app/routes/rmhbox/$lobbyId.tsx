@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { connectToRMHbox, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { C2S, S2C } from '@/lib/rmhbox/events';
-import { toast } from '@/lib/rmhbox/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import { PartyPopper, Trophy } from 'lucide-react';
 import LobbyView from '@/components/rmhbox/LobbyView';
 import GameVoting from '@/components/rmhbox/GameVoting';

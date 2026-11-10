@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { prefersLessData } from '@/lib/viewport-prefetch';
+import { prefersLessData } from '@/lib/network-quality';
 
 /**
  * A resource to warm ahead of a navigation. A bare string is treated as an

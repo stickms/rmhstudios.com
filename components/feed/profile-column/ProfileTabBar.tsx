@@ -42,7 +42,6 @@ export function ProfileTabBar({
         ]}
         value={tab}
         onChange={(id) => onChange(id as ProfileTab)}
-        scroll
       />
     </div>
   );

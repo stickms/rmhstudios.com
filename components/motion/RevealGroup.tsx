@@ -22,14 +22,6 @@ import type { ElementType, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface RevealGroupProps {
-  /**
-   * Formerly the gap between each child's start, in seconds. The cascade is now
-   * fixed in CSS (`nth-child` range shifts), so this is accepted and ignored
-   * rather than removed — it keeps the existing call sites compiling.
-   *
-   * @deprecated No effect. See `.u-reveal-group` in globals.css.
-   */
-  stagger?: number;
   /** Shift before the first child enters, in seconds. */
   delay?: number;
   className?: string;

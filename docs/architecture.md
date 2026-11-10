@@ -326,10 +326,10 @@ realtime topology.)
 - **Node hubs:** validate the session token against the shared `session`
   table (each hub has its own `auth.ts`; socket-server is soft-auth,
   rmhbox/rmhtube hard-auth).
-- **Go services:** `pkg/auth` runs the same SQL lookup where a service needs
-  identity. They are internal-only (workers + `status` + `assets`) and never
-  terminate user-facing traffic — the old identity-injecting `gateway` was
-  removed with the Go realtime topology.
+- **Go services:** validate no sessions. `status` and `assets` are
+  internal-only and never terminate user-facing traffic; the old
+  identity-injecting `gateway` was removed with the Go realtime topology, and
+  `pkg/auth` (its Go copy of the session lookup) went after it.
 - **Server-to-server:** shared-secret via `lib/internal-auth.ts`
   (`INTERNAL_API_SECRET`), used e.g. by workers bridging events to the web
   tier's SSE.

@@ -80,8 +80,7 @@ const ComposeModal = lazy(() =>
 
 // The open event + opener live in a dependency-free module so callers can trigger
 // the palette without importing the games+apps registries and scorer this file
-// pulls in. Re-exported here for back-compat with existing import sites.
-export { COMMAND_PALETTE_EVENT, openCommandPalette } from './command-palette-bus';
+// pulls in: import them from './command-palette-bus', never from here.
 import { COMMAND_PALETTE_EVENT } from './command-palette-bus';
 
 type Section = 'pages' | 'games' | 'apps' | 'actions' | 'themes' | 'people' | 'posts';

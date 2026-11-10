@@ -64,6 +64,5 @@ make images     # build + load every service image into Docker
 ## Conventions
 
 Config via `pkg/config`, logging via `pkg/log`, DB via raw pgx (quote
-camelCase columns exactly as Prisma names them), sessions validated via
-`pkg/auth` against the shared `session` table. Full detail — including the
+camelCase columns exactly as Prisma names them). Full detail — including the
 `pkg/` API — is in [`CLAUDE.md`](./CLAUDE.md).

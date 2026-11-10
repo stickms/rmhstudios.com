@@ -64,10 +64,6 @@ export function PageFrame({
       >
         {children}
       </AnimatedMain>
-      {/* No `reserve` — it and `compactReserve` are documented no-ops on
-          ContextRail (the shell's grid keeps the column centred on its own),
-          and the rail renders nothing without children anyway. Two dozen call
-          sites were passing them. */}
       <ContextRail>{rightSidebar}</ContextRail>
     </>
   );

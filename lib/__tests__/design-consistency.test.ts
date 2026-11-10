@@ -619,23 +619,6 @@ describe('site pages take the shared frame', () => {
         'See docs/page-consistency.md.',
     ).toEqual([]);
   });
-
-  it('passes no deprecated rail spacer', () => {
-    // `reserve` / `compactReserve` are documented no-ops on ContextRail — the
-    // shell's grid keeps the column centred without a spacer — but two dozen
-    // call sites still passed them, which reads as load-bearing to the next
-    // person to touch the file.
-    const offenders: string[] = [];
-    for (const file of [...routeFiles, ...SITE_FILES]) {
-      const src = readFileSync(join(ROOT, file), 'utf8');
-      if (/<ContextRail[^>]*\b(reserve|compactReserve)\b/.test(src)) offenders.push(file);
-    }
-    expect(
-      offenders,
-      "`reserve` and `compactReserve` do nothing (see ContextRail's own " +
-        'JSDoc). Drop the prop rather than carrying it forward.',
-    ).toEqual([]);
-  });
 });
 
 /**

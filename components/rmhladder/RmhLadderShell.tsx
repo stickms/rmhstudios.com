@@ -99,7 +99,6 @@ export default function RmhLadderShell({
           <Tabs
             tabs={tabs}
             value={activeTo}
-            scroll
             aria-label={t('ladder.navigation', { defaultValue: 'RMH Ladder navigation' })}
             renderTab={(tab, props) => (
               // Bare <Link> wearing Tabs' own tab class (props.className) so

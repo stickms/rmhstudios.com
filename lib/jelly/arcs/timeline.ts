@@ -23,7 +23,8 @@
  * each {@link strikeOnsets} entry and calls {@link truncateStrikes} when one is refused.
  */
 
-import { mulberry32, randInt, randRange } from './rng';
+import { mulberry32 } from '@/lib/core/rng';
+import { randInt, randRange } from './rng';
 
 export type ArcKind = 'ambient' | 'click' | 'key' | 'fizz' | 'discharge';
 

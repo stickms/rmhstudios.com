@@ -5,13 +5,9 @@
  * danmaku field from a shared seed + frame counter, so bullets never have to be
  * streamed over the wire. That requires a fast, fully deterministic RNG with no
  * reliance on `Math.random`. `Rng` is a small stateful xorshift wrapper used by
- * the simulation; `mulberry32` is a stateless seeder for one-off layouts.
+ * the simulation; one-off layouts use the shared stateless `mulberry32`
+ * (`@/lib/core/rng`).
  */
-
-import { mulberry32 } from '@/lib/core/rng';
-
-// Stateless 32-bit seeded generator — the shared one (lib/core/rng.ts); re-exported for existing importers.
-export { mulberry32 };
 
 /** Hash two integers into a 32-bit seed (frame + salt → deterministic stream). */
 export function hash2(a: number, b: number): number {

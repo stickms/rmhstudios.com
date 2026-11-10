@@ -3,7 +3,8 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { createHash } from 'node:crypto';
 import { getReplay } from '@/lib/replays.server';
 import { renderPageCard } from '@/lib/og/page-card.server';
-import { REPLAY_GAME_TITLES, lightsOutShapeLabel } from '@/lib/game/replay';
+import { lightsOutShapeLabel } from '@/lib/game/replay';
+import { REPLAY_GAME_TITLES } from '@/lib/game/replay-meta';
 
 /** Best-effort subtitle from the game-specific payload. */
 function replaySubtitle(game: string, data: unknown): string | null {

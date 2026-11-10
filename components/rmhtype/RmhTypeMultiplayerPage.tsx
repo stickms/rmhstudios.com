@@ -9,7 +9,7 @@ import { Globe, RefreshCw } from 'lucide-react';
 import { connectToRmhType, getSocket, disconnectFromRmhType, emit } from '@/lib/rmhtype/socket';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
 import { C2S, S2C } from '@/lib/rmhtype/events';
-import { toast } from '@/lib/rmhtype/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
 import type { Difficulty, PassageLength, PublicRoomInfo } from '@/lib/rmhtype/types';
 import { useRouter } from '@tanstack/react-router';

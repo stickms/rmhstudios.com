@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { Button } from '@/components/ui/button';
-import { Search, Check, X, Music } from'@/lib/icons';
+import { Search, Check, X, Music } from 'lucide-react';
 
 export interface SpotifyTrack {
  id: string;

@@ -72,7 +72,7 @@ export const Route = createFileRoute('/api/discord/activity-image')({
                         maxAge = phase === 'results' ? 120 : 15;
                     } else if (type === 'caretakers') {
                         // Global Alex caretaker leaderboard (one shared Alex → keyed by
-                        // the "global" sentinel; mirrors globalPetKey in the Go bot).
+                        // the "global" sentinel; GLOBAL_PET_KEY in server/discord-bot/pet.ts).
                         const rows = await prisma.discordAlexCaretaker.findMany({
                             where: { guildId: 'global' },
                             orderBy: [{ points: 'desc' }, { updatedAt: 'asc' }],

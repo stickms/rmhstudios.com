@@ -11,7 +11,7 @@ import { MonitorPlay, Lock, Star, StarOff, Clock, History, Users } from 'lucide-
 import { connectToRmhTube, getSocket, disconnectFromRmhTube, emit } from '@/lib/rmhtube/socket';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { S2C, C2S } from '@/lib/rmhtube/events';
-import { toast } from '@/lib/rmhtube/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import { formatRelativeTime } from '@/lib/rmhtube/utils';
 import RmhTubeHeader from '@/components/rmhtube/RmhTubeHeader';
 import type { PublicRoomInfo, RoomHistoryStatus } from '@/lib/rmhtube/types';

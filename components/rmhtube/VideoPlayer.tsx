@@ -63,7 +63,7 @@ import { extrapolate } from '@/lib/rmhtube/sync-math';
 import { playableUrl } from '@/lib/rmhtube/media';
 import { registerResync, syncStats } from '@/lib/rmhtube/sync-stats';
 import { getServerNow, hasClockSync } from '@/lib/rmhtube/clock';
-import { toast } from '@/lib/rmhtube/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import { bindMediaElement } from '@/lib/media/media-session';
 import type { ClientQueueItem, VideoState } from '@/lib/rmhtube/types';
 

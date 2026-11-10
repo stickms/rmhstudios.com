@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { useRmhTubeStore } from './store';
 import { extrapolate } from './sync-math';
 import { getServerNow } from './clock';
-import { toast } from './toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import type { CommentaryLine, PartyState } from './party';
 
 export interface TimedComment {

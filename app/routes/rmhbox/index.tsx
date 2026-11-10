@@ -20,7 +20,7 @@ import { connectToRMHbox, getSocket, disconnectFromRMHbox, emit } from '@/lib/rm
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { useQuitGame } from '@/hooks/useQuitGame';
 import { S2C, C2S } from '@/lib/rmhbox/events';
-import { toast } from '@/lib/rmhbox/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import LeaderboardPanel from '@/components/rmhbox/LeaderboardPanel';
 import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import type { PublicLobbyInfo } from '@/lib/rmhbox/types';

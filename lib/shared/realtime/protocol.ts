@@ -19,27 +19,13 @@
  * `lib/shared/realtime/client.ts`. Reloading a player mid-round is a worse
  * outcome than the mismatch it fixes.
  *
- * ## Why this file is duplicated in `server/shared/protocol.ts`
+ * ## One declaration
  *
- * It should not be. The two halves are byte-identical declarations because the
- * Dockerfile's `server-builder` stage USED to copy a curated per-module subset
- * of `lib/`, and this file was not in it — a `server/` bundle importing an
- * uncopied `lib/` module either fails the image build or, worse, ships a bundle
- * that throws MODULE_NOT_FOUND on boot (server/CLAUDE.md gotchas 7 and 8).
- *
- * **That constraint is gone.** The stage now copies `lib/` wholesale, so this
- * file is in the build context and `server/shared/protocol.ts` can simply
- * re-export from here:
- *
- * ```ts
- * export { PROTOCOL_EVENTS, PROTOCOL_VERSION } from '../../lib/shared/realtime/protocol';
- * ```
- *
- * (a RELATIVE specifier, not `@/…` — gotcha 7). Doing that deletes the
- * duplicate declaration and `lib/__tests__/protocol-version.test.ts` along with
- * it. Until someone does, that test fails the build if the two copies drift,
- * which is the property that actually matters: a silent divergence would reject
- * every client on the planet.
+ * This file is the only declaration of the contract. `server/shared/protocol.ts`
+ * (the hubs' guard) imports it with a relative specifier (server/CLAUDE.md
+ * gotcha 7); it used to carry a byte-identical copy, from when the Dockerfile's
+ * `server-builder` stage copied a curated subset of `lib/` that left this file
+ * out. That stage copies `lib/` wholesale now.
  */
 
 /**

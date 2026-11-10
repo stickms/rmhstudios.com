@@ -18,7 +18,8 @@ export const Route = createFileRoute('/api/admin/users')({
         const cursor = searchParams.get('cursor');
         const limit = pageSize(searchParams.get('limit'), 50, 100);
 
-        // Bot accounts are ordinary `user` rows created by the Go bot-worker.
+        // Bot accounts are ordinary `user` rows created by the RMHark bot-worker
+        // (lib/rmhark-ai/bot-worker.server.ts, in the jobs worker).
         // They're indistinguishable from people in a flat list, so let the
         // dashboard narrow to one population or the other.
         const accounts = searchParams.get('accounts');

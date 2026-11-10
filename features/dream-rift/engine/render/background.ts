@@ -8,7 +8,7 @@
  */
 
 import { type StageTheme } from './palette';
-import { mulberry32 } from '../rng';
+import { mulberry32 } from '@/lib/core/rng';
 
 interface Star {
     x: number;

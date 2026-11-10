@@ -9,7 +9,7 @@ import { Crown, Check, Copy, UserX, Ban, Globe, GlobeLock } from 'lucide-react';
 import { connectToRmhType, emit, getSocket } from '@/lib/rmhtype/socket';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
 import { C2S } from '@/lib/rmhtype/events';
-import { toast } from '@/lib/rmhtype/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
 import BanListModal from '@/components/shared/BanListModal';
 import ChatPanel from '@/components/shared/ChatPanel';

@@ -9,10 +9,9 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { prefersLessData, shouldSpeculate } from '@/lib/network-quality';
 import {
-  prefersLessData,
   prefetchTarget,
-  shouldSpeculate,
   startViewportPrefetch,
   type PrefetchRouter,
 } from '@/lib/viewport-prefetch';

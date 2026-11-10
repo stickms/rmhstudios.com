@@ -1,8 +1,7 @@
 // Package httpx holds the small HTTP building blocks every service shares:
 // a /health handler (the Compose + Helm probes from PR #121 hit this), a
 // graceful-shutdown runner wired to SIGINT/SIGTERM (matching the Node
-// services' shutdown hooks), and helpers to pull the Better Auth token out of
-// a request (cookie or Authorization header).
+// services' shutdown hooks) and a JSON writer.
 package httpx
 
 import (
@@ -12,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -42,26 +40,6 @@ func WriteJSON(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(body)
-}
-
-// SessionToken extracts a Better Auth session token from a request. It checks,
-// in order: the Authorization: Bearer header, then the Better Auth cookie
-// (better-auth.session_token, optionally __Secure- prefixed). The cookie value
-// is URL-style "<token>.<signature>"; Better Auth validates against the part
-// before the dot, which is what the "session".token column stores.
-func SessionToken(r *http.Request) string {
-	if h := r.Header.Get("Authorization"); strings.HasPrefix(h, "Bearer ") {
-		return strings.TrimSpace(strings.TrimPrefix(h, "Bearer "))
-	}
-	for _, name := range []string{"better-auth.session_token", "__Secure-better-auth.session_token"} {
-		if c, err := r.Cookie(name); err == nil && c.Value != "" {
-			if i := strings.IndexByte(c.Value, '.'); i > 0 {
-				return c.Value[:i]
-			}
-			return c.Value
-		}
-	}
-	return ""
 }
 
 // Server wraps http.Server with a graceful Run helper.

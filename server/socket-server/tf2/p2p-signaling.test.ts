@@ -27,7 +27,7 @@ import {
   type P2pRelayReadyPayload,
   type P2pSignalIn,
 } from '@/lib/tf2-game/net/p2p/signal';
-import { all, last, makeWorld, type FakeSocket } from './helpers';
+import { all, last, makeWorld, type FakeSocket } from '../test-support/fake-world';
 
 process.env.LOG_LEVEL = 'silent';
 

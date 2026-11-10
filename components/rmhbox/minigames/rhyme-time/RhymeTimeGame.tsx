@@ -29,7 +29,7 @@ import { m as motion, AnimatePresence } from 'framer-motion';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
 import { playSound } from '@/lib/rmhbox/audio';
-import { toast } from '@/lib/rmhbox/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import { RT_MAX_SUBMISSIONS, RT_INVALID_PENALTY } from '@/lib/rmhbox/constants';
 import RhymeTimeInput from './RhymeTimeInput';
 import RhymeTimeResults from './RhymeTimeResults';
