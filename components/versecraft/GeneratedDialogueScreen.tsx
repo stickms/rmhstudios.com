@@ -453,7 +453,7 @@ export function GeneratedDialogueScreen() {
               // Speech (cast or player) is upright sans-serif; narration / inner
               // thought is italic serif — so "talking" never looks like "thinking".
               fontFamily: isSpeech
-                ? 'var(--font-nunito, sans-serif)'
+                ? 'var(--font-geist), system-ui, sans-serif'
                 : 'var(--font-eb-garamond, serif)',
               color: isMC ? '#dfe9f5' : speaker ? '#f1ebdd' : '#c2b6a4',
               fontStyle: isSpeech ? 'normal' : 'italic',

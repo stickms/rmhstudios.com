@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { checkInStreakApi, getStreakApi } from '@/lib/streak.contract';
 import { getStreak, checkIn } from '@/lib/streak.server';
 
 /**
@@ -9,10 +10,11 @@ import { getStreak, checkIn } from '@/lib/streak.server';
 export const Route = createFileRoute('/api/streak')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
+      GET: implement(getStreakApi, {}, async ({ session }) => {
         return Response.json(await getStreak(session.user.id));
       }),
-      POST: defineHandler(
+      POST: implement(
+        checkInStreakApi,
         { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'streak-checkin' } },
         async ({ session }) => {
           try {

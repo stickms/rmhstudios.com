@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { deleteSeriesApi, getSeriesApi, updateSeriesApi } from '@/lib/posts-plus/series.contract';
 import { deleteSeries, getSeriesView, updateSeries } from '@/lib/posts-plus/series.server';
 import { seriesUpdateSchema } from '@/lib/posts-plus/schema';
 
@@ -11,12 +12,17 @@ import { seriesUpdateSchema } from '@/lib/posts-plus/schema';
 export const Route = createFileRoute('/api/series/$id')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ userId, params }) => {
-        const view = await getSeriesView(params.id, userId);
-        if (!view) return Response.json({ error: 'Not found' }, { status: 404 });
-        return Response.json(view, { headers: { 'Cache-Control': 'private, no-store' } });
-      }),
-      PATCH: defineHandler(
+      GET: implement(
+        getSeriesApi,
+        { auth: 'optional', rateLimit: 'read' },
+        async ({ userId, params }) => {
+          const view = await getSeriesView(params.id, userId);
+          if (!view) return Response.json({ error: 'Not found' }, { status: 404 });
+          return Response.json(view, { headers: { 'Cache-Control': 'private, no-store' } });
+        },
+      ),
+      PATCH: implement(
+        updateSeriesApi,
         { rateLimit: 'write', body: seriesUpdateSchema },
         async ({ userId, params, body }) => {
           const res = await updateSeries(userId, params.id, body);
@@ -24,7 +30,7 @@ export const Route = createFileRoute('/api/series/$id')({
           return Response.json({ ok: true });
         },
       ),
-      DELETE: defineHandler({ rateLimit: 'write' }, async ({ userId, params }) => {
+      DELETE: implement(deleteSeriesApi, { rateLimit: 'write' }, async ({ userId, params }) => {
         const res = await deleteSeries(userId, params.id);
         if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
         return Response.json({ ok: true });

@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createRecipeApi, listRecipesApi } from '@/lib/devplatform/recipes.contract';
 import { createRecipeSchema } from '@/lib/devplatform/recipes-schema';
 import { createRecipe, listRecipes, recipeOptions } from '@/lib/devplatform/recipes.server';
 
@@ -10,13 +11,14 @@ import { createRecipe, listRecipes, recipeOptions } from '@/lib/devplatform/reci
 export const Route = createFileRoute('/api/recipes/')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) =>
+      GET: implement(listRecipesApi, { rateLimit: 'read' }, async ({ userId }) =>
         Response.json(
           { recipes: await listRecipes(userId), options: recipeOptions() },
           { headers: { 'Cache-Control': 'private, no-store' } },
         ),
       ),
-      POST: defineHandler(
+      POST: implement(
+        createRecipeApi,
         { rateLimit: 'write', body: createRecipeSchema },
         async ({ userId, body }) => {
           const result = await createRecipe(userId, body);

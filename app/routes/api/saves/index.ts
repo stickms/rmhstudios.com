@@ -1,6 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { saveEntitySchema, SAVE_ENTITY_TYPES, type SaveEntityType } from '@/lib/saves/types';
+import { implement } from '@/lib/api/implement.server';
+import { listSavesApi, saveItemApi, unsaveItemApi } from '@/lib/saves/saves.contract';
+import {
+  saveEntitySchema,
+  saveListQuery,
+  SAVE_ENTITY_TYPES,
+  type SaveEntityType,
+} from '@/lib/saves/types';
 import { addSave, removeSave, listSaves, listFolders } from '@/lib/saves/saves.server';
 
 /**
@@ -11,12 +17,11 @@ import { addSave, removeSave, listSaves, listFolders } from '@/lib/saves/saves.s
 export const Route = createFileRoute('/api/saves/')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ request, session }) => {
-        const url = new URL(request.url);
-        const folderParam = url.searchParams.get('folder'); // id | 'default' | null (all)
-        const typeParam = url.searchParams.get('type');
-        const cursor = url.searchParams.get('cursor') ?? undefined;
-        const q = url.searchParams.get('q') ?? undefined; // X9: search the owner's notes
+      GET: implement(listSavesApi, { query: saveListQuery }, async ({ query, session }) => {
+        const folderParam = query.folder ?? null; // id | 'default' | null (all)
+        const typeParam = query.type ?? null;
+        const cursor = query.cursor;
+        const q = query.q; // X9: search the owner's notes
         const type =
           typeParam && (SAVE_ENTITY_TYPES as readonly string[]).includes(typeParam)
             ? (typeParam as SaveEntityType)
@@ -34,7 +39,8 @@ export const Route = createFileRoute('/api/saves/')({
         return Response.json({ ...result, folders });
       }),
 
-      POST: defineHandler(
+      POST: implement(
+        saveItemApi,
         { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'saves' }, body: saveEntitySchema },
         async ({ session, body }) => {
           try {
@@ -52,7 +58,8 @@ export const Route = createFileRoute('/api/saves/')({
         },
       ),
 
-      DELETE: defineHandler(
+      DELETE: implement(
+        unsaveItemApi,
         { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'saves' }, body: saveEntitySchema },
         async ({ session, body }) => {
           await removeSave(session.user.id, body.entityType, body.entityId);

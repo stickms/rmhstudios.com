@@ -24,6 +24,7 @@ import {
   type PostTtl,
 } from '@/lib/posts-plus/constants';
 import type { PostsPlusCompose } from './PostsPlusCompose';
+import { createSeriesApi, listSeriesApi } from '@/lib/posts-plus/series.contract';
 
 /** The composer dialogs for posts-plus. Default export so the composer can lazy-load it. */
 export default function PostsPlusPanels({
@@ -131,10 +132,9 @@ function SeriesDialog({ pp, onClose }: { pp: PostsPlusCompose; onClose: () => vo
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/series', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { mine?: SeriesOption[] } | null) => {
-        if (!cancelled) setMine(d?.mine ?? []);
+    api(listSeriesApi)
+      .then((d) => {
+        if (!cancelled) setMine(d.mine);
       })
       .catch(() => {
         if (!cancelled) setMine([]);
@@ -154,20 +154,12 @@ function SeriesDialog({ pp, onClose }: { pp: PostsPlusCompose; onClose: () => vo
     if (name.length < 2) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/series', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: name }),
-      });
-      const data = (await res.json().catch(() => null)) as { id?: string; error?: string } | null;
-      if (!res.ok || !data?.id) {
-        toast.error(
-          data?.error ?? t('series-create-failed', { defaultValue: 'Could not create the series' }),
-        );
-        return;
-      }
+      const data = await api(createSeriesApi, { body: { title: name } });
       choose({ id: data.id, title: name });
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('series-create-failed', { defaultValue: 'Could not create the series' }),
+      );
     } finally {
       setCreating(false);
     }

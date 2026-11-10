@@ -339,7 +339,7 @@
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
   color: var(--site-text-muted);
-  font-family: var(--font-jetbrains-mono), ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-family: var(--site-font-mono);
   font-size: 0.78rem;
   line-height: 1.6;
   white-space: pre-wrap;
@@ -419,7 +419,7 @@
   background: var(--site-surface);
   border: 0.5px solid var(--site-border);
   color: var(--site-text);
-  font-family: var(--font-jetbrains-mono), ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-family: var(--site-font-mono);
   font-size: 0.7rem;
 }
 
@@ -446,7 +446,7 @@
   align-items: center;
   gap: 8px;
   padding: 5px 4px;
-  font-family: var(--font-jetbrains-mono), ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-family: var(--site-font-mono);
   font-size: 0.78rem;
   color: var(--site-text-muted);
   animation: vibe-rise-soft 280ms cubic-bezier(0.16, 1, 0.3, 1) both;

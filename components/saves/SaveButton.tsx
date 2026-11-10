@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 
 import { IconButton } from '@/components/ui/icon-button';
 import type { SaveEntityType } from '@/lib/saves/types';
+import { api } from '@/lib/contract/client';
+import { saveItemApi, unsaveItemApi } from '@/lib/saves/saves.contract';
 
 /**
  * SaveButton (§4) — a reusable save toggle for any content. Optimistic; the
@@ -34,12 +36,7 @@ export function SaveButton({
     setBusy(true);
     setSaved(next);
     try {
-      const res = await fetch('/api/saves', {
-        method: next ? 'POST' : 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entityType, entityId }),
-      });
-      if (!res.ok) throw new Error('save failed');
+      await api(next ? saveItemApi : unsaveItemApi, { body: { entityType, entityId } });
       if (next) toast.success(t('saved', { defaultValue: 'Saved' }));
     } catch {
       setSaved(!next);

@@ -5,6 +5,8 @@ import { Check, NotebookPen, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MAX_SAVE_NOTE } from '@/lib/posts-plus/constants';
+import { api } from '@/lib/contract/client';
+import { setSaveNoteApi } from '@/lib/saves/saves.contract';
 
 /**
  * X9 - the private note on a saved item ("why I saved this"), edited inline on
@@ -33,14 +35,9 @@ export function SaveNoteEditor({
   const save = async () => {
     setBusy(true);
     try {
-      const res = await fetch('/api/saves/note', {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entityType, entityId, note: draft.trim() || null }),
+      const data = await api(setSaveNoteApi, {
+        body: { entityType, entityId, note: draft.trim() || null },
       });
-      if (!res.ok) throw new Error(String(res.status));
-      const data = (await res.json()) as { note: string | null };
       setNote(data.note);
       setDraft(data.note ?? '');
       setEditing(false);

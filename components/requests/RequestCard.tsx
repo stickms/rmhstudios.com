@@ -7,6 +7,9 @@ import { isVotable } from '@/lib/requests/status';
 import type { FeatureRequestDTO } from '@/lib/requests/schema';
 import { RequestStatusBadge } from './RequestStatusBadge';
 import { RequestAdminPanel } from './RequestAdminPanel';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { voteRequestApi } from '@/lib/requests/requests.contract';
 
 interface RequestCardProps {
   request: FeatureRequestDTO;
@@ -42,18 +45,10 @@ export function RequestCard({
     }
     setVoting(true);
     try {
-      const res = await fetch(`/api/requests/${request.id}/vote`, { method: 'POST' });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(data.error ?? t('request-vote-failed', { defaultValue: 'Could not vote' }));
-        return;
-      }
-      const data = (await res.json()) as {
-        requestId: string;
-        voteCount: number;
-        hasVoted: boolean;
-      };
+      const data = await api(voteRequestApi, { params: { id: request.id } });
       onVoted(data.requestId, data.voteCount, data.hasVoted);
+    } catch (e) {
+      toast.error(serverError(e) ?? t('request-vote-failed', { defaultValue: 'Could not vote' }));
     } finally {
       setVoting(false);
     }

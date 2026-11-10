@@ -20,8 +20,8 @@
     --accent-red: #ff5252;
     --accent-gold: #ffd740;
     --glow-strength: 0.4;
-    --font-body: 'Inter', -apple-system, sans-serif;
-    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --font-body: 'Geist Variable', 'Geist', system-ui, sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, monospace;
     --radius-sm: 6px;
     --radius-md: 12px;
     --radius-lg: 20px;

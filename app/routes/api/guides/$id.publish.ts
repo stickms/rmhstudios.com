@@ -1,18 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import { publishGuideApi } from '@/lib/games/guides.contract';
+import { guidePublishBody } from '@/lib/games/reviews';
 import { publishGuide, GameMetaError } from '@/lib/games/meta.server';
-
-const schema = z.object({ published: z.boolean() });
 
 /** POST /api/guides/:id/publish { published } — publish/unpublish (author). */
 export const Route = createFileRoute('/api/guides/$id/publish')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        publishGuideApi,
         {
           rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:guides/:id.publish' },
-          body: schema,
+          body: guidePublishBody,
         },
         async ({ params, session, body }) => {
           try {

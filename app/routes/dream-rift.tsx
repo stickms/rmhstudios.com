@@ -13,9 +13,12 @@ import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 // hydration, and an update reaching the boundary then swaps the server-rendered
 // page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
 import { DreamRiftGate } from '@/components/dream-rift/DreamRiftGate';
+// Cinzel + Playfair Display, the game's lettering — self-hosted with
+// `font-display: optional` (app/fonts/) and loaded with this route only.
+import dreamRiftFontsCss from '@/app/fonts/dream-rift.css?url';
 
 export const Route = createFileRoute('/dream-rift')({
-  head: () => gameRouteHead('dream-rift'),
+  head: () => gameRouteHead('dream-rift', { links: [{ rel: 'stylesheet', href: dreamRiftFontsCss }] }),
   component: DreamRiftPage,
 });
 

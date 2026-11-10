@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ImageOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { getAltTextSettingApi } from '@/lib/feed/alt-text.contract';
 
 /**
  * X12 composer pieces.
@@ -17,10 +19,9 @@ export function useRequireAltText(hasImages: boolean): boolean {
   useEffect(() => {
     if (!hasImages || cached !== null) return;
     let cancelled = false;
-    fetch('/api/settings/alt-text', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { requireAltText?: boolean } | null) => {
-        cached = d?.requireAltText ?? false;
+    api(getAltTextSettingApi)
+      .then((d) => {
+        cached = d.requireAltText ?? false;
         if (!cancelled) setValue(cached);
       })
       .catch(() => {});

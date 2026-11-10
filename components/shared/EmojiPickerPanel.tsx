@@ -61,6 +61,8 @@ import {
 import { loadShortcodes } from '@/lib/emoji/shortcodes';
 import type { InstalledPack, PackItem } from '@/lib/emoji/packs';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/contract/client';
+import { installedPacksApi } from '@/lib/emoji/packs.contract';
 
 interface EmojiPickerPanelProps {
   /**
@@ -161,10 +163,9 @@ export default function EmojiPickerPanel({
   // usable with Unicode alone, so the custom section simply doesn't appear.
   useEffect(() => {
     let alive = true;
-    void fetch('/api/emoji-packs/installed')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((body: { installed?: InstalledPack[] } | null) => {
-        if (alive && body?.installed) setPacks(body.installed);
+    void api(installedPacksApi)
+      .then((body) => {
+        if (alive && body.installed) setPacks(body.installed);
       })
       .catch(() => {});
     return () => {

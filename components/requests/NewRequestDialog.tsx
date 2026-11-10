@@ -12,6 +12,9 @@ import {
   REQUEST_TITLE_MIN,
 } from '@/lib/requests/status';
 import type { FeatureRequestDTO } from '@/lib/requests/schema';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createRequestApi } from '@/lib/requests/requests.contract';
 
 export function NewRequestDialog({
   open,
@@ -34,23 +37,18 @@ export function NewRequestDialog({
     if (!valid) return;
     setSaving(true);
     try {
-      const res = await fetch('/api/requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), body: body.trim() }),
+      const data = await api(createRequestApi, {
+        body: { title: title.trim(), body: body.trim() },
       });
-      const data = (await res.json().catch(() => ({}))) as FeatureRequestDTO & { error?: string };
-      if (!res.ok) {
-        toast.error(
-          data.error ?? t('request-create-failed', { defaultValue: 'Could not file that request' }),
-        );
-        return;
-      }
       onCreated(data);
       setTitle('');
       setBody('');
       onOpenChange(false);
       toast.success(t('request-created', { defaultValue: 'Request filed' }));
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('request-create-failed', { defaultValue: 'Could not file that request' }),
+      );
     } finally {
       setSaving(false);
     }

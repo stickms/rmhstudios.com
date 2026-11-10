@@ -10,6 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { api } from '@/lib/contract/client';
+import {
+  createGuideApi,
+  deleteGuideApi,
+  publishGuideApi,
+  updateGuideApi,
+} from '@/lib/games/guides.contract';
 
 export interface GuideData {
   id: string;
@@ -45,22 +52,11 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
     setBusy(true);
     try {
       if (isNew) {
-        const res = await fetch('/api/guides', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ gameId, title, body }),
-        });
-        if (!res.ok) throw new Error();
-        const { id } = (await res.json()) as { id: string };
+        const { id } = await api(createGuideApi, { body: { gameId, title, body } });
         toast.success(t('guide-created', { defaultValue: 'Draft saved' }));
         void navigate({ to: '/games/$gameId/guides/$guideId', params: { gameId, guideId: id } });
       } else {
-        const res = await fetch(`/api/guides/${guide.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, body }),
-        });
-        if (!res.ok) throw new Error();
+        await api(updateGuideApi, { params: { id: guide.id }, body: { title, body } });
         setEditing(false);
         toast.success(t('guide-saved', { defaultValue: 'Guide saved' }));
       }
@@ -75,12 +71,11 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
     if (isNew || !guide) return;
     const next = !published;
     setPublished(next);
-    const res = await fetch(`/api/guides/${guide.id}/publish`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ published: next }),
-    });
-    if (!res.ok) setPublished(!next);
+    const ok = await api(publishGuideApi, { params: { id: guide.id }, body: { published: next } }).then(
+      () => true,
+      () => false,
+    );
+    if (!ok) setPublished(!next);
     else toast.success(next ? t('published', { defaultValue: 'Published' }) : t('unpublished', { defaultValue: 'Unpublished' }));
   }
 
@@ -91,8 +86,11 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
       danger: true,
     });
     if (!ok) return;
-    const res = await fetch(`/api/guides/${guide.id}`, { method: 'DELETE' });
-    if (res.ok) void navigate({ to: '/games/$gameId', params: { gameId } });
+    const deleted = await api(deleteGuideApi, { params: { id: guide.id } }).then(
+      () => true,
+      () => false,
+    );
+    if (deleted) void navigate({ to: '/games/$gameId', params: { gameId } });
   }
 
   if (editing) {

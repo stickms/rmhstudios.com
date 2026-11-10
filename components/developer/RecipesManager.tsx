@@ -12,6 +12,14 @@ import {
   type RecipeAction,
   type RecipeView,
 } from '@/lib/devplatform/recipes';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  createRecipeApi,
+  deleteRecipeApi,
+  listRecipesApi,
+  setRecipeEnabledApi,
+} from '@/lib/devplatform/recipes.contract';
 
 interface Options {
   games: { id: string; title: string }[];
@@ -33,11 +41,13 @@ export function RecipesManager() {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/recipes', { credentials: 'include' });
-    if (!res.ok) return setRecipes([]);
-    const data = await res.json();
-    setRecipes(data.recipes);
-    setOptions(data.options);
+    try {
+      const data = await api(listRecipesApi);
+      setRecipes(data.recipes);
+      setOptions(data.options);
+    } catch {
+      setRecipes([]);
+    }
   }, []);
   useEffect(() => {
     void load();
@@ -46,11 +56,8 @@ export function RecipesManager() {
   async function create() {
     setBusy(true);
     try {
-      const res = await fetch('/api/recipes', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await api(createRecipeApi, {
+        body: {
           name,
           trigger,
           gameId: trigger === 'new_pb' ? gameId : undefined,
@@ -58,36 +65,30 @@ export function RecipesManager() {
           maxPrice: trigger === 'price_below' ? Number(maxPrice) : undefined,
           action,
           discordUrl: action === 'discord_webhook' ? discordUrl : undefined,
-        }),
+        },
       });
-      if (res.ok) {
-        setName('');
-        setDiscordUrl('');
-        await load();
-      } else {
-        const d = await res.json().catch(() => ({}));
-        toast.error(
-          d.error ||
-            t('recipes-createFailed', { defaultValue: 'Check the recipe fields and try again' }),
-        );
-      }
+      setName('');
+      setDiscordUrl('');
+      await load();
+    } catch (e) {
+      toast.error(
+        serverError(e) ||
+          t('recipes-createFailed', { defaultValue: 'Check the recipe fields and try again' }),
+      );
     } finally {
       setBusy(false);
     }
   }
 
   async function toggle(r: RecipeView) {
-    await fetch(`/api/recipes/${r.id}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enabled: !r.enabled }),
-    });
+    await api(setRecipeEnabledApi, { params: { id: r.id }, body: { enabled: !r.enabled } }).catch(
+      () => {},
+    );
     await load();
   }
 
   async function remove(r: RecipeView) {
-    await fetch(`/api/recipes/${r.id}`, { method: 'DELETE', credentials: 'include' });
+    await api(deleteRecipeApi, { params: { id: r.id } }).catch(() => {});
     await load();
   }
 

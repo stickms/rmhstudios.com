@@ -6,7 +6,7 @@
  *
  * ## Why this exists
  *
- * `app/globals.css` loads Inter with `font-display: swap`. `swap` guarantees the
+ * `app/globals.css` loads Geist with `font-display: swap`. `swap` guarantees the
  * words are on screen immediately — and guarantees a REFLOW when the real face
  * arrives, because the system font the browser painted first has different
  * metrics (different average advance width, different ascent/descent). That
@@ -15,7 +15,7 @@
  * The fix is an `@font-face` for the FALLBACK — a face whose `src` is a
  * `local()` system font, carrying `size-adjust` / `ascent-override` /
  * `descent-override` / `line-gap-override` descriptors that bend that system
- * font onto Inter's metrics. The swap then changes the letterforms and nothing
+ * font onto Geist's metrics. The swap then changes the letterforms and nothing
  * else: same line box, same line breaks, zero CLS.
  *
  * The four numbers are NOT hand-tuned and must never be hand-edited. Run this
@@ -43,7 +43,7 @@
  *   lineGapOverride =  real.lineGap / (real.upem * sizeAdjust)
  *
  * `size-adjust` scales the fallback so its average text run is exactly as wide
- * as Inter's, which is what keeps LINE BREAKS identical across the swap. The
+ * as Geist's, which is what keeps LINE BREAKS identical across the swap. The
  * three vertical overrides then restate INTER's own line box on the scaled
  * fallback (hence the division by `sizeAdjust` — the descriptors are resolved
  * after the size adjustment, so they have to be pre-divided by it).
@@ -77,17 +77,11 @@ import { resolve } from 'node:path';
 /**
  * The faces the site downloads with `font-display: swap` (see globals.css's
  * `@import`s), each with the fallback family its metric face is published
- * under. `--font geist` picks one; Inter is the default so the original
- * invocation keeps printing what it always printed.
+ * under. `--font geist` picks one (Geist is the only entry and the default).
  *
- *   pnpm exec tsx scripts/gen-font-metrics.ts               # Inter Fallback
- *   pnpm exec tsx scripts/gen-font-metrics.ts --font geist  # Geist Fallback
+ *   pnpm exec tsx scripts/gen-font-metrics.ts               # Geist Fallback
  */
 const REAL_FONTS = {
-  inter: {
-    path: 'node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2',
-    fallbackFamily: 'Inter Fallback',
-  },
   geist: {
     path: 'node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2',
     fallbackFamily: 'Geist Fallback',
@@ -454,7 +448,7 @@ function main(): void {
   const flagIndex = argv.indexOf('--fallback');
   const override = flagIndex >= 0 ? argv[flagIndex + 1] : undefined;
   const fontIndex = argv.indexOf('--font');
-  const fontKey = fontIndex >= 0 ? argv[fontIndex + 1] : 'inter';
+  const fontKey = fontIndex >= 0 ? argv[fontIndex + 1] : 'geist';
   if (!(fontKey in REAL_FONTS)) {
     throw new Error(`--font must be one of: ${Object.keys(REAL_FONTS).join(', ')}`);
   }

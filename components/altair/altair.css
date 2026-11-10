@@ -63,8 +63,8 @@
   /* Fonts — Michroma (wide, instrument-panel) for titles, Jost for reading,
      IBM Plex Mono for data. All three are self-hosted by fonts.css above. */
   --altair-font-display: 'Michroma', 'Orbitron', 'Jost', system-ui, sans-serif;
-  --altair-font-body: 'Jost', 'Inter', 'Segoe UI', system-ui, sans-serif;
-  --altair-font-mono: 'IBM Plex Mono', 'JetBrains Mono', 'Cascadia Code', monospace;
+  --altair-font-body: 'Jost', 'Geist Variable', system-ui, sans-serif;
+  --altair-font-mono: 'IBM Plex Mono', 'Geist Mono', monospace;
 
   /* Layout — hard corners, no soft drop shadows */
   --altair-shadow: 0 0 0 1px rgba(25, 211, 218, 0.08), 0 8px 28px rgba(0, 0, 0, 0.55);

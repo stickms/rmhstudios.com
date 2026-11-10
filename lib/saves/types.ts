@@ -30,6 +30,14 @@ export const saveEntitySchema = z.object({
   folderId: z.string().min(1).max(64).nullable().optional(),
 });
 
+/** `GET /api/saves` query. `type` is narrowed in the handler: an unknown value means "all types". */
+export const saveListQuery = z.object({
+  folder: z.string().optional(),
+  type: z.string().optional(),
+  cursor: z.string().optional(),
+  q: z.string().optional(),
+});
+
 export const folderCreateSchema = z.object({
   name: z.string().trim().min(1).max(MAX_FOLDER_NAME),
 });

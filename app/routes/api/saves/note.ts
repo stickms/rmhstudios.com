@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { SAVE_ENTITY_TYPES, type SaveEntityType } from '@/lib/saves/types';
 import { setSaveNote } from '@/lib/saves/saves.server';
+import { setSaveNoteApi } from '@/lib/saves/saves.contract';
 import { saveNoteSchema } from '@/lib/posts-plus/schema';
 
 /**
@@ -12,7 +13,8 @@ import { saveNoteSchema } from '@/lib/posts-plus/schema';
 export const Route = createFileRoute('/api/saves/note')({
   server: {
     handlers: {
-      PUT: defineHandler(
+      PUT: implement(
+        setSaveNoteApi,
         { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'saves-note' }, body: saveNoteSchema },
         async ({ session, body }) => {
           if (!(SAVE_ENTITY_TYPES as readonly string[]).includes(body.entityType)) {
