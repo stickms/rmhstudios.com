@@ -1,0 +1,911 @@
+/* ─── Scoped shared-element View Transitions ─────────────────────────────
+ * Progressive enhancement (see lib/view-transition.ts). We deliberately keep
+ * the full-page cross-fade OFF — it was removed for feeling heavy — and only
+ * animate elements that carry a matching `view-transition-name` (e.g. a post's
+ * media morphing from the feed card into the detail hero). Named groups get a
+ * quick, springy morph; the document root swaps instantly. */
+::view-transition-group(*) {
+  animation-duration: 0.28s;
+  animation-timing-function: var(--ease-morph);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+/* While a transition is running, stand the per-page enter animation down so it
+ * doesn't fight the morph (lib/view-transition.ts toggles this class). */
+html.vt-active .page-root > * {
+  animation: none !important;
+}
+/* §5.48 liquid open transitions: while a card→detail morph runs, runViewTransition
+ * marks <html> with `.vt-liquid` (cleared with the same guarantee as `.vt-active`),
+ * and the shared-element groups run a touch longer on the springy glass curve so a
+ * card visibly *expands* into its detail hero. The overshoot is subtle at 0.38s;
+ * snapshots are flat images so baked corner radii are acceptable — the bounds
+ * morph carries the effect. The reduced-motion block below still neutralises this
+ * (it matches `::view-transition-group(*)` unconditionally). */
+html.vt-liquid::view-transition-group(*) {
+  animation-duration: 0.38s;
+  animation-timing-function: var(--ease-glass);
+}
+/* View-transition pseudo-elements live outside the document tree, so the global
+ * `*` reduced-motion rule can't reach them — neutralise them explicitly. */
+
+/* ─── Off-screen feed card virtualization ────────────────────────────────
+ * Long timelines render a lot of cards (avatars, media, embeds). Skipping the
+ * layout + paint work for cards that aren't near the viewport keeps scrolling
+ * smooth without a JS virtualizer. `contain-intrinsic-size: auto <h>` reserves
+ * an estimated height so the scrollbar stays stable and, once a card has been
+ * rendered, its real measured height is remembered — so scroll position and
+ * find-in-page both behave. */
+.feed-card-cv {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 332px; /* card + the floating-card gap (§8.3) */
+}
+/* During a back/forward restore, lay every feed card out at its REAL height so the
+ * saved pixel offset lands on exactly the content you left — the size estimate
+ * above would otherwise shift the restored position (a visible re-scroll). Only
+ * on for the brief restore window; content-visibility resumes for scroll perf
+ * right after. Toggled by hooks/useScrollRestoration.ts. */
+html.nav-restoring .feed-card-cv {
+  content-visibility: visible;
+}
+/* This class stayed the ONLY consumer after an audit of every other long uniform
+ * list on the site (OPT-14). Recorded here so the next pass doesn't re-derive it.
+ *
+ * `content-visibility: auto` is not just "skip off-screen work": it turns on
+ * layout + style + PAINT containment permanently, on-screen included (Contain L2
+ * §4 — "similar to `contain: content`"). So it clips, and every candidate failed
+ * on one of three things:
+ *
+ *   - No selector to aim at. The doc's own example names `.comment-row` and
+ *     `.library-card`; neither exists. `CommentItem`'s root is `<div class="py-3">`
+ *     and `LeaderboardColumn`'s rows are an unnamed Tailwind string, so there is
+ *     nothing to hook without editing the components.
+ *   - Something deliberately overflows the box. `.lib-book` spins its cover out
+ *     past its own grid cell on hover (that is what its `z-index: 20` is for, and
+ *     `.lib-book__cover` is `overflow: visible`); `.lib-album`'s cover lifts 3px
+ *     and casts a 30px-blur shadow sideways past the card; `.builds-card` tilts in
+ *     3D under a 56px shadow. Containment clips all of it. `CommentItem` also
+ *     hangs a non-portalled `absolute … top-full` menu out of a ~130px row.
+ *   - JS owns the measurement. `.social-post` looks ideal — it is already
+ *     `overflow: hidden`, so paint containment would be a visual no-op — but
+ *     `FeedList` / `VirtualPostList` deliberately DROP `.feed-card-cv` in
+ *     windowed mode and hand height measurement to TanStack Virtual, and there is
+ *     no selector separating the windowed rows from the plain ones. A skipped card
+ *     inside a row being measured by `virtualizer.measureElement` reports its
+ *     estimate instead of its height, which corrupts every offset below it. Same
+ *     objection to the radial wheel: `.radial-wheel__slot` rakes cards from cached
+ *     document offsets, and skipped cards change those offsets.
+ */
+
+/* Posts flushed in from the "N new posts" pill ease down into place instead of
+ * popping. `backwards` applies the start frame immediately so there's no flash
+ * before the animation runs. */
+@keyframes content-item-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.content-item-enter,
+.feed-item-enter {
+  animation: content-item-enter 0.2s var(--ease-smooth) backwards;
+}
+
+/* ─── Skeleton shimmer ───────────────────────────────────────────────────
+ * A moving light sweep for loading placeholders, an upgrade on the plain
+ * opacity pulse: it reads as "content streaming in" and improves perceived
+ * speed. Opt in via `<Skeleton shimmer />` (the default stays `animate-pulse`
+ * so existing skeletons are unchanged). The gradient rides on top of the
+ * element's `bg-site-surface`, so it stays theme-correct everywhere.
+ * `--site-text` at low alpha keeps the highlight subtle on both light and dark
+ * themes. */
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+.animate-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--site-text) 10%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: shimmer 1.25s ease-in-out infinite;
+}
+/* The sweep reads as light travelling through liquid glass: a soft elliptical
+   highlight rather than a hard band, so skeletons match the radial language the
+   loading mark and the hub speak. Applies to both skeleton modes. */
+[data-slot='skeleton'] {
+  overflow: hidden;
+  position: relative;
+}
+
+/* One line of placeholder text, sized by the element it stands in.
+   A menu that fetches on open renders its loading state, ANIMATES ITSELF TO
+   THAT HEIGHT, and then jumps when the rows arrive — the box moved after the
+   animation had committed to it (§7.1; `hooks/useReservedRows.ts` supplies the
+   count). Reserving the right height is the fix, and the height has to be right
+   to the pixel or six rows of "close enough" is a 60px jump. So: put this inside
+   the real `<strong>`/`<small>`/`<span class="text-xs">` it replaces and let the
+   line box do the measuring. `1lh` IS one line box of that element; `1em` is the
+   fallback for an engine without it, and it is 11px short per row — which is
+   exactly why this is not a hardcoded height. Verified against a real row: both
+   55px. */
+.skeleton-line {
+  display: block;
+  height: 1em;
+  height: 1lh;
+}
+[data-slot='skeleton']::after {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  border-radius: 50%;
+  corner-shape: round;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in oklab, var(--site-text) 12%, transparent),
+    transparent 62%
+  );
+  animation: liquid-skeleton-drift 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes liquid-skeleton-drift {
+  0%,
+  100% {
+    transform: translateX(-32%) scale(0.85);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateX(32%) scale(1.15);
+    opacity: 0.9;
+  }
+}
+/* A travelling sweep is more distracting than the pulse we preserve elsewhere,
+ * so under reduced motion drop it back to a static themed surface. */
+
+/* ─── Inverse surfaces ──────────────────────────────────────────────────────
+ * A few editorial surfaces (the news hero, the design story's CTA) flip to the
+ * opposite end of the palette. They carry a COMPLETE colour contract of their
+ * own so a theme switch can never pair a light foreground with a dark card. The
+ * tokens are grouped by theme brightness; everything else still resolves from
+ * the active theme, so an inverse surface is still glass — just inverted.
+ */
+:root,
+.style-default {
+  --site-inverse-bg: #14151c;
+  --site-inverse-text: #ffffff;
+  --site-inverse-muted: #c6c8d7;
+  --site-inverse-border: rgba(255, 255, 255, 0.22);
+}
+
+.style-graphite {
+  --site-inverse-bg: #f7f7fb;
+  --site-inverse-text: #11131c;
+  --site-inverse-muted: #5e6170;
+  --site-inverse-border: rgba(17, 19, 28, 0.22);
+}
+
+body {
+  background: var(--site-bg);
+  color: var(--site-text);
+}
+
+/* Inverse surfaces carry their own complete color contract. This prevents a
+   theme switch from pairing a light-theme foreground with a dark-theme card. */
+.site-inverse,
+[data-contrast='inverse'] {
+  --site-surface: var(--site-inverse-bg);
+  --site-surface-hover: color-mix(in srgb, var(--site-inverse-text) 12%, var(--site-inverse-bg));
+  --site-surface-active: color-mix(in srgb, var(--site-inverse-text) 18%, var(--site-inverse-bg));
+  --site-border: var(--site-inverse-border);
+  --site-border-bright: var(--site-inverse-muted);
+  --site-text: var(--site-inverse-text);
+  --site-text-muted: var(--site-inverse-muted);
+  --site-text-dim: color-mix(in srgb, var(--site-inverse-muted) 72%, transparent);
+  --site-accent: var(--site-inverse-text);
+  --site-accent-fg: var(--site-inverse-bg);
+  --site-accent-hover: var(--site-inverse-muted);
+  background: var(--site-inverse-bg);
+  color: var(--site-inverse-text);
+}
+
+/* The glass sticky chrome keeps only its page-edge geometry here; the material
+   (tint, blur, glint) comes from the .glass-chrome tier the surface also carries. */
+.site-sticky-chrome {
+  top: var(--site-sticky-edge);
+  margin-inline: var(--site-page-gutter);
+}
+
+[data-slot='card'],
+.feed-card-cv > :first-child {
+  transition:
+    transform 240ms var(--ease-smooth),
+    border-color 180ms ease,
+    box-shadow 240ms ease;
+}
+
+@media (max-width: 767px) {
+  .site-sticky-chrome {
+    top: calc(var(--safe-top) + var(--site-sticky-edge));
+  }
+
+  /* `break-word`, NOT `anywhere`. Both break a word that cannot fit its line,
+     so an unbreakable URL is still contained either way — but `anywhere` also
+     collapses an element's intrinsic MIN-CONTENT width to a single character,
+     and that is the whole difference. A flex row that should have been forced
+     to wrap (or to overflow visibly) instead let its text column shrink to
+     nothing: measured 24px on the /leaderboard "Ranked" card, which rendered
+     the word as "Ra/nk/ed", and the same shape produced "Page/s", "In/f/o",
+     "Suc/ces/s" and "CORPOR/ATE/STRATE/GY" elsewhere. With `break-word` the
+     min-content width stays the longest word, so a column can no longer
+     collapse below one and the layout bug shows up as a layout bug. */
+  [data-slot='page-content'] {
+    overflow-wrap: break-word;
+  }
+}
+
+@media (max-width: 479px) {
+  [data-slot='page-header-action'] [data-slot='button'] {
+    width: 2.75rem;
+    min-width: 2.75rem;
+    padding-inline: 0;
+    gap: 0;
+    font-size: 0;
+  }
+}
+
+/* ==========================================================================
+   The editorial vocabulary (audit SPA-001 / SPA-002 / SPA-004 / SPA-005)
+   --------------------------------------------------------------------------
+   These are the classes the /design page SHOULD have been built from. That page
+   demonstrated the target language as ~270 lines of page-scoped CSS, which meant
+   no other surface could adopt it without copying — measured adoption of its
+   ideas outside itself was: `--site-section-gap` 3 files, `--site-inverse-*` 3
+   files, its kicker 1 file. Promoting the language here is what lets 64
+   PageLayout routes inherit it from one component change.
+
+   Everything below is type, rhythm and structure only — no colour decisions. The
+   palette, the themes and `ensureReadableAccent()` are unchanged.
+   ========================================================================== */
+
+/* ── Display scale ────────────────────────────────────────────────────────
+   Size, weight, leading and tracking arrive together: at these sizes the tight
+   leading and negative tracking ARE the look, and a page that sets only the size
+   gets large-but-wrong type. Tokens in the `:root` block above. */
+.site-display-3,
+.site-display-4 {
+  font-family: var(--site-font-display);
+  font-weight: var(--site-display-weight);
+  /* Long single words (a handle, a game title) must not spill the column. */
+  overflow-wrap: anywhere;
+}
+.site-display-3 {
+  font-size: var(--site-display-3);
+  line-height: var(--site-display-3-leading);
+  letter-spacing: var(--site-display-3-tracking);
+}
+.site-display-4 {
+  font-size: var(--site-display-4);
+  line-height: var(--site-display-4-leading);
+  letter-spacing: var(--site-display-4-tracking);
+}
+
+/* ── Kicker + lede ───────────────────────────────────────────────────────── */
+.site-kicker {
+  /* Sentence case, site sans (CLAUDE.md "Identity": no eyebrows). */
+  font-size: var(--site-kicker-size);
+  font-weight: var(--site-kicker-weight);
+  letter-spacing: var(--site-kicker-tracking);
+  color: var(--site-text-muted);
+}
+/* ── Section label ────────────────────────────────────────────────────────
+   The heading of a group INSIDE a page — "Trending", "Who to follow",
+   "Milestones", "Accent color". It used to be retyped by hand as a tiny
+   uppercase, letter-spaced, dimmed label in 20+ variants (`tracking-wide` vs
+   `-wider`, `dim` vs `muted`, `xs` vs `sm`, semibold vs bold) across 39 call
+   sites. It is one style now, in sentence case at full ink — a heading you
+   read rather than an eyebrow you decode (UI minimalism audit, 2026-10-09).
+   `lib/__tests__/design-consistency.test.ts` keeps uppercase off site-tier
+   h2/h3 so the variants don't regrow. */
+.site-section-label {
+  font-size: 0.875rem;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.006em;
+  color: var(--site-text);
+}
+.site-lede {
+  max-width: 34rem;
+  font-size: var(--site-lede-size);
+  line-height: var(--site-lede-leading);
+  color: var(--site-text-muted);
+}
+
+/* ── Reveal on scroll (audit SPA-003) ─────────────────────────────────────
+   The rules that used to be here are GONE, and this note is what replaces them,
+   because the deletion is the interesting part.
+
+   `[data-reveal-armed] .site-reveal` was the site's answer to AUD-006: a reveal
+   whose hidden state was opt-IN, applied only after `hooks/useReveal` had an
+   IntersectionObserver watching, so content could never be left invisible by a
+   mechanism that never ran. The design was right. It was also never adopted —
+   `.site-reveal` finished with ZERO consumers in the entire tree, and the hook
+   with zero importers, while the five implementations it was written to replace
+   carried on (`rmh-pmc`, `rmh-capital`, `LibraryReveal`, `MembershipPanel`,
+   `RoadmapSection`). Two of those still had the exact `opacity: 0` fail-closed
+   bug AUD-006 named.
+
+   So the answer is not a sixth mechanism. It is `.u-reveal` (§ further down this
+   file): `animation-timeline: view()`, no observer, no JS at all, and hidden
+   only inside `@supports` + `@media not (prefers-reduced-motion)` — which gets
+   the fail-open property structurally instead of by arming an attribute.
+   `--site-reveal-distance` / `-duration` / `-ease` above are KEPT and are what
+   the CSS reveals read, so "one curve for the whole site" survives the change.
+   See docs/archive/2026/performance-audit-2026-08-12.md §1.4. */
+
+/* Standalone design-system story. */
+.spatial-design-page {
+  min-height: 100dvh;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+  background: var(--site-bg);
+  color: var(--site-text);
+}
+
+.spatial-design-nav {
+  position: sticky;
+  top: calc(var(--safe-top) + clamp(0.75rem, 2vw, 1.5rem));
+  z-index: 30;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  min-height: 4rem;
+  padding: 0 1.25rem;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  background: color-mix(in srgb, var(--site-surface) 94%, transparent);
+  box-shadow: var(--site-shadow-sm);
+}
+
+.spatial-design-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: fit-content;
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: var(--site-text-muted);
+  transition: color 180ms ease;
+}
+
+.spatial-design-nav a:hover {
+  color: var(--site-text);
+}
+
+.spatial-design-nav svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.spatial-design-nav__action {
+  justify-self: end;
+}
+
+.spatial-design-hero {
+  position: relative;
+  min-height: calc(100dvh - 7rem);
+  margin-top: var(--site-section-gap);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  padding: clamp(2rem, 7vw, 7rem);
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  background: var(--site-surface);
+  box-shadow: var(--site-shadow-sm);
+  isolation: isolate;
+}
+
+.spatial-design-hero::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 32% 34% 0 0;
+  border-radius: inherit;
+  corner-shape: inherit;
+  background: linear-gradient(135deg, var(--site-surface) 36%, transparent 86%);
+  pointer-events: none;
+}
+
+.spatial-design-hero__art {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.spatial-design-hero__art::before {
+  content: '';
+  position: absolute;
+  width: min(52rem, 68vw);
+  aspect-ratio: 1;
+  top: -34%;
+  right: -12%;
+  border-radius: 42% 58% 63% 37% / 47% 39% 61% 53%;
+  background: var(--site-text);
+  /* Scroll depth only. The two `--spatial-parallax-*` terms are gone with the
+     pointer tracker that fed them (hooks/useSpatialParallax.ts) — and this
+     declaration had never actually applied, because the X fallback was a
+     unitless `0`, which makes `calc(0 * 0.9)` a <number> and invalidates the
+     whole `translate3d()`. So this shape has been sitting still since it
+     shipped; it moves now. */
+  transform: translate3d(0, calc(var(--spatial-scroll-y, 0px) * 0.08), 0) rotate(11deg);
+  transition: transform 800ms var(--ease-smooth);
+}
+
+.spatial-design-hero__art span {
+  position: absolute;
+  top: 11%;
+  right: 7%;
+  width: min(31rem, 40vw);
+  aspect-ratio: 1;
+  background-image: radial-gradient(circle, var(--site-accent-fg) 1.2px, transparent 1.3px);
+  background-size: 12px 12px;
+  mask-image: radial-gradient(circle, black 20%, transparent 72%);
+  opacity: 0.72;
+  /* Same correction as the shape above. */
+  transform: translate3d(0, calc(var(--spatial-scroll-y, 0px) * -0.035), 0);
+  transition: transform 900ms var(--ease-smooth);
+}
+
+.spatial-design-hero__copy {
+  position: relative;
+  z-index: 2;
+  max-width: min(64%, 58rem);
+}
+
+.spatial-design-hero h1 {
+  max-width: 9ch;
+  font-family: var(--site-font-display);
+  font-size: clamp(4rem, 11vw, 10rem);
+  font-weight: 500;
+  line-height: 0.84;
+  letter-spacing: -0.07em;
+}
+
+.spatial-design-hero__lede {
+  max-width: 34rem;
+  margin-top: clamp(1.75rem, 4vw, 3.5rem);
+  font-size: clamp(1rem, 1.5vw, 1.3rem);
+  line-height: 1.65;
+  color: var(--site-text-muted);
+}
+
+.spatial-design-statement,
+.spatial-design-principles {
+  padding: clamp(5rem, 13vw, 12rem) clamp(1.5rem, 8vw, 9rem);
+}
+
+.spatial-design-statement h2 {
+  max-width: 20ch;
+  font-family: var(--site-font-display);
+  font-size: clamp(2.6rem, 6.5vw, 7rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.spatial-design-section-head {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: clamp(2rem, 5vw, 4rem);
+  border-bottom: 1px solid var(--site-border);
+}
+
+.spatial-design-section-head h2 {
+  font-family: var(--site-font-display);
+  font-size: clamp(2rem, 4vw, 4.5rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.spatial-design-principles__grid article {
+  display: grid;
+  grid-template-columns: minmax(4rem, 0.2fr) 1fr;
+  gap: 2rem;
+  align-items: center;
+  padding: clamp(2rem, 5vw, 4rem) 0;
+  border-bottom: 1px solid var(--site-border);
+}
+
+.spatial-design-principles__grid article > div {
+  display: flex;
+  align-items: center;
+  color: var(--site-text-dim);
+}
+
+.spatial-design-principles__grid article svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke-width: 1.5;
+}
+
+.spatial-design-principles__grid h3 {
+  font-family: var(--site-font-display);
+  font-size: clamp(1.65rem, 2.6vw, 2.75rem);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+}
+
+.spatial-design-cta {
+  margin: 0 clamp(0rem, 5vw, 6rem) clamp(1rem, 4vw, 4rem);
+  padding: clamp(3rem, 8vw, 8rem);
+  border-radius: var(--site-radius);
+}
+
+.spatial-design-cta.site-inverse {
+  background: var(--site-inverse-bg);
+  color: var(--site-inverse-text);
+}
+
+.spatial-design-cta h2 {
+  max-width: 12ch;
+  font-family: var(--site-font-display);
+  font-size: clamp(2.8rem, 7vw, 7.5rem);
+  font-weight: 500;
+  line-height: 0.92;
+  letter-spacing: -0.06em;
+}
+
+.spatial-design-cta a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.75rem;
+  margin-top: 2.5rem;
+  padding: 0 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--site-text) 40%, transparent);
+  border-radius: var(--site-control-radius);
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.spatial-design-cta a:hover {
+  background: var(--site-text);
+  color: var(--site-surface);
+}
+
+.spatial-design-cta a svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.spatial-design-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 2rem clamp(1rem, 5vw, 5rem);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--site-text-dim);
+}
+
+[data-animate] [data-spatial-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 700ms var(--ease-smooth) var(--spatial-delay, 0ms),
+    transform 700ms var(--ease-smooth) var(--spatial-delay, 0ms);
+}
+
+[data-animate] [data-spatial-reveal][data-visible] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (max-width: 767px) {
+  .spatial-design-page {
+    padding: 0.75rem;
+  }
+
+  .spatial-design-nav {
+    grid-template-columns: 1fr auto;
+    min-height: 3.5rem;
+    padding-inline: 1rem;
+  }
+
+  .spatial-design-hero {
+    min-height: calc(100dvh - 6rem);
+    padding: clamp(1.5rem, 7vw, 2.5rem);
+  }
+
+  .spatial-design-hero__art::before {
+    width: 28rem;
+    top: -18%;
+    right: -58%;
+  }
+
+  .spatial-design-hero__art span {
+    width: 13rem;
+    right: -3%;
+  }
+
+  .spatial-design-hero::after {
+    inset: 40% 0 0;
+    background: linear-gradient(to top, var(--site-surface) 58%, transparent);
+  }
+
+  .spatial-design-hero__copy {
+    max-width: 100%;
+  }
+
+  .spatial-design-hero h1 {
+    font-size: clamp(3rem, 17vw, 5rem);
+  }
+
+  .spatial-design-hero__lede {
+    line-height: 1.5;
+  }
+
+  .spatial-design-statement,
+  .spatial-design-principles {
+    padding: 4rem 0.75rem;
+  }
+
+  .spatial-design-statement h2 {
+    font-size: clamp(2.4rem, 12vw, 4rem);
+  }
+
+  .spatial-design-section-head,
+  .spatial-design-principles__grid article {
+    grid-template-columns: 1fr;
+  }
+
+  .spatial-design-section-head {
+    align-items: start;
+  }
+
+  .spatial-design-principles__grid article {
+    gap: 1.25rem;
+  }
+
+  .spatial-design-cta {
+    margin-inline: 0;
+    padding: 2.5rem 1.5rem;
+  }
+
+  .spatial-design-cta h2 {
+    font-size: clamp(2.4rem, 13vw, 4.5rem);
+  }
+
+  .spatial-design-cta a {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .spatial-design-footer {
+    gap: 1rem;
+    padding-inline: 0.75rem;
+  }
+}
+
+@media (max-width: 419px) {
+  .spatial-design-footer {
+    flex-direction: column;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MONOCHROME / APPLE MOTION UTILITIES  (UI rewrite)
+   Reusable, token-driven flourishes for the new minimalist shell, homepage,
+   and top pages. Everything here is progressive-enhancement: the base state is
+   the FINISHED, visible state, so unsupported engines and reduced-motion users
+   simply see the content with no animation — nothing ever hides permanently.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Balanced/pretty wrapping for Apple-style headlines and lead paragraphs. */
+.text-balance {
+  text-wrap: balance;
+}
+.text-pretty {
+  text-wrap: pretty;
+}
+
+/* A big, tight, San-Francisco display headline — the hero voice. Fluid size,
+   negative tracking, and balanced wrapping, straight off the token contract. */
+.display-hero {
+  font-family: var(--site-font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.03;
+  text-wrap: balance;
+  font-size: clamp(2.5rem, 7vw, 5.5rem);
+}
+
+/* ── Scroll-driven reveal (native, zero-JS) ──────────────────────────────────
+   Elements tagged `.u-reveal` fade + rise as they scroll into view, driven by
+   the CSS `view()` timeline. The base rule leaves them fully visible, so any
+   engine without scroll-driven animations shows the finished content. */
+@keyframes u-reveal-in {
+  from {
+    opacity: 0;
+    /* `--site-reveal-distance` is the site's one reveal offset (§ the token block
+       near the top of this file). `<Reveal y={…}>` overrides it per element via
+       `--u-reveal-y`; everything else inherits the shared curve. */
+    transform: translateY(var(--u-reveal-y, var(--site-reveal-distance)));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@supports (animation-timeline: view()) {
+  html .u-reveal {
+    animation: u-reveal-in linear both;
+    animation-timeline: view();
+    /* A stagger on a scroll timeline is a RANGE SHIFT, not a delay: there is
+         no clock for `animation-delay` to delay against, so a delay set here is
+         silently ignored. `--u-reveal-shift` moves where in its own entry an
+         element starts, which is the same effect for siblings sharing a row. */
+    animation-range: entry var(--u-reveal-shift, 0%) entry calc(46% + var(--u-reveal-shift, 0%));
+  }
+  /* Optional per-item lift for staggered grids: parent sets nothing, each
+       child just enters on its own geometry — a natural cascade. */
+  html .u-reveal-soft {
+    animation: u-reveal-in linear both;
+    animation-timeline: view();
+    animation-range: entry 2% cover 12%;
+  }
+
+  /* ── `.u-reveal-group` — the staggered container (`<RevealGroup>`) ────────
+       Children cascade. The shift is assigned by `nth-child` rather than by an
+       index prop because the alternative is threading a number through every
+       item, and because it keeps working when children are conditional.
+
+       Past the 6th child the shift stops growing on purpose: a grid of 30 cards
+       whose stagger kept accumulating would leave the last row starting more
+       than a full entry late, i.e. visibly stuck. Six steps is enough to read as
+       a cascade in the row where a cascade is visible at all. */
+  html .u-reveal-group > * {
+    animation: u-reveal-in linear both;
+    animation-timeline: view();
+    animation-range: entry var(--u-reveal-shift, 0%) entry calc(46% + var(--u-reveal-shift, 0%));
+  }
+  html .u-reveal-group > *:nth-child(2) {
+    --u-reveal-shift: 5%;
+  }
+  html .u-reveal-group > *:nth-child(3) {
+    --u-reveal-shift: 10%;
+  }
+  html .u-reveal-group > *:nth-child(4) {
+    --u-reveal-shift: 15%;
+  }
+  html .u-reveal-group > *:nth-child(5) {
+    --u-reveal-shift: 20%;
+  }
+  html .u-reveal-group > *:nth-child(n + 6) {
+    --u-reveal-shift: 25%;
+  }
+}
+
+/* Element-anchored parallax: drifts as its OWN box travels through the nearest
+   scrollport, so it works no matter which ancestor scrolls (window on desktop,
+   the inner feed scroller on phones) — no JS, no scroller wiring. */
+@keyframes u-parallax-view {
+  from {
+    transform: translateY(calc(var(--u-parallax, 40px) * -1));
+  }
+  to {
+    transform: translateY(var(--u-parallax, 40px));
+  }
+}
+@supports (animation-timeline: view()) {
+  html .u-parallax-hero {
+    animation: u-parallax-view linear both;
+    animation-timeline: view();
+    animation-range: cover 0% cover 100%;
+    will-change: transform;
+  }
+}
+
+/* Reduced motion / account flag: freeze every utility above at its rest state. */
+
+/* ── AppleHero (components/shared/AppleHero.tsx) ─────────────────────────────
+   A reusable marketing/index hero: big SF display type, drifting monochrome
+   auras for parallax depth, strictly greyscale with the accent reserved for
+   actions. */
+.apple-hero {
+  position: relative;
+  overflow: clip;
+  isolation: isolate;
+  padding-block: clamp(2.5rem, 8vw, 5.5rem);
+  padding-inline: clamp(1rem, 4vw, 2rem);
+}
+.apple-hero--compact {
+  padding-block: clamp(1.75rem, 5vw, 3rem);
+}
+.apple-hero__inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-width: 52rem;
+}
+.apple-hero--center .apple-hero__inner {
+  align-items: center;
+  margin-inline: auto;
+  text-align: center;
+}
+.apple-hero__eyebrow {
+  color: var(--site-text-muted);
+  font-size: var(--site-kicker-size);
+  font-weight: var(--site-kicker-weight);
+}
+.apple-hero__title {
+  color: var(--site-text);
+}
+.apple-hero__sub {
+  max-width: 40rem;
+  color: var(--site-text-muted);
+  font-size: clamp(1rem, 2.2vw, 1.35rem);
+  line-height: 1.5;
+  font-weight: 400;
+}
+.apple-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.6rem;
+}
+.apple-hero--center .apple-hero__actions {
+  justify-content: center;
+}
+.apple-hero__aura {
+  position: absolute;
+  z-index: 0;
+  border-radius: 50%;
+  corner-shape: round;
+  pointer-events: none;
+  filter: blur(46px);
+}
+.apple-hero__aura--a {
+  top: -6rem;
+  right: -4rem;
+  width: 24rem;
+  height: 24rem;
+  --u-parallax: 30px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--site-text) 7%, transparent),
+    transparent 70%
+  );
+}
+.apple-hero__aura--b {
+  bottom: -8rem;
+  left: -6rem;
+  width: 22rem;
+  height: 22rem;
+  --u-parallax: 72px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--site-accent) 14%, transparent),
+    transparent 70%
+  );
+}

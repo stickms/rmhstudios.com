@@ -28,9 +28,10 @@ import { describe, expect, it } from 'vitest';
 import { runPrepaint } from './prepaint-harness';
 import postcss from 'postcss';
 import selectorParser from 'postcss-selector-parser';
+import { readCss } from './css-source';
 
 const ROOT = join(__dirname, '..', '..');
-const read = (p: string) => readFileSync(join(ROOT, p), 'utf8');
+const read = (p: string) => readCss(join(ROOT, p));
 const BASELINE_PATH = join(__dirname, 'ios-edge.baseline.json');
 
 // ── 1. Invariants ──────────────────────────────────────────────────────────────────────────────────────────────

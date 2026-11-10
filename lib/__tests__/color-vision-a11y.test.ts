@@ -12,6 +12,7 @@ import {
 // see that module's header note.
 import { runPrepaint } from './prepaint-harness';
 import { appearanceComfortSchema } from '@/lib/appearance/prefs-schema';
+import { readCss } from './css-source';
 
 /**
  * Colour-vision support has three moving parts that must agree, and each one
@@ -29,7 +30,7 @@ import { appearanceComfortSchema } from '@/lib/appearance/prefs-schema';
  */
 
 const ROOT = process.cwd();
-const css = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
+const css = readCss(join(ROOT, 'app', 'globals.css'));
 
 /** The modes that actually retint something ('none' is the untouched default). */
 const ACTIVE_MODES = COLOR_VISION_MODES.filter((m) => m !== 'none');

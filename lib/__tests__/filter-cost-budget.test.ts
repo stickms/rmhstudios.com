@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { readCss } from './css-source';
 
 /**
  * The SVG-filter cost budget, as an executable gate.
@@ -55,7 +55,7 @@ const SHEETS = [
   join('app', 'jelly-coverage.css'),
 ];
 
-const read = (rel: string) => readFileSync(join(ROOT, rel), 'utf8');
+const read = (rel: string) => readCss(join(ROOT, rel));
 
 /**
  * Source with `/* … *\/` comments removed. Every rule here is about what the CSS

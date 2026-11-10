@@ -4,12 +4,12 @@
  * knows Tailwind's own names, so each one is registered in lib/utils.ts; this keeps that list
  * equal to the CSS so a new step cannot be added to one and forgotten in the other.
  */
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { TYPE_SCALE_STEPS, Z_LAYER_NAMES, cn } from '@/lib/utils';
+import { readCss } from './css-source';
 
-const css = readFileSync(join(process.cwd(), 'app', 'globals.css'), 'utf8');
+const css = readCss(join(process.cwd(), 'app', 'globals.css'));
 const block = css.slice(css.indexOf('/* E2 type scale'), css.indexOf('/* A full radius'));
 
 describe('E2 named steps stay registered with tailwind-merge', () => {

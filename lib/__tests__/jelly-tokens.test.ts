@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { JELLY_LAYOUT, PLASMA } from '@/lib/jelly/tiers';
+import { readCss } from './css-source';
 
 /**
  * #989 token parity (docs/plasmatic-jelly-system.md §1.1; CLAUDE.md "Design system: Plasmatic Jelly").
@@ -17,8 +18,8 @@ import { JELLY_LAYOUT, PLASMA } from '@/lib/jelly/tiers';
 
 const ROOT = process.cwd();
 const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
-const GLOBALS = strip(readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8'));
-const MATERIAL = strip(readFileSync(join(ROOT, 'app', 'jelly-material.css'), 'utf8'));
+const GLOBALS = strip(readCss(join(ROOT, 'app', 'globals.css')));
+const MATERIAL = strip(readCss(join(ROOT, 'app', 'jelly-material.css')));
 const LIQUID = strip(readFileSync(join(ROOT, 'app', 'glass-roles.css'), 'utf8'));
 const APP = strip(readFileSync(join(ROOT, 'components', 'shared', 'app-theme.css'), 'utf8'));
 

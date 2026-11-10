@@ -1,0 +1,1122 @@
+/* ─── Safehouse Theme (Kiriakou) ─────────────────────────────────────────── */
+[data-theme='safehouse'] {
+  --doctrine-bg-primary: #030712;
+  --doctrine-bg-secondary: #0c1220;
+  --doctrine-bg-tertiary: #111827;
+  --doctrine-accent: #22d3ee;
+  --doctrine-accent-muted: rgba(34, 211, 238, 0.2);
+}
+
+/* ─── Sahur Theme (Tung Tung Tung) ───────────────────────────────────────── */
+[data-theme='sahur'] {
+  --doctrine-bg-primary: #1a0f00;
+  --doctrine-bg-secondary: #2d1a00;
+  --doctrine-bg-tertiary: #3d2400;
+  --doctrine-accent: #f59e0b;
+  --doctrine-accent-muted: rgba(245, 158, 11, 0.2);
+  --doctrine-text-primary: #fde68a;
+  cursor:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ctext y='20' font-size='20'%3E🪵%3C/text%3E%3C/svg%3E"),
+    auto;
+}
+
+[data-theme='sahur'] * {
+  cursor: inherit;
+}
+
+/* Sahur wood-grain background texture */
+[data-theme='sahur']::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 2px,
+    rgba(139, 92, 42, 0.04) 2px,
+    rgba(139, 92, 42, 0.04) 4px
+  );
+  pointer-events: none;
+}
+
+/* Sahur screen shake on button clicks */
+@keyframes doctrine-shake {
+  0%,
+  100% {
+    transform: translate(0);
+  }
+  25% {
+    transform: translate(-2px, 1px);
+  }
+  50% {
+    transform: translate(2px, -1px);
+  }
+  75% {
+    transform: translate(-1px, 2px);
+  }
+}
+
+[data-theme='sahur'] button:active {
+  animation: doctrine-shake 0.15s ease-in-out;
+}
+
+/* ─── Doctrine layout base ───────────────────────────────────────────────── */
+.doctrine-layout {
+  background: var(--doctrine-bg-primary);
+  color: var(--doctrine-text-primary);
+  min-height: 100dvh;
+}
+
+.doctrine-sidebar {
+  background: var(--doctrine-bg-secondary);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ─── Streak loss animation ──────────────────────────────────────────────── */
+/* ─── Number inputs ──────────────────────────────────────────────────────
+ * The native up/down spinners render with the OS theme and clash with the
+ * site's dark UI. Hide them globally so number fields match every other
+ * themed input; users still type values (and themed stepper controls can be
+ * added per-field where needed). */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* ----- RTL support (Arabic) ----- */
+[dir='rtl'] body {
+  text-align: right;
+}
+/* Flip directional chevron/arrow icons that imply forward/back. */
+[dir='rtl'] .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* ─── Dream Rift menu animations ─────────────────────────────────────────
+ * Staggered entrance for menu items and a gentle title float. Respects the
+ * user's reduced-motion preference. */
+@keyframes dr-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes dr-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes dr-title-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 18px rgba(212, 64, 90, 0.5))
+      drop-shadow(0 0 6px rgba(231, 205, 140, 0.55));
+  }
+  50% {
+    filter: drop-shadow(0 0 30px rgba(231, 205, 140, 0.6))
+      drop-shadow(0 0 10px rgba(212, 64, 90, 0.5));
+  }
+}
+.dr-rise {
+  opacity: 0;
+  animation: dr-rise 0.5s var(--ease-reveal) forwards;
+}
+.dr-float {
+  animation: dr-float 4.5s ease-in-out infinite;
+}
+.dr-title-glow {
+  animation: dr-title-glow 5s ease-in-out infinite;
+}
+
+/* ─── Dream Rift — authentic Touhou STG skin ─────────────────────────────
+ * Windows-era Touhou UI language: deep midnight-indigo grounds, ornate brass
+ * frames, shrine-crimson accents and cream serif lettering. These tokens and
+ * helpers are shared by every Dream Rift menu/overlay so the chrome stays
+ * cohesive; the in-canvas HUD mirrors the same palette in renderer.ts. */
+:root {
+  --dr-gold: #e7cd8c;
+  --dr-gold-soft: #d8b768;
+  --dr-cream: #f3ead2;
+  --dr-cream-dim: rgba(243, 234, 210, 0.58);
+  --dr-cream-faint: rgba(243, 234, 210, 0.34);
+  --dr-crimson: #d4405a;
+  /* Cinzel + Playfair load with the game (app/fonts/dream-rift.css via the route). */
+  --dr-serif: 'Cinzel', Georgia, 'Times New Roman', serif;
+  --dr-serif-body: 'Playfair Display', Georgia, serif;
+}
+
+/* Ornate brass double-frame on a smoked-indigo ground — the base panel. */
+.dr-frame {
+  position: relative;
+  background: linear-gradient(180deg, rgba(29, 20, 48, 0.94), rgba(11, 7, 18, 0.96));
+  border: 1px solid rgba(231, 205, 140, 0.42);
+  box-shadow:
+    inset 0 0 0 1px rgba(11, 7, 18, 0.9),
+    inset 0 0 0 4px rgba(231, 205, 140, 0.1),
+    inset 0 1px 0 rgba(231, 205, 140, 0.18),
+    0 14px 48px rgba(0, 0, 0, 0.55);
+}
+/* Faint gold corner ticks reinforce the "framed scroll" read. */
+.dr-frame::before,
+.dr-frame::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgba(231, 205, 140, 0.55);
+  pointer-events: none;
+}
+.dr-frame::before {
+  top: 5px;
+  left: 5px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.dr-frame::after {
+  bottom: 5px;
+  right: 5px;
+  border-left: 0;
+  border-top: 0;
+}
+
+/* A thinner inset panel for stat blocks / list rows inside a frame. */
+.dr-inset {
+  background: linear-gradient(180deg, rgba(11, 7, 18, 0.66), rgba(11, 7, 18, 0.4));
+  border: 1px solid rgba(231, 205, 140, 0.16);
+  box-shadow: inset 0 1px 0 rgba(231, 205, 140, 0.08);
+}
+
+/* Menu plaque — a framed command with a shrine-red selection sigil. */
+.dr-plaque {
+  position: relative;
+  font-family: var(--dr-serif);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dr-cream);
+  background: linear-gradient(180deg, rgba(29, 20, 48, 0.85), rgba(13, 8, 22, 0.9));
+  border: 1px solid rgba(231, 205, 140, 0.3);
+  box-shadow: inset 0 1px 0 rgba(231, 205, 140, 0.12);
+  transition:
+    color 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease,
+    transform 0.16s ease;
+}
+.dr-plaque:hover:not(:disabled),
+.dr-plaque:focus-visible {
+  color: #fff7e6;
+  border-color: rgba(231, 205, 140, 0.85);
+  background: linear-gradient(180deg, rgba(140, 36, 56, 0.5), rgba(13, 8, 22, 0.92));
+  transform: translateY(-1px);
+}
+.dr-plaque:disabled {
+  opacity: 0.4;
+}
+/* Crimson cursor sigil slides in on focus, the Touhou menu pointer. */
+.dr-plaque::before {
+  content: '❖';
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%) scale(0.5);
+  color: var(--dr-crimson);
+  font-size: 0.7em;
+  opacity: 0;
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+.dr-plaque:hover:not(:disabled)::before,
+.dr-plaque:focus-visible::before {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
+/* Primary plaque — the lit shrine-crimson call to action. */
+.dr-plaque-primary {
+  color: #fff4e0;
+  background: linear-gradient(180deg, #c5364e, #8c2438);
+  border-color: rgba(231, 205, 140, 0.65);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 222, 196, 0.28),
+    0 6px 18px rgba(140, 36, 56, 0.35);
+}
+.dr-plaque-primary:hover:not(:disabled),
+.dr-plaque-primary:focus-visible {
+  background: linear-gradient(180deg, #df4660, #a02b42);
+  border-color: var(--dr-gold);
+}
+
+/* Hairline gold rule used under section headings. */
+.dr-rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(231, 205, 140, 0.55), transparent);
+}
+
+/* Serif lettering helpers (Cinzel display caps + Playfair body). */
+.dr-serif {
+  font-family: var(--dr-serif);
+}
+.dr-serif-body {
+  font-family: var(--dr-serif-body);
+}
+
+/* ─── Images fade in as their bytes land (lib/media-reveal.ts) ────────────
+ * `html.media-reveal` is stamped by a pre-paint script that also marks every
+ * <img> `data-loaded` on load/error, so without JavaScript nothing is hidden.
+ * Opacity only — never layout — so it cannot shift anything. The LCP image
+ * (`fetchpriority=high`), an image with no src (it would never load), opted-out
+ * images and reduced motion are never hidden. Full-screen apps keep their own
+ * image handling. Base layer, so a component's own fade utilities still win. */
+@layer base {
+  html.media-reveal:not(.app-route)
+    img[src]:not([src='']):not([fetchpriority='high']):not([data-no-reveal]) {
+    transition: opacity 0.32s var(--ease-smooth);
+  }
+  html.media-reveal:not(.app-route)
+    img[src]:not([src='']):not([fetchpriority='high']):not([data-no-reveal]):not([data-loaded]) {
+    opacity: 0;
+  }
+  /* Paper has no load event to wait for. */
+  @media print {
+    html.media-reveal img {
+      opacity: 1 !important;
+    }
+  }
+}
+
+/* ─── Per-page content transition ────────────────────────────────────────
+ * Only the content column(s) animate on navigation — the left nav rail lives
+ * outside the content <main> (see app/routes/_site.tsx), so it never moves.
+ * Route-to-route navigation remounts the content, replaying this enter
+ * animation. `backwards` fill applies the start frame immediately (no flash)
+ * and leaves NO lingering transform afterward (so `position: fixed`
+ * descendants are unaffected once the animation settles).
+ *
+ * Deliberately NOT on the sampled spring (`--spring-smooth`, §7.1) like the
+ * floating surfaces: while any transform is running on a page root, its
+ * `position: fixed` descendants (the compose FAB, floating lanes) are laid out
+ * against the page box instead of the viewport. 0.16s of that is invisible;
+ * the spring's 0.64s settle would park the FAB at the bottom of the document
+ * for over half a second on every navigation. */
+/* The page swap (docs/superpowers/specs/2026-10-27-smooth-transitions-design.md). OPACITY ONLY, and never blank: the old
+   page dims to --swap-dim while it leaves (html[data-page-leaving], set by lib/page-transition.ts) and the new one
+   enters from that same level, so a navigation reads as one quick dip instead of a blink. No transform on purpose: a
+   running transform on the page root makes its `position: fixed` descendants (the compose FAB, floating lanes) lay out
+   against the page box instead of the viewport. Every other one-shot entrance inside the page is finished at mount
+   (finishEntranceAnimations), so this is the only one that paints. */
+:root {
+  --swap-dim: 0.72;
+  --swap-out: 100ms;
+  --swap-in: 220ms;
+}
+@keyframes page-enter {
+  from {
+    opacity: var(--swap-dim);
+  }
+  to {
+    opacity: 1;
+  }
+}
+.page-root > * {
+  animation: page-enter var(--swap-in) var(--ease-smooth) backwards;
+  transition: opacity var(--swap-out) var(--ease-smooth);
+}
+html[data-page-leaving] .page-root > * {
+  opacity: var(--swap-dim);
+}
+/* The kind rides on the flag itself (a sibling leave dims only the content). */
+.page-root > [data-page-enter-complete],
+.page-root > [data-route-pending] {
+  animation: none !important;
+}
+/* Not on the document's own first paint. The enter is for ARRIVING by a
+ * navigation; on a fresh load the server-rendered page is already there, and
+ * fading it in from opacity 0 hid it at first contentful paint — an element
+ * painted at opacity 0 is not an LCP candidate, so the home feed's first card
+ * never counted (docs/archive/2026/performance-audit-2026-10-21.md §Home LCP).
+ * `data-navigated` is set on the first client navigation (`app/routes/__root.tsx`),
+ * which marks the page then on screen complete first so it never replays. */
+html:not([data-navigated]) .page-root > * {
+  animation: none;
+}
+
+/* Same layout group (tabbed / sibling pages): the frame, the title and the tab strip, stays perfectly still and only the
+   content swaps. The column itself never animates; the swap is keyed to what is NOT the frame, on the two shapes the
+   shell renders (PageLayout's `page-content`, and the radial feed). Pages with another shape simply swap instantly. */
+html[data-nav-kind='sibling'] .page-root > * {
+  animation: none;
+}
+html[data-nav-kind='sibling'] [data-slot='page-content'] > :not([data-slot='page-controls']),
+html[data-nav-kind='sibling']
+  .radial-feed
+  > :not([data-slot='page-controls'], h1, .radial-feed__compose) {
+  animation: page-enter var(--swap-in) var(--ease-smooth) backwards;
+  transition: opacity var(--swap-out) var(--ease-smooth);
+}
+html[data-page-leaving='sibling'] .page-root > * {
+  opacity: 1;
+}
+html[data-page-leaving='sibling'] [data-slot='page-content'] > :not([data-slot='page-controls']),
+html[data-page-leaving='sibling']
+  .radial-feed
+  > :not([data-slot='page-controls'], h1, .radial-feed__compose) {
+  opacity: var(--swap-dim);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   §7.1 — `data-motion`: the enter/exit vocabulary for floating surfaces
+   ==========================================================================
+   framer-motion is the site's animation library, and `lib/motion.ts` holds the
+   variants — but a Radix popover/dialog/menu unmounts on its own schedule, so
+   animating one with framer means `forceMount` + `AnimatePresence` threaded
+   through every consumer. The established alternative here is Radix's own
+   `data-state` attribute driving CSS keyframes: `components/ui/dialog.css` and
+   `sheet.css` both already did exactly that, each with a note explaining that
+   `tailwindcss-animate` is not installed.
+
+   The problem was that they were the ONLY two, they hardcoded their own timings
+   (0.3s ease-out, 0.32s one expo-out curve, 0.3s another
+   — three different answers), and every other Radix surface on the site was left
+   writing `data-[state=open]:animate-in`, which compiles to nothing. So: one
+   vocabulary, opted into with `data-motion`, timed from the same tokens
+   `lib/motion.ts` uses, and dialog/sheet retimed onto it.
+
+     data-motion="fade"  a scrim, a backdrop — opacity only
+     data-motion="pop"   a popover, menu, select, hover card — the bloom below
+     data-motion="rise"  modal content — the `modalContent` variant
+
+   **This is not Radix-only.** The enter selector is `:not([data-state='closed'])`
+   rather than `[data-state='open']`, so the dozen-odd hand-rolled menus on the
+   site — which mount on open and unmount on close, and therefore carry no
+   `data-state` at all — opt in with the one attribute and get the same open as
+   the Select. They have no exit to animate (React has already removed them by
+   the time it would run); Radix surfaces, which stay mounted while they close,
+   still get the `closed` half. That generalisation is what retired the last two
+   bespoke menu keyframes on the site (`lib-ctx-in` at 120ms and
+   `vibe-model-pop` at 140ms — the same "three different answers" this section
+   was written to end, one level down).
+
+   ── The pop is anchored, and it is a bloom ────────────────────────────────
+   A menu is not something that materialises in mid-air: it comes OUT of the
+   control you pressed. So `pop` scales from the trigger's edge, not the panel's
+   centre. Radix computes that anchor for every popper surface and publishes it
+   as `--radix-popper-transform-origin` on the wrapper it portals (a custom
+   property, so it inherits down to the content) — which means a collision flip,
+   a menu that opens upward because there was no room below, re-anchors itself
+   for free. A hand-rolled menu states its own anchor, either with Tailwind's
+   `origin-*` utility when the placement is static (`origin-top-right` beside the
+   `absolute right-0 top-full` that put it there) or with `--motion-origin` when
+   the menu picks its side at runtime, as the language switcher does. The rule
+   sits in `@layer components` precisely so the utility outranks it; the variable
+   is the escape hatch for the cases a utility cannot express.
+
+   ── It opens the way Apple's menus open: one settle, nothing staged ───────
+   This used to be a two-act "bloom": a wireframe CAGE (`::after`, the globe's
+   6×7 meridian grid) held the first third while the panel's fill was forced
+   transparent and its rows sat at zero opacity, then the cage dissolved and the
+   content read in behind it. On top of that the panel ROCKED — a sampled
+   under-damped spring driving a 0.9deg `rotate()` about the anchor — and the
+   scale was ANISOTROPIC, 0.94 × 0.84.
+
+   It was coherent with the navigation globe and it was wrong for a menu, in
+   four ways a user actually perceives:
+
+     1. **A skeleton flash.** No platform menu shows you its own wireframe on
+        the way in. Whatever it evokes, what it reads as is a rendering glitch —
+        a panel that failed to paint for 100ms and then recovered.
+     2. **Rotation.** Nothing in AppKit, UIKit or SwiftUI rotates a menu. A
+        rotated panel puts every horizontal rule and every row of text off-axis
+        for the length of the open, which is the single loudest "this is a web
+        page" tell in the vocabulary — and it forces antialiasing on every glyph
+        edge in the panel while it runs.
+     3. **Anisotropic scale.** 0.94 × 0.84 is a squash. Apple scales uniformly,
+        so the panel reads as the same object arriving from further away rather
+        than as a shape being stretched into existence.
+     4. **Staged content.** Holding the rows at zero until 34% means the menu is
+        VISIBLE but UNREADABLE for its first 100ms. The one number that decides
+        whether an open feels fast is when the content is legible, and staging
+        is the only thing here that was making it slow.
+
+   So the bloom is retired and this is now the platform shape: an **anchored,
+   uniform scale-and-fade on one spring**, content arriving WITH the panel.
+
+     · scale 0.92 → 1, uniform, from the trigger's own corner (§ the anchor,
+       below), sampled from `spring(0.26, 0.08)` in `lib/fluid.ts` — the same
+       function `SPRINGS`/`APPLE_SPRING` are built from, so this is not an
+       imitation of a spring's look with a bezier, it IS the site's spring.
+       Bounce 0.08 puts the peak 0.06% past the target: a real spring's
+       deceleration profile with an overshoot far below a pixel, so it never
+       inflates past its own box (an X overshoot can push a horizontal scrollbar
+       onto the document for two frames) and never fights the settle.
+     · opacity 0 → 1 over the first 24% (≈62ms), so the panel is legible almost
+       immediately and the scale is what finishes the arrival.
+
+   Legible from ~60ms rather than ~200ms, settled at 260ms rather than 300ms.
+
+   Stops are sampled, and the timing function is `linear`, because these ARE the
+   curve — an ease between sampled points would re-shape a spring that was
+   already exact. `lib/__tests__/motion-pop-spring.test.ts` re-samples
+   `spring(0.26, 0.08)` and asserts these exact stops, so the CSS and the physics
+   cannot drift apart.
+
+   Two things deliberately do NOT animate, both for cost. The **blur** lands at
+   once, because it is the one property here that cannot be animated cheaply
+   (`.glass-overlay` re-samples its whole backdrop per frame). And the **shadow**
+   is never animated: a blurred box-shadow is a full repaint of the panel and its
+   penumbra on every frame, and it buys a detail nobody looks at during a 260ms
+   open. What is left is compositor-only — transform and opacity, nothing else.
+   That is also why retiring the cage is a performance change and not only a
+   visual one: it was an extra full-size painted layer carrying two repeating
+   gradients, composited over a backdrop-filtered panel, on every menu, select,
+   dialog and sheet the site opens.
+
+   ── The close ─────────────────────────────────────────────────────────────
+   A dismissal is not a performance: a quick uniform reabsorb toward the anchor
+   over `--motion-collapse`, with `forwards` so the panel stays gone while
+   whatever owns it unmounts. `pointer-events: none` for the same window — the
+   panel is visibly leaving and must not still be clickable. It is deliberately
+   less than half the open: Apple's asymmetry is that arriving is a movement and
+   leaving is an erasure, and a dismissal that takes as long as the open is the
+   thing that makes a UI feel like it is arguing with you. The exit scale is
+   UNIFORM (0.96) for the same reason the open is — the old `scale(0.97, 0.9)`
+   collapsed the panel vertically into a letterbox on the way out.
+
+   Radix schedules its own unmount and needs nothing. A hand-rolled menu is
+   removed by React the instant its state flips, which is why NOTHING it did
+   used to be visible on close; `hooks/usePopPresence.ts` holds it mounted for
+   exactly `--motion-collapse` and flips it to `data-state="closed"`, so both
+   halves of this vocabulary reach both kinds of surface.
+
+   Mirrors of `lib/motion.ts`: `--motion-in` = DURATION.slow (0.22s),
+   `--motion-out` = DURATION.fast (0.1s), the enter curve = EASE.emphasized,
+   the exit = a plain ease-in so dismissals feel immediate. `--motion-bloom` is
+   the pop's own window: 0.26s, the perceptual duration of the spring it samples
+   and inside the 0.3s ceiling this site's own motion note sets for a tween. The
+   number that matters more than the total is when the CONTENT is readable —
+   ~60ms — because that, not the last frame of a settling spring, is what "it
+   opened" means to whoever is reading it. `--motion-collapse` mirrors
+   `POP_COLLAPSE_MS` in `lib/motion.ts`, which is what the presence hook counts.
+   Keep them in step — if one moves, move the other;
+   `lib/__tests__/motion-pop-spring.test.ts` fails if they drift.
+
+   Everything here is gated on no-preference, and the global reduce rule in
+   §REDUCED MOTION collapses it anyway. */
+:root {
+  --motion-in: 0.22s;
+  --motion-out: 0.1s;
+  --motion-bloom: 0.26s;
+  --motion-collapse: 0.11s;
+  --motion-ease-in: var(--ease-smooth);
+  /* Smooth at both ends: a dismissal that ends at full speed reads as a cut. */
+  --motion-ease-out: cubic-bezier(0.45, 0, 0.55, 1);
+  /* An exit that has a long way to travel (a phone sheet leaving through the
+     bottom edge). `--motion-out` is right for a panel that fades where it
+     stands; 0.1s across a whole screen height is a teleport, not a dismissal.
+     Accelerating, so it leaves the way a flicked sheet does. */
+  --motion-out-travel: 0.24s;
+  --motion-ease-out-travel: cubic-bezier(0.32, 0, 0.67, 0);
+
+  /* ── The Apple springs, as CSS easings ──────────────────────────────────
+     `APPLE_SPRING` in `lib/motion.ts` (framer) and `SPRINGS` in `lib/fluid.ts`
+     (imperative) are the site's motion. CSS has no spring, but `linear()` can
+     carry one exactly: these are the step responses of `spring(d, bounce)`
+     sampled at 41 evenly spaced points from rest until the motion is within
+     0.05% of its target, and `--spring-*-duration` is that settle time — so
+     `animation: x var(--spring-smooth-duration) var(--spring-smooth)` IS the
+     framer spring, not a curve that resembles it. The perceptual duration
+     (0.4s / 0.55s) is shorter than the settle; the last third is sub-pixel.
+     `lib/__tests__/motion-spring-easings.test.ts` re-derives every stop.
+
+     Use them on ENTERS and on transitions of `transform`/`scale`/`translate`.
+     Not on colour: `snappy` overshoots, and an overshooting colour clamps. */
+  --spring-smooth: linear(
+    0,
+    0.0268,
+    0.091,
+    0.1748,
+    0.2662,
+    0.3577,
+    0.4448,
+    0.5249,
+    0.5969,
+    0.6603,
+    0.7154,
+    0.7628,
+    0.8032,
+    0.8374,
+    0.8661,
+    0.89,
+    0.91,
+    0.9265,
+    0.9401,
+    0.9513,
+    0.9605,
+    0.968,
+    0.9741,
+    0.9791,
+    0.9831,
+    0.9864,
+    0.9891,
+    0.9912,
+    0.9929,
+    0.9943,
+    0.9955,
+    0.9964,
+    0.9971,
+    0.9977,
+    0.9981,
+    0.9985,
+    0.9988,
+    0.9991,
+    0.9992,
+    0.9994,
+    1
+  );
+  --spring-smooth-duration: 0.64s;
+  --spring-snappy: linear(
+    0,
+    0.0243,
+    0.085,
+    0.1673,
+    0.2604,
+    0.3564,
+    0.4501,
+    0.5378,
+    0.6177,
+    0.6886,
+    0.7503,
+    0.803,
+    0.8472,
+    0.8839,
+    0.9137,
+    0.9376,
+    0.9564,
+    0.9711,
+    0.9822,
+    0.9904,
+    0.9964,
+    1.0006,
+    1.0033,
+    1.005,
+    1.0059,
+    1.0063,
+    1.0062,
+    1.0059,
+    1.0054,
+    1.0048,
+    1.0042,
+    1.0036,
+    1.0031,
+    1.0026,
+    1.0021,
+    1.0017,
+    1.0013,
+    1.001,
+    1.0008,
+    1.0006,
+    1
+  );
+  --spring-snappy-duration: 0.6s;
+  --spring-sheet: linear(
+    0,
+    0.0162,
+    0.0577,
+    0.1156,
+    0.1831,
+    0.2552,
+    0.3284,
+    0.4001,
+    0.4685,
+    0.5325,
+    0.5915,
+    0.6452,
+    0.6936,
+    0.7367,
+    0.7749,
+    0.8084,
+    0.8377,
+    0.8631,
+    0.8851,
+    0.9039,
+    0.92,
+    0.9337,
+    0.9452,
+    0.955,
+    0.9632,
+    0.97,
+    0.9757,
+    0.9804,
+    0.9843,
+    0.9875,
+    0.9901,
+    0.9923,
+    0.994,
+    0.9954,
+    0.9965,
+    0.9974,
+    0.9981,
+    0.9986,
+    0.999,
+    0.9994,
+    1
+  );
+  --spring-sheet-duration: 0.67s;
+}
+
+/* Outside the motion query on purpose: the anchor is not an animation, and a
+   `pop` surface that is scaled by anything else should still be scaled from the
+   corner it hangs off. Layered so an `origin-*` utility on the element wins —
+   unlayered rules beat every layer, which would have made the utility silently
+   inert. Empty/absent variables fall through to the initial `50% 50%`, which is
+   the `center` this would otherwise name. */
+@layer components {
+  [data-motion='pop'] {
+    transform-origin: var(--motion-origin, var(--radix-popper-transform-origin, center));
+  }
+
+  /* How long a surface's own open runs. The modal surfaces keep `--motion-in`,
+     the window their own keyframes already use; `pop` runs the spring's
+     perceptual duration. Nothing else reads this any more — it used to time the
+     cage and the staged row reveal against whatever travel the host had, and
+     both of those are gone. */
+  :is([data-motion='rise'], [data-slot='dialog-content'], [data-slot='sheet-content']) {
+  }
+  [data-motion='pop'] {
+  }
+}
+
+/* Closed UI is never interactive, even when system preferences change during exit. */
+:is([data-motion='pop'], [data-motion='rise'], [data-motion='fade'])[data-state='closed'],
+:is([data-slot='dialog-overlay'], [data-slot='dialog-content'])[data-state='closed'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Transitions retarget from the current frame when a surface is reopened
+     during its exit. Longhand scale preserves each surface's positioning. */
+
+:is([data-motion='pop'], [data-motion='rise'], [data-motion='fade']) {
+  opacity: 1;
+  scale: 1;
+  transition:
+    opacity var(--motion-collapse) var(--motion-ease-out),
+    scale var(--site-transition-speed) var(--motion-ease-in);
+}
+
+:is([data-motion='pop'], [data-motion='rise'], [data-motion='fade'])[data-state='closed'] {
+  opacity: 0;
+  scale: 0.98;
+  pointer-events: none;
+  transition-duration: var(--motion-collapse);
+  /* Radix Presence holds the node until animationend; visibility is constant
+       while the compositor finishes the actual opacity/scale transitions. */
+  animation: motion-presence var(--motion-collapse) linear;
+}
+
+@starting-style {
+  :is([data-motion='pop'], [data-motion='rise'], [data-motion='fade']):not([data-state='closed']) {
+    opacity: 0;
+    scale: 0.98;
+  }
+}
+@keyframes motion-presence {
+  from {
+    visibility: visible;
+  }
+  to {
+    visibility: visible;
+  }
+}
+
+/* Back/forward (history POP) navigations shouldn't replay the enter animation —
+ * returning should feel like landing back where you were, not the page
+ * re-animating. Toggled by components/ui/BackNavAnimation.tsx. */
+html.nav-pop .page-root > * {
+  animation: none !important;
+}
+
+/* Section 7.3 Eversion is reserved for globe navigation.
+   Existing data-evert markers retain an opacity state layer for menus,
+   selected navigation and cards. Controls never grow a second globe, invert,
+   or animate a moving origin. No document listeners are needed for this layer. */
+:root {
+  --evert-in: 0.419s;
+  --evert-ease: linear(
+    0,
+    0.0322,
+    0.1102,
+    0.2123,
+    0.3234,
+    0.4335,
+    0.5364,
+    0.6287,
+    0.7088,
+    0.7764,
+    0.8322,
+    0.8772,
+    0.9128,
+    0.9403,
+    0.9612,
+    0.9766,
+    0.9876,
+    0.9953,
+    1.0004,
+    1.0036,
+    1.0053,
+    1.0061,
+    1.0063,
+    1.006,
+    1.0054,
+    1.0048,
+    1.0041,
+    1.0034,
+    1.0028,
+    1.0022,
+    1.0017,
+    1.0013,
+    1
+  );
+  --evert-pop-in: 0.524s;
+  --evert-ease-pop: linear(
+    0,
+    0.0444,
+    0.1515,
+    0.2898,
+    0.4367,
+    0.5767,
+    0.701,
+    0.8049,
+    0.8872,
+    0.949,
+    0.9926,
+    1.021,
+    1.0374,
+    1.0448,
+    1.0458,
+    1.0426,
+    1.0371,
+    1.0305,
+    1.0238,
+    1.0176,
+    1.0121,
+    1.0077,
+    1.0042,
+    1.0016,
+    0.9999,
+    0.9987,
+    0.9981,
+    0.9979,
+    0.9979,
+    0.9981,
+    0.9984,
+    0.9987,
+    1
+  );
+}
+@layer components {
+  /* `relative` in this layer so a control's own `absolute`/`fixed` utility still wins. */
+  [data-evert] {
+    position: relative;
+    isolation: isolate;
+  }
+  [data-evert]::before,
+  [data-evert~='select']::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    corner-shape: inherit;
+    background: var(--site-surface-hover);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--site-transition-speed) var(--ease-glass);
+  }
+  [data-evert]:is([data-pressed], [data-highlighted], :focus-visible)::before {
+    opacity: 1;
+  }
+  [data-evert]:is(:disabled, [aria-disabled='true'], [data-disabled])::before {
+    opacity: 0;
+  }
+  [data-evert~='select']::after {
+    background: var(--site-accent);
+  }
+  [data-evert~='select']:is([aria-current='page'], .is-active)::after {
+    opacity: 1;
+  }
+  [data-evert~='over']::before {
+    z-index: 3;
+    background: var(--liquid-coat);
+  }
+
+  /* Dropdown rows are text, not bands. A menu, select or autocomplete row has no fill, edge or radius of its own;
+     hovering it (or moving the keyboard highlight onto it) wakes a gentle glow behind the text: a soft accent wash that
+     fades to nothing at the row's own edges (`closest-side`), so it never draws a rectangle against the panel. It is the
+     same state layer as above — an opacity transition, no keyframes, no shadow, no filter — and the text is never
+     the thing that glows. Destructive rows glow in the danger colour. Selected rows are marked by their accent text and
+     check, not by a fill. */
+  [data-slot='menu-item'][data-evert]::before,
+  [data-slot='select-item'][data-evert]::before,
+  [data-row-glow][data-evert]::before {
+    border-radius: 0;
+    background: radial-gradient(
+      ellipse closest-side at 50% 50%,
+      color-mix(in srgb, var(--site-accent) var(--row-glow-strength, 20%), transparent),
+      transparent
+    );
+  }
+  [data-slot='menu-item'][data-tone='danger'][data-evert]::before {
+    background: radial-gradient(
+      ellipse closest-side at 50% 50%,
+      color-mix(in srgb, var(--site-danger) var(--row-glow-strength, 20%), transparent),
+      transparent
+    );
+  }
+}
+
+/* The ghost of the layer (lib/evert-auto.ts): for a control that cannot hold its own `::before` (a text field, a
+   textarea, a select, an inline link, a control whose `::before` the site already uses), one shared body-level box
+   laid over the control in its own shape. `lib/evert-auto.ts` places it with an inline `translate` and size (re-placed
+   only on scroll and resize while it is up) and copies the control's radius; the hover ghost carries
+   `data-liquid-glass="lit"`, so the glass engine draws the shared optical response (tilt, light, rim) on it exactly
+   as on a control that holds its own slab (app/glass-roles.css drops the static coat once that canvas is on).
+   Restored after a39a095e deleted these base rules with the old scale eversion while the script still creates the
+   ghost — without them it fell to the end of <body> as a static block and added page height (F2, 2026-10-23).
+   Adapted to the current layer and the jelly contract: it is fixed and out of flow, never takes the pointer, is an
+   overlay that is never a soft body (physics, the registry and the arcs exclude `.evert-ghost`), and its state is
+   an OPACITY change like `[data-evert]::before` above — no scale, no moving origin, no transform transition, no
+   filter or backdrop-filter. */
+.evert-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: calc(var(--z-tooltip) - 1);
+  pointer-events: none;
+  contain: strict;
+  isolation: isolate;
+  background: var(--liquid-coat);
+  opacity: 0;
+  transition: opacity var(--site-transition-speed) var(--ease-glass);
+}
+.evert-ghost[data-on] {
+  opacity: 0.8;
+}
+.evert-ghost[data-on][data-pressed] {
+  opacity: 1;
+}
+.evert-ghost[data-kind='focus'] {
+  background: color-mix(in srgb, var(--site-accent) 7%, transparent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--site-accent) 45%, transparent);
+}
+.evert-ghost[data-kind='focus'][data-on] {
+  opacity: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+  @layer components {
+    [data-evert]:hover:not(:disabled, [aria-disabled='true'], [data-disabled])::before {
+      opacity: 1;
+    }
+  }
+}
+
+/* Legacy variant tint tokens remain for selected/pressed consumers. Hover uses
+   the shared coat/optical tilt; the CSS build policy removes hover colour swaps. */
+@layer components {
+  [data-slot='button']:is(
+    [data-variant='default'],
+    [data-variant='accent'],
+    [data-variant='signal']
+  ) {
+    --evert-tint: var(--site-accent-hover);
+    --evert-rest-opacity: 1;
+  }
+  [data-slot='button']:is(
+    [data-variant='outline'],
+    [data-variant='secondary'],
+    [data-variant='ghost']
+  ),
+  [data-slot='menu-item'],
+  [data-slot='select-item'],
+  [data-slot='select'][data-evert],
+  [role='tab'][data-evert],
+  [data-tab-active][data-evert],
+  .rad-rail__item,
+  .radial-topbar__btn,
+  .cstudio-ranked__toggle,
+  .rmhark__link,
+  .store-spot__link {
+    --evert-tint: var(--site-surface-hover);
+    --evert-rest-opacity: 1;
+  }
+  .radial-topbar__signin,
+  .radial-feed__compose {
+    --evert-tint: var(--site-accent);
+    --evert-rest-opacity: 1;
+  }
+  .radial-feed__compose {
+    --evert-tint: var(--site-accent-hover);
+  }
+  .cstudio-ranked__link {
+    --evert-tint: color-mix(in srgb, var(--site-accent) 22%, transparent);
+    --evert-rest-opacity: 1;
+  }
+  [data-slot='button']:is([data-variant='accent-outline'], [data-variant='accent-ghost']) {
+    --evert-tint: var(--site-accent-dim);
+    --evert-rest-opacity: 1;
+  }
+  [data-slot='menu-item'][data-tone='danger'] {
+    --evert-tint: color-mix(in srgb, var(--site-danger) 10%, transparent);
+  }
+}
+
+/* Focus is immediate; a keyboard user never waits for a ring to animate. */
+/* Switch: the "on" colour everts out of the knob as the knob travels, and swallows
+   back into it. The origin is the knob's resting place on the off side. */
+@layer components {
+  [data-slot='switch']::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    corner-shape: inherit;
+    background: var(--site-accent);
+    opacity: 0;
+    transition: opacity var(--site-transition-speed) var(--ease-glass);
+    pointer-events: none;
+  }
+  [data-slot='switch'][aria-checked='true']::before {
+    opacity: 1;
+  }
+  [data-slot='switch'] > [data-switch-knob] {
+    position: relative;
+    transition:
+      translate var(--site-transition-speed) var(--ease-glass),
+      background-color var(--site-transition-speed) var(--ease-glass);
+  }
+}
+
+/* Native checkbox and radio: the accent everts out from the centre and the mark
+   springs in after it. Drawn with pseudo-elements, which Gecko does not render on
+   inputs, so Firefox keeps the native control (in the accent, via accent-color),
+   too. Zero-specificity and in the components layer, so any
+   control with its own size, radius or colour utilities keeps them. */
+@supports not (-moz-appearance: none) {
+  @layer components {
+    :where(input[type='checkbox'], input[type='radio']) {
+      appearance: none;
+      position: relative;
+      display: inline-grid;
+      place-content: center;
+      flex-shrink: 0;
+      width: 1rem;
+      height: 1rem;
+      margin: 0;
+      vertical-align: middle;
+      border: 1.5px solid var(--site-border-bright);
+      border-radius: calc(var(--site-radius-sm) * 0.5);
+      background: var(--site-surface-opaque);
+      color: var(--site-accent-fg);
+      cursor: pointer;
+      transition: border-color var(--site-transition-speed) var(--ease-glass);
+    }
+    :where(input[type='radio']) {
+      border-radius: 50%;
+      corner-shape: round;
+    }
+    :where(input[type='checkbox'], input[type='radio'])::before {
+      content: '';
+      position: absolute;
+      inset: -1.5px;
+      border-radius: inherit;
+      corner-shape: inherit;
+      background: var(--site-accent);
+      opacity: 0;
+      transition: opacity var(--site-transition-speed) var(--ease-glass);
+    }
+    :where(input[type='checkbox'], input[type='radio']):is(:checked, :indeterminate)::before {
+      opacity: 1;
+    }
+    :where(input[type='checkbox'], input[type='radio']):is(:checked, :indeterminate) {
+      border-color: var(--site-accent);
+    }
+    /* The tick: two borders of an L, turned to a check. It lands after the fill. */
+    :where(input[type='checkbox'])::after {
+      content: '';
+      position: relative;
+      width: 0.3125rem;
+      height: 0.5625rem;
+      margin-top: -0.125rem;
+      border: solid currentColor;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg) scale(0);
+      transition: transform 0.12s var(--ease-smooth);
+    }
+    :where(input[type='checkbox']):checked::after {
+      transform: rotate(45deg) scale(1);
+      transition: transform var(--site-transition-speed) var(--ease-glass) 0.06s;
+    }
+    :where(input[type='checkbox']):indeterminate::after {
+      width: 0.5rem;
+      height: 0;
+      margin-top: 0;
+      border-width: 0 0 2px;
+      transform: scale(1);
+      transition: transform var(--site-transition-speed) var(--ease-glass) 0.06s;
+    }
+    :where(input[type='radio'])::after {
+      content: '';
+      position: relative;
+      width: 0.375rem;
+      height: 0.375rem;
+      border-radius: 50%;
+      corner-shape: round;
+      background: currentColor;
+      transform: scale(0);
+      transition: transform 0.12s var(--ease-smooth);
+    }
+    :where(input[type='radio']):checked::after {
+      transform: scale(1);
+      transition: transform var(--site-transition-speed) var(--ease-glass) 0.06s;
+    }
+    :where(input[type='checkbox'], input[type='radio']):disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+}
+
+/* WebKit cannot run a `linear()` timing function on the compositor: an animation
+   or transition on one is ticked on the main thread and capped at 30 fps even on
+   a 120 Hz display (WebKit bug 281429, "as designed" until bug 250970). So in
+   WebKit only — `font: -apple-system-body` is a WebKit-only value — the sampled
+   springs fall back to the closest cubic-bezier, which WebKit accelerates. The
+   durations stay the springs' settle times, so the curves front-load the travel
+   the way the springs do (their last third is sub-pixel); `snappy` and `pop`
+   keep their overshoot through a y > 1 control point. Chromium and Gecko
+   accelerate `linear()` and keep the exact springs. After every token it
+   overrides (the evert springs are declared above). */
+@supports (font: -apple-system-body) {
+  :root {
+    --spring-smooth: var(--ease-smooth);
+    --spring-snappy: var(--ease-pop);
+    --spring-sheet: var(--ease-smooth);
+    --evert-ease: var(--ease-smooth);
+    --evert-ease-pop: var(--ease-pop);
+  }
+}

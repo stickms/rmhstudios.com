@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { readCss } from './css-source';
 
 /**
  * Custom properties are INHERITED, so a component that portals to `<body>` only
@@ -58,7 +58,7 @@ describe('portaled surfaces only use document-level design tokens', () => {
   // `@import …;` statements (eversion.css, at the top) end in `;` not `}`, so the
   // rule scanners below would read one as the head of the next selector. Blanked,
   // not removed, to keep line numbers true.
-  const css = readFileSync(join(ROOT, RADIAL_CSS), 'utf8').replace(/^@import[^;]*;/gm, (c) =>
+  const css = readCss(join(ROOT, RADIAL_CSS)).replace(/^@import[^;]*;/gm, (c) =>
     c.replace(/[^\n]/g, ' '),
   );
 

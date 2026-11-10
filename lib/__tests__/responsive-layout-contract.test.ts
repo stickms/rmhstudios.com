@@ -2,11 +2,12 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { gridClassFor } from '@/lib/whats-new';
+import { readCss } from './css-source';
 
 const ROOT = process.cwd();
 
 function source(path: string) {
-  return readFileSync(join(ROOT, path), 'utf8');
+  return readCss(join(ROOT, path));
 }
 
 describe('spatial redesign — responsive layout contract', () => {

@@ -26,6 +26,7 @@
  *
  * Suite runs in `node` (no jsdom), so the documents here are the smallest objects `tiers.ts` reads.
  */
+import { readCss } from './css-source';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
@@ -432,7 +433,7 @@ describe('N13 — never fake a law', () => {
     'app/glass-roles.css',
   ].sort();
   const css = (f: string) =>
-    fs.readFileSync(path.join(ROOT, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
+    readCss(f).replace(/\/\*[\s\S]*?\*\//g, ' ');
   /** Every `prop: value` declaration (values may span lines), with its line number. */
   const decls = (f: string) => declsOf(css(f));
   const declsOf = (src: string) => {

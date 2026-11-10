@@ -1,7 +1,7 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { readCss } from '../../../lib/__tests__/css-source';
 
-const read = (p: string) => readFileSync(new URL(p, import.meta.url), 'utf8');
+const read = (p: string) => readCss(new URL(p, import.meta.url));
 const css = read('../jelly-group.css');
 const tsx = read('../jelly-group.tsx');
 const globals = read('../../../app/globals.css');

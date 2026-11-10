@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { readCss } from './css-source';
 
 /**
  * Corner shape (see the "Corner shape" note in app/globals.css `@layer base`): every rounded corner is a squircle
@@ -39,7 +40,7 @@ function missingNextTo(pattern: RegExp, want: RegExp, accept: (value: string) =>
 
 describe('corner shape', () => {
   it('the universal squircle default and the Tailwind full-radius override exist', () => {
-    const css = readFileSync(`${root}app/globals.css`, 'utf8');
+    const css = readCss(`${root}app/globals.css`);
     expect(css).toMatch(/@supports \(corner-shape: squircle\)\s*\{\s*\*,\s*::before,\s*::after\s*\{\s*corner-shape: squircle;/);
     expect(css).toMatch(/@utility rounded-full\s*\{\s*corner-shape: round;/);
     expect(css).toMatch(/@utility rounded-t-full\s*\{\s*corner-shape: round;/);
@@ -71,7 +72,7 @@ describe('corner shape', () => {
   });
 
   it('the universal rule keeps pseudo-elements on their host shape, controls as capsules and the toast close round', () => {
-    const css = readFileSync(`${root}app/globals.css`, 'utf8');
+    const css = readCss(`${root}app/globals.css`);
     expect(css).toMatch(/::before,\s*::after\s*\{\s*corner-shape: inherit;/);
     expect(css).toMatch(/\[data-slot='button'\][\s\S]*?\[data-sonner-toast\] \[data-close-button\]\s*\{\s*corner-shape: round;/);
   });

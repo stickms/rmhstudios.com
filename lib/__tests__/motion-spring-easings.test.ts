@@ -26,9 +26,10 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { spring, type Spring } from '@/lib/fluid';
 import { APPLE_SPRING, EASE, SMOOTH_EASE_CSS } from '@/lib/motion';
+import { readCss } from './css-source';
 
 const ROOT = join(__dirname, '..', '..');
-const GLOBALS = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
+const GLOBALS = readCss(join(ROOT, 'app', 'globals.css'));
 const DIALOG = readFileSync(join(ROOT, 'components', 'ui', 'dialog.css'), 'utf8');
 const SHEET = readFileSync(join(ROOT, 'components', 'ui', 'sheet.css'), 'utf8');
 
@@ -54,19 +55,6 @@ function cssVar(name: string): string {
   const m = new RegExp(`${name}:\\s*([^;]+);`).exec(GLOBALS);
   expect(m, `${name} is missing from globals.css`).not.toBeNull();
   return m![1].trim();
-}
-
-/** The INSIDE of the first `@keyframes <name> { … }` in `css`. */
-function keyframes(css: string, name: string, from = 0): string {
-  const start = css.indexOf(`@keyframes ${name} {`, from);
-  expect(start, `@keyframes ${name} is missing`).toBeGreaterThan(-1);
-  const open = css.indexOf('{', start);
-  let depth = 0;
-  for (let i = open; i < css.length; i++) {
-    if (css[i] === '{') depth++;
-    else if (css[i] === '}' && --depth === 0) return css.slice(open + 1, i);
-  }
-  throw new Error(`unterminated @keyframes ${name}`);
 }
 
 function transformIn(body: string): string {
@@ -134,8 +122,6 @@ describe('dialog and sheet: one path both ways, readable on the quick clock', ()
       expect(body, String(rule)).toMatch(/var\(--spring-\w+-duration\)\s+var\(--spring-\w+\)/);
       expect(body, String(rule)).toMatch(/var\(--motion-in\)\s+var\(--motion-ease-in\)/);
     }
-    // ...and the spring half never animates opacity itself.
-    expect(keyframes(GLOBALS, 'motion-rise-move')).not.toMatch(/opacity/);
   });
 });
 

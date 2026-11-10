@@ -1,12 +1,12 @@
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readCss } from '../../../lib/__tests__/css-source';
 
 /**
  * The route-progress bar creeps toward 90% on one CSS transition. It used to be a `setInterval` that set React state
  * every 160ms for as long as a navigation was pending.
  */
-const read = (p: string) => readFileSync(join(__dirname, '../../..', p), 'utf8');
+const read = (p: string) => readCss(join(__dirname, '../../..', p));
 
 describe('NavigationProgress', () => {
   const src = read('components/ui/NavigationProgress.tsx');

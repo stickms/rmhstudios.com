@@ -6,12 +6,12 @@
  * the scripts Geist lacks (non-Latin locales). These
  * assertions keep the wiring from drifting one line at a time.
  */
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readCss } from './css-source';
 
 const ROOT = join(__dirname, '..', '..');
-const read = (p: string) => readFileSync(join(ROOT, p), 'utf8');
+const read = (p: string) => readCss(join(ROOT, p));
 
 const globals = read('app/globals.css');
 const siteDisplay = read('app/fonts/site-display.css');

@@ -11,8 +11,8 @@
  *
  *   node scripts/probe-type-scale.mjs
  */
+import { readCssInlined } from './css-inline.mjs';
 import { createRequire } from 'node:module';
-import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,7 +21,7 @@ const req = createRequire(join(root, 'package.json'));
 const viteReq = createRequire(req.resolve('@tailwindcss/vite'));
 const { compile } = await import(viteReq.resolve('@tailwindcss/node'));
 
-const globals = readFileSync(join(root, 'app/globals.css'), 'utf8');
+const globals = readCssInlined(join(root, 'app/globals.css'));
 const start = globals.indexOf('/* E2 type scale');
 const end = globals.indexOf('/* A full radius');
 if (start < 0 || end < 0) throw new Error('E2 block markers not found in app/globals.css');

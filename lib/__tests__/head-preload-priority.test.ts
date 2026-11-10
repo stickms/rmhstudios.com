@@ -18,6 +18,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { RouterManagedTag } from '@tanstack/react-router';
 import { deprioritizeModulePreloads } from '@/components/SiteHeadContent';
+import { readCss } from './css-source';
 
 describe('deprioritizeModulePreloads', () => {
   it('lowers modulepreload links and leaves every other tag untouched', () => {
@@ -52,7 +53,7 @@ describe('the jelly haze tile is preloaded at high priority', () => {
   // (inside the first glass slab) becomes a ~5 s LCP on slow phones.
   it('the root head preloads the tile the stylesheet references', () => {
     const root = readFileSync(resolve(__dirname, '../../app/routes/__root.tsx'), 'utf8');
-    const css = readFileSync(resolve(__dirname, '../../app/jelly-material.css'), 'utf8');
+    const css = readCss(resolve(__dirname, '../../app/jelly-material.css'));
     const url = css.match(/--jelly-tile:\s*url\('([^']+)'\)/)?.[1];
     expect(url).toBe('/jelly/haze-tile.webp');
     expect(root).toContain(`href: '${url}'`);
