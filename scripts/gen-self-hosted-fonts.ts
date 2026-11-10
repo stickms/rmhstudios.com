@@ -68,10 +68,7 @@ const GROUPS: Group[] = [
         css: ['wght.css'],
         family: 'Playfair Display',
       },
-      { pkg: '@fontsource/bangers', css: ['400.css'], family: 'Bangers' },
-      { pkg: '@fontsource/bebas-neue', css: ['400.css'], family: 'Bebas Neue' },
       { pkg: '@fontsource-variable/cinzel', css: ['wght.css'], family: 'Cinzel' },
-      { pkg: '@fontsource/patrick-hand', css: ['400.css'], family: 'Patrick Hand' },
     ],
   },
   {
@@ -86,9 +83,10 @@ const GROUPS: Group[] = [
   },
   {
     out: 'app/fonts/eb-garamond.css',
-    usedBy: 'app/routes/versecraft.tsx',
+    usedBy: 'app/routes/versecraft.tsx (EB Garamond, plus the Patrick Hand handwriting face only versecraft uses)',
     sources: [
       { pkg: '@fontsource-variable/eb-garamond', css: ['wght.css'], family: 'EB Garamond' },
+      { pkg: '@fontsource/patrick-hand', css: ['400.css'], family: 'Patrick Hand' },
     ],
   },
   {
