@@ -56,6 +56,7 @@ site-reference/index
 developer-api/index
 codebase-overview
 architecture
+csp
 testing
 hearthworks-multiplayer
 frontend-webassembly

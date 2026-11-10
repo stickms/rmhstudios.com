@@ -6,6 +6,21 @@ import { installStyleTierPreload } from '@/lib/style-tier';
 import { installPageTransitions } from '@/lib/page-transition';
 import { installHistoryTrail } from '@/lib/router/history-trail';
 import appTierCss from '@/app/app-tier.css?url';
+import { currentRequestNonce } from '@/lib/csp/nonce.server';
+
+// The CSP nonce (redesign audit F5, docs/csp.md). On the server it is the one
+// minted for this request by server/nitro/security-headers.ts; in the browser it is
+// read back from the `<meta property="csp-nonce">` the router emits, so client-side
+// tags carry the same value the server rendered. Browsers hide a script's nonce
+// attribute after parsing, which is why the meta is the source of truth there.
+function cspNonce(): string | undefined {
+  if (typeof document !== 'undefined') {
+    return (
+      document.querySelector<HTMLMetaElement>('meta[property="csp-nonce"]')?.content || undefined
+    );
+  }
+  return typeof currentRequestNonce === 'function' ? currentRequestNonce() : undefined;
+}
 
 // `getRouter()` runs once per client page load and once per SSR request. The
 // style-tier preload is a browser-only, page-lifetime singleton, so it is
@@ -15,8 +30,10 @@ let pageTransitionsInstalled = false;
 let historyTrailInstalled = false;
 
 export function getRouter() {
+  const nonce = cspNonce();
   const router = createTanStackRouter({
     routeTree,
+    ...(nonce ? { ssr: { nonce } } : {}),
     scrollRestoration: true,
     // Jump, don't animate. globals.css sets `html { scroll-behavior: smooth }`
     // for in-page anchors, and with this option unset the router's reset

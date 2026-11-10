@@ -436,6 +436,9 @@ function RootDocument({ children }: { children: ReactNode }) {
   // step (runs in <head> before body paint) will correct lang/dir
   // client-side for any mismatch, and RootComponent always passes the real
   // resolved locale down to AppI18nProvider.
+  // The CSP nonce (docs/csp.md): every inline executable script in this document
+  // carries it, or is covered by a static hash of the generated pre-paint code.
+  const nonce = useRouter().options.ssr?.nonce;
   let locale: Locale = 'en';
   try {
     const data = Route.useLoaderData();
@@ -466,7 +469,11 @@ function RootDocument({ children }: { children: ReactNode }) {
         </noscript>
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
-        <script dangerouslySetInnerHTML={{ __html: PREPAINT_BODY_SCRIPT }} />
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: PREPAINT_BODY_SCRIPT }}
+        />
         {/* The aurora canvas — the shared backdrop every glass surface samples.
             The two layers are this element's ::before (near field) and ::after
             (far field); see the §5.1 block in app/globals.css.
