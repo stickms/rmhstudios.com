@@ -104,7 +104,7 @@ export default function AppShell({
       // Historic claim on the app subtree for the old press layer. The CSS soft
       // body (app/jelly-material.css §8) now presses every button, tab
       // and menu item everywhere by default, so the attribute is a no-op alias
-      // kept for readers. Gesture surfaces opt out with `data-jelly="off"` (or
+      // kept for readers. Gesture surfaces opt out with `data-jelly` set to off (or
       // the alias `data-fluid-press="none"`), and held HUD regions with
       // `data-jelly-scope="off"`.
       data-fluid-press-scope

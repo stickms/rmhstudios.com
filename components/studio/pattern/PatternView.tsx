@@ -118,7 +118,7 @@ export function PatternView() {
                       <button
                         key={stepIdx}
                         onClick={() => toggleStep(trackIdx, stepIdx)}
-                        className={`h-7 rounded-sm transition-colors ${isBeatStart ? 'ml-1' : ''} ${
+                        className={`h-7 rounded-[calc(var(--app-radius-sm)/3)] transition-colors ${isBeatStart ? 'ml-1' : ''} ${
                           step.active
                             ? 'bg-app-accent hover:bg-app-accent-hover'
                             : 'bg-app-surface-hover hover:bg-app-surface-hover'

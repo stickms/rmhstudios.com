@@ -68,7 +68,7 @@ export function FaderControl({
         // names and dB readouts for it to sweep across. (globals.css §Selection;
         // its sibling `KnobControl` says the same thing.)
         data-gesture=""
-        className="relative cursor-ns-resize rounded-sm bg-app-bg-subtle"
+        className="relative cursor-ns-resize rounded-[calc(var(--app-radius-sm)/3)] bg-app-bg-subtle"
         style={{ width, height }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -94,7 +94,7 @@ export function FaderControl({
 
         {/* Thumb */}
         <div
-          className="absolute left-0 right-0 rounded-sm border border-app-border-bright"
+          className="absolute left-0 right-0 rounded-[calc(var(--app-radius-sm)/3)] border border-app-border-bright"
           style={{
             top: thumbY,
             height: thumbHeight,

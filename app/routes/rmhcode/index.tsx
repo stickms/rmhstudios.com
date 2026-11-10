@@ -15,6 +15,7 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
+import { delayed } from '@/lib/motion';
 
 const TokenGenerator = lazy(() => import('@/components/rmhcode/TokenGenerator'));
 
@@ -138,7 +139,7 @@ function RmhCodePage() {
           </motion.div>
 
           {/* Install Section */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="max-w-2xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={delayed(0.1)} className="max-w-2xl mx-auto">
             <div className="glass-fill rounded-site p-6">
               <h2 className="text-lg font-semibold text-site-text mb-2 flex items-center gap-2">
                 <Terminal className="w-5 h-5 text-site-accent" />
@@ -160,7 +161,7 @@ function RmhCodePage() {
               />
               {installTab === 'mac' && (
                 <div className="space-y-3">
-                  <p className="text-xs text-site-text-dim font-medium uppercase tracking-wide">{t("one-liner-recommended", { defaultValue: "One-liner (recommended)" })}</p>
+                  <p className="text-xs text-site-text-dim font-medium">{t("one-liner-recommended", { defaultValue: "One-liner (recommended)" })}</p>
                   <CodeBlock code={INSTALL_COMMAND_MAC} />
                   <p className="text-xs text-site-text-dim">{t("install-note-uninstall", { defaultValue: "Note: may require an uninstall before reinstalling for updates." })}</p>
                   <button onClick={() => setShowManualMac(!showManualMac)} className="flex items-center gap-1.5 text-sm text-site-text-muted hover:text-site-text transition-colors">
@@ -173,14 +174,14 @@ function RmhCodePage() {
               {installTab === 'windows' && (
                 <div className="space-y-4">
                   <div>
-                    <p className="text-xs text-site-text-dim font-medium uppercase tracking-wide mb-2">{t("option-1-installer", { defaultValue: "Option 1: Installer (.exe)" })}</p>
+                    <p className="text-xs text-site-text-dim font-medium mb-2">{t("option-1-installer", { defaultValue: "Option 1: Installer (.exe)" })}</p>
                     <a href={RELEASES_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 rounded-site-sm bg-site-accent-dim border border-site-border text-site-accent text-sm font-medium hover:bg-site-accent-dim transition-colors">
                       <Download className="w-4 h-4" /> {t("download-from-github", { defaultValue: "Download from GitHub Releases" })}
                     </a>
                     <p className="text-xs text-site-text-dim mt-1.5">{t("download-latest", { defaultValue: "Download the latest" })} <code className="text-site-accent">rmhcode-*-setup-x64.exe</code></p>
                   </div>
                   <div>
-                    <p className="text-xs text-site-text-dim font-medium uppercase tracking-wide mb-2">{t("option-2-powershell", { defaultValue: "Option 2: PowerShell one-liner" })}</p>
+                    <p className="text-xs text-site-text-dim font-medium mb-2">{t("option-2-powershell", { defaultValue: "Option 2: PowerShell one-liner" })}</p>
                     <CodeBlock code={INSTALL_COMMAND_PS} />
                   </div>
                   <div>
@@ -351,8 +352,8 @@ function RmhCodePage() {
           <div className="glass-fill rounded-site p-6">
             <h2 className="text-lg font-semibold text-site-text mb-4 flex items-center gap-2"><Trash2 className="w-5 h-5 text-site-text-muted" />{t("uninstall-heading", { defaultValue: "Uninstall" })}</h2>
             <div className="space-y-4">
-              <div><p className="text-xs text-site-text-dim font-medium uppercase tracking-wide mb-2">{t("tab-mac-linux", { defaultValue: "macOS / Linux" })}</p><CodeBlock code={UNINSTALL_MAC} /></div>
-              <div><p className="text-xs text-site-text-dim font-medium uppercase tracking-wide mb-2">{t("uninstall-windows-label", { defaultValue: "Windows (PowerShell install)" })}</p><CodeBlock code={UNINSTALL_WIN} /></div>
+              <div><p className="text-xs text-site-text-dim font-medium mb-2">{t("tab-mac-linux", { defaultValue: "macOS / Linux" })}</p><CodeBlock code={UNINSTALL_MAC} /></div>
+              <div><p className="text-xs text-site-text-dim font-medium mb-2">{t("uninstall-windows-label", { defaultValue: "Windows (PowerShell install)" })}</p><CodeBlock code={UNINSTALL_WIN} /></div>
               <p className="text-xs text-site-text-dim">{t("uninstall-windows-installer", { defaultValue: "Windows installer: Use Add/Remove Programs or run the uninstaller from the Start Menu." })}</p>
             </div>
           </div>

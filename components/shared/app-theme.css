@@ -92,7 +92,7 @@
   --app-duration-fast: 120ms;
   --app-duration: 160ms;
   --app-duration-slow: 220ms;
-  --app-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --app-ease: var(--ease-morph);
 
   /* Density — `.app-compact` / `.app-spacious` shift these */
   --app-density-gap: 0.5rem;
@@ -848,24 +848,6 @@
   animation: app-skeleton-pulse 1.5s ease-in-out infinite;
 }
 
-.app-skeleton-text {
-  height: 0.875rem;
-  margin-bottom: 0.375rem;
-  border-radius: 4px;
-}
-
-.app-skeleton-avatar {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 9999px;
-  corner-shape: round;
-}
-
-.app-skeleton-thumbnail {
-  width: 4rem;
-  height: 2.25rem;
-  border-radius: 4px;
-}
 
 /* ══════════════════════════════════════════════════════════════════════════
    8. Layout helpers
@@ -927,11 +909,13 @@
   }
 }
 
-/* Print — apps aren't print targets, but a stray Ctrl+P shouldn't burn ink. */
+/* Print — apps aren't print targets, but a stray Ctrl+P shouldn't burn ink. The app drops its own ground and ink
+   and takes the page's print ink (white paper, black text: the print block in app/globals/loader-print-access.css,
+   which every sheet that loads this one also loads). */
 @media print {
   .app-theme {
-    background: #ffffff;
-    color: #000000;
+    background: none;
+    color: inherit;
   }
 
   .app-theme .app-glass {
