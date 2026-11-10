@@ -6,6 +6,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from'@/components/ui
 import { Button } from'@/components/ui/button';
 import { Input } from'@/components/ui/input';
 import { Spinner } from'@/components/ui/spinner';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+ addPlaylistItemApi,
+ createPlaylistApi,
+ listPlaylistsApi,
+} from '@/lib/playlists/playlists.contract';
 
 export interface PlaylistItemInput {
  externalId: string;
@@ -49,8 +56,7 @@ export function AddToPlaylistDialog({
  if (!open) return;
  setAddedId(null);
  setLoading(true);
- fetch('/api/playlists?kind=video', { credentials:'include'})
- .then((r) => (r.ok ? r.json() : { playlists: [] }))
+ api(listPlaylistsApi)
  .then((d) => setPlaylists(d.playlists ?? []))
  .catch(() => setPlaylists([]))
  .finally(() => setLoading(false));
@@ -60,17 +66,7 @@ export function AddToPlaylistDialog({
  if (!item) return;
  setBusyId(playlistId);
  try {
- const res = await fetch(`/api/playlists/${playlistId}/items`, {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify(item),
- });
- const data = await res.json().catch(() => ({}));
- if (!res.ok) {
- toast.error(data.error ?? t('playlist-add-failed', { defaultValue:'Could not add.'}));
- return;
- }
+ const data = await api(addPlaylistItemApi, { params: { id: playlistId }, body: item });
  setAddedId(playlistId);
  setPlaylists((ps) => ps.map((p) => (p.id === playlistId ? { ...p, itemCount: p.itemCount + (data.duplicate ? 0 : 1) } : p)));
  toast.success(
@@ -78,8 +74,8 @@ export function AddToPlaylistDialog({
  ? t('playlist-already', { defaultValue:'Already in that playlist.'})
  : t('playlist-added', { defaultValue:'Added to playlist.'}),
  );
- } catch {
- toast.error(t('playlist-add-failed', { defaultValue:'Could not add.'}));
+ } catch (err) {
+ toast.error(serverError(err) ?? t('playlist-add-failed', { defaultValue:'Could not add.'}));
  } finally {
  setBusyId(null);
  }
@@ -90,20 +86,12 @@ export function AddToPlaylistDialog({
  if (!name || !item) return;
  setCreating(true);
  try {
- const res = await fetch('/api/playlists', {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ name, kind:'video'}),
- });
- const data = await res.json().catch(() => ({}));
- if (!res.ok || !data.id) {
- toast.error(data.error ?? t('playlist-create-failed', { defaultValue:'Could not create playlist.'}));
- return;
- }
+ const data = await api(createPlaylistApi, { body: { name, kind:'video'} });
  setNewName('');
  setPlaylists((ps) => [{ id: data.id, name, itemCount: 0 }, ...ps]);
  await add(data.id);
+ } catch (err) {
+ toast.error(serverError(err) ?? t('playlist-create-failed', { defaultValue:'Could not create playlist.'}));
  } finally {
  setCreating(false);
  }
