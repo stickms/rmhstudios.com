@@ -1,8 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { rsvp, unrsvp, EventError } from '@/lib/events.server';
 
 const rsvpSchema = z.object({
@@ -36,35 +34,29 @@ function mapEventError(err: EventError): [string, number] {
 export const Route = createFileRoute('/api/events/$id/rsvp')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const { allowed } = rateLimit(getClientIp(request), {
-            limit: 30,
-            windowMs: 60_000,
-            prefix: 'event-rsvp',
-          });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
-          const parsed = rsvpSchema.safeParse(await request.json().catch(() => ({})));
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-          const result = await rsvp(params.id, session.user.id, parsed.data.status, {
-            everyTime: parsed.data.everyTime,
-            occurrenceAt: parsed.data.occurrenceAt,
-          });
-          return Response.json(result);
-        } catch (error) {
-          if (error instanceof EventError) {
-            const [message, status] = mapEventError(error);
-            return Response.json({ error: message }, { status });
+      POST: defineHandler(
+        {
+          rateLimit: { limit: 30, windowMs: 60_000, prefix: 'event-rsvp' },
+          body: rsvpSchema,
+          allowEmptyBody: true,
+          invalid: () => Response.json({ error: 'Invalid input' }, { status: 400 }),
+        },
+        async ({ params, session, body }) => {
+          try {
+            const result = await rsvp(params.id, session.user.id, body.status, {
+              everyTime: body.everyTime,
+              occurrenceAt: body.occurrenceAt,
+            });
+            return Response.json(result);
+          } catch (error) {
+            if (error instanceof EventError) {
+              const [message, status] = mapEventError(error);
+              return Response.json({ error: message }, { status });
+            }
+            throw error;
           }
-          console.error('RSVP error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
 
       DELETE: defineHandler(
         {

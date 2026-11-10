@@ -12,6 +12,8 @@ import {
   type ReadAcc,
   type ReadSummary,
 } from '@features/gabriels-horn/engine/table-read';
+import { api } from '@/lib/contract/client';
+import { getTableReadApi } from '@features/gabriels-horn/engine/gabriels-horn.contract';
 import { Panel } from './ui';
 
 type Career = (ReadAcc & { games: number }) | null;
@@ -34,9 +36,8 @@ export function TableReadPanel({
   useEffect(() => {
     const ctl = new AbortController();
     const timer = setTimeout(() => {
-      fetch('/api/gabriels-horn/table-read', { signal: ctl.signal })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((body: { career: Career } | null) => setCareer(body?.career ?? null))
+      api(getTableReadApi, { signal: ctl.signal })
+        .then((body) => setCareer((body.career as Career) ?? null))
         .catch(() => undefined);
     }, 1500);
     return () => {

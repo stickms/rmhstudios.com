@@ -24,6 +24,9 @@ import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { games } from '@/lib/catalog';
 import { APPLE_SPRING } from '@/lib/motion';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { claimArcadeChallengeApi, getArcadeStateApi } from '@/lib/arcade/arcade.contract';
 import type { ArcadeState, ArcadeChallengeView } from '@/lib/quests/arcade';
 
 /** Milliseconds until the next UTC midnight (when challenges rotate). */
@@ -66,9 +69,7 @@ export function ArcadeHub({
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch('/api/arcade/', { credentials: 'include' });
-      if (!res.ok) return;
-      setState((await res.json()) as ArcadeState);
+      setState(await api(getArcadeStateApi));
     } catch {
       /* best-effort refresh */
     }
@@ -84,20 +85,12 @@ export function ArcadeHub({
   async function claim(challengeId: string) {
     setClaiming(challengeId);
     try {
-      const res = await fetch('/api/arcade/claim', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ challengeId }),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        xp?: number;
-        coins?: number;
-      };
-      if (!res.ok) {
+      let data: { xp?: number; coins?: number };
+      try {
+        data = await api(claimArcadeChallengeApi, { body: { challengeId } });
+      } catch (e) {
         toast.error(
-          data.error ?? t('arcade-claim-failed', { defaultValue: 'Could not claim reward' }),
+          serverError(e) ?? t('arcade-claim-failed', { defaultValue: 'Could not claim reward' }),
         );
         return;
       }

@@ -8,6 +8,8 @@ import { useTranslation } from'react-i18next';
 import { PinnedHero } from'@/components/feed/PinnedHero';
 import { Reveal, RevealGroup, RevealItem } from'@/components/motion';
 import { LIFT_CARD } from'@/components/feed/motionHelpers';
+import { api } from'@/lib/contract/client';
+import { getRecapApi } from'@/lib/wrapped/wrapped.contract';
 
 interface Recap {
  posts: number;
@@ -44,9 +46,9 @@ export function RecapColumn({
  useEffect(() => {
  if (seeded.current) return;
  let active = true;
- fetch('/api/recap', { credentials:'include'})
- .then((r) => (r.ok ? r.json() : null))
+ api(getRecapApi)
  .then((d) => active && setRecap(d))
+ .catch(() => {})
  .finally(() => active && setLoading(false));
  return () => {
  active = false;

@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { api } from '@/lib/contract/client';
+import { startBasketApi, startDailyRunApi } from '@/lib/arcade/arcade.contract';
 import { findModifier, isSeededGame, seedKeyOf, type SeededGameId } from '@/lib/arcade/seeded';
 
 export interface RunPlan {
@@ -82,47 +84,31 @@ export async function planRun(gameId: string, currentVariant: string): Promise<R
     pending = null; // one-shot: "Play again" afterwards is a free run
     if (gameId === 'laundry-sort') {
       try {
-        const res = await fetch('/api/arcade/basket/start', { method: 'POST' });
-        if (res.ok) {
-          const d = (await res.json()) as {
-            counted: boolean;
-            basket: { day: string; seed: number; options: Record<string, string | number> };
-          };
-          plan = {
-            kind: 'basket',
-            gameId,
-            seed: d.basket.seed,
-            variant: d.basket.day,
-            options: d.basket.options,
-            counted: d.counted,
-          };
-        }
+        const d = await api(startBasketApi);
+        plan = {
+          kind: 'basket',
+          gameId,
+          seed: d.basket.seed,
+          variant: d.basket.day,
+          options: d.basket.options,
+          counted: d.counted,
+        };
       } catch {
         /* falls through to a free run */
       }
     }
   } else if (p?.kind === 'daily') {
     try {
-      const res = await fetch('/api/arcade/daily/start', { method: 'POST' });
-      if (res.ok) {
-        const d = (await res.json()) as {
-          counted: boolean;
-          mutator: {
-            gameId: string;
-            seed: number;
-            modifier: { id: string; options: Record<string, string | number> };
-          };
+      const d = await api(startDailyRunApi);
+      if (d.mutator.gameId === gameId) {
+        plan = {
+          kind: 'daily',
+          gameId,
+          seed: d.mutator.seed,
+          variant: d.mutator.modifier.id,
+          options: d.mutator.modifier.options,
+          counted: d.counted,
         };
-        if (d.mutator.gameId === gameId) {
-          plan = {
-            kind: 'daily',
-            gameId,
-            seed: d.mutator.seed,
-            variant: d.mutator.modifier.id,
-            options: d.mutator.modifier.options,
-            counted: d.counted,
-          };
-        }
       }
     } catch {
       /* falls through to a free run */

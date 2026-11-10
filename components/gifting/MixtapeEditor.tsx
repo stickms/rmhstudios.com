@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { apiJson } from '@/components/economy-plus/api';
+import { api } from '@/lib/contract/client';
+import { searchSpotifyApi } from '@/lib/spotify.contract';
 import { MIXTAPE_MAX_TRACKS, type MixtapeTrack } from '@/lib/gifting/exchange';
 
 interface SearchHit {
@@ -34,14 +36,9 @@ export default function MixtapeEditor({
   async function search() {
     if (!q.trim()) return;
     setSearching(true);
-    const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(q.trim())}`).catch(
-      () => null,
-    );
-    const data = res?.ok
-      ? ((await res.json()) as { tracks?: SearchHit[]; configured?: boolean })
-      : null;
+    const data = await api(searchSpotifyApi, { query: { q: q.trim() } }).catch(() => null);
     setSearching(false);
-    if (!data || data.configured === false) {
+    if (!data) {
       toast.error(
         t('mixtape-search-off', { defaultValue: 'Track search is not available right now' }),
       );

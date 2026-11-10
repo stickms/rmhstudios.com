@@ -17,15 +17,17 @@
  * ## Rollout posture: lenient by default
  *
  * A client that sends NO version is allowed through. That is not timidity, it
- * is correctness — most of this hub's clients are bare `io()` calls
- * (`features/casino/engine/holdem/socket.ts`, `features/altair/engine/multiplayer/socket.ts`, and a dozen
- * more) that have never sent a handshake field in their lives, and every tab
- * open at the moment this first deploys is one of them. Rejecting "absent"
- * would take every game on the site down at the instant the guard shipped, to
- * fix a bug that only bites across a shape change.
+ * is correctness. Every tab that loaded its bundle before the game clients moved
+ * onto `createRealtimeClient` never sends a handshake field, and the Lights Out
+ * Discord Activity (`components/lights-out/LightsOutDiscordActivity.tsx`) still
+ * opens a bare `io()` (it races the socket against HTTP polling behind Discord's
+ * proxy). Rejecting "absent" would drop those players, to fix a bug that only
+ * bites across a shape change.
  *
  * So: absent ⇒ allowed, different ⇒ rejected. Set SOCKET_PROTOCOL_STRICT=1 to
- * also reject absent, once `createRealtimeClient` is the only way in.
+ * also reject absent once the Lights Out Activity is on the wrapper and the
+ * `protocol_absent` line has gone quiet (`lib/__tests__/bare-socket-io-ratchet.test.ts`
+ * keeps every other client on it).
  */
 
 import {

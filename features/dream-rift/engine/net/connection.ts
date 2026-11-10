@@ -8,13 +8,14 @@
  */
 
 import { singleFlight } from '@/lib/shared/realtime/single-flight';
-import { io, type Socket } from 'socket.io-client';
-import { ensureTrailingSlash } from '@/lib/url';
+import type { Socket } from 'socket.io-client';
+import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
+import type { RealtimeStatus } from '@/lib/shared/realtime/types';
 import { authClient } from '@/lib/auth-client';
-import { useDreamRift } from '../store';
+import { useDreamRift, type ConnectionState } from '../store';
 import { C2S, S2C, type DrDifficulty, type JoinedPayload, type DrPlayerId, type LobbySnapshot, type PublicLobbyInfo, type RelayMsg, type StartPayload } from './events';
 
-let socket: Socket | null = null;
+let client: RealtimeClient | null = null;
 let relayHandler: ((msg: RelayMsg) => void) | null = null;
 let startHandler: ((p: StartPayload) => void) | null = null;
 let peerLeftHandler: ((slot: number) => void) | null = null;
@@ -42,50 +43,60 @@ export function setStartHandler(fn: ((p: StartPayload) => void) | null): void {
 }
 
 export function getSocket(): Socket | null {
-    return socket;
+    return client?.socket ?? null;
+}
+
+/** The shared client's six states, folded onto the four the Dream Rift store knows. */
+function toConnectionState(status: RealtimeStatus): ConnectionState {
+    if (status === 'connected' || status === 'error') return status;
+    // A dropped transport that is being retried is `connecting` again, not idle.
+    return status === 'connecting' || status === 'reconnecting' ? 'connecting' : 'idle';
+}
+
+/** Lobby intents are queued across a blip; positional relay traffic is not (see `sendRelay`). */
+function emit(event: string, data: unknown, queue = true): void {
+    client?.emit(event, data, { queue });
 }
 
 async function connectDreamRiftInner(): Promise<Socket> {
-    if (socket?.connected) return socket;
-    if (socket) {
-        socket.removeAllListeners();
-        socket.disconnect();
-        socket = null;
-    }
-    const store = useDreamRift.getState();
-    store.setConnection('connecting');
-
-    let token: string | undefined;
-    try {
-        const session = await authClient.getSession();
-        token = session?.data?.session?.token;
-    } catch {
-        token = undefined;
+    if (client) {
+        // An existing client re-joins on connect; a second call only nudges a stalled one.
+        client.reconnectNow();
+        return client.socket;
     }
 
-    const serverUrl = ensureTrailingSlash(import.meta.env.VITE_SOCKET_URL);
-    socket = io(serverUrl, {
+    client = createRealtimeClient({
+        name: 'DreamRift',
+        url: import.meta.env.VITE_SOCKET_URL,
         path: '/socket/',
-        forceNew: true,
-        auth: token ? { token } : {},
-        reconnection: true,
-        reconnectionAttempts: 6,
-        reconnectionDelay: 1000,
+        // Guests can play multiplayer (the hub soft-authenticates), so a missing
+        // or unreadable session is an anonymous handshake, not a failure.
+        auth: async () => {
+            try {
+                const session = await authClient.getSession();
+                const token = session?.data?.session?.token;
+                return token ? { token } : {};
+            } catch {
+                return {};
+            }
+        },
+        onStatus: (status) => useDreamRift.getState().setConnection(toConnectionState(status)),
+        onConnect: (socket) => {
+            // A transport that dropped and came back is a NEW socket id: ask the server
+            // to rebind our held seat to it (it keeps the seat for the shared grace window).
+            if (resumeCreds) {
+                resumePending = true;
+                socket.emit(C2S.RESUME, resumeCreds);
+            }
+        },
+        bind: bindHandlers,
     });
 
-    const s = socket;
-    s.on('connect', () => {
-        useDreamRift.getState().setConnection('connected');
-        // A transport that dropped and came back is a NEW socket id: ask the server
-        // to rebind our held seat to it (it keeps the seat for the shared grace window).
-        if (resumeCreds) {
-            resumePending = true;
-            s.emit(C2S.RESUME, resumeCreds);
-        }
-    });
-    s.on('disconnect', () => useDreamRift.getState().setConnection('idle'));
+    return client.socket;
+}
+
+function bindHandlers(s: Socket): void {
     s.on('connect_error', () => {
-        useDreamRift.getState().setConnection('error');
         useDreamRift.getState().setError('Could not reach the multiplayer server.');
     });
 
@@ -125,16 +136,11 @@ async function connectDreamRiftInner(): Promise<Socket> {
     });
     s.on(S2C.START, (p: StartPayload) => startHandler?.(p));
     s.on(S2C.RELAY, (msg: RelayMsg) => relayHandler?.(msg));
-
-    return s;
 }
 
 export function disconnectDreamRift(): void {
-    if (socket) {
-        socket.removeAllListeners();
-        socket.disconnect();
-        socket = null;
-    }
+    client?.destroy();
+    client = null;
     relayHandler = null;
     startHandler = null;
     peerLeftHandler = null;
@@ -147,39 +153,39 @@ export function disconnectDreamRift(): void {
 // ── lobby actions ──
 
 export function createLobby(opts: { name?: string; isPublic: boolean; difficulty: DrDifficulty }): void {
-    socket?.emit(C2S.CREATE, opts);
+    emit(C2S.CREATE, opts);
 }
 export function joinLobby(code: string): void {
-    socket?.emit(C2S.JOIN, { code: code.toUpperCase() });
+    emit(C2S.JOIN, { code: code.toUpperCase() });
 }
 export function quickplay(): void {
-    socket?.emit(C2S.QUICKPLAY, {});
+    emit(C2S.QUICKPLAY, {});
 }
 export function browseLobbies(): void {
-    socket?.emit(C2S.BROWSE, {});
+    emit(C2S.BROWSE, {});
 }
 export function leaveLobby(): void {
     resumeCreds = null;
-    socket?.emit(C2S.LEAVE, {});
+    emit(C2S.LEAVE, {});
     useDreamRift.getState().setLobby(null);
 }
 export function setLobbyChar(charId: DrPlayerId): void {
-    socket?.emit(C2S.SET_CHAR, { charId });
+    emit(C2S.SET_CHAR, { charId });
 }
 export function setLobbyReady(ready: boolean): void {
-    socket?.emit(C2S.READY, { ready });
+    emit(C2S.READY, { ready });
 }
 export function setLobbySettings(difficulty: DrDifficulty): void {
-    socket?.emit(C2S.SET_SETTINGS, { difficulty });
+    emit(C2S.SET_SETTINGS, { difficulty });
 }
 export function startLobby(): void {
-    socket?.emit(C2S.START, {});
+    emit(C2S.START, {});
 }
 export function kickPlayer(slot: number): void {
-    socket?.emit(C2S.KICK, { slot });
+    emit(C2S.KICK, { slot });
 }
 export function sendRelay(msg: RelayMsg): void {
-    socket?.emit(C2S.RELAY, msg);
+    emit(C2S.RELAY, msg, false);
 }
 
 /** Concurrent callers share one in-flight connect (see single-flight.ts). */

@@ -67,7 +67,7 @@ async function startMatch() {
 }
 
 // Simulate the network dying under the client without the client hanging up.
-const dropTransport = (c: NetworkClient) => (c as any).socket.io.engine.close();
+const dropTransport = (c: NetworkClient) => (c as any).client.socket.io.engine.close();
 
 describe('kowloon knockout: a dropped guest resumes the same match', () => {
   it('guest drop mid-match: reconnects, keeps seat, gets snapshots again, host never sees player_left', async () => {

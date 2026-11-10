@@ -11,6 +11,12 @@ import { CHARACTERS } from '@features/dream-rift/engine/render/sprites';
 import { saveHiScore } from '@features/dream-rift/engine/highscore';
 import { RunPanel } from '@/components/arcade/RunPanel';
 import { formatClockSeconds } from '@/lib/core/format';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import {
+    submitDreamRiftCoopApi,
+    submitDreamRiftScoreApi,
+} from '@features/dream-rift/engine/dream-rift.contract';
 
 export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () => void; onMenu: () => void; onLeaderboard: () => void }) {
     const result = useDreamRift((s) => s.result);
@@ -35,31 +41,27 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
         if (!result || scoreSubmittedFor.current === result || !session.data?.user) return;
         scoreSubmittedFor.current = result;
         setSubmitState('saving');
-        fetch('/api/dream-rift/score', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        api(submitDreamRiftScoreApi, {
+            body: {
                 score: Math.min(result.score, 10_000_000),
                 difficulty: result.difficulty,
                 stage: result.stageReached,
                 character: result.character,
                 graze: result.graze,
                 spellsCaptured: result.spellsCaptured,
-            }),
+            },
         })
-            .then(async (res) => {
-                const data = await res.json().catch(() => ({}));
-                if (res.ok) {
-                    setSubmitState('done');
-                    setSubmitMsg('High score saved to the leaderboard!');
-                } else {
-                    setSubmitState('error');
-                    setSubmitMsg(data.error || 'Could not save score.');
-                }
+            .then(() => {
+                setSubmitState('done');
+                setSubmitMsg('High score saved to the leaderboard!');
             })
-            .catch(() => {
+            .catch((e: unknown) => {
                 setSubmitState('error');
-                setSubmitMsg('Network error saving score.');
+                setSubmitMsg(
+                    e instanceof HttpError
+                        ? serverError(e) || 'Could not save score.'
+                        : 'Network error saving score.',
+                );
             });
     }, [result, session.data?.user]);
 
@@ -72,17 +74,15 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
         if (!result || coopSubmittedFor.current === result) return;
         if (result.playerCount < 2 || !result.isHost || !session.data?.user) return;
         coopSubmittedFor.current = result;
-        fetch('/api/dream-rift/coop', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        api(submitDreamRiftCoopApi, {
+            body: {
                 difficulty: result.difficulty,
                 combinedScore: Math.min(result.combinedScore, 40_000_000),
                 timeSurvived: result.timeSurvived,
                 stageReached: result.stageReached,
                 cleared: result.cleared,
                 players: result.perPlayer.map((p) => ({ name: p.name, charId: p.charId, score: p.score, userId: p.userId })),
-            }),
+            },
         }).catch(() => {
             /* best-effort; a failed co-op submit shouldn't disrupt the results screen */
         });

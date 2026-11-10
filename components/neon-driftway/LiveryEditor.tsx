@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Copy, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/contract/client';
+import { getLiveryApi, saveLiveryApi } from '@/lib/neon-driftway/neon-driftway.contract';
 import {
   Dialog,
   DialogContent,
@@ -29,12 +31,8 @@ import {
 
 async function saveRemote(l: Livery): Promise<boolean> {
   try {
-    const res = await fetch('/api/neon-driftway/livery', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: encodeLivery(l) }),
-    });
-    return res.ok;
+    await api(saveLiveryApi, { body: { code: encodeLivery(l) } });
+    return true;
   } catch {
     return false;
   }
@@ -59,9 +57,8 @@ export function LiveryEditorButton() {
   useEffect(() => {
     if (!session.data) return;
     let cancelled = false;
-    fetch('/api/neon-driftway/livery')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { code: string | null } | null) => {
+    api(getLiveryApi)
+      .then((data) => {
         const remote = data?.code ? decodeLivery(data.code) : null;
         if (remote && !cancelled) {
           setLivery(remote);

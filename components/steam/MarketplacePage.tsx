@@ -4,7 +4,10 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { RARITY_COLORS } from '@/lib/shop/catalog';
-import type { MarketListingView } from '@/components/market/ListingCard';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { buyListingApi } from '@/lib/market/market.contract';
+import type { MarketListingView } from '@/lib/market/market.contract';
 import { PersonAvatar } from './SteamPeople';
 import { Swatch } from './ShopPage';
 import { StoreNav } from './StoreNav';
@@ -25,19 +28,15 @@ export function MarketplacePage({
   const buy = async (l: MarketListingView, name: string) => {
     setBusy(l.id);
     try {
-      const res = await fetch(`/api/market/listings/${l.id}/buy`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const body = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
-      if (res.status === 202) {
+      const body = await api(buyListingApi, { params: { id: l.id } });
+      if (body.status === 'HELD') {
         toast.info(body.message ?? t('steam-marketplace-held', { defaultValue: 'This listing is under review.' }));
-      } else if (res.ok) {
+      } else {
         toast.success(t('steam-marketplace-bought', { defaultValue: 'Bought {{name}}', name }));
         setListings((prev) => prev.filter((x) => x.id !== l.id));
-      } else {
-        toast.error(body.error ?? t('steam-shop-failed', { defaultValue: 'That purchase did not go through.' }));
       }
+    } catch (e) {
+      toast.error(serverError(e) ?? t('steam-shop-failed', { defaultValue: 'That purchase did not go through.' }));
     } finally {
       setBusy(null);
     }

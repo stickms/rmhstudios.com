@@ -1,8 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { httpUrl } from '@/lib/url-schema';
 import { createEvent, listEvents, EventError, type EventScope } from '@/lib/events.server';
 import { eventRecurrenceSchema } from '@/lib/calendar/schema';
@@ -79,48 +77,38 @@ export const Route = createFileRoute('/api/events/')({
         return Response.json({ events });
       }),
 
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const { allowed } = rateLimit(getClientIp(request), {
-            limit: 10,
-            windowMs: 60_000,
-            prefix: 'event-create',
-          });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
-          const parsed = createSchema.safeParse(await request.json().catch(() => ({})));
-          if (!parsed.success) {
-            return Response.json(
-              { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-              { status: 400 },
-            );
+      POST: defineHandler(
+        {
+          rateLimit: { limit: 10, windowMs: 60_000, prefix: 'event-create' },
+          body: createSchema,
+          allowEmptyBody: true,
+          invalid: (error) =>
+            Response.json({ error: error.issues[0]?.message ?? 'Invalid input' }, { status: 400 }),
+        },
+        async ({ session, body }) => {
+          try {
+            const event = await createEvent({
+              hostId: session.user.id,
+              communityId: body.communityId ?? null,
+              title: body.title,
+              description: body.description,
+              startsAt: body.startsAt,
+              endsAt: body.endsAt ?? null,
+              venueKind: body.venueKind,
+              venueRef: body.venueRef ?? null,
+              capacity: body.capacity ?? null,
+              recurrence: body.recurrence ?? null,
+            });
+            return Response.json({ event }, { status: 201 });
+          } catch (error) {
+            if (error instanceof EventError) {
+              const [message, status] = mapEventError(error);
+              return Response.json({ error: message }, { status });
+            }
+            throw error;
           }
-
-          const event = await createEvent({
-            hostId: session.user.id,
-            communityId: parsed.data.communityId ?? null,
-            title: parsed.data.title,
-            description: parsed.data.description,
-            startsAt: parsed.data.startsAt,
-            endsAt: parsed.data.endsAt ?? null,
-            venueKind: parsed.data.venueKind,
-            venueRef: parsed.data.venueRef ?? null,
-            capacity: parsed.data.capacity ?? null,
-            recurrence: parsed.data.recurrence ?? null,
-          });
-          return Response.json({ event }, { status: 201 });
-        } catch (error) {
-          if (error instanceof EventError) {
-            const [message, status] = mapEventError(error);
-            return Response.json({ error: message }, { status });
-          }
-          console.error('Create event error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });
