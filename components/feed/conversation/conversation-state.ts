@@ -269,7 +269,7 @@ export function formatTime(dateStr: string): string {
 export function dateSeparatorKind(
   dateStr: string,
   now: Date = new Date(),
-): { kind: 'today' | 'yesterday' } | { kind: 'date'; text: string } {
+): { kind: 'today' } | { kind: 'yesterday' } | { kind: 'date'; text: string } {
   const d = new Date(dateStr);
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
