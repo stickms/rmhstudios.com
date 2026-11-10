@@ -1122,7 +1122,7 @@
      portals. In place this was measured inside `.radial-frame`'s stacking
      context (pinned at 1), so 120 bought nothing and the shell's chrome painted
      over the scrim. At <body> the ordinary dialog band is correct. */
-  z-index: 50;
+  z-index: var(--z-dialog);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1709,7 +1709,7 @@
    corner by construction. */
 .lib-ctx {
   position: fixed;
-  z-index: 1000;
+  z-index: var(--z-context-menu);
   min-width: 196px;
   max-width: 260px;
   padding: 6px;
