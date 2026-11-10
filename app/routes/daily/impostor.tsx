@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
 
@@ -20,5 +21,9 @@ function ImpostorPage() {
 }
 
 export const Route = createFileRoute('/daily/impostor')({
+  head: () => ({
+    meta: buildMeta({ title: 'Impostor | Daily Puzzles | RMH Studios', description: "Find the impostor in today's daily deduction puzzle.", path: '/daily/impostor' }),
+    links: [buildCanonical('/daily/impostor')],
+  }),
     component: ImpostorPage,
 })

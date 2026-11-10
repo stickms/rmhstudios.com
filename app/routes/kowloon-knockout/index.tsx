@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { gameRouteHead } from '@/lib/seo-catalog';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
 
@@ -27,5 +28,6 @@ function KowloonKnockoutPage() {
 }
 
 export const Route = createFileRoute('/kowloon-knockout/')({
+  head: () => gameRouteHead('kowloon-knockout'),
   component: KowloonKnockoutPage,
 })

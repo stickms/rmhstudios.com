@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached } from '@/lib/cached.server';
 import { games } from '@/lib/games';
 import { getGameAdapter } from '@/lib/game/adapters.server';
 import { renderBadge } from '@/lib/devplatform/badge';
@@ -57,11 +57,7 @@ export const Route = createFileRoute('/api/badge/$userId/$gameId')({
           const userKey = (params.userId ?? '').slice(0, 64);
           const gameId = (params.gameId ?? '').replace(/\.svg$/i, '').slice(0, 64);
           const key = `badge:${userKey}:${gameId}`;
-          let svg = apiCache.get<string>(key);
-          if (!svg) {
-            svg = await buildSvg(userKey, gameId);
-            apiCache.set(key, svg, TTL_MS);
-          }
+          const svg = await cached(key, TTL_MS, () => buildSvg(userKey, gameId));
           return new Response(svg, { headers: { 'Content-Type': 'image/svg+xml; charset=utf-8' } });
         },
       ),

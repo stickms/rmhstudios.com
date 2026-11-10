@@ -469,7 +469,7 @@ export interface HandlerOptions<
    * micro-cache (`response-cache.server.ts`, up to 30 s, keyed by URL only). Required
    * when the route's data has a write path that clears an in-process cache or flips
    * visibility (private wishlist, admin config edit): the micro-cache cannot see
-   * `apiCache.invalidate*`, so it would keep serving the pre-write body.
+   * `invalidateCached*`, so it would keep serving the pre-write body.
    */
   microCache?: boolean;
 }

@@ -4,7 +4,7 @@
 
 # Realtime hubs (gateway/gamehub/rmhmusic/rmhtube/rmhbox) were removed in the
 # rewrite (design §5.2) — the Node hubs are the production realtime tier.
-SERVICES := recap doctrine-worker vibe-worker discord-bot
+SERVICES := vibe-worker discord-bot
 IMAGE_PREFIX ?= rmhstudios-go
 GO_IMAGE := golang:1.27.1-alpine
 MODCACHE := rmhgo-modcache

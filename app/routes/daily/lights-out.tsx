@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
 
@@ -20,5 +21,9 @@ function LightsOutPage() {
 }
 
 export const Route = createFileRoute('/daily/lights-out')({
+  head: () => ({
+    meta: buildMeta({ title: 'Lights Out | Daily Puzzles | RMH Studios', description: "Switch every light off in today's daily Lights Out puzzle.", path: '/daily/lights-out' }),
+    links: [buildCanonical('/daily/lights-out')],
+  }),
     component: LightsOutPage,
 })

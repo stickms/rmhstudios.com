@@ -13,8 +13,8 @@ import { chartReviews, hasClearedChart } from '@/lib/slice-it/library.server';
  * whether the notes represent the music, `fun` asks whether playing them is any
  * good. A single number collapses those into something nobody can act on.
  *
- * `SongRating` is NOT revived here — the schema marks it dead with a standing
- * "do not add writers" instruction, and this is a different model anyway.
+ * The old per-song `SongRating` was dead and has been dropped; this is a
+ * different model.
  */
 const BodyZ = z.object({
   fit: z.number().int().min(1).max(5),

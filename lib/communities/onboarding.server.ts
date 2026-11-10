@@ -7,7 +7,7 @@
  * flairs the member will follow, which the community feed then prioritises.
  */
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import { listFlairs } from '@/lib/communities/flairs.server';
 import {
   ONBOARDING_MAX_QUESTIONS,
@@ -51,20 +51,24 @@ function parseOptions(raw: unknown): OnboardingOptionDTO[] {
 export async function getOnboardingQuestions(
   communityId: string,
 ): Promise<OnboardingQuestionDTO[]> {
-  const hit = apiCache.get<OnboardingQuestionDTO[]>(key(communityId));
-  if (hit) return hit;
-  const rows = await prisma.communityOnboardingQuestion.findMany({
-    where: { communityId },
-    orderBy: { position: 'asc' },
-    take: ONBOARDING_MAX_QUESTIONS,
-  });
-  const questions = rows.map((r) => ({
-    id: r.id,
-    prompt: r.prompt,
-    options: parseOptions(r.options),
-  }));
-  apiCache.set(key(communityId), questions, TTL_MS);
-  return questions;
+  return cached(
+    key(communityId),
+    TTL_MS,
+    async () => {
+      const rows = await prisma.communityOnboardingQuestion.findMany({
+        where: { communityId },
+        orderBy: { position: 'asc' },
+        take: ONBOARDING_MAX_QUESTIONS,
+      });
+      const questions = rows.map((r) => ({
+        id: r.id,
+        prompt: r.prompt,
+        options: parseOptions(r.options),
+      }));
+      return questions;
+    },
+    { l2: false },
+  );
 }
 
 /** Replace the whole question set (mods). Existing answers go with their questions. */
@@ -91,7 +95,7 @@ export async function setOnboardingQuestions(
       }),
     ),
   ]);
-  apiCache.invalidate(key(communityId));
+  void invalidateCached(key(communityId));
   return getOnboardingQuestions(communityId);
 }
 

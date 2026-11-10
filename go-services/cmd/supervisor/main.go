@@ -13,8 +13,6 @@ import (
 
 	"github.com/rmhstudios/rmh-go/internal/botworker"
 	"github.com/rmhstudios/rmh-go/internal/discordbot"
-	"github.com/rmhstudios/rmh-go/internal/doctrine"
-	"github.com/rmhstudios/rmh-go/internal/recap"
 	"github.com/rmhstudios/rmh-go/internal/vibeworker"
 	"github.com/rmhstudios/rmh-go/pkg/config"
 	"github.com/rmhstudios/rmh-go/pkg/db"
@@ -41,11 +39,9 @@ func main() {
 	defer database.Close()
 
 	runs := map[string]worker.RunFunc{
-		"doctrine-worker": doctrine.Run,
-		"vibe-worker":     vibeworker.Run,
-		"recap":           recap.Run,
-		"discord-bot":     discordbot.Run,
-		"bot-worker":      botworker.Run,
+		"vibe-worker": vibeworker.Run,
+		"discord-bot": discordbot.Run,
+		"bot-worker":  botworker.Run,
 	}
 
 	// One metrics registry per worker so the merged /metrics keeps per-worker

@@ -13,12 +13,14 @@ import (
 	"github.com/rmhstudios/rmh-go/pkg/oncall"
 )
 
-// Go worker health for on-call. Once a minute the status service reads the
-// supervisor's /metrics (compose network) and turns it into watchdog alarms:
+// Worker health for on-call. Once a minute the status service reads the
+// supervisor's /metrics (compose network), the pg-boss job table (jobs that moved
+// to the Node `jobs` worker) and the daily-puzzle table, and turns them into
+// watchdog alarms:
 //
 //	A11 Sev2  a worker is down (rmh_worker_up 0 for 2m) or panicking (>=3 in 15m)
-//	A19 Sev2  tomorrow's daily puzzles don't exist after 00:15 UTC
-//	B06 Sev3  a job's last success is older than its limit (staleLimits)
+//	A19 Sev2  tomorrow's daily puzzles don't exist after 00:15 UTC (read from doctrine_puzzle)
+//	B06 Sev3  a job's last success is older than its limit (staleLimits; nodeJobLimits for Node jobs)
 //	B07 Sev3  the Discord gateway has been disconnected for 5m
 //
 // Alarms are debounced (fire after N bad checks, resolve after M good ones)
@@ -31,16 +33,23 @@ const WorkerCheckInterval = time.Minute
 
 const workerRefresh = 10 * time.Minute
 
-// staleLimits: jobs that run on a fixed cadence and record every run. Jobs not
-// listed (event-driven, weekly, or idle without config) are never "stale".
-var staleLimits = map[string]time.Duration{
-	"recap":            20 * time.Minute, // every 5m
-	"sahur_activation": 10 * time.Minute, // every 60s
-}
+// staleLimits: jobs that run on a fixed cadence in the Go supervisor and record
+// every run (rmh_job_last_success_timestamp_seconds). Jobs not listed
+// (event-driven, weekly, or idle without config) are never "stale". Empty since
+// recap and sahur_activation moved to the Node jobs worker (D3); see nodeJobLimits.
+var staleLimits = map[string]time.Duration{}
 
 // JobQueueStreak is the pg-boss queue of the Node streak-saver job
 // (lib/streak-reminders.server.ts STREAK_REMINDER_QUEUE).
 const JobQueueStreak = "streak.reminder-sweep"
+
+// pg-boss queues of the Node recap and Doctrine Sahur jobs
+// (lib/lights-out/recap.server.ts RECAP_QUEUE,
+// lib/doctrine/jobs.server.ts DOCTRINE_SAHUR_QUEUE).
+const (
+	JobQueueRecap = "lights-out.recap"
+	JobQueueSahur = "doctrine.sahur-activation"
+)
 
 // nodeJobLimits: jobs that moved from the Go supervisor to the Node `jobs`
 // worker (D3). They no longer appear in the supervisor's metrics, so freshness is
@@ -51,7 +60,9 @@ var nodeJobLimits = []struct {
 	job, queue string
 	limit      time.Duration
 }{
-	{"streak_sweep", JobQueueStreak, 3 * time.Hour}, // hourly
+	{"streak_sweep", JobQueueStreak, 3 * time.Hour},       // hourly
+	{"recap", JobQueueRecap, 20 * time.Minute},            // every 5m
+	{"sahur_activation", JobQueueSahur, 10 * time.Minute}, // every minute
 }
 
 // NodeJobQueues lists the queues JobLastSuccess should report on.
@@ -80,6 +91,23 @@ func evaluateNodeJobs(last map[string]time.Time, now time.Time) []workerConditio
 		})
 	}
 	return out
+}
+
+// evaluatePuzzles turns "the latest UTC day whose daily puzzles all exist" into
+// A19. readyFor is the zero time when no complete day exists at all. The Node job
+// makes tomorrow's puzzles at 00:00 UTC; the alarm waits until 00:15.
+func evaluatePuzzles(readyFor time.Time, now time.Time) workerCondition {
+	utc := now.UTC()
+	tomorrow := time.Date(utc.Year(), utc.Month(), utc.Day()+1, 0, 0, 0, 0, time.UTC)
+	afterRun := utc.Hour() > 0 || utc.Minute() >= 15
+	through := "no day"
+	if !readyFor.IsZero() {
+		through = readyFor.UTC().Format("2006-01-02")
+	}
+	return workerCondition{
+		alert:  oncall.Alert{ID: "A19", Sev: 2, Title: "Tomorrow's daily puzzles missing", Detail: fmt.Sprintf("Daily puzzles exist through %s, but not for %s. If today's midnight run doesn't make them, players get no puzzle tomorrow. The jobs worker (queue doctrine.daily-puzzles) makes tomorrow's at 00:00 UTC and at startup: check its logs, then restart the jobs container to rerun it.", through, tomorrow.Format("2006-01-02")), Source: "status"},
+		active: afterRun && readyFor.Before(tomorrow), forChecks: 2, clearCk: 1,
+	}
 }
 
 type promSample struct {
@@ -146,9 +174,11 @@ type workerWatch struct {
 	url string
 	// jobLastSuccess reads the last completed run per pg-boss queue; nil = unused.
 	jobLastSuccess func(ctx context.Context) (map[string]time.Time, error)
-	client         *oncall.Client
-	logger         Warner
-	http           *http.Client
+	// puzzlesReadyFor reads the latest day whose daily puzzles all exist; nil = A19 off.
+	puzzlesReadyFor func(ctx context.Context) (time.Time, error)
+	client          *oncall.Client
+	logger          Warner
+	http            *http.Client
 
 	tracks       map[string]*workerTrack
 	lastPanics   map[string]float64
@@ -156,12 +186,12 @@ type workerWatch struct {
 	gatewayEarUp bool // the gateway has been seen connected at least once
 }
 
-func newWorkerWatch(metricsURL string, client *oncall.Client, logger Warner, jobLastSuccess func(ctx context.Context) (map[string]time.Time, error)) *workerWatch {
-	if client == nil || (metricsURL == "" && jobLastSuccess == nil) {
+func newWorkerWatch(metricsURL string, client *oncall.Client, logger Warner, jobLastSuccess func(ctx context.Context) (map[string]time.Time, error), puzzlesReadyFor func(ctx context.Context) (time.Time, error)) *workerWatch {
+	if client == nil || (metricsURL == "" && jobLastSuccess == nil && puzzlesReadyFor == nil) {
 		return nil
 	}
 	return &workerWatch{
-		url: metricsURL, client: client, logger: logger, jobLastSuccess: jobLastSuccess,
+		url: metricsURL, client: client, logger: logger, jobLastSuccess: jobLastSuccess, puzzlesReadyFor: puzzlesReadyFor,
 		http:        &http.Client{Timeout: 5 * time.Second},
 		tracks:      map[string]*workerTrack{},
 		lastPanics:  map[string]float64{},
@@ -217,18 +247,6 @@ func (w *workerWatch) evaluate(samples []promSample, now time.Time) []workerCond
 			out = append(out, workerCondition{
 				alert:  alert("B06", job, 3, "Background job stale: "+job, fmt.Sprintf("%s (%s) last succeeded %s ago; it should run at least every %s.", job, svc, age.Round(time.Minute), limit)),
 				active: age > limit, forChecks: 1, clearCk: 1,
-			})
-		case "rmh_doctrine_puzzles_ready_for_timestamp_seconds":
-			if s.value <= 0 {
-				continue // not reported yet since the supervisor started
-			}
-			utc := now.UTC()
-			tomorrow := time.Date(utc.Year(), utc.Month(), utc.Day()+1, 0, 0, 0, 0, time.UTC)
-			afterRun := utc.Hour() > 0 || utc.Minute() >= 15
-			readyFor := time.Unix(int64(s.value), 0).UTC()
-			out = append(out, workerCondition{
-				alert:  alert("A19", "", 2, "Tomorrow's daily puzzles missing", fmt.Sprintf("Daily puzzles exist through %s, but not for %s. If today's midnight run doesn't make them, players get no puzzle tomorrow. Restart the supervisor to rerun it (it generates tomorrow's at startup).", readyFor.Format("2006-01-02"), tomorrow.Format("2006-01-02"))),
-				active: afterRun && readyFor.Before(tomorrow), forChecks: 2, clearCk: 1,
 			})
 		case "rmh_discord_gateway_connected":
 			if svc != "discord-bot" {
@@ -307,6 +325,15 @@ func (w *workerWatch) check(ctx context.Context, now time.Time) {
 			}
 		} else {
 			conds = append(conds, evaluateNodeJobs(last, now)...)
+		}
+	}
+	if w.puzzlesReadyFor != nil {
+		if readyFor, err := w.puzzlesReadyFor(ctx); err != nil {
+			if w.logger != nil {
+				w.logger.Warn("status: daily puzzle read failed", "error", err)
+			}
+		} else {
+			conds = append(conds, evaluatePuzzles(readyFor, now))
 		}
 	}
 	for _, a := range w.step(conds, now) {

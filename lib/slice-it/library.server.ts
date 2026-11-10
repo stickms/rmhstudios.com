@@ -8,7 +8,7 @@
  * import the other five.
  */
 
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCachedPrefix } from '@/lib/cached.server';
 import { prisma } from '@/lib/prisma.server';
 import { deleteObject } from '@/lib/storage/s3.server';
 import { resolveUser, userDisplaySelect, type ResolvedUser } from '@/lib/user-display';
@@ -34,7 +34,7 @@ export interface Shelf {
 const SHELF_TTL_MS = 10 * 60 * 1000;
 
 export function invalidateShelves(): void {
-  apiCache.invalidatePrefix('slice-it:shelf:');
+  void invalidateCachedPrefix('slice-it:shelf:');
 }
 
 export async function shelf(id: ShelfId, viewerId: string | null): Promise<Shelf> {
@@ -44,15 +44,11 @@ export async function shelf(id: ShelfId, viewerId: string | null): Promise<Shelf
   // share a cache entry — and caching one per user id would blow the cache's
   // 1000-entry ceiling on a busy day, so those are simply not cached.
   const key = `slice-it:shelf:${id}`;
-  if (!viewerId) {
-    const cached = apiCache.get<Shelf>(key);
-    if (cached) return cached;
-  }
-
-  const rows = await shelfRows(id);
-  const result: Shelf = { id, songs: rows.map((row) => toSliceSong(row, viewerId)) };
-  if (!viewerId) apiCache.set(key, result, SHELF_TTL_MS);
-  return result;
+  const load = async (): Promise<Shelf> => {
+    const rows = await shelfRows(id);
+    return { id, songs: rows.map((row) => toSliceSong(row, viewerId)) };
+  };
+  return viewerId ? load() : cached(key, SHELF_TTL_MS, load, { l2: false });
 }
 
 async function shelfRows(id: ShelfId) {

@@ -36,7 +36,7 @@
  * rolls back, debit and all.
  */
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import { creditCoins, debitCoins, InsufficientFundsError } from '@/lib/economy/ledger.server';
 import { createNotification } from '@/lib/notifications.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
@@ -76,7 +76,7 @@ const MIN_DEADLINE_MS = 60 * 60_000;
 const MAX_DEADLINE_MS = 366 * 86_400_000;
 
 function bust(): void {
-  apiCache.invalidate(LIST_KEY);
+  void invalidateCached(LIST_KEY);
 }
 
 // ── admin: create / cancel / fulfil ──────────────────────────────────────────
@@ -447,33 +447,36 @@ interface BaseGoal {
 
 /** Goals newest first: open and funded ones lead, recent history follows. */
 export async function listCommunityGoals(viewerId: string | null): Promise<CommunityGoalView[]> {
-  let base = apiCache.get<BaseGoal[]>(LIST_KEY);
-  if (!base) {
-    const rows = await prisma.communityGoal.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 20,
-    });
-    const counts = rows.length
-      ? await prisma.$queryRaw<{ goalId: string; n: bigint }[]>`
+  const base = await cached(
+    LIST_KEY,
+    LIST_TTL_MS,
+    async () => {
+      const rows = await prisma.communityGoal.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      });
+      const counts = rows.length
+        ? await prisma.$queryRaw<{ goalId: string; n: bigint }[]>`
           SELECT "goalId", COUNT(DISTINCT "userId") AS n
           FROM community_goal_pledge
           WHERE "goalId" = ANY(${rows.map((r) => r.id)})
           GROUP BY "goalId"`
-      : [];
-    const byGoal = new Map(counts.map((c) => [c.goalId, Number(c.n)]));
-    base = rows.map((g) => ({
-      id: g.id,
-      title: g.title,
-      description: g.description,
-      unlock: g.unlock,
-      targetCoins: g.targetCoins,
-      raisedCoins: g.raisedCoins,
-      deadline: g.deadline.toISOString(),
-      status: g.status as CommunityGoalStatus,
-      pledgers: byGoal.get(g.id) ?? 0,
-    }));
-    apiCache.set(LIST_KEY, base, LIST_TTL_MS);
-  }
+        : [];
+      const byGoal = new Map(counts.map((c) => [c.goalId, Number(c.n)]));
+      return rows.map((g): BaseGoal => ({
+        id: g.id,
+        title: g.title,
+        description: g.description,
+        unlock: g.unlock,
+        targetCoins: g.targetCoins,
+        raisedCoins: g.raisedCoins,
+        deadline: g.deadline.toISOString(),
+        status: g.status as CommunityGoalStatus,
+        pledgers: byGoal.get(g.id) ?? 0,
+      }));
+    },
+    { l2: false },
+  );
 
   const mine = new Map<string, { pledged: number; refunded: number }>();
   if (viewerId && base.length > 0) {

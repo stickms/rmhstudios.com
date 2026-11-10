@@ -6,6 +6,7 @@
 
 import { Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 
@@ -14,6 +15,7 @@ import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import { PracticeLesson } from '@/components/rmhmusic/learn/PracticeLesson';
 
 export const Route = createFileRoute('/rmhmusic/practice')({
+  head: () => noindexHead('RMHMusic Practice'),
   component: PracticeRoute,
 });
 

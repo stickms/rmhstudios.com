@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { useDoctrineReputation } from '@/hooks/useDoctrineReputation';
 import { XpBar } from '@/components/doctrine/reputation/xp-bar';
 import { RankBadge } from '@/components/doctrine/reputation/rank-badge';
@@ -9,6 +10,7 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/strategies/profile/')({
+  head: () => noindexHead('Strategies Profile'),
   component: ProfilePage,
 });
 

@@ -46,7 +46,7 @@
  * change that teaches its client to apply the modifiers.
  */
 
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached, peekL1, putL1 } from '@/lib/cached.server';
 import { redisDel, redisGetJSON, redisSetJSON } from '@/lib/redis.server';
 import { getGameAdapter } from '@/lib/game/adapters.server';
 import { getGameScoreRules } from '@/lib/game/registry';
@@ -204,11 +204,12 @@ export async function playerStanding(
   if (!adapter) return null;
 
   const key = `director:board:${gameId}`;
-  let rows = apiCache.get<{ userId: string | null }[]>(key);
-  if (!rows) {
-    rows = (await adapter.leaderboard(SAMPLE_SIZE)).map((r) => ({ userId: r.userId }));
-    apiCache.set(key, rows, STANDING_TTL_MS);
-  }
+  const rows = await cached(
+    key,
+    STANDING_TTL_MS,
+    async () => (await adapter.leaderboard(SAMPLE_SIZE)).map((r) => ({ userId: r.userId })),
+    { l2: false },
+  );
 
   const index = rows.findIndex((r) => r.userId === userId);
   return {
@@ -300,7 +301,8 @@ const claimKey = (gameId: string, userId: string) => `director:claim:${gameId}:$
 
 async function writeClaim(gameId: string, userId: string, claim: RunClaim): Promise<void> {
   const key = claimKey(gameId, userId);
-  apiCache.set(key, claim, CLAIM_TTL_MS);
+  // The claim has its own Redis key and read/consume protocol below; this is only its in-process copy.
+  putL1(key, claim, CLAIM_TTL_MS);
   try {
     await redisSetJSON(key, claim, CLAIM_TTL_MS);
   } catch (err) {
@@ -372,7 +374,7 @@ export async function consumeRunEligibility(
   if (!directorEnabled(gameId)) return { ranked: true };
 
   const key = claimKey(gameId, userId);
-  let claim = apiCache.get<RunClaim>(key) ?? null;
+  let claim = peekL1<RunClaim>(key) ?? null;
   if (!claim) {
     try {
       claim = await redisGetJSON<RunClaim>(key);
@@ -383,10 +385,8 @@ export async function consumeRunEligibility(
   }
   if (!claim) return { ranked: true };
 
-  // `apiCache` exposes prefix invalidation, not a single-key delete. The key is
-  // already unique per (user, game) so invalidating it as a prefix removes
-  // exactly this entry.
-  apiCache.invalidatePrefix(key);
+  // Drop the in-process copy here and in every other process: a claim is consumed once.
+  void invalidateCached(key);
   try {
     await redisDel(key);
   } catch {

@@ -17,7 +17,7 @@
  * terms — the model never ranks, filters, or invents results.
  */
 
-import { apiCache } from '@/lib/cache';
+import { cached } from '@/lib/cached.server';
 import { expandSearchQuery, isAITextConfigured, type QueryExpansion } from '@/lib/ai/text.server';
 import { normalizeQuery } from './normalize';
 import { catalogNames } from './catalog';
@@ -57,9 +57,21 @@ export async function expandQuery(rawQuery: string): Promise<QueryExpansion> {
   if (!normalized || normalized.length < 2 || !isAITextConfigured()) return EMPTY;
 
   const key = cacheKey(normalized);
-  const cached = apiCache.get<QueryExpansion>(key);
-  if (cached) return cached;
+  return cached(
+    key,
+    CACHE_TTL_MS,
+    () => runExpansion(rawQuery, normalized),
+    // A timeout / failure is cached only briefly: the underlying call may still be fine.
+    {
+      ttlFor: (v) =>
+        (v as QueryExpansion).terms.length || (v as QueryExpansion).correction
+          ? CACHE_TTL_MS
+          : FAILURE_TTL_MS,
+    },
+  );
+}
 
+async function runExpansion(rawQuery: string, normalized: string): Promise<QueryExpansion> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const result = await Promise.race([
@@ -78,12 +90,9 @@ export async function expandQuery(rawQuery: string): Promise<QueryExpansion> {
         : '';
     const cleaned: QueryExpansion = { terms, correction };
 
-    // A timeout is cached only briefly: the underlying call may still be fine.
-    apiCache.set(key, cleaned, terms.length || correction ? CACHE_TTL_MS : FAILURE_TTL_MS);
     return cleaned;
   } catch (error) {
     console.error('search expansion failed:', error);
-    apiCache.set(key, EMPTY, FAILURE_TTL_MS);
     return EMPTY;
   } finally {
     if (timer) clearTimeout(timer);

@@ -1,5 +1,6 @@
 import { Bell, CheckCheck } from 'lucide-react';
 import { createFileRoute, Link, redirect, useRouter } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { markReadSchema } from '@/lib/rmhladder/server-fn-schemas.server';
@@ -34,6 +35,7 @@ const doMarkRead = createServerFn({ method: 'POST' })
   });
 
 export const Route = createFileRoute('/_site/rmhladder/alerts')({
+  head: () => noindexHead('Alerts | RMH Ladder'),
   loader: () => fetchAlerts(),
   component: AlertsPage,
 });

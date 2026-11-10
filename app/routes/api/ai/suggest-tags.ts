@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached } from '@/lib/cached.server';
 import { extractHashtags, normalizeTag } from '@/lib/tags-extract.server';
 import { isAITextConfigured, suggestHashtags } from '@/lib/ai/text.server';
 
@@ -25,16 +25,14 @@ const TRENDING_CACHE_KEY = 'ai:suggest-tags:trending';
 const TRENDING_TTL_MS = 5 * 60_000;
 
 async function trendingTags(): Promise<string[]> {
-  const cached = apiCache.get<string[]>(TRENDING_CACHE_KEY);
-  if (cached) return cached;
-  const rows = await prisma.hashtag.findMany({
-    orderBy: { postCount: 'desc' },
-    take: 40,
-    select: { tag: true },
+  return cached(TRENDING_CACHE_KEY, TRENDING_TTL_MS, async () => {
+    const rows = await prisma.hashtag.findMany({
+      orderBy: { postCount: 'desc' },
+      take: 40,
+      select: { tag: true },
+    });
+    return rows.map((r) => r.tag);
   });
-  const tags = rows.map((r) => r.tag);
-  apiCache.set(TRENDING_CACHE_KEY, tags, TRENDING_TTL_MS);
-  return tags;
 }
 
 export const Route = createFileRoute('/api/ai/suggest-tags')({

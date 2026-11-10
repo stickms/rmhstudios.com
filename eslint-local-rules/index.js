@@ -15,6 +15,7 @@ import noHardcodedRadius from './no-hardcoded-radius.js';
 import noTransitionAll from './no-transition-all.js';
 import noInlineMotion from './no-inline-motion.js';
 import noDeadAnimateClasses from './no-dead-animate-classes.js';
+import routeNeedsHead from './route-needs-head.js';
 
 /** @type {import('eslint').ESLint.Plugin} */
 const plugin = {
@@ -29,6 +30,7 @@ const plugin = {
     'no-transition-all': noTransitionAll,
     'no-inline-motion': noInlineMotion,
     'no-dead-animate-classes': noDeadAnimateClasses,
+    'route-needs-head': routeNeedsHead,
   },
 };
 

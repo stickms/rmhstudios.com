@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
+import { gameRouteHead } from '@/lib/seo-catalog';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 
@@ -22,5 +23,6 @@ function TempleOfJoyPage() {
 }
 
 export const Route = createFileRoute('/temple-of-joy/')({
+  head: () => gameRouteHead('temple-of-joy'),
   component: TempleOfJoyPage,
 });

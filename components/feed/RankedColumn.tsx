@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from'react';
 import { useTranslation } from'react-i18next';
 import { Swords, Trophy, Check, X, Flag } from'lucide-react';
 import { Button } from'@/components/ui/button';
+import { EmptyState } from'@/components/ui/empty-state';
 import { Spinner } from'@/components/ui/spinner';
 import { toast } from'sonner';
 import { Select } from'@/components/ui/select';
@@ -385,9 +386,7 @@ export function RankedColumn({
  <Spinner size={20} />
  </div>
  ) : lb.length === 0 ? (
- <p className="py-8 text-center text-sm text-site-text-muted">
- {t('no-ranked-players', { defaultValue:'No ranked players yet.'})}
- </p>
+ <EmptyState icon={Trophy} title={t('no-ranked-players', { defaultValue:'No ranked players yet.'})} />
  ) : (
  <div className="space-y-2">
  {lb.map((row) => (

@@ -5,7 +5,7 @@ import { auth } from '@/lib/auth';
 import { validateAnswer, calculateScore } from '@/lib/doctrine/puzzle-engine';
 import { awardXp, updateStreak } from '@/lib/doctrine/reputation';
 import { isSahurActive, SAHUR_WINDOW } from '@/lib/doctrine';
-import { apiCache } from '@/lib/cache';
+import { invalidateTag } from '@/lib/cached.server';
 
 export const Route = createFileRoute('/api/doctrine/puzzles/submit')({
   server: {
@@ -123,7 +123,7 @@ export const Route = createFileRoute('/api/doctrine/puzzles/submit')({
 
             // Invalidate leaderboard cache
             const dateStr = puzzle.date.toISOString().slice(0, 10);
-            apiCache.invalidate(`doctrine:leaderboard:${puzzle.mode}:${dateStr}`);
+            await invalidateTag(`doctrine:leaderboard:${puzzle.mode}:${dateStr}`);
 
             return Response.json({ success: true, submission: { correct, score }, xpMultiplier });
           } catch (e) {

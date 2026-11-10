@@ -12,7 +12,7 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { extractTags } from './ranking';
-import { apiCache } from '@/lib/cache';
+import { lruL1 } from '@/lib/cached.server';
 import { redisEnabled, redisGetJSON, redisSetJSON } from '@/lib/redis.server';
 
 export interface InterestProfile {
@@ -22,10 +22,10 @@ export interface InterestProfile {
 
 const EMPTY: InterestProfile = { authorAffinity: new Map(), topicInterest: new Map() };
 
-// Per-user L1 cache. This rides the shared `apiCache` rather than a private
-// Map: entries there are TTL-swept and capacity-bounded, whereas the Map this
-// replaced only ever grew — every signed-in viewer who loaded a feed left a
-// profile behind for the life of the process, and nothing evicted expired ones.
+// Per-user L1 cache. In-process on purpose (`lruL1`): the value holds Maps, which do not survive the JSON round trip
+// of the shared cache's Redis layer, and this module already keeps its own serialised copy in Redis (`redisKey`).
+// Bounded and TTL-swept, unlike the plain Map it replaced, which only ever grew.
+const profileL1 = lruL1('interest-profile', { maxEntries: 5000 });
 const TTL_MS = 5 * 60 * 1000;
 const SAMPLE_SIZE = 80;
 const cacheKey = (userId: string) => `interest-profile:${userId}`;
@@ -41,7 +41,10 @@ function normalize(counts: Map<string, number>): Map<string, number> {
 
 // Maps don't survive JSON, so (de)serialize to entry arrays for the cache.
 type SerializedProfile = { a: [string, number][]; t: [string, number][] };
-const serialize = (p: InterestProfile): SerializedProfile => ({ a: [...p.authorAffinity], t: [...p.topicInterest] });
+const serialize = (p: InterestProfile): SerializedProfile => ({
+  a: [...p.authorAffinity],
+  t: [...p.topicInterest],
+});
 const deserialize = (s: SerializedProfile): InterestProfile => ({
   authorAffinity: new Map(s.a),
   topicInterest: new Map(s.t),
@@ -52,7 +55,7 @@ export async function buildInterestProfile(userId: string | null): Promise<Inter
   if (!userId) return EMPTY;
 
   // L1: per-instance cache.
-  const cached = apiCache.get<InterestProfile>(cacheKey(userId));
+  const cached = profileL1.get<InterestProfile>(cacheKey(userId));
   if (cached) return cached;
 
   // L2: shared Redis cache (cross-instance) when configured.
@@ -60,7 +63,7 @@ export async function buildInterestProfile(userId: string | null): Promise<Inter
     const hit = await redisGetJSON<SerializedProfile>(redisKey(userId));
     if (hit) {
       const profile = deserialize(hit);
-      apiCache.set(cacheKey(userId), profile, TTL_MS);
+      profileL1.set(cacheKey(userId), profile, TTL_MS);
       return profile;
     }
   }
@@ -94,7 +97,7 @@ export async function buildInterestProfile(userId: string | null): Promise<Inter
       authorAffinity: normalize(authorCounts),
       topicInterest: normalize(topicCounts),
     };
-    apiCache.set(cacheKey(userId), profile, TTL_MS);
+    profileL1.set(cacheKey(userId), profile, TTL_MS);
     if (redisEnabled()) await redisSetJSON(redisKey(userId), serialize(profile), TTL_MS);
     return profile;
   } catch (err) {

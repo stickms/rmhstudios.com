@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +8,7 @@ import { ReactionBar } from '@/components/doctrine/reaction-bar';
 import { EMPTY_REACTIONS } from '@/lib/doctrine/types';
 
 export const Route = createFileRoute('/strategies/safehouse/drops')({
+  head: () => noindexHead('Safehouse Drops'),
   component: DropsPage,
 });
 

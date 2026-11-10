@@ -64,6 +64,10 @@ type Config struct {
 	// NodeJobQueues) for jobs that run in the Node `jobs` worker. Nil disables
 	// those freshness alarms. See workers.go.
 	JobLastSuccess func(ctx context.Context) (map[string]time.Time, error)
+	// PuzzlesReadyFor reports the latest UTC day whose daily puzzles (all six
+	// modes) exist in doctrine_puzzle, the zero time when none does. Nil disables
+	// the A19 alarm. See workers.go.
+	PuzzlesReadyFor func(ctx context.Context) (time.Time, error)
 	// Announcement is an optional static banner (STATUS_ANNOUNCEMENT).
 	Announcement      string
 	AnnouncementLevel string
@@ -169,7 +173,7 @@ func New(cfg Config) *Service {
 	}
 	return &Service{
 		cfg: cfg, prober: p, store: store, notifier: notifier, oncall: oncallNotifier, heartbeat: hb, diag: diagnoser,
-		workers:   newWorkerWatch(cfg.SupervisorMetricsURL, cfg.Oncall, cfg.Logger, cfg.JobLastSuccess),
+		workers:   newWorkerWatch(cfg.SupervisorMetricsURL, cfg.Oncall, cfg.Logger, cfg.JobLastSuccess, cfg.PuzzlesReadyFor),
 		startedAt: time.Now(),
 	}
 }

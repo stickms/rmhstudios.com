@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
 
@@ -20,5 +21,9 @@ function OutcastPage() {
 }
 
 export const Route = createFileRoute('/daily/outcast')({
+  head: () => ({
+    meta: buildMeta({ title: 'Outcast | Daily Puzzles | RMH Studios', description: "Pick the odd one out in today's daily Outcast puzzle.", path: '/daily/outcast' }),
+    links: [buildCanonical('/daily/outcast')],
+  }),
     component: OutcastPage,
 })

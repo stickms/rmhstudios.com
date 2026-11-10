@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { appRouteHead } from '@/lib/seo-catalog';
 import { Suspense } from 'react';
 import { useTranslation } from "react-i18next";
 import { Spinner } from '@/components/ui/spinner';
@@ -11,6 +12,7 @@ import StudioShell from '@/components/studio/StudioShell';
 import StudioAppShell from '@/components/studio/StudioAppShell';
 
 export const Route = createFileRoute('/studio/')({
+  head: () => appRouteHead('studio'),
   component: StudioPage,
 });
 

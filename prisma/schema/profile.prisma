@@ -325,30 +325,6 @@ model ProfileLink {
   @@map("profile_link")
 }
 
-/// Ordered blocks for the link-in-bio page (F8).
-///
-/// `ProfileLink` stays the source of truth for links (it carries the `rel=me`
-/// verification). This is the *layout* around them, which is why a block can
-/// reference a link, embed a platform object, or render a live "now playing"
-/// pulled from the Activity stream — the one thing no link-in-bio service can
-/// offer.
-model ProfileBlock {
-  id        String   @id @default(cuid())
-  userId    String
-  /// 'link' | 'heading' | 'embed' | 'now'
-  kind      String   @db.VarChar(12)
-  position  Int      @default(0)
-  /// Shape depends on kind; validated by lib/profile-links/blocks.ts.
-  config    Json     @default("{}")
-  clicks    Int      @default(0)
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, position])
-  @@map("profile_block")
-}
-
 // ─── The cross-game assist layer (P7, 2026-09-19) ─────────────────────────
 // `lib/game-capabilities.ts` named this as a known absence in its own header:
 // "accessibility is empty for almost every game, and that is not an oversight;

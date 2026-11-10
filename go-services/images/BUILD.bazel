@@ -8,16 +8,6 @@ load("//bazel:defs.bzl", "go_service_image")
 # The realtime hubs (gateway/gamehub/rmhbox/rmhmusic/rmhtube) were removed in the
 # rewrite (design §5.2): they were an unshipped duplicate of the production Node
 # hubs. The Node hubs remain the production realtime tier.
-go_service_image(
-    name = "recap",
-    binary = "//go-services/cmd/recap:recap",
-)
-
-go_service_image(
-    name = "doctrine-worker",
-    binary = "//go-services/cmd/doctrine-worker:doctrine-worker",
-)
-
 # assets: streams /library /music /models /sprites from the S3-compatible
 # bucket. The AWS SDK is pure Go, so distroless static is sufficient.
 go_service_image(
@@ -48,8 +38,8 @@ go_service_image(
     binary = "//go-services/cmd/status:status",
 )
 
-# supervisor: runs ALL FIVE background workers (vibe-worker, discord-bot,
-# bot-worker, doctrine-worker, recap) as goroutines in one process. Its base
+# supervisor: runs ALL THREE background workers (vibe-worker, discord-bot,
+# bot-worker) as goroutines in one process. Its base
 # must satisfy the union of their runtime needs:
 #   - vibe-worker → headless Chromium + PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
 #   - discord-bot → git + openssh-client (rmhbot worktree/PR feature)

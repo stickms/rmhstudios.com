@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached } from '@/lib/cached.server';
 import { generatePuzzle, getSeedForDate, stripSolution } from '@/lib/doctrine/puzzle-engine';
 import type { PuzzleMode } from '@/lib/doctrine/types';
 
@@ -22,26 +22,25 @@ export const Route = createFileRoute('/api/doctrine/puzzles/today')({
           try {
             const today = new Date().toISOString().slice(0, 10);
             const cacheKey = `doctrine:puzzles:today:${today}`;
-            const cached = apiCache.get(cacheKey);
-            if (cached) return Response.json(cached);
+            const result = await cached(cacheKey, 60_000, async () => {
+              // 1 min cache
+              // Ensure today's puzzles exist (create if missing)
+              const puzzles = await ensureTodaysPuzzles(today);
 
-            // Ensure today's puzzles exist (create if missing)
-            const puzzles = await ensureTodaysPuzzles(today);
-
-            const result = puzzles.map((p) => ({
-              id: p.id,
-              mode: p.mode,
-              date: today,
-              difficulty: p.difficulty,
-              resetsAt: p.resetsAt,
-              isSahur: p.isSahur,
-              data: stripSolution(
-                p.mode.toLowerCase() as 'alibi' | 'spectrum' | 'outcast' | 'chainlink' | 'impostor',
-                p.data as Record<string, unknown>,
-              ),
-            }));
-
-            apiCache.set(cacheKey, result, 60_000); // 1 min cache
+              return puzzles.map((p) => ({
+                id: p.id,
+                mode: p.mode,
+                date: today,
+                difficulty: p.difficulty,
+                resetsAt: p.resetsAt,
+                isSahur: p.isSahur,
+                data: stripSolution(
+                  p.mode.toLowerCase() as
+                    'alibi' | 'spectrum' | 'outcast' | 'chainlink' | 'impostor',
+                  p.data as Record<string, unknown>,
+                ),
+              }));
+            });
             return Response.json(result);
           } catch (e) {
             console.error('Doctrine today puzzles failed:', e);

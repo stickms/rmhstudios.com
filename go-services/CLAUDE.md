@@ -16,8 +16,8 @@ the newer services.
 
 Production is a **hybrid** (see `docker-compose.yml` at repo root):
 
-- **Go is authoritative for:** the five background workers — discord-bot,
-  recap, doctrine-worker, vibe-worker, bot-worker — consolidated
+- **Go is authoritative for:** the three background workers — discord-bot,
+  vibe-worker, bot-worker — consolidated
   as goroutines in one `supervisor` binary (metrics :9090); the `status`
   dashboard (7008); and `assets` (7007, off the main user path under Compose).
 - **Node is authoritative for:** web SSR (7005) and the realtime hubs —
@@ -49,24 +49,21 @@ go-services/
 
 | Service | Port (default) | Transport | Replaces (Node) | Status |
 |---|---|---|---|---|
-| `recap` | `RECAP_PORT` 7004 | HTTP (health) | recap | fully ported (Lights Out → Discord) |
-| `doctrine-worker` | — | worker | doctrine-worker | fully ported (mulberry32 bit-exact puzzle gen, Sahur, decay) |
 | `vibe-worker` | — | worker | vibe-worker | fully ported (chromedp thumbnails; needs Chromium in image) |
 | `discord-bot` | — | worker | discord-bot | `/chat` + full Alex tamagotchi; idles without token |
 | `bot-worker` | — | worker | bot-worker | ported; idles without `DEEPSEEK_API_KEY` |
 | `assets` | `ASSETS_PORT` 7007 | HTTP | Apache off-disk CDN | range-aware S3/R2 streaming for `/library /music /models /sprites` |
 | `status` | `STATUS_PORT` 7008 | HTTP | server/status | `/api/status` is byte-compatible with the Node original; the dashboard is the site's own liquid-globe design (`internal/status/dashboard.go`); incidents, maintenance, the admin API, feeds, badges, `/metrics` and a Statuspage-compatible `/api/v2` are documented in [`docs/status-page.md`](../docs/status-page.md) |
-| `supervisor` | `METRICS_ADDR` :9090 | — | (consolidation) | runs the 5 workers (discord-bot, recap, doctrine-worker, vibe-worker, bot-worker) as goroutines under an errgroup |
+| `supervisor` | `METRICS_ADDR` :9090 | — | (consolidation) | runs the 3 workers (discord-bot, vibe-worker, bot-worker) as goroutines under an errgroup |
 
-The **5 supervised workers** are the five worker `cmd/` binaries (bot-worker,
-discord-bot, doctrine-worker, recap, vibe-worker). The streak-saver was ported
-to the Node `jobs` worker (`lib/streak-reminders.server.ts`, D3); `status` reads
-its freshness from pg-boss's job table (B06). (`status`, `assets`, and `supervisor` are the three
-non-worker `cmd/` binaries.) `internal/ledger`
-(a Go artifact/provenance store, `LEDGER_ADDR :7100` in docs only) is also
-`internal/`-only — implemented but wired into no binary, not built, not
-deployed. Don't confuse **`ledger`** with **`ladder-worker`** (the Node
-RMHLadder job cron, not ported).
+The **3 supervised workers** are the three worker `cmd/` binaries (bot-worker,
+discord-bot, vibe-worker). The streak-saver, recap and doctrine workers were
+ported to the Node `jobs` worker (`lib/streak-reminders.server.ts`,
+`lib/lights-out/recap.server.ts`, `lib/doctrine/jobs.server.ts`, D3); `status`
+reads their freshness from pg-boss's job table (B06) and the daily-puzzle alarm
+(A19) straight from `doctrine_puzzle`. (`status`, `assets`, and `supervisor` are the three
+non-worker `cmd/` binaries.) The dead `internal/ledger` artifact store and its
+`ledger_*` tables were deleted (audit C3).
 
 ### Shared packages (pkg/)
 
@@ -155,15 +152,13 @@ make images         # build + load every service image into Docker (Bazel)
 
 1. `go-services/README.md` and `FOUNDATION.md` were written for the original
    9-service Helm/realtime design and still mention the removed hubs/gateway and
-   `pkg/events`/`pkg/realtime` — the real fleet is **8 binaries** under `cmd/`
-   (assets, bot-worker, discord-bot, doctrine-worker, recap, status, supervisor,
-   vibe-worker). Trust the code + this file.
+   `pkg/events`/`pkg/realtime` — the real fleet is **6 binaries** under `cmd/`
+   (assets, bot-worker, discord-bot, status, supervisor, vibe-worker). Trust the code + this file.
 2. The legacy `go-services/Makefile` `SERVICES` list and the root `Makefile`
    image loop both lag the real service set — check `images/BUILD.bazel` for
    what's actually buildable.
-3. There is no `cmd/ledger`: `internal/ledger` (Go artifact/provenance store)
-   is implemented but wired into no binary — not built, not deployed. The
-   `ledger_*` schema tables remain.
+3. There is no `cmd/ledger`: the old `internal/ledger` package and the
+   `ledger_*` tables were removed (audit C3).
 4. Discord bot commands are `/chat` + the Alex tamagotchi
    ([`docs/alex-tamagotchi/`](../docs/alex-tamagotchi/README.md)); there is no
    `/rmhbot` command (old README claim is stale). The `/liquid` Liquid Globe

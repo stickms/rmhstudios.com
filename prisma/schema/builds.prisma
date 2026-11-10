@@ -86,7 +86,8 @@ model BuildUnlock {
   @@map("build_unlock")
 }
 
-/// DEAD (rewrite R0-T7): zero code references (marketplace versioning unshipped). Drop scheduled R1-T3.
+/// (Formerly marked DEAD; `UserBuild.versions` is read by the account export and
+/// GET /api/v1/builds/$slug, so it stays.)
 model BuildVersion {
   id         String   @id @default(cuid())
   buildId    String

@@ -10,7 +10,7 @@ export const Route = createFileRoute('/api/office-hours/host/$id/summary')({
         {
           auth: 'none',
           rateLimit: 'read',
-          // Opt out of the 30 s micro-cache: office-hours writes invalidate the summary in apiCache.
+          // Opt out of the 30 s micro-cache: office-hours writes invalidate the summary in the shared cache.
           microCache: false,
           cache: { visibility: 'public', maxAge: 60, sMaxAge: 60, staleWhileRevalidate: 300 },
         },

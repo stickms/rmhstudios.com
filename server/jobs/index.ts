@@ -52,6 +52,8 @@ import {
   STREAK_REMINDER_QUEUE,
   registerStreakReminderCron,
 } from '@/lib/streak-reminders.server';
+import { RECAP_QUEUE, registerRecapCron } from '@/lib/lights-out/recap.server';
+import { registerDoctrineJobs } from '@/lib/doctrine/jobs.server';
 import {
   PROFILE_VISIT_SWEEP_QUEUE,
   registerProfileVisitSweepCron,
@@ -140,6 +142,12 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // D3: streak-saver (ported from the Go worker). Hourly "keep your streak" notification + web push;
   // STREAK_REMINDER_ENABLED=false skips it. The status service watches its last success (B06).
   { queue: STREAK_REMINDER_QUEUE, register: registerStreakReminderCron },
+  // D3: Lights Out → Discord daily recap (ported from the Go worker), every 5 min. The status service
+  // watches its last success (B06 `recap`).
+  { queue: RECAP_QUEUE, register: registerRecapCron },
+  // D3: Doctrine Engine (ported from the Go worker): tomorrow's puzzles at 00:00 UTC (A19 watches the
+  // table), Sahur activation every minute (B06 `sahur_activation`), Monday reputation decay.
+  { queue: 'doctrine', register: registerDoctrineJobs },
   // M3 disappearing messages: expiry is enforced at read time; this only deletes the rows.
   { queue: CHAT_EXPIRY_QUEUE, register: registerChatExpiryCron },
   // F5: expire unmatched study-buddy requests and tell their owners.

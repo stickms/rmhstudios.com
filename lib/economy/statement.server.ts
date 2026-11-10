@@ -15,7 +15,7 @@
  * what the member actually has, and every later movement is subtracted out.
  */
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached } from '@/lib/cached.server';
 import { userChipSelect } from '@/lib/user-display';
 import {
   STATEMENT_CSV_MAX_ROWS,
@@ -38,55 +38,59 @@ export async function getStatementSummary(
   if (!range) return null;
 
   const key = summaryKey(userId, month);
-  const hit = apiCache.get<StatementSummary>(key);
-  if (hit) return hit;
+  return cached(
+    key,
+    SUMMARY_TTL_MS,
+    async () => {
+      const inRange = { gte: range.start, lt: range.end };
+      const [credits, debits, creditsAfter, debitsAfter, profile] = await Promise.all([
+        prisma.coinTransaction.groupBy({
+          by: ['type'],
+          where: { recipientId: userId, createdAt: inRange },
+          _sum: { amount: true },
+          _count: { _all: true },
+        }),
+        prisma.coinTransaction.groupBy({
+          by: ['type'],
+          where: { senderId: userId, createdAt: inRange },
+          _sum: { amount: true },
+          _count: { _all: true },
+        }),
+        prisma.coinTransaction.aggregate({
+          where: { recipientId: userId, createdAt: { gte: range.end } },
+          _sum: { amount: true },
+        }),
+        prisma.coinTransaction.aggregate({
+          where: { senderId: userId, createdAt: { gte: range.end } },
+          _sum: { amount: true },
+        }),
+        prisma.userProfile.findUnique({ where: { userId }, select: { coins: true } }),
+      ]);
 
-  const inRange = { gte: range.start, lt: range.end };
-  const [credits, debits, creditsAfter, debitsAfter, profile] = await Promise.all([
-    prisma.coinTransaction.groupBy({
-      by: ['type'],
-      where: { recipientId: userId, createdAt: inRange },
-      _sum: { amount: true },
-      _count: { _all: true },
-    }),
-    prisma.coinTransaction.groupBy({
-      by: ['type'],
-      where: { senderId: userId, createdAt: inRange },
-      _sum: { amount: true },
-      _count: { _all: true },
-    }),
-    prisma.coinTransaction.aggregate({
-      where: { recipientId: userId, createdAt: { gte: range.end } },
-      _sum: { amount: true },
-    }),
-    prisma.coinTransaction.aggregate({
-      where: { senderId: userId, createdAt: { gte: range.end } },
-      _sum: { amount: true },
-    }),
-    prisma.userProfile.findUnique({ where: { userId }, select: { coins: true } }),
-  ]);
+      const groups: TypeTotal[] = [
+        ...credits.map((g) => ({
+          type: g.type as string,
+          direction: 'in' as const,
+          total: Number(g._sum.amount ?? 0),
+          count: g._count._all,
+        })),
+        ...debits.map((g) => ({
+          type: g.type as string,
+          direction: 'out' as const,
+          total: Number(g._sum.amount ?? 0),
+          count: g._count._all,
+        })),
+      ];
 
-  const groups: TypeTotal[] = [
-    ...credits.map((g) => ({
-      type: g.type as string,
-      direction: 'in' as const,
-      total: Number(g._sum.amount ?? 0),
-      count: g._count._all,
-    })),
-    ...debits.map((g) => ({
-      type: g.type as string,
-      direction: 'out' as const,
-      total: Number(g._sum.amount ?? 0),
-      count: g._count._all,
-    })),
-  ];
+      const balanceNow = Number(profile?.coins ?? 0);
+      const closing =
+        balanceNow - (Number(creditsAfter._sum.amount ?? 0) - Number(debitsAfter._sum.amount ?? 0));
+      const summary = summarize(month, groups, closing);
 
-  const balanceNow = Number(profile?.coins ?? 0);
-  const closing = balanceNow - (Number(creditsAfter._sum.amount ?? 0) - Number(debitsAfter._sum.amount ?? 0));
-  const summary = summarize(month, groups, closing);
-
-  apiCache.set(key, summary, SUMMARY_TTL_MS);
-  return summary;
+      return summary;
+    },
+    { l2: false },
+  );
 }
 
 const HANDLE_CHUNK = 1000;

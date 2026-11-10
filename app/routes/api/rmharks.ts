@@ -24,7 +24,7 @@ import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { publishDueForUser } from '@/lib/scheduled/publish.server';
 import { screenNewContent } from '@/lib/moderation/auto-moderate.server';
 import { recordLinkDomains } from '@/lib/safety/link-risk.server';
-import { apiCache } from '@/lib/cache';
+import { lruL1 } from '@/lib/cached.server';
 import { altTextViolation } from '@/lib/feed/alt-text.server';
 import { gateCommunityContent, logRemoved } from '@/lib/communities/gate.server';
 import { HELD_BY, recordModItem } from '@/lib/communities/automod.server';
@@ -36,6 +36,9 @@ import { planPostsPlus, recordPostsPlusTx, afterPostsPlus } from '@/lib/posts-pl
 
 /** Throttle window for the lazy scheduled-post probe on the feed read path. */
 const SCHEDULED_PROBE_TTL_MS = 60_000;
+// In-process on purpose: a per-user "already probed" throttle flag. Each worker may probe once per window, and a
+// Redis round trip would cost more than the scan it avoids.
+const scheduledProbeSeen = lruL1('rmharks:scheduled-probe', { maxEntries: 5000 });
 
 export const Route = createFileRoute('/api/rmharks')({
   server: {
@@ -88,8 +91,8 @@ export const Route = createFileRoute('/api/rmharks')({
         // a newly-due post still surfaces within the throttle window.
         if (userId && !cursor) {
           const probeKey = `scheduled:probe:${userId}`;
-          if (!apiCache.get(probeKey)) {
-            apiCache.set(probeKey, 1, SCHEDULED_PROBE_TTL_MS);
+          if (!scheduledProbeSeen.get(probeKey)) {
+            scheduledProbeSeen.set(probeKey, 1, SCHEDULED_PROBE_TTL_MS);
             void publishDueForUser(userId).catch(() => {});
           }
         }

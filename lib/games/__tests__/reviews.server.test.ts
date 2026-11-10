@@ -5,7 +5,15 @@ const db = vi.hoisted(() => ({
   seenWhere: null as unknown,
 }));
 
-const user = (id: string) => ({ id, name: id.toUpperCase(), username: null, handle: id, image: null, profile: null, inventory: [] });
+const user = (id: string) => ({
+  id,
+  name: id.toUpperCase(),
+  username: null,
+  handle: id,
+  image: null,
+  profile: null,
+  inventory: [],
+});
 const review = (id: string, userId: string, stars: number) => ({
   id,
   userId,
@@ -17,11 +25,19 @@ const review = (id: string, userId: string, stars: number) => ({
   votes: [],
 });
 
-vi.mock('@/lib/cache', () => ({ apiCache: { get: () => null, set: () => {}, invalidate: () => {} } }));
+vi.mock('@/lib/cached.server', () => ({
+  cached: (_k: string, _t: number, load: () => Promise<unknown>) => load(),
+  invalidateCached: async () => {},
+}));
 vi.mock('@/lib/prisma.server', () => ({
   prisma: {
     gameReview: {
-      findMany: async () => [review('r1', 'pub', 5), review('r2', 'fol', 4), review('r3', 'priv', 1), review('r4', 'viewer', 3)],
+      findMany: async () => [
+        review('r1', 'pub', 5),
+        review('r2', 'fol', 4),
+        review('r3', 'priv', 1),
+        review('r4', 'viewer', 3),
+      ],
     },
     gamePlaytime: {
       findMany: async () => [

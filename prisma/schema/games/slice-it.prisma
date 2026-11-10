@@ -156,7 +156,6 @@ model Song {
   updatedAt DateTime @updatedAt
 
   packItems    ChartPackItem[]
-  ratings      SongRating[]
   comments     SongComment[]
   scores       SongLeaderboard[]
   likes        SongLike[]
@@ -194,8 +193,7 @@ model Song {
 
 /// **L3 — a review of a CHART, not of a song.**
 ///
-/// `SongRating` exists in this schema and is explicitly marked dead ("zero code
-/// references. Drop scheduled R1-T3; do not add writers"), so this is a new
+/// The old per-song `SongRating` was dead and has been dropped, so this is a new
 /// model rather than a revival — and it is a different thing anyway.
 ///
 /// Two axes, because "this chart is bad" and "this song is bad" are different
@@ -234,20 +232,6 @@ model SongLike {
   id        String   @id @default(cuid())
   songId    String
   userId    String
-  createdAt DateTime @default(now())
-
-  song Song @relation(fields: [songId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([songId, userId])
-}
-
-/// DEAD (rewrite R0-T7): zero code references. Drop scheduled R1-T3; do not add writers.
-model SongRating {
-  id        String   @id @default(cuid())
-  songId    String
-  userId    String
-  rating    Int // 1-5
   createdAt DateTime @default(now())
 
   song Song @relation(fields: [songId], references: [id], onDelete: Cascade)

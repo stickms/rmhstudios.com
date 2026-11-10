@@ -1,6 +1,6 @@
 /** Z3 — site museum: admin-edited eras, public read. */
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import type { z } from 'zod';
 import type { eraSchema } from '@/lib/delight/schema';
 
@@ -8,11 +8,15 @@ const KEY = 'delight:museum';
 const select = { id: true, eraDate: true, title: true, body: true, imageUrl: true } as const;
 
 export async function listEras() {
-  const hit = apiCache.get<Awaited<ReturnType<typeof load>>>(KEY);
-  if (hit) return hit;
-  const rows = await load();
-  apiCache.set(KEY, rows, 5 * 60_000);
-  return rows;
+  return cached(
+    KEY,
+    5 * 60_000,
+    async () => {
+      const rows = await load();
+      return rows;
+    },
+    { l2: false },
+  );
 }
 
 async function load() {
@@ -30,17 +34,17 @@ const data = (i: EraInput) => ({
 
 export async function createEra(i: EraInput) {
   const row = await prisma.siteEra.create({ data: data(i), select: { id: true } });
-  apiCache.invalidate(KEY);
+  void invalidateCached(KEY);
   return row;
 }
 
 export async function updateEra(id: string, i: EraInput): Promise<boolean> {
   const res = await prisma.siteEra.updateMany({ where: { id }, data: data(i) });
-  apiCache.invalidate(KEY);
+  void invalidateCached(KEY);
   return res.count > 0;
 }
 
 export async function deleteEra(id: string): Promise<void> {
   await prisma.siteEra.deleteMany({ where: { id } });
-  apiCache.invalidate(KEY);
+  void invalidateCached(KEY);
 }

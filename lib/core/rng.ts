@@ -1,7 +1,7 @@
 /**
- * The one seeded RNG. `mulberry32` is bit-for-bit the Node reference that the
- * Go doctrine worker replicates (go-services/internal/doctrine/seed.go) —
- * changing it breaks daily-puzzle parity. Do not edit the arithmetic.
+ * The one seeded RNG. `mulberry32` drives the daily doctrine puzzles (the Go copy
+ * was deleted when the worker moved to the jobs service, D3) — changing it changes
+ * every future puzzle and breaks stored seeds. Do not edit the arithmetic.
  */
 
 /** Deterministic PRNG in [0, 1). Same seed → same sequence, on every platform. */

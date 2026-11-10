@@ -25,9 +25,9 @@ export function Switch({ checked, onCheckedChange, disabled, className, ...rest 
  data-jelly="control"
  onClick={() => onCheckedChange(!checked)}
  className={cn(
- // Compact visual track with a larger invisible hit area. This keeps dense
+ // Compact visual track; `.hit-slop` grows the invisible hit box to --hit-min on coarse pointers. This keeps dense
  // settings rows easy to scan without shrinking the touch target.
- "relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border border-site-border bg-site-surface-active after:absolute after:-inset-x-2 after:-inset-y-2.5 after:content-['']",
+ "relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border border-site-border bg-site-surface-active hit-slop",
  // The track is always the off surface (never the same colour as the knob, so
  // the knob stays visible even in high-contrast, where --site-border ==
  // --site-text). The accent of the "on" state is a layer that everts out of

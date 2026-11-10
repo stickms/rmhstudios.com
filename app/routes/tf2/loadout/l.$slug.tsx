@@ -3,10 +3,12 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import Tf2LoadoutDetail from '@/components/tf2-hud/loadout/Tf2LoadoutDetail';
 
 export const Route = createFileRoute('/tf2/loadout/l/$slug')({
+  head: () => noindexHead('TF2 Loadout'),
   component: DetailRoute,
 });
 

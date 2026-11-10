@@ -7,7 +7,7 @@
  * reportGameResult adoption. v1 allows one review per signed-in user per game.
  */
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import { games } from '@/lib/games';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import type { RatingAgg, ReviewView, GuideSummary } from '@/lib/games/reviews';
@@ -22,23 +22,31 @@ export function isValidGame(gameId: string): boolean {
 const aggKey = (gameId: string) => `game-rating:${gameId}`;
 
 export async function getRatingAgg(gameId: string): Promise<RatingAgg> {
-  const cached = apiCache.get<RatingAgg>(aggKey(gameId));
-  if (cached) return cached;
-  const [res, byStars] = await Promise.all([
-    prisma.gameReview.aggregate({
-      where: { gameId },
-      _avg: { stars: true },
-      _count: { _all: true },
-    }),
-    prisma.gameReview.groupBy({ by: ['stars'], where: { gameId, stars: { gte: 4 } }, _count: { _all: true } }),
-  ]);
-  const agg: RatingAgg = {
-    average: res._avg.stars ? Math.round(res._avg.stars * 10) / 10 : 0,
-    count: res._count._all,
-    positive: byStars.reduce((n, r) => n + r._count._all, 0),
-  };
-  apiCache.set(aggKey(gameId), agg, 60_000);
-  return agg;
+  return cached(
+    aggKey(gameId),
+    60_000,
+    async () => {
+      const [res, byStars] = await Promise.all([
+        prisma.gameReview.aggregate({
+          where: { gameId },
+          _avg: { stars: true },
+          _count: { _all: true },
+        }),
+        prisma.gameReview.groupBy({
+          by: ['stars'],
+          where: { gameId, stars: { gte: 4 } },
+          _count: { _all: true },
+        }),
+      ]);
+      const agg: RatingAgg = {
+        average: res._avg.stars ? Math.round(res._avg.stars * 10) / 10 : 0,
+        count: res._count._all,
+        positive: byStars.reduce((n, r) => n + r._count._all, 0),
+      };
+      return agg;
+    },
+    { l2: false },
+  );
 }
 
 /** Ratings for many games at once (games directory badges). */
@@ -107,7 +115,13 @@ export async function listReviews(
   const playtime = new Map<string, number>();
   for (const p of plays) {
     const setting = isPlaytimePrivacy(p.user.playtimePrivacy) ? p.user.playtimePrivacy : 'private';
-    if (canViewPlaytime(setting, { viewerId, ownerId: p.userId, viewerFollowsOwner: follows.has(p.userId) })) {
+    if (
+      canViewPlaytime(setting, {
+        viewerId,
+        ownerId: p.userId,
+        viewerFollowsOwner: follows.has(p.userId),
+      })
+    ) {
       playtime.set(p.userId, p.totalSeconds);
     }
   }
@@ -151,16 +165,23 @@ export async function upsertReview(
     create: { userId, gameId, stars: data.stars, body: data.body ?? null },
     update: { stars: data.stars, body: data.body ?? null },
   });
-  apiCache.invalidate(aggKey(gameId));
+  void invalidateCached(aggKey(gameId));
 }
 
 export async function deleteReview(userId: string, gameId: string): Promise<void> {
   await prisma.gameReview.deleteMany({ where: { userId, gameId } });
-  apiCache.invalidate(aggKey(gameId));
+  void invalidateCached(aggKey(gameId));
 }
 
-export async function voteReview(userId: string, reviewId: string, helpful: boolean): Promise<void> {
-  const review = await prisma.gameReview.findUnique({ where: { id: reviewId }, select: { userId: true } });
+export async function voteReview(
+  userId: string,
+  reviewId: string,
+  helpful: boolean,
+): Promise<void> {
+  const review = await prisma.gameReview.findUnique({
+    where: { id: reviewId },
+    select: { userId: true },
+  });
   if (!review) throw new GameMetaError('NOT_FOUND');
   if (review.userId === userId) throw new GameMetaError('OWN_REVIEW');
   await prisma.gameReviewVote.upsert({
@@ -259,14 +280,19 @@ export async function updateGuide(
   id: string,
   data: { title?: string; body?: string; note?: string },
 ): Promise<void> {
-  const guide = await prisma.gameGuide.findUnique({ where: { id }, select: { authorId: true, body: true } });
+  const guide = await prisma.gameGuide.findUnique({
+    where: { id },
+    select: { authorId: true, body: true },
+  });
   if (!guide) throw new GameMetaError('NOT_FOUND');
   if (guide.authorId !== authorId) throw new GameMetaError('FORBIDDEN');
 
   await prisma.$transaction(async (tx) => {
     // On a changed body, snapshot the previous revision (bounded to MAX_REVISIONS).
     if (data.body !== undefined && data.body !== guide.body) {
-      await tx.gameGuideRevision.create({ data: { guideId: id, body: guide.body, note: data.note ?? null } });
+      await tx.gameGuideRevision.create({
+        data: { guideId: id, body: guide.body, note: data.note ?? null },
+      });
       const count = await tx.gameGuideRevision.count({ where: { guideId: id } });
       if (count > MAX_REVISIONS) {
         const oldest = await tx.gameGuideRevision.findMany({
@@ -293,7 +319,11 @@ export async function deleteGuide(authorId: string, id: string): Promise<void> {
   if (res.count === 0) throw new GameMetaError('NOT_FOUND');
 }
 
-export async function publishGuide(authorId: string, id: string, published: boolean): Promise<void> {
+export async function publishGuide(
+  authorId: string,
+  id: string,
+  published: boolean,
+): Promise<void> {
   const res = await prisma.gameGuide.updateMany({ where: { id, authorId }, data: { published } });
   if (res.count === 0) throw new GameMetaError('NOT_FOUND');
 }
