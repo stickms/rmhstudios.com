@@ -5,6 +5,8 @@ import { filterOther, otherStats, type OtherRace } from '@/lib/elections/downbal
 import { STATE_CODES, stateName } from '@/lib/elections/states';
 import { fmtInt } from './hooks';
 import { useFollow } from './FollowContext';
+import { api } from '@/lib/contract/client';
+import { getElectionOfficesApi } from '@/lib/elections/elections.contract';
 
 const PAGE = 18;
 
@@ -12,9 +14,7 @@ export function useOffices(cycle: string, live: boolean) {
   return useQuery<{ races: OtherRace[]; updatedAt: string }>({
     queryKey: ['elections-offices', cycle],
     queryFn: async () => {
-      const r = await fetch(`/api/elections/offices?cycle=${encodeURIComponent(cycle)}`);
-      if (!r.ok) throw new Error(String(r.status));
-      return r.json();
+      return api(getElectionOfficesApi, { query: { cycle }, retries: 0 });
     },
     refetchInterval: live ? 30_000 : 10 * 60_000,
     staleTime: 15_000,

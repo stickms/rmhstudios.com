@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getQotdAnswersApi } from '@/lib/posts-plus/qotd.contract';
 import { getArchivedPrompt, listAnswers } from '@/lib/posts-plus/qotd.server';
 import { dayKeySchema } from '@/lib/posts-plus/schema';
 
@@ -12,7 +13,8 @@ import { dayKeySchema } from '@/lib/posts-plus/schema';
 export const Route = createFileRoute('/api/qotd/answers')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        getQotdAnswersApi,
         {
           auth: 'optional',
           rateLimit: 'read',

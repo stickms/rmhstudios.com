@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { MessageCircleQuestion, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
+import { api } from '@/lib/contract/client';
+import { getQotdTodayApi } from '@/lib/posts-plus/qotd.contract';
 import { useQotdAnswering } from '@/lib/posts-plus/qotd-store';
 
 interface Today {
@@ -37,10 +39,9 @@ export default function QotdCard() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/qotd/today', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: Today | null) => {
-        if (cancelled || !d) return;
+    api(getQotdTodayApi, { retries: 0 })
+      .then((d) => {
+        if (cancelled) return;
         setToday(d);
         setHidden(wasDismissed(d.dayKey));
       })

@@ -14,6 +14,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  listAchievementTipsApi,
+  postAchievementTipApi,
+  voteAchievementTipApi,
+} from '@/lib/arcade/arcade.contract';
 
 interface Tip {
   id: string;
@@ -41,9 +48,11 @@ export function AchievementTipsDialog({
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/arcade/tips?achievementId=${encodeURIComponent(achievementId)}`);
-    if (res.ok) setTips(((await res.json()) as { tips: Tip[] }).tips);
-    else setTips([]);
+    try {
+      setTips((await api(listAchievementTipsApi, { query: { achievementId }, retries: 0 })).tips);
+    } catch {
+      setTips([]);
+    }
   }, [achievementId]);
 
   useEffect(() => {
@@ -52,19 +61,16 @@ export function AchievementTipsDialog({
 
   async function post() {
     setBusy(true);
-    const res = await fetch('/api/arcade/tips', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ achievementId, body: draft }),
-    }).catch(() => null);
-    setBusy(false);
-    if (res?.ok) {
-      setDraft('');
-      await load();
-    } else {
-      const err = (await res?.json().catch(() => null)) as { error?: string } | null;
-      toast.error(err?.error ?? t('tip-failed', { defaultValue: 'Could not post that tip.' }));
+    try {
+      await api(postAchievementTipApi, { body: { achievementId, body: draft } });
+    } catch (err) {
+      setBusy(false);
+      toast.error(serverError(err) ?? t('tip-failed', { defaultValue: 'Could not post that tip.' }));
+      return;
     }
+    setBusy(false);
+    setDraft('');
+    await load();
   }
 
   async function vote(tip: Tip) {
@@ -75,11 +81,7 @@ export function AchievementTipsDialog({
           x.id === tip.id ? { ...x, voted: !x.voted, votes: x.votes + (x.voted ? -1 : 1) } : x,
         ) ?? prev,
     );
-    await fetch('/api/arcade/tips', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tipId: tip.id }),
-    }).catch(() => {});
+    await api(voteAchievementTipApi, { body: { tipId: tip.id } }).catch(() => {});
   }
 
   return (

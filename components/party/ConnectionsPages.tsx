@@ -12,6 +12,17 @@ import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useSession } from '@/components/Providers';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  createConnectionGridApi,
+  deleteConnectionGridApi,
+  getConnectionGridApi,
+  guessConnectionGridApi,
+  listConnectionGridsApi,
+  rateConnectionGridApi,
+  scheduleConnectionGridApi,
+} from '@/lib/party/connections.contract';
 import { cn } from '@/lib/utils';
 import {
   MAX_MISTAKES,
@@ -61,8 +72,7 @@ export function ConnectionsHome() {
     recent: GridSummary[];
   } | null>(null);
   useEffect(() => {
-    fetch('/api/connections/grids')
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('x'))))
+    api(listConnectionGridsApi, { retries: 0 })
       .then(setData)
       .catch(() => toast.error(t('load-failed-grids', { defaultValue: 'Could not load grids.' })));
   }, [t]);
@@ -146,19 +156,14 @@ export function ConnectionsNew() {
 
   async function submit() {
     setBusy(true);
-    const res = await fetch('/api/connections/grids', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, groups }),
-    }).catch(() => null);
-    setBusy(false);
-    if (res?.ok) {
-      const { id } = (await res.json()) as { id: string };
+    try {
+      const { id } = await api(createConnectionGridApi, { body: { title, groups } });
+      setBusy(false);
       toast.success(t('grid-created', { defaultValue: 'Grid published.' }));
       void navigate({ to: '/connections/u/$id', params: { id } });
-    } else {
-      const err = res ? ((await res.json().catch(() => ({}))) as { error?: string }) : {};
-      toast.error(err.error ?? t('grid-failed', { defaultValue: 'Could not publish the grid.' }));
+    } catch (err) {
+      setBusy(false);
+      toast.error(serverError(err) ?? t('grid-failed', { defaultValue: 'Could not publish the grid.' }));
     }
   }
 
@@ -246,9 +251,12 @@ export function ConnectionsPlay({ id }: { id: string }) {
   const [date, setDate] = useState('');
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/connections/grids/${id}`).catch(() => null);
-    if (res?.ok) setGrid(((await res.json()) as { grid: GridPlayView }).grid);
-    else setMissing(true);
+    try {
+      const res = await api(getConnectionGridApi, { params: { id }, retries: 0 });
+      setGrid(res.grid);
+    } catch {
+      setMissing(true);
+    }
   }, [id]);
   useEffect(() => {
     void load();
@@ -279,17 +287,13 @@ export function ConnectionsPlay({ id }: { id: string }) {
   const canPlay = signedIn && !grid.isAuthor && !done;
 
   async function guess() {
-    const res = await fetch(`/api/connections/grids/${id}/guess`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: picked }),
-    }).catch(() => null);
-    if (!res?.ok) {
-      const err = res ? ((await res.json().catch(() => ({}))) as { error?: string }) : {};
-      toast.error(err.error ?? t('guess-failed', { defaultValue: 'Could not check that guess.' }));
+    let r: { correct: boolean; oneAway: boolean };
+    try {
+      r = await api(guessConnectionGridApi, { params: { id }, body: { items: picked } });
+    } catch (err) {
+      toast.error(serverError(err) ?? t('guess-failed', { defaultValue: 'Could not check that guess.' }));
       return;
     }
-    const r = (await res.json()) as { correct: boolean; oneAway: boolean };
     setMsg(
       r.correct
         ? null
@@ -302,31 +306,28 @@ export function ConnectionsPlay({ id }: { id: string }) {
   }
 
   async function rate(n: number) {
-    const res = await fetch(`/api/connections/grids/${id}/rate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rating: n }),
-    }).catch(() => null);
-    if (res?.ok) {
-      toast.success(t('rated', { defaultValue: 'Thanks for rating.' }));
-      await load();
+    try {
+      await api(rateConnectionGridApi, { params: { id }, body: { rating: n } });
+    } catch {
+      return;
     }
+    toast.success(t('rated', { defaultValue: 'Thanks for rating.' }));
+    await load();
   }
 
   async function schedule(d: string | null) {
-    const res = await fetch(`/api/connections/grids/${id}/schedule`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: d }),
-    }).catch(() => null);
-    if (res?.ok) {
-      toast.success(
-        d
-          ? t('scheduled', { defaultValue: 'Scheduled as the daily for {{d}}.', d })
-          : t('unscheduled', { defaultValue: 'Daily cleared.' }),
-      );
-      await load();
-    } else toast.error(t('schedule-failed', { defaultValue: 'Could not schedule (past date?).' }));
+    try {
+      await api(scheduleConnectionGridApi, { params: { id }, body: { date: d } });
+    } catch {
+      toast.error(t('schedule-failed', { defaultValue: 'Could not schedule (past date?).' }));
+      return;
+    }
+    toast.success(
+      d
+        ? t('scheduled', { defaultValue: 'Scheduled as the daily for {{d}}.', d })
+        : t('unscheduled', { defaultValue: 'Daily cleared.' }),
+    );
+    await load();
   }
 
   async function remove() {
@@ -337,8 +338,12 @@ export function ConnectionsPlay({ id }: { id: string }) {
       }))
     )
       return;
-    const res = await fetch(`/api/connections/grids/${id}`, { method: 'DELETE' }).catch(() => null);
-    if (res?.ok) void navigate({ to: '/connections' });
+    try {
+      await api(deleteConnectionGridApi, { params: { id } });
+    } catch {
+      return;
+    }
+    void navigate({ to: '/connections' });
   }
 
   async function share() {

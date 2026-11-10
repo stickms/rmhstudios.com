@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/sheet';
 import type { ChatRef } from '@/lib/chat-plus/types';
 import type { PinView } from '@/lib/chat-plus/settings.client';
+import { api } from '@/lib/contract/client';
+import { setChatPinApi } from '@/lib/chat-plus/chat.contract';
 import { chatMetaKey, useChatMeta } from './hooks';
 
 /**
@@ -84,13 +86,10 @@ function PinsSheet({
 
   const unpin = async (messageId: string) => {
     try {
-      const res = await fetch(`/api/chats/${chat.kind}/${encodeURIComponent(chat.id)}/pin`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messageId, pinned: false }),
+      await api(setChatPinApi, {
+        params: { kind: chat.kind, id: chat.id },
+        body: { messageId, pinned: false },
       });
-      if (!res.ok) throw new Error('unpin failed');
       await qc.invalidateQueries({ queryKey: chatMetaKey(chat) });
     } catch {
       toast.error(t('pin-failed', { defaultValue: 'Could not update the pin' }));

@@ -16,6 +16,7 @@ import type { ChatRef } from '@/lib/chat-plus/types';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { setReminderApi } from '@/lib/reminders/reminders.contract';
+import { runChatCommandApi } from '@/lib/chat-plus/chat.contract';
 
 /**
  * M4 — slash commands for a chat composer.
@@ -148,24 +149,17 @@ export function useSlashCommands({
 
       // Everything else is decided on the server.
       try {
-        const res = await fetch(`/api/chats/${chat.kind}/${encodeURIComponent(chat.id)}/command`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text }),
+        const data = await api(runChatCommandApi, {
+          params: { kind: chat.kind, id: chat.id },
+          body: { text },
         });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          // The draft stays, so a typo in `/poll` is one edit away from working.
-          toast.error(
-            data.error || t('command-failed', { defaultValue: 'That command did not work' }),
-          );
-          return true;
-        }
         setDraft('');
         onPosted(data.message);
-      } catch {
-        toast.error(t('command-failed', { defaultValue: 'That command did not work' }));
+      } catch (err) {
+        // The draft stays, so a typo in `/poll` is one edit away from working.
+        toast.error(
+          serverError(err) || t('command-failed', { defaultValue: 'That command did not work' }),
+        );
       }
       return true;
     },

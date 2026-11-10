@@ -3,6 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { ListChecks, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createChatChecklistApi } from '@/lib/chat-plus/chat.contract';
 import {
   Dialog,
   DialogContent,
@@ -49,22 +52,17 @@ export function ChecklistComposer({
     if (!valid || busy) return;
     setBusy(true);
     try {
-      const res = await fetch(`/api/chats/${chat.kind}/${encodeURIComponent(chat.id)}/checklist`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), items: filled }),
+      const data = await api(createChatChecklistApi, {
+        params: { kind: chat.kind, id: chat.id },
+        body: { title: title.trim(), items: filled },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(
-          data.error || t('checklist-failed', { defaultValue: 'Could not post the checklist' }),
-        );
-        return;
-      }
       onPosted(data.message);
       reset();
       setOpen(false);
+    } catch (err) {
+      toast.error(
+        serverError(err) || t('checklist-failed', { defaultValue: 'Could not post the checklist' }),
+      );
     } finally {
       setBusy(false);
     }

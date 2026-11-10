@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Check, Coins, Dices, ListChecks, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/contract/client';
+import { tickChatChecklistApi, voteChatPollApi } from '@/lib/chat-plus/chat.contract';
 import type {
   ChatRef,
   ChecklistItem,
@@ -140,14 +142,10 @@ function ChecklistCard({
       ),
     );
     try {
-      const res = await fetch(`/api/chats/${chat.kind}/${encodeURIComponent(chat.id)}/checklist`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messageId, index }),
+      const data = await api(tickChatChecklistApi, {
+        params: { kind: chat.kind, id: chat.id },
+        body: { messageId, index },
       });
-      if (!res.ok) throw new Error('tick failed');
-      const data = (await res.json()) as { items: ChecklistItem[] };
       setItems(data.items);
     } catch {
       setItems(before);
@@ -245,14 +243,10 @@ function DmPollCard({
       };
     });
     try {
-      const res = await fetch(`/api/chats/${chat.kind}/${encodeURIComponent(chat.id)}/vote`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messageId, optionIdx }),
+      const data = await api(voteChatPollApi, {
+        params: { kind: chat.kind, id: chat.id },
+        body: { messageId, optionIdx },
       });
-      if (!res.ok) throw new Error('vote failed');
-      const data = (await res.json()) as { poll: PollView };
       setView(data.poll);
     } catch {
       setView(before);

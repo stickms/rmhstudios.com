@@ -5,6 +5,9 @@ import {
   type RoomConfig,
 } from '@/lib/elections/room-config';
 import type { RoomView } from '@/lib/elections/rooms';
+import { api } from '@/lib/contract/client';
+import { getElectionRoomApi, updateElectionRoomApi } from '@/lib/elections/elections.contract';
+import { HttpError } from '@/lib/http';
 
 export type RoomSource = { kind: 'solo' } | { kind: 'hosted'; code: string };
 
@@ -60,12 +63,9 @@ export function useRoomState(cycle: string, source: RoomSource) {
     }
     let cancelled = false;
     setStatus('loading');
-    fetch(`/api/elections/rooms/${source.code}`, { credentials: 'same-origin' })
-      .then(async (res) => {
+    api(getElectionRoomApi, { params: { code: source.code }, retries: 0 })
+      .then(({ room }) => {
         if (cancelled) return;
-        if (res.status === 404) return setStatus('not-found');
-        if (!res.ok) return setStatus('error');
-        const { room } = (await res.json()) as { room: RoomView };
         setConfigState(sanitizeRoomConfig(room.config));
         setMeta({
           name: room.name,
@@ -75,7 +75,10 @@ export function useRoomState(cycle: string, source: RoomSource) {
         });
         setStatus('ready');
       })
-      .catch(() => !cancelled && setStatus('error'));
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setStatus(err instanceof HttpError && err.status === 404 ? 'not-found' : 'error');
+      });
     return () => {
       cancelled = true;
     };
@@ -94,11 +97,9 @@ export function useRoomState(cycle: string, source: RoomSource) {
       // Host: keep the screen responsive, save at most once per half second.
       if (save.current) clearTimeout(save.current);
       save.current = setTimeout(() => {
-        fetch(`/api/elections/rooms/${source.code}`, {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({ config: next }),
+        api(updateElectionRoomApi, {
+          params: { code: source.code },
+          body: { config: next },
         }).catch(() => undefined);
       }, 500);
     },

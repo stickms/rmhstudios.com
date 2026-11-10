@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getPatchNoteApi, publishPatchNoteApi } from '@/lib/arcade/arcade.contract';
 import { prisma } from '@/lib/prisma.server';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { games } from '@/lib/games';
@@ -32,7 +33,7 @@ const latestFor = (gameId: string) =>
 export const Route = createFileRoute('/api/arcade/patch-notes/')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(getPatchNoteApi, 
         { auth: 'none', rateLimit: 'read', query: getQuery },
         async ({ query }) => {
           const game = games.find((g) => g.href === query.path);
@@ -43,7 +44,7 @@ export const Route = createFileRoute('/api/arcade/patch-notes/')({
           );
         },
       ),
-      POST: defineHandler(
+      POST: implement(publishPatchNoteApi, 
         { auth: 'admin', rateLimit: 'write', body: postBody },
         async ({ body }) => {
           if (!games.some((g) => g.id === body.gameId)) {

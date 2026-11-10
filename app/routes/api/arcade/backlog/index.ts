@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler, notFound } from '@/lib/api/handler.server';
+import { notFound } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { clearBacklogApi, getBacklogApi, setBacklogApi } from '@/lib/arcade/arcade.contract';
 import { prisma } from '@/lib/prisma.server';
 import { PLAY_STATUSES, FINISH_STATUSES } from '@/lib/arcade/backlog';
 import { completionStats, isKnownGame } from '@/lib/arcade/backlog.server';
@@ -20,7 +22,7 @@ const putBody = z.object({
 export const Route = createFileRoute('/api/arcade/backlog/')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(getBacklogApi, 
         { auth: 'optional', rateLimit: 'read', query: gameQuery },
         async ({ userId, query }) => {
           if (!isKnownGame(query.gameId)) return notFound('Unknown game');
@@ -36,7 +38,7 @@ export const Route = createFileRoute('/api/arcade/backlog/')({
           return Response.json({ stats, mine });
         },
       ),
-      PUT: defineHandler({ rateLimit: 'write', body: putBody }, async ({ userId, body }) => {
+      PUT: implement(setBacklogApi, { rateLimit: 'write', body: putBody }, async ({ userId, body }) => {
         if (!isKnownGame(body.gameId)) return notFound('Unknown game');
         const finishMinutes = (FINISH_STATUSES as readonly string[]).includes(body.status)
           ? (body.finishMinutes ?? null)
@@ -48,7 +50,7 @@ export const Route = createFileRoute('/api/arcade/backlog/')({
         });
         return Response.json({ ok: true });
       }),
-      DELETE: defineHandler({ rateLimit: 'write', query: gameQuery }, async ({ userId, query }) => {
+      DELETE: implement(clearBacklogApi, { rateLimit: 'write', query: gameQuery }, async ({ userId, query }) => {
         await prisma.gamePlayStatus.deleteMany({ where: { userId, gameId: query.gameId } });
         return Response.json({ ok: true });
       }),

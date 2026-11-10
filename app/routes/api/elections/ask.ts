@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { askElectionsApi } from '@/lib/elections/elections.contract';
 import { currentCycle, parseDay } from '@/lib/elections/calendar';
 import { answerElectionQuestion } from '@/lib/elections/ai.server';
 import { getElectionSnapshot } from '@/lib/elections/source.server';
@@ -15,7 +16,7 @@ const body = z.object({
 export const Route = createFileRoute('/api/elections/ask')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(askElectionsApi, 
         { rateLimit: 'ai', body, label: 'elections.ask' },
         async ({ userId, body: b }) => {
           if (!isAiConfigured()) return Response.json({ error: 'AI is unavailable' }, { status: 503 });

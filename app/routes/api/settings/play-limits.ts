@@ -1,12 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { getPlayLimits, updatePlayLimits } from '@/lib/economy/play-limits.server';
-import {
-  MAX_COOL_OFF_DAYS,
-  MAX_DAILY_CAP,
-  MAX_EXCLUSION_DAYS,
-} from '@/lib/economy/play-limits';
+import { getPlayLimitsApi, setPlayLimitsApi } from '@/lib/economy/play-limits.contract';
+import { playLimitsChangeSchema } from '@/lib/economy/play-limits-schema';
 
 /**
  * `/api/settings/play-limits` — the member's own guard rails (W8).
@@ -24,31 +20,16 @@ import {
  * exactly the shortcut a member asked us not to offer them.
  */
 
-const schema = z
-  .object({
-    /** `null` removes the cap (a loosening, so it waits). Omit to leave alone. */
-    dailyCoinCap: z.number().int().min(1).max(MAX_DAILY_CAP).nullable().optional(),
-    excludeForDays: z.number().int().min(1).max(MAX_EXCLUSION_DAYS).optional(),
-    coolOffForDays: z.number().int().min(1).max(MAX_COOL_OFF_DAYS).optional(),
-  })
-  .refine(
-    (v) =>
-      v.dailyCoinCap !== undefined ||
-      v.excludeForDays !== undefined ||
-      v.coolOffForDays !== undefined,
-    { message: 'Nothing to change' },
-  );
-
 export const Route = createFileRoute('/api/settings/play-limits')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ session }) =>
-        Response.json(await getPlayLimits(session.user.id)),
+      GET: implement(getPlayLimitsApi, { rateLimit: 'read' }, async ({ session }) =>
+        getPlayLimits(session.user.id),
       ),
-      POST: defineHandler(
-        { rateLimit: 'write', body: schema },
-        async ({ session, body }) =>
-          Response.json(await updatePlayLimits(session.user.id, body)),
+      POST: implement(
+        setPlayLimitsApi,
+        { rateLimit: 'write', body: playLimitsChangeSchema },
+        async ({ session, body }) => updatePlayLimits(session.user.id, body),
       ),
     },
   },

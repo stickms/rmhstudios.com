@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getElectionsApi } from '@/lib/elections/elections.contract';
 import { currentCycle, parseDay, phaseOf } from '@/lib/elections/calendar';
 import { getElectionSnapshot } from '@/lib/elections/source.server';
 import { OFFICES, type Office } from '@/lib/elections/types';
@@ -21,7 +22,7 @@ const query = z.object({
 export const Route = createFileRoute('/api/elections/')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(getElectionsApi, 
         {
           auth: 'none',
           rateLimit: 'read',

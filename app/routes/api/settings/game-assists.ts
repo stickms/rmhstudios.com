@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getAssistsApi, setAssistsApi } from '@/lib/game/assist.contract';
+import { assistPatchSchema } from '@/lib/game/assist-schema';
 import { getAssists, setAssists } from '@/lib/game/assist.server';
-import { ASSIST_CAPABLE, MIN_SPEED_FLOOR } from '@/lib/game/assist';
+import { ASSIST_CAPABLE } from '@/lib/game/assist';
 
 /**
  * `/api/settings/game-assists` — the member's own assists (P7).
@@ -13,30 +14,20 @@ import { ASSIST_CAPABLE, MIN_SPEED_FLOOR } from '@/lib/game/assist';
  * yet — and today that list is empty, which the panel says out loud.
  */
 
-const schema = z.object({
-  holdToPress: z.boolean().optional(),
-  speedFloor: z.number().min(MIN_SPEED_FLOOR).max(1).optional(),
-  calmVisuals: z.boolean().optional(),
-  colorSafe: z.boolean().optional(),
-  noTimedInput: z.boolean().optional(),
-});
-
 export const Route = createFileRoute('/api/settings/game-assists')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ session }) =>
-        Response.json({
-          assists: await getAssists(session.user.id),
+      GET: implement(getAssistsApi, { rateLimit: 'read' }, async ({ session }) => ({
+        assists: await getAssists(session.user.id),
+        honouredBy: [...ASSIST_CAPABLE].sort(),
+      })),
+      POST: implement(
+        setAssistsApi,
+        { rateLimit: 'write', body: assistPatchSchema },
+        async ({ session, body }) => ({
+          assists: await setAssists(session.user.id, body),
           honouredBy: [...ASSIST_CAPABLE].sort(),
         }),
-      ),
-      POST: defineHandler(
-        { rateLimit: 'write', body: schema },
-        async ({ session, body }) =>
-          Response.json({
-            assists: await setAssists(session.user.id, body),
-            honouredBy: [...ASSIST_CAPABLE].sort(),
-          }),
       ),
     },
   },
