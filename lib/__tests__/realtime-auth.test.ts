@@ -34,6 +34,7 @@ const CLIENTS = [
   'lib/tf2-game/net/client.ts',
   'features/balatro/engine/mp/hub-client.ts',
   'features/hearthworks/engine/net/hub-client-core.ts',
+  'features/casino/engine/table-client.ts',
 ];
 
 /**

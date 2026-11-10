@@ -1,8 +1,10 @@
 import { create } from 'zustand';
+import type { RealtimeStatus } from '@/lib/shared/realtime/types';
 import type { TablePhase, PlayerSeatClient, RoomListEntry, RoomInfo, CardRevealPayload, RoundResultPayload, PlayerBets } from './types';
 import type { Card, BaccaratResult } from './logic';
 
-type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+/** The shared realtime status contract (lib/shared/realtime/types.ts). */
+type ConnectionStatus = RealtimeStatus;
 type ViewMode = 'lobby' | 'room';
 
 const emptyBets: PlayerBets = { player: 0, banker: 0, tie: 0, playerPair: 0, bankerPair: 0, playerDragon: 0, bankerDragon: 0 };

@@ -17,9 +17,9 @@
  * ## Rollout posture: lenient by default
  *
  * A client that sends NO version is allowed through. That is not timidity, it
- * is correctness — most of this hub's clients are bare `io()` calls
- * (`features/casino/engine/holdem/socket.ts`, `features/altair/engine/multiplayer/socket.ts`, and a dozen
- * more) that have never sent a handshake field in their lives, and every tab
+ * is correctness — several of this hub's clients are still bare `io()` calls
+ * (`features/altair/engine/multiplayer/socket.ts`, `features/dream-rift/engine/net/connection.ts`,
+ * and a handful more) that have never sent a handshake field in their lives, and every tab
  * open at the moment this first deploys is one of them. Rejecting "absent"
  * would take every game on the site down at the instant the guard shipped, to
  * fix a bug that only bites across a shape change.
