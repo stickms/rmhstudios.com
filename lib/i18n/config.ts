@@ -204,5 +204,12 @@ export function buildInitOptions(
     resources,
     interpolation: { escapeValue: false },
     returnNull: false,
+    // Namespaces load on demand on the client (lib/i18n/instances.ts), so a
+    // component can render before its namespace has arrived. Never suspend:
+    // `t()` returns each call's defaultValue meanwhile (identical to the SSR
+    // markup, so hydration matches) and useTranslation re-renders when the load
+    // lands (`loaded` re-renders consumers
+    // of a namespace that arrived without their own hook asking for it).
+    react: { useSuspense: false, bindI18n: 'languageChanged loaded' },
   };
 }

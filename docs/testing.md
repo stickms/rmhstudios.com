@@ -57,7 +57,7 @@ gate, the game-viewport contract, the filter-cost budget, the theme-token and
 colour-vision contracts, the API-handler adoption backlog, the i18n catalog and
 namespace integrity, the rAF-loop allowlist, the server-bundle copy check, the
 FOUC contract and the test-discovery gate — plus eslint on the changed files,
-`tsc`, and the generated-docs freshness checks. That subset is deliberately the fast one (measure with `time pnpm check:consistency --fast`). It is wired into
+`tsc`, and the generated-docs freshness checks. The class-string conventions (raw palette colours, hardcoded radii, `transition-all`, dead `tailwindcss-animate` classes) are not tests: they are eslint `local/no-raw-palette-color`, `local/no-hardcoded-radius`, `local/no-transition-all` and `local/no-dead-animate-classes`, scoped by `eslint-local-rules/design-scope.js`. That subset is deliberately the fast one (measure with `time pnpm check:consistency --fast`). It is wired into
 `git commit` by `.githooks/pre-commit` (`pnpm hooks:install`) and by
 `.claude/hooks/commit-gate.sh` in agent sessions. A new guard test belongs in
 the `GATE_TESTS` list in `scripts/check-consistency.sh`.

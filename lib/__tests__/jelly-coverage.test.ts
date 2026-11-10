@@ -38,6 +38,7 @@
  * `JELLY_COVERAGE_BASELINE=freeze` rewrites every shard from the current tree. It exists for the initial
  * freeze only; a raised number shows up in review as a diff to this JSON, and has to be argued for there.
  */
+import { FULLSCREEN_TIER_DIRS } from '../../eslint-local-rules/design-scope.js';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -75,16 +76,7 @@ const ROLE = /glass-|app-glass|data-liquid/;
 const isSurface = (v: string) =>
   SURFACE_BG.test(v) && ROUNDED.test(v) && BORDER.test(v) && !ROLE.test(v);
 
-/** Site tier = not a full-screen game/app dir, parsed from the design gate (the policy lives there). */
-const FULLSCREEN_TIER_DIRS = (() => {
-  const src = readFileSync(join(ROOT, 'lib/__tests__/design-consistency.test.ts'), 'utf8');
-  const start = src.indexOf('const FULLSCREEN_TIER_DIRS = new Set([');
-  return new Set(
-    [...src.slice(start, src.indexOf(']);', start)).matchAll(/^\s*'([a-z0-9-]+)'/gm)].map(
-      (m) => m[1],
-    ),
-  );
-})();
+/** Site tier = not a full-screen game/app dir (the policy lives in eslint-local-rules/design-scope.js). */
 const isGameOrApp = (f: string) =>
   f.startsWith('components/') && FULLSCREEN_TIER_DIRS.has(f.split('/')[1]);
 

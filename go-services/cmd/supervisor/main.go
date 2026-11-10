@@ -15,7 +15,6 @@ import (
 	"github.com/rmhstudios/rmh-go/internal/discordbot"
 	"github.com/rmhstudios/rmh-go/internal/doctrine"
 	"github.com/rmhstudios/rmh-go/internal/recap"
-	"github.com/rmhstudios/rmh-go/internal/streaksaver"
 	"github.com/rmhstudios/rmh-go/internal/vibeworker"
 	"github.com/rmhstudios/rmh-go/pkg/config"
 	"github.com/rmhstudios/rmh-go/pkg/db"
@@ -47,7 +46,6 @@ func main() {
 		"recap":           recap.Run,
 		"discord-bot":     discordbot.Run,
 		"bot-worker":      botworker.Run,
-		"streak-saver":    streaksaver.Run,
 	}
 
 	// One metrics registry per worker so the merged /metrics keeps per-worker

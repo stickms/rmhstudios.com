@@ -158,10 +158,11 @@ review() {
 }
 
 # ── The site-tier path filter, read from the CI gate itself ──────────────────
-# design-consistency.test.ts rules 5-7 exempt the full-screen games and the
-# `--app-*` apps by design. That exemption list is POLICY and lives in the test;
-# it is parsed out here rather than copied so the two can never drift apart.
-GATE_TEST="lib/__tests__/design-consistency.test.ts"
+# The site-tier rules exempt the full-screen games and the `--app-*` apps by
+# design. That exemption list is POLICY and lives in eslint-local-rules/design-scope.js
+# (the same file eslint.config.mjs scopes its class-string rules from); it is
+# parsed out here rather than copied so the two can never drift apart.
+GATE_TEST="eslint-local-rules/design-scope.js"
 # POSIX ERE has no lookahead, so the tier is a two-stage filter: candidate
 # paths, minus the exempt ones. If the gate test ever moves or changes shape,
 # the candidate set narrows to the unambiguously-site directories rather than
@@ -226,23 +227,10 @@ fi
 step "2. Design language — added lines (docs/design-language.md §13)"
 BEFORE=$FAILED
 
-blocking_site "Raw Tailwind palette colour in site UI (§13 rule 5)" \
-  'class.*(^|[^A-Za-z0-9:_-])(bg|text|border|ring|from|via|to|fill|stroke|divide|outline|shadow|decoration|placeholder|caret|accent)-(zinc|gray|slate|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-[0-9][0-9]+([^A-Za-z0-9_-]|$)' \
-  'Every colour comes from the --site-* contract. A domain-fixed palette gets a scoped variable group (--casino-*).'
-
-blocking_site "Hardcoded radius in site UI (§13 rule 6)" \
-  'class.*(^|[^A-Za-z0-9:_-])rounded-(sm|md|lg|xl|2xl|3xl)([^A-Za-z0-9_-]|$)' \
-  'Use rounded-site / rounded-site-sm. (rounded-full and rounded-none are shapes, not radii — those stay fine.)'
-
-blocking "transition-all (§13 rule 8)" \
-  '\.tsx$' \
-  'class.*(^|[^A-Za-z0-9_-])transition-all([^A-Za-z0-9_-]|$)' \
-  'Name what moves: transition-colors / transition-transform / transition-[a,b]. Animate a transform, not a layout property.'
-
-blocking "Dead tailwindcss-animate class (§13 rule 9)" \
-  '\.tsx$' \
-  'class.*(^|[^A-Za-z0-9:._/-])(animate-(in|out)|fade-(in|out)|zoom-(in|out)|slide-(in-from|out-to)-(top|bottom|left|right)|fill-mode-(both|forwards|backwards|none))([^A-Za-z0-9._/-]|$)' \
-  'That plugin is not installed — these compile to zero rules. Use the lib/motion.ts variants (scaleIn / popIn / modalContent).'
+# Raw palette colours (§13 rule 5), hardcoded radii (rule 6), `transition-all` (rule 8) and dead
+# tailwindcss-animate classes (rule 9) are eslint rules now — local/no-raw-palette-color,
+# local/no-hardcoded-radius, local/no-transition-all, local/no-dead-animate-classes — so the
+# eslint step below gates them, scoped by eslint-local-rules/design-scope.js.
 
 # The one exemption mirrors TABLIST_ALLOW in design-consistency.test.ts: the TF2 HUD Editor is
 # deliberately outside the jelly material and ships its own flat TfTabs.

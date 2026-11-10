@@ -9,6 +9,10 @@
 import noAdhocUserSelect from './no-adhoc-user-select.js';
 import noLucideNamespaceImport from './no-lucide-namespace-import.js';
 import noUseClientDirective from './no-use-client-directive.js';
+import noRawPaletteColor from './no-raw-palette-color.js';
+import noHardcodedRadius from './no-hardcoded-radius.js';
+import noTransitionAll from './no-transition-all.js';
+import noDeadAnimateClasses from './no-dead-animate-classes.js';
 
 /** @type {import('eslint').ESLint.Plugin} */
 const plugin = {
@@ -17,6 +21,10 @@ const plugin = {
     'no-adhoc-user-select': noAdhocUserSelect,
     'no-lucide-namespace-import': noLucideNamespaceImport,
     'no-use-client-directive': noUseClientDirective,
+    'no-raw-palette-color': noRawPaletteColor,
+    'no-hardcoded-radius': noHardcodedRadius,
+    'no-transition-all': noTransitionAll,
+    'no-dead-animate-classes': noDeadAnimateClasses,
   },
 };
 

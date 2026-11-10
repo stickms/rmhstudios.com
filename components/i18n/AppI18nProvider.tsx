@@ -9,10 +9,10 @@ import { getServerI18n, ensureClientLocale } from "@/lib/i18n/instances";
  * instance is created (useMemo runs once per render = per request); on the
  * client the singleton is reused and switched to `locale`.
  *
- * `resources` is the active language's bundle handed down from the server for the
- * first render (non-en only — en is always bundled), so the client initializes
+ * `resources` is the active language's CORE namespaces handed down from the server for the
+ * first render (non-en only — en renders from defaultValues), so the client initializes
  * synchronously with the same translations the server rendered and hydration
- * matches. Subsequent language switches load their chunk on demand.
+ * matches. Every other namespace, and later language switches, load per namespace on demand.
  */
 export function AppI18nProvider({
   locale,

@@ -49,6 +49,10 @@ import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
 import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
 import { registerRecipeJobs } from '@/lib/devplatform/recipes.server';
 import {
+  STREAK_REMINDER_QUEUE,
+  registerStreakReminderCron,
+} from '@/lib/streak-reminders.server';
+import {
   PROFILE_VISIT_SWEEP_QUEUE,
   registerProfileVisitSweepCron,
 } from '@/lib/profile/visit-sweep.server';
@@ -133,6 +137,9 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   { queue: 'communities', register: registerCommunityCrons },
   // P9: nightly sweep of the profile visitor-counter dedupe ledger.
   { queue: PROFILE_VISIT_SWEEP_QUEUE, register: registerProfileVisitSweepCron },
+  // D3: streak-saver (ported from the Go worker). Hourly "keep your streak" notification + web push;
+  // STREAK_REMINDER_ENABLED=false skips it. The status service watches its last success (B06).
+  { queue: STREAK_REMINDER_QUEUE, register: registerStreakReminderCron },
   // M3 disappearing messages: expiry is enforced at read time; this only deletes the rows.
   { queue: CHAT_EXPIRY_QUEUE, register: registerChatExpiryCron },
   // F5: expire unmatched study-buddy requests and tell their owners.

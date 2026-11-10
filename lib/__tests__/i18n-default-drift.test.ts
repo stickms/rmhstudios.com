@@ -10,13 +10,14 @@ import { fileURLToPath } from 'node:url';
  * ## Why this is a FOUC gate
  *
  * No English catalog ships in the client entry (until 2026-10-09 the core
- * namespaces did, ~136 KB minified, the largest thing in it). The whole catalog
- * is backfilled after `load` + idle (`backfillEn` in `lib/i18n/instances.ts`),
- * and the server renders without it. So every page renders every English string
+ * namespaces did, ~136 KB minified, the largest thing in it). Each namespace
+ * loads lazily and on demand through the client backend (`clientI18nBackend` in
+ * `lib/i18n/instances.ts`; English waits for `load` + idle), and the server
+ * renders without it. So every page renders every English string
  * from its `defaultValue` first — on the server and on the client's first
- * render — and re-renders it from `locales/en/<ns>.json` when the backfill lands. Wherever
+ * render — and re-renders it from `locales/en/<ns>.json` when the namespace lands. Wherever
  * the two differ, the reader watches the text change after it painted, and when
- * the backfill wins the race with hydration React fails to hydrate outright
+ * the catalog wins the race with hydration React fails to hydrate outright
  * (#418). Measured on `/rmh-capital` ("Latest Perspectives" → "Insights") and
  * `/rmh-pmc`, whose Command page rendered the HOME page's section headings once
  * the catalog loaded (docs/archive/2026/fouc-audit-2026-10-06.md §21).
@@ -188,7 +189,7 @@ describe('i18n: defaults agree with the English catalog', () => {
 
   it('every call carries a literal default', () => {
     // With no catalog on the critical path a call without one renders its KEY
-    // until the backfill lands (and the server renders the key outright).
+    // until the namespace lands (and the server renders the key outright).
     //
     // A template-literal default (`Page ${n}`) counts as none: `i18n:extract`
     // cannot read it, so it writes "" into locales/ — and i18next returns an

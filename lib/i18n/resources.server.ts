@@ -12,8 +12,8 @@
 // time the SSR root module evaluated — a large, pure cold-boot cost paid even by
 // English visitors who never use the other 15 languages.
 //
-// Now each locale is loaded on demand via a dynamic import (its own async chunk,
-// reusing the same per-locale loaders the client uses) and cached. The SSR entry
+// Now each locale's CORE namespaces are loaded on demand via dynamic imports (one
+// chunk per namespace, reusing the same per-namespace loaders the client uses) and cached. The SSR entry
 // (app/routes/__root.tsx `getInitialI18n`) awaits `preloadLocale(locale)` BEFORE
 // render, so the *synchronous* getServerI18n → localeCoreResources path
 // (lib/i18n/instances.ts) still reads a warm bundle. English needs nothing here:
@@ -21,7 +21,7 @@
 // catalog either), and getServerI18n only calls localeCoreResources for non-en
 // locales.
 import { CORE_NAMESPACES, DEFAULT_LOCALE, type Locale } from '@/lib/i18n/config';
-import { LOCALE_LOADERS, type LocaleBundle } from '@/lib/i18n/resources';
+import { loadNamespaces, type LocaleBundle } from '@/lib/i18n/resources';
 
 /** Per-locale bundle cache, populated on first preloadLocale()/access and kept
  *  for the life of the process (the bundles are immutable static objects). */
@@ -34,8 +34,10 @@ function loadLocale(locale: Locale): Promise<LocaleBundle> {
   if (hit) return Promise.resolve(hit);
   const pending = inflight.get(locale);
   if (pending) return pending;
-  const loader = LOCALE_LOADERS[locale] ?? LOCALE_LOADERS[DEFAULT_LOCALE];
-  const p = loader()
+  // Only the CORE namespaces are ever read synchronously during SSR
+  // (localeCoreResources), so only those namespace chunks are imported — not
+  // the whole locale. The client loads the rest per namespace on demand.
+  const p = loadNamespaces(locale, CORE_NAMESPACES)
     .then((bundle) => {
       cache.set(locale, bundle);
       inflight.delete(locale);
@@ -50,7 +52,7 @@ function loadLocale(locale: Locale): Promise<LocaleBundle> {
 }
 
 /**
- * Load a language's full bundle (its own async chunk) and cache it, so the
+ * Load a language's core namespaces (their own async chunks) and cache them, so the
  * synchronous {@link localeResources}/{@link localeCoreResources} accessors below
  * can serve it during render. Call this in an async context (the root loader)
  * BEFORE the synchronous SSR i18n init runs. Idempotent; no-op once cached.
@@ -65,8 +67,8 @@ function cachedBundle(locale: Locale): LocaleBundle {
   return cache.get(locale) ?? cache.get(DEFAULT_LOCALE) ?? {};
 }
 
-/** The full resource bundle (all namespaces) for one language. Server use only.
- *  Returns the cached bundle — call {@link preloadLocale} first. */
+/** The cached bundle for one language — the core namespaces {@link preloadLocale}
+ *  warmed. Server use only; call {@link preloadLocale} first. */
 export function localeResources(locale: Locale): LocaleBundle {
   return cachedBundle(locale);
 }
@@ -76,7 +78,7 @@ export function localeResources(locale: Locale): LocaleBundle {
  * renders with and what the root loader dehydrates into the HTML — instead of the
  * full ~66-namespace catalog (~250-300 KB per non-en page view). Non-core
  * (game/app) namespaces resolve to their English `defaultValue` until the client
- * backfills them from the per-locale chunk after hydration (see
+ * loads them per namespace on demand (see
  * lib/i18n/instances.ts). Because BOTH the server render and the client hydrate
  * from this same core set, there is no hydration mismatch. Returns the cached
  * bundle — call {@link preloadLocale} first (the root loader does).

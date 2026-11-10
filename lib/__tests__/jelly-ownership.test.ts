@@ -25,8 +25,12 @@
  *  (d) No site-tier file writes `style.transform` / `style.scale` / `style.translate` in a file that handles
  *      pointer input — a per-component deformation outside the CSS soft body. The baseline is today's gesture
  *      surfaces (a swipe row, a 3D book, the globe, the news hero); games and apps are exempt, read
- *      from `design-consistency.test.ts` like `scripts/check-consistency.sh` does.
+ *      from `eslint-local-rules/design-scope.js` like `scripts/check-consistency.sh` does.
  */
+import {
+  FULLSCREEN_TIER_DIRS,
+  FULLSCREEN_ROUTE_SEGMENTS,
+} from '../../eslint-local-rules/design-scope.js';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -64,15 +68,7 @@ const code = (file: string) =>
 
 const SOURCES = ['components', 'app', 'hooks', 'lib', 'stores'].flatMap((d) => collect(d));
 
-/** The full-screen tiers, parsed out of the design gate (the policy lives there, not here). */
-function setFromGate(name: string): Set<string> {
-  const src = readFileSync(join(ROOT, 'lib/__tests__/design-consistency.test.ts'), 'utf8');
-  const start = src.indexOf(`const ${name} = new Set([`);
-  const block = src.slice(start, src.indexOf(']);', start));
-  return new Set([...block.matchAll(/^\s*'([a-z0-9-]+)'/gm)].map((m) => m[1]));
-}
-const FULLSCREEN_TIER_DIRS = setFromGate('FULLSCREEN_TIER_DIRS');
-const FULLSCREEN_ROUTE_SEGMENTS = setFromGate('FULLSCREEN_ROUTE_SEGMENTS');
+// The full-screen tiers: eslint-local-rules/design-scope.js (the policy lives there, not here).
 
 function isSiteTier(file: string): boolean {
   const parts = file.split('/');
@@ -145,7 +141,9 @@ describe('N2 — the jelly services have one owner each', () => {
     'hooks/fluid-drag-settle.ts',
   ]);
   /** A client split over several files: the frame import and the hub import may sit in different files of it. */
-  const SHARED_FRAME_CLIENT_GROUPS: string[][] = [['hooks/useFluidDrag.ts', 'hooks/fluid-drag-settle.ts']];
+  const SHARED_FRAME_CLIENT_GROUPS: string[][] = [
+    ['hooks/useFluidDrag.ts', 'hooks/fluid-drag-settle.ts'],
+  ];
   const inJellyScope = (f: string) =>
     f.startsWith('lib/jelly/') || f.startsWith('lib/liquid/') || SHARED_FRAME_CLIENTS.has(f);
 

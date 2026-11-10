@@ -1696,25 +1696,24 @@ remain the authority:
   segmented control, a `flex-1` button row with an active tint) still belongs
   on `Tabs`. Reviewers catch those by eye.
 
-  The same file carries four **site-tier** rules added 2026-08-01 (games and
-  the `--app-*` apps are exempt, by design — Temple of Joy is supposed to be
-  candlelit): **(5)** no raw Tailwind palette colour (`bg-red-600`,
-  `text-zinc-500`, …) in site UI — a domain-fixed colour gets a scoped variable
-  group like `--casino-*` instead; **(6)** no hardcoded radius
-  (`rounded-lg`/`-xl`/`-2xl`) — `rounded-full` and `rounded-none` are shapes,
-  not radii, and stay allowed; **(7)** no floating surface below L4 — an element
-  that is positioned + stacked + edge-anchored and carries `.glass-fill` /
-  `.glass-pane` / `bg-site-surface` is a dropdown without L4's legibility floor;
-  Plus two that run over the **whole tree**, because neither is a palette
-  question — a game has no more claim to an exemption than a settings page:
-  **(8)** no `transition-all` anywhere — name the properties;
-  **(9)** no `tailwindcss-animate` class (`animate-in`, `fade-in-0`,
-  `zoom-in-95`, `slide-in-from-*`, `fill-mode-*`): that plugin is a Tailwind v3
-  thing this project does not have, so they compile to **zero rules** and the
-  element never animates. 103 of them were in the source, on the command
-  palette, the composer and every Radix open/close pair.
-  The only allowlist entry across rules 5–9 is `/login`, for the third-party
-  provider brand marks.
+  Rules 5, 6, 8 and 9 are **eslint rules**, not tests (moved 2026-11-09, audit
+  item F1 — one implementation, editor squiggle, `--cache`d). Their scope
+  (games and the `--app-*` apps are exempt from 5 and 6, by design — Temple of
+  Joy is supposed to be candlelit) lives in one file,
+  `eslint-local-rules/design-scope.js`, which `eslint.config.mjs`, the vitest
+  gates and `check-consistency.sh` all read:
+
+  | Rule | eslint rule | Scope |
+  | --- | --- | --- |
+  | **(5)** no raw Tailwind palette colour (`bg-red-600`, `text-zinc-500`, …) — a domain-fixed colour gets a scoped variable group like `--casino-*` | `local/no-raw-palette-color` | site tier (allowlist: `/login`, third-party brand marks) |
+  | **(6)** no hardcoded radius (`rounded-lg`/`-xl`/`-2xl`); `rounded-full` / `rounded-none` are shapes and stay | `local/no-hardcoded-radius` | site tier |
+  | **(8)** no `transition-all` — name the properties | `local/no-transition-all` | whole tree |
+  | **(9)** no `tailwindcss-animate` class (`animate-in`, `fade-in-0`, `zoom-in-95`, `slide-in-from-*`, `fill-mode-*`): that plugin is a Tailwind v3 thing this project does not have, so they compile to **zero rules** | `local/no-dead-animate-classes` | whole tree |
+
+  **(7)** no floating surface below L4 — an element that is positioned +
+  stacked + edge-anchored and carries `.glass-fill` / `.glass-pane` /
+  `bg-site-surface` is a dropdown without L4's legibility floor — is still the
+  test in `design-consistency.test.ts`.
 
 - **`lib/__tests__/game-viewport-consistency.test.ts` — the full-screen
   viewport contract (§12.1).** A static scan over the thirty game/app
@@ -1785,4 +1784,4 @@ executable rule here rather than another paragraph of prose: a source scan in
 that only ever shrinks, plus a "scanned > N files" assertion so a broken walker
 cannot make the rule pass vacuously. `check-consistency.sh` picks up anything
 added to its gate list, and the fast added-lines preview reads its path
-exemptions straight out of `design-consistency.test.ts`.
+exemptions straight out of `eslint-local-rules/design-scope.js`.

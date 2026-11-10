@@ -331,8 +331,8 @@ const getInitialI18n = createServerFn({ method: 'GET' }).handler(async () => {
   // payload — not the full ~66-namespace catalog (~250-300KB) — so the client
   // hydrates synchronously in the right language for the shell/feed. preloadLocale()
   // must finish before the synchronous getServerI18n render path reads the bundle,
-  // so we await it here. The rest of the locale is backfilled client-side after
-  // hydration (perf audit §4.1; see lib/i18n/instances.ts). SSR renders from the
+  // so we await it here. The other namespaces load client-side on demand
+  // (perf audit B6; see lib/i18n/instances.ts). SSR renders from the
   // same core set, so hydration still matches.
   if (locale === DEFAULT_LOCALE) return { locale, resources: null };
   try {
@@ -341,7 +341,7 @@ const getInitialI18n = createServerFn({ method: 'GET' }).handler(async () => {
   } catch {
     // A failed locale chunk load must not take the whole document down with a
     // 500 / "Something went wrong": render English (the always-available
-    // defaultValues) and let the client backfill the real locale.
+    // defaultValues) and let the client load the real locale's namespaces on demand.
     return { locale: DEFAULT_LOCALE, resources: null };
   }
 });
