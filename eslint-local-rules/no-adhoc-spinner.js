@@ -17,8 +17,8 @@
  * `animate-spin` class in a **site-tier** file: `components/**` outside
  * `components/ui/**` and the full-screen tier dirs, and `app/routes/**` outside
  * the full-screen route segments. The full-screen games and `--app-*` apps own
- * their loading art; the lists below mirror `FULLSCREEN_TIER_DIRS` /
- * `FULLSCREEN_ROUTE_SEGMENTS` in `lib/__tests__/design-consistency.test.ts`.
+ * their loading art; the exemption lists are the shared ones in
+ * `eslint-local-rules/design-scope.js`.
  *
  * ## The legitimate exceptions
  *
@@ -29,107 +29,18 @@
  * always a `<Spinner>`.
  */
 
-/** Mirrors FULLSCREEN_TIER_DIRS in lib/__tests__/design-consistency.test.ts. */
-const FULLSCREEN_TIER_DIRS = new Set([
-  'altair',
-  'cursed-logic',
-  'daily-puzzles',
-  'dream-rift',
-  'gabriels-horn',
-  'game',
-  'hearthworks',
-  'house-always-wins',
-  'kowloon-knockout',
-  'laundry-sort',
-  'lights-out',
-  'neon-driftway',
-  'nightrail',
-  'signal-forge',
-  'slice-it',
-  'synapse-storm',
-  'temple-of-joy',
-  'vega',
-  'velum2099',
-  'versecraft',
-  'void-breaker',
-  'rmhbox',
-  'rmhcode',
-  'rmhmusic',
-  'rmhstudy',
-  'rmhtube',
-  'rmhtype',
-  'tf2-hud',
-  'tf2-game',
-  'sp-game',
-  'csgo-game',
-  'rmhvibe',
-  'shared',
-  'studio',
-  'blm',
-  'pf2ecal',
-  'dunesday',
-  'breakpoint',
-  'covid',
-  'elections',
-  'doctrine',
-  'history',
-  'lockdown',
-  'render',
-  'rmh-capital',
-  'rmh-pmc',
-  'sohumbum',
-  'sohumtracker',
-  'steam',
-  // The primitive itself.
-  'ui',
-]);
-
-/** Mirrors FULLSCREEN_ROUTE_SEGMENTS in lib/__tests__/design-consistency.test.ts. */
-const FULLSCREEN_ROUTE_SEGMENTS = new Set([
-  'altair',
-  'api',
-  'daily',
-  'discord',
-  'dream-rift',
-  'games',
-  'dunesday',
-  'gabriels-horn',
-  'hearthworks',
-  'house-always-wins',
-  'kowloon-knockout',
-  'laundry-sort',
-  'neon-driftway',
-  'nightrail',
-  'pf2ecal',
-  'rmhbox',
-  'rmhcode',
-  'rmhmusic',
-  'rmhstudy',
-  'rmhtube',
-  'rmhtype',
-  'tf2-hud',
-  'secret',
-  'slice-it',
-  'sohumbum',
-  'sohumtracker',
-  'strategies',
-  'studio',
-  'synapse-storm',
-  'temple-of-joy',
-  'velum2099',
-  'versecraft',
-  'void-breaker',
-]);
+import { isSiteTier as isSiteTierPath } from './design-scope.js';
 
 const SPIN = /(^|[\s"'`])animate-spin($|[\s"'`])/;
 
+/** The one exemption list (design-scope.js), plus the primitive itself. */
 function isSiteTier(filename) {
   const path = filename.replace(/\\/g, '/');
-  let m = path.match(/(?:^|\/)components\/([^/]+)\//);
-  if (m) return !FULLSCREEN_TIER_DIRS.has(m[1]);
-  m = path.match(/(?:^|\/)app\/routes\/([^/]+?)(?:\.tsx?)?(?:\/|$)/);
-  if (m) return !FULLSCREEN_ROUTE_SEGMENTS.has(m[1]);
-  return false;
+  const at = path.search(/(?:^|\/)(?:components|app\/routes)\//);
+  if (at < 0) return false;
+  const rel = path.slice(path[at] === '/' ? at + 1 : at);
+  if (rel.startsWith('components/ui/')) return false;
+  return isSiteTierPath(rel);
 }
 
 /** @type {import('eslint').Rule.RuleModule} */
