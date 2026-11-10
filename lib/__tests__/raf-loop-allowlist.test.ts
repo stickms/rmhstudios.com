@@ -176,11 +176,11 @@ const SCAN_DIRS = ['components', 'app', 'hooks', 'lib', 'stores', 'features'];
 /** Files permitted to call requestAnimationFrame (see the doc block above). */
 const ALLOW = new Set<string>([
   // Altair co-op match: the draw loop is cancelled in the effect cleanup (unmount); it only draws.
-  'components/altair/multiplayer/MultiplayerGameScreen.tsx',
+  'features/altair/ui/multiplayer/MultiplayerGameScreen.tsx',
   // Altair main-menu backdrop (pixel-art corridor). Bounded by MOUNT and by visibility: the effect
   // cancels the frame on unmount, a hidden tab cancels it and `visibilitychange` restarts it, and it
   // is capped at 30 fps with a fixed-size buffer (no per-frame canvas reallocation).
-  'components/altair/menu/MenuBackdrop.tsx',
+  'features/altair/ui/menu/MenuBackdrop.tsx',
   // Kowloon Knockout main-menu backdrop (pixel-art street). Same bounds as the Altair one: the effect
   // cancels the frame on unmount, a hidden tab cancels it and `visibilitychange` restarts it, Jelly
   // motion Still draws one frame and stops (a MutationObserver restarts it), and it is capped at 30 fps
@@ -335,7 +335,7 @@ const ALLOW = new Set<string>([
   'hooks/useLiquidBackground.ts',
   'hooks/useScrollRestoration.ts',
   'hooks/useSpatialParallax.ts',
-  'lib/altair/engine/game-loop.ts',
+  'features/altair/engine/engine/game-loop.ts',
   // Balatro: the render governor's frame sampler runs while the engine does and is cancelled in
   // stop(); the phone keyboard's key queue is a one-shot chain that ends when the queue is empty.
   'features/balatro/engine/runtime.ts',

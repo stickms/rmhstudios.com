@@ -9,24 +9,24 @@ import { gameRouteHead } from '@/lib/seo-catalog';
 import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { useAltairGameStore } from '@/lib/altair/stores/game-store'
-import { useAltairMetaStore } from '@/lib/altair/stores/meta-store'
-import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store'
-import { finalCoinsFor, loadoutFromUpgrades } from '@/lib/altair/solo/loadout'
-import { clearSoloSession, getActiveRun, getSoloSession, setSoloSession } from '@/lib/altair/solo/session'
-import { startServerRun, submitSoloRun, waitForVerdict } from '@/lib/altair/solo/client'
-import { setFallbackRun } from '@/lib/altair/stores/meta-store'
+import { useAltairGameStore } from '@features/altair/engine/stores/game-store'
+import { useAltairMetaStore } from '@features/altair/engine/stores/meta-store'
+import { useAltairSettingsStore } from '@features/altair/engine/stores/settings-store'
+import { finalCoinsFor, loadoutFromUpgrades } from '@features/altair/engine/solo/loadout'
+import { clearSoloSession, getActiveRun, getSoloSession, setSoloSession } from '@features/altair/engine/solo/session'
+import { startServerRun, submitSoloRun, waitForVerdict } from '@features/altair/engine/solo/client'
+import { setFallbackRun } from '@features/altair/engine/stores/meta-store'
 import { useSignInGate } from '@/components/shared/SignInRequiredDialog'
-import AltairHeader from '@/components/altair/AltairHeader'
-import MenuScreen from '@/components/altair/screens/MenuScreen'
-import ClassSelectScreen from '@/components/altair/screens/ClassSelectScreen'
-import GameOverScreen from '@/components/altair/screens/GameOverScreen'
-import MetaShopScreen from '@/components/altair/screens/MetaShopScreen'
-import SettingsScreen from '@/components/altair/screens/SettingsScreen'
-import BestiaryScreen from '@/components/altair/screens/BestiaryScreen'
+import AltairHeader from '@features/altair/ui/AltairHeader'
+import MenuScreen from '@features/altair/ui/screens/MenuScreen'
+import ClassSelectScreen from '@features/altair/ui/screens/ClassSelectScreen'
+import GameOverScreen from '@features/altair/ui/screens/GameOverScreen'
+import MetaShopScreen from '@features/altair/ui/screens/MetaShopScreen'
+import SettingsScreen from '@features/altair/ui/screens/SettingsScreen'
+import BestiaryScreen from '@features/altair/ui/screens/BestiaryScreen'
 
 // Lazy import for the game canvas
-const GameScreen = lazy(() => import('@/components/altair/screens/GameScreen'))
+const GameScreen = lazy(() => import('@features/altair/ui/screens/GameScreen'))
 
 function AltairPage() {
   const { t } = useTranslation('r-altair')
@@ -60,7 +60,7 @@ function AltairPage() {
 
   const submitScore = useCallback((keepalive = false) => {
     if (scoreSubmittedRef.current) return
-    // A server-issued run is scored from its replay (lib/altair/solo), never from these numbers.
+    // A server-issued run is scored from its replay (features/altair/engine/solo), never from these numbers.
     if (getSoloSession()?.runId && getActiveRun()) return
 
     const gameState = useAltairGameStore.getState()
@@ -138,7 +138,7 @@ function AltairPage() {
     const run = getActiveRun()
     const clearedClass = gameState.phase === 'victory' ? gameState.selectedClassId : null
     // The first-clear bonus is flat (not multiplied) and paid ONCE per class. A server-issued run gets it
-    // from the server, which adds it to the replay's payout (lib/altair/solo/persist.server.ts); this
+    // from the server, which adds it to the replay's payout (features/altair/engine/solo/persist.server.ts); this
     // client claims none. Every other path (signed out / offline, or a run the server could not take)
     // pays it locally, into the same payout that is saved below.
     const payFirstClear = () => {

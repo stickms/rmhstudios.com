@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { apiError } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/altair/altair.contract';
+import * as C from '@features/altair/engine/altair.contract';
 import { prisma } from '@/lib/prisma.server';
 
 /** GET — where a submitted run is: submitted | verified (with the coins paid) | rejected | unverified. */

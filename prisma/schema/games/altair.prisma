@@ -30,7 +30,7 @@ model AltairMetaProgress {
   user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   coins              Int       @default(0)
   // Earned coins the server will still accept from a client save (refills with time; see
-  // lib/altair/meta-guard.ts). Interim bound until single-player runs are replay-verified.
+  // features/altair/engine/meta-guard.ts). Interim bound until single-player runs are replay-verified.
   coinAllowance      Int       @default(8000)
   coinAllowanceAt    DateTime?
   upgrades           Json      @default("{}")
@@ -48,7 +48,7 @@ model AltairMetaProgress {
   @@map("altair_meta_progress")
 }
 
-// A single-player run the SERVER issued (seed + loadout) and later replays (lib/altair/solo). Coins and
+// A single-player run the SERVER issued (seed + loadout) and later replays (features/altair/engine/solo). Coins and
 // leaderboard totals are written from the replay's numbers only, under this row, exactly once.
 model AltairSoloRun {
   id              String    @id @default(cuid())

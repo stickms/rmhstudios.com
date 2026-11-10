@@ -351,7 +351,7 @@ renderer swapped for a first-person <b>three.js</b> scene
 (<code>lib/neon-driftway/renderer3d.ts</code>) — imperative <code>three</code>, not R3F — while the
 loop → update → render pattern and the score/leaderboard path were untouched. Altair is also 2D but
 renders through a hand-written <b>WebGL2</b> batch renderer
-(<code>lib/altair/engine/webgl/</code>, with <code>initWebGL()</code> and a <code>SpriteBatch</code>)
+(<code>features/altair/engine/engine/webgl/</code>, with <code>initWebGL()</code> and a <code>SpriteBatch</code>)
 and uses <b>howler</b> for audio — it is the survivors-like with the heaviest draw load, so it pays for
 a GPU path. Temple of Joy renders no canvas at all: it is a pure React-DOM idle game whose engine
 (<code>lib/temple-of-joy/engine.ts</code>) is a set of pure compute functions like
@@ -372,7 +372,7 @@ Rapier) change.</div>
     <tr><td>Slice It!</td><td>Rhythm</td><td>2D</td><td>Canvas 2D + Web Audio</td><td><code>lib/slice-it/engine.ts</code></td></tr>
     <tr><td>Signal Forge</td><td>Deckbuilder roguelike</td><td>2D</td><td>Canvas 2D (pure render fn)</td><td><code>lib/signal-forge/index.ts</code></td></tr>
     <tr><td>Neon Driftway</td><td>Endless racer</td><td>3D</td><td>three.js (imperative), gyro head look</td><td><code>lib/neon-driftway/game.ts</code></td></tr>
-    <tr><td>Altair</td><td>Survivors-like</td><td>2D</td><td>WebGL2 batches + howler</td><td><code>lib/altair/engine/game-loop.ts</code></td></tr>
+    <tr><td>Altair</td><td>Survivors-like</td><td>2D</td><td>WebGL2 batches + howler</td><td><code>features/altair/engine/engine/game-loop.ts</code></td></tr>
     <tr><td>Temple of Joy</td><td>Idle / incremental</td><td>2D (DOM)</td><td>React DOM, no canvas</td><td><code>lib/temple-of-joy/engine.ts</code></td></tr>
     <tr><td>VELUM 2099 / Forest Explorer</td><td>3D action / exploration</td><td>3D</td><td>R3F + Rapier (per README)</td><td><i>3D stack</i></td></tr>
   </tbody>

@@ -1,0 +1,276 @@
+/**
+ * LevelUpScreen — Upgrade picker overlay shown on level up.
+ * Presents 3-4 options: new weapon, weapon upgrade, new passive, passive upgrade, or gold.
+ */
+
+import { useAltairGameStore, UpgradeChoice } from '@features/altair/engine/stores/game-store';
+import { WEAPONS, EVOLVED_WEAPONS } from '@features/altair/engine/data/weapons';
+import { PASSIVES } from '@features/altair/engine/data/passives';
+import { CATALYSTS } from '@features/altair/engine/data/catalysts';
+import { RotateCcw, X, Coins } from 'lucide-react';
+import SpriteIcon from '@features/altair/ui/hud/SpriteIcon';
+import { WEAPON_ICON_SRC, PASSIVE_ICON_SRC, CATALYST_ICON_SRC } from '@features/altair/engine/engine/sprites/sprite-defs';
+import { useKeyboardNav } from '@features/altair/engine/hooks/use-keyboard-nav';
+import { useTranslation } from 'react-i18next';
+
+function getChoiceInfo(choice: UpgradeChoice): { name: string; description: string; levelText: string; color: string; isGold: boolean; iconFrame: number; iconType: 'weapon' | 'passive' | 'catalyst' | 'gold' } {
+  switch (choice.type) {
+    case 'new_weapon': {
+      const w = WEAPONS.find((w) => w.id === choice.weaponId);
+      return {
+        name: w?.name ?? choice.weaponId,
+        description: w?.description ?? '',
+        levelText: 'NEW',
+        color: w?.color ?? '#888',
+        isGold: false,
+        iconFrame: w?.iconFrame ?? 0,
+        iconType: 'weapon',
+      };
+    }
+    case 'upgrade_weapon': {
+      const w = WEAPONS.find((w) => w.id === choice.weaponId) || EVOLVED_WEAPONS.find((w) => w.id === choice.weaponId);
+      return {
+        name: w?.name ?? choice.weaponId,
+        description: `+15% damage, enhanced effects`,
+        levelText: `Lv.${choice.newLevel - 1} → ${choice.newLevel}`,
+        color: w?.color ?? '#888',
+        isGold: false,
+        iconFrame: w?.iconFrame ?? 0,
+        iconType: 'weapon',
+      };
+    }
+    case 'new_passive': {
+      const p = PASSIVES.find((p) => p.id === choice.passiveId);
+      return {
+        name: p?.name ?? choice.passiveId,
+        description: p?.description ?? '',
+        levelText: 'NEW',
+        color: p?.color ?? '#a86ad4',
+        isGold: false,
+        iconFrame: p?.iconFrame ?? 0,
+        iconType: 'passive',
+      };
+    }
+    case 'upgrade_passive': {
+      const p = PASSIVES.find((p) => p.id === choice.passiveId);
+      return {
+        name: p?.name ?? choice.passiveId,
+        description: p?.description ?? '',
+        levelText: `Lv.${choice.newLevel - 1} → ${choice.newLevel}`,
+        color: p?.color ?? '#a86ad4',
+        isGold: false,
+        iconFrame: p?.iconFrame ?? 0,
+        iconType: 'passive',
+      };
+    }
+    case 'new_catalyst': {
+      const c = CATALYSTS.find((c) => c.id === choice.catalystId);
+      return {
+        name: c?.name ?? choice.catalystId,
+        description: c?.descriptions[0] ?? '',
+        levelText: 'NEW',
+        color: c?.color ?? '#c084fc',
+        isGold: false,
+        iconFrame: c?.iconFrame ?? 0,
+        iconType: 'catalyst',
+      };
+    }
+    case 'upgrade_catalyst': {
+      const c = CATALYSTS.find((c) => c.id === choice.catalystId);
+      return {
+        name: c?.name ?? choice.catalystId,
+        description: c?.descriptions[choice.newLevel - 1] ?? '',
+        levelText: `Lv.${choice.newLevel - 1} → ${choice.newLevel}`,
+        color: c?.color ?? '#c084fc',
+        isGold: false,
+        iconFrame: c?.iconFrame ?? 0,
+        iconType: 'catalyst',
+      };
+    }
+    case 'gold':
+      return {
+        name: '+25 Gold',
+        description: 'Add 25 coins to your run total',
+        levelText: '',
+        color: '#d9b44a',
+        isGold: true,
+        iconFrame: 0,
+        iconType: 'gold',
+      };
+  }
+}
+
+interface LevelUpPickerProps {
+  choices: UpgradeChoice[];
+  level: number;
+  onPick: (index: number) => void;
+  /** Solo only: how many banishes are left, and the banish action. */
+  banishesRemaining?: number;
+  onBanish?: (index: number) => void;
+  /** Solo only: rerolls left and the reroll action. */
+  rerollsRemaining?: number;
+  onReroll?: () => void;
+  /** Co-op: seconds left before the first option is auto-picked (the world never pauses). */
+  countdown?: number;
+}
+
+/**
+ * The upgrade picker itself (title, cards, keyboard navigation). Single-player
+ * wraps it in LevelUpScreen (store-driven, pauses the game); co-op renders it
+ * per player from the host's offer, with a countdown and no pause.
+ */
+export function LevelUpPicker({
+  choices,
+  level,
+  onPick,
+  banishesRemaining = 0,
+  onBanish,
+  rerollsRemaining = 0,
+  onReroll,
+  countdown,
+}: LevelUpPickerProps) {
+  const { t } = useTranslation("c-altair");
+  const { focusedIndex } = useKeyboardNav({
+    itemCount: choices.length,
+    onSelect: onPick,
+    orientation: 'horizontal',
+    enabled: choices.length > 0,
+    numberKeys: true,
+  });
+
+  return (
+    <div className="absolute inset-0 z-50 flex items-center-safe justify-center-safe altair-overlay overflow-y-auto">
+      <div className="absolute inset-0 bg-(--altair-hud-scrim)/70" />
+      <div className="relative z-10 w-full max-w-2xl mx-4 my-4 sm:my-0">
+        {/* Title */}
+        <div className="text-center mb-4 sm:mb-6">
+          <div className="text-xs font-mono text-(--altair-text-dim) uppercase tracking-[0.3em] mb-1">
+            {t("level-up", { defaultValue: "Level Up!" })}
+          </div>
+          <h2 className="text-3xl font-black text-(--altair-info) tracking-wider">
+            {t("level-heading", { defaultValue: "LEVEL {{level}}", level })}
+          </h2>
+          <p className="text-sm text-(--altair-text-muted) mt-1">{t("choose-upgrade", { defaultValue: "Choose an upgrade" })}</p>
+          {countdown !== undefined && (
+            <p data-testid="levelup-countdown" className="mt-1 font-mono text-xs text-(--altair-warning)">
+              {t("coop-levelup-countdown", { defaultValue: "The first option is picked in {{seconds}}s. The game keeps running; you are protected.", seconds: Math.max(0, Math.ceil(countdown)) })}
+            </p>
+          )}
+        </div>
+
+        {/* Choice cards */}
+        <div className="flex gap-2 sm:gap-3 justify-center flex-wrap">
+          {choices.map((choice, i) => {
+            const info = getChoiceInfo(choice);
+            const isFocused = focusedIndex === i;
+            return (
+              <div key={i} className="relative group">
+                <button
+                  onClick={() => onPick(i)}
+                  className={`altair-scan-surface w-36 sm:w-44 p-3 sm:p-4 rounded-(--altair-radius-lg) border bg-(--altair-surface) hover:bg-(--altair-surface-hover) hover:border-(--altair-border-bright) transition-colors text-left altair-modal ${
+                    isFocused ? 'border-2 border-(--altair-accent) ring-2 ring-(--altair-accent)/30 scale-[1.03]' : 'border-(--altair-border)'
+                  }`}
+                  style={{ animationDelay: `${i * 0.05}s` }}
+                >
+                  {/* Icon */}
+                  <div
+                    className="w-10 h-10 rounded-(--altair-radius) mb-3 flex items-center justify-center"
+                    style={{ backgroundColor: `${info.color}20`, border: `1px solid ${info.color}40` }}
+                  >
+                    {info.isGold ? (
+                      <Coins size={20} style={{ color: info.color }} />
+                    ) : (
+                      <SpriteIcon
+                        sheetSrc={info.iconType === 'weapon' ? WEAPON_ICON_SRC : info.iconType === 'catalyst' ? CATALYST_ICON_SRC : PASSIVE_ICON_SRC}
+                        frameIndex={info.iconFrame}
+                        size={28}
+                      />
+                    )}
+                  </div>
+
+                  <h3 className="font-bold text-sm text-(--altair-text) mb-0.5">{info.name}</h3>
+                  {info.levelText && (
+                    <span
+                      className="text-xs font-bold uppercase tracking-wider"
+                      style={{ color: info.levelText === 'NEW' ? 'var(--altair-success)' : info.color }}
+                    >
+                      {info.levelText}
+                    </span>
+                  )}
+                  <p className="text-xs text-(--altair-text-muted) mt-1 leading-tight">
+                    {info.description}
+                  </p>
+                </button>
+
+                {/* Banish button */}
+                {banishesRemaining > 0 && onBanish && !info.isGold && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBanish(i);
+                    }}
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-(--altair-danger) text-(--altair-hud-ink) flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    title={t("banish-title", { defaultValue: "Banish ({{count}} left)", count: banishesRemaining })}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Keyboard hint */}
+        <div className="text-center mt-3 text-xs text-(--altair-text-dim) font-mono hidden sm:block">
+          {t("keyboard-hint-level-up-screen", { defaultValue: "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick", count: choices.length })}
+        </div>
+
+        {/* Reroll button */}
+        {rerollsRemaining > 0 && (
+          <div className="text-center mt-4">
+            <button
+              onClick={() => {
+                if (onReroll) onReroll();
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-(--altair-radius) bg-(--altair-surface) border border-(--altair-border) text-sm font-medium text-(--altair-text-muted) hover:text-(--altair-text) hover:bg-(--altair-surface-hover) transition-colors"
+            >
+              <RotateCcw size={14} />
+              {t("reroll", { defaultValue: "Reroll ({{count}} left)", count: rerollsRemaining })}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface LevelUpScreenProps {
+  /** Single-player routes these through the run, which records them for the server's replay. */
+  onPick?: (index: number) => void;
+  onBanish?: (index: number) => void;
+  onReroll?: () => void;
+}
+
+export default function LevelUpScreen({ onPick, onBanish, onReroll }: LevelUpScreenProps) {
+  const phase = useAltairGameStore((s) => s.phase);
+  const choices = useAltairGameStore((s) => s.upgradeChoices);
+  const rerollsRemaining = useAltairGameStore((s) => s.rerollsRemaining);
+  const banishesRemaining = useAltairGameStore((s) => s.banishesRemaining);
+  const pickUpgrade = useAltairGameStore((s) => s.pickUpgrade);
+  const banish = useAltairGameStore((s) => s.banish);
+  const level = useAltairGameStore((s) => s.level);
+
+  if (!(phase === 'upgrading' && choices.length > 0)) return null;
+
+  return (
+    <LevelUpPicker
+      choices={choices}
+      level={level}
+      onPick={onPick ?? pickUpgrade}
+      banishesRemaining={banishesRemaining}
+      onBanish={onBanish ?? banish}
+      rerollsRemaining={rerollsRemaining}
+      onReroll={onReroll}
+    />
+  );
+}

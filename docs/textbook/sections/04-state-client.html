@@ -120,7 +120,7 @@ every consumer on any change.</p>
 
 <h3>A real game store: <code>useAltairGameStore</code></h3>
 <p>Games are where global client state earns its keep, because dozens of systems read and write the
-same run. <code>lib/altair/stores/game-store.ts</code> holds the entire per-run session: <code>phase</code>,
+same run. <code>features/altair/engine/stores/game-store.ts</code> holds the entire per-run session: <code>phase</code>,
 <code>hp</code>, <code>xp</code>, <code>level</code>, <code>kills</code>, <code>coins</code>,
 the chosen weapons and passives, and a long list of <b>actions</b>. Its header comment is explicit
 that this is "per-run state (NOT persisted)" — it is wiped between runs, which is why the store has a
@@ -163,7 +163,7 @@ consistent milestone behaviour.</div>
 <h3>Persisting client state: the <code>persist</code> middleware</h3>
 <p>Some client state should outlive the tab. Zustand ships a <code>persist</code> middleware that
 serialises a store to <code>localStorage</code> automatically. The Altair settings store
-(<code>lib/altair/stores/settings-store.ts</code>) wraps its setup in <code>persist(...)</code> and
+(<code>features/altair/engine/stores/settings-store.ts</code>) wraps its setup in <code>persist(...)</code> and
 declares both a storage key and a <code>partialize</code> function that whitelists which fields to
 save:</p>
 

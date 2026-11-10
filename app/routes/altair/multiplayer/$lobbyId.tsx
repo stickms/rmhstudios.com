@@ -10,21 +10,21 @@ import { noindexHead } from '@/lib/seo';
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import { connectToAltair, emit } from '@/lib/altair/multiplayer/socket'
-import { useAltairMultiplayerStore } from '@/lib/altair/multiplayer/store'
-import { C2S, S2C } from '@/lib/altair/multiplayer/events'
-import { useAltairToastStore } from '@/lib/altair/stores/toast-store'
-import AltairHeader from '@/components/altair/AltairHeader'
-import LobbyWaiting from '@/components/altair/multiplayer/LobbyWaiting'
+import { connectToAltair, emit } from '@features/altair/engine/multiplayer/socket'
+import { useAltairMultiplayerStore } from '@features/altair/engine/multiplayer/store'
+import { C2S, S2C } from '@features/altair/engine/multiplayer/events'
+import { useAltairToastStore } from '@features/altair/engine/stores/toast-store'
+import AltairHeader from '@features/altair/ui/AltairHeader'
+import LobbyWaiting from '@features/altair/ui/multiplayer/LobbyWaiting'
 
 // Lazy import for the multiplayer game screen
 const MultiplayerGameScreen = lazy(
-  () => import('@/components/altair/multiplayer/MultiplayerGameScreen'),
+  () => import('@features/altair/ui/multiplayer/MultiplayerGameScreen'),
 )
 
 // Lazy import for results screen
 const MultiplayerResultsScreen = lazy(
-  () => import('@/components/altair/multiplayer/MultiplayerResultsScreen'),
+  () => import('@features/altair/ui/multiplayer/MultiplayerResultsScreen'),
 )
 
 /** Player-facing text for a hub rejection (falls back to the hub's own message). */

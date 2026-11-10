@@ -106,7 +106,7 @@ const ALLOWED: Readonly<Record<string, { count: number; reason: string }>> = {
     count: 1,
     reason: 'matchmaking queue tick over in-memory queues',
   },
-  'server/socket-server/handlers/altair.ts': { count: 2, reason: GAME_TICK },
+  'features/altair/server/handlers.ts': { count: 2, reason: GAME_TICK },
   'features/balatro/server/queue.ts': { count: 1, reason: HUB_HOUSEKEEPING },
   'server/socket-server/handlers/controller.ts': { count: 1, reason: HUB_HOUSEKEEPING },
   'server/socket-server/handlers/dream-rift.ts': { count: 1, reason: GAME_TICK },

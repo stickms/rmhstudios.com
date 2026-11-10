@@ -33,7 +33,7 @@
 @import './globals.css';
 
 /* Full-screen games and apps — components/ and lib/ directories no site page imports. */
-@source not "../components/altair";
+@source not "../features/altair";
 @source not "../features/balatro";
 @source not "../components/blm";
 @source not "../components/breaches";
@@ -88,7 +88,6 @@
 @source not "../components/velum2099";
 @source not "../components/versecraft";
 @source not "../features/void-breaker";
-@source not "../lib/altair";
 @source not "../lib/audio";
 @source not "../lib/cards";
 @source not "../lib/controller";

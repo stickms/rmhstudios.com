@@ -2,14 +2,14 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler, apiError } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { decodeRunLog } from '@/lib/altair/verify/log-codec.server';
-import { MAX_ENCODED_LOG_CHARS } from '@/lib/altair/verify/log-codec';
-import { allowSoloSubmission, enqueueSoloRun } from '@/lib/altair/solo/queue.server';
+import { decodeRunLog } from '@features/altair/engine/verify/log-codec.server';
+import { MAX_ENCODED_LOG_CHARS } from '@features/altair/engine/verify/log-codec';
+import { allowSoloSubmission, enqueueSoloRun } from '@features/altair/engine/solo/queue.server';
 
 /**
  * POST — hand in a finished (or abandoned) single-player run. Nothing in the body is believed: the log
  * is queued for a headless replay in the jobs worker, and coins / leaderboard rows are written only from
- * what the replay reproduces (lib/altair/solo). Answers 202 (the result is not known yet).
+ * what the replay reproduces (features/altair/engine/solo). Answers 202 (the result is not known yet).
  *
  *   queued | inline  -> verified later; the client polls /api/altair/run/status
  *   unverified       -> the server could not take the log (queue full, rate limited); the run is marked

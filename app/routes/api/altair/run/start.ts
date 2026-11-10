@@ -2,8 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { apiError } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/altair/altair.contract';
-import { issueSoloRun } from '@/lib/altair/solo/issue.server';
+import * as C from '@features/altair/engine/altair.contract';
+import { issueSoloRun } from '@features/altair/engine/solo/issue.server';
 
 /**
  * POST — start a single-player run. The server picks the seed and reads the loadout from its own copy of

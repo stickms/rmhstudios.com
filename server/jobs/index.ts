@@ -41,10 +41,10 @@ import {
   SOHUMTRACKER_ALERT_QUEUE,
   registerSohumTrackerAlertCron,
 } from '@/lib/sohumtracker/alerts.server';
-import { registerAltairVerifyWorker } from '@/lib/altair/verify/queue.server';
-import { registerAltairSoloWorker } from '@/lib/altair/solo/queue.server';
-import { VERIFY_SOLO_QUEUE } from '@/lib/altair/solo/job';
-import { VERIFY_COOP_QUEUE } from '@/lib/altair/verify/job';
+import { registerAltairVerifyWorker } from '@features/altair/engine/verify/queue.server';
+import { registerAltairSoloWorker } from '@features/altair/engine/solo/queue.server';
+import { VERIFY_SOLO_QUEUE } from '@features/altair/engine/solo/job';
+import { VERIFY_COOP_QUEUE } from '@features/altair/engine/verify/job';
 import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
 import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
 import { registerRecipeJobs } from '@/lib/devplatform/recipes.server';

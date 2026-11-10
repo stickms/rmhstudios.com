@@ -222,7 +222,7 @@ The 3D first-person mode uses `requestPointerLock()` for mouse-look plus WASD/Sh
 
 **Recommended fix (lowest-effort acceptable bar):** detect touch with the existing `hooks/useIsMobile.ts` (or `matchMedia('(pointer: coarse)')`) and render a "This experience needs a keyboard & mouse — open it on a desktop" interstitial instead of the pointer-lock canvas. A fuller fix would add on-screen touch controls, but messaging is the minimum to remove the dead end.
 
-> **Contrast — games that handle mobile well (no action needed):** **Altair** (`components/altair/screens/GameScreen.tsx:71` touch detection via `matchMedia('(hover: none) and (pointer: coarse)')`, D-pad in `components/altair/mobile/MobileDPad.tsx`, `100dvh`, safe-area-aware controls), **VELUM 2099** (`components/velum2099/game/ui/MobileControls.ts:44-46` touch detect, full joystick + buttons), **Kowloon Knockout** (`useIsMobile()` + thumbstick/punch controls, `vw`-based HUD). These confirm a good in-house pattern exists to apply to Forest Explorer.
+> **Contrast — games that handle mobile well (no action needed):** **Altair** (`features/altair/ui/screens/GameScreen.tsx:71` touch detection via `matchMedia('(hover: none) and (pointer: coarse)')`, D-pad in `features/altair/ui/mobile/MobileDPad.tsx`, `100dvh`, safe-area-aware controls), **VELUM 2099** (`components/velum2099/game/ui/MobileControls.ts:44-46` touch detect, full joystick + buttons), **Kowloon Knockout** (`useIsMobile()` + thumbstick/punch controls, `vw`-based HUD). These confirm a good in-house pattern exists to apply to Forest Explorer.
 
 ---
 
@@ -269,9 +269,9 @@ The project helpfully redefines the Tailwind `.h-screen`/`.min-h-screen` utiliti
 
 - `app/routes/kowloon-knockout.tsx:5` and `app/routes/rmh-farming-sim.tsx:5` — inline `width: '100vw', height: '100vh'`. `100vh` reintroduces the URL-bar resize jank; `100vw` ignores the scrollbar gutter and can force a horizontal scrollbar.
 - `components/synapse-storm/SynapseStorm.css` — multiple `height: 100vh; width: 100vw`.
-- `components/altair/screens/*` — `min-h-[calc(100vh-56px)]` (arbitrary value → not overridden). Minor, since Altair is otherwise mobile-aware.
+- `features/altair/ui/screens/*` — `min-h-[calc(100vh-56px)]` (arbitrary value → not overridden). Minor, since Altair is otherwise mobile-aware.
 
-**Fix.** Replace `100vh`→`100dvh` and `100vw`→`100%` (or the `.h-screen` utility) in these spots. **VELUM 2099** already models the right call: `style={{ width: '100vw', height: '100dvh' }}` (`components/altair/screens/GameScreen.tsx:448`).
+**Fix.** Replace `100vh`→`100dvh` and `100vw`→`100%` (or the `.h-screen` utility) in these spots. **VELUM 2099** already models the right call: `style={{ width: '100vw', height: '100dvh' }}` (`features/altair/ui/screens/GameScreen.tsx:448`).
 
 ---
 

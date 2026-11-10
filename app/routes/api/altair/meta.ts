@@ -3,7 +3,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import type { Prisma } from '@prisma/client';
-import { reconcileMetaSave, type MetaRow } from '@/lib/altair/meta-guard';
+import { reconcileMetaSave, type MetaRow } from '@features/altair/engine/meta-guard';
 
 /**
  * The save body. Only the three fields the old route checked are validated; the rest
@@ -85,7 +85,7 @@ export const Route = createFileRoute('/api/altair/meta')({
 
           // The client's coin balance is a CLAIM, not a fact: purchases are priced from the server's
           // own table against the server's balance, and earned coins are limited by a refilling
-          // allowance (lib/altair/meta-guard.ts). Everything else saves as before.
+          // allowance (features/altair/engine/meta-guard.ts). Everything else saves as before.
           // New clients send x-altair-verified-runs: their coins come from the replay of a server-issued
           // run, never from this claim. The one exception is a run the server could not take
           // (x-altair-fallback-run names it, status 'unverified'): it may be paid once through the
