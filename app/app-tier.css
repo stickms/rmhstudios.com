@@ -18,4 +18,5 @@
 @import './globals.css';
 
 /* Islands (separately built, separately styled). */
-@source not "../features/void-breaker";
+@source not "../features/void-breaker/engine";
+@source not "../features/void-breaker/ui";

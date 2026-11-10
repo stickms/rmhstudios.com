@@ -170,9 +170,15 @@ describe('entry stylesheet tiers', () => {
     // A feature with an `island.tsx` is built and styled on its own (redesign B1,
     // vite.islands.config.ts) and never renders in a site document, so it is the one
     // exclusion the superset carries — exactly the set of islands, no more, no less.
+    // Per part, like every feature exclusion: `features/<id>/catalog.ts` is the card site pages render,
+    // so it stays scanned even for an island.
     const islands = readdirSync(join(ROOT, 'features'))
       .filter((id) => existsSync(join(ROOT, 'features', id, 'island.tsx')))
-      .map((id) => `features/${id}`)
+      .flatMap((id) =>
+        ['engine', 'ui', 'server']
+          .filter((part) => existsSync(join(ROOT, 'features', id, part)))
+          .map((part) => `features/${id}/${part}`),
+      )
       .sort();
     expect(sourceNots('app-tier.css').sort()).toEqual(islands);
     for (const dir of islands) expect(tierExcluded, `site-tier.css must skip ${dir} too`).toContain(dir);

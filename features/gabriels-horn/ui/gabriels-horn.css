@@ -25,7 +25,7 @@
  * (design-language.md §5.1.1, retired 2026-08-01).
  */
 
-@import '../shared/app-theme.css';
+@import '../../../components/shared/app-theme.css';
 
 /* ─── Dark (default) ─────────────────────────────────────────────── */
 

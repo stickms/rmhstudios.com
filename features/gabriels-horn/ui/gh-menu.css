@@ -16,7 +16,7 @@
  * stops under `prefers-reduced-motion` (WCAG 2.2.2). No backdrop-filter.
  */
 
-@import '../shared/game-fonts/fonts.css';
+@import '../../../components/shared/game-fonts/fonts.css';
 
 .ghm-scene {
   --ghm-bg: #10051f;

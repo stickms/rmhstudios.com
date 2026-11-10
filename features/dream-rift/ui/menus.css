@@ -15,7 +15,7 @@
  * `prefers-reduced-motion` (WCAG 2.2.2).
  */
 
-@import '../shared/game-fonts/fonts.css';
+@import '../../../components/shared/game-fonts/fonts.css';
 
 /* Tokens live on the screen roots AND the dialog (which portals out of them). */
 .drm-root,
