@@ -458,7 +458,10 @@ services:
     cpus: 1.0
     # Let in-flight handlers finish on a deploy: `boss.stop({ graceful: true })` waits up to 30 s, and Docker's default
     # 10 s grace SIGKILLed the process first, leaving those jobs to expire and re-run.
-    stop_grace_period: 45s
+    # 90s (was 45s, D3): with DISCORD_BOT_RUNTIME=node the Discord bot lives here and, like the Go supervisor it
+    # replaces, gets time to finish in-flight AI replies (DISCORD_BOT_DRAIN_GRACE, 60 s, in parallel with pg-boss).
+    # A ceiling only: the worker exits as soon as both drains finish.
+    stop_grace_period: 90s
     # Async queue drainer — the web tier falls back to inline work if it's
     # starved (never a correctness dependency), so it yields to web too.
     cpu_shares: 512
@@ -485,6 +488,9 @@ services:
       - SOCKET_INTERNAL_URL=http://socket:${PORT_SOCKET:-7001}
       - RMHBOX_INTERNAL_URL=http://rmhbox:${PORT_RMHBOX:-7676}
       - RMHTUBE_INTERNAL_URL=http://rmhtube:${PORT_RMHTUBE:-7003}
+      # Which runtime holds the Discord bot's gateway (D3): `node` = this worker (server/discord-bot/), anything else
+      # = the Go supervisor. Exactly one connects; the supervisor and status read the same value.
+      - DISCORD_BOT_RUNTIME=${DISCORD_BOT_RUNTIME:-}
     command: ['node', 'dist-server/server/jobs/index.cjs']
 
   # ─── Go Supervisor (discord-bot) ─
@@ -520,6 +526,8 @@ services:
       # Merged /metrics + /health endpoint for all three workers (httpx.ServeMetrics).
       # Templated so the healthcheck below stays in sync with the bind port.
       - METRICS_ADDR=:${PORT_SUPERVISOR_METRICS:-9090}
+      # `node` hands the discord-bot to the Node jobs worker; this process then idles it (D3).
+      - DISCORD_BOT_RUNTIME=${DISCORD_BOT_RUNTIME:-}
     command: ['/app/bin/supervisor']
     restart: unless-stopped
     # discord-bot needs 90s for in-flight AI
@@ -556,6 +564,8 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - STATUS_PORT=${PORT_STATUS:-7008}
+      # With `node`, the supervisor's idle discord-bot reads gateway_connected=0 by design: B07 is not raised from it.
+      - DISCORD_BOT_RUNTIME=${DISCORD_BOT_RUNTIME:-}
       # Public origin the WEB-FACING probes go through (DNS → Cloudflare → Apache
       # → service), so the dashboard reflects real reachability rather than
       # internal container health: the website row hits "/" here, and /api/ready,

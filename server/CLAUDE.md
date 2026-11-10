@@ -23,7 +23,7 @@ Current production (Docker Compose on the VPS):
 | `ladder-worker` (job cron)          | **Node** | —                             | `dist-server/server/ladder-worker/index.cjs` |
 | `homes-worker` (listings cron)      | **Node** | —                             | `dist-server/server/homes-worker/index.cjs`  |
 | `jobs` (pg-boss async backbone)     | **Node** | —                             | `dist-server/server/jobs/index.cjs`          |
-| `supervisor` (2 background workers) | **Go**   | 9090 (metrics)                | `/app/bin/supervisor`                        |
+| `supervisor` (discord-bot)          | **Go**   | 9090 (metrics)                | `/app/bin/supervisor`                        |
 | `status`                            | **Go**   | 7008                          | `/app/bin/status`                            |
 | `assets`                            | **Go**   | 7007                          | `/app/bin/assets`                            |
 | `minio`                             | infra    | 9000/9001                     | S3-compatible store                          |
@@ -132,6 +132,14 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   `/admin/deepseek` and prunes rows older than 400 days; it skips silently when
   `DEEPSEEK_API_KEY` is unset.
   `ops.data-cleanup` (daily 04:00 UTC session/verification/notification/comment-view purge, `exclusive`, no retries).
+  **The Discord bot** (D3, `server/discord-bot/`: Alex `/chat` + the tamagotchi + the `/sohumtracker` tracker, a port of
+  `go-services/internal/discordbot`) runs here only with `DISCORD_BOT_RUNTIME=node`: the gateway (`@discordjs/ws`,
+  REST via `@discordjs/rest`, both imported only then) lives in this process, and its Go tickers are the crons
+  `discord-bot.care-tick` (`6-59/10`), `discord-bot.watch-flush` (every minute), `discord-bot.watch-identity` (`:23`)
+  and `discord-bot.watch-summary` (`11-59/30`), each a no-op until READY. Unset, the Go supervisor runs the bot. On
+  SIGTERM it closes the gateway, lets in-flight replies finish (`DISCORD_BOT_DRAIN_GRACE`, 60 s, beside pg-boss's 30 s;
+  `stop_grace_period` is 90 s) and closes the tracker's open sessions. `guard.ts` holds the live-test limits
+  (`DISCORD_BOT_GUILD_ALLOWLIST`, `DISCORD_BOT_CHANNEL_ALLOWLIST`): never set them in production.
   Owns pg-boss queue maintenance/scheduling (the web tier is send-only). **It is the only scheduler (D4):** background
   work is a pg-boss cron here, or a queue its own worker consumes (ladder, homes); `lib/__tests__/scheduler-ratchet.test.ts`
   allowlists the per-process `setInterval`s that remain (SSE keepalives, cache GC, hub game ticks) and fails on a new one.
@@ -186,7 +194,8 @@ history if a rollback ever needs it.
 
 - **Dev:** `pnpm dev` = concurrently Vite (7005) + socket-server + rmhbox +
   rmhtube + ladder-worker + homes-worker + jobs, each under `tsx watch`. The
-  Go-replaced workers (vibe/discord-bot/status) do not run in dev. The recap, doctrine and bot-worker crons run in `jobs` (D3), so they do (the bot-worker idles without `DEEPSEEK_API_KEY`).
+  Go-replaced workers (vibe/discord-bot/status) do not run in dev (the Node discord-bot starts in `jobs` only with
+  `DISCORD_BOT_RUNTIME=node` and a token). The recap, doctrine and bot-worker crons run in `jobs` (D3), so they do (the bot-worker idles without `DEEPSEEK_API_KEY`).
 - **Build order is load-bearing:** `pnpm build` = build-vibe-packages →
   `vite build` → esbuild bundles exactly **6 entrypoints**
   (socket-server, rmhbox, rmhtube, ladder-worker, homes-worker, jobs) into

@@ -20,6 +20,17 @@ const summaryInterval = 30 * time.Minute
 // cancelled. With no bot token configured it idles (returns nil on cancel) so a
 // missing secret never takes down the supervisor.
 func Run(ctx context.Context, d worker.Deps) error {
+	// DISCORD_BOT_RUNTIME=node hands the bot to the Node jobs worker
+	// (server/discord-bot/, redesign D3). Exactly one runtime may hold the
+	// gateway session — two would double every reply and every care post — so
+	// this side idles, the same shape as a missing token: the supervisor stays
+	// up and healthy, it just runs nothing.
+	if NodeRuntimeSelected() {
+		d.Logger.Info("DISCORD_BOT_RUNTIME=node — the Node jobs worker runs the discord bot; idling")
+		<-ctx.Done()
+		return nil
+	}
+
 	cfg := Config{
 		Token:          firstNonEmpty(config.GetString("DISCORD_BOT_TOKEN", ""), config.GetString("DISCORD_ACTIVITY_BOT_TOKEN", "")),
 		DevGuildID:     config.GetString("DISCORD_DEV_GUILD_ID", ""),
@@ -117,4 +128,11 @@ func firstNonEmpty(vals ...string) string {
 		}
 	}
 	return ""
+}
+
+// NodeRuntimeSelected reports whether DISCORD_BOT_RUNTIME selects the Node bot.
+// Trimmed and case-insensitive, matching server/discord-bot/config.ts, so the
+// two runtimes can never disagree about which of them owns the gateway.
+func NodeRuntimeSelected() bool {
+	return strings.EqualFold(strings.TrimSpace(config.GetString("DISCORD_BOT_RUNTIME", "")), "node")
 }

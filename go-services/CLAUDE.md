@@ -17,7 +17,9 @@ the newer services.
 Production is a **hybrid** (see `docker-compose.yml` at repo root):
 
 - **Go is authoritative for:** the discord-bot background worker, run by the
-  `supervisor` binary (metrics :9090); the `status`
+  `supervisor` binary (metrics :9090) — unless `DISCORD_BOT_RUNTIME=node`, which
+  hands it to the Node port in the `jobs` worker (`server/discord-bot/`, D3) and
+  makes `discordbot.Run` idle; the `status`
   dashboard (7008); and `assets` (7007, off the main user path under Compose).
 - **Node is authoritative for:** web SSR (7005) and the realtime hubs —
   socket-server (7001), rmhbox (7676), rmhtube (7003) — plus ladder-worker +
@@ -53,7 +55,15 @@ go-services/
 | `status` | `STATUS_PORT` 7008 | HTTP | server/status | `/api/status` is byte-compatible with the Node original; the dashboard is the site's own liquid-globe design (`internal/status/dashboard.go`); incidents, maintenance, the admin API, feeds, badges, `/metrics` and a Statuspage-compatible `/api/v2` are documented in [`docs/status-page.md`](../docs/status-page.md) |
 | `supervisor` | `METRICS_ADDR` :9090 | — | (consolidation) | runs the discord-bot worker as a goroutine under an errgroup |
 
-The **only supervised worker** is `discord-bot`. The streak-saver, recap, doctrine, bot-worker and vibe-worker workers were
+The **only supervised worker** is `discord-bot`, and it has a Node twin: with
+`DISCORD_BOT_RUNTIME=node` (passed by compose to `jobs`, `supervisor` and `status`
+alike) `discordbot.Run` idles like it does without a token, the Node jobs worker
+holds the gateway, and status skips the B07 gateway alarm (`NodeDiscordBot`). Flip
+it, and roll it back, by recreating those three services together
+(`docs/architecture.md` §"The Discord bot's runtime switch"). Once the Node bot has
+run in production, the supervisor, `internal/discordbot` and this module's last
+worker can be deleted. Behaviour changes to the bot must land in BOTH copies until
+then. The streak-saver, recap, doctrine, bot-worker and vibe-worker workers were
 ported to the Node `jobs` worker (`lib/streak-reminders.server.ts`,
 `lib/lights-out/recap.server.ts`, `lib/doctrine/jobs.server.ts`,
 `lib/rmhark-ai/bot-worker.server.ts`, `lib/rmhvibe/thumbnail-worker.server.ts`, D3); `status`
