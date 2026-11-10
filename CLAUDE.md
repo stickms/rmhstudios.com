@@ -229,8 +229,8 @@ _why_.
    user-supplied URL fetches through `lib/ssrf-guard.server`; CSP/security
    headers live in `deploy/apache/rmhstudios.conf` (the production front door;
    the Helm/Traefik path was removed in the rewrite — design §5.2).
-9. **Go code:** config via `pkg/config`, logging via `pkg/log`, sessions
-   validated via `pkg/auth` against the shared `session` table. Run
+9. **Go code:** config via `pkg/config`, logging via `pkg/log`. Go validates
+   no user sessions (`status`/`assets` take no user traffic). Run
    `make gazelle` after adding files.
 10. **Quality bar (from CONTRIBUTING.md):** don't add new type/lint warnings
     relative to the base branch; keep commits focused; never commit secrets.

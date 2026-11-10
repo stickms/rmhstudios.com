@@ -45,7 +45,7 @@ Production is a **hybrid** (see `docker-compose.yml` at repo root):
 go-services/
   cmd/<svc>/main.go       one main package per binary (status + assets)
   internal/<svc>/         each service's private implementation
-  pkg/                    shared libraries (config/auth/httpx/ratelimit/telemetry/objectstore/oncall/log)
+  pkg/                    shared libraries (config/httpx/telemetry/objectstore/oncall/log)
   images/BUILD.bazel      hand-maintained OCI image targets (status/assets)
   Dockerfile, Makefile    standalone docker-build path for the service images
 ```
@@ -74,25 +74,18 @@ were deleted (audit C3).
 |---|---|
 | `config` | env config: `LoadCommon(service)` → `{ServiceName, Env, DatabaseURL, RedisURL, MetricsAddr, LogLevel}`; `GetString/Int/Bool/Duration/CSV`. Never read env ad-hoc. |
 | `log` | slog JSON wrapper matching the Node logger's field names (`timestamp`); `New(service, level)`, `.Fatal()` only at boot |
-| `auth` | Better Auth **session validation** (see below); `NewValidator(pool)`, `ValidateSession`, `ResolveDiscordAccount`, `ErrUnauthenticated` |
-| `httpx` | `Health`, `WriteJSON`, `SessionToken` extraction, graceful `Server.Run`, `SignalContext` |
-| `ratelimit` | in-memory sliding window keyed `(conn, event)`, bounded + GC'd |
+| `httpx` | `Health`, `WriteJSON`, graceful `Server.Run`, `SignalContext` |
 | `telemetry` | Prometheus metrics per service (`assets` /metrics) |
 | `objectstore` | range-aware S3/MinIO reader (only place importing the AWS SDK) |
 | `oncall` | signed alarm client for the off-box watchdog (`status` sends heartbeats and A19/B06/B07) |
 
 ## Auth model
 
-Go never issues sessions — Better Auth (Node) does. Go **validates** them
-directly against the shared `session` table (`pkg/auth`):
-
-1. Token from `Authorization: Bearer`, or cookie
-   `better-auth.session_token` / `__Secure-...` (cookie value is
-   `<token>.<signature>` — only the part before the dot is looked up), or
-   `?token=` for WS.
-2. `SELECT ... FROM "session" s JOIN "user" u ...  WHERE s."token" = $1` →
-   `Identity{UserID, Name, Image, IsAdmin}`; expired/unknown ⇒
-   `ErrUnauthenticated`.
+Go never issues or validates user sessions. Better Auth (Node) issues them, and
+the Node hubs validate them (`server/shared/session-auth.ts`). `pkg/auth` (a Go
+copy of that session lookup) and `pkg/ratelimit` (a per-connection limiter) were
+deleted with the last binaries that used them (the gateway and Go hubs, §5.2):
+neither `status` nor `assets` takes user traffic.
 
 The Go services here are `status` + `assets`; none terminate
 user-facing WebSocket traffic, so there is no WS auth handshake in this fleet.
@@ -173,10 +166,9 @@ is Bazel:
       `BUILD.bazel` changes belong in the same commit.
 - [ ] `make test` green (`bazelisk test --build_tests_only //go-services/...`,
       which is exactly what `go-microservices.yml` runs).
-- [ ] Config through `pkg/config`, logging through `pkg/log`, session
-      validation through `pkg/auth` against the shared `session` table — a
-      service that reads `os.Getenv` or prints straight to stdout is the drift
-      those packages exist to prevent.
+- [ ] Config through `pkg/config`, logging through `pkg/log` — a service that
+      reads `os.Getenv` or prints straight to stdout is the drift those packages
+      exist to prevent.
 - [ ] A new binary is wired where it actually ships: the root `Dockerfile`
       `go-builder` stage builds `./cmd/...` for the Compose path, and
       `images/BUILD.bazel` is the truth for what Bazel can build.
