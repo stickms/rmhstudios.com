@@ -7,6 +7,9 @@ import { useSession } from '@/components/Providers';
 import { isRoomCode, ROOM_NAME_MAX } from '@/lib/elections/room-config';
 import type { RoomListItem } from '@/lib/elections/rooms';
 import type { RoomSource } from './useRoomState';
+import { api } from '@/lib/contract/client';
+import { listElectionRoomsApi, createElectionRoomApi } from '@/lib/elections/elections.contract';
+import { serverError } from '@/lib/http';
 
 /**
  * Where a room starts. Three ways in:
@@ -27,9 +30,7 @@ export function RoomLobby({ cycle, onOpen }: { cycle: string; onOpen: (s: RoomSo
   const { data } = useQuery<{ rooms: RoomListItem[] }>({
     queryKey: ['elections-rooms', cycle],
     queryFn: async () => {
-      const r = await fetch(`/api/elections/rooms?cycle=${encodeURIComponent(cycle)}`);
-      if (!r.ok) throw new Error(String(r.status));
-      return r.json();
+      return api(listElectionRoomsApi, { query: { cycle }, retries: 0 });
     },
     refetchInterval: 20_000,
     staleTime: 5_000,
@@ -42,21 +43,14 @@ export function RoomLobby({ cycle, onOpen }: { cycle: string; onOpen: (s: RoomSo
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/elections/rooms', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ name: name.trim(), visibility, cycle }),
+      const { room } = await api(createElectionRoomApi, {
+        body: { name: name.trim(), visibility, cycle },
       });
-      const j = (await res.json().catch(() => null)) as {
-        room?: { code: string };
-        error?: string;
-      } | null;
-      if (res.ok && j?.room) onOpen({ kind: 'hosted', code: j.room.code });
-      else
-        setError(j?.error ?? t('lobby.createFail', { defaultValue: 'Could not create the room.' }));
-    } catch {
-      setError(t('lobby.createFail', { defaultValue: 'Could not create the room.' }));
+      onOpen({ kind: 'hosted', code: room.code });
+    } catch (err) {
+      setError(
+        serverError(err) ?? t('lobby.createFail', { defaultValue: 'Could not create the room.' }),
+      );
     } finally {
       setBusy(false);
     }

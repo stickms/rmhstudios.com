@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getElectionCalendarApi } from '@/lib/elections/elections.contract';
 import { currentCycle, cycleForYear, isValidCycleYear } from '@/lib/elections/calendar';
 import { derivePrimaryDays, mergeDays } from '@/lib/elections/calendar-days';
 import { fecKeyConfigured, getFecDays } from '@/lib/elections/fec.server';
@@ -17,7 +18,7 @@ const query = z.object({ year: z.coerce.number().int().optional() });
 export const Route = createFileRoute('/api/elections/calendar')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(getElectionCalendarApi, 
         {
           auth: 'none',
           rateLimit: 'read',

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createChatChecklistApi, tickChatChecklistApi } from '@/lib/chat-plus/chat.contract';
 import { requireChat } from '@/lib/chat-plus/route-helpers.server';
 import {
   checklistSchema,
@@ -21,7 +22,7 @@ const tickSchema = z.object({
 export const Route = createFileRoute('/api/chats/$kind/$id/checklist')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(createChatChecklistApi, 
         {
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'chat-checklist' },
           body: checklistSchema,
@@ -33,7 +34,7 @@ export const Route = createFileRoute('/api/chats/$kind/$id/checklist')({
           return Response.json({ message: posted.message, kind: posted.kind }, { status: 201 });
         },
       ),
-      PUT: defineHandler(
+      PUT: implement(tickChatChecklistApi, 
         { rateLimit: { limit: 120, windowMs: 60_000, prefix: 'chat-tick' }, body: tickSchema },
         async ({ params, userId, body }) => {
           const access = await requireChat(params, userId, { write: true });

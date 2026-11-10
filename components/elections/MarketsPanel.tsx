@@ -2,6 +2,8 @@ import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { fmtInt } from './hooks';
+import { api } from '@/lib/contract/client';
+import { getElectionMarketsApi } from '@/lib/elections/elections.contract';
 
 /** The slice of GET /api/elections/markets this panel reads. */
 interface Market {
@@ -23,9 +25,7 @@ export function MarketsPanel({ cycle }: { cycle: string }) {
   const { data } = useQuery<{ markets: Market[] }>({
     queryKey: ['elections-markets', cycle],
     queryFn: async () => {
-      const r = await fetch('/api/elections/markets');
-      if (!r.ok) throw new Error(String(r.status));
-      return r.json();
+      return api(getElectionMarketsApi, { retries: 0 });
     },
     refetchInterval: 30_000,
     staleTime: 10_000,

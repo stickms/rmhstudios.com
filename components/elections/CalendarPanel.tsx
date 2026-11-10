@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { ElectionDayEntry } from '@/lib/elections/calendar-days';
 import { stateName } from '@/lib/elections/states';
+import { api } from '@/lib/contract/client';
+import { getElectionCalendarApi } from '@/lib/elections/elections.contract';
 
 interface CalendarResponse {
   year: number;
@@ -30,9 +32,7 @@ export function CalendarPanel({
   const { data, isError } = useQuery<CalendarResponse>({
     queryKey: ['elections-calendar', year],
     queryFn: async () => {
-      const r = await fetch(`/api/elections/calendar?year=${year}`);
-      if (!r.ok) throw new Error(String(r.status));
-      return r.json();
+      return api(getElectionCalendarApi, { query: { year }, retries: 0 });
     },
     staleTime: 10 * 60_000,
     retry: 1,

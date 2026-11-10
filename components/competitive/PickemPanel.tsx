@@ -4,15 +4,10 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { PICK_ROLES, type PickRole } from '@/lib/competitive/pickem';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { getPickemApi, setPickemApi, type PickemView as PickemData } from '@/lib/competitive/pickem.contract';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
-
-interface PickemData {
-  open: boolean;
-  complete: boolean;
-  pickerCount: number;
-  mine: { role: PickRole; entrantId: string }[];
-  leaderboard: { user: { name?: string | null } | null; points: number }[];
-}
 
 const SLOTS: { key: string; role: PickRole }[] = [
   { key: 'CHAMPION', role: 'CHAMPION' },
@@ -36,9 +31,12 @@ export function PickemPanel({
   const id = tournament.id;
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/tournaments/${id}/pickem`);
-    if (!res.ok) return;
-    const d = (await res.json()) as PickemData;
+    let d: PickemData;
+    try {
+      d = await api(getPickemApi, { params: { id }, retries: 0 });
+    } catch {
+      return;
+    }
     setData(d);
     const next: Record<string, string> = {};
     let semi = 0;
@@ -61,18 +59,14 @@ export function PickemPanel({
         role: s.role,
         entrantId: card[s.key],
       }));
-      const res = await fetch(`/api/tournaments/${id}/pickem`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ picks }),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok)
-        toast.error(body.error ?? t('pk-failed', { defaultValue: 'Could not save picks' }));
-      else {
-        toast.success(t('pk-saved', { defaultValue: 'Picks saved' }));
-        await load();
+      try {
+        await api(setPickemApi, { params: { id }, body: { picks } });
+      } catch (err) {
+        toast.error(serverError(err) ?? t('pk-failed', { defaultValue: 'Could not save picks' }));
+        return;
       }
+      toast.success(t('pk-saved', { defaultValue: 'Picks saved' }));
+      await load();
     } finally {
       setBusy(false);
     }

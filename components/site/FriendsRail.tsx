@@ -7,6 +7,8 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useActiveFriends } from '@/hooks/useActiveFriends';
 import { useClipboard } from '@/hooks/useClipboard';
 import { contextVerb, sameActiveFriend, type ActiveFriend } from '@/lib/presence-types';
+import { api } from '@/lib/contract/client';
+import { getMyReferralApi } from '@/lib/referrals.contract';
 import { ActivityLine } from './ActivityLine';
 
 /**
@@ -22,9 +24,7 @@ export function FriendsRail() {
 
   const copyInvite = async () => {
     try {
-      const res = await fetch('/api/referrals/me', { credentials: 'include' });
-      if (!res.ok) return;
-      const data = (await res.json()) as { url: string };
+      const data = await api(getMyReferralApi, { retries: 0 });
       await copy(data.url);
     } catch {
       // clipboard unavailable — nothing to do

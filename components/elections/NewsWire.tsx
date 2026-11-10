@@ -5,6 +5,8 @@ import { ExternalLink } from 'lucide-react';
 import type { NewsItem } from '@/lib/elections/news';
 import { stateName } from '@/lib/elections/states';
 import { timeAgo, useNow } from './hooks';
+import { api } from '@/lib/contract/client';
+import { getElectionNewsApi } from '@/lib/elections/elections.contract';
 
 interface NewsResponse {
   items: NewsItem[];
@@ -24,9 +26,7 @@ export function NewsWire({ state, live }: { state: string | null; live: boolean 
   const { data, isError } = useQuery<NewsResponse>({
     queryKey: ['elections-news', scoped ? state : '*'],
     queryFn: async () => {
-      const r = await fetch(`/api/elections/news${scoped ? `?state=${state}` : ''}`);
-      if (!r.ok) throw new Error(String(r.status));
-      return r.json();
+      return api(getElectionNewsApi, { query: scoped && state ? { state } : {}, retries: 0 });
     },
     refetchInterval: live ? 45_000 : 5 * 60_000,
     staleTime: 20_000,

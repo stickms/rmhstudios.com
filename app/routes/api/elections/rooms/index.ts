@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createElectionRoomApi, listElectionRoomsApi } from '@/lib/elections/elections.contract';
 import { parseDay } from '@/lib/elections/calendar';
 import { validateRoomConfig, roomNameSchema } from '@/lib/elections/room-config';
 import { createRoom, listPublicRooms } from '@/lib/elections/rooms.server';
@@ -20,7 +21,7 @@ const createBody = z.object({
 export const Route = createFileRoute('/api/elections/rooms/')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(listElectionRoomsApi, 
         { auth: 'none', rateLimit: 'read', query: listQuery, cache: { visibility: 'public', maxAge: 5, sMaxAge: 10 }, etag: false, microCache: false, label: 'elections.rooms.list' },
         async ({ query }) => {
           const day = parseDay(query.cycle);
@@ -28,7 +29,7 @@ export const Route = createFileRoute('/api/elections/rooms/')({
           return Response.json({ rooms: await listPublicRooms(day.date) });
         },
       ),
-      POST: defineHandler(
+      POST: implement(createElectionRoomApi, 
         { rateLimit: { limit: 6, windowMs: 3_600_000, prefix: 'elections:room:create' }, body: createBody, label: 'elections.rooms.create' },
         async ({ userId, body }) => {
           const day = parseDay(body.cycle);

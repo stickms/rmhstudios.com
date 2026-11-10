@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { rateConnectionGridApi } from '@/lib/party/connections.contract';
 import { rateSchema } from '@/lib/party/connections-schema';
 import { rateGrid } from '@/lib/party/connections.server';
 
@@ -7,7 +8,7 @@ import { rateGrid } from '@/lib/party/connections.server';
 export const Route = createFileRoute('/api/connections/grids/$id/rate')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(rateConnectionGridApi, 
         { rateLimit: 'write', body: rateSchema },
         async ({ userId, params, body }) => {
           const r = await rateGrid(userId, params.id, body.rating);

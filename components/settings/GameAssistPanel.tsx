@@ -4,7 +4,9 @@ import { Accessibility } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Switch } from '@/components/ui/switch';
+import { api } from '@/lib/contract/client';
 import { MIN_SPEED_FLOOR, type AssistSettings } from '@/lib/game/assist';
+import { getAssistsApi, setAssistsApi, type AssistView } from '@/lib/game/assist.contract';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 
 /**
@@ -25,20 +27,14 @@ import { SettingsSection } from '@/components/settings/SettingsSection';
  * It is the thing somebody most needs to know BEFORE flipping one.
  */
 
-interface AssistResponse {
-  assists: AssistSettings;
-  honouredBy: string[];
-}
-
 export function GameAssistPanel() {
   const { t } = useTranslation('site');
-  const [state, setState] = useState<AssistResponse | null>(null);
+  const [state, setState] = useState<AssistView | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch('/api/settings/game-assists', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: AssistResponse | null) => d && setState(d))
+    api(getAssistsApi, { retries: 0 })
+      .then((d) => setState(d))
       .catch(() => {
         /* The panel simply does not render; a failed read is not a toast. */
       });
@@ -48,14 +44,7 @@ export function GameAssistPanel() {
     async (patch: Partial<AssistSettings>) => {
       setSaving(true);
       try {
-        const res = await fetch('/api/settings/game-assists', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(patch),
-        });
-        if (!res.ok) throw new Error(String(res.status));
-        setState((await res.json()) as AssistResponse);
+        setState(await api(setAssistsApi, { body: patch }));
       } catch {
         toast.error(t('assists-error', { defaultValue: 'Could not save that.' }));
       } finally {

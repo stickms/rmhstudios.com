@@ -5,6 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { Sparkles, SendHorizontal } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { timeAgo, useNow } from './hooks';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { getElectionSummaryApi, askElectionsApi } from '@/lib/elections/elections.contract';
 
 interface SummaryResponse {
   summary: string | null;
@@ -36,9 +39,7 @@ export function AiDesk({
   const { data } = useQuery<SummaryResponse>({
     queryKey: ['elections-summary', cycle],
     queryFn: async ({ signal }) => {
-      const r = await fetch(`/api/elections/summary?cycle=${encodeURIComponent(cycle)}`, { signal });
-      if (!r.ok) throw new Error(String(r.status));
-      return r.json();
+      return api(getElectionSummaryApi, { query: { cycle }, signal, retries: 0 });
     },
     refetchInterval: live ? 60_000 : 10 * 60_000,
     staleTime: 20_000,
@@ -51,25 +52,18 @@ export function AiDesk({
     if (question.length < 3 || busy) return;
     setBusy(true);
     try {
-      const res = await fetch('/api/elections/ask', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ question, cycle }),
-      });
-      if (res.ok) {
-        const j = (await res.json()) as { answer: string };
-        setAnswer({ q: question, a: j.answer });
-        setQ('');
-      } else if (res.status === 429) {
+      const j = await api(askElectionsApi, { body: { question, cycle } });
+      setAnswer({ q: question, a: j.answer });
+      setQ('');
+    } catch (err) {
+      const status = err instanceof HttpError ? err.status : null;
+      if (status === 429) {
         setAnswer({ q: question, a: t('ask.slow', { defaultValue: 'Easy — too many questions. Try again in a minute.' }) });
-      } else if (res.status === 402) {
+      } else if (status === 402) {
         setAnswer({ q: question, a: t('ask.budget', { defaultValue: 'You have used this month’s AI allowance.' }) });
       } else {
         setAnswer({ q: question, a: t('ask.unavailable', { defaultValue: 'The AI desk is unavailable right now.' }) });
       }
-    } catch {
-      setAnswer({ q: question, a: t('ask.unavailable', { defaultValue: 'The AI desk is unavailable right now.' }) });
     } finally {
       setBusy(false);
     }

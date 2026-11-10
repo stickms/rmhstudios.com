@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getMyReferralApi } from '@/lib/referrals.contract';
 import { prisma } from '@/lib/prisma.server';
 import { getOrCreateReferralCode, REFERRAL_REWARD } from '@/lib/referrals.server';
 
@@ -10,7 +11,7 @@ import { getOrCreateReferralCode, REFERRAL_REWARD } from '@/lib/referrals.server
 export const Route = createFileRoute('/api/referrals/me')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ request, session }) => {
+      GET: implement(getMyReferralApi, {}, async ({ request, session }) => {
         const userId = session.user.id;
         const [code, invited, rewarded] = await Promise.all([
           getOrCreateReferralCode(userId),
@@ -18,13 +19,13 @@ export const Route = createFileRoute('/api/referrals/me')({
           prisma.referral.count({ where: { referrerId: userId, rewardedAt: { not: null } } }),
         ]);
         const origin = new URL(request.url).origin;
-        return Response.json({
+        return {
           code,
           url: `${origin}/ref/${code}`,
           reward: REFERRAL_REWARD,
           invited,
           rewarded,
-        });
+        };
       }),
     },
   },

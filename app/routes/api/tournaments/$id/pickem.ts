@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler, notFound } from '@/lib/api/handler.server';
+import { notFound } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getPickemApi, setPickemApi } from '@/lib/competitive/pickem.contract';
 import { getPickem, setPicks } from '@/lib/competitive/pickem.server';
 import { PICK_ROLE_LIST } from '@/lib/competitive/pickem';
 
@@ -22,12 +24,12 @@ const bodySchema = z.object({
 export const Route = createFileRoute('/api/tournaments/$id/pickem')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ params, userId }) => {
+      GET: implement(getPickemApi, { auth: 'optional', rateLimit: 'read' }, async ({ params, userId }) => {
         const data = await getPickem(params.id, userId);
         if (!data) return notFound('No pick’em for this tournament');
         return Response.json(data, { headers: { 'Cache-Control': 'private, no-store' } });
       }),
-      PUT: defineHandler(
+      PUT: implement(setPickemApi, 
         { rateLimit: 'write', body: bodySchema },
         async ({ params, userId, body }) => {
           const res = await setPicks(

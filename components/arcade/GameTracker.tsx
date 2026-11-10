@@ -8,17 +8,15 @@ import { Select } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { FINISH_STATUSES, PLAY_STATUSES, type PlayStatus } from '@/lib/arcade/backlog';
-
-interface BacklogData {
-  stats: { medianMinutes: number | null; count: number };
-  mine: { status: PlayStatus; finishMinutes: number | null } | null;
-}
-interface RivalData {
-  ranked: boolean;
-  myScore?: number;
-  rival?: { name: string; score: number; rank: number } | null;
-  state?: 'ahead' | 'behind';
-}
+import {
+  clearBacklogApi,
+  getBacklogApi,
+  getRivalApi,
+  setBacklogApi,
+  type BacklogView as BacklogData,
+  type RivalView as RivalData,
+} from '@/lib/arcade/arcade.contract';
+import { api } from '@/lib/contract/client';
 
 function formatMinutes(m: number): string {
   return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
@@ -36,19 +34,17 @@ export function GameTracker({ gameId, signedIn }: { gameId: string; signedIn: bo
 
   useEffect(() => {
     let live = true;
-    fetch(`/api/arcade/backlog?gameId=${encodeURIComponent(gameId)}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: BacklogData | null) => {
-        if (!live || !d) return;
+    api(getBacklogApi, { query: { gameId }, retries: 0 })
+      .then((d) => {
+        if (!live) return;
         setData(d);
         if (d.mine?.finishMinutes)
           setHours(String(Math.round((d.mine.finishMinutes / 60) * 10) / 10));
       })
       .catch(() => {});
     if (signedIn) {
-      fetch(`/api/arcade/rival?gameId=${encodeURIComponent(gameId)}`)
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d: RivalData | null) => live && setRival(d))
+      api(getRivalApi, { query: { gameId }, retries: 0 })
+        .then((d) => live && setRival(d))
         .catch(() => {});
     }
     return () => {
@@ -61,19 +57,10 @@ export function GameTracker({ gameId, signedIn }: { gameId: string; signedIn: bo
       const minutes = Math.round(Number(hoursText) * 60);
       const finishMinutes =
         (FINISH_STATUSES as readonly string[]).includes(status) && minutes > 0 ? minutes : null;
-      const res = await fetch(
-        status ? '/api/arcade/backlog' : `/api/arcade/backlog?gameId=${encodeURIComponent(gameId)}`,
-        {
-          method: status ? 'PUT' : 'DELETE',
-          ...(status
-            ? {
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ gameId, status, finishMinutes }),
-              }
-            : {}),
-        },
-      ).catch(() => null);
-      if (!res || !res.ok) {
+      try {
+        if (status) await api(setBacklogApi, { body: { gameId, status, finishMinutes } });
+        else await api(clearBacklogApi, { query: { gameId } });
+      } catch {
         toast.error(t('save-failed', { defaultValue: 'Could not save that.' }));
         return;
       }

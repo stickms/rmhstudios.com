@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { runChatCommandApi } from '@/lib/chat-plus/chat.contract';
 import { requireChat } from '@/lib/chat-plus/route-helpers.server';
 import { commandSchema, runChatCommand } from '@/lib/chat-plus/commands.server';
 
@@ -12,7 +13,7 @@ import { commandSchema, runChatCommand } from '@/lib/chat-plus/commands.server';
 export const Route = createFileRoute('/api/chats/$kind/$id/command')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(runChatCommandApi, 
         { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'chat-command' }, body: commandSchema },
         async ({ params, userId, session, body }) => {
           const access = await requireChat(params, userId, { write: true });

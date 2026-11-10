@@ -5,6 +5,8 @@ import { subscribeChatUpdates } from '@/lib/chat-plus/client-bus';
 import type { ChatRef, ChatUpdate } from '@/lib/chat-plus/types';
 import type { ChatMeta } from '@/lib/chat-plus/settings.client';
 import { accentStyle, parseTheme, wallpaperStyle } from '@/lib/chat-plus/themes';
+import { api } from '@/lib/contract/client';
+import { getChatMetaApi } from '@/lib/chat-plus/chat.contract';
 
 /** Subscribe to `chat-update` events for one chat (either kind). */
 export function useChatUpdates(chat: ChatRef, handler: (update: ChatUpdate) => void): void {
@@ -37,11 +39,7 @@ export function useChatMeta(chat: ChatRef, enabled = true) {
     enabled,
     staleTime: 60_000,
     queryFn: async (): Promise<ChatMeta> => {
-      const res = await fetch(`/api/chats/${chat.kind}/${encodeURIComponent(chat.id)}/meta`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('meta failed');
-      return res.json();
+      return api(getChatMetaApi, { params: { kind: chat.kind, id: chat.id }, retries: 0 });
     },
   });
   useChatUpdates(chat, (u) => {

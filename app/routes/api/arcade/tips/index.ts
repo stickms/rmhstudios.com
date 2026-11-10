@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler, notFound } from '@/lib/api/handler.server';
+import { notFound } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { listAchievementTipsApi, postAchievementTipApi, voteAchievementTipApi } from '@/lib/arcade/arcade.contract';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { ACHIEVEMENTS } from '@/lib/achievements/catalog';
@@ -22,7 +24,7 @@ const known = (id: string) => ACHIEVEMENTS.some((a) => a.id === id);
 export const Route = createFileRoute('/api/arcade/tips/')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(listAchievementTipsApi, 
         { auth: 'optional', rateLimit: 'read', query: listQuery },
         async ({ userId, query }) => {
           if (!known(query.achievementId)) return notFound('Unknown achievement');
@@ -51,7 +53,7 @@ export const Route = createFileRoute('/api/arcade/tips/')({
           });
         },
       ),
-      POST: defineHandler({ rateLimit: 'write', body: postBody }, async ({ userId, body }) => {
+      POST: implement(postAchievementTipApi, { rateLimit: 'write', body: postBody }, async ({ userId, body }) => {
         if (!known(body.achievementId)) return notFound('Unknown achievement');
         const mine = await prisma.achievementTip.count({
           where: { userId, achievementId: body.achievementId },
@@ -68,7 +70,7 @@ export const Route = createFileRoute('/api/arcade/tips/')({
         });
         return Response.json({ id: tip.id }, { status: 201 });
       }),
-      PUT: defineHandler({ rateLimit: 'write', body: voteBody }, async ({ userId, body }) => {
+      PUT: implement(voteAchievementTipApi, { rateLimit: 'write', body: voteBody }, async ({ userId, body }) => {
         const tip = await prisma.achievementTip.findUnique({
           where: { id: body.tipId },
           select: { userId: true },

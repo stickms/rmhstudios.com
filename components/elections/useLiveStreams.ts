@@ -1,14 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import type { FeaturedStream } from '@/lib/elections/streams';
+import { api } from '@/lib/contract/client';
+import { getElectionStreamsApi } from '@/lib/elections/elections.contract';
 
 /** Featured + auto-discovered live streams (`/api/elections/streams`), shared by the watch panel and room panes. */
 export function useLiveStreams(): FeaturedStream[] {
   const { data } = useQuery<{ streams: FeaturedStream[] }>({
     queryKey: ['elections-streams'],
     queryFn: async () => {
-      const r = await fetch('/api/elections/streams');
-      if (!r.ok) throw new Error(String(r.status));
-      return r.json();
+      return api(getElectionStreamsApi, { retries: 0 });
     },
     staleTime: 3 * 60_000,
     refetchInterval: 5 * 60_000,

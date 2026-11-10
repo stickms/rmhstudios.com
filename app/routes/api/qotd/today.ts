@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getQotdTodayApi } from '@/lib/posts-plus/qotd.contract';
 import { getToday } from '@/lib/posts-plus/qotd.server';
 
 /**
@@ -10,7 +11,7 @@ import { getToday } from '@/lib/posts-plus/qotd.server';
 export const Route = createFileRoute('/api/qotd/today')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ userId }) =>
+      GET: implement(getQotdTodayApi, { auth: 'optional', rateLimit: 'read' }, async ({ userId }) =>
         Response.json(await getToday(userId), {
           headers: { 'Cache-Control': 'private, no-store' },
         }),

@@ -6,6 +6,9 @@ import { useSession } from '@/components/Providers';
 import { MAX_CHAT_LENGTH } from '@/lib/elections/chat';
 import { useRoomStream, type ReactionBurst, type StreamStatus } from './useRoomStream';
 import type { ChatMessage } from '@/lib/elections/chat';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { deleteElectionChatApi, postElectionChatApi } from '@/lib/elections/elections.contract';
 
 /**
  * The live room. Reads over Server-Sent Events (EventSource reconnects on its own), writes over a
@@ -55,36 +58,26 @@ export function ElectionChat({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/elections/chat', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ text: body, cycle, ...(room ? { room } : {}) }),
+      await api(postElectionChatApi, {
+        body: room ? { text: body, cycle, room } : { text: body, cycle },
       });
-      if (res.ok) {
-        setText('');
-        stick.current = true;
-      } else if (res.status === 429) {
+      setText('');
+      stick.current = true;
+    } catch (err) {
+      if (err instanceof HttpError && err.status === 429) {
         setError(t('chat.slow', { defaultValue: 'Slow down a little.' }));
       } else {
-        const j = (await res.json().catch(() => null)) as { error?: string } | null;
-        setError(j?.error ?? t('chat.fail', { defaultValue: 'Could not send that.' }));
+        setError(serverError(err) ?? t('chat.fail', { defaultValue: 'Could not send that.' }));
       }
-    } catch {
-      setError(t('chat.fail', { defaultValue: 'Could not send that.' }));
     } finally {
       setBusy(false);
     }
   };
 
   const remove = (id: string) =>
-    fetch(
-      `/api/elections/chat?cycle=${encodeURIComponent(cycle)}${room ? `&room=${encodeURIComponent(room)}` : ''}&id=${encodeURIComponent(id)}`,
-      {
-        method: 'DELETE',
-        credentials: 'same-origin',
-      },
-    ).catch(() => undefined);
+    api(deleteElectionChatApi, {
+      query: room ? { cycle, room, id } : { cycle, id },
+    }).catch(() => undefined);
 
   const fill = height === 'fill';
   return (

@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createConnectionGridApi, listConnectionGridsApi } from '@/lib/party/connections.contract';
 import { createGridSchema } from '@/lib/party/connections-schema';
 import { createGrid, listGrids } from '@/lib/party/connections.server';
 
@@ -10,12 +11,12 @@ import { createGrid, listGrids } from '@/lib/party/connections.server';
 export const Route = createFileRoute('/api/connections/grids/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none', rateLimit: 'read' }, async () =>
+      GET: implement(listConnectionGridsApi, { auth: 'none', rateLimit: 'read' }, async () =>
         Response.json(await listGrids(), {
           headers: { 'Cache-Control': 'public, max-age=15, s-maxage=30' },
         }),
       ),
-      POST: defineHandler(
+      POST: implement(createConnectionGridApi, 
         { rateLimit: 'write', body: createGridSchema },
         async ({ userId, body }) => {
           const r = await createGrid(userId, body);

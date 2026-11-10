@@ -8,6 +8,8 @@ import { fmtMargin, swingFrom } from '@/lib/elections/swing';
 import { fmtInt } from './hooks';
 import { useBaselineFor } from './BaselineContext';
 import { useFollow } from './FollowContext';
+import { api } from '@/lib/contract/client';
+import { askElectionsApi } from '@/lib/elections/elections.contract';
 
 const PARTY_CHIP: Record<Party, string> = { DEM: 'dem', GOP: 'gop', OTH: 'oth' };
 const PARTY_WORD: Record<Party, string> = { DEM: 'Dem', GOP: 'GOP', OTH: 'Ind' };
@@ -50,16 +52,12 @@ export function RaceCard({ race, onShare }: { race: Race; onShare?: (race: Race)
   const askExplain = async () => {
     setExplain({ busy: true, text: null });
     try {
-      const res = await fetch('/api/elections/ask', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({
+      const j = await api(askElectionsApi, {
+        body: {
           question: `In two short sentences, explain the ${race.label} race: who is ahead, by how much, how much is counted, and what could change it.`,
-        }),
+        },
       });
-      const j = res.ok ? ((await res.json()) as { answer?: string }) : null;
-      setExplain({ busy: false, text: j?.answer ?? t('card.explainFail', { defaultValue: 'The Briefing Room can’t answer right now.' }) });
+      setExplain({ busy: false, text: j.answer });
     } catch {
       setExplain({ busy: false, text: t('card.explainFail', { defaultValue: 'The Briefing Room can’t answer right now.' }) });
     }
