@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { FeedSummary } from '@/lib/discovery/feeds.server';
+import { feedsQuery } from '@/lib/discovery/feeds.queries';
 import { EMPTY_FEED_FORM, FeedForm, feedBody } from './FeedForm';
 
 interface Lists {
@@ -66,23 +68,16 @@ export function FeedsPage() {
   const { t } = useTranslation('f-discovery');
   const { data: session } = useSession();
   const navigate = useNavigate();
-  const [lists, setLists] = useState<Lists | null>(null);
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch('/api/feeds', { credentials: 'include' });
-      if (!res.ok) throw new Error(String(res.status));
-      setLists((await res.json()) as Lists);
-    } catch {
-      toast.error(t('feeds-load-failed', { defaultValue: 'Could not load feeds' }));
-    }
-  }, [t]);
-
+  // Seeded by the /feeds loader; fetched here only when the loader had no session to use.
+  const list = useQuery({ ...feedsQuery<Lists>(), enabled: !!session, retry: false });
+  const lists = list.data ?? null;
+  const loadFailed = list.isError;
   useEffect(() => {
-    if (session) void load();
-  }, [session, load]);
+    if (loadFailed) toast.error(t('feeds-load-failed', { defaultValue: 'Could not load feeds' }));
+  }, [loadFailed, t]);
 
   const create = async (v: Parameters<typeof feedBody>[0]) => {
     setBusy(true);

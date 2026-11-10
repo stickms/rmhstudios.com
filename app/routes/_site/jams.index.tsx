@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { JamsList } from '@/components/competitive/JamsList';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { jamsQuery } from '@/lib/competitive/jams.queries';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 
 export const Route = createFileRoute('/_site/jams/')({
@@ -14,6 +16,7 @@ export const Route = createFileRoute('/_site/jams/')({
     }),
     links: [buildCanonical('/jams')],
   }),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, jamsQuery()),
   component: JamsPage,
 });
 

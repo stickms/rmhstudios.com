@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { TabItem } from '@/components/ui/tabs';
-import { apiJson } from './api';
+import { walletBalanceQuery } from '@/lib/economy/wallet.queries';
 
 import { WALLET_TABS, type WalletTab } from '@/lib/economy/wallet-tabs';
 export { WALLET_TABS, type WalletTab };
@@ -46,12 +46,8 @@ export function WalletPage({
   const { data: session, isPending } = useSession();
   const signedIn = !!session && !isPending;
 
-  const { data: balance } = useQuery({
-    queryKey: ['economy-plus', 'balance'],
-    queryFn: () => apiJson<{ coins: number }>('/api/coins'),
-    enabled: signedIn,
-    staleTime: 15_000,
-  });
+  // Seeded by the /wallet loader, so the balance is in the first paint.
+  const { data: balance } = useQuery({ ...walletBalanceQuery(), enabled: signedIn });
 
   const tabs: TabItem[] = [
     { id: 'goals', label: t('wallet-tab-goals', { defaultValue: 'Goals' }), icon: Target },
