@@ -16,6 +16,15 @@ import {
   type StampView,
 } from '@/lib/profile/stamps';
 import { StampImage } from '../StampWallModule';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  addStampToWallApi,
+  browseStampsApi,
+  deleteStampApi,
+  myStampsApi,
+  removeStampFromWallApi,
+} from '@/lib/profile/stamps.contract';
 
 type Sort = 'new' | 'popular';
 
@@ -39,7 +48,7 @@ export default function StampSettings({ userId }: { userId: string }) {
 
   const loadMine = useCallback(async () => {
     const [a, b] = await Promise.all([
-      fetch('/api/stamps/mine').then((r) => (r.ok ? r.json() : { stamps: [] })),
+      api(myStampsApi).catch((): { stamps: StampView[] } => ({ stamps: [] })),
       fetch(`/api/profile/${encodeURIComponent(userId)}/stamps`).then((r) =>
         r.ok ? r.json() : { stamps: [] },
       ),
@@ -52,13 +61,14 @@ export default function StampSettings({ userId }: { userId: string }) {
     async (reset: boolean, after: string | null) => {
       setLoadingGallery(true);
       try {
-        const q = new URLSearchParams({ sort });
-        if (after) q.set('cursor', after);
-        const res = await fetch(`/api/stamps?${q}`);
-        if (!res.ok) return;
-        const json = (await res.json()) as { stamps: StampView[]; nextCursor: string | null };
+        const json = await api(browseStampsApi, {
+          query: { sort, ...(after ? { cursor: after } : {}) },
+          retries: 0,
+        });
         setGallery((prev) => (reset ? json.stamps : [...prev, ...json.stamps]));
         setCursor(json.nextCursor);
+      } catch {
+        // A failed page leaves the gallery as it was.
       } finally {
         setLoadingGallery(false);
       }
@@ -99,10 +109,10 @@ export default function StampSettings({ userId }: { userId: string }) {
   }
 
   async function setOnWall(stamp: StampView, on: boolean) {
-    const res = await fetch(`/api/stamps/${stamp.id}/wall`, { method: on ? 'POST' : 'DELETE' });
-    const json = (await res.json().catch(() => ({}))) as { error?: string };
-    if (!res.ok) {
-      toast.error(json.error ?? t('stamp-failed', { defaultValue: "Couldn't update your wall" }));
+    try {
+      await api(on ? addStampToWallApi : removeStampFromWallApi, { params: { id: stamp.id } });
+    } catch (e) {
+      toast.error(serverError(e) ?? t('stamp-failed', { defaultValue: "Couldn't update your wall" }));
       return;
     }
     await loadMine();
@@ -110,8 +120,11 @@ export default function StampSettings({ userId }: { userId: string }) {
   }
 
   async function remove(stamp: StampView) {
-    const res = await fetch(`/api/stamps/${stamp.id}`, { method: 'DELETE' });
-    if (!res.ok) {
+    const deleted = await api(deleteStampApi, { params: { id: stamp.id } }).then(
+      () => true,
+      () => false,
+    );
+    if (!deleted) {
       toast.error(t('stamp-delete-failed', { defaultValue: "Couldn't delete that stamp" }));
       return;
     }

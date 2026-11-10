@@ -6,13 +6,15 @@
  * worth making.
  */
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler, apiError } from '@/lib/api/handler.server';
+import { apiError } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { subscribePackApi, unsubscribePackApi } from '@/lib/emoji/packs.contract';
 import { subscribe, unsubscribe, PackError } from '@/lib/emoji/packs.server';
 
 export const Route = createFileRoute('/api/emoji-packs/$slug/subscribe')({
   server: {
     handlers: {
-      POST: defineHandler({ rateLimit: 'write' }, async ({ userId, params }) => {
+      POST: implement(subscribePackApi, { rateLimit: 'write' }, async ({ userId, params }) => {
         try {
           await subscribe(userId, params.slug);
           return Response.json({ ok: true });
@@ -21,7 +23,7 @@ export const Route = createFileRoute('/api/emoji-packs/$slug/subscribe')({
           throw err;
         }
       }),
-      DELETE: defineHandler({ rateLimit: 'write' }, async ({ userId, params }) => {
+      DELETE: implement(unsubscribePackApi, { rateLimit: 'write' }, async ({ userId, params }) => {
         await unsubscribe(userId, params.slug);
         return Response.json({ ok: true });
       }),

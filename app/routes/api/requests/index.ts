@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createRequestApi, listRequestsApi } from '@/lib/requests/requests.contract';
 import { requestCreateSchema, requestListQuerySchema } from '@/lib/requests/schema';
 import { createRequest, listRequests, RequestBoardError } from '@/lib/requests/board.server';
 
@@ -10,7 +11,8 @@ import { createRequest, listRequests, RequestBoardError } from '@/lib/requests/b
 export const Route = createFileRoute('/api/requests/')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        listRequestsApi,
         { auth: 'optional', rateLimit: 'read', query: requestListQuerySchema },
         async ({ userId, query }) =>
           Response.json(
@@ -24,7 +26,8 @@ export const Route = createFileRoute('/api/requests/')({
             }),
           ),
       ),
-      POST: defineHandler(
+      POST: implement(
+        createRequestApi,
         {
           // Deliberately tighter than the shared `write` policy: a request board
           // is a public queue humans read, so the failure mode is flooding it,

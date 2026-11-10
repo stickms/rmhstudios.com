@@ -5,13 +5,14 @@
  * the whole set before they can render anything. Not gated: using packs is free.
  */
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { installedPacksApi } from '@/lib/emoji/packs.contract';
 import { listInstalledPacks, listOwnedPacks } from '@/lib/emoji/packs.server';
 
 export const Route = createFileRoute('/api/emoji-packs/installed')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) => {
+      GET: implement(installedPacksApi, { rateLimit: 'read' }, async ({ userId }) => {
         const [installed, owned] = await Promise.all([
           listInstalledPacks(userId),
           listOwnedPacks(userId),

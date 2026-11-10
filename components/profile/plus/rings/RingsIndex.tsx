@@ -17,6 +17,9 @@ import {
   type RingSummary,
 } from '@/lib/profile/webrings';
 import { useJson } from '../useJson';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createRingApi } from '@/lib/profile/webrings.contract';
 
 function RingCard({ ring }: { ring: RingSummary }) {
   const { t } = useTranslation('f-profile-plus');
@@ -57,20 +60,13 @@ export default function RingsIndex() {
   async function create() {
     setCreating(true);
     try {
-      const res = await fetch('/api/webrings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description }),
-      });
-      const json = (await res.json().catch(() => ({}))) as { error?: string; ring?: RingSummary };
-      if (!res.ok || !json.ring) {
-        toast.error(
-          json.error ?? t('ring-create-failed', { defaultValue: "Couldn't start that ring" }),
-        );
-        return;
-      }
+      const json = await api(createRingApi, { body: { name, description } });
       toast.success(t('ring-created', { defaultValue: 'Ring started' }));
       void navigate({ to: `/rings/${json.ring.slug}` as string });
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('ring-create-failed', { defaultValue: "Couldn't start that ring" }),
+      );
     } finally {
       setCreating(false);
     }

@@ -5,29 +5,25 @@
  * free account gets a 402 with an upgrade envelope rather than a bare 403.
  */
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler, apiError } from '@/lib/api/handler.server';
-import { createPackSchema } from '@/lib/emoji/packs-schema';
+import { apiError } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { browsePacksApi, createPackApi } from '@/lib/emoji/packs.contract';
+import { browsePacksQuery, createPackSchema } from '@/lib/emoji/packs-schema';
 import { browsePacks, createPack, PackError } from '@/lib/emoji/packs.server';
 
 export const Route = createFileRoute('/api/emoji-packs/')({
   server: {
     handlers: {
-      GET: defineHandler(
-        {
-          auth: 'optional',
-          rateLimit: 'read',
-          query: z.object({
-            q: z.string().trim().max(60).optional(),
-            cursor: z.string().max(64).optional(),
-          }),
-        },
+      GET: implement(
+        browsePacksApi,
+        { auth: 'optional', rateLimit: 'read', query: browsePacksQuery },
         async ({ userId, query }) =>
           Response.json({
             packs: await browsePacks(userId, { query: query.q, cursor: query.cursor }),
           }),
       ),
-      POST: defineHandler(
+      POST: implement(
+        createPackApi,
         { feature: 'sticker-packs', rateLimit: 'write', body: createPackSchema },
         async ({ userId, body }) => {
           try {

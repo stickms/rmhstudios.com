@@ -14,6 +14,8 @@ import type { HydratedSave, SaveFolderView } from '@/lib/saves/types';
 import { RemindersList } from '@/components/reminders/RemindersList';
 import { SaveNoteEditor } from '@/components/posts-plus/SaveNoteEditor';
 import { SaveNoteSearch } from '@/components/posts-plus/SaveNoteSearch';
+import { api } from '@/lib/contract/client';
+import { createSaveFolderApi, listSavesApi, unsaveItemApi } from '@/lib/saves/saves.contract';
 
 interface HubData {
   items: HydratedSave[];
@@ -41,13 +43,14 @@ export function SavesHub({ initial }: { initial: HubData }) {
     async (f: FolderFilter, append = false, cur?: string | null) => {
       setLoading(true);
       try {
-        const params = new URLSearchParams();
-        if (f !== 'all') params.set('folder', f);
-        if (append && cur) params.set('cursor', cur);
-        if (q.trim()) params.set('q', q.trim());
-        const res = await fetch(`/api/saves?${params.toString()}`);
-        if (!res.ok) throw new Error('load failed');
-        const data = (await res.json()) as HubData;
+        const data = await api(listSavesApi, {
+          query: {
+            ...(f !== 'all' ? { folder: f } : {}),
+            ...(append && cur ? { cursor: cur } : {}),
+            ...(q.trim() ? { q: q.trim() } : {}),
+          },
+          retries: 0,
+        });
         setItems((prev) => (append ? [...prev, ...data.items] : data.items));
         setCursor(data.nextCursor);
         setFolders(data.folders);
@@ -78,13 +81,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
     const name = newName.trim();
     if (!name) return;
     try {
-      const res = await fetch('/api/saves/folders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
-      });
-      if (!res.ok) throw new Error('create failed');
-      const { folder } = (await res.json()) as { folder: SaveFolderView };
+      const { folder } = await api(createSaveFolderApi, { body: { name } });
       setFolders((prev) => [...prev, folder]);
       setNewName('');
       setCreating(false);
@@ -97,10 +94,8 @@ export function SavesHub({ initial }: { initial: HubData }) {
   async function removeItem(save: HydratedSave) {
     setItems((prev) => prev.filter((i) => i.id !== save.id));
     try {
-      await fetch('/api/saves', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entityType: save.entityType, entityId: save.entityId }),
+      await api(unsaveItemApi, {
+        body: { entityType: save.entityType, entityId: save.entityId },
       });
     } catch {
       /* best-effort; the row reappears on next load if this failed */

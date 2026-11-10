@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { closeRingApi } from '@/lib/profile/webrings.contract';
 import { ringSlugSchema } from '@/lib/profile/webrings-schema';
 import { deleteOwnRing, getRingDetail } from '@/lib/profile/webrings.server';
 
@@ -17,7 +19,7 @@ export const Route = createFileRoute('/api/webrings/$slug')({
         if (!ring) return Response.json({ error: 'Not found' }, { status: 404 });
         return Response.json(ring, { headers: { 'Cache-Control': 'private, no-store' } });
       }),
-      DELETE: defineHandler({ rateLimit: 'write' }, async ({ params, userId }) => {
+      DELETE: implement(closeRingApi, { rateLimit: 'write' }, async ({ params, userId }) => {
         const ok = await deleteOwnRing(userId, params.slug);
         return ok
           ? Response.json({ success: true })

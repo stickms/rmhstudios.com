@@ -1,19 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { z } from 'zod';
+import { createDeveloperKeyApi, listDeveloperKeysApi } from '@/lib/devplatform/keys.contract';
+import { createKeyBody } from '@/lib/devplatform/keys-schema';
 import { getUserTier, hasApiAccess } from '@/lib/entitlements';
 import { generateApiKey } from '@/lib/api/developer-auth.server';
 import { normalizeScopes, DEFAULT_SCOPES, ALL_SCOPES } from '@/lib/api/scopes';
 
-const createSchema = z.object({
-  name: z.string().min(1).max(100),
-  scopes: z.array(z.string()).optional(),
-  expiresInDays: z.number().int().min(1).max(365).optional(),
-  /** `rmh_test_` sandbox key (fixtures for reads, no-op writes). */
-  testMode: z.boolean().optional(),
-});
 const MAX_KEYS = 10;
 
 /**
@@ -24,7 +18,7 @@ const MAX_KEYS = 10;
 export const Route = createFileRoute('/api/developer/keys/')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
+      GET: implement(listDeveloperKeysApi, {}, async ({ session }) => {
         // Independent reads — the tier lookup doesn't gate the key list.
         const [tier, keys] = await Promise.all([
           getUserTier(session.user.id),
@@ -52,8 +46,9 @@ export const Route = createFileRoute('/api/developer/keys/')({
         });
       }),
 
-      POST: defineHandler(
-        { body: createSchema, allowEmptyBody: true, verboseValidationErrors: true },
+      POST: implement(
+        createDeveloperKeyApi,
+        { body: createKeyBody, allowEmptyBody: true, verboseValidationErrors: true },
         async ({ request, session, body }) => {
           const userId = session.user.id;
 

@@ -22,6 +22,16 @@ import type { PackSummary, InstalledPack } from '@/lib/emoji/packs';
 import { MAX_ITEMS_PER_PACK, SHORTCODE_RE } from '@/lib/emoji/packs';
 import { upgradeHref } from '@/lib/entitlements/features';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import {
+  addPackItemApi,
+  browsePacksApi,
+  createPackApi,
+  installedPacksApi,
+  subscribePackApi,
+  unsubscribePackApi,
+} from '@/lib/emoji/packs.contract';
 
 export const Route = createFileRoute('/_site/emoji-packs')({
   head: () => ({
@@ -103,8 +113,8 @@ function EmojiPacksPage() {
 
   const load = useCallback(async () => {
     const [browseRes, mineRes] = await Promise.all([
-      fetch('/api/emoji-packs').then((r) => (r.ok ? r.json() : { packs: [] })),
-      fetch('/api/emoji-packs/installed').then((r) => (r.ok ? r.json() : null)),
+      api(browsePacksApi).catch((): { packs: PackSummary[] } => ({ packs: [] })),
+      api(installedPacksApi).catch((): null => null),
     ]);
     setBrowse(browseRes.packs ?? []);
     if (mineRes) {
@@ -122,10 +132,9 @@ function EmojiPacksPage() {
     async (pack: PackSummary) => {
       setBusySlug(pack.slug);
       try {
-        const res = await fetch(`/api/emoji-packs/${pack.slug}/subscribe`, {
-          method: pack.subscribed ? 'DELETE' : 'POST',
+        await api(pack.subscribed ? unsubscribePackApi : subscribePackApi, {
+          params: { slug: pack.slug },
         });
-        if (!res.ok) throw new Error(String(res.status));
         setBrowse((prev) =>
           prev.map((p) => (p.id === pack.id ? { ...p, subscribed: !p.subscribed } : p)),
         );
@@ -148,28 +157,23 @@ function EmojiPacksPage() {
     if (!name) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/emoji-packs', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name }),
-      });
+      await api(createPackApi, { body: { name, kind: 'emoji', visibility: 'public' } });
+      setNewName('');
+      setCanCreate(true);
+      await load();
+      toast.success(t('pack-created', { defaultValue: 'Pack created — add some items' }));
+    } catch (e) {
       // 402 is the membership refusal; it carries an upgrade envelope.
-      if (res.status === 402) {
+      if (e instanceof HttpError && e.status === 402) {
         setCanCreate(false);
         toast.error(
           t('pack-needs-membership', {
             defaultValue: 'Building packs needs a membership.',
           }),
         );
-        return;
+      } else {
+        toast.error(t('pack-create-failed', { defaultValue: 'Could not create that pack.' }));
       }
-      if (!res.ok) throw new Error(String(res.status));
-      setNewName('');
-      setCanCreate(true);
-      await load();
-      toast.success(t('pack-created', { defaultValue: 'Pack created — add some items' }));
-    } catch {
-      toast.error(t('pack-create-failed', { defaultValue: 'Could not create that pack.' }));
     } finally {
       setCreating(false);
     }
@@ -315,22 +319,17 @@ function OwnedPackCard({ pack, onChanged }: { pack: PackSummary; onChanged: () =
         if (!up.ok) throw new Error(String(up.status));
         const { mediaId } = (await up.json()) as { mediaId: string };
 
-        const res = await fetch(`/api/emoji-packs/${pack.slug}/items`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
+        await api(addPackItemApi, {
+          params: { slug: pack.slug },
+          body: {
             name: code,
             mediaId,
             // Alt text is mandatory at every tier. Seeded from the shortcode so
             // the field is never empty, and editable afterwards.
             alt: code.replace(/[-_+]/g, ' '),
             kind: pack.kind === 'sticker' ? 'sticker' : 'emoji',
-          }),
+          },
         });
-        if (!res.ok) {
-          const body = (await res.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(body?.error ?? String(res.status));
-        }
         setName('');
         onChanged();
         toast.success(t('pack-item-added', { defaultValue: 'Added' }));

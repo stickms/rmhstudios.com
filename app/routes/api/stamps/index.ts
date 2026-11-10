@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
-import { STAMP_MAX_UPLOAD_BYTES, stampNameSchema } from '@/lib/profile/stamps';
+import { implement } from '@/lib/api/implement.server';
+import { browseStampsApi } from '@/lib/profile/stamps.contract';
+import { browseStampsQuery, STAMP_MAX_UPLOAD_BYTES, stampNameSchema } from '@/lib/profile/stamps';
 import { browseStamps, createStamp } from '@/lib/profile/stamps.server';
 
 /**
@@ -13,16 +14,12 @@ import { browseStamps, createStamp } from '@/lib/profile/stamps.server';
  * Reporting a stamp goes through the existing `/api/moderation/report` with
  * `entityType: 'stamp'`.
  */
-const browseQuery = z.object({
-  sort: z.enum(['new', 'popular']).default('new'),
-  cursor: z.string().max(64).optional(),
-});
-
 export const Route = createFileRoute('/api/stamps/')({
   server: {
     handlers: {
-      GET: defineHandler(
-        { auth: 'optional', rateLimit: 'read', query: browseQuery },
+      GET: implement(
+        browseStampsApi,
+        { auth: 'optional', rateLimit: 'read', query: browseStampsQuery },
         async ({ userId, query }) =>
           Response.json(
             await browseStamps({

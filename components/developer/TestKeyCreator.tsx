@@ -5,6 +5,9 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SCOPES } from '@/lib/api/scopes';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createDeveloperKeyApi } from '@/lib/devplatform/keys.contract';
 
 /** D1: creates an `rmh_test_` sandbox key — fixtures for reads, no-op writes. */
 export function TestKeyCreator({ onCreated }: { onCreated: (plaintext: string) => void }) {
@@ -15,25 +18,15 @@ export function TestKeyCreator({ onCreated }: { onCreated: (plaintext: string) =
   async function create() {
     setBusy(true);
     try {
-      const res = await fetch('/api/developer/keys', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name.trim(),
-          scopes: SCOPES.map((s) => s.id),
-          testMode: true,
-        }),
+      const data = await api(createDeveloperKeyApi, {
+        body: { name: name.trim(), scopes: SCOPES.map((s) => s.id), testMode: true },
       });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setName('');
-        onCreated(data.key);
-      } else {
-        toast.error(
-          data.error || t('testKeys-error', { defaultValue: 'Could not create the test key' }),
-        );
-      }
+      setName('');
+      onCreated(data.key);
+    } catch (e) {
+      toast.error(
+        serverError(e) || t('testKeys-error', { defaultValue: 'Could not create the test key' }),
+      );
     } finally {
       setBusy(false);
     }

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { moveSeriesPostApi, removeSeriesPostApi } from '@/lib/posts-plus/series.contract';
+import { seriesReorderBody } from '@/lib/posts-plus/schema';
 import { movePost, removePost } from '@/lib/posts-plus/series.server';
 
 /**
@@ -10,15 +11,16 @@ import { movePost, removePost } from '@/lib/posts-plus/series.server';
 export const Route = createFileRoute('/api/series/$id/posts/$postId')({
   server: {
     handlers: {
-      PATCH: defineHandler(
-        { rateLimit: 'write', body: z.object({ direction: z.enum(['up', 'down']) }) },
+      PATCH: implement(
+        moveSeriesPostApi,
+        { rateLimit: 'write', body: seriesReorderBody },
         async ({ userId, params, body }) => {
           const res = await movePost(userId, params.id, params.postId, body.direction);
           if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
           return Response.json({ ok: true });
         },
       ),
-      DELETE: defineHandler({ rateLimit: 'write' }, async ({ userId, params }) => {
+      DELETE: implement(removeSeriesPostApi, { rateLimit: 'write' }, async ({ userId, params }) => {
         const res = await removePost(userId, params.id, params.postId);
         if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
         return Response.json({ ok: true });

@@ -11,6 +11,9 @@ import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { MAX_SERIES_TITLE } from '@/lib/posts-plus/constants';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createSeriesApi, listSeriesApi } from '@/lib/posts-plus/series.contract';
 
 interface Summary {
   id: string;
@@ -31,9 +34,7 @@ export function SeriesIndexPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/series', { credentials: 'include' });
-      if (!res.ok) throw new Error(String(res.status));
-      setData(await res.json());
+      setData(await api(listSeriesApi));
     } catch {
       setData({ mine: [], following: [] });
       toast.error(t('series-load-failed', { defaultValue: 'Could not load the series' }));
@@ -47,21 +48,13 @@ export function SeriesIndexPage() {
   const create = async () => {
     setBusy(true);
     try {
-      const res = await fetch('/api/series', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim() }),
-      });
-      if (!res.ok) {
-        const err = (await res.json().catch(() => null)) as { error?: string } | null;
-        toast.error(
-          err?.error ?? t('series-create-failed', { defaultValue: 'Could not create the series' }),
-        );
-        return;
-      }
+      await api(createSeriesApi, { body: { title: title.trim() } });
       setTitle('');
       await load();
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('series-create-failed', { defaultValue: 'Could not create the series' }),
+      );
     } finally {
       setBusy(false);
     }

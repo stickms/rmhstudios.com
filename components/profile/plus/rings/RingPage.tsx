@@ -11,6 +11,9 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useSession } from '@/components/Providers';
 import type { RingDetail } from '@/lib/profile/webrings';
 import { useJson } from '../useJson';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { closeRingApi, joinRingApi, leaveRingApi } from '@/lib/profile/webrings.contract';
 
 const ReportDialog = lazy(() =>
   import('@/components/moderation/ReportDialog').then((m) => ({ default: m.ReportDialog })),
@@ -30,15 +33,10 @@ export default function RingPage({ slug }: { slug: string }) {
   async function membership(join: boolean) {
     setBusy(true);
     try {
-      const res = await fetch(`/api/webrings/${encodeURIComponent(slug)}/membership`, {
-        method: join ? 'POST' : 'DELETE',
-      });
-      const json = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) {
-        toast.error(json.error ?? t('ring-join-failed', { defaultValue: "Couldn't update that" }));
-        return;
-      }
+      await api(join ? joinRingApi : leaveRingApi, { params: { slug } });
       reload();
+    } catch (e) {
+      toast.error(serverError(e) ?? t('ring-join-failed', { defaultValue: "Couldn't update that" }));
     } finally {
       setBusy(false);
     }
@@ -56,9 +54,10 @@ export default function RingPage({ slug }: { slug: string }) {
     if (!ok) return;
     setBusy(true);
     try {
-      const res = await fetch(`/api/webrings/${encodeURIComponent(slug)}`, { method: 'DELETE' });
-      if (res.ok) void navigate({ to: '/rings' });
-      else toast.error(t('ring-close-failed', { defaultValue: "Couldn't close the ring" }));
+      await api(closeRingApi, { params: { slug } });
+      void navigate({ to: '/rings' });
+    } catch {
+      toast.error(t('ring-close-failed', { defaultValue: "Couldn't close the ring" }));
     } finally {
       setBusy(false);
     }

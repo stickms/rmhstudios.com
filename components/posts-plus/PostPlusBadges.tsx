@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { BookOpen, ChevronLeft, ChevronRight, Hourglass } from 'lucide-react';
 import { useNearViewport } from '@/hooks/useNearViewport';
 import { isExpired, type SeriesNav } from '@/lib/posts-plus/constants';
+import { api } from '@/lib/contract/client';
+import { seriesNavForPostApi } from '@/lib/posts-plus/series.contract';
 
 /**
  * posts-plus badges on a post: "Part k of N - Series name" with prev/next (X5)
@@ -45,8 +47,8 @@ function SeriesChip({ postId }: { postId: string }) {
   useEffect(() => {
     if (!visible || navCache.has(postId)) return;
     let cancelled = false;
-    fetch(`/api/series/post/${encodeURIComponent(postId)}`, { credentials: 'include' })
-      .then((r) => (r.ok ? (r.json() as Promise<SeriesNav>) : null))
+    api(seriesNavForPostApi, { params: { postId } })
+      .catch((): null => null) // not in a live series, or offline: no chip
       .then((d) => {
         navCache.set(postId, d);
         if (!cancelled) setNav(d);

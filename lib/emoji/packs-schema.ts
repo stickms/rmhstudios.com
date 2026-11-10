@@ -26,6 +26,12 @@ export const createPackSchema = z.object({
   visibility: z.enum(PACK_VISIBILITIES).default('public'),
 });
 
+/** `GET /api/emoji-packs` query. */
+export const browsePacksQuery = z.object({
+  q: z.string().trim().max(60).optional(),
+  cursor: z.string().max(64).optional(),
+});
+
 export const updatePackSchema = createPackSchema.partial();
 
 export const addItemSchema = z.object({

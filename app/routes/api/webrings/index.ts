@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createRingApi } from '@/lib/profile/webrings.contract';
 import { createRingSchema } from '@/lib/profile/webrings-schema';
 import { createRing, listRings } from '@/lib/profile/webrings.server';
 
@@ -15,7 +17,8 @@ export const Route = createFileRoute('/api/webrings/')({
           headers: { 'Cache-Control': 'private, no-store' },
         }),
       ),
-      POST: defineHandler(
+      POST: implement(
+        createRingApi,
         {
           rateLimit: { limit: 5, windowMs: 60 * 60_000, prefix: 'webring-create' },
           body: createRingSchema,

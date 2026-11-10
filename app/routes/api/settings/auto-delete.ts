@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import {
   countAutoDeleteCandidates,
   getAutoDelete,
   setAutoDelete,
 } from '@/lib/posts-plus/lifecycle.server';
+import { getAutoDeleteApi, setAutoDeleteApi } from '@/lib/posts-plus/auto-delete.contract';
 import { AUTO_DELETE_MONTHS } from '@/lib/posts-plus/constants';
 import { autoDeleteSchema } from '@/lib/posts-plus/schema';
 
@@ -27,17 +28,22 @@ const previewQuery = z.object({
 export const Route = createFileRoute('/api/settings/auto-delete')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read', query: previewQuery }, async ({ userId, query }) => {
-        const setting = await getAutoDelete(userId);
-        const eligible = query.preview
-          ? await countAutoDeleteCandidates(userId, query.preview)
-          : undefined;
-        return Response.json(
-          { ...setting, eligible },
-          { headers: { 'Cache-Control': 'private, no-store' } },
-        );
-      }),
-      PUT: defineHandler(
+      GET: implement(
+        getAutoDeleteApi,
+        { rateLimit: 'read', query: previewQuery },
+        async ({ userId, query }) => {
+          const setting = await getAutoDelete(userId);
+          const eligible = query.preview
+            ? await countAutoDeleteCandidates(userId, query.preview)
+            : undefined;
+          return Response.json(
+            { ...setting, eligible },
+            { headers: { 'Cache-Control': 'private, no-store' } },
+          );
+        },
+      ),
+      PUT: implement(
+        setAutoDeleteApi,
         { rateLimit: 'write', body: autoDeleteSchema },
         async ({ userId, body }) => {
           await setAutoDelete(userId, body.months);

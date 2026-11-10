@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import { ImageOff } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { api } from '@/lib/contract/client';
+import { getAltTextSettingApi, setAltTextSettingApi } from '@/lib/feed/alt-text.contract';
 
 /**
  * X12 — the "Require alt text" switch, in Settings → Content preferences.
@@ -23,11 +25,10 @@ export function RequireAltTextSetting() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/settings/alt-text', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { requireAltText?: boolean } | null) => {
+    api(getAltTextSettingApi)
+      .then((d) => {
         if (cancelled) return;
-        setValue(d?.requireAltText ?? false);
+        setValue(d.requireAltText ?? false);
         setReady(true);
       })
       .catch(() => {
@@ -43,13 +44,7 @@ export function RequireAltTextSetting() {
     const prev = value;
     setValue(next);
     try {
-      const res = await fetch('/api/settings/alt-text', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requireAltText: next }),
-      });
-      if (!res.ok) throw new Error(String(res.status));
+      await api(setAltTextSettingApi, { body: { requireAltText: next } });
     } catch {
       setValue(prev);
       toast.error(t('alt-setting-failed', { defaultValue: 'Could not save that setting' }));

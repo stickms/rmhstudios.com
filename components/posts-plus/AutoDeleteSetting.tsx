@@ -7,6 +7,8 @@ import { Select } from '@/components/ui/select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { AUTO_DELETE_MONTHS, type AutoDeleteMonths } from '@/lib/posts-plus/constants';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { api } from '@/lib/contract/client';
+import { getAutoDeleteApi, setAutoDeleteApi } from '@/lib/posts-plus/auto-delete.contract';
 
 /**
  * X8 - "Auto-delete my posts older than N months", in Settings > Content.
@@ -27,11 +29,10 @@ export function AutoDeleteSetting() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/settings/auto-delete', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { months?: AutoDeleteMonths | null } | null) => {
+    api(getAutoDeleteApi)
+      .then((d) => {
         if (cancelled) return;
-        setMonths(d?.months ?? null);
+        setMonths(d.months ?? null);
         setReady(true);
       })
       .catch(() => {
@@ -45,13 +46,7 @@ export function AutoDeleteSetting() {
   const save = async (next: AutoDeleteMonths | null) => {
     setSaving(true);
     try {
-      const res = await fetch('/api/settings/auto-delete', {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ months: next }),
-      });
-      if (!res.ok) throw new Error(String(res.status));
+      await api(setAutoDeleteApi, { body: { months: next } });
       setMonths(next);
     } catch {
       toast.error(t('autodelete-failed', { defaultValue: 'Could not save that setting' }));
@@ -68,10 +63,8 @@ export function AutoDeleteSetting() {
     const next = Number(value) as AutoDeleteMonths;
     let eligible = 0;
     try {
-      const res = await fetch(`/api/settings/auto-delete?preview=${next}`, {
-        credentials: 'include',
-      });
-      if (res.ok) eligible = ((await res.json()) as { eligible?: number }).eligible ?? 0;
+      const res = await api(getAutoDeleteApi, { query: { preview: next } });
+      eligible = res.eligible ?? 0;
     } catch {
       /* the confirmation still explains the rule without a number */
     }
