@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { unpackGemsApi } from '@/lib/cards/steam.contract';
+import { unpackGemsBody } from '@/lib/cards/steam-schema';
 import { unpackCards } from '@/lib/cards/gems.server';
 import { gemsResponse } from '@/lib/cards/gems-api.server';
 
@@ -8,15 +9,11 @@ import { gemsResponse } from '@/lib/cards/gems-api.server';
 export const Route = createFileRoute('/api/games/gems/unpack')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        unpackGemsApi,
         {
           rateLimit: 'write',
-          body: z.object({
-            gameId: z.string().min(1).max(64),
-            cardIndex: z.number().int().min(0).max(63),
-            foil: z.boolean().default(false),
-            qty: z.number().int().min(1).max(99).default(1),
-          }),
+          body: unpackGemsBody,
         },
         ({ userId, body }) => gemsResponse(() => unpackCards({ userId, ...body })),
       ),

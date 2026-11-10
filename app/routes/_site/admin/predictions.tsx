@@ -13,18 +13,16 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  adminModeratePredictionApi,
+  adminPredictionQueueApi,
+  adminResolvePredictionApi,
+} from '@/lib/predictions/predictions.contract';
+import type { SerializedMarket } from '@/lib/predictions/predictions.server';
 
-interface AdminMarket {
-  id: string;
-  title: string;
-  description: string | null;
-  status: string;
-  isAiGenerated: boolean;
-  yesPercent: number;
-  volume: number;
-  closesAt: string | null;
-  creator: { id: string; name: string | null; handle: string | null } | null;
-}
+type AdminMarket = SerializedMarket;
 
 export const Route = createFileRoute('/_site/admin/predictions')({
   head: () => ({ meta: [{ title: 'Prediction Markets | Admin' }] }),
@@ -41,8 +39,7 @@ function AdminPredictionsPage() {
 
   const load = useCallback(() => {
     setLoading(true);
-    fetch('/api/admin/predictions')
-      .then((r) => r.json())
+    api(adminPredictionQueueApi)
       .then((data) => {
         setPending(data.pending ?? []);
         setOpen(data.open ?? []);
@@ -58,14 +55,10 @@ function AdminPredictionsPage() {
   async function moderate(id: string, action: 'approve' | 'deny') {
     setBusy(id);
     try {
-      const res = await fetch(`/api/admin/predictions/${id}/moderate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || t('action-failed', { defaultValue: 'Action failed.' }));
+      try {
+        await api(adminModeratePredictionApi, { params: { id }, body: { action } });
+      } catch (e) {
+        toast.error(serverError(e) || t('action-failed', { defaultValue: 'Action failed.' }));
         return;
       }
       toast.success(
@@ -85,14 +78,11 @@ function AdminPredictionsPage() {
     }
     setBusy(id);
     try {
-      const res = await fetch(`/api/admin/predictions/${id}/resolve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ outcome }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || t('action-failed', { defaultValue: 'Action failed.' }));
+      let data;
+      try {
+        data = await api(adminResolvePredictionApi, { params: { id }, body: { outcome } });
+      } catch (e) {
+        toast.error(serverError(e) || t('action-failed', { defaultValue: 'Action failed.' }));
         return;
       }
       toast.success(t('resolved-paid', { defaultValue: 'Resolved {{outcome}} — paid {{payouts}} coins', outcome, payouts: data.payouts }));

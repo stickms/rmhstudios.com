@@ -3,7 +3,9 @@ import { useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { Minus, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { api, errorField } from '@/lib/contract/client';
 import { cardName } from '@/lib/cards/cards';
+import { proposeTradeApi } from '@/lib/cards/steam.contract';
 import { MAX_CARDS_PER_SIDE, MAX_QTY_PER_CARD } from '@/lib/cards/trade-rules';
 import type { TradeCard, TradeInventories } from '@/lib/cards/trade-types';
 import type { PersonRef } from '@/lib/games/community-types';
@@ -98,24 +100,17 @@ export function TradeComposer({
   async function send() {
     setBusy(true);
     try {
-      const res = await fetch('/api/games/trades/propose', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
+      await api(proposeTradeApi, {
+        body: {
           toId: partner.userId,
           give: toItems(inventories.mine, give),
           ask: toItems(inventories.theirs, ask),
-        }),
+        },
       });
-      if (res.ok) {
-        toast.success(t('steam-trade-sent', { defaultValue: 'Offer sent.' }));
-        await router.navigate({ to: '/games/trades' });
-      } else {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(tradeErrorText(body.error, t));
-      }
-    } catch {
-      toast.error(tradeErrorText(undefined, t));
+      toast.success(t('steam-trade-sent', { defaultValue: 'Offer sent.' }));
+      await router.navigate({ to: '/games/trades' });
+    } catch (e) {
+      toast.error(tradeErrorText(errorField<string>(e, 'error'), t));
     } finally {
       setBusy(false);
     }

@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Link, useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { api, errorField } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { acceptTradeApi, cancelTradeApi, declineTradeApi } from '@/lib/cards/steam.contract';
 import { cardName } from '@/lib/cards/cards';
 import type { TradeCard, TradeData, TradeView } from '@/lib/cards/trade-types';
 import { CardArt } from './CardArt';
@@ -62,18 +65,19 @@ export function TradesPage({ data }: { data: TradeData }) {
   async function act(tradeId: string, action: 'accept' | 'decline' | 'cancel', done: string) {
     setBusy(tradeId);
     try {
-      const res = await fetch(`/api/games/trades/${action}`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ tradeId }),
-      });
-      if (res.ok) {
+      const contract =
+        action === 'accept' ? acceptTradeApi : action === 'decline' ? declineTradeApi : cancelTradeApi;
+      try {
+        await api(contract, { body: { tradeId } });
         toast.success(done);
         await router.invalidate();
-      } else {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(tradeErrorText(body.error, t));
-        await router.invalidate();
+      } catch (e) {
+        if (e instanceof HttpError) {
+          toast.error(tradeErrorText(errorField<string>(e, 'error'), t));
+          await router.invalidate();
+        } else {
+          throw e;
+        }
       }
     } catch {
       toast.error(tradeErrorText(undefined, t));

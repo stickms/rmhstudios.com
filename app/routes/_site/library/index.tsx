@@ -62,6 +62,11 @@ import { LibraryStyles } from '@/components/library/LibraryStyles';
 import type { CollectionView } from '@/lib/library/collections';
 import { api } from '@/lib/contract/client';
 import { listLibraryCollectionsApi } from '@/lib/library/collections.contract';
+import {
+  adminLibraryListApi,
+  adminLibraryMigrateApi,
+  adminLibraryReorderApi,
+} from '@/lib/library/admin-library.contract';
 
 const fetchBooks = createServerFn({ method: 'GET' }).handler(async () => ({
   books: await listAllBooks(),
@@ -303,13 +308,10 @@ function Library() {
   const refresh = useMemo(
     () => async () => {
       if (isAdmin) {
-        const res = await fetch('/api/admin/library').catch(() => null);
-        if (res?.ok) {
-          const data = await res.json().catch(() => null);
-          if (data?.books) {
-            setBooks(data.books as LibraryBook[]);
-            return;
-          }
+        const data = await api(adminLibraryListApi).catch(() => null);
+        if (data?.books) {
+          setBooks(data.books);
+          return;
         }
       }
       const data = await fetchBooks().catch(() => null);
@@ -363,12 +365,11 @@ function Library() {
     setBooks((prev) =>
       prev.map((b) => (b.id && pos.has(b.id) ? { ...b, position: pos.get(b.id) } : b)),
     );
-    const res = await fetch('/api/admin/library/reorder', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: orderedIds }),
-    }).catch(() => null);
-    if (!res?.ok) void refresh(); // resync on failure
+    const ok = await api(adminLibraryReorderApi, { body: { ids: orderedIds } }).then(
+      () => true,
+      () => false,
+    );
+    if (!ok) void refresh(); // resync on failure
   }
 
   // Build the combined id order after replacing `section` with `nextManaged`.
@@ -406,23 +407,20 @@ function Library() {
 
   async function runMigration() {
     setMigrating(true);
-    const res = await fetch('/api/admin/library/migrate', { method: 'POST' }).catch(() => null);
+    const summary = await api(adminLibraryMigrateApi).catch(() => null);
     setMigrating(false);
-    if (res?.ok) {
-      const summary = await res.json().catch(() => null);
-      if (summary) {
-        const base = t('migrate-done', {
-          migrated: summary.migrated,
-          skipped: summary.skipped,
-          failed: summary.failed,
-          defaultValue: 'Migrated {{migrated}}, skipped {{skipped}}, failed {{failed}}.',
-        });
-        const reasons =
-          Array.isArray(summary.errors) && summary.errors.length
-            ? `\n\n${summary.errors.join('\n')}`
-            : '';
-        window.alert(base + reasons);
-      }
+    if (summary) {
+      const base = t('migrate-done', {
+        migrated: summary.migrated,
+        skipped: summary.skipped,
+        failed: summary.failed,
+        defaultValue: 'Migrated {{migrated}}, skipped {{skipped}}, failed {{failed}}.',
+      });
+      const reasons =
+        Array.isArray(summary.errors) && summary.errors.length
+          ? `\n\n${summary.errors.join('\n')}`
+          : '';
+      window.alert(base + reasons);
       void refresh();
     }
   }

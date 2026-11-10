@@ -14,6 +14,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { adminAlbumCreate, adminAlbumsList } from '@/lib/admin/albums.contract';
 
 export const Route = createFileRoute('/_site/admin/albums/')({
   head: () => ({ meta: [{ title: 'Library Albums | Admin' }] }),
@@ -41,11 +44,8 @@ function AdminAlbumsPage() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const res = await fetch('/api/admin/albums').catch(() => null);
-      if (active && res?.ok) {
-        const data = await res.json().catch(() => null);
-        if (data?.albums) setAlbums(data.albums as AdminAlbum[]);
-      }
+      const data = await api(adminAlbumsList).catch(() => null);
+      if (active && data?.albums) setAlbums(data.albums as AdminAlbum[]);
       if (active) setLoading(false);
     })();
     return () => {
@@ -59,16 +59,11 @@ function AdminAlbumsPage() {
     if (!trimmed) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/admin/albums', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: trimmed }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok)
+      const data = await api(adminAlbumCreate, { body: { title: trimmed } }).catch((e: unknown) => {
         throw new Error(
-          data?.error || t('album-create-failed', { defaultValue: 'Failed to create album' }),
+          serverError(e) || t('album-create-failed', { defaultValue: 'Failed to create album' }),
         );
+      });
       toast.success(
         t('album-created', {
           title: data.album.title,

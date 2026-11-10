@@ -1,13 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import { adminPredictionQueueApi } from '@/lib/predictions/predictions.contract';
 import { prisma } from '@/lib/prisma.server';
 import { serializeMarket } from '@/lib/predictions/predictions.server';
-
-async function requireAdmin(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) return null;
-  return session;
-}
 
 /**
  * GET /api/admin/predictions — moderation queue. Returns PENDING submissions and
@@ -16,10 +11,7 @@ async function requireAdmin(request: Request) {
 export const Route = createFileRoute('/api/admin/predictions/')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const session = await requireAdmin(request);
-        if (!session) return Response.json({ error: 'Forbidden' }, { status: 403 });
-
+      GET: implement(adminPredictionQueueApi, { auth: 'admin' }, async () => {
         const rows = await prisma.prediction.findMany({
           where: { status: { in: ['PENDING', 'OPEN'] } },
           orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
@@ -29,11 +21,11 @@ export const Route = createFileRoute('/api/admin/predictions/')({
           },
         });
         const markets = rows.map((r) => serializeMarket(r));
-        return Response.json({
+        return {
           pending: markets.filter((m) => m.status === 'PENDING'),
           open: markets.filter((m) => m.status === 'OPEN'),
-        });
-      },
+        };
+      }),
     },
   },
 });

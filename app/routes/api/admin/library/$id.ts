@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import { adminBookPatchSchema } from '@/lib/library/admin-library-schema';
+import { adminLibraryDeleteApi, adminLibraryPatchApi } from '@/lib/library/admin-library.contract';
 import { prisma } from '@/lib/prisma.server';
 import { deleteObject } from '@/lib/storage/s3.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
@@ -17,24 +19,23 @@ import { isSafeLibraryId } from '@/lib/library/keys';
 const TITLE_MAX = 200;
 const DESCRIPTION_MAX = 1000;
 
-async function requireAdmin(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) return null;
-  return session;
-}
-
 export const Route = createFileRoute('/api/admin/library/$id')({
   server: {
     handlers: {
-      PATCH: async ({ request, params }) => {
-        const session = await requireAdmin(request);
-        if (!session) return Response.json({ error: 'Forbidden' }, { status: 403 });
+      PATCH: implement(
+        adminLibraryPatchApi,
+        {
+          auth: 'admin',
+          body: adminBookPatchSchema,
+          allowEmptyBody: true,
+          invalid: () => Response.json({ error: 'Nothing to update.' }, { status: 400 }),
+        },
+        async ({ userId, params, body }) => {
         if (!isSafeLibraryId(params.id)) return Response.json({ error: 'Not found.' }, { status: 404 });
 
         const doc = await prisma.libraryDocument.findUnique({ where: { id: params.id } });
         if (!doc) return Response.json({ error: 'Not found.' }, { status: 404 });
 
-        const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
         const data: {
           title?: string;
           description?: string;
@@ -69,17 +70,16 @@ export const Route = createFileRoute('/api/admin/library/$id')({
         }
 
         const updated = await prisma.libraryDocument.update({ where: { id: doc.id }, data });
-        await logAdminAction(session.user.id, 'library.edit', {
+        await logAdminAction(userId, 'library.edit', {
           targetType: 'LibraryDocument',
           targetId: doc.id,
           detail: Object.keys(data).join(','),
         });
-        return Response.json({ ok: true, slug: updated.slug });
-      },
+        return { ok: true as const, slug: updated.slug };
+        },
+      ),
 
-      DELETE: async ({ request, params }) => {
-        const session = await requireAdmin(request);
-        if (!session) return Response.json({ error: 'Forbidden' }, { status: 403 });
+      DELETE: implement(adminLibraryDeleteApi, { auth: 'admin' }, async ({ userId, params }) => {
         if (!isSafeLibraryId(params.id)) return Response.json({ error: 'Not found.' }, { status: 404 });
 
         const doc = await prisma.libraryDocument.findUnique({ where: { id: params.id } });
@@ -88,13 +88,13 @@ export const Route = createFileRoute('/api/admin/library/$id')({
         await deleteObject(doc.pdfKey).catch(() => {});
         if (doc.coverKey) await deleteObject(doc.coverKey).catch(() => {});
         await prisma.libraryDocument.delete({ where: { id: doc.id } });
-        await logAdminAction(session.user.id, 'library.delete', {
+        await logAdminAction(userId, 'library.delete', {
           targetType: 'LibraryDocument',
           targetId: doc.id,
           detail: doc.title.slice(0, 120),
         });
-        return Response.json({ ok: true });
-      },
+        return { ok: true as const };
+      }),
     },
   },
 });

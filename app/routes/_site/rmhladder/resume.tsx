@@ -6,6 +6,13 @@ import { getRequest } from '@tanstack/react-start/server';
 import { CheckCircle2, Download, FileText, Sparkles, Trash2, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  analyzeLadderResumeApi,
+  confirmLadderResumeApi,
+  deleteLadderResumeApi,
+} from '@/lib/rmhladder/resume/resume.contract';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { listUserResumes, type ResumePrisma } from '@/lib/rmhladder/resume/service.server';
@@ -72,11 +79,9 @@ function ResumePage() {
   async function analyze(resume: ResumeRow, version: VersionRow) {
     setBusyId(`analyze-${version.id}`);
     try {
-      const response = await fetch(`/api/rmhladder/resume/${resume.id}/analyze`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ versionId: version.id }),
+      await api(analyzeLadderResumeApi, { params: { id: resume.id }, body: { versionId: version.id } }).catch((e: unknown) => {
+        throw new Error(serverError(e) || 'Review failed');
       });
-      const data = await response.json().catch(() => ({})) as { error?: string };
-      if (!response.ok) throw new Error(data.error || 'Review failed');
       toast.success(t('ladder.resume.reviewReady', { defaultValue: 'AI review is ready. Confirm the extracted profile to generate matches.' }));
       await refresh();
     } catch (error) {
@@ -90,9 +95,9 @@ function ResumePage() {
     if (!window.confirm(t('ladder.resume.confirmDelete', { defaultValue: 'Delete this resume and every private version?' }))) return;
     setBusyId(`delete-${resume.id}`);
     try {
-      const response = await fetch(`/api/rmhladder/resume/${resume.id}`, { method: 'DELETE' });
-      const data = await response.json().catch(() => ({})) as { error?: string };
-      if (!response.ok) throw new Error(data.error || 'Delete failed');
+      await api(deleteLadderResumeApi, { params: { id: resume.id } }).catch((e: unknown) => {
+        throw new Error(serverError(e) || 'Delete failed');
+      });
       setResumes((rows) => rows.filter((row) => row.id !== resume.id));
       toast.success(t('ladder.resume.deleted', { defaultValue: 'Resume deleted' }));
       await refresh();
@@ -228,9 +233,9 @@ function ProfileConfirmation({ resume, version, initial, onRefresh }: { resume: 
   async function confirm() {
     setSaving(true);
     try {
-      const response = await fetch(`/api/rmhladder/resume/${resume.id}/confirm`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ versionId: version.id, profile }) });
-      const data = await response.json().catch(() => ({})) as { error?: string };
-      if (!response.ok) throw new Error(data.error || 'Confirmation failed');
+      await api(confirmLadderResumeApi, { params: { id: resume.id }, body: { versionId: version.id, profile } }).catch((e: unknown) => {
+        throw new Error(serverError(e) || 'Confirmation failed');
+      });
       toast.success(t('ladder.resume.matchesReady', { defaultValue: 'Profile confirmed and matches refreshed' }));
       await onRefresh();
     } catch (error) { toast.error(error instanceof Error ? error.message : 'Confirmation failed'); }
