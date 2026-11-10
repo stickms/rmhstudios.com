@@ -1,8 +1,8 @@
-# rmhstudios-go — Go worker fleet
+# rmhstudios-go — Go services
 
 The Go side of rmhstudios.com's **hybrid runtime**. In production, Go runs the
-background-worker tier, the status dashboard, and the asset streamer; **Node**
-still runs the web SSR tier and every user-facing realtime hub (see
+status dashboard and the asset streamer; **Node** runs the web SSR tier, every
+user-facing realtime hub and every background worker (see
 [`../server/CLAUDE.md`](../server/CLAUDE.md)).
 
 > **Canonical guide:** [`CLAUDE.md`](./CLAUDE.md) in this directory. This README
@@ -17,12 +17,11 @@ the **Bazel workspace root is the repo root** (`MODULE.bazel` at `/`).
 
 | Binary (`cmd/`) | Port | Role |
 |---|---|---|
-| `supervisor` | 9090 (metrics) | Runs the `discord-bot` worker as a goroutine under an errgroup |
 | `status` | 7008 | Standalone health dashboard (`/`, `/api/status`) that probes every service; designed to survive outages |
 | `assets` | 7007 | Range-aware S3/R2 streaming CDN for `/library` `/music` `/models` `/sprites` |
 
-The `discord-bot` binary exists so the worker can be run standalone, but in
-production it runs **inside `supervisor`**.
+There are no Go workers: the last one, the Discord bot, runs in the Node `jobs`
+worker (`server/discord-bot/`), and its supervisor was deleted with it (D3).
 
 > **Removed in the rewrite (design §5.2):** the earlier full-Go realtime
 > topology — a `gateway` fronting Go `gamehub`/`rmhbox`/`rmhtube`/`rmhmusic`
@@ -34,10 +33,10 @@ production it runs **inside `supervisor`**.
 
 ```
 go-services/
-  cmd/<svc>/main.go     one main package per binary (workers + status + assets)
+  cmd/<svc>/main.go     one main package per binary (status + assets)
   internal/<svc>/       each service's private implementation
-  pkg/                  shared libraries: config, log, db, auth, httpx,
-                        ratelimit, telemetry, objectstore, worker
+  pkg/                  shared libraries: config, log, auth, httpx,
+                        ratelimit, telemetry, objectstore, oncall
   images/BUILD.bazel    hand-maintained OCI image targets (Bazel)
   Dockerfile, Makefile  legacy standalone docker-build path (superseded by the
                         root Dockerfile's go-builder stage in production)
@@ -64,9 +63,7 @@ make images     # build + load every service image into Docker
 
 ## Conventions
 
-Config via `pkg/config`, logging via `pkg/log`, DB via raw pgx + `pkg/db`
-(quote camelCase columns exactly as Prisma names them), sessions validated via
-`pkg/auth` against the shared `session` table. Workers implement the `pkg/worker`
-`RunFunc` contract and return errors rather than calling `log.Fatal`. Full
-detail — including the `pkg/` API and the supervisor worker registry — is in
-[`CLAUDE.md`](./CLAUDE.md).
+Config via `pkg/config`, logging via `pkg/log`, DB via raw pgx (quote
+camelCase columns exactly as Prisma names them), sessions validated via
+`pkg/auth` against the shared `session` table. Full detail — including the
+`pkg/` API — is in [`CLAUDE.md`](./CLAUDE.md).

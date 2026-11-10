@@ -1,23 +1,14 @@
 package status
 
 import (
-	"strings"
+	"context"
+	"errors"
 	"testing"
 	"time"
 )
 
-// Supervisor metrics → on-call alarms. Each rule's edge is pinned: a wrong one
-// is a missed puzzle day or a 3am false page.
-
-const scrape = `# HELP rmh_worker_up 1 while the worker's Run is executing.
-# TYPE rmh_worker_up gauge
-rmh_worker_up{service="recap"} 1
-rmh_worker_up{service="streak-saver"} 0
-rmh_worker_panics_total{service="recap"} 2
-rmh_job_last_success_timestamp_seconds{job="recap",service="recap"} 1.8e+09
-rmh_job_last_success_timestamp_seconds{job="thumbnail",service="vibe-worker"} 1
-rmh_discord_gateway_connected{service="recap"} 0
-`
+// pg-boss / doctrine reads → on-call alarms. Each rule's edge is pinned: a
+// wrong one is a missed puzzle day or a 3am false page.
 
 func cond(cs []workerCondition, id, instance string) *workerCondition {
 	for i := range cs {
@@ -28,46 +19,10 @@ func cond(cs []workerCondition, id, instance string) *workerCondition {
 	return nil
 }
 
-func TestParsePromText(t *testing.T) {
-	s := parsePromText(strings.NewReader(scrape))
-	if len(s) != 6 || s[0].name != "rmh_worker_up" || s[0].labels["service"] != "recap" || s[3].value != 1.8e9 {
-		t.Fatalf("parse: %+v", s)
-	}
-}
-
-func TestWorkerRules(t *testing.T) {
-	w := newWorkerWatch("http://x", nil, nil, nil, nil)
-	if w != nil {
+func TestNewWorkerWatch(t *testing.T) {
+	read := func(context.Context) (map[string]time.Time, error) { return nil, nil }
+	if newWorkerWatch(nil, nil, read, nil, nil) != nil {
 		t.Fatal("no on-call client should mean no watcher")
-	}
-	w = &workerWatch{tracks: map[string]*workerTrack{}, lastPanics: map[string]float64{}, panicWindow: map[string][]float64{}}
-	now := time.Unix(1_800_000_000, 0).Add(30 * time.Minute) // recap last ok 30m ago
-	// staleLimits is empty now that every cadenced job runs in Node; the rule stays for the next one.
-	staleLimits["recap"] = 20 * time.Minute
-	defer delete(staleLimits, "recap")
-
-	cs := w.evaluate(parsePromText(strings.NewReader(scrape)), now)
-	if c := cond(cs, "A11", "streak-saver"); c == nil || !c.active || c.alert.Sev != 2 {
-		t.Fatalf("worker down should be an active Sev2: %+v", c)
-	}
-	if c := cond(cs, "A11", "recap"); c == nil || c.active {
-		t.Fatalf("running worker must not be down: %+v", c)
-	}
-	if c := cond(cs, "B06", "recap"); c == nil || !c.active {
-		t.Fatalf("recap 30m stale (limit 20m) should be active: %+v", c)
-	}
-	if cond(cs, "B06", "thumbnail") != nil {
-		t.Fatal("jobs without a cadence limit are never stale")
-	}
-	if cond(cs, "A19", "") != nil || cond(cs, "B07", "") != nil {
-		t.Fatal("unreported puzzles / a non-discord gateway gauge must not alarm")
-	}
-	if c := cond(cs, "A11", "recap-panics"); c == nil || c.active {
-		t.Fatal("first sighting of the panic counter is a baseline")
-	}
-	cs = w.evaluate(parsePromText(strings.NewReader(strings.Replace(scrape, `{service="recap"} 2`, `{service="recap"} 5`, 1))), now)
-	if c := cond(cs, "A11", "recap-panics"); c == nil || !c.active {
-		t.Fatalf("3 new panics in 15m should page: %+v", c)
 	}
 }
 
@@ -93,43 +48,77 @@ func TestPuzzleRule(t *testing.T) {
 	}
 }
 
+// B07 is read from the Node bot's pg-boss heartbeat queue: it completes a job
+// every minute while the gateway is READY and fails one otherwise.
 func TestGatewayRule(t *testing.T) {
-	w := &workerWatch{tracks: map[string]*workerTrack{}, lastPanics: map[string]float64{}, panicWindow: map[string][]float64{}}
-	day := time.Date(2026, 10, 22, 0, 0, 0, 0, time.UTC)
-	gw := func(v string) []workerCondition {
-		return w.evaluate(parsePromText(strings.NewReader(`rmh_discord_gateway_connected{service="discord-bot"} `+v)), day)
+	now := time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC)
+	hb := func(scheduled bool, ago time.Duration) GatewayHeartbeat {
+		h := GatewayHeartbeat{Scheduled: scheduled}
+		if ago >= 0 {
+			h.LastCompleted = now.Add(-ago)
+		}
+		return h
 	}
-	if cond(gw("0"), "B07", "") != nil {
-		t.Fatal("a bot that never connected (no token) is not an outage")
+	if _, ok := evaluateGateway(hb(false, time.Hour), true, now); ok {
+		t.Fatal("an unscheduled heartbeat (no token: the bot is disabled) is not an outage")
 	}
-	gw("1")
-	if c := cond(gw("0"), "B07", ""); c == nil || !c.active {
-		t.Fatal("connected then dropped should be active")
+	if _, ok := evaluateGateway(hb(true, -1), false, now); ok {
+		t.Fatal("a bot that never connected (no completed heartbeat) is not an outage")
+	}
+	if c, ok := evaluateGateway(hb(true, time.Minute), false, now); !ok || c.active || c.alert.ID != "B07" || c.alert.Sev != 3 {
+		t.Fatalf("a heartbeat a minute old is connected: %+v", c)
+	}
+	if c, _ := evaluateGateway(hb(true, GatewayHeartbeatLimit), false, now); c.active {
+		t.Fatal("exactly the limit is still connected")
+	}
+	if c, ok := evaluateGateway(hb(true, GatewayHeartbeatLimit+time.Minute), false, now); !ok || !c.active {
+		t.Fatalf("over 5m since the last READY heartbeat is B07: %+v", c)
+	}
+	if c, ok := evaluateGateway(hb(true, -1), true, now); !ok || !c.active {
+		t.Fatalf("seen connected, then every row pruned: still down: %+v", c)
 	}
 }
 
-// With the bot on Node the supervisor idles its discord-bot, so a gauge that
-// once read 1 (before the flip) and now reads 0 must not page.
-func TestGatewayRuleSkippedWhenNodeRunsTheBot(t *testing.T) {
-	w := (&workerWatch{tracks: map[string]*workerTrack{}, lastPanics: map[string]float64{}, panicWindow: map[string][]float64{}}).withNodeDiscordBot(true)
-	day := time.Date(2026, 10, 22, 0, 0, 0, 0, time.UTC)
-	gw := func(v string) []workerCondition {
-		return w.evaluate(parsePromText(strings.NewReader(`rmh_discord_gateway_connected{service="discord-bot"} `+v)), day)
+type fakeWarner struct{ n int }
+
+func (f *fakeWarner) Info(string, ...any) {}
+func (f *fakeWarner) Warn(string, ...any) { f.n++ }
+
+func TestGatewayConditionTracksSeen(t *testing.T) {
+	now := time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC)
+	var next GatewayHeartbeat
+	var readErr error
+	warn := &fakeWarner{}
+	w := &workerWatch{tracks: map[string]*workerTrack{}, logger: warn}
+	w.discordGateway = func(context.Context) (GatewayHeartbeat, error) { return next, readErr }
+
+	next = GatewayHeartbeat{Scheduled: true}
+	if len(w.gatewayCondition(context.Background(), now)) != 0 || w.gatewaySeen {
+		t.Fatal("never connected: no condition")
 	}
-	gw("1")
-	if cond(gw("0"), "B07", "") != nil {
-		t.Fatal("B07 must not be evaluated from the supervisor while DISCORD_BOT_RUNTIME=node")
+	next = GatewayHeartbeat{Scheduled: true, LastCompleted: now.Add(-time.Minute)}
+	if cs := w.gatewayCondition(context.Background(), now); len(cs) != 1 || cs[0].active || !w.gatewaySeen {
+		t.Fatalf("connected: %+v", cs)
 	}
-	var nilWatch *workerWatch
-	if nilWatch.withNodeDiscordBot(true) != nil {
-		t.Fatal("withNodeDiscordBot must be nil-safe")
+	next = GatewayHeartbeat{Scheduled: true}
+	if cs := w.gatewayCondition(context.Background(), now); len(cs) != 1 || !cs[0].active {
+		t.Fatalf("rows pruned after being seen connected: down: %+v", cs)
+	}
+	readErr = errors.New("db down")
+	if len(w.gatewayCondition(context.Background(), now)) != 0 || warn.n != 1 {
+		t.Fatal("a failed read holds state and is logged")
+	}
+	readErr = nil
+	next = GatewayHeartbeat{Scheduled: false}
+	if len(w.gatewayCondition(context.Background(), now)) != 0 || w.gatewaySeen {
+		t.Fatal("unscheduled (disabled on purpose) resets seen and raises nothing")
 	}
 }
 
 func TestWorkerStepDebounces(t *testing.T) {
 	w := &workerWatch{tracks: map[string]*workerTrack{}}
 	c := []workerCondition{{active: true, forChecks: 2, clearCk: 2}}
-	c[0].alert.ID = "A11"
+	c[0].alert.ID = "B07"
 	t0 := time.Unix(0, 0)
 	if len(w.step(c, t0)) != 0 {
 		t.Fatal("one bad check is not enough")
@@ -161,14 +150,10 @@ func TestNodeJobFreshness(t *testing.T) {
 	if len(evaluateNodeJobs(map[string]time.Time{}, now)) != 0 {
 		t.Fatal("a job with no completed run (disabled/new) must not alarm")
 	}
-	// The supervisor no longer owns streak_sweep.
-	if _, ok := staleLimits["streak_sweep"]; ok {
-		t.Fatal("streak_sweep must not be watched via supervisor metrics any more")
-	}
 	if q := NodeJobQueues(); len(q) != 3 || q[0] != "streak.reminder-sweep" || q[1] != "lights-out.recap" || q[2] != "doctrine.sahur-activation" {
 		t.Fatalf("queues: %v", q)
 	}
-	// recap (5m cadence) and Sahur activation (1m) keep the limits they had in the supervisor.
+	// recap (5m cadence) and Sahur activation (1m) keep the limits they had in the Go supervisor.
 	for _, c := range []struct {
 		job, queue   string
 		fresh, stale time.Duration
@@ -182,9 +167,6 @@ func TestNodeJobFreshness(t *testing.T) {
 		}
 		if x := cond(evaluateNodeJobs(at(c.stale), now), "B06", c.job); x == nil || !x.active {
 			t.Fatalf("%s %s old is a Sev3 B06: %+v", c.job, c.stale, x)
-		}
-		if _, ok := staleLimits[c.job]; ok {
-			t.Fatalf("%s must not be watched via supervisor metrics any more", c.job)
 		}
 	}
 }

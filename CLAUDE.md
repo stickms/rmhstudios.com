@@ -31,7 +31,7 @@ locales, RTL for `ar`/`ur`). Node ≥24.18, pnpm workspace.
 | `components/`  | React components by feature; `ui/` = shared primitives; `feed/PageLayout.tsx` = canonical page wrapper; `shared/` = the full-screen app tier (`--app-*`, `AppShell`).    | [`components/CLAUDE.md`](components/CLAUDE.md)   |
 | `lib/`         | Shared logic: auth, prisma, feed, economy, i18n, motion tokens, per-game logic, `.server.ts` server-only modules.                                                        | [`lib/CLAUDE.md`](lib/CLAUDE.md)                 |
 | `server/`      | **Node** service tier: web SSR plus socket-server (7001), rmhbox (7676), rmhtube (7003), and the ladder-worker / homes-worker / jobs (pg-boss) workers.                  | [`server/CLAUDE.md`](server/CLAUDE.md)           |
-| `go-services/` | **Go** microservice fleet (Bazel + gazelle): `supervisor`, `status`, `assets` run in prod; the gateway + Go hubs were removed (rewrite §5.2).                            | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
+| `go-services/` | **Go** microservice fleet (Bazel + gazelle): `status` and `assets` run in prod; the gateway, Go hubs, workers and supervisor were removed (§5.2, D3).            | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
 | `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                           | `lib/CLAUDE.md`                                  |
 | `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidDrag`, `useJellyPointer`, `useLiquidBackground`, `useReveal`, …).                       | `lib/CLAUDE.md`                                  |
 | `prisma/`      | `schema/` (one file per domain; model/enum/line counts: `docs/_generated/facts.json`) + migrations.                                                                                                        | `lib/CLAUDE.md`                                  |
@@ -420,8 +420,13 @@ full-viewport layer.
 
 Production is Docker Compose on a VPS behind Apache/Cloudflare — **hybrid
 runtime**: Node runs web SSR + all realtime hubs + the ladder/homes/jobs
-workers; **Go** runs the `discord-bot` worker in a `supervisor` process,
-plus `status` and `assets` (the streak-saver, recap, doctrine, RMHark bot and vibe-thumbnail workers moved to the Node `jobs` worker, D3; the slim Node image carries Chromium for the thumbnails). The old full-Go gateway/hub
+workers, and the `jobs` worker also hosts the Discord bot (`server/discord-bot/`,
+on whenever a bot token is set); **Go** runs only `status` and `assets`. Every
+Go worker (streak-saver, recap, doctrine, RMHark bot, vibe thumbnails, the
+Discord bot) was ported to `jobs` and the Go copies, the `supervisor` that ran
+them and its container are deleted (D3; `deploy.sh` removes a leftover
+supervisor container before `up`, so two bots never share the token; the slim
+Node image carries Chromium for the thumbnails). The old full-Go gateway/hub
 topology (and its Helm/k3s charts) was **removed** in the rewrite — the Node
 hubs are the realtime tier.
 

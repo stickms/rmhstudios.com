@@ -159,9 +159,9 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // D3: RMHVibe gallery thumbnails (ported from the Go worker): every minute, render up to 5 stale pages
   // in headless Chromium (PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH, in this image) and upload to object storage.
   { queue: VIBE_THUMB_QUEUE, register: registerVibeThumbnailCron },
-  // D3: the Discord bot (ported from the Go supervisor), only with DISCORD_BOT_RUNTIME=node: the gateway connection
-  // lives in this process and its periodic work (care tick, tracker flush, identity poll, summarizer) are crons here.
-  // Unset, it registers nothing and the Go supervisor runs the bot (server/discord-bot/jobs.ts).
+  // D3: the Discord bot (the Go supervisor and its copy are deleted), whenever a bot token is set: the gateway
+  // connection lives in this process and its periodic work (care tick, tracker flush, identity poll, summarizer,
+  // the B07 gateway heartbeat) are crons here. No token: it logs `discord_bot.disabled` and unschedules them.
   { queue: 'discord-bot', register: registerDiscordBot },
   // D4: data-lifecycle cleanup (sessions, verifications, notifications, comment views), daily at 04:00 UTC.
   // Moved from a node-cron + worker-lease in the ladder worker; the `exclusive` policy is the lock now.

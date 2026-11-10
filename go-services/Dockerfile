@@ -5,11 +5,8 @@
 # service needs extra OS packages at runtime, EXTRA_PKGS:
 #
 #   docker build -f go-services/Dockerfile \
-#     --build-arg SERVICE=gateway \
-#     -t rmhstudios-go-gateway:dev go-services
-#
-#   # discord-bot needs git for RMHBot:
-#   --build-arg SERVICE=discord-bot  --build-arg EXTRA_PKGS="git openssh-client"
+#     --build-arg SERVICE=status \
+#     -t rmhstudios-go-status:dev go-services
 #
 # Mirrors PR #121's philosophy: a tiny, reproducible runtime; the build layer is
 # the only thing that changes per service. Statically-linked Go binary on a
@@ -35,8 +32,8 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
 # ── Runtime stage ────────────────────────────────────────────────────────────
 FROM alpine:3.20 AS runtime
 ARG EXTRA_PKGS=""
-# ca-certificates: outbound TLS (Discord, DeepSeek). tzdata: doctrine-worker's
-# per-timezone time.LoadLocation. EXTRA_PKGS: per-service runtime deps.
+# ca-certificates: outbound TLS (object storage, webhooks). tzdata: time zones.
+# EXTRA_PKGS: per-service runtime deps (none today).
 RUN apk add --no-cache ca-certificates tzdata ${EXTRA_PKGS} && \
     addgroup -S app && adduser -S app -G app
 COPY --from=build /out/app /usr/local/bin/app

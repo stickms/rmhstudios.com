@@ -2,8 +2,6 @@
 # named after its cmd directory. Production builds them into the image
 # (Dockerfile go-builder stage / Bazel), never from a committed artifact.
 /assets
-/discord-bot
 /doctrine-worker
 /recap
 /status
-/supervisor

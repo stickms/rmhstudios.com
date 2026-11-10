@@ -3,7 +3,7 @@ import { authorizeInternalRequest } from '@/lib/internal-auth';
 import { runAutoMarketTick } from '@/lib/predictions/auto-markets.server';
 
 // Server-to-server driver for the self-referential market tick (seed + settle).
-// A worker (Go supervisor job, cron, or the Node bot-worker) can POST here on an
+// A worker (a pg-boss cron in the jobs worker, or the Node bot-worker) can POST here on an
 // interval instead of relying only on the opportunistic tick in the markets GET.
 // Guarded by the shared internal secret.
 export const Route = createFileRoute('/api/internal/predictions-tick')({

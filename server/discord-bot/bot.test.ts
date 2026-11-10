@@ -1,14 +1,19 @@
 /**
- * The runtime switch, the cron wiring and the dispatch router — the pieces that decide whether
- * this process touches the production bot at all, and what it does with a real user's event.
+ * The token gate, the cron wiring, the B07 heartbeat and the dispatch router — the pieces that decide
+ * whether this process touches the production bot at all, and what it does with a real user's event.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../lib/prisma.server', () => ({ prisma: null }));
 
 import { DiscordBot, commandsToRegister, intentsFor, loadBotConfig, mentionTarget } from './bot';
-import { DISCORD_BOT_QUEUES, discordBotCrons, registerDiscordBot } from './jobs';
-import { nodeRuntimeSelected } from './config';
+import {
+  DISCORD_BOT_QUEUES,
+  HEARTBEAT_RETENTION_SECONDS,
+  discordBotCrons,
+  gatewayHeartbeat,
+  registerDiscordBot,
+} from './jobs';
 import { slashCommands } from './interactions';
 
 afterEach(() => {
@@ -27,30 +32,16 @@ function fakeBoss() {
   };
 }
 
-describe('runtime switch', () => {
-  it('is off unless DISCORD_BOT_RUNTIME=node', () => {
-    expect(nodeRuntimeSelected({})).toBe(false);
-    expect(nodeRuntimeSelected({ DISCORD_BOT_RUNTIME: 'go' })).toBe(false);
-    expect(nodeRuntimeSelected({ DISCORD_BOT_RUNTIME: ' Node ' })).toBe(true);
-  });
-
-  it('registers nothing (and drops stale schedules) when the Go runtime owns the bot', async () => {
-    vi.stubEnv('DISCORD_BOT_RUNTIME', '');
-    vi.stubEnv('DISCORD_BOT_TOKEN', 'x');
-    const boss = fakeBoss();
-    await registerDiscordBot(boss);
-    expect(boss.work).not.toHaveBeenCalled();
-    expect(boss.schedule).not.toHaveBeenCalled();
-    expect(boss.unschedule).toHaveBeenCalledTimes(Object.keys(DISCORD_BOT_QUEUES).length);
-  });
-
-  it('idles without a token even when selected', async () => {
-    vi.stubEnv('DISCORD_BOT_RUNTIME', 'node');
+describe('token gate', () => {
+  it('idles without a token and drops every schedule a run with one left', async () => {
     vi.stubEnv('DISCORD_BOT_TOKEN', '');
     vi.stubEnv('DISCORD_ACTIVITY_BOT_TOKEN', '');
     const boss = fakeBoss();
     await registerDiscordBot(boss);
     expect(boss.work).not.toHaveBeenCalled();
+    expect(boss.schedule).not.toHaveBeenCalled();
+    // The heartbeat queue included: status reads a scheduled heartbeat as "the bot should be online".
+    expect(boss.unschedule.mock.calls.map((c) => c[0]).sort()).toEqual(Object.values(DISCORD_BOT_QUEUES).sort());
   });
 
   it('maps the Go tickers onto offset crons', () => {
@@ -59,8 +50,28 @@ describe('runtime switch', () => {
       'discord-bot.watch-flush': '* * * * *',
       'discord-bot.watch-identity': '23 * * * *',
       'discord-bot.watch-summary': '11-59/30 * * * *',
+      'discord-bot.gateway-heartbeat': '* * * * *',
     });
     expect(discordBotCrons({ ALEX_TICK_INTERVAL: '1m' })['discord-bot.care-tick']).toBe('* * * * *');
+  });
+});
+
+describe('B07 gateway heartbeat', () => {
+  it('completes only while the gateway is READY', async () => {
+    await expect(gatewayHeartbeat({ isReady: () => true })).resolves.toBeUndefined();
+    // A throw is what makes pg-boss record the minute as `failed`, which status reads as "not connected".
+    await expect(gatewayHeartbeat({ isReady: () => false })).rejects.toThrow(/not ready/);
+  });
+
+  it('tracks a freshly built bot as not ready until READY is dispatched', async () => {
+    const bot = new DiscordBot(loadBotConfig({ DISCORD_BOT_TOKEN: 'x' }), null);
+    await expect(gatewayHeartbeat(bot)).rejects.toThrow();
+    bot.onDispatch('READY', { user: { id: 'self', username: 'Alex' }, application: { id: 'app' }, guilds: [] });
+    await expect(gatewayHeartbeat(bot)).resolves.toBeUndefined();
+  });
+
+  it('keeps a day of heartbeat rows, enough for the status read', () => {
+    expect(HEARTBEAT_RETENTION_SECONDS).toBe(86_400);
   });
 });
 

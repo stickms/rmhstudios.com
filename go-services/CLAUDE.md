@@ -16,15 +16,19 @@ the newer services.
 
 Production is a **hybrid** (see `docker-compose.yml` at repo root):
 
-- **Go is authoritative for:** the discord-bot background worker, run by the
-  `supervisor` binary (metrics :9090) — unless `DISCORD_BOT_RUNTIME=node`, which
-  hands it to the Node port in the `jobs` worker (`server/discord-bot/`, D3) and
-  makes `discordbot.Run` idle; the `status`
-  dashboard (7008); and `assets` (7007, off the main user path under Compose).
-- **Node is authoritative for:** web SSR (7005) and the realtime hubs —
-  socket-server (7001), rmhbox (7676), rmhtube (7003) — plus ladder-worker +
-  homes-worker. Apache routes all user
-  traffic to Node ports.
+- **Go is authoritative for:** the `status` dashboard (7008) and `assets`
+  (7007, off the main user path under Compose). Nothing else.
+- **Node is authoritative for:** web SSR (7005), the realtime hubs —
+  socket-server (7001), rmhbox (7676), rmhtube (7003) — and every background
+  worker: ladder-worker, homes-worker and `jobs`, which also hosts the Discord
+  bot (`server/discord-bot/`). Apache routes all user traffic to Node ports.
+- **The Go workers are gone (D3).** Every one (streak-saver, recap, doctrine,
+  bot-worker, vibe-worker, and last the Discord bot) was ported to the Node
+  `jobs` worker, and the Go copies were deleted with what only existed to run
+  them: the Go bot package and its standalone command, `cmd/supervisor` (and its
+  compose service and container), `pkg/worker`, `pkg/db`, the worker metrics in
+  `pkg/telemetry`, the git base image and its Bazel images. There is no
+  fallback to keep in step.
 - **The full-Go realtime topology was REMOVED in the rewrite (design §5.2):**
   the `gateway`, the Go hubs (gamehub/rmhbox/rmhtube/rmhmusic), `pkg/realtime`/
   `pkg/events`, the Helm charts, the k8s manifests, and the e2e suite are all
@@ -39,52 +43,43 @@ Production is a **hybrid** (see `docker-compose.yml` at repo root):
 
 ```
 go-services/
-  cmd/<svc>/main.go       one main package per binary (workers + status + assets)
+  cmd/<svc>/main.go       one main package per binary (status + assets)
   internal/<svc>/         each service's private implementation
-  pkg/                    shared libraries (config/db/auth/httpx/ratelimit/telemetry/objectstore/worker/log)
-  images/BUILD.bazel      hand-maintained OCI image targets (worker/status/assets)
-  Dockerfile, Makefile    standalone docker-build path for the worker images
+  pkg/                    shared libraries (config/auth/httpx/ratelimit/telemetry/objectstore/oncall/log)
+  images/BUILD.bazel      hand-maintained OCI image targets (status/assets)
+  Dockerfile, Makefile    standalone docker-build path for the service images
 ```
 
 ### Services (cmd/)
 
 | Service | Port (default) | Transport | Replaces (Node) | Status |
 |---|---|---|---|---|
-| `discord-bot` | — | worker | discord-bot | `/chat` + full Alex tamagotchi; idles without token |
 | `assets` | `ASSETS_PORT` 7007 | HTTP | Apache off-disk CDN | range-aware S3/R2 streaming for `/library /music /models /sprites` |
 | `status` | `STATUS_PORT` 7008 | HTTP | server/status | `/api/status` is byte-compatible with the Node original; the dashboard is the site's own liquid-globe design (`internal/status/dashboard.go`); incidents, maintenance, the admin API, feeds, badges, `/metrics` and a Statuspage-compatible `/api/v2` are documented in [`docs/status-page.md`](../docs/status-page.md) |
-| `supervisor` | `METRICS_ADDR` :9090 | — | (consolidation) | runs the discord-bot worker as a goroutine under an errgroup |
 
-The **only supervised worker** is `discord-bot`, and it has a Node twin: with
-`DISCORD_BOT_RUNTIME=node` (passed by compose to `jobs`, `supervisor` and `status`
-alike) `discordbot.Run` idles like it does without a token, the Node jobs worker
-holds the gateway, and status skips the B07 gateway alarm (`NodeDiscordBot`). Flip
-it, and roll it back, by recreating those three services together
-(`docs/architecture.md` §"The Discord bot's runtime switch"). Once the Node bot has
-run in production, the supervisor, `internal/discordbot` and this module's last
-worker can be deleted. Behaviour changes to the bot must land in BOTH copies until
-then. The streak-saver, recap, doctrine, bot-worker and vibe-worker workers were
-ported to the Node `jobs` worker (`lib/streak-reminders.server.ts`,
-`lib/lights-out/recap.server.ts`, `features/doctrine/engine/jobs.server.ts`,
-`lib/rmhark-ai/bot-worker.server.ts`, `lib/rmhvibe/thumbnail-worker.server.ts`, D3); `status`
-reads their freshness from pg-boss's job table (B06) and the daily-puzzle alarm
-(A19) straight from `doctrine_puzzle`. (`status`, `assets`, and `supervisor` are the three
-non-worker `cmd/` binaries.) The dead `internal/ledger` artifact store and its
-`ledger_*` tables were deleted (audit C3).
+The Discord bot (Alex `/chat`, the tamagotchi, `/sohumtracker`) runs only in the
+Node `jobs` worker. `status` watches the Node jobs through pg-boss's own tables:
+B06 job freshness (`nodeJobLimits`), B07 from the bot's
+`discord-bot.gateway-heartbeat` queue (a per-minute job that completes only while
+the gateway is READY; B07 fires when the last completed one is over 5 minutes old
+while the queue is scheduled), and A19 straight from `doctrine_puzzle`
+(`internal/status/workers.go`, readers in `cmd/status/dbprobe.go`). The old
+supervisor `/metrics` scrape and its A11 worker-down alarm went with the
+supervisor. The dead `internal/ledger` artifact store and its `ledger_*` tables
+were deleted (audit C3).
 
 ### Shared packages (pkg/)
 
 | pkg | Provides |
 |---|---|
-| `config` | env config: `LoadCommon(service)` → `{ServiceName, Env, DatabaseURL, DBPoolSize (`GO_DB_POOL_SIZE`, default 3, max 6), RedisURL, MetricsAddr, LogLevel}`; `GetString/Int/Bool/Duration/CSV`. Never read env ad-hoc. |
+| `config` | env config: `LoadCommon(service)` → `{ServiceName, Env, DatabaseURL, RedisURL, MetricsAddr, LogLevel}`; `GetString/Int/Bool/Duration/CSV`. Never read env ad-hoc. |
 | `log` | slog JSON wrapper matching the Node logger's field names (`timestamp`); `New(service, level)`, `.Fatal()` only at boot |
-| `db` | pgxpool: `Open(ctx, dsn, poolSize)`, `WaitForReachable(ctx, dsn, poolSize, 10, 5s)`; typed models in `models.go` (column casing verbatim from Prisma) |
 | `auth` | Better Auth **session validation** (see below); `NewValidator(pool)`, `ValidateSession`, `ResolveDiscordAccount`, `ErrUnauthenticated` |
-| `httpx` | `Health`, `WriteJSON`, `SessionToken` extraction, graceful `Server.Run`, `SignalContext`, `ServeMetrics` |
+| `httpx` | `Health`, `WriteJSON`, `SessionToken` extraction, graceful `Server.Run`, `SignalContext` |
 | `ratelimit` | in-memory sliding window keyed `(conn, event)`, bounded + GC'd |
-| `telemetry` | Prometheus metrics per service; `MergedHandler` for supervisor |
+| `telemetry` | Prometheus metrics per service (`assets` /metrics) |
 | `objectstore` | range-aware S3/MinIO reader (only place importing the AWS SDK) |
-| `worker` | uniform worker contract: `RunFunc(ctx, Deps)`, `RunStandalone`; workers return errors, **never** `log.Fatal` inside `Run` |
+| `oncall` | signed alarm client for the off-box watchdog (`status` sends heartbeats and A19/B06/B07) |
 
 ## Auth model
 
@@ -99,7 +94,7 @@ directly against the shared `session` table (`pkg/auth`):
    `Identity{UserID, Name, Image, IsAdmin}`; expired/unknown ⇒
    `ErrUnauthenticated`.
 
-The Go services here are workers + `status` + `assets`; none terminate
+The Go services here are `status` + `assets`; none terminate
 user-facing WebSocket traffic, so there is no WS auth handshake in this fleet.
 Realtime auth lives in the **Node** hubs (`server/CLAUDE.md`). The old Go
 `gateway` that injected trusted `X-Rmh-*` headers was removed with the Go
@@ -115,13 +110,13 @@ realtime topology.
 
 ## Conventions
 
-- Binary in `cmd/<svc>/main.go` (thin); implementation in `internal/<svc>/`
-  with a `Manager` (`NewManager` + `Register` + `Start/Stop`). Workers are a
-  `RunFunc` wired both into `cmd/<svc>` (standalone) and `cmd/supervisor`.
+- Binary in `cmd/<svc>/main.go` (thin); implementation in `internal/<svc>/`.
+  New background work is a pg-boss cron in the Node `jobs` worker, not a Go
+  worker (D3/D4).
 - Config via `pkg/config` only; ports via `config.GetString("<SVC>_PORT", default)`.
 - Structured logging via `pkg/log` key/value pairs.
-- DB via raw pgx + `pkg/db`; quote camelCase columns exactly as Prisma names
-  them (`"userId"`, `"expiresAt"`).
+- DB via raw pgx (`status` keeps its own small probe pool); quote camelCase
+  columns exactly as Prisma names them (`"userId"`, `"expiresAt"`).
 - Ports of Node behavior must be faithful; out-of-scope gaps get a
   **compiling** `// TODO(migration):` stub, never broken code.
 - **After adding/moving `.go` files: run `make gazelle`**
@@ -146,8 +141,8 @@ make images         # build + load every service image into Docker (Bazel)
   `go-services/**`. The old Postgres e2e job and the `helm lint`/`template` job
   were removed with the Go realtime/Helm topology (design §5.2).
 - Images: `bazel/defs.bzl#go_service_image` → `<svc>_image/_load/_push`
-  targets in `images/BUILD.bazel`; distroless base, except discord-bot and supervisor (git). No image for
-  the workers (they live in supervisor) or ledger.
+  targets in `images/BUILD.bazel` (`status`, `assets`); distroless base. The git
+  base image went with the Go bot.
 - **Production Compose path (what actually ships):** root `Dockerfile`
   `go-builder` stage (`go build ./cmd/...`) → binaries in the
   `rmhstudios-app-full` image (see `docs/architecture.md`). The k3s/Helm deploy
@@ -158,20 +153,15 @@ make images         # build + load every service image into Docker (Bazel)
 
 1. `go-services/README.md` and `FOUNDATION.md` were written for the original
    9-service Helm/realtime design and still mention the removed hubs/gateway and
-   `pkg/events`/`pkg/realtime` — the real fleet is **4 binaries** under `cmd/`
-   (assets, discord-bot, status, supervisor). Trust the code + this file.
-2. The legacy `go-services/Makefile` `SERVICES` list and the root `Makefile`
-   image loop both lag the real service set — check `images/BUILD.bazel` for
-   what's actually buildable.
+   `pkg/events`/`pkg/realtime` (and the supervisor/worker skeleton) — the real
+   fleet is **2 binaries** under `cmd/` (assets, status). Trust the code + this file.
+2. The `go-services/Makefile` and root `Makefile` `SERVICES` lists are
+   `status assets`; `images/BUILD.bazel` is the truth for what Bazel builds.
 3. There is no `cmd/ledger`: the old `internal/ledger` package and the
    `ledger_*` tables were removed (audit C3).
-4. Discord bot commands are `/chat` + the Alex tamagotchi
-   ([`docs/alex-tamagotchi/`](../docs/alex-tamagotchi/README.md)); there is no
-   `/rmhbot` command (old README claim is stale). The `/liquid` Liquid Globe
-   bot that briefly replaced Alex is gone — its tables were never separate, so
-   the five `discord_alex_*` / `discord_chat_session` tables are back
-   (migration `20260806120000_restore_alex_bot`, which un-does
-   `20260803120000_retire_alex_bot` going forward).
+4. The Discord bot is not here any more: it is `server/discord-bot/` in the Node
+   `jobs` worker ([`docs/alex-tamagotchi/`](../docs/alex-tamagotchi/README.md)
+   for the pet). Recover the Go original from git history if ever needed.
 
 ## Before you commit Go changes
 

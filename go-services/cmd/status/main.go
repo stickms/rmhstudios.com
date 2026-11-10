@@ -77,10 +77,10 @@ func main() {
 		Socket:  config.GetString("STATUS_SOCKET_URL", hubHealthURL("socket", "SOCKET_PORT", "7001")),
 		RMHBox:  config.GetString("STATUS_RMHBOX_URL", hubHealthURL("rmhbox", "RMHBOX_PORT", "7676")),
 		RMHTube: config.GetString("STATUS_RMHTUBE_URL", hubHealthURL("rmhtube", "RMHTUBE_PORT", "7003")),
-		// The background worker (discord-bot) runs as a goroutine inside the
-		// supervisor process, which serves /health on its METRICS_ADDR
-		// (default :9090). There is no standalone recap:7004.
-		Supervisor: config.GetString("STATUS_SUPERVISOR_URL", "http://supervisor:9090/health"),
+		// No "Background workers" probe: it pointed at the Go supervisor's
+		// /health, and the supervisor is gone with its last worker (the Discord
+		// bot runs in the Node jobs worker, D3). The jobs worker has no port; its
+		// health is the A16 check-in alarm and, for the bot, B07 below.
 	}
 
 	probeInterval := time.Duration(config.GetInt("STATUS_PROBE_INTERVAL_MS", 15000)) * time.Millisecond
@@ -138,14 +138,13 @@ func main() {
 		// On-call watchdog (deploy/oncall-watchdog): heartbeat + incident
 		// alarms. Unset (or a secret under 32 chars) = disabled.
 		Oncall: oncall.New(config.GetString("ONCALL_URL", ""), config.GetString("ONCALL_SIGNING_SECRET", "")),
-		// Go worker health alarms read the supervisor's metrics (same host as its
-		// /health probe above).
-		SupervisorMetricsURL: config.GetString("STATUS_SUPERVISOR_METRICS_URL", strings.TrimSuffix(urls.Supervisor, "/health")+"/metrics"),
-		NodeDiscordBot:       strings.EqualFold(strings.TrimSpace(config.GetString("DISCORD_BOT_RUNTIME", "")), "node"),
 		// Jobs that moved to the Node `jobs` worker (D3) report freshness through
 		// pg-boss's own job table (needs DATABASE_URL; unset = those B06 alarms are off).
-		JobLastSuccess:    jobFreshness(os.Getenv("DATABASE_URL"), probeTimeout),
-		PuzzlesReadyFor:   puzzlesReadyFor(os.Getenv("DATABASE_URL"), probeTimeout),
+		JobLastSuccess:  jobFreshness(os.Getenv("DATABASE_URL"), probeTimeout),
+		PuzzlesReadyFor: puzzlesReadyFor(os.Getenv("DATABASE_URL"), probeTimeout),
+		// B07: the Discord bot (Node jobs worker) completes a pg-boss heartbeat
+		// job every minute while its gateway is READY; read the same way as B06.
+		DiscordGateway:    discordHeartbeat(os.Getenv("DATABASE_URL"), probeTimeout),
 		Announcement:      config.GetString("STATUS_ANNOUNCEMENT", ""),
 		AnnouncementLevel: config.GetString("STATUS_ANNOUNCEMENT_LEVEL", "info"),
 		AnnouncementLink:  config.GetString("STATUS_ANNOUNCEMENT_LINK", ""),
@@ -163,7 +162,7 @@ func main() {
 // probeURLs holds the resolved URL for every HTTP probe target. Each is
 // resolved by main() from a default plus a STATUS_<svc>_URL override. The
 // web-facing ones point at the PUBLIC origin (DNS → edge → active container);
-// the rest (the three hubs, supervisor) at compose DNS names.
+// the rest (the three hubs) at compose DNS names.
 //
 // Ready/Feed/Sitemap are FUNCTIONAL probes, not liveness ones: they exercise
 // the database, the render path and the SEO surface through the same route a
@@ -175,14 +174,13 @@ func main() {
 // and would pin a probe at HTTP 401 (a permanent false "degraded") — which is
 // why the content probe is the public blog feed rather than the search API.
 type probeURLs struct {
-	Website    string
-	Ready      string
-	Feed       string
-	Sitemap    string
-	Socket     string
-	RMHBox     string
-	RMHTube    string
-	Supervisor string
+	Website string
+	Ready   string
+	Feed    string
+	Sitemap string
+	Socket  string
+	RMHBox  string
+	RMHTube string
 }
 
 // hubHealthURL builds a realtime hub's internal health URL from its compose
@@ -224,7 +222,6 @@ const (
 //   - Content: the public feed + sitemap, which prove the DB-backed render and
 //     the SEO surface still work. These break independently of the homepage and
 //     used to fail silently.
-//   - Platform: the supervisor running the six background workers, internal-only.
 //
 // When DATABASE_URL is set the Database probe (same SELECT 1 check) is
 // appended; unset, it is omitted so cmd/status starts cleanly without a DB.
@@ -311,15 +308,6 @@ func buildTargets(u probeURLs, probeTimeout time.Duration) []status.Target {
 			ExpectAny:     []string{"<sitemapindex", "<urlset"},
 			DegradedAfter: apiBudget,
 			FreshConn:     true,
-		},
-
-		// The two background workers run as goroutines inside the supervisor
-		// process — probe its shared /health.
-		status.Target{
-			Name:        "Background workers",
-			Description: "Supervisor: discord-bot",
-			Group:       "Platform",
-			URL:         u.Supervisor,
 		},
 	)
 

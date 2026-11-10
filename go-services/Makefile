@@ -3,8 +3,9 @@
 # (set USE_LOCAL_GO=1 to use a local toolchain instead).
 
 # Realtime hubs (gateway/gamehub/rmhmusic/rmhtube/rmhbox) were removed in the
-# rewrite (design §5.2) — the Node hubs are the production realtime tier.
-SERVICES := discord-bot
+# rewrite (design §5.2) — the Node hubs are the production realtime tier — and
+# the Discord bot moved to the Node jobs worker (D3). What is left: status, assets.
+SERVICES := status assets
 IMAGE_PREFIX ?= rmhstudios-go
 GO_IMAGE := golang:1.27.1-alpine
 MODCACHE := rmhgo-modcache
@@ -39,10 +40,8 @@ fmt: ## gofmt the tree
 
 images: ## build a container image per service
 	@for svc in $(SERVICES); do \
-		extra=""; \
-		[ "$$svc" = "discord-bot" ] && extra="git openssh-client"; \
 		echo "==> building $(IMAGE_PREFIX)-$$svc"; \
-		docker build -f Dockerfile --build-arg SERVICE=$$svc --build-arg EXTRA_PKGS="$$extra" \
+		docker build -f Dockerfile --build-arg SERVICE=$$svc \
 			-t $(IMAGE_PREFIX)-$$svc:$${TAG:-dev} . || exit 1; \
 	done
 

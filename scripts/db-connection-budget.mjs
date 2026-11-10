@@ -3,7 +3,7 @@
 /**
  * Fit the fleet's Postgres pools inside the server's REAL max_connections.
  *
- * WHY: docker-compose.yml's connection budget (~160 at the blue/green peak)
+ * WHY: docker-compose.yml's connection budget (162 at the blue/green peak)
  * assumes the tuned host from deploy/postgres/postgresql.tuning.conf
  * (max_connections = 200). Applying that file is a root action plus a Postgres
  * restart, which the sandboxed deploy cannot do (deploy/apply-perf-tuning.sh is
@@ -42,15 +42,12 @@ export const ENV_NAMES = {
 const HUBS = 3; // socket, rmhbox, rmhtube — each runs `server` + `auth`
 const WEB_CONTAINERS_AT_PEAK = 2; // old + new during deploy/hotswap-web.sh
 const WEB_PGBOSS_PER_WORKER = 2; // lib/jobs/boss.server.ts producer pool
-/** The Go supervisor's pool (GO_DB_POOL_SIZE; go-services/pkg/config default 3,
- *  clamped to 1..6). Not scaled by the plan, but an operator override counts. */
-export const GO_POOL_DEFAULT = 3;
-const GO_POOL_MAX = 6;
 const STATUS_PROBE = 2;
 const SLACK = 2;
 /** Connections nothing here sizes: pg-boss worker 8, ladder-worker 3+3,
  *  homes-worker 3, status probe 2 (+2 slack), and 10 for migrate / psql /
- *  backups / admin sessions. The Go supervisor pool is added on top (`goPool`). */
+ *  backups / admin sessions. (The Go supervisor's GO_DB_POOL_SIZE pool went with
+ *  it: the Discord bot it ran now uses the jobs worker's Prisma pool, D3.) */
 const FIXED = 8 + 6 + 3 + STATUS_PROBE + SLACK + 10;
 
 /**
@@ -61,32 +58,23 @@ const FIXED = 8 + 6 + 3 + STATUS_PROBE + SLACK + 10;
  * Worst-case connections the fleet can hold open at once with these pools.
  * @param {Pools} p
  * @param {number} webWorkers Nitro cluster workers per web container
- * @param {number} [goPool] the Go supervisor's pool (default GO_POOL_DEFAULT)
  */
-export function peakConnections(p, webWorkers, goPool = GO_POOL_DEFAULT) {
+export function peakConnections(p, webWorkers) {
   return (
     WEB_CONTAINERS_AT_PEAK * webWorkers * (p.web + WEB_PGBOSS_PER_WORKER) +
     HUBS * (p.server + p.auth) +
     p.jobs +
-    goPool +
     FIXED
   );
 }
 
 /**
- * @param {{ maxConnections: number, reserved: number, webWorkers: number, current: Pools, goPool?: number }} input
+ * @param {{ maxConnections: number, reserved: number, webWorkers: number, current: Pools }} input
  *   `reserved` = superuser_reserved_connections + reserved_connections (PG16+).
- *   `goPool` = the Go supervisor's pool, default GO_POOL_DEFAULT.
  */
-export function planPools({
-  maxConnections,
-  reserved,
-  webWorkers,
-  current,
-  goPool = GO_POOL_DEFAULT,
-}) {
+export function planPools({ maxConnections, reserved, webWorkers, current }) {
   const usable = maxConnections - reserved;
-  const before = peakConnections(current, webWorkers, goPool);
+  const before = peakConnections(current, webWorkers);
   if (before <= usable) {
     return { usable, before, after: before, pools: { ...current }, changed: false, fits: true };
   }
@@ -103,7 +91,7 @@ export function planPools({
     const scaled = Math.max(MINIMUMS[key], Math.floor(current[key] * factor));
     pools[key] = Math.min(current[key], scaled); // shrink only
   }
-  const after = peakConnections(pools, webWorkers, goPool);
+  const after = peakConnections(pools, webWorkers);
   return { usable, before, after, pools, changed: true, fits: after <= usable };
 }
 
@@ -159,8 +147,7 @@ async function main() {
     jobs: intEnv(env.JOBS_DB_POOL_SIZE, DEFAULTS.jobs),
   };
   const webWorkers = intEnv(env.NITRO_CLUSTER_WORKERS, 2);
-  const goPool = Math.min(GO_POOL_MAX, intEnv(env.GO_DB_POOL_SIZE, GO_POOL_DEFAULT));
-  const plan = planPools({ maxConnections, reserved, webWorkers, current, goPool });
+  const plan = planPools({ maxConnections, reserved, webWorkers, current });
 
   console.log(
     `db-budget: max_connections=${maxConnections} (usable ${plan.usable}), fleet peak at configured pools=${plan.before}`,

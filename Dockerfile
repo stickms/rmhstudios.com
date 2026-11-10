@@ -5,7 +5,7 @@
 # Produces TWO runner images from one shared build graph:
 #   - runner       (slim): web, socket, rmhbox, rmhtube, Node workers — Node + Chromium (the jobs
 #                           worker renders vibe thumbnails; D3)
-#   - runner-full         : supervisor, status, assets — Go bins, no app layers, no Chromium
+#   - runner-full         : status, assets — Go bins, no app layers, no Chromium
 # Each service overrides the CMD via docker-compose.yml. Splitting keeps the Go binaries off the user-facing services, and makes each
 # image invariant to the other's inputs: a Go-only change leaves the slim image
 # byte-identical (so the web hotswap is skipped), and a web-only change leaves the
@@ -113,9 +113,9 @@ COPY features ./features/
 
 # Only the Node services still served by compose (socket/rmhbox/rmhtube +
 # ladder-worker + homes-worker + jobs) are bundled here.
-# status and discord-bot were migrated to the Go supervisor/status binaries
-# (built in the go-builder stage); recap, doctrine, the streak-saver, the bot-worker and the
-# vibe thumbnail worker live in the jobs bundle above (D3).
+# status is the Go status binary (built in the go-builder stage); recap, doctrine, the
+# streak-saver, the bot-worker, the vibe thumbnail worker and the Discord bot live in the jobs
+# bundle (D3).
 RUN pnpm exec esbuild \
     server/socket-server/index.ts \
     server/rmhbox/index.ts \
@@ -378,7 +378,7 @@ RUN rm -rf /app/.output/public/library \
            /app/.output/public/sprites
 
 # ── Stage 3b: Go binaries ────────────────────────────────────────────────
-# Builds supervisor, status and assets (plus all other cmd/ packages)
+# Builds status and assets (every cmd/ package; there are no others)
 # from the go-services module using the official Go toolchain. The binaries
 # are statically linked (CGO_ENABLED=0) so they drop cleanly into the musl
 # Alpine runner without libc ceremony.
@@ -413,15 +413,15 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
 # service ever launches it, and the web /api/vibe/thumb route stays Playwright-free.
 # The four user-facing Node services need only the Node runtime, node_modules,
 # the Nitro/.output bundle, and the esbuild server bundles. They do NOT need:
-#   - git — only the discord-bot worker (in the supervisor) shells out to git.
-#   - the Go binaries — supervisor/status run them, the Node services don't.
+#   - git — nothing in production shells out to it any more.
+#   - the Go binaries — status/assets run them, the Node services don't.
 # Keeping those OUT of this image:
 #   - less disk, smaller SHA-tagged rollback images;
 #   - makes this image INVARIANT to go-services changes, so a Go-only or
-#     supervisor-only deploy leaves it byte-for-byte identical — which lets
+#     status/assets-only deploy leaves it byte-for-byte identical — which lets
 #     deploy/hotswap-web.sh skip the web hotswap entirely (no second container,
 #     no health wait, no Apache reload) when nothing web-facing changed.
-# The heavier bits live in the runner-full stage below (supervisor + status).
+# The Go binaries live in the runner-full stage below (status + assets).
 #
 # ── Shared runtime base (both images start here) ─────────────────────────────
 # Everything below this line in either image is a layer on top of these, so the
@@ -529,15 +529,16 @@ EXPOSE 7005 7001 7676 7003
 
 CMD ["node", "server/web-cluster.mjs"]
 
-# ── Stage 4b: Full runtime (Go supervisor + status + assets) ─────────────────
+# ── Stage 4b: Full runtime (Go status + assets) ─────────────────────────────
 # Everything ONLY the background fleet needs:
-#   - Go binaries: supervisor runs the discord-bot worker; status is the Go
-#     status page server; assets serves the R2-backed static paths.
+#   - Go binaries: status is the Go status page server; assets serves the
+#     R2-backed static paths. (The supervisor and its Discord bot worker were
+#     deleted: the bot runs in the Node jobs worker, slim image, D3.)
 #   No Chromium any more: the vibe-worker's thumbnails render in the Node jobs
 #   worker (slim image, `runtime-chromium`).
-# Used ONLY by the `supervisor`, `status` and `assets` compose services.
+# Used ONLY by the `status` and `assets` compose services.
 #
-# FROM runtime-base, NOT FROM runner. Those three services are Go binaries: they
+# FROM runtime-base, NOT FROM runner. Those two services are Go binaries: they
 # never read node_modules, .output, dist-server or scripts/ (the only path any of them
 # touches is the /app/db volume). Keeping the Node app layers out means a web-only commit
 # gives this image no new layers at all.
@@ -545,11 +546,11 @@ CMD ["node", "server/web-cluster.mjs"]
 # It shares runtime-base with the slim image on the VPS, so splitting costs no disk.
 FROM runtime-base AS runner-full
 
-# ─── Go binaries (supervisor, status, assets, workers) ──────────────────
+# ─── Go binaries (status, assets) ───────────────────────────────────────
 # Compiled in the go-builder stage (CGO_ENABLED=0, fully static). `--link` so the
 # base layers stay a remote reference (see Stage 4).
 COPY --link --from=go-builder --chown=1001:1001 /app/bin/ /app/bin/
 
 USER app
 
-CMD ["/app/bin/supervisor"]
+CMD ["/app/bin/status"]
