@@ -1,6 +1,7 @@
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/user-builds.contract';
 /**
  * User Builds API
  * GET /api/user-builds - List builds with filters
@@ -52,7 +53,7 @@ async function ensureUniqueSlug(baseSlug: string, excludeId?: string): Promise<s
 export const Route = createFileRoute('/api/user-builds')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ request }) => {
+      GET: implement(C.listUserBuildsApi, { auth: 'none' }, async ({ request }) => {
         const { searchParams } = new URL(request.url);
         const cursor = searchParams.get('cursor');
         const limit = pageSize(searchParams.get('limit'), 20, 50);
@@ -193,7 +194,7 @@ export const Route = createFileRoute('/api/user-builds')({
           hasMore,
         });
       }),
-      POST: defineHandler({ auth: 'none' }, async ({ request }) => {
+      POST: implement(C.createUserBuildApi, { auth: 'none' }, async ({ request }) => {
         let userId: string | null = null;
 
         const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);

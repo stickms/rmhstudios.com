@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import type { Build } from '@/lib/user-builds-types';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { api } from '@/lib/contract/client';
+import { featuredUserBuildsApi, listUserBuildsApi } from '@/lib/user-builds.contract';
 
 interface BuildSidebarProps {
   className?: string;
@@ -55,20 +57,13 @@ export function BuildSidebar({ className = '' }: BuildSidebarProps) {
   useEffect(() => {
     async function fetchSidebarData() {
       try {
-        const [featuredRes, popularRes] = await Promise.all([
-          fetch('/api/user-builds/featured?limit=3'),
-          fetch('/api/user-builds?sort=popular&limit=5'),
+        const [featuredRes, popularRes] = await Promise.allSettled([
+          api(featuredUserBuildsApi, { query: { limit: 3 } }),
+          api(listUserBuildsApi, { query: { sort: 'popular', limit: 5 } }),
         ]);
 
-        if (featuredRes.ok) {
-          const data = await featuredRes.json();
-          setFeatured(data.builds);
-        }
-
-        if (popularRes.ok) {
-          const data = await popularRes.json();
-          setPopular(data.items);
-        }
+        if (featuredRes.status === 'fulfilled') setFeatured(featuredRes.value.builds);
+        if (popularRes.status === 'fulfilled') setPopular(popularRes.value.items);
       } catch (error) {
         console.error('Error fetching sidebar data:', error);
       } finally {

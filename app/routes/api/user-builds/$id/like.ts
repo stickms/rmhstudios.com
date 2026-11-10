@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/user-builds.contract';
 /**
  * Build Like API
  * POST /api/user-builds/[id]/like - Toggle like
@@ -14,7 +15,7 @@ type RouteParams = { params: Promise<{ id: string }> };
 export const Route = createFileRoute('/api/user-builds/$id/like')({
   server: {
     handlers: {
-      POST: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+      POST: implement(C.likeUserBuildApi, { auth: 'none' }, async ({ request, params }) => {
         const { id } = params;
 
         // Check auth

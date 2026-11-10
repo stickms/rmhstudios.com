@@ -6,6 +6,8 @@ import { BuildCard } from './BuildCard';
 import type { Build, BuildSortOption } from '@/lib/user-builds-types';
 import { Reveal } from '@/components/motion';
 import { LAYOUT_SPRING } from '@/lib/motion';
+import { api } from '@/lib/contract/client';
+import { likeUserBuildApi, listUserBuildsApi } from '@/lib/user-builds.contract';
 
 interface BuildGridProps {
   initialBuilds?: Build[];
@@ -49,20 +51,18 @@ export function BuildGrid({
       }
 
       try {
-        const params = new URLSearchParams();
-        params.set('limit', '20');
-        params.set('sort', sort);
-        if (cursorParam) params.set('cursor', cursorParam);
-        if (category) params.set('category', category);
-        if (technology) params.set('technology', technology);
-        if (search) params.set('search', search);
-        if (userId) params.set('userId', userId);
-        if (curated) params.set('curated', 'true');
-
-        const res = await fetch(`/api/user-builds?${params.toString()}`);
-        if (!res.ok) throw new Error('Failed to fetch builds');
-
-        const data = await res.json();
+        const data = await api(listUserBuildsApi, {
+          query: {
+            limit: 20,
+            sort,
+            cursor: cursorParam || undefined,
+            category: category || undefined,
+            technology: technology || undefined,
+            search: search || undefined,
+            userId: userId || undefined,
+            curated: curated ? true : undefined,
+          },
+        });
 
         if (isLoadMore) {
           setBuilds((prev) => [...prev, ...data.items]);
@@ -123,7 +123,7 @@ export function BuildGrid({
     );
 
     try {
-      await fetch(`/api/user-builds/${id}/like`, { method: 'POST' });
+      await api(likeUserBuildApi, { params: { id } });
     } catch {
       // Revert on error
       setBuilds((prev) =>

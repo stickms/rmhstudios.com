@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/user-builds.contract';
 /**
  * Build Categories API
  * GET /api/user-builds/categories - List all categories
@@ -10,7 +11,7 @@ import { prisma } from '@/lib/prisma.server';
 export const Route = createFileRoute('/api/user-builds/categories')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(C.userBuildCategoriesApi,
         {
           auth: 'none',
           // Anonymous-invariant: one global catalog row set, and the only

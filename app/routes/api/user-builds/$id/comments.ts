@@ -1,6 +1,7 @@
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/user-builds.contract';
 /**
  * Build Comments API
  * GET /api/user-builds/[id]/comments - List comments
@@ -19,7 +20,7 @@ type RouteParams = { params: Promise<{ id: string }> };
 export const Route = createFileRoute('/api/user-builds/$id/comments')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+      GET: implement(C.listBuildCommentsApi, { auth: 'none' }, async ({ request, params }) => {
         const { id } = params;
         const { searchParams } = new URL(request.url);
         const cursor = searchParams.get('cursor');
@@ -87,7 +88,7 @@ export const Route = createFileRoute('/api/user-builds/$id/comments')({
           hasMore,
         });
       }),
-      POST: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+      POST: implement(C.createBuildCommentApi, { auth: 'none' }, async ({ request, params }) => {
         const { id } = params;
 
         // Check auth

@@ -18,6 +18,9 @@ import { useSession } from '@/components/Providers';
 import { LockedCommunityHeader, RequestToJoin } from '@/components/communities/LockedCommunity';
 import { ColumnHeader } from './ColumnHeader';
 import { toast } from 'sonner';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createCommunityApi, listCommunitiesApi } from '@/lib/communities/communities.contract';
 
 interface Community {
   id: string;
@@ -72,10 +75,10 @@ export function CommunitiesColumn({
   const load = useCallback(async (q?: string) => {
     setLoading(true);
     try {
-      const url =
-        q && q.trim() ? `/api/communities?q=${encodeURIComponent(q.trim())}` : '/api/communities';
-      const res = await fetch(url, { credentials: 'include' });
-      if (res.ok) setItems((await res.json()).communities);
+      const trimmed = q?.trim();
+      setItems((await api(listCommunitiesApi, { query: { q: trimmed || undefined } })).communities);
+    } catch {
+      // Keep the list that is shown.
     } finally {
       setLoading(false);
     }
@@ -103,26 +106,20 @@ export function CommunitiesColumn({
     if (name.trim().length < 2) return;
     setSubmitting(true);
     try {
-      const res = await fetch('/api/communities', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
+      const data = await api(createCommunityApi, {
+        body: {
           name: name.trim(),
           description: description.trim() || undefined,
           icon: icon || undefined,
-        }),
+        },
       });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        toast.success(t('community-created', { defaultValue: 'Community created!' }));
-        setCreateOpen(false);
-        navigate({ to: `/c/${data.slug}` as string });
-      } else {
-        toast.error(
-          data.error || t('community-create-error', { defaultValue: 'Could not create community' }),
-        );
-      }
+      toast.success(t('community-created', { defaultValue: 'Community created!' }));
+      setCreateOpen(false);
+      navigate({ to: `/c/${data.slug}` as string });
+    } catch (err) {
+      toast.error(
+        serverError(err) || t('community-create-error', { defaultValue: 'Could not create community' }),
+      );
     } finally {
       setSubmitting(false);
     }

@@ -1,13 +1,14 @@
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/communities/communities.contract';
 import { getCommunityFeed } from '@/lib/community.server';
 
 /** GET /api/communities/$slug/feed — posts in a community (cursor paginated). */
 export const Route = createFileRoute('/api/communities/$slug/feed')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ request, params, session }) => {
+      GET: implement(C.communityFeedApi, { auth: 'optional' }, async ({ request, params, session }) => {
         const url = new URL(request.url);
         const cursor = url.searchParams.get('cursor');
         const limit = pageSize(url.searchParams.get('limit'), 20, 50);
