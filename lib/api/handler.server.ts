@@ -400,6 +400,13 @@ export interface HandlerOptions<
    */
   verboseValidationErrors?: boolean;
   /**
+   * Build the 400 yourself when body/query validation fails, so a route moved
+   * onto `defineHandler` keeps the exact message/shape its clients already read.
+   * Takes precedence over `verboseValidationErrors`. Defaults to the standard
+   * `{ error: 'Invalid input' | 'Invalid query' }` envelope.
+   */
+  invalid?: (error: z.ZodError, kind: 'body' | 'query') => Response;
+  /**
    * Label used in the 500-path server log so a failure is still traceable to a
    * route. Defaults to `"<METHOD> <pathname>"`.
    */
@@ -672,7 +679,11 @@ export function defineHandler<
           raw = {};
         }
         const parsed = options.body.safeParse(raw);
-        if (!parsed.success) return badRequest(reason(parsed.error, 'Invalid input'));
+        if (!parsed.success) {
+          return options.invalid
+            ? options.invalid(parsed.error, 'body')
+            : badRequest(reason(parsed.error, 'Invalid input'));
+        }
         body = parsed.data;
       }
 
@@ -680,7 +691,11 @@ export function defineHandler<
       if (options.query) {
         const raw = Object.fromEntries(new URL(request.url).searchParams);
         const parsed = options.query.safeParse(raw);
-        if (!parsed.success) return badRequest(reason(parsed.error, 'Invalid query'));
+        if (!parsed.success) {
+          return options.invalid
+            ? options.invalid(parsed.error, 'query')
+            : badRequest(reason(parsed.error, 'Invalid query'));
+        }
         query = parsed.data;
       }
 

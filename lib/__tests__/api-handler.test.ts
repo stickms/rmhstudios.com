@@ -121,6 +121,31 @@ describe('validation', () => {
     expect((await res.json()).error).not.toBe('Invalid input');
   });
 
+  it('invalid() replaces the 400 for body and query failures, defaults untouched', async () => {
+    const calls: string[] = [];
+    const h = defineHandler(
+      {
+        body: schema,
+        invalid: (_e, kind) => {
+          calls.push(kind);
+          return apiError(`custom ${kind}`, 422);
+        },
+      },
+      async () => Response.json({ ok: true }),
+    );
+    const res = await h({ params: {}, request: post({ name: '' }) });
+    expect(res.status).toBe(422);
+    await expect(res.json()).resolves.toEqual({ error: 'custom body' });
+
+    const hq = defineHandler(
+      { query: z.object({ n: z.coerce.number().int() }), invalid: (_e, k) => apiError(`bad ${k}`, 400) },
+      async () => Response.json({ ok: true }),
+    );
+    const rq = await hq({ params: {}, request: req('https://rmhstudios.com/api/test?n=x') });
+    await expect(rq.json()).resolves.toEqual({ error: 'bad query' });
+    expect(calls).toEqual(['body']);
+  });
+
   it('allowEmptyBody validates {} instead of null for a bodyless request', async () => {
     const optional = z.object({ name: z.string().optional() });
 

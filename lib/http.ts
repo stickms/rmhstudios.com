@@ -26,13 +26,37 @@ export class HttpError extends Error {
   readonly status: number;
   /** Seconds the server asked us to wait (Retry-After), when it said. */
   readonly retryAfterSec?: number;
+  /** The parsed JSON error body, when the server sent JSON. Read fields with {@link errorField}. */
+  readonly body?: unknown;
+  /** The raw response text, when the body was not JSON (and non-empty). */
+  readonly text?: string;
 
-  constructor(status: number, message?: string, retryAfterSec?: number) {
+  constructor(
+    status: number,
+    message?: string,
+    retryAfterSec?: number,
+    detail?: { body?: unknown; text?: string },
+  ) {
     super(message ?? `HTTP ${status}`);
     this.name = 'HttpError';
     this.status = status;
     this.retryAfterSec = retryAfterSec;
+    if (detail?.body !== undefined) this.body = detail.body;
+    if (detail?.text !== undefined) this.text = detail.text;
   }
+}
+
+/**
+ * One field of a failed call's JSON error body (`reason`, `code`, a 402's
+ * `feature`, …), or `undefined` when the error is not an {@link HttpError}, had
+ * no JSON object body, or lacks the key. The caller names the type it expects;
+ * it is a cast, not a validation, so check the value before trusting it.
+ */
+export function errorField<T = unknown>(error: unknown, key: string): T | undefined {
+  if (!(error instanceof HttpError)) return undefined;
+  const body = error.body;
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) return undefined;
+  return (body as Record<string, unknown>)[key] as T | undefined;
 }
 
 /**
@@ -148,13 +172,21 @@ export async function fetchJson<T>(input: RequestInfo | URL, options: FetchJsonO
       const res = await fetch(input, { credentials: 'include', ...init, signal: controller.signal });
       if (!res.ok) {
         let message: string | undefined;
+        let parsed: unknown;
+        let text: string | undefined;
+        const raw = await res.text().catch(() => '');
         try {
-          const body = (await res.clone().json()) as { error?: unknown };
-          if (typeof body?.error === 'string') message = body.error;
+          parsed = JSON.parse(raw);
+          const err = (parsed as { error?: unknown } | null)?.error;
+          if (typeof err === 'string') message = err;
         } catch {
-          /* not JSON — keep the status message */
+          /* not JSON — keep the status message and the raw text */
+          if (raw) text = raw;
         }
-        throw new HttpError(res.status, message, parseRetryAfter(res.headers.get('Retry-After')));
+        const detail: { body?: unknown; text?: string } = {};
+        if (parsed !== undefined) detail.body = parsed;
+        if (text !== undefined) detail.text = text;
+        throw new HttpError(res.status, message, parseRetryAfter(res.headers.get('Retry-After')), detail);
       }
       return (await res.json()) as T;
     } catch (err) {

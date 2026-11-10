@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { HttpError, TimeoutError, fetchJson, isRetryable, retryDelayMs } from '@/lib/http';
+import { errorField, HttpError, TimeoutError, fetchJson, isRetryable, retryDelayMs } from '@/lib/http';
 
 /**
  * The client's retry/timeout contract. React Query's global retry policy is
@@ -88,5 +88,35 @@ describe('fetchJson', () => {
     vi.stubGlobal('fetch', f);
     await expect(fetchJson('/x', { timeoutMs: 0, retries: 3 })).rejects.toBeInstanceOf(HttpError);
     expect(f).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('HttpError body and errorField', () => {
+  const failing = (body: string, status = 402) =>
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(body, { status })));
+
+  it('keeps the parsed JSON body and exposes fields', async () => {
+    failing(JSON.stringify({ error: 'Nope', reason: 'no_funds', code: 7 }));
+    const err = await fetchJson('/x', { timeoutMs: 0 }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(HttpError);
+    expect((err as HttpError).message).toBe('Nope');
+    expect(errorField<string>(err, 'reason')).toBe('no_funds');
+    expect(errorField<number>(err, 'code')).toBe(7);
+    expect(errorField(err, 'missing')).toBeUndefined();
+  });
+
+  it('keeps raw text when the body is not JSON', async () => {
+    failing('plain failure', 500);
+    const err = (await fetchJson('/x', { timeoutMs: 0 }).catch((e: unknown) => e)) as HttpError;
+    expect(err.text).toBe('plain failure');
+    expect(err.body).toBeUndefined();
+    expect(errorField(err, 'reason')).toBeUndefined();
+  });
+
+  it('is undefined for non-HttpError and non-object bodies', async () => {
+    expect(errorField(new Error('x'), 'reason')).toBeUndefined();
+    failing('[1,2]', 400);
+    const err = await fetchJson('/x', { timeoutMs: 0 }).catch((e: unknown) => e);
+    expect(errorField(err, '0')).toBeUndefined();
   });
 });

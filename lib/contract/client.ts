@@ -20,6 +20,9 @@
  */
 
 import { fetchJson, type FetchJsonOptions } from '@/lib/http';
+
+/** Read a field (`reason`, `code`, …) off a failed call's JSON error body. */
+export { errorField } from '@/lib/http';
 import {
   buildPath,
   buildQuery,
