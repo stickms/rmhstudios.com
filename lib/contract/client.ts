@@ -2,7 +2,8 @@
  * The typed client for site API contracts (redesign audit C1).
  *
  * `api(contract, input)` builds the URL from the contract's `$param` template,
- * sends the body as JSON, and returns the contract's response type. Transport
+ * sends the body as JSON (or, when the contract's `body` is `FormData`, as multipart
+ * with the browser-chosen boundary), and returns the contract's response type. Transport
  * behaviour — timeout, credentials, typed `HttpError` with the server's
  * `{ error }` message, GET-only retries with jittered backoff — is
  * `fetchJson` (`lib/http.ts`), so a contract call fails exactly the way the
@@ -47,7 +48,21 @@ export const AI_TIMEOUT_MS = 60_000;
  */
 export const AI_IMAGE_TIMEOUT_MS = 240_000;
 
-type Transport = Pick<FetchJsonOptions, 'signal' | 'timeoutMs' | 'retries' | 'headers'>;
+/**
+ * Multipart uploads (a contract whose `body` is `FormData`) default to this ceiling
+ * instead of the 15s one: a phone on a slow uplink sending a few megabytes, then the
+ * server re-encoding it, outlives 15s routinely. The raw fetches they replace had no
+ * timeout at all; this stays just under the front door's `ProxyTimeout 300`
+ * (deploy/apache/rmhstudios.conf) so an upload the server is still finishing is not
+ * reported as failed. Override per call with `timeoutMs`.
+ */
+export const UPLOAD_TIMEOUT_MS = 240_000;
+
+/**
+ * `keepalive` lets the request outlive the page (unload / navigation beacons). The
+ * browser caps a keepalive body at 64 KiB, so it is for small JSON only.
+ */
+type Transport = Pick<FetchJsonOptions, 'signal' | 'timeoutMs' | 'retries' | 'headers' | 'keepalive'>;
 
 /** Keys whose type is `undefined` become absent; the rest are required. */
 type Slot<K extends string, V> = [V] extends [undefined] ? { [P in K]?: undefined } : { [P in K]: V };
@@ -86,7 +101,13 @@ export function api<E extends Endpoint>(
   };
   if (i.signal !== undefined) opts.signal = i.signal;
   if (i.timeoutMs !== undefined) opts.timeoutMs = i.timeoutMs;
-  if (hasBody) {
+  if (i.keepalive !== undefined) opts.keepalive = i.keepalive;
+  if (hasBody && i.body instanceof FormData) {
+    // No Content-Type: the browser must add `multipart/form-data; boundary=…` itself.
+    if (i.timeoutMs === undefined) opts.timeoutMs = UPLOAD_TIMEOUT_MS;
+    if (i.headers !== undefined) opts.headers = i.headers;
+    opts.body = i.body;
+  } else if (hasBody) {
     opts.headers = { 'Content-Type': 'application/json', ...i.headers };
     opts.body = JSON.stringify(i.body);
   } else if (i.headers !== undefined) {
