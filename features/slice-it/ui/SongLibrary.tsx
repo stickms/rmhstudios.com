@@ -59,7 +59,6 @@ import {
   normalizeLibrarySearch,
   type LibrarySearch,
   type LibrarySong,
-  type LibrarySongPage,
   type LibrarySort,
   type RandomConstraints,
 } from '@features/slice-it/engine/library-filters';
@@ -69,6 +68,7 @@ import { NeumorphicModal } from './NeumorphicModal';
 import { SongTable } from './SongTable';
 import { PackPanel } from './packs/PackPanel';
 
+import { listLibrarySongsApi, randomSongApi } from '@features/slice-it/engine/play.contract';
 /**
  * One entry of the artist facet (L15), as `/api/slice-it/songs/artists`
  * returns it. A structural type rather than an import of `ArtistSummary`,
@@ -237,21 +237,21 @@ export function SongLibrary({
     async (cursor: string | null, append: boolean) => {
       setLoading(true);
       try {
-        const params = new URLSearchParams({ sort: filters.sort });
-        if (filters.dir) params.set('dir', filters.dir);
-        if (filters.q) params.set('q', filters.q);
-        // L15 — the artist facet. A normalised key, never the display string:
-        // the whole point of the key is that this is an indexed equality
-        // filter rather than the substring search it replaces.
-        if (filters.artist) params.set('artist', filters.artist);
-        if (cursor) params.set('cursor', cursor);
-        // The table is scanned, not paged — a bigger page means fewer
-        // round-trips while scrolling instead of a "Load more" click.
-        if (filters.view === 'table') params.set('limit', String(SONGS_PAGE_SIZE_MAX));
-
-        const response = await fetch(`/api/slice-it/songs?${params}`);
-        if (!response.ok) throw new Error(String(response.status));
-        const page = (await response.json()) as LibrarySongPage;
+        const page = await api(listLibrarySongsApi, {
+          query: {
+            sort: filters.sort,
+            ...(filters.dir ? { dir: filters.dir } : {}),
+            ...(filters.q ? { q: filters.q } : {}),
+            // L15 — the artist facet. A normalised key, never the display string:
+            // the whole point of the key is that this is an indexed equality
+            // filter rather than the substring search it replaces.
+            ...(filters.artist ? { artist: filters.artist } : {}),
+            ...(cursor ? { cursor } : {}),
+            // The table is scanned, not paged — a bigger page means fewer
+            // round-trips while scrolling instead of a "Load more" click.
+            ...(filters.view === 'table' ? { limit: SONGS_PAGE_SIZE_MAX } : {}),
+          },
+        });
 
         setSongs((previous) => (append ? [...previous, ...page.songs] : page.songs));
         setNextCursor(page.nextCursor);
@@ -379,19 +379,19 @@ export function SongLibrary({
   const rollRandom = async () => {
     setRandomLoading(true);
     try {
-      const params = new URLSearchParams({ random: '1' });
-      if (randomConstraints.durationMin !== undefined) {
-        params.set('durationMin', String(randomConstraints.durationMin));
-      }
-      if (randomConstraints.durationMax !== undefined) {
-        params.set('durationMax', String(randomConstraints.durationMax));
-      }
-      if (randomConstraints.unplayedOnly) params.set('unplayedOnly', 'true');
-      if (randomConstraints.likedOnly) params.set('likedOnly', 'true');
-
-      const response = await fetch(`/api/slice-it/songs?${params}`);
-      if (!response.ok) throw new Error(String(response.status));
-      const body = (await response.json()) as { song: LibrarySong | null };
+      const body = await api(randomSongApi, {
+        query: {
+          random: '1',
+          ...(randomConstraints.durationMin !== undefined
+            ? { durationMin: randomConstraints.durationMin }
+            : {}),
+          ...(randomConstraints.durationMax !== undefined
+            ? { durationMax: randomConstraints.durationMax }
+            : {}),
+          ...(randomConstraints.unplayedOnly ? { unplayedOnly: 'true' as const } : {}),
+          ...(randomConstraints.likedOnly ? { likedOnly: 'true' as const } : {}),
+        },
+      });
       if (!body.song) {
         toast.error(ts('random-no-match', { defaultValue: 'No song matches those constraints.' }));
         return;

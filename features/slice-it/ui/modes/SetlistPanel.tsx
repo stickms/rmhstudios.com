@@ -65,6 +65,7 @@ import {
   type SetlistIndex,
 } from '@features/slice-it/engine/setlists.contract';
 
+import { searchSongsApi } from '@features/slice-it/engine/play.contract';
 const LIKED_ID = 'liked';
 
 interface SetlistPanelProps {
@@ -177,9 +178,7 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
       return;
     }
     try {
-      const res = await fetch(`/api/slice-it/songs?q=${encodeURIComponent(q)}&limit=10`);
-      if (!res.ok) throw new Error(String(res.status));
-      const data = (await res.json()) as { songs: SliceSong[] };
+      const data = await api(searchSongsApi, { query: { q, limit: 10 } });
       setResults(data.songs ?? []);
     } catch {
       setResults([]);

@@ -21,6 +21,10 @@ import type { Modifiers } from './types';
 import { type TimingSummary } from './integrity';
 import type { SliceItReplay } from '@/lib/game/replay';
 
+import { api } from '@/lib/contract/client';
+import type { ResOf } from '@/lib/contract/endpoint';
+import { errorField, HttpError } from '@/lib/http';
+import { submitScoreApi, uploadReplayApi } from '@features/slice-it/engine/play.contract';
 export interface SubmitResult {
   status: 'idle' | 'submitting' | 'ok' | 'unranked' | 'failed';
   isNewBest: boolean;
@@ -40,13 +44,7 @@ export interface SubmitResult {
  */
 async function uploadReplay(replay: SliceItReplay): Promise<string | null> {
   try {
-    const response = await fetch('/api/slice-it/replay', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ replay }),
-    });
-    if (!response.ok) return null;
-    const body = (await response.json().catch(() => ({}))) as { id?: string };
+    const body = await api(uploadReplayApi, { body: { replay } });
     return body.id ?? null;
   } catch {
     return null;
@@ -122,22 +120,13 @@ export function useSubmitScore(run: RunSummary | null): SubmitResult {
     const { getReplay, practiceAids: _practiceAids, ...scoreBody } = summary;
     void _practiceAids;
     try {
-      const response = await fetch('/api/slice-it/score', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(scoreBody),
-      });
-      const body = (await response.json().catch(() => ({}))) as {
-        isNewBest?: boolean;
-        previousBest?: number | null;
-        ranked?: boolean;
-        /** False for the guest path, which persists nothing. */
-        stored?: boolean;
-      };
-
-      if (!response.ok) {
+      let body: ResOf<typeof submitScoreApi>;
+      try {
+        body = await api(submitScoreApi, { body: scoreBody });
+      } catch (error) {
+        if (!(error instanceof HttpError)) throw error;
         setResult({
-          status: body.ranked === false ? 'unranked' : 'failed',
+          status: errorField(error, 'ranked') === false ? 'unranked' : 'failed',
           isNewBest: false,
           previousBest: null,
         });

@@ -34,6 +34,7 @@ const DECODE_TIMEOUT_MS = 20_000;
 import type { GameEngine } from './engine';
 import type { BeatMap, SliceSong } from './types';
 
+import { patchSongAnalysisApi } from '@features/slice-it/engine/play.contract';
 export interface StartRunOptions {
   /** Skip the play-count increment — the server already counted this one. */
   countPlay?: boolean;
@@ -134,12 +135,9 @@ export function useStartRun(engine: GameEngine | null) {
           map = generated;
 
           // Backfill, so this only ever happens once for this song.
-          void fetch(`/api/slice-it/songs/${song.id}/patch-analysis`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              analysisData: { ...generated, analysisVersion: BEATMAP_VERSION },
-            }),
+          void api(patchSongAnalysisApi, {
+            params: { id: song.id },
+            body: { analysisData: { ...generated, analysisVersion: BEATMAP_VERSION } },
           }).catch(() => {});
         }
 

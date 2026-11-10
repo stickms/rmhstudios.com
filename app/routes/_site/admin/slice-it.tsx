@@ -47,38 +47,14 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 
-/** Mirrors `QualificationReport` in `features/slice-it/engine/ranking.server.ts`. */
-interface Evidence {
-  chartId: string;
-  eligible: boolean;
-  blockers: string[];
-  players: number;
-  plays: number;
-  clearRate: number | null;
-  lintErrors: number;
-  status: string;
-}
-
-interface RankingRow {
-  id: string;
-  songId: string;
-  songTitle: string;
-  songArtist: string;
-  name: string;
-  difficulty: string;
-  authorName: string | null;
-  authorHandle: string | null;
-  rating: number | null;
-  ratingVersion: number | null;
-  status: string;
-  rankStatus: string;
-  rankStatusAt: string | null;
-  updatedAt: string;
-  evidence: Evidence;
-}
-
-type RankStatus = 'unranked' | 'qualified' | 'ranked';
-
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import {
+  listRankingApi,
+  rankChartActionApi,
+  type RankingRow,
+  type RankStatus,
+} from '@features/slice-it/engine/admin.contract';
 /**
  * The thresholds, duplicated for display only.
  *
@@ -108,12 +84,7 @@ function AdminSliceItRankingPage() {
   const load = useCallback(async (next: RankStatus) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/slice-it/charts/ranking?status=${next}&limit=25`);
-      if (!response.ok) throw new Error(String(response.status));
-      const data = (await response.json()) as {
-        charts: RankingRow[];
-        counts: Record<string, number>;
-      };
+      const data = await api(listRankingApi, { query: { status: next, limit: 25 } });
       setRows(data.charts ?? []);
       setCounts(data.counts ?? {});
     } catch {
@@ -130,15 +101,13 @@ function AdminSliceItRankingPage() {
   const act = async (chartId: string, action: 'promote' | 'demote') => {
     setPending(chartId);
     try {
-      const response = await fetch('/api/slice-it/charts/ranking', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chartId, action }),
-      });
-      const data = (await response.json()) as { error?: string; rankStatus?: string };
-      if (!response.ok) {
+      try {
+        await api(rankChartActionApi, { body: { chartId, action } });
+      } catch (error) {
+        if (!(error instanceof HttpError)) throw error;
         toast.error(
-          data.error ?? t('admin-rank-action-failed', { defaultValue: 'That did not go through.' }),
+          serverError(error) ??
+            t('admin-rank-action-failed', { defaultValue: 'That did not go through.' }),
         );
         // A 409 means this list is stale, which is exactly the case where
         // re-reading it is the useful thing to do.

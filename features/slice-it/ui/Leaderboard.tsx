@@ -19,6 +19,13 @@ import { DIFFICULTIES, type Difficulty } from '@features/slice-it/engine/constan
 import { MOD_POOLS, type ModPool } from '@features/slice-it/engine/pools';
 import type { LeaderboardEntry } from '@features/slice-it/engine/types';
 
+import { api } from '@/lib/contract/client';
+import {
+  getBoardReplaysApi,
+  getLeaderboardApi,
+  type BoardEntry,
+  type LeaderboardResponse,
+} from '@features/slice-it/engine/play.contract';
 /**
  * The song / global leaderboard panel.
  *
@@ -59,27 +66,6 @@ import type { LeaderboardEntry } from '@features/slice-it/engine/types';
  * the statistic it always was rather than as the ranking.
  */
 
-/**
- * A global-board row, which carries three fields a song row does not.
- *
- * Optional, because one component renders both boards out of one piece of
- * state, and because a client deployed against an older server does not receive
- * them — in which case the extra chips do not render and the row is exactly what
- * it was.
- */
-type BoardEntry = LeaderboardEntry & {
-  skillRating?: number;
-  totalScore?: number;
-  rankedPlays?: number;
-};
-
-interface LeaderboardResponse {
-  entries?: BoardEntry[];
-  total?: number;
-  self?: BoardEntry | null;
-  scopeUnavailable?: 'signed-out' | 'no-location';
-}
-
 type Scope = 'global' | 'friends' | 'country';
 type TimeWindow = 'all' | 'month' | 'week';
 
@@ -117,21 +103,19 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
     const load = async () => {
       setIsLoading(true);
       try {
-        const params = new URLSearchParams();
-        if (songId) params.set('songId', songId);
         // The filters only mean anything on a song board — the global board is
         // one list of skill ratings with no tier and no modifiers, because a
         // skill rating is already an aggregate across every tier and pool.
-        if (songId && difficulty !== 'all') params.set('difficulty', difficulty);
-        if (songId && modPool !== 'all') params.set('modPool', modPool);
-        if (songId && scope !== 'global') params.set('scope', scope);
-        if (songId && timeWindow !== 'all') params.set('window', timeWindow);
-
-        const res = await fetch(`/api/slice-it/leaderboard?${params}`, {
+        const data = await api(getLeaderboardApi, {
+          query: {
+            ...(songId ? { songId } : {}),
+            ...(songId && difficulty !== 'all' ? { difficulty } : {}),
+            ...(songId && modPool !== 'all' ? { modPool } : {}),
+            ...(songId && scope !== 'global' ? { scope } : {}),
+            ...(songId && timeWindow !== 'all' ? { window: timeWindow } : {}),
+          },
           signal: controller.signal,
         });
-        if (!res.ok) return;
-        const data = (await res.json()) as LeaderboardResponse;
         setEntries(Array.isArray(data.entries) ? data.entries : []);
         setSelf(data.self ?? null);
         setUnavailable(data.scopeUnavailable);
@@ -165,10 +149,10 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
 
     const load = async () => {
       try {
-        const params = new URLSearchParams({ songId, userIds: shownIds });
-        const res = await fetch(`/api/slice-it/replay?${params}`, { signal: controller.signal });
-        if (!res.ok) return;
-        const data = (await res.json()) as { replays?: Record<string, string> };
+        const data = await api(getBoardReplaysApi, {
+          query: { songId, userIds: shownIds },
+          signal: controller.signal,
+        });
         setReplays(data.replays ?? {});
       } catch {
         // A board without watch buttons is a board. This lookup is decoration on
