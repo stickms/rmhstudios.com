@@ -1,13 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { addDeckCardApi, deleteDeckApi, getDeckApi } from '@/lib/study/decks.contract';
+import { addCardBody } from '@/lib/study/decks-schema';
 import { prisma } from '@/lib/prisma.server';
-import { z } from 'zod';
 import { getDeck } from '@/lib/study.server';
-
-const addCardSchema = z.object({
-  front: z.string().min(1).max(500),
-  back: z.string().min(1).max(500),
-});
 
 /**
  * GET    /api/study/decks/$id — deck detail with cards (owner or public).
@@ -17,13 +13,13 @@ const addCardSchema = z.object({
 export const Route = createFileRoute('/api/study/decks/$id/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ params, session }) => {
+      GET: implement(getDeckApi, { auth: 'optional' }, async ({ params, session }) => {
         const detail = await getDeck(params.id, { id: session?.user?.id ?? null });
         if (!detail) return Response.json({ error: 'Not found' }, { status: 404 });
-        return Response.json(detail);
+        return detail;
       }),
 
-      POST: defineHandler({}, async ({ request, params, session }) => {
+      POST: implement(addDeckCardApi, {}, async ({ request, params, session }) => {
         const deck = await prisma.flashcardDeck.findUnique({
           where: { id: params.id },
           select: { userId: true, cardCount: true },
@@ -34,7 +30,7 @@ export const Route = createFileRoute('/api/study/decks/$id/')({
           return Response.json({ error: 'Deck is full' }, { status: 400 });
 
         const body = await request.json().catch(() => ({}));
-        const parsed = addCardSchema.safeParse(body);
+        const parsed = addCardBody.safeParse(body);
         if (!parsed.success) return Response.json({ error: 'Invalid card' }, { status: 400 });
 
         const [card] = await prisma.$transaction([
@@ -55,7 +51,7 @@ export const Route = createFileRoute('/api/study/decks/$id/')({
         return Response.json({ success: true, card }, { status: 201 });
       }),
 
-      DELETE: defineHandler({}, async ({ params, session }) => {
+      DELETE: implement(deleteDeckApi, {}, async ({ params, session }) => {
         const deck = await prisma.flashcardDeck.findUnique({
           where: { id: params.id },
           select: { userId: true },
@@ -63,7 +59,7 @@ export const Route = createFileRoute('/api/study/decks/$id/')({
         if (!deck || deck.userId !== session.user.id)
           return Response.json({ error: 'Not found' }, { status: 404 });
         await prisma.flashcardDeck.delete({ where: { id: params.id } });
-        return Response.json({ success: true });
+        return { success: true as const };
       }),
     },
   },

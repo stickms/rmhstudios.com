@@ -15,6 +15,8 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import type { ListView } from '@/lib/lists/constants';
 import type { ResolvedUser } from '@/lib/user-display';
 import type { ListTimelinePost } from '@/lib/lists/lists.server';
+import { api } from '@/lib/contract/client';
+import { deleteListApi, listFeedApi, updateListApi } from '@/lib/lists/lists.contract';
 
 export function ListDetailView({ list, members }: { list: ListView; members: ResolvedUser[] }) {
   const { t } = useTranslation('c-lists');
@@ -27,10 +29,9 @@ export function ListDetailView({ list, members }: { list: ListView; members: Res
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/lists/${list.id}/feed`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { items: ListTimelinePost[]; nextCursor: string | null } | null) => {
-        if (cancelled || !data) return;
+    api(listFeedApi, { params: { id: list.id } })
+      .then((data) => {
+        if (cancelled) return;
         setPosts(data.items);
         setCursor(data.nextCursor);
       })
@@ -43,9 +44,12 @@ export function ListDetailView({ list, members }: { list: ListView; members: Res
 
   async function loadMore() {
     if (!cursor) return;
-    const res = await fetch(`/api/lists/${list.id}/feed?cursor=${cursor}`);
-    if (!res.ok) return;
-    const data = (await res.json()) as { items: ListTimelinePost[]; nextCursor: string | null };
+    let data;
+    try {
+      data = await api(listFeedApi, { params: { id: list.id }, query: { cursor } });
+    } catch {
+      return;
+    }
     setPosts((prev) => [...prev, ...data.items]);
     setCursor(data.nextCursor);
   }
@@ -53,11 +57,10 @@ export function ListDetailView({ list, members }: { list: ListView; members: Res
   async function togglePin() {
     const next = !pinned;
     setPinned(next);
-    await fetch(`/api/lists/${list.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pinned: next }),
-    }).catch(() => setPinned(!next));
+    // A non-2xx answer throws (HttpError), so a refused pin rolls back too.
+    await api(updateListApi, { params: { id: list.id }, body: { pinned: next } }).catch(() =>
+      setPinned(!next),
+    );
   }
 
   async function remove() {
@@ -67,11 +70,13 @@ export function ListDetailView({ list, members }: { list: ListView; members: Res
       danger: true,
     });
     if (!ok) return;
-    const res = await fetch(`/api/lists/${list.id}`, { method: 'DELETE' });
-    if (res.ok) {
-      toast.success(t('deleted', { defaultValue: 'List deleted' }));
-      void navigate({ to: '/saves', search: { tab: 'lists' } });
+    try {
+      await api(deleteListApi, { params: { id: list.id } });
+    } catch {
+      return;
     }
+    toast.success(t('deleted', { defaultValue: 'List deleted' }));
+    void navigate({ to: '/saves', search: { tab: 'lists' } });
   }
 
   return (

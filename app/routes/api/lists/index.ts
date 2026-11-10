@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createListApi, getUserListsApi } from '@/lib/lists/lists.contract';
 import { listCreateSchema } from '@/lib/lists/constants';
 import { getUserLists, createList, ListError } from '@/lib/lists/lists.server';
 
@@ -10,15 +11,16 @@ import { getUserLists, createList, ListError } from '@/lib/lists/lists.server';
 export const Route = createFileRoute('/api/lists/')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ request, session }) => {
+      GET: implement(getUserListsApi, {}, async ({ request, session }) => {
         const member = new URL(request.url).searchParams.get('member') ?? undefined;
-        return Response.json({ lists: await getUserLists(session.user.id, member) });
+        return { lists: await getUserLists(session.user.id, member) };
       }),
-      POST: defineHandler(
+      POST: implement(
+        createListApi,
         { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'lists' }, body: listCreateSchema },
         async ({ session, body }) => {
           try {
-            return Response.json({ list: await createList(session.user.id, body) });
+            return { list: await createList(session.user.id, body) };
           } catch (e) {
             if (e instanceof ListError) return Response.json({ error: e.message }, { status: 400 });
             throw e;

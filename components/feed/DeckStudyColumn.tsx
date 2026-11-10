@@ -10,6 +10,14 @@ import { useConfirm } from'@/components/ui/confirm-dialog';
 import { useTranslation } from'react-i18next';
 import { Reveal } from'@/components/motion';
 import { LIFT_CARD } from'@/components/feed/motionHelpers';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import {
+ addDeckCardApi,
+ deckReviewQueueApi,
+ deleteDeckApi,
+ getDeckApi,
+} from '@/lib/study/decks.contract';
 
 interface Card {
  id: string;
@@ -81,19 +89,15 @@ export function DeckStudyColumn({
  const [adding, setAdding] = useState(false);
 
  const load = useCallback(async () => {
- const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}`, {
- credentials:'include',
- });
- if (res.status === 404) {
- setNotFound(true);
- return;
- }
- if (res.ok) {
- const data = await res.json();
+ try {
+ const data = await api(getDeckApi, { params: { id: deckId } });
  setDeck(data.deck);
  setCards(data.cards ?? []);
  setDueCount(data.dueCount ?? 0);
  setSignedIn(!!data.signedIn);
+ } catch (err) {
+ // 404 is the not-found state; any other failure leaves the page as it was.
+ if (err instanceof HttpError && err.status === 404) setNotFound(true);
  }
  }, [deckId]);
 
@@ -117,21 +121,13 @@ export function DeckStudyColumn({
  const session = ++reviewSession.current;
  setStartingReview(true);
  try {
- const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}/review`, {
- credentials:'include',
- });
- if (session !== reviewSession.current) return;
- if (res.ok) {
- const data = await res.json();
+ const data = await api(deckReviewQueueApi, { params: { id: deckId } });
  if (session !== reviewSession.current) return;
  reviewBusyRef.current = false;
  setReviewBusy(false);
  setQueue(data.due ?? []);
  setIdx(0);
  setRevealed(false);
- } else {
- toast.error(t('deck-review-load-failed', { defaultValue:'Could not load cards'}));
- }
  } catch {
  if (session === reviewSession.current)
  toast.error(t('deck-review-load-failed', { defaultValue:'Could not load cards'}));
@@ -175,18 +171,15 @@ export function DeckStudyColumn({
  if (!front.trim() || !back.trim()) return;
  setAdding(true);
  try {
- const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}`, {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ front: front.trim(), back: back.trim() }),
+ const data = await api(addDeckCardApi, {
+ params: { id: deckId },
+ body: { front: front.trim(), back: back.trim() },
  });
- if (res.ok) {
- const data = await res.json();
  setCards((c) => [...c, data.card]);
  setFront('');
  setBack('');
- }
+ } catch {
+ /* the draft stays in the fields so it can be resent */
  } finally {
  setAdding(false);
  }
@@ -200,11 +193,12 @@ export function DeckStudyColumn({
  }))
  )
  return;
- const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}`, {
- method:'DELETE',
- credentials:'include',
- });
- if (res.ok) navigate({ to:'/study'});
+ try {
+ await api(deleteDeckApi, { params: { id: deckId } });
+ } catch {
+ return;
+ }
+ navigate({ to:'/study'});
  }
 
  if (loading) {

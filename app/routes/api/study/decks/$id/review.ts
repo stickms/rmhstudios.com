@@ -1,12 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { deckReviewQueueApi } from '@/lib/study/decks.contract';
 import { prisma } from '@/lib/prisma.server';
 
 /** GET /api/study/decks/$id/review — the viewer's due cards for this deck. */
 export const Route = createFileRoute('/api/study/decks/$id/review')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ params, session }) => {
+      GET: implement(deckReviewQueueApi, {}, async ({ params, session }) => {
         const userId = session.user.id;
 
         const deck = await prisma.flashcardDeck.findUnique({
@@ -37,7 +38,7 @@ export const Route = createFileRoute('/api/study/decks/$id/review')({
           .slice(0, 50)
           .map((c) => ({ id: c.id, front: c.front, back: c.back }));
 
-        return Response.json({ due });
+        return { due };
       }),
     },
   },
