@@ -119,7 +119,7 @@ export const APP_ROUTE_THEME_BG: Record<
     dark: '#171d25',
     light: '#171d25',
   },
-  // Slice It has one theme (`--slice-bg` in `components/slice-it/slice-it.css`),
+  // Slice It has one theme (`--slice-bg` in `features/slice-it/ui/slice-it.css`),
   // so both grounds are the same navy whatever an older save says. The key and
   // flag stay only because an entry must name them.
   '/slice-it': {

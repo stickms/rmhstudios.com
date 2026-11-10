@@ -8,18 +8,18 @@ because the file belongs to somebody else this wave.
 
 ## What shipped, so the requests have context
 
-- `lib/slice-it/engine.ts` records `{t, lane, judgment}` per resolution into
+- `features/slice-it/engine/engine.ts` records `{t, lane, judgment}` per resolution into
   three pre-sized typed arrays (zero allocation on the frame path), and can be
   driven _by_ such a log instead of by a player (`loadReplay` / `advanceReplay` /
   `seekReplay`).
-- `lib/slice-it/replay.ts` maps the engine's six judgements onto the four the
+- `features/slice-it/engine/replay.ts` maps the engine's six judgements onto the four the
   cross-game schema in `lib/game/replay.ts` defines, and records the modifier
   subset the chart seed is derived from.
 - `POST /api/slice-it/replay` stores a log — only for a run that is already a
   stored personal best. `GET` answers "which of these players have one".
-- `components/slice-it/ReplayViewer.tsx` plays one back through a real
+- `features/slice-it/ui/ReplayViewer.tsx` plays one back through a real
   `GameEngine`, linked from leaderboard rows.
-- `lib/slice-it/verify.server.ts` re-judges a log against the real chart with
+- `features/slice-it/engine/verify.server.ts` re-judges a log against the real chart with
   the shared `judge()`, asynchronously.
 
 ## 1. `AudioManager` cannot seek — replays go silent after a scrub
@@ -58,7 +58,7 @@ viewer would then call `audio.seek(t)` inside `scrub()` and drop the
 
 **Owner:** whoever owns `server/jobs/` (pg-boss) or `go-services/supervisor/`.
 
-`lib/slice-it/verify.server.ts#scheduleVerification` detaches the re-judge with a
+`features/slice-it/engine/verify.server.ts#scheduleVerification` detaches the re-judge with a
 `setTimeout(0)` from the upload handler. Nothing on the request path awaits it
 and every failure is swallowed into a log line, so it cannot hurt a submission —
 but it also does not survive a deploy mid-verification and cannot retry.
@@ -67,7 +67,7 @@ but it also does not survive a deploy mid-verification and cannot retry.
 Either way the seam is already a single exported function:
 
 ```ts
-import { verifyStoredReplay } from '@/lib/slice-it/verify.server';
+import { verifyStoredReplay } from '@features/slice-it/engine/verify.server';
 const result = await verifyStoredReplay(replayId); // { ok, score, accuracy, … }
 ```
 
@@ -89,7 +89,7 @@ model GameReplay {
   /// re-judge to the claimed score against the real notes.
   verified       Boolean?
   verifiedAt     DateTime?
-  /// Failure code from `lib/slice-it/verify.server.ts#VerifyFailure`.
+  /// Failure code from `features/slice-it/engine/verify.server.ts#VerifyFailure`.
   verifyReason   String?   @db.VarChar(32)
   /// The score the re-judge derived, when it disagreed.
   verifiedScore  Int?
@@ -120,7 +120,7 @@ question about one key.
 
 ## 5. `LeaderboardEntry` deliberately does not carry `replayId`
 
-**Owner:** `lib/slice-it/types.ts` (not this agent's file — noted as a decision,
+**Owner:** `features/slice-it/engine/types.ts` (not this agent's file — noted as a decision,
 not a request).
 
 The leaderboard panel asks a second endpoint which of the rows on screen have a

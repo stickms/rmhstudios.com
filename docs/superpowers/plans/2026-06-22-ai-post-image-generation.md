@@ -330,7 +330,7 @@ git commit -m "feat: derive text-to-image prompts from post text via DeepSeek"
 - Modify: `.env.example` (document `XAI_API_KEY`, `XAI_IMAGE_MODEL`, `XAI_IMAGE_ENABLED`)
 
 **Interfaces:**
-- Consumes: `generateImagePrompt` (Task 2), `tryConsumeImageBudget` (Task 1), `validateImageBuffer`/`detectImageExt` (`@/lib/slice-it/upload-validation`), `putObject` (`@/lib/storage/s3.server`), `feedImageKey`/`feedImageUrl`/`contentTypeForFilename` (`@/lib/storage/keys`).
+- Consumes: `generateImagePrompt` (Task 2), `tryConsumeImageBudget` (Task 1), `validateImageBuffer`/`detectImageExt` (`@features/slice-it/engine/upload-validation`), `putObject` (`@/lib/storage/s3.server`), `feedImageKey`/`feedImageUrl`/`contentTypeForFilename` (`@/lib/storage/keys`).
 - Produces:
   - `isImageGenConfigured(): boolean` — `XAI_API_KEY` set AND `XAI_IMAGE_ENABLED !== 'false'`.
   - `generatePostImage(opts: { text: string; userId: string }): Promise<string | null>` — a `feedImageUrl` on success, `null` on any failure. Never throws.
@@ -459,7 +459,7 @@ Create `lib/rmhark-ai/image.server.ts`:
 import OpenAI from 'openai';
 import { generateImagePrompt } from './generate.server';
 import { tryConsumeImageBudget } from './image-budget.server';
-import { validateImageBuffer, detectImageExt } from '@/lib/slice-it/upload-validation';
+import { validateImageBuffer, detectImageExt } from '@features/slice-it/engine/upload-validation';
 import { putObject } from '@/lib/storage/s3.server';
 import { feedImageKey, feedImageUrl, contentTypeForFilename } from '@/lib/storage/keys';
 

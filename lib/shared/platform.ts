@@ -160,7 +160,7 @@ export function setHapticsEnabled(enabled: boolean): void {
 /**
  * 0–1. Defaults to 0.7 rather than 1: full-strength `vibrate()` reads as
  * harsh on most phones, and the judgement-scaled durations in
- * `lib/slice-it/engine.ts` are already tuned against that default.
+ * `features/slice-it/engine/engine.ts` are already tuned against that default.
  */
 export function hapticsIntensity(): number {
   if (typeof localStorage === 'undefined') return 0.7;

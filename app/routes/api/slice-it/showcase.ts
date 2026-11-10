@@ -10,9 +10,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/slice-it/slice-it.contract';
+import * as C from '@features/slice-it/engine/slice-it.contract';
 import { CACHE_POLICY } from '@/lib/api/cache-policies';
-import { sliceItShowcaseStats } from '@/lib/slice-it/showcase.server';
+import { sliceItShowcaseStats } from '@features/slice-it/engine/showcase.server';
 
 const QueryZ = z.object({ userId: z.string().min(1).max(64) });
 

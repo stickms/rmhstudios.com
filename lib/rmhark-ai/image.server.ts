@@ -12,7 +12,7 @@
 import OpenAI from 'openai';
 import { generateImagePrompt } from './generate.server';
 import { tryConsumeImageBudget } from './image-budget.server';
-import { validateImageBuffer, detectImageExt } from '@/lib/slice-it/upload-validation';
+import { validateImageBuffer, detectImageExt } from '@features/slice-it/engine/upload-validation';
 import { putObject } from '@/lib/storage/s3.server';
 import {
   feedImageKey,

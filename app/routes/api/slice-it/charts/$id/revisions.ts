@@ -12,7 +12,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import type { ChartRevisionDto } from '@/lib/slice-it/editor/api-schemas';
+import type { ChartRevisionDto } from '@features/slice-it/engine/editor/api-schemas';
 
 const RevisionQueryZ = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),

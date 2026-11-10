@@ -158,7 +158,7 @@ For each: menu, pause and HUD chrome are in scope; play-fields stay excluded (`d
 | G-11 Neon Driftway (`/neon-driftway`) | 1 role file, 3 ui files; touch controls scope off | none found | T6 | Sweep | |
 | G-12 Nightrail (`/nightrail`) | HUD `NightrailHud.tsx:212`, field `playfield`, touch controls scope off | none found | T6 | Sweep | |
 | G-13 RMHbox (see A-05) | | | | | |
-| G-14 Slice It! (`/slice-it`, `artist.$key`, `edit.$songId`, `player.$handle`) | **Own scheme** `.slice-theme` / `.slice-tokens` (`components/slice-it/slice-it.css`); route wrapper `data-jelly-scope="off"` (`app/routes/slice-it.tsx:14`); 3 role files, 24 ui files | `slice-it.css:433-434` `.slice-theme :is(.jelly-flow, .jelly-haze-canvas, canvas[data-liquid-glass]) { display: none }` (a; Fwd for T2, see section 3); `slice-it.css:240-310` `html.perf-lite … [data-jelly-rest='flat']` rules (c, with U-07) | T2, T6 | Sweep (menu, results), Shot | |
+| G-14 Slice It! (`/slice-it`, `artist.$key`, `edit.$songId`, `player.$handle`) | **Own scheme** `.slice-theme` / `.slice-tokens` (`features/slice-it/ui/slice-it.css`); route wrapper `data-jelly-scope="off"` (`app/routes/slice-it.tsx:14`); 3 role files, 24 ui files | `slice-it.css:433-434` `.slice-theme :is(.jelly-flow, .jelly-haze-canvas, canvas[data-liquid-glass]) { display: none }` (a; Fwd for T2, see section 3); `slice-it.css:240-310` `html.perf-lite … [data-jelly-rest='flat']` rules (c, with U-07) | T2, T6 | Sweep (menu, results), Shot | |
 | G-15 Synapse Storm (`/synapse-storm`) | Own scheme (2 css); `HUD` hud zone, `GameBoard` playfield, `PuzzleCard` scope off | none found | T6 | Sweep | |
 | G-16 Temple of Joy (`/temple-of-joy`) | Own WebGL globes (`TempleGlobes.tsx`, playfield), `TempleHud` hud, `bowl/BowlOverlay.tsx:490` opts out | none found | T6 | Sweep | |
 | G-17 VELUM2099 (`/velum2099`) | 1 role file, 1 ui file, 2 css | none found | T6 | Sweep | |
@@ -261,7 +261,7 @@ item (item 38).
 | 29 | `components/shared/app-theme.css:365,636` | comments naming `data-scrolling`, `[data-jelly-flow='on']` | (a) | |
 | 30 | `components/radial/radial.css:4009-4010` | `.radial-topbar__signin[data-liquid-canvas='on']`, `.radial-topbar__search[data-liquid-canvas='on']` | (a) | Hairline goes clear only while the engine draws the rim. After T1 the hairline always shows; check in R-01. |
 | 31 | `components/creator-studio/storefront.css:654` | `.store-spot__link[data-liquid-canvas='on']` | (a) | Same as 30. |
-| 32 | `components/slice-it/slice-it.css:433-434` | `.slice-theme :is(.jelly-flow, .jelly-haze-canvas, canvas[data-liquid-glass]), .slice-tokens :is(…) { display: none }` | (a) | Dead today. Fwd for T2 (section 3, D-F3). |
+| 32 | `features/slice-it/ui/slice-it.css:433-434` | `.slice-theme :is(.jelly-flow, .jelly-haze-canvas, canvas[data-liquid-glass]), .slice-tokens :is(…) { display: none }` | (a) | Dead today. Fwd for T2 (section 3, D-F3). |
 | 33 | `components/steam/steam.css:1340` | `.stm-legacy .jelly-flow, .stm-legacy canvas { display: none !important }` | (a) | Fwd for T2/T3 (D-F4). |
 | 34 | `app/jelly-arcs.css:6` | comment: `<canvas class="jelly-arc-layer" … data-liquid-glass="off" data-jelly-arcs="off">` | (a) | |
 | 35 | `app/globals.css:3740-3767` | `:where(*:not([data-scrolling]))` scrollbar rules | (a) | `data-scrolling` is owned by `lib/scrollbar-reveal.ts`, not the engine. Unaffected. |
@@ -300,7 +300,7 @@ Engine- or physics-stamped names that outside code reads. Included because "only
 
 | # | Reference | Exact text | Class | Note |
 | --- | --- | --- | --- | --- |
-| 51 | `app/liquid-glass.css:311,316`; `components/slice-it/slice-it.css:240-241,298-310`; `components/ui/button.tsx:107` (writes it) | `[data-jelly-rest='flat']` | (c) | Read by the engine to keep a flat button slab-less until touched. After T1 the attribute only drives the `perf-lite`/print opaque affordance. `button.tsx:16` comment goes stale. Check the look of each flat variant (U-07). |
+| 51 | `app/liquid-glass.css:311,316`; `features/slice-it/ui/slice-it.css:240-241,298-310`; `components/ui/button.tsx:107` (writes it) | `[data-jelly-rest='flat']` | (c) | Read by the engine to keep a flat button slab-less until touched. After T1 the attribute only drives the `perf-lite`/print opaque affordance. `button.tsx:16` comment goes stale. Check the look of each flat variant (U-07). |
 | 52 | `components/radial/RadialShell.tsx:209`, `ui/jelly-group.tsx:45`, `ui/selection-bar.tsx:79` | `data-jelly-press-through` | (c) | Read only by `lib/jelly/physics.ts:656-659` to stop a container squashing when an inner control is pressed. CSS `:active` matches every ancestor; T3 must replace this semantic (D-F5). Task 8: retired; the setters (and the scroller pill) carry `data-jelly-press-body`, a press body that squashes as one for any member (`app/jelly-material.css` §8). |
 | 53 | `app/jelly-material.css:513`, `app/liquid-glass.css:145,236,275` | `.liquid-glass-canvas`, `.liquid-light`, `[data-jelly-body]` | (a) | `.liquid-glass-canvas` is engine-only. `.liquid-light` is injected by `lib/liquid/runtime.ts` (W-12) and is not removed by any task. |
 | 54 | `lib/liquid/runtime.ts:93` (inside `lib/liquid`, listed because it survives) | `host.matches('[data-liquid-canvas],[data-liquid-layer]')` | (c) | Fallback light skips engine-drawn hosts; after T1 it lights every host (W-12, D-C5). |

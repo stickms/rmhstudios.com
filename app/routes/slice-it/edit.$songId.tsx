@@ -18,7 +18,7 @@ import { useTranslation } from 'react-i18next';
  * `/discord/*` keeps the Discord SDK out of the shared bundle.
  */
 const ChartEditor = lazy(() =>
-  import('@/components/slice-it/editor/ChartEditor').then((m) => ({ default: m.ChartEditor })),
+  import('@features/slice-it/ui/editor/ChartEditor').then((m) => ({ default: m.ChartEditor })),
 );
 
 export const Route = createFileRoute('/slice-it/edit/$songId')({

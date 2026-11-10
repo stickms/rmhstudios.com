@@ -10,7 +10,7 @@ legitimate run. §2-3 are cosmetic/completeness gaps that degrade gracefully.
 
 ---
 
-## 1. `notesResolved` can now exceed `chartNotes` for an honest LN run — `app/routes/api/slice-it/score.ts`, `lib/slice-it/integrity.ts`
+## 1. `notesResolved` can now exceed `chartNotes` for an honest LN run — `app/routes/api/slice-it/score.ts`, `features/slice-it/engine/integrity.ts`
 
 **What changed.** Before G5, a hold's release was scored but never counted:
 `submitRelease` touched `score` only. After G5 it is judged through the same
@@ -26,7 +26,7 @@ HUD's "misses left for grade X" denominator stays correct. That fix is local
 to `engine.ts`, which this agent owns.
 
 **What is not fixed, and cannot be from this agent's files.**
-`checkConsistency` in `lib/slice-it/integrity.ts` (not owned) rejects a
+`checkConsistency` in `features/slice-it/engine/integrity.ts` (not owned) rejects a
 submission outright when:
 
 ```ts
@@ -78,7 +78,7 @@ line keeps compiling either way — see the constant's doc comment.
 
 ---
 
-## 2. Two new modifiers, no pool classification — `lib/slice-it/pools.ts`
+## 2. Two new modifiers, no pool classification — `features/slice-it/engine/pools.ts`
 
 Not owned by this agent. `Modifiers.lenientTiming` and `Modifiers.perfectionist`
 are both new; neither is in `pools.ts`'s `CHALLENGE_MODIFIERS`, and
@@ -97,7 +97,7 @@ run into `standard` — comparable with a stock-window run, which is the thing
 `CHALLENGE_MODIFIERS` exists to prevent.
 
 ```ts
-// lib/slice-it/pools.ts
+// features/slice-it/engine/pools.ts
 export const CHALLENGE_MODIFIERS = [
   'invisible', 'spin', 'strictTiming', 'oneTrack', 'switching', 'bombs',
   'lenientTiming',
@@ -120,7 +120,7 @@ migration's `CASE` needs the matching change — the file's own comment says
 "Change one, change the other."
 
 ```ts
-// lib/slice-it/pools.ts, poolOfStoredRow
+// features/slice-it/engine/pools.ts, poolOfStoredRow
 if (
   modifiers.suddenDeath === true ||
   modifiers.perfectionist === true ||   // ← add
@@ -135,7 +135,7 @@ if (
 Until this lands, a historical `perfectionist` row backfilled from that SQL
 (not the live `poolOf` path) would be misclassified as `none` — mixed with
 completely clean runs despite carrying the largest single-modifier bonus in
-the game. `lib/slice-it/__tests__/pools.test.ts` already pins `poolOf` and
+the game. `features/slice-it/engine/__tests__/pools.test.ts` already pins `poolOf` and
 `poolOfStoredRow` together case by case; add a case for `perfectionist` there
 when this lands.
 
@@ -160,7 +160,7 @@ runtime, so wiring up Sudden Death later needs no change to the exclusion —
 only a second branch in `checkFailConditions`:
 
 ```ts
-// lib/slice-it/engine.ts, checkFailConditions — the shape it would take
+// features/slice-it/engine/engine.ts, checkFailConditions — the shape it would take
 if (modifiers.suddenDeath && result === 'MISS') this.fail('suddenDeath');
 ```
 
@@ -189,7 +189,7 @@ generation/upload time, at rest positions between existing notes. But
 `modifiers.bombs` is true, at play time:
 
 ```ts
-// lib/slice-it/chart.ts, applyChartModifiers — current runtime gate
+// features/slice-it/engine/chart.ts, applyChartModifiers — current runtime gate
 if (modifiers.bombs) {
   out = out.map((slice) => {
     if (slice.type === 'SWITCH' || slice.type === 'LONG') return slice;
@@ -246,7 +246,7 @@ Implemented and backed out in the same session. The code worked; it broke three
 things that are not bugs, and each is a design decision rather than a fix.
 
 **1. The charter guarantees a GLOBAL minimum gap, not a per-lane one.**
-`lib/slice-it/__tests__/beatmap.test.ts` ("never places two notes closer than
+`features/slice-it/engine/__tests__/beatmap.test.ts` ("never places two notes closer than
 the tier gap") asserts it across every note in a tier regardless of lane, and it
 predates this branch. A chord is two notes at gap zero by definition, so the
 feature and the invariant cannot both hold. Weakening a pre-existing contract to

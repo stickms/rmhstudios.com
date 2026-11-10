@@ -1,7 +1,7 @@
 /**
  * Slice It — the ranked pool's moderation surface (`R10`).
  *
- * `promoteToRanked()` and `demote()` in `lib/slice-it/ranking.server.ts` are the
+ * `promoteToRanked()` and `demote()` in `features/slice-it/engine/ranking.server.ts` are the
  * two human decisions in R10 and, until this route existed, they had no caller
  * at all. Qualification is automatic (the score route evaluates it on every
  * submission), so charts accumulated in `qualified` and stopped: nothing was
@@ -47,7 +47,7 @@ import {
   inspectCharts,
   promoteToRanked,
   type QualificationReport,
-} from '@/lib/slice-it/ranking.server';
+} from '@features/slice-it/engine/ranking.server';
 
 const RankingQueryZ = z.object({
   /** Which pool state to list. Defaults to the one awaiting a decision. */

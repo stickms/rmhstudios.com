@@ -19,6 +19,7 @@
 import type { Server, Socket } from 'socket.io';
 import altair from '../../features/altair/server';
 import balatro from '../../features/balatro/server';
+import sliceIt from '../../features/slice-it/server';
 
 const SHARED_SLOT = 'shared';
 
@@ -39,7 +40,7 @@ export interface FeatureSocketServer {
   onDisconnect?(io: Server, socket: Socket): void;
 }
 
-export const FEATURE_SOCKET_SERVERS: readonly FeatureSocketServer[] = [altair, balatro];
+export const FEATURE_SOCKET_SERVERS: readonly FeatureSocketServer[] = [altair, balatro, sliceIt];
 
 const inSlot = (f: FeatureSocketServer, slot: string): boolean => (f.slot ?? SHARED_SLOT) === slot;
 

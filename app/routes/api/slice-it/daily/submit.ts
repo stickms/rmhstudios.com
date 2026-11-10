@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/slice-it/slice-it.contract';
-import { submitDailyEntry } from '@/lib/slice-it/daily.server';
+import * as C from '@features/slice-it/engine/slice-it.contract';
+import { submitDailyEntry } from '@features/slice-it/engine/daily.server';
 
 /**
  * S1 — spend the day's one ranked attempt.

@@ -10,7 +10,7 @@ does instead, and what that costs.
 
 ---
 
-## 1. `lib/slice-it/engine.ts` — `new GameEngine({ submitting: false })`
+## 1. `features/slice-it/engine/engine.ts` — `new GameEngine({ submitting: false })`
 
 **Why.** §10 writes the playtest engine as
 `new GameEngine({ submitting: false })`, "a flag that makes that structural
@@ -23,7 +23,7 @@ owned by another agent this wave.
 throw — or return null — for a non-submitting run.
 
 **What the editor does instead.** Three layers in
-`lib/slice-it/editor/playtest.ts`, none of which needs the engine to change:
+`features/slice-it/engine/editor/playtest.ts`, none of which needs the engine to change:
 
 1. The map is minted with an `editor:` id and `assertSubmittable(mapId)` throws
    on one.
@@ -71,7 +71,7 @@ method would also let the replay viewer play audio, which is the larger win.
 
 ---
 
-## 3. `lib/slice-it/beatmap/charter.ts` — a density parameter on `buildCharts`
+## 3. `features/slice-it/engine/beatmap/charter.ts` — a density parameter on `buildCharts`
 
 **Why.** §8's `GenerateOptions` carries `densityBias: -2…+2` ("the C10 density
 bias; 0 is the generator's own budget"). `buildCharts(notes, duration, seed)`
@@ -91,7 +91,7 @@ editor's density slider silently changes meaning with it.
 
 ---
 
-## 4. `lib/slice-it/beatmap/index.ts` — persist the onset pool, not just the chart
+## 4. `features/slice-it/engine/beatmap/index.ts` — persist the onset pool, not just the chart
 
 **Why.** §8.2 says the editor re-charts in the browser "from cached analysis
 artefacts", and §6 (phase 6) wants the rejected onset candidates for the
@@ -101,7 +101,7 @@ grid, but not the quantised onset pool the charter selected from.
 **Change.** Add the pool (time, strength, lowRatio, highRatio, sustain per onset)
 to the stored analysis blob, behind the existing `analysisVersion` bump.
 
-**What the editor does instead.** `lib/slice-it/editor/artefacts.ts` reconstructs
+**What the editor does instead.** `features/slice-it/engine/editor/artefacts.ts` reconstructs
 a pool from the **Expert** chart in `analysisData` (Expert is the densest tier and
 every other tier is derived from it), assigning each note a strength from its
 stored quantisation and a lane bias from the lane the generator chose, then runs

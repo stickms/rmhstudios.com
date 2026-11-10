@@ -7,7 +7,7 @@ import { MEDIA_MAX_BYTES } from '@/lib/media/policy';
 import { hasApiImageUpload } from '@/lib/entitlements';
 import { keyedLimit, checkDailyUploadQuota } from '@/lib/media/quota.server';
 import { optimizeImage } from '@/lib/image-optimize';
-import { detectImageExt } from '@/lib/slice-it/upload-validation';
+import { detectImageExt } from '@features/slice-it/engine/upload-validation';
 
 const MAX_DIMENSION = 2048;
 const WEBP_QUALITY = 82;

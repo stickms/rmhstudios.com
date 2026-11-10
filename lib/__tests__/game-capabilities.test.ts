@@ -33,12 +33,12 @@ function readSources(dirs: string[]): string {
 
 /**
  * Games whose code does not live at `lib/<id>` / `components/<id>`. Slice It! is
- * the whole of the shared `game/` module — `components/slice-it` holds only a
+ * the whole of the shared `game/` module — `features/slice-it/ui` holds only a
  * wrapper and a stylesheet — so the convention would check the wrong files and
  * report a game with a full multiplayer lobby as having none.
  */
 const SOURCE_OVERRIDES: Record<string, string[]> = {
-  'slice-it': ['lib/game', 'components/game', 'lib/slice-it', 'components/slice-it'],
+  'slice-it': ['lib/game', 'components/game', 'features/slice-it/engine', 'features/slice-it/ui'],
   // The Valve games share one browser engine: the SP simulation, the game client and the HUD.
   'half-life-2': ['lib/sp-game', 'lib/tf2-game/client', 'components/sp-game', 'components/tf2-game'],
   portal: ['lib/sp-game', 'lib/tf2-game/client', 'components/sp-game', 'components/tf2-game'],

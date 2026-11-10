@@ -15,16 +15,16 @@ import {
   SONG_TITLE_MAX,
   TOTAL_STORAGE_LIMIT_BYTES,
   UPLOAD_BODY_MAX_BYTES,
-} from '@/lib/slice-it/constants';
+} from '@features/slice-it/engine/constants';
 import { estimatedPcmBytes, probeAudioDuration } from '@/lib/audio/probe';
-import { UploadFieldsZ } from '@/lib/slice-it/api-schemas';
-import { validateAudioBuffer, validateImageBuffer } from '@/lib/slice-it/upload-validation';
-import { deleteSongAssets, storeSongAudio, storeSongCover } from '@/lib/slice-it/songs.server';
-import { artistKeyOf } from '@/lib/slice-it/artist';
-import { createAlbumPack } from '@/lib/slice-it/packs.server';
-import { decodedToAudioLike, type AudioLike, type generateBeatmap } from '@/lib/slice-it/beatmap';
-import { enqueueAnalysis } from '@/lib/slice-it/analysis-queue.server';
-import { recordSongUploaded } from '@/lib/slice-it/progression.server';
+import { UploadFieldsZ } from '@features/slice-it/engine/api-schemas';
+import { validateAudioBuffer, validateImageBuffer } from '@features/slice-it/engine/upload-validation';
+import { deleteSongAssets, storeSongAudio, storeSongCover } from '@features/slice-it/engine/songs.server';
+import { artistKeyOf } from '@features/slice-it/engine/artist';
+import { createAlbumPack } from '@features/slice-it/engine/packs.server';
+import { decodedToAudioLike, type AudioLike, type generateBeatmap } from '@features/slice-it/engine/beatmap';
+import { enqueueAnalysis } from '@features/slice-it/engine/analysis-queue.server';
+import { recordSongUploaded } from '@features/slice-it/engine/progression.server';
 
 /**
  * Song upload.

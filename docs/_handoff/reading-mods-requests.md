@@ -57,7 +57,7 @@ Modifiers-shaped chart rewrites, EXCEPT mirror is not a `Modifiers` field (see
 `store.modifiers`:
 
 ```ts
-// lib/slice-it/engine.ts, inside loadMap, after `const modifiers = store.modifiers;`
+// features/slice-it/engine/engine.ts, inside loadMap, after `const modifiers = store.modifiers;`
 const prepared = prepareChart(map, modifiers);
 this.slices = (store.mirror && !modifiers.oneTrack ? applyMirror(prepared, 2) : prepared)
   .sort((a, b) => a.time - b.time);

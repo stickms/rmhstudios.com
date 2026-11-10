@@ -4,25 +4,25 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { recordGamePlay } from '@/lib/quests/engine.server';
 import { reportGameResult } from '@/lib/game/results.server';
-import { ScoreSubmissionZ } from '@/lib/slice-it/api-schemas';
-import { RANKED_MIN_SPEED } from '@/lib/slice-it/constants';
-import { applyExclusions, unrankedReason } from '@/lib/slice-it/modifiers';
-import { maxPlausibleCombo, maxPlausibleScore } from '@/lib/slice-it/scoring';
+import { ScoreSubmissionZ } from '@features/slice-it/engine/api-schemas';
+import { RANKED_MIN_SPEED } from '@features/slice-it/engine/constants';
+import { applyExclusions, unrankedReason } from '@features/slice-it/engine/modifiers';
+import { maxPlausibleCombo, maxPlausibleScore } from '@features/slice-it/engine/scoring';
 import {
   checkConsistency,
   checkElapsed,
   checkTiming,
   mergeVerdicts,
   type IntegrityVerdict,
-} from '@/lib/slice-it/integrity';
-import { verifyRunToken } from '@/lib/slice-it/run-token.server';
-import { poolOf } from '@/lib/slice-it/pools';
-import { evaluateQualification, toRankStatus } from '@/lib/slice-it/ranking.server';
-import { scheduleSkillRecompute } from '@/lib/slice-it/rating.server';
-import { gradeFor } from '@/lib/slice-it/scoring';
-import { getPracticeStreak, reportSliceItRun } from '@/lib/slice-it/progression.server';
-import type { Difficulty } from '@/lib/slice-it/constants';
-import type { SuspicionCode } from '@/lib/slice-it/integrity';
+} from '@features/slice-it/engine/integrity';
+import { verifyRunToken } from '@features/slice-it/engine/run-token.server';
+import { poolOf } from '@features/slice-it/engine/pools';
+import { evaluateQualification, toRankStatus } from '@features/slice-it/engine/ranking.server';
+import { scheduleSkillRecompute } from '@features/slice-it/engine/rating.server';
+import { gradeFor } from '@features/slice-it/engine/scoring';
+import { getPracticeStreak, reportSliceItRun } from '@features/slice-it/engine/progression.server';
+import type { Difficulty } from '@features/slice-it/engine/constants';
+import type { SuspicionCode } from '@features/slice-it/engine/integrity';
 
 /**
  * Score submission.
@@ -147,7 +147,7 @@ export const Route = createFileRoute('/api/slice-it/score')({
           // ── Integrity ─────────────────────────────────────────────────────
           //
           // Three further checks, and the honest framing for all of them is in
-          // `lib/slice-it/integrity.ts`: this game judges hits on the client
+          // `features/slice-it/engine/integrity.ts`: this game judges hits on the client
           // because it has to, so none of this stops someone determined. It
           // stops the console one-liner, and it makes a bot visible.
           const verdict = mergeVerdicts(

@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 
 import { defineHandler } from '@/lib/api/handler.server';
-import { chartTimingPopulation, reviewQueue } from '@/lib/slice-it/review.server';
+import { chartTimingPopulation, reviewQueue } from '@features/slice-it/engine/review.server';
 
 /**
  * R7 — the moderator's view of what integrity flagged.

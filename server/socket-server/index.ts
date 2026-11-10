@@ -21,7 +21,6 @@ import { attachRedisAdapter } from '../shared/redis-adapter';
 import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
 
 // ─── Game Handlers ──────────────────────────────────────────────
-import { registerSliceItHandlers, handleSliceItDisconnect } from './handlers/slice-it';
 import {
   registerNeonDriftwayHandlers,
   handleNeonDriftwayDisconnect,
@@ -422,7 +421,7 @@ io.on('connection', (socket) => {
   logger.info({ event: 'connection', userId, userName, socketId: socket.id });
 
   // Register all game handlers
-  registerSliceItHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'slice-it');
   registerNeonDriftwayHandlers(io, socket);
   registerSynapseStormHandlers(io, socket);
   registerRmhTypeHandlers(io, socket);
@@ -476,7 +475,7 @@ io.on('connection', (socket) => {
     void handleGroupCallDisconnect(io, socket);
     handleControllerDisconnect(io, socket);
     if (!shuttingDown) handleSynapseStormDisconnect(io, socket);
-    handleSliceItDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'slice-it');
     if (!shuttingDown) handleNeonDriftwayDisconnect(io, socket);
     if (!shuttingDown) handleRmhTypeDisconnect(io, socket);
     handleRmhStudyDisconnect(io, socket);

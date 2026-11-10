@@ -6,12 +6,12 @@ From the wave implementing `X8, X9, X10` of
 Everything below is a change in a file this agent does **not** own. None of it
 is required for the shipped work to function — each item is written so the
 feature degrades rather than breaks without it, and the degradation is stated.
-The client side (`components/slice-it/SliceItDiscordActivity.tsx`) already
+The client side (`features/slice-it/ui/SliceItDiscordActivity.tsx`) already
 does its half of every item here; these are the other halves.
 
 ---
 
-## 1. `server/socket-server/handlers/slice-it.ts` — a guest seat, keyed by socket
+## 1. `features/slice-it/server/handlers.ts` — a guest seat, keyed by socket
 
 **Why.** `X10`. `identity()` requires `socket.data.userId`, which the hub's
 auth middleware only ever sets from a validated Better Auth session token
@@ -24,7 +24,7 @@ just unauthenticated, it is unrepresentable.
 
 **Change**, in three parts:
 
-1. `lib/slice-it/net/events.ts` — `LobbyPlayer.userId` becomes
+1. `features/slice-it/engine/net/events.ts` — `LobbyPlayer.userId` becomes
    `string | null`, and a seat gets an optional `guest` block:
 
    ```ts
@@ -44,7 +44,7 @@ just unauthenticated, it is unrepresentable.
    `LobbyPlayerZ` needs the matching relaxation (`userId: z.string().nullable()`,
    `guest: z.object({ name: z.string(), avatarUrl: z.string().nullable() }).optional()`).
 
-2. `server/socket-server/handlers/slice-it.ts` — a second identity path for a
+2. `features/slice-it/server/handlers.ts` — a second identity path for a
    socket that authenticated via Discord instead of a site session (see item 3
    below for how that token reaches the hub at all), and the seat key changes
    from "the userId" to "the userId, or a synthetic guest key that does not
@@ -129,7 +129,7 @@ special-casing, same as before this wave.
 
 ---
 
-## 3. `server/socket-server/handlers/slice-it.ts` — `slice:create` should accept a preferred code
+## 3. `features/slice-it/server/handlers.ts` — `slice:create` should accept a preferred code
 
 **Why.** `X9`. `SliceItDiscordActivity.tsx` derives a stable 6-character code
 from `discord.channelId` so a voice channel's lobby needs no code typed. But
@@ -146,10 +146,10 @@ practice today: the launcher gets a working lobby; everyone else sits in
 honoured when free:
 
 ```ts
-// lib/slice-it/net/events.ts
+// features/slice-it/engine/net/events.ts
 'slice:create': { c2s: LobbySettingsPatchZ.extend({ code: CodeZ.optional() }) },
 
-// server/socket-server/handlers/slice-it.ts, createLobby()
+// features/slice-it/server/handlers.ts, createLobby()
 function createLobby(host, isPublic: boolean, preferredCode?: string): Lobby | null {
   const code =
     preferredCode && preferredCode.length === LOBBY_CODE_LENGTH && !lobbies.has(preferredCode)

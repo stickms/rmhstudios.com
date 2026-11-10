@@ -3,10 +3,10 @@ import { z } from 'zod';
 
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { DIFFICULTIES, INPUT_COOLDOWN_MS } from '@/lib/slice-it/constants';
-import { chartHashOf } from '@/lib/slice-it/editor/hash.server';
-import { uuidv7 } from '@/lib/slice-it/editor/uuid';
-import { ImportError, importChart } from '@/lib/slice-it/import';
+import { DIFFICULTIES, INPUT_COOLDOWN_MS } from '@features/slice-it/engine/constants';
+import { chartHashOf } from '@features/slice-it/engine/editor/hash.server';
+import { uuidv7 } from '@features/slice-it/engine/editor/uuid';
+import { ImportError, importChart } from '@features/slice-it/engine/import';
 
 /**
  * C9 — import a chart from osu!mania, StepMania or Clone Hero.

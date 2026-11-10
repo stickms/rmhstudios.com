@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, BadgeCheck, Music4, PenLine } from 'lucide-react';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { buildCanonical, buildMeta } from '@/lib/seo';
-import { playerProfile, type PlayerProfile } from '@/lib/slice-it/player.server';
-import { gradeFor } from '@/lib/slice-it/scoring';
-import type { Lamp } from '@/lib/slice-it/types';
+import { playerProfile, type PlayerProfile } from '@features/slice-it/engine/player.server';
+import { gradeFor } from '@features/slice-it/engine/scoring';
+import type { Lamp } from '@features/slice-it/engine/types';
 
 /**
  * A Slice It player page — where every leaderboard row now goes (`X11`/`X12`).

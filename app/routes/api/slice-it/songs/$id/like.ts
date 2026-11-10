@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/slice-it/slice-it.contract';
+import * as C from '@features/slice-it/engine/slice-it.contract';
 import { prisma } from '@/lib/prisma.server';
 
 /**

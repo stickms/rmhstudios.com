@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { regenerateSong } from '@/lib/slice-it/regen.server';
+import { regenerateSong } from '@features/slice-it/engine/regen.server';
 
 /**
  * C8 — re-chart a song with the current generator.

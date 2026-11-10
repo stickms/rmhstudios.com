@@ -23,7 +23,7 @@ and deploy pipeline see [`architecture.md`](./architecture.md) §2–3 and
 ```bash
 pnpm check:consistency        # the commit gate (guard tests + lint + tsc + docs freshness)
 pnpm test                     # main suite (vitest.config.ts); measure with `time pnpm test`
-pnpm test lib/slice-it        # one file or directory
+pnpm test features/slice-it/engine        # one file or directory
 pnpm test:watch               # watch mode
 pnpm test:coverage            # V8 coverage → text + coverage/index.html + lcov
 pnpm test:epic                # epic content-build suite (needs Chromium)
@@ -161,7 +161,7 @@ Everything whose worst case is **"the game plays wrong"** went. In full:
 
 | Gone                                                                                                                                                                                                                   | Was                                                                          |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `lib/slice-it/**` (49 of 58) and `lib/slice-it/editor/**`                                                                                                                                                              | judgement windows, note vocabulary, beatmaps, FFT, chart-editor tools        |
+| `features/slice-it/engine/**` (49 of 58) and `features/slice-it/engine/editor/**`                                                                                                                                                              | judgement windows, note vocabulary, beatmaps, FFT, chart-editor tools        |
 | `testing/rmhbox/phase-1…6` (49 of 57)                                                                                                                                                                                  | lobby FSM, voting, per-minigame rules, chat, spectator flow                  |
 | `lib/cookgame`, `lib/kowloon-knockout`, `lib/dream-rift`, `lib/temple-of-joy`, `lib/versecraft/gen`, `lib/kaikai-debt`, `lib/laundry-sort`, `lib/massive-march`, `lib/isleworks`, `features/nightrail/engine`, `lib/daily-puzzles` | whole gameplay suites — simulation, scoring curves, world/content generation |
 | `lib/__tests__/void-breaker-*` (7), `altair-enemy-navigation`, `desk-*` (3), `speedrun`                                                                                                                                | per-game logic that happened to live in the shared directory                 |

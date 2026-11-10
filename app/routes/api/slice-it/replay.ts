@@ -31,7 +31,7 @@
  * payload against the shared schema, enforces the 256 KB cap, and re-simulates
  * the log's internal consistency. The deeper check — re-judging every input
  * against the real notes — runs afterwards and off the request path (`R8`, see
- * `lib/slice-it/verify.server.ts`).
+ * `features/slice-it/engine/verify.server.ts`).
  */
 
 import { createFileRoute } from '@tanstack/react-router';
@@ -40,9 +40,9 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { sliceItReplaySchema } from '@/lib/game/replay';
 import { ReplayError, saveReplay } from '@/lib/replays.server';
-import { poolOf } from '@/lib/slice-it/pools';
-import { modsFromReplay } from '@/lib/slice-it/replay';
-import { scheduleVerification } from '@/lib/slice-it/verify.server';
+import { poolOf } from '@features/slice-it/engine/pools';
+import { modsFromReplay } from '@features/slice-it/engine/replay';
+import { scheduleVerification } from '@features/slice-it/engine/verify.server';
 
 const ReplayUploadZ = z.object({ replay: sliceItReplaySchema });
 

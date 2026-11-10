@@ -10,7 +10,7 @@ This PR implements all remediation items from **SECURITY-AUDIT-REPORT.md** (find
 
 | Change | Details |
 |--------|--------|
-| **Magic-byte validation** | Upload route now uses `lib/slice-it/upload-validation.ts`: audio validated by file signatures (MP3, WAV, OGG, FLAC), covers by image signatures (PNG, JPEG, GIF, WebP). Client MIME and inline size checks removed; limits are 50 MB per audio file, 5 MB per cover per SECURITY.md. |
+| **Magic-byte validation** | Upload route now uses `features/slice-it/engine/upload-validation.ts`: audio validated by file signatures (MP3, WAV, OGG, FLAC), covers by image signatures (PNG, JPEG, GIF, WebP). Client MIME and inline size checks removed; limits are 50 MB per audio file, 5 MB per cover per SECURITY.md. |
 | **Upload rate limit** | 10 uploads per 60 seconds per IP (prefix `slice-upload`). Returns 429 with `Retry-After` when exceeded. |
 | **10 GB total storage** | New optional `Song.fileSizeBytes` (Prisma + migration). Before writing any file, upload route aggregates current total and rejects with 413 if adding the new file would exceed 10 GB. New uploads set `fileSizeBytes`; existing rows are treated as 0 in the sum. |
 | **Path safety** | Stream, cover, and DELETE routes resolve paths with `resolvePathUnder()` so requests cannot escape `db/music` or `db/music/covers`. |

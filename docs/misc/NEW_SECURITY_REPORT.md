@@ -98,7 +98,7 @@ Each finding includes a unique ID, severity rating, affected files with line num
 |---|---|---|
 | SEC-028 | `.env` properly gitignored | Verified: not in git history |
 | SEC-029 | Prisma ORM prevents SQL injection | All DB queries parameterized |
-| SEC-030 | File upload validates via magic bytes | `lib/slice-it/upload-validation.ts` |
+| SEC-030 | File upload validates via magic bytes | `features/slice-it/engine/upload-validation.ts` |
 
 ---
 
@@ -1039,8 +1039,8 @@ The codebase demonstrates good security awareness in several areas:
 | Area | Implementation | File |
 |---|---|---|
 | SQL Injection Prevention | Prisma ORM with parameterized queries throughout | All database operations |
-| File Type Validation | Magic byte verification (not MIME/extension based) | `lib/slice-it/upload-validation.ts:12-30` |
-| Path Traversal Protection | `resolvePathUnder()` validates paths stay within base directory | `lib/slice-it/upload-validation.ts:60-67` |
+| File Type Validation | Magic byte verification (not MIME/extension based) | `features/slice-it/engine/upload-validation.ts:12-30` |
+| Path Traversal Protection | `resolvePathUnder()` validates paths stay within base directory | `features/slice-it/engine/upload-validation.ts:60-67` |
 | Upload Size Limits | Per-user storage caps enforced | `app/api/slice-it/songs/upload/route.ts` |
 | Authentication on Protected Routes | `auth.api.getSession()` checked consistently on most routes | All `app/api/` routes |
 | Socket Input Sanitization | `sanitizeLobbyId()` and `sanitizeUserName()` strip dangerous characters | `server/socket-server.ts:17-24` |

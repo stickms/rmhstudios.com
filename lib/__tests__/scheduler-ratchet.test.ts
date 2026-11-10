@@ -117,7 +117,7 @@ const ALLOWED: Readonly<Record<string, { count: number; reason: string }>> = {
   'server/socket-server/handlers/lights-out.ts': { count: 1, reason: GAME_TICK },
   'server/socket-server/handlers/rmhstudy.ts': { count: 1, reason: HUB_HOUSEKEEPING },
   'server/socket-server/handlers/rmhtype.ts': { count: 3, reason: GAME_TICK },
-  'server/socket-server/handlers/slice-it.ts': { count: 2, reason: GAME_TICK },
+  'features/slice-it/server/handlers.ts': { count: 2, reason: GAME_TICK },
   'server/rmhbox/lobby-manager.ts': { count: 1, reason: HUB_HOUSEKEEPING },
   'server/rmhbox/minigames/base-minigame.ts': { count: 3, reason: GAME_TICK },
   'server/rmhbox/minigames/fact-or-friction/handler.ts': { count: 1, reason: GAME_TICK },

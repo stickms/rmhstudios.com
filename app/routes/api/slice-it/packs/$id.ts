@@ -1,23 +1,23 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/slice-it/packs.contract';
+import * as C from '@features/slice-it/engine/packs.contract';
 import { prisma } from '@/lib/prisma.server';
-import { PackUpdateZ, type PackSummary } from '@/lib/slice-it/packs';
-import type { LibrarySong } from '@/lib/slice-it/library-filters';
+import { PackUpdateZ, type PackSummary } from '@features/slice-it/engine/packs';
+import type { LibrarySong } from '@features/slice-it/engine/library-filters';
 import {
   ownedPack,
   packSelect,
   packSongIds,
   readPack,
   toPackSummary,
-} from '@/lib/slice-it/packs.server';
+} from '@features/slice-it/engine/packs.server';
 import {
   libraryFieldsOf,
   songSelect,
   toSliceSong,
   viewerSongJoins,
-} from '@/lib/slice-it/songs.server';
+} from '@features/slice-it/engine/songs.server';
 
 /**
  * L16 — read, edit and delete one pack.

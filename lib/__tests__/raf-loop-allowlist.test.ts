@@ -253,25 +253,25 @@ const ALLOW = new Set<string>([
   // tab going to the background. A page parked on the analytics panel with
   // nothing moving schedules no frames at all.
   'hooks/useCanvasStage.ts',
-  'components/slice-it/GameCanvas.tsx',
-  'components/slice-it/HUD.tsx',
+  'features/slice-it/ui/GameCanvas.tsx',
+  'features/slice-it/ui/HUD.tsx',
   // The music in the margins of a wide screen. Idle at rest: it only exists while
   // the playfield is locked to its ratio in landscape, it advances motion only while
   // there is sound, and once every bar, the thump and the sparks have settled it
   // stops asking for frames and polls on a 4 Hz TIMER for the music to return — a
   // paused run schedules no animation frames. Hidden tabs poll the same way. The
   // effect cancels the frame and the timer on unmount.
-  'components/slice-it/SideWaves.tsx',
+  'features/slice-it/ui/SideWaves.tsx',
   // Replay playback (R4). Idle at rest: the loop only exists while the replay
   // is *playing* — a paused or finished one paints once and schedules nothing —
   // and it stops itself at the end of the track. `cancelAnimationFrame` on
   // unmount and on every dependency change besides.
-  'components/slice-it/ReplayViewer.tsx',
+  'features/slice-it/ui/ReplayViewer.tsx',
   // Chart editor playtest (C1 phase 4). Idle at rest in the strongest sense:
   // the effect returns before creating a loop unless `playtesting` is true, so
   // an editor sitting open schedules no frames at all. It also stops itself
   // past the end of the song, and cancels on unmount.
-  'components/slice-it/editor/PlaytestControls.tsx',
+  'features/slice-it/ui/editor/PlaytestControls.tsx',
   // Chart editor timeline. Dirty-flag gated — the loop schedules, but returns
   // immediately unless an edit, a seek or a zoom marked the canvas dirty, so a
   // still timeline does no work per frame. Cancels on unmount.
@@ -279,7 +279,7 @@ const ALLOW = new Set<string>([
   // This one is a scheduling-at-rest loop rather than a true idle one; it stays
   // because the alternative (re-arming rAF from every mutation site) puts the
   // scheduling decision in a dozen places instead of one.
-  'components/slice-it/editor/Timeline.tsx',
+  'features/slice-it/ui/editor/Timeline.tsx',
   'components/kowloon-knockout/arena/GameView.tsx',
   'components/laundry-sort/hud/HudReadout.tsx',
   'components/library/AlbumUploader.tsx',
