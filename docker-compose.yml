@@ -503,15 +503,16 @@ services:
       <<: *build-common
       target: runner-full
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-supervisor
-    # Resource limits — starting point (audit §5.2). The AI-loop worker (it used to
-    # bundle the vibe-worker's Chromium too), the runaway shape the audit
-    # flags. Give it the most headroom of the workers, but still cap it.
-    mem_limit: 1536m
-    mem_reservation: 512m
-    cpus: 1.5
+    # Resource limits — starting point (audit §5.2). It now runs only the discord-bot
+    # (the bot-worker and the vibe-worker's Chromium moved to the Node jobs worker, D3),
+    # so it gives back the 512m / 0.5 CPU the jobs worker took for Chromium: the box's
+    # total budget is unchanged. Still capped against an AI-loop runaway.
+    mem_limit: 1024m
+    mem_reservation: 384m
+    cpus: 1.0
     # The heaviest Go background service (AI loops) and the most likely
     # to spike CPU — lowest weight so it can never starve web SSR (initial-load
-    # audit). Its 1.5-core cap still bounds it; the low weight just means when
+    # audit). Its 1-core cap still bounds it; the low weight just means when
     # web and supervisor both want CPU, web wins.
     cpu_shares: 256
     env_file: ${ENV_FILE:-.env.production}
