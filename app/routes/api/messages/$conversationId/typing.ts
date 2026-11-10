@@ -1,18 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { typingApi } from '@/lib/messages/message-actions.contract';
+import { typingBody } from '@/lib/messages/message-actions-schema';
 import { prisma } from '@/lib/prisma.server';
 import { notifyUser } from '@/lib/message-events';
-import { z } from 'zod';
 import { getPairPrivacy } from '@/lib/chat-plus/receipts.server';
-
-const typingSchema = z.object({ isTyping: z.boolean() });
 
 /** POST /api/messages/[conversationId]/typing — broadcast a typing indicator to the other participant */
 
 export const Route = createFileRoute('/api/messages/$conversationId/typing')({
   server: {
     handlers: {
-      POST: defineHandler({ body: typingSchema }, async ({ params, session, body }) => {
+      POST: implement(typingApi, { body: typingBody }, async ({ params, session, body }) => {
         const { conversationId } = params;
         const userId = session.user.id;
 
@@ -42,7 +41,7 @@ export const Route = createFileRoute('/api/messages/$conversationId/typing')({
             conversation.participantOneId,
             conversation.participantTwoId,
           ]);
-          if (privacy.typingHidden) return Response.json({ success: true, suppressed: true });
+          if (privacy.typingHidden) return { success: true as const, suppressed: true as const };
         }
 
         notifyUser(otherUserId, {
@@ -50,7 +49,7 @@ export const Route = createFileRoute('/api/messages/$conversationId/typing')({
           typing: { conversationId, senderId: userId, isTyping: body.isTyping },
         });
 
-        return Response.json({ success: true });
+        return { success: true as const };
       }),
     },
   },

@@ -12,6 +12,12 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import type { ListView } from '@/lib/lists/constants';
+import { api } from '@/lib/contract/client';
+import {
+  addListMemberApi,
+  getUserListsApi,
+  removeListMemberApi,
+} from '@/lib/lists/lists.contract';
 
 type ListRow = ListView & { containsTarget?: boolean };
 
@@ -29,9 +35,7 @@ export function AddToListSheet({ targetUserId }: { targetUserId: string }) {
     setOpen(true);
     if (lists) return;
     try {
-      const res = await fetch(`/api/lists?member=${encodeURIComponent(targetUserId)}`);
-      if (!res.ok) throw new Error('load failed');
-      const data = (await res.json()) as { lists: ListRow[] };
+      const data = await api(getUserListsApi, { query: { member: targetUserId } });
       setLists(data.lists);
     } catch {
       toast.error(t('load-error', { defaultValue: "Couldn't load your lists" }));
@@ -42,12 +46,9 @@ export function AddToListSheet({ targetUserId }: { targetUserId: string }) {
     const adding = !list.containsTarget;
     setPending(list.id);
     try {
-      const res = await fetch(`/api/lists/${list.id}/members`, {
-        method: adding ? 'PUT' : 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: targetUserId }),
-      });
-      if (!res.ok) throw new Error('toggle failed');
+      const input = { params: { id: list.id }, body: { userId: targetUserId } };
+      if (adding) await api(addListMemberApi, input);
+      else await api(removeListMemberApi, input);
       setLists(
         (prev) =>
           prev?.map((l) =>

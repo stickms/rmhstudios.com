@@ -1,12 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { toggleFollowApi } from '@/lib/profile/follow.contract';
 import { prisma } from '@/lib/prisma.server';
 import { toggleFollow } from '@/lib/social/engagement.server';
 
 export const Route = createFileRoute('/api/profile/$id/follow')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        toggleFollowApi,
         { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'follow-toggle' } },
         async ({ params, session }) => {
           const { id: idOrHandle } = params;
@@ -22,7 +24,7 @@ export const Route = createFileRoute('/api/profile/$id/follow')({
           if (result.selfFollow)
             return Response.json({ error: 'Cannot follow yourself' }, { status: 400 });
           if (!result.found) return Response.json({ error: 'User not found' }, { status: 404 });
-          return Response.json({ success: true, following: result.following });
+          return { success: true as const, following: result.following };
         },
       ),
     },

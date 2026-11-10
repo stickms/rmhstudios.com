@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { addListMemberApi, removeListMemberApi } from '@/lib/lists/lists.contract';
 import { listMemberSchema } from '@/lib/lists/constants';
 import { addMember, removeMember, ListError } from '@/lib/lists/lists.server';
 
@@ -10,7 +11,8 @@ import { addMember, removeMember, ListError } from '@/lib/lists/lists.server';
 export const Route = createFileRoute('/api/lists/$id/members')({
   server: {
     handlers: {
-      PUT: defineHandler(
+      PUT: implement(
+        addListMemberApi,
         {
           rateLimit: { limit: 60, windowMs: 60_000, prefix: 'lists-member' },
           body: listMemberSchema,
@@ -27,10 +29,11 @@ export const Route = createFileRoute('/api/lists/$id/members')({
             }
             throw e;
           }
-          return Response.json({ ok: true });
+          return { ok: true as const };
         },
       ),
-      DELETE: defineHandler(
+      DELETE: implement(
+        removeListMemberApi,
         {
           rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:lists/:id.members' },
           body: listMemberSchema,
@@ -47,7 +50,7 @@ export const Route = createFileRoute('/api/lists/$id/members')({
             }
             throw e;
           }
-          return Response.json({ ok: true });
+          return { ok: true as const };
         },
       ),
     },

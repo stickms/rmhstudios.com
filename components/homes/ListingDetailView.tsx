@@ -36,6 +36,9 @@ import {
 } from '@/lib/homes/format';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 import { Spinner } from '@/components/ui/spinner';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { sendMessageApi } from '@/lib/messages/messages.contract';
 
 export function ListingDetailView({ id }: { id: string }) {
   const goBack = useBackOrFallback();
@@ -82,19 +85,20 @@ export function ListingDetailView({ id }: { id: string }) {
     }
     setMessaging(true);
     try {
-      const res = await fetch('/api/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipientId: listing.author.id }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Could not open conversation');
+      const data = await api(sendMessageApi, { body: { recipientId: listing.author.id } });
       navigate({
         to: '/messages/$conversationId',
         params: { conversationId: data.conversationId },
       });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not message the poster');
+      toast.error(
+        serverError(err) ??
+          (err instanceof HttpError
+            ? 'Could not open conversation'
+            : err instanceof Error
+              ? err.message
+              : 'Could not message the poster'),
+      );
     } finally {
       setMessaging(false);
     }

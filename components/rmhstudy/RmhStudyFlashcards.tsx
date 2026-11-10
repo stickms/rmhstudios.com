@@ -14,6 +14,8 @@ import { summarizeGrades } from '@/lib/rmhstudy/session-summary';
 import { useTranslation } from 'react-i18next';
 import { Layers, Loader2, ArrowLeft, ExternalLink, RotateCw } from 'lucide-react';
 import { toast } from '@/lib/rmhstudy/toast-store';
+import { api } from '@/lib/contract/client';
+import { deckReviewQueueApi, listDecksApi } from '@/lib/study/decks.contract';
 
 interface DeckRow {
   id: string;
@@ -61,13 +63,12 @@ export default function RmhStudyFlashcards() {
   const loadDecks = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/study/decks', { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setMine(data.mine ?? []);
-        setPopular(data.popular ?? []);
-        setSignedIn(!!data.signedIn);
-      }
+      const data = await api(listDecksApi);
+      setMine(data.mine ?? []);
+      setPopular(data.popular ?? []);
+      setSignedIn(!!data.signedIn);
+    } catch {
+      /* a failed load leaves the lists as they were */
     } finally {
       setLoading(false);
     }
@@ -80,13 +81,7 @@ export default function RmhStudyFlashcards() {
   const startReview = useCallback(async (deck: DeckRow) => {
     const session = ++sessionRef.current;
     try {
-      const res = await fetch(`/api/study/decks/${deck.id}/review`, { credentials: 'include' });
-      if (session !== sessionRef.current) return;
-      if (!res.ok) {
-        toast.error(t("could-not-load-cards", { defaultValue: "Could not load cards" }));
-        return;
-      }
-      const data = await res.json();
+      const data = await api(deckReviewQueueApi, { params: { id: deck.id } });
       if (session !== sessionRef.current) return;
       const due: DueCard[] = data.due ?? [];
       if (due.length === 0) {

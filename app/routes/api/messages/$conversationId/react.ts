@@ -1,21 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import { reactMessageApi } from '@/lib/messages/message-actions.contract';
+import { reactMessageBody } from '@/lib/messages/message-actions-schema';
 import { prisma } from '@/lib/prisma.server';
 import { notifyUser } from '@/lib/message-events';
 import { isValidReactionEmoji } from '@/lib/social/reactions';
 import { toggleDmReaction } from '@/lib/social/reactions.server';
 
-const reactSchema = z.object({
-  messageId: z.string(),
-  emoji: z.string().min(1).max(32),
-});
-
 /** POST /api/messages/$conversationId/react — toggle an emoji reaction on a DM. */
 export const Route = createFileRoute('/api/messages/$conversationId/react')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        reactMessageApi,
         { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'reaction' } },
         async ({ request, params, session }) => {
           const { conversationId } = params;
@@ -39,7 +36,7 @@ export const Route = createFileRoute('/api/messages/$conversationId/react')({
           }
 
           const body = await request.json().catch(() => null);
-          const parsed = reactSchema.safeParse(body);
+          const parsed = reactMessageBody.safeParse(body);
           if (!parsed.success || !isValidReactionEmoji(parsed.data.emoji)) {
             return Response.json({ error: 'Invalid emoji' }, { status: 400 });
           }
@@ -64,7 +61,7 @@ export const Route = createFileRoute('/api/messages/$conversationId/react')({
             reactions: result.rows,
           });
 
-          return Response.json({ success: true, reacted: result.reacted, reactions: result.rows });
+          return { success: true as const, reacted: result.reacted, reactions: result.rows };
         },
       ),
     },

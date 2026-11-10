@@ -10,6 +10,9 @@ import { Reveal } from '@/components/motion';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
 import { ColumnHeader } from './ColumnHeader';
 import { StudyTabs } from '@/components/study/StudyTabs';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createDeckApi, listDecksApi } from '@/lib/study/decks.contract';
 
 interface Deck {
   id: string;
@@ -45,12 +48,13 @@ export function FlashcardsColumn({
   });
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/study/decks', { credentials: 'include' });
-    if (res.ok) {
-      const data = await res.json();
+    try {
+      const data = await api(listDecksApi);
       setMine(data.mine ?? []);
       setPopular(data.popular ?? []);
       setSignedIn(!!data.signedIn);
+    } catch {
+      /* a failed load leaves the lists as they were */
     }
   }, []);
 
@@ -73,23 +77,17 @@ export function FlashcardsColumn({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/study/decks', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await api(createDeckApi, {
+        body: {
           title: form.title.trim(),
           description: form.description.trim() || undefined,
           isPublic: form.isPublic,
           generateTopic: form.generateTopic.trim() || undefined,
-        }),
+        },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(data.error ?? t('could-not-create', { defaultValue: 'Could not create' }));
-        return;
-      }
       navigate({ to: `/study/${data.id}` as string });
+    } catch (err) {
+      setError(serverError(err) ?? t('could-not-create', { defaultValue: 'Could not create' }));
     } finally {
       setBusy(false);
     }

@@ -30,17 +30,16 @@
 
 import { m as motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { editorialTransition } from '@/lib/motion';
 import { MENU_PRICE_SEK } from '@/lib/rebar-rutabaga/menu';
 
 /** The page's curve, matching `--rebar-ease`. See `Reveal.tsx`. */
-const EASE = [0.16, 1, 0.3, 1] as const;
-
 /** Rise-and-settle, sequenced by `delay`. */
 function rise(delay: number) {
   return {
     initial: { opacity: 0, y: 26 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.78, ease: EASE, delay },
+    transition: editorialTransition(0.78, delay),
   };
 }
 
@@ -102,7 +101,7 @@ export function Hero() {
         <motion.div
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
-          transition={{ duration: 1.1, ease: EASE, delay: 0.42 }}
+          transition={editorialTransition(1.1, 0.42)}
           aria-hidden
           className="mt-12 h-px w-full max-w-[40rem] origin-left bg-rebar-line-strong"
         />

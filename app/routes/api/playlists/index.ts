@@ -1,13 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import { createPlaylistApi, listPlaylistsApi } from '@/lib/playlists/playlists.contract';
+import { createPlaylistBody } from '@/lib/playlists/playlists-schema';
 import { listPlaylists, createPlaylist } from '@/lib/playlists.server';
-
-const createSchema = z.object({
-  name: z.string().min(1).max(100),
-  // Every playlist is a video playlist; the field is accepted for older clients.
-  kind: z.literal('video').optional(),
-});
 
 /**
  * GET  /api/playlists — the caller's (video) playlists. A `?kind=` param is ignored.
@@ -16,14 +11,15 @@ const createSchema = z.object({
 export const Route = createFileRoute('/api/playlists/')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) =>
-        Response.json({ playlists: await listPlaylists(session.user.id) }),
-      ),
+      GET: implement(listPlaylistsApi, {}, async ({ session }) => ({
+        playlists: await listPlaylists(session.user.id),
+      })),
 
-      POST: defineHandler(
+      POST: implement(
+        createPlaylistApi,
         {
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'playlist-create' },
-          body: createSchema,
+          body: createPlaylistBody,
           allowEmptyBody: true,
         },
         async ({ session, body }) => {

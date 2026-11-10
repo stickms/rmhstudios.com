@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
 import type { ListView } from '@/lib/lists/constants';
+import { api } from '@/lib/contract/client';
+import { createListApi } from '@/lib/lists/lists.contract';
 
 export function ListsManager({ initial }: { initial: ListView[] }) {
   const { t } = useTranslation('c-lists');
@@ -20,13 +22,7 @@ export function ListsManager({ initial }: { initial: ListView[] }) {
     const trimmed = name.trim();
     if (!trimmed) return;
     try {
-      const res = await fetch('/api/lists', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: trimmed }),
-      });
-      if (!res.ok) throw new Error('create failed');
-      const { list } = (await res.json()) as { list: ListView };
+      const { list } = await api(createListApi, { body: { name: trimmed } });
       setLists((prev) => [list, ...prev]);
       setName('');
       setCreating(false);

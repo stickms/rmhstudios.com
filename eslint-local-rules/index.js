@@ -13,6 +13,7 @@ import noUseClientDirective from './no-use-client-directive.js';
 import noRawPaletteColor from './no-raw-palette-color.js';
 import noHardcodedRadius from './no-hardcoded-radius.js';
 import noTransitionAll from './no-transition-all.js';
+import noInlineMotion from './no-inline-motion.js';
 import noDeadAnimateClasses from './no-dead-animate-classes.js';
 
 /** @type {import('eslint').ESLint.Plugin} */
@@ -26,6 +27,7 @@ const plugin = {
     'no-raw-palette-color': noRawPaletteColor,
     'no-hardcoded-radius': noHardcodedRadius,
     'no-transition-all': noTransitionAll,
+    'no-inline-motion': noInlineMotion,
     'no-dead-animate-classes': noDeadAnimateClasses,
   },
 };

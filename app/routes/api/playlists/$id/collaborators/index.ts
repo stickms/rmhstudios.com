@@ -1,18 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
-import { HANDLE_REGEX } from '@/lib/handle';
+import { implement } from '@/lib/api/implement.server';
+import {
+  addPlaylistCollaboratorApi,
+  listPlaylistCollaboratorsApi,
+} from '@/lib/playlists/playlists.contract';
+import { addCollaboratorBody } from '@/lib/playlists/playlists-schema';
 import { addCollaborator, listCollaborators } from '@/lib/playlists.server';
-
-/** Accepts "@name" or "name"; normalises to the stored lowercase handle. */
-const addSchema = z.object({
-  handle: z
-    .string()
-    .trim()
-    .max(21)
-    .transform((h) => h.replace(/^@/, '').toLowerCase())
-    .pipe(z.string().regex(HANDLE_REGEX, 'Invalid handle')),
-});
 
 /**
  * GET  /api/playlists/$id/collaborators — list collaborators (owner only).
@@ -21,16 +14,17 @@ const addSchema = z.object({
 export const Route = createFileRoute('/api/playlists/$id/collaborators/')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ params, session }) => {
+      GET: implement(listPlaylistCollaboratorsApi, {}, async ({ params, session }) => {
         const collaborators = await listCollaborators(params.id, session.user.id);
         if (!collaborators) return Response.json({ error: 'Not found' }, { status: 404 });
-        return Response.json({ collaborators });
+        return { collaborators };
       }),
 
-      POST: defineHandler(
+      POST: implement(
+        addPlaylistCollaboratorApi,
         {
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'playlist-collab-add' },
-          body: addSchema,
+          body: addCollaboratorBody,
         },
         async ({ params, session, body }) => {
           const result = await addCollaborator(params.id, session.user.id, body.handle);
