@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { getArticleTakeawaysApi } from '@/lib/ai/ai.contract';
 
 /**
  * "Key takeaways" for a devlog post — 3–5 bullets a reader can scan before
@@ -21,11 +23,10 @@ export function ArticleTakeaways({ slug }: { slug: string }) {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`/api/ai/takeaways?slug=${encodeURIComponent(slug)}`, {
-          credentials: 'include',
+        const data = await api(getArticleTakeawaysApi, {
+          query: { slug },
+          timeoutMs: AI_TIMEOUT_MS,
         });
-        if (cancelled || !res.ok) return;
-        const data = await res.json().catch(() => ({}));
         if (!cancelled && Array.isArray(data.takeaways)) setTakeaways(data.takeaways);
       } catch {
         // Progressive enhancement: no strip, same article.

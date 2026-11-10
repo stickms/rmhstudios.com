@@ -13,6 +13,7 @@ import { Spinner } from '@/components/ui/spinner';
 import type { FeedItem } from '@/lib/feed-types';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
+import { profilePostsApi } from '@/lib/feed/feed-reads.contract';
 import { addSeriesPostApi } from '@/lib/posts-plus/series.contract';
 
 /**
@@ -37,15 +38,12 @@ export default function AddSeriesPostDialog({
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/profile/${encodeURIComponent(authorKey)}/rmharks?limit=30`, {
-      credentials: 'include',
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { items?: FeedItem[] } | null) => {
+    api(profilePostsApi, { params: { id: authorKey }, query: { limit: 30 } })
+      .then((d) => {
         if (cancelled) return;
         // Own original posts only: reposts carry another author, quotes are fine.
         setPosts(
-          (d?.items ?? []).filter((i) => !i.seriesId && !i.repostedBy && !i.locked && !i.pending),
+          d.items.filter((i) => !i.seriesId && !i.repostedBy && !i.locked && !i.pending),
         );
       })
       .catch(() => {

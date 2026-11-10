@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { suggestMessageApi } from '@/lib/ai/ai.contract';
 
 export interface SuggestionContextMessage {
   author: string;
@@ -44,14 +46,11 @@ export function useMessageSuggestion({
     let cancelled = false;
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch('/api/ai/message-suggest', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ draft, context: contextRef.current.slice(-20) }),
+        const data = await api(suggestMessageApi, {
+          body: { draft, context: contextRef.current.slice(-20) },
+          timeoutMs: AI_TIMEOUT_MS,
         });
-        if (cancelled || !res.ok) return;
-        const data = await res.json();
+        if (cancelled) return;
         let s = typeof data?.suggestion === 'string' ? data.suggestion : '';
         s = s.replace(/\s+/g, ' ').trim();
         if (!s) return;

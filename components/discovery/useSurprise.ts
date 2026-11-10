@@ -3,6 +3,8 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Shuffle } from 'lucide-react';
 import { toast } from 'sonner';
+import { api } from '@/lib/contract/client';
+import { getSurpriseApi } from '@/lib/discovery/discovery.contract';
 
 let lastId: string | undefined;
 
@@ -14,14 +16,7 @@ export function useSurprise(onGo?: () => void) {
   const run = useCallback(async () => {
     setBusy(true);
     try {
-      const res = await fetch(
-        `/api/discovery/surprise${lastId ? `?not=${encodeURIComponent(lastId)}` : ''}`,
-        {
-          credentials: 'include',
-        },
-      );
-      if (!res.ok) throw new Error(String(res.status));
-      const pick = (await res.json()) as { id: string; href: string };
+      const pick = await api(getSurpriseApi, { query: lastId ? { not: lastId } : {} });
       lastId = pick.id;
       onGo?.();
       void navigate({ to: pick.href });

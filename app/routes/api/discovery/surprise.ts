@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getSurpriseApi } from '@/lib/discovery/discovery.contract';
 import { surpriseQuery } from '@/lib/discovery/schema';
 import { surpriseMe } from '@/lib/discovery/surprise.server';
 
@@ -7,7 +8,8 @@ import { surpriseMe } from '@/lib/discovery/surprise.server';
 export const Route = createFileRoute('/api/discovery/surprise')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        getSurpriseApi,
         { auth: 'optional', rateLimit: 'read', query: surpriseQuery },
         async ({ userId, query }) => {
           const pick = await surpriseMe(userId, query.not);

@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { buildMeta, buildCanonical } from '@/lib/seo';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { scheduleQuery } from '@/lib/schedule/schedule.queries';
-import type { SlotKind } from '@/lib/schedule/slots';
+import type { ScheduleGrid } from '@/lib/schedule/schedule.contract';
 
 /**
  * `/schedule` — what is on (L1).
@@ -17,20 +17,6 @@ import type { SlotKind } from '@/lib/schedule/slots';
  * says which one is worth opening right now.
  */
 
-interface Occurrence {
-  slotId: string;
-  kind: SlotKind;
-  title: string;
-  href: string | null;
-  startsAt: string;
-  endsAt: string;
-}
-interface GridView {
-  from: string;
-  days: number;
-  next: Occurrence | null;
-  byDay: { day: string; occurrences: Occurrence[] }[];
-}
 
 export const Route = createFileRoute('/_site/schedule')({
   head: () => ({
@@ -42,7 +28,7 @@ export const Route = createFileRoute('/_site/schedule')({
     }),
     links: [buildCanonical('/schedule')],
   }),
-  loader: ({ context }) => prefetchRouteQuery(context.queryClient, scheduleQuery<GridView>()),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, scheduleQuery()),
   component: SchedulePage,
 });
 
@@ -61,8 +47,8 @@ const KIND_TINT: Record<string, string> = {
 
 function SchedulePage() {
   const { t, i18n } = useTranslation('site');
-  const query = useQuery(scheduleQuery<GridView>());
-  const grid: GridView | null = query.data ?? null;
+  const query = useQuery(scheduleQuery());
+  const grid: ScheduleGrid | null = query.data ?? null;
   const failed = query.isError;
 
   const time = (iso: string) =>

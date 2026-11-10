@@ -5,7 +5,7 @@
  */
 import type { ReactionRow } from '@/lib/social/reactions';
 import type { PollView } from '@/lib/chat-plus/types';
-import type { SentVoiceMessage } from '@/components/voice/VoiceComposer';
+import type { SentVoiceMessage } from '@/lib/messages/voice.contract';
 
 export interface Message {
   id: string;

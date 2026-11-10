@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { askDunesdayApi } from '@/lib/dunesday/ask.contract';
 import { dunesdayAskSchema } from '@/lib/dunesday/ask-schema';
 import { answerDunesdayQuestion, isAITextConfigured } from '@/lib/dunesday/assistant.server';
 
@@ -17,7 +18,8 @@ import { answerDunesdayQuestion, isAITextConfigured } from '@/lib/dunesday/assis
 export const Route = createFileRoute('/api/dunesday/ask')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        askDunesdayApi,
         { auth: 'optional', rateLimit: 'ai', body: dunesdayAskSchema },
         async ({ body }) => {
           if (!isAITextConfigured()) {

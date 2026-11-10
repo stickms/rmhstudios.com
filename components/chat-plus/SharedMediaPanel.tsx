@@ -4,38 +4,20 @@ import { ExternalLink, FileAudio, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ChatRef } from '@/lib/chat-plus/types';
+import { api } from '@/lib/contract/client';
+import { getChatSharedLinksApi, getChatSharedMediaApi } from '@/lib/chat-plus/chat.contract';
+import type { LinkItem, MediaItem, MediaPage } from '@/lib/chat-plus/media.server';
 
-interface MediaItem {
-  messageId: string;
-  type: 'image' | 'gif' | 'voice';
-  url: string;
-  createdAt: string;
-}
-interface LinkItem {
-  messageId: string;
-  url: string;
-  createdAt: string;
-}
-interface Page<T> {
-  items: T[];
-  nextCursor: string | null;
-}
-
-function usePages<T>(chat: ChatRef, tab: 'media' | 'links') {
+function usePages<T>(
+  chat: ChatRef,
+  tab: 'media' | 'links',
+  load: (cursor: string | null) => Promise<MediaPage<T>>,
+) {
   return useInfiniteQuery({
     queryKey: ['chat-shared', chat.kind, chat.id, tab],
     initialPageParam: null as string | null,
     staleTime: 30_000,
-    queryFn: async ({ pageParam }): Promise<Page<T>> => {
-      const params = new URLSearchParams({ tab });
-      if (pageParam) params.set('cursor', pageParam);
-      const res = await fetch(
-        `/api/chats/${chat.kind}/${encodeURIComponent(chat.id)}/media?${params}`,
-        { credentials: 'include' },
-      );
-      if (!res.ok) throw new Error('media failed');
-      return res.json();
-    },
+    queryFn: ({ pageParam }) => load(pageParam),
     getNextPageParam: (last) => last.nextCursor,
   });
 }
@@ -43,8 +25,19 @@ function usePages<T>(chat: ChatRef, tab: 'media' | 'links') {
 /** M6 — "Media & links": every image, GIF, voice note and link, newest first. */
 export function SharedMediaPanel({ chat, tab }: { chat: ChatRef; tab: 'media' | 'links' }) {
   const { t } = useTranslation('f-messaging');
-  const media = usePages<MediaItem>(chat, 'media');
-  const links = usePages<LinkItem>(chat, 'links');
+  const params = { kind: chat.kind, id: chat.id };
+  const media = usePages(chat, 'media', (cursor) =>
+    api(getChatSharedMediaApi, {
+      params,
+      query: cursor ? { tab: 'media', cursor } : { tab: 'media' },
+    }),
+  );
+  const links = usePages(chat, 'links', (cursor) =>
+    api(getChatSharedLinksApi, {
+      params,
+      query: cursor ? { tab: 'links', cursor } : { tab: 'links' },
+    }),
+  );
   const q = tab === 'media' ? media : links;
   const items = (q.data?.pages ?? []).flatMap((p) => p.items as (MediaItem | LinkItem)[]);
 

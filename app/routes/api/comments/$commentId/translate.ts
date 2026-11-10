@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { translateCommentApi } from '@/lib/ai/ai.contract';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { translateText, isAITextConfigured } from '@/lib/ai/text.server';
@@ -57,7 +58,7 @@ export const Route = createFileRoute('/api/comments/$commentId/translate')({
       // it. The expensive part is the AI round trip, and that stays memoized below;
       // what is checked fresh on EVERY request is the one indexed row that decides
       // whether the answer may be shown at all.
-      GET: defineHandler({ auth: 'optional' }, async ({ request, params, userId }) => {
+      GET: implement(translateCommentApi, { auth: 'optional' }, async ({ request, params, userId }) => {
         if (!isAITextConfigured())
           return Response.json({ error: 'Translation unavailable' }, { status: 503 });
         const ip = getClientIp(request);

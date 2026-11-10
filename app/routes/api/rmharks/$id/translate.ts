@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { translatePostApi } from '@/lib/ai/ai.contract';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -50,7 +51,7 @@ const ALLOWED_LANGS = new Set([
 export const Route = createFileRoute('/api/rmharks/$id/translate')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+      GET: implement(translatePostApi, { auth: 'none' }, async ({ request, params }) => {
         if (!isAITextConfigured())
           return Response.json({ error: 'Translation unavailable' }, { status: 503 });
         const ip = getClientIp(request);

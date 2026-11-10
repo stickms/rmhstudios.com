@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { FeedItem, FeedFilter, FeedItemUser } from '@/lib/feed-types';
 import { useUserDisplayStore } from './userDisplayStore';
+import { api } from '@/lib/contract/client';
+import { getTimelineApi } from '@/lib/feed/feed-reads.contract';
 
 /** Per-viewer delivery metadata attached by the SSE stream to created events. */
 export interface CreatedDelivery {
@@ -171,14 +173,19 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     const { filter, search } = get();
     set({ loading: true, error: false });
     try {
-      const params = new URLSearchParams({ limit: '20', filter });
-      if (filter === 'friends') params.set('feed', 'following');
-      if (search) params.set('search', search);
-
-      const res = await fetch(`/api/rmharks?${params}`, { signal: controller.signal });
-      if (!res.ok) throw new Error('Failed to refresh feed');
-
-      const data = await res.json();
+      // The store owns the timeout (`FEED_FETCH_TIMEOUT_MS`) and the supersede abort, so the
+      // client's own ceiling and its GET retry are off.
+      const data = await api(getTimelineApi, {
+        query: {
+          limit: 20,
+          filter,
+          ...(filter === 'friends' ? { feed: 'following' as const } : {}),
+          ...(search ? { search } : {}),
+        },
+        signal: controller.signal,
+        timeoutMs: 0,
+        retries: 0,
+      });
       if (generation !== requestGeneration) return;
 
       cacheItemUsers(data.items as FeedItem[]);
@@ -248,16 +255,20 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
     set({ loading: true, error: false });
     try {
-      const params = new URLSearchParams({ limit: '20', filter });
-      // Twitter-shaped surface naming: the "friends" tab is the Following feed.
-      if (filter === 'friends') params.set('feed', 'following');
-      if (cursor) params.set('cursor', cursor);
-      if (search) params.set('search', search);
-
-      const res = await fetch(`/api/rmharks?${params}`, { signal: controller.signal });
-      if (!res.ok) throw new Error('Failed to fetch feed');
-
-      const data = await res.json();
+      // Twitter-shaped surface naming: the "friends" tab is the Following feed. The store owns
+      // the timeout and the supersede abort, so the client's own ceiling and GET retry are off.
+      const data = await api(getTimelineApi, {
+        query: {
+          limit: 20,
+          filter,
+          ...(filter === 'friends' ? { feed: 'following' as const } : {}),
+          ...(cursor ? { cursor } : {}),
+          ...(search ? { search } : {}),
+        },
+        signal: controller.signal,
+        timeoutMs: 0,
+        retries: 0,
+      });
 
       // A newer fetch (or a surface switch) superseded this one — drop the
       // result so it can't clobber the current surface.

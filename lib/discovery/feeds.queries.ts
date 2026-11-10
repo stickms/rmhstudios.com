@@ -4,6 +4,8 @@ import { createServerFn } from '@tanstack/react-start';
 import { routeQueryFn } from '@/lib/route/route-query';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { listFeeds } from '@/lib/discovery/feeds.server';
+import { api } from '@/lib/contract/client';
+import { listFeedsApi } from '@/lib/discovery/discovery.contract';
 
 const listFeedsOnServer = createServerFn({ method: 'GET' }).handler(async () => {
   const session = await getRequestSession();
@@ -11,17 +13,12 @@ const listFeedsOnServer = createServerFn({ method: 'GET' }).handler(async () => 
   return listFeeds(session.user.id);
 });
 
-/** `T` is the wire shape the page declares for `/api/feeds`. */
-export const feedsQuery = <T>() =>
+export const feedsQuery = () =>
   queryOptions({
     queryKey: ['feeds', 'mine'],
-    queryFn: routeQueryFn<T>(
+    queryFn: routeQueryFn(
       () => listFeedsOnServer(),
-      async () => {
-        const res = await fetch('/api/feeds', { credentials: 'include' });
-        if (!res.ok) throw new Error(String(res.status));
-        return (await res.json()) as T;
-      },
+      () => api(listFeedsApi),
     ),
     staleTime: 5_000,
   });

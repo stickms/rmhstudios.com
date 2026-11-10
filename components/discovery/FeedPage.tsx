@@ -11,17 +11,10 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import type { FeedItem } from '@/lib/feed-types';
-import type { FeedSummary } from '@/lib/discovery/feeds.server';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { getCustomFeedApi, type CustomFeedView } from '@/lib/discovery/discovery.contract';
 import { FeedForm, feedBody, type FeedFormValue } from './FeedForm';
-
-interface View {
-  feed: FeedSummary & {
-    people: string[];
-    owner: { name: string | null; handle: string | null; id: string };
-  };
-  items: FeedItem[];
-  nextCursor: string | null;
-}
 
 /** /feeds/$id - one custom feed: keyset-paginated posts, subscribe, and owner edit (A4). */
 export function FeedPage({ id }: { id: string }) {
@@ -29,7 +22,7 @@ export function FeedPage({ id }: { id: string }) {
   const { data: session } = useSession();
   const confirm = useConfirm();
   const navigate = useNavigate();
-  const [view, setView] = useState<View | null>(null);
+  const [view, setView] = useState<CustomFeedView | null>(null);
   const [items, setItems] = useState<FeedItem[]>([]);
   const [missing, setMissing] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -37,23 +30,17 @@ export function FeedPage({ id }: { id: string }) {
 
   const load = useCallback(
     async (cursor?: string) => {
-      const res = await fetch(
-        `/api/feeds/${encodeURIComponent(id)}${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,
-        {
-          credentials: 'include',
-        },
-      );
-      if (res.status === 404) {
-        setMissing(true);
-        return;
-      }
-      if (!res.ok) {
+      try {
+        const v = await api(getCustomFeedApi, { params: { id }, query: cursor ? { cursor } : {} });
+        setView(v);
+        setItems((prev) => (cursor ? [...prev, ...v.items] : v.items));
+      } catch (e) {
+        if (e instanceof HttpError && e.status === 404) {
+          setMissing(true);
+          return;
+        }
         toast.error(t('feed-load-failed', { defaultValue: 'Could not load the feed' }));
-        return;
       }
-      const v = (await res.json()) as View;
-      setView(v);
-      setItems((prev) => (cursor ? [...prev, ...v.items] : v.items));
     },
     [id, t],
   );

@@ -1,8 +1,8 @@
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
 import { createRMHarkApi } from '@/lib/feed/compose-assist.contract';
+import { getTimelineApi } from '@/lib/feed/feed-reads.contract';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { checkRateLimit } from '@/lib/rate-limit.server';
@@ -44,7 +44,7 @@ const scheduledProbeSeen = lruL1('rmharks:scheduled-probe', { maxEntries: 5000 }
 export const Route = createFileRoute('/api/rmharks')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ request, userId }) => {
+      GET: implement(getTimelineApi, { auth: 'optional' }, async ({ request, userId }) => {
         const { searchParams } = new URL(request.url);
         const cursor = searchParams.get('cursor');
         const limit = pageSize(searchParams.get('limit'), 20, 50);
