@@ -39,6 +39,14 @@ import {
  */
 export const AI_TIMEOUT_MS = 60_000;
 
+/**
+ * Image generation chains a prompt call, the image model, a download and an upload, and
+ * can run well past a minute. Aborting first would report a failure for an image the
+ * server still finishes (and pays for), so these calls wait up to just under the front
+ * door's own limit (`ProxyTimeout 300` in deploy/apache/rmhstudios.conf).
+ */
+export const AI_IMAGE_TIMEOUT_MS = 240_000;
+
 type Transport = Pick<FetchJsonOptions, 'signal' | 'timeoutMs' | 'retries' | 'headers'>;
 
 /** Keys whose type is `undefined` become absent; the rest are required. */

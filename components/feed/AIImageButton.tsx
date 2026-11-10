@@ -1,4 +1,4 @@
-import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { AI_IMAGE_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { aiGenerateImageApi } from '@/lib/feed/compose-assist.contract';
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
@@ -54,7 +54,7 @@ export function AIImageButton({
  setLoading(true);
  setError(null);
  try {
- const data = await api(aiGenerateImageApi, { body: { draft }, timeoutMs: AI_TIMEOUT_MS });
+ const data = await api(aiGenerateImageApi, { body: { draft }, timeoutMs: AI_IMAGE_TIMEOUT_MS });
  if (typeof data?.url ==='string'&& data.url) {
  onGenerated(data.url);
  }

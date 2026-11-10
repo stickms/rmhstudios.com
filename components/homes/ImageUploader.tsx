@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
-import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { AI_IMAGE_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { generateHomeAiImageApi, getHomeAiImageAvailabilityApi } from '@/lib/homes/homes.contract';
 interface ImageUploaderProps {
@@ -91,7 +91,7 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
     }
     setGenerating(true);
     try {
-      const data = await api(generateHomeAiImageApi, { body: { prompt }, timeoutMs: AI_TIMEOUT_MS }).catch(
+      const data = await api(generateHomeAiImageApi, { body: { prompt }, timeoutMs: AI_IMAGE_TIMEOUT_MS }).catch(
         (error: unknown) => {
           throw new Error(serverError(error) || 'Could not generate an image.');
         },
