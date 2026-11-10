@@ -9,6 +9,8 @@ import { useSession } from '@/components/Providers';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { FOOLS_FLAG_KEY, FOOLS_OFF_KEY } from '@/lib/delight/season';
 import type { DelightConfig } from '@/lib/delight/shared';
+import { api } from '@/lib/contract/client';
+import { delightConfigApi } from '@/lib/site-reads.contract';
 
 const CFG_KEY = 'rmh-delight-cfg';
 const TTL_MS = 10 * 60_000;
@@ -55,10 +57,8 @@ export function DelightMount() {
         alive = false;
       };
     }
-    fetch('/api/delight/config')
-      .then((r) => (r.ok ? (r.json() as Promise<DelightConfig>) : null))
+    api(delightConfigApi)
       .then((c) => {
-        if (!c) return;
         try {
           localStorage.setItem(CFG_KEY, JSON.stringify({ ...c, at: Date.now() }));
         } catch {

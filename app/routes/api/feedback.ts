@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { sendFeedbackApi } from '@/lib/feedback.contract';
 import { prisma } from '@/lib/prisma.server';
 import { feedbackSchema } from '@/lib/feedback-schema';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 const FEEDBACK_LIST_CAP = 100;
 
@@ -40,54 +41,48 @@ export const Route = createFileRoute('/api/feedback')({
 
         return Response.json(formatted);
       }),
-      POST: defineHandler({}, async ({ request, session }) => {
-        const ip = getClientIp(request);
-        const { allowed, retryAfter } = rateLimit(ip, {
-          limit: 3,
-          windowMs: 10 * 60_000,
-          prefix: 'feedback',
-        });
-        if (!allowed) {
-          return Response.json(
-            { error: 'Too many submissions. Please try again later.' },
-            { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-          );
-        }
-
-        const body = await request.json();
-        const result = feedbackSchema.safeParse(body);
-
-        if (!result.success) {
-          const firstError = result.error.issues[0]?.message ?? 'Invalid input';
-          return Response.json({ error: firstError }, { status: 400 });
-        }
-
-        const { category, message } = result.data;
-
-        const feedback = await prisma.feedback.create({
-          data: {
-            category,
-            message,
-            userId: session.user.id,
+      POST: implement(
+        sendFeedbackApi,
+        {
+          rateLimit: {
+            limit: 3,
+            windowMs: 10 * 60_000,
+            prefix: 'feedback',
+            message: 'Too many submissions. Please try again later.',
           },
-          include: {
-            user: {
-              select: { name: true, username: true, image: true },
+          body: feedbackSchema,
+          allowEmptyBody: true,
+          invalid: (error) =>
+            Response.json({ error: error.issues[0]?.message ?? 'Invalid input' }, { status: 400 }),
+        },
+        async ({ session, body }) => {
+          const { category, message } = body;
+
+          const feedback = await prisma.feedback.create({
+            data: {
+              category,
+              message,
+              userId: session.user.id,
             },
-          },
-        });
+            include: {
+              user: {
+                select: { name: true, username: true, image: true },
+              },
+            },
+          });
 
-        return Response.json({
-          id: feedback.id,
-          category: feedback.category,
-          message: feedback.message,
-          createdAt: feedback.createdAt,
-          user: {
-            name: feedback.user.name || feedback.user.username || 'Unknown',
-            image: feedback.user.image,
-          },
-        });
-      }),
+          return {
+            id: feedback.id,
+            category: feedback.category,
+            message: feedback.message,
+            createdAt: feedback.createdAt.toISOString(),
+            user: {
+              name: feedback.user.name || feedback.user.username || 'Unknown',
+              image: feedback.user.image,
+            },
+          };
+        },
+      ),
     },
   },
 });

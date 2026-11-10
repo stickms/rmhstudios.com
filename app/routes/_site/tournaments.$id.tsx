@@ -21,6 +21,8 @@ import { getTournamentApi } from '@/lib/tournaments/tournaments.contract';
 import { prisma } from '@/lib/prisma.server';
 import { getWagerGame } from '@/lib/wager/eligible-games';
 import { buildCanonical, buildMeta } from '@/lib/seo';
+import { serverError } from '@/lib/http';
+import { reportTournamentMatchApi } from '@/lib/tournaments/tournaments.contract';
 
 /**
  * A meta-only loader.
@@ -131,20 +133,16 @@ function TournamentDetailPage() {
   const report = async (matchId: string, winnerEntrantId: string) => {
     setReportingId(matchId);
     try {
-      const res = await fetch(`/api/tournaments/${id}/matches/${matchId}/report`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ winnerEntrantId }),
+      const data = await api(reportTournamentMatchApi, {
+        params: { id, matchId },
+        body: { winnerEntrantId },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error ?? t('failed', { defaultValue: 'Something went wrong' }));
-        return;
-      }
       if (data.tournamentComplete)
         toast.success(t('complete', { defaultValue: 'Tournament complete — prizes paid out!' }));
       else toast.success(t('result-recorded', { defaultValue: 'Result recorded' }));
       await load();
+    } catch (e) {
+      toast.error(serverError(e) ?? t('failed', { defaultValue: 'Something went wrong' }));
     } finally {
       setReportingId(null);
     }

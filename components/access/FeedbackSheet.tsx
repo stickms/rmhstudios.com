@@ -12,6 +12,9 @@ import { Tabs } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { FEEDBACK_CATEGORIES, type FeedbackCategory } from '@/lib/feedback-schema';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { sendFeedbackApi } from '@/lib/feedback.contract';
 
 /** Feedback form over the existing `POST /api/feedback`; opened by a shake on phones. */
 export function FeedbackSheet({
@@ -36,21 +39,15 @@ export function FeedbackSheet({
   async function submit() {
     setBusy(true);
     try {
-      const res = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ category, message }),
-      });
-      if (res.status === 401) {
+      await api(sendFeedbackApi, { body: { category, message } });
+      toast.success(t('fb-sent', { defaultValue: 'Thanks, feedback sent.' }));
+      setMessage('');
+      onOpenChange(false);
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 401) {
         toast.error(t('fb-signin', { defaultValue: 'Sign in to send feedback.' }));
-      } else if (!res.ok) {
-        const d = (await res.json().catch(() => null)) as { error?: string } | null;
-        toast.error(d?.error ?? t('fb-failed', { defaultValue: 'Could not send feedback.' }));
       } else {
-        toast.success(t('fb-sent', { defaultValue: 'Thanks, feedback sent.' }));
-        setMessage('');
-        onOpenChange(false);
+        toast.error(serverError(e) ?? t('fb-failed', { defaultValue: 'Could not send feedback.' }));
       }
     } finally {
       setBusy(false);

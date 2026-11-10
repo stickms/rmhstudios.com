@@ -8,6 +8,8 @@ import { Swords } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { WagerCard } from '@/components/wager/WagerCard';
 import type { SerializedWager } from '@/lib/wager/wager.server';
+import { api } from '@/lib/contract/client';
+import { getWagerApi } from '@/lib/wager/wager.contract';
 
 export const Route = createFileRoute('/_site/wager/$id')({
   head: () => ({ meta: [{ title: 'Wager Match | RMH Studios' }] }),
@@ -25,8 +27,7 @@ function WagerDetailPage() {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    fetch(`/api/wager/${id}`)
-      .then((r) => r.json())
+    api(getWagerApi, { params: { id } })
       .then((d) => {
         if (active) setWager(d.wager ?? null);
       })

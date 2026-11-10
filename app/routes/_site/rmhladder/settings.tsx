@@ -30,6 +30,12 @@ import {
   type ActionsPrisma,
   type PrefsPatch,
 } from '@/lib/rmhladder/server/actions';
+import { api } from '@/lib/contract/client';
+import {
+  deleteSavedSearchApi,
+  saveSearchApi,
+  type SavedSearchFilters,
+} from '@/lib/rmhladder/searches.contract';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
@@ -174,17 +180,16 @@ function SettingsPage() {
   }
 
   async function updateSavedSearch(search: AnyRow, alertsOn: boolean) {
-    const response = await fetch('/api/rmhladder/searches', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: search.id,
-        name: search.name,
-        filters: search.filters,
-        alertsOn,
-      }),
-    });
-    if (!response.ok) {
+    try {
+      await api(saveSearchApi, {
+        body: {
+          id: search.id as string,
+          name: search.name as string,
+          filters: search.filters as SavedSearchFilters,
+          alertsOn,
+        },
+      });
+    } catch {
       setError(t('ladder.settings.updateSearchFailed', { defaultValue: 'Could not update saved search' }));
       return;
     }
@@ -194,10 +199,9 @@ function SettingsPage() {
   }
 
   async function deleteSavedSearch(id: string) {
-    const response = await fetch(`/api/rmhladder/searches?id=${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) {
+    try {
+      await api(deleteSavedSearchApi, { query: { id } });
+    } catch {
       setError(t('ladder.settings.deleteSearchFailed', { defaultValue: 'Could not delete saved search' }));
       return;
     }

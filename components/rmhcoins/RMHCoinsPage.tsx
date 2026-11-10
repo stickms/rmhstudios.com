@@ -14,6 +14,7 @@ import { CoinIcon } from './CoinIcon';
 import { PlayTab } from './PlayTab';
 import { PredictionsMarketTab } from '@/components/predictions/PredictionsMarketTab';
 import { useForecastingTab } from '@/components/forecasting/forecastingTab';
+import { coinBalanceApi } from '@/lib/site-reads.contract';
 
 const ForecastingPanel = lazy(() =>
   import('@/components/forecasting/ForecastingPanel').then((m) => ({ default: m.ForecastingPanel })),
@@ -49,8 +50,7 @@ export function RMHCoinsPage() {
       return;
     }
     setLoading(true);
-    fetch('/api/coins')
-      .then((r) => r.json())
+    api(coinBalanceApi)
       .then((data) => {
         setCoins(data.coins ?? 0);
       })

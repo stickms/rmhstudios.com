@@ -5,6 +5,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { NoteBody } from '@/components/devplatform/NoteBody';
 import type { ReleaseNoteView } from '@/lib/devplatform/release-notes';
+import { api } from '@/lib/contract/client';
+import { releaseNotesApi } from '@/lib/site-reads.contract';
 
 /** Public changelog: the published release notes, newest first. */
 export function ChangelogList() {
@@ -12,8 +14,7 @@ export function ChangelogList() {
   const [notes, setNotes] = useState<ReleaseNoteView[] | null>(null);
 
   useEffect(() => {
-    fetch('/api/release-notes')
-      .then((r) => (r.ok ? r.json() : { notes: [] }))
+    api(releaseNotesApi)
       .then((d) => setNotes(d.notes))
       .catch(() => setNotes([]));
   }, []);

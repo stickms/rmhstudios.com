@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { Gift } from 'lucide-react';
 import { toast } from 'sonner';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { giftSubApi } from '@/lib/gifting/gift.contract';
 
 interface GiftSubDialogProps {
   open: boolean;
@@ -29,27 +32,19 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
     if (submitting) return;
     setSubmitting(true);
     try {
-      const res = await fetch('/api/gift-sub', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ recipient: recipientId, tier, months }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        toast.success(
-          recipientName
-            ? t('gift-success-named', { defaultValue: 'Gifted {{months}} month{{s}} of {{tier}} to {{name}}!', months, s: months > 1 ? 's' : '', tier: tier === 'pro' ? 'Pro' : 'HARD-R', name: recipientName })
-            : t('gift-success', { defaultValue: 'Gifted {{months}} month{{s}} of {{tier}}!', months, s: months > 1 ? 's' : '', tier: tier === 'pro' ? 'Pro' : 'HARD-R' })
-        );
-        onOpenChange(false);
-      } else if (res.status === 401) {
+      await api(giftSubApi, { body: { recipient: recipientId, tier, months } });
+      toast.success(
+        recipientName
+          ? t('gift-success-named', { defaultValue: 'Gifted {{months}} month{{s}} of {{tier}} to {{name}}!', months, s: months > 1 ? 's' : '', tier: tier === 'pro' ? 'Pro' : 'HARD-R', name: recipientName })
+          : t('gift-success', { defaultValue: 'Gifted {{months}} month{{s}} of {{tier}}!', months, s: months > 1 ? 's' : '', tier: tier === 'pro' ? 'Pro' : 'HARD-R' })
+      );
+      onOpenChange(false);
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 401) {
         toast.error(t('gift-sign-in', { defaultValue: 'Please sign in to gift a membership.' }));
       } else {
-        toast.error(data.error || t('gift-error', { defaultValue: 'Could not gift membership' }));
+        toast.error(serverError(e) || t('gift-error', { defaultValue: 'Could not gift membership' }));
       }
-    } catch {
-      toast.error(t('gift-error', { defaultValue: 'Could not gift membership' }));
     } finally {
       setSubmitting(false);
     }

@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { api } from '@/lib/contract/client';
+import { saveSearchApi, type SavedSearchFilters } from '@/lib/rmhladder/searches.contract';
 
 export function SaveSearchDialog({ filters }: { filters: ListJobsFilters }) {
   const [open, setOpen] = useState(false);
@@ -26,22 +28,20 @@ export function SaveSearchDialog({ filters }: { filters: ListJobsFilters }) {
     if (!trimmed) return;
     setSaving(true);
     try {
-      const response = await fetch('/api/rmhladder/searches', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await api(saveSearchApi, {
+        body: {
           name: trimmed,
           alertsOn,
+          // The server validates the preset / sort / program-type values and 400s on a stray one.
           filters: {
             preset: filters.preset,
             q: filters.q,
             cities: filters.cities,
             programTypes: filters.programTypes,
             sort: filters.sort,
-          },
-        }),
+          } as SavedSearchFilters,
+        },
       });
-      if (!response.ok) throw new Error('Could not save this search');
       toast.success('Search saved');
       setName('');
       setOpen(false);

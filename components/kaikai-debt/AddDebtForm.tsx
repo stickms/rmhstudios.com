@@ -6,15 +6,13 @@ import { LogIn, Receipt, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSession } from '@/components/Providers';
-import { MAX_CLAIM_CHARS, type DebtEntryDto } from '@/lib/kaikai-debt/debt';
+import { MAX_CLAIM_CHARS } from '@/lib/kaikai-debt/debt';
 import { playDebtAdded, playRejected } from '@/lib/kaikai-debt/sound';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { addDebtEntryApi, type AddDebtResult } from '@/lib/kaikai-debt/kaikai-debt.contract';
 
-/** The `/entries` response, narrowed to the fields the page updates from. */
-export interface AddDebtResult {
-  entry: DebtEntryDto;
-  basisCents: number;
-  contributorCount: number;
-}
+export type { AddDebtResult };
 
 interface AddDebtFormProps {
   onAdded: (payload: AddDebtResult) => void;
@@ -55,40 +53,32 @@ export function AddDebtForm({ onAdded, disabled }: AddDebtFormProps) {
 
     setSubmitting(true);
     try {
-      const res = await fetch('/api/kaikai-debt/entries', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      let payload: AddDebtResult;
+      try {
+        payload = await api(addDebtEntryApi, {
+          body: { claim: text },
           // The button can be double-fired and the service worker's outbox
           // replays writes by design; without a key, one burrito becomes two.
-          'Idempotency-Key': crypto.randomUUID(),
-        },
-        body: JSON.stringify({ claim: text }),
-      });
-
-      const data: unknown = await res.json().catch(() => null);
-
-      if (res.status === 422) {
-        // The appraiser declined. Its sentence is the useful part, so it is
-        // shown verbatim rather than replaced with a generic validation error.
+          headers: { 'Idempotency-Key': crypto.randomUUID() },
+        });
+      } catch (e) {
+        if (!(e instanceof HttpError)) throw e;
         playRejected();
-        toast.error(
-          (data as { error?: string })?.error ??
-            t('add.declined', { defaultValue: 'The appraiser declined that one.' }),
-        );
+        if (e.status === 422) {
+          // The appraiser declined. Its sentence is the useful part, so it is
+          // shown verbatim rather than replaced with a generic validation error.
+          toast.error(
+            serverError(e) ??
+              t('add.declined', { defaultValue: 'The appraiser declined that one.' }),
+          );
+        } else {
+          toast.error(
+            serverError(e) ??
+              t('add.failed', { defaultValue: 'Could not add that to his tab. Try again.' }),
+          );
+        }
         return;
       }
-
-      if (!res.ok) {
-        playRejected();
-        toast.error(
-          (data as { error?: string })?.error ??
-            t('add.failed', { defaultValue: 'Could not add that to his tab. Try again.' }),
-        );
-        return;
-      }
-
-      const payload = data as AddDebtResult;
       playDebtAdded();
       setClaim('');
       onAdded(payload);

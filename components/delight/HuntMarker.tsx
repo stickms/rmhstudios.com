@@ -3,6 +3,8 @@ import { useLocation } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Sparkles } from 'lucide-react';
 import { IconButton } from '@/components/ui/icon-button';
+import { api } from '@/lib/contract/client';
+import { huntMarkerApi } from '@/lib/site-reads.contract';
 
 /**
  * Z2 — the hidden clue marker. The server only answers for the page that hides
@@ -19,9 +21,8 @@ export default function HuntMarker() {
     setOpen(false);
     const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
     let alive = true;
-    fetch(`/api/hunt/marker?path=${encodeURIComponent(path)}`, { credentials: 'include' })
-      .then((r) => (r.ok ? (r.json() as Promise<{ marker: { text: string } | null }>) : null))
-      .then((d) => alive && setText(d?.marker?.text ?? null))
+    api(huntMarkerApi, { query: { path } })
+      .then((d) => alive && setText(d.marker?.text ?? null))
       .catch(() => {});
     return () => {
       alive = false;

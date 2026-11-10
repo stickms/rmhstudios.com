@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { TrendingWhy } from '@/lib/discovery/schema';
+import { api } from '@/lib/contract/client';
+import { whyTrendingApi } from '@/lib/discovery/discovery.contract';
 
 /** A2 · "Why is this trending?" on a tag chip; the data loads only when opened. */
 export function WhyTrending({ tag }: { tag: string }) {
@@ -23,10 +25,7 @@ export function WhyTrending({ tag }: { tag: string }) {
   useEffect(() => {
     if (!open || why) return;
     let live = true;
-    fetch(`/api/discovery/trending/${encodeURIComponent(tag)}`)
-      .then((r) =>
-        r.ok ? (r.json() as Promise<TrendingWhy>) : Promise.reject(new Error(String(r.status))),
-      )
+    api(whyTrendingApi, { params: { tag } })
       .then((d) => live && setWhy(d))
       .catch(() => live && setFailed(true));
     return () => {

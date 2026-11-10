@@ -6,6 +6,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { toast } from 'sonner';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { tipApi } from '@/lib/economy/tip.contract';
 import { TIP_MAX, TIP_MIN, TIP_NOTE_MAX, tipSchema, type TipEntityType } from '@/lib/economy/tip-schema';
 import { parseTipAmount } from '@/lib/economy/tip-amount';
 
@@ -44,24 +47,16 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
     if (submitting) return;
     setSubmitting(true);
     try {
-      const res = await fetch('/api/coins/tip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(parsed.data),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        toast.success(t("tip-success", { defaultValue: "Tipped {{amount}} coins{{recipient}}!", amount, recipient: recipientName ? ` to ${recipientName}` : '' }));
-        onOpenChange(false);
-        setNote('');
-      } else if (res.status === 401) {
+      await api(tipApi, { body: parsed.data });
+      toast.success(t("tip-success", { defaultValue: "Tipped {{amount}} coins{{recipient}}!", amount, recipient: recipientName ? ` to ${recipientName}` : '' }));
+      onOpenChange(false);
+      setNote('');
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 401) {
         toast.error(t("tip-sign-in", { defaultValue: "Please sign in to tip." }));
       } else {
-        toast.error(data.error || t("tip-error", { defaultValue: "Could not send tip" }));
+        toast.error(serverError(e) || t("tip-error", { defaultValue: "Could not send tip" }));
       }
-    } catch {
-      toast.error(t("tip-error", { defaultValue: "Could not send tip" }));
     } finally {
       setSubmitting(false);
     }
