@@ -31,6 +31,18 @@ export const updateProfileApi = endpoint<{
   res: UpdatedProfile;
 }>()({ method: 'PATCH', path: '/api/profile' });
 
+/** Multipart: `avatar` (one image). Answers the stored avatar URL. */
+export const uploadAvatarApi = endpoint<{ body: FormData; res: { image: string } }>()({
+  method: 'POST',
+  path: '/api/profile/avatar',
+});
+
+/** Multipart: `banner` (one image, <= 8 MB). Answers the stored banner URL. */
+export const uploadBannerApi = endpoint<{ body: FormData; res: { bannerUrl: string } }>()({
+  method: 'POST',
+  path: '/api/profile/banner',
+});
+
 export const removeProfileBannerApi = endpoint<{ res: { bannerUrl: null } }>()({
   method: 'DELETE',
   path: '/api/profile/banner',

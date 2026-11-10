@@ -6,7 +6,9 @@ import { ArrowLeft, Trophy, Upload, Vote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { fetchJson } from '@/lib/http';
+import { api } from '@/lib/contract/client';
+import { fetchJson, serverError } from '@/lib/http';
+import { uploadChallengeAudioApi } from '@/lib/creator/challenge-upload.contract';
 import type { ChallengeDetail, ChallengeView } from '@/lib/studio/challenge/shared';
 
 const post = (body: unknown) => ({
@@ -125,9 +127,10 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
       if (file) {
         const form = new FormData();
         form.set('audio', file);
-        const res = await fetch('/api/studio/challenges/audio', { method: 'POST', body: form });
-        const data = (await res.json()) as { key?: string; error?: string };
-        if (!res.ok || !data.key) throw new Error(data.error ?? 'Upload failed');
+        const data = await api(uploadChallengeAudioApi, { body: form }).catch((e: unknown) => {
+          throw new Error(serverError(e) ?? 'Upload failed');
+        });
+        if (!data.key) throw new Error('Upload failed');
         audioKey = data.key;
       }
       await fetchJson(

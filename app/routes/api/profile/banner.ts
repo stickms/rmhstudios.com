@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { uploadBannerApi } from '@/lib/profile.contract';
 import { prisma } from '@/lib/prisma.server';
 import { validateImageBuffer } from '@features/slice-it/engine/upload-validation';
 import { optimizeImage } from '@/lib/image-optimize';
@@ -30,7 +32,8 @@ async function removeStoredBanner(url: string | null | undefined): Promise<void>
 export const Route = createFileRoute('/api/profile/banner')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        uploadBannerApi,
         {
           rateLimit: {
             limit: 5,

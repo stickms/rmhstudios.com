@@ -2,10 +2,16 @@
  * Contracts for the library upload dialog (redesign audit C1, batch 8): the
  * upload quota and its appeal, deleting your own upload, and the AI title /
  * description draft. Client-safe: types only, by `import type`. The PDF upload
- * itself is multipart and stays a raw fetch.
+ * itself is multipart (batch 9).
  */
 import { endpoint } from '@/lib/contract/endpoint';
 import type { QuotaStatus } from '@/lib/library/quota.server';
+
+/** Multipart: `file` (PDF/EPUB), optional `cover`, `title`, `description`, `pages`. Answers 201. */
+export const uploadLibraryBookApi = endpoint<{
+  body: FormData;
+  res: { slug: string; url: string };
+}>()({ method: 'POST', path: '/api/library/upload' });
 
 /** The caller's library usage, as the upload dialog reads it. */
 export type LibraryQuota = QuotaStatus;

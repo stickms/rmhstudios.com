@@ -7,7 +7,11 @@ import { PRONUNCIATION_MAX_MS } from '@/lib/profile/plus';
 import type { RecordedClip, VoiceRecorder } from '@/lib/voice/recorder';
 
 import { api } from '@/lib/contract/client';
-import { removePronunciationApi } from '@/lib/profile/pronunciation.contract';
+import { serverError } from '@/lib/http';
+import {
+  removePronunciationApi,
+  uploadPronunciationApi,
+} from '@/lib/profile/pronunciation.contract';
 /**
  * P3 — record the 5-second "this is how you say my name" clip. Uses the same
  * `MediaRecorder` wrapper as DM voice notes (it releases the microphone on every
@@ -49,17 +53,13 @@ export function PronunciationRecorder({
       const form = new FormData();
       form.append('audio', clip.blob, 'pronunciation');
       form.append('durationMs', String(Math.round(clip.durationMs)));
-      const res = await fetch('/api/profile/pronunciation', { method: 'POST', body: form });
-      const json = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        pronunciationUrl?: string | null;
-      };
-      if (!res.ok) {
+      const json = await api(uploadPronunciationApi, { body: form }).catch((e: unknown) => {
         toast.error(
-          json.error ?? t('pron-failed', { defaultValue: "Couldn't save that recording" }),
+          serverError(e) ?? t('pron-failed', { defaultValue: "Couldn't save that recording" }),
         );
-        return;
-      }
+        return null;
+      });
+      if (!json) return;
       onChange(json.pronunciationUrl ?? null);
       toast.success(t('pron-saved', { defaultValue: 'Pronunciation saved' }));
     } finally {

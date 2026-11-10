@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { uploadChallengeAudioApi } from '@/lib/creator/challenge-upload.contract';
 import { saveChallengeAudio } from '@/lib/studio/challenge/challenge.server';
 import { CHALLENGE_AUDIO_MAX_BYTES, challengeAudioUrl } from '@/lib/studio/challenge/shared';
 
@@ -7,7 +8,8 @@ import { CHALLENGE_AUDIO_MAX_BYTES, challengeAudioUrl } from '@/lib/studio/chall
 export const Route = createFileRoute('/api/studio/challenges/audio/')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        uploadChallengeAudioApi,
         { rateLimit: { limit: 6, windowMs: 60_000, prefix: 'studio-challenge-audio' } },
         async ({ request, userId }) => {
           if (

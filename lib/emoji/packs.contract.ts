@@ -42,3 +42,9 @@ export const addPackItemApi = endpoint<{
   body: z.infer<typeof addItemSchema>;
   res: { item: PackItem };
 }>()({ method: 'POST', path: '/api/emoji-packs/$slug/items' });
+
+/** Multipart: `image` and `kind` ('emoji' | 'sticker'). 402 when building packs needs a membership. */
+export const uploadPackItemImageApi = endpoint<{ body: FormData; res: { mediaId: string } }>()({
+  method: 'POST',
+  path: '/api/emoji-packs/$slug/upload',
+});

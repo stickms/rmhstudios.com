@@ -21,6 +21,7 @@ import { serverError } from '@/lib/http';
 import {
   addStampToWallApi,
   browseStampsApi,
+  createStampApi,
   deleteStampApi,
   myStampsApi,
   removeStampFromWallApi,
@@ -91,14 +92,17 @@ export default function StampSettings({ userId }: { userId: string }) {
       const form = new FormData();
       form.append('image', file);
       form.append('name', name.trim());
-      const res = await fetch('/api/stamps', { method: 'POST', body: form });
-      const json = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) {
-        toast.error(
-          json.error ?? t('stamp-create-failed', { defaultValue: "Couldn't create that stamp" }),
-        );
-        return;
-      }
+      const created = await api(createStampApi, { body: form }).then(
+        () => true,
+        (e: unknown) => {
+          toast.error(
+            serverError(e) ??
+              t('stamp-create-failed', { defaultValue: "Couldn't create that stamp" }),
+          );
+          return false;
+        },
+      );
+      if (!created) return;
       setName('');
       setFile(null);
       if (fileRef.current) fileRef.current.value = '';
@@ -113,7 +117,9 @@ export default function StampSettings({ userId }: { userId: string }) {
     try {
       await api(on ? addStampToWallApi : removeStampFromWallApi, { params: { id: stamp.id } });
     } catch (e) {
-      toast.error(serverError(e) ?? t('stamp-failed', { defaultValue: "Couldn't update your wall" }));
+      toast.error(
+        serverError(e) ?? t('stamp-failed', { defaultValue: "Couldn't update your wall" }),
+      );
       return;
     }
     await loadMine();

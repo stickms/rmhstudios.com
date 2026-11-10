@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 import { AI_IMAGE_TIMEOUT_MS, api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
+import { uploadImagesApi } from '@/lib/media/upload.contract';
 import { generateHomeAiImageApi, getHomeAiImageAvailabilityApi } from '@/lib/homes/homes.contract';
 interface ImageUploaderProps {
   value: string[];
@@ -62,12 +63,9 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
       for (let i = 0; i < files.length; i += CHUNK) {
         const form = new FormData();
         for (const f of files.slice(i, i + CHUNK)) form.append('images', f);
-        const res = await fetch('/api/rmharks/image', { method: 'POST', body: form });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || 'Upload failed');
-        }
-        const data = await res.json();
+        const data = await api(uploadImagesApi, { body: form }).catch((e: unknown) => {
+          throw new Error(serverError(e) || 'Upload failed');
+        });
         collected.push(...(data.urls ?? []));
       }
       onChange([...value, ...collected].slice(0, max), aiImages);
@@ -91,11 +89,12 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
     }
     setGenerating(true);
     try {
-      const data = await api(generateHomeAiImageApi, { body: { prompt }, timeoutMs: AI_IMAGE_TIMEOUT_MS }).catch(
-        (error: unknown) => {
-          throw new Error(serverError(error) || 'Could not generate an image.');
-        },
-      );
+      const data = await api(generateHomeAiImageApi, {
+        body: { prompt },
+        timeoutMs: AI_IMAGE_TIMEOUT_MS,
+      }).catch((error: unknown) => {
+        throw new Error(serverError(error) || 'Could not generate an image.');
+      });
       if (!data.url) throw new Error('Could not generate an image.');
       onChange([...value, data.url].slice(0, max), [...aiImages, data.url]);
       setAiPrompt('');

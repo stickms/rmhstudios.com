@@ -9,7 +9,8 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import type { GrantedDrop } from '@/lib/cards/types';
+import { api } from '@/lib/contract/client';
+import { recordPlaytimeBeatApi } from '@/lib/playtime/playtime.contract';
 import { startHeartbeatLoop } from '@/lib/playtime/heartbeat-loop';
 
 const INPUT_EVENTS = ['pointerdown', 'pointermove', 'keydown', 'touchstart', 'wheel'] as const;
@@ -22,13 +23,8 @@ export function usePlaytimeHeartbeat(gameId: string | null, signedIn: boolean): 
     const loop = startHeartbeatLoop({
       gameId,
       send: (id) => {
-        void fetch('/api/games/playtime', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ gameId: id }),
-          keepalive: true,
-        })
-          .then((r) => (r.ok ? (r.json() as Promise<{ drops?: GrantedDrop[] }>) : null))
+        void api(recordPlaytimeBeatApi, { body: { gameId: id }, keepalive: true })
+          .catch(() => null)
           .then((body) => {
             // A trading card dropped: say so, with a way to see it.
             for (const d of body?.drops ?? []) {
