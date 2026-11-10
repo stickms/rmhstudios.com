@@ -232,6 +232,13 @@ _why_.
 10. **Quality bar (from CONTRIBUTING.md):** don't add new type/lint warnings
     relative to the base branch; keep commits focused; never commit secrets.
     Every commit passes `pnpm check:consistency` — see the commit gate above.
+11. **Strict islands:** `tsconfig.strict.json` turns on `noUncheckedIndexedAccess`,
+    `exactOptionalPropertyTypes`, `noImplicitOverride` and `noFallthroughCasesInSwitch`
+    for a list of small, owned modules (`pnpm typecheck:strict`, run in CI). A new
+    top-level module joins the island's `include`; the list only grows. Escape hatches
+    (`any`, `@ts-ignore`, `@ts-nocheck`…) are count-ratcheted down in
+    `lib/__tests__/ts-escape-hatch-ratchet.test.ts`; the 26 `@ts-nocheck` files are
+    `components/velum2099/game/` and must not grow.
 
 ## Design system: Plasmatic Jelly
 
