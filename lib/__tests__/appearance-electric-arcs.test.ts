@@ -10,9 +10,6 @@
  * only for a non-default value; the default (`full`) is expressed by absence.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { join, dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 const { getSession, upsert, findUnique } = vi.hoisted(() => ({
   getSession: vi.fn(),
@@ -38,8 +35,8 @@ import {
 import { appearanceComfortSchema } from '@/lib/appearance/prefs-schema';
 import { accountAppearanceSeed } from '@/lib/appearance/account-seed';
 import { useThemeStore } from '@/stores/themeStore';
+import { runPrepaint } from './prepaint-harness';
 
-const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 type Handler = (ctx: { params: object; request: Request }) => Promise<Response>;
 const handlers = (
@@ -187,14 +184,16 @@ describe('electricArcs resolution, store, seed and applier', () => {
   });
 
   it('the pre-paint script stamps exactly the non-default values from the cache key', () => {
-    const root = readFileSync(join(REPO, 'app/routes/__root.tsx'), 'utf8');
-    const nonDefaults = ELECTRIC_ARC_MODES.filter((v) => v !== DEFAULT_ELECTRIC_ARCS);
-    expect(root).toContain(`localStorage.getItem("rmh-electric-arcs")`);
-    expect(root).toContain(`setAttribute("data-electric-arcs"`);
-    const cond = nonDefaults.map((v) => `ea==="${v}"`).join('||');
-    expect(root).toContain(
-      `if(${cond}){document.documentElement.setAttribute("data-electric-arcs",ea)}`,
-    );
+    // Runs the GENERATED pre-paint code (lib/prepaint/generated.ts) against each stored value.
+    for (const v of ELECTRIC_ARC_MODES) {
+      const run = runPrepaint({ storage: { 'rmh-electric-arcs': v } });
+      if (v === DEFAULT_ELECTRIC_ARCS) expect(run.attrs.has('data-electric-arcs')).toBe(false);
+      else expect(run.attrs.get('data-electric-arcs')).toBe(v);
+    }
+    expect(
+      runPrepaint({ storage: { 'rmh-electric-arcs': 'bogus' } }).attrs.has('data-electric-arcs'),
+    ).toBe(false);
+    expect(runPrepaint().attrs.has('data-electric-arcs')).toBe(false);
   });
 
   it('round-trips through the localStorage cache key (signed-out path)', () => {

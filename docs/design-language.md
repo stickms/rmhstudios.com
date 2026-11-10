@@ -461,10 +461,11 @@ setPreview, accent, setAccent }`. `THEME_BG` is derived from `SITE_STYLES`.
   background. It also **self-heals** any persisted-but-unknown style back to
   `DEFAULT_STYLE`. Games/app routes are excluded (`THEME_EXCLUDED_ROUTES`) —
   they own their styling; an `app-route` class is toggled on `<html>` for them.
-- **No-flash SSR:** an inline `themeScript` in `app/routes/__root.tsx` applies
-  the persisted class + accent _before hydration_, deriving the background from
-  the `THEME_BG` map (also from `SITE_STYLES`), so there is no hand-copied
-  theme→background map to keep in sync.
+- **No-flash SSR:** the generated pre-paint script (`lib/prepaint/`, theme step
+  `lib/prepaint/theme.ts`; see `docs/fouc.md`) applies the persisted class +
+  accent _before hydration_, deriving the background from the `THEME_BG` map
+  (also from `SITE_STYLES`, delivered in the `rmh-prepaint` config block), so
+  there is no hand-copied theme→background map to keep in sync.
 
 ### 2.1 The appearance & accessibility suite
 

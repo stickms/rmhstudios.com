@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DELIGHT_PREPAINT_SCRIPT, seasonForDate } from '@/lib/delight/season';
+import { SEASONS, seasonForDate } from '@/lib/delight/season';
+import { runPrepaint } from '@/lib/__tests__/prepaint-harness';
 import { addDays, normalizeAnswer, sitePathSchema } from '@/lib/delight/schema';
 
 describe('seasonForDate', () => {
@@ -10,8 +11,19 @@ describe('seasonForDate', () => {
     expect(seasonForDate(new Date(2026, 5, 15))).toBeNull();
   });
   it('ships a pre-paint script built from the same table', () => {
-    expect(DELIGHT_PREPAINT_SCRIPT).toContain('"halloween"');
-    expect(DELIGHT_PREPAINT_SCRIPT).toContain('rmh-fools-off');
+    // The GENERATED pre-paint code, run on a date inside each window and one outside.
+    for (const s of SEASONS) {
+      const run = runPrepaint({ now: new Date(2026, Math.floor(s.from / 100) - 1, s.from % 100) });
+      expect(run.classes.has(`season-${s.name}`), s.name).toBe(true);
+    }
+    const none = runPrepaint({ now: new Date(2026, 5, 15) });
+    expect([...none.classes].some((c) => c.startsWith('season-'))).toBe(false);
+    // April Fools: the cached admin flag, unless the member switched it off.
+    expect(runPrepaint({ storage: { 'rmh-fools': '1' } }).classes.has('fools')).toBe(true);
+    expect(
+      runPrepaint({ storage: { 'rmh-fools': '1', 'rmh-fools-off': '1' } }).classes.has('fools'),
+    ).toBe(false);
+    expect(runPrepaint().classes.has('fools')).toBe(false);
   });
 });
 

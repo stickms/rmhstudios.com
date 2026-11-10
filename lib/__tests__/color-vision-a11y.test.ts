@@ -10,6 +10,7 @@ import {
 } from '@/lib/appearance/prefs';
 // The zod schema lives apart so `prefs` stays off the client critical path —
 // see that module's header note.
+import { runPrepaint } from './prepaint-harness';
 import { appearanceComfortSchema } from '@/lib/appearance/prefs-schema';
 
 /**
@@ -29,7 +30,6 @@ import { appearanceComfortSchema } from '@/lib/appearance/prefs-schema';
 
 const ROOT = process.cwd();
 const css = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
-const rootTsx = readFileSync(join(ROOT, 'app', 'routes', '__root.tsx'), 'utf8');
 
 /** The modes that actually retint something ('none' is the untouched default). */
 const ACTIVE_MODES = COLOR_VISION_MODES.filter((m) => m !== 'none');
@@ -63,7 +63,7 @@ describe('colour-vision modes', () => {
   it.each(ACTIVE_MODES)('%s has a palette in globals.css', (mode) => {
     expect(
       css.includes(`data-color-vision='${mode}'`),
-      `No CSS block for '${mode}'. Without one the setting is selectable and does nothing.`
+      `No CSS block for '${mode}'. Without one the setting is selectable and does nothing.`,
     ).toBe(true);
   });
 
@@ -88,13 +88,15 @@ describe('colour-vision modes', () => {
   });
 
   it('is applied by the pre-paint script, not just at runtime', () => {
-    expect(
-      rootTsx.includes('rmh-color-vision'),
-      'The no-flash script must read the cached mode, or the default palette flashes on every load.'
-    ).toBe(true);
+    // Runs the GENERATED pre-paint code against each cached mode.
     for (const mode of ACTIVE_MODES) {
-      expect(rootTsx.includes(mode), `Pre-paint script does not handle '${mode}'`).toBe(true);
+      const run = runPrepaint({ storage: { 'rmh-color-vision': mode } });
+      expect(
+        run.attrs.get('data-color-vision'),
+        `Pre-paint script does not handle '${mode}' — the default palette flashes on every load.`,
+      ).toBe(mode);
     }
+    expect(runPrepaint().attrs.has('data-color-vision')).toBe(false);
   });
 });
 
@@ -107,7 +109,7 @@ describe('status colour is never the only signal', () => {
     for (const variant of ['success', 'warning', 'danger']) {
       expect(
         badge.includes(`${variant}:`),
-        `Badge variant '${variant}' has no entry in STATUS_ICONS`
+        `Badge variant '${variant}' has no entry in STATUS_ICONS`,
       ).toBe(true);
     }
     expect(badge).toContain('STATUS_ICONS');

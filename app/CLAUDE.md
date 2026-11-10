@@ -158,12 +158,15 @@ Conventions:
 ## __root.tsx / _site.tsx (don't duplicate what they already do)
 
 `__root.tsx`: resolves session + locale server-side (signed-in shell on first
-paint), injects the anti-FOUC inline theme/locale scripts, deferred font
+paint), emits the ONE generated pre-paint script (`lib/prepaint/`: theme, locale,
+access, delight, platform, consent, media-reveal — plus its `rmh-prepaint` JSON
+data block; never hand-edit `lib/prepaint/generated.ts`, run `pnpm prepaint:build`;
+see `docs/fouc.md`), deferred font
 loading, site-wide JSON-LD, error/404 boundaries, client-error reporting
 (`lib/client-errors.ts` → `/api/client-error`), Core Web Vitals RUM
 (`lib/rum.ts` → `/api/rum`), and service-worker registration. It special-cases
-`/discord/*` routes with a **minimal head** (Discord's CSP blocks inline
-scripts/external fonts) — replicate that if adding Discord Activity routes.
+`/discord/*` routes with a **minimal head** (no external fonts or preconnects, no JSON-LD; it still carries the
+pre-paint script with `discord: true`) — replicate that if adding Discord Activity routes.
 
 `_site.tsx`: left sidebar, mobile nav, skip link, `<main id="main-content">`
 landmark, `.page-root` enter animation, and its own error/404 components so

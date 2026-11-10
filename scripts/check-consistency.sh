@@ -505,6 +505,19 @@ else
       skip "docs freshness" "registry/catalog/routes untouched"
     fi
 
+    # lib/prepaint/generated.ts is the ONE inline pre-paint script (and its CSP
+    # hash), bundled from lib/prepaint/*.ts and the small modules those steps
+    # import. A stale copy ships the old logic to every document.
+    if has '^(lib/prepaint/|lib/access/prefs\.ts|lib/appearance\.ts|lib/cookie-consent\.ts|lib/delight/season\.ts|lib/i18n/config\.ts|lib/native-material-routes\.ts|scripts/build-prepaint\.ts)'; then
+      if pnpm run prepaint:check; then
+        pass "pre-paint script is current"
+      else
+        fail "lib/prepaint/generated.ts is stale — run pnpm prepaint:build and stage it"
+      fi
+    else
+      skip "pre-paint freshness" "lib/prepaint untouched"
+    fi
+
     # docs/_generated/facts.json holds the counts (models, routes, tests, css, ...)
     # that CLAUDE.md and the living docs point at. Only the paths that feed those
     # counts (or the file itself) can make it stale.

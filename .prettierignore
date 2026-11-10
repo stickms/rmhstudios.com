@@ -21,3 +21,4 @@ packages/sdk/
 
 # AssemblyScript syntax is checked by its compiler, not the TypeScript formatter.
 /wasm/
+lib/prepaint/generated.ts

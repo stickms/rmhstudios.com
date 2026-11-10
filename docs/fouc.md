@@ -2,8 +2,9 @@
 
 A flash of unstyled content is this site's hardest class of defect to reason
 about, because nothing about it is visible in a diff. Every mechanism that
-prevents one — the pre-paint script stack in
-[`app/routes/__root.tsx`](../app/routes/__root.tsx), the `--site-*`/`--app-*`
+prevents one — the generated pre-paint script
+([`lib/prepaint/`](../lib/prepaint/), emitted by
+[`app/routes/__root.tsx`](../app/routes/__root.tsx)), the `--site-*`/`--app-*`
 token contracts, the route-CSS guards in [`app/globals.css`](../app/globals.css),
 Vite's CSS-before-chunk preload ordering — is correct in isolation, and only
 provably correct **together, in a real browser, in the order the browser actually
@@ -254,6 +255,38 @@ asserts the matching detector catches each one:
 finding (`kind: 'instrument'`), so a dead instrument fails loudly rather than
 passing quietly — but the self-test is what proves the live ones still work.
 
+## The pre-paint script is generated, not hand-written
+
+Everything that must be on `<html>` before the first frame lives in
+[`lib/prepaint/`](../lib/prepaint/) as ordinary TypeScript — one module per
+concern (`platform`, `media-reveal`, `account-seed`, `theme`, `access`,
+`delight`, `locale`, `cookie-consent`), each a `(ctx) => void` step.
+`lib/prepaint/index.ts` runs them in order, each in its own `try/catch`, so one
+failing step (blocked storage, a corrupt stored value) never blocks the rest or
+paint. **Order matters:** platform before theme (theme reads `ios-webkit`), the
+account seed before theme (it writes the `localStorage` the theme step reads).
+
+`pnpm prepaint:build` (`scripts/build-prepaint.ts`) bundles `lib/prepaint/entry.ts`
+with esbuild (IIFE, minified, ES2017) into the GENERATED `lib/prepaint/generated.ts`:
+`PREPAINT_CODE`, its base64 sha256 `PREPAINT_SHA256` (the CSP `'sha256-…'` source,
+redesign F5), and the tiny `<body>`-top companion `PREPAINT_BODY_CODE` (it needs
+`document.body`, so it cannot fold into the head script). Never edit the generated
+file; `pnpm prepaint:check` (commit gate + CI "Docs freshness") and
+`lib/prepaint/__tests__/generated.test.ts` fail when it is stale.
+
+There is exactly ONE code string. What varies is **data**, in a
+`<script type="application/json" id="rmh-prepaint">` block the root emits just
+before it (`lib/prepaint/config.ts`): `nf` (a global 404 is a site page whatever
+the URL), `discord` (that head never ran media-reveal or cookie-consent), `seed`
+(a signed-in account's saved appearance), and the `theme` tables from
+`stores/themeStore.ts` and `lib/prepaint/theme-routes.ts` (`THEME_EXCLUDED_ROUTES`,
+`THEME_EXCLUDED_EXCEPTIONS`; too heavy to bundle — they pull in the game and app
+catalogs). The route predicate is `isAppRoute` in `lib/prepaint/route.ts`, imported
+by both the theme step and `isAppThemeRoute` in `Providers`: one implementation,
+no hand-kept ES5 twin. To add a pre-paint behaviour: write a step, register it in
+`PREPAINT_STEPS`, run `pnpm prepaint:build`, and add a case that runs the generated
+code (`lib/__tests__/prepaint-harness.ts`).
+
 ## The commit-time contract
 
 The runtime audit needs a build and a server, so it runs before a release. A FOUC
@@ -266,7 +299,7 @@ found:
    `Providers.tsx`, `themeStore.ts` and `lib/appearance/prefs.ts`
    for every class, `data-*` attribute and custom property
    written to `<html>` from client code, and requires each one to also be written
-   by the pre-paint scripts. Transient tokens (`vt-active`, `vt-liquid` — set for
+   by the generated pre-paint script (`lib/prepaint/generated.ts`). Transient tokens (`vt-active`, `vt-liquid` — set for
    the duration of a View Transition, with no persisted state behind them) are the
    only exemption, and entries come out of that list rather than going in.
 2. **A page nobody audited** — the coverage dichotomy above.

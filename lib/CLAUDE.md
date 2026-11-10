@@ -235,8 +235,8 @@ don't remove that plugin.
   `pnpm i18n:resources` (regenerate the resource modules) →
   `pnpm i18n:coverage` (verify; `--strict` gate available).
 - Locale resolution: `rmh-lang` cookie → Accept-Language → `en`
-  (`lib/i18n/resolve.ts`); `<html lang/dir>` is set pre-paint by an inline
-  script in `__root.tsx`.
+  (`lib/i18n/resolve.ts`); `<html lang/dir>` is set pre-paint by the
+  `locale` step of the generated pre-paint script (`lib/prepaint/`, `docs/fouc.md`).
 
 ## Caching / realtime / jobs
 
