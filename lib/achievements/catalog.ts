@@ -134,7 +134,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'game.daily.all_in_day', name: 'Clean Sweep', description: 'Complete every daily puzzle in one day.', icon: '🧹', category: 'games', tier: 'gold', coinReward: 75, target: 1, group: 'Daily Puzzles' },
   { id: 'game.slice_it.full_combo', name: 'Full Combo', description: 'Clear a song with a full combo.', icon: '🎼', category: 'games', tier: 'gold', coinReward: 75, target: 1, group: 'Slice It!' },
   // X1 — the rest of the ladder. Unlock checks live in `lib/achievements/slice-it.ts`
-  // (pure, per-run logic) and `lib/slice-it/progression.server.ts` (the Prisma
+  // (pure, per-run logic) and `features/slice-it/engine/progression.server.ts` (the Prisma
   // orchestration), called from `score.ts`. `charted` is granted from
   // `app/routes/api/slice-it/charts/$id.ts` on the draft→public transition —
   // the only place a chart's publish state actually changes.

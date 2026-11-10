@@ -34,13 +34,13 @@ Three things in it deserve a second look:
    divergence. Adding the column **does rewrite the `Song` table**; everything
    else in the migration is catalogue-only.
 3. **The `artistKey` backfill.** It reproduces `artistKeyOf()` from
-   `lib/slice-it/artist.ts` in SQL: a `regexp_replace` for the featuring clause,
+   `features/slice-it/engine/artist.ts` in SQL: a `regexp_replace` for the featuring clause,
    a `translate()` for Latin-1 accents, then a strip to alphanumerics. The
    runtime normaliser folds diacritics with NFKD, which covers strictly more
    characters than the `translate()` table, so a row whose artist carries a
    non-Latin-1 diacritic gets a slightly different key from the backfill than it
    will get the next time it is written. That is a handful of rows in the wrong
-   group until they are next edited. `lib/slice-it/__tests__/artist.test.ts`
+   group until they are next edited. `features/slice-it/engine/__tests__/artist.test.ts`
    pins the two character tables against each other so the Latin-1 half cannot
    drift; the rest is documented rather than enforced. The alternative was
    requiring the `unaccent` extension.
@@ -60,7 +60,7 @@ migration because it needs `analysisData` parsed per row and that is a
 multi-hundred-kilobyte JSON document each:
 
 ```ts
-import { songDensityStrip } from '@/lib/slice-it/songs.server';
+import { songDensityStrip } from '@features/slice-it/engine/songs.server';
 
 // Batched, because loading every chart in the library at once is exactly the
 // thing `songSelect` excludes `analysisData` to avoid.
@@ -91,7 +91,7 @@ If any other path writes `Song.artist` — the "edit track info" panel does — 
 leaves the song on the old artist's page:
 
 ```ts
-import { artistKeyOf } from '@/lib/slice-it/artist';
+import { artistKeyOf } from '@features/slice-it/engine/artist';
 data: { artist, artistKey: artistKeyOf(artist) }
 ```
 
@@ -134,7 +134,7 @@ are in `locales/en/r-slice-it.json`.
 ## 6. What the wave finished from earlier handoffs
 
 - **`docs/_handoff/rating-requests.md` §1 — the difficulty sort.** Done.
-  `SONG_SORTS` in `lib/slice-it/constants.ts` gained `'difficulty'`, the
+  `SONG_SORTS` in `features/slice-it/engine/constants.ts` gained `'difficulty'`, the
   `ORDER_BY` map in `app/routes/api/slice-it/songs.ts` maps it to
   `{ chartRating: { sort: dir, nulls: 'last' } }`, and the grid's sort dropdown
   offers it. The rest of that document is untouched: **nothing still calls
@@ -163,5 +163,5 @@ are in `locales/en/r-slice-it.json`.
   is a worse bug than an unindexed scan.
 - **The weights are unfitted.** Same caveat as the C3 rating: `3 / 1 / 0.15` and
   the `0.25` trigram threshold were chosen by judgement. They are in
-  `SEARCH_TUNING` in `lib/slice-it/library-query.server.ts` so that a future
+  `SEARCH_TUNING` in `features/slice-it/engine/library-query.server.ts` so that a future
   calibration has one place to change.

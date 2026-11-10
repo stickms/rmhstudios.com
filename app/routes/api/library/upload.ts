@@ -3,7 +3,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { prisma } from '@/lib/prisma.server';
 import { putObject, deleteObject, objectExists, s3Configured } from '@/lib/storage/s3.server';
-import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
+import { validateImageBuffer } from '@features/slice-it/engine/upload-validation';
 import { processLibraryUpload, type UploadDeps } from '@/lib/library/upload';
 import { libraryPdfMaxBytes } from '@/lib/library/upload-validation';
 import { uploadSlugExists } from '@/lib/library/library.server';

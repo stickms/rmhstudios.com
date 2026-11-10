@@ -1,52 +1,50 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { versecraftSaveBody } from '@/lib/versecraft/save-schema';
+import { loadVersecraftSaveApi, saveVersecraftApi } from '@/lib/versecraft/versecraft.contract';
+import type { GameState } from '@/lib/versecraft/types';
 import { prisma } from '@/lib/prisma.server';
 
 export const Route = createFileRoute('/api/versecraft/save')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
+      GET: implement(loadVersecraftSaveApi, {}, async ({ session }) => {
         const [save, progress] = await Promise.all([
           prisma.versecraftSave.findUnique({ where: { userId: session.user.id } }),
           prisma.versecraftProgress.findUnique({ where: { userId: session.user.id } }),
         ]);
 
-        return Response.json({
-          saveData: save?.saveData ?? null,
+        return {
+          saveData: (save?.saveData ?? null) as GameState | null,
           progress: progress
             ? {
-                completedChapters: progress.completedChapters,
-                unlockedEndings: progress.unlockedEndings,
-                completedRoutes: progress.completedRoutes,
+                completedChapters: progress.completedChapters as string[],
+                unlockedEndings: progress.unlockedEndings as string[],
+                completedRoutes: progress.completedRoutes as string[],
                 totalPoemsWritten: progress.totalPoemsWritten,
                 totalPlaytime: progress.totalPlaytime,
               }
             : null,
-        });
+        };
       }),
-      POST: defineHandler(
-        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'versecraft-save' } },
-        async ({ request, session }) => {
-          let body: {
-            saveData?: object;
-            progress?: {
-              completedChapters?: string[];
-              unlockedEndings?: string[];
-              completedRoutes?: string[];
-              totalPoemsWritten?: number;
-              totalPlaytime?: number;
-            };
-          };
-          try {
-            body = await request.json();
-          } catch {
-            return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
-          }
-
+      POST: implement(
+        saveVersecraftApi,
+        {
+          rateLimit: { limit: 20, windowMs: 60_000, prefix: 'versecraft-save' },
+          body: versecraftSaveBody,
+          // A body that is not JSON (or not an object) was 'Invalid JSON body'; a missing/non-object saveData was its own text.
+          invalid: (error) =>
+            Response.json(
+              {
+                error: error.issues.some((i) => i.path[0] === 'saveData')
+                  ? 'Missing or invalid saveData'
+                  : 'Invalid JSON body',
+              },
+              { status: 400 },
+            ),
+        },
+        async ({ session, body }) => {
           const { saveData, progress } = body;
-          if (!saveData || typeof saveData !== 'object') {
-            return Response.json({ error: 'Missing or invalid saveData' }, { status: 400 });
-          }
 
           // Validate body size (max 500KB)
           const bodyStr = JSON.stringify(saveData);
@@ -77,13 +75,13 @@ export const Route = createFileRoute('/api/versecraft/save')({
               },
               update: {
                 ...(progress.completedChapters !== undefined && {
-                  completedChapters: progress.completedChapters,
+                  completedChapters: progress.completedChapters as string[],
                 }),
                 ...(progress.unlockedEndings !== undefined && {
-                  unlockedEndings: progress.unlockedEndings,
+                  unlockedEndings: progress.unlockedEndings as string[],
                 }),
                 ...(progress.completedRoutes !== undefined && {
-                  completedRoutes: progress.completedRoutes,
+                  completedRoutes: progress.completedRoutes as string[],
                 }),
                 ...(progress.totalPoemsWritten !== undefined && {
                   totalPoemsWritten: progress.totalPoemsWritten,
@@ -95,7 +93,7 @@ export const Route = createFileRoute('/api/versecraft/save')({
             });
           }
 
-          return Response.json({ success: true, updatedAt: save.updatedAt });
+          return { success: true as const, updatedAt: save.updatedAt.toISOString() };
         },
       ),
     },

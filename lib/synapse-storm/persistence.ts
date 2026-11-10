@@ -1,6 +1,11 @@
 import { authClient } from '../auth-client';
 import { api } from '@/lib/contract/client';
 import { submitSynapseStormScoreApi } from '@/lib/game/score.contract';
+import { HttpError } from '@/lib/http';
+import {
+    getSynapseStormLeaderboardApi,
+    loadSynapseStormSaveApi,
+} from './synapse-storm.contract';
 
 export interface LeaderboardEntry {
     rank: number;
@@ -34,13 +39,9 @@ export async function saveSynapseStormScore(data: ScoreSaveData) {
 
 export async function loadSynapseStormSave() {
     try {
-        const response = await fetch('/api/games/synapse-storm/save');
-        if (!response.ok) {
-            if (response.status === 404) return null;
-            throw new Error('Failed to load save');
-        }
-        return await response.json();
+        return await api(loadSynapseStormSaveApi);
     } catch (error) {
+        if (error instanceof HttpError && error.status === 404) return null;
         console.error('Error loading Synapse Storm save:', error);
         return null;
     }
@@ -48,11 +49,7 @@ export async function loadSynapseStormSave() {
 
 export async function fetchGlobalLeaderboard(limit = 20): Promise<LeaderboardEntry[]> {
     try {
-        const response = await fetch(`/api/games/synapse-storm/leaderboard?limit=${limit}`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch leaderboard');
-        }
-        const data = await response.json();
+        const data = await api(getSynapseStormLeaderboardApi, { query: { limit } });
         return data.leaderboard ?? [];
     } catch (error) {
         console.error('Error fetching Synapse Storm leaderboard:', error);

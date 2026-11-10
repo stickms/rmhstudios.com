@@ -60,7 +60,12 @@ function deps(file: string): string[] {
       // way; following those edges reached server code (and through it game logic the site sheet skips) that no
       // page ever loads. Mixed imports (`import { type A, b }`) are still followed.
       if (/^(?:import|export)\s+type\s/.test(m[0])) continue;
-      const r = resolveImport(file, m[1] ?? m[2] ?? m[3]);
+      const spec = m[1] ?? m[2] ?? m[3];
+      // A `*.server` module is emptied out of the client bundle (stubServerFiles in vite.config.ts), so nothing it
+      // imports renders on a page. Route loaders reach server logic this way (a `createServerFn` in a
+      // `*.queries.ts`, redesign B4); following that edge counted game code the server scores with as page code.
+      if (spec && /\.server(?:\.[cm]?[jt]sx?)?$/.test(spec)) continue;
+      const r = resolveImport(file, spec);
       if (r) out.push(r);
     }
   }

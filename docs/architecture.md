@@ -328,7 +328,20 @@ realtime topology.)
   `redis-state`); the app routes state keys there only once `REDIS_STATE_URL`
   is set, otherwise it falls back to the cache connection (`lib/redis.server.ts`).
   If Redis is entirely absent the web tier degrades to in-process. Node realtime
-  hubs hold state process-locally (single-instance; no socket.io Redis adapter).
+  hubs hold state process-locally (single-instance; the socket.io Redis adapter
+  is wired but off unless `REALTIME_REDIS_ADAPTER=1`).
+- **Durable rmhbox lobbies (D2 step 2, off by default):** with
+  `RMHBOX_DURABLE_LOBBIES=1` **and** `REDIS_STATE_URL` reachable at boot, the
+  rmhbox hub writes each lobby to the `redis-state` plane (never the cache
+  plane) as `rmhbox:lobby:<id>` (versioned JSON, 30 min TTL refreshed on every
+  save, indexed by the set `rmhbox:lobbies`), saves every lobby inside its
+  graceful shutdown, and restores them before it listens. A deploy then keeps
+  the lobby, its seats, cumulative scores, match history and chat; a round in
+  progress is cancelled (the lobby comes back in `WAITING` with a system chat
+  line). Restored members start disconnected under the normal 15 s grace, so a
+  lobby nobody returns to disbands as it always has. With the flag unset, or
+  the plane unreachable, nothing is constructed and lobbies are lost on restart
+  as before. Details: `server/CLAUDE.md` (rmhbox).
 
 ## 8. Observability
 

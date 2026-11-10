@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { readSongCover } from '@/lib/slice-it/songs.server';
+import { readSongCover } from '@features/slice-it/engine/songs.server';
 
 /**
  * A song's cover art.

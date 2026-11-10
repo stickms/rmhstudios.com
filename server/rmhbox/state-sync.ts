@@ -73,6 +73,9 @@ export class StateSyncService {
     const lobby = this.lobbyManager.getLobby(lobbyId);
     if (!lobby) return;
     this.sendFullSyncToAll(lobby);
+    // Phase boundaries (round results, back to WAITING) are a save point for
+    // durable lobbies; the 10 s heartbeat (tick) is not.
+    this.lobbyManager.markChanged(lobbyId);
   }
 
   /**

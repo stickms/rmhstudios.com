@@ -47,7 +47,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 
-/** Mirrors `QualificationReport` in `lib/slice-it/ranking.server.ts`. */
+/** Mirrors `QualificationReport` in `features/slice-it/engine/ranking.server.ts`. */
 interface Evidence {
   chartId: string;
   eligible: boolean;

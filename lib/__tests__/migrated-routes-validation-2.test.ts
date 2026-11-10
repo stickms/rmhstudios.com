@@ -12,6 +12,7 @@ const h = vi.hoisted(() => ({ getSession: vi.fn() }));
 vi.mock('@/lib/auth', () => ({ auth: { api: { getSession: h.getSession } } }));
 vi.mock('@/lib/prisma.server', () => ({ prisma: {} }));
 vi.mock('@/lib/quests/engine.server', () => ({ recordGamePlay: vi.fn() }));
+vi.mock('@/lib/xp/engine.server', () => ({ awardXp: vi.fn() }));
 vi.mock('@/lib/game/results.server', () => ({ reportGameResult: vi.fn() }));
 vi.mock('@/lib/economy/ledger.server', () => ({
   creditCoins: vi.fn(),
@@ -45,6 +46,9 @@ const ALTAIR_SCORE = '@/app/routes/api/altair/score';
 const ALTAIR_META = '@/app/routes/api/altair/meta';
 const BET = '@/app/routes/api/coins/bet';
 const PURCHASE = '@/app/routes/api/coins/purchase';
+const VERSECRAFT = '@/app/routes/api/versecraft/save';
+const PASS_CLAIM = '@/app/routes/api/battlepass/claim';
+const PASS_UNLOCK = '@/app/routes/api/battlepass/unlock';
 
 const CASES: Case[] = [
   {
@@ -197,6 +201,50 @@ const CASES: Case[] = [
     body: { item: 'nope' },
     error: 'Invalid input: expected "profile-pet"',
   },
+
+  {
+    name: 'versecraft save: malformed JSON',
+    mod: VERSECRAFT,
+    body: '{nope',
+    error: 'Invalid JSON body',
+  },
+  {
+    name: 'versecraft save: no saveData',
+    mod: VERSECRAFT,
+    body: {},
+    error: 'Missing or invalid saveData',
+  },
+  {
+    name: 'versecraft save: saveData is a string',
+    mod: VERSECRAFT,
+    body: { saveData: 'x' },
+    error: 'Missing or invalid saveData',
+  },
+  {
+    name: 'versecraft save: saveData is null',
+    mod: VERSECRAFT,
+    body: { saveData: null },
+    error: 'Missing or invalid saveData',
+  },
+
+  {
+    name: 'battlepass claim: malformed JSON',
+    mod: PASS_CLAIM,
+    body: '{nope',
+    error: 'Invalid input',
+  },
+  {
+    name: 'battlepass claim: tier 0',
+    mod: PASS_CLAIM,
+    body: { tier: 0, track: 'free' },
+    error: 'Invalid input',
+  },
+  {
+    name: 'battlepass claim: unknown track',
+    mod: PASS_CLAIM,
+    body: { tier: 1, track: 'gold' },
+    error: 'Invalid input',
+  },
 ];
 
 /** Every migrated POST, for the signed-out check (body deliberately invalid). */
@@ -210,6 +258,9 @@ const POSTS = [
   PURCHASE,
   '@/app/routes/api/coins/claim',
   '@/app/routes/api/signal-forge/abandon',
+  VERSECRAFT,
+  PASS_CLAIM,
+  PASS_UNLOCK,
 ];
 
 function post(body?: unknown): Request {

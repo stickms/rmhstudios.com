@@ -6,7 +6,7 @@
  *   pnpm exec tsx scripts/altair/balance/report.ts --json /tmp/baseline.json
  *
  * Flags
- *   --classes a,b,c   class ids (default: every class in lib/altair/data/classes.ts)
+ *   --classes a,b,c   class ids (default: every class in features/altair/engine/data/classes.ts)
  *   --seeds N         seeds per class, 1..N (default 2)
  *   --skill s         novice | average | expert (default average)
  *   --heat N          Heat tier to play at, 0..20 (default 0)
@@ -17,7 +17,7 @@
  * diff across a balance change is a real comparison, not noise.
  */
 import { writeFileSync } from 'node:fs';
-import { CLASSES } from '@/lib/altair/data/classes';
+import { CLASSES } from '@features/altair/engine/data/classes';
 import { playBot, type BotSkill } from './bot';
 
 function arg(name: string, fallback: string): string {

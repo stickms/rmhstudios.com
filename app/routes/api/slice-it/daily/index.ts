@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/slice-it/slice-it.contract';
-import { getDailyState } from '@/lib/slice-it/daily.server';
+import * as C from '@features/slice-it/engine/slice-it.contract';
+import { getDailyState } from '@features/slice-it/engine/daily.server';
 
 /**
  * S1 — today's daily challenge, its board, and the viewer's attempt.

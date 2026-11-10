@@ -113,7 +113,7 @@ model Player {
   /// statistic ("how much have I played"), it is what the profile card shows,
   /// and rewriting its meaning under a shipped column would silently change
   /// every number already displayed. `skillRating` is the ranking axis; this is
-  /// the odometer. See `lib/slice-it/ranking.server.ts`.
+  /// the odometer. See `features/slice-it/engine/ranking.server.ts`.
   totalScore  Int @default(0)
   gamesPlayed Int @default(0)
 

@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/slice-it/slice-it.contract';
-import { topArtists, type ArtistSummary } from '@/lib/slice-it/library-query.server';
+import * as C from '@features/slice-it/engine/slice-it.contract';
+import { topArtists, type ArtistSummary } from '@features/slice-it/engine/library-query.server';
 
 /**
  * L15 — the artist facet.

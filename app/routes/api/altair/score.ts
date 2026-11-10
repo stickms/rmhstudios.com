@@ -39,7 +39,7 @@ export const Route = createFileRoute('/api/altair/score')({
           const existingProfile = await prisma.altairPlayer.findUnique({ where: { userId } });
 
           // LEGACY intake. Current clients never call this: their runs are replayed server-side and the
-          // leaderboard rows are written from the replay (lib/altair/solo/persist.server.ts). What still
+          // leaderboard rows are written from the replay (features/altair/engine/solo/persist.server.ts). What still
           // arrives here is an old client's self-report, so it is bounded to what play could produce, and
           // ALTAIR_LEGACY_SCORE=0 closes it once old clients are gone.
           if (process.env.ALTAIR_LEGACY_SCORE === '0') {

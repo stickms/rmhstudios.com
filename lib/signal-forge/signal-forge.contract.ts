@@ -30,6 +30,15 @@ export const submitSignalForgeScoreApi = endpoint<{
   res: { success: true; profile: Record<string, unknown>; isRecord: boolean };
 }>()({ method: 'POST', path: '/api/signal-forge/score' });
 
+/**
+ * Save the in-progress run. The route answers 413 before it checks the session, so it stays
+ * hand-parsed; the call site treats any answer as sent, as the raw fetch did.
+ */
+export const saveSignalForgeRunApi = endpoint<{
+  body: { runState: Record<string, unknown> };
+  res: { success: true };
+}>()({ method: 'POST', path: '/api/signal-forge/save' });
+
 /** Drop the caller's saved run. */
 export const abandonSignalForgeRunApi = endpoint<{
   res: { success: true };

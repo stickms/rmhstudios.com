@@ -13,7 +13,7 @@ has to do for these features to work well, plus what was deliberately left out.
 ## 1. `/slice-it` strips the invite parameters (`N9`) — owner: library wave
 
 `app/routes/slice-it/index.tsx` sets `validateSearch: librarySearchSchema`
-(`lib/slice-it/library-filters.ts`). That is a `z.object()`, and a zod object
+(`features/slice-it/engine/library-filters.ts`). That is a `z.object()`, and a zod object
 **strips keys it does not declare** — so `?lobby=ABC123` and `?watch=1` are
 parsed away before `useSearch()` ever sees them. The invite link the lobby has
 been copying to the clipboard since before this wave therefore arrived as an
@@ -44,7 +44,7 @@ open-lobby list, a `?lobby=CODE&watch=1` link, and `net.spectateLobby(code)`. It
 is **not** reachable from the main menu, because `MainMenu.tsx` is outside this
 wave. A "Watch a lobby" entry that takes a code and calls `spectateLobby` would
 be six lines; the component to render afterwards is
-`components/slice-it/spectate/SpectatorView.tsx`, which takes `{ code, onLeave }`
+`features/slice-it/ui/spectate/SpectatorView.tsx`, which takes `{ code, onLeave }`
 and reads everything else from the store.
 
 ## 3. A spectator still needs a session — owner: `net/client.ts` + hub auth
@@ -57,7 +57,7 @@ the match. Making anonymous watching real means letting the client connect with
 no credential at all, which is a decision about the whole hub's soft auth and not
 about Slice It. Left alone deliberately.
 
-## 4. The store has no spectator flag — owner: `lib/slice-it/store.ts`
+## 4. The store has no spectator flag — owner: `features/slice-it/engine/store.ts`
 
 "Am I watching or seated" lives in `MultiplayerLobby`'s local state and in a
 module-level `spectatingCode` in `net/client.ts` (which is what the reconnect

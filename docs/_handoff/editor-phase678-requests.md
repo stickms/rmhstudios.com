@@ -11,7 +11,7 @@ does instead, and what is lost by doing it that way.
 
 ---
 
-## 1. `lib/slice-it/beatmap/charter.ts` — export the lane-bias thresholds
+## 1. `features/slice-it/engine/beatmap/charter.ts` — export the lane-bias thresholds
 
 **Why.** Promoting an onset ghost has to put the note on the lane the charter
 would have chosen, or the single most-used interaction in the editor (§6) puts
@@ -19,7 +19,7 @@ notes on the wrong side of the playfield. The rule is
 `lowRatio >= LOW_LANE_BIAS → lane 0`, `highRatio >= HIGH_LANE_BIAS → lane 1`,
 and both constants are module-private.
 
-**What ships instead.** `suggestLane()` in `lib/slice-it/editor/artefacts.ts`
+**What ships instead.** `suggestLane()` in `features/slice-it/engine/editor/artefacts.ts`
 copies the two values (`0.42` / `0.3`). It deliberately does **not** reproduce
 the charter's later passes (anti-jack alternation, same-lane spacing), which are
 properties of generating a whole chart and meaningless for one promoted note.
@@ -31,9 +31,9 @@ from both places, removes the drift entirely.
 
 ---
 
-## 2. `lib/slice-it/engine.ts` — scroll velocity is an INTEGRAL
+## 2. `features/slice-it/engine/engine.ts` — scroll velocity is an INTEGRAL
 
-**Why.** `lib/slice-it/editor/sv.ts` ships the timing-point/SV model (phase 8)
+**Why.** `features/slice-it/engine/editor/sv.ts` ships the timing-point/SV model (phase 8)
 and the editor can now author SV markers, but the engine still draws every note
 at `(note.time - now) * pixelsPerSecond`, so the markers change nothing during
 play.
@@ -48,11 +48,11 @@ notes swap order**, and the player has no way to know the display is lying.
 **What to call.** `buildSvTable(svPoints)` once per chart load, then
 `scrollOffset(table, note.time, playhead)` per note; `timeAtScroll()` inverts it
 for hit-testing. With no markers the table is the identity, so adopting it costs
-existing charts nothing. Tests: `lib/slice-it/editor/__tests__/sv.test.ts`.
+existing charts nothing. Tests: `features/slice-it/engine/editor/__tests__/sv.test.ts`.
 
 ---
 
-## 3. `lib/slice-it/api-schemas.ts` — `BeatMapZ` strips the new artefacts
+## 3. `features/slice-it/engine/api-schemas.ts` — `BeatMapZ` strips the new artefacts
 
 **Why.** `generateBeatmap()` now returns an `artefacts` block (peak envelope,
 every detected onset with its `kept` flag, sections — §6). The upload route
@@ -102,7 +102,7 @@ artefacts as a normal case (see the "degrades to no waveform" test).
 
 **Why.** §9 says the linter is shared with upload-time validation so a
 hand-authored chart and a generated one are held to the same standard. The rules
-are in `lib/slice-it/beatmap/lint.ts` — pure, no editor types, no DOM — for
+are in `features/slice-it/engine/beatmap/lint.ts` — pure, no editor types, no DOM — for
 exactly this reason, and the editor and the chart API already both import them.
 
 **What to call.** `lintNotes({ difficulty, notes, duration, beats })` and reject

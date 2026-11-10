@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { detectImageExt } from "@/lib/slice-it/upload-validation";
+import { detectImageExt } from "@features/slice-it/engine/upload-validation";
 
 describe("detectImageExt", () => {
   it("detects PNG by magic bytes", () => {

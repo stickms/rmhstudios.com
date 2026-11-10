@@ -1,23 +1,19 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import { unlockBattlePassApi } from '@/lib/battlepass/battlepass.contract';
 import { prisma } from '@/lib/prisma.server';
 import { debitCoins } from '@/lib/economy/ledger.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { CURRENT_SEASON } from '@/lib/battlepass/season';
 
 /** POST /api/battlepass/unlock — unlock the premium track by spending RMH coins. */
 export const Route = createFileRoute('/api/battlepass/unlock')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
+      POST: implement(
+        unlockBattlePassApi,
+        { rateLimit: { limit: 10, windowMs: 60_000, prefix: 'bp-unlock' } },
+        async ({ session }) => {
         try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, { limit: 10, windowMs: 60_000, prefix: 'bp-unlock' });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
           const userId = session.user.id;
           const price = CURRENT_SEASON.premiumPrice;
 
@@ -49,16 +45,16 @@ export const Route = createFileRoute('/api/battlepass/unlock')({
             });
           });
 
-          return Response.json({ success: true });
+          return { success: true as const };
         } catch (error) {
           if (error instanceof Error) {
             if (error.message === 'ALREADY_PREMIUM') return Response.json({ error: 'Already unlocked' }, { status: 409 });
             if (error.message === 'INSUFFICIENT_COINS') return Response.json({ error: 'Not enough coins' }, { status: 400 });
           }
-          console.error('Battlepass unlock error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+          throw error; // the wrapper logs it and answers the generic 500
         }
-      },
+        },
+      ),
     },
   },
 });

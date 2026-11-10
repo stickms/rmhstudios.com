@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 
 import { defineHandler } from '@/lib/api/handler.server';
-import { uploaderStats } from '@/lib/slice-it/library.server';
+import { uploaderStats } from '@features/slice-it/engine/library.server';
 
 /**
  * L6 — the uploader dashboard's read.

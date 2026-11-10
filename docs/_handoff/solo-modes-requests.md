@@ -9,13 +9,13 @@ because the seam it needs does not exist yet.
 
 ## 1. `engine.ts` — a course cannot actually start a song below full gauge
 
-**Owner:** whoever owns `lib/slice-it/engine.ts`.
+**Owner:** whoever owns `features/slice-it/engine/engine.ts`.
 
 **What is true today.** `GameEngine.reset()` (around line 366) does
 `this.health = HEALTH_MAX;` unconditionally, and there is no setter and no
 `loadMap` option for a starting value. So a course:
 
-- tracks the carried gauge correctly (`lib/slice-it/course.ts` → `advance()`),
+- tracks the carried gauge correctly (`features/slice-it/engine/course.ts` → `advance()`),
 - decides continue / complete / fail from it,
 - displays it in the progress banner,
 - and then starts the next song at 100 anyway.
@@ -34,7 +34,7 @@ engine.loadMap(map, buffer, { startingHealth?: number });
 ```
 
 The reducer already produces the number (`CourseState.health` after `advance()`)
-and `components/slice-it/modes/SetlistPanel.tsx` already has it in hand at the
+and `features/slice-it/ui/modes/SetlistPanel.tsx` already has it in hand at the
 call site. Wiring is one argument at the `onPlay` call; **no change to
 `course.ts` is required**, which is why the reducer was written for the finished
 behaviour rather than the current one.
@@ -92,13 +92,13 @@ path.
 
 ## 4. `store.ts` — modes borrow the modifier set and put it back by hand
 
-**Owner:** whoever owns `lib/slice-it/store.ts`.
+**Owner:** whoever owns `features/slice-it/engine/store.ts`.
 
 Both the daily (fixed modifier set) and courses (gauge forced on) need to run one
 or more songs under modifiers that are **not** the player's. The store's
 `modifiers` is persisted, so the panels snapshot the player's set, overwrite it,
 and restore it in the run-finish handler
-(`components/slice-it/modes/{DailyPanel,SetlistPanel}.tsx`).
+(`features/slice-it/ui/modes/{DailyPanel,SetlistPanel}.tsx`).
 
 That is correct as written and it is also fragile: a crash between the overwrite
 and the restore leaves the daily's modifiers as the player's saved settings. A

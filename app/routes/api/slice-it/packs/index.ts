@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/slice-it/packs.contract';
+import * as C from '@features/slice-it/engine/packs.contract';
 import { prisma } from '@/lib/prisma.server';
-import { PackCreateZ, PackListQueryZ, type PackSummary } from '@/lib/slice-it/packs';
-import { addSongsToPack, listPacks, packSelect, toPackSummary } from '@/lib/slice-it/packs.server';
+import { PackCreateZ, PackListQueryZ, type PackSummary } from '@features/slice-it/engine/packs';
+import { addSongsToPack, listPacks, packSelect, toPackSummary } from '@features/slice-it/engine/packs.server';
 
 /**
  * L16 — list and create packs.

@@ -17,8 +17,8 @@
 
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { gameRouteHead } from '@/lib/seo-catalog';
-import AltairShell from '@/components/altair/AltairShell';
-import altairCss from '@/components/altair/altair.css?url';
+import AltairShell from '@features/altair/ui/AltairShell';
+import altairCss from '@features/altair/ui/altair.css?url';
 
 function AltairLayout() {
   return (

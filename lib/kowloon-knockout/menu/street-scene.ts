@@ -3,7 +3,7 @@
 // =============================================================================
 // The main-menu backdrop: a rain-soaked Hong Kong street in 1997, drawn per pixel
 // into a small RGBA buffer the page scales up, so it is pixel art all the way down
-// (same contract as lib/altair/menu/corridor-scene.ts: no DOM, no canvas, nothing
+// (same contract as features/altair/engine/menu/corridor-scene.ts: no DOM, no canvas, nothing
 // allocated per frame; the caller owns the buffer and puts it on screen).
 //
 // What is in it (docs/game-design-schemes/kowloon-knockout.json, and the card art):

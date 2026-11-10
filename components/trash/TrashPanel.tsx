@@ -21,6 +21,9 @@ import { Tabs } from '@/components/ui/tabs';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { TrashRow } from '@/components/trash/TrashRow';
 import { refusalCopy } from '@/components/trash/copy';
+import { api } from '@/lib/contract/client';
+import { errorField, serverError } from '@/lib/http';
+import { listTrashApi, purgeTrashApi, restoreTrashApi } from '@/lib/trash/trash.contract';
 import type { RestoreRefusal, TrashItem, TrashPage } from '@/lib/trash/types';
 
 type Filter = 'all' | 'post' | 'comment';
@@ -29,10 +32,10 @@ interface RefusalError extends Error {
   reason?: RestoreRefusal;
 }
 
-async function readError(res: Response): Promise<RefusalError> {
-  const body = (await res.json().catch(() => ({}))) as { error?: string; reason?: RestoreRefusal };
-  const error: RefusalError = new Error(body.error ?? 'Request failed');
-  error.reason = body.reason;
+/** The server's `{ error, reason }` refusal as the error the mutations' handlers read. */
+function refusal(e: unknown): RefusalError {
+  const error: RefusalError = new Error(serverError(e) ?? 'Request failed');
+  error.reason = errorField<RestoreRefusal>(e, 'reason');
   return error;
 }
 
@@ -48,12 +51,16 @@ export function TrashPanel() {
     queryKey: ['trash', filter],
     initialPageParam: null as string | null,
     queryFn: async ({ pageParam }): Promise<TrashPage> => {
-      const params = new URLSearchParams();
-      if (filter !== 'all') params.set('kind', filter);
-      if (pageParam) params.set('cursor', pageParam);
-      const res = await fetch(`/api/trash?${params.toString()}`, { credentials: 'include' });
-      if (!res.ok) throw await readError(res);
-      return res.json();
+      try {
+        return await api(listTrashApi, {
+          query: {
+            ...(filter !== 'all' ? { kind: filter } : {}),
+            ...(pageParam ? { cursor: pageParam } : {}),
+          },
+        });
+      } catch (e) {
+        throw refusal(e);
+      }
     },
     getNextPageParam: (last) => last.nextCursor,
     staleTime: 15_000,
@@ -68,13 +75,11 @@ export function TrashPanel() {
 
   const restore = useMutation({
     mutationFn: async (item: TrashItem) => {
-      const res = await fetch('/api/trash/restore', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ kind: item.kind, id: item.id }),
-      });
-      if (!res.ok) throw await readError(res);
+      try {
+        await api(restoreTrashApi, { body: { kind: item.kind, id: item.id } });
+      } catch (e) {
+        throw refusal(e);
+      }
     },
     onSuccess: () => {
       toast.success(t('trash-restored-toast', { defaultValue: 'Restored' }));
@@ -93,11 +98,11 @@ export function TrashPanel() {
 
   const purge = useMutation({
     mutationFn: async (item: TrashItem) => {
-      const res = await fetch(`/api/trash/${item.kind}/${encodeURIComponent(item.id)}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!res.ok) throw await readError(res);
+      try {
+        await api(purgeTrashApi, { params: { kind: item.kind, id: item.id } });
+      } catch (e) {
+        throw refusal(e);
+      }
     },
     onSuccess: () => {
       toast.success(t('trash-purged-toast', { defaultValue: 'Deleted permanently' }));

@@ -14,7 +14,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { putObject } from '@/lib/storage/s3.server';
 import { optimizeImage } from '@/lib/image-optimize';
-import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
+import { validateImageBuffer } from '@features/slice-it/engine/upload-validation';
 import { createMediaFromUpload } from '@/lib/media/upload.server';
 import { EMOJI_MAX_DIMENSION, STICKER_MAX_DIMENSION, ITEM_MAX_BYTES } from '@/lib/emoji/packs';
 

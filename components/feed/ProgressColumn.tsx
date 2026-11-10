@@ -1,5 +1,7 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
-import { useEffect, useState, useCallback } from'react';
+import { useState, useCallback } from'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { battlepassQuery, progressSummaryQuery } from '@/lib/progress.queries';
 import { useTranslation } from'react-i18next';
 import {
  Loader2,
@@ -21,104 +23,39 @@ import { EmptyState } from'@/components/ui/empty-state';
 import { DailyWheel } from'./DailyWheel';
 import { StakingCard } from'./StakingCard';
 import { ColumnHeader } from'./ColumnHeader';
-
-interface QuestView {
- id: string;
- period:'daily'|'weekly';
- name: string;
- description: string;
- target: number;
- xp: number;
- coins: number;
- progress: number;
- completed: boolean;
- claimed: boolean;
-}
-
-interface LevelInfo {
- level: number;
- xp: number;
- xpIntoLevel: number;
- xpForNextLevel: number;
- progress: number;
-}
-
-interface ProgressPayload {
- level: LevelInfo;
- coins: number;
- quests: QuestView[];
- season: {
- id: string;
- name: string;
- endsAt: string;
- seasonXp: number;
- tier: number;
- maxTier: number;
- premium: boolean;
- };
-}
-
-interface PassReward {
- type:'coins'|'item'|'xp'|'badge';
- amount?: number;
- itemId?: string;
- label: string;
-}
-interface PassTier {
- tier: number;
- xpRequired: number;
- free: PassReward | null;
- premium: PassReward | null;
-}
-interface BattlePassPayload {
- season: { id: string; name: string; endsAt: string; premiumPrice: number; xpPerTier: number };
- tiers: PassTier[];
- seasonXp: number;
- currentTier: number;
- premium: boolean;
- claimedFree: number[];
- claimedPaid: number[];
- signedIn: boolean;
-}
+import { api } from'@/lib/contract/client';
+import { serverError } from'@/lib/http';
+import {
+ claimBattlePassTierApi,
+ claimQuestApi,
+ unlockBattlePassApi,
+ type QuestView,
+} from'@/lib/battlepass/battlepass.contract';
+import type { PassReward, PassTier } from '@/lib/battlepass/season';
 
 export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } = {}) {
  const { t } = useTranslation('feed');
- const [data, setData] = useState<ProgressPayload | null>(null);
- const [pass, setPass] = useState<BattlePassPayload | null>(null);
- const [loading, setLoading] = useState(true);
+ const queryClient = useQueryClient();
+ const progressQ = useQuery(progressSummaryQuery());
+ const passQ = useQuery(battlepassQuery());
+ const data = progressQ.data ?? null;
+ const pass = passQ.data ?? null;
+ const loading = progressQ.isPending || passQ.isPending;
  const [busy, setBusy] = useState<string | null>(null);
 
- const load = useCallback(async () => {
- const [pRes, bRes] = await Promise.all([
- fetch('/api/progress', { credentials:'include'}),
- fetch('/api/battlepass', { credentials:'include'}),
- ]);
- if (pRes.ok) setData(await pRes.json());
- if (bRes.ok) setPass(await bRes.json());
- }, []);
-
- useEffect(() => {
- let active = true;
- (async () => {
- try {
- await load();
- } finally {
- if (active) setLoading(false);
- }
- })();
- return () => {
- active = false;
- };
- }, [load]);
+ // After a claim: refetch both from the API.
+ const load = useCallback(
+ () => queryClient.invalidateQueries({ queryKey: ['progress'] }),
+ [queryClient],
+ );
 
  async function claimQuest(id: string) {
  setBusy(`q:${id}`);
  try {
- const res = await fetch(`/api/quests/${encodeURIComponent(id)}/claim`, {
- method:'POST',
- credentials:'include',
- });
- if (res.ok) await load();
+ await api(claimQuestApi, { params: { id } });
+ await load();
+ } catch {
+ // A refused claim leaves the list as it is.
  } finally {
  setBusy(null);
  }
@@ -127,13 +64,10 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  async function claimTier(tier: number, track:'free'|'paid') {
  setBusy(`t:${tier}:${track}`);
  try {
- const res = await fetch('/api/battlepass/claim', {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ tier, track }),
- });
- if (res.ok) await load();
+ await api(claimBattlePassTierApi, { body: { tier, track } });
+ await load();
+ } catch {
+ // A refused claim leaves the track as it is.
  } finally {
  setBusy(null);
  }
@@ -142,12 +76,11 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  async function unlockPremium() {
  setBusy('unlock');
  try {
- const res = await fetch('/api/battlepass/unlock', { method:'POST', credentials:'include'});
- if (res.ok) await load();
- else {
- const body = await res.json().catch(() => ({}));
- if (body?.error) alert(body.error);
- }
+ await api(unlockBattlePassApi);
+ await load();
+ } catch (e) {
+ const message = serverError(e);
+ if (message) alert(message);
  } finally {
  setBusy(null);
  }

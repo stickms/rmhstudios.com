@@ -8,13 +8,13 @@ a chart gets made, and how a match survives someone's wifi dying.
 
 | Concern         | Lives in                                                           |
 | --------------- | ------------------------------------------------------------------ |
-| Chart analysis  | `lib/slice-it/beatmap/`                                            |
-| Gameplay engine | `lib/slice-it/engine.ts`, `chart.ts`, `scoring.ts`, `constants.ts` |
-| Wire protocol   | `lib/slice-it/net/events.ts` (shared), `net/client.ts` (browser)   |
-| Lobby server    | `server/socket-server/handlers/slice-it.ts`                        |
+| Chart analysis  | `features/slice-it/engine/beatmap/`                                            |
+| Gameplay engine | `features/slice-it/engine/engine.ts`, `chart.ts`, `scoring.ts`, `constants.ts` |
+| Wire protocol   | `features/slice-it/engine/net/events.ts` (shared), `net/client.ts` (browser)   |
+| Lobby server    | `features/slice-it/server/handlers.ts`                        |
 | HTTP API        | `app/routes/api/slice-it/**`                                       |
-| UI              | `components/slice-it/`                                             |
-| Storage         | `lib/slice-it/songs.server.ts` → `lib/storage/s3.server`           |
+| UI              | `features/slice-it/ui/`                                             |
+| Storage         | `features/slice-it/engine/songs.server.ts` → `lib/storage/s3.server`           |
 
 ## Beatmap generation
 
@@ -195,7 +195,7 @@ reported.
 
 Per-seat, not lobby-wide — you pick your own difficulty and race someone playing
 theirs, with the score multiplier making the comparison meaningful. Multiplayer
-clamps two of them (`lib/slice-it/modifiers.ts#forMultiplayer`): speed floors at
+clamps two of them (`features/slice-it/engine/modifiers.ts#forMultiplayer`): speed floors at
 1.0x, because a slower chart in a race is a free easy mode and the multiplier
 only rewards going faster; and Sudden Death is dropped, because dying at 12
 seconds and then watching four minutes of other people playing is not a mode
@@ -209,7 +209,7 @@ web container's own filesystem — and production runs blue/green web containers
 so a song uploaded to blue 404'd from green until the next deploy flipped back.
 
 Rows written before that change hold a bare filename rather than an object key;
-`lib/slice-it/songs.server.ts` reads both.
+`features/slice-it/engine/songs.server.ts` reads both.
 
 Quotas are global (10 GB) **and** per-account (1 GB). The global-only version
 made the library first-come-first-served: one account could fill it and everyone
@@ -221,7 +221,7 @@ against both quotas.
 
 ## Scoring
 
-`lib/slice-it/scoring.ts` is shared by the engine and the score endpoint, which
+`features/slice-it/engine/scoring.ts` is shared by the engine and the score endpoint, which
 is what makes "is this score believable?" answerable at all.
 
 - Judgement windows scale with playback rate (constant _musical_ leniency) and
@@ -242,7 +242,7 @@ backdrop, HUD and accessibility. There is no operator-name field (the name is th
 signed-in account's) and no Mirror.
 
 A run is **not uploaded** when `unrankedReason(modifiers, practiceAids)`
-(`lib/slice-it/modifiers.ts`) returns anything: playback below 1.0x, Lenient
+(`features/slice-it/engine/modifiers.ts`) returns anything: playback below 1.0x, Lenient
 Timing, the assists (No Fail, Assist, Taps Only), or either practice aid
 (Metronome, Assist Tick). The results label, the client's submit guard
 (`useSubmitScore`) and the score endpoint all call that one function. The
@@ -250,7 +250,7 @@ endpoint cannot see the guide sounds, since they change neither the chart nor
 the windows, so for those the client is the only gate.
 
 Volume is three sliders: **Master** scales both **Music** and **Effects**
-(`musicGain` / `sfxGain` in `lib/slice-it/store.ts`). Hit sounds, guide ticks and
+(`musicGain` / `sfxGain` in `features/slice-it/engine/store.ts`). Hit sounds, guide ticks and
 cues are effects; the song and the library preview are music.
 
 `maxPlausibleScore(duration, modifiers)` is the server's ceiling. It is
@@ -263,7 +263,7 @@ number under one billion", which is to say it accepted anything.
 ### The phone menu is a document
 
 Outside a run, below 640px, the menu scrolls the **page**, not a box inside it
-(`components/slice-it/slice-menu.css`, "A phone: the menu is a document"). Safari
+(`features/slice-it/ui/slice-menu.css`, "A phone: the menu is a document"). Safari
 collapses its bars only for document scroll, and shows page content through its floating
 bar only when there is some under it; a viewport-high shell with scroll boxes inside gave
 neither, so the bars never shrank and the strip behind the bottom bar was flat page
@@ -301,7 +301,7 @@ heading row and every data row share one grid, with a fixed-width actions column
 their headings.
 
 "Charting…" is only shown while the job can be alive (`rowChartState` in
-`lib/slice-it/song-status.ts`: a `pending` song under ten minutes old). A song still
+`features/slice-it/engine/song-status.ts`: a `pending` song under ten minutes old). A song still
 `pending` after that has no live job, so the row stops claiming it is charting (it is
 playable; a chart is generated on play), and the hourly sweep
 (`requeueFailedAnalyses`) re-queues it alongside the `failed` ones.
@@ -328,7 +328,7 @@ place as its number, and the row that is you is cut in paper.
 ### A struck note breaks
 
 A struck disc is not a fade: it is cut along a line **rolled for that strike**
-(`components/slice-it/cut-fx.ts`, `rollCut`): any angle, a little off-centre, with
+(`features/slice-it/ui/cut-fx.ts`, `rollCut`): any angle, a little off-centre, with
 its own spin. The two halves slide apart along the cut's normal, drift along the blade
 and tumble in opposite directions, with a hairline of paper down the crack for the first
 few frames. At the same moment `spawnCutFx` throws glass (sharp, spinning shards on both
@@ -346,7 +346,7 @@ their own bursts.
 The playfield's decoration is deliberately small and deliberately gated. Two
 things drive all of it, and neither is a timer:
 
-- **The combo** (`V13`, `lib/slice-it/presentation.ts#comboEnergy`) — a
+- **The combo** (`V13`, `features/slice-it/engine/presentation.ts#comboEnergy`) — a
   saturating curve with no thresholds anywhere, driving the lane rails, the
   vignette, note trails and the receptor glow together. It replaced a
   full-screen colour wash at 50/100/250/500/1000 combo, which was the

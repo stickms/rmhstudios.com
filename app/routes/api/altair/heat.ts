@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/altair/altair.contract';
-import { maxUnlockedHeat } from '@/lib/altair/solo/heat.server';
-import { HEAT_MAX } from '@/lib/altair/data/heat';
+import * as C from '@features/altair/engine/altair.contract';
+import { maxUnlockedHeat } from '@features/altair/engine/solo/heat.server';
+import { HEAT_MAX } from '@features/altair/engine/data/heat';
 
 /**
  * GET — the highest Heat tier this account may start, from the server's ledger of verified victories.

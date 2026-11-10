@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/altair/altair.contract';
+import * as C from '@features/altair/engine/altair.contract';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 

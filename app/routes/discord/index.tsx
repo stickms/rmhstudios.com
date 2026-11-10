@@ -32,7 +32,7 @@ const RMHboxDiscordActivity = lazy(() =>
   })),
 );
 const SliceItDiscordActivity = lazy(() =>
-  import('@/components/slice-it/SliceItDiscordActivity').then((m) => ({
+  import('@features/slice-it/ui/SliceItDiscordActivity').then((m) => ({
     default: m.SliceItDiscordActivity,
   })),
 );

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Flame, Play } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -7,18 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
-import { SEEDED_GAMES, type DailyMutator } from '@/lib/arcade/seeded';
-
-interface DailyData {
-  mutator: DailyMutator;
-  board: {
-    rank: number;
-    score: number;
-    isMe: boolean;
-    user: { name?: string | null; handle?: string | null };
-  }[];
-  mine: { score: number | null; finishedAt: string | null } | null;
-}
+import { SEEDED_GAMES } from '@/lib/arcade/seeded';
+import { dailyMutatorQuery } from '@/lib/arcade/daily.queries';
 
 function untilReset(): string {
   const ms = 86_400_000 - (Date.now() % 86_400_000);
@@ -30,19 +20,10 @@ export function DailyMutatorPage() {
   const { t } = useTranslation('f-arcade');
   const session = useSession();
   const signedIn = !!session.data?.user;
-  const [data, setData] = useState<DailyData | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let live = true;
-    fetch('/api/arcade/daily')
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((d: DailyData) => live && setData(d))
-      .catch(() => live && setFailed(true));
-    return () => {
-      live = false;
-    };
-  }, [signedIn]);
+  // Seeded by the route loader (the same key, so no second fetch on hydrate).
+  const daily = useQuery(dailyMutatorQuery());
+  const data = daily.data ?? null;
+  const failed = daily.isError;
 
   const game = data ? SEEDED_GAMES[data.mutator.gameId] : null;
   const used = !!data?.mine;
