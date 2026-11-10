@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { DiscordSDK, patchUrlMappings } from '@discord/embedded-app-sdk';
+import { api } from '@/lib/contract/client';
+import { discordTokenApi } from '@/lib/discord.contract';
 
 export interface DiscordUser {
   id: string;
@@ -173,17 +175,11 @@ export function useDiscordSdk(): DiscordState {
         });
 
         // 3. Exchange code for access token via our server
-        const tokenRes = await fetch('/api/discord/token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code }),
-        });
-
-        if (!tokenRes.ok) {
-          throw new Error('Token exchange failed');
-        }
-
-        const { access_token, linkedUserId } = await tokenRes.json();
+        const { access_token, linkedUserId } = await api(discordTokenApi, { body: { code } }).catch(
+          () => {
+            throw new Error('Token exchange failed');
+          },
+        );
 
         // 4. Authenticate with Discord
         const authResult = await sdk.commands.authenticate({

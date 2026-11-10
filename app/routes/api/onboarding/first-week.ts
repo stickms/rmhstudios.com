@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { claimFirstWeekApi } from '@/lib/onboarding.contract';
 import {
   getFirstWeekStatus,
   claimFirstWeekGraduation,
@@ -21,7 +23,8 @@ export const Route = createFileRoute('/api/onboarding/first-week')({
         return Response.json(status);
       }),
 
-      POST: defineHandler(
+      POST: implement(
+        claimFirstWeekApi,
         { rateLimit: { limit: 5, windowMs: 60_000, prefix: 'first-week-claim' } },
         async ({ session }) => {
           const result = await claimFirstWeekGraduation(session.user.id);

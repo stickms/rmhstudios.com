@@ -43,6 +43,12 @@ export const uploadBannerApi = endpoint<{ body: FormData; res: { bannerUrl: stri
   path: '/api/profile/banner',
 });
 
+/** Reset to the account picture: removes the custom avatar and answers the avatar now in effect. */
+export const removeProfileAvatarApi = endpoint<{ res: { image: string | null } }>()({
+  method: 'DELETE',
+  path: '/api/profile/avatar',
+});
+
 export const removeProfileBannerApi = endpoint<{ res: { bannerUrl: null } }>()({
   method: 'DELETE',
   path: '/api/profile/banner',

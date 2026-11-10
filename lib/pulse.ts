@@ -20,7 +20,8 @@
  * between pulses renders the last known value instead of a spinner.
  */
 
-export type PulseSection = 'notifications' | 'friends' | 'activeFriends';
+import { api } from '@/lib/contract/client';
+import { pulseApi, type PulseSection } from '@/lib/pulse.contract';
 
 export interface PulseData {
   notifications: number;
@@ -81,15 +82,8 @@ export function requestPulse(): Promise<void> {
   // platform fetch implementation can throw synchronously.
   const run = Promise.resolve()
     .then(async () => {
-      const res = await fetch('/api/pulse', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ want: wanted() }),
-        signal: ac.signal,
-      });
-      if (!res.ok) return;
-      const body = (await res.json()) as Partial<PulseData> & { ok?: boolean };
+      // A refusal or a dropped connection throws and lands in the catch below: keep the last values.
+      const body = await api(pulseApi, { body: { want: wanted() }, signal: ac.signal });
       // Ignore a response that raced teardown, so one user's values can never
       // repopulate the cache after the last subscriber left (and, on a shared
       // device, after a sign-out).

@@ -27,26 +27,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Reveal, DrawnRule } from './Reveal';
-import { MAX_PARTY_SIZE, type Seating } from '@/lib/rebar-rutabaga/booking';
-
-interface NightAvailability {
-  date: string;
-  seatings: { seating: Seating; seatsLeft: number }[];
-}
-interface Availability {
-  month: string;
-  covers: number;
-  maxPartySize: number;
-  nights: NightAvailability[];
-}
-
-/** A booked table, as the confirmation renders it. */
-interface Booked {
-  id: string;
-  serviceDate: string;
-  seating: string;
-  partySize: number;
-}
+import { MAX_PARTY_SIZE } from '@/lib/rebar-rutabaga/booking';
+import { api } from '@/lib/contract/client';
+import { HttpError, errorField } from '@/lib/http';
+import { bookRebarTableApi, getRebarAvailabilityApi } from '@/lib/rebar-rutabaga/booking.contract';
+import type { Availability, BookingResult } from '@/lib/rebar-rutabaga/booking.server';
 
 const FIELD =
   'w-full border-0 border-b border-rebar-line bg-transparent px-0 py-3 font-mono text-sm text-rebar-ink outline-none transition-colors duration-[var(--rebar-dur-quick)] placeholder:text-rebar-ink-faint focus-visible:border-rebar-line-strong';
@@ -63,20 +48,22 @@ export function BookingForm() {
   const [email, setEmail] = useState('');
   const [note, setNote] = useState('');
   const [sending, setSending] = useState(false);
-  const [booked, setBooked] = useState<Booked | null>(null);
+  const [booked, setBooked] = useState<BookingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || availability) return;
-    fetch('/api/services/rebar-reservations', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { availability: Availability } | null) => {
-        if (!d) return;
+    api(getRebarAvailabilityApi)
+      .then((d) => {
         setAvailability(d.availability);
         const first = d.availability.nights[0];
         if (first) setDate(first.date);
       })
-      .catch(() => setError(t('book.formError', { defaultValue: 'The book is not answering. Try the email below.' })));
+      .catch((e: unknown) => {
+        // A refusal leaves the form without a calendar and without a message, as before.
+        if (e instanceof HttpError) return;
+        setError(t('book.formError', { defaultValue: 'The book is not answering. Try the email below.' }));
+      });
   }, [open, availability, t]);
 
   const night = availability?.nights.find((n) => n.date === date) ?? null;
@@ -105,26 +92,19 @@ export function BookingForm() {
     setSending(true);
     setError(null);
     try {
-      const res = await fetch('/api/services/rebar-reservations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ serviceDate: date, seating, partySize, name, email, note: note || undefined }),
+      const body = await api(bookRebarTableApi, {
+        body: { serviceDate: date, seating, partySize, name, email, note: note || undefined },
       });
-      const body = (await res.json()) as Booked & { detail?: { reason?: string } };
-      if (!res.ok) {
-        setError(
-          body.detail?.reason === 'already-booked'
-            ? t('book.formDuplicate', { defaultValue: 'That email already holds a table for this service.' })
-            : body.detail?.reason === 'full'
-              ? t('book.formFull', { defaultValue: 'That seating filled while you were reading. Try the other one.' })
-              : t('book.formError', { defaultValue: 'The book is not answering. Try the email below.' }),
-        );
-        return;
-      }
       setBooked(body);
-    } catch {
-      setError(t('book.formError', { defaultValue: 'The book is not answering. Try the email below.' }));
+    } catch (e) {
+      const reason = errorField<{ reason?: string }>(e, 'detail')?.reason;
+      setError(
+        reason === 'already-booked'
+          ? t('book.formDuplicate', { defaultValue: 'That email already holds a table for this service.' })
+          : reason === 'full'
+            ? t('book.formFull', { defaultValue: 'That seating filled while you were reading. Try the other one.' })
+            : t('book.formError', { defaultValue: 'The book is not answering. Try the email below.' }),
+      );
     } finally {
       setSending(false);
     }
