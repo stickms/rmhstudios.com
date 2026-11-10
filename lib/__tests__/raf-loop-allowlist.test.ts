@@ -171,7 +171,7 @@ import { join, posix } from 'node:path';
  */
 
 const ROOT = process.cwd();
-const SCAN_DIRS = ['components', 'app', 'hooks', 'lib', 'stores'];
+const SCAN_DIRS = ['components', 'app', 'hooks', 'lib', 'stores', 'features'];
 
 /** Files permitted to call requestAnimationFrame (see the doc block above). */
 const ALLOW = new Set<string>([

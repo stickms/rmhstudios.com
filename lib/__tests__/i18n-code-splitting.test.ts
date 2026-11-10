@@ -134,6 +134,7 @@ describe('i18n code-splitting (only the selected locale reaches the client)', ()
       ...collectSources(join(ROOT, 'components')),
       ...collectSources(join(ROOT, 'hooks')),
       ...collectSources(join(ROOT, 'stores')),
+      ...collectSources(join(ROOT, 'features')),
       ...collectSources(join(ROOT, 'lib')),
     ];
     const offenders = files
@@ -149,6 +150,7 @@ describe('i18n code-splitting (only the selected locale reaches the client)', ()
       ...collectSources(join(ROOT, 'components')),
       ...collectSources(join(ROOT, 'hooks')),
       ...collectSources(join(ROOT, 'stores')),
+      ...collectSources(join(ROOT, 'features')),
       ...collectSources(join(ROOT, 'lib')),
     ];
     const offenders: string[] = [];

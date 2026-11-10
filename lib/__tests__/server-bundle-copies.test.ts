@@ -89,9 +89,11 @@ const EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js'];
 function resolveImport(fromFile: string, specifier: string): string | null {
   const base = specifier.startsWith('@/')
     ? join(ROOT, specifier.slice(2))
-    : specifier.startsWith('.')
-      ? resolve(dirname(fromFile), specifier)
-      : null;
+    : specifier.startsWith('@features/')
+      ? join(ROOT, 'features', specifier.slice('@features/'.length))
+      : specifier.startsWith('.')
+        ? resolve(dirname(fromFile), specifier)
+        : null;
   if (base === null) return null;
 
   for (const ext of EXTENSIONS) {

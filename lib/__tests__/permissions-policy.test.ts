@@ -27,7 +27,7 @@ const ROOT = resolve(__dirname, '../..');
 const VHOST = join(ROOT, 'deploy/apache/rmhstudios.conf');
 
 /** Source trees where a browser API call could live. */
-const SCAN_DIRS = ['lib', 'components', 'hooks', 'app', 'stores'];
+const SCAN_DIRS = ['lib', 'components', 'hooks', 'app', 'stores', 'features'];
 const SKIP_DIRS = new Set(['node_modules', '__tests__', 'dist', '.output']);
 
 function collect(dir: string, out: string[] = []): string[] {

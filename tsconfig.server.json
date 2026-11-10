@@ -10,6 +10,9 @@
         "paths": {
         "@/*": [
             "./*"
+        ],
+        "@features/*": [
+            "./features/*"
         ]
         }
     },
@@ -21,6 +24,7 @@
         "lib/rmhbox/**/*.ts",
         "lib/blackjack/logic.ts",
         "lib/lights-out/**/*.ts",
-        "lib/dream-rift/net/events.ts"
+        "lib/dream-rift/net/events.ts",
+        "features/*/server/**/*.ts"
     ]
 }

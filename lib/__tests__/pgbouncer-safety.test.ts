@@ -27,7 +27,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const ROOT = process.cwd();
-const SCANNED_DIRS = ['lib', 'server', 'app', 'hooks', 'stores'];
+const SCANNED_DIRS = ['lib', 'server', 'app', 'hooks', 'stores', 'features'];
 
 /** Every .ts/.tsx file under the scanned dirs, excluding tests and generated code. */
 function sourceFiles(): string[] {

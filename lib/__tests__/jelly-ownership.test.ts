@@ -66,7 +66,7 @@ const code = (file: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, ' ')
     .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
 
-const SOURCES = ['components', 'app', 'hooks', 'lib', 'stores'].flatMap((d) => collect(d));
+const SOURCES = ['components', 'app', 'hooks', 'lib', 'stores', 'features'].flatMap((d) => collect(d));
 
 // The full-screen tiers: eslint-local-rules/design-scope.js (the policy lives there, not here).
 

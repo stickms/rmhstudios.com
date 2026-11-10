@@ -24,7 +24,7 @@ import path from 'node:path';
 
 const ROOT = process.cwd();
 const BASELINE = path.join(ROOT, 'eslint-baseline', 'boundaries.json');
-const TARGETS = ['components', 'lib', 'hooks', 'stores'];
+const TARGETS = ['components', 'lib', 'hooks', 'stores', 'features'];
 
 interface Entry {
   file: string;

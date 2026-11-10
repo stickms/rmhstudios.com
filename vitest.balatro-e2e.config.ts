@@ -63,6 +63,9 @@ export default defineConfig({
     ],
   },
   resolve: {
-    alias: { '@': path.resolve(import.meta.dirname) },
+    alias: {
+      '@': path.resolve(import.meta.dirname),
+      '@features': path.resolve(import.meta.dirname, 'features'),
+    },
   },
 });

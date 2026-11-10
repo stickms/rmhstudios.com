@@ -25,7 +25,7 @@ export const APP_TIER_DIRS = new Set([
 
 function owned(rel: string): boolean {
   const parts = rel.split('/');
-  if (parts[0] !== 'components') return true;
+  if (parts[0] !== 'components' && parts[0] !== 'features') return true;
   const dir = parts[1] ?? '';
   return APP_TIER_DIRS.has(dir) || !FULLSCREEN_TIER_DIRS.has(dir);
 }
@@ -48,5 +48,5 @@ function walk(root: string, dir: string, out: string[]): string[] {
 
 /** Repo-relative paths of every site-tier and app-tier `.css` file (split partials included), sorted. */
 export function siteAppCssFiles(root: string = process.cwd()): string[] {
-  return ['app', 'components', 'lib', 'hooks', 'stores'].flatMap((d) => walk(root, d, [])).sort();
+  return ['app', 'components', 'lib', 'hooks', 'stores', 'features'].flatMap((d) => walk(root, d, [])).sort();
 }

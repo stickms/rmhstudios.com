@@ -438,7 +438,7 @@ describe('FOUC contract: pre-paint parity', () => {
     const systemOnly = new Set(
       [...block.matchAll(/'(\/[^']+)': \{[^}]*system: true/gs)].map((m) => m[1]),
     );
-    const sources = ['lib', 'components', 'app', 'stores']
+    const sources = ['lib', 'components', 'app', 'stores', 'features']
       .map((dir) => join(REPO, dir))
       .filter((p) => existsSync(p));
     expect(sources.length).toBe(4);
@@ -724,7 +724,7 @@ function repoSources(): { path: string; text: string }[] {
       }
     }
   };
-  for (const root of ['lib', 'components', 'app', 'stores', 'hooks']) {
+  for (const root of ['lib', 'components', 'app', 'stores', 'hooks', 'features']) {
     const dir = join(REPO, root);
     if (existsSync(dir)) walk(dir);
   }

@@ -34,6 +34,9 @@ export default defineConfig({
     env: { LOG_LEVEL: process.env.LOG_LEVEL ?? 'silent' },
   },
   resolve: {
-    alias: { '@': path.resolve(import.meta.dirname) },
+    alias: {
+      '@': path.resolve(import.meta.dirname),
+      '@features': path.resolve(import.meta.dirname, 'features'),
+    },
   },
 });

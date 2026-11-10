@@ -133,6 +133,7 @@ export default defineConfig({
         'components/**/*.{ts,tsx}',
         'hooks/**/*.{ts,tsx}',
         'stores/**/*.{ts,tsx}',
+        'features/**/*.{ts,tsx}',
       ],
       exclude: [
         '**/__tests__/**',
@@ -150,6 +151,8 @@ export default defineConfig({
       // warns on the CJS global and will drop it when `configLoader: 'native'`
       // becomes the default.
       '@': path.resolve(import.meta.dirname),
+      // Feature-sliced workspace (redesign A1): features/<id>/{engine,ui,net,server,api}.
+      '@features': path.resolve(import.meta.dirname, 'features'),
     },
   },
 });
