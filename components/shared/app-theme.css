@@ -818,9 +818,13 @@
 /* Every button is repainted onto the opaque surface above, so its own ink has to follow: a
    primary button kept its accent-fg (dark) text on the now-dark surface and read as blank
    (RMHTube's Create Room / Join). Text takes the high-contrast ink, and the button gets an
-   inset solid edge so it still reads as a control; inset, so layout never moves. Two classes
-   (0,2,1) so it outranks the :is() rule above, whose attribute arm makes it (0,2,0). */
-.app-theme.app-high-contrast button {
+   inset solid edge so it still reads as a control; inset, so layout never moves. Specificity:
+   the second selector mirrors the liquid-material button rule (.app-theme :is(button,
+   [role=button]):not([data-liquid-material=off]), 0,3,0, which zeroes box-shadow) plus the
+   high-contrast class, so it outranks it at 0,4,0; the first covers buttons with the material
+   off, where only the :is() rule above (0,2,0) competes. */
+.app-theme.app-high-contrast button,
+.app-theme.app-high-contrast :is(button, [role='button']):not([data-liquid-material='off']) {
   color: var(--app-text);
   box-shadow: inset 0 0 0 1px var(--app-border-bright);
 }
