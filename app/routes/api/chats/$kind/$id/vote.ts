@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { voteChatPollApi } from '@/lib/chat-plus/chat.contract';
 import { requireChat } from '@/lib/chat-plus/route-helpers.server';
 import { pollVoteSchema, voteDmPoll } from '@/lib/chat-plus/polls.server';
 
@@ -10,7 +11,7 @@ import { pollVoteSchema, voteDmPoll } from '@/lib/chat-plus/polls.server';
 export const Route = createFileRoute('/api/chats/$kind/$id/vote')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(voteChatPollApi, 
         {
           rateLimit: { limit: 60, windowMs: 60_000, prefix: 'chat-poll-vote' },
           body: pollVoteSchema,

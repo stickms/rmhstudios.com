@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { guessConnectionGridApi } from '@/lib/party/connections.contract';
 import { guessSchema } from '@/lib/party/connections-schema';
 import { submitGuess } from '@/lib/party/connections.server';
 
@@ -7,7 +8,7 @@ import { submitGuess } from '@/lib/party/connections.server';
 export const Route = createFileRoute('/api/connections/grids/$id/guess')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(guessConnectionGridApi, 
         {
           rateLimit: { limit: 60, windowMs: 60_000, prefix: 'connections-guess' },
           body: guessSchema,

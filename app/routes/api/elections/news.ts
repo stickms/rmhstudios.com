@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getElectionNewsApi } from '@/lib/elections/elections.contract';
 import { getNews } from '@/lib/elections/news.server';
 import { STATE_NAMES } from '@/lib/elections/states';
 
@@ -14,7 +15,7 @@ const query = z.object({ state: z.string().length(2).toUpperCase().optional() })
 export const Route = createFileRoute('/api/elections/news')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(getElectionNewsApi, 
         {
           auth: 'none',
           rateLimit: 'read',

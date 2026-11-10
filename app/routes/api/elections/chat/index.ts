@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { deleteElectionChatApi, postElectionChatApi } from '@/lib/elections/elections.contract';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { resolveChannel } from '@/lib/elections/channel.server';
@@ -28,7 +29,7 @@ const REASONS = {
 export const Route = createFileRoute('/api/elections/chat/')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(postElectionChatApi, 
         {
           // Signed-in only, and slow enough to read: 8 messages / 20s per account.
           rateLimit: { limit: 8, windowMs: 20_000, prefix: 'elections:chat' },
@@ -61,7 +62,7 @@ export const Route = createFileRoute('/api/elections/chat/')({
           return Response.json({ id: msg.id });
         },
       ),
-      DELETE: defineHandler(
+      DELETE: implement(deleteElectionChatApi, 
         { rateLimit: 'write', query: deleteQuery, label: 'elections.chat.delete' },
         async ({ userId, isAdmin, query }) => {
           const channel = await resolveChannel({ cycle: query.cycle, room: query.room });

@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getElectionMarketsApi } from '@/lib/elections/elections.contract';
 import { prisma } from '@/lib/prisma.server';
 import { serializeMarket } from '@/lib/predictions/predictions.server';
 import { ELECTION_MARKET_KEYS } from '@/lib/elections/markets.server';
@@ -11,7 +12,7 @@ import { ELECTION_MARKET_KEYS } from '@/lib/elections/markets.server';
 export const Route = createFileRoute('/api/elections/markets')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(getElectionMarketsApi, 
         {
           auth: 'none',
           rateLimit: 'read',

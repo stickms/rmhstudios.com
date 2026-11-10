@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { api } from '@/lib/contract/client';
+import { getPlayLimitsApi, setPlayLimitsApi } from '@/lib/economy/play-limits.contract';
 import type { PlayLimitsView } from '@/lib/economy/play-limits.server';
 import { MAX_COOL_OFF_DAYS, MAX_DAILY_CAP } from '@/lib/economy/play-limits';
 import { SettingsSection } from '@/components/settings/SettingsSection';
@@ -45,10 +47,8 @@ export function PlayLimitsPanel() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch('/api/settings/play-limits', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: PlayLimitsView | null) => {
-        if (!d) return;
+    api(getPlayLimitsApi, { retries: 0 })
+      .then((d) => {
         setView(d);
         setCapInput(d.dailyCoinCap === null ? '' : String(d.dailyCoinCap));
       })
@@ -58,17 +58,10 @@ export function PlayLimitsPanel() {
   }, []);
 
   const save = useCallback(
-    async (body: Record<string, number | null>) => {
+    async (body: { dailyCoinCap?: number | null; excludeForDays?: number; coolOffForDays?: number }) => {
       setSaving(true);
       try {
-        const res = await fetch('/api/settings/play-limits', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(body),
-        });
-        if (!res.ok) throw new Error(String(res.status));
-        const next = (await res.json()) as PlayLimitsView;
+        const next = await api(setPlayLimitsApi, { body });
         setView(next);
         setCapInput(next.dailyCoinCap === null ? '' : String(next.dailyCoinCap));
         if (next.pendingCapAt) {

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { reactElectionChatApi } from '@/lib/elections/elections.contract';
 import { resolveChannel } from '@/lib/elections/channel.server';
 import { postReaction } from '@/lib/elections/chat.server';
 import { isReaction } from '@/lib/elections/rooms';
@@ -11,7 +12,7 @@ const body = z.object({ cycle: z.string().max(10), room: z.string().max(12).opti
 export const Route = createFileRoute('/api/elections/chat/react')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(reactElectionChatApi, 
         { rateLimit: { limit: 20, windowMs: 10_000, prefix: 'elections:react' }, body, label: 'elections.react' },
         async ({ body: b }) => {
           // A closed vocabulary: anything that is not one of the offered emoji is rejected, not relayed.

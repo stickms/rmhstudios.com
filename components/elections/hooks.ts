@@ -3,6 +3,8 @@ import type { ElectionEvent } from '@/lib/elections/events';
 import { useQuery } from '@tanstack/react-query';
 import type { ElectionsApiResponse } from '@/lib/elections/api-types';
 import type { Baseline } from '@/lib/elections/swing';
+import { api } from '@/lib/contract/client';
+import { getElectionsApi, getElectionSwingApi } from '@/lib/elections/elections.contract';
 
 /** Poll fast while results are coming in, slowly otherwise. */
 export const LIVE_POLL_MS = 20_000;
@@ -12,9 +14,7 @@ export function useElectionData(cycle: string) {
   return useQuery<ElectionsApiResponse>({
     queryKey: ['elections', cycle],
     queryFn: async ({ signal }) => {
-      const res = await fetch(`/api/elections?cycle=${encodeURIComponent(cycle)}`, { signal });
-      if (!res.ok) throw new Error(`elections ${res.status}`);
-      return res.json();
+      return api(getElectionsApi, { query: { cycle }, signal, retries: 0 });
     },
     refetchInterval: (q) => {
       const d = q.state.data;
@@ -137,9 +137,7 @@ export function useBaseline(cycle: string): Record<string, Baseline> {
   const { data } = useQuery<{ baseline: Record<string, Baseline> }>({
     queryKey: ['elections-swing', cycle],
     queryFn: async () => {
-      const r = await fetch(`/api/elections/swing?cycle=${encodeURIComponent(cycle)}`);
-      if (!r.ok) throw new Error(String(r.status));
-      return r.json();
+      return api(getElectionSwingApi, { query: { cycle }, retries: 0 });
     },
     staleTime: 10 * 60_000,
     retry: 1,

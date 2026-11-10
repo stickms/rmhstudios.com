@@ -58,6 +58,8 @@ import {
   DEFAULT_LOOK,
   type Look,
 } from '@/lib/elections/split';
+import { api } from '@/lib/contract/client';
+import { reactElectionChatApi } from '@/lib/elections/elections.contract';
 
 const LAYOUT_ICON: Record<Layout, typeof Square> = {
   '1': Square,
@@ -240,11 +242,8 @@ export function RoomOverlay({
   }, []);
 
   const react = (emoji: string) =>
-    fetch('/api/elections/chat/react', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({ cycle, emoji, ...(code ? { room: code } : {}) }),
+    api(reactElectionChatApi, {
+      body: code ? { cycle, emoji, room: code } : { cycle, emoji },
     }).catch(() => undefined);
 
   const inviteUrl = code ? `${SITE_URL}${roomPath(code)}` : null;

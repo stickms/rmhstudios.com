@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getElectionStreamsApi } from '@/lib/elections/elections.contract';
 import { mergeStreams, parseFeaturedStreams } from '@/lib/elections/streams';
 import { getAutoStreams } from '@/lib/elections/stream-discovery.server';
 
@@ -14,7 +15,7 @@ import { getAutoStreams } from '@/lib/elections/stream-discovery.server';
 export const Route = createFileRoute('/api/elections/streams')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(getElectionStreamsApi, 
         {
           auth: 'none',
           rateLimit: 'read',

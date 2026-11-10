@@ -9,6 +9,9 @@ import { cn } from '@/lib/utils';
 import { isPlainKind, type ChatRef } from '@/lib/chat-plus/types';
 import { useChatPlusUi } from '@/lib/chat-plus/ui-store';
 import type { ChatMeta } from '@/lib/chat-plus/settings.client';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { setChatPinApi } from '@/lib/chat-plus/chat.contract';
 import { chatMetaKey, useChatMeta } from './hooks';
 
 export interface PlusMessage {
@@ -50,20 +53,13 @@ export function MessagePlusItems({
   const togglePin = async () => {
     onDone();
     try {
-      const res = await fetch(`/api/chats/${chat.kind}/${encodeURIComponent(chat.id)}/pin`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messageId: message.id, pinned: !pinned }),
+      await api(setChatPinApi, {
+        params: { kind: chat.kind, id: chat.id },
+        body: { messageId: message.id, pinned: !pinned },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error || t('pin-failed', { defaultValue: 'Could not update the pin' }));
-        return;
-      }
       void qc.invalidateQueries({ queryKey: chatMetaKey(chat) });
-    } catch {
-      toast.error(t('pin-failed', { defaultValue: 'Could not update the pin' }));
+    } catch (err) {
+      toast.error(serverError(err) || t('pin-failed', { defaultValue: 'Could not update the pin' }));
     }
   };
 

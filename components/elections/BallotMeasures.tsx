@@ -5,6 +5,8 @@ import { filterMeasures, measureStats, type BallotMeasure } from '@/lib/election
 import { STATE_CODES, stateName } from '@/lib/elections/states';
 import { fmtInt } from './hooks';
 import { useFollow } from './FollowContext';
+import { api } from '@/lib/contract/client';
+import { getElectionMeasuresApi } from '@/lib/elections/elections.contract';
 
 const PAGE = 18;
 
@@ -12,9 +14,7 @@ export function useMeasures(cycle: string, live: boolean) {
   return useQuery<{ measures: BallotMeasure[]; updatedAt: string }>({
     queryKey: ['elections-measures', cycle],
     queryFn: async () => {
-      const r = await fetch(`/api/elections/measures?cycle=${encodeURIComponent(cycle)}`);
-      if (!r.ok) throw new Error(String(r.status));
-      return r.json();
+      return api(getElectionMeasuresApi, { query: { cycle }, retries: 0 });
     },
     refetchInterval: live ? 30_000 : 10 * 60_000,
     staleTime: 15_000,

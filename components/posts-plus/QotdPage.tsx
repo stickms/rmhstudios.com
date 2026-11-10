@@ -11,6 +11,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/contract/client';
+import { getQotdAnswersApi, getQotdArchiveApi } from '@/lib/posts-plus/qotd.contract';
 import type { FeedItem } from '@/lib/feed-types';
 import { useQotdAnswering } from '@/lib/posts-plus/qotd-store';
 
@@ -56,10 +58,9 @@ export function QotdPage({ day }: { day?: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/qotd/archive')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { days: ArchiveDay[] } | null) => {
-        if (!cancelled) setArchive(d?.days ?? []);
+    api(getQotdArchiveApi, { retries: 0 })
+      .then((d) => {
+        if (!cancelled) setArchive(d.days);
       })
       .catch(() => {
         if (!cancelled) setArchive([]);
@@ -76,11 +77,10 @@ export function QotdPage({ day }: { day?: string }) {
   const load = useCallback(async (dayKey: string, cur: string | null) => {
     setLoading(true);
     try {
-      const qs = new URLSearchParams({ day: dayKey });
-      if (cur) qs.set('cursor', cur);
-      const res = await fetch(`/api/qotd/answers?${qs}`, { credentials: 'include' });
-      if (!res.ok) throw new Error(String(res.status));
-      const data = (await res.json()) as AnswersPage;
+      const data = await api(getQotdAnswersApi, {
+        query: cur ? { day: dayKey, cursor: cur } : { day: dayKey },
+        retries: 0,
+      });
       setPage(data);
       setItems((prev) => (cur ? [...prev, ...data.items] : data.items));
       setCursor(data.nextCursor);

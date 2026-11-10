@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { deleteElectionRoomApi, getElectionRoomApi, updateElectionRoomApi } from '@/lib/elections/elections.contract';
 import { isRoomCode, roomNameSchema, validateRoomConfig } from '@/lib/elections/room-config';
 import { deleteRoom, getRoom, toRoomView, updateRoom } from '@/lib/elections/rooms.server';
 
@@ -18,7 +19,7 @@ const patchBody = z.object({
 export const Route = createFileRoute('/api/elections/rooms/$code')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read', label: 'elections.rooms.get' }, async ({ params, userId }) => {
+      GET: implement(getElectionRoomApi, { auth: 'optional', rateLimit: 'read', label: 'elections.rooms.get' }, async ({ params, userId }) => {
         const code = String(params.code ?? '').toUpperCase();
         if (!isRoomCode(code)) return Response.json({ error: 'Room not found.' }, { status: 404 });
         const row = await getRoom(code);
@@ -26,7 +27,7 @@ export const Route = createFileRoute('/api/elections/rooms/$code')({
         // Per-viewer (`mine`) and capability-gated: never cacheable by a shared cache.
         return Response.json({ room: toRoomView(row, userId) }, { headers: { 'Cache-Control': 'private, no-store' } });
       }),
-      PATCH: defineHandler({ rateLimit: 'write', body: patchBody, label: 'elections.rooms.update' }, async ({ params, userId, body }) => {
+      PATCH: implement(updateElectionRoomApi, { rateLimit: 'write', body: patchBody, label: 'elections.rooms.update' }, async ({ params, userId, body }) => {
         const code = String(params.code ?? '').toUpperCase();
         if (!isRoomCode(code)) return Response.json({ error: 'Room not found.' }, { status: 404 });
         let config;
@@ -38,7 +39,7 @@ export const Route = createFileRoute('/api/elections/rooms/$code')({
         const res = await updateRoom(code, userId, { name: body.name, visibility: body.visibility, config });
         return res.ok ? Response.json({ room: res.room }) : Response.json({ error: res.error }, { status: res.status });
       }),
-      DELETE: defineHandler({ rateLimit: 'write', label: 'elections.rooms.delete' }, async ({ params, userId, isAdmin }) => {
+      DELETE: implement(deleteElectionRoomApi, { rateLimit: 'write', label: 'elections.rooms.delete' }, async ({ params, userId, isAdmin }) => {
         const code = String(params.code ?? '').toUpperCase();
         if (!isRoomCode(code)) return Response.json({ error: 'Room not found.' }, { status: 404 });
         const res = await deleteRoom(code, userId, isAdmin);

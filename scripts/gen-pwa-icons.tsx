@@ -12,19 +12,13 @@ import { Resvg } from '@resvg/resvg-js';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const INTER_BOLD_URL =
-  'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf';
-
 const h = React.createElement;
 const ACCENT = '#9b7ad8';
 const FG = '#0b0d12';
 
+// Geist 800 from public/fonts/og (built by scripts/gen-og-fonts.py) -- no network.
 async function loadFont(): Promise<Buffer> {
-  const p = process.env.OG_FONT_BOLD;
-  if (p) return readFileSync(p);
-  const res = await fetch(INTER_BOLD_URL);
-  if (!res.ok) throw new Error(`font ${res.status}`);
-  return Buffer.from(await res.arrayBuffer());
+  return readFileSync(resolve(process.cwd(), 'public', 'fonts', 'og', 'Geist-800.ttf'));
 }
 
 /** @param inset padding fraction (0 = full-bleed maskable, >0 = rounded badge). */
@@ -58,13 +52,13 @@ function icon(size: number, inset: number, font: Buffer) {
             borderRadius: inset > 0 ? `${Math.round(size * 0.22)}px` : '0px',
             fontSize: `${Math.round(size * 0.58)}px`,
             fontWeight: 800,
-            fontFamily: 'Inter',
+            fontFamily: 'Geist',
           },
         },
         'R',
       ),
     ),
-    { width: size, height: size, fonts: [{ name: 'Inter', data: font, weight: 800, style: 'normal' }] },
+    { width: size, height: size, fonts: [{ name: 'Geist', data: font, weight: 800, style: 'normal' }] },
   );
 }
 

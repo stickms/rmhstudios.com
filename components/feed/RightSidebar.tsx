@@ -16,6 +16,8 @@ import {
   Check,
 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
+import { api } from '@/lib/contract/client';
+import { getMyReferralApi } from '@/lib/referrals.contract';
 import { useClipboard } from '@/hooks/useClipboard';
 import { AdSlot } from '@/components/ads/AdSlot';
 
@@ -77,9 +79,7 @@ function InviteFriendsCard() {
 
   const copyLink = async () => {
     try {
-      const res = await fetch('/api/referrals/me', { credentials: 'include' });
-      if (!res.ok) return;
-      const data = (await res.json()) as { url: string; reward: number };
+      const data = await api(getMyReferralApi, { retries: 0 });
       setReward(data.reward);
       await copy(data.url);
     } catch {
