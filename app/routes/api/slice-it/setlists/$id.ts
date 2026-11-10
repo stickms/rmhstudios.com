@@ -1,5 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/slice-it/setlists.contract';
 import { SetlistPatchZ } from '@/lib/slice-it/setlist-schema';

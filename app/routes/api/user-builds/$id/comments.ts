@@ -15,7 +15,6 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { createCommentSchema } from '@/lib/user-builds-schema';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 
-type RouteParams = { params: Promise<{ id: string }> };
 
 export const Route = createFileRoute('/api/user-builds/$id/comments')({
   server: {

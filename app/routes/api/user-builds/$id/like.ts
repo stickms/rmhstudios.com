@@ -10,7 +10,6 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
-type RouteParams = { params: Promise<{ id: string }> };
 
 export const Route = createFileRoute('/api/user-builds/$id/like')({
   server: {

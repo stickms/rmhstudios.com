@@ -20,7 +20,6 @@ import { findBuild, projectBuildDetail } from '@/lib/user-builds-detail.server';
 import { getAuthenticatedUser } from '@/lib/rmhcode-auth';
 import { logAdminAction } from '@/lib/admin-audit.server';
 
-type RouteParams = { params: Promise<{ id: string }> };
 
 export const Route = createFileRoute('/api/user-builds/$id')({
   server: {
