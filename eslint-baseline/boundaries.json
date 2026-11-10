@@ -213,67 +213,67 @@
       "count": 1
     },
     {
-      "file": "lib/hearthworks/avatar/collision.ts",
+      "file": "features/hearthworks/engine/avatar/collision.ts",
       "rule": "import-x/no-cycle",
       "count": 1
     },
     {
-      "file": "lib/hearthworks/nav/astar.ts",
+      "file": "features/hearthworks/engine/nav/astar.ts",
       "rule": "import-x/no-cycle",
       "count": 1
     },
     {
-      "file": "lib/hearthworks/nav/index.ts",
+      "file": "features/hearthworks/engine/nav/index.ts",
       "rule": "import-x/no-cycle",
       "count": 1
     },
     {
-      "file": "lib/hearthworks/nav/mover.ts",
+      "file": "features/hearthworks/engine/nav/mover.ts",
       "rule": "import-x/no-cycle",
       "count": 1
     },
     {
-      "file": "lib/hearthworks/nav/passable.ts",
+      "file": "features/hearthworks/engine/nav/passable.ts",
       "rule": "import-x/no-cycle",
       "count": 1
     },
     {
-      "file": "lib/hearthworks/world/actions.ts",
+      "file": "features/hearthworks/engine/world/actions.ts",
       "rule": "import-x/no-cycle",
       "count": 1
     },
     {
-      "file": "lib/hearthworks/world/agents.ts",
+      "file": "features/hearthworks/engine/world/agents.ts",
       "rule": "import-x/no-cycle",
       "count": 1
     },
     {
-      "file": "lib/hearthworks/world/city.ts",
+      "file": "features/hearthworks/engine/world/city.ts",
       "rule": "import-x/no-cycle",
       "count": 1
     },
     {
-      "file": "lib/hearthworks/world/customers.ts",
+      "file": "features/hearthworks/engine/world/customers.ts",
       "rule": "import-x/no-cycle",
       "count": 1
     },
     {
-      "file": "lib/hearthworks/world/farmhands.ts",
+      "file": "features/hearthworks/engine/world/farmhands.ts",
       "rule": "import-x/no-cycle",
       "count": 1
     },
     {
-      "file": "lib/hearthworks/world/index.ts",
+      "file": "features/hearthworks/engine/world/index.ts",
       "rule": "import-x/no-cycle",
       "count": 1
     },
     {
-      "file": "lib/hearthworks/world/police.ts",
+      "file": "features/hearthworks/engine/world/police.ts",
       "rule": "import-x/no-cycle",
       "count": 1
     },
     {
-      "file": "lib/hearthworks/world/world.ts",
+      "file": "features/hearthworks/engine/world/world.ts",
       "rule": "import-x/no-cycle",
       "count": 1
     },

@@ -8,7 +8,7 @@
  *   pnpm exec tsx scripts/hearthworks/balance.ts --only guns,heat
  *   pnpm exec tsx scripts/hearthworks/balance.ts --out balance.json
  *
- * Not part of the default test run. The regression tests in lib/hearthworks/world/__tests__/balance.test.ts pin
+ * Not part of the default test run. The regression tests in features/hearthworks/engine/world/__tests__/balance.test.ts pin
  * the invariants this reports on. Same seeds, same numbers: the sim is deterministic.
  */
 
@@ -23,7 +23,7 @@ import {
   WEAPONS,
   WEAPON_IDS,
   type OfficerKind,
-} from '../../lib/hearthworks/content';
+} from '../../features/hearthworks/engine/content';
 import {
   HEAT_DECAY_TICKS,
   HUSTLE_MARKUP,
@@ -33,7 +33,7 @@ import {
   WANTED_HEAT,
   placeOfficer,
   stepWorld,
-} from '../../lib/hearthworks/world';
+} from '../../features/hearthworks/engine/world';
 import {
   duelKill,
   farmer,
@@ -48,7 +48,7 @@ import {
   summarize,
   type RunLog,
   type Summary,
-} from '../../lib/hearthworks/world/__tests__/balance-sim';
+} from '../../features/hearthworks/engine/world/__tests__/balance-sim';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Arguments.

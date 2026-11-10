@@ -686,7 +686,7 @@ depends: []
 ```
 
 **Evidence:** There are 52 strongly connected components (223 files; this
-count includes type-only edges). The largest are `lib/hearthworks/world/*` (28
+count includes type-only edges). The largest are `features/hearthworks/engine/world/*` (28
 files), `components/dunesday/os/apps/*` (22) and `lib/tf2-game/sim/*` (21).
 There is also an 8-file shell cycle:
 `components/site/CommandPalette` ↔ `feed/ComposeModal` ↔ `call/CallMount` ↔ `site/PlaytimeTracker` ….
@@ -2915,7 +2915,7 @@ For a coding agent picking up an item from this document:
 
 ```yaml
 # status ledger: agents append here
-A1: in-progress (steps 1-3: features/ root, lib/core/feature.ts manifest + @features/* alias wired through tsconfig, vitest, knip, Dockerfile server-builder, boundary rules and the design-tier scope; balatro (no inbound importers, 0 other-feature imports, 309 files) and void-breaker (0 / 0, 28 files), nightrail, altair (also used by server/jobs and scripts/altair; handler + 3 tests in features/altair/server) and slice-it (206 files; 2,300-line handler + handler test in features/slice-it/server; stft.worker esbuild entry repointed to features/slice-it/engine/beatmap) moved to features/<id>/{engine,ui,server}; FeatureSocketServer gained an optional `slot` so altair/slice-it register at their original spot in the hub's handler order; balatro's socket handlers + hub state live in features/balatro/server and register through server/socket-server/features.ts. Pending: hearthworks and the remaining games/apps (steps 2-3 for the rest), then steps 4-7)
+A1: in-progress (steps 1-3: features/ root, lib/core/feature.ts manifest + @features/* alias wired through tsconfig, vitest, knip, Dockerfile server-builder, boundary rules and the design-tier scope; balatro (no inbound importers, 0 other-feature imports, 309 files) and void-breaker (0 / 0, 28 files), nightrail, altair (also used by server/jobs and scripts/altair; handler + 3 tests in features/altair/server) and slice-it (206 files; 2,300-line handler + handler test in features/slice-it/server; stft.worker esbuild entry repointed to features/slice-it/engine/beatmap) moved to features/<id>/{engine,ui,server}; FeatureSocketServer gained an optional `slot` so altair/slice-it register at their original spot in the hub's handler order; balatro's socket handlers + hub state live in features/balatro/server and register through server/socket-server/features.ts. hearthworks (153 files, 5 inbound importers; its P2P signalling handler + 4 tests + harness in features/hearthworks/server, shared hub slot after balatro; keeps @/lib imports of tf2-game assets and tf2-loadout gltf-loader until tf2 is a feature). Pending: casino, doctrine and the remaining games/apps, then steps 4-7)
 A2: done (owner kept every page; redirect stubs stay as routes: they also redirect in-app client navigation, which a server-only redirect rule would not)
 A3: in-progress (phase 17, steps 2-3: lib/tf2-game/sim value-import cycles 10 -> 0 (damage-info / damage-push / items/damage-query leaves; import-x/no-cycle baseline 79 -> 69); tf2 -> sp/csgo imports 16 -> 0 (sp client/console modules moved into lib/sp-game, CS:GO registers its client profile and has its own listen worker), held by lib/__tests__/tf2-engine-boundaries.test.ts. Step 1 (packages/engines/source) waits on A1; step 4 (one Rapier binding) pending)
 A4: in-progress (#1531: lib/core math/rng/format, ~75 copies codemodded, no-restricted-syntax guard; sockets/audio/leaderboards/persist pending)

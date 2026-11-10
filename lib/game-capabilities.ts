@@ -130,9 +130,9 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
   hearthworks: {
     genre: ['simulation', 'strategy'],
     // Co-op over WebRTC: the host's browser runs the world (host-authoritative, signalled by the games hub, which
-    // never carries game state) and hands it to another player when it leaves. lib/hearthworks/net.
+    // never carries game state) and hands it to another player when it leaves. features/hearthworks/engine/net.
     players: ['single', 'online-coop'],
-    maxPlayers: 8, // lib/hearthworks/net/events.ts: HW_LIMITS.MAX_PLAYERS
+    maxPlayers: 8, // features/hearthworks/engine/net/events.ts: HW_LIMITS.MAX_PLAYERS
     input: { supported: ['mouse', 'touch'], required: [] },
     sessionMinutes: [20, 90],
     engine: 'webgl',

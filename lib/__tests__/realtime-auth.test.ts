@@ -33,7 +33,7 @@ const CLIENTS = [
   'lib/laundry-sort/net/client.ts',
   'lib/tf2-game/net/client.ts',
   'features/balatro/engine/mp/hub-client.ts',
-  'lib/hearthworks/net/hub-client-core.ts',
+  'features/hearthworks/engine/net/hub-client-core.ts',
 ];
 
 /**

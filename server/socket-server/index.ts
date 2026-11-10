@@ -78,7 +78,6 @@ import { registerGlobeSetHandlers, handleGlobeSetDisconnect } from './handlers/g
 import { registerTf2GameHandlers, handleTf2GameDisconnect } from './handlers/tf2-game';
 import { registerTf2P2pHandlers, handleTf2P2pDisconnect } from './handlers/tf2-p2p';
 import { registerFeatureHandlers, handleFeatureDisconnects } from './features';
-import { registerHearthworksP2pHandlers, handleHearthworksP2pDisconnect } from './handlers/hearthworks-p2p';
 import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/spaces';
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
 import { registerMatchmakingHandlers, handleMatchmakingDisconnect } from './handlers/matchmaking';
@@ -445,10 +444,9 @@ io.on('connection', (socket) => {
   // TF2 peer-to-peer rooms: signaling (and a capped relay fallback) only — the match runs in the host's browser.
   registerTf2P2pHandlers(io, socket);
   // Feature-sliced handlers (redesign A1 step 3; features/<id>/server/, listed in ./features.ts):
-  // Balatro multiplayer — signalling, relay fallback, the seat directory, matchmaking/party/invites.
+  // Balatro multiplayer — signalling, relay fallback, the seat directory, matchmaking/party/invites;
+  // Hearthworks multiplayer — room list, signalling, relay fallback, host migration (the world runs in the host's browser).
   registerFeatureHandlers(io, socket);
-  // Hearthworks multiplayer: room list, signalling, relay fallback and host migration — the world runs in the host's browser.
-  registerHearthworksP2pHandlers(io, socket);
 
   // Platform expansion (§4, §5): live Spaces + cross-game party.
   registerSpacesHandlers(io, socket);
@@ -495,7 +493,6 @@ io.on('connection', (socket) => {
     handleTf2GameDisconnect(io, socket);
     handleTf2P2pDisconnect(io, socket);
     handleFeatureDisconnects(io, socket);
-    handleHearthworksP2pDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });
