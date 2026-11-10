@@ -83,6 +83,15 @@ bundle only**. SSR/server builds get the real module.
   `app/routes/api/rmhmusic/learn/` routes. **Status, unfinished work, future
   features and known gaps for it live in [`docs/rmhmusic/roadmap.md`](../docs/rmhmusic/roadmap.md)
   at the repo root — read it first.**
+- **`core/` (redesign A4):** the primitives every feature used to copy. `math.ts` (`clamp`,
+  `clamp01`, `lerp`, `invLerp`, `remap`), `rng.ts` (`mulberry32`, `shuffle`), `format.ts`, and
+  `persist.ts`: the ONE typed, SSR-safe Web Storage wrapper (`readJson(key, fallback, { validate })`,
+  `writeJson`, `readString`/`writeString`, `removeKey`, `persisted({ key, version, migrate })`;
+  never throws, `{ storage: 'session' }` for sessionStorage). Never write `localStorage.getItem` +
+  `JSON.parse` in a try/catch again: `lib/__tests__/persist-ratchet.test.ts` fails a new file that does.
+  Math/RNG are guarded by the `no-restricted-syntax` block in `eslint.config.mjs`. The
+  AudioContext has one owner too (`getAudioContext()` in `shared/platform.ts`);
+  `lib/__tests__/audio-context-ratchet.test.ts` fails a new `new AudioContext()` / `window.AudioContext`.
 - **`shared/`:** the cross-app tier. `realtime/client.ts` is the socket.io
   factory every app's `socket.ts` builds on (fast reconnect, wake signals,
   per-attempt auth, an opt-in outbox); `realtime/types.ts` holds the

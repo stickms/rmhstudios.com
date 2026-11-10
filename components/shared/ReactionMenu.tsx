@@ -49,7 +49,7 @@ export function ReactionMenu({ x, y, onSelect, onClose }: ReactionMenuProps) {
   };
 
   return createPortal(
-    <div ref={rootRef} className="fixed z-[100]" style={style}>
+    <div ref={rootRef} className="fixed z-popover" style={style}>
       {showFull ? (
         // Exempt the emoji-picker widget from the app-wide twemoji observer: it
         // renders its own emoji and re-renders internally, so letting twemoji

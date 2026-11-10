@@ -6,6 +6,7 @@
  * reveals, long-press (or Flag mode) flags.
  */
 
+import { readJson, writeJson } from '@/lib/core/persist';
 import {
   useCallback,
   useEffect,
@@ -78,22 +79,13 @@ const DEFAULT_SAVED: Saved = {
 };
 
 function loadSaved(): Saved {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_SAVED;
-    const p = JSON.parse(raw) as Partial<Saved>;
-    return { ...DEFAULT_SAVED, ...p, custom: validDims(p.custom) ?? DEFAULT_SAVED.custom };
-  } catch {
-    return DEFAULT_SAVED;
-  }
+  const p = readJson<Partial<Saved> | null>(STORAGE_KEY, null);
+  if (!p) return DEFAULT_SAVED;
+  return { ...DEFAULT_SAVED, ...p, custom: validDims(p.custom) ?? DEFAULT_SAVED.custom };
 }
 
 function writeSaved(s: Saved) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
-  } catch {
-    /* storage unavailable — the game still plays */
-  }
+  writeJson(STORAGE_KEY, s);
 }
 
 function maxMines(rows: number, cols: number) {

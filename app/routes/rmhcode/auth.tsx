@@ -1,3 +1,4 @@
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon: <Spinner> renders role="status" and would join the button accessible name */
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { noindexHead } from '@/lib/seo';
 import { Link } from '@tanstack/react-router';
@@ -6,6 +7,7 @@ import { m as motion } from 'framer-motion';
 import { Terminal, Check, X, Loader2, Shield } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
@@ -77,7 +79,7 @@ function AuthContent() {
     }
   }
 
-  if (isPending) return <div className="app-ground bg-site-bg flex items-center justify-center"><Loader2 className="w-8 h-8 text-site-accent animate-spin" aria-hidden="true" /></div>;
+  if (isPending) return <div className="app-ground bg-site-bg flex items-center justify-center"><Spinner size={32} /></div>;
 
   if (!session) {
     const loginUrl = `/login?redirect=${encodeURIComponent(`/rmhcode/auth?callback=${encodeURIComponent(callback || '')}&session=${sessionId || ''}`)}`;
@@ -162,7 +164,7 @@ function AuthContent() {
 
 function RmhCodeAuthPage() {
   return (
-    <Suspense fallback={<div className="app-ground bg-site-bg flex items-center justify-center"><Loader2 className="w-8 h-8 text-site-accent animate-spin" aria-hidden="true" /></div>}>
+    <Suspense fallback={<div className="app-ground bg-site-bg flex items-center justify-center"><Spinner size={32} /></div>}>
       <AuthContent />
     </Suspense>
   );

@@ -5,6 +5,9 @@
 // settings menu.
 // ───────────────────────────────────────────────────────────────────────────
 
+import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
+import { readString, writeString } from '@/lib/core/persist';
+
 type SfxName =
   | "jump"
   | "doublejump"
@@ -26,14 +29,12 @@ const VOL_KEY = "haw-sfx-vol";
 const MUTE_KEY = "haw-sfx-muted";
 
 function readNum(key: string, def: number): number {
-  if (typeof window === "undefined") return def;
-  const v = window.localStorage.getItem(key);
+  const v = readString(key);
   const n = v == null ? def : parseFloat(v);
   return Number.isFinite(n) ? n : def;
 }
 function readBool(key: string, def: boolean): boolean {
-  if (typeof window === "undefined") return def;
-  const v = window.localStorage.getItem(key);
+  const v = readString(key);
   return v == null ? def : v === "1";
 }
 
@@ -43,16 +44,15 @@ let _volume = readNum(VOL_KEY, 0.5);
 let _muted = readBool(MUTE_KEY, false);
 
 function audio(): AudioContext | null {
-  if (typeof window === "undefined") return null;
-  if (!ctx) {
-    const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AC) return null;
-    ctx = new AC();
+  const shared = getAudioContext();
+  if (!shared) return null;
+  if (shared !== ctx) {
+    ctx = shared;
     master = ctx.createGain();
     master.gain.value = _muted ? 0 : _volume;
     master.connect(ctx.destination);
   }
-  if (ctx.state === "suspended") ctx.resume().catch(() => {});
+  resumeAudioContext();
   return ctx;
 }
 
@@ -161,7 +161,7 @@ export const SfxManager = {
 
   setVolume(v: number) {
     _volume = Math.max(0, Math.min(1, v));
-    if (typeof window !== "undefined") window.localStorage.setItem(VOL_KEY, String(_volume));
+    writeString(VOL_KEY, String(_volume));
     if (master && !_muted) master.gain.value = _volume;
   },
   getVolume(): number {
@@ -169,7 +169,7 @@ export const SfxManager = {
   },
   setMuted(m: boolean) {
     _muted = m;
-    if (typeof window !== "undefined") window.localStorage.setItem(MUTE_KEY, m ? "1" : "0");
+    writeString(MUTE_KEY, m ? "1" : "0");
     if (master) master.gain.value = m ? 0 : _volume;
   },
   isMuted(): boolean {

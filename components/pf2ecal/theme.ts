@@ -29,6 +29,7 @@
  * So the ground and the page resolve from ONE preference, here.
  */
 
+import { readJson, writeJson } from '@/lib/core/persist';
 import { useCallback, useEffect, useState } from 'react';
 import { APP_ROUTE_THEME_BG, paintDocumentGround } from '@/stores/themeStore';
 
@@ -47,27 +48,15 @@ function prefersDark(): boolean {
 
 /** The stored preference, or Auto for a first visit / unreadable storage. */
 export function readMode(): Pf2eThemeMode {
-  try {
-    const raw = localStorage.getItem(GROUND.key);
-    const parsed = raw ? (JSON.parse(raw) as { mode?: unknown }) : null;
-    const mode = parsed?.mode;
-    if (mode === 'light' || mode === 'dark' || mode === 'auto') return mode;
-  } catch {
-    // Private mode, a quota error, or something else's key at the same name.
-  }
-  return 'auto';
+  // Private mode, a quota error, or something else's key at the same name reads as Auto.
+  const mode = readJson<{ mode?: unknown } | null>(GROUND.key, null)?.mode;
+  return mode === 'light' || mode === 'dark' || mode === 'auto' ? mode : 'auto';
 }
 
 function writeMode(mode: Pf2eThemeMode): void {
-  try {
-    localStorage.setItem(
-      GROUND.key,
-      // See the module note: no resolved flag on Auto, on purpose.
-      JSON.stringify(mode === 'auto' ? { mode } : { mode, dark: mode === 'dark' }),
-    );
-  } catch {
-    // A preference that cannot be saved still applies for this visit.
-  }
+  // See the module note: no resolved flag on Auto, on purpose. A preference that
+  // cannot be saved still applies for this visit.
+  writeJson(GROUND.key, mode === 'auto' ? { mode } : { mode, dark: mode === 'dark' });
 }
 
 /** Which of the two palettes a mode means right now. */

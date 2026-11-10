@@ -120,5 +120,5 @@ export function VUMeter({ level, peak = 0, width = 8, height = 120, horizontal =
     return () => cancelAnimationFrame(raf);
   }, [level, peak, width, height, horizontal]);
 
-  return <canvas ref={canvasRef} className="shrink-0 rounded-sm" />;
+  return <canvas ref={canvasRef} className="shrink-0 rounded-[calc(var(--app-radius-sm)/3)]" />;
 }

@@ -1,3 +1,4 @@
+import { readJson, writeJson } from '@/lib/core/persist';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   defaultRoomConfig,
@@ -21,20 +22,12 @@ export interface RoomMeta {
 const soloKey = (cycle: string) => `rmh-elections-room:solo:${cycle}`;
 
 export function readSolo(cycle: string): RoomConfig {
-  try {
-    const raw = localStorage.getItem(soloKey(cycle));
-    return raw ? sanitizeRoomConfig(JSON.parse(raw)) : defaultRoomConfig();
-  } catch {
-    return defaultRoomConfig();
-  }
+  const raw = readJson<unknown>(soloKey(cycle), null);
+  return raw ? sanitizeRoomConfig(raw) : defaultRoomConfig();
 }
 
 export function writeSolo(cycle: string, config: RoomConfig): void {
-  try {
-    localStorage.setItem(soloKey(cycle), JSON.stringify(config));
-  } catch {
-    /* private mode: the room lasts for this visit only */
-  }
+  writeJson(soloKey(cycle), config); // private mode: the room lasts for this visit only
 }
 
 /**

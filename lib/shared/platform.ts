@@ -14,6 +14,8 @@
  * at the call site.
  */
 
+import { readString, writeString } from '@/lib/core/persist';
+
 /* ─── Web Audio ─────────────────────────────────────────────────────────── */
 
 type AudioContextCtor = typeof AudioContext;
@@ -139,22 +141,13 @@ const HAPTICS_INTENSITY_KEY = 'rmh:haptics:intensity';
  * reader keeps agreeing on the storage format.
  */
 export function hapticsEnabled(): boolean {
-  if (typeof localStorage === 'undefined') return true;
-  try {
-    const raw = localStorage.getItem(HAPTICS_ENABLED_KEY);
-    return raw === null ? true : raw === '1';
-  } catch {
-    return true;
-  }
+  const raw = readString(HAPTICS_ENABLED_KEY);
+  return raw === null ? true : raw === '1';
 }
 
 export function setHapticsEnabled(enabled: boolean): void {
-  try {
-    localStorage.setItem(HAPTICS_ENABLED_KEY, enabled ? '1' : '0');
-  } catch {
-    // Private browsing / storage full — the in-memory default still applies
-    // for the rest of this tab's life, which is a fine place for this to fail.
-  }
+  // Private browsing / storage full: the default still applies, a fine place to fail.
+  writeString(HAPTICS_ENABLED_KEY, enabled ? '1' : '0');
 }
 
 /**
@@ -163,21 +156,12 @@ export function setHapticsEnabled(enabled: boolean): void {
  * `features/slice-it/engine/engine.ts` are already tuned against that default.
  */
 export function hapticsIntensity(): number {
-  if (typeof localStorage === 'undefined') return 0.7;
-  try {
-    const raw = Number(localStorage.getItem(HAPTICS_INTENSITY_KEY));
-    return Number.isFinite(raw) && raw > 0 && raw <= 1 ? raw : 0.7;
-  } catch {
-    return 0.7;
-  }
+  const raw = Number(readString(HAPTICS_INTENSITY_KEY));
+  return Number.isFinite(raw) && raw > 0 && raw <= 1 ? raw : 0.7;
 }
 
 export function setHapticsIntensity(value: number): void {
-  try {
-    localStorage.setItem(HAPTICS_INTENSITY_KEY, String(Math.max(0, Math.min(1, value))));
-  } catch {
-    // See setHapticsEnabled.
-  }
+  writeString(HAPTICS_INTENSITY_KEY, String(Math.max(0, Math.min(1, value)))); // see setHapticsEnabled
 }
 
 /* ─── Idle work ─────────────────────────────────────────────────────────── */

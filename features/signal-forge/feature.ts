@@ -14,6 +14,7 @@ export default defineFeature({
     'app/routes/api/signal-forge/score.ts',
     'app/routes/secret/signal-forge.tsx',
   ],
-  namespaces: ['c-signal-forge'],
+  // The game's strings, and the Vault's (`r-secret`: the way back to /secret) the page frame renders.
+  namespaces: ['c-signal-forge', 'r-secret'],
   listed: false,
 });

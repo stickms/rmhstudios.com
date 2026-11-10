@@ -1,3 +1,4 @@
+import { readJson, writeJson } from '@/lib/core/persist';
 /**
  * Spell practice bookkeeping (local storage only). A card becomes practicable
  * once a real run has met it; practice attempts never touch scores or boards.
@@ -21,22 +22,13 @@ const KEY = 'dr.practice.v1';
 export const practiceId = (t: PracticeTarget): string => `${t.stage}.${t.boss}.${t.card}`;
 
 export function loadPractice(): PracticeData {
-  try {
-    const raw = JSON.parse(localStorage.getItem(KEY) ?? 'null') as PracticeData | null;
-    if (raw && typeof raw === 'object')
-      return { reached: raw.reached ?? {}, stats: raw.stats ?? {} };
-  } catch {
-    /* storage blocked or corrupt */
-  }
+  const raw = readJson<PracticeData | null>(KEY, null);
+  if (raw && typeof raw === 'object') return { reached: raw.reached ?? {}, stats: raw.stats ?? {} };
   return { reached: {}, stats: {} };
 }
 
 function save(d: PracticeData): void {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(d));
-  } catch {
-    /* storage blocked */
-  }
+  writeJson(KEY, d);
 }
 
 export function recordReached(t: PracticeTarget): void {

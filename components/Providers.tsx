@@ -1,3 +1,4 @@
+import { readJson, readString, removeKey, writeString } from '@/lib/core/persist';
 import {
   ReactNode,
   createContext,
@@ -96,37 +97,6 @@ import { getMyProfileDisplayApi } from '@/lib/profile/profile-extras.contract';
 // The session context, its persisted last-known user and the seeding logic live in
 // a leaf so a separately built island can provide the same context (redesign B1).
 export { useSession } from '@/components/session/session-context';
-
-/**
- * `localStorage` for the theme hydrate/persist effects below, which must never throw: storage
- * that is full, disabled, or blocked outright (Safari with "Block all cookies" throws on any
- * access) once crashed the whole provider tree into the error page on every route. A failed
- * read is `null` (the pre-paint script's defaults stand); a failed write is dropped and the
- * DOM still updates, so a choice holds for the visit.
- */
-export const safeStorage = {
-  getItem(key: string): string | null {
-    try {
-      return localStorage.getItem(key);
-    } catch {
-      return null;
-    }
-  },
-  setItem(key: string, value: string): void {
-    try {
-      localStorage.setItem(key, value);
-    } catch {
-      /* dropped: see above */
-    }
-  },
-  removeItem(key: string): void {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      /* dropped: see above */
-    }
-  },
-};
 
 /* ------------------------------------------------------------------ */
 /*  Resolved user display – fetches custom image/name from profile    */
@@ -324,24 +294,15 @@ export function Providers({
   // so a flaky connection can retry on the next load.
   useEffect(() => {
     if (!userId) return;
-    let code: string | null;
-    try {
-      code = localStorage.getItem('rmh-ref');
-    } catch {
-      return;
-    }
+    const code = readString('rmh-ref');
     if (!code) return;
     api(claimReferralApi, { body: { code } })
-      .then(() => localStorage.removeItem('rmh-ref'))
+      .then(() => removeKey('rmh-ref'))
       .catch((err: unknown) => {
         // Any answer but 429 settles the code (claimed, already claimed, invalid);
         // a dropped connection or a 429 keeps it for the next load.
         if (err instanceof HttpError && err.status !== 429) {
-          try {
-            localStorage.removeItem('rmh-ref');
-          } catch {
-            /* storage unavailable */
-          }
+          removeKey('rmh-ref');
         }
       });
   }, [userId]);
@@ -385,60 +346,45 @@ export function Providers({
   // falls back to the site default (DEFAULT_STYLE) and is rewritten so it
   // doesn't linger.
   useEffect(() => {
-    const stored = safeStorage.getItem('rmh-style');
+    const stored = readString('rmh-style');
     if (stored && SITE_STYLES.some((s) => s.id === stored)) {
       useThemeStore.getState().setStyle(stored as SiteStyle);
     } else if (stored) {
-      safeStorage.setItem('rmh-style', DEFAULT_STYLE);
+      writeString('rmh-style', DEFAULT_STYLE);
       useThemeStore.getState().setStyle(DEFAULT_STYLE);
     }
-    const storedAccent = safeStorage.getItem(ACCENT_STORAGE_KEY);
+    const storedAccent = readString(ACCENT_STORAGE_KEY);
     if (isAccentId(storedAccent)) {
       useThemeStore.getState().setAccent(storedAccent);
     }
     // Comfort suite (§13) — hydrate from the no-flash localStorage cache.
     const st = useThemeStore.getState();
-    const fs = Number(safeStorage.getItem(FONT_SCALE_KEY));
+    const fs = Number(readString(FONT_SCALE_KEY));
     if ([875, 1000, 1125, 1250].includes(fs)) st.setFontScale(fs);
-    if (safeStorage.getItem(DENSITY_KEY) === 'compact') st.setDensity('compact');
-    if (safeStorage.getItem(READABLE_FONT_KEY) === '1') st.setReadableFont(true);
-    const ca = safeStorage.getItem(CUSTOM_ACCENT_KEY);
+    if (readString(DENSITY_KEY) === 'compact') st.setDensity('compact');
+    if (readString(READABLE_FONT_KEY) === '1') st.setReadableFont(true);
+    const ca = readString(CUSTOM_ACCENT_KEY);
     if (ca && HEX_RE.test(ca)) st.setCustomAccent(ca);
-    const cv = safeStorage.getItem(COLOR_VISION_KEY);
+    const cv = readString(COLOR_VISION_KEY);
     if (isColorVisionMode(cv)) st.setColorVision(cv);
-    const nt = safeStorage.getItem(NAV_TRANSITION_KEY);
+    const nt = readString(NAV_TRANSITION_KEY);
     if (isNavTransition(nt)) st.setNavTransition(nt);
-    if (safeStorage.getItem(ALWAYS_EVERT_GLOBE_KEY) === '1') st.setAlwaysEvertGlobe(true);
-    const el = safeStorage.getItem(EVERSION_LEVEL_KEY);
+    if (readString(ALWAYS_EVERT_GLOBE_KEY) === '1') st.setAlwaysEvertGlobe(true);
+    const el = readString(EVERSION_LEVEL_KEY);
     if (isEversionLevel(el)) st.setEversionLevel(el);
-    const jm = safeStorage.getItem(JELLY_MOTION_KEY);
+    const jm = readString(JELLY_MOTION_KEY);
     if (isJellyMotion(jm)) st.setJellyMotion(jm);
-    const ea = safeStorage.getItem(ELECTRIC_ARCS_KEY);
+    const ea = readString(ELECTRIC_ARCS_KEY);
     if (isElectricArcs(ea)) st.setElectricArcs(ea);
     // The globe cursor and its per-device settings were removed (2026-11-08): drop the stale key so devices do not keep
     // dead data. Nothing reads it any more. Safe to delete once every device that ever stored it has loaded the site.
-    try {
-      localStorage.removeItem('rmh-globe-cursor');
-    } catch {
-      /* storage blocked — nothing to clean */
-    }
+    removeKey('rmh-globe-cursor');
     // Marketplace user theme (§14): the no-flash script already painted it; hydrate
     // the store so the runtime effect keeps it applied and can clear it on removal.
-    try {
-      const raw = safeStorage.getItem(USER_THEME_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as AppliedUserTheme;
-        if (
-          parsed &&
-          typeof parsed.id === 'string' &&
-          parsed.vars &&
-          typeof parsed.bg === 'string'
-        ) {
-          st.setUserTheme(parsed);
-        }
-      }
-    } catch {
-      /* corrupt cache — ignore, the built-in theme shows through */
+    // A corrupt cache reads as null: the built-in theme shows through.
+    const parsed = readJson<AppliedUserTheme | null>(USER_THEME_KEY, null);
+    if (parsed && typeof parsed.id === 'string' && parsed.vars && typeof parsed.bg === 'string') {
+      st.setUserTheme(parsed);
     }
   }, []);
 
@@ -466,7 +412,7 @@ export function Providers({
       html.classList.add(`style-${activeStyle}`);
     }
     // Persist the COMMITTED style (not a transient preview).
-    safeStorage.setItem('rmh-style', style);
+    writeString('rmh-style', style);
 
     // Marketplace user theme (§14): a full v2 retint set inline over the built-in
     // cascade (a transient preview beats the committed one). Skipped on app/game
@@ -480,78 +426,78 @@ export function Providers({
       clearThemeTokens(html);
     }
     // Persist only the COMMITTED theme (not a transient preview) for the no-flash script.
-    if (userTheme) safeStorage.setItem(USER_THEME_KEY, JSON.stringify(userTheme));
-    else safeStorage.removeItem(USER_THEME_KEY);
+    if (userTheme) writeString(USER_THEME_KEY, JSON.stringify(userTheme));
+    else removeKey(USER_THEME_KEY);
 
     // Glass clarity is retired. Clear old device overrides, including during HMR;
     // OS transparency preferences and high contrast still apply in the material layer.
     html.classList.remove('reduce-transparency');
     html.style.removeProperty('--glass-user-blur');
     html.style.removeProperty('--glass-user-tint');
-    safeStorage.removeItem('rmh-glass-level');
-    safeStorage.removeItem('rmh-reduce-transparency');
-    safeStorage.removeItem('rmh-reduce-motion');
+    removeKey('rmh-glass-level');
+    removeKey('rmh-reduce-transparency');
+    removeKey('rmh-reduce-motion');
 
     // Accent override: apply on content pages; clear on app/game routes (they own
     // their palette) and when no accent is chosen. applyAccent no-ops safely for a
     // null/unknown id by clearing the tokens.
     applyAccent(html, isAppRoute ? null : accent);
-    if (isAccentId(accent)) safeStorage.setItem(ACCENT_STORAGE_KEY, accent);
-    else safeStorage.removeItem(ACCENT_STORAGE_KEY);
+    if (isAccentId(accent)) writeString(ACCENT_STORAGE_KEY, accent);
+    else removeKey(ACCENT_STORAGE_KEY);
 
     // ── Comfort suite (§13) ──────────────────────────────────────────────
     if (fontScale && fontScale !== 1000) {
       html.style.fontSize = `${fontScale / 10}%`;
-      safeStorage.setItem(FONT_SCALE_KEY, String(fontScale));
+      writeString(FONT_SCALE_KEY, String(fontScale));
     } else {
       html.style.removeProperty('font-size');
-      safeStorage.removeItem(FONT_SCALE_KEY);
+      removeKey(FONT_SCALE_KEY);
     }
     if (density === 'compact') {
       html.setAttribute('data-density', 'compact');
-      safeStorage.setItem(DENSITY_KEY, 'compact');
+      writeString(DENSITY_KEY, 'compact');
     } else {
       html.removeAttribute('data-density');
-      safeStorage.removeItem(DENSITY_KEY);
+      removeKey(DENSITY_KEY);
     }
     html.classList.toggle('readable-font', readableFont);
-    if (readableFont) safeStorage.setItem(READABLE_FONT_KEY, '1');
-    else safeStorage.removeItem(READABLE_FONT_KEY);
+    if (readableFont) writeString(READABLE_FONT_KEY, '1');
+    else removeKey(READABLE_FONT_KEY);
     // Colour-vision mode retints the semantic tokens via a data attribute the
     // theme cascade reads (see globals.css). Cached in localStorage so the
     // no-flash script in __root.tsx can apply it before first paint — without
     // that, a viewer who can't distinguish the default palette would see the
     // wrong status colours for a frame on every navigation.
     applyColorVision(html, colorVision);
-    if (colorVision !== 'none') safeStorage.setItem(COLOR_VISION_KEY, colorVision);
-    else safeStorage.removeItem(COLOR_VISION_KEY);
+    if (colorVision !== 'none') writeString(COLOR_VISION_KEY, colorVision);
+    else removeKey(COLOR_VISION_KEY);
     // Eversion transition choice: cache only (no DOM effect) so the controller can
     // read it synchronously; the default is expressed by absence.
     if (navTransition !== DEFAULT_NAV_TRANSITION)
-      safeStorage.setItem(NAV_TRANSITION_KEY, navTransition);
-    else safeStorage.removeItem(NAV_TRANSITION_KEY);
-    if (alwaysEvertGlobe) safeStorage.setItem(ALWAYS_EVERT_GLOBE_KEY, '1');
-    else safeStorage.removeItem(ALWAYS_EVERT_GLOBE_KEY);
+      writeString(NAV_TRANSITION_KEY, navTransition);
+    else removeKey(NAV_TRANSITION_KEY);
+    if (alwaysEvertGlobe) writeString(ALWAYS_EVERT_GLOBE_KEY, '1');
+    else removeKey(ALWAYS_EVERT_GLOBE_KEY);
     if (eversionLevel !== DEFAULT_EVERSION_LEVEL)
-      safeStorage.setItem(EVERSION_LEVEL_KEY, eversionLevel);
-    else safeStorage.removeItem(EVERSION_LEVEL_KEY);
+      writeString(EVERSION_LEVEL_KEY, eversionLevel);
+    else removeKey(EVERSION_LEVEL_KEY);
     // Plasmatic Jelly (R8/R9): stamped on <html> for the jelly/arc runtimes and
     // cached for the pre-paint script; both express the default by absence.
     applyJellyMotion(html, jellyMotion);
-    if (jellyMotion !== DEFAULT_JELLY_MOTION) safeStorage.setItem(JELLY_MOTION_KEY, jellyMotion);
-    else safeStorage.removeItem(JELLY_MOTION_KEY);
+    if (jellyMotion !== DEFAULT_JELLY_MOTION) writeString(JELLY_MOTION_KEY, jellyMotion);
+    else removeKey(JELLY_MOTION_KEY);
     applyElectricArcs(html, electricArcs);
     if (electricArcs !== DEFAULT_ELECTRIC_ARCS)
-      safeStorage.setItem(ELECTRIC_ARCS_KEY, electricArcs);
-    else safeStorage.removeItem(ELECTRIC_ARCS_KEY);
+      writeString(ELECTRIC_ARCS_KEY, electricArcs);
+    else removeKey(ELECTRIC_ARCS_KEY);
     // Custom accent (raw hex) overrides the preset accent applied just above.
     if (customAccent && HEX_RE.test(customAccent) && !isAppRoute) {
       const { hex, fg } = ensureReadableAccent(customAccent);
       for (const [name, val] of Object.entries(accentCssVars(hex, fg)))
         html.style.setProperty(name, val);
-      safeStorage.setItem(CUSTOM_ACCENT_KEY, customAccent);
+      writeString(CUSTOM_ACCENT_KEY, customAccent);
     } else {
-      safeStorage.removeItem(CUSTOM_ACCENT_KEY);
+      removeKey(CUSTOM_ACCENT_KEY);
     }
 
     // Excluded app/game routes keep their own document background so the browser

@@ -1,0 +1,23 @@
+/* ==========================================================================
+   PROJECT VEGA ISLAND SHEET (redesign audit B1) — the one render-blocking
+   stylesheet of the island document `app/routes/secret/vega.tsx` serves.
+
+   The shared design body (`app/globals.css`) plus Tailwind's utilities for THIS
+   island's own module graph and nothing else.
+
+   THE LIST BELOW IS A MANIFEST: `lib/__tests__/islands.test.ts` walks the import
+   graph from `features/vega/island.tsx` and fails if a reached component file is
+   not covered by an `@source` line here, printing the line to add.
+   ========================================================================== */
+@import 'tailwindcss' source(none);
+@import '../../app/globals.css';
+
+@source "./";
+@source "../../components/i18n/AppI18nProvider.tsx";
+@source "../../components/shared/GameErrorBoundary.tsx";
+@source "../../components/shared/GameLoadingFallback.tsx";
+@source "../../components/ui/site-toaster.tsx";
+@source "../../components/ui/TwemojiProvider.tsx";
+@source "../../components/island";
+@source "../../components/session/session-context.tsx";
+@source "../../components/ui/radial-loader.tsx";

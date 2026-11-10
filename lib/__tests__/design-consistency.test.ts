@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { FULLSCREEN_TIER_DIRS, isSiteTier } from '../../eslint-local-rules/design-scope.js';
 import { readCss } from './css-source';
+import { APP_TIER_DIRS } from './css-tiers';
 
 /**
  * §16.2 — the "global website design scheme" as an EXECUTABLE gate.
@@ -421,11 +422,23 @@ function isThemeableRadius(value: string): boolean {
   return /\d/.test(v);
 }
 
-function cssViolations(src: string): { hex: number; radius: number } {
-  const hex = (src.match(CSS_HEX) ?? []).length;
+/**
+ * An app's palette override (redesign E3). An app is on the same contract as a site page, with `--app-*` tokens and
+ * a palette override (the E3 table). In an app-tier stylesheet ({@link APP_TIER_DIRS}: `app-theme.css`, which is
+ * the `--app-*` contract itself, and an app's own `.studio-theme { --app-bg: … }` block) a hex that is the value of
+ * an `--app-*` declaration IS that override: a token definition, like the scoped groups in app/globals.css, not a
+ * colour painted on an element. Everywhere else, and for every other property, a hex still counts.
+ */
+const APP_PALETTE_DECL = /--app-[\w-]+\s*:[^;{}]*;/g;
+
+function cssViolations(src: string, file = ''): { hex: number; radius: number } {
+  // A comment is not a colour: `(#989)` is the owner's issue number, not a hex.
+  let body = src.replace(/\/\*[\s\S]*?\*\//g, '');
+  if (APP_TIER_DIRS.has(file.split(/[\\/]/)[1] ?? '')) body = body.replace(APP_PALETTE_DECL, '');
+  const hex = (body.match(CSS_HEX) ?? []).length;
   let radius = 0;
   CSS_RADIUS.lastIndex = 0;
-  for (let m = CSS_RADIUS.exec(src); m; m = CSS_RADIUS.exec(src)) {
+  for (let m = CSS_RADIUS.exec(body); m; m = CSS_RADIUS.exec(body)) {
     if (isThemeableRadius(m[1])) radius++;
   }
   return { hex, radius };
@@ -497,7 +510,7 @@ describe('one motion source in CSS (E7)', () => {
 describe('the token contract holds in CSS too', () => {
   const measured = SITE_CSS.map((file) => ({
     file: file.split(/[\\/]/).join('/'),
-    ...cssViolations(readFileSync(join(ROOT, file), 'utf8')),
+    ...cssViolations(readFileSync(join(ROOT, file), 'utf8'), file),
   }));
 
   it('scans the site-tier stylesheets at all', () => {

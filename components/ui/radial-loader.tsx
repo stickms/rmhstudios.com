@@ -1,4 +1,3 @@
-import { cn } from '@/lib/utils';
 
 interface RadialLoaderProps {
   /** Pixel size of the loader box (default 24). */
@@ -28,7 +27,10 @@ interface RadialLoaderProps {
 export function RadialLoader({ size = 24, className, label, decorative }: RadialLoaderProps) {
   return (
     <span
-      className={cn('rad-loader', className)}
+      // A plain join, not cn(): `rad-loader` is not a Tailwind utility, so twMerge has nothing to
+      // resolve, and cn() would pull tailwind-merge (~8 KB brotli) into every island via
+      // GameLoadingFallback.
+      className={className ? `rad-loader ${className}` : 'rad-loader'}
       style={{ width: size, height: size }}
       role={decorative ? undefined : 'status'}
       aria-label={decorative ? undefined : (label ?? 'Loading')}

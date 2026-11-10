@@ -7,6 +7,7 @@
  * site's whole provider stack. Both providers seed it the same way, through
  * {@link useEffectiveSession}.
  */
+import { readJson, removeKey, writeJson } from '@/lib/core/persist';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { authClient } from '@/lib/auth-client';
 
@@ -56,21 +57,12 @@ export type CachedSessionUser = {
 };
 
 function readCachedUser(): CachedSessionUser | null {
-  try {
-    const raw = localStorage.getItem(CACHED_USER_KEY);
-    return raw ? (JSON.parse(raw) as CachedSessionUser) : null;
-  } catch {
-    return null;
-  }
+  return readJson<CachedSessionUser | null>(CACHED_USER_KEY, null);
 }
 
 function writeCachedUser(user: CachedSessionUser | null) {
-  try {
-    if (user) localStorage.setItem(CACHED_USER_KEY, JSON.stringify(user));
-    else localStorage.removeItem(CACHED_USER_KEY);
-  } catch {
-    // ignore (private mode / storage disabled)
-  }
+  if (user) writeJson(CACHED_USER_KEY, user);
+  else removeKey(CACHED_USER_KEY);
 }
 
 /**

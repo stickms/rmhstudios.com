@@ -1,3 +1,4 @@
+import { readJson, writeJson } from '@/lib/core/persist';
 import { create } from 'zustand';
 import {
   parseLayoutPref,
@@ -19,22 +20,6 @@ import { api } from '@/lib/contract/client';
  * the mirror and `/api/preferences/layout`. Signed-out users keep the mirror
  * only; it syncs up on their next save while signed in.
  */
-
-function readMirror<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-function writeMirror(key: string, value: unknown) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    /* private mode / storage disabled */
-  }
-}
 
 async function persist(body: { sidebar?: SidebarPref; homeStack?: HomeStackItem[] }) {
   try {
@@ -84,8 +69,8 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
     editedSinceHydrate.homeStack = false;
     // Synchronous mirror read first (no flash), normalized through the parser.
     const applied = parseLayoutPref({
-      sidebar: readMirror<unknown>(LAYOUT_SIDEBAR_KEY, {}),
-      homeStack: readMirror<unknown>(LAYOUT_HOMESTACK_KEY, []),
+      sidebar: readJson<unknown>(LAYOUT_SIDEBAR_KEY, {}),
+      homeStack: readJson<unknown>(LAYOUT_HOMESTACK_KEY, []),
     });
     set({ sidebar: applied.sidebar, homeStack: applied.homeStack, hydrated: true });
     // Then reconcile with the account (cross-device). 401 for signed-out is fine.
@@ -94,11 +79,11 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
         const server = parseLayoutPref(d);
         const patch: Partial<Pick<LayoutStore, 'sidebar' | 'homeStack'>> = {};
         if (!editedSinceHydrate.sidebar) {
-          writeMirror(LAYOUT_SIDEBAR_KEY, server.sidebar);
+          writeJson(LAYOUT_SIDEBAR_KEY, server.sidebar);
           patch.sidebar = server.sidebar;
         }
         if (!editedSinceHydrate.homeStack) {
-          writeMirror(LAYOUT_HOMESTACK_KEY, server.homeStack);
+          writeJson(LAYOUT_HOMESTACK_KEY, server.homeStack);
           patch.homeStack = server.homeStack;
         }
         set(patch);
@@ -113,7 +98,7 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
       : // Pinning implies un-hiding (can't be both).
         { pinned: [...pinned, id], hidden: hidden.filter((h) => h !== id), order };
     editedSinceHydrate.sidebar = true;
-    writeMirror(LAYOUT_SIDEBAR_KEY, next);
+    writeJson(LAYOUT_SIDEBAR_KEY, next);
     set({ sidebar: next });
     void persist({ sidebar: next });
   },
@@ -124,7 +109,7 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
       ? { pinned, hidden: hidden.filter((h) => h !== id), order }
       : { pinned: pinned.filter((p) => p !== id), hidden: [...hidden, id], order };
     editedSinceHydrate.sidebar = true;
-    writeMirror(LAYOUT_SIDEBAR_KEY, next);
+    writeJson(LAYOUT_SIDEBAR_KEY, next);
     set({ sidebar: next });
     void persist({ sidebar: next });
   },
@@ -132,7 +117,7 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
   setSidebarOrder: (order) => {
     const next: SidebarPref = { ...get().sidebar, order };
     editedSinceHydrate.sidebar = true;
-    writeMirror(LAYOUT_SIDEBAR_KEY, next);
+    writeJson(LAYOUT_SIDEBAR_KEY, next);
     set({ sidebar: next });
     void persist({ sidebar: next });
   },
@@ -140,14 +125,14 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
   resetSidebar: () => {
     const next: SidebarPref = { pinned: [], hidden: [], order: [] };
     editedSinceHydrate.sidebar = true;
-    writeMirror(LAYOUT_SIDEBAR_KEY, next);
+    writeJson(LAYOUT_SIDEBAR_KEY, next);
     set({ sidebar: next });
     void persist({ sidebar: next });
   },
 
   setHomeStack: (stack) => {
     editedSinceHydrate.homeStack = true;
-    writeMirror(LAYOUT_HOMESTACK_KEY, stack);
+    writeJson(LAYOUT_HOMESTACK_KEY, stack);
     set({ homeStack: stack });
     void persist({ homeStack: stack });
   },

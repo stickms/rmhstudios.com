@@ -1,3 +1,4 @@
+import { readJson } from '@/lib/core/persist';
 import { create } from 'zustand';
 import type { AppliedUserTheme, AppliedUserThemePreview } from '@/lib/themes/tokens';
 import {
@@ -230,9 +231,10 @@ export function appRouteGround(pathname: string): { bg: string; dark: boolean } 
         typeof window.matchMedia === 'function' &&
         window.matchMedia('(prefers-color-scheme: dark)').matches
       : entry.defaultDark !== false;
-    try {
-      const raw = localStorage.getItem(entry.key);
-      const parsed = raw ? (JSON.parse(raw) as Record<string, unknown> | null) : null;
+    // Unreadable or non-JSON storage falls through to the default above
+    // (readJson never throws: a pre-paint path may not).
+    {
+      const parsed = readJson<Record<string, unknown> | null>(entry.key, null);
       const state = (parsed?.state ?? parsed) as Record<string, unknown> | null;
       const flag = state?.[entry.darkFlag];
       if (entry.darkWhen !== undefined) {
@@ -240,10 +242,6 @@ export function appRouteGround(pathname: string): { bg: string; dark: boolean } 
       } else if (typeof flag === 'boolean') {
         dark = flag;
       }
-    } catch {
-      // Unreadable or non-JSON storage falls through to the default above,
-      // which is the whole reason this is wrapped: a pre-paint path may not
-      // throw.
     }
     return { bg: dark ? entry.dark : entry.light, dark };
   }

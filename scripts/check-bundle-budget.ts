@@ -223,9 +223,27 @@ const BUDGETS = {
  * Before the move the same page loaded 2,507,212 B of JS (194 files) and the
  * 503,615 B app-tier sheet. Budgets are measured + 3.5% (the critical path's
  * original headroom).
+ *
+ * **2026-11-10 — nightrail, vega, signal-forge.** Three more islands, measured on
+ * the build that moved them (JS = the entry's static closure):
+ *   nightrail     JS 1,125,335 B raw / 268,397 B brotli (10 files), CSS 203,768 / 26,550
+ *   signal-forge  JS   616,357 B raw / 163,972 B brotli  (9 files), CSS 199,733 / 26,309
+ *   vega          JS   454,958 B raw / 129,568 B brotli (11 files), CSS 185,341 / 24,433
+ * With four entries in one island build, rolldown now splits what they share into
+ * shared chunks (React + the island providers in one, three.js + the shared game
+ * UI that nightrail and void-breaker both use in another), so a player moving
+ * between islands keeps them cached. That re-split void-breaker's single chunk
+ * into 16 files: the same code (1,312,047 → 1,317,286 B raw, +0.4% of chunk
+ * boundaries) but 304,653 → 316,522 B brotli (+3.9%), because each file is
+ * compressed on its own. Its JS line is re-measured + 3.5% for that reason alone
+ * (no game code changed; `codeSplitting.minSize` and a React group were tried and
+ * moved it by < 0.2%).
  */
 export const ISLAND_BUDGETS: Readonly<Record<string, { jsBrotli: number; cssBrotli: number }>> = {
-  'void-breaker': { jsBrotli: 315_000, cssBrotli: 28_300 },
+  nightrail: { jsBrotli: 277_800, cssBrotli: 27_500 },
+  'signal-forge': { jsBrotli: 169_800, cssBrotli: 27_300 },
+  vega: { jsBrotli: 134_200, cssBrotli: 25_300 },
+  'void-breaker': { jsBrotli: 327_700, cssBrotli: 28_300 },
 };
 
 const ISLANDS_DIR = path.join(ROOT, 'dist-islands');

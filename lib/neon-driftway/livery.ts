@@ -1,3 +1,4 @@
+import { readJson, writeJson } from '@/lib/core/persist';
 /** Neon Driftway livery: base + two accents + a stripe pattern, shared as a short code. */
 export const STRIPES = ['none', 'center', 'twin', 'chevron', 'side'] as const;
 export type Stripe = (typeof STRIPES)[number];
@@ -94,24 +95,15 @@ const listeners = new Set<() => void>();
 
 export function getLivery(): Livery {
   if (current) return current;
-  let stored = DEFAULT_LIVERY;
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) stored = sanitizeLivery(JSON.parse(raw) as Partial<Livery>);
-  } catch {
-    /* storage blocked or corrupt */
-  }
+  const raw = readJson<Partial<Livery> | null>(KEY, null);
+  const stored = raw ? sanitizeLivery(raw) : DEFAULT_LIVERY;
   current = stored;
   return stored;
 }
 
 export function setLivery(next: Livery): void {
   current = sanitizeLivery(next);
-  try {
-    localStorage.setItem(KEY, JSON.stringify(current));
-  } catch {
-    /* storage blocked */
-  }
+  writeJson(KEY, current);
   listeners.forEach((l) => l());
 }
 

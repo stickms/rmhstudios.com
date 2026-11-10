@@ -1785,8 +1785,9 @@ remain the authority:
 
   Rules 5, 6, 8 and 9 are **eslint rules**, not tests (moved 2026-11-09, audit
   item F1 — one implementation, editor squiggle, `--cache`d). Their scope
-  (games and the `--app-*` apps are exempt from 5 and 6, by design — Temple of
-  Joy is supposed to be candlelit) lives in one file,
+  (games are exempt from 5 and 6, by design — Temple of Joy is supposed to be
+  candlelit; the `--app-*` apps not yet ported are exempt until they are, and the
+  ported ones — `shared`, `studio`, `rmhcode` — are not, redesign E3) lives in one file,
   `eslint-local-rules/design-scope.js`, which `eslint.config.mjs`, the vitest
   gates and `check-consistency.sh` all read:
 

@@ -17,7 +17,8 @@
  * shared per-track graph to avoid leaks.
  */
 
-import { getAudioContext, getMasterGain } from "./context";
+import { getAudioContext } from "@/lib/shared/platform";
+import { getMasterGain } from "./context";
 
 export type MusicTrack =
     | "menu"

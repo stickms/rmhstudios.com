@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { readJson, writeJson } from '@/lib/core/persist';
 /* ═══════════════════════════════════════════
    NEURODRIVE — GTA-style Minimap
    Rotating (player-up) radar showing the road
@@ -81,10 +82,8 @@ export class Minimap {
     }
 
     _loadPosition() {
-        try {
-            const raw = localStorage.getItem(POS_KEY);
-            if (raw) { const p = JSON.parse(raw); if (typeof p.x === 'number') return p; }
-        } catch { /* ignore */ }
+        const p = readJson(POS_KEY, null);
+        if (p && typeof p.x === 'number') return p;
         return this._defaultPosition();
     }
 
@@ -117,7 +116,7 @@ export class Minimap {
         this._onGripUp = (e) => {
             if (!active) return;
             active = false;
-            try { localStorage.setItem(POS_KEY, JSON.stringify(this._pos)); } catch { /* ignore */ }
+            writeJson(POS_KEY, this._pos);
             try { this._grip.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
         };
         this._grip.addEventListener('pointerdown', this._onGripDown);

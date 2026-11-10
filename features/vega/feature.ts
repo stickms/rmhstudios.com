@@ -11,6 +11,7 @@ export default defineFeature({
     'app/routes/api/vega/score.ts',
     'app/routes/secret/vega.tsx',
   ],
-  namespaces: ['c-vega'],
+  // The game's strings, and the Vault's (`r-secret`: the way back to /secret) the page frame renders.
+  namespaces: ['c-vega', 'r-secret'],
   listed: false,
 });

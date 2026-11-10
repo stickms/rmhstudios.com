@@ -16,6 +16,7 @@
  * starts that at boot, fetching the MP pack alongside the core.
  */
 
+import { readString, writeString } from '@/lib/core/persist';
 import { Download, LogOut, Maximize, Minimize, RotateCw, Upload, X } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -126,11 +127,7 @@ interface BootRun {
 }
 
 function readRejoinHint(): boolean {
-  try {
-    return !!window.localStorage.getItem(MP_REJOIN_HINT_KEY);
-  } catch {
-    return false;
-  }
+  return !!readString(MP_REJOIN_HINT_KEY);
 }
 
 /** Wires the stub to a booted engine; the MP chunk loads on the first open. */
@@ -361,20 +358,10 @@ export default function BalatroPage() {
 
   // A phone held upright gets a square table; say once that sideways is bigger. CSS shows
   // the hint only on a touch screen in portrait (balatro.css), so this only remembers a dismissal.
-  const [hintGone, setHintGone] = useState(() => {
-    try {
-      return typeof window !== 'undefined' && !!window.sessionStorage.getItem('rmh-balatro-rotate-hint');
-    } catch {
-      return false;
-    }
-  });
+  const [hintGone, setHintGone] = useState(() => !!readString('rmh-balatro-rotate-hint', { storage: 'session' }));
   const dismissHint = () => {
     setHintGone(true);
-    try {
-      window.sessionStorage.setItem('rmh-balatro-rotate-hint', '1');
-    } catch {
-      /* private mode: it shows again next visit */
-    }
+    writeString('rmh-balatro-rotate-hint', '1', { storage: 'session' }); // private mode: it shows again next visit
     canvasRef.current?.focus();
   };
 

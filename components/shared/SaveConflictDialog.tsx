@@ -131,7 +131,7 @@ export function SaveConflictDialog({ local, cloud, onChoose, gameName }: SaveCon
             className={
               wide
                 ? 'mt-2 text-xs leading-relaxed sm:text-sm'
-                : 'mt-1 text-[0.7rem] leading-snug'
+                : 'mt-1 text-rem-70 leading-snug'
             }
             style={{ color: 'var(--app-text-muted, #9a9ba4)' }}
           >

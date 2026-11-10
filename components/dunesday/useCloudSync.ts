@@ -10,6 +10,7 @@
  * the edit credential, which is why the UI that copies that link says so.
  */
 
+import { readJson, removeKey, writeJson } from '@/lib/core/persist';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DunesdayState } from '@/lib/dunesday/state';
 import { api } from '@/lib/contract/client';
@@ -50,24 +51,17 @@ function zone(): string {
 }
 
 function readSlot(): SyncSlot | null {
-  try {
-    const raw = localStorage.getItem(SLOT);
-    const v = raw ? (JSON.parse(raw) as Partial<SyncSlot>) : null;
+  {
+    const v = readJson<Partial<SyncSlot> | null>(SLOT, null);
     return v && typeof v.feedId === 'string' && typeof v.token === 'string'
       ? { feedId: v.feedId, token: v.token }
       : null;
-  } catch {
-    return null;
   }
 }
 
 function writeSlot(slot: SyncSlot | null) {
-  try {
-    if (slot) localStorage.setItem(SLOT, JSON.stringify(slot));
-    else localStorage.removeItem(SLOT);
-  } catch {
-    // Storage blocked: sync still works for this visit.
-  }
+  if (slot) writeJson(SLOT, slot);
+  else removeKey(SLOT); // Storage blocked: sync still works for this visit.
 }
 
 export function useCloudSync(

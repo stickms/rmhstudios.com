@@ -5,6 +5,7 @@
  * Internet Explorer, which keeps its own sandbox rules).
  */
 
+import { readJson, writeJson } from '@/lib/core/persist';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HOME, resolve } from '@/lib/dunesday/vfs';
@@ -17,14 +18,10 @@ import { useOs } from '../store';
 const HISTORY_KEY = 'dunesday:run';
 
 function loadHistory(): string[] {
-  try {
-    const raw = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]');
-    return Array.isArray(raw)
-      ? raw.filter((x): x is string => typeof x === 'string').slice(0, 10)
-      : [];
-  } catch {
-    return [];
-  }
+  return readJson<string[]>(HISTORY_KEY, [], {
+    validate: (v) =>
+      Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string').slice(0, 10) : undefined,
+  });
 }
 
 export default function RunApp({ win }: AppProps) {
@@ -66,14 +63,7 @@ export default function RunApp({ win }: AppProps) {
       });
       return;
     }
-    try {
-      localStorage.setItem(
-        HISTORY_KEY,
-        JSON.stringify([input, ...history.filter((h) => h !== input)].slice(0, 10)),
-      );
-    } catch {
-      // History is a convenience.
-    }
+    writeJson(HISTORY_KEY, [input, ...history.filter((h) => h !== input)].slice(0, 10)); // a convenience
     sfx.tick();
     close(win.id);
   };

@@ -22,7 +22,18 @@
  * imported because those modules pull in far more than a static scan needs.
  *
  * `rmhladder`, `rmhcalculator` and `homes` are NOT listed: they are `usesSiteTheme`
- * apps and are held to the site contract.
+ * apps and are held to the site contract. Nor are `shared` (the app-tier kit:
+ * `AppShell`, `app-theme.css`), `studio` and `rmhcode` (redesign E3): an app is on
+ * the same contract as a site page, with `--app-*` tokens and a palette override
+ * (an `--app-*` declaration in its own stylesheet) in place of `--site-*`.
+ * The site pages that used to sit here (`history`, `lockdown` — the legal pages —
+ * and `blm`) and the game render helpers (`render`) came out with it.
+ *
+ * What is left beyond the games is the queue for E3: apps still carrying
+ * eyebrows or edge-pinned modals (`rmhbox` … `rmhvibe`, `tf2-hud`), the
+ * RMH Strategies app (`doctrine`), and the one-off pages with an owner-asked
+ * art direction of their own, which are an A2 decision (archive, or an island),
+ * not a token swap.
  */
 export const FULLSCREEN_TIER_DIRS = new Set([
   // Games (their own palettes / scoped variable groups in globals.css)
@@ -31,7 +42,6 @@ export const FULLSCREEN_TIER_DIRS = new Set([
   'daily-puzzles',
   'dream-rift',
   'gabriels-horn',
-  'game', // Slice It's UI (reached from slice-it/index.tsx → GameCanvas)
   'hearthworks',
   'house-always-wins',
   'kowloon-knockout',
@@ -49,7 +59,6 @@ export const FULLSCREEN_TIER_DIRS = new Set([
   'void-breaker',
   // The `--app-*` full-screen app tier
   'rmhbox',
-  'rmhcode',
   'rmhmusic',
   'rmhstudy',
   'rmhtube',
@@ -67,10 +76,6 @@ export const FULLSCREEN_TIER_DIRS = new Set([
   // `--app-*` palette with scoped `--csg-*` team colours (components/csgo-game/cs-hud.css).
   'csgo-game',
   'rmhvibe',
-  'shared',
-  'studio',
-  // Standalone campaign/marketing arms with their own art direction
-  'blm',
   // An unlisted scheduling board for one Pathfinder 2e table, asked for as
   // "minimal, Apple-style, whites and blacks". It has no relationship to the
   // site's themes — it declares its own `--pf2e-*` group in
@@ -84,7 +89,7 @@ export const FULLSCREEN_TIER_DIRS = new Set([
   // variant) and paints its own sky over the viewport, so the site themes have
   // nothing to say about it.
   'dunesday',
-  'breakpoint',
+  // Standalone campaign/marketing arms with their own art direction
   'covid',
   // The election hub, asked for as neo-brutalist: paper ground, 3px ink borders, hard offset shadows,
   // square corners, stretched Archivo display type and flat saturated party colours. It declares its
@@ -92,9 +97,6 @@ export const FULLSCREEN_TIER_DIRS = new Set([
   // theme: red/blue must mean the same thing in every theme), so the site tokens have nothing to say.
   'elections',
   'doctrine',
-  'history',
-  'lockdown',
-  'render',
   'rmh-capital',
   'rmh-pmc',
   // A single-purpose page that pastiches another site's fixed palette. It has
@@ -115,7 +117,6 @@ export const FULLSCREEN_TIER_DIRS = new Set([
 /** Top-level route trees that are full-screen experiences, not `_site` pages. */
 export const FULLSCREEN_ROUTE_SEGMENTS = new Set([
   'altair',
-  'api',
   'daily',
   'discord',
   'dream-rift',
@@ -134,19 +135,16 @@ export const FULLSCREEN_ROUTE_SEGMENTS = new Set([
   // The PF2e table's board — see the note beside `pf2ecal` above.
   'pf2ecal',
   'rmhbox',
-  'rmhcode',
   'rmhmusic',
   'rmhstudy',
   'rmhtube',
   'rmhtype',
-  'tf2-hud',
   'secret',
   'slice-it',
   'sohumbum',
   // The live activity dossier — see the note beside `sohumtracker` above.
   'sohumtracker',
   'strategies',
-  'studio',
   'synapse-storm',
   'temple-of-joy',
   'velum2099',

@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { readJson, removeKey, writeJson } from '@/lib/core/persist';
 /* ═══════════════════════════════════════════
    VELUM2099: GHOST ROUTE — Campaign Save
    localStorage-backed progress for Story Mode.
@@ -47,9 +48,7 @@ export class StorySave {
 
     _load() {
         try {
-            const raw = localStorage.getItem(STORY_SAVE_KEY);
-            if (!raw) return false;
-            const saved = JSON.parse(raw);
+            const saved = readJson(STORY_SAVE_KEY, null);
             if (!saved || typeof saved !== 'object') return false;
             // Merge onto a fresh template so older/partial saves stay valid.
             const base = _freshSave();
@@ -70,11 +69,7 @@ export class StorySave {
 
     _save() {
         this.data.updatedAt = Date.now();
-        try {
-            localStorage.setItem(STORY_SAVE_KEY, JSON.stringify(this.data));
-        } catch (e) {
-            console.warn('[Story] 存档写入失败:', e);
-        }
+        if (!writeJson(STORY_SAVE_KEY, this.data)) console.warn('[Story] 存档写入失败');
     }
 
     /** Begin a brand-new campaign, unlocking the first mission. */
@@ -93,7 +88,7 @@ export class StorySave {
     reset() {
         this.data = _freshSave();
         this._loaded = false;
-        try { localStorage.removeItem(STORY_SAVE_KEY); } catch { /* ignore */ }
+        removeKey(STORY_SAVE_KEY);
     }
 
     /* ── queries ── */

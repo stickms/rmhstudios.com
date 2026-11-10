@@ -22,6 +22,7 @@
  * leaderboard never reads any of this: it ranks the server's rows.
  */
 
+import { readJson, removeKey, writeJson } from '@/lib/core/persist';
 import { isCard, type Card } from './cards';
 import { dealForDate } from './game';
 
@@ -60,34 +61,6 @@ const EMPTY_STATS: GlobeSetStats = {
   playedDates: [],
 };
 
-function readJson<T>(key: string): T | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeJson(key: string, value: unknown): void {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    /* quota, privacy mode, disabled storage — the run still plays */
-  }
-}
-
-function removeKey(key: string): void {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.removeItem(key);
-  } catch {
-    /* ignore */
-  }
-}
-
 /* ─── The in-progress run ────────────────────────────────────────────────── */
 
 /**
@@ -124,7 +97,7 @@ export function snapshotMatchesDeck(snapshot: RunSnapshot, deck: readonly Card[]
 
 /** The saved run for `dateKey`, or `null` when there is nothing usable. */
 export function loadRun(dateKey: string): RunSnapshot | null {
-  const saved = readJson<RunSnapshot>(RUN_KEY);
+  const saved = readJson<RunSnapshot | null>(RUN_KEY, null);
   if (!saved || saved.v !== VERSION || saved.dateKey !== dateKey) return null;
   if (typeof saved.elapsedMs !== 'number' || !Number.isFinite(saved.elapsedMs)) return null;
   if (saved.elapsedMs < 0) return null;
@@ -147,7 +120,7 @@ export function clearRun(): void {
 /* ─── The player's record ────────────────────────────────────────────────── */
 
 export function loadStats(): GlobeSetStats {
-  const saved = readJson<GlobeSetStats>(STATS_KEY);
+  const saved = readJson<GlobeSetStats | null>(STATS_KEY, null);
   if (!saved || saved.v !== VERSION) return { ...EMPTY_STATS };
   return {
     v: VERSION,
