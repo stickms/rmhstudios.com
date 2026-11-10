@@ -69,7 +69,7 @@ vi.mock('../audience.server', async () => {
 
 import { getTimeline } from '../timeline';
 import { encodeCursor } from '../cursor';
-import { apiCache } from '../../cache';
+import { invalidateCachedPrefix } from '../../cached.server';
 import { evalWhere, type Row } from './where-eval';
 
 const NOW = Date.now();
@@ -105,7 +105,7 @@ const VIEWER = 'viewer';
 
 beforeEach(() => {
   // The signed-in first page is cached per viewer; start every case cold.
-  apiCache.invalidatePrefix('');
+  void invalidateCachedPrefix('');
   db.rMHark.findMany.mockImplementation(fakeFindMany(() => store.posts));
   db.rMHarkRepost.findMany.mockImplementation(fakeFindMany(() => store.reposts));
   seq = 0;

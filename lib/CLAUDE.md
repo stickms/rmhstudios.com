@@ -32,7 +32,7 @@ bundle only**. SSR/server builds get the real module.
 | `auth-client.ts`                           | `authClient` for the browser                                                                                                                                                                                             |
 | `entitlements.ts`                          | `getUserTier(userId)`, tier ranks, `hasApiAccess/...` — resolves Stripe subscription + gift membership                                                                                                                   |
 | `rate-limit.ts`                            | `rateLimit(ip, opts)`, `getClientIp` — in-memory, per-process, × `RATE_LIMIT_MULTIPLIER` (default 4)                                                                                                                     |
-| `cache.ts`                                 | `apiCache` in-memory TTL cache (`invalidatePrefix` supported)                                                                                                                                                            |
+| `cached.server.ts`                         | THE cache helper: `cached()` (L1 + Redis L2, single-flight, tags, cross-process invalidation) and `lruL1()` (explicitly in-process). `lib/cache.ts`/`apiCache` is gone.                                                |
 | `redis.server.ts`                          | optional ioredis backplane — `redisPublish/Subscribe/RateLimit/GetJSON/SetJSON`; **no-ops when `REDIS_URL` unset**                                                                                                       |
 | `realtime-bus.server.ts`                   | `createBus<T>(namespace)` — EventEmitter + Redis fan-out; the seam under all SSE                                                                                                                                         |
 | `feed-sse.ts` / `feed-types.ts`            | feed event bus + the `FeedItem` client contract                                                                                                                                                                          |
@@ -240,8 +240,29 @@ don't remove that plugin.
 
 ## Caching / realtime / jobs
 
-- Layers: `apiCache` (in-process TTL) → optional Redis (`redis.server.ts`) —
-  everything degrades gracefully without Redis.
+- **One cache helper: `cached.server.ts`.** (`lib/cache.ts` / `apiCache` was deleted; do not recreate it.)
+  - `cached(key, ttlMs, loader, { tags, l2, shouldCache, ttlFor })`: L1 (in-process, bounded LRU) -> L2 (Redis) ->
+    loader, with single-flight on misses. `cachedNullable` / `cachedMiss` / `cachedMany` / `cachedSWR` are the
+    absent-row, batch and stale-while-revalidate variants.
+  - Invalidate with `invalidateCached(key)`, `invalidateTag(tag)` or `invalidateCachedPrefix(prefix)`: each drops the
+    local copy synchronously (a sync caller may `void` it) and broadcasts on the `cache:invalidate` Redis channel so
+    every process drops its L1. Writers should call one after the write.
+  - **Prefer tags** (`cached(..., { tags: ['x'] })` + `invalidateTag('x')`) over prefix matching for new key families.
+    Tagged entries are L1-only (Redis has no cheap delete-by-tag), so the invalidation is exact everywhere.
+  - **L2 rules:** values that go to Redis are JSON round-tripped, so a value holding a Date / Map / class instance
+    must pass `l2: false`. A prefix-invalidated family must also be `l2: false` (prefix invalidation does not clear
+    Redis; the next read would re-seed L1 from the stale copy). `cached()` caches a loader's `null`; pass
+    `shouldCache: (v) => v != null` where a miss must not be remembered.
+  - `peekL1(key)` / `putL1(key, v, ttl)`: sync access to the shared L1 only, for a caller that owns its own second
+    layer or has a value-dependent TTL. Everything else should call `cached()`.
+  - `lruL1(name, opts)`: an explicitly in-process, sync, bounded TTL cache that never touches Redis and is never
+    broadcast-invalidated. Use only for per-process throttles/probe flags, hot paths where a Redis round trip would
+    cost more than the work saved, or values that cannot cross a process. Say why in a comment at the call site.
+  - Do not add a hand-rolled `new Map()` + `TTL_MS` cache: `lib/__tests__/adhoc-cache-ratchet.test.ts` counts the
+    existing ones (a one-directional backlog) and fails if the number grows.
+  - The `defineHandler` response micro-cache (`lib/api/response-cache.server.ts`, <= 30 s, keyed by URL) is separate
+    and is NOT reached by these invalidators: a public route whose data has a write path must pass `microCache: false`.
+- Everything degrades gracefully without Redis (`redis.server.ts`): L1 + single-flight only, local invalidation.
 - All SSE rides `createBus` (`realtime-bus.server.ts`): local EventEmitter +
   optional Redis pub/sub.
 - **No cron in the web tier.** Background work runs in separate processes

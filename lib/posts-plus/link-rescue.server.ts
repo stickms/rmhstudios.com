@@ -13,7 +13,7 @@
 import { createHash } from 'node:crypto';
 import type { PgBoss } from 'pg-boss';
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { lruL1 } from '@/lib/cached.server';
 import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
 import { canonicalizeUrl } from '@/lib/unfurl/parse';
 import {
@@ -49,6 +49,10 @@ const clip = (v: string | null | undefined, n: number) => (v ? v.slice(0, n) : n
  * per process, so a viral link costs one write an hour rather than one per view.
  * Never throws - a bookkeeping failure must not break the preview.
  */
+// In-process on purpose: a per-link bookkeeping throttle (each worker writes at most once per window); sharing it
+// through Redis would cost more than the write it saves.
+const seenThrottle = lruL1('link-rescue:seen', { maxEntries: 5000 });
+
 export async function noteLinkSeen(
   rawUrl: string,
   meta: { title?: string | null; description?: string | null; siteName?: string | null },
@@ -58,8 +62,8 @@ export async function noteLinkSeen(
     if (!url || url.length > 2048) return;
     const urlKey = linkKey(url);
     const throttleKey = `link:seen:${urlKey}`;
-    if (apiCache.get(throttleKey)) return;
-    apiCache.set(throttleKey, 1, SEEN_THROTTLE_MS);
+    if (seenThrottle.get(throttleKey)) return;
+    seenThrottle.set(throttleKey, 1, SEEN_THROTTLE_MS);
 
     const now = new Date();
     // Healthy rows keep their snapshot fresh; any other state keeps the last good one.

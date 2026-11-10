@@ -60,7 +60,7 @@ vi.mock('../audience.server', async () => {
 });
 
 import { getTimeline } from '../timeline';
-import { apiCache } from '../../cache';
+import { invalidateCachedPrefix } from '../../cached.server';
 import { evalWhere, type Row } from './where-eval';
 
 const NOW = Date.now();
@@ -92,11 +92,10 @@ function post(over: Row): Row {
   };
 }
 
-
 const VIEWER = 'viewer';
 
 beforeEach(() => {
-  apiCache.invalidatePrefix('');
+  void invalidateCachedPrefix('');
   db.rMHark.findMany.mockImplementation(fakeFindMany(() => store.posts));
   db.rMHarkRepost.findMany.mockImplementation(fakeFindMany(() => store.reposts));
   seq = 0;
@@ -137,11 +136,14 @@ describe('reposts of community posts (item 10)', () => {
     ];
   });
 
-  it.each(['following', 'foryou'] as const)('%s feed drops the community post, keeps the plain one', async (surface) => {
-    const contents = (await items(VIEWER, surface)).map((i) => i.content);
-    expect(contents).toContain('plain');
-    expect(contents).not.toContain('in-community');
-  });
+  it.each(['following', 'foryou'] as const)(
+    '%s feed drops the community post, keeps the plain one',
+    async (surface) => {
+      const contents = (await items(VIEWER, surface)).map((i) => i.content);
+      expect(contents).toContain('plain');
+      expect(contents).not.toContain('in-community');
+    },
+  );
 
   it('an anonymous visitor does not get it either', async () => {
     const contents = (await items(null, 'foryou')).map((i) => i.content);
@@ -170,7 +172,9 @@ describe('quote cards (item 11)', () => {
     ...over,
   });
   const cardOf = async (over: Row, viewer = VIEWER) => {
-    store.posts = [post({ userId: viewer === VIEWER ? 'friend' : 'author', original: quoted(over) })];
+    store.posts = [
+      post({ userId: viewer === VIEWER ? 'friend' : 'author', original: quoted(over) }),
+    ];
     const [it] = await items(viewer, 'following');
     return it.original!;
   };

@@ -3,7 +3,7 @@
  *
  * The production build holds `lib/cached.server.ts` twice: once in the Nitro
  * bundle (the startup plugins) and once in the app's `_ssr` bundle, where the
- * requests read and write `apiCache` (the same split documented on
+ * requests read and write the shared L1 (the same split documented on
  * BUDGET_STORAGE_KEY in lib/prisma.server.ts). A plugin that called the Nitro
  * copy's `startCacheBridge` subscribed that copy's cache, which no request ever
  * reads, and left the app copy unsubscribed. So the plugin raises this flag on

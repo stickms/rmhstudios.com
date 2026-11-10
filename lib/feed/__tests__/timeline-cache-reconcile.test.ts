@@ -48,7 +48,12 @@ vi.mock('../audience.server', async () => {
 });
 
 import { getTimeline, invalidateViewerFeedPages } from '../timeline';
-import { apiCache, viewerFeedCache, VIEWER_FEED_PREFIX } from '../../cache';
+import {
+  invalidateCached,
+  invalidateCachedPrefix,
+  viewerFeedL1 as viewerFeedCache,
+  VIEWER_FEED_PREFIX,
+} from '../../cached.server';
 
 const NOW = Date.now();
 const VIEWER = 'viewer';
@@ -80,20 +85,37 @@ function post(id: string, over: Row = {}): Row {
   };
 }
 
-const assemblies = () => db.rMHark.findMany.mock.calls.filter((c: unknown[]) => {
+const assemblies = () =>
+  db.rMHark.findMany.mock.calls.filter((c: unknown[]) => {
     const a = c[0] as { take?: number; where: { id?: unknown } };
     return a.take !== undefined && !a.where.id;
   }).length;
 
 async function read(surface: 'foryou' | 'following' = 'foryou', userId = VIEWER) {
-  const page = await getTimeline({ userId, surface, filter: 'all', cursor: null, limit: 20, search: null });
+  const page = await getTimeline({
+    userId,
+    surface,
+    filter: 'all',
+    cursor: null,
+    limit: 20,
+    search: null,
+  });
   // Ranking may reorder (followed authors boost); order is not what is under test.
-  return page.items.filter((i) => i.type === 'rmhark').map((i) => i.id).sort();
+  return page.items
+    .filter((i) => i.type === 'rmhark')
+    .map((i) => i.id)
+    .sort();
 }
 
 beforeEach(() => {
-  apiCache.invalidatePrefix('');
-  Object.assign(w, { following: ['friend'], circles: [], hidden: [], mutedTags: [], mutedWords: [] });
+  void invalidateCachedPrefix('');
+  Object.assign(w, {
+    following: ['friend'],
+    circles: [],
+    hidden: [],
+    mutedTags: [],
+    mutedWords: [],
+  });
   w.posts = [post('p1'), post('p2', { userId: 'friend' }), post('p3')];
   db.rMHark.findMany.mockReset();
   db.rMHark.findMany.mockImplementation(async (a: { where: Row; take?: number }) => {
@@ -103,7 +125,9 @@ beforeEach(() => {
   });
   db.follow.findMany.mockReset();
   db.follow.findMany.mockImplementation(async (a: { where: { followingId: { in: string[] } } }) =>
-    w.following.filter((id) => a.where.followingId.in.includes(id)).map((followingId) => ({ followingId })),
+    w.following
+      .filter((id) => a.where.followingId.in.includes(id))
+      .map((followingId) => ({ followingId })),
   );
   db.closeFriend.findMany.mockReset();
   db.closeFriend.findMany.mockImplementation(async (a: { where: { ownerId: { in: string[] } } }) =>
@@ -193,13 +217,20 @@ describe('signed-in first page cache: correctness against the live database', ()
     w.posts[0].hashtags = [{ hashtag: { tag: 'spoilers' } }];
     w.mutedTags = ['spoilers'];
     w.mutedWords = ['content of p3'];
-    apiCache.invalidate(`muted-words:${VIEWER}`);
+    void invalidateCached(`muted-words:${VIEWER}`);
     expect(await read()).toEqual(['p2']);
   });
 
   it('re-assembles when a paywalled post on the page was unlocked after caching', async () => {
     const page = () =>
-      getTimeline({ userId: VIEWER, surface: 'foryou', filter: 'all', cursor: null, limit: 20, search: null });
+      getTimeline({
+        userId: VIEWER,
+        surface: 'foryou',
+        filter: 'all',
+        cursor: null,
+        limit: 20,
+        search: null,
+      });
     w.posts[0].unlockPrice = 50;
     expect((await page()).items.find((i) => i.id === 'p1')?.locked).toBe(true);
     const before = assemblies();

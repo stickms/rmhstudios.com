@@ -11,7 +11,7 @@
  * community; the page reads the top rows from it. Reads never aggregate.
  */
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 
 export const STAR_POST_POINTS = 3;
@@ -34,30 +34,34 @@ const TTL_MS = 5 * 60_000;
 const key = (communityId: string) => `community:contributors:${communityId}`;
 
 export async function getTopContributors(communityId: string): Promise<ContributorDTO[]> {
-  const hit = apiCache.get<ContributorDTO[]>(key(communityId));
-  if (hit) return hit;
-  const rows = await prisma.communityContributorScore.findMany({
-    where: { communityId, score: { gt: 0 } },
-    orderBy: [{ score: 'desc' }, { userId: 'asc' }],
-    take: CONTRIBUTORS_SHOWN,
-    include: { user: { select: userDisplaySelect } },
-  });
-  const members = rows.length
-    ? await prisma.communityMember.findMany({
-        where: { communityId, userId: { in: rows.map((r) => r.userId) } },
-        select: { userId: true, roleTags: true },
-      })
-    : [];
-  const tags = new Map(members.map((m) => [m.userId, m.roleTags]));
-  const out = rows.map((r) => ({
-    user: resolveUser(r.user),
-    starPosts: r.starPosts,
-    challengeWins: r.challengeWins,
-    score: r.score,
-    roleTags: tags.get(r.userId) ?? [],
-  }));
-  apiCache.set(key(communityId), out, TTL_MS);
-  return out;
+  return cached(
+    key(communityId),
+    TTL_MS,
+    async () => {
+      const rows = await prisma.communityContributorScore.findMany({
+        where: { communityId, score: { gt: 0 } },
+        orderBy: [{ score: 'desc' }, { userId: 'asc' }],
+        take: CONTRIBUTORS_SHOWN,
+        include: { user: { select: userDisplaySelect } },
+      });
+      const members = rows.length
+        ? await prisma.communityMember.findMany({
+            where: { communityId, userId: { in: rows.map((r) => r.userId) } },
+            select: { userId: true, roleTags: true },
+          })
+        : [];
+      const tags = new Map(members.map((m) => [m.userId, m.roleTags]));
+      const out = rows.map((r) => ({
+        user: resolveUser(r.user),
+        starPosts: r.starPosts,
+        challengeWins: r.challengeWins,
+        score: r.score,
+        roleTags: tags.get(r.userId) ?? [],
+      }));
+      return out;
+    },
+    { l2: false },
+  );
 }
 
 /**
@@ -110,7 +114,7 @@ export async function rebuildCommunityScores(communityId: string): Promise<numbe
       })),
     }),
   ]);
-  apiCache.invalidate(key(communityId));
+  void invalidateCached(key(communityId));
   return byUser.size;
 }
 

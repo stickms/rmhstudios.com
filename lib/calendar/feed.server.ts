@@ -13,7 +13,7 @@
  */
 import { randomBytes } from 'node:crypto';
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import { SITE_URL } from '@/lib/seo';
 import { calendarFeedICS, type ICSEvent } from '@/lib/events-ics';
 import { expand, type SlotDefinition, type SlotKind } from '@/lib/schedule/slots';
@@ -113,7 +113,7 @@ export async function updateFeed(
   }
   if (Object.keys(data).length) {
     await prisma.calendarFeed.update({ where: { userId }, data });
-    apiCache.invalidate(`calendar-feed:${feed.token}`);
+    void invalidateCached(`calendar-feed:${feed.token}`);
   }
   if (patch.slotIds) {
     const valid = await prisma.scheduledSlot.findMany({
@@ -126,7 +126,7 @@ export async function updateFeed(
       prisma.calendarFeedSlot.deleteMany({ where: { userId } }),
       prisma.calendarFeedSlot.createMany({ data: ids.map((slotId) => ({ userId, slotId })) }),
     ]);
-    apiCache.invalidate(`calendar-feed:${feed.token}`);
+    void invalidateCached(`calendar-feed:${feed.token}`);
   }
   return getFeedView(userId);
 }
@@ -134,13 +134,17 @@ export async function updateFeed(
 /** The ICS body for a token, or null when it is unknown or switched off. */
 export async function buildFeedForToken(token: string): Promise<string | null> {
   const key = `calendar-feed:${token}`;
-  const hit = apiCache.get<string>(key);
-  if (hit) return hit;
-  const feed = await prisma.calendarFeed.findUnique({ where: { token } });
-  if (!feed || !feed.enabled) return null;
-  const ics = await buildFeed(feed.userId);
-  apiCache.set(key, ics, FEED_CACHE_MS);
-  return ics;
+  return cached(
+    key,
+    FEED_CACHE_MS,
+    async () => {
+      const feed = await prisma.calendarFeed.findUnique({ where: { token } });
+      if (!feed || !feed.enabled) return null;
+      const ics = await buildFeed(feed.userId);
+      return ics;
+    },
+    { shouldCache: (v) => v != null },
+  );
 }
 
 async function buildFeed(userId: string): Promise<string> {

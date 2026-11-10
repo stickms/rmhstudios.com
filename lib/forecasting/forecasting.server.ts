@@ -4,7 +4,7 @@
  */
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached } from '@/lib/cached.server';
 import { userChipSelect } from '@/lib/user-display';
 import { aiChat, isAITextConfigured } from '@/lib/ai/text.server';
 import { calibrate, type Calibration } from '@/lib/predictions/calibration';
@@ -80,84 +80,92 @@ export async function listSeasons(): Promise<SeasonSummary[]> {
 /** Season leaderboard from members' forecasts on the resolved markets; cached 60s. */
 export async function getSeasonBoard(seasonId: string): Promise<SeasonBoard | null> {
   const key = `forecast:season:${seasonId}`;
-  const hit = apiCache.get<SeasonBoard>(key);
-  if (hit) return hit;
-  const season = await prisma.predictionSeason.findUnique({
-    where: { id: seasonId },
-    include: { markets: { select: { predictionId: true } } },
-  });
-  if (!season) return null;
-  const marketIds = season.markets.map((m) => m.predictionId);
-  const resolved = await prisma.prediction.findMany({
-    where: { id: { in: marketIds }, status: { in: [...RESOLVED] } },
-    select: { id: true, status: true },
-  });
-  const outcome = new Map(resolved.map((m) => [m.id, m.status === 'RESOLVED_YES']));
-  const positions = outcome.size
-    ? await prisma.predictionPosition.findMany({
-        where: { predictionId: { in: [...outcome.keys()] } },
-        select: {
-          userId: true,
-          predictionId: true,
-          lastP: true,
-          yesShares: true,
-          noShares: true,
-          spent: true,
+  return cached(
+    key,
+    60_000,
+    async () => {
+      const season = await prisma.predictionSeason.findUnique({
+        where: { id: seasonId },
+        include: { markets: { select: { predictionId: true } } },
+      });
+      if (!season) return null;
+      const marketIds = season.markets.map((m) => m.predictionId);
+      const resolved = await prisma.prediction.findMany({
+        where: { id: { in: marketIds }, status: { in: [...RESOLVED] } },
+        select: { id: true, status: true },
+      });
+      const outcome = new Map(resolved.map((m) => [m.id, m.status === 'RESOLVED_YES']));
+      const positions = outcome.size
+        ? await prisma.predictionPosition.findMany({
+            where: { predictionId: { in: [...outcome.keys()] } },
+            select: {
+              userId: true,
+              predictionId: true,
+              lastP: true,
+              yesShares: true,
+              noShares: true,
+              spent: true,
+            },
+            take: 20_000,
+          })
+        : [];
+      const rows = positions.flatMap((pos) => {
+        const p = positionForecast(pos);
+        const o = outcome.get(pos.predictionId);
+        return p == null || o == null ? [] : [{ userId: pos.userId, p, outcomeYes: o }];
+      });
+      const ranked = rankSeason(rows).slice(0, 50);
+      const users = await prisma.user.findMany({
+        where: { id: { in: ranked.map((r) => r.userId) } },
+        select: userChipSelect,
+      });
+      const byId = new Map(users.map((u) => [u.id, u]));
+      const board: SeasonBoard = {
+        season: {
+          id: season.id,
+          title: season.title,
+          startsAt: season.startsAt.toISOString(),
+          endsAt: season.endsAt.toISOString(),
+          marketCount: marketIds.length,
         },
-        take: 20_000,
-      })
-    : [];
-  const rows = positions.flatMap((pos) => {
-    const p = positionForecast(pos);
-    const o = outcome.get(pos.predictionId);
-    return p == null || o == null ? [] : [{ userId: pos.userId, p, outcomeYes: o }];
-  });
-  const ranked = rankSeason(rows).slice(0, 50);
-  const users = await prisma.user.findMany({
-    where: { id: { in: ranked.map((r) => r.userId) } },
-    select: userChipSelect,
-  });
-  const byId = new Map(users.map((u) => [u.id, u]));
-  const board: SeasonBoard = {
-    season: {
-      id: season.id,
-      title: season.title,
-      startsAt: season.startsAt.toISOString(),
-      endsAt: season.endsAt.toISOString(),
-      marketCount: marketIds.length,
+        resolvedCount: outcome.size,
+        leaderboard: ranked.map((r) => ({ ...r, user: byId.get(r.userId) ?? null })),
+      };
+      return board;
     },
-    resolvedCount: outcome.size,
-    leaderboard: ranked.map((r) => ({ ...r, user: byId.get(r.userId) ?? null })),
-  };
-  apiCache.set(key, board, 60_000);
-  return board;
+    { l2: false, shouldCache: (v) => v != null },
+  );
 }
 
 /** A member's calibration over their resolved markets; cached 10 min. */
 export async function getCalibration(userId: string): Promise<Calibration> {
   const key = `forecast:calibration:${userId}`;
-  const hit = apiCache.get<Calibration>(key);
-  if (hit) return hit;
-  const positions = await prisma.predictionPosition.findMany({
-    where: { userId, prediction: { status: { in: [...RESOLVED] } } },
-    orderBy: { updatedAt: 'desc' },
-    take: 500,
-    select: {
-      lastP: true,
-      yesShares: true,
-      noShares: true,
-      spent: true,
-      prediction: { select: { status: true } },
+  return cached(
+    key,
+    10 * 60_000,
+    async () => {
+      const positions = await prisma.predictionPosition.findMany({
+        where: { userId, prediction: { status: { in: [...RESOLVED] } } },
+        orderBy: { updatedAt: 'desc' },
+        take: 500,
+        select: {
+          lastP: true,
+          yesShares: true,
+          noShares: true,
+          spent: true,
+          prediction: { select: { status: true } },
+        },
+      });
+      const result = calibrate(
+        positions.flatMap((pos) => {
+          const p = positionForecast(pos);
+          return p == null ? [] : [{ p, outcome: pos.prediction.status === 'RESOLVED_YES' }];
+        }),
+      );
+      return result;
     },
-  });
-  const result = calibrate(
-    positions.flatMap((pos) => {
-      const p = positionForecast(pos);
-      return p == null ? [] : [{ p, outcome: pos.prediction.status === 'RESOLVED_YES' }];
-    }),
+    { l2: false },
   );
-  apiCache.set(key, result, 10 * 60_000);
-  return result;
 }
 
 /** The side a position leans to, with its size, for the comment snapshot. */
@@ -232,21 +240,25 @@ export async function devilsAdvocate(
 ) {
   if (!isAITextConfigured()) return null;
   const key = `forecast:advocate:${market.id}:${side}`;
-  const hit = apiCache.get<string>(key);
-  if (hit) return hit;
-  const text = await aiChat(
-    ADVOCATE_SYSTEM,
-    JSON.stringify({
-      argue_for_resolution: side,
-      title: market.title,
-      description: market.description ?? '',
-    }),
-    350,
-    0.5,
+  return cached(
+    key,
+    24 * 3600_000,
+    async () => {
+      const text = await aiChat(
+        ADVOCATE_SYSTEM,
+        JSON.stringify({
+          argue_for_resolution: side,
+          title: market.title,
+          description: market.description ?? '',
+        }),
+        350,
+        0.5,
+      );
+      if (!text) return null;
+      return text;
+    },
+    { l2: false, shouldCache: (v) => v != null },
   );
-  if (!text) return null;
-  apiCache.set(key, text, 24 * 3600_000);
-  return text;
 }
 
 export { visibleMarket };

@@ -11,7 +11,7 @@ import { resumeCards, RESUME_LIMIT_DEFAULT, RESUME_LIMIT_MAX } from '@/lib/histo
  * empty array that looks like "you have finished everything".
  *
  * No cache layer. The response is per-user and changes the moment anything is
- * saved, read or drafted — an `apiCache` entry keyed by user id would mostly
+ * saved, read or drafted — an `cached() entry keyed by user id would mostly
  * serve a rail that is one action out of date, which is exactly the case
  * ("I just closed that book, why isn't it here") the feature exists to answer.
  */

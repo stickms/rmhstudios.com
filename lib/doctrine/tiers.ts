@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import { TIER_HIERARCHY, TIERS } from './constants';
 import type { TierId } from './types';
 
@@ -21,17 +21,20 @@ export function checkTierAccess(userTier: TierId, requiredTier: TierId): boolean
  */
 export async function getUserTier(userId: string): Promise<TierId> {
   const cacheKey = `doctrine:tier:${userId}`;
-  const cached = apiCache.get<TierId>(cacheKey);
-  if (cached) return cached;
+  return cached(
+    cacheKey,
+    300_000,
+    async () => {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { doctrineTier: true },
+      });
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { doctrineTier: true },
-  });
-
-  const tier = (user?.doctrineTier ?? 'PUBLIC') as TierId;
-  apiCache.set(cacheKey, tier, 300_000); // 5 min cache
-  return tier;
+      const tier = (user?.doctrineTier ?? 'PUBLIC') as TierId;
+      return tier;
+    },
+    { l2: false },
+  );
 }
 
 /**
@@ -46,7 +49,7 @@ export async function setUserTier(userId: string, newTier: TierId) {
     },
   });
 
-  apiCache.invalidate(`doctrine:tier:${userId}`);
+  void invalidateCached(`doctrine:tier:${userId}`);
   return { userId, tier: newTier, tierName: TIERS[newTier].name };
 }
 

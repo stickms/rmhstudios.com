@@ -1,7 +1,7 @@
 /**
  * A public `auth: 'none'` route whose data has a write path that invalidates an
  * in-process cache (or can flip visibility) must opt out of the per-worker
- * response micro-cache with `microCache: false`: `apiCache.invalidate*` does not
+ * response micro-cache with `microCache: false`: `invalidateCached*` does not
  * reach it, so the route would serve the pre-write body for up to 30 s.
  * See lib/api/response-cache.server.ts.
  */
@@ -17,7 +17,7 @@ const walk = (d: string): string[] =>
   });
 
 /** Cache/auth plumbing: defines invalidate(), says nothing about the route's own data. */
-const INFRA = new Set(['lib/cache', 'lib/cached.server', 'lib/auth']);
+const INFRA = new Set(['lib/cached.server', 'lib/auth']);
 
 /** Whole-file signal that the route's own data source clears an in-process cache. */
 function invalidates(src: string): boolean {

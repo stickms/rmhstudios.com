@@ -1,21 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
-  const values = new Map<string, unknown>();
   return {
-    values,
-    cacheGet: vi.fn((key: string) => values.get(key)),
-    cacheSet: vi.fn((key: string, value: unknown) => {
-      values.set(key, value);
-    }),
-    cacheInvalidate: vi.fn((key: string) => {
-      values.delete(key);
-    }),
-    cacheInvalidatePrefix: vi.fn((prefix: string) => {
-      for (const key of values.keys()) {
-        if (key.startsWith(prefix)) values.delete(key);
-      }
-    }),
     redisEnabled: vi.fn(() => false),
     redisGetJSON: vi.fn(async () => null as unknown),
     redisSetJSON: vi.fn(async () => {}),
@@ -24,21 +10,6 @@ const mocks = vi.hoisted(() => {
     redisSubscribe: vi.fn(() => () => {}),
   };
 });
-
-vi.mock('@/lib/cache', () => ({
-  apiCache: {
-    get: mocks.cacheGet,
-    set: mocks.cacheSet,
-    invalidate: mocks.cacheInvalidate,
-    invalidatePrefix: mocks.cacheInvalidatePrefix,
-    // cached.server drops locally via these (so a remote receipt never re-publishes).
-    dropLocal: mocks.cacheInvalidate,
-    dropLocalPrefix: mocks.cacheInvalidatePrefix,
-    setInvalidationHook: vi.fn(),
-    setBridgeInstaller: vi.fn(),
-  },
-  CACHE_PROCESS_ID: 'test-process',
-}));
 
 vi.mock('@/lib/redis.server', () => ({
   redisEnabled: mocks.redisEnabled,
@@ -49,7 +20,15 @@ vi.mock('@/lib/redis.server', () => ({
   redisSubscribe: mocks.redisSubscribe,
 }));
 
-import { cached, invalidateCached } from '@/lib/cached.server';
+import {
+  cached,
+  invalidateCached,
+  invalidateCachedPrefix,
+  invalidateTag,
+  lruL1,
+  peekL1,
+  putL1,
+} from '@/lib/cached.server';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -60,7 +39,6 @@ function deferred<T>() {
 }
 
 beforeEach(() => {
-  mocks.values.clear();
   vi.clearAllMocks();
   mocks.redisEnabled.mockReturnValue(false);
   mocks.redisGetJSON.mockResolvedValue(null);
@@ -80,13 +58,13 @@ describe('cached invalidation races', () => {
     oldValue.resolve('stale');
 
     await expect(oldResult).resolves.toBe('stale');
-    expect(mocks.cacheSet).not.toHaveBeenCalledWith(key, 'stale', 60_000);
+    expect(peekL1(key)).toBeUndefined();
     expect(mocks.redisSetJSON).not.toHaveBeenCalledWith(key, 'stale', 60_000);
 
     const freshLoader = vi.fn(async () => 'fresh');
     await expect(cached(key, 60_000, freshLoader)).resolves.toBe('fresh');
     expect(freshLoader).toHaveBeenCalledTimes(1);
-    expect(mocks.values.get(key)).toBe('fresh');
+    expect(peekL1(key)).toBe('fresh');
     expect(mocks.redisSetJSON).toHaveBeenCalledWith(key, 'fresh', 60_000);
   });
 
@@ -112,6 +90,71 @@ describe('cached invalidation races', () => {
     await expect(Promise.all([newResult, joinedResult])).resolves.toEqual(['new', 'new']);
     expect(newLoader).toHaveBeenCalledTimes(1);
     expect(shouldNotRun).not.toHaveBeenCalled();
-    expect(mocks.values.get(key)).toBe('new');
+    expect(peekL1(key)).toBe('new');
+  });
+});
+
+describe('cached single-flight, tags and lruL1', () => {
+  it('collapses concurrent misses onto one loader run', async () => {
+    const gate = deferred<string>();
+    const loader = vi.fn(() => gate.promise);
+    const a = cached('test:sf', 60_000, loader, { l2: false });
+    const b = cached('test:sf', 60_000, loader, { l2: false });
+    gate.resolve('v');
+    await expect(Promise.all([a, b])).resolves.toEqual(['v', 'v']);
+    expect(loader).toHaveBeenCalledTimes(1);
+  });
+
+  it('invalidateTag drops only keys filed under the tag', async () => {
+    await cached('test:tag:1', 60_000, async () => 1, { tags: ['t1'] });
+    await cached('test:tag:2', 60_000, async () => 2, { tags: ['t1', 't2'] });
+    await cached('test:tag:3', 60_000, async () => 3, { tags: ['t2'] });
+    await invalidateTag('t1');
+    expect(peekL1('test:tag:1')).toBeUndefined();
+    expect(peekL1('test:tag:2')).toBeUndefined();
+    expect(peekL1('test:tag:3')).toBe(3);
+  });
+
+  it('does not store a load that an invalidateTag overtook', async () => {
+    const gate = deferred<string>();
+    const result = cached('test:tag:race', 60_000, () => gate.promise, { tags: ['race'] });
+    await invalidateTag('race');
+    gate.resolve('stale');
+    await expect(result).resolves.toBe('stale');
+    expect(peekL1('test:tag:race')).toBeUndefined();
+  });
+
+  it('tagged entries never touch Redis (so an invalidation is exact)', async () => {
+    mocks.redisEnabled.mockReturnValue(true);
+    await cached('test:tag:l2', 60_000, async () => 'x', { tags: ['l2'] });
+    expect(mocks.redisGetJSON).not.toHaveBeenCalled();
+    expect(mocks.redisSetJSON).not.toHaveBeenCalled();
+  });
+
+  it('shouldCache keeps a rejected result out of the cache', async () => {
+    const loader = vi.fn(async () => null);
+    await cached('test:nocache', 60_000, loader, { l2: false, shouldCache: (v) => v != null });
+    await cached('test:nocache', 60_000, loader, { l2: false, shouldCache: (v) => v != null });
+    expect(loader).toHaveBeenCalledTimes(2);
+  });
+
+  it('prefix invalidation drops the family', async () => {
+    putL1('test:fam:a', 1, 60_000);
+    putL1('test:fam:b', 2, 60_000);
+    putL1('test:other', 3, 60_000);
+    await invalidateCachedPrefix('test:fam:');
+    expect(peekL1('test:fam:a')).toBeUndefined();
+    expect(peekL1('test:other')).toBe(3);
+  });
+
+  it('lruL1 is private to its instance, never reaches Redis and is not touched by invalidation', async () => {
+    mocks.redisEnabled.mockReturnValue(true);
+    const mine = lruL1('test');
+    mine.set('test:private', 1, 60_000);
+    expect(peekL1('test:private')).toBeUndefined();
+    await invalidateCached('test:private');
+    await invalidateCachedPrefix('test:');
+    expect(mine.get('test:private')).toBe(1);
+    expect(mocks.redisSetJSON).not.toHaveBeenCalled();
   });
 });

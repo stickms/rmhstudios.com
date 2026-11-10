@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCachedPrefix } from '@/lib/cached.server';
 import type { DisclosureStatus, TierId } from './types';
 import { TIER_HIERARCHY } from './constants';
 
@@ -14,16 +14,18 @@ import { TIER_HIERARCHY } from './constants';
  */
 export async function isFeatureDisclosed(codename: string): Promise<boolean> {
   const cacheKey = `doctrine:disclosure:status:${codename}`;
-  const cached = apiCache.get<string>(cacheKey);
-  if (cached !== undefined) return cached === 'DISCLOSED';
-
-  const disclosure = await prisma.doctrineDisclosure.findFirst({
-    where: { codename },
-    select: { status: true },
-  });
-
-  const status = disclosure?.status ?? 'UNKNOWN';
-  apiCache.set(cacheKey, status, 300_000); // 5 minute cache
+  const status = await cached(
+    cacheKey,
+    300_000, // 5 minute cache
+    async () => {
+      const disclosure = await prisma.doctrineDisclosure.findFirst({
+        where: { codename },
+        select: { status: true },
+      });
+      return disclosure?.status ?? 'UNKNOWN';
+    },
+    { l2: false },
+  );
 
   return status === 'DISCLOSED';
 }
@@ -33,12 +35,7 @@ export async function isFeatureDisclosed(codename: string): Promise<boolean> {
  */
 export async function getDisclosuresForTier(userTier: TierId) {
   const cacheKey = `doctrine:disclosures:${userTier}`;
-  const cached = apiCache.get<Awaited<ReturnType<typeof fetchDisclosures>>>(cacheKey);
-  if (cached) return cached;
-
-  const result = await fetchDisclosures(userTier);
-  apiCache.set(cacheKey, result, 60_000);
-  return result;
+  return cached(cacheKey, 60_000, () => fetchDisclosures(userTier), { l2: false });
 }
 
 async function fetchDisclosures(userTier: TierId) {
@@ -66,10 +63,7 @@ async function fetchDisclosures(userTier: TierId) {
 /**
  * Transition a disclosure through its lifecycle.
  */
-export async function transitionDisclosure(
-  id: string,
-  newStatus: DisclosureStatus,
-) {
+export async function transitionDisclosure(id: string, newStatus: DisclosureStatus) {
   const now = new Date();
   const updateData: Record<string, unknown> = { status: newStatus };
 
@@ -82,8 +76,8 @@ export async function transitionDisclosure(
   });
 
   // Invalidate all disclosure caches
-  apiCache.invalidatePrefix('doctrine:disclosure');
-  apiCache.invalidatePrefix('doctrine:disclosures');
+  void invalidateCachedPrefix('doctrine:disclosure');
+  void invalidateCachedPrefix('doctrine:disclosures');
 
   return disclosure;
 }

@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import type { CreateNoticeInput } from './schema';
 
 const ACTIVE_KEY = 'ops:notices:active';
@@ -15,21 +15,32 @@ interface ActiveNotice {
 }
 
 async function activeNotices(): Promise<ActiveNotice[]> {
-  const hit = apiCache.get<ActiveNotice[]>(ACTIVE_KEY);
-  if (hit) return hit;
-  const now = new Date();
-  const rows = await prisma.targetedNotice.findMany({
-    where: {
-      archivedAt: null,
-      startsAt: { lte: now },
-      OR: [{ endsAt: null }, { endsAt: { gt: now } }],
+  return cached(
+    ACTIVE_KEY,
+    60_000,
+    async () => {
+      const now = new Date();
+      const rows = await prisma.targetedNotice.findMany({
+        where: {
+          archivedAt: null,
+          startsAt: { lte: now },
+          OR: [{ endsAt: null }, { endsAt: { gt: now } }],
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: {
+          id: true,
+          title: true,
+          body: true,
+          linkUrl: true,
+          segment: true,
+          segmentValue: true,
+        },
+      });
+      return rows;
     },
-    orderBy: { createdAt: 'desc' },
-    take: 20,
-    select: { id: true, title: true, body: true, linkUrl: true, segment: true, segmentValue: true },
-  });
-  apiCache.set(ACTIVE_KEY, rows, 60_000);
-  return rows;
+    { l2: false },
+  );
 }
 
 /** The newest undismissed notice this member matches, or null. */
@@ -97,7 +108,7 @@ export async function createNotice(adminId: string, input: CreateNoticeInput) {
       createdById: adminId,
     },
   });
-  apiCache.invalidate(ACTIVE_KEY);
+  void invalidateCached(ACTIVE_KEY);
   return row;
 }
 
@@ -106,7 +117,7 @@ export async function archiveNotice(id: string) {
     where: { id, archivedAt: null },
     data: { archivedAt: new Date() },
   });
-  apiCache.invalidate(ACTIVE_KEY);
+  void invalidateCached(ACTIVE_KEY);
   return res.count > 0;
 }
 

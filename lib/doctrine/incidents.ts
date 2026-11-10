@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCachedPrefix } from '@/lib/cached.server';
 import { generateCodename } from './constants';
 import type { IncidentSeverity, IncidentStatus } from './types';
 
@@ -37,36 +37,27 @@ export async function createIncident(data: {
     include: { timeline: true },
   });
 
-  apiCache.invalidatePrefix('doctrine:incidents');
+  void invalidateCachedPrefix('doctrine:incidents');
   return incident;
 }
 
 /**
  * Add a timeline event to an existing incident.
  */
-export async function addIncidentEvent(
-  incidentId: string,
-  type: string,
-  message: string,
-) {
+export async function addIncidentEvent(incidentId: string, type: string, message: string) {
   const event = await prisma.doctrineIncidentEvent.create({
     data: { incidentId, type, message },
   });
 
-  apiCache.invalidatePrefix('doctrine:incidents');
+  void invalidateCachedPrefix('doctrine:incidents');
   return event;
 }
 
 /**
  * Transition an incident to a new status.
  */
-export async function transitionIncidentStatus(
-  incidentId: string,
-  newStatus: IncidentStatus,
-) {
-  const resolvedAt = newStatus === 'RESOLVED' || newStatus === 'LEGENDARY'
-    ? new Date()
-    : undefined;
+export async function transitionIncidentStatus(incidentId: string, newStatus: IncidentStatus) {
+  const resolvedAt = newStatus === 'RESOLVED' || newStatus === 'LEGENDARY' ? new Date() : undefined;
 
   const incident = await prisma.doctrineIncident.update({
     where: { id: incidentId },
@@ -83,7 +74,7 @@ export async function transitionIncidentStatus(
     `Incident status changed to ${newStatus}.`,
   );
 
-  apiCache.invalidatePrefix('doctrine:incidents');
+  void invalidateCachedPrefix('doctrine:incidents');
   return incident;
 }
 
@@ -92,12 +83,15 @@ export async function transitionIncidentStatus(
  */
 export async function getRecentIncidents(limit = 10) {
   const cacheKey = `doctrine:incidents:recent:${limit}`;
-  const cached = apiCache.get<Awaited<ReturnType<typeof fetchIncidents>>>(cacheKey);
-  if (cached) return cached;
-
-  const result = await fetchIncidents(limit);
-  apiCache.set(cacheKey, result, 15_000); // 15s TTL (incidents are time-sensitive)
-  return result;
+  return cached(
+    cacheKey,
+    15_000,
+    async () => {
+      const result = await fetchIncidents(limit);
+      return result;
+    },
+    { l2: false },
+  );
 }
 
 async function fetchIncidents(limit: number) {
@@ -134,11 +128,7 @@ export async function getIncident(id: string) {
 /**
  * Submit a user report for an incident.
  */
-export async function reportIncident(
-  incidentId: string,
-  userId: string,
-  message: string,
-) {
+export async function reportIncident(incidentId: string, userId: string, message: string) {
   return prisma.doctrineIncidentReport.create({
     data: { incidentId, userId, message },
   });

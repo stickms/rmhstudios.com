@@ -12,7 +12,7 @@ export const Route = createFileRoute('/api/doctrine/reputation/leaderboard')({
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'doctrine-rep-lb' },
           // Anonymous-invariant global top-N — the same bytes for every caller,
           // which is what `public` claims. Matches `void-breaker/leaderboard`.
-          // Opt out of the 30 s micro-cache: awardXp invalidates the leaderboard in apiCache.
+          // Opt out of the 30 s micro-cache: awardXp invalidates the leaderboard in the shared cache.
           microCache: false,
           cache: { visibility: 'public', maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 300 },
         },

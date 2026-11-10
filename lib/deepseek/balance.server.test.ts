@@ -23,7 +23,8 @@ vi.mock('@/lib/prisma.server', () => ({
   },
 }));
 
-vi.mock('@/lib/cached.server', () => ({
+vi.mock('@/lib/cached.server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/cached.server')>()),
   cached: (_key: string, _ttl: number, loader: () => Promise<unknown>) => loader(),
 }));
 

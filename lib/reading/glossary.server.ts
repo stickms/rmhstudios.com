@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import { GLOSSARY_KEY, type GlossaryTermView } from './schema';
 
 const CACHE_KEY = 'reading:glossary';
@@ -14,15 +14,19 @@ const TTL_MS = 5 * 60_000;
 const MAX_TERMS = 500;
 
 export async function listGlossary(): Promise<GlossaryTermView[]> {
-  const hit = apiCache.get<GlossaryTermView[]>(CACHE_KEY);
-  if (hit) return hit;
-  const rows = await prisma.glossaryTerm.findMany({
-    orderBy: { term: 'asc' },
-    take: MAX_TERMS,
-    select: { id: true, term: true, aliases: true, definition: true, linkUrl: true },
-  });
-  apiCache.set(CACHE_KEY, rows, TTL_MS);
-  return rows;
+  return cached(
+    CACHE_KEY,
+    TTL_MS,
+    async () => {
+      const rows = await prisma.glossaryTerm.findMany({
+        orderBy: { term: 'asc' },
+        take: MAX_TERMS,
+        select: { id: true, term: true, aliases: true, definition: true, linkUrl: true },
+      });
+      return rows;
+    },
+    { l2: false },
+  );
 }
 
 export interface TermInput {
@@ -52,7 +56,7 @@ export async function createTerm(userId: string, input: TermInput): Promise<Term
     },
     select: { id: true, term: true, aliases: true, definition: true, linkUrl: true },
   });
-  apiCache.invalidate(CACHE_KEY);
+  void invalidateCached(CACHE_KEY);
   return { ok: true, term: row };
 }
 
@@ -76,12 +80,12 @@ export async function updateTerm(id: string, input: TermInput): Promise<TermResu
     },
     select: { id: true, term: true, aliases: true, definition: true, linkUrl: true },
   });
-  apiCache.invalidate(CACHE_KEY);
+  void invalidateCached(CACHE_KEY);
   return { ok: true, term: row };
 }
 
 export async function deleteTerm(id: string): Promise<boolean> {
   const { count } = await prisma.glossaryTerm.deleteMany({ where: { id } });
-  apiCache.invalidate(CACHE_KEY);
+  void invalidateCached(CACHE_KEY);
   return count > 0;
 }

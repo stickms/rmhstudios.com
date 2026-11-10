@@ -10,7 +10,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import { DIFFICULTIES, type Difficulty } from './constants';
 
 const CACHE_TTL_MS = 300_000;
@@ -37,7 +37,7 @@ function cacheKey(userId: string): string {
 
 /** Drop this user's cached showcase stats — call after anything that could move them. */
 export function invalidateSliceItShowcase(userId: string): void {
-  apiCache.invalidate(cacheKey(userId));
+  void invalidateCached(cacheKey(userId));
 }
 
 /**
@@ -51,53 +51,54 @@ export function invalidateSliceItShowcase(userId: string): void {
  * failed everything".
  */
 export async function sliceItShowcaseStats(userId: string): Promise<SliceItShowcaseStats | null> {
-  const cached = apiCache.get<SliceItShowcaseStats | null>(cacheKey(userId));
-  if (cached !== undefined) return cached;
+  // A null (never ranked) is cached too, as before.
+  return cached(
+    cacheKey(userId),
+    CACHE_TTL_MS,
+    async () => {
+      const [player, groups] = await Promise.all([
+        prisma.player.findUnique({ where: { userId }, select: { skillRating: true } }),
+        prisma.songLeaderboard.groupBy({
+          by: ['difficulty', 'cleared', 'isFullCombo', 'isPerfect'],
+          where: { userId },
+          _count: { _all: true },
+          _max: { accuracy: true },
+        }),
+      ]);
 
-  const [player, groups] = await Promise.all([
-    prisma.player.findUnique({ where: { userId }, select: { skillRating: true } }),
-    prisma.songLeaderboard.groupBy({
-      by: ['difficulty', 'cleared', 'isFullCombo', 'isPerfect'],
-      where: { userId },
-      _count: { _all: true },
-      _max: { accuracy: true },
-    }),
-  ]);
+      if (!player && groups.length === 0) return null;
 
-  if (!player && groups.length === 0) {
-    apiCache.set(cacheKey(userId), null, CACHE_TTL_MS);
-    return null;
-  }
+      const byTier = new Map<Difficulty, SliceItLampCounts>(
+        DIFFICULTIES.map((difficulty) => [
+          difficulty,
+          { difficulty, cleared: 0, fullCombo: 0, perfect: 0 },
+        ]),
+      );
+      let chartsCleared = 0;
+      let bestAccuracy: number | null = null;
 
-  const byTier = new Map<Difficulty, SliceItLampCounts>(
-    DIFFICULTIES.map((difficulty) => [
-      difficulty,
-      { difficulty, cleared: 0, fullCombo: 0, perfect: 0 },
-    ]),
+      for (const group of groups) {
+        const tier = byTier.get(group.difficulty as Difficulty);
+        const count = group._count._all;
+        if (tier) {
+          if (group.cleared) tier.cleared += count;
+          if (group.isFullCombo) tier.fullCombo += count;
+          if (group.isPerfect) tier.perfect += count;
+        }
+        if (group.cleared) chartsCleared += count;
+        if (group._max.accuracy !== null) {
+          bestAccuracy = Math.max(bestAccuracy ?? 0, group._max.accuracy);
+        }
+      }
+
+      const stats: SliceItShowcaseStats = {
+        skillRating: player?.skillRating ?? 0,
+        chartsCleared,
+        bestAccuracy,
+        lampsByDifficulty: [...byTier.values()],
+      };
+      return stats;
+    },
+    { l2: false },
   );
-  let chartsCleared = 0;
-  let bestAccuracy: number | null = null;
-
-  for (const group of groups) {
-    const tier = byTier.get(group.difficulty as Difficulty);
-    const count = group._count._all;
-    if (tier) {
-      if (group.cleared) tier.cleared += count;
-      if (group.isFullCombo) tier.fullCombo += count;
-      if (group.isPerfect) tier.perfect += count;
-    }
-    if (group.cleared) chartsCleared += count;
-    if (group._max.accuracy !== null) {
-      bestAccuracy = Math.max(bestAccuracy ?? 0, group._max.accuracy);
-    }
-  }
-
-  const stats: SliceItShowcaseStats = {
-    skillRating: player?.skillRating ?? 0,
-    chartsCleared,
-    bestAccuracy,
-    lampsByDifficulty: [...byTier.values()],
-  };
-  apiCache.set(cacheKey(userId), stats, CACHE_TTL_MS);
-  return stats;
 }

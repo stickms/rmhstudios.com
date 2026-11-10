@@ -7,7 +7,7 @@
  * cached because Nominatim's usage policy asks callers to be gentle.
  */
 
-import { apiCache } from '@/lib/cache';
+import { cached } from '@/lib/cached.server';
 import type { SearchCenter } from './types';
 
 // Re-exported for callers that historically imported it from here; the
@@ -39,32 +39,35 @@ export async function geocode(query: string, limit = 5): Promise<GeocodeResult[]
   if (q.length < 3) return [];
 
   const cacheKey = `homes:geocode:${q.toLowerCase()}:${limit}`;
-  const cached = apiCache.get<GeocodeResult[]>(cacheKey);
-  if (cached) return cached;
+  return cached(
+    cacheKey,
+    GEOCODE_TTL_MS,
+    async () => {
+      const url = new URL('/search', NOMINATIM_BASE);
+      url.searchParams.set('q', q);
+      url.searchParams.set('format', 'jsonv2');
+      url.searchParams.set('addressdetails', '0');
+      url.searchParams.set('limit', String(Math.min(Math.max(limit, 1), 10)));
 
-  const url = new URL('/search', NOMINATIM_BASE);
-  url.searchParams.set('q', q);
-  url.searchParams.set('format', 'jsonv2');
-  url.searchParams.set('addressdetails', '0');
-  url.searchParams.set('limit', String(Math.min(Math.max(limit, 1), 10)));
+      const res = await fetch(url, {
+        headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`Nominatim error ${res.status}`);
 
-  const res = await fetch(url, {
-    headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
-    signal: AbortSignal.timeout(8000),
-  });
-  if (!res.ok) throw new Error(`Nominatim error ${res.status}`);
+      const data = (await res.json()) as NominatimItem[];
+      const results = data
+        .map((item) => ({
+          label: item.display_name ?? '',
+          lat: item.lat ? Number(item.lat) : NaN,
+          lng: item.lon ? Number(item.lon) : NaN,
+        }))
+        .filter((r) => r.label && Number.isFinite(r.lat) && Number.isFinite(r.lng));
 
-  const data = (await res.json()) as NominatimItem[];
-  const results = data
-    .map((item) => ({
-      label: item.display_name ?? '',
-      lat: item.lat ? Number(item.lat) : NaN,
-      lng: item.lon ? Number(item.lon) : NaN,
-    }))
-    .filter((r) => r.label && Number.isFinite(r.lat) && Number.isFinite(r.lng));
-
-  apiCache.set(cacheKey, results, GEOCODE_TTL_MS);
-  return results;
+      return results;
+    },
+    // Public Nominatim results: JSON-safe and worth sharing across processes (usage policy asks us to be gentle).
+  );
 }
 
 /** Resolve a search's `location` string to a single center, or null. */
