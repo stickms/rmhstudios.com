@@ -1,4 +1,5 @@
 import {
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -660,7 +661,7 @@ interface LiquidGlobeProps {
   ) => void;
 }
 
-export function LiquidGlobe({
+export const LiquidGlobe = memo(function LiquidGlobe({
   items,
   pathname,
   onDismiss,
@@ -3541,4 +3542,4 @@ export function LiquidGlobe({
       </span>
     </div>
   );
-}
+});

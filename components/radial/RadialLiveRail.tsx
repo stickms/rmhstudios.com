@@ -20,7 +20,7 @@
  * the frame or spill over the content column.
  */
 
-import { Suspense, lazy, useState, type ReactNode } from 'react';
+import { Suspense, lazy, memo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
@@ -46,7 +46,11 @@ const RadialLiveRailContent = lazy(() =>
 /** The width at which radial.css actually reveals the rail (`min-width: 1440px`). */
 const RAIL_QUERY = '(min-width: 1440px)';
 
-export function RadialLiveRail({ children }: { children?: ReactNode }) {
+export const RadialLiveRail = memo(function RadialLiveRail({
+  children,
+}: {
+  children?: ReactNode;
+}) {
   const { t } = useTranslation('feed');
   // Deliberately the rail's OWN breakpoint, not the shared `xl` one: gating on a
   // wider query than the CSS reveal would starve the rail, and on a narrower one
@@ -89,4 +93,4 @@ export function RadialLiveRail({ children }: { children?: ReactNode }) {
       </div>
     </aside>
   );
-}
+});
