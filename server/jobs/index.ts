@@ -51,6 +51,7 @@ import { registerRecipeJobs } from '@/lib/devplatform/recipes.server';
 import { STREAK_REMINDER_QUEUE, registerStreakReminderCron } from '@/lib/streak-reminders.server';
 import { RECAP_QUEUE, registerRecapCron } from '@/lib/lights-out/recap.server';
 import { registerDoctrineJobs } from '@/lib/doctrine/jobs.server';
+import { CLEANUP_QUEUE, registerCleanupCron } from '@/lib/cleanup-job.server';
 import { registerBotWorkerJobs } from '@/lib/rmhark-ai/bot-worker.server';
 import {
   VIBE_THUMB_QUEUE,
@@ -157,6 +158,9 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // D3: RMHVibe gallery thumbnails (ported from the Go worker): every minute, render up to 5 stale pages
   // in headless Chromium (PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH, in this image) and upload to object storage.
   { queue: VIBE_THUMB_QUEUE, register: registerVibeThumbnailCron },
+  // D4: data-lifecycle cleanup (sessions, verifications, notifications, comment views), daily at 04:00 UTC.
+  // Moved from a node-cron + worker-lease in the ladder worker; the `exclusive` policy is the lock now.
+  { queue: CLEANUP_QUEUE, register: registerCleanupCron },
   // M3 disappearing messages: expiry is enforced at read time; this only deletes the rows.
   { queue: CHAT_EXPIRY_QUEUE, register: registerChatExpiryCron },
   // F5: expire unmatched study-buddy requests and tell their owners.
