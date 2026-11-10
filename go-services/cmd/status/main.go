@@ -77,7 +77,7 @@ func main() {
 		Socket:  config.GetString("STATUS_SOCKET_URL", hubHealthURL("socket", "SOCKET_PORT", "7001")),
 		RMHBox:  config.GetString("STATUS_RMHBOX_URL", hubHealthURL("rmhbox", "RMHBOX_PORT", "7676")),
 		RMHTube: config.GetString("STATUS_RMHTUBE_URL", hubHealthURL("rmhtube", "RMHTUBE_PORT", "7003")),
-		// The three background workers (discord-bot, vibe, bot-worker) are consolidated as goroutines inside the
+		// The two background workers (discord-bot, vibe) are consolidated as goroutines inside the
 		// supervisor process, which serves /health on its METRICS_ADDR
 		// (default :9090). There is no standalone recap:7004.
 		Supervisor: config.GetString("STATUS_SUPERVISOR_URL", "http://supervisor:9090/health"),
@@ -312,11 +312,11 @@ func buildTargets(u probeURLs, probeTimeout time.Duration) []status.Target {
 			FreshConn:     true,
 		},
 
-		// The six background workers run as goroutines inside the supervisor
+		// The two background workers run as goroutines inside the supervisor
 		// process — probe its shared /health.
 		status.Target{
 			Name:        "Background workers",
-			Description: "Supervisor: discord-bot, vibe, bot-worker",
+			Description: "Supervisor: discord-bot, vibe",
 			Group:       "Platform",
 			URL:         u.Supervisor,
 		},

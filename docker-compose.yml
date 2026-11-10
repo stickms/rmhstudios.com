@@ -483,8 +483,8 @@ services:
       - RMHTUBE_INTERNAL_URL=http://rmhtube:${PORT_RMHTUBE:-7003}
     command: ['node', 'dist-server/server/jobs/index.cjs']
 
-  # ─── Go Supervisor (discord-bot + vibe-worker + bot-worker) ─
-  # Runs the three background workers as goroutines in a single Go process.
+  # ─── Go Supervisor (discord-bot + vibe-worker) ─
+  # Runs the two background workers as goroutines in a single Go process.
   # Env union: every variable the five old Node services needed is carried here.
   # The active Go discord-bot does not perform Git operations and needs no host
   # repository access. The shared db/ mount from *common is sufficient.
@@ -593,7 +593,7 @@ services:
   # in compose the main user path still goes through web/Apache, so this service
   # is for local dev/smoke-testing — hit it directly on the published port
   # (e.g. curl -r 0-1023 http://127.0.0.1:7007/models/<key> → 206). It reads
-  # from the same S3-compatible bucket as bot-worker (S3_* from env_file; locally
+  # from the same S3-compatible bucket as the jobs worker (S3_* from env_file; locally
   # S3_ENDPOINT points at the minio service below, in production at R2).
   assets:
     <<: *common

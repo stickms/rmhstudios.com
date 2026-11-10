@@ -2936,7 +2936,7 @@ C3: in-progress (#1531: schema split into prisma/schema/ (30 files, empty migrat
 C4: open
 D1: declined (owner, 2026-11-09: no data moves off the box)
 D2: in-progress (#1534: one shared hub session check; Socket.IO Redis adapter wired but off unless REALTIME_REDIS_ADAPTER=1; durable rooms, drain, hub merge pending; two replicas NOT yet safe)
-D3: in-progress (#1533: streak-saver ported to Node jobs; status reads its freshness from pg-boss; recap + doctrine ported too, with A19 read from doctrine_puzzle; vibe, bot-worker, discord-bot pending)
+D3: in-progress (#1533: streak-saver ported to Node jobs; status reads its freshness from pg-boss; recap + doctrine ported too, with A19 read from doctrine_puzzle; bot-worker ported (lib/rmhark-ai/bot-worker.server.ts, four pg-boss crons); vibe, discord-bot pending)
 D4: in-progress (streak sweep, recap and doctrine crons on pg-boss; node-cron and web-tier setInterval consolidation pending)
 D5: in-progress (migration auto-retry already removed on main: a failed migrate stops the deploy; health-gated rollouts for all services pending)
 D6: open

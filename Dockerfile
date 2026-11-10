@@ -111,9 +111,9 @@ COPY lib ./lib/
 
 # Only the Node services still served by compose (socket/rmhbox/rmhtube +
 # ladder-worker + homes-worker + jobs) are bundled here.
-# recap, status, discord-bot, doctrine-worker, vibe-worker and bot-worker were
-# migrated to the Go supervisor/status binaries (built in the go-builder stage),
-# so their Node entrypoints are no longer compiled or shipped.
+# status, discord-bot and vibe-worker were migrated to the Go supervisor/status binaries
+# (built in the go-builder stage); recap, doctrine, the streak-saver and the bot-worker
+# live in the jobs bundle above (D3).
 RUN pnpm exec esbuild \
     server/socket-server/index.ts \
     server/rmhbox/index.ts \
@@ -376,7 +376,7 @@ RUN rm -rf /app/.output/public/library \
            /app/.output/public/sprites
 
 # ── Stage 3b: Go binaries ────────────────────────────────────────────────
-# Builds supervisor, status, and bot-worker (plus all other cmd/ packages)
+# Builds supervisor, status and assets (plus all other cmd/ packages)
 # from the go-services module using the official Go toolchain. The binaries
 # are statically linked (CGO_ENABLED=0) so they drop cleanly into the musl
 # Alpine runner without libc ceremony.

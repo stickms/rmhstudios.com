@@ -416,11 +416,11 @@ func (r *petRepo) setCaretakerAvatar(ctx context.Context, guildID, userID, avata
 	return err
 }
 
-// ─── Shared image-spend budget (mirrors botworker/image-budget) ─────────
+// ─── Shared image-spend budget (mirrors lib/rmhark-ai/image-budget.server.ts) ─────────
 
 // reserveImageBudgetQuery atomically reserves one unit of today's global image
 // budget, returning the new count iff still under cap. Identical form to the
-// bot-worker's so the two processes share one daily ceiling.
+// the Node jobs worker's so the two processes share one daily ceiling.
 const petReserveImageBudgetQuery = `
 INSERT INTO "image_gen_budget" (day, count) VALUES ($1, 1)
 ON CONFLICT (day) DO UPDATE
