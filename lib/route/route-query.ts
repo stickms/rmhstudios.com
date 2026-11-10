@@ -55,6 +55,9 @@ export function routeQueryFn<T>(
 export async function prefetchRouteQuery<TData, TKey extends QueryKey>(
   queryClient: QueryClient,
   options: UseQueryOptions<TData, Error, TData, TKey>,
-): Promise<void> {
+): Promise<undefined> {
   await queryClient.prefetchQuery(ON_SERVER ? { ...options, retry: false } : options);
+  // `undefined`, not void: a loader returning this keeps `loaderData: undefined`, which is what
+  // `definePage`'s head context expects.
+  return undefined;
 }

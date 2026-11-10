@@ -41,7 +41,10 @@ export function getRouter() {
   const router = createTanStackRouter({
     routeTree,
     context: { queryClient },
-    dehydrate: () => ({ queryState: dehydrate(queryClient) }),
+    // `as never`: Start's serializability check reads `mutationKey: unknown[]` as possibly
+    // unserializable. Query and mutation keys here are plain JSON arrays, and only queries are
+    // dehydrated (paused mutations never exist during SSR), so the wire value is plain data.
+    dehydrate: () => ({ queryState: dehydrate(queryClient) as never }),
     hydrate: (dehydrated: { queryState: DehydratedState }) => {
       hydrate(queryClient, dehydrated.queryState);
     },
