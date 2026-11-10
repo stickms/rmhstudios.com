@@ -7,6 +7,7 @@
  * Piles are numbered: 0 stock, 1–8 completed runs, 9–18 tableau.
  */
 
+import { writeJson } from '@/lib/core/persist';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AppProps } from '../apps';
@@ -30,7 +31,6 @@ import {
   makeDeck,
   motionOK,
   pickDropTarget,
-  saveJSON,
   shuffle,
   startCardDrag,
   topOf,
@@ -274,7 +274,7 @@ export default function SpiderApp({ win }: AppProps) {
   const updateSaved = useCallback((f: (s: Saved) => Saved) => {
     setSaved((s) => {
       const n = f(s);
-      saveJSON(KEY, n);
+      writeJson(KEY, n);
       return n;
     });
   }, []);

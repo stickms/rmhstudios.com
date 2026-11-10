@@ -6,6 +6,7 @@
  * empty composer mounts.
  */
 
+import { readJson, removeKey, writeJson } from '@/lib/core/persist';
 import { useEffect, useRef } from 'react';
 
 const KEY = 'rmh-compose-draft';
@@ -19,27 +20,17 @@ export interface ComposeDraft {
 }
 
 export function readComposeDraft(): ComposeDraft | null {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return null;
-    const draft = JSON.parse(raw) as ComposeDraft;
-    if (!draft?.content?.trim()) return null;
-    if (typeof draft.savedAt !== 'number' || Date.now() - draft.savedAt > MAX_AGE_MS) {
-      localStorage.removeItem(KEY);
-      return null;
-    }
-    return draft;
-  } catch {
+  const draft = readJson<ComposeDraft | null>(KEY, null);
+  if (!draft?.content?.trim()) return null;
+  if (typeof draft.savedAt !== 'number' || Date.now() - draft.savedAt > MAX_AGE_MS) {
+    removeKey(KEY);
     return null;
   }
+  return draft;
 }
 
 export function clearComposeDraft() {
-  try {
-    localStorage.removeItem(KEY);
-  } catch {
-    // ignore (private mode / storage disabled)
-  }
+  removeKey(KEY);
 }
 
 /**
@@ -57,15 +48,11 @@ export function useComposeDraftAutosave(content: string, gifUrl: string, enabled
       if (!content) return;
     }
     const timer = setTimeout(() => {
-      try {
-        if (content.trim()) {
-          const draft: ComposeDraft = { content, gifUrl, savedAt: Date.now() };
-          localStorage.setItem(KEY, JSON.stringify(draft));
-        } else {
-          localStorage.removeItem(KEY);
-        }
-      } catch {
-        // ignore (private mode / storage disabled)
+      if (content.trim()) {
+        const draft: ComposeDraft = { content, gifUrl, savedAt: Date.now() };
+        writeJson(KEY, draft);
+      } else {
+        removeKey(KEY);
       }
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);

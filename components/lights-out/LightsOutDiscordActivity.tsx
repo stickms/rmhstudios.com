@@ -1,3 +1,4 @@
+import { readJson, readString, writeJson, writeString } from '@/lib/core/persist';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
@@ -79,10 +80,7 @@ const INSTRUCTIONS_SEEN_KEY = 'lightsout-discord-instructions-seen';
 
 /** Check localStorage first (fast), fall back to server DB (cross-platform). */
 function getDailyCompletion(dateKey: string): DailyCompletion | null {
-    try {
-        const raw = localStorage.getItem(DAILY_KEY_PREFIX + dateKey);
-        return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
+    return readJson<DailyCompletion | null>(DAILY_KEY_PREFIX + dateKey, null);
 }
 
 /** Fetch completion from server DB (for cross-platform sync). */
@@ -97,7 +95,7 @@ async function fetchDailyCompletion(discordId: string, dateKey: string): Promise
                 ratingEmoji: data.ratingEmoji ?? '\u{1F4A1}',
             };
             // Cache locally so future checks are instant
-            try { localStorage.setItem(DAILY_KEY_PREFIX + dateKey, JSON.stringify(completion)); } catch {}
+            writeJson(DAILY_KEY_PREFIX + dateKey, completion);
             return completion;
         }
         return null;
@@ -105,9 +103,7 @@ async function fetchDailyCompletion(discordId: string, dateKey: string): Promise
 }
 
 function saveDailyCompletion(dateKey: string, data: DailyCompletion): void {
-    try {
-        localStorage.setItem(DAILY_KEY_PREFIX + dateKey, JSON.stringify(data));
-    } catch {}
+    writeJson(DAILY_KEY_PREFIX + dateKey, data);
 }
 
 // ─── Embed notification helper ───────────────────────────────────────
@@ -677,13 +673,10 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
     }, [discord.sdk, solved, shapeLabel]);
 
     // Instructions modal — show once per user
-    const [showInstructions, setShowInstructions] = useState(() => {
-        try { return !localStorage.getItem(INSTRUCTIONS_SEEN_KEY); }
-        catch { return true; }
-    });
+    const [showInstructions, setShowInstructions] = useState(() => !readString(INSTRUCTIONS_SEEN_KEY));
     const dismissInstructions = () => {
         setShowInstructions(false);
-        try { localStorage.setItem(INSTRUCTIONS_SEEN_KEY, '1'); } catch {}
+        writeString(INSTRUCTIONS_SEEN_KEY, '1');
     };
 
     // Load progress from server (authoritative) — restores grid + moves across guilds/devices

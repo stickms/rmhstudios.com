@@ -11,6 +11,7 @@
  * elements — no React state per pointer move and no animation-frame loop.
  */
 
+import { readJson } from '@/lib/core/persist';
 import {
   useCallback,
   useEffect,
@@ -574,24 +575,9 @@ export function arrowNav(
 /* ----------------------------------------------------------------- storage */
 
 export function loadJSON<T extends object>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    const parsed: unknown = JSON.parse(raw);
-    return parsed && typeof parsed === 'object'
-      ? { ...fallback, ...(parsed as Partial<T>) }
-      : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-export function saveJSON(key: string, value: unknown) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    /* private mode / quota — stats are a nicety */
-  }
+  return readJson<T>(key, fallback, {
+    validate: (v) => (v && typeof v === 'object' ? { ...fallback, ...(v as Partial<T>) } : undefined),
+  });
 }
 
 export interface CardStats {

@@ -1,3 +1,4 @@
+import { readJson, writeJson } from '@/lib/core/persist';
 /**
  * Configurable key bindings for Dream Rift.
  *
@@ -64,28 +65,17 @@ export function keyLabel(k: string): string {
 }
 
 export function loadBindings(): Bindings {
-    if (typeof localStorage === 'undefined') return clone(DEFAULT_BINDINGS);
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return clone(DEFAULT_BINDINGS);
-        const parsed = JSON.parse(raw) as Partial<Bindings>;
-        const merged = clone(DEFAULT_BINDINGS);
-        for (const a of BIND_ACTIONS) {
-            if (Array.isArray(parsed[a]) && parsed[a]!.length) merged[a] = parsed[a]!.filter((k) => typeof k === 'string');
-        }
-        return merged;
-    } catch {
-        return clone(DEFAULT_BINDINGS);
+    const parsed = readJson<Partial<Bindings> | null>(STORAGE_KEY, null);
+    if (!parsed || typeof parsed !== 'object') return clone(DEFAULT_BINDINGS);
+    const merged = clone(DEFAULT_BINDINGS);
+    for (const a of BIND_ACTIONS) {
+        if (Array.isArray(parsed[a]) && parsed[a]!.length) merged[a] = parsed[a]!.filter((k) => typeof k === 'string');
     }
+    return merged;
 }
 
 export function saveBindings(b: Bindings): void {
-    if (typeof localStorage === 'undefined') return;
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(b));
-    } catch {
-        /* ignore quota errors */
-    }
+    writeJson(STORAGE_KEY, b);
 }
 
 /** Return a copy of `bindings` with `key` assigned to `action` (removed elsewhere). */

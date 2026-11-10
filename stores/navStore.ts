@@ -1,3 +1,4 @@
+import { readJson, writeJson } from '@/lib/core/persist';
 import { create } from "zustand";
 
 /**
@@ -9,21 +10,13 @@ import { create } from "zustand";
 const STORAGE_KEY = "rmh-nav-pins";
 
 function readPins(): string[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((p): p is string => typeof p === "string") : [];
-  } catch {
-    return [];
-  }
+  return readJson<string[]>(STORAGE_KEY, [], {
+    validate: (v) => (Array.isArray(v) ? v.filter((p): p is string => typeof p === "string") : undefined),
+  });
 }
 
 function writePins(pins: string[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(pins));
-  } catch {
-    // ignore (private mode / storage disabled)
-  }
+  writeJson(STORAGE_KEY, pins);
 }
 
 interface NavStore {

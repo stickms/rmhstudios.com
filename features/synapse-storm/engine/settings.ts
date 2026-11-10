@@ -1,3 +1,4 @@
+import { readJson, writeJson } from '@/lib/core/persist';
 /**
  * Synapse Storm settings persisted to localStorage.
  */
@@ -15,27 +16,16 @@ const DEFAULTS: SynapseStormSettings = {
 };
 
 function load(): SynapseStormSettings {
-    if (typeof window === 'undefined') return DEFAULTS;
-    try {
-        const raw = localStorage.getItem(KEY);
-        if (!raw) return DEFAULTS;
-        const parsed = JSON.parse(raw) as Partial<SynapseStormSettings>;
-        return {
-            musicVolume: Math.max(0, Math.min(1, parsed.musicVolume ?? DEFAULTS.musicVolume)),
-            sfxVolume: Math.max(0, Math.min(1, parsed.sfxVolume ?? DEFAULTS.sfxVolume)),
-        };
-    } catch {
-        return DEFAULTS;
-    }
+    const parsed = readJson<Partial<SynapseStormSettings> | null>(KEY, null);
+    if (!parsed) return DEFAULTS;
+    return {
+        musicVolume: Math.max(0, Math.min(1, parsed.musicVolume ?? DEFAULTS.musicVolume)),
+        sfxVolume: Math.max(0, Math.min(1, parsed.sfxVolume ?? DEFAULTS.sfxVolume)),
+    };
 }
 
 function save(settings: SynapseStormSettings): void {
-    if (typeof window === 'undefined') return;
-    try {
-        localStorage.setItem(KEY, JSON.stringify(settings));
-    } catch {
-        // ignore
-    }
+    writeJson(KEY, settings);
 }
 
 let cache: SynapseStormSettings | null = null;
