@@ -40,9 +40,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { TrickSubmit } from './TrickSubmit';
 import { useSession } from '@/components/Providers';
-import { TRICK_LIST } from '@/lib/nightrail/constants';
-import { LEVELS, LEVEL_ORDER } from '@/lib/nightrail/levels';
-import type { LevelId, RunStats, TrickDirection } from '@/lib/nightrail/types';
+import { TRICK_LIST } from '@features/nightrail/engine/constants';
+import { LEVELS, LEVEL_ORDER } from '@features/nightrail/engine/levels';
+import type { LevelId, RunStats, TrickDirection } from '@features/nightrail/engine/types';
 
 export type UIState =
   'menu' | 'levelSelect' | 'tricktionary' | 'playing' | 'crashed' | 'runComplete';

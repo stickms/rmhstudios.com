@@ -290,7 +290,7 @@ const ALLOW = new Set<string>([
   'components/elections/GlobeCanvas.tsx',
   'components/radial/LiquidGlobe.tsx',
   'components/neon-driftway/NeonDriftwayGame.tsx',
-  'components/nightrail/NightrailGame.tsx',
+  'features/nightrail/ui/NightrailGame.tsx',
   'components/news/NewsHero.tsx',
   'components/rideshare/cars/LiquidCarStage.tsx',
   'components/rmhfashion/FashionStage.tsx',

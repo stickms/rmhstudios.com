@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { RunStats } from '@/lib/nightrail/types';
+import type { RunStats } from '@features/nightrail/engine/types';
 
 export function TrickSubmit({ runStats }: { runStats: RunStats }) {
   const { t } = useTranslation('f-async-games');

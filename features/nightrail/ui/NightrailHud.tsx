@@ -19,9 +19,9 @@
 
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { RunState } from '@/lib/nightrail/game';
-import { runProgress } from '@/lib/nightrail/game';
-import { MAX_MULTIPLIER } from '@/lib/nightrail/constants';
+import type { RunState } from '@features/nightrail/engine/game';
+import { runProgress } from '@features/nightrail/engine/game';
+import { MAX_MULTIPLIER } from '@features/nightrail/engine/constants';
 
 /** Pips rendered for cargo. Levels carry fewer; the surplus is hidden. */
 const CARGO_PIPS = 8;

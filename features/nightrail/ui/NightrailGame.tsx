@@ -4,7 +4,7 @@
  * This component owns everything the browser has to be asked for: the WebGL
  * canvas and its sizing, the single rAF loop, keyboard/pointer/gamepad input,
  * the audio context's lifecycle, and the screen wake lock. The simulation
- * lives in `lib/nightrail/game`, the drawing in `lib/nightrail/renderer3d`,
+ * lives in `features/nightrail/engine/game`, the drawing in `features/nightrail/engine/renderer3d`,
  * and neither knows this file exists.
  *
  * The division that matters: **nothing about a run is React state.** Score,
@@ -31,12 +31,12 @@ import {
   stepRun,
   withInterpolatedPose,
   type RunState,
-} from '@/lib/nightrail/game';
-import { NightrailRenderer3D } from '@/lib/nightrail/renderer3d';
+} from '@features/nightrail/engine/game';
+import { NightrailRenderer3D } from '@features/nightrail/engine/renderer3d';
 import { FrameCap, MENU_BACKDROP_FPS } from '@/lib/render/frame-cap';
-import { NightrailAudio } from '@/lib/nightrail/audio';
-import { LEVELS, LEVEL_ORDER } from '@/lib/nightrail/levels';
-import type { InputState, LevelId, RunStats, TrickDirection } from '@/lib/nightrail/types';
+import { NightrailAudio } from '@features/nightrail/engine/audio';
+import { LEVELS, LEVEL_ORDER } from '@features/nightrail/engine/levels';
+import type { InputState, LevelId, RunStats, TrickDirection } from '@features/nightrail/engine/types';
 import { NightrailHud, type HudHandle } from './NightrailHud';
 import { NightrailUI, type UIState } from './NightrailUI';
 import { NightrailTouchControls } from './NightrailTouchControls';

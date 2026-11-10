@@ -55,7 +55,7 @@
 @source not "../components/lights-out";
 @source not "../components/lockdown";
 @source not "../components/neon-driftway";
-@source not "../components/nightrail";
+@source not "../features/nightrail";
 @source not "../components/optimization";
 @source not "../components/pf2ecal";
 @source not "../components/rebar-rutabaga";
@@ -107,7 +107,6 @@
 @source not "../lib/laundry-sort";
 @source not "../lib/lights-out";
 @source not "../lib/neon-driftway";
-@source not "../lib/nightrail";
 @source not "../lib/pf2ecal";
 @source not "../lib/pwa";
 @source not "../lib/rebar-rutabaga";

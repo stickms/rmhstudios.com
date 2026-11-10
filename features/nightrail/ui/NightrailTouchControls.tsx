@@ -16,7 +16,7 @@ import { useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent, RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ArrowRight, ChevronsUp, Flame, Wind } from 'lucide-react';
-import type { InputState, TrickDirection } from '@/lib/nightrail/types';
+import type { InputState, TrickDirection } from '@features/nightrail/engine/types';
 
 /** The held, button-shaped inputs. `trick` is a one-shot and `pause`/`restart` are the parent's. */
 type HoldInput = 'left' | 'right' | 'drift' | 'jump' | 'boost';
