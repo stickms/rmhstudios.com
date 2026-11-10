@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { customizeLookApi } from '@/lib/cards/steam.contract';
 import type { LookEditorData } from '@/lib/games/community-types';
 
 /** Choose your profile background and avatar frame from the ones your badges unlocked. */
@@ -16,18 +18,10 @@ export function LookEditor({ data }: { data: LookEditorData }) {
   async function save() {
     setBusy(true);
     try {
-      const res = await fetch('/api/games/customize', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ background: bg || null, frame: fr || null }),
-      });
-      if (res.ok) {
-        toast.success(t('steam-look-saved', { defaultValue: 'Profile look saved.' }));
-        setOpen(false);
-        await router.invalidate();
-      } else {
-        toast.error(t('steam-look-err', { defaultValue: 'Could not save your profile look.' }));
-      }
+      await api(customizeLookApi, { body: { background: bg || null, frame: fr || null } });
+      toast.success(t('steam-look-saved', { defaultValue: 'Profile look saved.' }));
+      setOpen(false);
+      await router.invalidate();
     } catch {
       toast.error(t('steam-look-err', { defaultValue: 'Could not save your profile look.' }));
     } finally {

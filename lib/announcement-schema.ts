@@ -69,7 +69,12 @@ export const createAnnouncementSchema = z.object({
   poll: pollSchema.optional(),
 });
 
-export type CreateAnnouncementInput = z.infer<typeof createAnnouncementSchema>;
+export const updateAnnouncementSchema = z.object({
+  active: z.boolean().optional(),
+  pinned: z.boolean().optional(),
+});
+
+export type CreateAnnouncementInput =z.infer<typeof createAnnouncementSchema>;
 export type AnnouncementPollInput = z.infer<typeof pollSchema>;
 
 // Re-export poll constants for the admin maker UI.

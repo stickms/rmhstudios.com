@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { awardXp } from '@/lib/doctrine/reputation';
+import { awardXp } from '@features/doctrine/engine/reputation';
 import { invalidateCachedPrefix } from '@/lib/cached.server';
 
 const VALID_REACTIONS = ['FIRE', 'BASED', 'MID', 'CRINGE', 'TRASH', 'TUNG'] as const;

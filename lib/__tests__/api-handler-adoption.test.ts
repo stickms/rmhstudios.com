@@ -129,17 +129,8 @@ const callsGetSession = (src: string): boolean => /auth\.api\.getSession/.test(s
 
 /** Rule 1 backlog: route files that reference no wrapper at all. */
 const KNOWN_UNWRAPPED: readonly string[] = [
-  'app/routes/api/admin/albums/$id.ts',
-  'app/routes/api/admin/albums/index.ts',
-  'app/routes/api/admin/announcements.ts',
-  'app/routes/api/admin/announcements/$id.ts',
-  'app/routes/api/admin/library/$id.ts',
-  'app/routes/api/admin/library/index.ts',
-  'app/routes/api/admin/library/migrate.ts',
   'app/routes/api/admin/library/quota-requests.ts',
-  'app/routes/api/admin/library/reorder.ts',
   'app/routes/api/admin/library/storage-health.ts',
-  'app/routes/api/admin/predictions/index.ts',
   'app/routes/api/admin/vibe/backfill-thumbs.ts',
   'app/routes/api/ai/message-suggest.ts',
   'app/routes/api/albums/asset/$.ts',

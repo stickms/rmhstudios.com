@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { CACHE_POLICY } from '@/lib/api/cache-policies';
-import { getIncident } from '@/lib/doctrine/incidents';
-import { aggregateReactions, calculateDivisiveness } from '@/lib/doctrine/divisiveness';
+import { getIncident } from '@features/doctrine/engine/incidents';
+import { aggregateReactions, calculateDivisiveness } from '@features/doctrine/engine/divisiveness';
 
 export const Route = createFileRoute('/api/doctrine/incidents/$id')({
   server: {

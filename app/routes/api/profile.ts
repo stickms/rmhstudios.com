@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { updateProfileApi } from '@/lib/profile.contract';
 import { prisma } from '@/lib/prisma.server';
-import { updateProfileSchema } from '@/lib/profile-schema';
+import { updateProfileSchema, type ProfileLink } from '@/lib/profile-schema';
 import { canChangeHandle } from '@/lib/handle';
 import { handleSchema } from '@/lib/handle-schema';
 import { invalidateUserDisplay } from '@/lib/user-display.server';
@@ -9,18 +10,15 @@ import { invalidateUserDisplay } from '@/lib/user-display.server';
 export const Route = createFileRoute('/api/profile')({
   server: {
     handlers: {
-      PATCH: defineHandler(
-        { rateLimit: { limit: 10, windowMs: 60_000, prefix: 'profile-update' } },
-        async ({ request, session }) => {
-          const body = await request.json();
-          const parsed = updateProfileSchema.safeParse(body);
-          if (!parsed.success) {
-            return Response.json(
-              { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-              { status: 400 },
-            );
-          }
-
+      PATCH: implement(
+        updateProfileApi,
+        {
+          rateLimit: { limit: 10, windowMs: 60_000, prefix: 'profile-update' },
+          body: updateProfileSchema,
+          invalid: (err) =>
+            Response.json({ error: err.issues[0]?.message ?? 'Invalid input' }, { status: 400 }),
+        },
+        async ({ userId, body: data }) => {
           const {
             handle,
             displayName,
@@ -38,7 +36,7 @@ export const Route = createFileRoute('/api/profile')({
             tipGoal,
             tipGoalLabel,
             membershipPriceCoins,
-          } = parsed.data;
+          } = data;
 
           // Handle change logic
           let newHandle: string | undefined;
@@ -53,7 +51,7 @@ export const Route = createFileRoute('/api/profile')({
 
             // Check if handle actually changed
             const currentUser = await prisma.user.findUnique({
-              where: { id: session.user.id },
+              where: { id: userId },
               select: { handle: true, handleChangedAt: true, isAdmin: true },
             });
 
@@ -76,7 +74,7 @@ export const Route = createFileRoute('/api/profile')({
                 where: { handle },
                 select: { id: true },
               });
-              if (existing && existing.id !== session.user.id) {
+              if (existing && existing.id !== userId) {
                 return Response.json({ error: 'This handle is already taken' }, { status: 409 });
               }
 
@@ -87,7 +85,7 @@ export const Route = createFileRoute('/api/profile')({
           // Update handle on user model if changed
           if (newHandle) {
             await prisma.user.update({
-              where: { id: session.user.id },
+              where: { id: userId },
               data: { handle: newHandle, handleChangedAt: new Date() },
             });
           }
@@ -107,9 +105,9 @@ export const Route = createFileRoute('/api/profile')({
           const linksField = links !== undefined ? { links: links ?? [] } : {};
 
           const profile = await prisma.userProfile.upsert({
-            where: { userId: session.user.id },
+            where: { userId: userId },
             create: {
-              userId: session.user.id,
+              userId: userId,
               displayName: displayName ?? null,
               bio: bio ?? null,
               location: location ?? null,
@@ -143,15 +141,15 @@ export const Route = createFileRoute('/api/profile')({
 
           // handle / displayName feed the cached feed author display — refresh it so
           // the user's own next feed read shows the new name/handle immediately.
-          invalidateUserDisplay(session.user.id);
+          invalidateUserDisplay(userId);
 
-          return Response.json({
+          return {
             ...(newHandle ? { handle: newHandle } : {}),
             displayName: profile.displayName,
             bio: profile.bio,
             location: profile.location,
             website: profile.website,
-            links: profile.links ?? [],
+            links: (profile.links ?? []) as ProfileLink[],
             tipGoal: profile.tipGoal,
             tipGoalLabel: profile.tipGoalLabel,
             membershipPriceCoins: profile.membershipPriceCoins,
@@ -162,7 +160,7 @@ export const Route = createFileRoute('/api/profile')({
             profileSongArtist: profile.profileSongArtist,
             profileSongPreviewUrl: profile.profileSongPreviewUrl,
             profileSongAlbumArt: profile.profileSongAlbumArt,
-          });
+          };
         },
       ),
     },

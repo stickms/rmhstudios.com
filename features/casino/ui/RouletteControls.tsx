@@ -1,0 +1,233 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from "react-i18next";
+import { useBettingCountdown, BettingCountdown } from '@/components/rmhcoins/BettingCountdown';
+import { Button } from '@/components/ui/button';
+import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { useRouletteStore } from '@features/casino/engine/roulette/store';
+import { getRouletteSocket } from '@features/casino/engine/roulette/socket';
+import { C2S } from '@features/casino/engine/roulette/events';
+import { getNumberColor, getOutsideBetNumbers, numberLabel, DOUBLE_ZERO } from '@features/casino/engine/roulette/logic';
+import type { BetType } from '@features/casino/engine/roulette/logic';
+import { setSelectedChipValue, getSelectedChipValue } from './RouletteTable';
+
+interface Props {
+  coins: number;
+}
+
+const CHIP_VALUES = [1, 5, 25, 100, 500];
+
+const QUICK_BETS: { type: BetType; label: string; color: string }[] = [
+  { type: 'red', label: 'Red', color: 'bg-casino-red hover:bg-casino-red-hover text-casino-ink' },
+  { type: 'black', label: 'Black', color: 'bg-casino-felt hover:bg-casino-felt-raised text-casino-ink' },
+  { type: 'odd', label: 'Odd', color: 'bg-site-accent hover:bg-site-accent-hover text-site-accent-fg' },
+  { type: 'even', label: 'Even', color: 'bg-site-accent hover:bg-site-accent-hover text-site-accent-fg' },
+  { type: 'low', label: '1-18', color: 'bg-site-surface hover:bg-site-surface-hover text-site-text border border-site-border' },
+  { type: 'high', label: '19-36', color: 'bg-site-surface hover:bg-site-surface-hover text-site-text border border-site-border' },
+];
+
+export function RouletteControls({ coins }: Props) {
+  const {
+    tablePhase,
+    bettingCountdown,
+    stagedBets,
+    spinResult,
+    lastRoundResult,
+    myUserId,
+    players,
+    error,
+  } = useRouletteStore();
+
+  const addStagedBet = useRouletteStore((s) => s.addStagedBet);
+  const clearStagedBets = useRouletteStore((s) => s.clearStagedBets);
+
+  const { t } = useTranslation("c-rmhcoins");
+
+  const [selectedChip, setSelectedChip] = useState(5);
+  const countdown = useBettingCountdown(tablePhase, bettingCountdown);
+
+  // Keep the shared chip value in sync
+  useEffect(() => {
+    setSelectedChipValue(selectedChip);
+  }, [selectedChip]);
+
+  // Only use staged bets for total — server bets are the same ones echoed back
+  const totalBet = stagedBets.reduce((sum, b) => sum + b.amount, 0);
+
+  const handleClearBets = () => {
+    clearStagedBets();
+    const sock = getRouletteSocket();
+    if (sock) sock.emit(C2S.CLEAR_BETS);
+  };
+
+  const handleQuickBet = (type: BetType) => {
+    if (tablePhase !== 'betting') return;
+    const chipValue = getSelectedChipValue();
+    if (chipValue > coins) return;
+    const numbers = getOutsideBetNumbers(type);
+    addStagedBet({ type, numbers, amount: chipValue });
+    const sock = getRouletteSocket();
+    if (sock) {
+      sock.emit(C2S.PLACE_BET, { type, numbers, amount: chipValue });
+    }
+  };
+
+  // Idle state
+  if (tablePhase === 'idle') {
+    return (
+      <div className="text-center text-site-text-dim py-4">
+        <p className="text-sm">{t("waiting-for-next-round", { defaultValue: "Waiting for next round..." })}</p>
+      </div>
+    );
+  }
+
+  // Betting phase
+  if (tablePhase === 'betting') {
+    return (
+      <div className="flex flex-col gap-2.5">
+        <BettingCountdown countdown={countdown} />
+
+        {/* Chip selector — circular chips, scrollable on tiny screens */}
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-site-text-dim text-center">{t("select-chip-value", { defaultValue: "Select chip value" })}</span>
+          <div className="flex justify-center gap-2 py-1 overflow-x-auto" data-jelly-zone="playfield">
+            {CHIP_VALUES.map((val) => (
+              <Button
+                key={val}
+                type="button"
+                variant={selectedChip === val ? 'default' : 'secondary'}
+                onClick={() => setSelectedChip(val)}
+                disabled={val > coins}
+                className={`relative size-10 sm:size-11 rounded-full p-0 text-xs font-bold ${
+                  selectedChip === val ? 'ring-2 ring-site-accent ring-offset-1 ring-offset-site-bg' : ''
+                }`}
+              >
+                {val}
+              </Button>
+            ))}
+          </div>
+          <p className="text-caption text-site-text-dim text-center">{t("place-bets-hint", { defaultValue: "Place your bets on the board above" })}</p>
+        </div>
+
+        {/* Quick bet buttons — 3 columns on mobile, 6 on desktop */}
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-site-text-dim text-center">{t("quick-bets", { defaultValue: "Quick bets" })}</span>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+            {QUICK_BETS.map(({ type, label, color }) => (
+              <button
+                key={type}
+                onClick={() => handleQuickBet(type)}
+                disabled={selectedChip > coins}
+                className={`min-h-10 px-2 py-2 text-xs font-bold rounded-site-sm transition-transform active:scale-95 ${color} disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Current bets summary */}
+        {stagedBets.length > 0 && (
+          <div className="glass-fill flex flex-col gap-1.5 p-2.5 rounded-site-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-site-text-dim">{t("your-bets", { defaultValue: "Your bets" })}</span>
+              <div className="flex items-center gap-1">
+                <CoinIcon className="w-3.5 h-3.5" />
+                <span className="text-sm font-bold text-site-warning">{totalBet}</span>
+              </div>
+            </div>
+            {stagedBets.length > 0 && (
+              <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+                {stagedBets.map((bet, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-0.5 text-micro bg-site-accent-dim text-site-accent rounded-full px-1.5 py-0.5"
+                  >
+                    {bet.type === 'straight' ? `#${numberLabel(bet.numbers[0])}` : bet.type}: {bet.amount}
+                  </span>
+                ))}
+              </div>
+            )}
+            <Button
+              onClick={handleClearBets}
+              variant="outline"
+              className="w-full min-h-10 text-xs rounded-site-sm"
+            >
+              {t("clear-all-bets", { defaultValue: "Clear All Bets" })}
+            </Button>
+          </div>
+        )}
+
+        {error && (
+          <p className="text-sm text-site-danger text-center">{error}</p>
+        )}
+      </div>
+    );
+  }
+
+  // Spinning phase
+  if (tablePhase === 'spinning') {
+    return (
+      <div className="text-center text-site-text-dim py-4">
+        <p className="text-sm font-bold text-site-accent animate-pulse">
+          {t("no-more-bets-spinning", { defaultValue: "No more bets! Spinning..." })}
+        </p>
+      </div>
+    );
+  }
+
+  // Results phase
+  if (tablePhase === 'results') {
+    const myPayout = lastRoundResult?.payouts.find((p) => p.userId === myUserId);
+    const resultColor = spinResult !== null ? getNumberColor(spinResult) : 'green';
+
+    return (
+      <div className="flex flex-col items-center gap-3 py-4">
+        {/* Winning number */}
+        {spinResult !== null && (
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-xs text-site-text-dim uppercase tracking-wider">{t("winning-number", { defaultValue: "Winning Number" })}</span>
+            <div
+              className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-xl sm:text-2xl font-bold text-casino-ink shadow-site ${
+                resultColor === 'red' ? 'bg-casino-red'
+                : resultColor === 'green' ? 'bg-casino-green-hover'
+                : 'bg-casino-felt'
+              }`}
+            >
+              {numberLabel(spinResult)}
+            </div>
+          </div>
+        )}
+
+        {/* Payout info */}
+        {myPayout ? (
+          <div className="text-center">
+            {myPayout.netGain > 0 ? (
+              <>
+                <p className="text-lg font-bold text-site-success">{t("you-win", { defaultValue: "You win!" })}</p>
+                <div className="flex items-center justify-center gap-1 mt-1">
+                  <CoinIcon className="w-4 h-4" />
+                  <span className="text-sm text-site-text-dim">+{myPayout.payout} {t("coins", { defaultValue: "coins" })}</span>
+                </div>
+              </>
+            ) : myPayout.netGain === 0 ? (
+              <p className="text-lg font-bold text-casino-seat-1">{t("push", { defaultValue: "Push" })}</p>
+            ) : (
+              <p className="text-lg font-bold text-site-danger">{t("better-luck-next-time", { defaultValue: "Better luck next time" })}</p>
+            )}
+          </div>
+        ) : totalBet > 0 ? (
+          <p className="text-sm text-site-danger">{t("no-wins-this-round", { defaultValue: "No wins this round" })}</p>
+        ) : null}
+
+        <p className="text-xs text-site-text-dim">{t("next-round-starting-soon", { defaultValue: "Next round starting soon..." })}</p>
+      </div>
+    );
+  }
+
+  // Fallback
+  return (
+    <div className="text-center text-site-text-dim py-4">
+      <p className="text-sm animate-pulse">{t("loading", { defaultValue: "Loading..." })}</p>
+    </div>
+  );
+}

@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { getUserTier, checkTierAccess } from '@/lib/doctrine/tiers';
-import { createDisclosure, transitionDisclosure } from '@/lib/doctrine/narrative';
+import { getUserTier, checkTierAccess } from '@features/doctrine/engine/tiers';
+import { createDisclosure, transitionDisclosure } from '@features/doctrine/engine/narrative';
 import { logAdminAction } from '@/lib/admin-audit.server';
-import type { DisclosureStatus, TierId } from '@/lib/doctrine/types';
+import type { DisclosureStatus, TierId } from '@features/doctrine/engine/types';
 
 const VALID_STATUSES: DisclosureStatus[] = ['CLASSIFIED', 'TEASED', 'DISCLOSED', 'ARCHIVED'];
 

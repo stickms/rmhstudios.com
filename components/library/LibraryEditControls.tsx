@@ -12,19 +12,21 @@ import { LibraryDialogShell } from './LibraryDialogShell';
 import { useTranslation } from 'react-i18next';
 import { ArrowUp, ArrowDown, Pencil, Star, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { api, errorField } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { adminLibraryDeleteApi, adminLibraryPatchApi } from '@/lib/library/admin-library.contract';
 import type { LibraryBook } from '@/lib/library/library';
 import { LibraryContextMenu, type MenuItem, type MenuPos } from './LibraryContextMenu';
 import '@/components/library/library.css';
 
 async function patchBook(id: string, body: Record<string, unknown>): Promise<string | null> {
-  const res = await fetch(`/api/admin/library/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (res.ok) return null;
-  const data = await res.json().catch(() => ({}));
-  return data.error ?? 'Update failed.';
+  try {
+    await api(adminLibraryPatchApi, { params: { id }, body });
+    return null;
+  } catch (e) {
+    if (e instanceof HttpError) return errorField<string>(e, 'error') ?? 'Update failed.';
+    throw e;
+  }
 }
 
 /**
@@ -106,10 +108,13 @@ export function BookContextMenu({
           onSelect: async () => {
             if (await confirm({ title: t('edit-delete-confirm', { defaultValue: 'Delete this book permanently?' }), danger: true })) {
               void act(async () => {
-                const res = await fetch(`/api/admin/library/${book.id}`, { method: 'DELETE' });
-                if (res.ok) return null;
-                const data = await res.json().catch(() => ({}));
-                return data.error ?? 'Delete failed.';
+                try {
+                  await api(adminLibraryDeleteApi, { params: { id: book.id! } });
+                  return null;
+                } catch (e) {
+                  if (e instanceof HttpError) return errorField<string>(e, 'error') ?? 'Delete failed.';
+                  throw e;
+                }
               });
             }
           },

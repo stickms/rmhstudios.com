@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { getUserTier, checkTierAccess } from '@/lib/doctrine/tiers';
+import { getUserTier, checkTierAccess } from '@features/doctrine/engine/tiers';
 import { nanoid } from 'nanoid';
 
 export const Route = createFileRoute('/api/doctrine/recruitment/create')({

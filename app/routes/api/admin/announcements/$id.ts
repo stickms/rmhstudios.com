@@ -1,54 +1,49 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
-import { z } from 'zod';
+import { updateAnnouncementSchema } from '@/lib/announcement-schema';
+import {
+  adminAnnouncementDelete,
+  adminAnnouncementUpdate,
+} from '@/lib/admin/announcements.contract';
 
 /**
  * POST  /api/admin/announcements/$id — toggle active / edit fields. Admin only.
  * DELETE /api/admin/announcements/$id — delete an announcement.
  */
-const updateSchema = z.object({
-  active: z.boolean().optional(),
-  pinned: z.boolean().optional(),
-});
-
-async function requireAdmin(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) return null;
-  return session;
-}
-
 export const Route = createFileRoute('/api/admin/announcements/$id')({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
-        const session = await requireAdmin(request);
-        if (!session) return Response.json({ error: 'Forbidden' }, { status: 403 });
-        const body = await request.json().catch(() => ({}));
-        const parsed = updateSchema.safeParse(body);
-        if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-        await prisma.feedAnnouncement.update({
-          where: { id: params.id },
-          data: parsed.data,
-        });
-        await logAdminAction(session.user.id, 'announcement.update', {
-          targetType: 'FeedAnnouncement',
-          targetId: params.id,
-          detail: JSON.stringify(parsed.data),
-        });
-        return Response.json({ success: true });
-      },
-      DELETE: async ({ request, params }) => {
-        const session = await requireAdmin(request);
-        if (!session) return Response.json({ error: 'Forbidden' }, { status: 403 });
+      POST: implement(
+        adminAnnouncementUpdate,
+        {
+          auth: 'admin',
+          body: updateAnnouncementSchema,
+          allowEmptyBody: true,
+          invalid: () => Response.json({ error: 'Invalid input' }, { status: 400 }),
+        },
+        async ({ userId, body, params }) => {
+          await prisma.feedAnnouncement.update({
+            where: { id: params.id },
+            data: body,
+          });
+          await logAdminAction(userId, 'announcement.update', {
+            targetType: 'FeedAnnouncement',
+            targetId: params.id,
+            detail: JSON.stringify(body),
+          });
+          return { success: true as const };
+        },
+      ),
+      DELETE: implement(adminAnnouncementDelete, { auth: 'admin' }, async ({ userId, params }) => {
         await prisma.feedAnnouncement.delete({ where: { id: params.id } }).catch(() => {});
-        await logAdminAction(session.user.id, 'announcement.delete', {
+        await logAdminAction(userId, 'announcement.delete', {
           targetType: 'FeedAnnouncement',
           targetId: params.id,
         });
-        return Response.json({ success: true });
-      },
+        return { success: true as const };
+      }),
     },
   },
 });

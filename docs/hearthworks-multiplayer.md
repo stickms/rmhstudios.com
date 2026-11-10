@@ -2,8 +2,8 @@
 
 How Hearthworks plays together, what was verified on real WebRTC and what cannot be verified
 without a real network. Design intent: `docs/superpowers/specs/2026-11-04-hearthworks-design.md` §5.4.
-Code: `lib/hearthworks/net/`, `lib/shared/p2p/`, `server/socket-server/handlers/hearthworks-p2p.ts`
-(on `server/socket-server/p2p/signal-hub.ts`), `components/hearthworks/MultiplayerPanel.tsx`.
+Code: `features/hearthworks/engine/net/`, `lib/shared/p2p/`, `features/hearthworks/server/p2p.ts`
+(on `server/socket-server/p2p/signal-hub.ts`), `features/hearthworks/ui/MultiplayerPanel.tsx`.
 
 ## Shape
 
@@ -73,7 +73,7 @@ Optional, set when hosting (public or private). 4–32 characters (`HW_LIMITS.PA
 
 ## Remote players' motion
 
-`lib/hearthworks/net/poses.ts`. A `move` command teleports a player (≈10 Hz while walking), so drawing
+`features/hearthworks/engine/net/poses.ts`. A `move` command teleports a player (≈10 Hz while walking), so drawing
 `player.x/z` steps the avatar. Each remote player has a buffer of (tick, x, z); the avatar is drawn
 `INTERP_DELAY_MS` (100 ms) in the past, interpolated between the two samples around that moment, and
 extrapolated along its recent velocity for at most `EXTRAPOLATE_MAX_MS` (250 ms) before holding. Time is
@@ -185,7 +185,7 @@ intact and ordered (`big`, `flood`). That is evidence for loopback only.
   `WebRtcHideLocalIpsWithMdns`).
 - **TURN relay.** `iceServers` is empty. Credential minting, TURN allocation latency and the `turn`
   connection label are untested (`fake` + unit tests only), and so is the **hub relay fallback on real
-  channels** (covered with fakes in `hearthworks-p2p-e2e.test.ts`).
+  channels** (covered with fakes in `p2p-e2e.test.ts`).
 - **Mobile and lossy networks.** Loopback has no loss, jitter or reordering, so SCTP retransmission,
   bufferbloat, the 256 KiB backpressure path, the 10 s liveness timeout under packet loss and
   interpolation under real jitter were not exercised. Radio handover, Wi-Fi ↔ cellular switches, ICE

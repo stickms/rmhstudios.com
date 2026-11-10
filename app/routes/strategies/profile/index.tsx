@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { noindexHead } from '@/lib/seo';
-import { useDoctrineReputation } from '@/hooks/useDoctrineReputation';
-import { XpBar } from '@/components/doctrine/reputation/xp-bar';
-import { RankBadge } from '@/components/doctrine/reputation/rank-badge';
-import { StreakDisplay } from '@/components/doctrine/puzzles/streak-display';
-import { ActivityHeatmap } from '@/components/doctrine/reputation/activity-heatmap';
+import { useDoctrineReputation } from '@features/doctrine/ui/hooks/useDoctrineReputation';
+import { XpBar } from '@features/doctrine/ui/reputation/xp-bar';
+import { RankBadge } from '@features/doctrine/ui/reputation/rank-badge';
+import { StreakDisplay } from '@features/doctrine/ui/puzzles/streak-display';
+import { ActivityHeatmap } from '@features/doctrine/ui/reputation/activity-heatmap';
 import { User, Settings } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';

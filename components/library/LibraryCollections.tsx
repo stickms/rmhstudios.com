@@ -26,8 +26,12 @@ import '@/components/rmhvibe/vibe.css';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import {
+  addLibraryCollectionBookApi,
+  createLibraryCollectionApi,
   deleteLibraryCollectionApi,
   generateLibraryCollectionCoverApi,
+  removeLibraryCollectionBookApi,
+  updateLibraryCollectionApi,
 } from '@/lib/library/collections.contract';
 
 /** Cover image styled to fill the 3D book cover (absolute inset-0), with blur-up. */
@@ -71,13 +75,12 @@ export function LibraryCollections({
     );
 
   async function createCollection(title: string, description: string) {
-    const res = await fetch('/api/library/collections', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, description }),
-    }).catch(() => null);
+    const ok = await api(createLibraryCollectionApi, { body: { title, description } }).then(
+      () => true,
+      () => false,
+    );
     setCreating(false);
-    if (res?.ok) {
+    if (ok) {
       await onChanged();
     }
   }
@@ -105,30 +108,33 @@ export function LibraryCollections({
       c.title,
     );
     if (title === null) return;
-    const res = await fetch(`/api/library/collection/${c.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title }),
-    }).catch(() => null);
-    if (res?.ok) await onChanged();
+    const ok = await api(updateLibraryCollectionApi, { params: { id: c.id }, body: { title } }).then(
+      () => true,
+      () => false,
+    );
+    if (ok) await onChanged();
   }
 
   async function addBook(c: CollectionView, slug: string) {
-    const res = await fetch(`/api/library/collection/${c.id}/items`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bookSlug: slug }),
-    }).catch(() => null);
-    if (res?.ok) await onChanged();
+    const ok = await api(addLibraryCollectionBookApi, {
+      params: { id: c.id },
+      body: { bookSlug: slug },
+    }).then(
+      () => true,
+      () => false,
+    );
+    if (ok) await onChanged();
   }
 
   async function removeBook(c: CollectionView, slug: string) {
-    const res = await fetch(`/api/library/collection/${c.id}/items`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bookSlug: slug }),
-    }).catch(() => null);
-    if (res?.ok) await onChanged();
+    const ok = await api(removeLibraryCollectionBookApi, {
+      params: { id: c.id },
+      body: { bookSlug: slug },
+    }).then(
+      () => true,
+      () => false,
+    );
+    if (ok) await onChanged();
   }
 
   async function generateCover(c: CollectionView) {

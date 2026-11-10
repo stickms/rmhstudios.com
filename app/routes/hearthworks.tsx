@@ -4,7 +4,7 @@ import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 
-const HearthworksGame = lazy(() => import('@/components/hearthworks/HearthworksGame'));
+const HearthworksGame = lazy(() => import('@features/hearthworks/ui/HearthworksGame'));
 
 const SKY = '#dff3f8';
 const INK = '#1f6a74';

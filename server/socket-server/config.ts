@@ -337,7 +337,7 @@ export const config = {
     'balatro:spectate:list': { max: 30, windowMs: 60_000 },
     // Find Game's live counts (A12): Lua polls every 5 s while the page is open (12/min).
     'balatro:queue:counts': { max: 30, windowMs: 60_000 },
-    // Hearthworks multiplayer (lib/hearthworks/net/events.ts): the hub signals, lists rooms, relays as a
+    // Hearthworks multiplayer (features/hearthworks/engine/net/events.ts): the hub signals, lists rooms, relays as a
     // fallback and promotes a successor; the world itself runs in the host's browser. `admit` and `signal`
     // scale with an 8-player room (a host answers 7 joins, each a trickle of ICE candidates, and
     // re-admits everyone on a migration). `relay` is the fallback hot path — the byte budget per relayed
