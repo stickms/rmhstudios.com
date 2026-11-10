@@ -1,5 +1,5 @@
-import type { ReactionCount } from '@/lib/doctrine/types';
-import { useDoctrineDivisiveness } from '@/hooks/useDoctrineDivisiveness';
+import type { ReactionCount } from '@features/doctrine/engine/types';
+import { useDoctrineDivisiveness } from '@features/doctrine/ui/hooks/useDoctrineDivisiveness';
 
 interface DivisivenessBadgeProps {
   reactions: ReactionCount;

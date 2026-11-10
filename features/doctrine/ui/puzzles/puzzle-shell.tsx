@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Zap, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CountdownTimer } from '../countdown-timer';
-import { useDoctrineStore } from '@/stores/doctrineStore';
+import { useDoctrineStore } from '@features/doctrine/ui/doctrineStore';
 
 interface PuzzleShellProps {
   mode: string;

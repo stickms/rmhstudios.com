@@ -2,11 +2,11 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { useDoctrineReputation } from '@/hooks/useDoctrineReputation';
-import { StreakDisplay } from '@/components/doctrine/puzzles/streak-display';
+import { useDoctrineReputation } from '@features/doctrine/ui/hooks/useDoctrineReputation';
+import { StreakDisplay } from '@features/doctrine/ui/puzzles/streak-display';
 import { Puzzle } from 'lucide-react';
 import { api } from '@/lib/contract/client';
-import { getDoctrineTodayPuzzlesApi } from '@/lib/doctrine/doctrine.contract';
+import { getDoctrineTodayPuzzlesApi } from '@features/doctrine/engine/doctrine.contract';
 
 export const Route = createFileRoute('/strategies/puzzles/')({
   head: () => ({

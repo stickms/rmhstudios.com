@@ -65,7 +65,7 @@ run in production, the supervisor, `internal/discordbot` and this module's last
 worker can be deleted. Behaviour changes to the bot must land in BOTH copies until
 then. The streak-saver, recap, doctrine, bot-worker and vibe-worker workers were
 ported to the Node `jobs` worker (`lib/streak-reminders.server.ts`,
-`lib/lights-out/recap.server.ts`, `lib/doctrine/jobs.server.ts`,
+`lib/lights-out/recap.server.ts`, `features/doctrine/engine/jobs.server.ts`,
 `lib/rmhark-ai/bot-worker.server.ts`, `lib/rmhvibe/thumbnail-worker.server.ts`, D3); `status`
 reads their freshness from pg-boss's job table (B06) and the daily-puzzle alarm
 (A19) straight from `doctrine_puzzle`. (`status`, `assets`, and `supervisor` are the three

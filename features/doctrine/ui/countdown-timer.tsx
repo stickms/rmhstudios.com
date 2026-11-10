@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useDoctrineCountdown } from '@/hooks/useDoctrineCountdown';
+import { useDoctrineCountdown } from '@features/doctrine/ui/hooks/useDoctrineCountdown';
 
 interface CountdownTimerProps {
   target: Date | null;

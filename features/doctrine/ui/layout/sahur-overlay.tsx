@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { useDoctrineSahur } from '@/hooks/useDoctrineSahur';
-import { SAHUR_WINDOW } from '@/lib/doctrine/constants';
+import { useDoctrineSahur } from '@features/doctrine/ui/hooks/useDoctrineSahur';
+import { SAHUR_WINDOW } from '@features/doctrine/engine/constants';
 
 /**
  * Full-screen Sahur Mode overlay.

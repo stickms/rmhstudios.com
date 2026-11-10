@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { m as motion } from 'framer-motion';
-import type { ReactionCount, Reaction } from '@/lib/doctrine/types';
+import type { ReactionCount, Reaction } from '@features/doctrine/engine/types';
 
 const REACTIONS: Array<{ key: Reaction; emoji: string; label: string; color: string }> = [
   { key: 'fire', emoji: '🔥', label: 'Fire', color: 'var(--doctrine-reaction-fire, #F97316)' },

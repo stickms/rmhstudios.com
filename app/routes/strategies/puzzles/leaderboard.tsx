@@ -4,9 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Trophy } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RankBadge } from '@/components/doctrine/reputation/rank-badge';
+import { RankBadge } from '@features/doctrine/ui/reputation/rank-badge';
 import { api } from '@/lib/contract/client';
-import { getDoctrinePuzzleLeaderboardApi } from '@/lib/doctrine/doctrine.contract';
+import { getDoctrinePuzzleLeaderboardApi } from '@features/doctrine/engine/doctrine.contract';
 
 export const Route = createFileRoute('/strategies/puzzles/leaderboard')({
   head: () => ({

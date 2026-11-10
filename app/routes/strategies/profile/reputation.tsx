@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { noindexHead } from '@/lib/seo';
 import { useTranslation } from 'react-i18next';
-import { useDoctrineReputationLeaderboard } from '@/hooks/useDoctrineReputation';
+import { useDoctrineReputationLeaderboard } from '@features/doctrine/ui/hooks/useDoctrineReputation';
 import { Trophy } from 'lucide-react';
-import { RankBadge } from '@/components/doctrine/reputation/rank-badge';
+import { RankBadge } from '@features/doctrine/ui/reputation/rank-badge';
 
 export const Route = createFileRoute('/strategies/profile/reputation')({
   head: () => noindexHead('Strategies Reputation'),

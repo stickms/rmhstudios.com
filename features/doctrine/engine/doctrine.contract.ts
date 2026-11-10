@@ -7,9 +7,9 @@
  * `pageSize()` / `searchParams` themselves.
  */
 import { endpoint } from '@/lib/contract/endpoint';
-import type { getRecentIncidents } from '@/lib/doctrine/incidents';
-import type { getReputation, getReputationLeaderboard } from '@/lib/doctrine/reputation';
-import type { SahurModeConfig, SahurStatus } from '@/lib/doctrine/types';
+import type { getRecentIncidents } from '@features/doctrine/engine/incidents';
+import type { getReputation, getReputationLeaderboard } from '@features/doctrine/engine/reputation';
+import type { SahurModeConfig, SahurStatus } from '@features/doctrine/engine/types';
 
 /** What a value looks like after `JSON.stringify` → `JSON.parse`. */
 export type Json<T> = T extends Date

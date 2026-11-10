@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { RANKS } from '@/lib/doctrine/constants';
-import { getRank } from '@/lib/doctrine/reputation';
+import { RANKS } from '@features/doctrine/engine/constants';
+import { getRank } from '@features/doctrine/engine/reputation';
 
 interface XpBarProps {
   totalXp: number;

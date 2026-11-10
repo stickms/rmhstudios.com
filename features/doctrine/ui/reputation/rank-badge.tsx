@@ -1,4 +1,4 @@
-import { getRank } from '@/lib/doctrine/reputation';
+import { getRank } from '@features/doctrine/engine/reputation';
 
 interface RankBadgeProps {
   xp: number;

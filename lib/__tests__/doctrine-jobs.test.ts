@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/lib/prisma.server', () => ({ prisma: {} }));
 
 import { mulberry32 } from '../core/rng';
-import { getSeedForDate } from '../doctrine/puzzle-engine';
+import { getSeedForDate } from '@features/doctrine/engine/puzzle-engine';
 import {
   DAILY_PUZZLES_CRON,
   DECAY_CRON,
@@ -18,7 +18,7 @@ import {
   resetTimezoneCache,
   sahurDifficulty,
   tomorrowKey,
-} from '../doctrine/jobs.server';
+} from '@features/doctrine/engine/jobs.server';
 
 // Reference values from the Go worker's parity tests (themselves produced by the
 // original Node implementation). They pin the seeds the live puzzles use.

@@ -10,16 +10,16 @@ import { appRouteHead } from '@/lib/seo-catalog';
 import { Puzzle, Shield, AlertTriangle, Moon, Trophy, Flame } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { useDoctrineReputation } from '@/hooks/useDoctrineReputation';
-import { useDoctrineSahur } from '@/hooks/useDoctrineSahur';
-import { XpBar } from '@/components/doctrine/reputation/xp-bar';
-import { RankBadge } from '@/components/doctrine/reputation/rank-badge';
-import { StreakDisplay } from '@/components/doctrine/puzzles/streak-display';
-import { CrisisBanner } from '@/components/doctrine/coalition/crisis-banner';
-import { ProjectCard } from '@/components/doctrine/coalition/project-card';
-import { CountdownTimer } from '@/components/doctrine/countdown-timer';
+import { useDoctrineReputation } from '@features/doctrine/ui/hooks/useDoctrineReputation';
+import { useDoctrineSahur } from '@features/doctrine/ui/hooks/useDoctrineSahur';
+import { XpBar } from '@features/doctrine/ui/reputation/xp-bar';
+import { RankBadge } from '@features/doctrine/ui/reputation/rank-badge';
+import { StreakDisplay } from '@features/doctrine/ui/puzzles/streak-display';
+import { CrisisBanner } from '@features/doctrine/ui/coalition/crisis-banner';
+import { ProjectCard } from '@features/doctrine/ui/coalition/project-card';
+import { CountdownTimer } from '@features/doctrine/ui/countdown-timer';
 import { api } from '@/lib/contract/client';
-import { getDoctrineTodayPuzzlesApi, listDoctrineIncidentsApi } from '@/lib/doctrine/doctrine.contract';
+import { getDoctrineTodayPuzzlesApi, listDoctrineIncidentsApi } from '@features/doctrine/engine/doctrine.contract';
 
 export const Route = createFileRoute('/strategies/')({
   head: () => appRouteHead('rmh-strategies'),

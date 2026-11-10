@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { CURRENT_PHASE } from '@/lib/doctrine/constants';
+import { CURRENT_PHASE } from '@features/doctrine/engine/constants';
 
 /**
  * Perpetual beta banner — always visible.

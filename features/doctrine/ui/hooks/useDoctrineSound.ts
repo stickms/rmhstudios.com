@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { useDoctrineStore } from '@/stores/doctrineStore';
+import { useDoctrineStore } from '@features/doctrine/ui/doctrineStore';
 import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
 
 export function useDoctrineSound() {

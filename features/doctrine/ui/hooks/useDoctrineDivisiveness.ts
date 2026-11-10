@@ -3,9 +3,9 @@
  */
 
 import { useMemo } from 'react';
-import { calculateDivisiveness } from '@/lib/doctrine/divisiveness';
-import type { ReactionCount } from '@/lib/doctrine/types';
-import { DI_BOOST_THRESHOLD, DI_SUPPRESS_THRESHOLD } from '@/lib/doctrine/constants';
+import { calculateDivisiveness } from '@features/doctrine/engine/divisiveness';
+import type { ReactionCount } from '@features/doctrine/engine/types';
+import { DI_BOOST_THRESHOLD, DI_SUPPRESS_THRESHOLD } from '@features/doctrine/engine/constants';
 
 export function useDoctrineDivisiveness(reactions: ReactionCount) {
   const di = useMemo(() => calculateDivisiveness(reactions), [reactions]);

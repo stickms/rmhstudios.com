@@ -11,9 +11,9 @@
  */
 
 import { useEffect } from 'react';
-import { useDoctrineStore } from '@/stores/doctrineStore';
+import { useDoctrineStore } from '@features/doctrine/ui/doctrineStore';
 import { api } from '@/lib/contract/client';
-import { getDoctrineSahurStatusApi } from '@/lib/doctrine/doctrine.contract';
+import { getDoctrineSahurStatusApi } from '@features/doctrine/engine/doctrine.contract';
 
 let interval: ReturnType<typeof setInterval> | null = null;
 let refCount = 0;

@@ -38,7 +38,6 @@ import {
 import { registerStudioJamHandlers } from './handlers/studio-jam';
 import { initializeCasino, listCasinoRooms, CASINO_SHUTDOWN_REFUNDS, CASINO_SHUTDOWN_DEADLINE_MS } from '../../features/casino/server';
 import { registerLightsOutHandlers, handleLightsOutDisconnect } from './handlers/lights-out';
-import { registerDoctrineHandlers, handleDoctrineDisconnect } from './handlers/doctrine';
 import { registerVelumHandlers, handleVelumDisconnect } from './handlers/velum';
 import { registerDreamRiftHandlers, handleDreamRiftDisconnect } from './handlers/dream-rift';
 import { registerLaundrySortHandlers, handleLaundrySortDisconnect } from './handlers/laundry-sort';
@@ -397,7 +396,7 @@ io.on('connection', (socket) => {
   registerStudioJamHandlers(io, socket); // F13: self-cleans on disconnect
   registerFeatureHandlers(io, socket, 'casino'); // blackjack, holdem, baccarat, roulette (features/casino/server)
   registerLightsOutHandlers(io, socket);
-  registerDoctrineHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'doctrine');
   registerVelumHandlers(io, socket);
   registerDreamRiftHandlers(io, socket);
   registerLaundrySortHandlers(io, socket);
@@ -445,7 +444,7 @@ io.on('connection', (socket) => {
     handleKowloonKnockoutDisconnect(io, socket);
     handleFeatureDisconnects(io, socket, 'casino');
     handleLightsOutDisconnect(io, socket);
-    handleDoctrineDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'doctrine');
     handleVelumDisconnect(io, socket);
     handleDreamRiftDisconnect(io, socket);
     handleLaundrySortDisconnect(io, socket);

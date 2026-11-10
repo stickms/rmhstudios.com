@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/doctrine/doctrine.contract';
+import * as C from '@features/doctrine/engine/doctrine.contract';
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
-import { generatePuzzle, getSeedForDate, stripSolution } from '@/lib/doctrine/puzzle-engine';
-import type { PuzzleMode } from '@/lib/doctrine/types';
+import { generatePuzzle, getSeedForDate, stripSolution } from '@features/doctrine/engine/puzzle-engine';
+import type { PuzzleMode } from '@features/doctrine/engine/types';
 
 const MODES: PuzzleMode[] = ['alibi', 'spectrum', 'outcast', 'chainlink', 'impostor'];
 

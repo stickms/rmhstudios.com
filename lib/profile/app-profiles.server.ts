@@ -34,7 +34,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { getRank } from '@/lib/doctrine/reputation';
+import { getRank } from '@features/doctrine/engine/reputation';
 
 /* -------------------------------------------------------------------------- */
 /* The card                                                                   */
@@ -298,7 +298,7 @@ const readDoctrine: Reader = async (userId) => {
     select: { totalXp: true, currentStreak: true, longestStreak: true, sahurCount: true },
   });
   if (!row) return null;
-  // Rank comes from `lib/doctrine/reputation.ts` rather than a second XP ladder
+  // Rank comes from `features/doctrine/engine/reputation.ts` rather than a second XP ladder
   // here — two ladders drift, and the badge on the profile would then disagree
   // with the badge inside the app.
   const rank = getRank(row.totalXp);

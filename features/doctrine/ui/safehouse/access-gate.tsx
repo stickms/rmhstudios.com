@@ -1,7 +1,7 @@
 import { Shield, Lock } from 'lucide-react';
 import { useTranslation } from "react-i18next";
-import { TIERS } from '@/lib/doctrine/constants';
-import type { TierId } from '@/lib/doctrine/types';
+import { TIERS } from '@features/doctrine/engine/constants';
+import type { TierId } from '@features/doctrine/engine/types';
 
 interface AccessGateProps {
   requiredTier: TierId;

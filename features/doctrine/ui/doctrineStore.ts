@@ -5,7 +5,7 @@
  */
 
 import { create } from 'zustand';
-import type { SahurModeConfig } from '@/lib/doctrine/types';
+import type { SahurModeConfig } from '@features/doctrine/engine/types';
 
 type DoctrineTheme = 'default' | 'safehouse' | 'coalition' | 'sahur';
 

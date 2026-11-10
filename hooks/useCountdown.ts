@@ -3,7 +3,7 @@
  * seconds.
  *
  * `useDoctrineCountdown` already exists and does almost this, but it reports
- * *total* hours and has no `days` field — `components/doctrine/countdown-timer`
+ * *total* hours and has no `days` field — `features/doctrine/ui/countdown-timer`
  * renders `hours:minutes:seconds` and depends on that meaning. Adding `days`
  * there would have silently changed what `hours` means for Doctrine, so this is
  * a second hook rather than a widened one.

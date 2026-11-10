@@ -7,7 +7,7 @@ import { api } from '@/lib/contract/client';
 import {
   getDoctrineReputationApi,
   getDoctrineReputationLeaderboardApi,
-} from '@/lib/doctrine/doctrine.contract';
+} from '@features/doctrine/engine/doctrine.contract';
 
 export function useDoctrineReputation() {
   return useQuery({

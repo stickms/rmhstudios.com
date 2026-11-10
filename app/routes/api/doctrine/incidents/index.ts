@@ -2,13 +2,13 @@ import { z } from 'zod';
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/doctrine/doctrine.contract';
+import * as C from '@features/doctrine/engine/doctrine.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { CACHE_POLICY } from '@/lib/api/cache-policies';
 import { prisma } from '@/lib/prisma.server';
-import { getRecentIncidents, createIncident, reportIncident } from '@/lib/doctrine/incidents';
-import { awardXp } from '@/lib/doctrine/reputation';
-import type { IncidentSeverity } from '@/lib/doctrine/types';
+import { getRecentIncidents, createIncident, reportIncident } from '@features/doctrine/engine/incidents';
+import { awardXp } from '@features/doctrine/engine/reputation';
+import type { IncidentSeverity } from '@features/doctrine/engine/types';
 
 export const Route = createFileRoute('/api/doctrine/incidents/')({
   server: {

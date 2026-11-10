@@ -151,7 +151,7 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   service has `mem_limit` 1280m and `HOME=/tmp` for it), WebP to object storage, optimistic `updatedAt` clear;
   `exclusive`, no retries; always registered),
   and `doctrine.*` (`daily-puzzles` 00:00 UTC + at boot, `sahur-activation` every minute,
-  `reputation-decay` hourly on Mondays; `lib/doctrine/jobs.server.ts`). The status service
+  `reputation-decay` hourly on Mondays; `features/doctrine/engine/jobs.server.ts`). The status service
   watches the recap and sahur queues in pg-boss (B06) and `doctrine_puzzle` itself (A19). Hourly `ops.deepseek-balance` (`:05` UTC, `lib/jobs/maintenance.server.ts`)
   samples the DeepSeek account balance into `deepseek_balance_snapshot` for
   `/admin/deepseek` and prunes rows older than 400 days; it skips silently when

@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { Clock, MessageSquare } from 'lucide-react';
-import type { ReactionCount } from '@/lib/doctrine/types';
+import type { ReactionCount } from '@features/doctrine/engine/types';
 import { ReactionBar } from '../reaction-bar';
 import { DivisivenessBadge } from '../divisiveness-badge';
 

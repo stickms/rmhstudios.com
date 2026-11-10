@@ -1,8 +1,8 @@
 import { Link, useRouterState } from '@tanstack/react-router';
 import { Shield, Puzzle, AlertTriangle, Moon, User, BarChart3, Trophy, Home } from 'lucide-react';
 import { useTranslation } from "react-i18next";
-import { useDoctrineStore } from '@/stores/doctrineStore';
-import { CURRENT_PHASE } from '@/lib/doctrine/constants';
+import { useDoctrineStore } from '@features/doctrine/ui/doctrineStore';
+import { CURRENT_PHASE } from '@features/doctrine/engine/constants';
 
 const NAV_ITEMS = [
   { to: '/strategies', icon: Home, label: 'Dashboard' },

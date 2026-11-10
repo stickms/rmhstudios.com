@@ -29,7 +29,7 @@ describe('math', () => {
   });
 });
 
-// Reference copy from lib/doctrine/puzzle-engine.ts, which the Go worker mirrors.
+// Reference copy from features/doctrine/engine/puzzle-engine.ts, which the Go worker mirrors.
 function doctrineMulberry32(seed: number) {
   let s = seed | 0;
   return () => {

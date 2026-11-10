@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/doctrine/doctrine.contract';
+import * as C from '@features/doctrine/engine/doctrine.contract';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
-import { getSahurStatus, getSahurConfig } from '@/lib/doctrine/temporal';
+import { getSahurStatus, getSahurConfig } from '@features/doctrine/engine/temporal';
 
 export const Route = createFileRoute('/api/doctrine/sahur/status')({
   server: {
