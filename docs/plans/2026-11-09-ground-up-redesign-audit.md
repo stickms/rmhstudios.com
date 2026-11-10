@@ -2918,39 +2918,39 @@ For a coding agent picking up an item from this document:
 A1: open
 A2: done (owner kept every page; redirect stubs stay as routes: they also redirect in-app client navigation, which a server-only redirect rule would not)
 A3: open
-A4: open
-A5: open
+A4: in-progress (#1531: lib/core math/rng/format, ~75 copies codemodded, no-restricted-syntax guard; sockets/audio/leaderboards/persist pending)
+A5: done (#1531: pnpm lint:ratchet: import-x no-cycle + layer boundaries against eslint-baseline/boundaries.json, in CI)
 A6: open
-A7: open
+A7: in-progress (#1535: tsconfig.strict.json island + typecheck:strict in CI; escape-hatch ratchet; velum2099 @ts-nocheck held at 26 by the ratchet, quarantine blocked by a dynamic import)
 A8: done (#1529)
 B1: open
-B2: open
-B3: in-progress (eversion warms on intent, speculation rules removed; docked-globe poster and en backfill left to B6)
+B2: in-progress (generated single pre-paint script lib/prepaint + data block; Providers diet pending)
+B3: done (#1530/#1533: eversion warms on hub open, Speculation Rules removed, English idle backfill removed; docked-globe poster not done)
 B4: open
 B5: open
-B6: open
+B6: done (#1533: per-namespace lazy loading; English renders from defaultValue and loads only namespaces in use)
 B7: open
 C1: in-progress (contract + implement() + api() + raw-fetch ratchet landed with one worked endpoint; migrating call sites)
 C2: done (unsubscribe GET is read-only + RFC 8058 POST; remaining GET writers are authenticated and accepted, see commit)
-C3: open
+C3: in-progress (#1531: schema split into prisma/schema/ (30 files, empty migrate diff) + migrations path pinned; User thinning, index pass, counters pending)
 C4: open
 D1: declined (owner, 2026-11-09: no data moves off the box)
-D2: in-progress (steps 1-2 landed on wip/d2-session: one shared session check server/shared/session-auth.ts, opt-in REDIS_URL Socket.IO adapter in all three hubs; durable rooms, drain and hub merge pending; two replicas NOT yet safe)
-D3: open
-D4: open
-D5: open
+D2: in-progress (#1534: one shared hub session check; Socket.IO Redis adapter wired but off unless REALTIME_REDIS_ADAPTER=1; durable rooms, drain, hub merge pending; two replicas NOT yet safe)
+D3: in-progress (#1533: streak-saver ported to Node jobs; status reads its freshness from pg-boss; recap, doctrine, vibe, bot-worker, discord-bot pending)
+D4: in-progress (streak sweep on pg-boss; node-cron and web-tier setInterval consolidation pending)
+D5: in-progress (migration auto-retry already removed on main: a failed migrate stops the deploy; health-gated rollouts for all services pending)
 D6: open
 D7: done (dependabot groups @tanstack/* + nitro as one framework bump gated by the integration suite)
-E1: open
+E1: in-progress (#1535: --app-* registered in @theme, ~4,600 escaped utilities codemodded with a compiled-CSS equivalence proof; aliasing --app-* to --site-* pending visual review)
 E2: open
 E3: open
 E4: in-progress (steps 1-2 done: dead palettes and selectors pruned; split + keyframes pending)
-E5: open
-E6: open
+E5: done (#1531: Tabs, glass-roles.css, useJellyPointer, glass-filter; liquid-morph deleted; press-only alias attributes kept: not exact synonyms)
+E6: in-progress (#1534: one BanListModal, 12 standalone spinners → <Spinner>, local/no-adhoc-spinner; clipboard sites have no clean equivalent)
 E7: open
 E8: open
-F1: open
-F2: open
+F1: in-progress (#1533: 4 class-string rules ported to ESLint with one design-scope.js; CSS checks await Stylelint; GATE_TESTS trim pending)
+F2: in-progress (#1534: Stripe webhook integration tests (signed locally), tier-cache invalidation fix, coin conservation test; browser flow E2E pending)
 F3: in-progress (check jobs defined once in ci-checks.yml, prisma workflows merged, senior-review advisory; asset-sync merge declined: too different)
 F4: done (archive, facts.json + facts:check, drift fixed, AGENTS.md symlink; design-doc merge pending)
 F5: open
