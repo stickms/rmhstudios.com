@@ -135,7 +135,7 @@ describe("radial.css `data-phase='everting'`: the hub hands over by motion, noth
     );
     // The dissolve is the second half of WRAP.
     expect(swelling).toMatch(
-      /globe-dissolve calc\(var\(--eversion-wrap, 700ms\) \* 0\.45\) cubic-bezier\([^)]*\) calc\(var\(--eversion-wrap, 700ms\) \* 0\.45\) both/,
+      /globe-dissolve calc\(var\(--eversion-wrap, 700ms\) \* 0\.45\) var\(--ease-exit-in\) calc\(var\(--eversion-wrap, 700ms\) \* 0\.45\) both/,
     );
     const swell = /@keyframes globe-swell \{.*?\n\}/s.exec(radial)?.[0] ?? '';
     expect(swell).toMatch(/from \{\s*transform: scale\(1\);/);
