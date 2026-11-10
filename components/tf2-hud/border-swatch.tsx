@@ -35,7 +35,7 @@ export function BorderSwatch({ border, scheme }: { border: BorderDef; scheme: Sc
       ref={ref}
       width={96}
       height={48}
-      className="shrink-0 rounded-(--app-radius-sm)"
+      className="shrink-0 rounded-app-sm"
       aria-hidden
     />
   );

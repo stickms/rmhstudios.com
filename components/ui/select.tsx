@@ -212,13 +212,13 @@ const TIER_CLASSES = {
   },
   app: {
     trigger:
-      'rounded-[var(--app-radius-sm)] border border-(--app-border) bg-(--app-surface) text-(--app-text) text-sm hover:border-(--app-border-bright) focus-visible:border-(--app-accent) focus-visible:ring-2 focus-visible:ring-(--app-accent)',
+      'rounded-app-sm border border-app-border bg-app-surface text-app-text text-sm hover:border-app-border-bright focus-visible:border-app-accent focus-visible:ring-2 focus-visible:ring-app-accent',
     content:
-      'rounded-[var(--app-radius-sm)] border border-(--app-border) bg-(--app-surface) text-(--app-text) shadow-[var(--app-shadow)]',
-    item: 'rounded-none text-sm text-(--app-text) [--evert-tint:var(--app-surface-hover)] [--evert-rest-opacity:1] data-[state=checked]:text-(--app-accent)',
-    label: 'text-(--app-text-dim)',
-    scrollButton: 'text-(--app-text-dim)',
-    chevron: 'text-(--app-text-dim)',
+      'rounded-app-sm border border-app-border bg-app-surface text-app-text shadow-[var(--app-shadow)]',
+    item: 'rounded-none text-sm text-app-text [--evert-tint:var(--app-surface-hover)] [--evert-rest-opacity:1] data-[state=checked]:text-app-accent',
+    label: 'text-app-text-dim',
+    scrollButton: 'text-app-text-dim',
+    chevron: 'text-app-text-dim',
   },
 } as const;
 

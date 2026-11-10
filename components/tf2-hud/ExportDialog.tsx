@@ -114,10 +114,10 @@ export default function ExportDialog({
           <label
             key={o.id}
             htmlFor={`tf2hud-scope-${o.id}`}
-            className={`flex cursor-pointer items-start gap-3 rounded-(--app-radius-sm) border p-3 ${
+            className={`flex cursor-pointer items-start gap-3 rounded-app-sm border p-3 ${
               scope === o.id
-                ? 'border-(--app-accent) bg-(--app-accent-dim)'
-                : 'border-(--app-border-bright)'
+                ? 'border-app-accent bg-app-accent-dim'
+                : 'border-app-border-bright'
             }`}
           >
             <input
@@ -126,15 +126,15 @@ export default function ExportDialog({
               name="scope"
               checked={scope === o.id}
               onChange={() => setScope(o.id)}
-              className="mt-1 accent-(--app-accent)"
+              className="mt-1 accent-app-accent"
             />
             <span>
-              <span className="block text-sm font-semibold text-(--app-text)">{o.title}</span>
-              <span className="block text-xs text-(--app-text-muted)">{o.body}</span>
+              <span className="block text-sm font-semibold text-app-text">{o.title}</span>
+              <span className="block text-xs text-app-text-muted">{o.body}</span>
             </span>
           </label>
         ))}
-        <div className="flex items-center justify-between gap-3 pt-2 text-sm text-(--app-text)">
+        <div className="flex items-center justify-between gap-3 pt-2 text-sm text-app-text">
           {t('include-info', { defaultValue: 'Include info.vdf' })}
           <Toggle
             label={t('include-info', { defaultValue: 'Include info.vdf' })}
@@ -143,10 +143,10 @@ export default function ExportDialog({
           />
         </div>
         {hasBlocks ? (
-          <div className="flex items-center justify-between gap-3 text-sm text-(--app-text)">
+          <div className="flex items-center justify-between gap-3 text-sm text-app-text">
             <span>
               {t('include-blocks', { defaultValue: 'Include block data' })}
-              <span className="block text-xs text-(--app-text-muted)">
+              <span className="block text-xs text-app-text-muted">
                 {t('include-blocks-hint', {
                   defaultValue:
                     'Lets this editor restore your blocks when the zip is imported. The game ignores it.',
@@ -161,7 +161,7 @@ export default function ExportDialog({
           </div>
         ) : null}
       </fieldset>
-      <p className="mt-3 rounded-(--app-radius-sm) bg-(--app-bg) p-2 font-mono text-[11px] text-(--app-text-dim)">
+      <p className="mt-3 rounded-app-sm bg-app-bg p-2 font-mono text-[11px] text-app-text-dim">
         {folder}.zip → {folder}/resource, {folder}/scripts, {folder}/materials, {folder}/sound,
         LICENSE
       </p>
@@ -173,15 +173,15 @@ export default function ExportDialog({
           aria-valuemax={busy.total}
           aria-valuenow={busy.done}
         >
-          <div className="h-1.5 overflow-hidden rounded-full bg-(--app-bg)">
+          <div className="h-1.5 overflow-hidden rounded-full bg-app-bg">
             <div
-              className="h-full bg-(--app-accent)"
+              className="h-full bg-app-accent"
               style={{ width: `${(busy.done / Math.max(1, busy.total)) * 100}%` }}
             />
           </div>
         </div>
       ) : null}
-      <p className="mt-3 text-[11px] text-(--app-text-dim)">
+      <p className="mt-3 text-[11px] text-app-text-dim">
         {t('license-note', {
           defaultValue:
             'Downloads include the LICENSE that comes with the TF2 Default base HUD; see it for the terms that apply.',

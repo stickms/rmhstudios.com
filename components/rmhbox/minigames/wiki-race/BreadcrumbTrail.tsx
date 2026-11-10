@@ -48,9 +48,9 @@ export default function BreadcrumbTrail({
   return (
     <div
       ref={scrollRef}
-      className="glass-fill flex items-center gap-1 overflow-x-auto rounded-(--app-radius-sm) px-3 py-2 scrollbar-thin"
+      className="glass-fill flex items-center gap-1 overflow-x-auto rounded-app-sm px-3 py-2 scrollbar-thin"
     >
-      <span className="mr-1 text-xs font-medium text-(--app-text-muted) shrink-0">
+      <span className="mr-1 text-xs font-medium text-app-text-muted shrink-0">
         Path ({path.length}):
       </span>
       {path.map((title, idx) => {
@@ -62,7 +62,7 @@ export default function BreadcrumbTrail({
         return (
           <span key={`${idx}-${title}`} className="flex items-center gap-1 shrink-0">
             {idx > 0 && (
-              <ChevronRight size={10} className="text-(--app-text-muted)/50" />
+              <ChevronRight size={10} className="text-app-text-muted/50" />
             )}
             <button
               onClick={() => isClickable && onGoBack(title, idx)}
@@ -70,12 +70,12 @@ export default function BreadcrumbTrail({
               className={`
                 flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium transition-colors
                 ${isCurrent
-                  ? 'bg-(--app-accent)/20 text-(--app-accent) font-bold'
+                  ? 'bg-app-accent/20 text-app-accent font-bold'
                   : isStart
-                    ? 'text-(--app-success) hover:bg-(--app-success)/10'
+                    ? 'text-app-success hover:bg-app-success/10'
                     : isTarget
-                      ? 'text-(--app-warning) hover:bg-(--app-warning)/10'
-                      : 'text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)'
+                      ? 'text-app-warning hover:bg-app-warning/10'
+                      : 'text-app-text-muted hover:bg-app-surface-hover hover:text-app-text'
                 }
                 ${isClickable ? 'cursor-pointer' : 'cursor-default'}
               `}

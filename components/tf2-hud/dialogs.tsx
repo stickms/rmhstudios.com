@@ -62,7 +62,7 @@ export function PromptDialog({
         </>
       }
     >
-      <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wider text-(--app-text-dim)">
+      <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wider text-app-text-dim">
         {label}
         <TextField
           autoFocus
@@ -117,7 +117,7 @@ export function ConfirmDialog({
         </>
       }
     >
-      <p className="text-sm text-(--app-text-muted)">{description}</p>
+      <p className="text-sm text-app-text-muted">{description}</p>
     </Modal>
   );
 }
@@ -206,7 +206,7 @@ export function UploadDialog({ files, onClose }: { files: File[]; onClose: () =>
       <ul className="space-y-2">
         {files.map((f, i) => (
           <li key={`${f.name}-${i}`} className="flex flex-col gap-1">
-            <span className="truncate text-xs text-(--app-text-muted)">
+            <span className="truncate text-xs text-app-text-muted">
               {f.name} · {(f.size / 1024).toFixed(1)} KB
             </span>
             <TextField

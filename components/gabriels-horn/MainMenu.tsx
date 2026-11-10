@@ -86,7 +86,7 @@ export function MainMenu({
 
         <div className="ghm-stack">
           {!signedIn ? (
-            <Panel className="text-center text-sm text-(--app-text-muted)">
+            <Panel className="text-center text-sm text-app-text-muted">
               <p>
                 {t('sign-in-required', {
                   defaultValue:
@@ -146,7 +146,7 @@ export function MainMenu({
                     autoComplete="off"
                     autoCapitalize="characters"
                     spellCheck={false}
-                    className="min-w-0 grow rounded-[var(--app-radius-sm)] border border-(--app-border) bg-(--app-bg-subtle) px-3 py-2 font-mono text-sm tracking-[0.2em] text-(--app-text) uppercase placeholder:text-(--app-text-dim) focus-visible:border-(--app-accent)"
+                    className="min-w-0 grow rounded-app-sm border border-app-border bg-app-bg-subtle px-3 py-2 font-mono text-sm tracking-[0.2em] text-app-text uppercase placeholder:text-app-text-dim focus-visible:border-app-accent"
                   />
                   <HornButton type="submit" disabled={connecting || !code.trim()}>
                     {t('join', { defaultValue: 'Join' })}
@@ -169,7 +169,7 @@ export function MainMenu({
             <HornLeaderboard />
           </Panel>
 
-          <p className="text-center text-xs text-(--app-text-dim)">
+          <p className="text-center text-xs text-app-text-dim">
             {t('player-range', {
               defaultValue: '{{min}}–{{max}} players. Bluffing works better with more of them.',
               min: MIN_PLAYERS,

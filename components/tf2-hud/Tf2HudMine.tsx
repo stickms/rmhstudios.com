@@ -73,7 +73,7 @@ export default function Tf2HudMine() {
   }, [drafts, query]);
 
   return (
-    <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
+    <div className="app-page min-h-dvh bg-app-bg text-app-text">
       <Tf2Header
         title={t('my-huds', { defaultValue: 'My HUDs' })}
         backLabel="RMH TF2 HUD Editor"
@@ -90,7 +90,7 @@ export default function Tf2HudMine() {
 
         <div className="relative">
           <Search
-            className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-(--app-text-dim)"
+            className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-app-text-dim"
             aria-hidden
           />
           <input
@@ -99,7 +99,7 @@ export default function Tf2HudMine() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('search-my-huds', { defaultValue: 'Search your HUDs and drafts' })}
             aria-label={t('search-my-huds', { defaultValue: 'Search your HUDs and drafts' })}
-            className="h-10 w-full rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) ps-9 pe-3 text-sm text-(--app-text) placeholder:text-(--app-text-dim)"
+            className="h-10 w-full rounded-app-sm border border-app-border-bright bg-app-bg ps-9 pe-3 text-sm text-app-text placeholder:text-app-text-dim"
           />
         </div>
 
@@ -135,7 +135,7 @@ export default function Tf2HudMine() {
                         <Link
                           to="/tf2/hud-editor/editor"
                           search={{ hud: h.id }}
-                          className="inline-flex h-7 items-center rounded-(--app-radius-sm) bg-(--app-accent) px-2 text-xs font-semibold text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
+                          className="inline-flex h-7 items-center rounded-app-sm bg-app-accent px-2 text-xs font-semibold text-app-accent-fg hover:bg-app-accent-hover"
                         >
                           {t('open', { defaultValue: 'Open' })}
                         </Link>
@@ -156,7 +156,7 @@ export default function Tf2HudMine() {
           {shownDrafts.length === 0 ? (
             <EmptyNote>{t('no-drafts', { defaultValue: 'No local drafts.' })}</EmptyNote>
           ) : (
-            <ul className="divide-y divide-(--app-border) rounded-(--app-radius) border border-(--app-border)">
+            <ul className="divide-y divide-app-border rounded-app border border-app-border">
               {shownDrafts.map((d) => (
                 <li key={d.id} className="flex items-center gap-3 px-3 py-2">
                   <Link
@@ -166,7 +166,7 @@ export default function Tf2HudMine() {
                   >
                     {d.meta.name}
                   </Link>
-                  <span className="shrink-0 text-xs text-(--app-text-dim)">
+                  <span className="shrink-0 text-xs text-app-text-dim">
                     {new Date(d.updatedAt).toLocaleString()}
                   </span>
                   <IconBtn

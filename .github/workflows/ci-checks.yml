@@ -40,6 +40,8 @@ jobs:
         run: |
           mkdir -p .cache/tsc
           pnpm run typecheck
+      - name: Typecheck (strict islands)
+        run: pnpm run typecheck:strict
       - name: Restore lint cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:

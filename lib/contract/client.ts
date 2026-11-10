@@ -63,14 +63,19 @@ export function api<E extends Endpoint>(
   } & Transport;
   const url = apiUrl(e, i);
   const hasBody = i.body !== undefined && e.method !== 'GET';
-  return fetchJson<ResOf<E>>(url, {
+  const opts: FetchJsonOptions = {
     method: e.method,
-    signal: i.signal,
-    timeoutMs: i.timeoutMs,
     retries: i.retries ?? (e.method === 'GET' ? 1 : 0),
-    headers: hasBody ? { 'Content-Type': 'application/json', ...i.headers } : i.headers,
-    body: hasBody ? JSON.stringify(i.body) : undefined,
-  });
+  };
+  if (i.signal !== undefined) opts.signal = i.signal;
+  if (i.timeoutMs !== undefined) opts.timeoutMs = i.timeoutMs;
+  if (hasBody) {
+    opts.headers = { 'Content-Type': 'application/json', ...i.headers };
+    opts.body = JSON.stringify(i.body);
+  } else if (i.headers !== undefined) {
+    opts.headers = i.headers;
+  }
+  return fetchJson<ResOf<E>>(url, opts);
 }
 
 /** React Query options for a contract call. The key is `[path, params, query]`. */

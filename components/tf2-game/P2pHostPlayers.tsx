@@ -58,7 +58,7 @@ export default function P2pHostPlayers({ client }: { client: RefObject<unknown> 
             {seats.map((s) => (
               <li key={s.userId} className="flex items-center gap-2 text-sm">
                 <span className="min-w-0 flex-1 truncate">{s.name}</span>
-                <span className="text-xs text-(--app-text-dim)">
+                <span className="text-xs text-app-text-dim">
                   {s.droppedAt !== null
                     ? t('p2p_seat_held', { defaultValue: 'Reconnecting' })
                     : s.connection === 'relayed'

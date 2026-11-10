@@ -39,15 +39,15 @@ export default function ClueDisplay({
   onEndTurn,
 }: ClueDisplayProps) {
   const { t } = useTranslation('c-rmhbox');
-  const teamTextColor = teamId === 'red' ? 'text-(--app-danger)' : 'text-(--app-info)';
-  const teamBgColor = teamId === 'red' ? 'bg-(--app-danger)/20' : 'bg-(--app-info)/20';
+  const teamTextColor = teamId === 'red' ? 'text-app-danger' : 'text-app-info';
+  const teamBgColor = teamId === 'red' ? 'bg-app-danger/20' : 'bg-app-info/20';
   if (isWaiting && !clue) {
     return (
-      <div className="glass-fill mx-auto flex w-full max-w-md flex-col items-center gap-3 rounded-(--app-radius) p-4 text-center">
-        <MessageSquare className="h-6 w-6 text-(--app-text-muted) animate-pulse" />
-        <p className="text-sm text-(--app-text-muted)">
+      <div className="glass-fill mx-auto flex w-full max-w-md flex-col items-center gap-3 rounded-app p-4 text-center">
+        <MessageSquare className="h-6 w-6 text-app-text-muted animate-pulse" />
+        <p className="text-sm text-app-text-muted">
           {t('waiting-for-label', { defaultValue: 'Waiting for' })}{' '}
-          <span className="font-semibold text-(--app-accent)">{spymasterName}</span>{' '}
+          <span className="font-semibold text-app-accent">{spymasterName}</span>{' '}
           {t('to-give-a-clue', { defaultValue: 'to give a clue…' })}
         </p>
       </div>
@@ -63,7 +63,7 @@ export default function ClueDisplay({
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-fill mx-auto flex w-full max-w-md flex-col items-center gap-3 rounded-(--app-radius) p-4"
+      className="glass-fill mx-auto flex w-full max-w-md flex-col items-center gap-3 rounded-app p-4"
     >
       {/* Clue word + number */}
       <div className="flex items-baseline gap-3">
@@ -78,16 +78,16 @@ export default function ClueDisplay({
       </div>
 
       {/* Guesses remaining */}
-      <p className="text-sm text-(--app-text-muted)">
+      <p className="text-sm text-app-text-muted">
         {t('guesses-remaining', { defaultValue: 'Guesses remaining:' })}{' '}
-        <span className="font-mono font-semibold text-(--app-text)">{guessesRemaining}</span>
+        <span className="font-mono font-semibold text-app-text">{guessesRemaining}</span>
       </p>
 
       {/* End turn button (only for operatives on the active team) */}
       {onEndTurn && (
         <button
           onClick={onEndTurn}
-          className="mt-1 rounded-(--app-radius-sm) border border-(--app-border) px-4 py-1.5 text-sm font-medium text-(--app-text-muted) transition-colors hover:border-(--app-accent) hover:text-(--app-accent)"
+          className="mt-1 rounded-app-sm border border-app-border px-4 py-1.5 text-sm font-medium text-app-text-muted transition-colors hover:border-app-accent hover:text-app-accent"
         >
           {t('end-turn', { defaultValue: 'End Turn' })}
         </button>

@@ -75,7 +75,7 @@ export default function HistoryPanel() {
           </>
         }
       />
-      <p className="border-b border-(--app-border) px-3 py-1.5 text-[11px] text-(--app-text-dim)">
+      <p className="border-b border-app-border px-3 py-1.5 text-[11px] text-app-text-dim">
         {t('history-hint', {
           defaultValue: 'Ctrl+Z undo · Ctrl+Shift+Z redo · click a step to jump to it',
         })}
@@ -96,14 +96,14 @@ export default function HistoryPanel() {
                   onClick={() => travel(r.steps)}
                   className={cn(
                     'flex w-full items-center justify-between gap-3 px-3 py-1.5 text-start text-xs',
-                    r.kind === 'now' && 'bg-(--app-accent-dim) font-semibold text-(--app-text)',
-                    r.kind === 'future' && 'text-(--app-text-dim) hover:bg-(--app-surface-hover)',
-                    r.kind === 'past' && 'text-(--app-text-muted) hover:bg-(--app-surface-hover)',
+                    r.kind === 'now' && 'bg-app-accent-dim font-semibold text-app-text',
+                    r.kind === 'future' && 'text-app-text-dim hover:bg-app-surface-hover',
+                    r.kind === 'past' && 'text-app-text-muted hover:bg-app-surface-hover',
                   )}
                 >
                   <span className="truncate">{r.label}</span>
                   {r.kind !== 'now' ? (
-                    <span className="shrink-0 text-[11px] text-(--app-text-dim)">
+                    <span className="shrink-0 text-[11px] text-app-text-dim">
                       {ago(r.at, now)}
                     </span>
                   ) : null}

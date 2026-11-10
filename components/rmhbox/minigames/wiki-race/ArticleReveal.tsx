@@ -29,9 +29,9 @@ interface ArticleRevealProps {
 }
 
 const difficultyColors: Record<string, string> = {
-  easy: 'bg-(--app-success)/20 text-(--app-success)',
-  medium: 'bg-(--app-warning)/20 text-(--app-warning)',
-  hard: 'bg-(--app-danger)/20 text-(--app-danger)',
+  easy: 'bg-app-success/20 text-app-success',
+  medium: 'bg-app-warning/20 text-app-warning',
+  hard: 'bg-app-danger/20 text-app-danger',
 };
 
 export default function ArticleReveal({
@@ -70,14 +70,14 @@ export default function ArticleReveal({
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4, duration: 0.5 }}
-          className="app-glass flex-1 rounded-(--app-radius) p-4"
+          className="app-glass flex-1 rounded-app p-4"
         >
-          <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-(--app-text-muted)">
+          <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-app-text-muted">
             <BookOpen size={12} />
             {t("wiki-race-start-label", { defaultValue: "Start" })}
           </div>
-          <h3 className="text-lg font-bold text-(--app-accent)">{startArticle.title}</h3>
-          <p className="mt-1 text-sm text-(--app-text-muted)">{startArticle.description}</p>
+          <h3 className="text-lg font-bold text-app-accent">{startArticle.title}</h3>
+          <p className="mt-1 text-sm text-app-text-muted">{startArticle.description}</p>
         </motion.div>
 
         {/* Arrow */}
@@ -86,7 +86,7 @@ export default function ArticleReveal({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.7, type: 'spring' }}
         >
-          <ArrowRight size={24} className="text-(--app-accent)" />
+          <ArrowRight size={24} className="text-app-accent" />
         </motion.div>
 
         {/* Target article */}
@@ -94,14 +94,14 @@ export default function ArticleReveal({
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 1, duration: 0.5 }}
-          className="flex-1 rounded-(--app-radius) border-2 border-(--app-accent)/50 bg-(--app-accent)/5 p-4"
+          className="flex-1 rounded-app border-2 border-app-accent/50 bg-app-accent/5 p-4"
         >
-          <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-(--app-accent)">
+          <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-app-accent">
             <Target size={12} />
             {t("wiki-race-target-label", { defaultValue: "Target" })}
           </div>
           <h3 className="text-lg font-bold">{targetArticle.title}</h3>
-          <p className="mt-1 text-sm text-(--app-text-muted)">{targetArticle.description}</p>
+          <p className="mt-1 text-sm text-app-text-muted">{targetArticle.description}</p>
         </motion.div>
       </div>
 
@@ -109,7 +109,7 @@ export default function ArticleReveal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.5 }}
-        className="text-sm text-(--app-text-muted)"
+        className="text-sm text-app-text-muted"
       >
         {t("wiki-race-navigate-instruction", { defaultValue: "Navigate from Start → Target by clicking only wiki links!" })}
       </motion.p>

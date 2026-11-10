@@ -72,13 +72,13 @@ export default function GamePickerModal({
     <>
       {/* Backdrop */}
       <div
-        className="app-overlay fixed inset-0 z-60 bg-(--app-scrim)"
+        className="app-overlay fixed inset-0 z-60 bg-app-scrim"
         onClick={() => { setConfirmGame(null); onClose(); }}
       />
 
       {/* Panel */}
       <div
-        className="app-modal fixed inset-x-4 top-1/2 z-70 mx-auto max-w-md -translate-y-1/2 rounded-(--app-radius) border p-5 shadow-(--app-shadow)"
+        className="app-modal fixed inset-x-4 top-1/2 z-70 mx-auto max-w-md -translate-y-1/2 rounded-app border p-5 shadow-app"
         style={{
           backgroundColor: 'var(--app-surface)',
           borderColor: 'var(--app-border)',
@@ -89,14 +89,14 @@ export default function GamePickerModal({
       >
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-lg font-bold text-(--app-text)">
-            <Gamepad2 className="h-5 w-5 text-(--app-accent)" />
+          <h2 className="flex items-center gap-2 text-lg font-bold text-app-text">
+            <Gamepad2 className="h-5 w-5 text-app-accent" />
             {t("pick-a-game", { defaultValue: "Pick a Game" })}
           </h2>
           <button
             onClick={() => { setConfirmGame(null); onClose(); }}
             aria-label={t("close", { defaultValue: "Close" })}
-                className="rounded-(--app-radius-sm) p-2 text-(--app-text-muted) transition-colors hover:text-(--app-text)"
+                className="rounded-app-sm p-2 text-app-text-muted transition-colors hover:text-app-text"
           >
             <X className="h-5 w-5" />
           </button>
@@ -108,7 +108,7 @@ export default function GamePickerModal({
           <div className="mb-3">
             <button
               onClick={() => handlePick('__vote__')}
-              className="flex w-full items-center gap-2 rounded-(--app-radius-sm) px-3 py-2 transition-colors"
+              className="flex w-full items-center gap-2 rounded-app-sm px-3 py-2 transition-colors"
               style={{
                 backgroundColor: currentPickId === '__vote__' ? 'var(--app-accent)' : 'var(--app-bg)',
                 border: '1px solid var(--app-border)',
@@ -116,12 +116,12 @@ export default function GamePickerModal({
               }}
             >
               <div
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-(--app-accent-fg)"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-app-accent-fg"
                 style={{ backgroundColor: currentPickId === '__vote__' ? 'color-mix(in srgb, var(--app-accent-fg) 20%, transparent)' : 'var(--app-accent)' }}
               >
                 <Vote className="h-3.5 w-3.5" />
               </div>
-              <span className={`flex-1 truncate text-sm font-medium ${currentPickId === '__vote__' ? 'text-(--app-accent-fg)' : 'text-(--app-text)'}`}>
+              <span className={`flex-1 truncate text-sm font-medium ${currentPickId === '__vote__' ? 'text-app-accent-fg' : 'text-app-text'}`}>
                 {t("let-players-vote", { defaultValue: "Let Players Vote" })}
               </span>
               {currentPickId === '__vote__' && (
@@ -131,7 +131,7 @@ export default function GamePickerModal({
           </div>
 
           {/* Section header */}
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--app-text-muted)">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-app-text-muted">
             {t("games-count", { defaultValue: "Games ({{count}})", count: allGames.length })}
           </h3>
 
@@ -146,7 +146,7 @@ export default function GamePickerModal({
                 <button
                   key={game.id}
                   onClick={() => handlePick(game.id)}
-                  className="flex w-full items-center gap-2 rounded-(--app-radius-sm) px-3 py-2 transition-colors"
+                  className="flex w-full items-center gap-2 rounded-app-sm px-3 py-2 transition-colors"
                   style={{
                     backgroundColor: isSelected
                       ? 'var(--app-accent)'
@@ -170,18 +170,18 @@ export default function GamePickerModal({
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <div className="flex items-center gap-2">
-                      <span className={`text-sm font-medium ${isSelected ? 'text-(--app-accent-fg)' : 'text-(--app-text)'}`}>
+                      <span className={`text-sm font-medium ${isSelected ? 'text-app-accent-fg' : 'text-app-text'}`}>
                         {game.displayName}
                       </span>
                       {!isPlayable && !isSelected && (
-                        <AlertCircle className="h-3.5 w-3.5 shrink-0 text-(--app-warning)" />
+                        <AlertCircle className="h-3.5 w-3.5 shrink-0 text-app-warning" />
                       )}
                     </div>
-                    <div className={`text-xs text-left ${isSelected ? 'text-(--app-accent-fg)/70' : 'text-(--app-text-muted)'}`}>
+                    <div className={`text-xs text-left ${isSelected ? 'text-app-accent-fg/70' : 'text-app-text-muted'}`}>
                       {t("game-player-range", { defaultValue: "{{category}} · {{min}}–{{max}} players", category: game.category, min: game.minPlayers, max: game.maxPlayers })}
                     </div>
                     {isConfirming && (
-                      <div className="text-xs font-semibold text-(--app-warning) mt-0.5">
+                      <div className="text-xs font-semibold text-app-warning mt-0.5">
                         {t("confirm-incompatible", { defaultValue: "Requires {{min}}–{{max}} players (you have {{playerCount}}). Tap again to pick anyway.", min: game.minPlayers, max: game.maxPlayers, playerCount })}
                       </div>
                     )}

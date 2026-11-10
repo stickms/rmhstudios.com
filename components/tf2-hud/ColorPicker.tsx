@@ -103,7 +103,7 @@ export function PickerBody({ value, scheme, onChange, onCreateSchemeColor }: Bod
         aria-label={t('cp-area', { defaultValue: 'Saturation and brightness' })}
         aria-valuetext={`${Math.round(hsv.s * 100)}% saturation, ${Math.round(hsv.v * 100)}% brightness`}
         aria-valuenow={Math.round(hsv.s * 100)}
-        className="relative h-36 w-full cursor-crosshair touch-none rounded-(--app-radius-sm)"
+        className="relative h-36 w-full cursor-crosshair touch-none rounded-app-sm"
         style={{
           backgroundColor: `hsl(${hsv.h} 100% 50%)`,
           backgroundImage:
@@ -146,7 +146,7 @@ export function PickerBody({ value, scheme, onChange, onCreateSchemeColor }: Bod
         />
       </div>
 
-      <label className="block text-[11px] font-semibold uppercase tracking-wider text-(--app-text-dim)">
+      <label className="block text-[11px] font-semibold uppercase tracking-wider text-app-text-dim">
         {t('cp-hue', { defaultValue: 'Hue' })}
         <input
           type="range"
@@ -164,7 +164,7 @@ export function PickerBody({ value, scheme, onChange, onCreateSchemeColor }: Bod
           }}
         />
       </label>
-      <label className="block text-[11px] font-semibold uppercase tracking-wider text-(--app-text-dim)">
+      <label className="block text-[11px] font-semibold uppercase tracking-wider text-app-text-dim">
         {t('cp-alpha', { defaultValue: 'Opacity' })} · {Math.round((alpha / 255) * 100)}%
         <input
           type="range"
@@ -224,7 +224,7 @@ export function PickerBody({ value, scheme, onChange, onCreateSchemeColor }: Bod
           />
         ) : null}
       </div>
-      <p className="font-mono text-[11px] text-(--app-text-dim)">
+      <p className="font-mono text-[11px] text-app-text-dim">
         {toVguiLiteral(rgba)} ·{' '}
         {t('cp-contrast', {
           defaultValue: 'contrast {{dark}}:1 on black, {{light}}:1 on white',
@@ -273,8 +273,8 @@ export function PickerBody({ value, scheme, onChange, onCreateSchemeColor }: Bod
               aria-label={c.name}
               onClick={() => onChange(c.name)}
               className={cn(
-                'size-6 rounded-(--app-radius-sm)',
-                value.toLowerCase() === c.name.toLowerCase() && 'ring-2 ring-(--app-accent)',
+                'size-6 rounded-app-sm',
+                value.toLowerCase() === c.name.toLowerCase() && 'ring-2 ring-app-accent',
               )}
             >
               <Swatch color={c.rgba} className="size-6" />
@@ -359,7 +359,7 @@ export function ColorField({
         <p
           className={cn(
             'truncate font-mono text-[11px]',
-            resolved.kind === 'unknown' ? 'text-(--app-warning)' : 'text-(--app-text-dim)',
+            resolved.kind === 'unknown' ? 'text-app-warning' : 'text-app-text-dim',
           )}
         >
           {resolved.kind === 'unknown'

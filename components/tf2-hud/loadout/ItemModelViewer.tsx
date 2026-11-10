@@ -21,7 +21,7 @@ function Note({ children, className }: { children: ReactNode; className?: string
   return (
     <div
       className={cn(
-        'flex h-full min-h-40 flex-col items-center justify-center gap-2 p-4 text-center text-xs text-(--app-text-dim)',
+        'flex h-full min-h-40 flex-col items-center justify-center gap-2 p-4 text-center text-xs text-app-text-dim',
         className,
       )}
     >
@@ -100,7 +100,7 @@ export default function ItemModelViewer({
       role="img"
       aria-label={t('model-view', { defaultValue: '3D model viewer' })}
       className={cn(
-        'h-56 overflow-hidden rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg)',
+        'h-56 overflow-hidden rounded-app-sm border border-app-border bg-app-bg',
         className,
       )}
     >

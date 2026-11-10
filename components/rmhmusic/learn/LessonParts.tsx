@@ -21,7 +21,7 @@ function BackToPath() {
   return (
     <Link
       to="/rmhmusic"
-      className="inline-flex min-h-11 items-center justify-center px-2 text-sm font-medium text-(--app-accent)"
+      className="inline-flex min-h-11 items-center justify-center px-2 text-sm font-medium text-app-accent"
     >
       {t('lesson-back-to-path', { defaultValue: 'Back to your lessons' })}
     </Link>
@@ -72,12 +72,12 @@ export function LessonResult({
               <Notehead
                 key={i}
                 kind={i < stars ? 'filled' : 'open'}
-                className="h-5 w-7 text-(--app-accent)"
+                className="h-5 w-7 text-app-accent"
               />
             ))}
           </p>
         )}
-        <p role="status" className="min-h-5 self-stretch text-sm text-(--app-text-dim)">
+        <p role="status" className="min-h-5 self-stretch text-sm text-app-text-dim">
           {kind === 'saving' ? t('lesson-saving', { defaultValue: 'Saving…' }) : null}
         </p>
         <BackToPath />
@@ -93,7 +93,7 @@ export function LessonResult({
         className,
       )}
     >
-      <p className="text-sm text-(--app-danger)">
+      <p className="text-sm text-app-danger">
         {kind === 'signed-out'
           ? t('error-signed-out', {
               defaultValue: 'Your session ended. Sign in again to continue.',
@@ -150,7 +150,7 @@ export function DeviceRegion({ input, on }: { input: 'mic' | 'midi'; on: boolean
   }
   return (
     <div className="rmm-sheet flex h-full items-center justify-center p-4 text-center">
-      <p className="text-sm text-(--app-text-muted)">
+      <p className="text-sm text-app-text-muted">
         {input === 'mic'
           ? t('first-note-listening-mic', { defaultValue: 'Listening to your microphone.' })
           : t('first-note-listening-midi', {

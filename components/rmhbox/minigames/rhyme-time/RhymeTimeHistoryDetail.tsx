@@ -88,9 +88,9 @@ export default function RhymeTimeHistoryDetail({
     <div className="space-y-4" data-testid="rhyme-time-history-detail">
       {/* Game Settings */}
       {gameLog.initialState && (
-        <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-3">
-          <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase mb-1">{t("game-settings", { defaultValue: "Game Settings" })}</h4>
-          <div className="flex flex-wrap gap-3 text-xs text-(--app-text-muted)">
+        <div className="rounded-app-sm border border-app-border bg-app-bg p-3">
+          <h4 className="text-xs font-semibold text-app-text-muted uppercase mb-1">{t("game-settings", { defaultValue: "Game Settings" })}</h4>
+          <div className="flex flex-wrap gap-3 text-xs text-app-text-muted">
             <span>{t("rounds-count", { defaultValue: "Rounds: {{count}}", count: (gameLog.initialState.rounds as number) ?? roundStarts.length })}</span>
             {gameLog.initialState.secondsPerRound != null && (
               <span>{t("time-per-round", { defaultValue: "Time per Round: {{seconds}}s", seconds: String(gameLog.initialState.secondsPerRound) })}</span>
@@ -153,22 +153,22 @@ export default function RhymeTimeHistoryDetail({
         return (
           <div
             key={roundNum}
-            className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4"
+            className="rounded-app-sm border border-app-border bg-app-bg p-4"
           >
             {/* Round header */}
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-semibold text-(--app-text-muted)">
+              <h4 className="text-sm font-semibold text-app-text-muted">
                 {t("round-num", { defaultValue: "Round {{num}}", num: roundNum })}
               </h4>
               <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-(--app-accent)">
+                <span className="text-lg font-bold text-app-accent">
                   &ldquo;{rootWord}&rdquo;
                 </span>
                 {difficulty != null && (
                   <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                    difficulty === 'hard' ? 'bg-(--app-danger)/20 text-(--app-danger)' :
-                    difficulty === 'medium' ? 'bg-(--app-warning)/20 text-(--app-warning)' :
-                    'bg-(--app-success)/20 text-(--app-success)'
+                    difficulty === 'hard' ? 'bg-app-danger/20 text-app-danger' :
+                    difficulty === 'medium' ? 'bg-app-warning/20 text-app-warning' :
+                    'bg-app-success/20 text-app-success'
                   }`}>
                     {difficulty}
                   </span>
@@ -181,10 +181,10 @@ export default function RhymeTimeHistoryDetail({
               const tierWords = byRarity[tier] ?? [];
               if (tierWords.length === 0) return null;
               const tierColors: Record<string, string> = {
-                rare: 'text-(--app-warning)',
-                uncommon: 'text-(--app-info)',
-                common: 'text-(--app-text)',
-                invalid: 'text-(--app-danger)',
+                rare: 'text-app-warning',
+                uncommon: 'text-app-info',
+                common: 'text-app-text',
+                invalid: 'text-app-danger',
               };
               const tierLabels: Record<string, string> = {
                 rare: t("tier-rare", { defaultValue: "★ Rare" }),
@@ -209,12 +209,12 @@ export default function RhymeTimeHistoryDetail({
                           key={dw.word}
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${
                             isMe
-                              ? 'bg-(--app-accent)/20 text-(--app-accent) font-semibold'
-                              : 'bg-(--app-surface-hover) text-(--app-text-muted)'
+                              ? 'bg-app-accent/20 text-app-accent font-semibold'
+                              : 'bg-app-surface-hover text-app-text-muted'
                           } ${tier === 'invalid' ? 'line-through' : ''}`}
                         >
                           {dw.word}
-                          {dw.isMultiSyllable && <span className="ml-0.5 text-(--app-warning)">✦</span>}
+                          {dw.isMultiSyllable && <span className="ml-0.5 text-app-warning">✦</span>}
                           <span className="ml-1 opacity-60">
                             {dw.score > 0 ? '+' : ''}{dw.score}
                           </span>
@@ -222,7 +222,7 @@ export default function RhymeTimeHistoryDetail({
                             ({submitterNames.map((s, i) => (
                               <span key={i}>
                                 {i > 0 && ', '}{s.name}
-                                {s.isSpeedBonus && <Zap className="inline h-2.5 w-2.5 text-(--app-warning) ml-0.5" />}
+                                {s.isSpeedBonus && <Zap className="inline h-2.5 w-2.5 text-app-warning ml-0.5" />}
                               </span>
                             ))})
                           </span>
@@ -236,8 +236,8 @@ export default function RhymeTimeHistoryDetail({
 
             {/* Per-player round scores */}
             {Object.keys(playerScores).length > 0 && (
-              <div className="mt-3 pt-2 border-t border-(--app-border)">
-                <span className="text-xs font-medium text-(--app-text-muted) uppercase">{t("round-scores", { defaultValue: "Round Scores" })}</span>
+              <div className="mt-3 pt-2 border-t border-app-border">
+                <span className="text-xs font-medium text-app-text-muted uppercase">{t("round-scores", { defaultValue: "Round Scores" })}</span>
                 <div className="flex flex-wrap gap-3 mt-1">
                   {Object.entries(playerScores)
                     .sort(([, a], [, b]) => b - a)
@@ -247,7 +247,7 @@ export default function RhymeTimeHistoryDetail({
                       return (
                         <span
                           key={userId}
-                          className={`text-xs ${isMe ? 'text-(--app-accent) font-semibold' : 'text-(--app-text-muted)'}`}
+                          className={`text-xs ${isMe ? 'text-app-accent font-semibold' : 'text-app-text-muted'}`}
                         >
                           {name}: {score > 0 ? '+' : ''}{score}
                         </span>
@@ -259,9 +259,9 @@ export default function RhymeTimeHistoryDetail({
 
             {/* Round winner */}
             {roundWinner && (
-              <div className="mt-2 text-xs text-(--app-text-muted)">
+              <div className="mt-2 text-xs text-app-text-muted">
                 {t("round-winner", { defaultValue: "🏆 Round winner:" })}{' '}
-                <span className="font-semibold text-(--app-accent)">
+                <span className="font-semibold text-app-accent">
                   {players.find((p) => p.userId === roundWinner)?.userName ?? roundWinner}
                 </span>
               </div>
@@ -271,8 +271,8 @@ export default function RhymeTimeHistoryDetail({
       })}
 
       {/* Final scores */}
-      <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4">
-        <h4 className="text-sm font-semibold text-(--app-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
+      <div className="rounded-app-sm border border-app-border bg-app-bg p-4">
+        <h4 className="text-sm font-semibold text-app-text-muted mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players
             .sort((a, b) => a.rank - b.rank)
@@ -280,7 +280,7 @@ export default function RhymeTimeHistoryDetail({
               <div
                 key={p.userId}
                 className={`flex justify-between text-sm ${
-                  p.userId === currentUserId ? 'text-(--app-accent) font-semibold' : 'text-(--app-text)'
+                  p.userId === currentUserId ? 'text-app-accent font-semibold' : 'text-app-text'
                 }`}
               >
                 <span>

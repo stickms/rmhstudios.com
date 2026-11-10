@@ -22,15 +22,15 @@ const LABELS = ['A', 'B', 'C', 'D'];
 
 const STATE_STYLES: Record<OptionState, string> = {
   default:
-    'border-(--app-border) bg-(--app-surface-hover) text-(--app-text) hover:border-(--app-accent) hover:bg-(--app-accent)/10 cursor-pointer',
+    'border-app-border bg-app-surface-hover text-app-text hover:border-app-accent hover:bg-app-accent/10 cursor-pointer',
   selected:
-    'border-(--app-accent) bg-(--app-accent)/20 text-(--app-accent) ring-2 ring-(--app-accent)/40',
+    'border-app-accent bg-app-accent/20 text-app-accent ring-2 ring-app-accent/40',
   correct:
-    'border-(--app-success) bg-(--app-success)/20 text-(--app-success)',
+    'border-app-success bg-app-success/20 text-app-success',
   incorrect:
-    'border-(--app-danger) bg-(--app-danger)/20 text-(--app-danger)',
+    'border-app-danger bg-app-danger/20 text-app-danger',
   disabled:
-    'border-(--app-border) bg-(--app-bg) text-(--app-text-muted) opacity-60 cursor-not-allowed',
+    'border-app-border bg-app-bg text-app-text-muted opacity-60 cursor-not-allowed',
 };
 
 export default function OptionButton({
@@ -48,10 +48,10 @@ export default function OptionButton({
       whileTap={isInteractive ? { scale: 0.97 } : undefined}
       onClick={isInteractive ? onClick : undefined}
       disabled={!isInteractive}
-      className={`flex w-full items-center gap-3 rounded-(--app-radius-sm) border-2 px-4 py-3 text-left transition-colors ${STATE_STYLES[state]}`}
+      className={`flex w-full items-center gap-3 rounded-app-sm border-2 px-4 py-3 text-left transition-colors ${STATE_STYLES[state]}`}
     >
       {/* Letter prefix */}
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-(--app-radius-sm) bg-(--app-scrim) text-sm font-bold">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-app-sm bg-app-scrim text-sm font-bold">
         {label}
       </span>
 
@@ -63,7 +63,7 @@ export default function OptionButton({
         <motion.span
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="shrink-0 rounded-full bg-(--app-accent)/30 px-2 py-0.5 text-xs font-semibold text-(--app-accent)"
+          className="shrink-0 rounded-full bg-app-accent/30 px-2 py-0.5 text-xs font-semibold text-app-accent"
         >
           {lockedPotValue} pts
         </motion.span>

@@ -103,7 +103,7 @@ export default function HudEditorOverlay({ store }: { store: HudStore }) {
           aria-describedby={undefined}
           onEscapeKeyDown={(e) => e.preventDefault()}
           onOpenAutoFocus={(e) => e.preventDefault()}
-          className="tf2g-hud-editor fixed inset-0 z-50 bg-(--app-bg) outline-none"
+          className="tf2g-hud-editor fixed inset-0 z-50 bg-app-bg outline-none"
           data-jelly="off"
         >
           <DialogPrimitive.Title className="sr-only">
@@ -116,7 +116,7 @@ export default function HudEditorOverlay({ store }: { store: HudStore }) {
           ) : (
             <p
               role="status"
-              className="flex h-full items-center justify-center text-sm text-(--app-text-muted)"
+              className="flex h-full items-center justify-center text-sm text-app-text-muted"
             >
               {t('hud_editor_loading', { defaultValue: 'Opening the HUD editor…' })}
             </p>

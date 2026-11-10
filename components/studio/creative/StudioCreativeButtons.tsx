@@ -18,7 +18,7 @@ export function StudioCreativeButtons() {
     setPanel(next);
   };
   const live = useJamStore((s) => s.status === 'live');
-  const cls = 'rounded-(--app-radius-sm) p-1.5 text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)';
+  const cls = 'rounded-app-sm p-1.5 text-app-text-muted hover:bg-app-surface-hover hover:text-app-text';
   return (
     <>
       <button
@@ -32,7 +32,7 @@ export function StudioCreativeButtons() {
       </button>
       <button
         type="button"
-        className={`${cls} ${live ? 'text-(--app-accent)' : ''}`}
+        className={`${cls} ${live ? 'text-app-accent' : ''}`}
         title={t('btn-jam', { defaultValue: 'Live jam' })}
         aria-label={t('btn-jam', { defaultValue: 'Live jam' })}
         onClick={(e) => open(e, 'jam')}

@@ -44,7 +44,7 @@ function phaseColor(phase: TimerPhase): string {
     case 'working': return 'text-(--rmhstudy-work)';
     case 'short_break': return 'text-(--rmhstudy-break)';
     case 'long_break': return 'text-(--rmhstudy-long-break)';
-    default: return 'text-(--app-text-muted)';
+    default: return 'text-app-text-muted';
   }
 }
 
@@ -182,7 +182,7 @@ export default function RmhStudyRoom() {
       <div className="app-viewport">
         <RmhStudyHeader backLabel={t('back', { defaultValue: 'Back' })} backHref="/rmhstudy" />
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse text-(--app-text-muted)">
+          <div className="animate-pulse text-app-text-muted">
             {connectionStatus === 'connecting' ? t('connecting', { defaultValue: 'Connecting...' }) : t('joining-room', { defaultValue: 'Joining room...' })}
           </div>
         </div>
@@ -198,7 +198,7 @@ export default function RmhStudyRoom() {
   const timerAndTasks = (
     <div className="space-y-6">
       {/* Timer */}
-      <div className="rounded-(--app-radius) app-glass p-8 text-center">
+      <div className="rounded-app app-glass p-8 text-center">
         <div className={`text-sm font-medium uppercase tracking-wider mb-2 ${phaseColor(timer.phase)}`}>
           {phaseLabel(timer.phase, t)}
         </div>
@@ -207,13 +207,13 @@ export default function RmhStudyRoom() {
           {timer.phase === 'idle' ? formatTime(room.settings.workDurationMs) : formatTime(timer.remainingMs)}
         </div>
 
-        <div className="text-sm mt-2 text-(--app-text-muted)">
+        <div className="text-sm mt-2 text-app-text-muted">
           {t('session-counter', { defaultValue: 'Session {{sessionNumber}} of {{totalSessions}}', sessionNumber: timer.sessionNumber, totalSessions: timer.totalSessions })}
         </div>
 
         {/* Progress ring */}
         {timer.phase !== 'idle' && timer.totalMs > 0 && (
-          <div className="mt-4 h-2 rounded-full bg-(--app-bg) overflow-hidden">
+          <div className="mt-4 h-2 rounded-full bg-app-bg overflow-hidden">
             <div
               className="h-full w-full origin-left transition-[transform,background-color] duration-1000"
               style={{
@@ -234,7 +234,7 @@ export default function RmhStudyRoom() {
             {timer.phase === 'idle' && (
               <button
                 onClick={() => emit(C2S.TIMER_START, { roomCode })}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-app-sm font-semibold text-app-accent-fg transition-colors bg-app-accent hover:bg-app-accent-hover"
               >
                 <Play className="h-4 w-4" />
                 {t('start', { defaultValue: 'Start' })}
@@ -243,7 +243,7 @@ export default function RmhStudyRoom() {
             {timer.phase !== 'idle' && !timer.isPaused && (
               <button
                 onClick={() => emit(C2S.TIMER_PAUSE, { roomCode })}
-                className="flex items-center gap-2 px-4 py-2 rounded-(--app-radius-sm) font-medium transition-colors bg-(--app-surface-hover) text-(--app-text) hover:bg-(--app-surface-active)"
+                className="flex items-center gap-2 px-4 py-2 rounded-app-sm font-medium transition-colors bg-app-surface-hover text-app-text hover:bg-app-surface-active"
               >
                 <Pause className="h-4 w-4" />
                 {t('pause', { defaultValue: 'Pause' })}
@@ -252,7 +252,7 @@ export default function RmhStudyRoom() {
             {timer.isPaused && (
               <button
                 onClick={() => emit(C2S.TIMER_RESUME, { roomCode })}
-                className="flex items-center gap-2 px-4 py-2 rounded-(--app-radius-sm) font-medium text-(--app-accent-fg) transition-colors bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                className="flex items-center gap-2 px-4 py-2 rounded-app-sm font-medium text-app-accent-fg transition-colors bg-app-accent hover:bg-app-accent-hover"
               >
                 <Play className="h-4 w-4" />
                 {t('resume', { defaultValue: 'Resume' })}
@@ -262,14 +262,14 @@ export default function RmhStudyRoom() {
               <>
                 <button
                   onClick={() => emit(C2S.TIMER_SKIP, { roomCode })}
-                  className="flex items-center gap-2 px-4 py-2 rounded-(--app-radius-sm) font-medium transition-colors bg-(--app-surface-hover) text-(--app-text) hover:bg-(--app-surface-active)"
+                  className="flex items-center gap-2 px-4 py-2 rounded-app-sm font-medium transition-colors bg-app-surface-hover text-app-text hover:bg-app-surface-active"
                 >
                   <SkipForward className="h-4 w-4" />
                   {t('skip', { defaultValue: 'Skip' })}
                 </button>
                 <button
                   onClick={() => emit(C2S.TIMER_RESET, { roomCode })}
-                  className="flex items-center gap-2 px-4 py-2 rounded-(--app-radius-sm) font-medium transition-colors bg-(--app-danger-dim) text-(--app-danger) hover:bg-(--app-danger) hover:text-(--app-bg)"
+                  className="flex items-center gap-2 px-4 py-2 rounded-app-sm font-medium transition-colors bg-app-danger-dim text-app-danger hover:bg-app-danger hover:text-app-bg"
                 >
                   <RotateCcw className="h-4 w-4" />
                   {t('reset', { defaultValue: 'Reset' })}
@@ -281,7 +281,7 @@ export default function RmhStudyRoom() {
       </div>
 
       {/* Tasks */}
-      <div className="rounded-(--app-radius) app-glass p-4">
+      <div className="rounded-app app-glass p-4">
         <h3 className="text-sm font-semibold mb-3">{t('my-tasks', { defaultValue: 'My Tasks' })}</h3>
         <form onSubmit={handleAddTask} className="flex gap-2 mb-3">
           <input
@@ -290,34 +290,34 @@ export default function RmhStudyRoom() {
             onChange={(e) => setNewTask(e.target.value)}
             maxLength={200}
             placeholder={t('add-task-placeholder', { defaultValue: 'Add a task...' })}
-            className="flex-1 px-3 py-2 rounded-(--app-radius-sm) text-sm border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+            className="flex-1 px-3 py-2 rounded-app-sm text-sm border border-app-border bg-app-bg text-app-text placeholder:text-app-text-dim outline-none focus:ring-1 focus:ring-app-accent"
           />
-          <button type="submit" className="p-2 rounded-(--app-radius-sm) bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)">
+          <button type="submit" className="p-2 rounded-app-sm bg-app-accent text-app-accent-fg hover:bg-app-accent-hover">
             <Plus className="h-4 w-4" />
           </button>
         </form>
         {tasks.length === 0 ? (
-          <p className="text-xs text-(--app-text-dim) text-center py-2">{t('no-tasks-yet', { defaultValue: 'No tasks yet' })}</p>
+          <p className="text-xs text-app-text-dim text-center py-2">{t('no-tasks-yet', { defaultValue: 'No tasks yet' })}</p>
         ) : (
           <div className="space-y-1">
             {tasks.map((task) => (
-              <div key={task.id} className="flex items-center gap-2 p-2 rounded-(--app-radius-sm) hover:bg-(--app-bg) group">
+              <div key={task.id} className="flex items-center gap-2 p-2 rounded-app-sm hover:bg-app-bg group">
                 <button
                   onClick={() => emit(C2S.TASK_TOGGLE, { roomCode, taskId: task.id })}
-                  className={`shrink-0 h-5 w-5 rounded-(--app-radius-sm) border-2 flex items-center justify-center transition-colors ${
+                  className={`shrink-0 h-5 w-5 rounded-app-sm border-2 flex items-center justify-center transition-colors ${
                     task.completed
-                      ? 'bg-(--app-success) border-(--app-success) text-(--app-bg)'
-                      : 'border-(--app-border-bright) hover:border-(--app-accent)'
+                      ? 'bg-app-success border-app-success text-app-bg'
+                      : 'border-app-border-bright hover:border-app-accent'
                   }`}
                 >
                   {task.completed && <Check className="h-3 w-3" />}
                 </button>
-                <span className={`flex-1 text-sm ${task.completed ? 'line-through text-(--app-text-dim)' : ''}`}>
+                <span className={`flex-1 text-sm ${task.completed ? 'line-through text-app-text-dim' : ''}`}>
                   {task.text}
                 </span>
                 <button
                   onClick={() => emit(C2S.TASK_DELETE, { roomCode, taskId: task.id })}
-                  className="shrink-0 p-1 rounded-(--app-radius-sm) text-(--app-text-dim) opacity-0 group-hover:opacity-100 hover:text-(--app-danger)"
+                  className="shrink-0 p-1 rounded-app-sm text-app-text-dim opacity-0 group-hover:opacity-100 hover:text-app-danger"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -332,14 +332,14 @@ export default function RmhStudyRoom() {
   const membersSection = (
     <div className="p-4">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-(--app-text-muted)">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-app-text-muted">
           {t('members-count', { defaultValue: 'Members ({{count}})', count: room.members.length })}
         </h3>
         <div className="flex items-center gap-1.5">
           {isHost && (
             <button
               onClick={handleTogglePublic}
-              className="flex items-center gap-1 text-xs px-2 py-1 rounded-(--app-radius-sm) transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-app-sm transition-colors bg-app-bg text-app-text-muted hover:text-app-text"
             >
               {room.isPublic ? <Globe className="h-3 w-3" /> : <GlobeLock className="h-3 w-3" />}
               {room.isPublic ? t('public', { defaultValue: 'Public' }) : t('private', { defaultValue: 'Private' })}
@@ -347,7 +347,7 @@ export default function RmhStudyRoom() {
           )}
           <button
             onClick={handleCopyCode}
-            className="flex items-center gap-1 text-xs px-2 py-1 rounded-(--app-radius-sm) bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
+            className="flex items-center gap-1 text-xs px-2 py-1 rounded-app-sm bg-app-bg text-app-text-muted hover:text-app-text"
           >
             <Copy className="h-3 w-3" />
             {roomCode}
@@ -360,13 +360,13 @@ export default function RmhStudyRoom() {
             <Circle className={`h-2 w-2 fill-current shrink-0 ${
               m.status === 'studying' ? 'text-(--rmhstudy-work)' :
               m.status === 'break' ? 'text-(--rmhstudy-break)' :
-              m.status === 'away' ? 'text-(--app-text-dim)' :
-              'text-(--app-text-muted)'
+              m.status === 'away' ? 'text-app-text-dim' :
+              'text-app-text-muted'
             }`} />
             <span className="text-sm truncate">{m.userName}</span>
-            {m.isHost && <Crown className="h-3 w-3 shrink-0 text-(--app-accent)" />}
+            {m.isHost && <Crown className="h-3 w-3 shrink-0 text-app-accent" />}
             {m.tasksTotal > 0 && (
-              <span className="text-xs ml-auto text-(--app-text-dim)">
+              <span className="text-xs ml-auto text-app-text-dim">
                 {m.tasksCompleted}/{m.tasksTotal}
               </span>
             )}
@@ -374,14 +374,14 @@ export default function RmhStudyRoom() {
               <div className="flex gap-0.5 ml-auto opacity-0 group-hover/member:opacity-100">
                 <button
                   onClick={() => handleKick(m.userId)}
-                  className="rounded-(--app-radius-sm) p-0.5 text-(--app-text-dim) hover:text-(--app-danger) transition-colors"
+                  className="rounded-app-sm p-0.5 text-app-text-dim hover:text-app-danger transition-colors"
                   title={t('kick', { defaultValue: 'Kick' })}
                 >
                   <UserX className="h-3 w-3" />
                 </button>
                 <button
                   onClick={() => setBanTarget({ userId: m.userId, userName: m.userName })}
-                  className="rounded-(--app-radius-sm) p-0.5 text-(--app-text-dim) hover:text-(--app-danger) transition-colors"
+                  className="rounded-app-sm p-0.5 text-app-text-dim hover:text-app-danger transition-colors"
                   title={t('ban', { defaultValue: 'Ban' })}
                 >
                   <Ban className="h-3 w-3" />
@@ -397,7 +397,7 @@ export default function RmhStudyRoom() {
         <div className="mt-3 flex items-center justify-end">
           <button
             onClick={() => setShowBanList(true)}
-            className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-(--app-radius-sm) transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
+            className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-app-sm transition-colors bg-app-bg text-app-text-muted hover:text-app-text"
           >
             <Ban className="h-3 w-3" />
             {t('banned-count', { defaultValue: '{{count}} banned', count: room.bannedUsers.length })}
@@ -417,7 +417,7 @@ export default function RmhStudyRoom() {
         leftActions={
           <button
             onClick={() => setShowSettings(true)}
-            className="p-1.5 rounded-(--app-radius-sm) transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+            className="p-1.5 rounded-app-sm transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
             title={isHost ? t('room-settings', { defaultValue: 'Room Settings' }) : t('room-info', { defaultValue: 'Room Info' })}
           >
             {isHost ? <Settings className="h-4 w-4" /> : <Info className="h-4 w-4" />}
@@ -430,15 +430,15 @@ export default function RmhStudyRoom() {
         {/* Main content — Timer + Tasks / Flashcards */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6" style={{ scrollbarGutter: 'stable' }}>
           <div className="max-w-2xl mx-auto">
-            <div className="mb-4 flex gap-1 rounded-(--app-radius) bg-(--app-surface) p-1 text-sm">
+            <div className="mb-4 flex gap-1 rounded-app bg-app-surface p-1 text-sm">
               {(['session', 'flashcards'] as const).map((v) => (
                 <button
                   key={v}
                   onClick={() => setDesktopView(v)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-(--app-radius-sm) py-1.5 font-medium transition-colors ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-app-sm py-1.5 font-medium transition-colors ${
                     desktopView === v
-                      ? 'bg-(--app-accent) text-(--app-accent-fg)'
-                      : 'text-(--app-text-muted) hover:text-(--app-text)'
+                      ? 'bg-app-accent text-app-accent-fg'
+                      : 'text-app-text-muted hover:text-app-text'
                   }`}
                 >
                   {v === 'session' ? <Timer className="h-4 w-4" /> : <Layers className="h-4 w-4" />}
@@ -451,8 +451,8 @@ export default function RmhStudyRoom() {
         </div>
 
         {/* Sidebar — Members + Chat */}
-        <div className="w-80 border-l border-(--app-border) flex flex-col bg-(--app-bg-subtle)">
-          <div className="border-b border-(--app-border)">
+        <div className="w-80 border-l border-app-border flex flex-col bg-app-bg-subtle">
+          <div className="border-b border-app-border">
             {membersSection}
           </div>
           <ChatPanel
@@ -498,11 +498,11 @@ export default function RmhStudyRoom() {
         {/* Tab bar */}
         {/* The bar's surface reaches the physical bottom; the inset keeps its four
             targets above the home indicator. */}
-        <div className="shrink-0 flex border-t border-(--app-border) bg-(--app-surface) pb-[var(--safe-bottom)] pl-[var(--safe-left)] pr-[var(--safe-right)]">
+        <div className="shrink-0 flex border-t border-app-border bg-app-surface pb-[var(--safe-bottom)] pl-[var(--safe-left)] pr-[var(--safe-right)]">
           <button
             onClick={() => setMobileTab('session')}
             className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
-              mobileTab === 'session' ? 'text-(--app-accent)' : 'text-(--app-text-muted)'
+              mobileTab === 'session' ? 'text-app-accent' : 'text-app-text-muted'
             }`}
           >
             <Timer className="h-4 w-4" />
@@ -511,7 +511,7 @@ export default function RmhStudyRoom() {
           <button
             onClick={() => setMobileTab('flashcards')}
             className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
-              mobileTab === 'flashcards' ? 'text-(--app-accent)' : 'text-(--app-text-muted)'
+              mobileTab === 'flashcards' ? 'text-app-accent' : 'text-app-text-muted'
             }`}
           >
             <Layers className="h-4 w-4" />
@@ -520,7 +520,7 @@ export default function RmhStudyRoom() {
           <button
             onClick={() => setMobileTab('members')}
             className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
-              mobileTab === 'members' ? 'text-(--app-accent)' : 'text-(--app-text-muted)'
+              mobileTab === 'members' ? 'text-app-accent' : 'text-app-text-muted'
             }`}
           >
             <Users className="h-4 w-4" />
@@ -529,13 +529,13 @@ export default function RmhStudyRoom() {
           <button
             onClick={() => { setMobileTab('chat'); setUnreadChat(0); }}
             className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors relative ${
-              mobileTab === 'chat' ? 'text-(--app-accent)' : 'text-(--app-text-muted)'
+              mobileTab === 'chat' ? 'text-app-accent' : 'text-app-text-muted'
             }`}
           >
             <MessageCircle className="h-4 w-4" />
             {t('tab-chat', { defaultValue: 'Chat' })}
             {unreadChat > 0 && (
-              <span className="absolute top-1.5 right-1/4 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-(--app-accent) text-(--app-accent-fg) text-xs font-bold">
+              <span className="absolute top-1.5 right-1/4 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-app-accent text-app-accent-fg text-xs font-bold">
                 {unreadChat > 9 ? '9+' : unreadChat}
               </span>
             )}
@@ -547,22 +547,22 @@ export default function RmhStudyRoom() {
       {showSettings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 app-scrim" onClick={() => setShowSettings(false)} />
-          <div className="relative w-full max-w-md rounded-(--app-radius) app-glass p-6 max-h-[80dvh] overflow-y-auto">
+          <div className="relative w-full max-w-md rounded-app app-glass p-6 max-h-[80dvh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-semibold flex items-center gap-2">
-                {isHost ? <Settings className="h-5 w-5 text-(--app-accent)" /> : <Info className="h-5 w-5 text-(--app-accent)" />}
+                {isHost ? <Settings className="h-5 w-5 text-app-accent" /> : <Info className="h-5 w-5 text-app-accent" />}
                 {isHost ? t('room-settings', { defaultValue: 'Room Settings' }) : t('room-info', { defaultValue: 'Room Info' })}
               </h3>
               <button
                 onClick={() => setShowSettings(false)}
-                className="p-1 rounded-(--app-radius-sm) text-(--app-text-muted) hover:text-(--app-text) transition-colors"
+                className="p-1 rounded-app-sm text-app-text-muted hover:text-app-text transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             {isHost && timer.phase !== 'idle' && (
-              <p className="text-xs text-(--app-warning) mb-4">
+              <p className="text-xs text-app-warning mb-4">
                 {t('settings-idle-only', { defaultValue: 'Settings can only be changed while the timer is idle.' })}
               </p>
             )}
@@ -571,8 +571,8 @@ export default function RmhStudyRoom() {
               {/* Work Duration */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-(--app-text-muted)">{t('focus-duration', { defaultValue: 'Focus Duration' })}</label>
-                  <span className="text-sm font-mono font-bold text-(--app-text)">{Math.round(room.settings.workDurationMs / 60000)} min</span>
+                  <label className="text-sm font-medium text-app-text-muted">{t('focus-duration', { defaultValue: 'Focus Duration' })}</label>
+                  <span className="text-sm font-mono font-bold text-app-text">{Math.round(room.settings.workDurationMs / 60000)} min</span>
                 </div>
                 {isHost && timer.phase === 'idle' ? (
                   <div className="flex gap-1.5">
@@ -580,10 +580,10 @@ export default function RmhStudyRoom() {
                       <button
                         key={m}
                         onClick={() => handleUpdateSetting('workDurationMs', m * 60000)}
-                        className={`flex-1 py-1.5 rounded-(--app-radius-sm) text-xs font-medium transition-colors ${
+                        className={`flex-1 py-1.5 rounded-app-sm text-xs font-medium transition-colors ${
                           Math.round(room.settings.workDurationMs / 60000) === m
-                            ? 'bg-(--app-accent) text-(--app-accent-fg)'
-                            : 'bg-(--app-bg) text-(--app-text-muted) hover:bg-(--app-surface-hover)'
+                            ? 'bg-app-accent text-app-accent-fg'
+                            : 'bg-app-bg text-app-text-muted hover:bg-app-surface-hover'
                         }`}
                       >
                         {m}
@@ -591,7 +591,7 @@ export default function RmhStudyRoom() {
                     ))}
                   </div>
                 ) : (
-                  <div className="h-8 flex items-center px-3 rounded-(--app-radius-sm) bg-(--app-bg) text-sm text-(--app-text-muted)">
+                  <div className="h-8 flex items-center px-3 rounded-app-sm bg-app-bg text-sm text-app-text-muted">
                     {t('n-minutes', { defaultValue: '{{count}} minutes', count: Math.round(room.settings.workDurationMs / 60000) })}
                   </div>
                 )}
@@ -600,8 +600,8 @@ export default function RmhStudyRoom() {
               {/* Short Break */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-(--app-text-muted)">{t('short-break', { defaultValue: 'Short Break' })}</label>
-                  <span className="text-sm font-mono font-bold text-(--app-text)">{Math.round(room.settings.shortBreakMs / 60000)} min</span>
+                  <label className="text-sm font-medium text-app-text-muted">{t('short-break', { defaultValue: 'Short Break' })}</label>
+                  <span className="text-sm font-mono font-bold text-app-text">{Math.round(room.settings.shortBreakMs / 60000)} min</span>
                 </div>
                 {isHost && timer.phase === 'idle' ? (
                   <div className="flex gap-1.5">
@@ -609,10 +609,10 @@ export default function RmhStudyRoom() {
                       <button
                         key={m}
                         onClick={() => handleUpdateSetting('shortBreakMs', m * 60000)}
-                        className={`flex-1 py-1.5 rounded-(--app-radius-sm) text-xs font-medium transition-colors ${
+                        className={`flex-1 py-1.5 rounded-app-sm text-xs font-medium transition-colors ${
                           Math.round(room.settings.shortBreakMs / 60000) === m
-                            ? 'bg-(--app-accent) text-(--app-accent-fg)'
-                            : 'bg-(--app-bg) text-(--app-text-muted) hover:bg-(--app-surface-hover)'
+                            ? 'bg-app-accent text-app-accent-fg'
+                            : 'bg-app-bg text-app-text-muted hover:bg-app-surface-hover'
                         }`}
                       >
                         {m}
@@ -620,7 +620,7 @@ export default function RmhStudyRoom() {
                     ))}
                   </div>
                 ) : (
-                  <div className="h-8 flex items-center px-3 rounded-(--app-radius-sm) bg-(--app-bg) text-sm text-(--app-text-muted)">
+                  <div className="h-8 flex items-center px-3 rounded-app-sm bg-app-bg text-sm text-app-text-muted">
                     {t('n-minutes', { defaultValue: '{{count}} minutes', count: Math.round(room.settings.shortBreakMs / 60000) })}
                   </div>
                 )}
@@ -629,8 +629,8 @@ export default function RmhStudyRoom() {
               {/* Long Break */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-(--app-text-muted)">{t('long-break', { defaultValue: 'Long Break' })}</label>
-                  <span className="text-sm font-mono font-bold text-(--app-text)">{Math.round(room.settings.longBreakMs / 60000)} min</span>
+                  <label className="text-sm font-medium text-app-text-muted">{t('long-break', { defaultValue: 'Long Break' })}</label>
+                  <span className="text-sm font-mono font-bold text-app-text">{Math.round(room.settings.longBreakMs / 60000)} min</span>
                 </div>
                 {isHost && timer.phase === 'idle' ? (
                   <div className="flex gap-1.5">
@@ -638,10 +638,10 @@ export default function RmhStudyRoom() {
                       <button
                         key={m}
                         onClick={() => handleUpdateSetting('longBreakMs', m * 60000)}
-                        className={`flex-1 py-1.5 rounded-(--app-radius-sm) text-xs font-medium transition-colors ${
+                        className={`flex-1 py-1.5 rounded-app-sm text-xs font-medium transition-colors ${
                           Math.round(room.settings.longBreakMs / 60000) === m
-                            ? 'bg-(--app-accent) text-(--app-accent-fg)'
-                            : 'bg-(--app-bg) text-(--app-text-muted) hover:bg-(--app-surface-hover)'
+                            ? 'bg-app-accent text-app-accent-fg'
+                            : 'bg-app-bg text-app-text-muted hover:bg-app-surface-hover'
                         }`}
                       >
                         {m}
@@ -649,7 +649,7 @@ export default function RmhStudyRoom() {
                     ))}
                   </div>
                 ) : (
-                  <div className="h-8 flex items-center px-3 rounded-(--app-radius-sm) bg-(--app-bg) text-sm text-(--app-text-muted)">
+                  <div className="h-8 flex items-center px-3 rounded-app-sm bg-app-bg text-sm text-app-text-muted">
                     {t('n-minutes', { defaultValue: '{{count}} minutes', count: Math.round(room.settings.longBreakMs / 60000) })}
                   </div>
                 )}
@@ -658,8 +658,8 @@ export default function RmhStudyRoom() {
               {/* Sessions before long break */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-(--app-text-muted)">{t('sessions-before-long-break', { defaultValue: 'Sessions before long break' })}</label>
-                  <span className="text-sm font-mono font-bold text-(--app-text)">{room.settings.sessionsBeforeLongBreak}</span>
+                  <label className="text-sm font-medium text-app-text-muted">{t('sessions-before-long-break', { defaultValue: 'Sessions before long break' })}</label>
+                  <span className="text-sm font-mono font-bold text-app-text">{room.settings.sessionsBeforeLongBreak}</span>
                 </div>
                 {isHost && timer.phase === 'idle' ? (
                   <input
@@ -668,10 +668,10 @@ export default function RmhStudyRoom() {
                     max={12}
                     value={room.settings.sessionsBeforeLongBreak}
                     onChange={(e) => handleUpdateSetting('sessionsBeforeLongBreak', Number(e.target.value))}
-                    className="w-full accent-(--app-accent)"
+                    className="w-full accent-app-accent"
                   />
                 ) : (
-                  <div className="h-8 flex items-center px-3 rounded-(--app-radius-sm) bg-(--app-bg) text-sm text-(--app-text-muted)">
+                  <div className="h-8 flex items-center px-3 rounded-app-sm bg-app-bg text-sm text-app-text-muted">
                     {t('n-sessions', { defaultValue: '{{count}} sessions', count: room.settings.sessionsBeforeLongBreak })}
                   </div>
                 )}
@@ -680,37 +680,37 @@ export default function RmhStudyRoom() {
               {/* Auto-start toggles */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-(--app-text-muted)">{t('auto-start-breaks', { defaultValue: 'Auto-start breaks' })}</label>
+                  <label className="text-sm font-medium text-app-text-muted">{t('auto-start-breaks', { defaultValue: 'Auto-start breaks' })}</label>
                   {isHost && timer.phase === 'idle' ? (
                     <button
                       onClick={() => handleUpdateSetting('autoStartBreaks', !room.settings.autoStartBreaks)}
                       className={`relative w-10 h-5.5 rounded-full transition-colors ${
-                        room.settings.autoStartBreaks ? 'bg-(--app-accent)' : 'bg-(--app-border-bright)'
+                        room.settings.autoStartBreaks ? 'bg-app-accent' : 'bg-app-border-bright'
                       }`}
                     >
-                      <span className={`absolute top-0.5 h-4.5 w-4.5 rounded-full bg-(--app-text) transition-transform ${
+                      <span className={`absolute top-0.5 h-4.5 w-4.5 rounded-full bg-app-text transition-transform ${
                         room.settings.autoStartBreaks ? 'translate-x-5' : 'translate-x-0.5'
                       }`} />
                     </button>
                   ) : (
-                    <span className="text-sm text-(--app-text)">{room.settings.autoStartBreaks ? t('on', { defaultValue: 'On' }) : t('off', { defaultValue: 'Off' })}</span>
+                    <span className="text-sm text-app-text">{room.settings.autoStartBreaks ? t('on', { defaultValue: 'On' }) : t('off', { defaultValue: 'Off' })}</span>
                   )}
                 </div>
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-(--app-text-muted)">{t('auto-start-work-sessions', { defaultValue: 'Auto-start work sessions' })}</label>
+                  <label className="text-sm font-medium text-app-text-muted">{t('auto-start-work-sessions', { defaultValue: 'Auto-start work sessions' })}</label>
                   {isHost && timer.phase === 'idle' ? (
                     <button
                       onClick={() => handleUpdateSetting('autoStartWork', !room.settings.autoStartWork)}
                       className={`relative w-10 h-5.5 rounded-full transition-colors ${
-                        room.settings.autoStartWork ? 'bg-(--app-accent)' : 'bg-(--app-border-bright)'
+                        room.settings.autoStartWork ? 'bg-app-accent' : 'bg-app-border-bright'
                       }`}
                     >
-                      <span className={`absolute top-0.5 h-4.5 w-4.5 rounded-full bg-(--app-text) transition-transform ${
+                      <span className={`absolute top-0.5 h-4.5 w-4.5 rounded-full bg-app-text transition-transform ${
                         room.settings.autoStartWork ? 'translate-x-5' : 'translate-x-0.5'
                       }`} />
                     </button>
                   ) : (
-                    <span className="text-sm text-(--app-text)">{room.settings.autoStartWork ? t('on', { defaultValue: 'On' }) : t('off', { defaultValue: 'Off' })}</span>
+                    <span className="text-sm text-app-text">{room.settings.autoStartWork ? t('on', { defaultValue: 'On' }) : t('off', { defaultValue: 'Off' })}</span>
                   )}
                 </div>
               </div>
@@ -723,9 +723,9 @@ export default function RmhStudyRoom() {
       {banTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 app-scrim" onClick={() => { setBanTarget(null); setBanReason(''); }} />
-          <div className="relative w-full max-w-sm rounded-(--app-radius) app-glass p-6">
+          <div className="relative w-full max-w-sm rounded-app app-glass p-6">
             <h3 className="text-lg font-semibold mb-2">{t('ban-confirm-title', { defaultValue: 'Ban {{userName}}?', userName: banTarget.userName })}</h3>
-            <p className="text-sm text-(--app-text-muted) mb-4">
+            <p className="text-sm text-app-text-muted mb-4">
               {t('ban-confirm-desc', { defaultValue: 'This member will be removed and cannot rejoin this room.' })}
             </p>
             <input
@@ -734,18 +734,18 @@ export default function RmhStudyRoom() {
               onChange={(e) => setBanReason(e.target.value)}
               placeholder={t('ban-reason-placeholder', { defaultValue: 'Reason (optional)' })}
               maxLength={200}
-              className="w-full px-3 py-2 rounded-(--app-radius-sm) text-sm border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent) mb-4"
+              className="w-full px-3 py-2 rounded-app-sm text-sm border border-app-border bg-app-bg text-app-text placeholder:text-app-text-dim outline-none focus:ring-1 focus:ring-app-accent mb-4"
             />
             <div className="flex gap-2">
               <button
                 onClick={() => { setBanTarget(null); setBanReason(''); }}
-                className="flex-1 py-2 rounded-(--app-radius-sm) font-medium text-sm transition-colors bg-(--app-bg) text-(--app-text-muted) hover:text-(--app-text)"
+                className="flex-1 py-2 rounded-app-sm font-medium text-sm transition-colors bg-app-bg text-app-text-muted hover:text-app-text"
               >
                 {t('cancel', { defaultValue: 'Cancel' })}
               </button>
               <button
                 onClick={handleBanConfirm}
-                className="flex-1 py-2 rounded-(--app-radius-sm) font-medium text-sm text-(--app-bg) transition-colors bg-(--app-danger) hover:opacity-90"
+                className="flex-1 py-2 rounded-app-sm font-medium text-sm text-app-bg transition-colors bg-app-danger hover:opacity-90"
               >
                 {t('ban', { defaultValue: 'Ban' })}
               </button>

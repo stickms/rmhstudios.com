@@ -36,11 +36,11 @@ export default function VotingPhase({
   return (
     <div className="flex flex-col gap-6 py-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-medium text-(--app-text-muted)">
+        <div className="flex items-center gap-2 text-sm font-medium text-app-text-muted">
           <Vote className="h-4 w-4" />
           {t("matchup-index-of-total", { defaultValue: "Matchup {{current}} of {{total}}", current: matchupIndex + 1, total: totalMatchups })}
         </div>
-        <span className="text-sm text-(--app-text-muted)">
+        <span className="text-sm text-app-text-muted">
           {t("vote-count-of-total", { defaultValue: "{{voteCount}}/{{totalVoters}} voted", voteCount, totalVoters })}
         </span>
       </div>
@@ -48,21 +48,21 @@ export default function VotingPhase({
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="app-glass rounded-(--app-radius) p-4 text-center"
+        className="app-glass rounded-app p-4 text-center"
       >
-        <div className="text-xs font-medium text-(--app-text-muted) mb-1">{t("the-prompt", { defaultValue: "The prompt:" })}</div>
-        <div className="text-lg font-bold text-(--app-text)">{matchup.promptText}</div>
+        <div className="text-xs font-medium text-app-text-muted mb-1">{t("the-prompt", { defaultValue: "The prompt:" })}</div>
+        <div className="text-lg font-bold text-app-text">{matchup.promptText}</div>
       </motion.div>
 
       {isAuthor ? (
-        <div className="flex flex-col items-center gap-3 py-8 text-(--app-text-muted)">
+        <div className="flex flex-col items-center gap-3 py-8 text-app-text-muted">
           <Eye className="h-8 w-8" />
           <p className="text-sm font-medium">{t("author-spectating", { defaultValue: "This is your matchup — sit back and watch!" })}</p>
           <p className="text-xs">{t("audience-voting", { defaultValue: "The audience is voting on your answer right now." })}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-center text-(--app-text-muted)">
+          <p className="text-sm text-center text-app-text-muted">
             {t("which-answer-better", { defaultValue: "Which answer is better?" })}
           </p>
 
@@ -72,15 +72,15 @@ export default function VotingPhase({
               whileTap={{ scale: 0.98 }}
               onClick={() => onVote(matchup.playerA)}
               disabled={myVote !== null}
-              className={`glass-fill rounded-(--app-radius) border-2 p-5 text-left transition-colors ${
+              className={`glass-fill rounded-app border-2 p-5 text-left transition-colors ${
                 myVote === matchup.playerA
-                  ? 'border-(--app-accent) bg-(--app-accent)/10'
+                  ? 'border-app-accent bg-app-accent/10'
                   : myVote !== null
-                    ? 'border-(--app-border) opacity-50'
-                    : 'border-(--app-border) hover:border-(--app-accent)/50'
+                    ? 'border-app-border opacity-50'
+                    : 'border-app-border hover:border-app-accent/50'
               }`}
             >
-              <div className="text-base font-medium text-(--app-text)">
+              <div className="text-base font-medium text-app-text">
                 {matchup.answerA}
               </div>
             </motion.button>
@@ -90,15 +90,15 @@ export default function VotingPhase({
               whileTap={{ scale: 0.98 }}
               onClick={() => onVote(matchup.playerB)}
               disabled={myVote !== null}
-              className={`glass-fill rounded-(--app-radius) border-2 p-5 text-left transition-colors ${
+              className={`glass-fill rounded-app border-2 p-5 text-left transition-colors ${
                 myVote === matchup.playerB
-                  ? 'border-(--app-accent) bg-(--app-accent)/10'
+                  ? 'border-app-accent bg-app-accent/10'
                   : myVote !== null
-                    ? 'border-(--app-border) opacity-50'
-                    : 'border-(--app-border) hover:border-(--app-accent)/50'
+                    ? 'border-app-border opacity-50'
+                    : 'border-app-border hover:border-app-accent/50'
               }`}
             >
-              <div className="text-base font-medium text-(--app-text)">
+              <div className="text-base font-medium text-app-text">
                 {matchup.answerB}
               </div>
             </motion.button>
@@ -108,7 +108,7 @@ export default function VotingPhase({
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-sm text-center text-(--app-text-muted)"
+              className="text-sm text-center text-app-text-muted"
             >
               {t("vote-cast-waiting", { defaultValue: "Vote cast! Waiting for others..." })}
             </motion.p>

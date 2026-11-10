@@ -49,34 +49,34 @@ export default function MarketResultsScreen({
   const { t } = useTranslation("c-rmhbox");
   return (
     <div className="flex flex-col items-center gap-6 p-4">
-      <h2 className="text-xl font-bold text-(--app-text)">{t("market-results", { defaultValue: "Market Results" })}</h2>
-      <p className="text-sm text-(--app-text-muted)">{t("prompt-label-market-results-screen", { defaultValue: "Prompt:" })} &quot;{prompt}&quot;</p>
+      <h2 className="text-xl font-bold text-app-text">{t("market-results", { defaultValue: "Market Results" })}</h2>
+      <p className="text-sm text-app-text-muted">{t("prompt-label-market-results-screen", { defaultValue: "Prompt:" })} &quot;{prompt}&quot;</p>
 
       {/* Painting Rankings (by market value) */}
       <div className="w-full max-w-md space-y-3">
         {rankings.map((r) => (
           <div
             key={r.drawingId}
-            className="flex items-center gap-3 p-3 rounded-(--app-radius-sm) border border-(--app-border)"
+            className="flex items-center gap-3 p-3 rounded-app-sm border border-app-border"
           >
-            <span className="text-2xl font-bold text-(--app-accent) w-8 text-center">
+            <span className="text-2xl font-bold text-app-accent w-8 text-center">
               #{r.rank}
             </span>
             <DrawingCard strokes={r.strokes} backgroundColor={r.backgroundColor} className="w-16 shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-(--app-text) truncate">
+              <p className="font-semibold text-app-text truncate">
                 {r.artistUserName}
               </p>
-              <p className="text-xs text-(--app-text-muted)">
+              <p className="text-xs text-app-text-muted">
                 {t("market-value", { defaultValue: "Market value: {{value}}", value: r.marketValue })}
               </p>
               {r.winnerId && (
-                <p className="text-xs text-(--app-text-muted)">
+                <p className="text-xs text-app-text-muted">
                   {t("won-by", { defaultValue: "Won by {{winner}} for {{paid}}", winner: r.winnerName, paid: r.winnerPaid })}
                 </p>
               )}
               {!r.winnerId && r.marketValue === 0 && (
-                <p className="text-xs text-(--app-text-muted) italic">{t("no-bids", { defaultValue: "No bids" })}</p>
+                <p className="text-xs text-app-text-muted italic">{t("no-bids", { defaultValue: "No bids" })}</p>
               )}
             </div>
           </div>
@@ -86,7 +86,7 @@ export default function MarketResultsScreen({
       {/* Player Score Breakdowns */}
       {scoreBreakdowns.length > 0 && (
         <div className="w-full max-w-md">
-          <h3 className="text-sm font-semibold text-(--app-text) mb-2">
+          <h3 className="text-sm font-semibold text-app-text mb-2">
             {t("score-breakdown", { defaultValue: "Score Breakdown" })}
           </h3>
           <div className="space-y-2">
@@ -95,20 +95,20 @@ export default function MarketResultsScreen({
               .map((sb) => (
                 <div
                   key={sb.userId}
-                  className="glass-fill flex justify-between items-center text-sm px-3 py-2 rounded-(--app-radius-sm)"
+                  className="glass-fill flex justify-between items-center text-sm px-3 py-2 rounded-app-sm"
                 >
-                  <span className="font-medium text-(--app-text)">{sb.userName}</span>
+                  <span className="font-medium text-app-text">{sb.userName}</span>
                   <div className="flex items-center gap-3 text-xs">
                     {sb.paintedValue > 0 && (
-                      <span className="text-(--app-text-muted)">{t("painted-value", { defaultValue: "Painted: {{value}}", value: sb.paintedValue })}</span>
+                      <span className="text-app-text-muted">{t("painted-value", { defaultValue: "Painted: {{value}}", value: sb.paintedValue })}</span>
                     )}
                     {sb.ownedValue > 0 && (
-                      <span className="text-(--app-text-muted)">{t("owned-value", { defaultValue: "Owned: {{value}}", value: sb.ownedValue })}</span>
+                      <span className="text-app-text-muted">{t("owned-value", { defaultValue: "Owned: {{value}}", value: sb.ownedValue })}</span>
                     )}
                     {sb.overbidPenalty > 0 && (
-                      <span className="text-(--app-danger)">{t("penalty-value", { defaultValue: "Penalty: -{{value}}", value: sb.overbidPenalty })}</span>
+                      <span className="text-app-danger">{t("penalty-value", { defaultValue: "Penalty: -{{value}}", value: sb.overbidPenalty })}</span>
                     )}
-                    <span className="font-bold text-(--app-accent)">{t("total-score-pts", { defaultValue: "{{score}} pts", score: sb.totalScore })}</span>
+                    <span className="font-bold text-app-accent">{t("total-score-pts", { defaultValue: "{{score}} pts", score: sb.totalScore })}</span>
                   </div>
                 </div>
               ))}

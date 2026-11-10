@@ -248,7 +248,7 @@ describe('discovery', () => {
 
   it('admits the app tier adapter surfaces', () => {
     const surface = new El(['[data-liquid-surface]']);
-    const adapter = new El(['.app-theme [class~="bg-(--app-surface)"]']);
+    const adapter = new El(['.app-theme [class~="bg-app-surface"]']);
     root.append(surface, adapter);
     const reg = createJellyRegistry(doc);
     expect(reg.entryFor(surface as unknown as Element)).toBeDefined();

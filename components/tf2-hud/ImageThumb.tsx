@@ -66,12 +66,12 @@ export default function ImageThumb({ value, size = 56 }: { value: string; size?:
         ref={ref}
         width={size}
         height={size}
-        className="tf2hud-checker shrink-0 rounded-(--app-radius-sm) border border-(--app-border)"
+        className="tf2hud-checker shrink-0 rounded-app-sm border border-app-border"
         aria-hidden
       />
-      <p className="min-w-0 break-all font-mono text-[11px] text-(--app-text-dim)">
+      <p className="min-w-0 break-all font-mono text-[11px] text-app-text-dim">
         {path}
-        {img === null ? <span className="block text-(--app-warning)">missing texture</span> : null}
+        {img === null ? <span className="block text-app-warning">missing texture</span> : null}
       </p>
     </div>
   );

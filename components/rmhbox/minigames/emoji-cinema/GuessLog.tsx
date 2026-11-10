@@ -32,7 +32,7 @@ export default function GuessLog({ entries }: GuessLogProps) {
 
   return (
     <div className="w-full flex flex-col gap-1">
-      <span className="text-xs font-semibold text-(--app-text-muted) uppercase tracking-wide">
+      <span className="text-xs font-semibold text-app-text-muted uppercase tracking-wide">
         {t("guess-log", { defaultValue: "Guess Log" })}
       </span>
       <div
@@ -43,20 +43,20 @@ export default function GuessLog({ entries }: GuessLogProps) {
         {entries.map((entry, i) => (
           <div
             key={i}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-(--app-radius-sm) bg-(--app-surface) text-sm ${
-              entry.isCorrect ? 'text-(--app-success)' : 'text-(--app-text-muted)'
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-app-sm bg-app-surface text-sm ${
+              entry.isCorrect ? 'text-app-success' : 'text-app-text-muted'
             }`}
           >
             <span>{entry.isCorrect ? '🎉' : '💬'}</span>
             <span className="flex-1">
               {entry.isCorrect ? (
                 <>
-                  <span className="font-semibold text-(--app-text)">{entry.userName}</span>
+                  <span className="font-semibold text-app-text">{entry.userName}</span>
                   {t("guessed-the-movie", { defaultValue: " guessed the movie!" })}
                 </>
               ) : (
                 <>
-                  <span className="font-semibold text-(--app-text)">{entry.userName}</span>
+                  <span className="font-semibold text-app-text">{entry.userName}</span>
                   {t("guessed", { defaultValue: " guessed " })}
                   <span className="italic">{entry.guessText}</span>
                 </>

@@ -15,12 +15,12 @@ interface QuestionCardProps {
   totalQuestions: number;
 }
 
-const DEFAULT_DIFFICULTY_STYLE = 'bg-(--app-warning)/20 text-(--app-warning)';
+const DEFAULT_DIFFICULTY_STYLE = 'bg-app-warning/20 text-app-warning';
 
 const DIFFICULTY_STYLES: Record<string, string> = {
-  easy: 'bg-(--app-success)/20 text-(--app-success)',
+  easy: 'bg-app-success/20 text-app-success',
   medium: DEFAULT_DIFFICULTY_STYLE,
-  hard: 'bg-(--app-danger)/20 text-(--app-danger)',
+  hard: 'bg-app-danger/20 text-app-danger',
 };
 
 export default function QuestionCard({
@@ -35,15 +35,15 @@ export default function QuestionCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, type: 'spring' }}
-      className="w-full rounded-(--app-radius) border border-(--app-border) bg-(--app-bg) p-5"
+      className="w-full rounded-app border border-app-border bg-app-bg p-5"
     >
       {/* Header: question number + badges */}
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-xs font-semibold text-(--app-text-muted) uppercase tracking-wider">
+        <span className="text-xs font-semibold text-app-text-muted uppercase tracking-wider">
           Q{questionIndex + 1}/{totalQuestions}
         </span>
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-(--app-surface-hover) px-2 py-0.5 text-xs text-(--app-text-muted)">
+          <span className="rounded-full bg-app-surface-hover px-2 py-0.5 text-xs text-app-text-muted">
             {category}
           </span>
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${DIFFICULTY_STYLES[difficulty] ?? DEFAULT_DIFFICULTY_STYLE}`}>
@@ -57,7 +57,7 @@ export default function QuestionCard({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.3 }}
-        className="text-lg font-semibold leading-relaxed text-(--app-text)"
+        className="text-lg font-semibold leading-relaxed text-app-text"
       >
         {question}
       </motion.p>

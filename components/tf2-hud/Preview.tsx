@@ -576,12 +576,12 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
           : 'tf2hud-checker';
 
   return (
-    <div ref={wrapRef} className="relative min-h-0 flex-1 overflow-auto bg-(--app-bg) p-3">
+    <div ref={wrapRef} className="relative min-h-0 flex-1 overflow-auto bg-app-bg p-3">
       {play ? <PlayBar inGame={inGame} /> : null}
       <div className="mx-auto flex min-h-full w-fit min-w-full items-center justify-center">
         <div
           className={cn(
-            'relative shrink-0 overflow-hidden border border-(--app-border-bright)',
+            'relative shrink-0 overflow-hidden border border-app-border-bright',
             backdropClass,
           )}
           style={{ width: cssW, height: cssH }}
@@ -626,7 +626,7 @@ export default function Preview({ readOnly = false }: { readOnly?: boolean }) {
             />
           ) : null}
           {loading ? (
-            <p className="absolute inset-x-0 top-2 text-center text-xs text-(--app-text-muted)">
+            <p className="absolute inset-x-0 top-2 text-center text-xs text-app-text-muted">
               {t('loading-files', { defaultValue: 'Loading HUD files…' })}
             </p>
           ) : null}

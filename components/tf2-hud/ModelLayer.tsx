@@ -130,7 +130,7 @@ function ModelContent({
                 : {}),
             }}
             className={cn(
-              'overflow-hidden rounded-(--app-radius-sm) border-2 border-(--app-border) bg-(--app-bg)/60 p-0.5',
+              'overflow-hidden rounded-app-sm border-2 border-app-border bg-app-bg/60 p-0.5',
             )}
           >
             {item ? <ItemIcon item={item} /> : null}

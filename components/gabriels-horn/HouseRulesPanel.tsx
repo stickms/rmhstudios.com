@@ -89,7 +89,7 @@ export function HouseRulesSummary({ rules }: { rules: HouseRules | undefined }) 
   if (changes.length === 0) return null;
   return (
     <div className="space-y-1">
-      <h2 className="flex items-center gap-1.5 text-xs font-semibold tracking-[0.14em] text-(--app-accent) uppercase">
+      <h2 className="flex items-center gap-1.5 text-xs font-semibold tracking-[0.14em] text-app-accent uppercase">
         <Wand2 className="size-3.5" aria-hidden="true" />
         {t('house-rules-active', { defaultValue: 'House rules' })}
       </h2>
@@ -97,7 +97,7 @@ export function HouseRulesSummary({ rules }: { rules: HouseRules | undefined }) 
         {changes.map((change) => (
           <li
             key={change.key}
-            className="rounded-[var(--app-radius-sm)] bg-(--app-accent-dim) px-2 py-0.5 text-xs text-(--app-text)"
+            className="rounded-app-sm bg-app-accent-dim px-2 py-0.5 text-xs text-app-text"
           >
             {label(change.key)}: <strong>{change.to}</strong>
           </li>
@@ -160,11 +160,11 @@ export function HouseRulesPanel({
 
   return (
     <Panel className="space-y-2.5">
-      <h2 className="flex items-center gap-1.5 text-xs font-semibold tracking-[0.14em] text-(--app-text-muted) uppercase">
+      <h2 className="flex items-center gap-1.5 text-xs font-semibold tracking-[0.14em] text-app-text-muted uppercase">
         <Wand2 className="size-3.5" aria-hidden="true" />
         {t('house-rules-title', { defaultValue: 'Change the rules' })}
       </h2>
-      <p className="text-xs text-(--app-text-dim)">
+      <p className="text-xs text-app-text-dim">
         {t('house-rules-hint', {
           defaultValue:
             'Say what is wrong with the game and it will be balanced for you — “the horn is too risky”, “games drag on”, “drop Scry”.',
@@ -187,7 +187,7 @@ export function HouseRulesPanel({
           maxLength={400}
           onChange={(event) => setWish(event.target.value)}
           placeholder={t('house-rules-placeholder', { defaultValue: 'What should change?' })}
-          className="gh-inset min-w-0 grow px-3 py-2 text-sm text-(--app-text) placeholder:text-(--app-text-dim) focus-visible:border-(--app-accent)"
+          className="gh-inset min-w-0 grow px-3 py-2 text-sm text-app-text placeholder:text-app-text-dim focus-visible:border-app-accent"
         />
         <HornButton type="submit" variant="primary" disabled={busy || !wish.trim()}>
           <Sparkles className="size-4" aria-hidden="true" />
@@ -198,21 +198,21 @@ export function HouseRulesPanel({
       </form>
 
       {proposal ? (
-        <div className="space-y-2 border-t border-(--app-border) pt-2.5">
-          <p className="text-sm text-(--app-text)">{proposal.reasoning}</p>
+        <div className="space-y-2 border-t border-app-border pt-2.5">
+          <p className="text-sm text-app-text">{proposal.reasoning}</p>
 
           {proposal.changes.length > 0 ? (
             <>
               <ul className="space-y-1 text-xs">
                 {proposal.changes.map((change) => (
                   <li key={change.key} className="flex items-baseline justify-between gap-2">
-                    <span className="min-w-0 truncate text-(--app-text-muted)">
+                    <span className="min-w-0 truncate text-app-text-muted">
                       {label(change.key)}
                     </span>
                     <span className="shrink-0 font-mono tabular-nums">
-                      <span className="text-(--app-text-dim) line-through">{change.from}</span>
-                      <span className="mx-1 text-(--app-text-dim)">→</span>
-                      <span className="font-bold text-(--app-accent)">{change.to}</span>
+                      <span className="text-app-text-dim line-through">{change.from}</span>
+                      <span className="mx-1 text-app-text-dim">→</span>
+                      <span className="font-bold text-app-accent">{change.to}</span>
                     </span>
                   </li>
                 ))}
@@ -239,7 +239,7 @@ export function HouseRulesPanel({
             </>
           ) : null}
 
-          <p className="text-[0.6875rem] text-(--app-text-dim)">
+          <p className="text-[0.6875rem] text-app-text-dim">
             {proposal.source === 'ai'
               ? t('house-rules-by-ai', { defaultValue: 'Balanced by AI.' })
               : t('house-rules-by-fallback', {

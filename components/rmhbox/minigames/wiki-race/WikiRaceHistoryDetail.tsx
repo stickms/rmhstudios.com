@@ -171,13 +171,13 @@ export default function WikiRaceHistoryDetail({
     <div className="space-y-4" data-testid="wiki-race-history-detail">
       {/* Game-level header */}
       {isMultiRound && (
-        <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-3">
+        <div className="rounded-app-sm border border-app-border bg-app-bg p-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase">
+            <h4 className="text-xs font-semibold text-app-text-muted uppercase">
               {t("wiki-race-n-rounds", { defaultValue: "Wiki-Race — {{count}} Rounds", count: totalRounds })}
             </h4>
             {timeLimit && (
-              <span className="text-xs text-(--app-text-muted)">
+              <span className="text-xs text-app-text-muted">
                 {t("time-limit-per-round", { defaultValue: "{{seconds}}s per round", seconds: timeLimit })}
               </span>
             )}
@@ -198,8 +198,8 @@ export default function WikiRaceHistoryDetail({
       ))}
 
       {/* Final scores */}
-      <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4">
-        <h4 className="text-sm font-semibold text-(--app-text-muted) mb-2">
+      <div className="rounded-app-sm border border-app-border bg-app-bg p-4">
+        <h4 className="text-sm font-semibold text-app-text-muted mb-2">
           {isMultiRound ? t("cumulative-scores", { defaultValue: "Cumulative Scores" }) : t("final-scores", { defaultValue: "Final Scores" })}
         </h4>
         <div className="space-y-1">
@@ -210,8 +210,8 @@ export default function WikiRaceHistoryDetail({
                 key={p.userId}
                 className={`flex justify-between text-sm ${
                   p.userId === currentUserId
-                    ? 'text-(--app-accent) font-semibold'
-                    : 'text-(--app-text)'
+                    ? 'text-app-accent font-semibold'
+                    : 'text-app-text'
                 }`}
               >
                 <span>
@@ -265,17 +265,17 @@ function RoundSection({
     | undefined;
 
   const difficultyColors: Record<string, string> = {
-    easy: 'bg-(--app-success)/20 text-(--app-success)',
-    medium: 'bg-(--app-warning)/20 text-(--app-warning)',
-    hard: 'bg-(--app-danger)/20 text-(--app-danger)',
+    easy: 'bg-app-success/20 text-app-success',
+    medium: 'bg-app-warning/20 text-app-warning',
+    hard: 'bg-app-danger/20 text-app-danger',
   };
 
   return (
     <div className="space-y-3">
       {/* Race Info / Round header */}
-      <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4">
+      <div className="rounded-app-sm border border-app-border bg-app-bg p-4">
         <div className="flex items-center justify-between mb-2">
-          <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase">
+          <h4 className="text-xs font-semibold text-app-text-muted uppercase">
             {showRoundHeader ? t("round-n", { defaultValue: "Round {{round}}", round: round.round }) : t("race-details", { defaultValue: "Race Details" })}
           </h4>
           <div className="flex items-center gap-2">
@@ -291,24 +291,24 @@ function RoundSection({
           </div>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <span className="font-medium text-(--app-text)">
+          <span className="font-medium text-app-text">
             {round.startArticle}
           </span>
-          <span className="text-(--app-text-muted)">→</span>
-          <span className="font-bold text-(--app-accent)">
+          <span className="text-app-text-muted">→</span>
+          <span className="font-bold text-app-accent">
             {round.targetArticle}
           </span>
         </div>
         {!showRoundHeader && timeLimit && (
-          <div className="text-xs text-(--app-text-muted) mt-1">
+          <div className="text-xs text-app-text-muted mt-1">
             {t("time-limit-seconds", { defaultValue: "Time limit: {{seconds}}s", seconds: timeLimit })}
           </div>
         )}
       </div>
 
       {/* Player paths for this round */}
-      <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4">
-        <h4 className="text-sm font-semibold text-(--app-text-muted) mb-3">
+      <div className="rounded-app-sm border border-app-border bg-app-bg p-4">
+        <h4 className="text-sm font-semibold text-app-text-muted mb-3">
           {t("player-paths", { defaultValue: "Player Paths" })}
         </h4>
         <div className="space-y-3">
@@ -326,15 +326,15 @@ function RoundSection({
             return (
               <div
                 key={p.userId}
-                className={`rounded border border-(--app-border) p-3 ${
-                  isMe ? 'border-(--app-accent)/30 bg-(--app-accent)/5' : ''
+                className={`rounded border border-app-border p-3 ${
+                  isMe ? 'border-app-accent/30 bg-app-accent/5' : ''
                 }`}
               >
                 {/* Player header */}
                 <div className="flex items-center justify-between mb-2">
                   <span
                     className={`text-sm font-semibold ${
-                      isMe ? 'text-(--app-accent)' : 'text-(--app-text)'
+                      isMe ? 'text-app-accent' : 'text-app-text'
                     }`}
                   >
                     {finish && (
@@ -346,7 +346,7 @@ function RoundSection({
                   </span>
                   <div className="flex items-center gap-2 text-xs">
                     {finish ? (
-                      <span className="text-(--app-success) font-medium">
+                      <span className="text-app-success font-medium">
                         {t("finished-clicks", { defaultValue: "✓ Finished — {{clicks}} clicks", clicks: path.length - 1 })}
                         {(finish.payload.timeMs as number) != null && (
                           <>
@@ -359,21 +359,21 @@ function RoundSection({
                         )}
                       </span>
                     ) : timeout ? (
-                      <span className="text-(--app-danger) font-medium">
+                      <span className="text-app-danger font-medium">
                         {t("timeout-clicks", { defaultValue: "✗ Timeout — {{clicks}} clicks", clicks: path.length - 1 })}
                       </span>
                     ) : (
-                      <span className="text-(--app-text-muted)">
+                      <span className="text-app-text-muted">
                         {t("in-progress", { defaultValue: "In progress" })}
                       </span>
                     )}
                     {backs > 0 && (
-                      <span className="text-(--app-text-muted)">
+                      <span className="text-app-text-muted">
                         {t("n-back", { defaultValue: "({{count}} back)", count: backs })}
                       </span>
                     )}
                     {roundScores?.[p.userId] != null && (
-                      <span className="text-(--app-text-muted) font-mono">
+                      <span className="text-app-text-muted font-mono">
                         +{roundScores[p.userId]}
                       </span>
                     )}
@@ -381,20 +381,20 @@ function RoundSection({
                 </div>
 
                 {/* Breadcrumb trail */}
-                <div className="flex flex-wrap items-center gap-0.5 text-xs text-(--app-text-muted)">
+                <div className="flex flex-wrap items-center gap-0.5 text-xs text-app-text-muted">
                   {path.map((article, ai) => (
                     <span key={ai} className="flex items-center">
                       {ai > 0 && (
-                        <span className="mx-0.5 text-(--app-text-muted)/50">
+                        <span className="mx-0.5 text-app-text-muted/50">
                           →
                         </span>
                       )}
                       <span
                         className={
                           article === round.targetArticle
-                            ? 'text-(--app-success) font-semibold'
+                            ? 'text-app-success font-semibold'
                             : article === round.startArticle
-                              ? 'text-(--app-text) font-medium'
+                              ? 'text-app-text font-medium'
                               : ''
                         }
                       >
@@ -411,12 +411,12 @@ function RoundSection({
 
       {/* Round End Summary */}
       {round.endAction && (
-        <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-3">
-          <h4 className="text-xs font-semibold text-(--app-text-muted) uppercase mb-1">
+        <div className="rounded-app-sm border border-app-border bg-app-bg p-3">
+          <h4 className="text-xs font-semibold text-app-text-muted uppercase mb-1">
             {showRoundHeader ? t("round-n-end", { defaultValue: "Round {{round}} End", round: round.round }) : t("game-end", { defaultValue: "Game End" })}
           </h4>
-          <div className="text-xs text-(--app-text-muted)">
-            <span className="text-(--app-text)">
+          <div className="text-xs text-app-text-muted">
+            <span className="text-app-text">
               {(round.endAction.payload.reason as string)?.replace(/_/g, ' ') ??
                 t("game-over", { defaultValue: "Game over" })}
             </span>

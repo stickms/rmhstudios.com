@@ -53,7 +53,7 @@ function AnimationRunner() {
   return (
     <div className="space-y-1.5 pt-2">
       <h3 className="tf2hud-panel-head">{t('animations', { defaultValue: 'Animations' })}</h3>
-      <p className="text-[11px] text-(--app-text-dim)">
+      <p className="text-[11px] text-app-text-dim">
         {script
           ? t('animations-hint', {
               defaultValue: 'Run an event from hudanimations to see it play on the preview.',
@@ -185,7 +185,7 @@ export default function TestPanel() {
             onChange={(health) => setTest({ health })}
             className="w-20"
           />
-          <span className="text-xs text-(--app-text-dim)">/</span>
+          <span className="text-xs text-app-text-dim">/</span>
           <NumberField
             label={t('max-health', { defaultValue: 'Max health' })}
             value={test.maxHealth}
@@ -319,7 +319,7 @@ export default function TestPanel() {
         </h3>
         {[...EVENTS, ...SITUATIONS].map((e) => (
           <div key={e.id} className="flex items-center justify-between gap-3 py-0.5 text-xs">
-            <span className="text-(--app-text-muted)">{e.label}</span>
+            <span className="text-app-text-muted">{e.label}</span>
             <Toggle
               label={e.label}
               checked={test.events.includes(e.id)}

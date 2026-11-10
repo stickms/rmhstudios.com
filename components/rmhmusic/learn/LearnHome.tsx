@@ -134,7 +134,7 @@ export function LearnHome() {
   if (status === 'error') {
     body = (
       <div role="alert" className="rmm-sheet space-y-3 p-4">
-        <p className="text-(--app-text)">
+        <p className="text-app-text">
           {error === 'unauthorized'
             ? t('error-signed-out', {
                 defaultValue: 'Your session ended. Sign in again to continue.',
@@ -169,7 +169,7 @@ export function LearnHome() {
         />
         <div>
           <div className={INPUT_TEXT}>
-            <p className="min-w-0 text-sm leading-5 break-words text-(--app-text-muted)">
+            <p className="min-w-0 text-sm leading-5 break-words text-app-text-muted">
               {inputLine}
             </p>
           </div>
@@ -190,7 +190,7 @@ export function LearnHome() {
           </div>
         </div>
         {instrumentFailed && (
-          <p role="status" className="text-sm text-(--app-danger)">
+          <p role="status" className="text-sm text-app-danger">
             {t('error-save', { defaultValue: "Couldn't save that change. Try again." })}
           </p>
         )}
@@ -213,7 +213,7 @@ export function LearnHome() {
           <Link
             to="/apps"
             onClick={goBack}
-            className="-ms-3 flex min-h-11 min-w-0 items-center gap-1.5 rounded-(--app-radius-sm) px-3 py-2 text-sm font-medium text-(--app-text-muted) transition-colors hover:text-(--app-text)"
+            className="-ms-3 flex min-h-11 min-w-0 items-center gap-1.5 rounded-app-sm px-3 py-2 text-sm font-medium text-app-text-muted transition-colors hover:text-app-text"
           >
             <ArrowLeft className="h-4 w-4 shrink-0 rtl-flip" aria-hidden="true" />
             <span>{t('back-to-builds', { defaultValue: 'Back to Builds' })}</span>
@@ -231,7 +231,7 @@ export function LearnHome() {
             </p>
           )}
           <HomeHero />
-          <h1 className="rmm-display text-[2.5rem] leading-[3rem] text-(--app-text) sm:text-5xl sm:leading-[3.5rem]">
+          <h1 className="rmm-display text-[2.5rem] leading-[3rem] text-app-text sm:text-5xl sm:leading-[3.5rem]">
             {ready
               ? instrument === 'guitar'
                 ? t('heading-guitar', { defaultValue: 'Learn guitar' })

@@ -69,8 +69,8 @@ describe('NoteValues', () => {
         .replace(/<span class="sr-only">underlined<\/span>/g, '');
     const norm = (h: string) =>
       h
-        .replace(/text-\(--app-text(-muted)?\)/g, 'T')
-        .replace(/border-\(--app-accent\)|border-transparent/g, 'B');
+        .replace(/text-app-text(-muted)?\b/g, 'T')
+        .replace(/border-app-accent|border-transparent/g, 'B');
     expect(norm(strip(asked))).toBe(norm(plain));
   });
 });

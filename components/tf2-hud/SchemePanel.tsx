@@ -90,7 +90,7 @@ function ColorsTab({ scheme }: { scheme: Scheme }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="space-y-2 border-b border-(--app-border) p-2">
+      <div className="space-y-2 border-b border-app-border p-2">
         <div className="flex gap-2">
           <TextField
             type="search"
@@ -99,7 +99,7 @@ function ColorsTab({ scheme }: { scheme: Scheme }) {
             placeholder={t('search-colors', { defaultValue: 'Search colours' })}
             aria-label={t('search-colors', { defaultValue: 'Search colours' })}
           />
-          <label className="flex shrink-0 items-center gap-1.5 text-[11px] text-(--app-text-muted)">
+          <label className="flex shrink-0 items-center gap-1.5 text-[11px] text-app-text-muted">
             <Toggle
               label={t('base-settings', { defaultValue: 'BaseSettings' })}
               checked={source === 'base'}
@@ -175,20 +175,20 @@ function ColorsTab({ scheme }: { scheme: Scheme }) {
                     type="button"
                     onClick={(e) => setEditing({ name: c.name, anchor: e.currentTarget })}
                     className={cn(
-                      'flex w-full items-center gap-2 rounded-(--app-radius-sm) border p-1.5 text-start hover:bg-(--app-surface-hover)',
-                      used ? 'border-(--app-accent)' : 'border-(--app-border)',
+                      'flex w-full items-center gap-2 rounded-app-sm border p-1.5 text-start hover:bg-app-surface-hover',
+                      used ? 'border-app-accent' : 'border-app-border',
                     )}
                   >
                     <Swatch color={c.rgba} className="size-8 shrink-0" />
                     <span className="min-w-0">
-                      <span className="block truncate text-xs font-semibold text-(--app-text)">
+                      <span className="block truncate text-xs font-semibold text-app-text">
                         {c.name}
                       </span>
-                      <span className="block truncate font-mono text-[10px] text-(--app-text-dim)">
+                      <span className="block truncate font-mono text-[10px] text-app-text-dim">
                         {c.alias ? `→ ${c.raw}` : c.raw}
                       </span>
                       {used ? (
-                        <span className="block truncate text-[10px] text-(--app-accent-text)">
+                        <span className="block truncate text-[10px] text-app-accent-text">
                           {t('used-by', {
                             defaultValue: 'used by {{props}}',
                             props: used.join(', '),
@@ -258,11 +258,11 @@ function FontEditor({
         {defs.map((def, i) => (
           <section
             key={i}
-            className="space-y-2 rounded-(--app-radius-sm) border border-(--app-border) p-3"
+            className="space-y-2 rounded-app-sm border border-app-border p-3"
           >
             <FaceSample def={def} px={Math.max(12, def.tall)} />
             <div className="grid gap-2 sm:grid-cols-4">
-              <div className="col-span-2 flex flex-col gap-1 text-[11px] text-(--app-text-muted)">
+              <div className="col-span-2 flex flex-col gap-1 text-[11px] text-app-text-muted">
                 {t('face', { defaultValue: 'Face' })}
                 <FacePicker
                   key={`${name}:${i}`}
@@ -270,7 +270,7 @@ function FontEditor({
                   onChange={(v) => setProp(i, 'name', v)}
                 />
               </div>
-              <label className="flex flex-col gap-1 text-[11px] text-(--app-text-muted)">
+              <label className="flex flex-col gap-1 text-[11px] text-app-text-muted">
                 {t('size', { defaultValue: 'Size' })}
                 <NumberField
                   label={t('size', { defaultValue: 'Size' })}
@@ -280,7 +280,7 @@ function FontEditor({
                   onChange={(v) => setProp(i, 'tall', String(v))}
                 />
               </label>
-              <label className="flex flex-col gap-1 text-[11px] text-(--app-text-muted)">
+              <label className="flex flex-col gap-1 text-[11px] text-app-text-muted">
                 {t('weight', { defaultValue: 'Weight' })}
                 <NumberField
                   label={t('weight', { defaultValue: 'Weight' })}
@@ -296,7 +296,7 @@ function FontEditor({
               {FLAGS.map((flag) => (
                 <label
                   key={flag}
-                  className="flex items-center gap-1.5 text-[11px] text-(--app-text-muted)"
+                  className="flex items-center gap-1.5 text-[11px] text-app-text-muted"
                 >
                   <Toggle
                     label={flag}
@@ -314,7 +314,7 @@ function FontEditor({
                 </label>
               ))}
             </div>
-            <div className="flex items-center gap-2 text-[11px] text-(--app-text-muted)">
+            <div className="flex items-center gap-2 text-[11px] text-app-text-muted">
               {t('window', { defaultValue: 'Screen-height window' })}
               <NumberField
                 label="min"
@@ -390,7 +390,7 @@ function FontsTab({ scheme }: { scheme: Scheme }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="space-y-2 border-b border-(--app-border) p-2">
+      <div className="space-y-2 border-b border-app-border p-2">
         <TextField
           type="search"
           value={query}
@@ -422,7 +422,7 @@ function FontsTab({ scheme }: { scheme: Scheme }) {
             {t('add', { defaultValue: 'Add' })}
           </Btn>
         </div>
-        <p className="text-[11px] text-(--app-text-dim)">
+        <p className="text-[11px] text-app-text-dim">
           {t('fonts-at', { defaultValue: 'Shown at {{h}}p', h: screenH })}
         </p>
       </div>
@@ -441,12 +441,12 @@ function FontsTab({ scheme }: { scheme: Scheme }) {
                 <li
                   key={n}
                   className={cn(
-                    'border-b border-(--app-border) px-3 py-2',
-                    used && 'bg-(--app-accent-dim)',
+                    'border-b border-app-border px-3 py-2',
+                    used && 'bg-app-accent-dim',
                   )}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-xs font-semibold text-(--app-text)">{n}</span>
+                    <span className="truncate text-xs font-semibold text-app-text">{n}</span>
                     <span className="flex shrink-0 items-center gap-1.5">
                       <Pill tone={statusTone(status)}>{label(status)}</Pill>
                       <Btn size="xs" variant="ghost" onClick={() => setEditing(n)}>
@@ -455,7 +455,7 @@ function FontsTab({ scheme }: { scheme: Scheme }) {
                     </span>
                   </div>
                   {active ? <FaceSample def={active.def} px={active.px} /> : null}
-                  <p className="font-mono text-[10px] text-(--app-text-dim)">
+                  <p className="font-mono text-[10px] text-app-text-dim">
                     {active
                       ? `${active.def.name} · ${Math.round(active.px * 10) / 10}px${active.proportional ? ' scales' : ''}`
                       : ''}
@@ -488,7 +488,7 @@ function BordersTab({ scheme }: { scheme: Scheme }) {
   }, [scheme, query]);
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="border-b border-(--app-border) p-2">
+      <div className="border-b border-app-border p-2">
         <TextField
           type="search"
           value={query}
@@ -508,16 +508,16 @@ function BordersTab({ scheme }: { scheme: Scheme }) {
                 <li
                   key={name}
                   className={cn(
-                    'flex items-center gap-3 border-b border-(--app-border) px-3 py-2',
-                    used && 'bg-(--app-accent-dim)',
+                    'flex items-center gap-3 border-b border-app-border px-3 py-2',
+                    used && 'bg-app-accent-dim',
                   )}
                 >
                   <BorderSwatch border={border} scheme={scheme} />
                   <span className="min-w-0">
-                    <span className="block truncate text-xs font-semibold text-(--app-text)">
+                    <span className="block truncate text-xs font-semibold text-app-text">
                       {name}
                     </span>
-                    <span className="block font-mono text-[10px] text-(--app-text-dim)">
+                    <span className="block font-mono text-[10px] text-app-text-dim">
                       {t('border-layers', {
                         defaultValue: '{{n}} layer(s)',
                         n: Math.max(
@@ -557,7 +557,7 @@ export default function SchemePanel() {
       aria-label={t('scheme', { defaultValue: 'Scheme' })}
     >
       <PanelHead title={t('scheme', { defaultValue: 'Scheme' })} />
-      <div className="border-b border-(--app-border) p-1.5">
+      <div className="border-b border-app-border p-1.5">
         <TfTabs
           tabs={tabs}
           value={tab}

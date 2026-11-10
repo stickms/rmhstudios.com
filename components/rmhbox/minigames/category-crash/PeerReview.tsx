@@ -122,18 +122,18 @@ export default function PeerReview({
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-bold">{t("voting", { defaultValue: "Voting" })}</h3>
         </div>
-        <span className="rounded-(--app-radius-sm) bg-(--app-surface) px-3 py-1.5 text-sm font-medium text-(--app-text-muted)">
+        <span className="rounded-app-sm bg-app-surface px-3 py-1.5 text-sm font-medium text-app-text-muted">
           {t("host-directed", { defaultValue: "Host-directed" })}
         </span>
       </div>
 
-      <p className="text-sm text-(--app-text-muted)">
+      <p className="text-sm text-app-text-muted">
         {t("vote-instruction", { defaultValue: "Vote crash or safe on each answer. Letter: {{letter}}", letter })}
       </p>
 
       {/* Category indicator (server-driven, no manual navigation) */}
       <div className="flex flex-col items-center gap-1.5">
-        <span className="text-base font-bold text-(--app-text)">
+        <span className="text-base font-bold text-app-text">
           {activeCategory?.name ?? '—'}
         </span>
         {/* Dot indicators */}
@@ -143,16 +143,16 @@ export default function PeerReview({
               key={idx}
               className={`h-2 w-2 rounded-full transition-colors ${
                 idx === activeCatIndex
-                  ? 'bg-(--app-accent) scale-125'
+                  ? 'bg-app-accent scale-125'
                   : idx < activeCatIndex
-                    ? 'bg-(--app-text-muted)'
-                    : 'bg-(--app-border)'
+                    ? 'bg-app-text-muted'
+                    : 'bg-app-border'
               }`}
               title={categories[idx].name}
             />
           ))}
         </div>
-        <span className="text-[10px] text-(--app-text-muted)">
+        <span className="text-[10px] text-app-text-muted">
           {activeCatIndex + 1} / {categories.length}
         </span>
       </div>
@@ -184,9 +184,9 @@ export default function PeerReview({
             let voteStatusColor = '';
             if (!isEmpty && hasVotes && !isDuplicate) {
               if (crashCount > safeCount) {
-                voteStatusColor = 'text-(--app-danger)';
+                voteStatusColor = 'text-app-danger';
               } else if (safeCount > crashCount) {
-                voteStatusColor = 'text-(--app-success)';
+                voteStatusColor = 'text-app-success';
               }
               // tied → normal color (no override)
             }
@@ -194,32 +194,32 @@ export default function PeerReview({
             return (
               <div
                 key={answerSet.anonymousLabel}
-                className={`glass-fill flex items-center justify-between rounded-(--app-radius-sm) border px-3 py-2 text-sm transition-colors ${
+                className={`glass-fill flex items-center justify-between rounded-app-sm border px-3 py-2 text-sm transition-colors ${
                   isOwn
-                    ? 'border-(--app-accent)/40 bg-(--app-accent-dim)'
+                    ? 'border-app-accent/40 bg-app-accent-dim'
                     : isEmpty
-                      ? 'border-(--app-border)/30 opacity-40'
+                      ? 'border-app-border/30 opacity-40'
                       : isDuplicate
-                        ? 'border-(--app-warning)/40 bg-(--app-warning-dim) text-(--app-warning)'
-                        : 'border-(--app-border)'
+                        ? 'border-app-warning/40 bg-app-warning-dim text-app-warning'
+                        : 'border-app-border'
                 }`}
               >
                 <span className="flex items-center gap-2 min-w-0 flex-1">
                   <span className={`truncate ${
                     !startsCorrectly && !isEmpty
-                      ? 'line-through text-(--app-danger)/70'
+                      ? 'line-through text-app-danger/70'
                       : voteStatusColor
                   }`}>
                     {answer ?? t("empty-answer", { defaultValue: "— empty —" })}
                   </span>
                   {isOwn && (
-                    <span className="flex items-center gap-0.5 text-[10px] font-medium text-(--app-accent) shrink-0">
+                    <span className="flex items-center gap-0.5 text-[10px] font-medium text-app-accent shrink-0">
                       <User className="h-2.5 w-2.5" />
                       {t("yours-label", { defaultValue: "(yours)" })}
                     </span>
                   )}
                   {isDuplicate && (
-                    <span className="flex items-center gap-0.5 text-[10px] font-medium text-(--app-warning) shrink-0">
+                    <span className="flex items-center gap-0.5 text-[10px] font-medium text-app-warning shrink-0">
                       <Copy className="h-2.5 w-2.5" />
                       {t("duplicate", { defaultValue: "Duplicate" })}
                     </span>
@@ -230,10 +230,10 @@ export default function PeerReview({
                 {!isEmpty && !isDuplicate && (
                   <span className="flex items-center gap-1.5 shrink-0 ml-2">
                     {/* Live tally */}
-                    <span className="flex items-center gap-1 text-xs text-(--app-text-muted)">
-                      <Flame className="h-3 w-3 text-(--app-danger)" />
+                    <span className="flex items-center gap-1 text-xs text-app-text-muted">
+                      <Flame className="h-3 w-3 text-app-danger" />
                       {crashCount}
-                      <Shield className="h-3 w-3 text-(--app-success) ml-1" />
+                      <Shield className="h-3 w-3 text-app-success ml-1" />
                       {safeCount}
                     </span>
                     {/* Crash/Safe buttons (not shown for own answers) */}
@@ -244,8 +244,8 @@ export default function PeerReview({
                           onClick={() => onVote(answerSet.anonymousLabel, activeCatIndex, 'crash')}
                           className={`glass-fill flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
                             myVote === 'crash'
-                              ? 'bg-(--app-danger)/30 text-(--app-danger) border border-(--app-danger)/40'
-                              : 'text-(--app-text-muted) border border-(--app-border) hover:bg-(--app-danger-dim) hover:text-(--app-danger)'
+                              ? 'bg-app-danger/30 text-app-danger border border-app-danger/40'
+                              : 'text-app-text-muted border border-app-border hover:bg-app-danger-dim hover:text-app-danger'
                           }`}
                         >
                           <Flame className="h-3 w-3" />
@@ -256,8 +256,8 @@ export default function PeerReview({
                           onClick={() => onVote(answerSet.anonymousLabel, activeCatIndex, 'safe')}
                           className={`glass-fill flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
                             myVote === 'safe'
-                              ? 'bg-(--app-success)/30 text-(--app-success) border border-(--app-success)/40'
-                              : 'text-(--app-text-muted) border border-(--app-border) hover:bg-(--app-success-dim) hover:text-(--app-success)'
+                              ? 'bg-app-success/30 text-app-success border border-app-success/40'
+                              : 'text-app-text-muted border border-app-border hover:bg-app-success-dim hover:text-app-success'
                           }`}
                         >
                           <Shield className="h-3 w-3" />
@@ -279,7 +279,7 @@ export default function PeerReview({
           <button
             type="button"
             onClick={onAdvanceVoting}
-            className="flex items-center gap-2 rounded-(--app-radius-sm) bg-(--app-accent) px-5 py-2 text-sm font-semibold text-(--app-accent-fg) transition-colors hover:opacity-90"
+            className="flex items-center gap-2 rounded-app-sm bg-app-accent px-5 py-2 text-sm font-semibold text-app-accent-fg transition-colors hover:opacity-90"
           >
             {isLastCategory ? t("finish-voting", { defaultValue: "Finish Voting" }) : t("next-prompt", { defaultValue: "Next Prompt" })}
             <ChevronRight size={16} />

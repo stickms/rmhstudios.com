@@ -98,10 +98,10 @@ export function StaffCard({
 
   const ink =
     state === 'right'
-      ? 'text-(--app-accent)'
+      ? 'text-app-accent'
       : state === 'wrong'
-        ? 'text-(--app-danger)'
-        : 'text-(--app-text)';
+        ? 'text-app-danger'
+        : 'text-app-text';
 
   const right = CARD_W - 4;
   return (
@@ -110,7 +110,7 @@ export function StaffCard({
         viewBox={`0 0 ${CARD_W} ${height}`}
         role="img"
         aria-labelledby={titleId}
-        className="block h-auto w-full text-(--app-text)"
+        className="block h-auto w-full text-app-text"
       >
         <title id={titleId}>{label}</title>
         <g fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.6">

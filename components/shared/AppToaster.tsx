@@ -21,10 +21,10 @@ const ICON: Record<ToastType, React.ReactNode> = {
 };
 
 const TONE: Record<ToastType, string> = {
-  success: 'text-(--app-success)',
-  error: 'text-(--app-danger)',
-  warning: 'text-(--app-warning)',
-  info: 'text-(--app-info)',
+  success: 'text-app-success',
+  error: 'text-app-danger',
+  warning: 'text-app-warning',
+  info: 'text-app-info',
 };
 
 /**
@@ -72,7 +72,7 @@ export default function AppToaster() {
           // `.app-glass`: the toast is jelly like every other app surface (04 §1 "App toasts", tier S) — the engine
           // draws its rim and haze, the static floor stands in without WebGL, and `relative` gives those layers their
           // box. It keeps its opaque fill: it lands over a running game, where a translucent message would ghost.
-          className={`app-glass pointer-events-auto relative flex w-full max-w-[420px] items-center gap-3 rounded-(--app-radius-sm) px-4 py-3 ${
+          className={`app-glass pointer-events-auto relative flex w-full max-w-[420px] items-center gap-3 rounded-app-sm px-4 py-3 ${
             toast.exiting ? 'app-toast-exit' : 'app-toast-enter'
           } ${TONE[toast.type]}`}
           style={{
@@ -84,13 +84,13 @@ export default function AppToaster() {
           {ICON[toast.type]}
           {/* Server messages can carry a long unbroken token (a room code, a
               URL); without this one of them widens the toast off-screen. */}
-          <span className="min-w-0 flex-1 text-sm font-medium break-words text-(--app-text)">
+          <span className="min-w-0 flex-1 text-sm font-medium break-words text-app-text">
             {toast.message}
           </span>
           <button
             type="button"
             onClick={() => dismissToast(toast.id)}
-            className="-me-2 grid size-9 shrink-0 place-items-center rounded-full text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-text)"
+            className="-me-2 grid size-9 shrink-0 place-items-center rounded-full text-app-text-muted transition-colors hover:bg-app-surface-hover hover:text-app-text"
             aria-label={t('dismiss', { defaultValue: 'Dismiss' })}
           >
             <X className="h-3.5 w-3.5" aria-hidden />

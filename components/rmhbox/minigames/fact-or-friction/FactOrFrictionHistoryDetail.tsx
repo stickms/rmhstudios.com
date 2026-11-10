@@ -24,12 +24,12 @@ interface QuestionResult {
 
 const LABELS = ['A', 'B', 'C', 'D'];
 
-const DEFAULT_DIFFICULTY_STYLE = 'bg-(--app-warning)/20 text-(--app-warning)';
+const DEFAULT_DIFFICULTY_STYLE = 'bg-app-warning/20 text-app-warning';
 
 const DIFFICULTY_STYLES: Record<string, string> = {
-  easy: 'bg-(--app-success)/20 text-(--app-success)',
+  easy: 'bg-app-success/20 text-app-success',
   medium: DEFAULT_DIFFICULTY_STYLE,
-  hard: 'bg-(--app-danger)/20 text-(--app-danger)',
+  hard: 'bg-app-danger/20 text-app-danger',
 };
 
 export default function FactOrFrictionHistoryDetail({
@@ -45,9 +45,9 @@ export default function FactOrFrictionHistoryDetail({
     <div className="space-y-4" data-testid="fof-history-detail">
       {/* Game Settings */}
       {gameLog.initialState && (
-        <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-3">
-          <h4 className="mb-1 text-xs font-semibold uppercase text-(--app-text-muted)">{t("game-settings", { defaultValue: "Game Settings" })}</h4>
-          <div className="flex flex-wrap gap-3 text-xs text-(--app-text-muted)">
+        <div className="rounded-app-sm border border-app-border bg-app-bg p-3">
+          <h4 className="mb-1 text-xs font-semibold uppercase text-app-text-muted">{t("game-settings", { defaultValue: "Game Settings" })}</h4>
+          <div className="flex flex-wrap gap-3 text-xs text-app-text-muted">
             <span>{t("questions-count", { defaultValue: "Questions: {{count}}", count: (gameLog.initialState.totalQuestions as number) ?? questionStarts.length })}</span>
             {gameLog.initialState.answerDuration != null && (
               <span>{t("answer-time", { defaultValue: "Answer Time: {{duration}}s", duration: String(gameLog.initialState.answerDuration) })}</span>
@@ -75,16 +75,16 @@ export default function FactOrFrictionHistoryDetail({
         return (
           <div
             key={questionNum}
-            className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4"
+            className="rounded-app-sm border border-app-border bg-app-bg p-4"
           >
             {/* Question header */}
             <div className="mb-3 flex items-center justify-between">
-              <h4 className="text-sm font-semibold text-(--app-text-muted)">
+              <h4 className="text-sm font-semibold text-app-text-muted">
                 {t("question-number", { defaultValue: "Question {{num}}", num: questionNum })}
               </h4>
               <div className="flex items-center gap-2">
                 {category && (
-                  <span className="rounded-full bg-(--app-surface-hover) px-2 py-0.5 text-xs text-(--app-text-muted)">
+                  <span className="rounded-full bg-app-surface-hover px-2 py-0.5 text-xs text-app-text-muted">
                     {category}
                   </span>
                 )}
@@ -97,7 +97,7 @@ export default function FactOrFrictionHistoryDetail({
             </div>
 
             {/* Question text */}
-            <p className="mb-3 text-sm font-medium text-(--app-text)">{questionText}</p>
+            <p className="mb-3 text-sm font-medium text-app-text">{questionText}</p>
 
             {/* Options */}
             {options.length > 0 && (
@@ -107,10 +107,10 @@ export default function FactOrFrictionHistoryDetail({
                   return (
                     <div
                       key={i}
-                      className={`flex items-center gap-1.5 rounded-(--app-radius-sm) border px-2 py-1 text-xs ${
+                      className={`flex items-center gap-1.5 rounded-app-sm border px-2 py-1 text-xs ${
                         isCorrect
-                          ? 'border-(--app-success)/50 bg-(--app-success)/10 text-(--app-success) font-semibold'
-                          : 'border-(--app-border) text-(--app-text-muted)'
+                          ? 'border-app-success/50 bg-app-success/10 text-app-success font-semibold'
+                          : 'border-app-border text-app-text-muted'
                       }`}
                     >
                       <span className="font-bold">{LABELS[i]}.</span>
@@ -124,8 +124,8 @@ export default function FactOrFrictionHistoryDetail({
 
             {/* Player results for this question */}
             {revealResults.length > 0 && (
-              <div className="border-t border-(--app-border) pt-2">
-                <span className="text-xs font-medium uppercase text-(--app-text-muted)">{t("responses", { defaultValue: "Responses" })}</span>
+              <div className="border-t border-app-border pt-2">
+                <span className="text-xs font-medium uppercase text-app-text-muted">{t("responses", { defaultValue: "Responses" })}</span>
                 <div className="mt-1 space-y-1">
                   {revealResults.map((pr) => {
                     const name = players.find((p) => p.userId === pr.userId)?.userName ?? pr.userId;
@@ -134,22 +134,22 @@ export default function FactOrFrictionHistoryDetail({
                       <div
                         key={pr.userId}
                         className={`flex items-center justify-between text-xs ${
-                          isMe ? 'text-(--app-accent) font-semibold' : 'text-(--app-text-muted)'
+                          isMe ? 'text-app-accent font-semibold' : 'text-app-text-muted'
                         }`}
                       >
                         <div className="flex items-center gap-1.5">
                           {pr.isCorrect ? (
-                            <Check className="h-3 w-3 text-(--app-success)" />
+                            <Check className="h-3 w-3 text-app-success" />
                           ) : pr.passed ? (
-                            <SkipForward className="h-3 w-3 text-(--app-warning)" />
+                            <SkipForward className="h-3 w-3 text-app-warning" />
                           ) : pr.timedOut ? (
                             <Clock className="h-3 w-3" />
                           ) : (
-                            <X className="h-3 w-3 text-(--app-danger)" />
+                            <X className="h-3 w-3 text-app-danger" />
                           )}
                           <span>{name}</span>
                           {pr.isFirst && (
-                            <span className="flex items-center gap-0.5 text-[10px] text-(--app-warning)">
+                            <span className="flex items-center gap-0.5 text-[10px] text-app-warning">
                               <Zap className="h-2.5 w-2.5" /> {t("first", { defaultValue: "First" })}
                             </span>
                           )}
@@ -157,7 +157,7 @@ export default function FactOrFrictionHistoryDetail({
                             <span className="opacity-50">({LABELS[pr.selectedIndex]})</span>
                           )}
                         </div>
-                        <span className={pr.scoreChange > 0 ? 'text-(--app-success)' : pr.scoreChange < 0 ? 'text-(--app-danger)' : ''}>
+                        <span className={pr.scoreChange > 0 ? 'text-app-success' : pr.scoreChange < 0 ? 'text-app-danger' : ''}>
                           {pr.scoreChange > 0 ? '+' : ''}{pr.scoreChange}
                         </span>
                       </div>
@@ -171,8 +171,8 @@ export default function FactOrFrictionHistoryDetail({
       })}
 
       {/* Final scores */}
-      <div className="rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-4">
-        <h4 className="mb-2 text-sm font-semibold text-(--app-text-muted)">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
+      <div className="rounded-app-sm border border-app-border bg-app-bg p-4">
+        <h4 className="mb-2 text-sm font-semibold text-app-text-muted">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players
             .sort((a, b) => a.rank - b.rank)
@@ -180,7 +180,7 @@ export default function FactOrFrictionHistoryDetail({
               <div
                 key={p.userId}
                 className={`flex justify-between text-sm ${
-                  p.userId === currentUserId ? 'text-(--app-accent) font-semibold' : 'text-(--app-text)'
+                  p.userId === currentUserId ? 'text-app-accent font-semibold' : 'text-app-text'
                 }`}
               >
                 <span>

@@ -209,7 +209,7 @@ export function FretboardView({
                       kind={isRight ? 'filled' : 'open'}
                       className={cn(
                         'relative h-4 w-5',
-                        isRight ? 'text-(--app-accent)' : 'text-(--app-danger)',
+                        isRight ? 'text-app-accent' : 'text-app-danger',
                       )}
                     />
                   )}

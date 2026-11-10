@@ -19,10 +19,10 @@ import { buildCanonical, buildMeta } from '@/lib/seo';
 import type { MinigameDefinition } from '@/lib/rmhbox/types';
 
 const CATEGORY_COLORS: Record<string, string> = {
-  word: 'bg-(--app-success)/20 text-(--app-success)',
-  trivia: 'bg-(--app-info)/20 text-(--app-info)',
-  action: 'bg-(--app-warning)/20 text-(--app-warning)',
-  creative: 'bg-(--app-rare)/20 text-(--app-rare)',
+  word: 'bg-app-success/20 text-app-success',
+  trivia: 'bg-app-info/20 text-app-info',
+  action: 'bg-app-warning/20 text-app-warning',
+  creative: 'bg-app-rare/20 text-app-rare',
 };
 
 function MinigamesPage() {
@@ -40,7 +40,7 @@ function MinigamesPage() {
       />
 
       <main className="mx-auto w-full max-w-4xl px-4 pt-4 pb-12 md:px-8 md:pt-8">
-          <h2 className="mb-4 text-2xl font-bold text-(--app-text) md:mb-6">
+          <h2 className="mb-4 text-2xl font-bold text-app-text md:mb-6">
             {t('minigames', { defaultValue: 'Minigames' })}
           </h2>
 
@@ -48,23 +48,23 @@ function MinigamesPage() {
             {minigames.map((game) => (
               <div
                 key={game.id}
-                className="glass-fill flex flex-col rounded-(--app-radius) px-4 py-4 md:px-6 md:py-5"
+                className="glass-fill flex flex-col rounded-app px-4 py-4 md:px-6 md:py-5"
                 data-testid={`minigame-card-${game.id}`}
               >
                 {/* Icon + name + category */}
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-(--app-radius-sm) bg-(--app-accent)/10">
-                    <LucideAwardIcon name={game.icon} className="h-5 w-5 text-(--app-accent)" aria-hidden />
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-app-sm bg-app-accent/10">
+                    <LucideAwardIcon name={game.icon} className="h-5 w-5 text-app-accent" aria-hidden />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-(--app-text)">{game.displayName}</h3>
+                    <h3 className="text-lg font-semibold text-app-text">{game.displayName}</h3>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span
                         className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${CATEGORY_COLORS[game.category] ?? ''}`}
                       >
                         {game.category}
                       </span>
-                      <span className="text-xs text-(--app-text-muted)">
+                      <span className="text-xs text-app-text-muted">
                         {t('player-range', {
                           minPlayers: game.minPlayers,
                           maxPlayers: game.maxPlayers,
@@ -76,14 +76,14 @@ function MinigamesPage() {
                 </div>
 
                 {/* Description */}
-                <p className="text-sm text-(--app-text-muted) mb-4 flex-1">{game.description}</p>
+                <p className="text-sm text-app-text-muted mb-4 flex-1">{game.description}</p>
 
                 {/* Action buttons */}
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => setLeaderboardGame(game)}
-                    className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-(--app-radius-sm) py-2 text-sm font-medium transition-colors bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-border)"
+                    className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-app-sm py-2 text-sm font-medium transition-colors bg-app-surface-hover text-app-text-muted hover:text-app-text hover:bg-app-border"
                     data-testid={`leaderboard-btn-${game.id}`}
                   >
                     <Trophy className="h-4 w-4" aria-hidden />
@@ -97,7 +97,7 @@ function MinigamesPage() {
                         params: { minigameId: game.id },
                       })
                     }
-                    className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-(--app-radius-sm) py-2 text-sm font-medium transition-colors bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
+                    className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-app-sm py-2 text-sm font-medium transition-colors bg-app-accent text-app-accent-fg hover:bg-app-accent-hover"
                     data-testid={`history-btn-${game.id}`}
                   >
                     <History className="h-4 w-4" aria-hidden />

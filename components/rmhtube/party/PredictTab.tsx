@@ -54,7 +54,7 @@ export default function PredictTab() {
       )}
 
       {pred && (
-        <div className="space-y-2 rounded-(--app-radius-sm) border border-(--app-border) p-3">
+        <div className="space-y-2 rounded-app-sm border border-app-border p-3">
           <p className="font-medium">{pred.question}</p>
           <p className={muted}>
             {t('predict-totals', {
@@ -147,7 +147,7 @@ export default function PredictTab() {
       )}
 
       <div>
-        <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-(--app-text-dim)">
+        <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-app-text-dim">
           {t('leaderboard', { defaultValue: 'Room leaderboard' })}
         </h4>
         <ol className="space-y-1">
@@ -156,7 +156,7 @@ export default function PredictTab() {
               <span className="truncate">
                 {i + 1}. {row.name}
               </span>
-              <span className="tabular-nums text-(--app-text-muted)">{row.points}</span>
+              <span className="tabular-nums text-app-text-muted">{row.points}</span>
             </li>
           ))}
         </ol>

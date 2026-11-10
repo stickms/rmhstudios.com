@@ -78,7 +78,7 @@ export default function HostControls({
 
   return (
     <div className="flex flex-col gap-3">
-      <span className="w-full text-xs font-semibold uppercase tracking-wider text-(--app-text-muted)">
+      <span className="w-full text-xs font-semibold uppercase tracking-wider text-app-text-muted">
         {t('host-controls', { defaultValue: 'Host Controls' })}
       </span>
 
@@ -86,7 +86,7 @@ export default function HostControls({
         <button
           onClick={() => setShowGamePicker(true)}
           disabled={!isWaiting}
-          className="flex items-center gap-2 rounded-(--app-radius-sm) bg-(--app-accent) px-4 py-2 text-sm font-semibold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover) disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 rounded-app-sm bg-app-accent px-4 py-2 text-sm font-semibold text-app-accent-fg transition-colors hover:bg-app-accent-hover disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Gamepad2 className="h-4 w-4" /> {t('pick-game', { defaultValue: 'Pick Game' })}
         </button>
@@ -95,7 +95,7 @@ export default function HostControls({
         {gameSettingsState && gameSettingsState.mode === 'lobby' && (
           <button
             onClick={() => setShowGameSettings(true)}
-            className="flex items-center gap-2 rounded-(--app-radius-sm) bg-(--app-surface-hover) px-4 py-2 text-sm font-semibold text-(--app-text) transition-colors hover:brightness-110"
+            className="flex items-center gap-2 rounded-app-sm bg-app-surface-hover px-4 py-2 text-sm font-semibold text-app-text transition-colors hover:brightness-110"
           >
             <SlidersHorizontal className="h-4 w-4" />{' '}
             {t('game-settings', { defaultValue: 'Game Settings' })}
@@ -104,7 +104,7 @@ export default function HostControls({
 
         <button
           onClick={() => setShowSettings(!showSettings)}
-          className="flex items-center gap-2 rounded-(--app-radius-sm) bg-(--app-surface-hover) px-4 py-2 text-sm font-semibold text-(--app-text) transition-colors hover:brightness-110"
+          className="flex items-center gap-2 rounded-app-sm bg-app-surface-hover px-4 py-2 text-sm font-semibold text-app-text transition-colors hover:brightness-110"
         >
           <Settings className="h-4 w-4" /> {t('lobby-settings', { defaultValue: 'Lobby Settings' })}
         </button>
@@ -135,15 +135,15 @@ export default function HostControls({
 
       {/* Settings panel */}
       {showSettings && settings && (
-        <div className="mt-2 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-3 space-y-3">
+        <div className="mt-2 rounded-app-sm border border-app-border bg-app-bg p-3 space-y-3">
           <label className="flex items-center justify-between text-sm cursor-pointer">
-            <span className="text-(--app-text)">
+            <span className="text-app-text">
               {t('public-lobby', { defaultValue: 'Public lobby' })}
             </span>
             <Switch checked={settings.isPublic} onCheckedChange={(v) => handleUpdateSettings({ isPublic: v })} />
           </label>
           <label className="flex items-center justify-between text-sm">
-            <span className="text-(--app-text)">
+            <span className="text-app-text">
               {t('max-players', { defaultValue: 'Max players' })}
             </span>
             <Select
@@ -162,13 +162,13 @@ export default function HostControls({
             </Select>
           </label>
           <label className="flex items-center justify-between text-sm cursor-pointer">
-            <span className="text-(--app-text)">
+            <span className="text-app-text">
               {t('allow-mid-game-join', { defaultValue: 'Allow mid-game join' })}
             </span>
             <Switch checked={settings.allowMidGameJoin} onCheckedChange={(v) => handleUpdateSettings({ allowMidGameJoin: v })} />
           </label>
           <label className="flex items-center justify-between text-sm cursor-pointer">
-            <span className="text-(--app-text)">
+            <span className="text-app-text">
               {t('allow-spectator-promotion', { defaultValue: 'Allow spectator promotion' })}
             </span>
             <Switch checked={settings.allowSpectatorPromotion} onCheckedChange={(v) => handleUpdateSettings({ allowSpectatorPromotion: v })} />

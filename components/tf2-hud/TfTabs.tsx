@@ -105,7 +105,7 @@ export function TfTabs({
             aria-label={ariaLabel}
             onClick={() => setOpen((o) => !o)}
             className={cn(
-              'tf2hud-tab flex w-full min-w-40 items-center justify-between gap-2 border-b border-(--app-border) bg-(--tf2-panel) font-semibold uppercase tracking-wide text-(--app-text)',
+              'tf2hud-tab flex w-full min-w-40 items-center justify-between gap-2 border-b border-app-border bg-(--tf2-panel) font-semibold uppercase tracking-wide text-app-text',
               compact ? 'h-8 px-2.5 text-[11px]' : 'h-10 px-4 text-xs',
               'pointer-coarse:h-11 pointer-coarse:text-xs',
             )}
@@ -114,7 +114,7 @@ export function TfTabs({
               {CurrentIcon ? <CurrentIcon className="size-3.5 shrink-0" aria-hidden /> : null}
               <span className="truncate">{current?.label}</span>
             </span>
-            <ChevronDown className="size-3.5 shrink-0 text-(--app-text-dim)" aria-hidden />
+            <ChevronDown className="size-3.5 shrink-0 text-app-text-dim" aria-hidden />
           </button>
           <Popover
             anchor={trigger}
@@ -140,8 +140,8 @@ export function TfTabs({
                         trigger?.focus();
                       }}
                       className={cn(
-                        'flex w-full items-center gap-2 px-2.5 py-2 text-start text-xs font-semibold uppercase tracking-wide hover:bg-(--app-surface-hover) disabled:opacity-45 pointer-coarse:min-h-11',
-                        active ? 'text-(--app-text)' : 'text-(--app-text-muted)',
+                        'flex w-full items-center gap-2 px-2.5 py-2 text-start text-xs font-semibold uppercase tracking-wide hover:bg-app-surface-hover disabled:opacity-45 pointer-coarse:min-h-11',
+                        active ? 'text-app-text' : 'text-app-text-muted',
                       )}
                     >
                       {Icon ? (
@@ -151,10 +151,10 @@ export function TfTabs({
                       )}
                       <span className="min-w-0 flex-1 truncate">{tab.label}</span>
                       {tab.count !== undefined ? (
-                        <span className="font-mono text-(--app-text-dim)">{tab.count}</span>
+                        <span className="font-mono text-app-text-dim">{tab.count}</span>
                       ) : null}
                       {active ? (
-                        <Check className="size-3.5 shrink-0 text-(--app-accent-text)" aria-hidden />
+                        <Check className="size-3.5 shrink-0 text-app-accent-text" aria-hidden />
                       ) : null}
                     </button>
                   </li>
@@ -173,7 +173,7 @@ export function TfTabs({
         inert={collapsed}
         aria-hidden={collapsed || undefined}
         className={cn(
-          'tf2hud-tabs flex min-w-0 overflow-x-auto border-b border-(--app-border) bg-(--app-bg-subtle)',
+          'tf2hud-tabs flex min-w-0 overflow-x-auto border-b border-app-border bg-app-bg-subtle',
           collapsed && 'pointer-events-none invisible absolute start-0 top-0 w-max max-w-none',
         )}
       >
@@ -199,14 +199,14 @@ export function TfTabs({
                 // Touch: 44px tabs with 12px labels.
                 'pointer-coarse:h-11 pointer-coarse:text-xs',
                 active
-                  ? 'bg-(--tf2-panel) text-(--app-text)'
-                  : 'text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)',
+                  ? 'bg-(--tf2-panel) text-app-text'
+                  : 'text-app-text-muted hover:bg-app-surface-hover hover:text-app-text',
               )}
             >
               {Icon ? <Icon className="size-3.5" aria-hidden /> : null}
               {tab.label}
               {tab.count !== undefined ? (
-                <span className="font-mono text-(--app-text-dim)">{tab.count}</span>
+                <span className="font-mono text-app-text-dim">{tab.count}</span>
               ) : null}
             </button>
           );

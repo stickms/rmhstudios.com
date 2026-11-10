@@ -211,13 +211,13 @@ export default function HostControls({
   const pipSupported = typeof document !== 'undefined' && document.pictureInPictureEnabled;
 
   return (
-    <div className="border-b border-(--app-border)">
-      <div className="flex items-center gap-3 px-4 py-2 bg-(--app-bg-subtle)">
+    <div className="border-b border-app-border">
+      <div className="flex items-center gap-3 px-4 py-2 bg-app-bg-subtle">
         {/* Play/Pause — visible to all */}
         <button
           onClick={handlePlayPause}
           aria-label={playing ? t('pause', { defaultValue: 'Pause' }) : t('play', { defaultValue: 'Play' })}
-          className="shrink-0 rounded-full p-2 transition-colors bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
+          className="shrink-0 rounded-full p-2 transition-colors bg-app-accent text-app-accent-fg hover:bg-app-accent-hover"
         >
           {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
         </button>
@@ -226,7 +226,7 @@ export default function HostControls({
           <>
             <button
               onClick={() => handleJump(-10)}
-              className="shrink-0 rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+              className="shrink-0 rounded-app-sm p-2 transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
               title={t('back-10', { defaultValue: 'Back 10 seconds' })}
               aria-label={t('back-10', { defaultValue: 'Back 10 seconds' })}
             >
@@ -234,7 +234,7 @@ export default function HostControls({
             </button>
             <button
               onClick={() => handleJump(10)}
-              className="shrink-0 rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+              className="shrink-0 rounded-app-sm p-2 transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
               title={t('forward-10', { defaultValue: 'Forward 10 seconds' })}
               aria-label={t('forward-10', { defaultValue: 'Forward 10 seconds' })}
             >
@@ -246,7 +246,7 @@ export default function HostControls({
         {!isLeader && (
           <button
             onClick={handleControlRequest}
-            className="shrink-0 flex items-center gap-1 rounded-(--app-radius-sm) px-2 py-1.5 text-xs font-medium transition-colors text-(--app-info) hover:bg-(--app-info-dim)"
+            className="shrink-0 flex items-center gap-1 rounded-app-sm px-2 py-1.5 text-xs font-medium transition-colors text-app-info hover:bg-app-info-dim"
             title={
               isHost
                 ? t('take-control', { defaultValue: 'Take control' })
@@ -268,17 +268,17 @@ export default function HostControls({
 
         {/* Now playing title */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate text-(--app-text)">{currentItem.title}</p>
+          <p className="text-sm font-medium truncate text-app-text">{currentItem.title}</p>
           {isLive ? (
-            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-(--app-danger)">
+            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-app-danger">
               <span
-                className="inline-block h-1.5 w-1.5 rounded-full bg-(--app-danger)"
+                className="inline-block h-1.5 w-1.5 rounded-full bg-app-danger"
                 aria-hidden
               />
               {t('live', { defaultValue: 'Live' })}
             </p>
           ) : (
-            <p className="text-xs text-(--app-text-dim)">
+            <p className="text-xs text-app-text-dim">
               {/* Live position is on the seek bar below; this is the fallback
                 when the duration is not known yet. */}
               {duration ? formatDuration(duration) : formatDuration(currentTime)}
@@ -292,7 +292,7 @@ export default function HostControls({
         <div className="shrink-0 flex items-center gap-1.5">
           <button
             onClick={handleMuteToggle}
-            className="rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+            className="rounded-app-sm p-2 transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
             title={
               muted ? t('unmute', { defaultValue: 'Unmute' }) : t('mute', { defaultValue: 'Mute' })
             }
@@ -306,7 +306,7 @@ export default function HostControls({
             step={0.05}
             value={muted ? 0 : masterVolume}
             onChange={handleVolumeChange}
-            className="w-20 h-1 accent-(--app-accent) cursor-pointer"
+            className="w-20 h-1 accent-app-accent cursor-pointer"
             title={t('volume-pct', {
               defaultValue: 'Volume: {{pct}}%',
               pct: Math.round((muted ? 0 : masterVolume) * 100),
@@ -317,10 +317,10 @@ export default function HostControls({
         {/* Captions toggle — always visible */}
         <button
           onClick={handleCaptionsToggle}
-          className={`shrink-0 rounded-(--app-radius-sm) p-2 transition-colors ${
+          className={`shrink-0 rounded-app-sm p-2 transition-colors ${
             captionsEnabled
-              ? 'text-(--app-accent) bg-(--app-accent-dim)'
-              : 'text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)'
+              ? 'text-app-accent bg-app-accent-dim'
+              : 'text-app-text-muted hover:text-app-text hover:bg-app-surface-hover'
           }`}
           title={
             captionsEnabled
@@ -337,10 +337,10 @@ export default function HostControls({
           <button
             onClick={() => setShowSpeedMenu((v) => !v)}
             onDoubleClick={isLeader ? handleSpeedCycle : undefined}
-            className={`rounded-(--app-radius-sm) p-2 transition-colors flex items-center gap-1 ${
+            className={`rounded-app-sm p-2 transition-colors flex items-center gap-1 ${
               currentSpeed !== 1
-                ? 'text-(--app-accent) bg-(--app-accent-dim)'
-                : 'text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)'
+                ? 'text-app-accent bg-app-accent-dim'
+                : 'text-app-text-muted hover:text-app-text hover:bg-app-surface-hover'
             }`}
             title={
               isLeader
@@ -363,7 +363,7 @@ export default function HostControls({
             <div
               data-motion="pop"
               data-state={speedMenu.state}
-              className="absolute bottom-full mb-1 right-0 origin-bottom-right z-50 rounded-(--app-radius-sm) app-glass py-1 min-w-25"
+              className="absolute bottom-full mb-1 right-0 origin-bottom-right z-50 rounded-app-sm app-glass py-1 min-w-25"
             >
               {PLAYBACK_SPEEDS.map((speed) => (
                 <button
@@ -371,8 +371,8 @@ export default function HostControls({
                   onClick={() => handleSpeedSelect(speed)}
                   className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
                     speed === currentSpeed
-                      ? 'text-(--app-accent) bg-(--app-accent-dim) font-medium'
-                      : 'text-(--app-text) hover:bg-(--app-surface-hover)'
+                      ? 'text-app-accent bg-app-accent-dim font-medium'
+                      : 'text-app-text hover:bg-app-surface-hover'
                   }`}
                 >
                   {speed}x
@@ -386,7 +386,7 @@ export default function HostControls({
         {pipSupported && (
           <button
             onClick={handlePiP}
-            className="shrink-0 rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+            className="shrink-0 rounded-app-sm p-2 transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
             title={t('picture-in-picture', { defaultValue: 'Picture-in-Picture' })}
           >
             <PictureInPicture2 className="h-4 w-4" />
@@ -396,7 +396,7 @@ export default function HostControls({
         {/* Fullscreen toggle — always visible */}
         <button
           onClick={handleFullscreenToggle}
-          className="shrink-0 rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+          className="shrink-0 rounded-app-sm p-2 transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
           title={
             isFullscreen
               ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' })
@@ -409,7 +409,7 @@ export default function HostControls({
         {/* Skip — visible to all */}
         <button
           onClick={handleSkip}
-          className="shrink-0 rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+          className="shrink-0 rounded-app-sm p-2 transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
           title={t('skip-to-next', { defaultValue: 'Skip to next' })}
         >
           <SkipForward className="h-4 w-4" />

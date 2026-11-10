@@ -185,8 +185,8 @@ export function GabrielsHornGame() {
       realtime={{ status: connection, onRetry: reconnectNow }}
     >
       {screen === 'menu' && resuming ? (
-        <div className="app-screen bg-(--app-bg) text-(--app-text)">
-          <p className="text-center text-sm text-(--app-text-muted)" role="status">
+        <div className="app-screen bg-app-bg text-app-text">
+          <p className="text-center text-sm text-app-text-muted" role="status">
             {t('resuming', { defaultValue: 'Returning you to your table…' })}
           </p>
         </div>

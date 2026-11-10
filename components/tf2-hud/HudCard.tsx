@@ -12,13 +12,13 @@ import { Pill } from './ui';
 export default function HudCard({ hud, actions }: { hud: HudSummary; actions?: React.ReactNode }) {
   const { t } = useTranslation('c-tf2-hud');
   return (
-    <article className="relative flex flex-col gap-2 rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-4 hover:border-(--app-border-bright)">
+    <article className="relative flex flex-col gap-2 rounded-app border border-app-border bg-app-bg-subtle p-4 hover:border-app-border-bright">
       <div className="flex items-start justify-between gap-2">
         <h2 className="tf2hud-title min-w-0 truncate text-xl">
           <Link
             to="/tf2/hud-editor/h/$slug"
             params={{ slug: hud.slug }}
-            className="block truncate hover:underline after:absolute after:inset-0 after:content-[''] focus-visible:after:rounded-(--app-radius)"
+            className="block truncate hover:underline after:absolute after:inset-0 after:content-[''] focus-visible:after:rounded-app"
           >
             {hud.title}
           </Link>
@@ -31,14 +31,14 @@ export default function HudCard({ hud, actions }: { hud: HudSummary; actions?: R
           </Pill>
         ) : null}
       </div>
-      <p className="text-xs text-(--app-text-dim)">
+      <p className="text-xs text-app-text-dim">
         {hud.author ? t('by', { defaultValue: 'by {{name}}', name: hud.author.name }) : null}
         {hud.forkOf
           ? ` · ${t('fork-of', { defaultValue: 'fork of {{title}}', title: hud.forkOf.title })}`
           : null}
       </p>
       {hud.description ? (
-        <p className="line-clamp-2 text-sm text-(--app-text-muted)">{hud.description}</p>
+        <p className="line-clamp-2 text-sm text-app-text-muted">{hud.description}</p>
       ) : null}
       {hud.tags.length ? (
         <ul className="flex flex-wrap gap-1" aria-label={t('tags-label', { defaultValue: 'Tags' })}>
@@ -50,7 +50,7 @@ export default function HudCard({ hud, actions }: { hud: HudSummary; actions?: R
         </ul>
       ) : null}
       <div className="mt-auto flex items-center justify-between gap-2 pt-1">
-        <span className="flex items-center gap-3 text-xs text-(--app-text-muted)">
+        <span className="flex items-center gap-3 text-xs text-app-text-muted">
           <span
             className="inline-flex items-center gap-1"
             title={t('likes', { defaultValue: 'Likes' })}
