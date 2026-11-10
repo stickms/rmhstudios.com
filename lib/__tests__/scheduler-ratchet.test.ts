@@ -101,6 +101,12 @@ const ALLOWED: Readonly<Record<string, { count: number; reason: string }>> = {
     reason: 'DB lease heartbeat for the run in flight, and the shutdown drain poll',
   },
   'server/homes-worker/index.ts': { count: 1, reason: 'shutdown drain poll' },
+  // ── Discord bot (in the jobs worker, D3) ────────────────────────────────
+  'server/discord-bot/chat.ts': {
+    count: 1,
+    reason:
+      'keeps the "Alex is typing…" indicator alive (every 8 s) for ONE in-flight reply and is cleared when it is sent; the Go bot ran the same per-reply ticker',
+  },
   // ── Realtime hubs ───────────────────────────────────────────────────────
   'server/socket-server/matchmaking.ts': {
     count: 1,
