@@ -1,3 +1,4 @@
+-- rmh:contract-ok the previous release (main @ 6c26b1d) has zero reads/writes of any table dropped here (no Prisma accessor, raw SQL, Go or script reference), so a rollback to it runs unchanged on this schema.
 -- Drop 18 tables that no running code reads or writes (audit C3, owner decision
 -- "completely drop unused or deprecated DB rows and/or tables").
 --
