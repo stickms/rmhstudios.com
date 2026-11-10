@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { prisma } from '@/lib/prisma.server';
 import { findMemberForViewAs, viewAsMember } from '@/lib/safety/view-as.server';
 
@@ -12,7 +13,8 @@ import { findMemberForViewAs, viewAsMember } from '@/lib/safety/view-as.server';
 export const Route = createFileRoute('/api/admin/view-as')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        C.adminViewAsApi,
         { auth: 'admin', rateLimit: 'read', query: z.object({ user: z.string().min(1).max(80) }) },
         async ({ userId, query }) => {
           const target = await findMemberForViewAs(query.user);

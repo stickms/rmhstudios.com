@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/discovery/discovery.contract';
 import { watchQuery, watchSchema } from '@/lib/discovery/schema';
 import { getWatchLevel, setWatchLevel } from '@/lib/discovery/watch.server';
 
@@ -7,17 +8,24 @@ import { getWatchLevel, setWatchLevel } from '@/lib/discovery/watch.server';
 export const Route = createFileRoute('/api/discovery/watch')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read', query: watchQuery }, async ({ userId, query }) =>
-        Response.json(
-          { level: await getWatchLevel(userId, query.kind, query.targetId) },
-          { headers: { 'Cache-Control': 'private, no-store' } },
-        ),
+      GET: implement(
+        C.getDiscoveryWatchApi,
+        { rateLimit: 'read', query: watchQuery },
+        async ({ userId, query }) =>
+          Response.json(
+            { level: await getWatchLevel(userId, query.kind, query.targetId) },
+            { headers: { 'Cache-Control': 'private, no-store' } },
+          ),
       ),
-      PUT: defineHandler({ rateLimit: 'write', body: watchSchema }, async ({ userId, body }) => {
-        const res = await setWatchLevel(userId, body.kind, body.targetId, body.level);
-        if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
-        return Response.json({ level: body.level });
-      }),
+      PUT: implement(
+        C.setDiscoveryWatchApi,
+        { rateLimit: 'write', body: watchSchema },
+        async ({ userId, body }) => {
+          const res = await setWatchLevel(userId, body.kind, body.targetId, body.level);
+          if (!res.ok) return Response.json({ error: res.error }, { status: res.status });
+          return Response.json({ level: body.level });
+        },
+      ),
     },
   },
 });

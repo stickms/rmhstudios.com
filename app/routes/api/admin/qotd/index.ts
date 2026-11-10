@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { adminAdd, adminList } from '@/lib/posts-plus/qotd.server';
 import { qotdAddSchema } from '@/lib/posts-plus/schema';
 
@@ -10,10 +11,11 @@ import { qotdAddSchema } from '@/lib/posts-plus/schema';
 export const Route = createFileRoute('/api/admin/qotd/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'admin', rateLimit: 'read' }, async () =>
+      GET: implement(C.getAdminQotdApi, { auth: 'admin', rateLimit: 'read' }, async () =>
         Response.json(await adminList(), { headers: { 'Cache-Control': 'private, no-store' } }),
       ),
-      POST: defineHandler(
+      POST: implement(
+        C.addAdminQotdApi,
         { auth: 'admin', rateLimit: 'write', body: qotdAddSchema },
         async ({ userId, body }) => {
           const res = await adminAdd(userId, body);

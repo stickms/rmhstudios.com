@@ -7,6 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  addAdminLinkRuleApi,
+  deleteAdminLinkRuleApi,
+  listAdminLinkRulesApi,
+} from '@/lib/admin/admin-ops.contract';
 
 interface Rule {
   domain: string;
@@ -23,23 +30,21 @@ export function LinkRulesAdmin() {
   const [note, setNote] = useState('');
 
   const load = useCallback(async () => {
-    const r = await fetch('/api/admin/link-rules', { credentials: 'include' });
-    setRules(r.ok ? ((await r.json()) as { items: Rule[] }).items : []);
+    try {
+      setRules((await api(listAdminLinkRulesApi, { retries: 0 })).items);
+    } catch {
+      setRules([]);
+    }
   }, []);
   useEffect(() => {
     void load();
   }, [load]);
 
   const add = async () => {
-    const r = await fetch('/api/admin/link-rules', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ domain, kind, note: note || undefined }),
-    });
-    if (!r.ok) {
-      const d = (await r.json().catch(() => ({}))) as { error?: string };
-      return toast.error(d.error || t('rules-failed', { defaultValue: "Couldn't save the rule" }));
+    try {
+      await api(addAdminLinkRuleApi, { body: { domain, kind, note: note || undefined } });
+    } catch (e) {
+      return toast.error(serverError(e) || t('rules-failed', { defaultValue: "Couldn't save the rule" }));
     }
     setDomain('');
     setNote('');
@@ -47,10 +52,7 @@ export function LinkRulesAdmin() {
   };
 
   const remove = async (d: string) => {
-    await fetch(`/api/admin/link-rules?domain=${encodeURIComponent(d)}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
+    await api(deleteAdminLinkRuleApi, { query: { domain: d } }).catch(() => undefined);
     void load();
   };
 

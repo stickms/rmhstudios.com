@@ -10,6 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { formatRelativeTime } from '@/lib/i18n/relative-time';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { listAdminHeldListingsApi, resolveAdminHeldListingApi } from '@/lib/admin/admin-ops.contract';
 
 export const Route = createFileRoute('/_site/admin/market')({
   head: () => ({ meta: [{ title: 'Marketplace Review | RMH Studios' }] }),
@@ -47,17 +50,15 @@ function AdminMarketPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/market', { credentials: 'include' });
-      const data = await res.json().catch(() => ({ listings: [] }));
-      if (!res.ok) {
-        toast.error(
-          data.error ??
-            t('market-review-load-failed', { defaultValue: "Couldn't load held listings" }),
-        );
-      }
-      setRows(res.ok ? (data.listings ?? []) : []);
-    } catch {
-      toast.error(t('market-review-load-failed', { defaultValue: "Couldn't load held listings" }));
+      const data = await api(listAdminHeldListingsApi, { retries: 0 });
+      setRows(data.listings ?? []);
+    } catch (e) {
+      toast.error(
+        serverError(e) ??
+          t('market-review-load-failed', { defaultValue: "Couldn't load held listings" }),
+      );
+      // An HTTP refusal empties the list; a network failure leaves it as it was.
+      if (e instanceof HttpError) setRows([]);
     } finally {
       setLoading(false);
     }
@@ -71,17 +72,14 @@ function AdminMarketPage() {
     if (busy) return;
     setBusy({ id, action });
     try {
-      const res = await fetch(`/api/admin/market/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ action }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error ?? t('action-failed-appeals', { defaultValue: 'Action failed' }));
+      try {
+        await api(resolveAdminHeldListingApi, { params: { id }, body: { action } });
+      } catch (e) {
+        toast.error(serverError(e) ?? t('action-failed-appeals', { defaultValue: 'Action failed' }));
         // 409: someone else resolved it (or the seller cancelled) — drop it.
-        if (res.status === 409) setRows((prev) => prev.filter((r) => r.id !== id));
+        if (e instanceof HttpError && e.status === 409) {
+          setRows((prev) => prev.filter((r) => r.id !== id));
+        }
         return;
       }
       toast.success(

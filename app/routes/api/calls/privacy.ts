@@ -6,7 +6,8 @@
  */
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/call/calls.contract';
 import { prisma } from '@/lib/prisma.server';
 import { invalidateNotificationPrefs } from '@/lib/notifications.server';
 import { CALL_PRIVACY_VALUES, DEFAULT_CALL_PRIVACY, isCallPrivacy } from '@/lib/call/state';
@@ -14,7 +15,7 @@ import { CALL_PRIVACY_VALUES, DEFAULT_CALL_PRIVACY, isCallPrivacy } from '@/lib/
 export const Route = createFileRoute('/api/calls/privacy')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) => {
+      GET: implement(C.getCallPrivacyApi, { rateLimit: 'read' }, async ({ userId }) => {
         const prefs = await prisma.notificationPreference.findUnique({
           where: { userId },
           select: { callPrivacy: true },
@@ -22,7 +23,8 @@ export const Route = createFileRoute('/api/calls/privacy')({
         const value = prefs?.callPrivacy;
         return Response.json({ callPrivacy: isCallPrivacy(value) ? value : DEFAULT_CALL_PRIVACY });
       }),
-      PUT: defineHandler(
+      PUT: implement(
+        C.setCallPrivacyApi,
         {
           rateLimit: 'write',
           body: z.object({

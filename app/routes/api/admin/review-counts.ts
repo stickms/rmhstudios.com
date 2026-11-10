@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { getAdminReviewCounts } from '@/lib/admin-review.server';
 
 /**
@@ -9,7 +10,7 @@ import { getAdminReviewCounts } from '@/lib/admin-review.server';
 export const Route = createFileRoute('/api/admin/review-counts')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'admin' }, async () => {
+      GET: implement(C.getAdminReviewCountsApi, { auth: 'admin' }, async () => {
         return Response.json(await getAdminReviewCounts());
       }),
     },

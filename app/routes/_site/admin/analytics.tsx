@@ -7,6 +7,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { StatTile } from '@/components/admin/StatTile';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { getAdminAnalyticsApi } from '@/lib/admin/admin-ops.contract';
 
 export const Route = createFileRoute('/_site/admin/analytics')({
   head: () => ({ meta: [{ title: 'Analytics | RMH Studios' }] }),
@@ -27,8 +29,8 @@ function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/admin/analytics', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
+    api(getAdminAnalyticsApi, { retries: 0 })
+      .catch(() => null)
       .then(setData)
       .finally(() => setLoading(false));
   }, []);

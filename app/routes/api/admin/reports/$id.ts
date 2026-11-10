@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import type { ReportStatus } from '@prisma/client';
@@ -32,7 +33,10 @@ const STATUS_BY_ACTION = {
  * The report lifecycle: PENDING → REVIEWING → RESOLVED | DISMISSED (PENDING may
  * skip straight to either terminal state). RESOLVED and DISMISSED are terminal.
  */
-const ALLOWED_FROM: Record<(typeof STATUS_BY_ACTION)[keyof typeof STATUS_BY_ACTION], readonly ReportStatus[]> = {
+const ALLOWED_FROM: Record<
+  (typeof STATUS_BY_ACTION)[keyof typeof STATUS_BY_ACTION],
+  readonly ReportStatus[]
+> = {
   REVIEWING: ['PENDING'],
   RESOLVED: ['PENDING', 'REVIEWING'],
   DISMISSED: ['PENDING', 'REVIEWING'],
@@ -83,7 +87,8 @@ async function takedownReportedContent(entityType: string, entityId: string): Pr
 export const Route = createFileRoute('/api/admin/reports/$id')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        C.actOnAdminReportApi,
         {
           auth: 'admin',
           rateLimit: { policy: 'write', scope: 'user' },

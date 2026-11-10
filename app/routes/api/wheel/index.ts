@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/wheel/wheel.contract';
 import { prisma } from '@/lib/prisma.server';
 import { WHEEL_SEGMENTS, wheelDateKey } from '@/lib/wheel/wheel';
 
@@ -7,7 +8,7 @@ import { WHEEL_SEGMENTS, wheelDateKey } from '@/lib/wheel/wheel';
 export const Route = createFileRoute('/api/wheel/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ session }) => {
+      GET: implement(C.getWheelApi, { auth: 'optional' }, async ({ session }) => {
         const segments = WHEEL_SEGMENTS.map((s) => s.reward);
 
         if (!session) {

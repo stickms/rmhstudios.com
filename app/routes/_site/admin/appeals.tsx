@@ -22,6 +22,9 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { decideAdminAppealApi, getAdminAppealsApi } from '@/lib/admin/admin-ops.contract';
 
 export const Route = createFileRoute('/_site/admin/appeals')({
   head: () => ({ meta: [{ title: 'Strike Appeals | RMH Studios' }] }),
@@ -66,12 +69,11 @@ function AdminAppealsPage() {
   const load = useCallback(async (v: View) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/appeals?status=${v}`, { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setItems(data.items ?? []);
-        setCounts(data.counts ?? {});
-      }
+      const data = await api(getAdminAppealsApi, { query: { status: v }, retries: 0 });
+      setItems(data.items ?? []);
+      setCounts(data.counts ?? {});
+    } catch {
+      // A failed load leaves the queue as it was (the old code ignored non-2xx).
     } finally {
       setLoading(false);
     }
@@ -84,15 +86,14 @@ function AdminAppealsPage() {
   const decide = async (id: string, action: 'uphold' | 'overturn') => {
     setBusyId(id);
     try {
-      const res = await fetch(`/api/admin/appeals/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ action, note: notes[id]?.trim() || undefined }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error ?? t('action-failed-appeals', { defaultValue: 'Action failed' }));
+      let data;
+      try {
+        data = await api(decideAdminAppealApi, {
+          params: { id },
+          body: { action, note: notes[id]?.trim() || undefined },
+        });
+      } catch (e) {
+        toast.error(serverError(e) ?? t('action-failed-appeals', { defaultValue: 'Action failed' }));
         return;
       }
       toast.success(

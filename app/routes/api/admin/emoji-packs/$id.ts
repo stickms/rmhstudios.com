@@ -7,14 +7,17 @@
  * (`version` no longer matches) — answers 409 and changes nothing.
  */
 import { createFileRoute } from '@tanstack/react-router';
-import { apiError, defineHandler } from '@/lib/api/handler.server';
+import { apiError } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { moderatePackSchema } from '@/lib/emoji/packs-schema';
 import { moderatePack, PackError } from '@/lib/emoji/packs.server';
 
 export const Route = createFileRoute('/api/admin/emoji-packs/$id')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        C.moderateAdminEmojiPackApi,
         {
           auth: 'admin',
           rateLimit: { policy: 'write', scope: 'user' },

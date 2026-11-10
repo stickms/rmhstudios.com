@@ -3,6 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { adminViewAsApi } from '@/lib/admin/admin-ops.contract';
 
 interface Brief {
   id: string;
@@ -38,15 +41,14 @@ export function ViewAsAdmin() {
     setLoading(true);
     setError(null);
     setData(null);
-    const r = await fetch(`/api/admin/view-as?user=${encodeURIComponent(query.trim())}`, {
-      credentials: 'include',
-    });
-    setLoading(false);
-    if (!r.ok) {
-      const d = (await r.json().catch(() => ({}))) as { error?: string };
-      return setError(d.error || t('viewas-failed', { defaultValue: 'Lookup failed' }));
+    try {
+      const result = await api(adminViewAsApi, { query: { user: query.trim() }, retries: 0 });
+      setLoading(false);
+      setData(result);
+    } catch (e) {
+      setLoading(false);
+      setError(serverError(e) || t('viewas-failed', { defaultValue: 'Lookup failed' }));
     }
-    setData((await r.json()) as ViewAs);
   };
 
   const list = (title: string, users: Brief[]) => (

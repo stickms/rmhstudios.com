@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { listHeldListings } from '@/lib/market/market.server';
 
 /**
@@ -9,7 +10,7 @@ import { listHeldListings } from '@/lib/market/market.server';
 export const Route = createFileRoute('/api/admin/market/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'admin' }, async () =>
+      GET: implement(C.listAdminHeldListingsApi, { auth: 'admin' }, async () =>
         Response.json({ listings: await listHeldListings() }),
       ),
     },

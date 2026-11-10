@@ -10,8 +10,10 @@
  *     and it is the half to read before adding another faucet.
  */
 
+import { z } from 'zod';
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { getEconomySnapshot } from '@/lib/economy/supply.server';
 import { COIN_FLOWS, supplyShape } from '@/lib/economy/flows';
 
@@ -21,23 +23,27 @@ export const Route = createFileRoute('/api/admin/economy')({
       // `auth: 'admin'` rather than the hand-rolled isAdmin check this route
       // used to carry — CLAUDE.md §3: admin routes take the mode, so the
       // 401-vs-403 distinction is made in one place instead of per route.
-      GET: defineHandler({ auth: 'admin' }, async ({ request }) => {
-        const raw = Number(new URL(request.url).searchParams.get('days'));
-        const days = Number.isFinite(raw) ? Math.min(Math.max(Math.trunc(raw), 1), 365) : 30;
+      GET: implement(
+        C.getAdminEconomyApi,
+        { auth: 'admin', query: z.object({ days: z.string().optional() }) },
+        async ({ request }) => {
+          const raw = Number(new URL(request.url).searchParams.get('days'));
+          const days = Number.isFinite(raw) ? Math.min(Math.max(Math.trunc(raw), 1), 365) : 30;
 
-        return Response.json(
-          {
-            snapshot: await getEconomySnapshot(days),
-            flows: COIN_FLOWS,
-            shape: supplyShape(),
-          },
-          {
-            // A few aggregates over an append-only table; a short cache keeps a
-            // refreshing dashboard from re-running them on every keystroke.
-            headers: { 'Cache-Control': 'private, max-age=30' },
-          },
-        );
-      }),
+          return Response.json(
+            {
+              snapshot: await getEconomySnapshot(days),
+              flows: COIN_FLOWS,
+              shape: supplyShape(),
+            },
+            {
+              // A few aggregates over an append-only table; a short cache keeps a
+              // refreshing dashboard from re-running them on every keystroke.
+              headers: { 'Cache-Control': 'private, max-age=30' },
+            },
+          );
+        },
+      ),
     },
   },
 });

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { cached } from '@/lib/cached.server';
 import { effectiveRules } from '@/lib/ops/alarm-rules';
 import { loadOverrides } from '@/lib/ops/alarm-rules.server';
@@ -17,7 +18,8 @@ const querySchema = z.object({ range: z.enum(['1h', '24h', '7d']).default('24h')
 export const Route = createFileRoute('/api/admin/oncall-series')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        C.getAdminOncallSeriesApi,
         { auth: 'admin', rateLimit: 'read', query: querySchema, label: 'admin-oncall-series' },
         async ({ query }) => {
           const range = query.range as RangeId;

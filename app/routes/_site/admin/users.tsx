@@ -19,6 +19,13 @@ import { PageTabs } from '@/components/feed/PageTabs';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import {
+  grantAdminMembershipApi,
+  setAdminUserCoinsApi,
+  updateAdminUserApi,
+} from '@/lib/admin/admin-ops.contract';
 
 type AccountFilter = 'all' | 'people' | 'bots';
 
@@ -131,7 +138,7 @@ function AdminUsersPage() {
     const choice = prompt(t("prompt-grant-membership", { defaultValue: 'Grant membership — enter "starter" or "pro" (or "revoke" to remove):' }), 'pro');
     if (!choice) return;
     const action = choice.trim().toLowerCase();
-    let body: Record<string, unknown>;
+    let body: { revoke: true } | { tier: 'starter' | 'pro'; months: number };
     if (action === 'revoke') {
       body = { revoke: true };
     } else if (action === 'starter' || action === 'pro') {
@@ -145,13 +152,14 @@ function AdminUsersPage() {
     if (updating !== null) return;
     setUpdating(userId);
     try {
-      const res = await fetch(`/api/admin/users/${userId}/grant-membership`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (res.ok) toast.success(action === 'revoke' ? t("alert-grants-revoked", { defaultValue: 'Active grants revoked.' }) : t("alert-membership-granted", { action, defaultValue: 'Granted {{action}}.' }));
-      else { const d = await res.json().catch(() => ({})); toast.error(t("alert-membership-failed", { error: d.error || 'error', defaultValue: 'Failed: {{error}}' })); }
+      try {
+        await api(grantAdminMembershipApi, { params: { id: userId }, body });
+        toast.success(action === 'revoke' ? t("alert-grants-revoked", { defaultValue: 'Active grants revoked.' }) : t("alert-membership-granted", { action, defaultValue: 'Granted {{action}}.' }));
+      } catch (e) {
+        // An HTTP refusal reports the server's message; anything else is "can't connect".
+        if (e instanceof HttpError) toast.error(t("alert-membership-failed", { error: serverError(e) || 'error', defaultValue: 'Failed: {{error}}' }));
+        else throw e;
+      }
     } catch { toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
   };
 
@@ -167,18 +175,13 @@ function AdminUsersPage() {
     if (updating !== null) return;
     setUpdating(user.id);
     try {
-      const res = await fetch(`/api/admin/users/${user.id}/set-coins`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ coins }),
-      });
-      if (res.ok) {
-        const data = await res.json();
+      try {
+        const data = await api(setAdminUserCoinsApi, { params: { id: user.id }, body: { coins } });
         setUsers(prev => prev.map(u => u.id === user.id ? { ...u, profile: { coins: data.coins } } : u));
         toast.success(t("alert-coins-updated", { defaultValue: "Coin balance updated." }));
-      } else {
-        const d = await res.json().catch(() => ({}));
-        toast.error(t("alert-set-coins-failed", { error: d.error || 'error', defaultValue: 'Failed: {{error}}' }));
+      } catch (e) {
+        if (e instanceof HttpError) toast.error(t("alert-set-coins-failed", { error: serverError(e) || 'error', defaultValue: 'Failed: {{error}}' }));
+        else throw e;
       }
     } catch { toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
   };
@@ -192,9 +195,13 @@ function AdminUsersPage() {
     setUpdating(userId);
     setHandleError(null);
     try {
-      const res = await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, handle: handleInput.trim().toLowerCase() }) });
-      if (res.ok) { const updated = await res.json(); setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updated } : u)); setEditingHandle(null); setHandleInput(''); }
-      else { const data = await res.json().catch(() => ({})); setHandleError(data.error || t("error-update-handle", { defaultValue: 'Failed to update handle' })); }
+      try {
+        const updated = await api(updateAdminUserApi, { body: { userId, handle: handleInput.trim().toLowerCase() } });
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updated } : u)); setEditingHandle(null); setHandleInput('');
+      } catch (e) {
+        if (e instanceof HttpError) setHandleError(serverError(e) || t("error-update-handle", { defaultValue: 'Failed to update handle' }));
+        else throw e;
+      }
     } catch { setHandleError(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
   };
 

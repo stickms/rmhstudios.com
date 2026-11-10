@@ -1,3 +1,9 @@
+import { api } from '@/lib/contract/client';
+import {
+  deleteAdminFlagApi,
+  listAdminFlagsApi,
+  upsertAdminFlagApi,
+} from '@/lib/admin/admin-ops.contract';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
@@ -26,20 +32,19 @@ interface Flag {
 }
 
 async function saveFlag(flag: Flag): Promise<Flag | null> {
-  const res = await fetch('/api/admin/flags', {
-    method: 'PUT',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      key: flag.key,
-      enabled: flag.enabled,
-      rolloutPercent: flag.rolloutPercent,
-      description: flag.description,
-    }),
-  });
-  if (!res.ok) return null;
-  const data = (await res.json()) as { flag: Flag };
-  return data.flag;
+  try {
+    const data = await api(upsertAdminFlagApi, {
+      body: {
+        key: flag.key,
+        enabled: flag.enabled,
+        rolloutPercent: flag.rolloutPercent,
+        description: flag.description,
+      },
+    });
+    return data.flag;
+  } catch {
+    return null;
+  }
 }
 
 function FlagsPage() {
@@ -51,9 +56,12 @@ function FlagsPage() {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/admin/flags', { credentials: 'include' });
-    const data = res.ok ? ((await res.json()) as { flags: Flag[] }) : { flags: [] };
-    setFlags(data.flags);
+    try {
+      const data = await api(listAdminFlagsApi, { retries: 0 });
+      setFlags(data.flags);
+    } catch {
+      setFlags([]);
+    }
   }, []);
 
   useEffect(() => {
@@ -103,13 +111,11 @@ function FlagsPage() {
     if (!ok) return;
     setBusy(true);
     try {
-      const res = await fetch('/api/admin/flags', {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: flag.key }),
-      });
-      if (!res.ok) return failed();
+      try {
+        await api(deleteAdminFlagApi, { body: { key: flag.key } });
+      } catch {
+        return failed();
+      }
       setFlags((cur) => (cur ?? []).filter((f) => f.key !== flag.key));
     } finally {
       setBusy(false);

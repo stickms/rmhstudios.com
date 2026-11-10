@@ -37,6 +37,8 @@ import {
 } from '@/lib/shared/realtime/client';
 import type { RealtimeStatus } from '@/lib/shared/realtime/types';
 import type { IceServer } from '@/lib/call/ice';
+import { api } from '@/lib/contract/client';
+import { getCallIceApi } from '@/lib/call/calls.contract';
 import {
   GCALL_C2S,
   GCALL_S2C,
@@ -345,9 +347,7 @@ let selfUserId: string | null = null;
 /** Fresh ICE servers, or `null` when the endpoint could not be reached. */
 async function fetchIceServers(): Promise<IceServer[] | null> {
   try {
-    const res = await fetch('/api/calls/ice');
-    if (!res.ok) throw new Error(String(res.status));
-    const body = (await res.json()) as { iceServers?: IceServer[] };
+    const body = await api(getCallIceApi, { retries: 0 });
     return body.iceServers ?? [];
   } catch {
     return null;

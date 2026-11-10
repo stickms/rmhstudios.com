@@ -8,13 +8,20 @@ import { Switch } from '@/components/ui/switch';
 import { IconButton } from '@/components/ui/icon-button';
 import { MAX_ALERTS, MAX_ALERT_LENGTH } from '@/lib/search/keyword-alerts';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  addDiscoveryAlertApi,
+  getDiscoveryMemoriesApi,
+  listDiscoveryAlertsApi,
+  removeDiscoveryAlertApi,
+  setDiscoveryMemoriesApi,
+} from '@/lib/discovery/discovery.contract';
 
 interface Alert {
   id: string;
   query: string;
 }
-
-const json = { 'Content-Type': 'application/json' };
 
 /** A6 keyword alerts and the A5 "On this day" opt-in, on the notification settings page. */
 export function DiscoverySettings() {
@@ -25,33 +32,24 @@ export function DiscoverySettings() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    fetch('/api/discovery/alerts', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { alerts: Alert[] } | null) => d && setAlerts(d.alerts))
+    api(listDiscoveryAlertsApi, { retries: 0 })
+      .then((d) => setAlerts(d.alerts))
       .catch(() => {});
-    fetch('/api/discovery/memories', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { enabled: boolean } | null) => d && setMemories(d.enabled))
+    api(getDiscoveryMemoriesApi, { retries: 0 })
+      .then((d) => setMemories(d.enabled))
       .catch(() => {});
   }, []);
 
   const add = async () => {
     setBusy(true);
     try {
-      const res = await fetch('/api/discovery/alerts', {
-        method: 'POST',
-        credentials: 'include',
-        headers: json,
-        body: JSON.stringify({ query: draft }),
-      });
-      const d = (await res.json().catch(() => null)) as { alert?: Alert; error?: string } | null;
-      if (!res.ok || !d?.alert) {
-        toast.error(
-          d?.error ?? t('alerts-add-failed', { defaultValue: 'Could not add that alert' }),
-        );
+      let added: Alert;
+      try {
+        added = (await api(addDiscoveryAlertApi, { body: { query: draft } })).alert;
+      } catch (e) {
+        toast.error(serverError(e) ?? t('alerts-add-failed', { defaultValue: 'Could not add that alert' }));
         return;
       }
-      const added = d.alert;
       setAlerts((a) => [...(a ?? []).filter((x) => x.id !== added.id), added]);
       setDraft('');
     } finally {
@@ -62,11 +60,11 @@ export function DiscoverySettings() {
   const remove = async (id: string) => {
     const prev = alerts;
     setAlerts((a) => (a ?? []).filter((x) => x.id !== id));
-    const res = await fetch(`/api/discovery/alerts?id=${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    }).catch(() => null);
-    if (!res?.ok) {
+    const ok = await api(removeDiscoveryAlertApi, { query: { id } }).then(
+      () => true,
+      () => false,
+    );
+    if (!ok) {
       setAlerts(prev);
       toast.error(t('alerts-remove-failed', { defaultValue: 'Could not remove that alert' }));
     }
@@ -74,13 +72,11 @@ export function DiscoverySettings() {
 
   const toggleMemories = async (enabled: boolean) => {
     setMemories(enabled);
-    const res = await fetch('/api/discovery/memories', {
-      method: 'PUT',
-      credentials: 'include',
-      headers: json,
-      body: JSON.stringify({ enabled }),
-    }).catch(() => null);
-    if (!res?.ok) {
+    const ok = await api(setDiscoveryMemoriesApi, { body: { enabled } }).then(
+      () => true,
+      () => false,
+    );
+    if (!ok) {
       setMemories(!enabled);
       toast.error(t('memories-failed', { defaultValue: 'Could not save that setting' }));
     }

@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/admin/admin-ops.contract';
 import { cached } from '@/lib/cached.server';
 import { oncallClient } from '@/lib/oncall/client.server';
 import type { OncallApiResponse, WatchdogOverview } from '@/lib/oncall/dashboard';
@@ -16,33 +17,40 @@ import type { OncallApiResponse, WatchdogOverview } from '@/lib/oncall/dashboard
 export const Route = createFileRoute('/api/admin/oncall')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'admin', rateLimit: 'read', label: 'admin-oncall' }, async () => {
-        const headers = { 'Cache-Control': 'no-store' };
-        const client = oncallClient();
-        if (!client) {
-          return Response.json({ ok: false, error: 'not_configured' } satisfies OncallApiResponse, {
-            headers,
-          });
-        }
-        try {
-          const overview = await cached('oncall:overview', 10_000, () =>
-            client.get<WatchdogOverview>('/v1/alarms'),
-          );
-          // `?? []`: a watchdog older than the heartbeats field answers without it.
-          const body: OncallApiResponse = {
-            ok: true,
-            now: overview.now ?? Date.now(),
-            alarms: overview.alarms ?? [],
-            heartbeats: overview.heartbeats ?? [],
-          };
-          return Response.json(body, { headers });
-        } catch (err) {
-          console.error('[oncall] watchdog unreachable:', (err as Error)?.message ?? err);
-          return Response.json({ ok: false, error: 'unreachable' } satisfies OncallApiResponse, {
-            headers,
-          });
-        }
-      }),
+      GET: implement(
+        C.getAdminOncallApi,
+        { auth: 'admin', rateLimit: 'read', label: 'admin-oncall' },
+        async () => {
+          const headers = { 'Cache-Control': 'no-store' };
+          const client = oncallClient();
+          if (!client) {
+            return Response.json(
+              { ok: false, error: 'not_configured' } satisfies OncallApiResponse,
+              {
+                headers,
+              },
+            );
+          }
+          try {
+            const overview = await cached('oncall:overview', 10_000, () =>
+              client.get<WatchdogOverview>('/v1/alarms'),
+            );
+            // `?? []`: a watchdog older than the heartbeats field answers without it.
+            const body: OncallApiResponse = {
+              ok: true,
+              now: overview.now ?? Date.now(),
+              alarms: overview.alarms ?? [],
+              heartbeats: overview.heartbeats ?? [],
+            };
+            return Response.json(body, { headers });
+          } catch (err) {
+            console.error('[oncall] watchdog unreachable:', (err as Error)?.message ?? err);
+            return Response.json({ ok: false, error: 'unreachable' } satisfies OncallApiResponse, {
+              headers,
+            });
+          }
+        },
+      ),
     },
   },
 });
