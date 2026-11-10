@@ -71,7 +71,7 @@ export function PostAwards({
       try {
         await api(giveAwardApi, { body: { awardId, entityType, entityId, anonymous } });
       } catch (err) {
-        throw new Error(serverError(err) ?? 'give failed');
+        throw new Error(serverError(err) ?? 'give failed', { cause: err });
       }
       // Optimistically bump the local summary.
       setSummary((prev) => {
