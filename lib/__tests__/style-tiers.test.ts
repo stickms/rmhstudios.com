@@ -36,6 +36,7 @@ function walk(dir: string, out: string[] = []): string[] {
 function resolveImport(from: string, spec: string): string | null {
   let base: string;
   if (spec.startsWith('@/')) base = join(ROOT, spec.slice(2));
+  else if (spec.startsWith('@features/')) base = join(ROOT, 'features', spec.slice('@features/'.length));
   else if (spec.startsWith('.')) base = resolve(dirname(from), spec);
   else return null;
   base = base.replace(/\?.*$/, '');
@@ -144,7 +145,7 @@ describe('entry stylesheet tiers', () => {
     for (const file of appReach) {
       if (siteReach.has(file)) continue;
       const parts = relative(ROOT, file).split('/');
-      if (!(parts[0] === 'components' || parts[0] === 'lib') || parts.length < 3) continue;
+      if (!(parts[0] === 'components' || parts[0] === 'lib' || parts[0] === 'features') || parts.length < 3) continue;
       const dir = parts.slice(0, 2).join('/');
       if (tierExcluded.some((p) => dir === p || dir.startsWith(p + '/'))) continue;
       const dirHasSiteFile = [...siteReach].some((f) => under(f, dir));

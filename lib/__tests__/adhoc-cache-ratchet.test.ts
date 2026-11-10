@@ -32,7 +32,7 @@ const MODULE_MAP = /^(?:export\s+)?(?:const|let)\s+\w+\s*(?::[^=\n]+)?=\s*new Ma
 const TTL_WORD = /\b(?:\w*TTL\w*|\w*[tT]tl\w*|expiresAt)\b/;
 
 function count(): { total: number; files: string[] } {
-  const files = globSync('{app,lib,server}/**/*.{ts,tsx}').filter(
+  const files = globSync('{app,lib,server,features}/**/*.{ts,tsx}').filter(
     (f) =>
       !/node_modules|__tests__|\.test\.|routeTree\.gen|^lib\/cached\.server\.ts$|generated/.test(f),
   );

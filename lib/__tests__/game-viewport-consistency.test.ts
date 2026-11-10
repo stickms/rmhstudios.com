@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
@@ -81,7 +81,9 @@ const FULLSCREEN_DIRS = [
   'velum2099',
   'versecraft',
   'void-breaker',
-].map((d) => join('components', d));
+].map((d) =>
+  existsSync(join(ROOT, 'features', d, 'ui')) ? join('features', d, 'ui') : join('components', d),
+);
 
 const POINTER =
   'See app/globals.css §"Full-screen app/game layout helpers" (.app-viewport, ' +
@@ -341,7 +343,13 @@ function catalogGameIds(): string[] {
 
 function gamesWithoutPlayfield(): string[] {
   return catalogGameIds().filter((id) => {
-    const files = (GAME_DIRS[id] ?? [join('components', id)]).flatMap((d) => collect(d, ['.tsx']));
+    const files = (
+      GAME_DIRS[id] ?? [
+        existsSync(join(ROOT, 'features', id, 'ui'))
+          ? join('features', id, 'ui')
+          : join('components', id),
+      ]
+    ).flatMap((d) => collect(d, ['.tsx']));
     return !files.some((file) =>
       /data-jelly-zone=["']playfield["']/.test(readFileSync(join(ROOT, file), 'utf8')),
     );

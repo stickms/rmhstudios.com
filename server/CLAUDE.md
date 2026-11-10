@@ -65,6 +65,13 @@ socket)` (casino games also `initialize<Game>(io)` at boot, and a
     `handlers/casino-shutdown.ts`; a new casino game needs one). Registered
     per-connection in `index.ts`. Isolation is by event-name prefix
     (`rmhtype:*`, `altair:*`, `bj:*`, …) + socket.io rooms — **no namespaces**.
+  - **Feature handlers (redesign A1):** a moved feature keeps its handlers in
+    `features/<id>/server/` and default-exports one `FeatureSocketServer` from
+    `features/<id>/server/index.ts`; `socket-server/features.ts` lists them and `index.ts`
+    calls `registerFeatureHandlers` / `handleFeatureDisconnects` at the spot the
+    hand-written calls sat (list order = registration order). Balatro is the first
+    (`features/balatro/server/{p2p,queue}.ts`, hub state in `server/hub/`). The Dockerfile
+    `server-builder` stage copies `features/` as well as `server/` and `lib/`.
   - The rate-limit rule map in `config.ts` doubles as the catalog of valid
     inbound events — add new events there.
   - State: module-level in-memory `Map`s. Persistence (leaderboards, match
@@ -249,8 +256,8 @@ history if a rollback ever needs it.
    — every casino table and multiplayer game unreachable — off one
    `@/lib/economy/ledger-core`. A relative specifier fails loudly at build time
    instead, which is the entire reason for this rule.
-8. **Don't import outside `server/` and `lib/`.** The `server-builder` stage
-   copies exactly those two trees, so `pnpm build` (whole working tree) can
+8. **Don't import outside `server/`, `lib/` and `features/`.** The `server-builder` stage
+   copies exactly those three trees (`features/` since A1: moved handlers live there), so `pnpm build` (whole working tree) can
    pass while the image build fails with "Could not resolve" — or, via gotcha
    7, doesn't fail at all and ships a bundle that crashes on boot. A new
    `lib/` import is now free (the stage copies `lib/` wholesale; it used to be

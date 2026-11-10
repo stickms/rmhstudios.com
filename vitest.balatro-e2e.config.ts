@@ -5,7 +5,7 @@
  * - `harness`: unit tests of the e2e machinery itself (channel codec, static
  *   server, stack/accounts helpers): `testing/balatro-e2e/**\/*.unit.test.ts`.
  *   No browser, no network; seconds.
- * - `engine`: Lua L2 — in-engine specs (lib/balatro/lua/mp_test/specs/*_spec.lua)
+ * - `engine`: Lua L2 — in-engine specs (features/balatro/engine/lua/mp_test/specs/*_spec.lua)
  *   in the real love.wasm, headless Chromium on SwiftShader, on a static harness
  *   page (no DB, no hub): `testing/balatro-e2e/engine/**\/*.test.ts`. A hard CI gate.
  * - `match`: multi-browser matches (and bot-peer pages) against throwaway Postgres
@@ -63,6 +63,9 @@ export default defineConfig({
     ],
   },
   resolve: {
-    alias: { '@': path.resolve(import.meta.dirname) },
+    alias: {
+      '@': path.resolve(import.meta.dirname),
+      '@features': path.resolve(import.meta.dirname, 'features'),
+    },
   },
 });

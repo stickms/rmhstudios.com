@@ -345,7 +345,7 @@ describe('§5.6 — the shell stacking scale stays one scale (R4)', () => {
   });
 
   it('every --z-* token has a consumer', () => {
-    const corpus = listSourceFiles(['components', 'app', 'lib', 'hooks'], ['.css', '.tsx', '.ts'])
+    const corpus = listSourceFiles(['components', 'app', 'lib', 'hooks', 'features'], ['.css', '.tsx', '.ts'])
       .map((f) => readFileSync(join(ROOT, f), 'utf8'))
       .join('\n');
     const dead = tokens.filter(([name]) => !corpus.includes(`var(${name}`)).map(([n]) => n);

@@ -1,5 +1,5 @@
 /**
- * The chunks of the full in-engine UI sweep (lib/balatro/lua/mp_test/specs/ui_sweep_full.lua).
+ * The chunks of the full in-engine UI sweep (features/balatro/engine/lua/mp_test/specs/ui_sweep_full.lua).
  * The sweep is too long for one engine boot (the page runs out of memory on software WebGL), so
  * engine/sweep.ts runs each chunk in a fresh boot. The Lua file's CHUNKS table is the single
  * source; this reads it (between the `-- CHUNKS BEGIN` / `-- CHUNKS END` markers).

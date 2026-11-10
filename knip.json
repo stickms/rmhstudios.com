@@ -21,6 +21,7 @@
     "lib/**/*.{ts,tsx}",
     "hooks/**/*.{ts,tsx}",
     "stores/**/*.{ts,tsx}",
+    "features/**/*.{ts,tsx}",
     "server/**/*.{ts,tsx}"
   ],
   "ignore": [

@@ -34,7 +34,7 @@ const BASELINE: Record<string, number> = {
   'app/jelly-coverage.css': 12,
   'app/jelly-material/material.css': 6,
   'app/jelly-material/soft-body.css': 2,
-  'components/balatro/balatro.css': 2,
+  'features/balatro/ui/balatro.css': 2,
   'components/radial/eversion/eversion.css': 4,
   'components/radial/radial/feed-cards-panels.css': 3,
   'components/rmhcalculator/rmhcalculator.css': 1,

@@ -165,20 +165,26 @@ export const RAW_COLOR_ALLOW = ['app/routes/login.tsx'];
 /** True when a repo-relative `.tsx` path under `components/` or `app/routes/` is held to the `--site-*` contract. */
 export function isSiteTier(file) {
   const parts = file.split(/[\\/]/);
-  if (parts[0] === 'components') return !FULLSCREEN_TIER_DIRS.has(parts[1] ?? '');
+  // `features/<id>/ui/...` (redesign A1) is the feature's old `components/<id>/...`.
+  if (parts[0] === 'components' || parts[0] === 'features')
+    return !FULLSCREEN_TIER_DIRS.has(parts[1] ?? '');
   // app/routes/<seg>/... or app/routes/<seg>.tsx
   const seg = (parts[2] ?? '').replace(/\.tsx$/, '');
   return !FULLSCREEN_ROUTE_SEGMENTS.has(seg);
 }
 
 /** Files the class-string rules that run on the WHOLE tree look at (`transition-all`, dead animate classes). */
-export const ALL_TIER_FILES = ['components/**/*.tsx', 'app/routes/**/*.tsx'];
+export const ALL_TIER_FILES = [
+  'components/**/*.tsx',
+  'features/*/ui/**/*.tsx',
+  'app/routes/**/*.tsx',
+];
 
 /** Test and generated files no class-string rule looks at. */
 export const CLASS_RULE_IGNORES = ['**/__tests__/**', '**/*.test.tsx'];
 
 /** The full-screen tier as flat-config `ignores`, so site-tier rules skip exactly what `isSiteTier` skips. */
 export const FULLSCREEN_IGNORES = [
-  ...[...FULLSCREEN_TIER_DIRS].map((d) => `components/${d}/**`),
+  ...[...FULLSCREEN_TIER_DIRS].flatMap((d) => [`components/${d}/**`, `features/${d}/**`]),
   ...[...FULLSCREEN_ROUTE_SEGMENTS].flatMap((s) => [`app/routes/${s}/**`, `app/routes/${s}.tsx`]),
 ];

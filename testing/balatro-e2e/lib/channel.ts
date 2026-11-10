@@ -1,6 +1,6 @@
 /**
  * The engine harness's file channel, page side (pure; shared by the harness page
- * and its unit tests). The Lua side is lib/balatro/lua/mp_test/harness.lua:
+ * and its unit tests). The Lua side is features/balatro/engine/lua/mp_test/harness.lua:
  *
  *   /rmh/test/cmd   page → Lua  NDJSON {"id","cmd","args"}   (Lua reads all, removes)
  *   /rmh/test/res   Lua → page  NDJSON HarnessMessage         (page reads all, removes)

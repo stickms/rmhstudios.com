@@ -31,7 +31,7 @@ export const SHARED_SAVE_GAMES = [
  * capability test can stay an exact match.
  *
  * `balatro`: /balatro, signed-in only and unlisted. One row holds a snapshot of
- * the game's whole save directory (lib/balatro/cloud-saves.ts).
+ * the game's whole save directory (features/balatro/engine/cloud-saves.ts).
  */
 export const UNLISTED_SHARED_SAVE_GAMES = ['balatro'] as const;
 

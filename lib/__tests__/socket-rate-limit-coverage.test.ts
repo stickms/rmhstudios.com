@@ -35,7 +35,7 @@ import { GCALL_C2S } from '@/lib/groupcall/events';
 import { PARTY_C2S } from '@/lib/party/events';
 import { SPACE_C2S } from '@/lib/spaces/events';
 import { TF2_C2S } from '@/lib/tf2-game/net/events';
-import { BALATRO_C2S_EVENTS } from '@/lib/balatro/net/events';
+import { BALATRO_C2S_EVENTS } from '@features/balatro/engine/net/events';
 import { HW_C2S_EVENTS } from '@/lib/hearthworks/net/events';
 
 const CONFIG_PATH = join(process.cwd(), 'server/socket-server/config.ts');

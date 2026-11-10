@@ -108,6 +108,8 @@ FROM prisma-generate AS server-builder
 COPY tsconfig.json tsconfig.server.json ./
 COPY server ./server/
 COPY lib ./lib/
+# Feature-sliced code (redesign A1): socket handlers and engines live in features/<id>/.
+COPY features ./features/
 
 # Only the Node services still served by compose (socket/rmhbox/rmhtube +
 # ladder-worker + homes-worker + jobs) are bundled here.

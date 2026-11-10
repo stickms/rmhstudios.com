@@ -2,7 +2,7 @@
  * A generic peer-to-peer signalling registry for the games hub (PLAN §0.12):
  * the state machine every "match runs in the host's browser" app needs, with
  * no event names, payload shapes or app rules in it. An app handler (today
- * handlers/balatro-p2p.ts) owns the socket events and decides what to emit;
+ * server/p2p.ts) owns the socket events and decides what to emit;
  * this module owns the rooms.
  *
  *   - **Rooms:** code, resume token, the host's socket / account / peer id,

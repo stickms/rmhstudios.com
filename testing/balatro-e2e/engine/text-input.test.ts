@@ -1,5 +1,5 @@
 /**
- * The phone keyboard path (lib/balatro/text-input.ts) against the real engine: a tap on a
+ * The phone keyboard path (features/balatro/engine/text-input.ts) against the real engine: a tap on a
  * menu's text field must focus the page's hidden input inside the tap (what makes iOS raise
  * its keyboard), and what is then typed must reach the field as the keypresses Balatro reads.
  * A menu with one text field is opened by the test-only autopilot command `open_text_input`.
@@ -10,7 +10,7 @@
  */
 import { firefox, type Browser, type Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { parseTextState } from '../../../lib/balatro/text-input';
+import { parseTextState } from '../../../features/balatro/engine/text-input';
 import { openEngine, startEngineStack, type EnginePage, type EngineStack } from '../lib/engine-driver';
 
 interface Harness {
