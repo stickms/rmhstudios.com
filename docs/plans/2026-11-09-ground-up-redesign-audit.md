@@ -2920,35 +2920,35 @@ A2: done (owner kept every page; redirect stubs stay as routes: they also redire
 A3: open
 A4: in-progress (#1531: lib/core math/rng/format, ~75 copies codemodded, no-restricted-syntax guard; sockets/audio/leaderboards/persist pending)
 A5: done (#1531: pnpm lint:ratchet: import-x no-cycle + layer boundaries against eslint-baseline/boundaries.json, in CI)
-A6: open
+A6: in-progress (#1539: ComposeBox 1,610 -> 634 and ConversationView 1,585 -> 281; #1542: ProfileEditModal 1,265 -> 229 and GroupChatView 953 -> 164; each split behind characterization snapshots recorded on the unsplit file. LiquidGlobe and RadialHub (worker/WebGL, not renderToString-characterizable) and the other god files pending)
 A7: in-progress (#1535: tsconfig.strict.json island + typecheck:strict in CI; escape-hatch ratchet; velum2099 @ts-nocheck held at 26 by the ratchet, quarantine blocked by a dynamic import)
 A8: done (#1529)
 B1: open
 B2: done (#1536: one generated pre-paint script from real TypeScript, lib/prepaint + data block, prepaint:check in CI; Providers diet folded into B1)
 B3: done (#1530/#1533: eversion warms on hub open, Speculation Rules removed, English idle backfill removed; docked-globe poster not done)
 B4: open
-B5: open
+B5: done (phase 12: site CSS 41.6 -> 39.4 KB brotli by no longer inlining a JetBrains Mono subset as base64 (assetsInlineLimit excludes fonts); siteCssBrotli budget lowered 48 -> 40 KB and blocking)
 B6: done (#1533: per-namespace lazy loading; English renders from defaultValue and loads only namespaces in use)
 B7: open
-C1: in-progress (#1531/#1537: contract + implement() + api() + raw-fetch ratchet; phase 9: user-builds, communities, slice-it packs + setlists contracts, 41 call sites migrated, ratchet 800 -> 759; remaining domains pending)
+C1: in-progress (#1531/#1537: contract + implement() + api() + raw-fetch ratchet; #1540: user-builds, communities, slice-it, 800 -> 759; #1542: rmhark actions, preferences, notifications, shop, history, 759 -> 703; phase 12: recovery, profile-links, reminders, saved searches, scheduled, themes, personas, predictions, 703 -> 656. Multipart uploads, streaming/SSE, AI routes and the feed list GETs left raw on purpose; remaining domains pending)
 C2: done (unsubscribe GET is read-only + RFC 8058 POST; remaining GET writers are authenticated and accepted, see commit)
 C3: in-progress (#1531: schema split into prisma/schema/ + migrations path pinned; #1538: 18 unused tables dropped with evidence in docs/_generated/db-drop-candidates.md; retired columns (expand/contract), User thinning, index pass pending)
 C4: done (#1538: lib/cache.ts deleted; one module lib/cached.server.ts with tags, invalidateTag and an LRU L1; adhoc-cache ratchet holds the rest)
 D1: declined (owner, 2026-11-09: no data moves off the box)
 D2: in-progress (#1534: one shared hub session check; Socket.IO Redis adapter wired but off unless REALTIME_REDIS_ADAPTER=1; durable rooms, drain, hub merge pending; two replicas NOT yet safe)
-D3: in-progress (#1533: streak-saver; #1538: recap + doctrine ported to Node jobs, status reads their freshness from pg-boss, A19 from doctrine_puzzle, Go ledger package deleted; phase 8: bot-worker ported (lib/rmhark-ai/bot-worker.server.ts, four pg-boss crons; supervisor runs discord-bot + vibe-worker); vibe-worker ported (lib/rmhvibe/thumbnail-worker.server.ts, pg-boss cron every minute, Playwright on the OS Chromium now in the slim image; Go vibeworker + cmd/vibe-worker deleted, supervisor runs only discord-bot); discord-bot pending)
+D3: in-progress (all Go workers except the discord-bot are on the Node jobs worker: streak-saver #1533, recap + doctrine #1538, bot-worker #1539, vibe thumbnails #1541 (Chromium in the slim image, smoke-tested by a real render in candidate-image). The discord-bot (13.9k lines, a long-lived Discord gateway connection, not a cron) is deliberately kept in Go: a faithful port needs a staging bot token to verify against Discord)
 D4: in-progress (jobs worker is the only scheduler: node-cron removed (ladder pipeline and homes scrape are pg-boss queues consumed by their own workers, cleanup is a jobs cron), scheduler-ratchet allowlists the remaining server-side setInterval; Go supervisor discord-bot and the HTTP cron route pending)
 D5: in-progress (on main: a failed migrate stops the deploy (no auto-retry); every hub, status, the supervisor and the workers are health-checked after up and the non-web fleet rolls back to :rollback images on failure; web has blue/green smoke + bake + auto-rollback; #1538: additive-migration gate with rmh:contract-ok opt-out. Pending: per-service rollback, artifacts not checkouts, vhost from CI, deploy.sh < 300 lines: not done blind, needs a staging run on the VPS)
 D6: blocked (needs the owner to pick a hosted log/metrics/error vendor and provide its keys; the trace module and Prometheus endpoints are ready to export)
 D7: done (dependabot groups @tanstack/* + nitro as one framework bump gated by the integration suite)
 E1: in-progress (#1535: --app-* registered in @theme, ~4,600 escaped utilities codemodded with a compiled-CSS equivalence proof; aliasing --app-* to --site-* pending visual review)
-E2: in-progress (phase 8: 188 arbitrary text sizes and 17 z-[N] replaced by named steps proven byte-identical with Tailwind compile (scripts/probe-type-scale.mjs), local/no-arbitrary-type-size at error on the site tier, tailwind-merge registration; raising sub-11px text, collapsing the rem-NN steps and raw CSS z-index pending)
+E2: in-progress (#1539: 188 arbitrary text sizes and 17 z-[N] replaced by named steps proven byte-identical (scripts/probe-type-scale.mjs), local/no-arbitrary-type-size; #1542: six global-layer CSS z-index literals on the --z-* scale (scripts/probe-z-index.mjs), z-index-literals test blocks new raw values >= 10. Raising sub-11px text (a visual decision) and collapsing the rem-NN steps pending)
 E3: open
 E4: in-progress (steps 1-2 done: dead palettes and selectors pruned; split + keyframes pending)
 E5: done (#1531: Tabs, glass-roles.css, useJellyPointer, glass-filter; liquid-morph deleted; press-only alias attributes kept: not exact synonyms)
 E6: in-progress (#1534: one BanListModal, 12 standalone spinners → <Spinner>, local/no-adhoc-spinner; clipboard sites have no clean equivalent)
 E7: done (#1537: one motion source; curves tokenised in app/globals.css with a cubic-bezier ratchet, --ease-shimmer kept byte-exact; local/no-inline-motion)
-E8: open
+E8: in-progress (phase 12: unused Bangers + Bebas Neue faces, tokens and packages removed; Patrick Hand loads only with versecraft; 19 -> 17 font packages. Inter and JetBrains Mono stay: they are the Greek/non-Latin fallbacks Geist lacks on the main site; Playfair/Cinzel need a per-consumer move; two-packages target needs the E1 app-tier move to Geist plus an owner call on non-Latin coverage)
 F1: in-progress (#1533: 4 class-string rules ported to ESLint with one design-scope.js; CSS checks await Stylelint; GATE_TESTS trim pending)
 F2: in-progress (#1534: Stripe webhook integration tests (signed locally), tier-cache invalidation fix, coin conservation test; browser flow E2E pending)
 F3: in-progress (check jobs defined once in ci-checks.yml, prisma workflows merged, senior-review advisory; asset-sync merge declined: too different)
