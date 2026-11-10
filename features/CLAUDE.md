@@ -55,7 +55,7 @@ Moved so far: `hearthworks`, `casino`, `doctrine`, `balatro`, `altair`, `slice-i
 A feature with `features/<id>/island.tsx` is an **island**: built by `vite.islands.config.ts`
 (`pnpm build:islands`, run by `pnpm build` and the Dockerfile before `vite build`) into
 `dist-islands/`, served from `/islands/` (Nitro `publicAssets` in `vite.config.ts`), and mounted by a
-bare document instead of the router. Void Breaker is the first.
+bare document instead of the router. Void Breaker was the first.
 
 - **Route:** `app/routes/<id>.tsx` keeps its URL but has no component and no `head()`: `beforeLoad:
   islandBeforeLoad` (a client navigation becomes a document load) and a GET handler returning
@@ -71,4 +71,4 @@ bare document instead of the router. Void Breaker is the first.
 - `lib/__tests__/islands.test.ts` holds it together: manifest ↔ route, no site-shell import in the
   island graph, every reached component scanned by the island sheet.
 
-Moved so far: `hearthworks`, `casino`, `doctrine`, `balatro`, `altair`, `slice-it` (engine, ui, server), `void-breaker` and `nightrail` (engine, ui). The A1 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.
+Islands so far: `void-breaker` and `nightrail`. The B1 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.

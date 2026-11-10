@@ -1,38 +1,22 @@
-import { Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { gameRouteHead } from '@/lib/seo-catalog';
-import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
-import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
+import { renderIslandDocument } from '@/lib/islands/document.server';
+import { islandBeforeLoad } from '@/lib/islands/route';
 
-// Static, not `lazy()`: Start already splits this route's component into its own
-// chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
-// hydration, and an update reaching the boundary then swaps the server-rendered
-// page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
-import { NightrailGame } from '@features/nightrail/ui/NightrailGame';
-
-function NightrailPage() {
-  return (
-    <main
-      className="fixed inset-0 bg-black flex flex-col overflow-hidden"
-      style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
-    >
-      {/* The chase camera fills the viewport at every aspect ratio — the
-          renderer widens its field of view on portrait rather than
-          letterboxing, so a phone held upright still sees the next bend. */}
-      <div className="grow relative overflow-hidden">
-        <GameErrorBoundary gameName="Nightrail">
-          {/* The loading colours are the night sky the game opens on, so the
-              chunk arriving reads as the game appearing rather than as a flash. */}
-          <Suspense fallback={<GameLoadingFallback background="#0a0713" foreground="#f0abfc" />}>
-            <NightrailGame />
-          </Suspense>
-        </GameErrorBoundary>
-      </div>
-    </main>
-  );
-}
-
+// Nightrail is an island (redesign audit B1): its page is built separately
+// (features/nightrail/island.tsx, vite.islands.config.ts) and served as a bare
+// document with the game's head — `gameRouteHead('nightrail')`, from the catalog,
+// as before — instead of being rendered by the site's router. A client navigation
+// here reloads the document (islandBeforeLoad). The loading frame takes the night
+// sky the game opens on, as the route's Suspense fallback did.
 export const Route = createFileRoute('/nightrail')({
-  head: () => gameRouteHead('nightrail'),
-  component: NightrailPage,
+  beforeLoad: islandBeforeLoad,
+  server: {
+    handlers: {
+      GET: ({ request }) =>
+        renderIslandDocument('nightrail', request, {
+          background: '#0a0713',
+          foreground: '#f0abfc',
+        }),
+    },
+  },
 });
