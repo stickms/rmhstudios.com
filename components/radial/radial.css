@@ -938,7 +938,7 @@ body:has(.radial-shell) .call-banner {
   opacity: 0.35;
 }
 .rad-globe-dock:hover .rad-globe-dock__shimmer::before {
-  animation: dock-globe-shimmer 1.6s var(--ease-in-out) 1 both;
+  animation: dock-globe-shimmer 1.6s var(--ease-shimmer) 1 both;
 }
 .rad-globe-dock:hover .rad-globe-dock__shimmer::after {
   animation: dock-globe-glint 1.6s ease-in-out 1;

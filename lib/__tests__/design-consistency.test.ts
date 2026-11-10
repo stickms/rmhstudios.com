@@ -464,7 +464,7 @@ const SITE_CSS = collectCss('components').filter((f) => {
  * DOWN anywhere else. The jelly material's `--spring-*` `linear()` curves are
  * not `cubic-bezier` and are governed by their own test.
  */
-const CUBIC_BEZIER_BASELINE: Record<string, number> = { 'app/globals.css': 13 };
+const CUBIC_BEZIER_BASELINE: Record<string, number> = { 'app/globals.css': 14 };
 
 describe('one motion source in CSS (E7)', () => {
   const files = [
