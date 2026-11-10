@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import type { RidePlace } from '@/lib/rideshare/geo';
+import { api } from '@/lib/contract/client';
+import { errorField, HttpError, serverError } from '@/lib/http';
+import { geocodeApi, reverseGeocodeApi } from '@/lib/rideshare/rideshare.contract';
 
 interface GeocodeResult {
   label: string;
@@ -61,19 +64,22 @@ export function LocationSearch({
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
+        const { latitude, longitude } = pos.coords;
         try {
-          const { latitude, longitude } = pos.coords;
-          const res = await fetch(`/api/rideshare/reverse?lat=${latitude}&lng=${longitude}`);
-          const data = await res.json();
-          if (!res.ok) {
+          const data = await api(reverseGeocodeApi, {
+            query: { lat: String(latitude), lng: String(longitude) },
+            retries: 0,
+          });
+          onSelect({ label: data.label, lat: latitude, lng: longitude });
+        } catch (e) {
+          if (e instanceof HttpError) {
             // Still usable: drop a pin even without a nice label.
-            onSelect({ label: data.label ?? `Current location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`, lat: latitude, lng: longitude });
-            if (!data.label) toast.message(t('using-current-location', { defaultValue: 'Using your current location.' }));
+            const label = errorField<string>(e, 'label');
+            onSelect({ label: label ?? `Current location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`, lat: latitude, lng: longitude });
+            if (!label) toast.message(t('using-current-location', { defaultValue: 'Using your current location.' }));
           } else {
-            onSelect({ label: data.label, lat: latitude, lng: longitude });
+            toast.error(t('location-lookup-failed', { defaultValue: 'Could not look up your location.' }));
           }
-        } catch {
-          toast.error(t('location-lookup-failed', { defaultValue: 'Could not look up your location.' }));
         } finally {
           setLocating(false);
         }
@@ -103,18 +109,18 @@ export function LocationSearch({
     setError(null);
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/rideshare/geocode?q=${encodeURIComponent(q)}`);
-        const data = await res.json();
+        const data = await api(geocodeApi, { query: { q }, retries: 0 });
         if (cancelled) return;
-        if (!res.ok) {
-          setError(data.error || t('search-failed', { defaultValue: 'Search failed' }));
+        setResults(data.results ?? []);
+        setOpen(true);
+      } catch (e) {
+        if (cancelled) return;
+        if (e instanceof HttpError) {
+          setError(serverError(e) || t('search-failed', { defaultValue: 'Search failed' }));
           setResults([]);
         } else {
-          setResults(data.results ?? []);
-          setOpen(true);
+          setError(t('search-failed', { defaultValue: 'Search failed' }));
         }
-      } catch {
-        if (!cancelled) setError(t('search-failed', { defaultValue: 'Search failed' }));
       } finally {
         if (!cancelled) setLoading(false);
       }

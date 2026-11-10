@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { api } from '@/lib/contract/client';
+import { shareDriverLocationApi } from '@/lib/rideshare/rideshare.contract';
 
 /**
  * While `active` is true, watches the device GPS and posts the driver's
@@ -7,7 +9,9 @@ import { useEffect, useState } from 'react';
  *
  * Returns the permission/availability state so the UI can prompt the driver.
  */
-export function useDriverLocationShare(active: boolean): 'idle' | 'sharing' | 'denied' | 'unavailable' {
+export function useDriverLocationShare(
+  active: boolean,
+): 'idle' | 'sharing' | 'denied' | 'unavailable' {
   const [state, setState] = useState<'idle' | 'sharing' | 'denied' | 'unavailable'>('idle');
 
   useEffect(() => {
@@ -25,11 +29,7 @@ export function useDriverLocationShare(active: boolean): 'idle' | 'sharing' | 'd
       const now = Date.now();
       if (now - lastSent < 8000) return;
       lastSent = now;
-      fetch('/api/rideshare/location', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lat, lng }),
-      }).catch(() => {});
+      api(shareDriverLocationApi, { body: { lat, lng } }).catch(() => {});
     };
 
     const watchId = navigator.geolocation.watchPosition(

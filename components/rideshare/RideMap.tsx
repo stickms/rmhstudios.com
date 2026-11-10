@@ -6,6 +6,8 @@ import { MapPin, Navigation, Car } from 'lucide-react';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { ensureMaplibreWorker } from '@/lib/maplibre';
 import type { LatLng, RidePlace } from '@/lib/rideshare/geo';
+import { api } from '@/lib/contract/client';
+import { rideDirectionsApi } from '@/lib/rideshare/rideshare.contract';
 
 interface RideMapProps {
   pickup: RidePlace | null;
@@ -72,8 +74,7 @@ export function RideMap({ pickup, dropoff, driverLocation, className }: RideMapP
       toLat: String(dropoff.lat),
       toLng: String(dropoff.lng),
     });
-    fetch(`/api/rideshare/directions?${params}`)
-      .then((r) => r.json())
+    api(rideDirectionsApi, { query: Object.fromEntries(params), retries: 0 })
       .then((data) => {
         if (cancelled) return;
         const geo: Coord[] | null = Array.isArray(data.geometry) ? data.geometry : null;

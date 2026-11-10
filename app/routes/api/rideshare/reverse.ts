@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/rideshare/rideshare.contract';
+import { reverseQuery } from '@/lib/rideshare/rideshare-schema';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { isValidLatLng } from '@/lib/rideshare/geo';
 import { reverseGeocode } from '@/lib/rideshare/osm.server';
@@ -11,13 +13,8 @@ import { reverseGeocode } from '@/lib/rideshare/osm.server';
 export const Route = createFileRoute('/api/rideshare/reverse')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      GET: implement(C.reverseGeocodeApi, { query: reverseQuery }, async ({ request }) => {
         try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-
           const ip = getClientIp(request);
           const { allowed, retryAfter } = rateLimit(ip, {
             limit: 30,
@@ -50,7 +47,7 @@ export const Route = createFileRoute('/api/rideshare/reverse')({
             { status: 502 },
           );
         }
-      },
+      }),
     },
   },
 });

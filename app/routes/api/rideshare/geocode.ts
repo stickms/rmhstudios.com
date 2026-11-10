@@ -1,18 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/rideshare/rideshare.contract';
+import { geocodeQuery } from '@/lib/rideshare/rideshare-schema';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { geocode } from '@/lib/rideshare/osm.server';
 
 export const Route = createFileRoute('/api/rideshare/geocode')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      GET: implement(C.geocodeApi, { query: geocodeQuery }, async ({ request }) => {
         try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
-
           const ip = getClientIp(request);
           const { allowed, retryAfter } = rateLimit(ip, {
             limit: 30,
@@ -40,7 +37,7 @@ export const Route = createFileRoute('/api/rideshare/geocode')({
             { status: 502 },
           );
         }
-      },
+      }),
     },
   },
 });

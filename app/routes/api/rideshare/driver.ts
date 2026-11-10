@@ -1,28 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/rideshare/rideshare.contract';
+import { driverApplicationBody, driverOnlineBody } from '@/lib/rideshare/rideshare-schema';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { isRideClassId } from '@/lib/rideshare/classes';
 import { diagnoseServerError } from '@/lib/rideshare/errors.server';
-
-const currentYear = new Date().getFullYear();
-
-const applicationSchema = z.object({
-  vehicleMake: z.string().trim().min(1).max(60),
-  vehicleModel: z.string().trim().min(1).max(60),
-  vehicleYear: z.coerce
-    .number()
-    .int()
-    .min(1980)
-    .max(currentYear + 2),
-  vehicleColor: z.string().trim().min(1).max(30),
-  licensePlate: z.string().trim().min(1).max(16),
-  licenseNumber: z.string().trim().min(1).max(40),
-  vehicleClass: z.string().refine(isRideClassId, 'Invalid ride class'),
-  seats: z.coerce.number().int().min(1).max(8),
-});
 
 /** Public-safe view of a driver record (never exposes the licence key). */
 function publicDriver(d: {
@@ -62,12 +45,8 @@ function publicDriver(d: {
 export const Route = createFileRoute('/api/rideshare/driver')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      GET: implement(C.getDriverApi, {}, async ({ session }) => {
         try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          }
           const driver = await prisma.rideshareDriver.findUnique({
             where: { userId: session.user.id },
           });
@@ -77,31 +56,33 @@ export const Route = createFileRoute('/api/rideshare/driver')({
           const { status, error: message } = diagnoseServerError(error);
           return Response.json({ error: message }, { status });
         }
-      },
-
-      // Toggle availability (online/offline) for approved drivers.
-      PATCH: defineHandler({}, async ({ request, session }) => {
-        const body = await request.json().catch(() => ({}));
-        if (typeof body.isOnline !== 'boolean') {
-          return Response.json({ error: 'isOnline boolean required' }, { status: 400 });
-        }
-        const result = await prisma.rideshareDriver.updateMany({
-          where: { userId: session.user.id, status: 'APPROVED' },
-          data: { isOnline: body.isOnline },
-        });
-        if (result.count === 0) {
-          return Response.json({ error: 'Not an approved driver.' }, { status: 403 });
-        }
-        return Response.json({ isOnline: body.isOnline });
       }),
 
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      // Toggle availability (online/offline) for approved drivers.
+      PATCH: implement(
+        C.setDriverOnlineApi,
+        {
+          body: driverOnlineBody,
+          // A missing/unparseable body used to read as `{}`; keep that.
+          allowEmptyBody: true,
+          invalid: () => Response.json({ error: 'isOnline boolean required' }, { status: 400 }),
+        },
+        async ({ session, body }) => {
+          const result = await prisma.rideshareDriver.updateMany({
+            where: { userId: session.user.id, status: 'APPROVED' },
+            data: { isOnline: body.isOnline },
+          });
+          if (result.count === 0) {
+            return Response.json({ error: 'Not an approved driver.' }, { status: 403 });
           }
+          return Response.json({ isOnline: body.isOnline });
+        },
+      ),
 
+      // Not `implement`/`body`: the 409 "already applied" check must run BEFORE
+      // body validation (400), an order the wrapper's body option cannot express.
+      POST: defineHandler({}, async ({ request, session }) => {
+        try {
           const ip = getClientIp(request);
           const { allowed, retryAfter } = rateLimit(ip, {
             limit: 5,
@@ -131,7 +112,7 @@ export const Route = createFileRoute('/api/rideshare/driver')({
           }
 
           const body = await request.json().catch(() => ({}));
-          const parsed = applicationSchema.safeParse(body);
+          const parsed = driverApplicationBody.safeParse(body);
           if (!parsed.success) {
             return Response.json(
               { error: parsed.error.issues[0]?.message ?? 'Invalid details' },
@@ -159,7 +140,7 @@ export const Route = createFileRoute('/api/rideshare/driver')({
           const { status, error: message } = diagnoseServerError(error);
           return Response.json({ error: message }, { status });
         }
-      },
+      }),
     },
   },
 });

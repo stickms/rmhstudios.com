@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/rideshare/rideshare.contract';
 import { prisma } from '@/lib/prisma.server';
 
 /**
@@ -10,7 +11,7 @@ import { prisma } from '@/lib/prisma.server';
 export const Route = createFileRoute('/api/rideshare/rides/$id/sync')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ params, session }) => {
+      GET: implement(C.syncRideApi, {}, async ({ params, session }) => {
         const userId = session.user.id;
 
         const ride = await prisma.ride.findUnique({

@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { LocationSearch, type SavedPlaceOption } from './LocationSearch';
 import type { RidePlace } from '@/lib/rideshare/geo';
 import { api } from '@/lib/contract/client';
-import { deleteSavedPlaceApi } from '@/lib/rideshare/rideshare.contract';
+import { serverError } from '@/lib/http';
+import { createSavedPlaceApi, deleteSavedPlaceApi } from '@/lib/rideshare/rideshare.contract';
 
 interface SavedPlacesProps {
   places: SavedPlaceOption[];
@@ -28,21 +29,16 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
     }
     setSaving(true);
     try {
-      const res = await fetch('/api/rideshare/places', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ label: label.trim(), address: place.label, lat: place.lat, lng: place.lng }),
+      await api(createSavedPlaceApi, {
+        body: { label: label.trim(), address: place.label, lat: place.lat, lng: place.lng },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error || t("could-not-save-place", { defaultValue: "Could not save place." }));
-        return;
-      }
       toast.success(t("place-saved", { defaultValue: "Place saved." }));
       setAdding(false);
       setLabel('');
       setPlace(null);
       onChanged();
+    } catch (e) {
+      toast.error(serverError(e) || t("could-not-save-place", { defaultValue: "Could not save place." }));
     } finally {
       setSaving(false);
     }
