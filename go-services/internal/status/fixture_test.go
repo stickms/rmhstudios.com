@@ -29,7 +29,7 @@ func richService(t testing.TB) *Service {
 		{Name: "RMHbox", Description: "Party-game WebSocket server", Group: "Realtime", DegradedAfter: 1500 * time.Millisecond, Probe: up},
 		{Name: "Content feed", Description: "Public blog RSS", Group: "Content", DegradedAfter: 2500 * time.Millisecond, Probe: up},
 		{Name: "Sitemap", Description: "Generated sitemap.xml", Group: "Content", DegradedAfter: 2500 * time.Millisecond, Probe: up},
-		{Name: "Background workers", Description: "Supervisor", Group: "Platform", Probe: up},
+		{Name: "Background jobs", Description: "Queue worker", Group: "Platform", Probe: up},
 	}
 	svc := New(Config{Targets: targets})
 	p := svc.prober
@@ -37,7 +37,7 @@ func richService(t testing.TB) *Service {
 	now := time.Now().UTC()
 	nowMs := now.UnixMilli()
 
-	base := map[string]int64{"Website": 180, "App readiness": 60, "Database": 3, "Realtime / Games": 4, "RMHbox": 5, "Content feed": 240, "Sitemap": 300, "Background workers": 2}
+	base := map[string]int64{"Website": 180, "App readiness": 60, "Database": 3, "Realtime / Games": 4, "RMHbox": 5, "Content feed": 240, "Sitemap": 300, "Background jobs": 2}
 	// failRate is the per-check failure probability; Website reproduces the
 	// screenshot that started this work: frequent single-check blips.
 	failRate := map[string]float64{"Website": 0.006, "App readiness": 0.03, "RMHbox": 0.002}

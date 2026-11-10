@@ -57,13 +57,6 @@ type Config struct {
 	// Oncall, when non-nil, gets a heartbeat after each probe cycle and every
 	// automatic incident as an alarm (oncall.go). nil = on-call not configured.
 	Oncall *oncall.Client
-	// SupervisorMetricsURL is read once a minute for Go worker health alarms
-	// (workers.go); empty, or Oncall nil, disables them.
-	SupervisorMetricsURL string
-	// NodeDiscordBot is true when DISCORD_BOT_RUNTIME=node: the Node jobs worker
-	// holds the Discord gateway and the supervisor's discord-bot idles, so its
-	// rmh_discord_gateway_connected=0 is the expected reading, not an outage (B07).
-	NodeDiscordBot bool
 	// JobLastSuccess reports the last completed run per pg-boss queue (names from
 	// NodeJobQueues) for jobs that run in the Node `jobs` worker. Nil disables
 	// those freshness alarms. See workers.go.
@@ -72,6 +65,10 @@ type Config struct {
 	// modes) exist in doctrine_puzzle, the zero time when none does. Nil disables
 	// the A19 alarm. See workers.go.
 	PuzzlesReadyFor func(ctx context.Context) (time.Time, error)
+	// DiscordGateway reads the Discord bot's heartbeat queue
+	// (JobQueueDiscordHeartbeat) in pg-boss: is it scheduled, and when did a
+	// heartbeat last complete. Nil disables the B07 alarm. See workers.go.
+	DiscordGateway func(ctx context.Context) (GatewayHeartbeat, error)
 	// Announcement is an optional static banner (STATUS_ANNOUNCEMENT).
 	Announcement      string
 	AnnouncementLevel string
@@ -177,7 +174,7 @@ func New(cfg Config) *Service {
 	}
 	return &Service{
 		cfg: cfg, prober: p, store: store, notifier: notifier, oncall: oncallNotifier, heartbeat: hb, diag: diagnoser,
-		workers:   newWorkerWatch(cfg.SupervisorMetricsURL, cfg.Oncall, cfg.Logger, cfg.JobLastSuccess, cfg.PuzzlesReadyFor).withNodeDiscordBot(cfg.NodeDiscordBot),
+		workers:   newWorkerWatch(cfg.Oncall, cfg.Logger, cfg.JobLastSuccess, cfg.PuzzlesReadyFor, cfg.DiscordGateway),
 		startedAt: time.Now(),
 	}
 }

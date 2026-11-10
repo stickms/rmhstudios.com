@@ -133,7 +133,7 @@ writing, not necessarily the current code).
 | [`signal-forge/`](./signal-forge/), [`temple-of-joy/`](./temple-of-joy/), [`void-breaker/`](./void-breaker/), [`daily-puzzles/`](./daily-puzzles/), [`rmhpoetry/`](./rmhpoetry/) | Game design docs                                                                                                                                 |
 | [`tf2-hub.md`](./tf2-hub.md), [`tf2-hud-editor.md`](./tf2-hud-editor.md)                                                                                                                                       | RMH TF2 HUD Editor: architecture, the base HUD, preview fidelity, storage/API trust model                                                        |
 | [`hearthworks-city.md`](./hearthworks-city.md) | Hearthworks city layer (roads, zones, utilities, milestones): the rules and every number, the nav / save / peer-command integration, determinism, and what was left behind from Isleworks |
-| [`alex-tamagotchi/`](./alex-tamagotchi/)                                                                                                                                         | Alex, the Discord tamagotchi pet (now implemented in `go-services/internal/discordbot`)                                                          |
+| [`alex-tamagotchi/`](./alex-tamagotchi/)                                                                                                                                         | Alex, the Discord tamagotchi pet (implemented in `server/discord-bot/`, the Node `jobs` worker)                                                 |
 | [`textbook/`](./textbook/), [`indonesia-history/`](./indonesia-history/)                                                                                                         | Generated book projects (architecture textbook; Library content) — content artifacts, not code docs                                              |
 
 ## ⚠️ Known-stale docs (do not trust these claims)
@@ -150,7 +150,11 @@ These predate the Next.js → TanStack Start migration and/or the Go cutover:
 - `../go-services/FOUNDATION.md` — a `pkg/` API reference; the removed
   `pkg/events`/`pkg/realtime` sections were cut, but treat
   `go-services/CLAUDE.md` as canonical (`go-services/README.md` was refreshed to
-  the current 3-service-in-prod reality)
+  the current 2-service-in-prod reality: `status` + `assets`)
+- The June 2026 Go cutover runbooks and designs (`runbooks/2026-06-22-go-runtime-cutover.md`,
+  `runbooks/2026-06-23-go-fleet-deploy.md`, `superpowers/*/2026-06-22-goroutine-migration*`)
+  describe a Go `supervisor` running the background workers. Every one of those workers,
+  the Discord bot last, now runs in the Node `jobs` worker and the supervisor is deleted (D3)
 - Anything claiming production runs PM2 — production is Docker Compose with a
   blue/green web hotswap (see `architecture.md`)
 - **Anything describing a warm `.vinxi` module-graph cache as load-bearing** —

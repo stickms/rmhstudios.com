@@ -1,14 +1,15 @@
 # server/ — Node service tier (realtime hubs + workers)
 
 > Scope: guidance for working inside `server/`. Repo-wide context:
-> [`/CLAUDE.md`](../CLAUDE.md). The Go ports of these services:
+> [`/CLAUDE.md`](../CLAUDE.md). The Go services (status, assets):
 > [`go-services/CLAUDE.md`](../go-services/CLAUDE.md). Runtime topology &
 > deploy: [`docs/architecture.md`](../docs/architecture.md).
 
 ## Read this first: what actually runs in production
 
-Two runtimes coexist. The Node services here are the originals;
-`go-services/` contains Go ports of most of them. **The source of truth for
+Two runtimes coexist. Node runs every service here and every background
+worker; `go-services/` runs only `status` and `assets` (the Go workers were
+ported back to `jobs` and deleted, D3). **The source of truth for
 what runs in production is the `command:` lines in `docker-compose.yml`** —
 not the README, not old docs.
 
@@ -23,7 +24,6 @@ Current production (Docker Compose on the VPS):
 | `ladder-worker` (job cron)          | **Node** | —                             | `dist-server/server/ladder-worker/index.cjs` |
 | `homes-worker` (listings cron)      | **Node** | —                             | `dist-server/server/homes-worker/index.cjs`  |
 | `jobs` (pg-boss async backbone)     | **Node** | —                             | `dist-server/server/jobs/index.cjs`          |
-| `supervisor` (discord-bot)          | **Go**   | 9090 (metrics)                | `/app/bin/supervisor`                        |
 | `status`                            | **Go**   | 7008                          | `/app/bin/status`                            |
 | `assets`                            | **Go**   | 7007                          | `/app/bin/assets`                            |
 | `minio`                             | infra    | 9000/9001                     | S3-compatible store                          |
@@ -148,7 +148,7 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   `vibe-worker.thumbnails` (RMHVibe gallery thumbnails, `lib/rmhvibe/thumbnail-worker.server.ts`: every minute, up to 5
   `thumbnailStale` pages per batch (drains while batches are full and progressing), Playwright against the OS
   Chromium (`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`, in the slim image's `runtime-chromium` layer; the `jobs`
-  service has `mem_limit` 1280m and `HOME=/tmp` for it), WebP to object storage, optimistic `updatedAt` clear;
+  service has `mem_limit` 1792m and `HOME=/tmp` for it), WebP to object storage, optimistic `updatedAt` clear;
   `exclusive`, no retries; always registered),
   and `doctrine.*` (`daily-puzzles` 00:00 UTC + at boot, `sahur-activation` every minute,
   `reputation-decay` hourly on Mondays; `features/doctrine/engine/jobs.server.ts`). The status service
@@ -157,11 +157,16 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   `/admin/deepseek` and prunes rows older than 400 days; it skips silently when
   `DEEPSEEK_API_KEY` is unset.
   `ops.data-cleanup` (daily 04:00 UTC session/verification/notification/comment-view purge, `exclusive`, no retries).
-  **The Discord bot** (D3, `server/discord-bot/`: Alex `/chat` + the tamagotchi + the `/sohumtracker` tracker, a port of
-  `go-services/internal/discordbot`) runs here only with `DISCORD_BOT_RUNTIME=node`: the gateway (`@discordjs/ws`,
-  REST via `@discordjs/rest`, both imported only then) lives in this process, and its Go tickers are the crons
-  `discord-bot.care-tick` (`6-59/10`), `discord-bot.watch-flush` (every minute), `discord-bot.watch-identity` (`:23`)
-  and `discord-bot.watch-summary` (`11-59/30`), each a no-op until READY. Unset, the Go supervisor runs the bot. On
+  **The Discord bot** (D3, `server/discord-bot/`: Alex `/chat` + the tamagotchi + the `/sohumtracker` tracker; the Go
+  original, `cmd/supervisor` and `cmd/discord-bot` are deleted, this is the only copy) runs here whenever
+  `DISCORD_BOT_TOKEN` or `DISCORD_ACTIVITY_BOT_TOKEN` is set (outside `NODE_ENV=production` it also needs
+  `DISCORD_BOT_GUILD_ALLOWLIST`, so a dev `.env` with the shared token stays off the production bot); otherwise it logs
+  `discord_bot.disabled` and unschedules its crons. The gateway (`@discordjs/ws`, REST via `@discordjs/rest`, imported
+  only then) lives in this process, and its Go tickers are the crons `discord-bot.care-tick` (`6-59/10`),
+  `discord-bot.watch-flush` (every minute), `discord-bot.watch-identity` (`:23`) and `discord-bot.watch-summary`
+  (`11-59/30`), each a no-op until READY. `discord-bot.gateway-heartbeat` (every minute) is the B07 signal: its job
+  completes only while the gateway is READY, and the status service raises B07 when the last completed one is over
+  5 minutes old. The `jobs` limits (1792m, 1.5 CPU) carry it. On
   SIGTERM it closes the gateway, lets in-flight replies finish (`DISCORD_BOT_DRAIN_GRACE`, 60 s, beside pg-boss's 30 s;
   `stop_grace_period` is 90 s) and closes the tracker's open sessions. `guard.ts` holds the live-test limits
   (`DISCORD_BOT_GUILD_ALLOWLIST`, `DISCORD_BOT_CHANNEL_ALLOWLIST`): never set them in production.
@@ -218,17 +223,18 @@ history if a rollback ever needs it.
 ## Dev, build, prod
 
 - **Dev:** `pnpm dev` = concurrently Vite (7005) + socket-server + rmhbox +
-  rmhtube + ladder-worker + homes-worker + jobs, each under `tsx watch`. The
-  Go-replaced workers (vibe/discord-bot/status) do not run in dev (the Node discord-bot starts in `jobs` only with
-  `DISCORD_BOT_RUNTIME=node` and a token). The recap, doctrine and bot-worker crons run in `jobs` (D3), so they do (the bot-worker idles without `DEEPSEEK_API_KEY`).
+  rmhtube + ladder-worker + homes-worker + jobs, each under `tsx watch`. The Go
+  `status` does not run in dev; the Discord bot starts in `jobs` only with a token AND
+  `DISCORD_BOT_GUILD_ALLOWLIST` (dev is not `NODE_ENV=production`). The recap, doctrine and bot-worker crons run in `jobs` (D3), so they do (the bot-worker idles without `DEEPSEEK_API_KEY`).
 - **Build order is load-bearing:** `pnpm build` = build-vibe-packages →
   `vite build` → esbuild bundles exactly **6 entrypoints**
   (socket-server, rmhbox, rmhtube, ladder-worker, homes-worker, jobs) into
   `dist-server/**/*.cjs` with `--packages=external` (deps, including the
   generated Prisma client, resolve at runtime — `prisma generate` must have run).
 - **Adding a new Node service** requires editing the `build` and `start`
-  scripts in `package.json` AND `docker-compose.yml`. Ask whether it should
-  be a Go worker instead (that's the migration direction).
+  scripts in `package.json` AND `docker-compose.yml`. First ask whether it
+  should be a pg-boss cron in `jobs` instead (D4: one scheduler); there are no
+  Go workers any more (D3).
 - **Prod:** Docker Compose via `deploy.sh` — **not PM2** (old README claim).
   Web deploys blue/green via `deploy/hotswap-web.sh` (spare port 7015,
   health-gated Apache flip).

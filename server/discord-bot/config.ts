@@ -78,11 +78,6 @@ export function getDuration(key: string, fallbackMs: number, env: Env = process.
   return d === null ? fallbackMs : d;
 }
 
-/** True when this process should run the Discord bot (DISCORD_BOT_RUNTIME=node). */
-export function nodeRuntimeSelected(env: Env = process.env): boolean {
-  return (env.DISCORD_BOT_RUNTIME ?? '').trim().toLowerCase() === 'node';
-}
-
 /**
  * A cron for "every `ms`", for the periodic work the Go bot ran on tickers. pg-boss crons are
  * minute-grained: sub-minute values round up to a minute, values that do not divide an hour fall

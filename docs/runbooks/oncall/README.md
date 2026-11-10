@@ -52,7 +52,6 @@ Threshold alarms over the metrics history (A08, A09, M01–M03, B02, B03) are de
 | [A06](A06.md) | 2 | Postgres connections near the limit / web DB pool saturated |
 | [A08](A08.md) | 2 | Web 5xx error rate high |
 | [A09](A09.md) | 2 | Web latency high (p95) |
-| [A11](A11.md) | 2 | Background (Go) worker down / crash-looping |
 | [A13](A13.md) | 2 | Disk almost full (92%) |
 | [A14](A14.md) | 2 | Host memory exhausted / kernel OOM kill |
 | [A15](A15.md) | 2 | Economy job failing / outbox delivery stuck |

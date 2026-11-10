@@ -13,7 +13,7 @@
 # Image strategy (build now runs in CI):
 #   - The heavy build (vibe-packages → vite build → esbuild server bundles → Go
 #     binaries → Chromium) happens in GitHub Actions on native ARM64 runners and
-#     is pushed to GHCR as two images (slim web + full supervisor/status), each
+#     is pushed to GHCR as two images (slim web + full status/assets), each
 #     tagged with the full commit SHA. See .github/workflows/deploy.yml.
 #   - This script PULLS those images and retags them to the local names
 #     docker-compose.yml expects, so the compose file + blue/green hotswap are
@@ -98,7 +98,7 @@ GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 GITHUB_REPO="stickms/rmhstudios.com"
 
 # ── GHCR pull config ─────────────────────────────────────────────────────────
-# The web (slim) + full (supervisor/status) images built by GitHub Actions.
+# The web (slim) + full (status/assets) images built by GitHub Actions.
 # GHCR_TOKEN needs `read:packages`; it defaults to GITHUB_TOKEN so a single PAT
 # with `repo` (commit status) + `read:packages` (image pull) covers both. If the
 # packages are public, no token is needed (the pull works unauthenticated).
@@ -596,7 +596,7 @@ stage_note() {
 #     builtin and needs no package.
 #
 # The budget only costs wall-clock on a genuine failure (a healthy port returns
-# on the first probe) and runs inside the supervisor gate's parallel 120s, so it
+# on the first probe) and runs inside the parallel health wave's 120s, so it
 # is free to be generous here. Override with PORT_HEALTH_TIMEOUT if needed.
 check_port() {
     local port=$1 count=0 max_retries="${PORT_HEALTH_TIMEOUT:-60}" probe=ss
@@ -761,9 +761,9 @@ fi
 # to R2"), so Apache no longer touches them and no chmod dance is needed.
 
 IMAGE_NAME="${PROJECT_NAME}-app"
-# Full image (Go supervisor/status: + Go bins, git). Built from the
+# Full image (Go status/assets: + Go bins). Built from the
 # same Dockerfile as the slim web image, target runner-full. Must match the
-# `image:` for the supervisor/status services in docker-compose.yml.
+# `image:` for the status/assets services in docker-compose.yml.
 FULL_IMAGE_NAME="${IMAGE_NAME}-full"
 GIT_SHA=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
 # Full (untruncated) commit SHA — the immutable tag CI pushes to GHCR. After the
@@ -821,7 +821,7 @@ step_done
 #  image — see below.)
 
 # ── Step 2: Pull pre-built images from GHCR ──────────────────────────────────
-# The two images (slim web → runner, full supervisor/status → runner-full) are
+# The two images (slim web → runner, full status/assets → runner-full) are
 # built + pushed by .github/workflows/deploy.yml on GitHub's native ARM64
 # runners, each tagged with the full commit SHA. We pull THIS deploy's SHA and
 # retag it to the local names docker-compose.yml expects (${IMAGE_NAME}:latest /
@@ -1194,25 +1194,45 @@ if [ -n "$BG_R2_PID" ]; then
     BG_R2_PID=''
     release_event assets-published
 fi
+# Retire the Go supervisor BEFORE `up` (D3). It ran the Discord bot, and the bot now runs in the
+# `jobs` worker whenever a token is set, so a supervisor container left running from an earlier
+# release would hold a second gateway session on the same token: two bots answering every /chat.
+# Deleting the service from docker-compose.yml does not stop its container. `--remove-orphans`
+# below would remove it too, but that is compose's ordering to keep, not ours; this makes the
+# order explicit and fails the deploy if the old container cannot be removed. Found by the compose
+# labels (and by its container_name, for one started by hand), so it is a no-op once it is gone.
+# `docker stop -t 90` gives the Go bot the stop_grace_period it had to drain in-flight replies.
+retire_supervisor() {
+    local ids
+    ids=$( { "$DOCKER_BIN" ps -aq \
+                 --filter "label=com.docker.compose.project=${PROJECT_NAME}" \
+                 --filter "label=com.docker.compose.service=supervisor"
+             "$DOCKER_BIN" ps -aq --filter "name=^/${PROJECT_NAME}-supervisor\$"
+           } 2>/dev/null | sort -u | xargs) || true
+    [ -n "$ids" ] || return 0
+    log "Retiring the Go supervisor container(s) ${ids} (the Discord bot runs in jobs now)..."
+    # shellcheck disable=SC2086
+    "$DOCKER_BIN" stop -t 90 $ids >/dev/null 2>&1 || true
+    # shellcheck disable=SC2086
+    "$DOCKER_BIN" rm -f $ids >/dev/null 2>&1 || true
+    # Still there (rm refused, or a restart policy raced it back): refuse to start a second bot.
+    if [ -n "$("$DOCKER_BIN" ps -aq --filter "name=^/${PROJECT_NAME}-supervisor\$" 2>/dev/null)" ] \
+        || [ -n "$("$DOCKER_BIN" ps -aq --filter "label=com.docker.compose.project=${PROJECT_NAME}" --filter "label=com.docker.compose.service=supervisor" 2>/dev/null)" ]; then
+        return 1
+    fi
+}
 step_start "Starting containers (all services except web)..."
+if ! retire_supervisor; then
+    log "ERROR: could not remove the old supervisor container; starting jobs now would run two Discord bots."
+    update_deploy_status fail "old supervisor container could not be removed"
+    exit 1
+fi
 if ! dc up -d --no-build --remove-orphans --scale web=0; then
     log "ERROR: docker compose up failed."
     update_deploy_status fail "docker compose up failed"
     exit 1
 fi
 step_done
-
-SUPERVISOR_METRICS_PORT="${PORT_SUPERVISOR_METRICS:-9090}"
-check_supervisor() {
-    for _ in $(seq 1 24); do
-        if dc exec -T supervisor curl -fsS "http://localhost:${SUPERVISOR_METRICS_PORT}/health" >/dev/null 2>&1; then
-            return 0
-        fi
-        sleep 5
-    done
-    return 1
-}
-
 
 # HTTP /health on each hub + status (a listening port alone said nothing about a
 # hub that accepted connections but could not serve them).
@@ -1274,9 +1294,8 @@ run_health_checks() {
     check_http "$PORT_RMHBOX"  & local p_rmhbox=$!
     check_http "$PORT_RMHTUBE" & local p_rmhtube=$!
     check_http "$PORT_STATUS"  & local p_status=$!
-    check_supervisor           & local p_sup=$!
     wf=$(mktemp); check_workers "${1:-${WORKER_SETTLE_SECONDS:-30}}" > "$wf" & local p_workers=$!
-    for job in "socket:$p_socket" "rmhbox:$p_rmhbox" "rmhtube:$p_rmhtube" "status:$p_status" "supervisor:$p_sup"; do
+    for job in "socket:$p_socket" "rmhbox:$p_rmhbox" "rmhtube:$p_rmhtube" "status:$p_status"; do
         wait "${job#*:}" || failed="$failed ${job%%:*}"
     done
     wait "$p_workers" || failed="$failed $(cat "$wf")"
@@ -1388,15 +1407,10 @@ step_done
 # NOTE: web is intentionally NOT checked here — the hotswap in Step 4b already
 # proved the new web container serves traffic before flipping Apache to it, and
 # web now listens on the blue/green port, not the fixed $PORT_WEB.
-# The supervisor /health gate (the Go discord-bot worker) can take up to
-# ~120s (it covers the DB WaitForReachable before the metrics server binds). It
-# used to run AFTER the port checks, serializing the two waits. Run it as one
-# more background job in the same wave so its long poll OVERLAPS the port checks —
-# total health time becomes max(port, supervisor), not their sum.
-# discord-bot runs as a
-# goroutine inside the `supervisor` process; it serves a MERGED
-# /health + /metrics on METRICS_ADDR (:9090), NOT host-published, so we probe it
-# from INSIDE the container with `dc exec`.
+# The cron/queue workers (jobs — which also holds the Discord bot — ladder-worker,
+# homes-worker) have no port: check_workers watches them for a crash-loop over the
+# same window. (The Go supervisor's in-container /health + /metrics gate went
+# with the supervisor, D3.)
 stage health
 step_start "Joining service health checks (observed during web bake)..."
 wait "$BG_HEALTH_PID"
@@ -1418,16 +1432,6 @@ if [ -n "$failed_services" ]; then
     update_deploy_status fail "${failed_services} failed health checks and ROLLBACK FAILED — needs a human"
     exit 1
 fi
-
-# Confirm the merged metrics registry exposes the worker. A missing label
-# means one worker silently failed to register inside the shared process (not
-# that the process is down) — log it for the post-deploy watch rather than
-# blocking the deploy.
-SUP_METRICS=$(dc exec -T supervisor curl -fsS "http://localhost:${SUPERVISOR_METRICS_PORT}/metrics" 2>/dev/null || echo "")
-for w in discord-bot; do
-    printf '%s' "$SUP_METRICS" | grep -q "service=\"$w\"" || \
-        log "WARNING: supervisor /metrics missing service=\"$w\" label — check that worker."
-done
 
 step_done
 

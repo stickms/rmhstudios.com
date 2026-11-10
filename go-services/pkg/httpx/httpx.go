@@ -84,7 +84,7 @@ func NewServer(addr string, h http.Handler, logger *log.Logger) *Server {
 
 // Run starts the server and blocks until SIGINT/SIGTERM, then drains
 // connections within the grace period. This is the Go analog of the Node
-// services' SIGTERM handlers (e.g. the discord-bot's 90s grace).
+// services' SIGTERM handlers (e.g. the jobs worker's 90s grace).
 func (s *Server) Run(grace time.Duration) error {
 	errc := make(chan error, 1)
 	go func() {
@@ -119,17 +119,4 @@ func WaitForSignal() os.Signal {
 // wrapper equivalent of the WaitForSignal pattern.
 func SignalContext() (context.Context, context.CancelFunc) {
 	return signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-}
-
-// ServeMetrics starts a background /health + /metrics server for a standalone
-// worker. A bind failure is fatal (an unprobeable pod is never restarted).
-func ServeMetrics(addr, service string, h http.Handler, logger *log.Logger) {
-	go func() {
-		mux := http.NewServeMux()
-		mux.HandleFunc("/health", Health(service, nil))
-		mux.Handle("/metrics", h)
-		if err := http.ListenAndServe(addr, mux); err != nil {
-			logger.Fatal("metrics server", "error", err)
-		}
-	}()
 }

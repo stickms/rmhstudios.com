@@ -78,7 +78,7 @@ func TestDiagTextRedactsAndBounds(t *testing.T) {
 }
 
 func TestTargetLabelHidesInternalHosts(t *testing.T) {
-	if got := targetLabel("http://supervisor:9090/health"); strings.Contains(got, "supervisor") || strings.Contains(got, "9090") {
+	if got := targetLabel("http://rmhbox:7676/health"); strings.Contains(got, "rmhbox") || strings.Contains(got, "7676") {
 		t.Errorf("internal host leaked: %q", got)
 	}
 	if got := targetLabel("https://rmhstudios.com/sitemap.xml"); got != "rmhstudios.com/sitemap.xml" {

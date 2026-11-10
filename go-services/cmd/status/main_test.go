@@ -11,38 +11,35 @@ import (
 // default*URL mirror the corresponding env defaults in main(): the WEB-FACING
 // surfaces are probed through the PUBLIC origin (so the probe traverses DNS →
 // CDN → Apache → container, the same path a visitor takes), while the services
-// with no public route — the three hubs and the supervisor — use compose DNS
-// names.
+// with no public route — the three hubs — use compose DNS names.
 const (
-	publicOrigin         = "https://rmhstudios.com"
-	defaultReadyURL      = publicOrigin + "/api/ready"
-	defaultFeedURL       = publicOrigin + "/blog/rss.xml"
-	defaultSitemapURL    = publicOrigin + "/sitemap.xml"
-	defaultSocketURL     = "http://socket:7001/health"
-	defaultRMHBoxURL     = "http://rmhbox:7676/health"
-	defaultRMHTubeURL    = "http://rmhtube:7003/health"
-	defaultSupervisorURL = "http://supervisor:9090/health"
+	publicOrigin      = "https://rmhstudios.com"
+	defaultReadyURL   = publicOrigin + "/api/ready"
+	defaultFeedURL    = publicOrigin + "/blog/rss.xml"
+	defaultSitemapURL = publicOrigin + "/sitemap.xml"
+	defaultSocketURL  = "http://socket:7001/health"
+	defaultRMHBoxURL  = "http://rmhbox:7676/health"
+	defaultRMHTubeURL = "http://rmhtube:7003/health"
 )
 
 // defaultURLs returns the default URL set used by main(), so each test starts
 // from the same baseline and overrides only what it exercises.
 func defaultURLs() probeURLs {
 	return probeURLs{
-		Website:    publicOrigin + "/",
-		Ready:      defaultReadyURL,
-		Feed:       defaultFeedURL,
-		Sitemap:    defaultSitemapURL,
-		Socket:     defaultSocketURL,
-		RMHBox:     defaultRMHBoxURL,
-		RMHTube:    defaultRMHTubeURL,
-		Supervisor: defaultSupervisorURL,
+		Website: publicOrigin + "/",
+		Ready:   defaultReadyURL,
+		Feed:    defaultFeedURL,
+		Sitemap: defaultSitemapURL,
+		Socket:  defaultSocketURL,
+		RMHBox:  defaultRMHBoxURL,
+		RMHTube: defaultRMHTubeURL,
 	}
 }
 
 // httpTargetNames are every HTTP (non-Database) target buildTargets emits.
 var httpTargetNames = []string{
 	"Website", "App readiness", "Realtime / Games", "RMHbox", "RMHtube",
-	"Content feed", "Sitemap", "Background workers",
+	"Content feed", "Sitemap",
 }
 
 // TestBuildTargetsOmitsDatabaseWithoutDSN asserts that with DATABASE_URL unset
@@ -108,13 +105,13 @@ func TestRemovedTopologyTargetsAreGone(t *testing.T) {
 	// the heavy media it was written to serve moved to Cloudflare R2 behind
 	// cdn.rmhstudios.com (lib/storage/asset.ts) — so no visitor's request ever
 	// reaches it, and a tile for it is a health signal about nothing.
-	for _, gone := range []string{"Gateway", "RMHmusic", "Recap runner", "Assets"} {
+	for _, gone := range []string{"Gateway", "RMHmusic", "Recap runner", "Assets", "Background workers"} {
 		if findTarget(targets, gone) != nil {
 			t.Fatalf("target %q belongs to the removed Go realtime topology and must not be probed", gone)
 		}
 	}
 	for _, tg := range targets {
-		for _, dead := range []string{"gateway", "rmhmusic-ws", "recap", ":7004", ":7002", "assets:"} {
+		for _, dead := range []string{"gateway", "rmhmusic-ws", "recap", ":7004", ":7002", "assets:", "supervisor", ":9090"} {
 			if strings.Contains(tg.URL, dead) {
 				t.Fatalf("target %q still points at removed infrastructure: %q", tg.Name, tg.URL)
 			}
@@ -243,15 +240,14 @@ func TestSitemapProbeAcceptsTheIndex(t *testing.T) {
 
 // TestLatencyBudgetsSet asserts every HTTP target on the user path carries a
 // DegradedAfter budget, so a service that answers but crawls is reported
-// degraded rather than green. The two internal-only targets are exempt.
+// degraded rather than green. The Database probe (a Probe func) is exempt.
 func TestLatencyBudgetsSet(t *testing.T) {
 	t.Setenv("DATABASE_URL", "")
 
 	targets := buildTargets(defaultURLs(), 4*time.Second)
-	exempt := map[string]bool{"Background workers": true}
 
 	for _, tg := range targets {
-		if tg.Probe != nil || exempt[tg.Name] {
+		if tg.Probe != nil {
 			continue
 		}
 		if tg.DegradedAfter <= 0 {
@@ -265,27 +261,11 @@ func TestLatencyBudgetsSet(t *testing.T) {
 func TestEveryTargetIsGrouped(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
 
-	valid := map[string]bool{"Core": true, "Realtime": true, "Content": true, "Platform": true}
+	valid := map[string]bool{"Core": true, "Realtime": true, "Content": true}
 	for _, tg := range buildTargets(defaultURLs(), 4*time.Second) {
 		if !valid[tg.Group] {
 			t.Fatalf("target %q has unexpected group %q", tg.Name, tg.Group)
 		}
-	}
-}
-
-// TestBuildTargetsSupervisorURLOverride asserts STATUS_SUPERVISOR_URL is honored
-// (passed through buildTargets) — a custom URL appears on the supervisor target.
-func TestBuildTargetsSupervisorURLOverride(t *testing.T) {
-	t.Setenv("DATABASE_URL", "")
-
-	const custom = "http://localhost:19090/health"
-	urls := defaultURLs()
-	urls.Supervisor = custom
-	targets := buildTargets(urls, 4*time.Second)
-
-	bg := findTarget(targets, "Background workers")
-	if bg == nil || bg.URL != custom {
-		t.Fatalf("supervisor override not honored: %+v", bg)
 	}
 }
 
@@ -303,7 +283,6 @@ func TestBuildTargetsURLsFlowThrough(t *testing.T) {
 		{"RMHtube", defaultRMHTubeURL},
 		{"Content feed", defaultFeedURL},
 		{"Sitemap", defaultSitemapURL},
-		{"Background workers", defaultSupervisorURL},
 	} {
 		if tg := findTarget(targets, c.name); tg == nil || tg.URL != c.want {
 			t.Fatalf("%q URL = %+v, want %q", c.name, tg, c.want)
@@ -312,14 +291,13 @@ func TestBuildTargetsURLsFlowThrough(t *testing.T) {
 
 	// Overrides (e.g. probing a staging origin) flow through unchanged.
 	overridden := buildTargets(probeURLs{
-		Website:    "https://staging.rmhstudios.com/",
-		Ready:      "https://staging.rmhstudios.com/api/ready",
-		Feed:       "https://staging.rmhstudios.com/blog/rss.xml",
-		Sitemap:    "https://staging.rmhstudios.com/sitemap.xml",
-		Socket:     "http://socket-server:7001/health",
-		RMHBox:     "http://rmhbox-staging:7676/health",
-		RMHTube:    "http://rmhtube-staging:7003/health",
-		Supervisor: defaultSupervisorURL,
+		Website: "https://staging.rmhstudios.com/",
+		Ready:   "https://staging.rmhstudios.com/api/ready",
+		Feed:    "https://staging.rmhstudios.com/blog/rss.xml",
+		Sitemap: "https://staging.rmhstudios.com/sitemap.xml",
+		Socket:  "http://socket-server:7001/health",
+		RMHBox:  "http://rmhbox-staging:7676/health",
+		RMHTube: "http://rmhtube-staging:7003/health",
 	}, 4*time.Second)
 	for _, c := range []struct{ name, want string }{
 		{"Website", "https://staging.rmhstudios.com/"},
@@ -358,4 +336,26 @@ func findTarget(targets []status.Target, name string) *status.Target {
 		}
 	}
 	return nil
+}
+
+// TestDiscordHeartbeatQuery pins the B07 read against the bot's queue name and
+// pg-boss's tables: scheduled-ness from the schedule table, the newest
+// COMPLETED heartbeat from the job table (a failed one is a minute down).
+func TestDiscordHeartbeatQuery(t *testing.T) {
+	q := discordHeartbeatQuery("pgboss")
+	for _, want := range []string{"FROM pgboss.schedule WHERE name = $1", "max(completed_on) FROM pgboss.job WHERE name = $1 AND state = 'completed'"} {
+		if !strings.Contains(q, want) {
+			t.Fatalf("heartbeat query missing %q:\n%s", want, q)
+		}
+	}
+	if status.JobQueueDiscordHeartbeat != "discord-bot.gateway-heartbeat" {
+		t.Fatalf("queue name drifted from server/discord-bot/jobs.ts: %q", status.JobQueueDiscordHeartbeat)
+	}
+	if discordHeartbeat("", time.Second) != nil {
+		t.Fatal("no DATABASE_URL must disable B07")
+	}
+	t.Setenv("PGBOSS_SCHEMA", "bad; drop")
+	if discordHeartbeat("postgres://x", time.Second) != nil {
+		t.Fatal("a non-identifier schema must disable the read, never be interpolated")
+	}
 }

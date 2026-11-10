@@ -3,13 +3,13 @@
 Module path: `github.com/rmhstudios/rmh-go`. Go 1.23. Every service is a binary
 under `cmd/<service>/main.go` with its private code under `internal/<service>/`.
 
-> **Scope note.** The current fleet is workers + `status` + `assets` (see
+> **Scope note.** The current fleet is `status` + `assets` (see
 > [`CLAUDE.md`](./CLAUDE.md)). The `pkg/events` (pub/sub backplane) and
 > `pkg/realtime` (WebSocket framework) packages — and the realtime/HTTP-hub
 > service skeleton that used them — were **removed in the rewrite** with the Go
 > gateway/hub topology, and are no longer documented here. Surviving shared
-> packages: `config`, `log`, `db`, `auth`, `httpx`, `ratelimit`, `telemetry`,
-> `objectstore`, `worker`.
+> packages: `config`, `log`, `auth`, `httpx`, `ratelimit`, `telemetry`,
+> `objectstore`, `oncall` (`db` and `worker` went with the supervisor, D3).
 
 **Rules for service authors**
 - Import shared packages; do **not** edit anything under `pkg/` or `go.mod`.
@@ -21,7 +21,7 @@ under `cmd/<service>/main.go` with its private code under `internal/<service>/`.
 
 ## config
 ```go
-cfg, err := config.LoadCommon("rmhbox") // cfg: ServiceName, Env, DatabaseURL string; DBPoolSize int32; RedisURL, MetricsAddr, LogLevel string
+cfg, err := config.LoadCommon("assets") // cfg: ServiceName, Env, DatabaseURL, RedisURL, MetricsAddr, LogLevel string
 config.GetString(key, fallback string) string
 config.GetInt(key string, fallback int) int
 config.GetBool(key string, fallback bool) bool
@@ -38,25 +38,16 @@ logger.With("room", id) *log.Logger
 logger.Fatal("boot failed", "error", err)        // logs + os.Exit(1)
 ```
 
-## db
-```go
-database, err := db.Open(ctx, cfg.DatabaseURL, cfg.DBPoolSize) // *db.DB
-defer database.Close()
-database.Pool // *pgxpool.Pool — run queries with database.Pool.Query/QueryRow/Exec
-db.WaitForReachable(ctx, dsn string, poolSize int32, attempts int, interval time.Duration) (*db.DB, error) // workers: 10, 5*time.Second
-```
-Typed models live in package `db` (use or ignore as convenient): `db.User`,
-`db.Session`, `db.Account`, `db.DoctrinePuzzle`, `db.DoctrineReputation`,
-`db.DoctrineSahurSession`, `db.VibePage`, `db.DiscordActivityChannel`,
-`db.DiscordDailyParticipant`, `db.RMHboxProfile`, `db.RmhTubeRoom`.
-Run raw pgx SQL for anything else.
+## db (removed)
+`pkg/db` went with the supervisor (D3). `status` opens its own small pgxpool
+(`cmd/status/dbprobe.go`).
 
 pgx usage reminder:
 ```go
-row := database.Pool.QueryRow(ctx, `SELECT "id" FROM "user" WHERE "id"=$1`, id)
+row := pool.QueryRow(ctx, `SELECT "id" FROM "user" WHERE "id"=$1`, id)
 err := row.Scan(&u.ID)
-rows, err := database.Pool.Query(ctx, `...`); defer rows.Close(); for rows.Next() {...}
-tag, err := database.Pool.Exec(ctx, `UPDATE ...`, args...)
+rows, err := pool.Query(ctx, `...`); defer rows.Close(); for rows.Next() {...}
+tag, err := pool.Exec(ctx, `UPDATE ...`, args...)
 ```
 
 ## auth
@@ -102,16 +93,6 @@ store, err := objectstore.New(ctx) // *S3 — range-aware S3/MinIO reader (the o
 // used by the `assets` service to stream /library /music /models /sprites
 ```
 
-## worker (uniform worker contract)
-```go
-// A worker is just a RunFunc; it returns errors and NEVER calls log.Fatal inside Run.
-type Deps struct { DB *db.DB; Logger *log.Logger; Metrics *telemetry.Metrics; Cfg config.Common }
-type RunFunc = func(ctx context.Context, d worker.Deps) error
-
-// Wire the same RunFunc into BOTH cmd/<svc> (standalone) and cmd/supervisor.
-func Run(ctx context.Context, d worker.Deps) error { /* ... tickers / loops ... */ return nil }
-```
-
 ## Standard main() skeleton — HTTP service (status / assets)
 ```go
 package main
@@ -121,9 +102,6 @@ func main() {
     if err != nil { logger.Fatal("config", "error", err) }
     ctx, cancel := httpx.SignalContext() // ctx cancelled on SIGINT/SIGTERM
     defer cancel()
-    database, err := db.Open(ctx, cfg.DatabaseURL, cfg.DBPoolSize)
-    if err != nil { logger.Fatal("db", "error", err) }
-    defer database.Close()
     metrics := telemetry.New("status")
     mux := http.NewServeMux()
     mux.HandleFunc("/health", httpx.Health("status", nil))
@@ -135,13 +113,7 @@ func main() {
 }
 ```
 
-## Standard main() skeleton — standalone worker
-```go
-package main
-// The thin wrapper: RunStandalone owns config/log/db/metrics/signals and the
-// :9090 metrics+health server, then calls your RunFunc. In production the same
-// RunFunc runs inside cmd/supervisor instead.
-func main() {
-    worker.RunStandalone("doctrine-worker", "", doctrine.Run) // "" => METRICS_ADDR default :9090
-}
-```
+## Standalone workers (removed)
+There are none. The worker contract (`pkg/worker`), `cmd/supervisor` and the
+last Go worker, the Discord bot, were deleted once it was ported to the Node
+`jobs` worker (D3). New background work is a pg-boss cron there.
