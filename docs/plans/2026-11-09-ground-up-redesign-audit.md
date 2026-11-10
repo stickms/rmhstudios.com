@@ -2920,7 +2920,7 @@ A2: done (owner kept every page; redirect stubs stay as routes: they also redire
 A3: open
 A4: in-progress (#1531: lib/core math/rng/format, ~75 copies codemodded, no-restricted-syntax guard; sockets/audio/leaderboards/persist pending)
 A5: done (#1531: pnpm lint:ratchet: import-x no-cycle + layer boundaries against eslint-baseline/boundaries.json, in CI)
-A6: in-progress (#1539: ComposeBox 1,610 -> 634 and ConversationView 1,585 -> 281; #1542: ProfileEditModal 1,265 -> 229 and GroupChatView 953 -> 164; each split behind characterization snapshots recorded on the unsplit file. LiquidGlobe and RadialHub (worker/WebGL, not renderToString-characterizable) and the other god files pending)
+A6: in-progress (#1539: ComposeBox 1,610 -> 634, ConversationView 1,585 -> 281; #1542: ProfileEditModal 1,265 -> 229, GroupChatView 953 -> 164; phase 13: RoadmapSection 1,012 -> 56, OptimizationPage 811 -> 47; each behind characterization snapshots recorded on the unsplit file. Not characterizable by renderToString and still pending: LiquidGlobe, RadialHub, Providers, the library route, BookReader/BookCanvas)
 A7: in-progress (#1535: tsconfig.strict.json island + typecheck:strict in CI; escape-hatch ratchet; velum2099 @ts-nocheck held at 26 by the ratchet, quarantine blocked by a dynamic import)
 A8: done (#1529)
 B1: open
@@ -2948,7 +2948,7 @@ E4: in-progress (steps 1-2 done: dead palettes and selectors pruned; split + key
 E5: done (#1531: Tabs, glass-roles.css, useJellyPointer, glass-filter; liquid-morph deleted; press-only alias attributes kept: not exact synonyms)
 E6: in-progress (#1534: one BanListModal, 12 standalone spinners → <Spinner>, local/no-adhoc-spinner; clipboard sites have no clean equivalent)
 E7: done (#1537: one motion source; curves tokenised in app/globals.css with a cubic-bezier ratchet, --ease-shimmer kept byte-exact; local/no-inline-motion)
-E8: in-progress (phase 12: unused Bangers + Bebas Neue faces, tokens and packages removed; Patrick Hand loads only with versecraft; 19 -> 17 font packages. Inter and JetBrains Mono stay: they are the Greek/non-Latin fallbacks Geist lacks on the main site; Playfair/Cinzel need a per-consumer move; two-packages target needs the E1 app-tier move to Geist plus an owner call on non-Latin coverage)
+E8: done for the site and app tier (owner 2026-11-10: "you can replace fonts especially those used on older UI elements"): #1544 removed unused Bangers/Bebas Neue and scoped Patrick Hand; phase 13 makes Geist / Geist Mono the only faces of the site and app tier (Inter, JetBrains Mono and Outfit removed; non-Latin falls back to system-ui; login logo off Playfair), Playfair/Cinzel load only with the games and arms that use them, dead tokens (Nunito, Orbitron, Pacifico, Permanent Marker, Caveat, Dancing Script) removed; 19 -> 14 font packages. Games and standalone arms keep their own display faces, loaded per route. Inter in the OG/PWA image generators (satori) is a follow-up)
 F1: in-progress (#1533: 4 class-string rules ported to ESLint with one design-scope.js; CSS checks await Stylelint; GATE_TESTS trim pending)
 F2: in-progress (#1534: Stripe webhook integration tests (signed locally), tier-cache invalidation fix, coin conservation test; browser flow E2E pending)
 F3: in-progress (check jobs defined once in ci-checks.yml, prisma workflows merged, senior-review advisory; asset-sync merge declined: too different)
