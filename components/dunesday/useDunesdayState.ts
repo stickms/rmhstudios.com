@@ -8,6 +8,7 @@
  * hydration, which would hide the hero from crawlers and link unfurls.
  */
 
+import { readJson, writeJson } from '@/lib/core/persist';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { localToday } from '@/lib/dunesday/schedule';
 import {
@@ -29,13 +30,7 @@ export function useDunesdayState() {
   const [importedShare, setImportedShare] = useState(false);
 
   useEffect(() => {
-    let stored: unknown;
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      stored = raw ? JSON.parse(raw) : null;
-    } catch {
-      stored = null;
-    }
+    const stored = readJson<unknown>(STORAGE_KEY, null);
     let next = hydrateState(stored);
     const match = window.location.hash.match(/plan=([A-Za-z0-9_-]+)/);
     if (match) {
@@ -61,11 +56,7 @@ export function useDunesdayState() {
 
   useEffect(() => {
     if (!ready) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      // Private mode / quota: the plan still works for this visit.
-    }
+    writeJson(STORAGE_KEY, state); // Private mode / quota: the plan still works for this visit.
   }, [state, ready]);
 
   const update = useCallback((fn: (s: DunesdayState) => DunesdayState) => setState(fn), []);

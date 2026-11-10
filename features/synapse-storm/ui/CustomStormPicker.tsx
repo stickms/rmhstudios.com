@@ -1,3 +1,4 @@
+import { readJson, writeJson } from '@/lib/core/persist';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SlidersHorizontal } from 'lucide-react';
@@ -20,17 +21,14 @@ export const CUSTOM_STORM_CATEGORIES: PuzzleCategory[] = [
 const STORAGE_KEY = 'synapse-storm:custom-storm';
 
 function loadPicked(): PuzzleCategory[] {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? (JSON.parse(raw) as unknown) : null;
-    if (Array.isArray(parsed)) {
+  // Storage unavailable or empty: start from the default.
+  return readJson<PuzzleCategory[]>(STORAGE_KEY, ['math', 'pattern'], {
+    validate: (parsed) => {
+      if (!Array.isArray(parsed)) return undefined;
       const valid = parsed.filter((c): c is PuzzleCategory => CUSTOM_STORM_CATEGORIES.includes(c));
-      if (valid.length) return valid;
-    }
-  } catch {
-    /* storage unavailable: start from the default */
-  }
-  return ['math', 'pattern'];
+      return valid.length ? valid : undefined;
+    },
+  });
 }
 
 interface CustomStormPickerProps {
@@ -62,11 +60,7 @@ export const CustomStormPicker: React.FC<CustomStormPickerProps> = ({ onStart })
   const canStart = picked.some((c) => c !== 'powerup');
 
   const start = () => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(picked));
-    } catch {
-      /* remembering the pick is a convenience only */
-    }
+    writeJson(STORAGE_KEY, picked); // remembering the pick is a convenience only
     onStart(CUSTOM_STORM_CATEGORIES.filter((c) => picked.includes(c)));
   };
 

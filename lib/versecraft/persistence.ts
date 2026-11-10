@@ -1,3 +1,4 @@
+import { readJson, writeJson } from '@/lib/core/persist';
 import type { SaveFile, GameState } from './types';
 import { api } from '@/lib/contract/client';
 import { loadVersecraftSaveApi, saveVersecraftApi } from './versecraft.contract';
@@ -17,21 +18,14 @@ export function saveGame(state: GameState, slotId: number): boolean {
       chapterTitle: state.currentChapter,
       playerName: state.settings.playerName,
     };
-    localStorage.setItem(`${SAVE_KEY_PREFIX}${slotId}`, JSON.stringify(saveFile));
-    return true;
+    return writeJson(`${SAVE_KEY_PREFIX}${slotId}`, saveFile);
   } catch {
     return false;
   }
 }
 
 export function loadGame(slotId: number): SaveFile | null {
-  try {
-    const raw = localStorage.getItem(`${SAVE_KEY_PREFIX}${slotId}`);
-    if (!raw) return null;
-    return JSON.parse(raw) as SaveFile;
-  } catch {
-    return null;
-  }
+  return readJson<SaveFile | null>(`${SAVE_KEY_PREFIX}${slotId}`, null);
 }
 
 export function deleteSave(slotId: number): void {

@@ -1,3 +1,4 @@
+import { readJson, removeKey, writeJson } from '@/lib/core/persist';
 const STORAGE_KEY = 'rmh-daily-puzzle';
 const HINTS_USED_KEY = 'rmh-daily-puzzle-hints';
 const HISTORY_KEY = 'rmh-puzzle-history';
@@ -21,39 +22,17 @@ export interface PuzzleHistoryEntry {
 }
 
 export function loadSave(dateKey: string): DailyPuzzleSave | null {
-    if (typeof window === 'undefined') return null;
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return null;
-        const data = JSON.parse(raw) as DailyPuzzleSave;
-        return data.dateKey === dateKey ? data : null;
-    } catch {
-        return null;
-    }
+    const data = readJson<DailyPuzzleSave | null>(STORAGE_KEY, null);
+    return data && data.dateKey === dateKey ? data : null;
 }
 
 export function loadHintsUsed(dateKey: string): number {
-    if (typeof window === 'undefined') return 0;
-    try {
-        const raw = localStorage.getItem(HINTS_USED_KEY);
-        if (!raw) return 0;
-        const data = JSON.parse(raw) as { dateKey: string; hintsUsed: number };
-        return data.dateKey === dateKey ? Math.min(3, Math.max(0, data.hintsUsed)) : 0;
-    } catch {
-        return 0;
-    }
+    const data = readJson<{ dateKey: string; hintsUsed: number } | null>(HINTS_USED_KEY, null);
+    return data && data.dateKey === dateKey ? Math.min(3, Math.max(0, data.hintsUsed)) : 0;
 }
 
 export function saveHintsUsed(dateKey: string, hintsUsed: number): void {
-    if (typeof window === 'undefined') return;
-    try {
-        localStorage.setItem(
-            HINTS_USED_KEY,
-            JSON.stringify({ dateKey, hintsUsed: Math.min(3, Math.max(0, hintsUsed)) })
-        );
-    } catch {
-        // ignore
-    }
+    writeJson(HINTS_USED_KEY, { dateKey, hintsUsed: Math.min(3, Math.max(0, hintsUsed)) });
 }
 
 export function saveProgress(
@@ -63,21 +42,12 @@ export function saveProgress(
     dnf?: boolean,
     optimalMoves?: number
 ): void {
-    if (typeof window === 'undefined') return;
-    try {
-        localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify({ dateKey, moves, solved, dnf: dnf ?? false, optimalMoves })
-        );
-    } catch {
-        // ignore
-    }
+    writeJson(STORAGE_KEY, { dateKey, moves, solved, dnf: dnf ?? false, optimalMoves });
 }
 
 /** Save a completed puzzle to history */
 export function saveToHistory(entry: PuzzleHistoryEntry): void {
-    if (typeof window === 'undefined') return;
-    try {
+    {
         const history = loadHistory();
         const idx = history.findIndex((h) => h.dateKey === entry.dateKey);
         if (idx >= 0) {
@@ -91,30 +61,16 @@ export function saveToHistory(entry: PuzzleHistoryEntry): void {
         // Keep last 30 days
         history.sort((a, b) => b.dateKey.localeCompare(a.dateKey));
         const trimmed = history.slice(0, 30);
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
-    } catch {
-        // ignore
+        writeJson(HISTORY_KEY, trimmed);
     }
 }
 
 /** Load puzzle history (most recent first) */
 export function loadHistory(): PuzzleHistoryEntry[] {
-    if (typeof window === 'undefined') return [];
-    try {
-        const raw = localStorage.getItem(HISTORY_KEY);
-        if (!raw) return [];
-        return JSON.parse(raw) as PuzzleHistoryEntry[];
-    } catch {
-        return [];
-    }
+    return readJson<PuzzleHistoryEntry[]>(HISTORY_KEY, []);
 }
 
 export function clearSave(): void {
-    if (typeof window === 'undefined') return;
-    try {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(HINTS_USED_KEY);
-    } catch {
-        // ignore
-    }
+    removeKey(STORAGE_KEY);
+    removeKey(HINTS_USED_KEY);
 }

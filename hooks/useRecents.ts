@@ -6,6 +6,7 @@
  * without a catalog lookup or icon map.
  */
 
+import { readJson, writeJson } from '@/lib/core/persist';
 import { useEffect, useState } from 'react';
 
 const KEY = 'rmh-recents';
@@ -24,25 +25,15 @@ export interface RecentEntry {
 export const RECENTS_EVENT = 'rmh:recents-changed';
 
 function read(): RecentEntry[] {
-  try {
-    const raw = localStorage.getItem(KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  return readJson<RecentEntry[]>(KEY, [], { validate: (v) => (Array.isArray(v) ? (v as RecentEntry[]) : undefined) });
 }
 
 /** Record a visit (dedupes by href, most-recent first, capped at MAX). */
 export function recordRecent(entry: Omit<RecentEntry, 'at'>) {
-  try {
-    const list = read().filter((e) => e.href !== entry.href);
-    list.unshift({ ...entry, at: Date.now() });
-    localStorage.setItem(KEY, JSON.stringify(list.slice(0, MAX)));
-    window.dispatchEvent(new Event(RECENTS_EVENT));
-  } catch {
-    // ignore (private mode / storage disabled)
-  }
+  const list = read().filter((e) => e.href !== entry.href);
+  list.unshift({ ...entry, at: Date.now() });
+  writeJson(KEY, list.slice(0, MAX));
+  window.dispatchEvent(new Event(RECENTS_EVENT));
 }
 
 /** Reactive read of the recents list; refreshes on record + cross-tab writes. */

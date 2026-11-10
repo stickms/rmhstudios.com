@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { readJson, writeJson } from '@/lib/core/persist';
 /* ═══════════════════════════════════════════
    NEURODRIVE — Game Settings Store
    Centralized settings with localStorage persistence
@@ -109,9 +110,8 @@ export class GameSettings {
 
     _load() {
         try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) {
-                const saved = JSON.parse(raw);
+            const saved = readJson(STORAGE_KEY, null);
+            if (saved) {
                 for (const key in saved) {
                     if (key in DEFAULTS) this._data[key] = saved[key];
                 }
@@ -122,10 +122,6 @@ export class GameSettings {
     }
 
     _save() {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(this._data));
-        } catch (e) {
-            console.warn('[Settings] localStorage 写入失败:', e);
-        }
+        if (!writeJson(STORAGE_KEY, this._data)) console.warn('[Settings] localStorage 写入失败');
     }
 }

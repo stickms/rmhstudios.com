@@ -1,3 +1,4 @@
+import { readJson, removeKey, writeJson } from '@/lib/core/persist';
 import { create } from 'zustand';
 
 /**
@@ -34,27 +35,18 @@ function isAllowKind(value: unknown): value is FocusAllowKind {
 }
 
 function read(): PersistedFocus {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { until: null, allow: DEFAULT_FOCUS_ALLOW };
-    const parsed = JSON.parse(raw) as Partial<PersistedFocus>;
-    const allow = Array.isArray(parsed.allow) ? parsed.allow.filter(isAllowKind) : [];
-    return {
-      until: typeof parsed.until === 'number' ? parsed.until : null,
-      allow: allow.length ? allow : DEFAULT_FOCUS_ALLOW,
-    };
-  } catch {
-    return { until: null, allow: DEFAULT_FOCUS_ALLOW };
-  }
+  const parsed = readJson<Partial<PersistedFocus> | null>(STORAGE_KEY, null);
+  if (!parsed) return { until: null, allow: DEFAULT_FOCUS_ALLOW };
+  const allow = Array.isArray(parsed.allow) ? parsed.allow.filter(isAllowKind) : [];
+  return {
+    until: typeof parsed.until === 'number' ? parsed.until : null,
+    allow: allow.length ? allow : DEFAULT_FOCUS_ALLOW,
+  };
 }
 
 function write(state: PersistedFocus) {
-  try {
-    if (state.until === null) localStorage.removeItem(STORAGE_KEY);
-    else localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // ignore (private mode / storage disabled)
-  }
+  if (state.until === null) removeKey(STORAGE_KEY);
+  else writeJson(STORAGE_KEY, state);
 }
 
 /**

@@ -1,3 +1,4 @@
+import { readJson, writeJson } from '@/lib/core/persist';
 import { useEffect, useState } from'react';
 import { Megaphone, X } from'lucide-react';
 import { useTranslation } from'react-i18next';
@@ -24,11 +25,7 @@ const VARIANT_STYLES: Record<string, string> = {
 const DISMISS_KEY ='rmh-dismissed-announcements';
 
 function readDismissed(): string[] {
- try {
- return JSON.parse(localStorage.getItem(DISMISS_KEY) ||'[]');
- } catch {
- return [];
- }
+ return readJson<string[]>(DISMISS_KEY, []);
 }
 
 /** Admin-authored announcement banners, pinned at the top of the feed. */
@@ -54,11 +51,7 @@ export function FeedAnnouncements() {
  const dismiss = (id: string) => {
  const next = [...new Set([...dismissed, id])];
  setDismissed(next);
- try {
- localStorage.setItem(DISMISS_KEY, JSON.stringify(next.slice(-50)));
- } catch {
- // ignore
- }
+ writeJson(DISMISS_KEY, next.slice(-50));
  };
 
  const updatePoll = (id: string, poll: FeedPoll) => {

@@ -1,3 +1,4 @@
+import { readJson, removeKey, writeJson } from '@/lib/core/persist';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';
@@ -24,12 +25,9 @@ async function call(path: Api, body: unknown): Promise<{ ok: boolean; error?: st
 }
 
 function readLegacy(): string[] {
-  try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(LEGACY_KEY) ?? '[]');
-    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
-  } catch {
-    return [];
-  }
+  return readJson<string[]>(LEGACY_KEY, [], {
+    validate: (v) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : undefined),
+  });
 }
 
 /**
@@ -62,11 +60,7 @@ export function useLibraryCollections(server: Collection[], signedIn: boolean) {
     if (ids.length === 0) return;
     void call('/api/games/collections/import', { ids }).then(async (r) => {
       if (!r.ok) return;
-      try {
-        localStorage.removeItem(LEGACY_KEY);
-      } catch {
-        /* storage unavailable: the import is idempotent, so a repeat is harmless */
-      }
+      removeKey(LEGACY_KEY); // storage unavailable: the import is idempotent, so a repeat is harmless
       await router.invalidate();
     });
   }, [signedIn, router]);
@@ -95,11 +89,7 @@ export function useLibraryCollections(server: Collection[], signedIn: boolean) {
 
       if (!signedIn) {
         const ids = apply(before).find((c) => c.name === FAVORITES)?.ids ?? [];
-        try {
-          localStorage.setItem(LEGACY_KEY, JSON.stringify(ids));
-        } catch {
-          /* storage unavailable: favourites last for this visit only */
-        }
+        writeJson(LEGACY_KEY, ids); // storage unavailable: favourites last for this visit only
         return;
       }
       const r = await call('/api/games/collections/item', { collection, gameId: id, on });

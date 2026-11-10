@@ -20,27 +20,20 @@
  * list of ids for rows that no longer exist.
  */
 
+import { readJson, writeJson } from '@/lib/core/persist';
 import { useCallback, useEffect, useState } from 'react';
 
 const KEY = 'pf2ecal-dismissed';
 
 function read(): string[] {
-  try {
-    const raw = localStorage.getItem(KEY);
-    const parsed = raw ? (JSON.parse(raw) as unknown) : null;
-    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
-  } catch {
-    // Private mode, a quota error, or something else's key at this name.
-    return [];
-  }
+  // Private mode, a quota error, or something else's key at this name reads as none.
+  return readJson<string[]>(KEY, [], {
+    validate: (v) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : undefined),
+  });
 }
 
 function write(ids: string[]): void {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(ids));
-  } catch {
-    // A dismissal that cannot be saved still applies for this visit.
-  }
+  writeJson(KEY, ids); // A dismissal that cannot be saved still applies for this visit.
 }
 
 export interface DismissedState {

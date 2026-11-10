@@ -1,3 +1,4 @@
+import { readJson, readString, writeJson } from '@/lib/core/persist';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
@@ -97,11 +98,7 @@ const KIND_LABEL: Record<PaneKind, [string, string]> = {
  */
 /** Read the saved bar choice synchronously (the open-focus decision happens before state has loaded it). */
 function localStorageBarIsAuto(): boolean {
-  try {
-    return localStorage.getItem('rmh-elections-roombar') === 'auto';
-  } catch {
-    return false;
-  }
+  return readString('rmh-elections-roombar') === 'auto';
 }
 
 export function RoomOverlay({
@@ -135,42 +132,26 @@ export function RoomOverlay({
   // How the panes sit: spacing and border size (None … Roomy / Thick), per viewer, kept in this browser.
   const [look, setLookState] = useState<Look>(DEFAULT_LOOK);
   useEffect(() => {
-    try {
-      setLookState(parseLook(localStorage.getItem('rmh-elections-roomlook')));
-    } catch {
-      /* defaults */
-    }
+    setLookState(parseLook(readString('rmh-elections-roomlook')));
   }, []);
   const setLook = (next: Look) => {
     setLookState(next);
-    try {
-      localStorage.setItem('rmh-elections-roomlook', JSON.stringify(next));
-    } catch {
-      /* ignore */
-    }
+    writeJson('rmh-elections-roomlook', next);
   };
   // Pane order is also per viewer: drag a pane's grip onto another to swap them.
   const [orders, setOrders] = useState<Record<string, string[]>>({});
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   useEffect(() => {
-    try {
-      const raw = JSON.parse(localStorage.getItem('rmh-elections-roomorder') ?? '{}') as Record<string, unknown>;
-      const clean: Record<string, string[]> = {};
-      for (const [k, v] of Object.entries(raw)) if (Array.isArray(v)) clean[k] = v.filter((x): x is string => typeof x === 'string').slice(0, 8);
-      setOrders(clean);
-    } catch {
-      /* default order */
-    }
+    const raw = readJson<Record<string, unknown>>('rmh-elections-roomorder', {});
+    const clean: Record<string, string[]> = {};
+    for (const [k, v] of Object.entries(raw)) if (Array.isArray(v)) clean[k] = v.filter((x): x is string => typeof x === 'string').slice(0, 8);
+    setOrders(clean);
   }, []);
   const saveOrder = (layout: string, ids: string[]) =>
     setOrders((cur) => {
       const next = { ...cur, [layout]: ids };
-      try {
-        localStorage.setItem('rmh-elections-roomorder', JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
+      writeJson('rmh-elections-roomorder', next);
       return next;
     });
   const { split, grid, dragging, handlers } = useSplit(config.layout, SPACE_PX[look.space] ?? 4, SPACE_PX[look.space] ?? 4);

@@ -4,6 +4,7 @@
  * minutes — and mounts the two things that depend on it. With nothing active it
  * renders nothing and never loads another chunk.
  */
+import { readJson, readString, writeString } from '@/lib/core/persist';
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { useSession } from '@/components/Providers';
 import { useIdleReady } from '@/hooks/useIdleReady';
@@ -19,13 +20,8 @@ const HuntMarker = lazy(() => import('@/components/delight/HuntMarker'));
 const FoolsPill = lazy(() => import('@/components/delight/FoolsPill'));
 
 function readCache(): DelightConfig | null {
-  try {
-    const c = JSON.parse(localStorage.getItem(CFG_KEY) ?? 'null') as
-      (DelightConfig & { at: number }) | null;
-    return c && Date.now() - c.at < TTL_MS ? c : null;
-  } catch {
-    return null;
-  }
+  const c = readJson<(DelightConfig & { at: number }) | null>(CFG_KEY, null);
+  return c && Date.now() - c.at < TTL_MS ? c : null;
 }
 
 export function DelightMount() {
@@ -40,13 +36,9 @@ export function DelightMount() {
     const apply = (c: DelightConfig) => {
       if (!alive) return;
       setCfg(c);
-      let off = false;
-      try {
-        localStorage.setItem(FOOLS_FLAG_KEY, c.fools ? '1' : '0');
-        off = localStorage.getItem(FOOLS_OFF_KEY) === '1';
-      } catch {
-        /* storage blocked: the class simply is not remembered */
-      }
+      // Storage blocked: the class simply is not remembered.
+      writeString(FOOLS_FLAG_KEY, c.fools ? '1' : '0');
+      const off = readString(FOOLS_OFF_KEY) === '1';
       document.documentElement.classList.toggle('fools', c.fools && !off);
       setFools(c.fools && !off);
     };

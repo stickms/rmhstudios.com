@@ -3,6 +3,7 @@
  * localStorage for anonymous play; DB for signed-in users (via API).
  */
 
+import { readJson, writeJson } from '@/lib/core/persist';
 import { api } from '@/lib/contract/client';
 import { getDailyPuzzleResultApi, getDailyPuzzleResultsApi } from './daily-puzzles.contract';
 
@@ -26,22 +27,14 @@ interface DailyPuzzlesState {
 }
 
 function loadState(): DailyPuzzlesState {
-    if (typeof window === 'undefined') return { version: 1, results: {} };
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-            const parsed = JSON.parse(raw);
-            if (parsed && typeof parsed === 'object' && parsed.results) return parsed;
-        }
-    } catch { /* ignore */ }
-    return { version: 1, results: {} };
+    return readJson<DailyPuzzlesState>(STORAGE_KEY, { version: 1, results: {} }, {
+        validate: (v) =>
+            v && typeof v === 'object' && (v as DailyPuzzlesState).results ? (v as DailyPuzzlesState) : undefined,
+    });
 }
 
 function saveState(state: DailyPuzzlesState): void {
-    if (typeof window === 'undefined') return;
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch { /* ignore */ }
+    writeJson(STORAGE_KEY, state);
 }
 
 /** Get result from localStorage */

@@ -4,6 +4,7 @@
  * sharing and the workshop; it is never needed to build.
  */
 
+import { readJson, writeJson } from '@/lib/core/persist';
 import type { LoadoutSlots, TfClass } from './catalog-types';
 
 const KEY = 'rmh-tf2-loadout-drafts';
@@ -11,13 +12,7 @@ const KEY = 'rmh-tf2-loadout-drafts';
 type Drafts = Partial<Record<TfClass, LoadoutSlots>>;
 
 function read(): Drafts {
-  try {
-    const raw = localStorage.getItem(KEY);
-    const parsed = raw ? (JSON.parse(raw) as unknown) : null;
-    return parsed && typeof parsed === 'object' ? (parsed as Drafts) : {};
-  } catch {
-    return {};
-  }
+  return readJson<Drafts>(KEY, {}, { validate: (v) => (v && typeof v === 'object' ? (v as Drafts) : undefined) });
 }
 
 export function loadDraft(cls: TfClass): LoadoutSlots {
@@ -33,11 +28,8 @@ export function hasDraft(cls: TfClass): boolean {
 }
 
 export function saveDraft(cls: TfClass, slots: LoadoutSlots): void {
-  try {
-    const all = read();
-    all[cls] = slots;
-    localStorage.setItem(KEY, JSON.stringify(all));
-  } catch {
-    /* storage unavailable (private mode, quota): the draft just isn't kept */
-  }
+  // Storage unavailable (private mode, quota): the draft just isn't kept.
+  const all = read();
+  all[cls] = slots;
+  writeJson(KEY, all);
 }

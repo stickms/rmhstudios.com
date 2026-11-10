@@ -1,3 +1,4 @@
+import { readJson, writeJson } from '@/lib/core/persist';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
@@ -84,37 +85,38 @@ function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzl
         }
         // Resume a half-played puzzle: leaving mid-way used to throw the
         // rounds away and let the player re-guess them with the answers seen.
-        try {
-            const raw = localStorage.getItem(`rmh-outcast-progress:${dateKey}`);
-            const saved = raw ? JSON.parse(raw) : null;
-            if (
-                saved &&
-                Array.isArray(saved.correctRounds) &&
-                Array.isArray(saved.selectedNames) &&
-                saved.correctRounds.length > 0 &&
-                saved.correctRounds.length <= 5 &&
-                saved.correctRounds.length === saved.selectedNames.length
-            ) {
-                const n = saved.correctRounds.length;
-                setCorrectRounds(saved.correctRounds);
-                setSelectedNames(saved.selectedNames);
-                setCurrentRound(n - 1);
-                setRoundRevealed(true);
-                setSelectedName(saved.selectedNames[n - 1]);
-            }
-        } catch { /* storage unavailable: start fresh */ }
+        const saved = readJson<{ correctRounds: boolean[]; selectedNames: string[] } | null>(
+            `rmh-outcast-progress:${dateKey}`,
+            null,
+            {
+                validate: (v) => {
+                    const s = v as { correctRounds?: unknown; selectedNames?: unknown } | null;
+                    return s &&
+                        Array.isArray(s.correctRounds) &&
+                        Array.isArray(s.selectedNames) &&
+                        s.correctRounds.length > 0 &&
+                        s.correctRounds.length <= 5 &&
+                        s.correctRounds.length === s.selectedNames.length
+                        ? (s as { correctRounds: boolean[]; selectedNames: string[] })
+                        : undefined;
+                },
+            },
+        );
+        if (saved) {
+            const n = saved.correctRounds.length;
+            setCorrectRounds(saved.correctRounds);
+            setSelectedNames(saved.selectedNames);
+            setCurrentRound(n - 1);
+            setRoundRevealed(true);
+            setSelectedName(saved.selectedNames[n - 1] ?? null);
+        }
     }, [dateKey]);
 
     // Persist each answered round (never the empty initial state, which would
     // clobber the saved progress before the restore above has applied).
     useEffect(() => {
         if (completed || correctRounds.length === 0) return;
-        try {
-            localStorage.setItem(
-                `rmh-outcast-progress:${dateKey}`,
-                JSON.stringify({ correctRounds, selectedNames }),
-            );
-        } catch { /* ignore */ }
+        writeJson(`rmh-outcast-progress:${dateKey}`, { correctRounds, selectedNames });
     }, [dateKey, completed, correctRounds, selectedNames]);
 
     const session = useSession();

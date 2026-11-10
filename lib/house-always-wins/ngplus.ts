@@ -2,6 +2,7 @@
 // room entities remixed from a seed and one House rule, on its own save slot.
 // Pure logic + a tiny localStorage record; the zustand store picks its slot
 // from here at creation time.
+import { readJson, removeKey, writeJson } from '@/lib/core/persist';
 import type { EntitySpec } from './types';
 import { mulberry32 } from '@/lib/core/rng';
 
@@ -26,9 +27,8 @@ const DEFAULT: NgMeta = { cleared: false, slot: 'main', seed: 1, rule: 'fastLase
 export const CLEAR_ENDINGS = ['settled', 'gamble_win'];
 
 export function readMeta(): NgMeta {
-  if (typeof window === 'undefined') return DEFAULT;
-  try {
-    const raw = JSON.parse(localStorage.getItem(META_KEY) ?? 'null') as Partial<NgMeta> | null;
+  {
+    const raw = readJson<Partial<NgMeta> | null>(META_KEY, null);
     if (!raw) return DEFAULT;
     return {
       cleared: raw.cleared === true,
@@ -37,17 +37,11 @@ export function readMeta(): NgMeta {
       rule: HOUSE_RULES.includes(raw.rule as HouseRule) ? (raw.rule as HouseRule) : 'fastLasers',
       cycles: Number.isInteger(raw.cycles) ? (raw.cycles as number) : 0,
     };
-  } catch {
-    return DEFAULT;
   }
 }
 
 function writeMeta(meta: NgMeta): void {
-  try {
-    localStorage.setItem(META_KEY, JSON.stringify(meta));
-  } catch {
-    /* storage unavailable: NG+ simply isn't offered */
-  }
+  writeJson(META_KEY, meta); // storage unavailable: NG+ simply isn't offered
 }
 
 export const slotStorageName = (slot: Slot) =>
@@ -68,11 +62,7 @@ export function markCleared(): void {
 export function startNewGamePlus(): void {
   const m = readMeta();
   const seed = (Math.floor(Math.random() * 2 ** 31) + 1) | 0;
-  try {
-    localStorage.removeItem(slotStorageName('ngplus'));
-  } catch {
-    /* ignore */
-  }
+  removeKey(slotStorageName('ngplus'));
   writeMeta({
     ...m,
     cleared: true,
