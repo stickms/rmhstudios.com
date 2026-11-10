@@ -3,7 +3,6 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { CACHE_POLICY } from '@/lib/api/cache-policies';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
-import { auth } from '@/lib/auth';
 
 const DIFFICULTIES = ['easy', 'normal', 'hard', 'lunatic'] as const;
 type Difficulty = (typeof DIFFICULTIES)[number];
@@ -74,15 +73,9 @@ export const Route = createFileRoute('/api/dream-rift/coop')({
 
       // ── Submit a completed co-op run (host only, authenticated) ──
       POST: defineHandler(
-        { auth: 'none', rateLimit: { limit: 5, windowMs: 60_000, prefix: 'dream-rift-coop-post' } },
-        async ({ request }) => {
+        { rateLimit: { limit: 5, windowMs: 60_000, prefix: 'dream-rift-coop-post' } },
+        async ({ request, userId }) => {
           try {
-            const session = await auth.api.getSession({ headers: request.headers });
-            const userId = session?.user?.id;
-            if (!userId) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-
             const body = await request.json();
             const { difficulty, combinedScore, timeSurvived, stageReached, cleared, players } =
               body;

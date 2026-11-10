@@ -1,7 +1,6 @@
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { checkRateLimit } from '@/lib/rate-limit.server';
@@ -43,7 +42,7 @@ const scheduledProbeSeen = lruL1('rmharks:scheduled-probe', { maxEntries: 5000 }
 export const Route = createFileRoute('/api/rmharks')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ request }) => {
+      GET: defineHandler({ auth: 'optional' }, async ({ request, userId }) => {
         const { searchParams } = new URL(request.url);
         const cursor = searchParams.get('cursor');
         const limit = pageSize(searchParams.get('limit'), 20, 50);
@@ -52,13 +51,6 @@ export const Route = createFileRoute('/api/rmharks')({
         const feedParam = searchParams.get('feed');
 
         // Get current user session (optional, for liked/reposted status)
-        let userId: string | null = null;
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          userId = session?.user?.id ?? null;
-        } catch {
-          // Not logged in, that's fine
-        }
 
         // Normal feed browsing stays open and unthrottled. Only the `search` path is
         // gated: it runs a text match over posts and (unlike normal pages) bypasses

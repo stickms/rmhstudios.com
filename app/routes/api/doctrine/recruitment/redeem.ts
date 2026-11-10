@@ -1,21 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { auth } from '@/lib/auth';
 import { awardXp } from '@/lib/doctrine/reputation';
 
 export const Route = createFileRoute('/api/doctrine/recruitment/redeem')({
   server: {
     handlers: {
       POST: defineHandler(
-        { auth: 'none', rateLimit: { limit: 5, windowMs: 300_000, prefix: 'doctrine-redeem' } },
-        async ({ request }) => {
+        { rateLimit: { limit: 5, windowMs: 300_000, prefix: 'doctrine-redeem' } },
+        async ({ request, session }) => {
           try {
-            const session = await auth.api.getSession({ headers: request.headers });
-            if (!session?.user?.id) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-
             const body = await request.json();
             const { code } = body;
 

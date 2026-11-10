@@ -12,6 +12,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { submitLaundryScoreApi } from '@/lib/laundry-sort/laundry.contract';
 import { useRouterState } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { useSession } from '@/components/Providers';
@@ -191,10 +193,8 @@ export function LaundryGame() {
     const store = useLaundryStore.getState();
     store.patchSoloResult({ submitted: 'pending' });
     try {
-      const response = await fetch('/api/laundry-sort/score', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await api(submitLaundryScoreApi, {
+        body: {
           score: match.stats.score,
           sorted: match.stats.sorted,
           wrong: match.stats.wrong,
@@ -202,10 +202,8 @@ export function LaundryGame() {
           bestCombo: match.stats.bestCombo,
           durationSec: match.options.durationSec,
           difficulty: match.options.difficulty,
-        }),
+        },
       });
-      if (!response.ok) throw new Error(String(response.status));
-      const data = (await response.json()) as { personalBest?: boolean };
       useLaundryStore
         .getState()
         .patchSoloResult({ submitted: 'done', personalBest: Boolean(data.personalBest) });

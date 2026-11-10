@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { auth } from '@/lib/auth';
 import { awardXp } from '@/lib/doctrine/reputation';
 import { invalidateCachedPrefix } from '@/lib/cached.server';
 
@@ -11,14 +10,9 @@ export const Route = createFileRoute('/api/doctrine/reactions')({
   server: {
     handlers: {
       POST: defineHandler(
-        { auth: 'none', rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-react' } },
-        async ({ request }) => {
+        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-react' } },
+        async ({ request, session }) => {
           try {
-            const session = await auth.api.getSession({ headers: request.headers });
-            if (!session?.user?.id) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-
             const body = await request.json();
             const { reaction, safehouseId, disclosureId, incidentId } = body;
 
