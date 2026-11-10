@@ -25,14 +25,6 @@ export interface RevealProps {
   delay?: number;
   /** Starting vertical offset in px (rises to 0). Defaults to the site curve. */
   y?: number;
-  /**
-   * Formerly the tween duration in seconds. A scroll-driven reveal is paced by
-   * the scroller, not by a clock, so this is accepted and ignored rather than
-   * removed — dropping it would be a 34-file diff for no behavioural gain.
-   *
-   * @deprecated No effect. Pacing comes from `animation-range` in globals.css.
-   */
-  duration?: number;
   className?: string;
   children?: ReactNode;
 }

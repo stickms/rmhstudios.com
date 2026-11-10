@@ -5,14 +5,6 @@ import { cn } from '@/lib/utils';
 
 interface ContextRailProps {
   children?: ReactNode;
-  /**
-   * @deprecated The shell's frame is a CSS grid with explicit tracks, so an
-   * empty rail no longer needs a spacer to keep the content column centred.
-   * Kept so existing callers type-check unchanged.
-   */
-  reserve?: boolean;
-  /** @deprecated See {@link ContextRailProps.reserve}. */
-  compactReserve?: boolean;
   className?: string;
 }
 

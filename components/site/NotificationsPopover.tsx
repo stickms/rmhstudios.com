@@ -14,7 +14,8 @@ import { NotificationBadge } from '@/components/ui/notification-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useReservedRows } from '@/hooks/useReservedRows';
 import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
-import { timeAgoShort } from '@/lib/utils';
+import { relativeTimeShort } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MENU_ITEM_ATTR } from '@/components/ui/menu';
 import { listNotificationsApi, markNotificationsReadApi } from '@/lib/preferences/preferences.contract';
@@ -248,7 +249,7 @@ export function NotificationsPopover({
                               </span>
                             )}
                             <span className="mt-0.5 block text-caption text-site-text-dim">
-                              {timeAgoShort(n.createdAt)}
+                              <RelativeTime date={n.createdAt} format={relativeTimeShort} />
                             </span>
                           </span>
                           {!n.read && (

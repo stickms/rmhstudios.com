@@ -35,7 +35,6 @@ export function DelightAdminPage() {
           aria-label={t('admin-tabs', { defaultValue: 'Delight tools sections' })}
           value={tab}
           onChange={(id) => setTab(id as Tab)}
-          scroll
           tabs={[
             { id: 'hunt', label: t('admin-tab-hunt', { defaultValue: 'Hunt' }), icon: Compass },
             {

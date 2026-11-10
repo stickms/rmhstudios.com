@@ -4,7 +4,8 @@ import { Coins, Users, Sparkles } from 'lucide-react';
 import { studioOverviewQuery } from '@/lib/creator/earnings.queries';
 import { Card } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import { timeAgoShort } from '@/lib/utils';
+import { relativeTimeShort } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 import { TierEditor } from '@/components/creator/TierEditor';
 import type { StudioOverview } from '@/lib/creator/studio.server';
 
@@ -219,7 +220,7 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
                     <Coins className="size-4 text-site-warning" aria-hidden />
                     {tip.amount.toLocaleString()}
                   </span>
-                  <span className="text-xs font-medium text-site-text-dim">{timeAgoShort(tip.createdAt)}</span>
+                  <span className="text-xs font-medium text-site-text-dim"><RelativeTime date={tip.createdAt} format={relativeTimeShort} /></span>
                 </div>
               </div>
             ))}

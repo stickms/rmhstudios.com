@@ -125,18 +125,6 @@ interface TabsProps {
    */
   sheet?: boolean;
   /**
-   * @deprecated No-op — every strip spans the full column width; short strips
-   * split it into equal segments (see the layout note in the module docblock).
-   * Still accepted so no caller has to change; safe to delete at any call site.
-   */
-  fullWidth?: boolean;
-  /**
-   * @deprecated No-op — a strip that outgrows its container always scrolls in one
-   * row with an edge fade (see the module docblock); there is nothing to opt into.
-   * Still accepted so no caller has to change; safe to delete at any call site.
-   */
-  scroll?: boolean;
-  /**
    * Icon-forward: visually hide each tab's text label (kept as an accessible
    * name via `sr-only` + a hover `title` tooltip) for tabs that carry an `icon`,
    * so crowded strips read as a compact icon row. Tabs without an icon keep

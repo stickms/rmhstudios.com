@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { History, Trash2, Play } from 'lucide-react';
 
-import { timeAgoShort } from '@/lib/utils';
+import { relativeTimeShort } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -137,7 +138,6 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
         ]}
         value={filter}
         onChange={(id) => setFilter(id as HistoryEntityType | 'all')}
-        scroll
         className="mb-4"
         aria-label={t('filter-history', { defaultValue: 'Filter history' })}
       />
@@ -211,7 +211,7 @@ function HistoryRow({ item, onRemove }: { item: HistoryView; onRemove: () => voi
           </span>
         ) : null}
       </span>
-      <span className="shrink-0 text-xs text-site-text-dim">{timeAgoShort(item.updatedAt)}</span>
+      <span className="shrink-0 text-xs text-site-text-dim"><RelativeTime date={item.updatedAt} format={relativeTimeShort} /></span>
     </>
   );
 

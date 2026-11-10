@@ -123,8 +123,6 @@ export function EventsColumn({ embedded = false }: { embedded?: boolean }) {
           value={tab}
           onChange={(id) => setTab(id as EventTab)}
           idBase="events"
-          fullWidth
-          scroll
           aria-label={t('events-filters', { defaultValue: 'Event filters' })}
         />
       </div>

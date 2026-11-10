@@ -32,7 +32,8 @@ import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
 import { useFreshUser } from '@/stores/userDisplayStore';
-import { timeAgoShort } from '@/lib/utils';
+import { relativeTimeShort } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 import { useTranslation } from 'react-i18next';
 import { useLocaleStore } from '@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from '@/lib/i18n/config';
@@ -372,10 +373,8 @@ export function CommentItem({
                 <span className="text-site-text-dim truncate">@{freshCommentUser.handle}</span>
               )}
             </Link>
-            {/* Relative time drifts by a tick between SSR and hydration; suppress
- the expected mismatch so it isn't reported as a hydration error. */}
-            <span className="text-site-text-dim shrink-0" suppressHydrationWarning>
-              · {timeAgoShort(comment.createdAt)}
+            <span className="text-site-text-dim shrink-0">
+              · <RelativeTime date={comment.createdAt} format={relativeTimeShort} />
             </span>
 
             {/* More menu */}

@@ -45,7 +45,7 @@ bundle only**. SSR/server builds get the real module.
 | `catalog/`                                 | the catalog (`games`, `apps`, `GameInfo`/`AppInfo`): single source of truth for game/app cards and score rules. Entries of games/apps with a `features/<id>/` folder live in `features/<id>/catalog.ts`; the rest are one file each under `catalog/{games,apps}/`. Scoring rules are the entry's `scoring` field; `game/registry.ts` derives from it |
 | `internal-auth.ts`                         | shared-secret server-to-server auth (`authorizeInternalRequest`)                                                                                                                                                         |
 | `ssrf-guard.server.ts`                     | `safeFetch` — required for any user-supplied URL fetch                                                                                                                                                                   |
-| `utils.ts`                                 | `cn()` (twMerge+clsx), `formatCount`, `timeAgoShort`, `formatRelativeTime`                                                                                                                                               |
+| `utils.ts`                                 | `cn()` (twMerge+clsx), `formatCount`, `relativeTimeShort`, `formatRelativeTime`                                                                                                                                          |
 
 ## Domain map
 

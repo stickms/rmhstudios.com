@@ -22,15 +22,6 @@ export interface AwardCoinsOptions {
   note?: string;
   entityType?: string;
   entityId?: string;
-  /**
-   * Sending user for peer-to-peer grants; omit for system rewards.
-   *
-   * @deprecated A grant with a sender is a TRANSFER, and routing one through
-   * here credits the recipient without debiting the sender — inventing coins.
-   * Call `transferCoins` instead. The parameter is retained so existing callers
-   * still compile; it is ignored.
-   */
-  senderId?: string | null;
   /** Dedupe token — a repeat with the same key does not grant twice. */
   idempotencyKey?: string;
 }
