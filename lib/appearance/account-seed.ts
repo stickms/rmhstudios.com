@@ -5,8 +5,8 @@
  *
  * ## Why this exists
  *
- * Appearance is stored twice: per device in `localStorage` (what `themeScript` in
- * `app/routes/__root.tsx` paints from, before any bundle runs) and per account in
+ * Appearance is stored twice: per device in `localStorage` (what the theme step in
+ * `lib/prepaint/theme.ts` paints from, before any bundle runs) and per account in
  * `AppearancePreference` (what follows you between devices). The two were
  * reconciled by the account sync in `components/Providers.tsx`, which runs at
  * IDLE — seconds after first paint — and lets the account win.
@@ -142,19 +142,4 @@ export function accountAppearanceSeed(
   }
 
   return seed;
-}
-
-/**
- * The inline script that applies a seed, for `head()`.
- *
- * It must run BEFORE `themeScript`, which is the whole point, and it must not be
- * able to break the page: every write is inside one `try`, because a full or
- * disabled `localStorage` must degrade to today's behaviour (the idle sync), not
- * to an exception in `<head>`. The payload is validated ids, numbers and a
- * checked hex colour, and `<` is escaped anyway so no value can close the tag.
- */
-export function accountSeedScript(seed: AppearanceSeed): string | null {
-  if (!Object.keys(seed).length) return null;
-  const json = JSON.stringify(seed).replace(/</g, '\\u003c');
-  return `(function(){try{var s=${json};for(var k in s){if(s[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,s[k])}}catch(e){}})()`;
 }

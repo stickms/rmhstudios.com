@@ -25,6 +25,7 @@ import { FULLSCREEN_TIER_DIRS } from '../../eslint-local-rules/design-scope.js';
 import { readFileSync, readdirSync, statSync, writeFileSync, existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { runPrepaint } from './prepaint-harness';
 import postcss from 'postcss';
 import selectorParser from 'postcss-selector-parser';
 
@@ -45,10 +46,19 @@ describe('iOS edge contract: invariants', () => {
   });
 
   it('theme-color is never written on iOS: the pre-paint script and the runtime both skip ios-webkit', () => {
-    // A theme-color is one flat colour, which is exactly the band. Pre-paint:
-    expect(root).toContain(
-      `if(!document.documentElement.classList.contains("ios-webkit")){var t=document.querySelector('meta[name="theme-color"][data-rmh-theme]')`,
-    );
+    // A theme-color is one flat colour, which is exactly the band. Pre-paint (the GENERATED script run in a fake DOM):
+    const ios = runPrepaint({
+      userAgent:
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+    });
+    expect(ios.classes.has('ios-webkit')).toBe(true);
+    expect(ios.metaCreated(), 'no theme-color tag on iOS WebKit').toBe(false);
+    const other = runPrepaint({
+      userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36',
+    });
+    expect(other.classes.has('ios-webkit')).toBe(false);
+    expect(other.metaCreated(), 'every other browser still gets one').toBe(true);
+    expect(other.meta.content).toBe('#000000');
     // Runtime (paintDocumentGround): on iOS it removes our tag instead of mirroring the background into it.
     expect(theme).toMatch(
       /if \(html\.classList\.contains\('ios-webkit'\)\) \{\s*marked\?\.remove\(\);/,
