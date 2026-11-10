@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/slice-it/packs.contract';
 import { prisma } from '@/lib/prisma.server';
 import { PackUpdateZ, type PackSummary } from '@/lib/slice-it/packs';
 import type { LibrarySong } from '@/lib/slice-it/library-filters';
@@ -40,7 +41,7 @@ export interface PackDetailResponse {
 export const Route = createFileRoute('/api/slice-it/packs/$id')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ userId, params }) => {
+      GET: implement(C.getPackApi, { auth: 'optional', rateLimit: 'read' }, async ({ userId, params }) => {
         const parsed = ParamsZ.safeParse(params);
         if (!parsed.success) return Response.json({ error: 'Not found.' }, { status: 404 });
 
@@ -76,7 +77,7 @@ export const Route = createFileRoute('/api/slice-it/packs/$id')({
         return Response.json(body);
       }),
 
-      PATCH: defineHandler(
+      PATCH: implement(C.updatePackApi, 
         { body: PackUpdateZ, rateLimit: 'write' },
         async ({ userId, params, body }) => {
           const parsed = ParamsZ.safeParse(params);
@@ -100,7 +101,7 @@ export const Route = createFileRoute('/api/slice-it/packs/$id')({
         },
       ),
 
-      DELETE: defineHandler({ rateLimit: 'write' }, async ({ userId, params }) => {
+      DELETE: implement(C.deletePackApi, { rateLimit: 'write' }, async ({ userId, params }) => {
         const parsed = ParamsZ.safeParse(params);
         if (!parsed.success) return Response.json({ error: 'Not found.' }, { status: 404 });
 

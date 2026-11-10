@@ -55,6 +55,15 @@ import type { GameEngine } from '@/lib/slice-it/engine';
 import type { SliceSong } from '@/lib/slice-it/types';
 import type { ResolvedSetlist, SetlistSummary } from '@/lib/slice-it/setlist.server';
 import { armRunFinish, disarmRunFinish } from './runTracker';
+import { api } from '@/lib/contract/client';
+import {
+  createSetlistApi,
+  deleteSetlistApi,
+  getSetlistApi,
+  listSetlistsApi,
+  updateSetlistApi,
+  type SetlistIndex,
+} from '@/lib/slice-it/setlists.contract';
 
 const LIKED_ID = 'liked';
 
@@ -62,12 +71,6 @@ interface SetlistPanelProps {
   engine: GameEngine | null;
   onPlay: (songId: string) => Promise<void>;
   onBack: () => void;
-}
-
-interface SetlistIndex {
-  mine: SetlistSummary[];
-  public: SetlistSummary[];
-  liked: { id: string; songCount: number } | null;
 }
 
 /** The banner shown while a set or a course is running. */
@@ -94,9 +97,7 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
   const loadIndex = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/slice-it/setlists');
-      if (!res.ok) throw new Error(String(res.status));
-      setIndex((await res.json()) as SetlistIndex);
+      setIndex(await api(listSetlistsApi));
       setError(null);
     } catch {
       setError(t('setlist-load-failed', { defaultValue: 'Could not load setlists.' }));
@@ -112,9 +113,7 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
   const openSetlist = React.useCallback(async (id: string) => {
     setBusy(true);
     try {
-      const res = await fetch(`/api/slice-it/setlists/${id}`);
-      if (!res.ok) throw new Error(String(res.status));
-      setOpen((await res.json()) as ResolvedSetlist);
+      setOpen(await api(getSetlistApi, { params: { id } }));
     } catch {
       setOpen(null);
     } finally {
@@ -127,14 +126,9 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
     if (!name) return;
     setBusy(true);
     try {
-      const res = await fetch('/api/slice-it/setlists', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, songIds: [] }),
-      });
-      if (!res.ok) throw new Error(String(res.status));
+      const created = await api(createSetlistApi, { body: { name, songIds: [] } });
       setNewName('');
-      setOpen((await res.json()) as ResolvedSetlist);
+      setOpen(created);
       await loadIndex();
     } catch {
       setError(t('setlist-create-failed', { defaultValue: 'Could not create that setlist.' }));
@@ -148,13 +142,9 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
     async (setlist: ResolvedSetlist, songIds: string[], patch: Record<string, unknown> = {}) => {
       setBusy(true);
       try {
-        const res = await fetch(`/api/slice-it/setlists/${setlist.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ songIds, ...patch }),
-        });
-        if (!res.ok) throw new Error(String(res.status));
-        setOpen((await res.json()) as ResolvedSetlist);
+        setOpen(
+          await api(updateSetlistApi, { params: { id: setlist.id }, body: { songIds, ...patch } }),
+        );
         await loadIndex();
       } catch {
         setError(t('setlist-save-failed', { defaultValue: 'Could not save that setlist.' }));
@@ -169,7 +159,8 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
     async (id: string) => {
       setBusy(true);
       try {
-        await fetch(`/api/slice-it/setlists/${id}`, { method: 'DELETE' });
+        // A refused delete still closes the list and reloads, as before.
+        await api(deleteSetlistApi, { params: { id } }).catch(() => undefined);
         setOpen(null);
         await loadIndex();
       } finally {
@@ -303,9 +294,12 @@ export function SetlistPanel({ engine, onPlay, onBack }: SetlistPanelProps) {
   );
 
   const playLiked = React.useCallback(async () => {
-    const res = await fetch(`/api/slice-it/setlists/${LIKED_ID}`);
-    if (!res.ok) return;
-    const liked = (await res.json()) as ResolvedSetlist;
+    let liked: ResolvedSetlist;
+    try {
+      liked = await api(getSetlistApi, { params: { id: LIKED_ID } });
+    } catch {
+      return;
+    }
     if (liked.songs.length === 0) return;
     playThrough(
       t('setlist-liked', { defaultValue: 'Liked Songs' }),

@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/communities/communities.contract';
 import { prisma } from '@/lib/prisma.server';
 import { getCommunityBySlug, getRole, canModerate } from '@/lib/communities/access.server';
 
@@ -7,7 +8,7 @@ import { getCommunityBySlug, getRole, canModerate } from '@/lib/communities/acce
 export const Route = createFileRoute('/api/communities/$slug/announcements/$id')({
   server: {
     handlers: {
-      DELETE: defineHandler({}, async ({ params, session }) => {
+      DELETE: implement(C.deleteCommunityAnnouncementApi, {}, async ({ params, session }) => {
         const community = await getCommunityBySlug(params.slug);
         if (!community) return Response.json({ error: 'Not found' }, { status: 404 });
 

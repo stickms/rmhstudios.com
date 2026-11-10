@@ -19,6 +19,8 @@ import type { CuratedBuild } from '@/lib/builds/curated';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
+import { api } from '@/lib/contract/client';
+import { listUserBuildsApi } from '@/lib/user-builds.contract';
 import '@/components/builds/builds.css';
 import '@/components/creator-studio/storefront.css';
 import '@/components/rmhvibe/vibe.css';
@@ -31,7 +33,7 @@ type UserBuildItem = {
   slug: string;
   title: string;
   description: string;
-  thumbnailUrl: string | null;
+  thumbnailUrl?: string | null;
   technologies: string[];
   likeCount: number;
   viewCount: number;
@@ -173,10 +175,9 @@ export function UserBuildsTab({ seed }: { seed: number }) {
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const params = new URLSearchParams({ limit: '24', sort: userSort });
-        if (query.trim()) params.set('search', query.trim());
-        const res = await fetch(`/api/user-builds?${params.toString()}`);
-        const data = await res.json();
+        const data = await api(listUserBuildsApi, {
+          query: { limit: 24, sort: userSort, search: query.trim() || undefined },
+        });
         if (reqId.current !== id) return;
         setUserItems(data.items ?? []);
         setCursor(data.nextCursor ?? null);
@@ -193,10 +194,9 @@ export function UserBuildsTab({ seed }: { seed: number }) {
     const id = reqId.current;
     setLoading(true);
     try {
-      const params = new URLSearchParams({ limit: '24', sort: userSort, cursor });
-      if (query.trim()) params.set('search', query.trim());
-      const res = await fetch(`/api/user-builds?${params.toString()}`);
-      const data = await res.json();
+      const data = await api(listUserBuildsApi, {
+        query: { limit: 24, sort: userSort, cursor, search: query.trim() || undefined },
+      });
       if (reqId.current !== id) return;
       setUserItems((prev) => [...prev, ...(data.items ?? [])]);
       setCursor(data.nextCursor ?? null);

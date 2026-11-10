@@ -2930,7 +2930,7 @@ B4: open
 B5: open
 B6: done (#1533: per-namespace lazy loading; English renders from defaultValue and loads only namespaces in use)
 B7: open
-C1: in-progress (#1531/#1537: contract + implement() + api() + raw-fetch ratchet; 35 endpoints on typed contracts so far; communities, user-builds and the rest pending)
+C1: in-progress (#1531/#1537: contract + implement() + api() + raw-fetch ratchet; phase 9: user-builds, communities, slice-it packs + setlists contracts, 41 call sites migrated, ratchet 800 -> 759; remaining domains pending)
 C2: done (unsubscribe GET is read-only + RFC 8058 POST; remaining GET writers are authenticated and accepted, see commit)
 C3: in-progress (#1531: schema split into prisma/schema/ + migrations path pinned; #1538: 18 unused tables dropped with evidence in docs/_generated/db-drop-candidates.md; retired columns (expand/contract), User thinning, index pass pending)
 C4: done (#1538: lib/cache.ts deleted; one module lib/cached.server.ts with tags, invalidateTag and an LRU L1; adhoc-cache ratchet holds the rest)

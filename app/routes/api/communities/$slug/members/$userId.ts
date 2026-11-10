@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/communities/communities.contract';
 import { prisma } from '@/lib/prisma.server';
 import { getCommunityBySlug, getRole, canModerate } from '@/lib/communities/access.server';
 import { markRemoved } from '@/lib/communities/join-requests.server';
@@ -16,7 +17,7 @@ const patchSchema = z.object({ role: z.enum(['MEMBER', 'MOD']) });
 export const Route = createFileRoute('/api/communities/$slug/members/$userId')({
   server: {
     handlers: {
-      PATCH: defineHandler({}, async ({ request, params, session }) => {
+      PATCH: implement(C.setCommunityMemberRoleApi, {}, async ({ request, params, session }) => {
         const community = await getCommunityBySlug(params.slug);
         if (!community) return Response.json({ error: 'Not found' }, { status: 404 });
 
@@ -46,7 +47,7 @@ export const Route = createFileRoute('/api/communities/$slug/members/$userId')({
         });
         return Response.json({ success: true, role: parsed.data.role });
       }),
-      DELETE: defineHandler({}, async ({ params, session }) => {
+      DELETE: implement(C.removeCommunityMemberApi, {}, async ({ params, session }) => {
         const community = await getCommunityBySlug(params.slug);
         if (!community) return Response.json({ error: 'Not found' }, { status: 404 });
 

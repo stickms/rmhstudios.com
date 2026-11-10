@@ -15,6 +15,8 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { Spinner } from '@/components/ui/spinner';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { EmptyState } from '@/components/ui/empty-state';
+import { api } from '@/lib/contract/client';
+import { getUserBuildApi } from '@/lib/user-builds.contract';
 
 export const Route = createFileRoute('/_site/user-builds/submit')({
   // `noindex`: an authoring form, and `Disallow`ed in robots.txt.
@@ -39,10 +41,9 @@ function SubmitBuildContent() {
     if (!editId || !session) return;
     setLoadingBuild(true);
     setFetchError(null);
-    fetch(`/api/user-builds/${editId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Build not found');
-        return res.json();
+    api(getUserBuildApi, { params: { id: editId } })
+      .catch(() => {
+        throw new Error('Build not found');
       })
       .then((data) => {
         if (!data.isOwner) throw new Error('You do not have permission to edit this build');

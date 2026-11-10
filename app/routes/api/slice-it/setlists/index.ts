@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/slice-it/setlists.contract';
+import { SetlistBodyZ } from '@/lib/slice-it/setlist-schema';
 import {
-  MAX_SETLIST_SONGS,
   createSetlist,
   likedSongsSetlist,
   listOwnSetlists,
@@ -18,17 +18,10 @@ import {
  * `mine: []` and no liked-songs list; the public browse still works, which is
  * what makes a shared setlist link worth sending to somebody.
  */
-const SetlistBodyZ = z.object({
-  name: z.string().trim().min(1).max(80),
-  description: z.string().trim().max(300).nullish(),
-  isPublic: z.boolean().optional(),
-  songIds: z.array(z.string().min(1).max(64)).max(MAX_SETLIST_SONGS).default([]),
-});
-
 export const Route = createFileRoute('/api/slice-it/setlists/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ userId }) => {
+      GET: implement(C.listSetlistsApi, { auth: 'optional', rateLimit: 'read' }, async ({ userId }) => {
         const [mine, published, liked] = await Promise.all([
           userId ? listOwnSetlists(userId) : Promise.resolve([]),
           listPublicSetlists(userId),
@@ -41,7 +34,7 @@ export const Route = createFileRoute('/api/slice-it/setlists/')({
         });
       }),
 
-      POST: defineHandler({ rateLimit: 'write', body: SetlistBodyZ }, async ({ userId, body }) => {
+      POST: implement(C.createSetlistApi, { rateLimit: 'write', body: SetlistBodyZ }, async ({ userId, body }) => {
         const result = await createSetlist(userId, {
           name: body.name,
           description: body.description ?? null,

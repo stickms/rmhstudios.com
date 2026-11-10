@@ -573,12 +573,15 @@ function scanRoute(file: string): Omit<Row, 'clientRefs'>[] {
         if (
           ts.isCallExpression(init) &&
           ts.isIdentifier(init.expression) &&
-          init.expression.text === 'defineHandler'
+          (init.expression.text === 'defineHandler' || init.expression.text === 'implement')
         ) {
+          // `implement(contract, options, fn)` (lib/api/implement.server.ts) IS defineHandler
+          // with the contract in front, so its options and handler sit one argument later.
           wrapper = 'defineHandler';
-          const a0 = init.arguments[0] && unwrap(init.arguments[0]);
+          const at = init.expression.text === 'implement' ? 1 : 0;
+          const a0 = init.arguments[at] && unwrap(init.arguments[at]);
           if (a0 && ts.isObjectLiteralExpression(a0)) options = a0;
-          const a1 = init.arguments[1] && unwrap(init.arguments[1]);
+          const a1 = init.arguments[at + 1] && unwrap(init.arguments[at + 1]);
           if (a1 && (ts.isArrowFunction(a1) || ts.isFunctionExpression(a1))) fn = a1;
         } else if (ts.isArrowFunction(init) || ts.isFunctionExpression(init)) {
           fn = init;

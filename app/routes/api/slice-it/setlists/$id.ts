@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/slice-it/setlists.contract';
+import { SetlistPatchZ } from '@/lib/slice-it/setlist-schema';
 import {
   LIKED_SETLIST_ID,
-  MAX_SETLIST_SONGS,
   deleteSetlist,
   likedSongsSetlist,
   resolveSetlist,
@@ -22,17 +22,10 @@ import {
  * `GET /liked` is intercepted before the database: the liked-songs list is
  * virtual (assembled from `SongLike` at read time) and has no row to find.
  */
-const PatchZ = z.object({
-  name: z.string().trim().min(1).max(80).optional(),
-  description: z.string().trim().max(300).nullish(),
-  isPublic: z.boolean().optional(),
-  songIds: z.array(z.string().min(1).max(64)).max(MAX_SETLIST_SONGS).optional(),
-});
-
 export const Route = createFileRoute('/api/slice-it/setlists/$id')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ userId, params }) => {
+      GET: implement(C.getSetlistApi, { auth: 'optional', rateLimit: 'read' }, async ({ userId, params }) => {
         const id = params.id;
         if (id === LIKED_SETLIST_ID) {
           if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -45,8 +38,8 @@ export const Route = createFileRoute('/api/slice-it/setlists/$id')({
         return Response.json(setlist);
       }),
 
-      PATCH: defineHandler(
-        { rateLimit: 'write', body: PatchZ },
+      PATCH: implement(C.updateSetlistApi, 
+        { rateLimit: 'write', body: SetlistPatchZ },
         async ({ userId, params, body }) => {
           const result = await updateSetlist(userId, params.id, {
             ...(body.name === undefined ? {} : { name: body.name }),
@@ -59,7 +52,7 @@ export const Route = createFileRoute('/api/slice-it/setlists/$id')({
         },
       ),
 
-      DELETE: defineHandler({ rateLimit: 'write' }, async ({ userId, params }) => {
+      DELETE: implement(C.deleteSetlistApi, { rateLimit: 'write' }, async ({ userId, params }) => {
         const ok = await deleteSetlist(userId, params.id);
         if (!ok) return Response.json({ error: 'Not found' }, { status: 404 });
         return Response.json({ ok: true });

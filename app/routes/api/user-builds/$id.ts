@@ -1,6 +1,7 @@
 import { isTrackableTitle } from '@/lib/games/route-match';
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/user-builds.contract';
 /**
  * Single Build API
  * GET /api/user-builds/[id] - Get a build by ID or slug
@@ -19,12 +20,11 @@ import { findBuild, projectBuildDetail } from '@/lib/user-builds-detail.server';
 import { getAuthenticatedUser } from '@/lib/rmhcode-auth';
 import { logAdminAction } from '@/lib/admin-audit.server';
 
-type RouteParams = { params: Promise<{ id: string }> };
 
 export const Route = createFileRoute('/api/user-builds/$id')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+      GET: implement(C.getUserBuildApi, { auth: 'none' }, async ({ request, params }) => {
         const { id } = params;
 
         let currentUserId: string | null = null;
@@ -75,7 +75,7 @@ export const Route = createFileRoute('/api/user-builds/$id')({
         // projection so the two paths cannot drift apart.
         return Response.json(projectBuildDetail(build, { isOwner, liked, unlocked }));
       }),
-      PATCH: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+      PATCH: implement(C.updateUserBuildApi, { auth: 'none' }, async ({ request, params }) => {
         const { id } = params;
 
         // Check auth - support both session and CLI token
@@ -219,7 +219,7 @@ export const Route = createFileRoute('/api/user-builds/$id')({
           tags: buildTags.map((t) => t.name),
         });
       }),
-      DELETE: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+      DELETE: implement(C.deleteUserBuildApi, { auth: 'none' }, async ({ request, params }) => {
         const { id } = params;
 
         // Check auth - support both session and CLI token

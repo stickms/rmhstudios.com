@@ -1,6 +1,7 @@
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/user-builds.contract';
 /**
  * Featured Builds API
  * GET /api/user-builds/featured - Get featured builds
@@ -14,7 +15,7 @@ import { buildCardSelect } from '@/lib/user-builds-list';
 export const Route = createFileRoute('/api/user-builds/featured')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ request }) => {
+      GET: implement(C.featuredUserBuildsApi, { auth: 'none' }, async ({ request }) => {
         const { searchParams } = new URL(request.url);
         const limit = pageSize(searchParams.get('limit'), 6, 20);
 

@@ -1,21 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/communities/communities.contract';
 import { prisma } from '@/lib/prisma.server';
 import { listCommunities } from '@/lib/communities.server';
-import { z } from 'zod';
+import { createCommunityBody } from '@/lib/communities/communities-schema';
 
 /**
  * GET  /api/communities — browse communities (most members first).
  * POST /api/communities — create one (creator becomes ADMIN member).
  */
-const createSchema = z.object({
-  name: z.string().min(2).max(60),
-  description: z.string().max(500).optional(),
-  icon: z.string().max(8).optional(),
-  color: z.string().max(16).optional(),
-  isPrivate: z.boolean().optional(),
-});
-
 function slugify(name: string): string {
   return name
     .toLowerCase()
@@ -27,12 +20,12 @@ function slugify(name: string): string {
 export const Route = createFileRoute('/api/communities/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
+      GET: implement(C.listCommunitiesApi, { auth: 'optional' }, async ({ request, session }) => {
         const q = new URL(request.url).searchParams.get('q');
         const communities = await listCommunities({ userId: session?.user.id ?? null, q });
         return Response.json({ communities });
       }),
-      POST: defineHandler(
+      POST: implement(C.createCommunityApi, 
         {
           rateLimit: {
             limit: 5,
@@ -40,7 +33,7 @@ export const Route = createFileRoute('/api/communities/')({
             prefix: 'community-create',
             message: 'Too many communities created. Try later.',
           },
-          body: createSchema,
+          body: createCommunityBody,
           allowEmptyBody: true,
           verboseValidationErrors: true,
         },

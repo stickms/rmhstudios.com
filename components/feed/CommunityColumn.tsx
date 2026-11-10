@@ -28,6 +28,18 @@ import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import type { FeedItem } from'@/lib/feed-types';
 import { WatchControl } from'@/components/discovery/WatchControl';
 import { FindATimeLink } from'@/components/calendar/FindATimeLink';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+ communityFeedApi,
+ communityMembersApi,
+ createCommunityAnnouncementApi,
+ deleteCommunityAnnouncementApi,
+ getCommunityApi,
+ joinCommunityApi,
+ removeCommunityMemberApi,
+ setCommunityMemberRoleApi,
+} from '@/lib/communities/communities.contract';
 
 interface Announcement {
  id: string;
@@ -86,13 +98,19 @@ export function CommunityColumn({
  const [membersOpen, setMembersOpen] = useState(false);
 
  const loadCommunity = useCallback(async () => {
- const res = await fetch(`/api/communities/${slug}`, { credentials:'include'});
- if (res.ok) setCommunity(await res.json());
+ try {
+ setCommunity(await api(getCommunityApi, { params: { slug } }));
+ } catch {
+ // Keep what is shown; a failed refresh is not user-visible.
+ }
  }, [slug]);
 
  const loadFeed = useCallback(async () => {
- const res = await fetch(`/api/communities/${slug}/feed`, { credentials:'include'});
- if (res.ok) setItems((await res.json()).items);
+ try {
+ setItems((await api(communityFeedApi, { params: { slug } })).items);
+ } catch {
+ // Keep what is shown; a failed refresh is not user-visible.
+ }
  }, [slug]);
 
  useEffect(() => {
@@ -113,37 +131,26 @@ export function CommunityColumn({
  setCommunity(
  (c) => c && { ...c, joined: !willJoin, memberCount: c.memberCount + (willJoin ? -1 : 1) },
  ),
- commit: () =>
- fetch(`/api/communities/${slug}/join`, { method:'POST', credentials:'include'}),
- reconcile: async (res) => {
- const data = await res.json().catch(() => ({}));
+ commit: async () => {
+ const data = await api(joinCommunityApi, { params: { slug }, body: {} });
  // Trust the server's authoritative membership flag.
  if (typeof data.joined ==='boolean')
  setCommunity((c) => c && { ...c, joined: data.joined });
  },
- onError: (_err, res) => {
- const fail = () =>
+ onError: (err) => {
  toast.error(
+ serverError(err) ??
  t('could-not-update-membership', { defaultValue:'Could not update membership'}),
  );
- if (res)
- res
- .json()
- .catch(() => ({}))
- .then((d: { error?: string }) => (d.error ? toast.error(d.error) : fail()));
- else fail();
  },
  });
  };
 
  const removeAnnouncement = async (id: string) => {
- const res = await fetch(`/api/communities/${slug}/announcements/${id}`, {
- method:'DELETE',
- credentials:'include',
- });
- if (res.ok) {
+ try {
+ await api(deleteCommunityAnnouncementApi, { params: { slug, id } });
  setCommunity((c) => c && { ...c, announcements: c.announcements.filter((a) => a.id !== id) });
- } else {
+ } catch {
  toast.error(t('could-not-delete', { defaultValue:'Could not delete'}));
  }
  };
@@ -350,19 +357,18 @@ function AnnounceDialog({
  if (!body.trim()) return;
  setSubmitting(true);
  try {
- const res = await fetch(`/api/communities/${slug}/announcements`, {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- credentials:'include',
- body: JSON.stringify({ body: body.trim() }),
+ const data = await api(createCommunityAnnouncementApi, {
+ params: { slug },
+ body: { body: body.trim() },
  });
- const data = await res.json().catch(() => ({}));
- if (res.ok && data.announcement) {
+ if (data.announcement) {
  onPosted(data.announcement);
  onClose();
  } else {
- toast.error(data.error || t('could-not-post', { defaultValue:'Could not post'}));
+ toast.error(t('could-not-post', { defaultValue:'Could not post'}));
  }
+ } catch (err) {
+ toast.error(serverError(err) || t('could-not-post', { defaultValue:'Could not post'}));
  } finally {
  setSubmitting(false);
  }
@@ -421,12 +427,13 @@ function MembersDialog({
  const [busy, setBusy] = useState<string | null>(null);
 
  const load = useCallback(async () => {
- const res = await fetch(`/api/communities/${slug}/members`, { credentials:'include'});
- if (res.ok) {
- const data = await res.json();
+ try {
+ const data = await api(communityMembersApi, { params: { slug } });
  setMembers(data.members);
  setViewerRole(data.viewerRole);
  setCreatedById(data.createdById);
+ } catch {
+ // Leave the roster empty; the empty state explains it.
  }
  setLoading(false);
  }, [slug]);
@@ -438,15 +445,12 @@ function MembersDialog({
  const setRole = async (m: Member, role:'MEMBER'|'MOD') => {
  setBusy(m.id);
  try {
- const res = await fetch(`/api/communities/${slug}/members/${m.id}`, {
- method:'PATCH',
- headers: {'Content-Type':'application/json'},
- credentials:'include',
- body: JSON.stringify({ role }),
- });
- const data = await res.json().catch(() => ({}));
- if (res.ok) setMembers((prev) => prev.map((x) => (x.id === m.id ? { ...x, role } : x)));
- else toast.error(data.error || t('action-failed', { defaultValue:'Action failed'}));
+ try {
+ await api(setCommunityMemberRoleApi, { params: { slug, userId: m.id }, body: { role } });
+ setMembers((prev) => prev.map((x) => (x.id === m.id ? { ...x, role } : x)));
+ } catch (err) {
+ toast.error(serverError(err) || t('action-failed', { defaultValue:'Action failed'}));
+ }
  } finally {
  setBusy(null);
  }
@@ -465,13 +469,12 @@ function MembersDialog({
  return;
  setBusy(m.id);
  try {
- const res = await fetch(`/api/communities/${slug}/members/${m.id}`, {
- method:'DELETE',
- credentials:'include',
- });
- const data = await res.json().catch(() => ({}));
- if (res.ok) setMembers((prev) => prev.filter((x) => x.id !== m.id));
- else toast.error(data.error || t('action-failed', { defaultValue:'Action failed'}));
+ try {
+ await api(removeCommunityMemberApi, { params: { slug, userId: m.id } });
+ setMembers((prev) => prev.filter((x) => x.id !== m.id));
+ } catch (err) {
+ toast.error(serverError(err) || t('action-failed', { defaultValue:'Action failed'}));
+ }
  } finally {
  setBusy(null);
  }

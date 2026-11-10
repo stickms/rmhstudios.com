@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/communities/communities.contract';
+import { joinCommunityBody } from '@/lib/communities/communities-schema';
 import { prisma } from '@/lib/prisma.server';
 import { acceptInvite } from '@/lib/communities/invites.server';
 
@@ -15,10 +16,10 @@ import { acceptInvite } from '@/lib/communities/invites.server';
 export const Route = createFileRoute('/api/communities/$slug/join')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(C.joinCommunityApi, 
         {
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'community-join' },
-          body: z.object({ invite: z.string().min(1).max(64).optional() }),
+          body: joinCommunityBody,
           allowEmptyBody: true,
         },
         async ({ params, session, body }) => {

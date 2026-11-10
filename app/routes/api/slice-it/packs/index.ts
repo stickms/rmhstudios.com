@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/slice-it/packs.contract';
 import { prisma } from '@/lib/prisma.server';
 import { PackCreateZ, PackListQueryZ, type PackSummary } from '@/lib/slice-it/packs';
 import { addSongsToPack, listPacks, packSelect, toPackSummary } from '@/lib/slice-it/packs.server';
@@ -19,7 +20,7 @@ import { addSongsToPack, listPacks, packSelect, toPackSummary } from '@/lib/slic
 export const Route = createFileRoute('/api/slice-it/packs/')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(C.listPacksApi, 
         { auth: 'optional', query: PackListQueryZ, rateLimit: 'read' },
         async ({ userId, query }) => {
           // `scope=mine` from a signed-out caller is an empty list, not the
@@ -32,7 +33,7 @@ export const Route = createFileRoute('/api/slice-it/packs/')({
         },
       ),
 
-      POST: defineHandler({ body: PackCreateZ, rateLimit: 'write' }, async ({ userId, body }) => {
+      POST: implement(C.createPackApi, { body: PackCreateZ, rateLimit: 'write' }, async ({ userId, body }) => {
         const songIds = body.songIds ?? [];
 
         // Filter the seed list to songs that exist and the curator may

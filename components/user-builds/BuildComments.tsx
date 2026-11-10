@@ -7,6 +7,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession } from '@/components/Providers';
 import type { BuildComment } from '@/lib/user-builds-types';
+import { api } from '@/lib/contract/client';
+import { createBuildCommentApi, listBuildCommentsApi } from '@/lib/user-builds.contract';
 
 interface BuildCommentsProps {
   buildId: string;
@@ -118,14 +120,10 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
   const fetchComments = useCallback(
     async (cursorParam?: string) => {
       try {
-        const params = new URLSearchParams();
-        params.set('limit', '20');
-        if (cursorParam) params.set('cursor', cursorParam);
-
-        const res = await fetch(`/api/user-builds/${buildId}/comments?${params.toString()}`);
-        if (!res.ok) throw new Error('Failed to fetch comments');
-
-        const data = await res.json();
+        const data = await api(listBuildCommentsApi, {
+          params: { id: buildId },
+          query: { limit: 20, cursor: cursorParam },
+        });
 
         if (cursorParam) {
           setComments((prev) => [...prev, ...data.items]);
@@ -153,18 +151,13 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
 
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/user-builds/${buildId}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const newComment = await api(createBuildCommentApi, {
+        params: { id: buildId },
+        body: {
           content: content.trim(),
           parentId: replyTo || undefined,
-        }),
+        },
       });
-
-      if (!res.ok) throw new Error('Failed to post comment');
-
-      const newComment = await res.json();
 
       if (replyTo) {
         // Add reply to parent comment

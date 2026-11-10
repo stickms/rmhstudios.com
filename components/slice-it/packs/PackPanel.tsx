@@ -11,7 +11,17 @@ import {
   packLibraryPath,
   type PackSummary,
 } from '@/lib/slice-it/packs';
-import type { LibrarySong } from '@/lib/slice-it/library-filters';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import {
+  createPackApi,
+  deletePackApi,
+  getPackApi,
+  listPacksApi,
+  patchPackItemsApi,
+  updatePackApi,
+  type PackDetail,
+} from '@/lib/slice-it/packs.contract';
 
 /**
  * L16 — the pack builder.
@@ -44,11 +54,6 @@ interface PackPanelProps {
   onAdded?: () => void;
 }
 
-interface PackDetail {
-  pack: PackSummary;
-  songs: LibrarySong[];
-}
-
 export function PackPanel({ addSongId = null, onAdded }: PackPanelProps) {
   const { t } = useTranslation('r-slice-it');
 
@@ -67,14 +72,16 @@ export function PackPanel({ addSongId = null, onAdded }: PackPanelProps) {
       // Two requests because "mine" includes unpublished drafts and the public
       // browse must not — one endpoint answering both would need a scope the
       // server cannot trust from the client anyway.
-      const [mineRes, publicRes] = await Promise.all([
-        fetch('/api/slice-it/packs?scope=mine&limit=50'),
-        fetch('/api/slice-it/packs?scope=public&limit=50'),
-      ]);
-      const mine = mineRes.ok ? ((await mineRes.json()) as { packs: PackSummary[] }).packs : [];
-      const shared = publicRes.ok
-        ? ((await publicRes.json()) as { packs: PackSummary[] }).packs
-        : [];
+      // A refused list (an HttpError) is an empty one; a transport failure still toasts.
+      const listScope = async (scope: 'mine' | 'public'): Promise<PackSummary[]> => {
+        try {
+          return (await api(listPacksApi, { query: { scope, limit: 50 } })).packs;
+        } catch (error) {
+          if (error instanceof HttpError) return [];
+          throw error;
+        }
+      };
+      const [mine, shared] = await Promise.all([listScope('mine'), listScope('public')]);
       const seen = new Set(mine.map((p) => p.id));
       setPacks([...mine, ...shared.filter((p) => !seen.has(p.id))]);
     } catch {
@@ -91,9 +98,11 @@ export function PackPanel({ addSongId = null, onAdded }: PackPanelProps) {
   const openPack = React.useCallback(async (id: string) => {
     setOpenId(id);
     setDetail(null);
-    const res = await fetch(`/api/slice-it/packs/${id}`);
-    if (!res.ok) return;
-    setDetail((await res.json()) as PackDetail);
+    try {
+      setDetail(await api(getPackApi, { params: { id } }));
+    } catch {
+      // A pack that cannot be read stays closed.
+    }
   }, []);
 
   const createPack = async () => {
@@ -101,10 +110,8 @@ export function PackPanel({ addSongId = null, onAdded }: PackPanelProps) {
     if (!title) return;
     setBusy(true);
     try {
-      const res = await fetch('/api/slice-it/packs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await api(createPackApi, {
+        body: {
           title,
           kind: newKind,
           isPublic: false,
@@ -112,9 +119,8 @@ export function PackPanel({ addSongId = null, onAdded }: PackPanelProps) {
           // arrive in one request, so a failure cannot leave a titled empty
           // pack in somebody's list.
           ...(addSongId ? { songIds: [addSongId] } : {}),
-        }),
+        },
       });
-      if (!res.ok) throw new Error(String(res.status));
       setNewTitle('');
       toast.success(t('pack-created', { defaultValue: 'Pack created.' }));
       await loadPacks();
@@ -132,20 +138,13 @@ export function PackPanel({ addSongId = null, onAdded }: PackPanelProps) {
   ) => {
     setBusy(true);
     try {
-      const res = await fetch(`/api/slice-it/packs/${packId}/items`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patch),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? String(res.status));
-      }
+      await api(patchPackItemsApi, { params: { id: packId }, body: patch });
       return true;
     } catch (error) {
+      const message = serverError(error);
       toast.error(
-        error instanceof Error && error.message.length < 200
-          ? error.message
+        message && message.length < 200
+          ? message
           : t('pack-update-failed', { defaultValue: 'Could not update the pack.' }),
       );
       return false;
@@ -186,12 +185,7 @@ export function PackPanel({ addSongId = null, onAdded }: PackPanelProps) {
   const togglePublish = async (pack: PackSummary) => {
     setBusy(true);
     try {
-      const res = await fetch(`/api/slice-it/packs/${pack.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isPublic: !pack.isPublic }),
-      });
-      if (!res.ok) throw new Error(String(res.status));
+      await api(updatePackApi, { params: { id: pack.id }, body: { isPublic: !pack.isPublic } });
       await loadPacks();
       if (openId === pack.id) await openPack(pack.id);
     } catch {
@@ -204,8 +198,7 @@ export function PackPanel({ addSongId = null, onAdded }: PackPanelProps) {
   const deletePack = async (pack: PackSummary) => {
     setBusy(true);
     try {
-      const res = await fetch(`/api/slice-it/packs/${pack.id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(String(res.status));
+      await api(deletePackApi, { params: { id: pack.id } });
       if (openId === pack.id) {
         setOpenId(null);
         setDetail(null);
