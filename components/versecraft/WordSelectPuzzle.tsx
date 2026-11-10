@@ -39,7 +39,7 @@ function WordTile({ word, isSelected, onToggle, disabled }: {
           : 'rgba(42, 34, 53, 0.7)',
         border: `1px solid ${isSelected ? `${hintColor}70` : 'rgba(196, 163, 90, 0.15)'}`,
         color: isSelected ? '#e8e0d0' : '#a89888',
-        fontFamily: 'var(--font-inter, sans-serif)',
+        fontFamily: 'var(--font-geist), system-ui, sans-serif',
         cursor: disabled && !isSelected ? 'not-allowed' : 'pointer',
         opacity: disabled && !isSelected ? 0.5 : 1,
       }}

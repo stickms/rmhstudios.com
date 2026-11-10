@@ -2,8 +2,8 @@
  * The site's type: Geist for everything, Geist Mono for data (no eyebrows)
  * (CLAUDE.md "Design system: Plasmatic Jelly" → Identity). Both faces are
  * self-hosted, the sans is preloaded and metric-matched, and the default
- * theme's `--site-font-*` tokens lead with them while keeping the system face
- * and Inter after them for the scripts Geist lacks (non-Latin locales). These
+ * theme's `--site-font-*` tokens lead with them and fall back to the OS face for
+ * the scripts Geist lacks (non-Latin locales). These
  * assertions keep the wiring from drifting one line at a time.
  */
 import { readFileSync } from 'node:fs';
@@ -49,40 +49,31 @@ describe('site fonts: Geist + Geist Mono', () => {
   });
 
   for (const token of ['--site-font-display', '--site-font-body']) {
-    it(`${token} leads with Geist and keeps the non-Latin fallbacks`, () => {
-      const v = firstToken(token);
-      expect(v.startsWith('var(--font-geist)')).toBe(true);
-      expect(v).toContain('system-ui');
-      expect(v).toContain('var(--font-inter)');
+    it(`${token} is Geist then the OS face — no second webfont`, () => {
+      expect(firstToken(token)).toBe('var(--font-geist), system-ui, sans-serif');
     });
   }
 
-  it('--site-font-mono leads with Geist Mono and keeps JetBrains Mono', () => {
-    const v = firstToken('--site-font-mono');
-    expect(v.startsWith('var(--font-geist-mono)')).toBe(true);
-    expect(v).toContain('var(--font-jetbrains-mono)');
+  it('--site-font-mono is Geist Mono then the OS mono — no second webfont', () => {
+    expect(firstToken('--site-font-mono')).toBe(
+      'var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace',
+    );
   });
 
-  it('fallbacks follow Geist in order', () => {
-    const order = (v: string, names: string[]) => {
-      const idx = names.map((n) => v.indexOf(n));
-      expect(idx.every((i) => i >= 0)).toBe(true);
-      expect([...idx].sort((a, b) => a - b)).toEqual(idx);
-    };
-    for (const token of ['--site-font-display', '--site-font-body']) {
-      order(firstToken(token), [
-        'var(--font-geist)',
-        '-apple-system',
-        'var(--font-inter)',
-        'system-ui',
-      ]);
+  it('the app tier uses the same faces', () => {
+    const app = read('components/shared/app-theme.css');
+    expect(app).toContain('--app-font-body: var(--font-geist), system-ui, sans-serif;');
+    expect(app).toContain('--app-font-display: var(--font-geist), system-ui, sans-serif;');
+    expect(app).toMatch(/--app-font-mono: var\(--font-geist-mono\)/);
+  });
+
+  it('loads no older face from the site sheet (those load with their game/page)', () => {
+    for (const old of ['Inter', 'JetBrains Mono', 'Playfair Display', 'Cinzel', 'Outfit']) {
+      expect(siteDisplay).not.toContain(`'${old}'`);
     }
-    order(firstToken('--site-font-mono'), [
-      'var(--font-geist-mono)',
-      'var(--font-jetbrains-mono)',
-      "'SF Mono'",
-      'monospace',
-    ]);
+    expect(globals).not.toMatch(/@import '@fontsource-variable\/(inter|jetbrains-mono)/);
+    expect(globals).not.toContain('--font-inter');
+    expect(globals).not.toContain('--font-serif');
   });
 
   it('has no eyebrows: the kicker is sentence case in the site sans, not letterspaced mono caps', () => {
