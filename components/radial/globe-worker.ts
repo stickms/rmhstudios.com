@@ -109,6 +109,7 @@ let lastFrameAt = 0;
 
 const hasRaf = typeof scope.requestAnimationFrame === 'function';
 let timerId: ReturnType<typeof setTimeout> | 0 = 0;
+let rafId = 0;
 let scheduled = false;
 
 const requestFrame = () => {
@@ -118,8 +119,28 @@ const requestFrame = () => {
     clearTimeout(timerId);
     timerId = 0;
   }
-  if (hasRaf) scope.requestAnimationFrame(onFrame);
+  if (hasRaf) rafId = scope.requestAnimationFrame(onFrame);
   else timerId = setTimeout(() => onFrame(performance.now()), 16);
+};
+
+/** Two draws closer than this belong to one display frame; the second waits for the next frame instead. */
+const DRAW_NOW_MIN_GAP_MS = 4;
+
+/**
+ * Draws in the current task instead of at the worker's next animation frame. Any frame or timer already pending is
+ * cancelled first: `onFrame` clears `scheduled`, so a pending callback left alive would fire anyway and the next
+ * `requestFrame` would queue a second one beside it, doubling the loop for as long as the globe keeps moving.
+ */
+const drawNow = (): boolean => {
+  const now = performance.now();
+  if (lastFrameAt && now - lastFrameAt < DRAW_NOW_MIN_GAP_MS) return false;
+  if (scheduled && hasRaf && rafId) scope.cancelAnimationFrame(rafId);
+  if (timerId) clearTimeout(timerId);
+  rafId = 0;
+  timerId = 0;
+  scheduled = false;
+  onFrame(now);
+  return true;
 };
 
 const sleepUntil = (ms: number) => {
@@ -390,6 +411,10 @@ scope.onmessage = (e: MessageEvent<unknown>) => {
     case 'place':
       place = { cx: m.cx, cy: m.cy, r: m.r, dx: m.dx, dy: m.dy };
       dirty.place = true;
+      // A placement is the page asking for the picture to follow the scroll *now*: it is drawn in this task rather than
+      // after the worker's next animation frame, which would leave it up to a frame behind the scroll it describes.
+      // (Nothing else is drawn early; any other pending change still waits for its frame.) From #1528.
+      if (coatReady && drawNow()) return;
       break;
     case 'clock':
       clock = m.clock;
