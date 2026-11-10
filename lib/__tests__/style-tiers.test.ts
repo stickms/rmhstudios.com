@@ -151,7 +151,11 @@ describe('entry stylesheet tiers', () => {
       if (siteReach.has(file)) continue;
       const parts = relative(ROOT, file).split('/');
       if (!(parts[0] === 'components' || parts[0] === 'lib' || parts[0] === 'features') || parts.length < 3) continue;
-      const dir = parts.slice(0, 2).join('/');
+      // A feature is excluded per part (engine/, ui/, server/), never whole: its catalog.ts is the
+      // card a site page renders (gradient classes the site sheet must see), so features/<id> itself
+      // always stays scanned.
+      if (parts[0] === 'features' && parts.length < 4) continue;
+      const dir = parts.slice(0, parts[0] === 'features' ? 3 : 2).join('/');
       if (tierExcluded.some((p) => dir === p || dir.startsWith(p + '/'))) continue;
       const dirHasSiteFile = [...siteReach].some((f) => under(f, dir));
       if (!dirHasSiteFile) missing.add(`@source not "../${dir}";`);

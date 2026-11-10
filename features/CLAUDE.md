@@ -43,5 +43,9 @@ Rules:
 - Moving a feature: `git mv` (history follows), rewrite specifiers repo-wide, move the matching
   `@source not` lines in `app/site-tier.css`, update test excludes in `vitest.config.ts` and workflow
   path filters that named the old directories.
+- **Site-sheet exclusions are per part, never the whole folder:** a full-screen feature gets
+  `@source not "../features/<id>/engine"` (and `/ui`, `/server`), so `features/<id>/catalog.ts` (the
+  card, with its gradient classes, that site pages render) stays scanned.
+  `lib/__tests__/style-tiers.test.ts` checks both directions at that granularity.
 
 Moved so far: `hearthworks`, `casino`, `doctrine`, `balatro`, `altair`, `slice-it` (engine, ui, server), `void-breaker` and `nightrail` (engine, ui). The A1 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.
