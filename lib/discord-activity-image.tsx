@@ -1,40 +1,16 @@
 import React from 'react';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
+import { OG_FONT_MONO, OG_FONT_SANS, satoriFontFaces } from '@/lib/og/fonts.server';
 
-// ─── Font cache (loaded once, kept forever) ──────────────────────────
-
-let fontRegular: ArrayBuffer | null = null;
-let fontBold: ArrayBuffer | null = null;
-let fontsLoading: Promise<void> | null = null;
+// ─── Fonts ───────────────────────────────────────────────────────────
+// Geist (400/700/800) and Geist Mono (the timing/move figures), read from disk —
+// see lib/og/fonts.server.ts. No network fetch, so nothing to cache or retry.
 
 function loadFonts(): Promise<void> {
-    if (fontRegular && fontBold) return Promise.resolve();
-    if (fontsLoading) return fontsLoading;
-
-    fontsLoading = Promise.all([
-        fetch('https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf').then(r => {
-            if (!r.ok) throw new Error(`Font fetch failed: ${r.status}`);
-            return r.arrayBuffer();
-        }),
-        fetch('https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf').then(r => {
-            if (!r.ok) throw new Error(`Font fetch failed: ${r.status}`);
-            return r.arrayBuffer();
-        }),
-    ]).then(([reg, bold]) => {
-        fontRegular = reg;
-        fontBold = bold;
-    }).catch(err => {
-        // Clear the promise so the next call retries instead of returning a rejected promise forever
-        fontsLoading = null;
-        throw err;
-    });
-
-    return fontsLoading;
+    satoriFontFaces({ weights: [400, 700, 800], mono: true });
+    return Promise.resolve();
 }
-
-// Eagerly start font loading on module import
-loadFonts().catch(() => {});
 
 // ─── Avatar pre-fetch cache ──────────────────────────────────────────
 // Satori fetches images via HTTP during render — slow for Discord CDN.
@@ -106,17 +82,10 @@ function setCachedPng(key: string, png: Buffer): void {
 async function renderToPng(element: React.ReactElement, width = 480, height = 240): Promise<Buffer> {
     await loadFonts();
 
-    if (!fontRegular || !fontBold) {
-        throw new Error('Fonts not loaded');
-    }
-
     const svg = await satori(element, {
         width,
         height,
-        fonts: [
-            { name: 'Inter', data: fontRegular, weight: 400, style: 'normal' as const },
-            { name: 'Inter', data: fontBold, weight: 700, style: 'normal' as const },
-        ],
+        fonts: satoriFontFaces({ weights: [400, 700, 800], mono: true }),
     });
 
     // Render at 2x resolution for crisp Discord embeds
@@ -182,7 +151,7 @@ export async function generateDailyImage(
             height: '100%',
             backgroundColor: BG,
             padding: '28px 32px',
-            fontFamily: 'Inter',
+            fontFamily: OG_FONT_SANS,
             color: TEXT,
         }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 20, flex: 1 }}>
@@ -278,7 +247,7 @@ export async function generateRaceImage(
                 height: '100%',
                 backgroundColor: BG,
                 padding: '24px 32px',
-                fontFamily: 'Inter',
+                fontFamily: OG_FONT_SANS,
                 color: TEXT,
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
@@ -327,7 +296,7 @@ export async function generateRaceImage(
                                 )}
                                 <Avatar src={getAv(p.userId, p.avatar)} size={28} />
                                 <span style={{ fontSize: 14, fontWeight: 600, flex: 1 }}>{p.username}</span>
-                                <span style={{ fontSize: 13, color: isSolved ? GREEN : '#ef4444', fontFamily: 'Inter' }}>
+                                <span style={{ fontSize: 13, color: isSolved ? GREEN : '#ef4444', fontFamily: OG_FONT_MONO }}>
                                     {isSolved
                                         ? (isTimed && timeStr ? `${timeStr} · ${p.moves}m` : `${p.moves} move${p.moves !== 1 ? 's' : ''}`)
                                         : 'DNF'
@@ -352,7 +321,7 @@ export async function generateRaceImage(
                 height: '100%',
                 backgroundColor: BG,
                 padding: '28px 32px',
-                fontFamily: 'Inter',
+                fontFamily: OG_FONT_SANS,
                 color: TEXT,
             }}>
                 <span style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Race Lobby</span>
@@ -453,7 +422,7 @@ export async function generateLeaderboardImage(
             height: '100%',
             backgroundColor: BG,
             padding: '24px 32px',
-            fontFamily: 'Inter',
+            fontFamily: OG_FONT_SANS,
             color: TEXT,
         }}>
             {/* Header */}
@@ -626,7 +595,7 @@ export async function generateCaretakersImage(entries: CaretakerEntry[]): Promis
             height: '100%',
             backgroundColor: RMH.bg,
             padding: '28px 32px',
-            fontFamily: 'Inter',
+            fontFamily: OG_FONT_SANS,
             color: RMH.text,
             letterSpacing: '-0.02em',
         }}>

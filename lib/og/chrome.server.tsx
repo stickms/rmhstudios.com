@@ -49,6 +49,7 @@
  */
 
 import React from 'react';
+import { OG_FONT_SANS } from '@/lib/og/fonts.server';
 import {
   CANVAS,
   DIM,
@@ -233,10 +234,12 @@ export function displayTracking(fontSize: number): string {
 }
 
 /**
- * Inter's average advance width as a fraction of the em, measured across the
- * mixed-case prose these cards actually carry. Used to guess line counts.
+ * Geist's average advance width as a fraction of the em, measured across the
+ * mixed-case prose these cards actually carry (0.476, with the same ~2.5% safety
+ * margin the old Inter value of 0.5 carried over its measured 0.488). Used to
+ * guess line counts.
  */
-const AVG_ADVANCE = 0.5;
+const AVG_ADVANCE = 0.49;
 
 export interface FitOptions {
   /** Width available for the text, in px. */
@@ -691,7 +694,7 @@ export function cardFrame({
         backgroundColor: CANVAS,
         backgroundImage: scene(width, height),
         padding: pad,
-        fontFamily: 'Inter',
+        fontFamily: OG_FONT_SANS,
       }}
     >
       {/* Brand row */}
