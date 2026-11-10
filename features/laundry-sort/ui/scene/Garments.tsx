@@ -10,8 +10,8 @@
 
 import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import type { LaundryMatch } from '@/lib/laundry-sort/match';
-import type { Garment } from '@/lib/laundry-sort/solver';
+import type { LaundryMatch } from '@features/laundry-sort/engine/match';
+import type { Garment } from '@features/laundry-sort/engine/solver';
 import type { QualityFlags } from '@/lib/render/tier';
 import { GarmentCloth } from './GarmentCloth';
 

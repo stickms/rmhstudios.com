@@ -5,7 +5,7 @@
  * combo, clock) are **not** here: they change 60 times a second and pushing
  * them through React would re-render the tree every frame for no benefit. The
  * HUD subscribes to the running match directly through a ref (see
- * `components/laundry-sort/hud/HudReadout.tsx`) and updates its own text nodes.
+ * `features/laundry-sort/ui/hud/HudReadout.tsx`) and updates its own text nodes.
  */
 
 import { create } from 'zustand';

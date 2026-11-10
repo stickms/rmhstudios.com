@@ -31,10 +31,10 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { WASH_COLORS } from '@/lib/laundry-sort/constants';
-import { writeShell } from '@/lib/laundry-sort/shell';
-import type { LaundryMatch } from '@/lib/laundry-sort/match';
-import type { Garment } from '@/lib/laundry-sort/solver';
+import { WASH_COLORS } from '@features/laundry-sort/engine/constants';
+import { writeShell } from '@features/laundry-sort/engine/shell';
+import type { LaundryMatch } from '@features/laundry-sort/engine/match';
+import type { Garment } from '@features/laundry-sort/engine/solver';
 import type { QualityFlags } from '@/lib/render/tier';
 import { weaveTexture } from '../weave';
 

@@ -15,7 +15,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Timer, Trophy, Flame } from 'lucide-react';
-import type { LaundryMatch } from '@/lib/laundry-sort/match';
+import type { LaundryMatch } from '@features/laundry-sort/engine/match';
 
 interface Props {
   matchRef: React.RefObject<LaundryMatch | null>;

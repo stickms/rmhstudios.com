@@ -42,8 +42,8 @@
 
 import { z } from 'zod';
 import { getReplayable, LIGHTS_OUT_VERSION, SLICE_IT_VERSION } from '@/lib/game/replay';
-import { buildDropSchedule } from '@/lib/laundry-sort/match';
-import { DIFFICULTIES, MATCH_DURATIONS, SCORE, scoreFor } from '@/lib/laundry-sort/constants';
+import { buildDropSchedule } from '@features/laundry-sort/engine/match';
+import { DIFFICULTIES, MATCH_DURATIONS, SCORE, scoreFor } from '@features/laundry-sort/engine/constants';
 import type { SpeedrunMetric, SpeedrunRejection, VerificationTier } from './types';
 
 /* -------------------------------------------------------------------------- */

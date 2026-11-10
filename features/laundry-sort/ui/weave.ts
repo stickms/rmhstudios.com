@@ -14,7 +14,7 @@
  */
 
 import * as THREE from 'three';
-import type { WeaveId } from '@/lib/laundry-sort/constants';
+import type { WeaveId } from '@features/laundry-sort/engine/constants';
 
 const TILE = 64;
 

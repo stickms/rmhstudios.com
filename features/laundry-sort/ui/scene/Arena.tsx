@@ -3,7 +3,7 @@
  * bins. Static geometry, so it renders once and never re-renders — everything
  * that moves is in `Garments`.
  *
- * The bin meshes are drawn from the same numbers `lib/laundry-sort/arena.ts`
+ * The bin meshes are drawn from the same numbers `features/laundry-sort/engine/arena.ts`
  * builds colliders from, so what a player sees and what the cloth collides with
  * cannot drift apart.
  */
@@ -11,8 +11,8 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as THREE from 'three';
-import { ARENA, BIN, binCenterX, WASH_COLORS } from '@/lib/laundry-sort/constants';
-import { FRONT_LIP } from '@/lib/laundry-sort/arena';
+import { ARENA, BIN, binCenterX, WASH_COLORS } from '@features/laundry-sort/engine/constants';
+import { FRONT_LIP } from '@features/laundry-sort/engine/arena';
 import { binDecalTexture } from '../weave';
 
 const ROOM_COLOR = '#252a3d';

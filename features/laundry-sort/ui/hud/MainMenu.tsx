@@ -26,9 +26,9 @@ import {
   SCORE,
   type Difficulty,
   type MatchDuration,
-} from '@/lib/laundry-sort/constants';
+} from '@features/laundry-sort/engine/constants';
 import { BasketCard } from '@/components/arcade/BasketCard';
-import { useLaundryStore } from '@/lib/laundry-sort/store';
+import { useLaundryStore } from '@features/laundry-sort/engine/store';
 import { LeaderboardPanel } from './LeaderboardPanel';
 import { WashLegend } from './WashLegend';
 

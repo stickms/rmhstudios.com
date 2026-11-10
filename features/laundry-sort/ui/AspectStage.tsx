@@ -31,7 +31,7 @@
  */
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ASPECT } from '@/lib/laundry-sort/constants';
+import { ASPECT } from '@features/laundry-sort/engine/constants';
 import { cn } from '@/lib/utils';
 
 interface Props {

@@ -6,7 +6,7 @@
  * only channel: every mark is a distinct shape.
  */
 
-import type { WeaveId } from '@/lib/laundry-sort/constants';
+import type { WeaveId } from '@features/laundry-sort/engine/constants';
 
 interface Props {
   weave: WeaveId;

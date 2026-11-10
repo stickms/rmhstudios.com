@@ -13,12 +13,12 @@ import { useTranslation } from 'react-i18next';
 import { Medal, RotateCcw, Home, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { useLaundryStore } from '@/lib/laundry-sort/store';
+import { useLaundryStore } from '@features/laundry-sort/engine/store';
 import { RunPanel } from '@/components/arcade/RunPanel';
 import { BasketPanel } from '@/components/arcade/BasketPanel';
 import { useArcadeRun } from '@/lib/arcade/run-client';
 import { useSession } from '@/components/Providers';
-import { laundryNet } from '@/lib/laundry-sort/net/client';
+import { laundryNet } from '@features/laundry-sort/engine/net/client';
 
 const PLACE_COLOR = ['var(--ls-warn)', '#cbd5e1', '#d08a52'];
 

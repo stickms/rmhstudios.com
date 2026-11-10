@@ -1,6 +1,6 @@
 /** Request schema for POST /api/laundry-sort/score. Client-safe. */
 import { z } from 'zod';
-import { MATCH_DURATIONS, DIFFICULTIES } from '@/lib/laundry-sort/constants';
+import { MATCH_DURATIONS, DIFFICULTIES } from '@features/laundry-sort/engine/constants';
 
 export const laundryScoreBody = z.object({
   score: z.number().int().min(0).max(1_000_000),

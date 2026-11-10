@@ -12,8 +12,8 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ARENA, WASH_COLORS } from '@/lib/laundry-sort/constants';
-import type { MatchEvent } from '@/lib/laundry-sort/match';
+import { ARENA, WASH_COLORS } from '@features/laundry-sort/engine/constants';
+import type { MatchEvent } from '@features/laundry-sort/engine/match';
 
 export interface Popup {
   key: number;

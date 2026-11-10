@@ -13,25 +13,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
-import { submitLaundryScoreApi } from '@/lib/laundry-sort/laundry.contract';
+import { submitLaundryScoreApi } from '@features/laundry-sort/engine/laundry.contract';
 import { useRouterState } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { useSession } from '@/components/Providers';
 import { ConnectionBanner } from '@/components/shared/ConnectionStatus';
 import { Button } from '@/components/ui/button';
 import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
-import { SCORE_PUBLISH_MS, type Difficulty, type MatchDuration } from '@/lib/laundry-sort/constants';
-import { LaundryMatch, type MatchEvent } from '@/lib/laundry-sort/match';
-import { randomSeed } from '@/lib/laundry-sort/rng';
+import { SCORE_PUBLISH_MS, type Difficulty, type MatchDuration } from '@features/laundry-sort/engine/constants';
+import { LaundryMatch, type MatchEvent } from '@features/laundry-sort/engine/match';
+import { randomSeed } from '@features/laundry-sort/engine/rng';
 import { planRun, useArcadeRun } from '@/lib/arcade/run-client';
 import { ChallengeNotice } from '@/components/arcade/ChallengeNotice';
-import { useLaundryStore } from '@/lib/laundry-sort/store';
+import { useLaundryStore } from '@features/laundry-sort/engine/store';
 import {
   connectLaundry,
   disconnectLaundry,
   laundryNet,
   reconnectNow,
-} from '@/lib/laundry-sort/net/client';
+} from '@features/laundry-sort/engine/net/client';
 import type { PartyTicketMsg } from '@/lib/party/types';
 import { AspectStage } from './AspectStage';
 import { GameCanvas } from './GameCanvas';

@@ -298,7 +298,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
   'laundry-sort': {
     genre: ['arcade', 'puzzle'],
     players: ['single', 'online-versus'],
-    maxPlayers: 8, // lib/laundry-sort/constants.ts: MAX_LOBBY_PLAYERS
+    maxPlayers: 8, // features/laundry-sort/engine/constants.ts: MAX_LOBBY_PLAYERS
     input: { supported: ['mouse', 'touch'], required: [] },
     sessionMinutes: [3, 10],
     engine: 'webgl',

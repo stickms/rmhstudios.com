@@ -9,7 +9,7 @@
 
 import { useMemo } from 'react';
 import * as THREE from 'three';
-import { ARENA } from '@/lib/laundry-sort/constants';
+import { ARENA } from '@features/laundry-sort/engine/constants';
 import type { QualityFlags } from '@/lib/render/tier';
 
 export function Lighting({ quality }: { quality: QualityFlags }) {

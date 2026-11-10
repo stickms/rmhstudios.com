@@ -30,7 +30,7 @@ const CLIENTS = [
   'lib/rmhtube/socket.ts',
   'lib/rmhbox/socket.ts',
   'features/gabriels-horn/engine/net/client.ts',
-  'lib/laundry-sort/net/client.ts',
+  'features/laundry-sort/engine/net/client.ts',
   'lib/tf2-game/net/client.ts',
   'features/balatro/engine/mp/hub-client.ts',
   'features/hearthworks/engine/net/hub-client-core.ts',

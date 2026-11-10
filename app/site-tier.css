@@ -59,7 +59,7 @@
 @source not "../components/house-always-wins";
 @source not "../components/kaikai-debt";
 @source not "../components/kowloon-knockout";
-@source not "../components/laundry-sort";
+@source not "../features/laundry-sort/ui";
 @source not "../components/lights-out";
 @source not "../components/lockdown";
 @source not "../components/neon-driftway";
@@ -112,7 +112,7 @@
 @source not "../lib/house-always-wins";
 @source not "../lib/kaikai-debt";
 @source not "../lib/kowloon-knockout";
-@source not "../lib/laundry-sort";
+@source not "../features/laundry-sort/engine";
 @source not "../lib/lights-out";
 @source not "../lib/neon-driftway";
 @source not "../lib/pf2ecal";

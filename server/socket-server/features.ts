@@ -24,6 +24,7 @@ import dreamRift from '../../features/dream-rift/server';
 import doctrine from '../../features/doctrine/server';
 import gabrielsHorn from '../../features/gabriels-horn/server';
 import hearthworks from '../../features/hearthworks/server';
+import laundrySort from '../../features/laundry-sort/server';
 import sliceIt from '../../features/slice-it/server';
 import synapseStorm from '../../features/synapse-storm/server';
 
@@ -52,7 +53,7 @@ export interface FeatureSocketServer {
   readonly skipDisconnectOnShutdown?: boolean;
 }
 
-export const FEATURE_SOCKET_SERVERS: readonly FeatureSocketServer[] = [altair, balatro, casino, doctrine, dreamRift, gabrielsHorn, hearthworks, sliceIt, synapseStorm];
+export const FEATURE_SOCKET_SERVERS: readonly FeatureSocketServer[] = [altair, balatro, casino, doctrine, dreamRift, gabrielsHorn, hearthworks, laundrySort, sliceIt, synapseStorm];
 
 const inSlot = (f: FeatureSocketServer, slot: string): boolean => (f.slot ?? SHARED_SLOT) === slot;
 

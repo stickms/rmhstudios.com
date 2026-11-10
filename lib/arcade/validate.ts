@@ -1,4 +1,4 @@
-import { SCORE, comboMultiplier } from '@/lib/laundry-sort/constants';
+import { SCORE, comboMultiplier } from '@features/laundry-sort/engine/constants';
 import { SEEDED_GAMES, type SeededGameId } from '@/lib/arcade/seeded';
 
 /**

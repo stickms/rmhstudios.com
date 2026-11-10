@@ -8,7 +8,7 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { WASH_COLORS } from '@/lib/laundry-sort/constants';
+import { WASH_COLORS } from '@features/laundry-sort/engine/constants';
 import { WeaveMark } from './WeaveMark';
 
 export function WashLegend({ compact = false }: { compact?: boolean }) {

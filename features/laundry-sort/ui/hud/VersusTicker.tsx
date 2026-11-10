@@ -8,7 +8,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
-import { useLaundryStore } from '@/lib/laundry-sort/store';
+import { useLaundryStore } from '@features/laundry-sort/engine/store';
 
 export function VersusTicker() {
   const { t } = useTranslation('c-laundry-sort');

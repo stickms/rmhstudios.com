@@ -2,7 +2,7 @@
  * Laundry Sort — multiplayer protocol.
  *
  * Imported by **both** the browser client and
- * `server/socket-server/handlers/laundry-sort.ts`, so the two can never drift
+ * `features/laundry-sort/server/handlers.ts`, so the two can never drift
  * on an event name. Deliberately free of any browser or three.js import: the
  * Node bundle pulls this file in verbatim.
  *
@@ -17,7 +17,7 @@
  * The `C2S`/`S2C` name maps below are unchanged and still the thing everyone
  * imports. What is new is {@link EVENTS}: the same names with a zod schema
  * attached, so the payload is declared where the name is, once, for both sides.
- * `server/socket-server/handlers/laundry-sort.ts` binds it through
+ * `features/laundry-sort/server/handlers.ts` binds it through
  * `bindEvents()` and no longer hand-rolls `sanitizeReport`/`isDuration`
  * coercions; the browser client gets `LaundryC2S`/`LaundryS2C` to type its
  * `emit`/`on`.
@@ -33,7 +33,7 @@ import {
   defineEvents,
   type ClientToServer,
   type ServerToClient,
-} from '../../shared/realtime/contract';
+} from '../../../../lib/shared/realtime/contract';
 import { DIFFICULTIES, MATCH_DURATIONS, type Difficulty, type MatchDuration } from '../constants';
 
 export const ROOM_PREFIX = 'ls:';

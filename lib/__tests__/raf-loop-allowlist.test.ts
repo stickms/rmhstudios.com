@@ -151,7 +151,7 @@ import { join, posix } from 'node:path';
  *                                       scroll-settle glide after a category
  *                                       switch; cancelled in cleanup and on the
  *                                       next switch.
- *   - components/laundry-sort/hud/HudReadout.tsx — writes score/clock/combo to its
+ *   - features/laundry-sort/ui/hud/HudReadout.tsx — writes score/clock/combo to its
  *                                       own text nodes instead of re-rendering the
  *                                       overlay 60× a second. Starts only while a
  *                                       round is running and cancels on unmount and
@@ -281,7 +281,7 @@ const ALLOW = new Set<string>([
   // scheduling decision in a dozen places instead of one.
   'features/slice-it/ui/editor/Timeline.tsx',
   'components/kowloon-knockout/arena/GameView.tsx',
-  'components/laundry-sort/hud/HudReadout.tsx',
+  'features/laundry-sort/ui/hud/HudReadout.tsx',
   'components/library/AlbumUploader.tsx',
   'components/library/BookReader.tsx',
   'components/library/EpubReader.tsx',

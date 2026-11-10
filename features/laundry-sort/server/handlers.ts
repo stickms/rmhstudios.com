@@ -3,7 +3,7 @@
  *
  * The server is a lobby manager and a scorekeeper. It does **not** simulate
  * cloth: it hands every client in a room the same 32-bit seed, and the seeded
- * drop schedule in `lib/laundry-sort/match.ts` guarantees they all get the same
+ * drop schedule in `features/laundry-sort/engine/match.ts` guarantees they all get the same
  * laundry, in the same order, at the same simulated moments. Racing the same
  * laundry is the whole contest, so that seed is the only synchronisation the
  * game needs — no state replication, no rollback, no per-frame traffic.
@@ -25,17 +25,17 @@
  */
 
 import type { Server, Socket } from 'socket.io';
-import { generateRoomCode, sanitizeUserName } from '../utils';
-import { checkRateLimit } from '../rate-limit';
-import { logger } from '../logger';
-import { getPrismaClient } from '../prisma-client';
+import { generateRoomCode, sanitizeUserName } from '../../../server/socket-server/utils';
+import { checkRateLimit } from '../../../server/socket-server/rate-limit';
+import { logger } from '../../../server/socket-server/logger';
+import { getPrismaClient } from '../../../server/socket-server/prisma-client';
 import {
   registerPartyGame,
   PARTY_ROOM_GRACE_MS,
   type PartyMember,
   type PartyTicket,
-} from '../party-contract';
-import { verifyPartyTicket } from '../party-contract';
+} from '../../../server/socket-server/party-contract';
+import { verifyPartyTicket } from '../../../server/socket-server/party-contract';
 import {
   COUNTDOWN_SECONDS,
   DEFAULT_DIFFICULTY,
@@ -45,7 +45,7 @@ import {
   MAX_LOBBY_PLAYERS,
   type Difficulty,
   type MatchDuration,
-} from '../../../lib/laundry-sort/constants';
+} from '../engine/constants';
 import {
   C2S,
   ROOM_PREFIX,
@@ -56,7 +56,7 @@ import {
   type MatchResults,
   type PublicLobbyInfo,
   type ScoreReport,
-} from '../../../lib/laundry-sort/net/events';
+} from '../engine/net/events';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 

@@ -18,9 +18,9 @@ import {
   MATCH_DURATIONS,
   type Difficulty,
   type MatchDuration,
-} from '@/lib/laundry-sort/constants';
-import { useLaundryStore } from '@/lib/laundry-sort/store';
-import { laundryNet } from '@/lib/laundry-sort/net/client';
+} from '@features/laundry-sort/engine/constants';
+import { useLaundryStore } from '@features/laundry-sort/engine/store';
+import { laundryNet } from '@features/laundry-sort/engine/net/client';
 import { WashLegend } from './WashLegend';
 
 /** Minimum seats before the host may start — a race of one is not a race. */
