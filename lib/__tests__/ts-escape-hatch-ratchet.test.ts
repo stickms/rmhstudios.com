@@ -18,8 +18,8 @@ import { describe, expect, it } from 'vitest';
 
 /** Lower these when you remove escape hatches. Never raise them. */
 const BASELINE = {
-  colonAny: 158,
-  asAny: 78,
+  colonAny: 130,
+  asAny: 71,
   tsIgnore: 1,
   tsExpectError: 3,
   tsNocheck: 26,
@@ -43,7 +43,18 @@ function count(): Record<Key, number> {
   const totals: Record<Key, number> = { colonAny: 0, asAny: 0, tsIgnore: 0, tsExpectError: 0, tsNocheck: 0 };
   for (const f of files) {
     const src = readFileSync(f, 'utf8');
-    for (const k of KEYS) totals[k] += (src.match(PATTERNS[k]) ?? []).length;
+    // `: any` / `as any` are counted in CODE only: prose in a comment ("…: any
+    // colour value") is not an escape hatch. The @ts-* directives live in
+    // comments by nature, so they are counted on the raw source.
+    const code = src
+      .split('\n')
+      .filter((line) => !/^\s*(\/\/|\/\*|\*)/.test(line))
+      .map((line) => line.replace(/\s\/\/.*$/, ''))
+      .join('\n');
+    for (const k of KEYS) {
+      const text = k === 'colonAny' || k === 'asAny' ? code : src;
+      totals[k] += (text.match(PATTERNS[k]) ?? []).length;
+    }
   }
   return totals;
 }
