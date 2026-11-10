@@ -27,7 +27,9 @@ export function ListDetailView({ list, members }: { list: ListView; members: Res
   const [pinned, setPinned] = useState(list.pinned);
   const firstPage = useQuery({ ...listFeedQuery(list.id), retry: false });
   // Further pages ("load more") are client-owned and appended after the first.
-  const [more, setMore] = useState<{ posts: ListTimelinePost[]; cursor: string | null } | null>(null);
+  const [more, setMore] = useState<{ posts: ListTimelinePost[]; cursor: string | null } | null>(
+    null,
+  );
   const posts = [...(firstPage.data?.items ?? []), ...(more?.posts ?? [])];
   const cursor = more ? more.cursor : (firstPage.data?.nextCursor ?? null);
   const loading = firstPage.isPending;
@@ -40,7 +42,10 @@ export function ListDetailView({ list, members }: { list: ListView; members: Res
     } catch {
       return;
     }
-    setMore((prev) => ({ posts: [...(prev?.posts ?? []), ...data.items], cursor: data.nextCursor }));
+    setMore((prev) => ({
+      posts: [...(prev?.posts ?? []), ...data.items],
+      cursor: data.nextCursor,
+    }));
   }
 
   async function togglePin() {

@@ -50,7 +50,11 @@ export function QotdPage({ day }: { day?: string }) {
   const { data: session } = useSession();
   // Seeded by the route loader. A failed fetch reads as an empty archive, as before.
   const archiveQ = useQuery({ ...qotdArchiveQuery(), retry: false });
-  const archive: ArchiveDay[] | null = archiveQ.data ? archiveQ.data.days : archiveQ.isError ? [] : null;
+  const archive: ArchiveDay[] | null = archiveQ.data
+    ? archiveQ.data.days
+    : archiveQ.isError
+      ? []
+      : null;
   const [page, setPage] = useState<AnswersPage | null>(null);
   const [items, setItems] = useState<FeedItem[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);

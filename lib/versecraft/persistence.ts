@@ -1,4 +1,6 @@
 import type { SaveFile, GameState } from './types';
+import { api } from '@/lib/contract/client';
+import { loadVersecraftSaveApi, saveVersecraftApi } from './versecraft.contract';
 
 const SAVE_KEY_PREFIX = 'versecraft-save-';
 const GAME_VERSION = '0.1.0';
@@ -104,13 +106,8 @@ export async function dbSave(state: GameState): Promise<boolean> {
         totalPlaytime: state.playtime,
       },
     };
-    const res = await fetch('/api/versecraft/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout?.(20000),
-    });
-    return res.ok;
+    await api(saveVersecraftApi, { body: payload, timeoutMs: 20000 });
+    return true;
   } catch {
     return false;
   }
@@ -118,9 +115,7 @@ export async function dbSave(state: GameState): Promise<boolean> {
 
 export async function dbLoad(): Promise<DbLoadResponse | null> {
   try {
-    const res = await fetch('/api/versecraft/save', { signal: AbortSignal.timeout?.(20000) });
-    if (!res.ok) return null;
-    return await res.json() as DbLoadResponse;
+    return await api(loadVersecraftSaveApi, { timeoutMs: 20000 });
   } catch {
     return null;
   }

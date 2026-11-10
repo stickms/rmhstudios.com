@@ -7,7 +7,8 @@ export const Route = createFileRoute('/_site/series/$id')({
   head: () => ({
     meta: [{ title: 'Series | RMH Studios' }, { name: 'robots', content: 'noindex, follow' }],
   }),
-  loader: ({ context, params }) => prefetchRouteQuery(context.queryClient, seriesDetailQuery(params.id)),
+  loader: ({ context, params }) =>
+    prefetchRouteQuery(context.queryClient, seriesDetailQuery(params.id)),
   component: SeriesRoute,
 });
 

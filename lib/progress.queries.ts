@@ -1,7 +1,13 @@
 /** The member's progress summary and the season pass as route-seeded queries (redesign audit B4). */
 import { queryOptions } from '@tanstack/react-query';
 import { createServerFn } from '@tanstack/react-start';
-import { fetchJson } from '@/lib/http';
+import { api } from '@/lib/contract/client';
+import {
+  getBattlePassApi,
+  getProgressApi,
+  type BattlePassPayload,
+  type ProgressPayload,
+} from '@/lib/battlepass/battlepass.contract';
 import { routeQueryFn } from '@/lib/route/route-query';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getProgressSummary } from '@/lib/progress-summary.server';
@@ -50,23 +56,22 @@ const getBattlepassOnServer = createServerFn({ method: 'GET' }).handler(async ()
   };
 });
 
-/** The payload types live with the component that renders them; callers pass them as `T`. */
-export const progressSummaryQuery = <T>() =>
+export const progressSummaryQuery = () =>
   queryOptions({
     queryKey: ['progress', 'summary'],
-    queryFn: routeQueryFn<T>(
+    queryFn: routeQueryFn<ProgressPayload>(
       () => getProgressOnServer(),
-      () => fetchJson<T>('/api/progress'),
+      () => api(getProgressApi),
     ),
     staleTime: 15_000,
   });
 
-export const battlepassQuery = <T>() =>
+export const battlepassQuery = () =>
   queryOptions({
     queryKey: ['progress', 'battlepass'],
-    queryFn: routeQueryFn<T>(
+    queryFn: routeQueryFn<BattlePassPayload>(
       () => getBattlepassOnServer(),
-      () => fetchJson<T>('/api/battlepass'),
+      () => api(getBattlePassApi),
     ),
     staleTime: 15_000,
   });

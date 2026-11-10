@@ -10,16 +10,19 @@ import type { GameState } from './GameTypes';
 import { serializeGameState, deserializeGameState } from './serialization';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
-import { abandonSignalForgeRunApi, loadSignalForgeRunApi } from './signal-forge.contract';
+import {
+  abandonSignalForgeRunApi,
+  loadSignalForgeRunApi,
+  saveSignalForgeRunApi,
+} from './signal-forge.contract';
 
 /** Save the current game state to the server. */
 export async function saveRunToServer(state: GameState): Promise<boolean> {
   try {
     const runState = serializeGameState(state);
-    await fetch('/api/signal-forge/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ runState }),
+    // Any answer from the server (even a refusal) counted as saved; only a transport failure did not.
+    await api(saveSignalForgeRunApi, { body: { runState } }).catch((e: unknown) => {
+      if (!(e instanceof HttpError)) throw e;
     });
     return true;
   } catch (e) {

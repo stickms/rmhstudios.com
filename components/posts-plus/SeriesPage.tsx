@@ -70,7 +70,8 @@ export function SeriesPage({ id }: { id: string }) {
 
   const loadFailed = seriesQ.isError && !missing;
   useEffect(() => {
-    if (loadFailed) toast.error(t('series-load-failed', { defaultValue: 'Could not load the series' }));
+    if (loadFailed)
+      toast.error(t('series-load-failed', { defaultValue: 'Could not load the series' }));
   }, [loadFailed, t]);
 
   // Keep the rename field in step with the loaded title.
