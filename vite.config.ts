@@ -452,6 +452,12 @@ export default defineConfig({
         // critical path inside their budgets. The server (Node 24) bundles keep
         // `esnext`: one known runtime, so lowering them is pure cost.
         target: 'baseline-widely-available',
+        // Never inline a font into a stylesheet. Vite's default 4 KB limit turned
+        // one small JetBrains Mono subset into a 2.7 KB base64 `data:` URI inside
+        // the render-blocking site sheet (~2.2 KB brotli: base64 does not
+        // compress), for a face almost no page paints. As a file it is fetched
+        // only when its `unicode-range` is needed. B5 / docs/plans/2026-11-09.
+        assetsInlineLimit: (file) => (/\.woff2?$/.test(file) ? false : undefined),
         rolldownOptions: {
           onwarn,
           checks: rolldownChecks,

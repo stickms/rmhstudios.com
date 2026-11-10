@@ -14,6 +14,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { Market } from './types';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { createPredictionApi } from '@/lib/predictions/predictions.contract';
 
 interface Props {
   open: boolean;
@@ -36,28 +39,25 @@ export function CreatePredictionModal({ open, onClose, onCreated }: Props) {
     }
     setSubmitting(true);
     try {
-      const res = await fetch('/api/predictions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await api(createPredictionApi, {
+        body: {
           title: title.trim(),
           description: description.trim() || undefined,
           closesAt: closesAt ? new Date(closesAt).toISOString() : undefined,
-        }),
+        },
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || t('create-failed', { defaultValue: 'Could not submit prediction' }));
-        return;
-      }
-      onCreated(data.market as Market);
+      onCreated(data.market);
       toast.success(t('submitted', { defaultValue: 'Submitted! An admin will review it shortly.' }));
       setTitle('');
       setDescription('');
       setClosesAt('');
       onClose();
-    } catch {
-      toast.error(t('network-error', { defaultValue: 'Network error' }));
+    } catch (e) {
+      toast.error(
+        e instanceof HttpError
+          ? serverError(e) || t('create-failed', { defaultValue: 'Could not submit prediction' })
+          : t('network-error', { defaultValue: 'Network error' }),
+      );
     } finally {
       setSubmitting(false);
     }

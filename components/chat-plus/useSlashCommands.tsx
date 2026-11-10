@@ -13,6 +13,9 @@ import { MenuItem } from '@/components/ui/menu';
 import { GifPicker } from '@/components/feed/GifPicker';
 import { parseRemind, resolveCommand, suggestCommands } from '@/lib/chat-plus/commands';
 import type { ChatRef } from '@/lib/chat-plus/types';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { setReminderApi } from '@/lib/reminders/reminders.contract';
 
 /**
  * M4 — slash commands for a chat composer.
@@ -116,25 +119,15 @@ export function useSlashCommands({
           return true;
         }
         try {
-          const res = await fetch('/api/reminders', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          await api(setReminderApi, {
+            body: {
               kind: 'page',
               targetId: `chat-${chat.kind}-${chat.id}-${Date.now()}`.slice(0, 128),
               label: parsed.value.text,
               url: chat.kind === 'dm' ? `/messages/${chat.id}` : `/groups/${chat.id}`,
               remindAt: parsed.value.remindAt.toISOString(),
-            }),
+            },
           });
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) {
-            toast.error(
-              data.error || t('remind-failed', { defaultValue: 'Could not set that reminder' }),
-            );
-            return true;
-          }
           setDraft('');
           toast.success(
             t('remind-set', {
@@ -145,8 +138,10 @@ export function useSlashCommands({
               defaultValue: 'Reminder set for {{when}}',
             }),
           );
-        } catch {
-          toast.error(t('remind-failed', { defaultValue: 'Could not set that reminder' }));
+        } catch (e) {
+          toast.error(
+            serverError(e) || t('remind-failed', { defaultValue: 'Could not set that reminder' }),
+          );
         }
         return true;
       }

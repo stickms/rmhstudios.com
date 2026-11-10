@@ -1,13 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
-import { themeTokensSchema } from '@/lib/themes/tokens-schema';
+import { implement } from '@/lib/api/implement.server';
+import { createThemeBody } from '@/lib/themes/themes-schema';
+import { createThemeApi, listMyThemesApi } from '@/lib/themes/themes.contract';
 import { listMyThemes, createTheme, ThemeError } from '@/lib/themes/themes.server';
-
-const createSchema = z.object({
-  name: z.string().trim().min(1).max(40),
-  tokens: themeTokensSchema,
-});
 
 /**
  * GET  /api/themes — the caller's themes.
@@ -16,15 +11,16 @@ const createSchema = z.object({
 export const Route = createFileRoute('/api/themes/')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
-        return Response.json({ themes: await listMyThemes(session.user.id) });
+      GET: implement(listMyThemesApi, {}, async ({ session }) => {
+        return { themes: await listMyThemes(session.user.id) };
       }),
-      POST: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'themes' }, body: createSchema },
+      POST: implement(
+        createThemeApi,
+        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'themes' }, body: createThemeBody },
         async ({ session, body }) => {
           try {
             const id = await createTheme(session.user.id, body.name, body.tokens);
-            return Response.json({ id });
+            return { id };
           } catch (e) {
             if (e instanceof ThemeError)
               return Response.json(

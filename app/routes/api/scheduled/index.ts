@@ -1,47 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createScheduledSchema } from '@/lib/scheduled/scheduled-schema';
+import { createScheduledApi, listScheduledApi } from '@/lib/scheduled/scheduled.contract';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { z } from 'zod';
-import {
-  MAX_RMHARK_LENGTH,
-  MAX_POLL_QUESTION_LENGTH,
-  MAX_POLL_OPTION_LENGTH,
-  MIN_POLL_OPTIONS,
-  MAX_POLL_OPTIONS,
-  MAX_IMAGE_ALT_LENGTH,
-} from '@/lib/rmhark-schema';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { listScheduled } from '@/lib/scheduled/list.server';
 import { altTextViolation } from '@/lib/feed/alt-text.server';
 import { capsuleDateError } from '@/lib/posts-plus/constants';
-
-const pollSchema = z.object({
-  question: z.string().min(1).max(MAX_POLL_QUESTION_LENGTH),
-  options: z
-    .array(z.string().min(1).max(MAX_POLL_OPTION_LENGTH))
-    .min(MIN_POLL_OPTIONS)
-    .max(MAX_POLL_OPTIONS),
-  multiSelect: z.boolean().optional(),
-  durationHours: z.number().int().min(1).max(720).optional(),
-});
-
-const createSchema = z.object({
-  content: z.string().max(MAX_RMHARK_LENGTH).optional().default(''),
-  poll: pollSchema.optional(),
-  gifUrl: z.string().url().optional(),
-  imageUrls: z.array(z.string()).max(4).optional(),
-  imageAlts: z.array(z.string().max(MAX_IMAGE_ALT_LENGTH)).max(4).optional(),
-  audience: z.enum(['PUBLIC', 'FOLLOWERS', 'PRIVATE']).optional(),
-  isSensitive: z.boolean().optional(),
-  replyControl: z.enum(['EVERYONE', 'FOLLOWING', 'MENTIONED']).optional(),
-  unlockPrice: z.number().int().min(0).max(1_000_000).optional(),
-  communityId: z.string().max(64).optional(),
-  // ISO date; omit/null = plain draft. Must be in the future when set.
-  scheduledAt: z.string().datetime().nullable().optional(),
-  // Z7: sealed until `scheduledAt` (at least a day out); can't be edited or opened early.
-  capsule: z.boolean().optional(),
-});
 
 const MAX_PENDING = 50;
 
@@ -49,13 +15,14 @@ export const Route = createFileRoute('/api/scheduled/')({
   server: {
     handlers: {
       // List the viewer's drafts + scheduled posts (publishing any that are due).
-      GET: defineHandler({}, async ({ session }) => {
-        return Response.json(await listScheduled(session.user.id));
+      GET: implement(listScheduledApi, {}, async ({ session }) => {
+        return listScheduled(session.user.id);
       }),
 
       // Save a new draft or scheduled post.
-      POST: defineHandler(
-        { body: createSchema, allowEmptyBody: true, verboseValidationErrors: true },
+      POST: implement(
+        createScheduledApi,
+        { body: createScheduledSchema, allowEmptyBody: true, verboseValidationErrors: true },
         async ({ request, session, body }) => {
           const userId = session.user.id;
 

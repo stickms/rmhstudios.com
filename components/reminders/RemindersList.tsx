@@ -6,6 +6,8 @@ import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconButton } from '@/components/ui/icon-button';
 import { Spinner } from '@/components/ui/spinner';
+import { api } from '@/lib/contract/client';
+import { cancelReminderApi, listRemindersApi } from '@/lib/reminders/reminders.contract';
 import type { ReminderView } from '@/lib/reminders/shared';
 
 /**
@@ -19,10 +21,9 @@ export function RemindersList() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/reminders', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : { reminders: [] }))
-      .then((d: { reminders: ReminderView[] }) => {
-        if (!cancelled) setItems(d.reminders ?? []);
+    api(listRemindersApi)
+      .then((d) => {
+        if (!cancelled) setItems(d.reminders);
       })
       .catch(() => {
         if (!cancelled) setItems([]);
@@ -35,11 +36,11 @@ export function RemindersList() {
   async function cancel(id: string) {
     const prev = items;
     setItems((list) => list?.filter((r) => r.id !== id) ?? null);
-    const res = await fetch(`/api/reminders/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    }).catch(() => null);
-    if (!res?.ok) {
+    const ok = await api(cancelReminderApi, { params: { id } }).then(
+      () => true,
+      () => false,
+    );
+    if (!ok) {
       setItems(prev);
       toast.error(t('remind-cancel-error', { defaultValue: "Couldn't cancel the reminder" }));
     }

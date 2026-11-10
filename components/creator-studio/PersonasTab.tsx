@@ -18,6 +18,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
 import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createPersonaApi, listPersonasApi } from '@/lib/personas/personas.contract';
 import '@/components/creator-studio/storefront.css';
 
 interface Persona {
@@ -59,12 +62,13 @@ export function PersonasTab({ seed }: { seed: number }) {
   });
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/personas', { credentials: 'include' });
-    if (res.ok) {
-      const data = await res.json();
-      setPersonas(data.personas ?? []);
-      setMine(data.mine ?? []);
-      setSignedIn(!!data.signedIn);
+    try {
+      const data = await api(listPersonasApi);
+      setPersonas(data.personas);
+      setMine(data.mine);
+      setSignedIn(data.signedIn);
+    } catch {
+      // Keep the current gallery when the refresh fails.
     }
   }, []);
 
@@ -86,27 +90,21 @@ export function PersonasTab({ seed }: { seed: number }) {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/personas', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await api(createPersonaApi, {
+        body: {
           name: form.name.trim(),
           tagline: form.tagline.trim() || undefined,
           emoji: form.emoji.trim() || undefined,
           greeting: form.greeting.trim() || undefined,
           systemPrompt: form.systemPrompt.trim(),
           isPublic: form.isPublic,
-        }),
+        },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(data.error ?? t('could-not-create', { defaultValue: 'Could not create' }));
-        return;
-      }
       setForm({ name: '', tagline: '', emoji: '', greeting: '', systemPrompt: '', isPublic: true });
       setShowForm(false);
       await load();
+    } catch (e) {
+      setError(serverError(e) ?? t('could-not-create', { defaultValue: 'Could not create' }));
     } finally {
       setBusy(false);
     }

@@ -18,6 +18,12 @@ import { Button } from'@/components/ui/button';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
 import { Reveal } from'@/components/motion';
 import { LIFT_CARD } from'@/components/feed/motionHelpers';
+import { api } from'@/lib/contract/client';
+import {
+ discardScheduledApi,
+ listScheduledApi,
+ publishScheduledApi,
+} from'@/lib/scheduled/scheduled.contract';
 
 interface ScheduledRow {
  id: string;
@@ -58,11 +64,12 @@ export function DraftsColumn({
  const [busy, setBusy] = useState<string | null>(null);
 
  const load = useCallback(async () => {
- const res = await fetch('/api/scheduled', { credentials:'include'});
- if (res.ok) {
- const data = await res.json();
- setDrafts(data.drafts ?? []);
- setScheduled(data.scheduled ?? []);
+ try {
+ const data = await api(listScheduledApi);
+ setDrafts(data.drafts);
+ setScheduled(data.scheduled);
+ } catch {
+ // A failed refresh leaves the current lists in place.
  }
  }, []);
 
@@ -86,11 +93,10 @@ export function DraftsColumn({
  async function publishNow(id: string) {
  setBusy(`p:${id}`);
  try {
- const res = await fetch(`/api/scheduled/${encodeURIComponent(id)}/publish`, {
- method:'POST',
- credentials:'include',
- });
- if (res.ok) await load();
+ await api(publishScheduledApi, { params: { id } });
+ await load();
+ } catch {
+ // Not published: leave the lists as they are.
  } finally {
  setBusy(null);
  }
@@ -99,11 +105,10 @@ export function DraftsColumn({
  async function discard(id: string) {
  setBusy(`d:${id}`);
  try {
- const res = await fetch(`/api/scheduled/${encodeURIComponent(id)}`, {
- method:'DELETE',
- credentials:'include',
- });
- if (res.ok) await load();
+ await api(discardScheduledApi, { params: { id } });
+ await load();
+ } catch {
+ // Not discarded: leave the lists as they are.
  } finally {
  setBusy(null);
  }

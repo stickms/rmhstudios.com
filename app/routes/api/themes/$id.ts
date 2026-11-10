@@ -1,13 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
-import { themeTokensSchema } from '@/lib/themes/tokens-schema';
+import { implement } from '@/lib/api/implement.server';
+import { updateThemeBody } from '@/lib/themes/themes-schema';
+import { updateThemeApi } from '@/lib/themes/themes.contract';
 import { getTheme, updateTheme, deleteOrDelistTheme, ThemeError } from '@/lib/themes/themes.server';
-
-const updateSchema = z.object({
-  name: z.string().trim().min(1).max(40).optional(),
-  tokens: themeTokensSchema.optional(),
-});
 
 /**
  * GET    /api/themes/:id — a theme (draft visible to author only).
@@ -22,8 +18,9 @@ export const Route = createFileRoute('/api/themes/$id')({
         if (!theme) return Response.json({ error: 'Not found' }, { status: 404 });
         return Response.json(theme);
       }),
-      PUT: defineHandler(
-        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'themes' }, body: updateSchema },
+      PUT: implement(
+        updateThemeApi,
+        { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'themes' }, body: updateThemeBody },
         async ({ params, session, body }) => {
           try {
             await updateTheme(session.user.id, params.id, body);
@@ -39,7 +36,7 @@ export const Route = createFileRoute('/api/themes/$id')({
             }
             throw e;
           }
-          return Response.json({ ok: true });
+          return { ok: true as const };
         },
       ),
       DELETE: defineHandler(

@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler, notFound } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { notFound } from '@/lib/api/handler.server';
+import { verifyProfileLinkApi } from '@/lib/profile-links/profile-links.contract';
 import { verifyProfileLink } from '@/lib/profile-links/verify.server';
 import { toProfileLinkDTO } from '@/lib/profile-links/links.server';
 
@@ -15,7 +17,8 @@ import { toProfileLinkDTO } from '@/lib/profile-links/links.server';
 export const Route = createFileRoute('/api/profile-links/$id/verify')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        verifyProfileLinkApi,
         {
           rateLimit: {
             limit: 6,
@@ -28,10 +31,10 @@ export const Route = createFileRoute('/api/profile-links/$id/verify')({
         async ({ userId, params }) => {
           const result = await verifyProfileLink(userId, params.id);
           if (!result) return notFound('Link not found');
-          return Response.json({
+          return {
             outcome: result.outcome,
             link: toProfileLinkDTO(result.link),
-          });
+          };
         },
       ),
     },

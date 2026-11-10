@@ -265,8 +265,11 @@ don't remove that plugin.
 - Everything degrades gracefully without Redis (`redis.server.ts`): L1 + single-flight only, local invalidation.
 - All SSE rides `createBus` (`realtime-bus.server.ts`): local EventEmitter +
   optional Redis pub/sub.
-- **No cron in the web tier.** Background work runs in separate processes
-  (`server/` workers, Go supervisor — see `server/CLAUDE.md`). One notable
+- **No cron in the web tier, and one scheduler (D4).** Periodic background work is a pg-boss cron in the `jobs`
+  worker (`server/jobs/index.ts` REGISTRATIONS; pattern: `streak-reminders.server.ts`, `cleanup-job.server.ts`), or a
+  pg-boss queue consumed by its own worker via `lib/jobs/scheduled-consumer.server.ts` (ladder, homes). `node-cron` is
+  gone. A server-side `setInterval` is only for per-process housekeeping and needs an allowlist row with a reason in
+  `lib/__tests__/scheduler-ratchet.test.ts`. One notable
   lazy pattern: scheduled posts have no worker;
   `scheduled/publish.server.ts#publishDueForUser` materializes due posts when
   the author's timeline is touched.

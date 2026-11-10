@@ -6,6 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
 import { RelativeTime } from '@/components/ui/RelativeTime';
+import { api } from '@/lib/contract/client';
+import {
+  addPredictionCommentApi,
+  listPredictionCommentsApi,
+} from '@/lib/predictions/predictions.contract';
 
 function ago(ts: number, now: number): string {
   const m = Math.max(0, Math.round((now - ts) / 60_000));
@@ -15,7 +20,7 @@ function ago(ts: number, now: number): string {
 interface Comment {
   id: string;
   body: string;
-  side: 'YES' | 'NO' | null;
+  side: string | null;
   shares: number;
   createdAt: string;
   user: { id: string; name: string | null; handle: string | null };
@@ -37,11 +42,10 @@ export function MarketPanel({ marketId, signedIn, held }: Props) {
   const [argument, setArgument] = useState<{ side: 'YES' | 'NO'; text: string } | null>(null);
 
   const load = useCallback(() => {
-    fetch(`/api/predictions/${marketId}/comments`)
-      .then((r) => r.json())
+    api(listPredictionCommentsApi, { params: { id: marketId } })
       .then((d) => {
-        setComments(d.comments ?? []);
-        setAiAvailable(Boolean(d.aiAvailable));
+        setComments(d.comments);
+        setAiAvailable(d.aiAvailable);
       })
       .catch(() => setComments([]));
   }, [marketId]);
@@ -52,13 +56,10 @@ export function MarketPanel({ marketId, signedIn, held }: Props) {
     if (posting || !draft.trim()) return;
     setPosting(true);
     try {
-      const res = await fetch(`/api/predictions/${marketId}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body: draft }),
+      const d = await api(addPredictionCommentApi, {
+        params: { id: marketId },
+        body: { body: draft },
       });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error);
       setComments((prev) => [d.comment, ...(prev ?? [])]);
       setDraft('');
     } catch {

@@ -29,6 +29,14 @@ import {
   type ProfileLinkDTO,
 } from '@/lib/profile-links/shared';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  addProfileLinkApi,
+  deleteProfileLinkApi,
+  listProfileLinksApi,
+  verifyProfileLinkApi,
+} from '@/lib/profile-links/profile-links.contract';
 
 interface ProfileLinksPanelProps {
   /** The signed-in user's handle, used to show the exact back-link to copy. */
@@ -48,11 +56,8 @@ export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/profile-links');
-      if (res.ok) {
-        const data = (await res.json()) as { links: ProfileLinkDTO[] };
-        setLinks(data.links);
-      }
+      const data = await api(listProfileLinksApi);
+      setLinks(data.links);
     } catch {
       // Offline or signed out — an empty list is the honest render.
     } finally {
@@ -69,24 +74,16 @@ export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
     if (!url.trim()) return;
     setAdding(true);
     try {
-      const res = await fetch('/api/profile-links', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ url: url.trim(), label: label.trim() || undefined }),
+      const data = await api(addProfileLinkApi, {
+        body: { url: url.trim(), label: label.trim() || undefined },
       });
-      const data = (await res.json().catch(() => ({}))) as {
-        link?: ProfileLinkDTO;
-        error?: string;
-      };
-      if (!res.ok || !data.link) {
-        toast.error(
-          data.error ?? t('links-add-failed', { defaultValue: 'Could not add that link.' }),
-        );
-        return;
-      }
-      setLinks((prev) => [...prev, data.link as ProfileLinkDTO]);
+      setLinks((prev) => [...prev, data.link]);
       setUrl('');
       setLabel('');
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('links-add-failed', { defaultValue: 'Could not add that link.' }),
+      );
     } finally {
       setAdding(false);
     }
@@ -95,25 +92,8 @@ export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
   const verify = async (link: ProfileLinkDTO) => {
     setVerifyingId(link.id);
     try {
-      const res = await fetch(`/api/profile-links/${encodeURIComponent(link.id)}/verify`, {
-        method: 'POST',
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        outcome?: string;
-        link?: ProfileLinkDTO;
-        error?: string;
-      };
-      if (!res.ok) {
-        toast.error(
-          data.error ?? t('links-verify-failed', { defaultValue: 'Verification failed.' }),
-        );
-        return;
-      }
-      if (data.link) {
-        setLinks((prev) =>
-          prev.map((row) => (row.id === data.link?.id ? (data.link as ProfileLinkDTO) : row)),
-        );
-      }
+      const data = await api(verifyProfileLinkApi, { params: { id: link.id } });
+      setLinks((prev) => prev.map((row) => (row.id === data.link.id ? data.link : row)));
       if (data.outcome === 'verified') {
         toast.success(t('links-verified', { defaultValue: 'Domain verified.' }));
       } else if (data.outcome === 'blocked') {
@@ -127,6 +107,10 @@ export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
           }),
         );
       }
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('links-verify-failed', { defaultValue: 'Verification failed.' }),
+      );
     } finally {
       setVerifyingId(null);
     }
@@ -142,10 +126,9 @@ export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
       danger: true,
     });
     if (!confirmed) return;
-    const res = await fetch(`/api/profile-links/${encodeURIComponent(link.id)}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) {
+    try {
+      await api(deleteProfileLinkApi, { params: { id: link.id } });
+    } catch {
       toast.error(t('links-remove-failed', { defaultValue: 'Could not remove that link.' }));
       return;
     }

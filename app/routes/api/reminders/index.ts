@@ -1,5 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import {
+  listRemindersApi,
+  setReminderApi,
+} from '@/lib/reminders/reminders.contract';
 import { createReminderSchema } from '@/lib/reminders/schema';
 import { listPendingReminders, setReminder } from '@/lib/reminders/reminders.server';
 
@@ -10,11 +14,12 @@ import { listPendingReminders, setReminder } from '@/lib/reminders/reminders.ser
 export const Route = createFileRoute('/api/reminders/')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) => {
+      GET: implement(listRemindersApi, { rateLimit: 'read' }, async ({ userId }) => {
         const reminders = await listPendingReminders(userId);
         return Response.json({ reminders }, { headers: { 'Cache-Control': 'private, no-store' } });
       }),
-      POST: defineHandler(
+      POST: implement(
+        setReminderApi,
         { rateLimit: 'write', body: createReminderSchema },
         async ({ userId, body }) => {
           const result = await setReminder(userId, body);

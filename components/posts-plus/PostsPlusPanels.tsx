@@ -13,6 +13,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createScheduledApi } from '@/lib/scheduled/scheduled.contract';
 import {
   DAY_MS,
   MAX_SERIES_TITLE,
@@ -296,19 +299,9 @@ function CapsuleDialog({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/scheduled', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...getBody(), scheduledAt: openAt.toISOString(), capsule: true }),
+      await api(createScheduledApi, {
+        body: { content: '', ...getBody(), scheduledAt: openAt.toISOString(), capsule: true },
       });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        setError(
-          data?.error ?? t('capsule-failed', { defaultValue: 'Could not seal the capsule' }),
-        );
-        return;
-      }
       toast.success(
         t('capsule-sealed', {
           defaultValue: 'Sealed. It opens on {{date}}.',
@@ -317,8 +310,8 @@ function CapsuleDialog({
       );
       onSealed();
       onClose();
-    } catch {
-      setError(t('capsule-failed', { defaultValue: 'Could not seal the capsule' }));
+    } catch (e) {
+      setError(serverError(e) ?? t('capsule-failed', { defaultValue: 'Could not seal the capsule' }));
     } finally {
       setBusy(false);
     }

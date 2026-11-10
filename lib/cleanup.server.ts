@@ -7,10 +7,9 @@
  * `rmheet_comment_view` accumulates one row per (comment, viewer) forever, and
  * soft-deleted posts (`rmheet.deletedAt`) stay in the hot table indefinitely.
  *
- * This module holds ONLY the delete queries. It is wired into an existing worker
- * (server/ladder-worker) on a node-cron schedule guarded by the shared DB
- * worker-lease, so exactly one instance runs it — see that worker for the cron +
- * lease plumbing.
+ * This module holds ONLY the delete queries. They run in the `jobs` worker as a
+ * pg-boss cron (`lib/cleanup-job.server.ts`, D4); its `exclusive` queue policy
+ * is what guarantees one run at a time.
  *
  * Everything is done in bounded batches (raw `DELETE ... WHERE id IN (SELECT id
  * ... LIMIT n)`) rather than one giant `deleteMany`, so each statement holds row

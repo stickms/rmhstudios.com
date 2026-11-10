@@ -1,9 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import type { PredictionStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { createPredictionSchema } from '@/lib/predictions/predictions-schema';
+import { createPredictionSchema, predictionListQuery } from '@/lib/predictions/predictions-schema';
+import {
+  createPredictionApi,
+  listPredictionsApi,
+} from '@/lib/predictions/predictions.contract';
 import { listMarkets, serializeMarket } from '@/lib/predictions/predictions.server';
 import { runAutoMarketTick } from '@/lib/predictions/auto-markets.server';
 
@@ -28,10 +32,12 @@ function maybeRunAutoTick() {
 export const Route = createFileRoute('/api/predictions/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
+      GET: implement(
+        listPredictionsApi,
+        { auth: 'optional', query: predictionListQuery },
+        async ({ query, session }) => {
         const viewerId = session?.user?.id;
-        const url = new URL(request.url);
-        const filter = url.searchParams.get('filter') ?? 'open';
+        const filter = query.filter ?? 'open';
 
         maybeRunAutoTick();
 
@@ -55,10 +61,12 @@ export const Route = createFileRoute('/api/predictions/')({
         const statuses: PredictionStatus[] =
           filter === 'resolved' ? ['RESOLVED_YES', 'RESOLVED_NO'] : ['OPEN'];
         const markets = await listMarkets({ statuses, viewerId });
-        return Response.json({ markets });
-      }),
+        return { markets };
+        },
+      ),
 
-      POST: defineHandler(
+      POST: implement(
+        createPredictionApi,
         { body: createPredictionSchema, verboseValidationErrors: true },
         async ({ request, session, body }) => {
           const userId = session.user.id;

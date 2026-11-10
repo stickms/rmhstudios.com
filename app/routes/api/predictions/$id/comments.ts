@@ -1,5 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import {
+  addPredictionCommentApi,
+  listPredictionCommentsApi,
+} from '@/lib/predictions/predictions.contract';
 import {
   addComment,
   advocateAvailable,
@@ -14,7 +18,7 @@ import {
 export const Route = createFileRoute('/api/predictions/$id/comments')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ params, session }) => {
+      GET: implement(listPredictionCommentsApi, { auth: 'optional', rateLimit: 'read' }, async ({ params, session }) => {
         const comments = await listComments(params.id, session?.user?.id);
         if (!comments) return Response.json({ error: 'Not found' }, { status: 404 });
         return Response.json(
@@ -22,7 +26,8 @@ export const Route = createFileRoute('/api/predictions/$id/comments')({
           { headers: { 'Cache-Control': 'private, no-store' } },
         );
       }),
-      POST: defineHandler(
+      POST: implement(
+        addPredictionCommentApi,
         { rateLimit: 'write', body: commentSchema },
         async ({ params, userId, body }) => {
           const comment = await addComment(params.id, userId, body.body);

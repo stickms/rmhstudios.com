@@ -130,12 +130,6 @@ importers:
       '@fontsource-variable/space-grotesk':
         specifier: ^5.3.0
         version: 5.3.0
-      '@fontsource/bangers':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource/bebas-neue':
-        specifier: ^5.3.0
-        version: 5.3.0
       '@fontsource/great-vibes':
         specifier: ^5.3.0
         version: 5.3.0
@@ -292,9 +286,6 @@ importers:
       nanoid:
         specifier: ^6.0.2
         version: 6.0.2
-      node-cron:
-        specifier: ^4.6.0
-        version: 4.6.0
       node-html-parser:
         specifier: ^9.0.6
         version: 9.0.6
@@ -1467,12 +1458,6 @@ packages:
 
   '@fontsource-variable/space-grotesk@5.3.0':
     resolution: {integrity: sha512-2IxmvfB08i9vnGB3Ym/AXvhRE+8XOjWMXIyDum03c+tPwH0FUoMNQfGpU8NXPxjbws0Vvss3AH0Zqt4oJBBAdw==}
-
-  '@fontsource/bangers@5.3.0':
-    resolution: {integrity: sha512-tSRpmWwkqrO9PCqo9wjA/99/5sLOIWm5cf51G3ooEHd8qZus8sVSSJoWp/7EvM5rIgZMjKRG6XtY9yeisKxE7g==}
-
-  '@fontsource/bebas-neue@5.3.0':
-    resolution: {integrity: sha512-nCxMEb9Bg9sjNWm9TIOsvHKDMLRUfEZPWpLgYu6m9KavZZVSA/WoHzI5wROwqA+eNwEi/PNBAcB5Co7HA3S0Cw==}
 
   '@fontsource/great-vibes@5.3.0':
     resolution: {integrity: sha512-1w60cXzXnC9V4y943po8044O1mqRQBiTTK75h7OpZE+1VQtx+KlAAzoIyEE5KNzu05gUpxaCQg7cbL7ITSwegQ==}
@@ -6585,10 +6570,6 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
-  node-cron@4.6.0:
-    resolution: {integrity: sha512-Si/bzYiKRHOB8/a99T2+SDGN582ONDMSTlJr5oCkT6GtnqPjZ2s10eoQRYkW9ZHwjVxONL+W8Fb+qR0AHMQsdg==}
-    engines: {node: '>=20'}
-
   node-html-parser@9.0.6:
     resolution: {integrity: sha512-q3ETJ2gU+VlERyYbiJ5JQ6+mMVV1Bc6mZQ7MdJ30moq+h3oN0kQGj3rWDORaSX1SOLSkPbY/bN+sBzDlliVOBA==}
 
@@ -9188,10 +9169,6 @@ snapshots:
   '@fontsource-variable/playfair-display@5.3.0': {}
 
   '@fontsource-variable/space-grotesk@5.3.0': {}
-
-  '@fontsource/bangers@5.3.0': {}
-
-  '@fontsource/bebas-neue@5.3.0': {}
 
   '@fontsource/great-vibes@5.3.0': {}
 
@@ -14401,8 +14378,6 @@ snapshots:
       srvx: 1.0.5
       unenv: 2.0.0-rc.24
       unstorage: 2.0.0-alpha.10
-
-  node-cron@4.6.0: {}
 
   node-html-parser@9.0.6:
     dependencies:

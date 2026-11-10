@@ -6,6 +6,12 @@ import { Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
+import { api } from '@/lib/contract/client';
+import {
+  createThemeApi,
+  publishThemeApi,
+  updateThemeApi,
+} from '@/lib/themes/themes.contract';
 import { relativeLuminance } from '@/lib/appearance/contrast';
 import {
   DEFAULT_THEME_TOKENS,
@@ -65,7 +71,6 @@ export function ThemeEditor({
   onDone: () => void;
 }) {
   const { t } = useTranslation('theme-studio');
-  const isNew = initial === null;
   const [name, setName] = useState(initial?.name ?? 'My theme');
   const [tokens, setTokens] = useState<ThemeTokens>(initial?.tokens ?? DEFAULT_THEME_TOKENS);
   const [price, setPrice] = useState(initial?.priceCoins ?? 500);
@@ -93,22 +98,14 @@ export function ThemeEditor({
   async function save() {
     setBusy(true);
     try {
-      if (isNew && !themeId) {
-        const res = await fetch('/api/themes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, tokens }),
-        });
-        if (!res.ok) throw new Error(await errorCode(res));
-        const { id } = (await res.json()) as { id: string };
+      if (!themeId) {
+        const { id } = await api(createThemeApi, { body: { name, tokens } });
         setThemeId(id);
       } else {
-        const res = await fetch(`/api/themes/${themeId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(editable ? { name, tokens } : { name }),
+        await api(updateThemeApi, {
+          params: { id: themeId },
+          body: editable ? { name, tokens } : { name },
         });
-        if (!res.ok) throw new Error(await errorCode(res));
       }
       toast.success(t('saved', { defaultValue: 'Saved' }));
     } catch (e) {
@@ -129,12 +126,7 @@ export function ThemeEditor({
     }
     setBusy(true);
     try {
-      const res = await fetch(`/api/themes/${themeId}/publish`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceCoins: price }),
-      });
-      if (!res.ok) throw new Error(await errorCode(res));
+      await api(publishThemeApi, { params: { id: themeId }, body: { priceCoins: price } });
       toast.success(t('published', { defaultValue: 'Published to the shop' }));
       onDone();
     } catch (e) {
@@ -312,11 +304,6 @@ export function ThemeEditor({
       </div>
     </div>
   );
-}
-
-async function errorCode(res: Response): Promise<string> {
-  const d = (await res.json().catch(() => null)) as { error?: string } | null;
-  return d?.error ?? 'ERROR';
 }
 
 function saveError(e: unknown, t: (k: string, o?: { defaultValue: string }) => string): string {
