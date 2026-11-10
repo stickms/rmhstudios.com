@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { auth } from '@/lib/auth';
 import { getUserTier, checkTierAccess } from '@/lib/doctrine/tiers';
 import { createDisclosure, transitionDisclosure } from '@/lib/doctrine/narrative';
 import { logAdminAction } from '@/lib/admin-audit.server';
@@ -14,16 +13,10 @@ export const Route = createFileRoute('/api/doctrine/admin/disclosures')({
     handlers: {
       POST: defineHandler(
         {
-          auth: 'none',
           rateLimit: { limit: 10, windowMs: 60_000, prefix: 'doctrine-admin-disclosure' },
         },
-        async ({ request }) => {
+        async ({ request, session }) => {
           try {
-            const session = await auth.api.getSession({ headers: request.headers });
-            if (!session?.user?.id) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-
             // Require admin or OPERATOR tier
             const [admin, userTier] = await Promise.all([
               prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } }),
@@ -79,16 +72,10 @@ export const Route = createFileRoute('/api/doctrine/admin/disclosures')({
       // PATCH: Transition disclosure status
       PATCH: defineHandler(
         {
-          auth: 'none',
           rateLimit: { limit: 10, windowMs: 60_000, prefix: 'doctrine-admin-disclosure' },
         },
-        async ({ request }) => {
+        async ({ request, session }) => {
           try {
-            const session = await auth.api.getSession({ headers: request.headers });
-            if (!session?.user?.id) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-
             const admin = await prisma.user.findUnique({
               where: { id: session.user.id },
               select: { isAdmin: true },

@@ -1,22 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import { claimCoinsApi } from '@/lib/coins.contract';
 import { creditCoins, getBalance } from '@/lib/economy/ledger.server';
 
 export const Route = createFileRoute('/api/coins/claim')({
   server: {
     handlers: {
-      POST: defineHandler(
-        { auth: 'none', rateLimit: { limit: 3, windowMs: 60_000, prefix: 'coins-claim' } },
-        async ({ request }) => {
+      POST: implement(
+        claimCoinsApi,
+        { rateLimit: { limit: 3, windowMs: 60_000, prefix: 'coins-claim' } },
+        async ({ userId }) => {
           try {
-            const session = await auth.api.getSession({ headers: request.headers });
-            if (!session?.user?.id) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-
-            const userId = session.user.id;
-
             // Top-up safety net for a user who has run dry. `onlyIfBalanceBelow` keeps
             // the `coins < 10` guard inside the UPDATE's WHERE clause, so two concurrent
             // claims can't both observe a stale sub-10 balance and each add 10 — and the
@@ -39,8 +33,7 @@ export const Route = createFileRoute('/api/coins/claim')({
                 { status: 400 },
               );
             }
-            console.error('Coins claim error:', error);
-            return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+            throw error;
           }
         },
       ),

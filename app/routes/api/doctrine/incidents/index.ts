@@ -6,7 +6,6 @@ import * as C from '@/lib/doctrine/doctrine.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { CACHE_POLICY } from '@/lib/api/cache-policies';
 import { prisma } from '@/lib/prisma.server';
-import { auth } from '@/lib/auth';
 import { getRecentIncidents, createIncident, reportIncident } from '@/lib/doctrine/incidents';
 import { awardXp } from '@/lib/doctrine/reputation';
 import type { IncidentSeverity } from '@/lib/doctrine/types';
@@ -46,16 +45,10 @@ export const Route = createFileRoute('/api/doctrine/incidents/')({
 
       POST: defineHandler(
         {
-          auth: 'none',
           rateLimit: { limit: 3, windowMs: 300_000, prefix: 'doctrine-incident-report' },
         },
-        async ({ request }) => {
+        async ({ request, session }) => {
           try {
-            const session = await auth.api.getSession({ headers: request.headers });
-            if (!session?.user?.id) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-
             const body = await request.json();
             const { title, message, severity } = body;
 

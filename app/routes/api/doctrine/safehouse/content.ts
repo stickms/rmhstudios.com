@@ -2,7 +2,6 @@ import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { auth } from '@/lib/auth';
 import { getUserTier, checkTierAccess } from '@/lib/doctrine/tiers';
 import { aggregateReactions, calculateDivisiveness } from '@/lib/doctrine/divisiveness';
 import type { TierId } from '@/lib/doctrine/types';
@@ -11,14 +10,9 @@ export const Route = createFileRoute('/api/doctrine/safehouse/content')({
   server: {
     handlers: {
       GET: defineHandler(
-        { auth: 'none', rateLimit: { limit: 20, windowMs: 60_000, prefix: 'doctrine-safehouse' } },
-        async ({ request }) => {
+        { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'doctrine-safehouse' } },
+        async ({ request, session }) => {
           try {
-            const session = await auth.api.getSession({ headers: request.headers });
-            if (!session?.user?.id) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-
             const userTier = await getUserTier(session.user.id);
             const url = new URL(request.url);
             const cursor = url.searchParams.get('cursor') ?? undefined;

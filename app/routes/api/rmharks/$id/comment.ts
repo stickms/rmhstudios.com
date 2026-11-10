@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { Prisma } from '@prisma/client';
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { createCommentSchema } from '@/lib/rmhark-schema';
@@ -45,20 +44,13 @@ function ascKeysetWhere(cursor: FeedCursor | null): Record<string, unknown> {
 export const Route = createFileRoute('/api/rmharks/$id/comment')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+      GET: defineHandler({ auth: 'optional' }, async ({ request, params, userId }) => {
         const { id } = params;
         const url = new URL(request.url);
         const cursorParam = url.searchParams.get('cursor');
         const parentIdParam = url.searchParams.get('parentId');
 
         // Get current user for liked/reposted status
-        let userId: string | null = null;
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          userId = session?.user?.id ?? null;
-        } catch {
-          // Not logged in
-        }
 
         // A viewer who cannot see the post cannot read its thread. 404, like a post
         // that does not exist, so the answer does not reveal that it does.

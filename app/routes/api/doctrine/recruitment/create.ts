@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { auth } from '@/lib/auth';
 import { getUserTier, checkTierAccess } from '@/lib/doctrine/tiers';
 import { nanoid } from 'nanoid';
 
@@ -9,14 +8,9 @@ export const Route = createFileRoute('/api/doctrine/recruitment/create')({
   server: {
     handlers: {
       POST: defineHandler(
-        { auth: 'none', rateLimit: { limit: 5, windowMs: 300_000, prefix: 'doctrine-recruit' } },
-        async ({ request }) => {
+        { rateLimit: { limit: 5, windowMs: 300_000, prefix: 'doctrine-recruit' } },
+        async ({ request, session }) => {
           try {
-            const session = await auth.api.getSession({ headers: request.headers });
-            if (!session?.user?.id) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-
             const userTier = await getUserTier(session.user.id);
             if (!checkTierAccess(userTier, 'OPERATOR')) {
               return Response.json(

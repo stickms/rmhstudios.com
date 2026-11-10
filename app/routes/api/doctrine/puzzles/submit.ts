@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { auth } from '@/lib/auth';
 import { validateAnswer, calculateScore } from '@/lib/doctrine/puzzle-engine';
 import { awardXp, updateStreak } from '@/lib/doctrine/reputation';
 import { isSahurActive, SAHUR_WINDOW } from '@/lib/doctrine';
@@ -12,16 +11,10 @@ export const Route = createFileRoute('/api/doctrine/puzzles/submit')({
     handlers: {
       POST: defineHandler(
         {
-          auth: 'none',
           rateLimit: { limit: 10, windowMs: 60_000, prefix: 'doctrine-puzzle-submit' },
         },
-        async ({ request }) => {
+        async ({ request, session }) => {
           try {
-            const session = await auth.api.getSession({ headers: request.headers });
-            if (!session?.user?.id) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-
             const body = await request.json();
             const { puzzleId, answer, timeMs, attempts } = body;
 

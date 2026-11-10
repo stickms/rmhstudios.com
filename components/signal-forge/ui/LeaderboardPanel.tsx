@@ -8,7 +8,10 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from "react-i18next";
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/contract/client';
-import { getSignalForgeLeaderboardApi } from '@/lib/signal-forge/signal-forge.contract';
+import {
+  getSignalForgeLeaderboardApi,
+  submitSignalForgeScoreApi,
+} from '@/lib/signal-forge/signal-forge.contract';
 
 export interface LeaderboardEntry {
   username: string;
@@ -36,12 +39,8 @@ export async function fetchLeaderboardData(): Promise<LeaderboardEntry[]> {
 /** Submit a score to the API. Returns true on success. */
 export async function submitScoreToServer(score: number, floorReached: number): Promise<boolean> {
   try {
-    const res = await fetch('/api/signal-forge/score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ score, floorReached }),
-    });
-    return res.ok;
+    await api(submitSignalForgeScoreApi, { body: { score, floorReached } });
+    return true;
   } catch (error) {
     console.error('Failed to submit score:', error);
     return false;

@@ -95,16 +95,10 @@ export const Route = createFileRoute('/api/doctrine/puzzles/replay')({
        */
       POST: defineHandler(
         {
-          auth: 'none',
           rateLimit: { limit: 15, windowMs: 60_000, prefix: 'doctrine-replay-submit' },
         },
-        async ({ request }) => {
+        async ({ request, session }) => {
           try {
-            const session = await auth.api.getSession({ headers: request.headers });
-            if (!session?.user?.id) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-
             const body = await request.json();
             const { puzzleId, answer, timeMs, attempts } = body;
 

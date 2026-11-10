@@ -1,81 +1,60 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import { submitVegaScoreApi } from '@/lib/vega/vega.contract';
+import { vegaScoreBody } from '@/lib/vega/score-schema';
 import { prisma } from '@/lib/prisma.server';
-import { auth } from '@/lib/auth';
 import { recordGamePlay } from '@/lib/quests/engine.server';
-
-// Bounded, strict schema — the old `typeof number` check let a client submit
-// Number.MAX_SAFE_INTEGER as a permanent top leaderboard entry.
-const scoreSchema = z
-  .object({
-    highestLoop: z.number().int().min(0).max(100_000),
-    highestLevel: z.number().int().min(0).max(100_000),
-  })
-  .strict();
 
 export const Route = createFileRoute('/api/vega/score')({
   server: {
     handlers: {
-      POST: defineHandler(
-        { auth: 'none', rateLimit: { limit: 5, windowMs: 60_000, prefix: 'vega-score' } },
-        async ({ request }) => {
-          try {
-            const session = await auth.api.getSession({
-              headers: request.headers,
-            });
+      POST: implement(
+        submitVegaScoreApi,
+        {
+          rateLimit: { limit: 5, windowMs: 60_000, prefix: 'vega-score' },
+          body: vegaScoreBody,
+          invalid: () => Response.json({ error: 'Invalid data' }, { status: 400 }),
+        },
+        async ({ session, body }) => {
+          const { highestLoop, highestLevel } = body;
 
-            if (!session) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
+          // Find existing profile
+          const existingProfile = await prisma.vegaPlayer.findUnique({
+            where: { userId: session.user.id },
+          });
 
-            const parsed = scoreSchema.safeParse(await request.json().catch(() => null));
-            if (!parsed.success) {
-              return Response.json({ error: 'Invalid data' }, { status: 400 });
-            }
-            const { highestLoop, highestLevel } = parsed.data;
+          if (existingProfile) {
+            // Update if better
+            // Primary metric: Loop. Secondary: Level.
+            const isBetter =
+              highestLoop > existingProfile.highestLoop ||
+              (highestLoop === existingProfile.highestLoop &&
+                highestLevel > existingProfile.highestLevel);
 
-            // Find existing profile
-            const existingProfile = await prisma.vegaPlayer.findUnique({
+            const updated = await prisma.vegaPlayer.update({
               where: { userId: session.user.id },
+              data: {
+                highestLoop: Math.max(existingProfile.highestLoop, highestLoop),
+                highestLevel: Math.max(existingProfile.highestLevel, highestLevel),
+                gamesPlayed: { increment: 1 },
+                username: session.user.name || session.user.email || 'Anonymous', // Update username if changed
+              },
             });
-
-            if (existingProfile) {
-              // Update if better
-              // Primary metric: Loop. Secondary: Level.
-              const isBetter =
-                highestLoop > existingProfile.highestLoop ||
-                (highestLoop === existingProfile.highestLoop &&
-                  highestLevel > existingProfile.highestLevel);
-
-              const updated = await prisma.vegaPlayer.update({
-                where: { userId: session.user.id },
-                data: {
-                  highestLoop: Math.max(existingProfile.highestLoop, highestLoop),
-                  highestLevel: Math.max(existingProfile.highestLevel, highestLevel),
-                  gamesPlayed: { increment: 1 },
-                  username: session.user.name || session.user.email || 'Anonymous', // Update username if changed
-                },
-              });
-              await recordGamePlay(session.user.id);
-              return Response.json({ success: true, profile: updated, isRecord: isBetter });
-            } else {
-              // Create new
-              const newProfile = await prisma.vegaPlayer.create({
-                data: {
-                  userId: session.user.id,
-                  username: session.user.name || session.user.email || 'Anonymous',
-                  highestLoop,
-                  highestLevel,
-                  gamesPlayed: 1,
-                },
-              });
-              await recordGamePlay(session.user.id);
-              return Response.json({ success: true, profile: newProfile, isRecord: true });
-            }
-          } catch (error) {
-            console.error('Error submitting Vega score:', error);
-            return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+            await recordGamePlay(session.user.id);
+            return Response.json({ success: true, profile: updated, isRecord: isBetter });
+          } else {
+            // Create new
+            const newProfile = await prisma.vegaPlayer.create({
+              data: {
+                userId: session.user.id,
+                username: session.user.name || session.user.email || 'Anonymous',
+                highestLoop,
+                highestLevel,
+                gamesPlayed: 1,
+              },
+            });
+            await recordGamePlay(session.user.id);
+            return Response.json({ success: true, profile: newProfile, isRecord: true });
           }
         },
       ),

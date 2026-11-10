@@ -7,7 +7,6 @@ import * as C from '@/lib/user-builds.contract';
  * GET /api/user-builds/featured - Get featured builds
  */
 
-import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser } from '@/lib/user-display';
 import { buildCardSelect } from '@/lib/user-builds-list';
@@ -15,18 +14,11 @@ import { buildCardSelect } from '@/lib/user-builds-list';
 export const Route = createFileRoute('/api/user-builds/featured')({
   server: {
     handlers: {
-      GET: implement(C.featuredUserBuildsApi, { auth: 'none' }, async ({ request }) => {
+      GET: implement(C.featuredUserBuildsApi, { auth: 'optional' }, async ({ request, userId: currentUserId }) => {
         const { searchParams } = new URL(request.url);
         const limit = pageSize(searchParams.get('limit'), 6, 20);
 
         // Get current user session (optional)
-        let currentUserId: string | null = null;
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          currentUserId = session?.user?.id ?? null;
-        } catch {
-          // Not logged in
-        }
 
         const builds = await prisma.userBuild.findMany({
           where: {

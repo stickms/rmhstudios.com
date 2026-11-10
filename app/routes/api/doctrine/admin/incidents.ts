@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { auth } from '@/lib/auth';
 import { transitionIncidentStatus, addIncidentEvent } from '@/lib/doctrine/incidents';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import type { IncidentStatus } from '@/lib/doctrine/types';
@@ -13,16 +12,10 @@ export const Route = createFileRoute('/api/doctrine/admin/incidents')({
     handlers: {
       PATCH: defineHandler(
         {
-          auth: 'none',
           rateLimit: { limit: 10, windowMs: 60_000, prefix: 'doctrine-admin-incident' },
         },
-        async ({ request }) => {
+        async ({ request, session }) => {
           try {
-            const session = await auth.api.getSession({ headers: request.headers });
-            if (!session?.user?.id) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-
             const admin = await prisma.user.findUnique({
               where: { id: session.user.id },
               select: { isAdmin: true },

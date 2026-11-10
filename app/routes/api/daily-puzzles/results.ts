@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { auth } from '@/lib/auth';
 
 const VALID_MODES = [
   'lights-out',
@@ -38,19 +37,10 @@ export const Route = createFileRoute('/api/daily-puzzles/results')({
     handlers: {
       GET: defineHandler(
         {
-          auth: 'none',
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'daily-puzzle-results' },
         },
-        async ({ request }) => {
+        async ({ request, session }) => {
           try {
-            const session = await auth.api.getSession({
-              headers: request.headers,
-            });
-
-            if (!session?.user?.id) {
-              return Response.json({ error: 'Unauthorized' }, { status: 401 });
-            }
-
             const { searchParams } = new URL(request.url);
             const gameMode = searchParams.get('gameMode');
             const dateKey = searchParams.get('date');

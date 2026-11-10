@@ -6,6 +6,9 @@ import { useEffect, useRef, useState } from 'react';
 import { m as motion } from 'framer-motion';
 import { scaleIn } from '@/lib/motion';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { submitVegaScoreApi } from '@/lib/vega/vega.contract';
 import { VegaGame } from '@/lib/vega/VegaGame';
 import { asset } from '@/lib/storage/asset';
 import { useGameStore, TOWER_COSTS } from '@/lib/vega/GameState';
@@ -437,10 +440,10 @@ function GameOverScreen() {
 
     useEffect(() => {
         // Submit Score
-        fetch('/api/vega/score', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ highestLoop: currentLoop, highestLevel: level })
+        // A refused submit (any non-2xx) still went on to show the leaderboard; keep that.
+        api(submitVegaScoreApi, { body: { highestLoop: currentLoop, highestLevel: level } })
+        .catch((e: unknown) => {
+            if (!(e instanceof HttpError)) throw e;
         })
         .then(() => {
             setStatus('success');
