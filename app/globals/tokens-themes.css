@@ -971,6 +971,12 @@
   --rmhfash-swatch-clay: #d38a6e;
 }
 
+/* The second selector is the full-screen app tier's dark shell (redesign E1): AppShell's root in its dark or
+   high-contrast appearance takes Midnight's tokens, so its `--app-*` ramp (components/shared/app-theme.css) and any
+   site primitive inside it resolve against this block rather than the Daylight `:root` an app route's <html> holds.
+   `:where()` keeps it at zero specificity: app-theme.css's own redirects on the shell (`--gel-*`, `--focus-ring`)
+   still win, and `html.app-route` below makes its surfaces opaque. */
+:where(.app-theme[data-tier='app']:not(.app-light)),
 .style-graphite {
   color-scheme: dark;
   --site-bg: #000000;
@@ -1093,7 +1099,9 @@ html[data-color-vision='protanopia'] {
 /* Same hues lifted for dark surfaces: the light-theme values fall below the
    contrast floor on a near-black background. */
 html[data-color-vision='deuteranopia']:is(.style-graphite),
-html[data-color-vision='protanopia']:is(.style-graphite) {
+html[data-color-vision='protanopia']:is(.style-graphite),
+html[data-color-vision='deuteranopia'] :where(.app-theme[data-tier='app']:not(.app-light)),
+html[data-color-vision='protanopia'] :where(.app-theme[data-tier='app']:not(.app-light)) {
   --site-success: #56b4e9;
   --site-success-fg: #08120c;
   --site-danger: #ff9a6b;
@@ -1114,7 +1122,8 @@ html[data-color-vision='tritanopia'] {
   --site-warning-fg: #ffffff;
 }
 
-html[data-color-vision='tritanopia']:is(.style-graphite) {
+html[data-color-vision='tritanopia']:is(.style-graphite),
+html[data-color-vision='tritanopia'] :where(.app-theme[data-tier='app']:not(.app-light)) {
   --site-success: #4ade80;
   --site-success-fg: #08120c;
   --site-danger: #ff8080;
@@ -1273,8 +1282,11 @@ html:not(.app-route) .bg-site-bg:not(.fixed):not([data-drawer-active]) {
    translucent surface there has no shared scene to sample — it just greys out
    over whatever the experience is drawing — so resolve the site surfaces to
    their opaque twins on those routes. Site chrome is unaffected: the class only
-   exists on game/app routes (Providers.tsx). */
-html.app-route {
+   exists on game/app routes (Providers.tsx). The second selector is the app tier's
+   dark shell, which re-declares Midnight's translucent surfaces (see
+   `.style-graphite`): the same rule, resolved against Midnight's opaque twin. */
+html.app-route,
+:where(html.app-route .app-theme[data-tier='app']:not(.app-light)) {
   --site-surface: var(--site-surface-opaque);
   --site-surface-hover: color-mix(in srgb, var(--site-text) 6%, var(--site-surface-opaque));
   --site-surface-active: color-mix(in srgb, var(--site-text) 12%, var(--site-surface-opaque));

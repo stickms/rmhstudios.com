@@ -299,6 +299,84 @@
   }
 }
 
+/* ── The AppShell tier reads the site contract (redesign E1, step 2) ─────────
+   `AppShell` stamps `data-tier="app"` on its root. On that root every `--app-*`
+   token that has a site counterpart is written in `--site-*` terms, so the
+   site's own token sets drive the apps instead of a parallel hex ramp:
+
+   - the DARK and high-contrast appearances scope Midnight onto the shell (the
+     `.style-graphite` token block in app/globals/tokens-themes.css carries this
+     shell as a second, zero-specificity selector, and `html.app-route` makes its
+     surfaces opaque there too);
+   - the LIGHT appearance inherits Daylight from `<html>` (an app route carries no
+     theme class, so `<html>` holds the `:root` Daylight tokens: lib/prepaint/theme.ts).
+
+   The neutral ramp is the tier modifier: `--site-surface-opaque` stepped toward
+   `--site-text` by a fixed share per step. The shares were fitted so the old hex
+   ramps above come back within a few levels: red and green within 3/255, blue
+   within 6/255 (Midnight) and 10/255 (Daylight), because the old ramps carried a
+   faint cool cast the site's neutral tokens do not. The table is
+   docs/design-language.md §12.2. Type, shape, depth and
+   motion are the site tokens of equal value.
+
+   What does NOT move: per-app palettes (`.rmhtube-theme`, `.rmhtype-theme`, …)
+   still override `--app-*` at this specificity and later in the cascade, so an app
+   that declares a ramp keeps it; high contrast (`.app-theme.app-high-contrast`,
+   0,2,0) keeps its literal opaque ramp and solid edge; the status hues
+   (`--app-success` … `--app-rare`) stay the tier's own, because the site's are
+   tuned for a different ground and the site has no info/rare; and a bare
+   `.app-theme` without `data-tier` (the games that wear this chrome without
+   AppShell) keeps the literal ramp above, untouched. Engines without
+   `color-mix()` keep the literal ramp too (the derived steps are inside @supports). */
+.app-theme:where([data-tier='app']) {
+  --app-text: var(--site-text);
+  --app-accent: var(--site-accent);
+  --app-accent-fg: var(--site-accent-fg);
+  --app-accent-hover: var(--site-accent-hover);
+  --app-font-display: var(--site-font-display);
+  --app-font-body: var(--site-font-body);
+  --app-font-mono: var(--site-font-mono);
+  /* The tier sits one step down the site's concentric scale: an app card is a site control's corner. */
+  --app-radius-lg: var(--site-radius);
+  --app-radius: var(--site-radius-sm);
+  --app-radius-sm: calc(var(--site-radius-sm) * 0.75);
+  --app-shadow: var(--site-shadow);
+  --app-shadow-sm: var(--site-shadow-sm);
+  --app-duration-fast: calc(var(--site-transition-speed) * 0.75);
+  --app-duration: var(--site-transition-speed);
+  --app-duration-slow: calc(var(--site-transition-speed) * 1.375);
+  --app-ease: var(--ease-morph);
+}
+
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  /* Dark: the ground IS the site's opaque surface; each step above it takes more ink. */
+  .app-theme:where([data-tier='app']) {
+    --app-bg: var(--site-surface-opaque);
+    --app-bg-subtle: color-mix(in srgb, var(--site-text) 2.5%, var(--site-surface-opaque));
+    --app-surface: color-mix(in srgb, var(--site-text) 6%, var(--site-surface-opaque));
+    --app-surface-hover: color-mix(in srgb, var(--site-text) 11%, var(--site-surface-opaque));
+    --app-surface-active: color-mix(in srgb, var(--site-text) 15%, var(--site-surface-opaque));
+    --app-border: color-mix(in srgb, var(--site-text) 15%, var(--site-surface-opaque));
+    --app-border-bright: color-mix(in srgb, var(--site-text) 23%, var(--site-surface-opaque));
+    --app-text-muted: color-mix(in srgb, var(--site-text) 62%, var(--site-surface-opaque));
+    --app-text-dim: color-mix(in srgb, var(--site-text) 38.5%, var(--site-surface-opaque));
+  }
+
+  /* Light: the card IS the site's opaque surface; the ground and lines sit below it. */
+  .app-theme.app-light:where([data-tier='app']) {
+    --app-bg: color-mix(in srgb, var(--site-text) 4%, var(--site-surface-opaque));
+    --app-bg-subtle: color-mix(in srgb, var(--site-text) 7%, var(--site-surface-opaque));
+    --app-surface: var(--site-surface-opaque);
+    --app-surface-hover: color-mix(in srgb, var(--site-text) 6%, var(--site-surface-opaque));
+    --app-surface-active: color-mix(in srgb, var(--site-text) 10%, var(--site-surface-opaque));
+    --app-border: color-mix(in srgb, var(--site-text) 17%, var(--site-surface-opaque));
+    --app-border-bright: color-mix(in srgb, var(--site-text) 25%, var(--site-surface-opaque));
+    --app-text: color-mix(in srgb, var(--site-text) 83.5%, var(--site-surface-opaque));
+    --app-text-muted: color-mix(in srgb, var(--site-text) 58.5%, var(--site-surface-opaque));
+    --app-text-dim: color-mix(in srgb, var(--site-text) 39.5%, var(--site-surface-opaque));
+  }
+}
+
 /* Density. Deliberately not scoped under `.app-theme` — apps apply it to an
    inner region (RMHTube puts it on the room, not the whole app) as often as to
    the root, and a token override only needs to sit on a common ancestor. */

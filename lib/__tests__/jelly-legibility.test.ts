@@ -398,6 +398,44 @@ describe('Plasmatic Jelly legibility — app tier (01 §4.3)', () => {
     );
   });
 
+  // The AppShell tier (redesign E1): on `[data-tier='app']` the ramp is derived from the site tokens, so it is
+  // checked against the theme each appearance resolves to — Midnight scoped onto the dark shell, Daylight inherited
+  // by the light one (app-theme.css, "The AppShell tier reads the site contract").
+  const tierDark: Tokens = Object.assign(
+    {},
+    ...blocks(APP, ".app-theme:where([data-tier='app'])").map(decls),
+  );
+  const tierLight: Tokens = Object.assign(
+    {},
+    ...blocks(APP, ".app-theme.app-light:where([data-tier='app'])").map(decls),
+  );
+  it.each([
+    ['dark (Midnight)', { ...siteTheme('graphite'), ...dark, ...tierDark }],
+    ['light (Daylight)', { ...ROOT_TOKENS, ...dark, ...tierDark, ...light, ...tierLight }],
+  ] as const)('.app-glass on the AppShell tier, %s', (_label, t) => {
+    expect(tierDark['--app-surface'], 'the tier derives its ramp from --site-*').toContain(
+      '--site-',
+    );
+    expect(tierLight['--app-surface'], 'the light tier derives its ramp from --site-*').toContain(
+      '--site-',
+    );
+    check(
+      `.app-theme[data-tier='app'] (${_label}) .app-glass`,
+      {
+        ground: resolve(t['--app-bg'], t),
+        tint: resolve(t['--app-glass-bg'], t),
+        gel: [resolve('var(--app-gel-body)', t), resolve('var(--app-gel-depth)', t)],
+        haze: resolve('var(--app-jelly-haze)', t),
+        hazeA: num('var(--app-jelly-haze-pane)', t),
+        plasma: [resolve('var(--app-jelly-plasma-a)', t), resolve('var(--app-jelly-plasma-b)', t)],
+        plasmaA: 0.06 * num('var(--app-jelly-plasma)', t),
+        text: resolve(t['--app-text'], t),
+        muted: resolve(t['--app-text-muted'], t),
+      },
+      0.04,
+    );
+  });
+
   it('.app-high-contrast zeroes the app material', () => {
     const hc = Object.assign(
       {},
