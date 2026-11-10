@@ -25,8 +25,8 @@ permissions:
 # NOTE: the Postgres-backed `e2e` job and the `helm` lint/template job were
 # removed with the Go realtime/gateway + Helm topology (rewrite, design §5.2).
 # The e2e suite only exercised the deleted gamehub/rmhtube hubs, and there is no
-# Helm chart to lint. Production Go is the four background workers (recap,
-# doctrine-worker, vibe-worker, discord-bot) run by the supervisor, plus status
+# Helm chart to lint. Production Go is the discord-bot background worker
+# run by the supervisor, plus status
 # and assets — all covered by the bazel unit tests below and built into the
 # app-full image by plain `go build ./cmd/...` in the root Dockerfile.
 jobs:

@@ -12,8 +12,8 @@
 #
 # TWO images are built from the SAME Dockerfile + build args (only the target
 # stage differs):
-#   - rmhstudios-app       (slim): web, socket, rmhbox, rmhtube  (Node, no Chromium)
-#   - rmhstudios-app-full         : supervisor, status, assets  (+ Go bins, Chromium, git)
+#   - rmhstudios-app       (slim): web, socket, rmhbox, rmhtube  (Node + Chromium for the jobs worker)
+#   - rmhstudios-app-full         : supervisor, status, assets  (+ Go bins, git)
 # The slim image is shared by the four Node services; the full image is shared by
 # the three Go services. No redundant rebuilds — shared stages cache once.
 #
@@ -47,7 +47,7 @@ x-common: &common
 # Per-service mem_limit/mem_reservation/cpus are added inline below. They are
 # intentionally CONSERVATIVE for a shared VPS that ALSO hosts Postgres (on the
 # host, reached via host.docker.internal) — the goal is to stop one runaway
-# process (e.g. the vibe-worker Chromium or an AI loop in supervisor) from
+# process (e.g. the jobs worker's Chromium thumbnail render or an AI loop in supervisor) from
 # starving the box (audit §5.2), not to right-size for peak. These use the
 # Compose v2 (non-swarm) keys, the same family as the existing `pids_limit`, so
 # `docker compose up` enforces them directly. Revisit once metrics exist.
@@ -190,7 +190,7 @@ services:
   # ─── Vite/Nitro Web App ─────────────────────────────────────────────────────
   web:
     <<: *common
-    # Slim image (no Chromium / git / Go binaries). image: comes from *common
+    # Slim image (Chromium for the jobs worker; no git / Go binaries). image: comes from *common
     # (${COMPOSE_PROJECT_NAME}-app:latest) and is shared by socket/rmhbox/rmhtube.
     build:
       <<: *build-common
@@ -207,7 +207,7 @@ services:
     # CPU PRIORITY, not just a cap. `cpus:` hard-caps each service but leaves
     # every container at the SAME scheduler weight (1024), so on this
     # oversubscribed box (Σ cpus ≈ 9.75 on ~4 cores) the batch workers
-    # (supervisor Chromium/AI, the cron workers) compete with web as equals. A
+    # (supervisor AI, the cron workers) compete with web as equals. A
     # high relative weight makes web WIN the CPU whenever the box is saturated;
     # the background services are dropped well below default so they yield to it.
     # The `cpus` caps still stop any one runaway from eating the box. Realtime
@@ -451,9 +451,11 @@ services:
     # RestartCount as a failed release (`check_workers`), so one transient kill rolled back the whole non-web fleet.
     # 768m matches the other workers that carry ~37 queues' worth of Prisma + pg-boss; it is a ceiling, the
     # reservation below is what the scheduler counts on.
-    mem_limit: 768m
+    # 1280m (was 768m, D3): the vibe thumbnail cron launches headless Chromium here (PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+    # from the image), which needs ~400-500 MB while a page renders. The Node heap cap below is unchanged.
+    mem_limit: 1280m
     mem_reservation: 128m
-    cpus: 0.5
+    cpus: 1.0
     # Let in-flight handlers finish on a deploy: `boss.stop({ graceful: true })` waits up to 30 s, and Docker's default
     # 10 s grace SIGKILLed the process first, leaving those jobs to expire and re-run.
     stop_grace_period: 45s
@@ -476,6 +478,8 @@ services:
       # Prisma engine, pg-boss's pool, buffers and the runtime itself. Never worse than before: the old 512m limit
       # killed this process at 512 MB of TOTAL memory, so its heap could not have been above this cap.
       - NODE_OPTIONS=--max-old-space-size=512
+      # Chromium (vibe thumbnails) writes its crash/config dirs under $HOME; the root FS is read-only, /tmp is the tmpfs.
+      - HOME=/tmp
       # The on-call checks (lib/oncall/checks.server.ts) read each hub's
       # /internal/metrics over the compose network, like the admin page on web.
       - SOCKET_INTERNAL_URL=http://socket:${PORT_SOCKET:-7001}
@@ -483,16 +487,15 @@ services:
       - RMHTUBE_INTERNAL_URL=http://rmhtube:${PORT_RMHTUBE:-7003}
     command: ['node', 'dist-server/server/jobs/index.cjs']
 
-  # ─── Go Supervisor (discord-bot + vibe-worker) ─
-  # Runs the two background workers as goroutines in a single Go process.
+  # ─── Go Supervisor (discord-bot) ─
+  # Runs the discord-bot background worker as a goroutine in a Go process.
   # Env union: every variable the five old Node services needed is carried here.
   # The active Go discord-bot does not perform Git operations and needs no host
   # repository access. The shared db/ mount from *common is sufficient.
-  # stop_grace_period: 90s = max of discord-bot (90s) and vibe-worker (30s) so
-  #   in-flight AI requests and Chromium captures both get time to finish.
+  # stop_grace_period: 90s so in-flight discord-bot AI requests get time to finish.
   supervisor:
     <<: *common
-    # Full image: Go binaries + Chromium (vibe-worker chromedp).
+    # Full image: Go binaries (no Chromium: vibe thumbnails render in the jobs worker).
     # This service carries the `runner-full` build; `status` reuses the image it
     # produces. Overrides the slim image: from *common.
     image: ${COMPOSE_PROJECT_NAME:-rmhstudios}-app-full:latest
@@ -500,13 +503,13 @@ services:
       <<: *build-common
       target: runner-full
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-supervisor
-    # Resource limits — starting point (audit §5.2). The HEAVIEST worker: bundles
-    # Chromium (vibe-worker chromedp) + AI loops, the exact runaway the audit
+    # Resource limits — starting point (audit §5.2). The AI-loop worker (it used to
+    # bundle the vibe-worker's Chromium too), the runaway shape the audit
     # flags. Give it the most headroom of the workers, but still cap it.
     mem_limit: 1536m
     mem_reservation: 512m
     cpus: 1.5
-    # The HEAVIEST background service (Chromium + AI loops) and the most likely
+    # The heaviest Go background service (AI loops) and the most likely
     # to spike CPU — lowest weight so it can never starve web SSR (initial-load
     # audit). Its 1.5-core cap still bounds it; the low weight just means when
     # web and supervisor both want CPU, web wins.
@@ -518,7 +521,7 @@ services:
       - METRICS_ADDR=:${PORT_SUPERVISOR_METRICS:-9090}
     command: ['/app/bin/supervisor']
     restart: unless-stopped
-    # discord-bot needs 90s for in-flight AI; vibe-worker needs 30s for Chromium
+    # discord-bot needs 90s for in-flight AI
     stop_grace_period: 90s
     # Supervisor serves /health on METRICS_ADDR (default :9090). This restores
     # the health signal the removed recap service had. start_period covers the

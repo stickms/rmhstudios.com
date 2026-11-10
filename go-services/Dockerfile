@@ -8,8 +8,7 @@
 #     --build-arg SERVICE=gateway \
 #     -t rmhstudios-go-gateway:dev go-services
 #
-#   # vibe-worker needs headless Chromium; discord-bot needs git for RMHBot:
-#   --build-arg SERVICE=vibe-worker  --build-arg EXTRA_PKGS="chromium nss freetype harfbuzz ttf-freefont"
+#   # discord-bot needs git for RMHBot:
 #   --build-arg SERVICE=discord-bot  --build-arg EXTRA_PKGS="git openssh-client"
 #
 # Mirrors PR #121's philosophy: a tiny, reproducible runtime; the build layer is
@@ -40,8 +39,6 @@ ARG EXTRA_PKGS=""
 # per-timezone time.LoadLocation. EXTRA_PKGS: per-service runtime deps.
 RUN apk add --no-cache ca-certificates tzdata ${EXTRA_PKGS} && \
     addgroup -S app && adduser -S app -G app
-# Default Chromium path for vibe-worker (no-op for other services).
-ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
 COPY --from=build /out/app /usr/local/bin/app
 USER app
 ENTRYPOINT ["/usr/local/bin/app"]

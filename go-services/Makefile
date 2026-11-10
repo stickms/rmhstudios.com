@@ -4,7 +4,7 @@
 
 # Realtime hubs (gateway/gamehub/rmhmusic/rmhtube/rmhbox) were removed in the
 # rewrite (design §5.2) — the Node hubs are the production realtime tier.
-SERVICES := vibe-worker discord-bot
+SERVICES := discord-bot
 IMAGE_PREFIX ?= rmhstudios-go
 GO_IMAGE := golang:1.27.1-alpine
 MODCACHE := rmhgo-modcache
@@ -40,7 +40,6 @@ fmt: ## gofmt the tree
 images: ## build a container image per service
 	@for svc in $(SERVICES); do \
 		extra=""; \
-		[ "$$svc" = "vibe-worker" ] && extra="chromium nss freetype harfbuzz ttf-freefont"; \
 		[ "$$svc" = "discord-bot" ] && extra="git openssh-client"; \
 		echo "==> building $(IMAGE_PREFIX)-$$svc"; \
 		docker build -f Dockerfile --build-arg SERVICE=$$svc --build-arg EXTRA_PKGS="$$extra" \

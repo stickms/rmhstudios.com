@@ -17,12 +17,12 @@ the **Bazel workspace root is the repo root** (`MODULE.bazel` at `/`).
 
 | Binary (`cmd/`) | Port | Role |
 |---|---|---|
-| `supervisor` | 9090 (metrics) | Runs two background workers as goroutines under an errgroup: `discord-bot`, `vibe-worker` |
+| `supervisor` | 9090 (metrics) | Runs the `discord-bot` worker as a goroutine under an errgroup |
 | `status` | 7008 | Standalone health dashboard (`/`, `/api/status`) that probes every service; designed to survive outages |
 | `assets` | 7007 | Range-aware S3/R2 streaming CDN for `/library` `/music` `/models` `/sprites` |
 
-The other `cmd/` binaries (`discord-bot`, `vibe-worker`) exist so a worker can be run standalone, but in
-production they run **inside `supervisor`**.
+The `discord-bot` binary exists so the worker can be run standalone, but in
+production it runs **inside `supervisor`**.
 
 > **Removed in the rewrite (design §5.2):** the earlier full-Go realtime
 > topology — a `gateway` fronting Go `gamehub`/`rmhbox`/`rmhtube`/`rmhmusic`
