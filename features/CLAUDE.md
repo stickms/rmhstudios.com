@@ -48,4 +48,27 @@ Rules:
   card, with its gradient classes, that site pages render) stays scanned.
   `lib/__tests__/style-tiers.test.ts` checks both directions at that granularity.
 
+Moved so far: `hearthworks`, `casino`, `doctrine`, `balatro`, `altair`, `slice-it` (engine, ui, server), `void-breaker` and `nightrail` (engine, ui), `vega` and `signal-forge` (engine, ui; unlisted secret games), `dream-rift`, `gabriels-horn`, `synapse-storm` and `laundry-sort` (engine, ui, server, catalog). A feature whose disconnect handler was guarded by `if (!shuttingDown)` sets `skipDisconnectOnShutdown` on its `FeatureSocketServer`, and the hub passes `shuttingDown` to `handleFeatureDisconnects`. The A1 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.
+
+## Islands (redesign audit B1)
+
+A feature with `features/<id>/island.tsx` is an **island**: built by `vite.islands.config.ts`
+(`pnpm build:islands`, run by `pnpm build` and the Dockerfile before `vite build`) into
+`dist-islands/`, served from `/islands/` (Nitro `publicAssets` in `vite.config.ts`), and mounted by a
+bare document instead of the router. Void Breaker is the first.
+
+- **Route:** `app/routes/<id>.tsx` keeps its URL but has no component and no `head()`: `beforeLoad:
+  islandBeforeLoad` (a client navigation becomes a document load) and a GET handler returning
+  `renderIslandDocument('<id>', request)` (`lib/islands/document.server.ts`), which emits the site-wide
+  head (`lib/root-head.ts`) under the catalog head for the manifest's `kind`, the pre-paint script, the
+  session seed, the locale's catalogs for the manifest's `namespaces`, and a loading frame.
+- **Entry:** `island.tsx` calls `mountIsland(<tree />)` (`components/island/mount.tsx`); its providers
+  (`IslandProviders`) are i18n, the session (`components/session/session-context.tsx`), the app-tier
+  flag, motion, `SiteToaster`, the jelly pointer, error/RUM reporting, Recents and the playtime heartbeat.
+  No router: shared code leaves a game through `hooks/useSiteNavigate.ts`, never `useNavigate()`.
+- **CSS:** `island.css` is `@import 'tailwindcss' source(none)` + `app/globals.css` + an `@source` per
+  reached component file; the feature is excluded from both site sheets.
+- `lib/__tests__/islands.test.ts` holds it together: manifest ↔ route, no site-shell import in the
+  island graph, every reached component scanned by the island sheet.
+
 Moved so far: `hearthworks`, `casino`, `doctrine`, `balatro`, `altair`, `slice-it` (engine, ui, server), `void-breaker` and `nightrail` (engine, ui). The A1 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.

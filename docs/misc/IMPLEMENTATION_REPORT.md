@@ -58,12 +58,12 @@ Successfully implemented 15 of 47 planned features (32% complete), establishing 
 ## Files Modified
 
 ```
-lib/signal-forge/StatusEffect.ts      (NEW)    +67 lines
-lib/signal-forge/Card.ts              (MODIFIED) +58 lines
-lib/signal-forge/Enemy.ts             (MODIFIED) +42 lines
-lib/signal-forge/Relic.ts             (MODIFIED) +96 lines
-lib/signal-forge/index.ts             (MODIFIED) +2 lines
-components/signal-forge/SignalForgeGame.tsx (MODIFIED) +150 lines
+features/signal-forge/engine/StatusEffect.ts      (NEW)    +67 lines
+features/signal-forge/engine/Card.ts              (MODIFIED) +58 lines
+features/signal-forge/engine/Enemy.ts             (MODIFIED) +42 lines
+features/signal-forge/engine/Relic.ts             (MODIFIED) +96 lines
+features/signal-forge/engine/index.ts             (MODIFIED) +2 lines
+features/signal-forge/ui/SignalForgeGame.tsx (MODIFIED) +150 lines
 docs/improvement-plan.md              (MODIFIED) +15 checkboxes
 ```
 

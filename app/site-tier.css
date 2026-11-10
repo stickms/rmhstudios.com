@@ -32,6 +32,10 @@
 @import 'tailwindcss';
 @import './globals.css';
 
+/* Build output (redesign B1): the island build writes dist-islands/ before this sheet builds.
+   Gitignored, but the Docker context has no .gitignore, so it must be excluded by name. */
+@source not "../dist-islands";
+
 /* Full-screen games and apps — components/ and lib/ directories no site page imports. */
 @source not "../features/altair/engine";
 @source not "../features/altair/ui";
@@ -45,6 +49,8 @@
 @source not "../features/hearthworks/engine";
 @source not "../features/hearthworks/ui";
 @source not "../features/hearthworks/server";
+/* The island route helpers (redesign B1): reached only by island routes, and they render no classes. */
+@source not "../lib/islands";
 @source not "../components/blm";
 @source not "../components/breaches";
 @source not "../components/covid";
@@ -52,14 +58,14 @@
 @source not "../components/cursed-logic";
 @source not "../components/daily-puzzles";
 @source not "../components/design";
-@source not "../components/dream-rift";
+@source not "../features/dream-rift/ui";
 @source not "../components/dunesday";
-@source not "../components/gabriels-horn";
+@source not "../features/gabriels-horn/ui";
 @source not "../components/games";
 @source not "../components/house-always-wins";
 @source not "../components/kaikai-debt";
 @source not "../components/kowloon-knockout";
-@source not "../components/laundry-sort";
+@source not "../features/laundry-sort/ui";
 @source not "../components/lights-out";
 @source not "../components/lockdown";
 @source not "../components/neon-driftway";
@@ -86,14 +92,14 @@
 @source not "../components/csgo-game";
 @source not "../components/security";
 @source not "../components/share";
-@source not "../components/signal-forge";
+@source not "../features/signal-forge/ui";
 @source not "../components/sohumbum";
 @source not "../components/sohumtracker";
 @source not "../components/steam";
 @source not "../components/studio";
-@source not "../components/synapse-storm";
+@source not "../features/synapse-storm/ui";
 @source not "../components/temple-of-joy";
-@source not "../components/vega";
+@source not "../features/vega/ui";
 @source not "../components/velum2099";
 @source not "../components/versecraft";
 @source not "../features/void-breaker/engine";
@@ -103,16 +109,16 @@
 @source not "../lib/controller";
 @source not "../lib/cursed-logic";
 @source not "../lib/daily-puzzles";
-@source not "../lib/dream-rift";
+@source not "../features/dream-rift/engine";
 @source not "../lib/elections";
 @source not "../lib/fonts";
-@source not "../lib/gabriels-horn";
+@source not "../features/gabriels-horn/engine";
 @source not "../lib/game-saves";
 @source not "../lib/globeset";
 @source not "../lib/house-always-wins";
 @source not "../lib/kaikai-debt";
 @source not "../lib/kowloon-knockout";
-@source not "../lib/laundry-sort";
+@source not "../features/laundry-sort/engine";
 @source not "../lib/lights-out";
 @source not "../lib/neon-driftway";
 @source not "../lib/pf2ecal";
@@ -131,14 +137,14 @@
 @source not "../lib/csgo-game";
 @source not "../lib/tf2-loadout";
 @source not "../lib/shortcuts";
-@source not "../lib/signal-forge";
+@source not "../features/signal-forge/engine";
 @source not "../lib/sohumtracker";
 @source not "../lib/store";
 @source not "../lib/studio";
-@source not "../lib/synapse-storm";
+@source not "../features/synapse-storm/engine";
 @source not "../lib/temple-of-joy";
 @source not "../lib/trick-week";
-@source not "../lib/vega";
+@source not "../features/vega/engine";
 @source not "../lib/velum2099";
 @source not "../lib/versecraft";
 

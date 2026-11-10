@@ -19,7 +19,13 @@ export const FeatureManifestSchema = z.object({
   kind: z.enum(['game', 'app', 'site']),
   /** Route prefix this feature owns, e.g. '/balatro'. B1 uses it to pick island vs shell. */
   basePath: z.string().startsWith('/'),
-  /** 'island' = separately built client bundle (B1); 'shell' = rendered inside _site. */
+  /**
+   * 'island' = delivered (or to be delivered) as a separately built client bundle (B1);
+   * 'shell' = rendered by the site's router. A feature IS an island once it has
+   * `features/<id>/island.tsx`: `vite.islands.config.ts` builds that entry and its
+   * route serves `renderIslandDocument` (lib/islands/document.server.ts) instead of a
+   * component. `lib/__tests__/islands.test.ts` holds both halves to each other.
+   */
   delivery: z.enum(['island', 'shell']),
   /** Every route file (relative to the repo root) that is a thin entry into this feature. */
   routes: z.array(z.string()),

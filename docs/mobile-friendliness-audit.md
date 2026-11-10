@@ -268,7 +268,7 @@ Independent of F3, several bespoke modals can exceed the viewport (especially wi
 The project helpfully redefines the Tailwind `.h-screen`/`.min-h-screen` utilities to `100dvh` (`app/globals.css:1134-1142`), so component `h-screen` usages are dvh-safe. But **inline styles and arbitrary values bypass that override**:
 
 - `app/routes/kowloon-knockout.tsx:5` and `app/routes/rmh-farming-sim.tsx:5` — inline `width: '100vw', height: '100vh'`. `100vh` reintroduces the URL-bar resize jank; `100vw` ignores the scrollbar gutter and can force a horizontal scrollbar.
-- `components/synapse-storm/SynapseStorm.css` — multiple `height: 100vh; width: 100vw`.
+- `features/synapse-storm/ui/SynapseStorm.css` — multiple `height: 100vh; width: 100vw`.
 - `features/altair/ui/screens/*` — `min-h-[calc(100vh-56px)]` (arbitrary value → not overridden). Minor, since Altair is otherwise mobile-aware.
 
 **Fix.** Replace `100vh`→`100dvh` and `100vw`→`100%` (or the `.h-screen` utility) in these spots. **VELUM 2099** already models the right call: `style={{ width: '100vw', height: '100dvh' }}` (`features/altair/ui/screens/GameScreen.tsx:448`).

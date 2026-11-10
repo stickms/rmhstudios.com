@@ -151,7 +151,7 @@ import { join, posix } from 'node:path';
  *                                       scroll-settle glide after a category
  *                                       switch; cancelled in cleanup and on the
  *                                       next switch.
- *   - components/laundry-sort/hud/HudReadout.tsx — writes score/clock/combo to its
+ *   - features/laundry-sort/ui/hud/HudReadout.tsx — writes score/clock/combo to its
  *                                       own text nodes instead of re-rendering the
  *                                       overlay 60× a second. Starts only while a
  *                                       round is running and cancels on unmount and
@@ -281,7 +281,7 @@ const ALLOW = new Set<string>([
   // scheduling decision in a dozen places instead of one.
   'features/slice-it/ui/editor/Timeline.tsx',
   'components/kowloon-knockout/arena/GameView.tsx',
-  'components/laundry-sort/hud/HudReadout.tsx',
+  'features/laundry-sort/ui/hud/HudReadout.tsx',
   'components/library/AlbumUploader.tsx',
   'components/library/BookReader.tsx',
   'components/library/EpubReader.tsx',
@@ -307,11 +307,11 @@ const ALLOW = new Set<string>([
   'components/radial/QuickPanel.tsx',
   'components/radial/RadialHub.tsx',
   'components/rmhtech/RmhtechLanding.tsx',
-  'components/signal-forge/SignalForgeGame.tsx',
+  'features/signal-forge/ui/SignalForgeGame.tsx',
   'components/site/LanguageSwitcher.tsx',
   'components/studio/arrangement/PlayheadCursor.tsx',
   'components/studio/mixer/VUMeter.tsx',
-  'components/synapse-storm/PuzzleCard.tsx',
+  'features/synapse-storm/ui/PuzzleCard.tsx',
   'components/temple-of-joy/TempleGlobes.tsx',
   // Globe eversion (T25): bounded by the navigation — the loop starts at `start` and stops at
   // `done`/`abort`/`context-lost`; no loop runs at rest.
@@ -340,7 +340,7 @@ const ALLOW = new Set<string>([
   // stop(); the phone keyboard's key queue is a one-shot chain that ends when the queue is empty.
   'features/balatro/engine/runtime.ts',
   'features/balatro/engine/text-input.ts',
-  'lib/dream-rift/net/session.ts',
+  'features/dream-rift/engine/net/session.ts',
   'lib/emoji/use-emoji-insert.ts',
   'lib/emoji/use-emoji-shortcodes.tsx',
   'lib/house-always-wins/engine/GameEngine.ts',
@@ -354,7 +354,7 @@ const ALLOW = new Set<string>([
   // DOM.
   'lib/render/refresh-rate.ts',
   'lib/rmhvibe/vibe.server.ts',
-  'lib/vega/VegaGame.ts',
+  'features/vega/engine/VegaGame.ts',
   // The browser TF2 / Half-Life 2 / Portal clients' ONE frame loop (`GameLoop`). Every
   // part of a running game — input, simulation/command ticks, rendering, audio, the
   // HUD — rides this callback; nothing else in lib/tf2-game or components/tf2-game

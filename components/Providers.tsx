@@ -6,14 +6,18 @@ import {
   useRef,
   useState,
   useCallback,
-  useMemo,
 } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { setSharedQueryClient } from '@/lib/query-client-ref';
 import { useLocation, useRouter, useRouterState } from '@tanstack/react-router';
 import { MotionConfig, LazyMotion } from 'framer-motion';
-import { Toaster } from 'sonner';
+import { SiteToaster } from '@/components/ui/site-toaster';
 import { authClient } from '@/lib/auth-client';
+import {
+  SessionCtx,
+  useEffectiveSession,
+  type CachedSessionUser,
+} from '@/components/session/session-context';
 import {
   useThemeStore,
   SITE_STYLES,
@@ -89,64 +93,9 @@ import { api } from '@/lib/contract/client';
 import { claimReferralApi } from '@/lib/referrals.contract';
 import { getMyProfileDisplayApi } from '@/lib/profile/profile-extras.contract';
 
-/* ------------------------------------------------------------------ */
-/*  Session context – single useSession() call shared across the app  */
-/* ------------------------------------------------------------------ */
-type SessionCtxValue = ReturnType<typeof authClient.useSession>;
-
-const SessionCtx = createContext<SessionCtxValue | null>(null);
-
-/* ------------------------------------------------------------------ */
-/*  Persisted session cache                                            */
-/*                                                                     */
-/*  better-auth's useSession() starts out { data: null, isPending:    */
-/*  true } on every fresh load and only resolves after a network      */
-/*  round-trip — which makes the shell flash "signed out" for a       */
-/*  moment. We persist the last-known user to localStorage and seed    */
-/*  the context with it so the signed-in UI shows immediately, then    */
-/*  let the live session take over (and self-heal if it's stale).     */
-/*                                                                     */
-/*  Only display fields are stored — never a token. This cache is a   */
-/*  hint for rendering the shell, never proof of anything: every       */
-/*  privileged read is authorized server-side against the session      */
-/*  cookie, so a hand-edited entry buys nothing but a wrong avatar     */
-/*  until the live session corrects it.                                */
-/*                                                                     */
-/*  It has nothing to offer a SIGNED-OUT visitor — there is no user    */
-/*  to remember — which is why their pending state is answered from    */
-/*  the server's own lookup instead (see `effectiveSession`).          */
-/* ------------------------------------------------------------------ */
-const CACHED_USER_KEY = 'rmh-auth-user';
-
-type CachedSessionUser = {
-  id: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-  handle?: string | null;
-  username?: string | null;
-  isAdmin?: boolean;
-  isVerified?: boolean;
-  tier?: string | null;
-};
-
-function readCachedUser(): CachedSessionUser | null {
-  try {
-    const raw = localStorage.getItem(CACHED_USER_KEY);
-    return raw ? (JSON.parse(raw) as CachedSessionUser) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeCachedUser(user: CachedSessionUser | null) {
-  try {
-    if (user) localStorage.setItem(CACHED_USER_KEY, JSON.stringify(user));
-    else localStorage.removeItem(CACHED_USER_KEY);
-  } catch {
-    // ignore (private mode / storage disabled)
-  }
-}
+// The session context, its persisted last-known user and the seeding logic live in
+// a leaf so a separately built island can provide the same context (redesign B1).
+export { useSession } from '@/components/session/session-context';
 
 /**
  * `localStorage` for the theme hydrate/persist effects below, which must never throw: storage
@@ -178,13 +127,6 @@ export const safeStorage = {
     }
   },
 };
-
-/** Use this instead of authClient.useSession() in navigation/shell components. */
-export function useSession() {
-  const ctx = useContext(SessionCtx);
-  if (!ctx) return { data: null as null, isPending: true };
-  return { data: ctx.data, isPending: ctx.isPending };
-}
 
 /* ------------------------------------------------------------------ */
 /*  Resolved user display – fetches custom image/name from profile    */
@@ -337,90 +279,9 @@ export function Providers({
     useLocaleStore.setState({ locale });
   }, [locale]);
 
-  // Seed the known user from the server-resolved session so the shell renders
-  // signed-in on the first paint (SSR) and the first client render — matching
-  // markup, no hydration mismatch, no flash. `initialUser` is authoritative
-  // for that first frame because the server read the actual session cookie; we
-  // only fall back to the persisted localStorage copy when the server didn't
-  // provide one (e.g. a client-only render path).
-  const [cachedUser, setCachedUser] = useState<CachedSessionUser | null>(initialUser);
-  useEffect(() => {
-    if (initialUser) return;
-    // The server resolving to NOBODY is an answer, not a gap. A stale copy in
-    // localStorage must not override it — that is a signed-out visitor watching
-    // the shell paint signed-in and then snap back a frame later. Drop the copy
-    // instead; the server just told us it is wrong.
-    if (sessionResolved) {
-      writeCachedUser(null);
-      return;
-    }
-    // Only when the server could NOT resolve (failed or timed out) is the
-    // persisted user the best guess available.
-    const stored = readCachedUser();
-    if (stored) setCachedUser(stored);
-  }, [initialUser, sessionResolved]);
-
-  // Persist the live session whenever it resolves (and clear it on sign-out).
-  const liveUser = session.data?.user;
-  useEffect(() => {
-    if (session.isPending) return;
-    if (liveUser) {
-      const snapshot: CachedSessionUser = {
-        id: liveUser.id,
-        name: liveUser.name,
-        email: liveUser.email,
-        image: liveUser.image,
-        handle: (liveUser as { handle?: string | null }).handle,
-        username: (liveUser as { username?: string | null }).username,
-        isAdmin: (liveUser as { isAdmin?: boolean }).isAdmin,
-        isVerified: (liveUser as { isVerified?: boolean }).isVerified,
-        tier: (liveUser as { tier?: string | null }).tier,
-      };
-      writeCachedUser(snapshot);
-      setCachedUser(snapshot);
-    } else {
-      writeCachedUser(null);
-      setCachedUser(null);
-    }
-  }, [session.isPending, liveUser]);
-
-  // Effective session handed to the rest of the app: while the live session is
-  // still loading, fall back to the persisted user so nothing flashes as
-  // signed-out. Once the real session resolves it always wins.
-  const effectiveSession = useMemo<SessionCtxValue>(() => {
-    if (session.isPending && cachedUser) {
-      return {
-        ...session,
-        isPending: false,
-        data: { user: cachedUser, session: null },
-      } as unknown as SessionCtxValue;
-    }
-    // The server read the cookie and found nobody, and we have never seen a
-    // live session. Signed-out is KNOWN from the first frame, so say so.
-    //
-    // Falling through to better-auth's raw state here is what made every
-    // signed-out visit start on a spinner: its `useSession()` begins
-    // `{ data: null, isPending: true }` and only settles after a network
-    // round-trip, so `isPending` stayed true for a visitor the SERVER had
-    // already answered for. Everything gated on it rendered its loading branch
-    // and then re-rendered — the feed composer painted its full-height
-    // signed-in placeholder and snapped to the short sign-in card a frame later.
-    //
-    // `!session.data` keeps this to the cold signed-out case: once a session
-    // has ever landed, a later refetch goes through `cachedUser` above instead
-    // of being reported as signed out.
-    if (sessionResolved && !initialUser && session.isPending && !session.data) {
-      return { ...session, isPending: false, data: null } as unknown as SessionCtxValue;
-    }
-    // Server couldn't resolve the session and we have no cached user: the
-    // answer is UNKNOWN. Report pending (not signed out) until the client
-    // session lands, so the shell shows a neutral placeholder instead of
-    // telling a signed-in visitor to sign in.
-    if (!sessionResolved && session.isPending && !cachedUser) {
-      return { ...session, isPending: true, data: null } as unknown as SessionCtxValue;
-    }
-    return session;
-  }, [session, cachedUser, sessionResolved, initialUser]);
+  // Seeded from the server-resolved user and the persisted last-known user, so nothing
+  // flashes signed-out (components/session/session-context.tsx).
+  const effectiveSession = useEffectiveSession(session, initialUser, sessionResolved);
 
   // Resolved user display data (custom image/name). Seed from the SSR-resolved
   // user so the current user's own avatar/name paint immediately from the loader
@@ -888,51 +749,7 @@ export function Providers({
                     </SilentErrorBoundary>
                   </ConfirmProvider>
                 </ResolvedUserCtx.Provider>
-                <Toaster
-                  theme={style === 'graphite' ? 'dark' : 'light'}
-                  position="bottom-left"
-                  // The bottom lane is SHARED, and sonner does not know that.
-                  //
-                  // Left to its defaults, sonner sits 16px off the bottom edge at
-                  // `z-index: 999999999` — above everything — and below 600px it
-                  // rewrites `bottom-left` to span the WHOLE bottom edge. That is
-                  // the hub orb's lane: the orb is
-                  // `bottom: calc(env(safe-area-inset-bottom) + var(--site-hub-orb-inset))`
-                  // and 60px tall, so on a 390px phone a toast covered it almost
-                  // entirely for its four-second life — and the orb is the site's
-                  // only navigation control on mobile. The same 16px also lands
-                  // inside the iOS home-indicator strip, so swipe-to-dismiss
-                  // fought the system home gesture, and a toast raised from inside
-                  // a bottom sheet covered the sheet's own confirm/cancel row.
-                  //
-                  // `--site-floating-reserve` is derived from the orb's own
-                  // geometry tokens (globals.css §5.5x), so this clears the orb by
-                  // construction and cannot drift if the orb is resized. It
-                  // already includes the safe-area inset — do not add it twice.
-                  offset={{ bottom: 'var(--site-floating-reserve)' }}
-                  mobileOffset={{
-                    bottom: 'var(--site-floating-reserve)',
-                    left: '0.75rem',
-                    right: '0.75rem',
-                  }}
-                  toastOptions={{
-                    // Toasts are L4 floating UI and get the matching fill inline. It is written out here rather than by
-                    // adding `.glass-overlay` because that class also sets position, max sizes and overflow — all of
-                    // which sonner owns for its own stacking. The jelly material (haze floor, CSS rim, carrier) comes
-                    // from `[data-sonner-toast]` in app/jelly-coverage.css, so only longhands are set here: a
-                    // `background` / `box-shadow` inline would erase the floor and the rim. No backdrop-filter — no
-                    // glass role has one (docs/liquid-glass-system.md); the overlay fill is the legibility floor.
-                    style: {
-                      // The SAME expression `.glass-overlay` uses (globals.css §L4), not a third answer.
-                      backgroundColor: 'var(--site-glass-overlay-fill)',
-                      border: '1px solid var(--site-border)',
-                      // A toast is a panel, not a control: `--site-radius`, the
-                      // same curve every other floating panel takes.
-                      borderRadius: 'var(--site-radius)',
-                      color: 'var(--site-text)',
-                    },
-                  }}
-                />
+                <SiteToaster theme={style === 'graphite' ? 'dark' : 'light'} />
               </AppTierContext.Provider>
             </SessionCtx.Provider>
           </MotionConfig>

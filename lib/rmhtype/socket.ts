@@ -13,7 +13,7 @@ import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime
 import type { PeerWaitState } from '@/lib/shared/realtime/types';
 import { useRmhTypeStore } from './store';
 import { S2C } from './events';
-import { toast } from './toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import type { ChatMessage, PlayerProgress, RoundResults, FinalResults, SoloResult } from './types';
 
 let client: RealtimeClient | null = null;

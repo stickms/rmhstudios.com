@@ -8,7 +8,8 @@ import { createHubThreadApi } from '@/lib/cards/steam.contract';
 import { MAX_POST, MAX_THREAD_BODY, MAX_TITLE } from '@/lib/games/hub-rules';
 import type { HubData } from '@/lib/games/hub-types';
 import { formatPlaytime } from '@/lib/games/format-playtime';
-import { timeAgoShort } from '@/lib/utils';
+import { relativeTimeShort } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 import { CommunityNav } from './CommunityNav';
 import { GroupRow, Stars } from './CommunityHome';
 import { EmotePicker } from './EmotePicker';
@@ -140,7 +141,7 @@ export function HubPage({ data }: { data: HubData }) {
                         </span>
                         <span className="stm-person-sub">{th.snippet}</span>
                         <span className="stm-person-sub">
-                          {th.author.name} · {timeAgoShort(th.lastPostAt)}
+                          {th.author.name} · <RelativeTime date={th.lastPostAt} format={relativeTimeShort} />
                         </span>
                       </span>
                       <span className="stm-thread-count" title={t('steam-hub-replies', { defaultValue: 'Replies' })}>

@@ -25,10 +25,6 @@ import {
   registerNeonDriftwayHandlers,
   handleNeonDriftwayDisconnect,
 } from './handlers/neon-driftway';
-import {
-  registerSynapseStormHandlers,
-  handleSynapseStormDisconnect,
-} from './handlers/synapse-storm';
 import { registerRmhTypeHandlers, handleRmhTypeDisconnect } from './handlers/rmhtype';
 import { registerRmhStudyHandlers, handleRmhStudyDisconnect } from './handlers/rmhstudy';
 import {
@@ -39,12 +35,6 @@ import { registerStudioJamHandlers } from './handlers/studio-jam';
 import { initializeCasino, listCasinoRooms, CASINO_SHUTDOWN_REFUNDS, CASINO_SHUTDOWN_DEADLINE_MS } from '../../features/casino/server';
 import { registerLightsOutHandlers, handleLightsOutDisconnect } from './handlers/lights-out';
 import { registerVelumHandlers, handleVelumDisconnect } from './handlers/velum';
-import { registerDreamRiftHandlers, handleDreamRiftDisconnect } from './handlers/dream-rift';
-import { registerLaundrySortHandlers, handleLaundrySortDisconnect } from './handlers/laundry-sort';
-import {
-  registerGabrielsHornHandlers,
-  handleGabrielsHornDisconnect,
-} from './handlers/gabriels-horn';
 import { registerGlobeSetHandlers, handleGlobeSetDisconnect } from './handlers/globeset';
 import { registerTf2GameHandlers, handleTf2GameDisconnect } from './handlers/tf2-game';
 import { registerTf2P2pHandlers, handleTf2P2pDisconnect } from './handlers/tf2-p2p';
@@ -388,7 +378,7 @@ io.on('connection', (socket) => {
   // Register all game handlers
   registerFeatureHandlers(io, socket, 'slice-it');
   registerNeonDriftwayHandlers(io, socket);
-  registerSynapseStormHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'synapse-storm');
   registerRmhTypeHandlers(io, socket);
   registerRmhStudyHandlers(io, socket);
   registerFeatureHandlers(io, socket, 'altair');
@@ -398,9 +388,9 @@ io.on('connection', (socket) => {
   registerLightsOutHandlers(io, socket);
   registerFeatureHandlers(io, socket, 'doctrine');
   registerVelumHandlers(io, socket);
-  registerDreamRiftHandlers(io, socket);
-  registerLaundrySortHandlers(io, socket);
-  registerGabrielsHornHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'dream-rift');
+  registerFeatureHandlers(io, socket, 'laundry-sort');
+  registerFeatureHandlers(io, socket, 'gabriels-horn');
   registerGlobeSetHandlers(io, socket);
   // TF2: the server browser and P2P signaling — every match runs in a player's browser.
   registerTf2GameHandlers(io, socket);
@@ -435,7 +425,7 @@ io.on('connection', (socket) => {
     void handleCallDisconnect(io, socket);
     void handleGroupCallDisconnect(io, socket);
     handleControllerDisconnect(io, socket);
-    if (!shuttingDown) handleSynapseStormDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'synapse-storm', shuttingDown);
     handleFeatureDisconnects(io, socket, 'slice-it');
     if (!shuttingDown) handleNeonDriftwayDisconnect(io, socket);
     if (!shuttingDown) handleRmhTypeDisconnect(io, socket);
@@ -446,9 +436,9 @@ io.on('connection', (socket) => {
     handleLightsOutDisconnect(io, socket);
     handleFeatureDisconnects(io, socket, 'doctrine');
     handleVelumDisconnect(io, socket);
-    handleDreamRiftDisconnect(io, socket);
-    handleLaundrySortDisconnect(io, socket);
-    handleGabrielsHornDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'dream-rift');
+    handleFeatureDisconnects(io, socket, 'laundry-sort');
+    handleFeatureDisconnects(io, socket, 'gabriels-horn');
     handleGlobeSetDisconnect(io, socket);
     handleTf2GameDisconnect(io, socket);
     handleTf2P2pDisconnect(io, socket);

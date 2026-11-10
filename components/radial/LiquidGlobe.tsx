@@ -15,7 +15,7 @@ import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { vibrate } from '@/lib/shared/platform';
-import { prefersLessData } from '@/lib/viewport-prefetch';
+import { prefersLessData } from '@/lib/network-quality';
 import {
   DECELERATION,
   RIPPLE,

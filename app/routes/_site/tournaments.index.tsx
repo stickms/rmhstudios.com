@@ -68,8 +68,6 @@ function TournamentsPage() {
             { id: 'LIVE', label: t('tab-live', { defaultValue: 'Live' }) },
             { id: 'COMPLETE', label: t('tab-done', { defaultValue: 'Finished' }) },
           ]}
-          fullWidth
-          scroll
         />
       </div>
 

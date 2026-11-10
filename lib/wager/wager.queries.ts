@@ -7,6 +7,8 @@ import { createServerFn } from '@tanstack/react-start';
 import { routeQueryFn } from '@/lib/route/route-query';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { listWagers, expireStaleWagers, type SerializedWager } from '@/lib/wager/wager.server';
+import { api } from '@/lib/contract/client';
+import { listWagersApi } from '@/lib/wager/wager.contract';
 
 export type WagerFilter = 'open' | 'mine';
 
@@ -27,9 +29,11 @@ export const wagersQuery = (filter: WagerFilter) =>
     queryFn: routeQueryFn<SerializedWager[]>(
       () => listWagersOnServer({ data: filter }),
       async () => {
-        const res = await fetch(`/api/wager?filter=${filter}`);
-        const data = await res.json().catch(() => ({ wagers: [] }));
-        return res.ok ? ((data.wagers ?? []) as SerializedWager[]) : [];
+        try {
+          return (await api(listWagersApi, { query: { filter } })).wagers;
+        } catch {
+          return [];
+        }
       },
     ),
     staleTime: 5_000,

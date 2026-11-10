@@ -58,7 +58,7 @@ pnpm format                  # prettier
 pnpm test                    # main test suite (mission-critical scope — docs/testing.md; time it with `time pnpm test`)
 pnpm test:epic               # epic content-build suite (needs Chromium)
 pnpm test:integration        # real flows vs a running app + throwaway Postgres (docs/testing.md §8)
-pnpm build                   # vibe-packages → vite build → esbuild 6 server bundles
+pnpm build                   # vibe-packages → islands (vite.islands.config.ts) → vite build → esbuild server bundles
 pnpm i18n:extract            # after adding t() strings
 pnpm facts:generate          # refresh docs/_generated/facts.json (model/route/test/namespace counts; facts:check gates it)
 pnpm check:consistency       # THE COMMIT GATE — run before every commit (see below)
@@ -229,8 +229,8 @@ _why_.
    user-supplied URL fetches through `lib/ssrf-guard.server`; CSP/security
    headers live in `deploy/apache/rmhstudios.conf` (the production front door;
    the Helm/Traefik path was removed in the rewrite — design §5.2).
-9. **Go code:** config via `pkg/config`, logging via `pkg/log`, sessions
-   validated via `pkg/auth` against the shared `session` table. Run
+9. **Go code:** config via `pkg/config`, logging via `pkg/log`. Go validates
+   no user sessions (`status`/`assets` take no user traffic). Run
    `make gazelle` after adding files.
 10. **Quality bar (from CONTRIBUTING.md):** don't add new type/lint warnings
     relative to the base branch; keep commits focused; never commit secrets.

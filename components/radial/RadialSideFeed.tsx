@@ -173,7 +173,6 @@ export function RadialSideFeed() {
       <Tabs
         className="rad-deck__tabs"
         size="sm"
-        fullWidth
         idBase={`${TAB_ID_BASE}-${surfaces.length}`}
         aria-label={t('more-feeds', { defaultValue: 'More feeds' })}
         value={active}

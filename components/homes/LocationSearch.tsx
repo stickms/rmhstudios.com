@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Loader2, MapPin, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
+import { api } from '@/lib/contract/client';
+import { homesGeocodeApi } from '@/lib/homes/homes.contract';
 
 export interface HomesPlace {
   label: string;
@@ -61,12 +63,9 @@ export function LocationSearch({
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/homes/geocode?q=${encodeURIComponent(q.trim())}`);
-        if (res.ok) {
-          const data = await res.json();
-          setResults(data.results ?? []);
-          setOpen(true);
-        }
+        const data = await api(homesGeocodeApi, { query: { q: q.trim() } });
+        setResults(data.results ?? []);
+        setOpen(true);
       } catch {
         // ignore transient errors — user can retry
       } finally {

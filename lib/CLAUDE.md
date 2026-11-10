@@ -45,7 +45,7 @@ bundle only**. SSR/server builds get the real module.
 | `catalog/`                                 | the catalog (`games`, `apps`, `GameInfo`/`AppInfo`): single source of truth for game/app cards and score rules. Entries of games/apps with a `features/<id>/` folder live in `features/<id>/catalog.ts`; the rest are one file each under `catalog/{games,apps}/`. Scoring rules are the entry's `scoring` field; `game/registry.ts` derives from it |
 | `internal-auth.ts`                         | shared-secret server-to-server auth (`authorizeInternalRequest`)                                                                                                                                                         |
 | `ssrf-guard.server.ts`                     | `safeFetch` — required for any user-supplied URL fetch                                                                                                                                                                   |
-| `utils.ts`                                 | `cn()` (twMerge+clsx), `formatCount`, `timeAgoShort`, `formatRelativeTime`                                                                                                                                               |
+| `utils.ts`                                 | `cn()` (twMerge+clsx), `formatCount`, `relativeTimeShort`, `formatRelativeTime`                                                                                                                                          |
 
 ## Domain map
 
@@ -69,7 +69,7 @@ bundle only**. SSR/server builds get the real module.
   `pipeline/`, `scoring.ts`, `verification.ts`, `seed/`, `server/`). Driven by
   `server/ladder-worker` on a cron; **heavily unit-tested** — keep colocated
   `.test.ts` files passing.
-- **Per-game/app logic:** (games moved by redesign A1 live in `features/<id>/engine/` — `balatro`, `void-breaker`, `nightrail`, `altair`, `slice-it`, `hearthworks`, `casino`, `doctrine`; see `features/CLAUDE.md`) one subdir per game (`altair/`, `rmhbox/`,
+- **Per-game/app logic:** (games moved by redesign A1 live in `features/<id>/engine/` — `balatro`, `void-breaker`, `nightrail`, `altair`, `slice-it`, `hearthworks`, `casino`, `doctrine`, `vega`, `signal-forge`, `dream-rift`, `gabriels-horn`, `synapse-storm`, `laundry-sort`; see `features/CLAUDE.md`) one subdir per game (`altair/`, `rmhbox/`,
   `slice-it/`, casino games, `doctrine/`, `versecraft/`, …) and per app
   (`rmhtube/`, `rmhmusic/`, `rmhtype/`, `rmhstudy/`, `rmhvibe/`, `studio/`,
   `personas/`, `rideshare/`, `homes/`, `predictions/`). Realtime client

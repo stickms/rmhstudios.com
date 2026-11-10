@@ -1,14 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { implement } from '@/lib/api/implement.server';
+import { createWagerApi, listWagersApi } from '@/lib/wager/wager.contract';
 import { createWagerSchema } from '@/lib/wager/wager-schema';
 import { createWager, listWagers, expireStaleWagers, WagerError } from '@/lib/wager/wager.server';
 
 export const Route = createFileRoute('/api/wager/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
+      GET: implement(listWagersApi, { auth: 'optional' }, async ({ request, session }) => {
         const viewerId = session?.user?.id ?? null;
         const url = new URL(request.url);
         const filter = url.searchParams.get('filter') === 'mine' ? 'mine' : 'open';
@@ -19,48 +18,35 @@ export const Route = createFileRoute('/api/wager/')({
         // Opportunistically refund challenges that timed out (no cron tier).
         void expireStaleWagers().catch(() => {});
         const wagers = await listWagers({ viewerId, filter, gameId });
-        return Response.json({ wagers });
+        return { wagers };
       }),
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session?.user?.id) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      POST: implement(
+        createWagerApi,
+        {
+          rateLimit: { limit: 20, windowMs: 60_000, prefix: 'wager-create' },
+          body: createWagerSchema,
+          allowEmptyBody: true,
+          invalid: (error) =>
+            Response.json({ error: error.issues[0]?.message ?? 'Invalid input' }, { status: 400 }),
+        },
+        async ({ userId, body }) => {
+          try {
+            const wager = await createWager({
+              challengerId: userId,
+              gameId: body.gameId,
+              stakeCoins: body.stakeCoins,
+              opponentId: body.opponentId ?? null,
+              expiresInMs: body.expiresInMs,
+            });
+            return { wager };
+          } catch (error) {
+            if (error instanceof WagerError) {
+              return Response.json({ error: error.message }, { status: error.status });
+            }
+            throw error;
           }
-          const { allowed, retryAfter } = rateLimit(getClientIp(request), {
-            limit: 20,
-            windowMs: 60_000,
-            prefix: 'wager-create',
-          });
-          if (!allowed) {
-            return Response.json(
-              { error: 'Too many requests' },
-              { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-            );
-          }
-          const parsed = createWagerSchema.safeParse(await request.json().catch(() => ({})));
-          if (!parsed.success) {
-            return Response.json(
-              { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-              { status: 400 },
-            );
-          }
-          const wager = await createWager({
-            challengerId: session.user.id,
-            gameId: parsed.data.gameId,
-            stakeCoins: parsed.data.stakeCoins,
-            opponentId: parsed.data.opponentId ?? null,
-            expiresInMs: parsed.data.expiresInMs,
-          });
-          return Response.json({ wager });
-        } catch (error) {
-          if (error instanceof WagerError) {
-            return Response.json({ error: error.message }, { status: error.status });
-          }
-          console.error('Wager create error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

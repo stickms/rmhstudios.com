@@ -218,8 +218,8 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     genre: ['action', 'puzzle'],
     // `online-versus` added 2026-09-19 (P1). The entry claimed single-player
     // plus a leaderboard, which understated the game: it ships a lobby client
-    // (components/synapse-storm/Lobby.tsx, MultiplayerMenu.tsx, MultiplayerGame.tsx
-    // over lib/synapse-storm/multiplayerClient.ts) against an 8-seat server
+    // (features/synapse-storm/ui/Lobby.tsx, MultiplayerMenu.tsx, MultiplayerGame.tsx
+    // over features/synapse-storm/engine/multiplayerClient.ts) against an 8-seat server
     // handler with its own SSLobby/SSMatch models. The existing realtime check
     // is one-directional — it catches a game CLAIMING online play without a
     // module, not one hiding the module it has — so this sat unflagged.
@@ -298,7 +298,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
   'laundry-sort': {
     genre: ['arcade', 'puzzle'],
     players: ['single', 'online-versus'],
-    maxPlayers: 8, // lib/laundry-sort/constants.ts: MAX_LOBBY_PLAYERS
+    maxPlayers: 8, // features/laundry-sort/engine/constants.ts: MAX_LOBBY_PLAYERS
     input: { supported: ['mouse', 'touch'], required: [] },
     sessionMinutes: [3, 10],
     engine: 'webgl',

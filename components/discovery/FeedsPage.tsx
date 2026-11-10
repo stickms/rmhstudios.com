@@ -12,6 +12,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { FeedSummary } from '@/lib/discovery/feeds.server';
 import { feedsQuery } from '@/lib/discovery/feeds.queries';
 import { EMPTY_FEED_FORM, FeedForm, feedBody } from './FeedForm';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createCustomFeedApi } from '@/lib/discovery/discovery.contract';
 
 interface Lists {
   mine: FeedSummary[];
@@ -82,23 +85,12 @@ export function FeedsPage() {
   const create = async (v: Parameters<typeof feedBody>[0]) => {
     setBusy(true);
     try {
-      const res = await fetch('/api/feeds', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(feedBody(v)),
-      });
-      const data = (await res.json().catch(() => null)) as {
-        feed?: { id: string };
-        error?: string;
-      } | null;
-      if (!res.ok || !data?.feed) {
-        toast.error(
-          data?.error ?? t('feeds-create-failed', { defaultValue: 'Could not create the feed' }),
-        );
-        return;
-      }
+      const data = await api(createCustomFeedApi, { body: feedBody(v) });
       void navigate({ to: '/feeds/$id', params: { id: data.feed.id } });
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('feeds-create-failed', { defaultValue: 'Could not create the feed' }),
+      );
     } finally {
       setBusy(false);
     }

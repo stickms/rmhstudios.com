@@ -2,7 +2,8 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import type { ActivityEvent, FriendActivity } from '@/lib/games/activity-types';
 import { formatPlaytime } from '@/lib/games/format-playtime';
-import { timeAgoShort } from '@/lib/utils';
+import { relativeTimeShort } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 import { Stars } from './CommunityHome';
 import { PersonAvatar } from './SteamPeople';
 
@@ -108,7 +109,7 @@ export function ActivityFeed({ events }: { events: ActivityEvent[] }) {
                 ) : null}
                 <Tail e={e} />
               </span>
-              <span className="stm-person-sub stm-activity-when">{timeAgoShort(e.at)}</span>
+              <span className="stm-person-sub stm-activity-when"><RelativeTime date={e.at} format={relativeTimeShort} /></span>
             </li>
           ))}
         </ul>

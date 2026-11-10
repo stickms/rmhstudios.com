@@ -98,7 +98,6 @@ export function PlayTab({ coins, setCoins, signedIn }: Props) {
           value={selected}
           onChange={(id) => setSelected(id as GameChoice)}
           idBase="rmhcoins-play"
-          scroll
           aria-label={t('play-games-aria', { defaultValue: 'Casino games' })}
         />
         <p className="text-xs text-site-text-dim">

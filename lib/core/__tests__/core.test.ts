@@ -29,7 +29,7 @@ describe('math', () => {
   });
 });
 
-// Reference copy from features/doctrine/engine/puzzle-engine.ts, which the Go worker mirrors.
+// Reference copy of the generator the daily doctrine puzzles were seeded with (features/doctrine/engine).
 function doctrineMulberry32(seed: number) {
   let s = seed | 0;
   return () => {

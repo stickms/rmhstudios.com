@@ -80,8 +80,8 @@ export interface BackfillHandlesResult {
  * Give every account still missing a handle one derived from its display name.
  *
  * Retroactive counterpart to the `user.create` hook in `lib/auth.ts`: accounts
- * that predate the handle column — and any bot the Go bot-worker inserted
- * before it set one — otherwise stay unmentionable forever, because
+ * that predate the handle column — and any bot the old Go bot-worker inserted
+ * before the bot-worker set one — otherwise stay unmentionable forever, because
  * `/api/feed/mention-search` only offers users with a handle and `/u/<handle>`
  * has nothing to route on.
  *

@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import { abandonSignalForgeRunApi } from '@/lib/signal-forge/signal-forge.contract';
+import { abandonSignalForgeRunApi } from '@features/signal-forge/engine/signal-forge.contract';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 

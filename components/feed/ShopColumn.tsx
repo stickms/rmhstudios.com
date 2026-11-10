@@ -243,7 +243,6 @@ export function ShopColumn({
           value={tab}
           onChange={(id) => setTab(id as ShopItemKind)}
           tabs={KIND_ORDER.map((k) => ({ id: k, label: KIND_LABELS[k] }))}
-          scroll
         />
       </div>
 

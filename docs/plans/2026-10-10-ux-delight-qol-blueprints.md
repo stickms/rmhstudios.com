@@ -122,7 +122,7 @@ says "games are too loud", plus a global mute.
 
 **Gap.** Volume is owned per app: separate stores and sliders in
 `lib/rmhtube/store.ts`, `lib/altair/stores/settings-store.ts`,
-`components/rmhbox/SettingsMenu.tsx`, `lib/synapse-storm/sounds.ts`,
+`components/rmhbox/SettingsMenu.tsx`, `features/synapse-storm/engine/sounds.ts`,
 `lib/bums-rush/audio/bus.ts` and others. A player who wants everything 50%
 quieter, or silent on a call, visits each one. There is no global mute.
 

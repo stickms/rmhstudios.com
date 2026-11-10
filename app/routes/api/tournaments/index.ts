@@ -1,9 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import { listTournamentsApi } from '@/lib/tournaments/tournaments.contract';
+import { createTournamentApi, listTournamentsApi } from '@/lib/tournaments/tournaments.contract';
 import { CACHE_POLICY } from '@/lib/api/cache-policies';
-import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { createTournamentSchema } from '@/lib/tournaments/tournament-schema';
 import {
   createTournament,
@@ -34,39 +32,27 @@ export const Route = createFileRoute('/api/tournaments/')({
           return Response.json({ tournaments });
         },
       ),
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session?.user?.id) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      POST: implement(
+        createTournamentApi,
+        {
+          rateLimit: { limit: 10, windowMs: 60_000, prefix: 'tournament-create' },
+          body: createTournamentSchema,
+          allowEmptyBody: true,
+          invalid: (error) =>
+            Response.json({ error: error.issues[0]?.message ?? 'Invalid input' }, { status: 400 }),
+        },
+        async ({ userId, body }) => {
+          try {
+            const id = await createTournament({ createdById: userId, ...body });
+            return { id };
+          } catch (error) {
+            if (error instanceof TournamentError) {
+              return Response.json({ error: error.message }, { status: error.status });
+            }
+            throw error;
           }
-          const { allowed } = rateLimit(getClientIp(request), {
-            limit: 10,
-            windowMs: 60_000,
-            prefix: 'tournament-create',
-          });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
-          const parsed = createTournamentSchema.safeParse(await request.json().catch(() => ({})));
-          if (!parsed.success) {
-            return Response.json(
-              { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
-              { status: 400 },
-            );
-          }
-          const id = await createTournament({
-            createdById: session.user.id,
-            ...parsed.data,
-          });
-          return Response.json({ id });
-        } catch (error) {
-          if (error instanceof TournamentError) {
-            return Response.json({ error: error.message }, { status: error.status });
-          }
-          console.error('Tournament create error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

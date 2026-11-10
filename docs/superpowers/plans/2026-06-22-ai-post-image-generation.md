@@ -16,7 +16,7 @@
 - **Bot probability:** `BOT_IMAGE_PROBABILITY` (default `0.05`).
 - **Tier gate:** human image generation requires tier ≥ `starter` (`lib/entitlements.ts` `TIER_RANK`). Enforced server-side in the route; the button is hidden client-side as UX only.
 - **Storage convention:** stored filenames are `<userId>-<ts>-<rand>.<ext>` via `feedImageKey`/`feedImageUrl`, identical to the in-app uploader, so results pass `ownsFeedImageUrl`.
-- **Tests:** Vitest only auto-discovers `lib/__tests__/**`, `lib/rmhark-ai/__tests__/**`, `lib/dream-rift/__tests__/**`, `testing/**`. Put new unit tests under `lib/rmhark-ai/__tests__/`. Routes, components, and the worker have no automated tests in this repo (verify manually), matching existing conventions.
+- **Tests:** Vitest only auto-discovers `lib/__tests__/**`, `lib/rmhark-ai/__tests__/**`, `features/dream-rift/engine/__tests__/**`, `testing/**`. Put new unit tests under `lib/rmhark-ai/__tests__/`. Routes, components, and the worker have no automated tests in this repo (verify manually), matching existing conventions.
 - Run a single test file with: `npx vitest run <path> -v`.
 
 ---

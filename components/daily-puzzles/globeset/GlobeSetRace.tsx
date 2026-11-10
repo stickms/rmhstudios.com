@@ -50,6 +50,8 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { GlobeSetCard } from './GlobeSetCard';
 import { GlobeSetGlobe } from './GlobeSetGlobe';
 import type { CardView } from './GlobeSetGame';
+import { api } from '@/lib/contract/client';
+import { globeSetRecordApi, type GlobeSetVersusRecord } from '@/lib/site-reads.contract';
 
 export interface GlobeSetRaceProps {
   shapes: boolean;
@@ -552,12 +554,7 @@ function RaceBoard({ shapes, view, attitudeRef, gyroActive }: Omit<GlobeSetRaceP
 
 /* ── After ─────────────────────────────────────────────────────────────────── */
 
-interface VersusRecord {
-  racesPlayed: number;
-  racesWon: number;
-  bestRaceMs: number | null;
-  setsFound: number;
-}
+type VersusRecord = GlobeSetVersusRecord;
 
 function RaceResults() {
   const { t } = useTranslation('c-daily-puzzles');
@@ -569,10 +566,9 @@ function RaceResults() {
   // is silent: the standings are the result, and the career line is a bonus.
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/globeset/record')
-      .then((res) => (res.ok ? res.json() : null))
+    api(globeSetRecordApi)
       .then((data) => {
-        if (!cancelled && data?.record) setRecord(data.record as VersusRecord);
+        if (!cancelled && data.record) setRecord(data.record);
       })
       .catch(() => {});
     return () => {

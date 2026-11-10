@@ -121,7 +121,6 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 setError(null);
               }}
               size="sm"
-              scroll
               className="mt-1 max-w-full"
               aria-label={t('profile-editor-sections', { defaultValue: 'Profile editor sections' })}
             />

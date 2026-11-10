@@ -114,7 +114,12 @@ const appReach = reach(appRoots);
 
 // The infrastructure exclusions (scripts, docs, …) live in globals.css and
 // apply to both sheets; the tier exclusions are what site-tier.css adds.
-const tierExcluded = sourceNots('site-tier.css');
+// Build outputs both sheets exclude explicitly. Tailwind's automatic detection skips
+// gitignored paths, but the Docker build context has no .gitignore (.dockerignore drops it),
+// so without these lines the vite build scans the island build that ran just before it
+// (dist-islands/) and the site sheet grows past its budget. They exist only after a build.
+const BUILD_OUTPUTS = ['dist-islands'];
+const tierExcluded = sourceNots('site-tier.css').filter((p) => !BUILD_OUTPUTS.includes(p));
 const under = (file: string, path: string) => {
   const r = relative(ROOT, file);
   return r === path || r.startsWith(path + '/');
@@ -166,8 +171,25 @@ describe('entry stylesheet tiers', () => {
     ).toEqual([]);
   }, 30_000); // same graph walk as above (~2.5s on CI)
 
-  it('the app-tier sheet is the unfiltered superset', () => {
-    expect(sourceNots('app-tier.css')).toEqual([]);
+  it('the app-tier sheet is the unfiltered superset (minus islands, which no site document renders)', () => {
+    // A feature with an `island.tsx` is built and styled on its own (redesign B1,
+    // vite.islands.config.ts) and never renders in a site document, so it is the one
+    // exclusion the superset carries — exactly the set of islands, no more, no less.
+    // Per part, like every feature exclusion: `features/<id>/catalog.ts` is the card site pages render,
+    // so it stays scanned even for an island.
+    const islands = readdirSync(join(ROOT, 'features'))
+      .filter((id) => existsSync(join(ROOT, 'features', id, 'island.tsx')))
+      .flatMap((id) =>
+        ['engine', 'ui', 'server']
+          .filter((part) => existsSync(join(ROOT, 'features', id, part)))
+          .map((part) => `features/${id}/${part}`),
+      )
+      .sort();
+    for (const sheet of ['site-tier.css', 'app-tier.css']) {
+      for (const out of BUILD_OUTPUTS) expect(sourceNots(sheet), `${sheet} must exclude ${out}`).toContain(out);
+    }
+    expect(sourceNots('app-tier.css').filter((p) => !BUILD_OUTPUTS.includes(p)).sort()).toEqual(islands);
+    for (const dir of islands) expect(tierExcluded, `site-tier.css must skip ${dir} too`).toContain(dir);
     const css = readFileSync(join(APP, 'app-tier.css'), 'utf8');
     expect(css).toMatch(/@import 'tailwindcss';\s*@import '\.\/globals\.css';/);
     expect(readFileSync(join(APP, 'site-tier.css'), 'utf8')).toMatch(

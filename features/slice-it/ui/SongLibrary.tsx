@@ -44,7 +44,6 @@ import { useSession } from '@/components/Providers';
 import { musicGain, useSliceItStore } from '@features/slice-it/engine/store';
 import { PREVIEW_SECONDS, previewFragment } from '@features/slice-it/engine/preview';
 import { rowChartState } from '@features/slice-it/engine/song-status';
-import { timeAgoShort } from '@/lib/utils';
 import {
   AUDIO_MAX_BYTES,
   COVER_MAX_BYTES,

@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { MAX_POST } from '@/lib/games/hub-rules';
 import type { PersonRef } from '@/lib/games/community-types';
 import type { ThreadPage as ThreadPageData } from '@/lib/games/hub-types';
-import { timeAgoShort } from '@/lib/utils';
+import { relativeTimeShort } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 import { CommunityNav } from './CommunityNav';
 import { EmotePicker } from './EmotePicker';
 import { PersonAvatar } from './SteamPeople';
@@ -34,7 +35,7 @@ function Author({ person, when }: { person: PersonRef; when: string }) {
         <PersonAvatar src={person.image} name={person.name} />
         <span className="stm-person-body">
           <span className="stm-person-name">{person.name}</span>
-          <span className="stm-person-sub">{timeAgoShort(when)}</span>
+          <span className="stm-person-sub"><RelativeTime date={when} format={relativeTimeShort} /></span>
         </span>
       </Link>
     </div>

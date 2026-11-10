@@ -65,7 +65,7 @@ import { createElectricField, type ElectricField } from './field';
 import { arcIntensityScale } from './glow';
 import { NUDGE, createArcNudge, shouldVibrate, type ArcNudge } from './nudge';
 import { createArcRenderer, type ArcRenderer, type LiveArc } from './renderer';
-import { mulberry32 } from './rng';
+import { mulberry32 } from '@/lib/core/rng';
 import {
   createAmbientScheduler,
   createChargeBook,

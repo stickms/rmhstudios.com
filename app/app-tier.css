@@ -6,6 +6,21 @@
    carries no tier exclusions — see the header of `site-tier.css` for why the
    app tier must be a superset rather than "just the game utilities", and
    `lib/style-tier.ts` for which routes get which sheet.
+
+   ONE kind of exclusion is allowed, and it is not a tier decision: a feature
+   delivered as an ISLAND (redesign audit B1, `features/<id>/island.tsx`) is
+   never rendered inside a site document at all — it is built separately with
+   its own sheet (`features/<id>/island.css`) and served as its own document —
+   so its utilities have no business in either site sheet. The list must equal
+   the set of islands exactly (`lib/__tests__/style-tiers.test.ts`).
    ========================================================================== */
 @import 'tailwindcss';
 @import './globals.css';
+
+/* Build output (redesign B1): the island build writes dist-islands/ before this sheet builds.
+   Gitignored, but the Docker context has no .gitignore, so it must be excluded by name. */
+@source not "../dist-islands";
+
+/* Islands (separately built, separately styled). */
+@source not "../features/void-breaker/engine";
+@source not "../features/void-breaker/ui";

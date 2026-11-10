@@ -49,6 +49,26 @@ function sourcesFor(gameId: string): string {
   return readSources(SOURCE_OVERRIDES[gameId] ?? [`lib/${gameId}`, `components/${gameId}`]);
 }
 
+/**
+ * Every socket handler source: the hub's `handlers/*.ts` plus each moved feature's
+ * `features/<id>/server/*.ts` (redesign A1).
+ */
+function handlerSources(): { file: string; src: string }[] {
+  const dirs = [join(ROOT, 'server/socket-server/handlers')];
+  const featuresDir = join(ROOT, 'features');
+  if (existsSync(featuresDir)) {
+    for (const id of readdirSync(featuresDir)) {
+      const d = join(featuresDir, id, 'server');
+      if (existsSync(d) && statSync(d).isDirectory()) dirs.push(d);
+    }
+  }
+  return dirs.flatMap((d) =>
+    readdirSync(d)
+      .filter((n) => n.endsWith('.ts') && !n.endsWith('.test.ts'))
+      .map((n) => ({ file: n, src: readFileSync(join(d, n), 'utf8') })),
+  );
+}
+
 describe('game capabilities', () => {
   it('covers exactly the game catalog — no missing, no stale entries', () => {
     const catalog = games.map((g) => g.id).sort();
@@ -139,10 +159,8 @@ describe('game capabilities', () => {
     // Resolve both spellings: a literal id, and the `GAME_ID` constant that
     // Bum's Rush registers with. A test that only saw literals would quietly
     // stop covering any game that tidied its id into a constant.
-    const dir = join(ROOT, 'server/socket-server/handlers');
     const registered = new Set<string>();
-    for (const f of readdirSync(dir).filter((n) => n.endsWith('.ts'))) {
-      const src = readFileSync(join(dir, f), 'utf8');
+    for (const { file: f, src } of handlerSources()) {
       const call = src.match(/registerPartyGame\(\s*(?:'([^']+)'|([A-Za-z_$][\w$]*))/);
       if (!call) continue;
       if (call[1]) {
@@ -190,11 +208,8 @@ describe('game capabilities', () => {
     // sweep. The sweepers must respect PARTY_ROOM_GRACE_MS — without it they
     // delete the party's room before it can arrive, which is the opposite bug
     // and just as fatal, so a sweeping game must name the constant.
-    const dir = join(ROOT, 'server/socket-server/handlers');
-    const files = readdirSync(dir).filter((f) => f.endsWith('.ts'));
     const registered: { id: string; file: string; src: string }[] = [];
-    for (const f of files) {
-      const src = readFileSync(join(dir, f), 'utf8');
+    for (const { file: f, src } of handlerSources()) {
       const m = src.match(/registerPartyGame\(\s*(?:'([^']+)'|([A-Z_]+))/);
       if (m) registered.push({ id: m[1] ?? m[2], file: f, src });
     }

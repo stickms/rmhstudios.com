@@ -13,12 +13,9 @@ import { Spinner } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useSession } from '@/components/Providers';
 import { PACK_MAX_PROMPTS, PACK_MIN_PROMPTS, type PackView } from '@/lib/party/packs';
-
-interface PackLists {
-  featured: PackView[];
-  recent: PackView[];
-  mine: PackView[];
-}
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createPackApi, listPacksApi, type PackLists } from '@/lib/party/packs.contract';
 
 export function PacksPage() {
   const { t } = useTranslation('f-party');
@@ -32,9 +29,11 @@ export function PacksPage() {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/rmhbox/packs').catch(() => null);
-    if (res?.ok) setLists((await res.json()) as PackLists);
-    else toast.error(t('load-failed', { defaultValue: 'Could not load packs.' }));
+    try {
+      setLists(await api(listPacksApi));
+    } catch {
+      toast.error(t('load-failed', { defaultValue: 'Could not load packs.' }));
+    }
   }, [t]);
 
   useEffect(() => {
@@ -48,23 +47,20 @@ export function PacksPage() {
 
   async function create() {
     setBusy(true);
-    const res = await fetch('/api/rmhbox/packs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, prompts }),
-    }).catch(() => null);
-    setBusy(false);
-    if (res?.ok) {
-      const { pack } = (await res.json()) as { pack: PackView };
+    try {
+      const { pack } = await api(createPackApi, { body: { name, game: 'wit-war', prompts } });
+      setBusy(false);
       toast.success(
         t('created', { defaultValue: 'Pack created. Share code {{code}}.', code: pack.code }),
       );
       setName('');
       setText('');
       void load();
-    } else {
-      const err = res ? ((await res.json().catch(() => ({}))) as { error?: string }) : {};
-      toast.error(err.error ?? t('create-failed', { defaultValue: 'Could not create the pack.' }));
+    } catch (e) {
+      setBusy(false);
+      toast.error(
+        serverError(e) ?? t('create-failed', { defaultValue: 'Could not create the pack.' }),
+      );
     }
   }
 

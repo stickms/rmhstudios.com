@@ -6,7 +6,7 @@
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { neonDriftwayScoreBody } from './score-schema';
-import type { synapseStormScoreBody } from '@/lib/synapse-storm/score-schema';
+import type { synapseStormScoreBody } from '@features/synapse-storm/engine/score-schema';
 
 /** Opaque result-moment payload; parse it with `parseScoreMoment`. */
 export type ScoreMoment = unknown;

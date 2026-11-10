@@ -2,6 +2,8 @@ import { useState, useEffect } from'react';
 import { ExternalLink } from'lucide-react';
 import { useNearViewport } from'@/hooks/useNearViewport';
 import { ArchivedCopyLabel } from'@/components/posts-plus/ArchivedCopyLabel';
+import { api } from '@/lib/contract/client';
+import { ogOembedApi } from '@/lib/unfurl/oembed.contract';
 
 interface OgData {
  title: string | null;
@@ -41,8 +43,7 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
  setLoading(true);
  let cancelled = false;
 
- fetch(`/api/oembed?type=og&url=${encodeURIComponent(url)}`)
- .then((res) => (res.ok ? res.json() : null))
+ api(ogOembedApi, { query: { type: 'og', url } })
  .then((result) => {
  if (cancelled) return;
  ogCache.set(url, result);

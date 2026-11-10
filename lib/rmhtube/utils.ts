@@ -5,13 +5,6 @@
 import { customAlphabet } from 'nanoid';
 import { ROOM_CODE_LENGTH, ROOM_CODE_ALPHABET } from './constants';
 
-/**
- * Media parsing moved to `./media` — one parser, written against react-player's
- * own matchers. These re-exports keep existing call sites resolving.
- */
-export { parseMedia, detectMediaType, extractYouTubeId, youtubeThumbnail } from './media';
-export type { MediaType, LiveHint, ParsedMedia } from './media';
-
 const generateCode = customAlphabet(ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH);
 
 /**

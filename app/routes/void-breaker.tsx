@@ -1,33 +1,17 @@
-import { Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { gameRouteHead } from '@/lib/seo-catalog';
-import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
-import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
+import { renderIslandDocument } from '@/lib/islands/document.server';
+import { islandBeforeLoad } from '@/lib/islands/route';
 
-// Static, not `lazy()`: Start already splits this route's component into its own
-// chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
-// hydration, and an update reaching the boundary then swaps the server-rendered
-// page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
-import { VoidBreakerGame } from '@features/void-breaker/ui/VoidBreakerGame';
-
-function VoidBreakerPage() {
-  return (
-    <main
-      className="fixed inset-0 bg-black flex flex-col overflow-hidden"
-      style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
-    >
-      <div className="grow relative flex items-center justify-center overflow-hidden">
-        <GameErrorBoundary gameName="Void Breaker">
-          <Suspense fallback={<GameLoadingFallback />}>
-            <VoidBreakerGame />
-          </Suspense>
-        </GameErrorBoundary>
-      </div>
-    </main>
-  );
-}
-
+// Void Breaker is an island (redesign audit B1): its page is built separately
+// (features/void-breaker/island.tsx, vite.islands.config.ts) and served as a bare
+// document with the game's head — `gameRouteHead('void-breaker')`, from the
+// catalog, as before — instead of being rendered by the site's router. A client
+// navigation here reloads the document (islandBeforeLoad).
 export const Route = createFileRoute('/void-breaker')({
-  head: () => gameRouteHead('void-breaker'),
-  component: VoidBreakerPage,
+  beforeLoad: islandBeforeLoad,
+  server: {
+    handlers: {
+      GET: ({ request }) => renderIslandDocument('void-breaker', request),
+    },
+  },
 });

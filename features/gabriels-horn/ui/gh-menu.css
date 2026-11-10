@@ -1,0 +1,471 @@
+/**
+ * Gabriel's Horn — menu skin ("a golden horn announcing a bluffing table").
+ *
+ * Scheme: docs/game-design-schemes/gabriels-horn.json. Royal purple ground,
+ * gold accent, Cinzel display over Jost body, 14px radius, double gold borders
+ * (a 2px line with a thin inner hairline), faint rays from the top right.
+ *
+ * Scope: MainMenu, LobbyPanel and BrowsePanel, which wear `.ghm-scene`. It
+ * re-points the `--app-*` tokens inside that subtree only, so the shared
+ * primitives (`HornButton`, `Panel`, the leaderboard) pick the scheme up
+ * without changing for the table, results and rules screens, which keep the
+ * brass-on-midnight theme from gabriels-horn.css.
+ *
+ * Motion: `transform`/`opacity` only, a few px or a few degrees per many
+ * seconds. Nothing repeats faster than once per 5s (WCAG 2.3.1) and all of it
+ * stops under `prefers-reduced-motion` (WCAG 2.2.2). No backdrop-filter.
+ */
+
+@import '../../../components/shared/game-fonts/fonts.css';
+
+.ghm-scene {
+  --ghm-bg: #10051f;
+  --ghm-bg-alt: #2a1050;
+  --ghm-surface: #1e0b3a;
+  --ghm-surface-hover: #2e1456;
+  --ghm-ink: #fff3d6;
+  --ghm-muted: #c9b2e0;
+  --ghm-gold: #f5b82e;
+  --ghm-gold-hi: #ffd76a;
+  --ghm-violet: #b57bff;
+  --ghm-danger: #e0505f;
+  --ghm-border: #5b2a8c;
+  --ghm-display: 'Cinzel', 'Times New Roman', serif;
+  --ghm-body: 'Jost', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ghm-stars: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360'%3E%3Ccircle cx='100' cy='94' r='1.1' fill='%23B57BFF' opacity='0.57'/%3E%3Ccircle cx='8' cy='123' r='1.0' fill='%23FFFFFF' opacity='0.78'/%3E%3Ccircle cx='117' cy='43' r='1.4' fill='%23B57BFF' opacity='0.87'/%3E%3Ccircle cx='338' cy='157' r='1.0' fill='%23FFFFFF' opacity='0.80'/%3E%3Ccircle cx='228' cy='4' r='1.3' fill='%23F5B82E' opacity='0.73'/%3E%3Ccircle cx='186' cy='137' r='1.2' fill='%23B57BFF' opacity='0.55'/%3E%3Ccircle cx='148' cy='198' r='0.8' fill='%23FFFFFF' opacity='0.80'/%3E%3Ccircle cx='356' cy='328' r='0.8' fill='%23FFFFFF' opacity='0.59'/%3E%3Ccircle cx='281' cy='206' r='1.0' fill='%23FFF3D6' opacity='0.89'/%3E%3Ccircle cx='187' cy='115' r='1.1' fill='%23FFFFFF' opacity='0.52'/%3E%3Ccircle cx='79' cy='59' r='1.6' fill='%23FFF3D6' opacity='0.71'/%3E%3Ccircle cx='83' cy='182' r='1.3' fill='%23B57BFF' opacity='0.70'/%3E%3Ccircle cx='73' cy='61' r='1.8' fill='%23B57BFF' opacity='0.36'/%3E%3Ccircle cx='244' cy='319' r='1.1' fill='%23F5B82E' opacity='0.87'/%3E%3Ccircle cx='222' cy='288' r='1.3' fill='%23C9B2E0' opacity='0.49'/%3E%3Ccircle cx='44' cy='94' r='1.1' fill='%23C9B2E0' opacity='0.75'/%3E%3Ccircle cx='134' cy='86' r='1.6' fill='%23C9B2E0' opacity='0.80'/%3E%3Ccircle cx='92' cy='76' r='1.1' fill='%23B57BFF' opacity='0.91'/%3E%3Ccircle cx='51' cy='142' r='1.1' fill='%23C9B2E0' opacity='0.55'/%3E%3Ccircle cx='209' cy='347' r='0.9' fill='%23F5B82E' opacity='0.91'/%3E%3Ccircle cx='138' cy='132' r='1.2' fill='%23C9B2E0' opacity='0.59'/%3E%3Ccircle cx='172' cy='223' r='1.0' fill='%23B57BFF' opacity='0.63'/%3E%3Ccircle cx='340' cy='33' r='0.8' fill='%23B57BFF' opacity='0.36'/%3E%3Cpath d='M340 28L340 38M335 33L345 33' stroke='%23B57BFF' stroke-width='.8' opacity='.55'/%3E%3Ccircle cx='184' cy='19' r='1.2' fill='%23B57BFF' opacity='0.79'/%3E%3Ccircle cx='309' cy='87' r='1.5' fill='%23F5B82E' opacity='0.73'/%3E%3Cpath d='M309 82L309 92M304 87L314 87' stroke='%23F5B82E' stroke-width='.8' opacity='.55'/%3E%3Ccircle cx='274' cy='45' r='1.8' fill='%23FFF3D6' opacity='0.38'/%3E%3Ccircle cx='77' cy='182' r='1.6' fill='%23FFFFFF' opacity='0.70'/%3E%3Ccircle cx='41' cy='345' r='0.7' fill='%23C9B2E0' opacity='0.73'/%3E%3Ccircle cx='70' cy='235' r='1.2' fill='%23FFF3D6' opacity='0.79'/%3E%3Ccircle cx='246' cy='113' r='1.0' fill='%23FFF3D6' opacity='0.94'/%3E%3Ccircle cx='250' cy='23' r='0.7' fill='%23C9B2E0' opacity='0.77'/%3E%3Ccircle cx='21' cy='93' r='1.5' fill='%23C9B2E0' opacity='0.52'/%3E%3Ccircle cx='22' cy='224' r='1.7' fill='%23C9B2E0' opacity='0.38'/%3E%3Ccircle cx='283' cy='344' r='1.4' fill='%23B57BFF' opacity='0.60'/%3E%3Ccircle cx='271' cy='105' r='1.0' fill='%23C9B2E0' opacity='0.78'/%3E%3Ccircle cx='163' cy='37' r='0.7' fill='%23FFF3D6' opacity='0.38'/%3E%3Ccircle cx='113' cy='178' r='0.8' fill='%23B57BFF' opacity='0.90'/%3E%3Ccircle cx='81' cy='33' r='0.8' fill='%23C9B2E0' opacity='0.41'/%3E%3Cpath d='M81 28L81 38M76 33L86 33' stroke='%23C9B2E0' stroke-width='.8' opacity='.55'/%3E%3Ccircle cx='205' cy='114' r='1.3' fill='%23FFFFFF' opacity='0.61'/%3E%3Ccircle cx='227' cy='153' r='0.9' fill='%23FFFFFF' opacity='0.67'/%3E%3Ccircle cx='53' cy='66' r='1.0' fill='%23C9B2E0' opacity='0.77'/%3E%3Ccircle cx='62' cy='225' r='0.9' fill='%23B57BFF' opacity='0.43'/%3E%3Ccircle cx='264' cy='116' r='0.8' fill='%23F5B82E' opacity='0.49'/%3E%3Ccircle cx='259' cy='227' r='1.1' fill='%23C9B2E0' opacity='0.90'/%3E%3Ccircle cx='201' cy='151' r='1.7' fill='%23FFFFFF' opacity='0.56'/%3E%3Ccircle cx='35' cy='235' r='1.6' fill='%23F5B82E' opacity='0.54'/%3E%3C/svg%3E");
+
+  /* Re-point the app tier's tokens for everything inside the scene. */
+  --app-bg: var(--ghm-bg);
+  --app-bg-subtle: #170a2e;
+  --app-surface: var(--ghm-surface);
+  --app-surface-hover: var(--ghm-surface-hover);
+  --app-surface-active: #3a1a68;
+  --app-border: var(--ghm-border);
+  --app-border-bright: #7a45b5;
+  --app-text: var(--ghm-ink);
+  --app-text-muted: var(--ghm-muted);
+  --app-text-dim: #b39bd2; /* 6.4:1 on the surface */
+  --app-accent: var(--ghm-gold);
+  --app-accent-fg: #1a0836;
+  --app-accent-hover: var(--ghm-gold-hi);
+  --app-success: #7de0a8;
+  --app-danger: #ff8591;
+  --app-radius: 14px;
+  --app-radius-sm: 10px;
+  --app-radius-lg: 14px;
+
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  background: var(--ghm-bg);
+  color: var(--ghm-ink);
+  font-family: var(--ghm-body);
+}
+
+/* ═══ Backdrop ══════════════════════════════════════════════════════════ */
+
+.ghm-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(90% 70% at 85% 0%, #3a1670 0%, transparent 62%),
+    radial-gradient(70% 60% at 0% 100%, #2a1050 0%, transparent 70%),
+    linear-gradient(180deg, #1a0838 0%, var(--ghm-bg) 70%);
+}
+.ghm-stars {
+  position: absolute;
+  inset: 0;
+  background-image: var(--ghm-stars);
+  background-size: 360px 360px;
+  animation: ghm-twinkle 11s ease-in-out infinite alternate;
+}
+@keyframes ghm-twinkle {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Rays fan from the top-right corner. The mask is static; only the child turns. */
+.ghm-rays-mask {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+}
+.ghm-rays {
+  position: absolute;
+  top: calc(-1 * min(110vmax, 1500px));
+  right: calc(-1 * min(110vmax, 1500px));
+  width: min(220vmax, 3000px);
+  height: min(220vmax, 3000px);
+  border-radius: 50%;
+  corner-shape: round;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgb(245 184 46 / 0.13) 0 3deg,
+    transparent 3deg 11deg
+  );
+  -webkit-mask-image: radial-gradient(closest-side, #000 0, rgb(0 0 0 / 0.55) 22%, transparent 48%);
+  mask-image: radial-gradient(closest-side, #000 0, rgb(0 0 0 / 0.55) 22%, transparent 48%);
+  animation: ghm-turn 480s linear infinite;
+  will-change: transform;
+}
+@keyframes ghm-turn {
+  to {
+    transform: rotate(1turn);
+  }
+}
+.ghm-glow {
+  position: absolute;
+  top: -20vmax;
+  right: -14vmax;
+  width: 60vmax;
+  height: 60vmax;
+  background: radial-gradient(
+    closest-side,
+    rgb(245 184 46 / 0.2),
+    rgb(181 123 255 / 0.08) 55%,
+    transparent
+  );
+}
+
+/* ═══ Layout ════════════════════════════════════════════════════════════ */
+
+.ghm-main {
+  display: grid;
+  width: 100%;
+  max-width: 28rem;
+  flex-grow: 1;
+  align-content: start;
+  gap: 22px;
+  margin-inline: auto;
+  /* The top inset clears the status bar / notch now that no header sits above. */
+  padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px 32px;
+}
+@media (min-width: 1024px) {
+  .ghm-main {
+    max-width: 66rem;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 26rem);
+    align-content: center;
+    align-items: center;
+    column-gap: 56px;
+    padding-block: 16px 40px;
+  }
+}
+.ghm-hero {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  text-align: center;
+}
+.ghm-stack {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.ghm-logo {
+  display: block;
+  width: min(86vw, 30rem);
+  height: auto;
+  filter: drop-shadow(0 4px 18px rgb(245 184 46 / 0.28));
+}
+.ghm-mirror {
+  margin: -6px 0 0;
+  font-family: var(--ghm-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5em;
+  text-indent: 0.5em;
+  text-transform: uppercase;
+  color: #d9c6ee;
+}
+.ghm-art {
+  display: block;
+  width: min(86vw, 24rem);
+  height: auto;
+  overflow: visible;
+}
+@media (min-width: 1024px) {
+  .ghm-art {
+    width: min(100%, 27rem);
+  }
+}
+.ghm-pitch {
+  margin: 0;
+  max-width: 30rem;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ghm-muted);
+}
+.ghm-ornament {
+  display: flex;
+  width: min(100%, 14rem);
+  align-items: center;
+  gap: 10px;
+  color: var(--ghm-gold);
+}
+.ghm-ornament::before,
+.ghm-ornament::after {
+  content: '';
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(90deg, transparent, var(--ghm-gold));
+}
+.ghm-ornament::after {
+  transform: scaleX(-1);
+}
+.ghm-ornament i {
+  width: 8px;
+  height: 8px;
+  rotate: 45deg;
+  background: var(--ghm-gold);
+}
+
+/* ═══ Panels: a gold line with a thin inner gold hairline ═══════════════ */
+
+.ghm-scene .ghm-panel,
+.ghm-scene .gh-pane,
+.ghm-scene .gh-fill {
+  position: relative;
+  padding: 18px;
+  background: linear-gradient(180deg, rgb(46 20 86 / 0.92), rgb(30 11 58 / 0.94));
+  border: 2px solid var(--ghm-gold);
+  border-radius: 14px;
+  box-shadow: 0 14px 34px rgb(5 0 14 / 0.5);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.ghm-scene .gh-fill {
+  padding: 12px 14px;
+}
+.ghm-scene .ghm-panel::before,
+.ghm-scene .gh-pane::before,
+.ghm-scene .gh-fill::before {
+  content: none;
+}
+.ghm-scene .ghm-panel::after,
+.ghm-scene .gh-pane::after,
+.ghm-scene .gh-fill::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgb(245 184 46 / 0.5);
+  border-radius: 9px;
+  pointer-events: none;
+}
+.ghm-scene .gh-fill {
+  border-width: 1px;
+  border-color: rgb(245 184 46 / 0.7);
+}
+.ghm-scene .gh-fill::after {
+  content: none;
+}
+
+.ghm-scene .ghm-h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  font-family: var(--ghm-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ghm-gold-hi);
+}
+.ghm-scene .ghm-h2::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  flex: none;
+  rotate: 45deg;
+  background: var(--ghm-gold);
+}
+
+/* ═══ Buttons ═══════════════════════════════════════════════════════════ */
+
+.ghm-scene [data-horn-variant],
+.ghm-scene .ghm-link-btn {
+  font-family: var(--ghm-display);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 14px;
+  transition:
+    box-shadow 180ms ease,
+    filter 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease;
+}
+.ghm-scene [data-horn-variant]:focus-visible,
+.ghm-scene .ghm-link-btn:focus-visible {
+  outline: 3px solid var(--ghm-ink);
+  outline-offset: 3px;
+}
+
+/* Primary: gold gradient, deep-purple Cinzel, a gold glow that wakes on hover. */
+.ghm-scene [data-horn-variant='primary'],
+.ghm-scene .ghm-link-btn {
+  color: #1a0836;
+  background: linear-gradient(180deg, #ffe08a 0%, #f5b82e 52%, #d99a1a 100%);
+  border: 1px solid #ffe9a8;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.55),
+    inset 0 -2px 0 rgb(120 70 0 / 0.35),
+    0 4px 14px rgb(5 0 14 / 0.45);
+}
+.ghm-scene [data-horn-variant='primary']:hover:not(:disabled),
+.ghm-scene .ghm-link-btn:hover {
+  background: linear-gradient(180deg, #fff0b8 0%, #ffc94d 52%, #e3a41f 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.6),
+    inset 0 -2px 0 rgb(120 70 0 / 0.35),
+    0 0 0 1px rgb(245 184 46 / 0.8),
+    0 0 26px rgb(245 184 46 / 0.55);
+}
+.ghm-scene [data-horn-variant='primary']:active:not(:disabled) {
+  filter: brightness(0.94);
+  translate: 0 1px;
+}
+
+/* Secondary: purple with a double gold hairline. */
+.ghm-scene [data-horn-variant='secondary'] {
+  color: var(--ghm-ink);
+  background: linear-gradient(180deg, #3a1a68, #2a1050);
+  border: 1px solid rgb(245 184 46 / 0.95);
+  box-shadow:
+    inset 0 0 0 3px #2a1050,
+    inset 0 0 0 4px rgb(245 184 46 / 0.55),
+    0 4px 14px rgb(5 0 14 / 0.4);
+}
+.ghm-scene [data-horn-variant='secondary']:hover:not(:disabled) {
+  background: linear-gradient(180deg, #482282, #351764);
+  box-shadow:
+    inset 0 0 0 3px #351764,
+    inset 0 0 0 4px rgb(255 215 106 / 0.85),
+    0 0 20px rgb(245 184 46 / 0.3);
+}
+.ghm-scene [data-horn-variant='ghost'] {
+  font-family: var(--ghm-body);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--ghm-muted);
+}
+.ghm-scene [data-horn-variant='ghost']:hover:not(:disabled) {
+  color: var(--ghm-gold-hi);
+  background: rgb(245 184 46 / 0.1);
+}
+.ghm-scene [data-horn-variant]:disabled {
+  opacity: 0.5;
+}
+.ghm-scene .ghm-link-btn {
+  display: inline-flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12px;
+  padding: 10px 16px;
+  font-size: 14px;
+  text-decoration: none;
+}
+.ghm-scene .ghm-cta {
+  min-height: 56px;
+  font-size: 16px;
+}
+
+/* Fields. */
+.ghm-scene input[type='text'],
+.ghm-scene .ghm-input {
+  font-family: var(--ghm-display);
+  font-weight: 600;
+  border: 1px solid rgb(245 184 46 / 0.6);
+  background: #12062a;
+  border-radius: 10px;
+  min-height: 44px;
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.35);
+}
+.ghm-scene input[type='text']:focus-visible {
+  border-color: var(--ghm-gold-hi);
+  outline: 3px solid var(--ghm-ink);
+  outline-offset: 2px;
+}
+.ghm-scene input[type='text']::placeholder {
+  color: #a58ac6;
+}
+
+/* Page heading on the secondary screens (open tables). */
+.ghm-scene .ghm-title {
+  margin: 0;
+  font-family: var(--ghm-display);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ghm-gold-hi);
+  text-shadow: 0 2px 0 #4a2606;
+}
+
+/* Table code on the lobby screen. */
+.ghm-scene .ghm-code {
+  font-family: var(--ghm-display);
+  color: var(--ghm-gold-hi);
+  text-shadow:
+    0 2px 0 #4a2606,
+    0 0 18px rgb(245 184 46 / 0.35);
+}
+
+/* ═══ The still life ════════════════════════════════════════════════════ */
+
+.ghm-bob {
+  animation: ghm-bob 7s ease-in-out infinite;
+}
+@keyframes ghm-bob {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+.ghm-note {
+  animation: ghm-note 9s ease-in-out infinite;
+}
+.ghm-note--b {
+  animation-delay: -4.5s;
+}
+@keyframes ghm-note {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(3px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-5px);
+  }
+}
+.ghm-fan {
+  animation: ghm-bob 9s ease-in-out infinite;
+  animation-delay: -3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ghm-stars,
+  .ghm-rays,
+  .ghm-bob,
+  .ghm-note,
+  .ghm-fan {
+    animation: none;
+  }
+  .ghm-scene [data-horn-variant],
+  .ghm-scene .ghm-link-btn {
+    transition: none;
+  }
+}

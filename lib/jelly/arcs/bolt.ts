@@ -13,7 +13,8 @@
  */
 
 import type { Point } from './geometry';
-import { mixSeed, mulberry32, randInt, randRange, randSign, type Rand } from './rng';
+import { mulberry32 } from '@/lib/core/rng';
+import { mixSeed, randInt, randRange, randSign, type Rand } from './rng';
 
 export const BOLT = {
   maxSegmentPx: 8,

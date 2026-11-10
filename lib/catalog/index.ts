@@ -79,24 +79,24 @@ import type { AppInfo, GameInfo } from './types';
 // ── Entries owned by a feature (features/<id>/catalog.ts, named by the manifest's `catalog`) ──
 import altair from '@features/altair/catalog';
 import doctrine from '@features/doctrine/catalog';
+import dreamRift from '@features/dream-rift/catalog';
+import gabrielsHorn from '@features/gabriels-horn/catalog';
 import hearthworks from '@features/hearthworks/catalog';
+import laundrySort from '@features/laundry-sort/catalog';
 import nightrail from '@features/nightrail/catalog';
 import sliceIt from '@features/slice-it/catalog';
+import synapseStorm from '@features/synapse-storm/catalog';
 import voidBreaker from '@features/void-breaker/catalog';
 
 // ── Games not yet in a feature folder ─────────────────────────────────────
 import dailyPuzzles from './games/daily-puzzles';
-import dreamRift from './games/dream-rift';
-import gabrielsHorn from './games/gabriels-horn';
 import halfLife2 from './games/half-life-2';
 import houseAlwaysWins from './games/house-always-wins';
 import kowloonKnockout from './games/kowloon-knockout';
-import laundrySort from './games/laundry-sort';
 import neonDriftway from './games/neon-driftway';
 import portal from './games/portal';
 import csgo from './games/csgo';
 import rmhbox from './games/rmhbox';
-import synapseStorm from './games/synapse-storm';
 import templeOfJoy from './games/temple-of-joy';
 import velum2099 from './games/velum2099';
 import versecraft from './games/versecraft';

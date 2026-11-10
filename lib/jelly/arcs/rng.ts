@@ -5,16 +5,12 @@
  * seeded stream, so tests are deterministic and a re-strike can regenerate "the same path with new detail" from
  * `seed + k`. Nothing here reads `Math.random` or a clock.
  *
- * The generator is mulberry32, the shared one in `lib/core/rng.ts` (site chrome may depend on `lib/core`, not on a game directory).
+ * The generator is mulberry32, the shared one in `lib/core/rng.ts` (site chrome may depend on `lib/core`, not on a game directory);
+ * the arc modules import it from there.
  */
-
-import { mulberry32 } from '@/lib/core/rng';
 
 /** A source of uniform numbers in [0, 1). */
 export type Rand = () => number;
-
-// mulberry32 is the shared generator (lib/core/rng.ts); re-exported so the arc modules keep their local import.
-export { mulberry32 };
 
 /** Mix two integers into a well-spread 32-bit seed (`seed`, `salt` → a fresh independent stream). */
 export function mixSeed(seed: number, salt: number): number {

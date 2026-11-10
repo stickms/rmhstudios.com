@@ -17,7 +17,7 @@ import { connectToRmhTube, emit } from '@/lib/rmhtube/socket';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { S2C, C2S } from '@/lib/rmhtube/events';
 import { SHORTCUTS, AUTO_AFK_TIMEOUT_MS } from '@/lib/rmhtube/constants';
-import { toast } from '@/lib/rmhtube/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import { clearMediaSession, setMediaHandlers, setMediaMeta } from '@/lib/media/media-session';
 import { extrapolate } from '@/lib/rmhtube/sync-math';
 import { getServerNow } from '@/lib/rmhtube/clock';

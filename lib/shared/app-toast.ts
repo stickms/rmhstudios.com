@@ -2,8 +2,8 @@
  * app-toast — the toast store shared by the full-screen apps.
  *
  * RMHbox, RMHType, RMHStudy and RMHTube each shipped a byte-for-byte copy of
- * this store and its container. They are one implementation now; the per-app
- * `toast-store.ts` modules re-export it so existing imports keep working.
+ * this store and its container. They are one implementation now, imported from
+ * here directly.
  *
  * Why not sonner (the site-wide toaster)? These apps render outside the
  * `_site` shell, so the global `<Toaster>` is not mounted on their routes and

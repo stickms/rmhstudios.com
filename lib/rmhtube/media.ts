@@ -368,22 +368,6 @@ export function playableUrl(url: string): string {
   return withStart(u.toString(), null);
 }
 
-// ─── Back-compat helpers ─────────────────────────────────────────
-
-/**
- * Legacy shape: the media type, or null when unplayable.
- * Prefer `parseMedia` — it answers this and everything else in one parse.
- */
-export function detectMediaType(url: string): MediaType | null {
-  return parseMedia(url)?.mediaType ?? null;
-}
-
-/** YouTube video id, or null. */
-export function extractYouTubeId(url: string): string | null {
-  const media = parseMedia(url);
-  return media?.mediaType === 'youtube' ? media.id : null;
-}
-
 /**
  * Could this be a raw media link the server can identify by asking the host?
  * True for any http(s) URL `parseMedia` doesn't place and that isn't a known

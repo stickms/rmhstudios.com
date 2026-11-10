@@ -14,7 +14,7 @@ import { useRmhTubeStore } from './store';
 import { usePartyStore } from './party-store';
 import type { PartyState } from './party';
 import { C2S, S2C } from './events';
-import { toast } from './toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import { bindSlowModeEvents } from '@/lib/safety/slow-mode-store';
 import { recordPong, beginClockSyncBurst, resetClock } from './clock';
 import { CLOCK_SYNC_SAMPLES, CLOCK_SYNC_INTERVAL_MS } from './constants';

@@ -5,9 +5,8 @@
  * `lib/game/replay.ts` builds its replay schemas with zod at module scope, and
  * anything a route definition imports (for `head`, `loader`, `validateSearch`)
  * is in the shared entry chunk, so importing a title from there put all of zod
- * (~70 KB minified) on the critical path of every page on the site. `replay.ts`
- * re-exports these, so existing imports keep working; route files and anything
- * they reach should import from here.
+ * (~70 KB minified) on the critical path of every page on the site. Everything
+ * imports these from here; `replay.ts` does not re-export them.
  */
 
 export const LIGHTS_OUT_VERSION = 'lo-1';

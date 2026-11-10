@@ -15,7 +15,7 @@ import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime
 import type { PeerWaitState } from '@/lib/shared/realtime/types';
 import { useRMHboxStore } from './store';
 import { S2C } from './events';
-import { toast } from './toast-store';
+import { toast } from '@/lib/shared/app-toast';
 
 let client: RealtimeClient | null = null;
 

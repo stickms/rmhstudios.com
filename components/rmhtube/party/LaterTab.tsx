@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2 } from 'lucide-react';
-import { toast } from '@/lib/rmhtube/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';

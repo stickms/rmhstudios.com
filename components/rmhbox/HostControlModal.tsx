@@ -26,7 +26,7 @@ import {
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
-import { toast } from '@/lib/rmhbox/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import { isInGameLobbyState } from '@/lib/rmhbox/lobby-state';
 
 export default function HostControlModal() {

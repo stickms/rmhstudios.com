@@ -20,9 +20,13 @@ import type { Server, Socket } from 'socket.io';
 import altair from '../../features/altair/server';
 import balatro from '../../features/balatro/server';
 import casino from '../../features/casino/server';
+import dreamRift from '../../features/dream-rift/server';
 import doctrine from '../../features/doctrine/server';
+import gabrielsHorn from '../../features/gabriels-horn/server';
 import hearthworks from '../../features/hearthworks/server';
+import laundrySort from '../../features/laundry-sort/server';
 import sliceIt from '../../features/slice-it/server';
+import synapseStorm from '../../features/synapse-storm/server';
 
 const SHARED_SLOT = 'shared';
 
@@ -41,9 +45,15 @@ export interface FeatureSocketServer {
   register(io: Server, socket: Socket): void;
   /** Called when that socket disconnects, in registry order. */
   onDisconnect?(io: Server, socket: Socket): void;
+  /**
+   * True when `onDisconnect` only holds in-memory state for a reconnect (grace windows, queue seats,
+   * lobby timers). The hub skips it while shutting down (`io.close()` drops every socket at once and
+   * the process is going away), exactly as the hand-written `if (!shuttingDown) …` calls did.
+   */
+  readonly skipDisconnectOnShutdown?: boolean;
 }
 
-export const FEATURE_SOCKET_SERVERS: readonly FeatureSocketServer[] = [altair, balatro, casino, doctrine, hearthworks, sliceIt];
+export const FEATURE_SOCKET_SERVERS: readonly FeatureSocketServer[] = [altair, balatro, casino, doctrine, dreamRift, gabrielsHorn, hearthworks, laundrySort, sliceIt, synapseStorm];
 
 const inSlot = (f: FeatureSocketServer, slot: string): boolean => (f.slot ?? SHARED_SLOT) === slot;
 
@@ -51,6 +61,15 @@ export function registerFeatureHandlers(io: Server, socket: Socket, slot: string
   for (const f of FEATURE_SOCKET_SERVERS) if (inSlot(f, slot)) f.register(io, socket);
 }
 
-export function handleFeatureDisconnects(io: Server, socket: Socket, slot: string = SHARED_SLOT): void {
-  for (const f of FEATURE_SOCKET_SERVERS) if (inSlot(f, slot)) f.onDisconnect?.(io, socket);
+export function handleFeatureDisconnects(
+  io: Server,
+  socket: Socket,
+  slot: string = SHARED_SLOT,
+  shuttingDown = false,
+): void {
+  for (const f of FEATURE_SOCKET_SERVERS) {
+    if (!inSlot(f, slot)) continue;
+    if (shuttingDown && f.skipDisconnectOnShutdown) continue;
+    f.onDisconnect?.(io, socket);
+  }
 }

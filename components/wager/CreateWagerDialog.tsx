@@ -16,6 +16,9 @@ import { Label } from '@/components/ui/label';
 import { WAGER_ELIGIBLE_GAMES } from '@/lib/wager/eligible-games';
 import { MIN_WAGER_STAKE, MAX_WAGER_STAKE } from '@/lib/wager/constants';
 import type { SerializedWager } from '@/lib/wager/wager.server';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createWagerApi } from '@/lib/wager/wager.contract';
 
 interface Props {
   open: boolean;
@@ -35,22 +38,13 @@ export function CreateWagerDialog({ open, onClose, onCreated, opponentId, oppone
   const submit = async () => {
     setSubmitting(true);
     try {
-      const res = await fetch('/api/wager', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await api(createWagerApi, {
+        body: {
           gameId,
           stakeCoins: stake,
           opponentId: opponentId ?? null,
-        }),
+        },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(
-          data.error ?? t('create-failed', { defaultValue: 'Could not create challenge' }),
-        );
-        return;
-      }
       toast.success(
         opponentId
           ? t('challenge-sent', { defaultValue: 'Challenge sent!' })
@@ -58,8 +52,10 @@ export function CreateWagerDialog({ open, onClose, onCreated, opponentId, oppone
       );
       onCreated(data.wager);
       onClose();
-    } catch {
-      toast.error(t('create-failed', { defaultValue: 'Could not create challenge' }));
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('create-failed', { defaultValue: 'Could not create challenge' }),
+      );
     } finally {
       setSubmitting(false);
     }

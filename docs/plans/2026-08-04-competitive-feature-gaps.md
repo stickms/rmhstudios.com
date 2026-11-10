@@ -512,7 +512,7 @@ glass-degradation ladder, all applied by the boot script in `app/routes/__root.t
 **None of it reaches a `<canvas>`.** A canvas game paints pixels; `--site-*`/`--app-*` tokens and
 `data-color-vision` are invisible to it. So the accessibility work stops at the game frame, and
 inside the frame there is no cross-game contract at all: `difficulty` appears in
-`lib/forest-explorer/`, `lib/vega/WaveManager.ts`, `lib/laundry-sort/` and `lib/game/GameEngine.ts`
+`lib/forest-explorer/`, `features/vega/engine/WaveManager.ts`, `features/laundry-sort/engine/` and `lib/game/GameEngine.ts`
 with four unrelated meanings, and there is no toggle anywhere for flashing.
 
 **The photosensitivity point is the sharp one.** Void Breaker and Neon Driftway are neon,

@@ -1,0 +1,1426 @@
+/* ============================================
+   Synapse Storm - Complete Stylesheet
+   Dark theme, neon accents, glassmorphism
+   ============================================ */
+
+.synapse-storm-root {
+    --bg-primary: #0a0a1a;
+    --bg-secondary: #111128;
+    --bg-card: rgba(18, 18, 45, 0.85);
+    --bg-card-hover: rgba(25, 25, 60, 0.95);
+    --border-color: rgba(100, 100, 255, 0.12);
+    --text-primary: #e8e8f0;
+    --text-secondary: #8888aa;
+    --text-muted: #555577;
+    --accent-cyan: #00e5ff;
+    --accent-pink: #ff6ec7;
+    --accent-green: #76ff03;
+    --accent-orange: #ffab00;
+    --accent-purple: #b388ff;
+    --accent-red: #ff5252;
+    --accent-gold: #ffd740;
+    --glow-strength: 0.4;
+    --font-body: 'Geist Variable', 'Geist', system-ui, sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, monospace;
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --transition-fast: 0.15s ease;
+    --transition-med: 0.3s ease;
+
+    font-family: var(--font-body);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    /**
+     * Height, and the keyboard.
+     *
+     * `100vh` is the fallback pair for engines without `dvh`. The `--kb-inset`
+     * subtraction is what stops the game magnifying itself when a puzzle is
+     * typed into.
+     *
+     * Several puzzle types take typed answers, so a software keyboard can cover
+     * the bottom 40% of the screen at any point in a run. This shell is exactly
+     * viewport-height and `overflow: hidden`, and `dvh` tracks the browser's own
+     * toolbars rather than the keyboard — so the engine, asked to reveal a
+     * focused field it believes is hidden, has nowhere to scroll and moves the
+     * only thing it can: the visual viewport. It pans, and where the field still
+     * will not fit, it scales. From the player's seat the whole playfield jumps
+     * and zooms mid-run and the other cards slide off screen.
+     *
+     * `--kb-inset` (hooks/useKeyboardInset, mounted by SynapseStormGame) is the
+     * keyboard's measured height, so the shell simply ENDS where the keyboard
+     * begins. The field is then already on screen, the engine has nothing to
+     * reveal, and it neither pans nor scales. The property is absent at rest, so
+     * the `0px` fallback makes this byte-for-byte the old rule on desktop and
+     * whenever no keyboard is up.
+     */
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.synapse-storm-root * {
+    box-sizing: border-box;
+}
+
+/* ---- GLOBAL APP ---- */
+.app-container {
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
+    width: 100%;
+    position: relative;
+    background: var(--bg-primary);
+    background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(0, 229, 255, 0.03) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(255, 110, 199, 0.03) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 80%, rgba(118, 255, 3, 0.02) 0%, transparent 50%);
+}
+
+.scanline-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+    background: repeating-linear-gradient(0deg,
+            transparent,
+            transparent 2px,
+            rgba(0, 0, 0, 0.015) 2px,
+            rgba(0, 0, 0, 0.015) 4px);
+}
+
+/* ============================================
+   SHARED MENU BITS
+   The main menu, multiplayer menu and lobby now live in SynapseStormMenu.css;
+   these three are still used by the game-over screens and the loading state.
+   ============================================ */
+.menu-bg-effect {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 30% 40%, rgba(0, 229, 255, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 70% 60%, rgba(255, 110, 199, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 50% 90%, rgba(118, 255, 3, 0.04) 0%, transparent 30%);
+    /* Static at the old pulse's mid-point. It used to breathe 0.6 ↔ 1 forever —
+       a full-screen layer UNDER the menu's eight backdrop-filter panes, so the
+       menu never went idle: ~1.7 cores and 33fps at rest on desktop, a locked
+       60fps with it still (perf audit 2026-10-08). The logo pulse and the start
+       button shimmer stay; they are small and they are the call to action. */
+    opacity: 0.8;
+}
+
+.menu-tagline {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    line-height: 1.5;
+    margin-bottom: 2rem;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@keyframes logoPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+
+/* ============================================
+   GAME BOARD
+   ============================================ */
+.game-board {
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.3s ease;
+}
+
+.game-board.saturated {
+    animation: panicPulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes panicPulse {
+
+    0%,
+    100% {
+        box-shadow: inset 0 0 20px rgba(255, 82, 82, 0);
+    }
+
+    50% {
+        box-shadow: inset 0 0 60px rgba(255, 82, 82, 0.4);
+    }
+}
+
+.playfield {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    padding: 1rem;
+}
+
+.playfield-grid {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.playfield-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+
+.loading-pulse {
+    font-size: 3rem;
+    animation: logoPulse 1.5s ease-in-out infinite;
+    margin-bottom: 0.5rem;
+}
+
+/* ---- COMBO OVERLAY ---- */
+.combo-overlay {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    pointer-events: none;
+    animation: comboAppear 0.5s ease-out;
+}
+
+.combo-text {
+    font-family: var(--font-mono);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--accent-gold);
+    text-shadow:
+        0 0 20px rgba(255, 215, 64, 0.6),
+        0 0 40px rgba(255, 215, 64, 0.3);
+    animation: comboPulse 0.8s ease-in-out infinite;
+}
+
+@keyframes comboAppear {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px) scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+    }
+}
+
+@keyframes comboPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.08);
+    }
+}
+
+/* ============================================
+   HUD
+   ============================================ */
+/**
+ * The HUD reflows rather than running off the side.
+ *
+ * It was a single non-wrapping row of six to seven readouts whose `min-width`s
+ * alone came to 440px, plus five 24px gaps and 48px of padding — a 608px floor
+ * inside an ancestor with `overflow: hidden`. On a 390px phone that put a third
+ * of the HUD (time survived, solved, best streak) permanently off screen with
+ * no way to scroll to it. `flex-wrap` lets it become two rows instead, and the
+ * phone block below tightens the metrics so two rows is all it ever needs.
+ */
+.hud {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.5rem;
+    padding: calc(0.75rem + var(--safe-top)) calc(1.5rem + var(--safe-right)) 0.75rem
+        calc(1.5rem + var(--safe-left));
+    background: rgba(10, 10, 26, 0.95);
+    border-bottom: 1px solid var(--border-color);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    z-index: 50;
+    flex-shrink: 0;
+}
+
+.hud-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 60px;
+}
+
+/* Phones: shed the fixed floors and the wide gaps so the whole HUD fits in two
+   compact rows, and drop the type a step so the values still read at a glance. */
+@media (max-width: 640px) {
+    .hud {
+        gap: 0.35rem 0.75rem;
+        padding: calc(0.5rem + var(--safe-top)) calc(0.75rem + var(--safe-right)) 0.5rem
+            calc(0.75rem + var(--safe-left));
+    }
+
+    .hud-section,
+    .hud-score,
+    .hud-difficulty {
+        min-width: 0;
+    }
+
+    .hud-value {
+        font-size: 0.95rem;
+    }
+
+    .score-value {
+        font-size: 1.05rem;
+    }
+
+    .hud-difficulty {
+        /* The intensity meter is the one readout that needs real width to mean
+           anything; give it what is left of the row rather than a fixed 100px. */
+        flex: 1 1 5rem;
+    }
+
+    /* `margin-left: auto` pushed best-streak to the far end of a row that no
+       longer has one end — once the HUD wraps it would strand itself alone on a
+       third line. */
+    .hud-best-streak {
+        margin-left: 0;
+    }
+}
+
+.hud-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    margin-bottom: 0.2rem;
+    font-weight: 600;
+}
+
+.hud-value {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.hud-score {
+    min-width: 100px;
+}
+
+.score-value {
+    color: var(--accent-cyan);
+    font-size: 1.3rem;
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+}
+
+.combo-value {
+    color: var(--text-secondary);
+    transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.combo-value.combo-active {
+    color: var(--accent-gold);
+    text-shadow: 0 0 10px rgba(255, 215, 64, 0.5);
+    animation: comboPulse 0.8s ease-in-out infinite;
+}
+
+.hud-difficulty {
+    min-width: 100px;
+}
+
+.difficulty-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 0.15rem;
+}
+
+.difficulty-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-green), var(--accent-orange), var(--accent-red));
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.difficulty-level {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--accent-orange);
+}
+
+.lives-display {
+    display: flex;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.life-pip.alive {
+    color: var(--accent-green);
+    text-shadow: 0 0 8px rgba(118, 255, 3, 0.4);
+}
+
+.life-pip.dead {
+    color: var(--text-muted);
+    opacity: 0.3;
+}
+
+.hud-best-streak {
+    margin-left: auto;
+}
+
+.best-streak-value {
+    color: var(--accent-gold);
+    text-shadow: 0 0 10px rgba(255, 215, 64, 0.4);
+}
+
+/* ============================================
+   PUZZLE CARD
+   ============================================ */
+/**
+ * Cards are placed inside the playfield, not merely near it.
+ *
+ * This was `position: absolute; width: 280px; left: x%` with x spawning up to
+ * 76 (`findNonOverlappingPosition` in `features/synapse-storm/engine/engine.ts`). A
+ * percentage `left` positions the card's LEFT edge, so on a ~358px-wide phone
+ * playfield a card at 76% started at 272px and ran to 552px — nearly 200px past
+ * the edge, clipped away by `.playfield { overflow: hidden }`, taking its answer
+ * buttons with it. The puzzle was unanswerable and the run was lost to a miss
+ * the player never had a chance at.
+ *
+ * The offsets now scale the spawn coordinate across the FREE space (the track
+ * the card can travel without any part of it leaving), so 0 is flush left, 100
+ * is flush right, and every value between is fully visible at every width. The
+ * vertical clamp uses the card's max-height rather than its real height —
+ * conservative on purpose, since CSS cannot know the latter, and erring toward
+ * "too far up" only ever keeps more of the card on screen.
+ */
+.puzzle-card {
+    --card-w: min(280px, calc(100% - 1rem));
+    --card-h-cap: min(22rem, calc(100% - 1rem));
+    position: absolute;
+    width: var(--card-w);
+    max-height: var(--card-h-cap);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    left: calc((100% - var(--card-w)) * var(--card-x, 0) / 100);
+    top: calc((100% - var(--card-h-cap)) * var(--card-y, 0) / 100);
+    background: var(--bg-card);
+    border: 1px solid var(--card-color, var(--border-color));
+    border-radius: var(--radius-md);
+    padding: 0.85rem 1rem 0.5rem;
+    -webkit-backdrop-filter: blur(15px);
+    backdrop-filter: blur(15px);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3), 0 0 1px var(--card-color, transparent);
+    animation: cardSpawn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+    z-index: 10;
+    touch-action: none;
+}
+
+.puzzle-card:hover {
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.4), 0 0 3px var(--card-color, transparent);
+    border-color: var(--card-color);
+}
+
+.puzzle-card.urgent {
+    animation: cardUrgent 0.5s ease-in-out infinite;
+    border-color: var(--accent-red);
+    box-shadow: 0 0 20px rgba(255, 82, 82, 0.2), 0 0 2px var(--accent-red);
+}
+
+.puzzle-card.expired {
+    opacity: 0.3;
+    pointer-events: none;
+    transform: scale(0.95);
+    transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+}
+
+.puzzle-card.priority {
+    border-width: 2px;
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 20px rgba(255, 215, 64, 0.15), inset 0 0 20px rgba(255, 215, 64, 0.03);
+}
+
+@keyframes cardSpawn {
+    from {
+        opacity: 0;
+        transform: scale(0.7) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes cardUrgent {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(255, 82, 82, 0.2);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(255, 82, 82, 0.4);
+    }
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.4rem;
+}
+
+.card-category {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--card-color);
+}
+
+.card-points {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.card-instruction {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.6rem;
+    font-weight: 500;
+}
+
+/* ---- TIMER BAR ---- */
+.timer-bar {
+    width: 100%;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 0.6rem;
+}
+
+.timer-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.1s linear, background-color 0.3s ease;
+    box-shadow: 0 0 6px currentColor;
+}
+
+/* ---- PUZZLE CONTENT ---- */
+.puzzle-content {
+    min-height: 60px;
+}
+
+.puzzle-expression {
+    font-family: var(--font-mono);
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-align: center;
+    color: var(--text-primary);
+    margin-bottom: 0.6rem;
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+}
+
+.puzzle-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+}
+
+.option-btn {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.45rem 0.6rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.option-btn:hover {
+    background: rgba(0, 229, 255, 0.1);
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    transform: translateY(-1px);
+}
+
+/* ---- SEQUENCE (PATTERN) ---- */
+.pattern-sequence {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+}
+
+.seq-unknown {
+    color: var(--accent-pink);
+    font-size: 1.2rem;
+    background: rgba(255, 110, 199, 0.1);
+    border: 1px dashed rgba(255, 110, 199, 0.3);
+    animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+}
+
+/* ---- LANGUAGE / TEXT INPUT ---- */
+.puzzle-prompt {
+    font-family: var(--font-mono);
+    font-size: 1.3rem;
+    font-weight: 700;
+    text-align: center;
+    color: var(--accent-green);
+    margin-bottom: 0.6rem;
+    letter-spacing: 0.15em;
+}
+
+.puzzle-input-form {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.puzzle-text-input {
+    flex: 1;
+    font-family: var(--font-mono);
+    /* Floored on touch so focusing it can't zoom the page — see
+       `--site-field-font-floor` in globals.css. */
+    font-size: max(0.95rem, var(--site-field-font-floor));
+    padding: 0.45rem 0.65rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    outline: none;
+}
+
+.submit-btn {
+    font-size: 1rem;
+    padding: 0.4rem 0.7rem;
+    background: rgba(118, 255, 3, 0.15);
+    border: 1px solid rgba(118, 255, 3, 0.3);
+    border-radius: var(--radius-sm);
+    color: var(--accent-green);
+    cursor: pointer;
+    font-weight: 700;
+}
+
+/* ---- SPATIAL / SHAPES ---- */
+.shape-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+}
+
+.clickable-shape {
+    cursor: pointer;
+    transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.clickable-shape:hover {
+    transform: scale(1.15);
+    filter: brightness(1.3);
+}
+
+/* ---- MEMORY ---- */
+.memory-sequence {
+    display: flex;
+    gap: 0.35rem;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+}
+
+.memory-digit {
+    font-family: var(--font-mono);
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent-purple);
+    padding: 0.2rem 0.5rem;
+    background: rgba(179, 136, 255, 0.1);
+    border-radius: 6px;
+    animation: memoryFlash 0.6s ease-in-out;
+}
+
+@keyframes memoryFlash {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.memory-hint {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--accent-purple);
+    animation: blink 1s ease-in-out infinite;
+    font-weight: 600;
+}
+
+/* ---- COLOR INPUT ---- */
+.color-input-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.selected-colors {
+    min-height: 32px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem;
+    gap: 0.3rem;
+    border: 1px inset rgba(255, 255, 255, 0.05);
+}
+
+.color-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.color-pick-btn {
+    height: 32px;
+    border-radius: 16px;
+    /* circular */
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+}
+
+.color-pick-btn:hover {
+    transform: scale(1.1);
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 12px currentColor;
+}
+
+.color-pick-btn:active {
+    transform: scale(0.9);
+}
+
+.text-small {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* ---- REACTION ---- */
+.reaction-field {
+    position: relative;
+    width: 100%;
+    height: 80px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.reaction-target {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    corner-shape: round;
+    background: radial-gradient(circle, var(--accent-red), #d32f2f);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 12px rgba(255, 82, 82, 0.5);
+}
+
+.reaction-target.jitter {
+    animation: targetJitter 0.2s linear infinite;
+}
+
+@keyframes targetJitter {
+
+    0%,
+    100% {
+        transform: translate(-50%, -50%) translate(0, 0);
+    }
+
+    25% {
+        transform: translate(-50%, -50%) translate(2px, -1px);
+    }
+
+    50% {
+        transform: translate(-50%, -50%) translate(-1px, 2px);
+    }
+
+    75% {
+        transform: translate(-50%, -50%) translate(1px, 1px);
+    }
+}
+
+/* ---- MINIGAME ---- */
+.minigame-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 70px;
+}
+
+.minigame-go-btn,
+.minigame-countdown-btn,
+.minigame-double-tap,
+.minigame-tap-fast {
+    font-size: 1.4rem;
+    font-weight: 900;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-sm);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 64, 129, 0.25);
+    color: var(--accent-pink, #ff4081);
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+}
+
+.minigame-go-btn:active,
+.minigame-countdown-btn:active,
+.minigame-double-tap:active,
+.minigame-tap-fast:active {
+    transform: scale(0.95);
+}
+
+.minigame-whack-target {
+    position: absolute;
+    width: 48px;
+    height: 48px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    corner-shape: round;
+    background: radial-gradient(circle, #ff4081, #c2185b);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 16px rgba(255, 64, 129, 0.5);
+}
+
+.minigame-whack-target:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.minigame-shapes {
+    padding: 0.5rem;
+}
+
+.minigame-shapes-grid {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+}
+
+.minigame-shape-btn {
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.15s;
+}
+
+.minigame-shape-btn:hover {
+    transform: scale(1.08);
+    border-color: rgba(255, 64, 129, 0.5);
+}
+
+.minigame-shape-btn:active {
+    transform: scale(0.95);
+}
+
+.fling-hint {
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;
+}
+
+.fling-hint .fling-arrow {
+    font-size: 2rem;
+    animation: flingBounce 1s ease-in-out infinite;
+}
+
+@keyframes flingBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+.fling-hint p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* ---- POWERUP ---- */
+.powerup-puzzle {
+    text-align: center;
+}
+
+.powerup-badge {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent-gold);
+    margin-bottom: 0.3rem;
+}
+
+/* ============================================
+   GAME OVER
+   ============================================ */
+.game-over {
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    align-items: safe center;
+    position: relative;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-block: calc(var(--safe-top)) calc(var(--safe-bottom));
+    padding-inline: var(--safe-left) var(--safe-right);
+}
+
+.go-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    max-width: 520px;
+    width: 100%;
+    padding: 2rem;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.go-final-score {
+    font-family: var(--font-mono);
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: var(--accent-cyan);
+    text-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
+}
+
+.go-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.go-stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 0.5rem;
+}
+
+.go-button {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0.85rem 2.5rem;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    width: 100%;
+    max-width: 300px;
+    margin-bottom: 0.5rem;
+}
+
+.go-restart {
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    color: #fff;
+    border: none;
+}
+
+/* ============================================
+   IN-MATCH LAYOUT (GAME + SIDEBAR)
+   ============================================ */
+.ss-mp-game-layout {
+    display: flex;
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
+    width: 100%;
+}
+
+.ss-mp-game-main {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.ss-mp-game-sidebar {
+    width: 220px;
+    background: rgba(10, 10, 26, 0.95);
+    border-left: 1px solid var(--border-color);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem;
+    flex-shrink: 0;
+    z-index: 50;
+}
+
+@media (max-width: 768px) {
+    .ss-mp-game-layout {
+        flex-direction: column;
+    }
+    .ss-mp-game-sidebar {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--border-color);
+        flex-direction: row;
+        padding: 0.4rem;
+        height: auto;
+        max-height: 80px;
+        overflow-x: auto;
+    }
+}
+
+.ss-mp-connection-status {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    padding: 0.5rem 0;
+}
+
+.ss-mp-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    corner-shape: round;
+}
+
+.ss-mp-status-connected {
+    background: var(--accent-green);
+    box-shadow: 0 0 6px var(--accent-green);
+}
+
+.ss-mp-status-disconnected {
+    background: var(--accent-red);
+}
+
+.ss-mp-status-connecting,
+.ss-mp-status-reconnecting {
+    background: var(--accent-orange);
+    animation: blink 1s ease-in-out infinite;
+}
+
+/* ============================================
+   LEADERBOARD (COMPACT - IN GAME)
+   ============================================ */
+.ss-lb-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.ss-lb-header {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--text-muted);
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0.25rem;
+}
+
+.ss-lb-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    transition: background var(--transition-fast);
+}
+
+.ss-lb-row-self {
+    background: rgba(0, 229, 255, 0.08);
+    border: 1px solid rgba(0, 229, 255, 0.15);
+}
+
+.ss-lb-row-finished {
+    opacity: 0.6;
+}
+
+.ss-lb-rank {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--text-muted);
+    min-width: 24px;
+    font-size: 0.7rem;
+}
+
+.ss-lb-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.ss-lb-score {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--accent-cyan);
+    font-size: 0.75rem;
+}
+
+/* ============================================
+   LEADERBOARD (FULL - POST MATCH)
+   ============================================ */
+.ss-lb-full {
+    margin-top: 1rem;
+}
+
+.ss-lb-full-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.ss-lb-full-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.ss-lb-full-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+}
+
+.ss-lb-full-row.ss-lb-row-self {
+    border-color: var(--accent-cyan);
+    background: rgba(0, 229, 255, 0.05);
+}
+
+.ss-lb-full-rank {
+    font-size: 1.2rem;
+    min-width: 30px;
+    text-align: center;
+}
+
+.ss-lb-full-info {
+    flex: 1;
+    text-align: left;
+}
+
+.ss-lb-full-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    display: block;
+}
+
+.ss-lb-full-stats {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+}
+
+.ss-lb-full-score {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    text-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+}
+
+.ss-mp-go-rank {
+    font-size: 3rem;
+    margin: 0.5rem 0;
+}
+
+/* ============================================
+   GLOBAL LEADERBOARD
+   ============================================ */
+.ss-glb {
+    margin-top: 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    text-align: left;
+}
+
+.ss-glb-compact {
+    margin-top: 1rem;
+}
+
+.ss-glb-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ss-glb-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent-gold);
+    font-weight: 700;
+}
+
+.ss-glb-trophy {
+    color: var(--accent-gold);
+}
+
+.ss-glb-collapse {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.2rem;
+    border-radius: 4px;
+    transition: color var(--transition-fast);
+}
+
+.ss-glb-collapse:hover {
+    color: var(--text-primary);
+}
+
+.ss-glb-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 1rem;
+    padding: 0.6rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--accent-gold);
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast), transform var(--transition-fast);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+.ss-glb-toggle:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 10px rgba(255, 215, 64, 0.1);
+}
+
+.ss-glb-my-rank {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--accent-cyan);
+    margin-left: auto;
+}
+
+.ss-glb-loading,
+.ss-glb-empty,
+.ss-glb-not-ranked {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding: 0.75rem 0;
+}
+
+.ss-glb-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    max-height: 320px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+}
+
+.ss-glb-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.ss-glb-row:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.ss-glb-row-self {
+    background: rgba(0, 229, 255, 0.06);
+    border: 1px solid rgba(0, 229, 255, 0.12);
+}
+
+.ss-glb-rank {
+    min-width: 28px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.ss-glb-player {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.ss-glb-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.ss-glb-you {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    background: rgba(0, 229, 255, 0.1);
+    padding: 0.05rem 0.35rem;
+    border-radius: 3px;
+    letter-spacing: 0.08em;
+    flex-shrink: 0;
+}
+
+.ss-glb-meta {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-top: 0.05rem;
+}
+
+.ss-glb-score {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    text-shadow: 0 0 6px rgba(0, 229, 255, 0.2);
+    flex-shrink: 0;
+}
+
+.ss-glb-score-new {
+    color: var(--accent-gold);
+    text-shadow: 0 0 8px rgba(255, 215, 64, 0.3);
+    animation: comboPulse 0.8s ease-in-out infinite;
+}
+
+.ss-glb-not-ranked {
+    border-top: 1px solid var(--border-color);
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    font-style: italic;
+}
+/* Touch targets: answer buttons and submit reach the 44px floor on coarse
+   pointers (desktop sizing is unchanged). The menu's own controls are sized in
+   SynapseStormMenu.css. */
+@media (pointer: coarse) {
+    .option-btn,
+    .submit-btn,
+    .ss-glb-toggle {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}

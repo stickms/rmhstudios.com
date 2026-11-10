@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
-import { toast } from '@/lib/rmhtube/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { api, roomPosition, usePartyStore, type TimedComment } from '@/lib/rmhtube/party-store';
 import { mediaKey } from '@/lib/rmhtube/party';

@@ -1,71 +1,15 @@
 /**
  * E2 — the socket protocol version.
  *
- * The load-bearing assertion in this file is the FIRST one: the client half
- * (`lib/shared/realtime/protocol.ts`) and the server half
- * (`server/shared/protocol.ts`) declare the same contract.
- *
- * They were duplicated rather than shared because the Dockerfile's
- * `server-builder` stage used to copy a curated per-module subset of `lib/`,
- * and the client module was not in it — a `server/` bundle importing an
- * uncopied `lib/` module either fails the image build or ships a bundle that
- * throws MODULE_NOT_FOUND on boot (`server/CLAUDE.md` gotchas 7 and 8).
- *
- * THAT BLOCKER IS GONE: the stage now copies `lib/` wholesale, so
- * `server/shared/protocol.ts` could re-export from the client half and the
- * duplication could be deleted outright. It has NOT been, so this test still
- * stands between a stray edit and a hub that rejects every client on earth —
- * but the follow-up is now a small refactor rather than a Dockerfile argument,
- * and whoever does it should delete this file along with the duplicate.
+ * The contract (`lib/shared/realtime/protocol.ts`) is declared once; the hubs'
+ * guard (`server/shared/protocol.ts`) imports it. This file pins the contract's
+ * own invariants and the guard's verdicts.
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 
 import * as client from '@/lib/shared/realtime/protocol';
 import * as server from '../../server/shared/protocol';
-
-const ROOT = resolve(__dirname, '../..');
-const CLIENT_SRC = readFileSync(resolve(ROOT, 'lib/shared/realtime/protocol.ts'), 'utf-8');
-const SERVER_SRC = readFileSync(resolve(ROOT, 'server/shared/protocol.ts'), 'utf-8');
-
-/** The body of the `fnv1a` helper, stripped of comments and whitespace. */
-function fnv1aBody(source: string): string {
-  const start = source.indexOf('function fnv1a(');
-  expect(start, 'no fnv1a helper found').toBeGreaterThan(-1);
-  return source
-    .slice(start, source.indexOf('\n}', start))
-    .replace(/\/\/[^\n]*/g, '')
-    .replace(/\s+/g, '');
-}
-
-describe('the two halves agree', () => {
-  it('declares the same event list', () => {
-    expect(server.PROTOCOL_EVENTS).toEqual(client.PROTOCOL_EVENTS);
-  });
-
-  it('declares the same revision', () => {
-    expect(server.PROTOCOL_REVISION).toBe(client.PROTOCOL_REVISION);
-  });
-
-  it('computes the same version', () => {
-    expect(server.PROTOCOL_VERSION).toBe(client.PROTOCOL_VERSION);
-  });
-
-  it('uses a byte-identical hash implementation', () => {
-    // Equal inputs producing equal outputs above is necessary but not
-    // sufficient: two different implementations can agree on one input and
-    // diverge on the next revision. Compare the code, not just the result.
-    expect(fnv1aBody(SERVER_SRC)).toBe(fnv1aBody(CLIENT_SRC));
-  });
-
-  it('agrees on the wire constants', () => {
-    expect(server.PROTOCOL_AUTH_KEY).toBe(client.PROTOCOL_AUTH_KEY);
-    expect(server.PROTOCOL_OUTDATED_EVENT).toBe(client.PROTOCOL_OUTDATED_EVENT);
-    expect(server.PROTOCOL_OUTDATED_REASON).toBe(client.PROTOCOL_OUTDATED_REASON);
-  });
-});
 
 describe('the declared contract', () => {
   it('is sorted, so two people adding an event cannot produce two versions', () => {
@@ -86,7 +30,6 @@ describe('hashEvents', () => {
     // A golden value. FNV-1a is implemented with shifts precisely because
     // `hash * 16777619` overflows the float53 mantissa and would make the hash
     // engine-dependent — this asserts the shift form is still in use.
-    expect(client.hashEvents(['a', 'b'], 1)).toBe(server.hashEvents(['a', 'b'], 1));
     expect(client.hashEvents(['a', 'b'], 1)).toMatch(/^[0-9a-f]{16}$/);
     expect(client.hashEvents(['a', 'b'], 1)).toBe(client.hashEvents(['a', 'b'], 1));
   });
@@ -125,7 +68,7 @@ function fakeSocket(auth: Record<string, unknown> | undefined) {
 
 describe('protocolGuard', () => {
   it('admits a matching client', () => {
-    const socket = fakeSocket({ protocol: server.PROTOCOL_VERSION });
+    const socket = fakeSocket({ protocol: client.PROTOCOL_VERSION });
     const next = vi.fn();
     server.protocolGuard()(socket, next);
     expect(next).toHaveBeenCalledWith();
@@ -160,7 +103,7 @@ describe('protocolGuard', () => {
     expect(socket.emitted).toEqual([
       {
         event: 'protocol:outdated',
-        payload: { expected: server.PROTOCOL_VERSION, received: 'deadbeefdeadbeef' },
+        payload: { expected: client.PROTOCOL_VERSION, received: 'deadbeefdeadbeef' },
       },
     ]);
     const error = next.mock.calls[0][0] as Error & { data?: unknown };
@@ -169,7 +112,7 @@ describe('protocolGuard', () => {
     // Sent twice on purpose — the emit races teardown, `err.data` needs a
     // connect_error handler; between them the client always learns why.
     expect(error.data).toEqual({
-      expected: server.PROTOCOL_VERSION,
+      expected: client.PROTOCOL_VERSION,
       received: 'deadbeefdeadbeef',
     });
   });

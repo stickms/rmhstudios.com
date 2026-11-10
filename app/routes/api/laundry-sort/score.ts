@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import { submitLaundryScoreApi } from '@/lib/laundry-sort/laundry.contract';
-import { laundryScoreBody } from '@/lib/laundry-sort/score-schema';
+import { submitLaundryScoreApi } from '@features/laundry-sort/engine/laundry.contract';
+import { laundryScoreBody } from '@features/laundry-sort/engine/score-schema';
 import { prisma } from '@/lib/prisma.server';
 import { recordGamePlay } from '@/lib/quests/engine.server';
 import { reportGameResult } from '@/lib/game/results.server';
-import { SCORE, comboMultiplier } from '@/lib/laundry-sort/constants';
+import { SCORE, comboMultiplier } from '@features/laundry-sort/engine/constants';
 
 /**
  * Submit a **solo** Laundry Sort run.

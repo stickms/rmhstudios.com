@@ -150,16 +150,6 @@ export interface LastRound {
   reinforced?: boolean;
 }
 
-/** @deprecated Use getStanceLabel instead */
-export const STANCE_LABELS: Record<Stance, string> = Object.fromEntries(
-  STANCE_POOL.map((s) => [s.id, s.label])
-) as Record<Stance, string>;
-
-/** @deprecated Use getStanceHint instead */
-export const STANCE_HINT: Record<Stance, string> = Object.fromEntries(
-  STANCE_POOL.map((s) => [s.id, s.hint])
-) as Record<Stance, string>;
-
 /** State passed to protocol AI and resolution. */
 export interface RoundState {
   round: number;

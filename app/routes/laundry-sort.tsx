@@ -21,7 +21,7 @@ import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 // chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
 // hydration, and an update reaching the boundary then swaps the server-rendered
 // page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
-import { LaundryGame } from '@/components/laundry-sort/LaundryGame';
+import { LaundryGame } from '@features/laundry-sort/ui/LaundryGame';
 
 function LaundryPage() {
   return (

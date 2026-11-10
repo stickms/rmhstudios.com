@@ -6,6 +6,7 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
+import type { GeocodeResult } from '@/lib/homes/geo.server';
 import type { Listing, Watch } from '@/lib/homes/types';
 import type { createWatchBody, deleteWatchQuery, patchWatchBody } from './watch-schema';
 
@@ -52,3 +53,15 @@ export const deleteHomeWatchApi = endpoint<{
   query: z.infer<typeof deleteWatchQuery>;
   res: { ok: true };
 }>()({ method: 'DELETE', path: '/api/homes/watches' });
+
+/** The caller's own (`mine`) or favorited (`favorites`) listings. */
+export const listMyHomeListingsApi = endpoint<{
+  query: { scope: 'mine' | 'favorites' };
+  res: { listings: Listing[] };
+}>()({ method: 'GET', path: '/api/homes/listings' });
+
+/** Location autocomplete (signed in). Fewer than 3 characters answers an empty list. */
+export const homesGeocodeApi = endpoint<{
+  query: { q: string };
+  res: { results: GeocodeResult[] };
+}>()({ method: 'GET', path: '/api/homes/geocode' });

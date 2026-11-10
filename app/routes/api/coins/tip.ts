@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { transferCoins } from '@/lib/economy/ledger.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { tipApi } from '@/lib/economy/tip.contract';
 // The amount bounds and the note cap live in a client-safe module so the tip
 // dialog validates against the same declaration this route enforces.
 import { tipSchema } from '@/lib/economy/tip-schema';
@@ -15,74 +15,75 @@ import { assertNoRecoveryHold } from '@/lib/recovery/hold.server';
  * POST /api/coins/tip — send coins to another user (a "tip jar").
  * Body: { recipientId, amount, note?, entityType?, entityId? }.
  */
-const schema = tipSchema;
-
 export const Route = createFileRoute('/api/coins/tip')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      POST: implement(
+        tipApi,
+        {
+          rateLimit: { limit: 20, windowMs: 60_000, prefix: 'coins-tip' },
+          body: tipSchema,
+          allowEmptyBody: true,
+          invalid: (error) =>
+            Response.json({ error: error.issues[0]?.message ?? 'Invalid input' }, { status: 400 }),
+        },
+        async ({ session, body }) => {
+          try {
+            const { recipientId, amount, note, entityType, entityId } = body;
+            const senderId = session.user.id;
+            if (recipientId === senderId) {
+              return Response.json({ error: 'You cannot tip yourself' }, { status: 400 });
+            }
 
-          const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, { limit: 20, windowMs: 60_000, prefix: 'coins-tip' });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
+            // A recovered account is held for 72h before it can move value.
+            // Without this the hold is reported and not enforced, and account
+            // recovery becomes the cheapest route into the economy.
+            const held = await assertNoRecoveryHold(senderId);
+            if (held) return held;
 
-          const body = await request.json().catch(() => ({}));
-          const parsed = schema.safeParse(body);
-          if (!parsed.success) {
-            return Response.json({ error: parsed.error.issues[0]?.message ?? 'Invalid input' }, { status: 400 });
+            const recipient = await prisma.user.findUnique({
+              where: { id: recipientId },
+              select: userChipSelect,
+            });
+            if (!recipient) return Response.json({ error: 'Recipient not found' }, { status: 404 });
+
+            // Debit, credit and ledger row in one atomic transfer. The balance
+            // guard lives inside the UPDATE, so concurrent tips can't both pass a
+            // stale read and overdraft (which would mint coins into the recipient).
+            await transferCoins(senderId, recipientId, amount, {
+              type: 'TIP',
+              note: note?.trim() || undefined,
+              entityType: entityType ?? undefined,
+              entityId: entityId ?? undefined,
+            });
+
+            // Notify the recipient + achievements (best-effort).
+            const senderName = session.user.name ?? 'Someone';
+            await createNotification({
+              userId: recipientId,
+              actorId: senderId,
+              type: 'SYSTEM',
+              entityType: 'tip',
+              entityId,
+              preview: `${senderName} tipped you 🪙 ${amount}${note ? ` — “${note.trim()}”` : ''}`,
+              link: recipient.handle ? `/u/${recipient.handle}` : undefined,
+            });
+            await grantAchievement(senderId, 'economy.first_tip_sent');
+            await grantAchievement(recipientId, 'economy.first_tip_received');
+
+            const profile = await prisma.userProfile.findUnique({
+              where: { userId: senderId },
+              select: { coins: true },
+            });
+            return { success: true as const, newBalance: Number(profile?.coins ?? 0) };
+          } catch (error) {
+            if (error instanceof Error && error.message === 'INSUFFICIENT_COINS') {
+              return Response.json({ error: 'Not enough coins' }, { status: 400 });
+            }
+            throw error;
           }
-          const { recipientId, amount, note, entityType, entityId } = parsed.data;
-          const senderId = session.user.id;
-          if (recipientId === senderId) {
-            return Response.json({ error: 'You cannot tip yourself' }, { status: 400 });
-          }
-
-          // A recovered account is held for 72h before it can move value.
-          // Without this the hold is reported and not enforced, and account
-          // recovery becomes the cheapest route into the economy.
-          const held = await assertNoRecoveryHold(senderId);
-          if (held) return held;
-
-          const recipient = await prisma.user.findUnique({ where: { id: recipientId }, select: userChipSelect });
-          if (!recipient) return Response.json({ error: 'Recipient not found' }, { status: 404 });
-
-          // Debit, credit and ledger row in one atomic transfer. The balance
-          // guard lives inside the UPDATE, so concurrent tips can't both pass a
-          // stale read and overdraft (which would mint coins into the recipient).
-          await transferCoins(senderId, recipientId, amount, {
-            type: 'TIP',
-            note: note?.trim() || undefined,
-            entityType: entityType ?? undefined,
-            entityId: entityId ?? undefined,
-          });
-
-          // Notify the recipient + achievements (best-effort).
-          const senderName = session.user.name ?? 'Someone';
-          await createNotification({
-            userId: recipientId,
-            actorId: senderId,
-            type: 'SYSTEM',
-            entityType: 'tip',
-            entityId,
-            preview: `${senderName} tipped you 🪙 ${amount}${note ? ` — “${note.trim()}”` : ''}`,
-            link: recipient.handle ? `/u/${recipient.handle}` : undefined,
-          });
-          await grantAchievement(senderId, 'economy.first_tip_sent');
-          await grantAchievement(recipientId, 'economy.first_tip_received');
-
-          const profile = await prisma.userProfile.findUnique({ where: { userId: senderId }, select: { coins: true } });
-          return Response.json({ success: true, newBalance: profile?.coins ?? 0 });
-        } catch (error) {
-          if (error instanceof Error && error.message === 'INSUFFICIENT_COINS') {
-            return Response.json({ error: 'Not enough coins' }, { status: 400 });
-          }
-          console.error('Tip error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });
