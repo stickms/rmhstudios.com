@@ -114,7 +114,12 @@ const appReach = reach(appRoots);
 
 // The infrastructure exclusions (scripts, docs, …) live in globals.css and
 // apply to both sheets; the tier exclusions are what site-tier.css adds.
-const tierExcluded = sourceNots('site-tier.css');
+// Build outputs both sheets exclude explicitly. Tailwind's automatic detection skips
+// gitignored paths, but the Docker build context has no .gitignore (.dockerignore drops it),
+// so without these lines the vite build scans the island build that ran just before it
+// (dist-islands/) and the site sheet grows past its budget. They exist only after a build.
+const BUILD_OUTPUTS = ['dist-islands'];
+const tierExcluded = sourceNots('site-tier.css').filter((p) => !BUILD_OUTPUTS.includes(p));
 const under = (file: string, path: string) => {
   const r = relative(ROOT, file);
   return r === path || r.startsWith(path + '/');
@@ -180,7 +185,10 @@ describe('entry stylesheet tiers', () => {
           .map((part) => `features/${id}/${part}`),
       )
       .sort();
-    expect(sourceNots('app-tier.css').sort()).toEqual(islands);
+    for (const sheet of ['site-tier.css', 'app-tier.css']) {
+      for (const out of BUILD_OUTPUTS) expect(sourceNots(sheet), `${sheet} must exclude ${out}`).toContain(out);
+    }
+    expect(sourceNots('app-tier.css').filter((p) => !BUILD_OUTPUTS.includes(p)).sort()).toEqual(islands);
     for (const dir of islands) expect(tierExcluded, `site-tier.css must skip ${dir} too`).toContain(dir);
     const css = readFileSync(join(APP, 'app-tier.css'), 'utf8');
     expect(css).toMatch(/@import 'tailwindcss';\s*@import '\.\/globals\.css';/);

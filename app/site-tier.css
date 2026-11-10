@@ -32,6 +32,10 @@
 @import 'tailwindcss';
 @import './globals.css';
 
+/* Build output (redesign B1): the island build writes dist-islands/ before this sheet builds.
+   Gitignored, but the Docker context has no .gitignore, so it must be excluded by name. */
+@source not "../dist-islands";
+
 /* Full-screen games and apps — components/ and lib/ directories no site page imports. */
 @source not "../features/altair/engine";
 @source not "../features/altair/ui";
