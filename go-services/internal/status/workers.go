@@ -36,7 +36,50 @@ const workerRefresh = 10 * time.Minute
 var staleLimits = map[string]time.Duration{
 	"recap":            20 * time.Minute, // every 5m
 	"sahur_activation": 10 * time.Minute, // every 60s
-	"streak_sweep":     3 * time.Hour,    // hourly
+}
+
+// JobQueueStreak is the pg-boss queue of the Node streak-saver job
+// (lib/streak-reminders.server.ts STREAK_REMINDER_QUEUE).
+const JobQueueStreak = "streak.reminder-sweep"
+
+// nodeJobLimits: jobs that moved from the Go supervisor to the Node `jobs`
+// worker (D3). They no longer appear in the supervisor's metrics, so freshness is
+// read from pg-boss's own job table (Config.JobLastSuccess): the latest
+// COMPLETED job of the queue. The alarm is the same B06 Sev3, keyed by the same
+// job name, with the same limit as before.
+var nodeJobLimits = []struct {
+	job, queue string
+	limit      time.Duration
+}{
+	{"streak_sweep", JobQueueStreak, 3 * time.Hour}, // hourly
+}
+
+// NodeJobQueues lists the queues JobLastSuccess should report on.
+func NodeJobQueues() []string {
+	out := make([]string, len(nodeJobLimits))
+	for i, j := range nodeJobLimits {
+		out[i] = j.queue
+	}
+	return out
+}
+
+// evaluateNodeJobs turns last-success times (by queue) into B06 conditions. A
+// queue with no completed job at all is skipped, like a zero metric before:
+// the job is disabled, brand new, or its history has been pruned.
+func evaluateNodeJobs(last map[string]time.Time, now time.Time) []workerCondition {
+	var out []workerCondition
+	for _, j := range nodeJobLimits {
+		t, ok := last[j.queue]
+		if !ok || t.IsZero() {
+			continue
+		}
+		age := now.Sub(t)
+		out = append(out, workerCondition{
+			alert:  oncall.Alert{ID: "B06", Instance: j.job, Sev: 3, Title: "Background job stale: " + j.job, Detail: fmt.Sprintf("%s (jobs worker, pg-boss queue %s) last succeeded %s ago; it should run at least every %s.", j.job, j.queue, age.Round(time.Minute), j.limit), Source: "status"},
+			active: age > j.limit, forChecks: 1, clearCk: 1,
+		})
+	}
+	return out
 }
 
 type promSample struct {
@@ -100,10 +143,12 @@ type workerTrack struct {
 
 // workerWatch holds the debounce state and counter memory between checks.
 type workerWatch struct {
-	url    string
-	client *oncall.Client
-	logger Warner
-	http   *http.Client
+	url string
+	// jobLastSuccess reads the last completed run per pg-boss queue; nil = unused.
+	jobLastSuccess func(ctx context.Context) (map[string]time.Time, error)
+	client         *oncall.Client
+	logger         Warner
+	http           *http.Client
 
 	tracks       map[string]*workerTrack
 	lastPanics   map[string]float64
@@ -111,12 +156,12 @@ type workerWatch struct {
 	gatewayEarUp bool // the gateway has been seen connected at least once
 }
 
-func newWorkerWatch(metricsURL string, client *oncall.Client, logger Warner) *workerWatch {
-	if client == nil || metricsURL == "" {
+func newWorkerWatch(metricsURL string, client *oncall.Client, logger Warner, jobLastSuccess func(ctx context.Context) (map[string]time.Time, error)) *workerWatch {
+	if client == nil || (metricsURL == "" && jobLastSuccess == nil) {
 		return nil
 	}
 	return &workerWatch{
-		url: metricsURL, client: client, logger: logger,
+		url: metricsURL, client: client, logger: logger, jobLastSuccess: jobLastSuccess,
 		http:        &http.Client{Timeout: 5 * time.Second},
 		tracks:      map[string]*workerTrack{},
 		lastPanics:  map[string]float64{},
@@ -235,18 +280,36 @@ func (w *workerWatch) step(conds []workerCondition, now time.Time) []oncall.Aler
 	return send
 }
 
-func (w *workerWatch) check(ctx context.Context, now time.Time) {
+func (w *workerWatch) scrape(ctx context.Context) []promSample {
+	if w.url == "" {
+		return nil
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, w.url, nil)
 	if err != nil {
-		return
+		return nil
 	}
 	resp, err := w.http.Do(req)
 	if err != nil {
-		return // the supervisor /health probe reports this
+		return nil // the supervisor /health probe reports this
 	}
-	samples := parsePromText(resp.Body)
-	resp.Body.Close()
-	for _, a := range w.step(w.evaluate(samples, now), now) {
+	defer resp.Body.Close()
+	return parsePromText(resp.Body)
+}
+
+func (w *workerWatch) check(ctx context.Context, now time.Time) {
+	samples := w.scrape(ctx)
+	conds := w.evaluate(samples, now)
+	if w.jobLastSuccess != nil {
+		// A failed read holds state (no condition), like an unreachable scrape.
+		if last, err := w.jobLastSuccess(ctx); err != nil {
+			if w.logger != nil {
+				w.logger.Warn("status: job freshness read failed", "error", err)
+			}
+		} else {
+			conds = append(conds, evaluateNodeJobs(last, now)...)
+		}
+	}
+	for _, a := range w.step(conds, now) {
 		if err := w.client.Send(ctx, a); err != nil && w.logger != nil {
 			w.logger.Warn("status: worker alarm failed", "alarm", a.ID+":"+a.Instance, "error", err)
 			// Undo so the next check retries the transition.

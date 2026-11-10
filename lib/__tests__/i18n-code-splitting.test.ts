@@ -12,9 +12,10 @@ import { LOCALE_LOADERS } from '@/lib/i18n/resources';
  * There is no exception, English included. Until 2026-10-09 the core English
  * namespaces (`resources.en-core`, ~136 KB minified) were statically bundled as
  * the per-key fallback; English now renders from each call's defaultValue and
- * the whole catalog — `resources.en` — loads lazily like every other, so a page
- * load fetches only the active locale (a non-en core inlined by the SSR loader,
- * the rest as one chunk).
+ * loads lazily like every other locale. Since perf audit B6 the split is PER
+ * NAMESPACE: `resources.<locale>.ts` is only a map of namespace -> dynamic
+ * `import()` of its JSON (one chunk each), and the client i18next backend
+ * (lib/i18n/instances.ts) asks for just the namespaces in use.
  *
  * These are SOURCE checks (no build required) so they run in the normal suite
  * and fail fast the moment someone reintroduces a static locale import.
@@ -107,6 +108,39 @@ describe('i18n code-splitting (only the selected locale reaches the client)', ()
     for (const locale of LOCALES) {
       expect(src).toMatch(new RegExp(`import\\([^)]*resources\\.${locale}\\b`));
     }
+  });
+
+  it('every generated resources.<locale>.ts is a namespace -> dynamic import() map (one chunk per namespace)', () => {
+    for (const locale of LOCALES) {
+      const src = readFileSync(join(ROOT, `lib/i18n/resources.${locale}.ts`), 'utf8');
+      // No JSON is imported statically: that would pull the whole locale into one chunk.
+      expect(src, locale).not.toMatch(/^\s*import\s+\w+\s+from\s+["']@\/locales\//m);
+      expect(staticCatalogImports(src), locale).toEqual([]);
+      const entries = [...src.matchAll(/^\s*"([^"]+)": \(\) => import\("@\/locales\/([a-z]+)\/([^"]+)\.json"\),$/gm)];
+      expect(entries.length, locale).toBeGreaterThan(0);
+      for (const [, ns, dir, file] of entries) {
+        expect(dir, `${locale}:${ns}`).toBe(locale);
+        expect(file, `${locale}:${ns}`).toBe(ns);
+      }
+      // Every namespace line is such a thunk (nothing else slipped into the map).
+      const lines = src.split('\n').filter((l) => /^\s*"[^"]+":/.test(l));
+      expect(lines.length, locale).toBe(entries.length);
+    }
+  });
+
+  it('the client never loads a whole locale: no module outside resources*/server code calls LOCALE_LOADERS', () => {
+    const files = [
+      ...collectSources(join(ROOT, 'app')),
+      ...collectSources(join(ROOT, 'components')),
+      ...collectSources(join(ROOT, 'hooks')),
+      ...collectSources(join(ROOT, 'stores')),
+      ...collectSources(join(ROOT, 'lib')),
+    ];
+    const offenders = files
+      .map((f) => relative(ROOT, f))
+      .filter((rel) => !isExcludedFromClientScan(rel) && readFileSync(join(ROOT, rel), 'utf8').includes('LOCALE_LOADERS'))
+      .filter((rel) => rel !== 'lib/i18n/resources.ts');
+    expect(offenders).toEqual([]);
   });
 
   it('no client-shipped module statically imports a per-locale catalog', () => {

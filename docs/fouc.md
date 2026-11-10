@@ -278,8 +278,8 @@ found:
    then swaps the server-rendered page for its fallback. The `lazy()`s that cannot
    do that (client-only scenes, on-demand panels, auth-only admin) are a reviewed,
    one-directional allowlist.
-4. **English copy that changes after paint.** A non-bundled namespace renders
-   from each call's `defaultValue` until its catalog backfills, so every such
+4. **English copy that changes after paint.** A not-yet-loaded namespace renders
+   from each call's `defaultValue` until its chunk loads (per-namespace, on demand), so every such
    default must equal its `locales/en` entry, plural forms included
    (`lib/__tests__/i18n-default-drift.test.ts`).
 5. **A display face that can swap.** No page loads from Google Fonts, and every

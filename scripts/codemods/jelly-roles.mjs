@@ -52,7 +52,7 @@ const GAMES = argv.includes('--games');
 const roots = argv.filter((a) => !a.startsWith('--'));
 const ROOTS = roots.length ? roots : ['components', 'app'];
 
-/** Mirrors FULLSCREEN_TIER_DIRS in lib/__tests__/design-consistency.test.ts. */
+/** Mirrors FULLSCREEN_TIER_DIRS in eslint-local-rules/design-scope.js. */
 const GAME_DIRS = new Set([
   'altair', 'cursed-logic', 'daily-puzzles', 'dream-rift',
   'gabriels-horn', 'game', 'house-always-wins',
