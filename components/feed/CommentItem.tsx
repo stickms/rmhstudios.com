@@ -40,6 +40,7 @@ import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { useSignInPrompt } from '@/hooks/useSignInPrompt';
 import { EngagementCount, engagementPill } from './EngagementCount';
 import type { ReactionSummary } from '@/lib/social/reactions';
+import { reactToCommentApi } from '@/lib/social/comment-reaction.contract';
 import { applyReactionToggle } from '@/lib/social/reactions';
 import { ReactionMenu } from '@/components/shared/ReactionMenu';
 import { ReactionChips } from '@/components/shared/ReactionChips';
@@ -267,12 +268,7 @@ export function CommentItem({
     await runReaction({
       apply: () => setReactions(applyReactionToggle(prev, emoji)),
       rollback: () => setReactions(prev),
-      commit: () =>
-        fetch(`/api/comments/${comment.id}/react`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ emoji }),
-        }),
+      commit: () => api(reactToCommentApi, { params: { commentId: comment.id }, body: { emoji } }),
     });
   };
 

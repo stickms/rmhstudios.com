@@ -16,3 +16,5 @@ export const addCardBody = z.object({
   front: z.string().min(1).max(500),
   back: z.string().min(1).max(500),
 });
+
+export const reviewCardBody = z.object({ grade: z.number().int().min(0).max(3) });

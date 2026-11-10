@@ -11,37 +11,42 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { submitNeonDriftwayScoreApi } from '@/lib/game/score.contract';
+import { neonDriftwayScoreBody } from '@/lib/game/score-schema';
 import { submitGameScore } from '@/lib/game/submit.server';
 
 export const Route = createFileRoute('/api/neon-driftway/score')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ request, session }) => {
-        const body = await request.json().catch(() => ({}));
-        const { username, score, distance, timeMs, level } = body ?? {};
-        if (typeof score !== 'number') {
-          return Response.json({ error: 'Invalid score' }, { status: 400 });
-        }
+      POST: implement(
+        submitNeonDriftwayScoreApi,
+        {
+          body: neonDriftwayScoreBody,
+          invalid: () => Response.json({ error: 'Invalid score' }, { status: 400 }),
+        },
+        async ({ session, body }) => {
+          const { username, score, distance, timeMs, level } = body;
 
-        const result = await submitGameScore({
-          gameId: 'neon-driftway',
-          userId: session.user.id,
-          score,
-          progress: typeof distance === 'number' ? distance : 0,
-          durationMs: typeof timeMs === 'number' ? timeMs : undefined,
-          username,
-          ...(typeof level === 'number' ? { meta: { level } } : {}),
-        });
+          const result = await submitGameScore({
+            gameId: 'neon-driftway',
+            userId: session.user.id,
+            score,
+            progress: typeof distance === 'number' ? distance : 0,
+            durationMs: typeof timeMs === 'number' ? timeMs : undefined,
+            username: username as string | undefined,
+            ...(typeof level === 'number' ? { meta: { level } } : {}),
+          });
 
-        if (!result.ok) {
-          return Response.json(
-            { error: result.error, reason: result.reason },
-            { status: result.status },
-          );
-        }
-        return Response.json({ success: true, linked: true, moment: result.moment ?? null });
-      }),
+          if (!result.ok) {
+            return Response.json(
+              { error: result.error, reason: result.reason },
+              { status: result.status },
+            );
+          }
+          return Response.json({ success: true, linked: true, moment: result.moment ?? null });
+        },
+      ),
     },
   },
 });

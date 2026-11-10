@@ -12,6 +12,9 @@ import { LEVELS } from '@/lib/neon-driftway/constants';
 import type { LevelId, RunStats } from '@/lib/neon-driftway/types';
 import type { GyroStatus } from '@/lib/neon-driftway/gyro';
 import type { ViewMode } from './NeonDriftwayGame';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { submitNeonDriftwayScoreApi } from '@/lib/game/score.contract';
 
 type LeaderboardEntry = {
   username: string;
@@ -90,18 +93,19 @@ export function NeonDriftwayUI({
     setScoreSubmitted(true);
     (async () => {
       try {
-        const res = await fetch('/api/neon-driftway/score', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        // A refused submit (any non-2xx) used to read as "no moment"; keep that.
+        const body: unknown = await api(submitNeonDriftwayScoreApi, {
+          body: {
             username,
             score: runStats.score,
             distance: runStats.distance,
             timeMs: runStats.timeSurvivedMs,
             level: runStats.level,
-          }),
+          },
+        }).catch((e: unknown) => {
+          if (e instanceof HttpError) return null;
+          throw e;
         });
-        const body: unknown = res.ok ? await res.json().catch(() => null) : null;
         void takeScoreMoment(body);
         // A new personal best becomes this level's ghost (U9). Only on a best,
         // so a player stores one trace per level however often they play.

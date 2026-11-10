@@ -8,7 +8,11 @@ import { propertyTypeLabel } from '@/lib/homes/format';
 import type { Watch } from '@/lib/homes/types';
 import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
-import { listHomeWatchesApi } from '@/lib/homes/homes.contract';
+import {
+  deleteHomeWatchApi,
+  listHomeWatchesApi,
+  setHomeWatchActiveApi,
+} from '@/lib/homes/homes.contract';
 
 /** One-line summary of a watch's criteria. */
 function summarize(w: Watch): string {
@@ -46,25 +50,20 @@ export function WatchManager() {
   async function toggle(w: Watch) {
     const next = !w.active;
     setWatches((prev) => prev.map((x) => (x.id === w.id ? { ...x, active: next } : x)));
-    const res = await fetch('/api/homes/watches', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: w.id, active: next }),
-    });
-    if (!res.ok) {
+    try {
+      await api(setHomeWatchActiveApi, { body: { id: w.id, active: next } });
+      toast.success(next ? 'Alert on' : 'Alert paused');
+    } catch {
       toast.error('Could not update alert');
       load();
-    } else {
-      toast.success(next ? 'Alert on' : 'Alert paused');
     }
   }
 
   async function remove(id: string) {
     setWatches((prev) => prev.filter((x) => x.id !== id));
-    const res = await fetch(`/api/homes/watches?id=${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) {
+    try {
+      await api(deleteHomeWatchApi, { query: { id } });
+    } catch {
       toast.error('Could not delete alert');
       load();
     }

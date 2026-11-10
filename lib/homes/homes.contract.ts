@@ -4,8 +4,10 @@
  * hand-parse their bodies (listing create / edit, watch create / patch), the
  * filtered search and the geocoder stay raw fetches. Client-safe.
  */
+import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { Listing, Watch } from '@/lib/homes/types';
+import type { createWatchBody, deleteWatchQuery, patchWatchBody } from './watch-schema';
 
 export const listHomeWatchesApi = endpoint<{ res: { watches: Watch[] } }>()({
   method: 'GET',
@@ -33,3 +35,20 @@ export const unfavoriteHomeListingApi = endpoint<{ res: { ok: true } }>()({
   method: 'DELETE',
   path: '/api/homes/listings/$id/favorite',
 });
+
+/** Create an alert from the browse filters (409 with the reason when the watch cannot be created). */
+export const createHomeWatchApi = endpoint<{
+  body: z.infer<typeof createWatchBody>;
+  res: { ok: true; watch: Watch };
+}>()({ method: 'POST', path: '/api/homes/watches' });
+
+/** Pause or resume an alert. */
+export const setHomeWatchActiveApi = endpoint<{
+  body: z.infer<typeof patchWatchBody>;
+  res: { ok: true };
+}>()({ method: 'PATCH', path: '/api/homes/watches' });
+
+export const deleteHomeWatchApi = endpoint<{
+  query: z.infer<typeof deleteWatchQuery>;
+  res: { ok: true };
+}>()({ method: 'DELETE', path: '/api/homes/watches' });

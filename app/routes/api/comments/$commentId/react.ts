@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import { reactToCommentApi } from '@/lib/social/comment-reaction.contract';
+import { reactBody } from '@/lib/social/reaction-schema';
 import { isValidReactionEmoji } from '@/lib/social/reactions';
 import { toggleCommentReaction } from '@/lib/social/reactions.server';
 
@@ -8,19 +9,22 @@ import { toggleCommentReaction } from '@/lib/social/reactions.server';
 export const Route = createFileRoute('/api/comments/$commentId/react')({
   server: {
     handlers: {
-      POST: defineHandler(
-        { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'reaction' } },
-        async ({ request, params, session }) => {
+      POST: implement(
+        reactToCommentApi,
+        {
+          rateLimit: { limit: 60, windowMs: 60_000, prefix: 'reaction' },
+          body: reactBody,
+          invalid: () => Response.json({ error: 'Invalid emoji' }, { status: 400 }),
+        },
+        async ({ params, session, body }) => {
           const { commentId } = params;
           const userId = session.user.id;
 
-          const body = await request.json().catch(() => null);
-          const parsed = z.object({ emoji: z.string().min(1).max(32) }).safeParse(body);
-          if (!parsed.success || !isValidReactionEmoji(parsed.data.emoji)) {
+          if (!isValidReactionEmoji(body.emoji)) {
             return Response.json({ error: 'Invalid emoji' }, { status: 400 });
           }
 
-          const result = await toggleCommentReaction(userId, commentId, parsed.data.emoji);
+          const result = await toggleCommentReaction(userId, commentId, body.emoji);
           if (!result.found) return Response.json({ error: 'Not found' }, { status: 404 });
           return Response.json({ success: true, reacted: result.reacted, reactions: result.rows });
         },

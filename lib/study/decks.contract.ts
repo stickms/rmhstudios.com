@@ -6,7 +6,7 @@
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { DeckCard, DeckDetail, DecksList } from '@/lib/study.server';
-import type { addCardBody, createDeckBody } from '@/lib/study/decks-schema';
+import type { addCardBody, createDeckBody, reviewCardBody } from '@/lib/study/decks-schema';
 
 /** Your decks plus popular public decks (signed-out visitors see only public ones). */
 export const listDecksApi = endpoint<{ res: DecksList }>()({
@@ -45,3 +45,9 @@ export const deckReviewQueueApi = endpoint<{ res: { due: DeckCard[] } }>()({
 export const cloneDeckApi = endpoint<{
   res: { success: true; id: string; alreadyOwned: boolean };
 }>()({ method: 'POST', path: '/api/study/decks/$id/clone' });
+
+/** Submit an SRS grade (0-3) for a card; 400 `Invalid grade`, 404 `Not found`. */
+export const reviewCardApi = endpoint<{
+  body: z.infer<typeof reviewCardBody>;
+  res: { success: true; dueAt: string; intervalDays: number };
+}>()({ method: 'POST', path: '/api/study/cards/$id/review' });

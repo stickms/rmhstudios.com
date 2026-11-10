@@ -86,6 +86,7 @@ import {
   setAppearancePrefsApi,
 } from '@/lib/preferences/preferences.contract';
 import { api } from '@/lib/contract/client';
+import { claimReferralApi } from '@/lib/referrals.contract';
 import { getMyProfileDisplayApi } from '@/lib/profile/profile-extras.contract';
 
 // perf audit §4.3: build the QueryClient PER component instance (via useState
@@ -497,16 +498,19 @@ export function Providers({
       return;
     }
     if (!code) return;
-    fetch('/api/referrals/claim', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ code }),
-    })
-      .then((res) => {
-        if (res.status !== 429) localStorage.removeItem('rmh-ref');
-      })
-      .catch(() => {});
+    api(claimReferralApi, { body: { code } })
+      .then(() => localStorage.removeItem('rmh-ref'))
+      .catch((err: unknown) => {
+        // Any answer but 429 settles the code (claimed, already claimed, invalid);
+        // a dropped connection or a 429 keeps it for the next load.
+        if (err instanceof HttpError && err.status !== 429) {
+          try {
+            localStorage.removeItem('rmh-ref');
+          } catch {
+            /* storage unavailable */
+          }
+        }
+      });
   }, [userId]);
 
   // A 404 the ROOT renders is a site page whatever its URL: `NotFound` is drawn

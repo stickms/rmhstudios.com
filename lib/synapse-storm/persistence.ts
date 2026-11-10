@@ -1,4 +1,6 @@
 import { authClient } from '../auth-client';
+import { api } from '@/lib/contract/client';
+import { submitSynapseStormScoreApi } from '@/lib/game/score.contract';
 
 export interface LeaderboardEntry {
     rank: number;
@@ -23,19 +25,7 @@ export interface ScoreSaveData {
 
 export async function saveSynapseStormScore(data: ScoreSaveData) {
     try {
-        const response = await fetch('/api/games/synapse-storm/score', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to save score');
-        }
-
-        return await response.json();
+        return await api(submitSynapseStormScoreApi, { body: data });
     } catch (error) {
         console.error('Error saving Synapse Storm score:', error);
         return { error: 'Failed to save score' };
