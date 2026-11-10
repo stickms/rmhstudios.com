@@ -55,7 +55,7 @@ export interface GameScoreRules {
   direction: ScoreDirection;
   /**
    * True for games that are deliberately absent from the public catalog
-   * (the catalog (`lib/catalog`)) — Signal Forge lives under `/secret/`. They still need
+   * (`lib/catalog`) — Signal Forge lives under `/secret/`. They still need
    * scoring rules; they just aren't listed anywhere a visitor browses.
    */
   unlisted?: boolean;

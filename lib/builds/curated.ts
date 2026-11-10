@@ -1,7 +1,7 @@
 /**
  * Curated (official) builds — the RMH-made games and apps.
  *
- * Flattens the two code-defined sources (lib/catalog) into one
+ * Flattens the code-defined catalog (lib/catalog: games and apps) into one
  * common shape the /builds bookshelf and detail page can render uniformly. These
  * are the "Curated / Official" side of the builds switch; community submissions
  * are the "User" side (fetched from /api/user-builds).
