@@ -14,6 +14,8 @@ import { deriveAppliedTheme, type ThemeTokens, type UserThemeView } from '@/lib/
 import { ThemeEditor } from './ThemeEditor';
 import { ThemeMiniShell } from './ThemeMiniShell';
 import { SettingsPageBody, SettingsSection } from '@/components/settings/SettingsSection';
+import { api } from '@/lib/contract/client';
+import { buyThemeApi, listMyThemesApi, themeShopApi } from '@/lib/themes/themes.contract';
 
 function PriceChip({ coins }: { coins: number | null }) {
   if (coins == null) return null;
@@ -51,16 +53,20 @@ export function ThemeStudio({
   const setUserThemePreview = useThemeStore((s) => s.setUserThemePreview);
 
   async function refreshMine() {
-    const res = await fetch('/api/themes');
-    if (res.ok) setMine(((await res.json()) as { themes: UserThemeView[] }).themes);
+    try {
+      setMine((await api(listMyThemesApi)).themes);
+    } catch {
+      // Keep the current list when the refresh fails.
+    }
   }
 
   async function changeSort(next: 'top' | 'new') {
     setSort(next);
     setSorting(true);
     try {
-      const res = await fetch(`/api/themes/shop?sort=${next}`);
-      if (res.ok) setShop(((await res.json()) as { themes: UserThemeView[] }).themes);
+      setShop((await api(themeShopApi, { query: { sort: next } })).themes);
+    } catch {
+      // Keep the current list when the re-sort fails.
     } finally {
       setSorting(false);
     }
@@ -68,11 +74,7 @@ export function ThemeStudio({
 
   async function buy(theme: UserThemeView) {
     try {
-      const res = await fetch(`/api/themes/${theme.id}/buy`, { method: 'POST' });
-      if (!res.ok) {
-        const d = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(d?.error);
-      }
+      await api(buyThemeApi, { params: { id: theme.id } });
       setShop((prev) =>
         prev.map((s) => (s.id === theme.id ? { ...s, owned: true, sales: s.sales + 1 } : s)),
       );

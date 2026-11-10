@@ -1,19 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { z } from 'zod';
-import { THEME_PRICE_MIN, THEME_PRICE_MAX } from '@/lib/themes/tokens';
+import { implement } from '@/lib/api/implement.server';
+import { publishThemeBody } from '@/lib/themes/themes-schema';
+import { publishThemeApi } from '@/lib/themes/themes.contract';
 import { publishTheme, ThemeError } from '@/lib/themes/themes.server';
-
-const schema = z.object({ priceCoins: z.number().int().min(THEME_PRICE_MIN).max(THEME_PRICE_MAX) });
 
 /** POST /api/themes/:id/publish { priceCoins } — run the contrast gate + list. */
 export const Route = createFileRoute('/api/themes/$id/publish')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        publishThemeApi,
         {
           rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:themes/:id.publish' },
-          body: schema,
+          body: publishThemeBody,
         },
         async ({ params, session, body }) => {
           try {
@@ -30,7 +29,7 @@ export const Route = createFileRoute('/api/themes/$id/publish')({
             }
             throw e;
           }
-          return Response.json({ ok: true });
+          return { ok: true as const };
         },
       ),
     },

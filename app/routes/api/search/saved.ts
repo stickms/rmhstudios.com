@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createSavedSearchApi, listSavedSearchesApi } from '@/lib/search/saved.contract';
 import { withRateLimit } from '@/lib/rate-limit';
 import { savedSearchCreateSchema } from '@/lib/search/saved';
 import { listSaved, createSaved, SavedSearchError } from '@/lib/search/saved.server';
@@ -11,15 +12,15 @@ import { listSaved, createSaved, SavedSearchError } from '@/lib/search/saved.ser
 export const Route = createFileRoute('/api/search/saved')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
-        return Response.json({ saved: await listSaved(session.user.id) });
+      GET: implement(listSavedSearchesApi, {}, async ({ session }) => {
+        return { saved: await listSaved(session.user.id) };
       }),
-      POST: defineHandler({ body: savedSearchCreateSchema }, async ({ request, session, body }) => {
+      POST: implement(createSavedSearchApi, { body: savedSearchCreateSchema }, async ({ request, session, body }) => {
         const limited = withRateLimit(request, 'write', { prefix: 'saved-search' });
         if (limited) return limited;
         try {
           const saved = await createSaved(session.user.id, body.query, body.types, body.alerts);
-          return Response.json({ saved });
+          return { saved };
         } catch (e) {
           if (e instanceof SavedSearchError)
             return Response.json({ error: e.message }, { status: 400 });

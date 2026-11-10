@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { listRecoveryRequestsApi, startRecoveryRequestApi } from '@/lib/recovery/recovery.contract';
 import {
   listApprovableRequests,
   listOwnRecoveryRequests,
@@ -28,15 +29,16 @@ const startSchema = z.object({
 export const Route = createFileRoute('/api/account/recovery/requests')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) => {
+      GET: implement(listRecoveryRequestsApi, { rateLimit: 'read' }, async ({ userId }) => {
         const [mine, approvable] = await Promise.all([
           listOwnRecoveryRequests(userId),
           listApprovableRequests(userId),
         ]);
-        return Response.json({ mine, approvable });
+        return { mine, approvable };
       }),
 
-      POST: defineHandler(
+      POST: implement(
+        startRecoveryRequestApi,
         {
           auth: 'none',
           rateLimit: {
@@ -53,7 +55,7 @@ export const Route = createFileRoute('/api/account/recovery/requests')({
             destinationEmail: body.email,
           });
           // Identical response in every case, including "no such account".
-          return Response.json({ ok: true });
+          return { ok: true as const };
         },
       ),
     },

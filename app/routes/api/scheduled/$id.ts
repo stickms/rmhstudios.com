@@ -1,24 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { patchScheduledSchema } from '@/lib/scheduled/scheduled-schema';
+import { discardScheduledApi, updateScheduledApi } from '@/lib/scheduled/scheduled.contract';
 import { prisma } from '@/lib/prisma.server';
-import { z } from 'zod';
-import { MAX_RMHARK_LENGTH } from '@/lib/rmhark-schema';
-
-const patchSchema = z.object({
-  content: z.string().max(MAX_RMHARK_LENGTH).optional(),
-  audience: z.enum(['PUBLIC', 'FOLLOWERS', 'PRIVATE']).optional(),
-  unlockPrice: z.number().int().min(0).max(1_000_000).nullable().optional(),
-  scheduledAt: z.string().datetime().nullable().optional(),
-});
 
 export const Route = createFileRoute('/api/scheduled/$id')({
   server: {
     handlers: {
       // Edit a draft/scheduled post.
-      PATCH: defineHandler(
+      PATCH: implement(
+        updateScheduledApi,
         {
           rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:scheduled/:id' },
-          body: patchSchema,
+          body: patchScheduledSchema,
           allowEmptyBody: true,
           verboseValidationErrors: true,
         },
@@ -70,7 +64,7 @@ export const Route = createFileRoute('/api/scheduled/$id')({
       ),
 
       // Discard a draft/scheduled post.
-      DELETE: defineHandler(
+      DELETE: implement(discardScheduledApi, 
         { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:scheduled/:id' } },
         async ({ params, session }) => {
           const existing = await prisma.scheduledPost.findUnique({ where: { id: params.id } });
@@ -79,7 +73,7 @@ export const Route = createFileRoute('/api/scheduled/$id')({
           }
 
           await prisma.scheduledPost.delete({ where: { id: params.id } });
-          return Response.json({ success: true });
+          return { success: true as const };
         },
       ),
     },

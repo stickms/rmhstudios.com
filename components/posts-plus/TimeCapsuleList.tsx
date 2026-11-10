@@ -6,6 +6,8 @@ import { Package, PackageOpen, Trash2 } from 'lucide-react';
 import { IconButton } from '@/components/ui/icon-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { formatCountdown } from '@/lib/posts-plus/constants';
+import { api } from '@/lib/contract/client';
+import { discardScheduledApi, listCapsulesApi } from '@/lib/scheduled/scheduled.contract';
 
 interface Capsule {
   id: string;
@@ -34,9 +36,7 @@ export function TimeCapsuleList() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/scheduled/capsules', { credentials: 'include' });
-      if (res.ok) setData(await res.json());
-      else setData({ sealed: [], opened: [] });
+      setData(await api(listCapsulesApi));
     } catch {
       setData({ sealed: [], opened: [] });
     }
@@ -59,11 +59,9 @@ export function TimeCapsuleList() {
       danger: true,
     });
     if (!ok) return;
-    const res = await fetch(`/api/scheduled/${encodeURIComponent(c.id)}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    if (!res.ok) {
+    try {
+      await api(discardScheduledApi, { params: { id: c.id } });
+    } catch {
       toast.error(t('capsule-cancel-failed', { defaultValue: 'Could not cancel the capsule' }));
       return;
     }

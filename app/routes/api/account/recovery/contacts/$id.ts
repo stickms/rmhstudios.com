@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler, notFound } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { confirmTrustedContactApi, removeTrustedContactApi } from '@/lib/recovery/recovery.contract';
+import { notFound } from '@/lib/api/handler.server';
 import {
   confirmTrustedContact,
   removeTrustedContact,
@@ -15,16 +17,16 @@ import {
 export const Route = createFileRoute('/api/account/recovery/contacts/$id')({
   server: {
     handlers: {
-      POST: defineHandler({ rateLimit: 'write' }, async ({ userId, params }) => {
+      POST: implement(confirmTrustedContactApi, { rateLimit: 'write' }, async ({ userId, params }) => {
         const confirmed = await confirmTrustedContact(userId, params.id);
         if (!confirmed) return notFound('No pending trusted-contact request');
-        return Response.json({ ok: true });
+        return { ok: true as const };
       }),
 
-      DELETE: defineHandler({ rateLimit: 'write' }, async ({ userId, params }) => {
+      DELETE: implement(removeTrustedContactApi, { rateLimit: 'write' }, async ({ userId, params }) => {
         const removed = await removeTrustedContact(userId, params.id);
         if (!removed) return notFound('Trusted contact not found');
-        return Response.json({ ok: true });
+        return { ok: true as const };
       }),
     },
   },

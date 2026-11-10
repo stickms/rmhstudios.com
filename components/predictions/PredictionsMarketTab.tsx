@@ -8,6 +8,8 @@ import { PredictionCard } from './PredictionCard';
 import { useSignInPrompt } from '@/hooks/useSignInPrompt';
 import { CreatePredictionModal } from './CreatePredictionModal';
 import type { Market } from './types';
+import { api } from '@/lib/contract/client';
+import { listPredictionsApi } from '@/lib/predictions/predictions.contract';
 import { Reveal } from '@/components/motion';
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -30,9 +32,8 @@ export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
 
   const load = useCallback((f: Filter) => {
     setLoading(true);
-    fetch(`/api/predictions?filter=${f}`)
-      .then((r) => r.json())
-      .then((data) => setMarkets(data.markets ?? []))
+    api(listPredictionsApi, { query: { filter: f } })
+      .then((data) => setMarkets(data.markets))
       .catch(() => setMarkets([]))
       .finally(() => setLoading(false));
   }, []);

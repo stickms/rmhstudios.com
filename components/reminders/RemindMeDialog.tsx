@@ -21,6 +21,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MenuItem } from '@/components/ui/menu';
 import { resolvePreset, type ReminderKind, type ReminderPreset } from '@/lib/reminders/shared';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { setReminderApi } from '@/lib/reminders/reminders.contract';
 
 export interface RemindTarget {
   kind: ReminderKind;
@@ -54,17 +57,7 @@ export default function RemindMeDialog({
     if (saving) return;
     setSaving(true);
     try {
-      const res = await fetch('/api/reminders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ ...target, remindAt: at.toISOString() }),
-      });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) {
-        toast.error(data.error || t('remind-error', { defaultValue: "Couldn't set the reminder" }));
-        return;
-      }
+      await api(setReminderApi, { body: { ...target, remindAt: at.toISOString() } });
       const when = at.toLocaleString(undefined, {
         weekday: 'short',
         hour: 'numeric',
@@ -72,8 +65,10 @@ export default function RemindMeDialog({
       });
       toast.success(t('remind-set', { defaultValue: 'Reminder set for {{when}}', when }));
       onOpenChange(false);
-    } catch {
-      toast.error(t('remind-error', { defaultValue: "Couldn't set the reminder" }));
+    } catch (e) {
+      toast.error(
+        serverError(e) || t('remind-error', { defaultValue: "Couldn't set the reminder" }),
+      );
     } finally {
       setSaving(false);
     }

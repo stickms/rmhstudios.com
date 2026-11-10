@@ -1,19 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { z } from 'zod';
+import { createPersonaBody } from '@/lib/personas/personas-schema';
+import { createPersonaApi, listPersonasApi } from '@/lib/personas/personas.contract';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { generatePersonaAvatar } from '@/lib/personas/avatar.server';
-
-const createSchema = z.object({
-  name: z.string().min(2).max(40),
-  tagline: z.string().max(120).optional(),
-  systemPrompt: z.string().min(10).max(2000),
-  greeting: z.string().max(500).optional(),
-  emoji: z.string().max(8).optional(),
-  isPublic: z.boolean().optional(),
-});
 
 const MAX_PERSONAS = 20;
 
@@ -24,7 +16,7 @@ const MAX_PERSONAS = 20;
 export const Route = createFileRoute('/api/personas/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ request, session }) => {
+      GET: implement(listPersonasApi, { auth: 'optional' }, async ({ request, session }) => {
         const q = new URL(request.url).searchParams.get('q')?.trim();
 
         const where = q
@@ -69,7 +61,7 @@ export const Route = createFileRoute('/api/personas/')({
             : Promise.resolve([]),
         ]);
 
-        return Response.json({
+        return {
           personas: personas.map((p) => ({
             id: p.id,
             name: p.name,
@@ -81,11 +73,12 @@ export const Route = createFileRoute('/api/personas/')({
           })),
           mine,
           signedIn: !!session,
-        });
+        };
       }),
 
-      POST: defineHandler(
-        { body: createSchema, allowEmptyBody: true, verboseValidationErrors: true },
+      POST: implement(
+        createPersonaApi,
+        { body: createPersonaBody, allowEmptyBody: true, verboseValidationErrors: true },
         async ({ request, session, body }) => {
           const userId = session.user.id;
 

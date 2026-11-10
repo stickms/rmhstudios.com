@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useThemeStore } from '@/stores/themeStore';
+import { api } from '@/lib/contract/client';
+import { buyThemeApi } from '@/lib/themes/themes.contract';
 
 export function ThemePreviewBar() {
   const { t } = useTranslation('theme-studio');
@@ -26,11 +28,7 @@ export function ThemePreviewBar() {
     if (!preview) return;
     setBusy(true);
     try {
-      const res = await fetch(`/api/themes/${preview.id}/buy`, { method: 'POST' });
-      if (!res.ok) {
-        const d = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(d?.error);
-      }
+      await api(buyThemeApi, { params: { id: preview.id } });
       // Commit the previewed theme as the applied one (drops the transient preview).
       setUserTheme({ id: preview.id, bg: preview.bg, vars: preview.vars });
       toast.success(t('bought', { defaultValue: 'Theme purchased — it is in your inventory' }));

@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { getPersonaChat } from '@/lib/persona-chat.server';
+import { deletePersonaApi, getPersonaApi } from '@/lib/personas/personas.contract';
 
 /**
  * GET    /api/personas/$id — persona detail + this viewer's conversation.
@@ -10,13 +11,13 @@ import { getPersonaChat } from '@/lib/persona-chat.server';
 export const Route = createFileRoute('/api/personas/$id/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ params, session }) => {
+      GET: implement(getPersonaApi, { auth: 'optional' }, async ({ params, session }) => {
         const payload = await getPersonaChat(params.id, session?.user?.id ?? null);
         if (!payload) return Response.json({ error: 'Not found' }, { status: 404 });
-        return Response.json(payload);
+        return payload;
       }),
 
-      DELETE: defineHandler({}, async ({ params, session }) => {
+      DELETE: implement(deletePersonaApi, {}, async ({ params, session }) => {
         const persona = await prisma.aiPersona.findUnique({
           where: { id: params.id },
           select: { ownerId: true },
@@ -25,7 +26,7 @@ export const Route = createFileRoute('/api/personas/$id/')({
           return Response.json({ error: 'Not found' }, { status: 404 });
         }
         await prisma.aiPersona.delete({ where: { id: params.id } });
-        return Response.json({ success: true });
+        return { success: true as const };
       }),
     },
   },

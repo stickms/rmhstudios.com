@@ -8,6 +8,9 @@ import { EmptyState } from'@/components/ui/empty-state';
 import { Spinner } from'@/components/ui/spinner';
 import { useConfirm } from'@/components/ui/confirm-dialog';
 import { liquidVTName } from'@/lib/view-transition';
+import { api } from'@/lib/contract/client';
+import { HttpError } from'@/lib/http';
+import { deletePersonaApi, getPersonaApi } from'@/lib/personas/personas.contract';
 
 interface Msg {
  role: string;
@@ -52,16 +55,13 @@ export function PersonaChatColumn({
  const scrollRef = useRef<HTMLDivElement>(null);
 
  const load = useCallback(async () => {
- const res = await fetch(`/api/personas/${encodeURIComponent(id)}`, { credentials:'include'});
- if (res.status === 404) {
- setNotFound(true);
- return;
- }
- if (res.ok) {
- const data = await res.json();
+ try {
+ const data = await api(getPersonaApi, { params: { id } });
  setPersona(data.persona);
- setMessages(data.messages ?? []);
- setSignedIn(!!data.signedIn);
+ setMessages(data.messages);
+ setSignedIn(data.signedIn);
+ } catch (e) {
+ if (e instanceof HttpError && e.status === 404) setNotFound(true);
  }
  }, [id]);
 
@@ -123,11 +123,12 @@ export function PersonaChatColumn({
  }))
  )
  return;
- const res = await fetch(`/api/personas/${encodeURIComponent(id)}`, {
- method:'DELETE',
- credentials:'include',
- });
- if (res.ok) window.location.href ='/personas';
+ try {
+ await api(deletePersonaApi, { params: { id } });
+ window.location.href ='/personas';
+ } catch {
+ // Not deleted: stay on the persona.
+ }
  }
 
  if (loading) {
