@@ -16,7 +16,6 @@ import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { RARITY_COLORS, type Rarity, type ShopItemKind } from '@/lib/shop/catalog';
 import type { MarketListingView } from '@/lib/market/market.contract';
 
-export type { MarketListingView };
 
 /** Kind-specific swatch, matching `ShopColumn`/`ProfileCosmetics` previews. */
 export function MarketItemPreview({

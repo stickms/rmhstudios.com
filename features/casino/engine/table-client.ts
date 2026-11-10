@@ -44,6 +44,8 @@
 
 import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
+import { api } from '@/lib/contract/client';
+import { coinBalanceApi } from '@/lib/site-reads.contract';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import { singleFlight } from '@/lib/shared/realtime/single-flight';
 import type { RealtimeStatus } from '@/lib/shared/realtime/types';
@@ -170,6 +172,15 @@ export function createCasinoTableClient<S extends CasinoTableStore>(
       return;
     }
     backToLobby(socket);
+    // A player who was seated was cashed out by the hub on the drop, and that balance push went
+    // to the dead socket: read the balance once so the coin display is not left stale.
+    if (roomId) {
+      api(coinBalanceApi)
+        .then(({ coins }) => balanceListeners.forEach((cb) => cb(coins)))
+        .catch(() => {
+          /* the next hub push corrects it */
+        });
+    }
   };
 
   async function connectInner(): Promise<Socket> {

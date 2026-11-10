@@ -39,6 +39,14 @@ const h = vi.hoisted(() => ({
   sessionError: null as Error | null,
 }));
 
+const balanceApi = vi.hoisted(() => ({ coins: 4321, calls: 0 }));
+vi.mock('@/lib/contract/client', () => ({
+  api: vi.fn(async () => {
+    balanceApi.calls += 1;
+    return { coins: balanceApi.coins };
+  }),
+}));
+
 vi.mock('socket.io-client', () => {
   const io = (url: string, opts: FakeSocket['opts']) => {
     const listeners = new Map<string, Listener[]>();
@@ -441,6 +449,29 @@ for (const game of CASES) {
       s.fire('disconnect', 'transport close');
       s.fire('connect');
       expect(s.emitted).toEqual([{ event: C2S.LIST_ROOMS, data: undefined }]);
+    });
+
+    it('a reconnect that leaves a table re-reads the balance; one that keeps the seat does not', async () => {
+      const client = await game.load();
+      const store = await game.store();
+      await client.connect();
+      const s = only();
+      s.fire('connect');
+      const seen: number[] = [];
+      client.onBalance((c) => seen.push(c));
+      store.setState({ roomInfo: { roomId: 'room-9' }, viewMode: 'room' });
+      balanceApi.calls = 0;
+      s.fire('disconnect', 'ping timeout');
+      s.fire('connect');
+      await new Promise((r) => setTimeout(r, 0));
+      if (game.holdsSeat) {
+        expect(balanceApi.calls).toBe(0);
+        expect(seen).toEqual([]);
+      } else {
+        // The hub cashed the seat out and its balance push went to the dead socket.
+        expect(balanceApi.calls).toBe(1);
+        expect(seen).toEqual([4321]);
+      }
     });
 
     it(

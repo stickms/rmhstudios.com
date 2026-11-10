@@ -7,7 +7,7 @@ import { RARITY_COLORS } from '@/lib/shop/catalog';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { buyListingApi } from '@/lib/market/market.contract';
-import type { MarketListingView } from '@/components/market/ListingCard';
+import type { MarketListingView } from '@/lib/market/market.contract';
 import { PersonAvatar } from './SteamPeople';
 import { Swatch } from './ShopPage';
 import { StoreNav } from './StoreNav';
