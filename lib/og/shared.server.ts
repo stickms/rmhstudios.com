@@ -5,78 +5,31 @@
  * `replay-image`, `stat-card`) each carried their own byte-identical copy of the
  * font loader, the avatar fetcher, the text helpers and the palette. That was
  * not only five copies of the logic — each copy owned its own module-level
- * cache, so a process that rendered all five card types fetched the two Inter
- * faces five times and held five copies of them (plus five separate 200-entry
+ * cache, so a process that rendered all five card types loaded the two
+ * font faces five times and held five copies of them (plus five separate 200-entry
  * avatar LRUs) resident for the life of the process. Sharing the module shares
  * the caches, which is the point.
  */
 
 import { loadOgImage } from '@/lib/og/media.server';
+import { satoriFontFaces } from '@/lib/og/fonts.server';
 
 /* -------------------------------------------------------------------------- */
 /* Fonts                                                                      */
 /* -------------------------------------------------------------------------- */
 
-const FONT_REGULAR_URL =
-  'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf';
-const FONT_BOLD_URL =
-  'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf';
-const FONT_FETCH_TIMEOUT_MS = 5_000;
-// After a font fetch failure, cool down before retrying instead of re-hitting
-// Google on every single request — a Google Fonts hiccup otherwise turns into a
-// per-request fetch storm and a 500 loop.
-const FONT_FAIL_COOLDOWN_MS = 30_000;
-
-let fontRegular: ArrayBuffer | null = null;
-let fontBold: ArrayBuffer | null = null;
-let fontsLoading: Promise<void> | null = null;
-let fontFailUntil = 0;
-
-async function fetchFont(url: string): Promise<ArrayBuffer> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FONT_FETCH_TIMEOUT_MS);
-  try {
-    const r = await fetch(url, { signal: controller.signal });
-    if (!r.ok) throw new Error(`Font fetch failed: ${r.status}`);
-    return await r.arrayBuffer();
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-export function loadFonts(): Promise<void> {
-  if (fontRegular && fontBold) return Promise.resolve();
-  if (fontsLoading) return fontsLoading;
-  // Negative cache: fail fast during the cooldown window rather than retrying.
-  if (Date.now() < fontFailUntil)
-    return Promise.reject(new Error('Fonts unavailable (cooling down)'));
-  fontsLoading = Promise.all([fetchFont(FONT_REGULAR_URL), fetchFont(FONT_BOLD_URL)])
-    .then(([reg, bold]) => {
-      fontRegular = reg;
-      fontBold = bold;
-    })
-    .catch((err) => {
-      fontsLoading = null;
-      fontFailUntil = Date.now() + FONT_FAIL_COOLDOWN_MS;
-      throw err;
-    });
-  return fontsLoading;
-}
-
-// Warm the cache at import time; failures are handled per-render by loadFonts().
-loadFonts().catch(() => {});
-
 /**
- * The satori `fonts` array. Call `await loadFonts()` first — this throws rather
- * than handing satori `null` buffers, which is the check each renderer used to
- * spell out as `if (!fontRegular || !fontBold) throw …`.
+ * Geist 400/700 (the weights the cards use), read from disk by `./fonts.server`.
+ * Kept async so the renderers' `await loadFonts()` call sites do not change, and so
+ * a missing file is a rejected render rather than an import-time crash.
  */
+export async function loadFonts(): Promise<void> {
+  satoriFontFaces({ weights: [400, 700] });
+}
+
+/** The satori `fonts` array. */
 export function satoriFonts() {
-  if (!fontRegular || !fontBold) throw new Error('Fonts not loaded');
-  return [
-    { name: 'Inter', data: fontRegular, weight: 400 as const, style: 'normal' as const },
-    { name: 'Inter', data: fontBold, weight: 700 as const, style: 'normal' as const },
-  ];
+  return satoriFontFaces({ weights: [400, 700] });
 }
 
 /* -------------------------------------------------------------------------- */

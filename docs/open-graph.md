@@ -47,7 +47,8 @@ the rule that colour may never be the only carrier of meaning (`design.md` §7).
 
 | File                             | What it is                                                                                                                    |
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `lib/og/shared.server.ts`        | Fonts (Inter, fetched once with a failure cooldown), the avatar fetcher, `stripEmoji`/`truncate`, the palette and `SCALE`      |
+| `lib/og/fonts.server.ts`         | Reads the static Geist / Geist Mono TTFs from `public/fonts/og/` (no network). Also used by `lib/discord-activity-image.tsx` and `scripts/gen-pwa-icons.tsx`. Rebuild with `python3 scripts/gen-og-fonts.py` (satori cannot read the WOFF2 the package ships) |
+| `lib/og/shared.server.ts`        | Satori font faces (Geist 400/700, via `fonts.server.ts`), the avatar fetcher, `stripEmoji`/`truncate`, the palette and `SCALE`      |
 | `lib/og/media.server.ts`         | **Pictures.** Resolves a stored object / `public/` path / remote URL to bytes, then re-encodes to the exact box the card draws  |
 | `lib/og/collage.ts`              | The 1–4 photo grid, as geometry. Client-safe, so the "every tile is inside the box" rule is testable                            |
 | `lib/og/post-visibility.ts`      | **The one rule** deciding whether a post's card, description and title may show the post. Client-safe                           |
