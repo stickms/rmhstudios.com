@@ -122,7 +122,7 @@ export default function ItemCustomizeModal({
             className="h-64 md:h-72"
           />
           {effect && particle.status !== 'ready' ? (
-            <p className="text-[11px] text-(--app-text-dim) pointer-coarse:text-xs">
+            <p className="text-[11px] text-app-text-dim pointer-coarse:text-xs">
               {particle.status === 'loading'
                 ? t('effect-loading', { defaultValue: 'Loading the game’s particle effect…' })
                 : particle.status === 'error'
@@ -184,8 +184,8 @@ export default function ItemCustomizeModal({
                 />
               </Field>
               {effect ? (
-                <fieldset className="flex flex-col gap-2 rounded-(--app-radius-sm) border border-(--app-border) p-3">
-                  <legend className="px-1 text-xs font-semibold text-(--app-text-muted)">
+                <fieldset className="flex flex-col gap-2 rounded-app-sm border border-app-border p-3">
+                  <legend className="px-1 text-xs font-semibold text-app-text-muted">
                     {t('effect-position', { defaultValue: 'Effect position' })}
                   </legend>
                   {(
@@ -197,7 +197,7 @@ export default function ItemCustomizeModal({
                     ] as const
                   ).map(([k, name, min, max]) => (
                     <label key={k} className="flex items-center gap-3 text-xs">
-                      <span className="w-24 shrink-0 text-(--app-text-muted)">{name}</span>
+                      <span className="w-24 shrink-0 text-app-text-muted">{name}</span>
                       <RangeField
                         label={name}
                         min={min}
@@ -206,7 +206,7 @@ export default function ItemCustomizeModal({
                         value={placement[k]}
                         onChange={(v) => setPlacement({ [k]: v })}
                       />
-                      <span className="w-10 shrink-0 text-end tabular-nums text-(--app-text-dim)">
+                      <span className="w-10 shrink-0 text-end tabular-nums text-app-text-dim">
                         {k === 's' ? `${placement.s.toFixed(1)}×` : pct(placement[k])}
                       </span>
                     </label>
@@ -228,12 +228,12 @@ export default function ItemCustomizeModal({
           ) : null}
 
           {canWarPaint ? (
-            <fieldset className="flex flex-col gap-3 rounded-(--app-radius-sm) border border-(--app-border) p-3">
-              <legend className="px-1 text-xs font-semibold text-(--app-text-muted)">
+            <fieldset className="flex flex-col gap-3 rounded-app-sm border border-app-border p-3">
+              <legend className="px-1 text-xs font-semibold text-app-text-muted">
                 {t('war-paint', { defaultValue: 'War paint' })}
               </legend>
               {decorated ? (
-                <p className="text-xs text-(--app-text-muted)">
+                <p className="text-xs text-app-text-muted">
                   {t('decorated-pattern', {
                     defaultValue: 'This weapon is a {{pattern}} skin; its pattern is fixed.',
                     pattern: idx.kit(item.sk!.kit)?.n ?? '',
@@ -257,7 +257,7 @@ export default function ItemCustomizeModal({
                   />
                 </Field>
               ) : (
-                <p className="text-xs text-(--app-text-dim)">
+                <p className="text-xs text-app-text-dim">
                   {t('war-paint-unavailable', {
                     defaultValue: 'War paints appear here once the game files have been synced.',
                   })}
@@ -296,7 +296,7 @@ export default function ItemCustomizeModal({
                       </Btn>
                     </div>
                   </Field>
-                  <p className="text-[11px] text-(--app-text-dim) pointer-coarse:text-xs">
+                  <p className="text-[11px] text-app-text-dim pointer-coarse:text-xs">
                     {t('war-paint-preview-approx', {
                       defaultValue:
                         "The preview paints the weapon with the game's own pattern for this war paint. The pattern's random parts come from the seed here, so the same seed can differ from the game in detail.",
@@ -355,7 +355,7 @@ export default function ItemCustomizeModal({
           ) : null}
 
           {!item.p && !item.st && !canEffect && !canWarPaint && !item.fz ? (
-            <p className="text-sm text-(--app-text-dim)">
+            <p className="text-sm text-app-text-dim">
               {t('nothing-to-customize', { defaultValue: 'This item has nothing to customize.' })}
             </p>
           ) : null}

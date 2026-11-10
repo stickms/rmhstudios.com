@@ -122,19 +122,19 @@ export default function CommandPalette({
               onClick={() => choose(a)}
               onPointerEnter={() => setIndex(i)}
               className={cn(
-                'flex w-full items-center justify-between gap-3 rounded-(--app-radius-sm) px-2 py-1.5 text-start text-sm',
-                i === index ? 'bg-(--app-accent-dim) text-(--app-text)' : 'text-(--app-text-muted)',
+                'flex w-full items-center justify-between gap-3 rounded-app-sm px-2 py-1.5 text-start text-sm',
+                i === index ? 'bg-app-accent-dim text-app-text' : 'text-app-text-muted',
               )}
             >
               <span className="truncate">{a.label}</span>
               {a.hint ? (
-                <span className="shrink-0 text-[11px] text-(--app-text-dim)">{a.hint}</span>
+                <span className="shrink-0 text-[11px] text-app-text-dim">{a.hint}</span>
               ) : null}
             </button>
           </li>
         ))}
         {items.length === 0 ? (
-          <li className="px-2 py-6 text-center text-xs text-(--app-text-dim)">
+          <li className="px-2 py-6 text-center text-xs text-app-text-dim">
             {t('no-results', { defaultValue: 'Nothing matches.' })}
           </li>
         ) : null}

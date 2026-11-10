@@ -122,7 +122,7 @@ export default function Tf2MainMenu({
 
   return (
     <HudProvider value={hud}>
-      <div className={panel === 'loadout' ? 'relative min-h-dvh bg-(--app-bg) text-(--app-text)' : 'app-viewport relative bg-(--app-bg) text-(--app-text)'}>
+      <div className={panel === 'loadout' ? 'relative min-h-dvh bg-app-bg text-app-text' : 'app-viewport relative bg-app-bg text-app-text'}>
         {panel === 'loadout' ? (
           <MenuLoadout source={source} onClose={back} />
         ) : (
@@ -145,7 +145,7 @@ export default function Tf2MainMenu({
           />
         </Modal>
         <Modal open={panel === 'hud'} onOpenChange={(o) => !o && back()} title={t('hud', { defaultValue: 'HUD' })} wide>
-          <Suspense fallback={<p className="text-sm text-(--app-text-muted)">{t('hud_loading', { defaultValue: 'Loading…' })}</p>}>
+          <Suspense fallback={<p className="text-sm text-app-text-muted">{t('hud_loading', { defaultValue: 'Loading…' })}</p>}>
             <HudPauseView onBack={back} onEdit={() => void navigate({ to: '/tf2/hud-editor' })} />
           </Suspense>
         </Modal>

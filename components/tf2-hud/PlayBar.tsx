@@ -28,9 +28,9 @@ export default function PlayBar({ inGame }: { inGame: boolean }) {
     <div
       role="region"
       aria-label={t('play-bar', { defaultValue: 'Play mode' })}
-      className="sticky top-0 z-10 mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) px-2 py-1.5 text-xs"
+      className="sticky top-0 z-10 mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-app-sm border border-app-border-bright bg-app-bg px-2 py-1.5 text-xs"
     >
-      <span className="font-semibold text-(--app-accent-text)">
+      <span className="font-semibold text-app-accent-text">
         {t('play-bar', { defaultValue: 'Play mode' })}
       </span>
       {canGoBack ? (
@@ -39,10 +39,10 @@ export default function PlayBar({ inGame }: { inGame: boolean }) {
         </Btn>
       ) : null}
       {inGame ? (
-        <ul className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-(--app-text-muted)">
+        <ul className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-app-text-muted">
           {PLAY_KEYS.map((k) => (
             <li key={k.key}>
-              <kbd className="rounded-(--app-radius-sm) bg-(--app-surface-hover) px-1 font-mono text-[11px] text-(--app-text)">
+              <kbd className="rounded-app-sm bg-app-surface-hover px-1 font-mono text-[11px] text-app-text">
                 {k.key}
               </kbd>{' '}
               {labels[k.label] ?? k.label}
@@ -50,7 +50,7 @@ export default function PlayBar({ inGame }: { inGame: boolean }) {
           ))}
         </ul>
       ) : (
-        <span className="text-(--app-text-muted)">
+        <span className="text-app-text-muted">
           {t('play-menu-hint', { defaultValue: 'Click the buttons.' })}
         </span>
       )}

@@ -333,7 +333,7 @@ export function TapBeatLesson({ lessonId, paused }: { lessonId: string; paused: 
   return (
     <SessionFrame className="rmm-rhythm space-y-4">
       <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
-        <h2 className="rmm-display min-h-8 text-2xl leading-8 text-(--app-text)">
+        <h2 className="rmm-display min-h-8 text-2xl leading-8 text-app-text">
           <span key={title}>{title}</span>
         </h2>
         <BeatBar position={running ? beatNow : null} />
@@ -341,7 +341,7 @@ export function TapBeatLesson({ lessonId, paused }: { lessonId: string; paused: 
           <div className="flex min-h-10 min-w-0 flex-[1_1_7rem] items-center justify-center">
             <p
               key={state.kind === 'tapping' ? 'tap' : state.kind}
-              className="text-sm leading-5 break-words text-(--app-text-muted)"
+              className="text-sm leading-5 break-words text-app-text-muted"
             >
               {line}
             </p>
@@ -383,14 +383,14 @@ function BeatBar({ position }: { position: number | null }) {
     >
       <div className="grid w-full max-w-64 grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
-          <span key={i} className="flex justify-center text-(--app-text)">
+          <span key={i} className="flex justify-center text-app-text">
             <Notehead kind={i === at ? 'filled' : 'open'} className="h-6 w-8" />
           </span>
         ))}
       </div>
       <div className="relative h-1 w-full max-w-64" aria-hidden="true">
         <span
-          className="rmm-beat__mark absolute inset-y-0 start-0 w-1/4 bg-(--app-accent)"
+          className="rmm-beat__mark absolute inset-y-0 start-0 w-1/4 bg-app-accent"
           style={{ transform: `translateX(${Math.max(0, at) * 100}%)`, opacity: at < 0 ? 0 : 1 }}
         />
       </div>
@@ -473,8 +473,8 @@ function TapPad({
       }}
       style={{ touchAction: 'none' }}
       className={cn(
-        'rmm-sheet rmm-display h-full w-full text-[2rem] leading-10 text-(--app-text) select-none',
-        'transition-colors hover:bg-(--app-surface-hover)',
+        'rmm-sheet rmm-display h-full w-full text-[2rem] leading-10 text-app-text select-none',
+        'transition-colors hover:bg-app-surface-hover',
       )}
     >
       <span key={label}>{label}</span>

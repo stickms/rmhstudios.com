@@ -190,7 +190,7 @@ export function PlayChordLesson({
         ref={answerGroup}
         className="rmm-sheet flex h-full flex-col items-center justify-center gap-1 p-4 text-center"
       >
-        <p className="text-sm leading-6 text-(--app-text-muted)">
+        <p className="text-sm leading-6 text-app-text-muted">
           {t('chord-mic', {
             defaultValue: 'The microphone hears one note at a time, so it cannot hear a chord.',
           })}
@@ -224,7 +224,7 @@ export function PlayChordLesson({
           aria-label={t('chord-region', { defaultValue: 'Where you play' })}
           className="rmm-sheet flex h-full items-center justify-center p-4 text-center"
         >
-          <p className="text-sm leading-6 text-(--app-text-muted)">
+          <p className="text-sm leading-6 text-app-text-muted">
             {t('flash-keys-region', {
               defaultValue:
                 'Your computer keys are a piano: A, S, D, F, G, H, J and K play C, D, E, F, G, A, B and C.',
@@ -265,7 +265,7 @@ export function ChordNameBox({ name, skeleton = false }: { name?: string; skelet
       {skeleton ? (
         <div className="app-skeleton h-10 w-48 max-w-full" aria-hidden="true" />
       ) : (
-        <p className="rmm-display text-[2.5rem] leading-[3rem] text-(--app-text)">{name}</p>
+        <p className="rmm-display text-[2.5rem] leading-[3rem] text-app-text">{name}</p>
       )}
     </div>
   );

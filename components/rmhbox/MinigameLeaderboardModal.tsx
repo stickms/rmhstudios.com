@@ -64,23 +64,23 @@ export default function MinigameLeaderboardModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-(--app-scrim)"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-app-scrim"
       onClick={onClose}
       data-testid="minigame-leaderboard-modal"
     >
       <div
-        className="w-full max-w-md mx-4 rounded-(--app-radius) app-glass p-5"
+        className="w-full max-w-md mx-4 rounded-app app-glass p-5"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h3 className="flex items-center gap-2 text-lg font-semibold text-(--app-text)">
-            <Trophy className="h-5 w-5 text-(--app-accent)" />
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-app-text">
+            <Trophy className="h-5 w-5 text-app-accent" />
             {t("leaderboard-title", { defaultValue: "{{displayName}} Leaderboard", displayName })}
           </h3>
           <button
             onClick={onClose}
-            className="rounded-(--app-radius-sm) p-2 text-(--app-text-muted) hover:text-(--app-text) transition-colors"
+            className="rounded-app-sm p-2 text-app-text-muted hover:text-app-text transition-colors"
             aria-label={t("close-leaderboard", { defaultValue: "Close leaderboard" })}
           >
             <X className="h-5 w-5" />
@@ -93,10 +93,10 @@ export default function MinigameLeaderboardModal({
             <button
               key={period}
               onClick={() => setActivePeriod(period)}
-              className={`flex-1 py-2 rounded-(--app-radius-sm) text-sm font-medium transition-colors ${
+              className={`flex-1 py-2 rounded-app-sm text-sm font-medium transition-colors ${
                 activePeriod === period
-                  ? 'bg-(--app-accent) text-(--app-accent-fg)'
-                  : 'bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text)'
+                  ? 'bg-app-accent text-app-accent-fg'
+                  : 'bg-app-surface-hover text-app-text-muted hover:text-app-text'
               }`}
             >
               {period === 'all-time' ? t("period-all-time", { defaultValue: "All-Time" }) : t("period-weekly", { defaultValue: "Weekly" })}
@@ -106,13 +106,13 @@ export default function MinigameLeaderboardModal({
 
         {/* Leaderboard table */}
         {loading ? (
-          <p className="text-sm text-center py-8 text-(--app-text-muted)">{t("loading", { defaultValue: "Loading…" })}</p>
+          <p className="text-sm text-center py-8 text-app-text-muted">{t("loading", { defaultValue: "Loading…" })}</p>
         ) : entries.length === 0 ? (
-          <p className="text-sm text-center py-8 text-(--app-text-muted)">{t("no-entries", { defaultValue: "No entries yet." })}</p>
+          <p className="text-sm text-center py-8 text-app-text-muted">{t("no-entries", { defaultValue: "No entries yet." })}</p>
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-(--app-text-muted)">
+              <tr className="text-left text-app-text-muted">
                 <th className="pb-2 pr-2 font-medium">#</th>
                 <th className="pb-2 pr-2 font-medium">{t("col-player", { defaultValue: "Player" })}</th>
                 <th className="pb-2 text-right font-medium">{t("col-score", { defaultValue: "Score" })}</th>
@@ -120,10 +120,10 @@ export default function MinigameLeaderboardModal({
             </thead>
             <tbody>
               {entries.map((entry) => (
-                <tr key={entry.userId} className="border-t border-(--app-border)">
-                  <td className="py-1.5 pr-2 font-bold text-(--app-accent)">{entry.rank}</td>
-                  <td className="py-1.5 pr-2 text-(--app-text)">{entry.userName}</td>
-                  <td className="py-1.5 text-right font-mono text-(--app-text)">
+                <tr key={entry.userId} className="border-t border-app-border">
+                  <td className="py-1.5 pr-2 font-bold text-app-accent">{entry.rank}</td>
+                  <td className="py-1.5 pr-2 text-app-text">{entry.userName}</td>
+                  <td className="py-1.5 text-right font-mono text-app-text">
                     {entry.value.toLocaleString()}
                   </td>
                 </tr>
@@ -134,8 +134,8 @@ export default function MinigameLeaderboardModal({
 
         {/* User rank */}
         {userRank !== null && (
-          <p className="mt-4 text-sm text-center text-(--app-text-muted)">
-            {t("your-rank", { defaultValue: "Your Rank:" })} <span className="font-bold text-(--app-accent)">#{userRank}</span>
+          <p className="mt-4 text-sm text-center text-app-text-muted">
+            {t("your-rank", { defaultValue: "Your Rank:" })} <span className="font-bold text-app-accent">#{userRank}</span>
           </p>
         )}
       </div>

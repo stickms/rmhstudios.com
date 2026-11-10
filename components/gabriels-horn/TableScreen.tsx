@@ -75,7 +75,7 @@ function Roster({ view }: { view: GameView }) {
           <li
             key={player.socketId}
             className={`gh-fill flex w-20 shrink-0 flex-col items-center gap-1 p-2 text-center ${
-              isActive ? 'border-(--app-accent)' : ''
+              isActive ? 'border-app-accent' : ''
             }`}
           >
             {/* A disconnected seat is dimmed and labelled rather than hidden.
@@ -87,7 +87,7 @@ function Roster({ view }: { view: GameView }) {
               size={30}
               className={player.connected ? undefined : 'opacity-40'}
             />
-            <span className="w-full truncate text-xs text-(--app-text-muted)">
+            <span className="w-full truncate text-xs text-app-text-muted">
               {isSelf ? t('you-suffix', { defaultValue: '(you)' }) : player.name}
             </span>
             <span className="flex items-center gap-1 font-mono text-sm font-bold tabular-nums">
@@ -100,7 +100,7 @@ function Roster({ view }: { view: GameView }) {
               ) : null}
             </span>
             {!player.connected ? (
-              <span className="flex items-center gap-1 text-xs text-(--app-warning)">
+              <span className="flex items-center gap-1 text-xs text-app-warning">
                 <WifiOff className="size-3" aria-hidden="true" />
                 {t('away', { defaultValue: 'away' })}
               </span>
@@ -126,14 +126,14 @@ function TargetPicker({
 }) {
   return (
     <div className="space-y-1.5">
-      <p className="text-xs text-(--app-text-muted)">{label}</p>
+      <p className="text-xs text-app-text-muted">{label}</p>
       <div className="flex flex-wrap gap-1.5">
         {players
           .filter((player) => player.socketId !== selfSocketId)
           .map((player) => (
             <HornButton key={player.socketId} size="sm" onClick={() => onPick(player.socketId)}>
               {player.name}
-              <span className="font-mono text-(--app-text-dim)">{player.handCount}</span>
+              <span className="font-mono text-app-text-dim">{player.handCount}</span>
             </HornButton>
           ))}
       </div>
@@ -212,16 +212,16 @@ export function TableScreen({
   })();
 
   return (
-    <div className="gh-scene app-page app-safe-x text-(--app-text)">
+    <div className="gh-scene app-page app-safe-x text-app-text">
       {/* Three groups in a row on a 320px screen: the code truncates first
           because it is the only one you can also read off the lobby, the round
           and clock never shrink because they are what the turn is measured in,
           and the controls never shrink because they are the way out. */}
       <header className="app-safe-top flex items-center justify-between gap-2 px-4 pt-3">
-        <span className="min-w-0 truncate font-mono text-xs tracking-[0.15em] text-(--app-text-dim)">
+        <span className="min-w-0 truncate font-mono text-xs tracking-[0.15em] text-app-text-dim">
           {view.code}
         </span>
-        <span className="shrink-0 text-xs text-(--app-text-muted)">
+        <span className="shrink-0 text-xs text-app-text-muted">
           {t('round', { defaultValue: 'Round {{n}}', n: view.round })}
           {seconds !== null ? (
             <span className="ms-2 font-mono tabular-nums" aria-live="off">
@@ -255,7 +255,7 @@ export function TableScreen({
         </p>
 
         {view.endCalledBy ? (
-          <p className="flex items-center justify-center gap-1.5 text-center text-xs text-(--app-accent)">
+          <p className="flex items-center justify-center gap-1.5 text-center text-xs text-app-accent">
             <Megaphone className="size-3.5" aria-hidden="true" />
             {t('horn-sounded', { defaultValue: 'The horn has sounded. Last turns.' })}
           </p>
@@ -280,7 +280,7 @@ export function TableScreen({
               <Megaphone className="size-4" aria-hidden="true" />
               {t('sound-horn', { defaultValue: 'Sound the horn' })}
             </HornButton>
-            <p className="text-center text-xs text-(--app-text-dim)">
+            <p className="text-center text-xs text-app-text-dim">
               {t('sound-horn-hint', {
                 defaultValue: 'You must be strictly lowest when the counting stops.',
               })}
@@ -290,7 +290,7 @@ export function TableScreen({
 
         {view.phase === 'claim' && !isMyTurn && !myClaim?.total ? (
           <Panel className="space-y-2">
-            <p className="text-xs text-(--app-text-muted)">
+            <p className="text-xs text-app-text-muted">
               {t('claim-prompt', {
                 defaultValue: 'Say a total. It does not have to be the right one.',
               })}
@@ -314,7 +314,7 @@ export function TableScreen({
                 </HornButton>
               ))}
             </div>
-            <p className="text-xs text-(--app-text-dim)">
+            <p className="text-xs text-app-text-dim">
               {t('claim-truth-hint', { defaultValue: 'The true total is highlighted.' })}
             </p>
           </Panel>
@@ -322,7 +322,7 @@ export function TableScreen({
 
         {view.claims.length > 0 && view.phase !== 'action' && view.phase !== 'final' ? (
           <Panel className="space-y-1.5">
-            <h2 className="text-xs font-semibold tracking-[0.14em] text-(--app-text-muted) uppercase">
+            <h2 className="text-xs font-semibold tracking-[0.14em] text-app-text-muted uppercase">
               {t('the-table-says', { defaultValue: 'The table says' })}
             </h2>
             <ul className="space-y-1.5">
@@ -345,7 +345,7 @@ export function TableScreen({
                     {claim.lie === null ? null : (
                       <span
                         className={`text-xs font-semibold ${
-                          claim.lie ? 'text-(--app-danger)' : 'text-(--app-success)'
+                          claim.lie ? 'text-app-danger' : 'text-app-success'
                         }`}
                       >
                         {claim.lie
@@ -354,7 +354,7 @@ export function TableScreen({
                       </span>
                     )}
                     {called ? (
-                      <span className="text-xs text-(--app-accent)">
+                      <span className="text-xs text-app-accent">
                         {t('called', { defaultValue: 'called' })}
                       </span>
                     ) : null}
@@ -381,7 +381,7 @@ export function TableScreen({
         {view.phase === 'reveal' && view.outcome ? (
           <p
             className={`text-center text-sm font-semibold ${
-              view.outcome.correct ? 'text-(--app-success)' : 'text-(--app-danger)'
+              view.outcome.correct ? 'text-app-success' : 'text-app-danger'
             }`}
             role="status"
           >
@@ -407,13 +407,13 @@ export function TableScreen({
         {/* ── Your hand ────────────────────────────────────────────────── */}
 
         <Panel className="space-y-2">
-          <h2 className="flex items-center gap-1.5 text-xs font-semibold tracking-[0.14em] text-(--app-text-muted) uppercase">
+          <h2 className="flex items-center gap-1.5 text-xs font-semibold tracking-[0.14em] text-app-text-muted uppercase">
             <Hand className="size-3.5" aria-hidden="true" />
             {t('your-hand', { defaultValue: 'Your hand — {{n}}', n: view.hand.length })}
           </h2>
 
           {view.hand.length === 0 ? (
-            <p className="text-sm text-(--app-success)">
+            <p className="text-sm text-app-success">
               {t('hand-empty', { defaultValue: 'Nothing at all. Sound the horn.' })}
             </p>
           ) : (
@@ -432,20 +432,20 @@ export function TableScreen({
           )}
 
           {!canPlayCards ? (
-            <p className="text-xs text-(--app-text-dim)">
+            <p className="text-xs text-app-text-dim">
               {t('hand-locked', {
                 defaultValue: 'Cards are played on your own turn, before you roll.',
               })}
             </p>
           ) : selectedCard ? (
-            <div className="space-y-2 border-t border-(--app-border) pt-2">
+            <div className="space-y-2 border-t border-app-border pt-2">
               <p className="text-sm">
-                <strong className="text-(--app-text)">{effectLabel(effectOf(selectedCard))}</strong>{' '}
-                <span className="text-(--app-text-muted)">
+                <strong className="text-app-text">{effectLabel(effectOf(selectedCard))}</strong>{' '}
+                <span className="text-app-text-muted">
                   {effectDescription(effectOf(selectedCard))}
                 </span>
               </p>
-              <p className="text-xs text-(--app-text-dim)">
+              <p className="text-xs text-app-text-dim">
                 {t('play-cost', {
                   defaultValue: 'Costs you {{draw}} cards for the one you spend — net one worse.',
                   draw: rules.playDraw,
@@ -465,7 +465,7 @@ export function TableScreen({
               )}
             </div>
           ) : (
-            <p className="text-xs text-(--app-text-dim)">
+            <p className="text-xs text-app-text-dim">
               {t('hand-hint', {
                 defaultValue: 'Tap a card to see what it does. A caught lie costs {{penalty}}.',
                 penalty: rules.penaltyDraw,
@@ -486,12 +486,12 @@ export function TableScreen({
 
         <Panel className="space-y-3">
           <TableChat />
-          <div className="border-t border-(--app-border) pt-2">
+          <div className="border-t border-app-border pt-2">
             <TableLog log={view.log} />
           </div>
         </Panel>
 
-        <p className="text-center text-xs text-(--app-text-dim)">
+        <p className="text-center text-xs text-app-text-dim">
           {t('deck-left', { defaultValue_one: '{{count}} card left in the deck',
             defaultValue: '{{count}} cards left in the deck',
             count: view.deckCount,

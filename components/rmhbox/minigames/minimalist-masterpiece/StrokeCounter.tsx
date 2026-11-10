@@ -13,7 +13,7 @@ export default function StrokeCounter({ current, max }: StrokeCounterProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <div className="w-24 h-2 rounded-full bg-(--app-border) overflow-hidden">
+      <div className="w-24 h-2 rounded-full bg-app-border overflow-hidden">
         <div
           className="h-full w-full origin-left transition-[transform,background-color] duration-200"
           style={{
@@ -24,7 +24,7 @@ export default function StrokeCounter({ current, max }: StrokeCounterProps) {
       </div>
       <span
         className={`text-sm font-mono ${
-          remaining <= 1 ? 'text-(--app-danger)' : 'text-(--app-text-muted)'
+          remaining <= 1 ? 'text-app-danger' : 'text-app-text-muted'
         }`}
       >
         {current}/{max}

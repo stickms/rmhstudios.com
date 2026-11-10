@@ -33,10 +33,10 @@ import { HornButton } from './ui';
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-1.5">
-      <h3 className="text-xs font-semibold tracking-[0.14em] text-(--app-accent) uppercase">
+      <h3 className="text-xs font-semibold tracking-[0.14em] text-app-accent uppercase">
         {title}
       </h3>
-      <div className="space-y-1.5 text-sm text-(--app-text-muted)">{children}</div>
+      <div className="space-y-1.5 text-sm text-app-text-muted">{children}</div>
     </section>
   );
 }
@@ -65,11 +65,11 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
         className="max-w-xl gap-0 rounded-none border-0 bg-transparent p-0 shadow-none"
         onInteractOutside={(event) => event.preventDefault()}
         onCloseAutoFocus={returnFocus}
-        overlayClassName="bg-(--app-scrim)"
+        overlayClassName="bg-app-scrim"
       >
-      <div className="gh-overlay w-full p-5 text-(--app-text)">
+      <div className="gh-overlay w-full p-5 text-app-text">
         <div className="mb-4 flex items-start justify-between gap-3">
-        <DialogTitle className="text-lg font-bold text-(--app-text)">
+        <DialogTitle className="text-lg font-bold text-app-text">
           {t('rules-title', { defaultValue: 'How Gabriel’s Horn works' })}
         </DialogTitle>
         <DialogClose asChild>
@@ -137,7 +137,7 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
                   className="gh-pip me-2 align-middle"
                   style={{ '--gh-card': 'var(--gh-azure)' } as React.CSSProperties}
                 />
-                <strong className="text-(--app-text)">
+                <strong className="text-app-text">
                   {t('effect-glimpse', { defaultValue: 'Glimpse' })}
                 </strong>{' '}
                 — {t('effect-glimpse-desc', { defaultValue: 'See your own dice this turn.' })}
@@ -147,7 +147,7 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
                   className="gh-pip me-2 align-middle"
                   style={{ '--gh-card': 'var(--gh-crimson)' } as React.CSSProperties}
                 />
-                <strong className="text-(--app-text)">
+                <strong className="text-app-text">
                   {t('effect-accuse', { defaultValue: 'Accuse' })}
                 </strong>{' '}
                 — {t('effect-accuse-desc', { defaultValue: 'A player of your choice draws.' })}
@@ -157,7 +157,7 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
                   className="gh-pip me-2 align-middle"
                   style={{ '--gh-card': 'var(--gh-verdant)' } as React.CSSProperties}
                 />
-                <strong className="text-(--app-text)">
+                <strong className="text-app-text">
                   {t('effect-ward', { defaultValue: 'Ward' })}
                 </strong>{' '}
                 —{' '}
@@ -170,7 +170,7 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
                   className="gh-pip me-2 align-middle"
                   style={{ '--gh-card': 'var(--gh-amber)' } as React.CSSProperties}
                 />
-                <strong className="text-(--app-text)">
+                <strong className="text-app-text">
                   {t('effect-scry', { defaultValue: 'Scry' })}
                 </strong>{' '}
                 — {t('effect-scry-desc', { defaultValue: "Look at a player's hand." })}
@@ -180,7 +180,7 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
                   className="gh-pip me-2 align-middle"
                   style={{ '--gh-card': 'var(--gh-swap)' } as React.CSSProperties}
                 />
-                <strong className="text-(--app-text)">
+                <strong className="text-app-text">
                   {t('rules-seven', { defaultValue: 'Any seven' })}
                 </strong>{' '}
                 —{' '}

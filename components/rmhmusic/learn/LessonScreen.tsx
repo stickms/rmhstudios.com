@@ -47,7 +47,7 @@ export function Shell({
         <header className="flex flex-wrap items-center justify-between gap-2 pt-[calc(0.5rem+var(--safe-top))]">
           <Link
             to="/rmhmusic"
-            className="-ms-3 flex min-h-11 min-w-0 items-center gap-1.5 rounded-(--app-radius-sm) px-3 py-2 text-sm font-medium text-(--app-text-muted) transition-colors hover:text-(--app-text)"
+            className="-ms-3 flex min-h-11 min-w-0 items-center gap-1.5 rounded-app-sm px-3 py-2 text-sm font-medium text-app-text-muted transition-colors hover:text-app-text"
           >
             <ArrowLeft className="h-4 w-4 shrink-0 rtl-flip" aria-hidden="true" />
             <span>{t('back-to-lessons', { defaultValue: 'Back to lessons' })}</span>
@@ -66,7 +66,7 @@ export function Shell({
               {t('loading-lesson', { defaultValue: 'Loading the lesson…' })}
             </p>
           )}
-          <h1 className="rmm-display text-[2.25rem] leading-[2.75rem] break-words text-(--app-text) sm:text-[2.75rem] sm:leading-[3.25rem]">
+          <h1 className="rmm-display text-[2.25rem] leading-[2.75rem] break-words text-app-text sm:text-[2.75rem] sm:leading-[3.25rem]">
             {title}
           </h1>
           {children}
@@ -290,7 +290,7 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
     return (
       <Shell title={t('lesson-unavailable-title', { defaultValue: 'Not available yet' })}>
         <div className="rmm-sheet space-y-3 p-5">
-          <p className="text-(--app-text-muted)">
+          <p className="text-app-text-muted">
             {t('lesson-unavailable-body', {
               defaultValue:
                 "This lesson isn't ready yet. Pick another one from your learning path.",
@@ -330,7 +330,7 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
   } else if (status === 'error' && error === 'unauthorized') {
     body = (
       <div role="alert" className="rmm-sheet space-y-3 p-5">
-        <p className="text-(--app-text)">
+        <p className="text-app-text">
           {t('error-signed-out', {
             defaultValue: 'Your session ended. Sign in again to continue.',
           })}
@@ -347,7 +347,7 @@ export function LessonScreen({ lessonId }: { lessonId: string }) {
   } else if (status === 'error') {
     body = (
       <div role="alert" className="rmm-sheet space-y-3 p-5">
-        <p className="text-(--app-text)">
+        <p className="text-app-text">
           {t('error-lesson-load', { defaultValue: "Couldn't load this lesson." })}
         </p>
         <button

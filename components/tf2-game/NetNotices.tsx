@@ -43,7 +43,7 @@ export default function NetNotices() {
       className="pointer-events-none absolute left-1/2 top-[calc(var(--safe-top,0px)+3.5rem)] z-20 grid max-w-[min(90vw,32rem)] -translate-x-1/2 gap-1 text-center"
     >
       {notices.map((n) => (
-        <p key={n.id} className="rounded-(--app-radius-sm) bg-(--app-surface) px-3 py-1.5 text-sm text-(--app-text)">
+        <p key={n.id} className="rounded-app-sm bg-app-surface px-3 py-1.5 text-sm text-app-text">
           <NoticeText n={n} />
         </p>
       ))}

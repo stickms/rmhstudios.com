@@ -82,7 +82,7 @@ export function PracticeLesson() {
 
   const signIn = (
     <div role="alert" className="rmm-sheet space-y-3 p-5">
-      <p className="text-(--app-text)">
+      <p className="text-app-text">
         {t('error-signed-out', {
           defaultValue: 'Your session ended. Sign in again to continue.',
         })}
@@ -99,7 +99,7 @@ export function PracticeLesson() {
   } else if (session !== null) {
     body = (
       <div className="rmm-sheet space-y-3 p-5">
-        <p className="text-(--app-text-muted)">
+        <p className="text-app-text-muted">
           {t('practice-nothing-due', {
             defaultValue: 'Nothing to practise right now. Come back when a card is due.',
           })}
@@ -114,7 +114,7 @@ export function PracticeLesson() {
   } else if (status === 'error' || cardsStatus === 'load_failed') {
     body = (
       <div role="alert" className="rmm-sheet space-y-3 p-5">
-        <p className="text-(--app-text)">
+        <p className="text-app-text">
           {t('practice-load-failed', { defaultValue: "Couldn't load your practice cards." })}
         </p>
         <button

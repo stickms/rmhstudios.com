@@ -19,18 +19,18 @@ export default function CorrectGuessersPanel({ correctGuessers }: CorrectGuesser
 
   return (
     <div className="w-full flex flex-col gap-1">
-      <span className="text-xs font-semibold text-(--app-text-muted) uppercase tracking-wide">
+      <span className="text-xs font-semibold text-app-text-muted uppercase tracking-wide">
         {t("correct-guessers", { defaultValue: "Correct Guessers" })}
       </span>
       <div className="flex flex-col gap-1">
         {correctGuessers.map((g) => (
           <div
             key={g.userId}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-(--app-radius-sm) bg-(--app-surface) text-sm"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-app-sm bg-app-surface text-sm"
           >
-            <span className="text-(--app-success)">✅</span>
-            <span className="text-(--app-text)">{g.userName}</span>
-            <span className="ml-auto text-xs text-(--app-text-muted)">
+            <span className="text-app-success">✅</span>
+            <span className="text-app-text">{g.userName}</span>
+            <span className="ml-auto text-xs text-app-text-muted">
               #{g.rank}
             </span>
           </div>

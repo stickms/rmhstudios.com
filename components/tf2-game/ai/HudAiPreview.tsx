@@ -68,17 +68,17 @@ export default function HudAiPreview({
 
   return (
     <figure className="flex min-w-0 flex-col gap-1">
-      <div className="tf2hud-backdrop-game relative aspect-video w-full overflow-hidden rounded-(--app-radius-sm) border border-(--app-border)">
+      <div className="tf2hud-backdrop-game relative aspect-video w-full overflow-hidden rounded-app-sm border border-app-border">
         <canvas ref={ref} className="absolute inset-0 h-full w-full" aria-hidden="true" />
         {!hud ? (
-          <span className="absolute inset-0 flex items-center justify-center text-[11px] text-(--app-text-muted)">
+          <span className="absolute inset-0 flex items-center justify-center text-[11px] text-app-text-muted">
             {failed
               ? t('ai_preview_failed', { defaultValue: 'No preview' })
               : t('ai_preview_loading', { defaultValue: 'Preparing the preview…' })}
           </span>
         ) : null}
       </div>
-      <figcaption className="text-[11px] text-(--app-text-dim)">
+      <figcaption className="text-[11px] text-app-text-dim">
         {t('ai_preview_caption', { defaultValue: 'Preview with your match' })}
       </figcaption>
     </figure>

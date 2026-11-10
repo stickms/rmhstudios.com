@@ -30,14 +30,14 @@ export function MicDetails() {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(level * 100)}
-        className="h-2 w-full overflow-hidden rounded-(--app-radius-sm) bg-(--app-surface-active)"
+        className="h-2 w-full overflow-hidden rounded-app-sm bg-app-surface-active"
       >
         <div
-          className="h-full origin-left bg-(--app-accent)"
+          className="h-full origin-left bg-app-accent"
           style={{ transform: `scaleX(${level})` }}
         />
       </div>
-      <p className="text-sm text-(--app-text-muted)" aria-live="polite">
+      <p className="text-sm text-app-text-muted" aria-live="polite">
         {note
           ? t('mic-heard', {
               note: midiToName(note.midi),
@@ -81,7 +81,7 @@ export function MidiDetails() {
   return (
     <div className="space-y-2 text-sm" aria-live="polite">
       {gone && (
-        <p className="text-(--app-warning)">
+        <p className="text-app-warning">
           {t('midi-disconnected', {
             name: gone,
             defaultValue: '{{name}} was disconnected.',
@@ -89,7 +89,7 @@ export function MidiDetails() {
         </p>
       )}
       {devices.length === 0 ? (
-        <p className="text-(--app-text-muted)">
+        <p className="text-app-text-muted">
           {t('midi-no-device', {
             defaultValue: 'Plug in or pair a MIDI controller. It will show up here.',
           })}
@@ -97,14 +97,14 @@ export function MidiDetails() {
       ) : (
         <ul className="space-y-1">
           {devices.map((d) => (
-            <li key={d.id} className="font-medium text-(--app-text)">
+            <li key={d.id} className="font-medium text-app-text">
               {d.name}
             </li>
           ))}
         </ul>
       )}
       {devices.length > 0 && (
-        <p className="min-h-6 text-(--app-text-muted)">
+        <p className="min-h-6 text-app-text-muted">
           {playing.length > 0
             ? t('midi-playing', {
                 notes: playing.map((m) => midiToName(m)).join(' '),
@@ -163,7 +163,7 @@ export function InputErrorNotice({
 
   return (
     <div role="alert" className="space-y-2 text-sm">
-      <p className="flex gap-2 text-(--app-danger)">
+      <p className="flex gap-2 text-app-danger">
         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
         <span>{message}</span>
       </p>

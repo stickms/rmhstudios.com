@@ -8,7 +8,7 @@ export function Swatch({ color, className }: { color?: Rgba; className?: string 
   return (
     <span
       className={cn(
-        'relative block overflow-hidden rounded-(--app-radius-sm) border border-(--app-border-bright)',
+        'relative block overflow-hidden rounded-app-sm border border-app-border-bright',
         className,
       )}
       aria-hidden

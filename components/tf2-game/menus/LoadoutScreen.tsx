@@ -190,16 +190,16 @@ export default function LoadoutScreen({
           href={`/tf2/loadout?class=${ed.cls}`}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex h-8 items-center gap-1.5 rounded-(--app-radius-sm) px-2 text-xs text-(--app-text-muted) hover:text-(--app-text) pointer-coarse:h-11"
+          className="inline-flex h-8 items-center gap-1.5 rounded-app-sm px-2 text-xs text-app-text-muted hover:text-app-text pointer-coarse:h-11"
         >
           <ExternalLink className="size-3.5" aria-hidden />
           {t('loadout_open_builder', { defaultValue: 'Open the full builder' })}
         </a>
         <p role="status" aria-live="polite" className="ms-auto text-xs">
-          {ed.status ? <Pill tone={ed.status.tone}>{ed.status.text}</Pill> : <span className="text-(--app-text-muted)">{ed.hint}</span>}
+          {ed.status ? <Pill tone={ed.status.tone}>{ed.status.text}</Pill> : <span className="text-app-text-muted">{ed.hint}</span>}
         </p>
         {ed.support.length ? (
-          <ul className="flex w-full flex-col gap-1 text-xs text-(--app-text-muted)">
+          <ul className="flex w-full flex-col gap-1 text-xs text-app-text-muted">
             {ed.support.map((s) => (
               <li key={s.key} className="flex items-start gap-1.5" title={s.missing.join(', ')}>
                 <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
@@ -211,8 +211,8 @@ export default function LoadoutScreen({
           </ul>
         ) : null}
         {ed.warnings.length ? (
-          <div role="status" className="w-full rounded-(--app-radius-sm) border border-(--app-warning)/50 bg-(--app-warning)/10 p-2.5 text-xs">
-            <p className="flex items-center gap-1.5 font-semibold text-(--app-warning)">
+          <div role="status" className="w-full rounded-app-sm border border-app-warning/50 bg-app-warning/10 p-2.5 text-xs">
+            <p className="flex items-center gap-1.5 font-semibold text-app-warning">
               <AlertTriangle className="size-4 shrink-0" aria-hidden />
               {t('loadout_not_allowed', { defaultValue: "The game won't accept this loadout yet" })}
             </p>

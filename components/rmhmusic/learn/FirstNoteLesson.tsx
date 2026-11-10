@@ -120,11 +120,11 @@ export function FirstNoteLesson({
   return (
     <div className="space-y-4">
       <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
-        <h2 className="rmm-display min-h-8 text-2xl leading-8 text-(--app-text)">
+        <h2 className="rmm-display min-h-8 text-2xl leading-8 text-app-text">
           {/* Keyed so a new state is a new text node: centred text rewritten in place counts as a layout shift. */}
           <span key={lesson.kind}>{title}</span>
         </h2>
-        <p className="min-h-15 text-sm leading-5 text-(--app-text-muted)">
+        <p className="min-h-15 text-sm leading-5 text-app-text-muted">
           <span key={done ? 'done' : 'hint'}>{line}</span>
         </p>
         <LiveStaff className="pt-2" note={played ?? undefined} announce={!done} />

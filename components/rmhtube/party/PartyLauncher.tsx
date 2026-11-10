@@ -35,12 +35,12 @@ export default function PartyLauncher() {
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
         title={t('party-title', { defaultValue: 'Watch party games' })}
-        className="relative rounded-(--app-radius-sm) p-2 text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-text)"
+        className="relative rounded-app-sm p-2 text-app-text-muted transition-colors hover:bg-app-surface-hover hover:text-app-text"
       >
         <PartyPopper className="h-5 w-5" aria-hidden />
         {live && (
           <span
-            className="absolute right-1 top-1 h-2 w-2 rounded-full bg-(--app-accent)"
+            className="absolute right-1 top-1 h-2 w-2 rounded-full bg-app-accent"
             aria-hidden
           />
         )}

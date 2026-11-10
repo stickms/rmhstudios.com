@@ -84,7 +84,7 @@ export function TableReadPanel({
       <h2 className="text-sm font-black">{t('read-title', { defaultValue: 'Table read' })}</h2>
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-xs text-(--app-text-dim)">
+          <tr className="text-xs text-app-text-dim">
             <th scope="col" className="text-start font-normal">
               <span className="sr-only">{t('read-stat', { defaultValue: 'Stat' })}</span>
             </th>
@@ -104,7 +104,7 @@ export function TableReadPanel({
         <tbody>
           {lines.map((l) => (
             <tr key={l.key}>
-              <th scope="row" className="text-start font-normal text-(--app-text-muted)">
+              <th scope="row" className="text-start font-normal text-app-text-muted">
                 {l.label}
               </th>
               <td className="text-end font-mono font-bold tabular-nums">{l.fmt(l.pick(you))}</td>
@@ -116,7 +116,7 @@ export function TableReadPanel({
           ))}
         </tbody>
       </table>
-      <p className="text-xs text-(--app-text-dim)">
+      <p className="text-xs text-app-text-dim">
         {t('read-tell-note', {
           defaultValue:
             'Tell: how much slower (+) or faster (−) you answer when you bluff. Anyone watching can read it.',

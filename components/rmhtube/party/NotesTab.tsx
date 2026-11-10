@@ -101,13 +101,13 @@ export default function NotesTab() {
       <ul className="space-y-1" data-jelly-group>
         {mine.map((c) => (
           <li key={c.id} className="flex items-center gap-2">
-            <span className="w-12 shrink-0 tabular-nums text-(--app-text-muted)">
+            <span className="w-12 shrink-0 tabular-nums text-app-text-muted">
               {formatDuration(c.atSec)}
             </span>
             <span className="min-w-0 flex-1 truncate">{c.body}</span>
             <button
               type="button"
-              className="rounded-(--app-radius-sm) p-1 text-(--app-text-muted) hover:text-(--app-danger)"
+              className="rounded-app-sm p-1 text-app-text-muted hover:text-app-danger"
               onClick={() => void remove(c.id)}
               title={t('remove', { defaultValue: 'Remove' })}
             >

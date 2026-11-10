@@ -31,32 +31,32 @@ interface AnswerCardProps {
 
 const statusStyles: Record<AnswerStatus, { bg: string; text: string; border: string; badge?: ReactNode }> = {
   unique: {
-    bg: 'bg-(--app-success-dim)',
-    text: 'text-(--app-success)',
-    border: 'border-(--app-success)/30',
-    badge: <Star className="h-3 w-3 fill-current text-(--app-success)" />,
+    bg: 'bg-app-success-dim',
+    text: 'text-app-success',
+    border: 'border-app-success/30',
+    badge: <Star className="h-3 w-3 fill-current text-app-success" />,
   },
   shared: {
-    bg: 'bg-(--app-surface)',
-    text: 'text-(--app-text)',
-    border: 'border-(--app-border)',
+    bg: 'bg-app-surface',
+    text: 'text-app-text',
+    border: 'border-app-border',
   },
   crashed: {
-    bg: 'bg-(--app-danger-dim)',
-    text: 'text-(--app-danger) line-through',
-    border: 'border-(--app-danger)/30',
-    badge: <Flame className="h-3 w-3 text-(--app-danger)" />,
+    bg: 'bg-app-danger-dim',
+    text: 'text-app-danger line-through',
+    border: 'border-app-danger/30',
+    badge: <Flame className="h-3 w-3 text-app-danger" />,
   },
   invalid: {
-    bg: 'bg-(--app-warning-dim)',
-    text: 'text-(--app-warning) line-through',
-    border: 'border-(--app-warning)/30',
-    badge: <AlertTriangle className="h-3 w-3 text-(--app-warning)" />,
+    bg: 'bg-app-warning-dim',
+    text: 'text-app-warning line-through',
+    border: 'border-app-warning/30',
+    badge: <AlertTriangle className="h-3 w-3 text-app-warning" />,
   },
   empty: {
-    bg: 'bg-(--app-surface)/50',
-    text: 'text-(--app-text-muted)/50 italic',
-    border: 'border-(--app-border)/30',
+    bg: 'bg-app-surface/50',
+    text: 'text-app-text-muted/50 italic',
+    border: 'border-app-border/30',
   },
 };
 
@@ -68,10 +68,10 @@ export default function AnswerCard({ answer, category, points, status }: AnswerC
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`flex flex-col gap-1 rounded-(--app-radius-sm) border p-2 ${style.bg} ${style.border}`}
+      className={`flex flex-col gap-1 rounded-app-sm border p-2 ${style.bg} ${style.border}`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-medium uppercase tracking-wider text-(--app-text-muted)">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-app-text-muted">
           {category}
         </span>
         {style.badge && <span className="text-xs">{style.badge}</span>}
@@ -81,7 +81,7 @@ export default function AnswerCard({ answer, category, points, status }: AnswerC
       </span>
       <span
         className={`text-[10px] font-semibold ${
-          points > 0 ? 'text-(--app-success)' : points < 0 ? 'text-(--app-danger)' : 'text-(--app-text-muted)'
+          points > 0 ? 'text-app-success' : points < 0 ? 'text-app-danger' : 'text-app-text-muted'
         }`}
       >
         {points > 0 ? `+${points}` : points === 0 ? '0' : points} {t("pts", { defaultValue: "pts" })}

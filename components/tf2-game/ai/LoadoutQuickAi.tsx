@@ -297,7 +297,7 @@ export default function LoadoutQuickAi({
           })}{' '}
           <button
             type="button"
-            className="text-(--app-accent-text) underline pointer-coarse:min-h-11"
+            className="text-app-accent-text underline pointer-coarse:min-h-11"
             onClick={() => setSignIn(true)}
           >
             {t('ai_sign_in', { defaultValue: 'Sign in' })}
@@ -307,7 +307,7 @@ export default function LoadoutQuickAi({
       {busy ? <Progress>{t('ai_loadout_thinking', { defaultValue: 'Thinking about this match…' })}</Progress> : null}
       {error ? <Note tone="danger">{error}</Note> : null}
       {answer ? (
-        <div className="flex min-w-0 flex-col gap-2 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-2">
+        <div className="flex min-w-0 flex-col gap-2 rounded-app-sm border border-app-border bg-app-bg p-2">
           <p className="text-xs break-words">{answer.text}</p>
           {answer.actions.length ? (
             <>

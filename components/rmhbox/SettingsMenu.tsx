@@ -58,26 +58,26 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
         <>
           {/* Backdrop */}
           <div
-            className="app-overlay fixed inset-0 z-60 bg-(--app-scrim)"
+            className="app-overlay fixed inset-0 z-60 bg-app-scrim"
             onClick={() => setIsOpen(false)}
           />
 
           {/* Settings panel — centered on screen */}
           <div
-            className="app-modal fixed inset-x-4 top-1/2 z-70 mx-auto max-w-sm -translate-y-1/2 max-h-[85dvh] overflow-y-auto rounded-(--app-radius) border p-5 shadow-(--app-shadow)"
+            className="app-modal fixed inset-x-4 top-1/2 z-70 mx-auto max-w-sm -translate-y-1/2 max-h-[85dvh] overflow-y-auto rounded-app border p-5 shadow-app"
             style={{
               backgroundColor: 'var(--app-surface)',
               borderColor: 'var(--app-border)',
             }}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-(--app-text)">
+              <h3 className="text-lg font-bold text-app-text">
                 {t("settings", { defaultValue: "Settings" })}
               </h3>
               <button
                 onClick={() => setIsOpen(false)}
                 aria-label={t("close", { defaultValue: "Close" })}
-                className="rounded-(--app-radius-sm) p-2 text-(--app-text-muted) transition-colors hover:text-(--app-text)"
+                className="rounded-app-sm p-2 text-app-text-muted transition-colors hover:text-app-text"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -86,10 +86,10 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
             <div className="space-y-4">
               {/* Theme Toggle */}
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-(--app-text)">{t("theme", { defaultValue: "Theme" })}</span>
+                <span className="text-sm font-medium text-app-text">{t("theme", { defaultValue: "Theme" })}</span>
                 <button
                   onClick={onToggleTheme}
-                  className="flex items-center gap-2 rounded-(--app-radius-sm) px-3 py-1.5 text-xs font-semibold transition-colors"
+                  className="flex items-center gap-2 rounded-app-sm px-3 py-1.5 text-xs font-semibold transition-colors"
                   style={{
                     backgroundColor: 'var(--app-bg)',
                     color: 'var(--app-text)',
@@ -113,7 +113,7 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
 
               {/* Audio Section */}
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-(--app-text-muted)">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-app-text-muted">
                   {settings.masterVolume === 0 ? (
                     <VolumeX className="h-3.5 w-3.5" />
                   ) : (
@@ -164,7 +164,7 @@ function VolumeSlider({
 }) {
   return (
     <label className="flex items-center gap-3">
-      <span className="w-12 text-xs text-(--app-text)">{label}</span>
+      <span className="w-12 text-xs text-app-text">{label}</span>
       <input
         type="range"
         min={0}
@@ -172,10 +172,10 @@ function VolumeSlider({
         step={0.05}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="flex-1 accent-(--app-accent)"
+        className="flex-1 accent-app-accent"
         style={{ height: '4px' }}
       />
-      <span className="w-8 text-right text-xs tabular-nums text-(--app-text-muted)">
+      <span className="w-8 text-right text-xs tabular-nums text-app-text-muted">
         {Math.round(value * 100)}
       </span>
     </label>

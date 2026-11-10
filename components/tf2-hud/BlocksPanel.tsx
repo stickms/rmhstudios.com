@@ -198,7 +198,7 @@ export default function BlocksPanel() {
           aria-label={t('block-selection', { defaultValue: 'Selection' })}
           className="space-y-2"
         >
-          <p className="text-xs text-(--app-text-muted)">
+          <p className="text-xs text-app-text-muted">
             {picked.length
               ? t('block-selected', {
                   defaultValue_one:
@@ -264,7 +264,7 @@ export default function BlocksPanel() {
           className="space-y-1.5"
         >
           <h3 className="tf2hud-panel-head">{t('block-arrange', { defaultValue: 'Arrange' })}</h3>
-          <p className="text-[11px] text-(--app-text-dim)">
+          <p className="text-[11px] text-app-text-dim">
             {arrangeTargets.length >= 2
               ? t('arrange-target', {
                   defaultValue_one: 'Acts on {{count}} panel on this page.',
@@ -287,7 +287,7 @@ export default function BlocksPanel() {
                 onClick={() => arrange(op)}
               />
             ))}
-            <span className="ms-2 text-[11px] text-(--app-text-dim)">
+            <span className="ms-2 text-[11px] text-app-text-dim">
               {t('arrange-gap', { defaultValue: 'Gap' })}
             </span>
             <NumberField
@@ -313,7 +313,7 @@ export default function BlocksPanel() {
               <div key={sug.id} className="flex items-center justify-between gap-2">
                 <span className="min-w-0 truncate text-xs">
                   {sug.name}
-                  <span className="text-(--app-text-dim)">
+                  <span className="text-app-text-dim">
                     {' '}
                     · {t('looks-alike', { defaultValue: 'look alike, near each other' })}
                   </span>
@@ -327,7 +327,7 @@ export default function BlocksPanel() {
               <div key={p.id} className="flex items-center justify-between gap-2">
                 <span className="min-w-0 text-xs" title={p.description}>
                   <span className="truncate">{p.name}</span>
-                  <span className="block truncate text-[11px] text-(--app-text-dim)">
+                  <span className="block truncate text-[11px] text-app-text-dim">
                     {p.description}
                   </span>
                 </span>
@@ -428,7 +428,7 @@ function BlockCard({
   };
 
   return (
-    <div className="rounded-(--app-radius-sm) border border-(--app-border)">
+    <div className="rounded-app-sm border border-app-border">
       <div className="flex items-center gap-1 p-1.5">
         <button
           type="button"
@@ -474,7 +474,7 @@ function BlockCard({
       </div>
 
       {open ? (
-        <div className="space-y-3 border-t border-(--app-border) p-2">
+        <div className="space-y-3 border-t border-app-border p-2">
           <TextField
             aria-label={t('block-name', { defaultValue: 'Block name' })}
             value={block.name}
@@ -482,11 +482,11 @@ function BlockCard({
           />
 
           <div className="space-y-1.5">
-            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-(--app-text-dim)">
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-app-text-dim">
               {t('shared-values', { defaultValue: 'Shared values' })}
             </h4>
             {keys.length === 0 ? (
-              <p className="text-[11px] text-(--app-text-dim)">
+              <p className="text-[11px] text-app-text-dim">
                 {t('shared-none', {
                   defaultValue:
                     'Nothing is shared yet. Add a property to set it on every panel at once.',
@@ -498,7 +498,7 @@ function BlockCard({
                 key={key}
                 className="grid grid-cols-[6.5rem_minmax(0,1fr)_auto] items-center gap-2"
               >
-                <span className="truncate text-xs text-(--app-text-muted)" title={key}>
+                <span className="truncate text-xs text-app-text-muted" title={key}>
                   {key}
                 </span>
                 <PropControl
@@ -516,7 +516,7 @@ function BlockCard({
                   onClick={() => removeBlockKey(block.id, key)}
                 />
                 {driftCount.get(key) ? (
-                  <div className="col-span-3 flex items-center justify-between gap-2 ps-[7rem] text-[11px] text-(--app-warning)">
+                  <div className="col-span-3 flex items-center justify-between gap-2 ps-[7rem] text-[11px] text-app-warning">
                     <span>
                       {t('key-differs', {
                         defaultValue_one: '{{count}} panel has a different value',
@@ -562,14 +562,14 @@ function BlockCard({
 
           {drift.length ? (
             <div className="space-y-1.5">
-              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-(--app-warning)">
+              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-app-warning">
                 {t('block-differs', { defaultValue: 'Differs from the block' })}
               </h4>
               {drift.slice(0, DRIFT_ROWS).map((d) => (
                 <div key={`${memberKey(d.member)}:${d.key}`} className="space-y-1 text-xs">
                   <p className="truncate">
                     <strong>{shortName(d.member)}</strong> · {d.key}:{' '}
-                    <span className="text-(--app-text-muted)">
+                    <span className="text-app-text-muted">
                       {d.actual ?? t('unset', { defaultValue: '(not set)' })} → {d.expected}
                     </span>
                   </p>
@@ -589,7 +589,7 @@ function BlockCard({
                 </div>
               ))}
               {drift.length > DRIFT_ROWS ? (
-                <p className="text-[11px] text-(--app-text-dim)">
+                <p className="text-[11px] text-app-text-dim">
                   {t('drift-more', {
                     defaultValue_one: '…and {{count}} more',
                     defaultValue_other: '…and {{count}} more',
@@ -601,7 +601,7 @@ function BlockCard({
           ) : null}
 
           <div className="space-y-1">
-            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-(--app-text-dim)">
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-app-text-dim">
               {t('block-members', { defaultValue: 'Panels' })}
               <span className="ms-1 font-normal normal-case">
                 {t('on-this-page', {
@@ -621,12 +621,12 @@ function BlockCard({
                     onClick={() => node && select(node.id)}
                     className={cn(
                       'min-w-0 flex-1 truncate text-start text-xs',
-                      node ? 'hover:underline' : 'text-(--app-text-dim)',
+                      node ? 'hover:underline' : 'text-app-text-dim',
                     )}
                     title={`${m.file} › ${m.path.join(' › ')}`}
                   >
                     {shortName(m)}
-                    <span className="text-(--app-text-dim)">
+                    <span className="text-app-text-dim">
                       {' '}
                       · {m.file.replace('resource/ui/', '')}
                     </span>

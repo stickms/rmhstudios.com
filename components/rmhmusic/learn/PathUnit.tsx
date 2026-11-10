@@ -56,7 +56,7 @@ export function PathUnit({ unit, progress, onOpenLesson, placeholder = false }: 
             page. The placeholder renders this same box. */}
         <h2
           id={headingId}
-          className={`rmm-display flex min-h-18 items-end text-[1.75rem] leading-9 text-(--app-text) sm:min-h-20 sm:text-[2rem] sm:leading-10${hidden}`}
+          className={`rmm-display flex min-h-18 items-end text-[1.75rem] leading-9 text-app-text sm:min-h-20 sm:text-[2rem] sm:leading-10${hidden}`}
         >
           {unit.title}
         </h2>
@@ -88,14 +88,14 @@ export function PathUnit({ unit, progress, onOpenLesson, placeholder = false }: 
               )}
               <Notehead
                 kind={marker(lesson, row)}
-                className={`self-start mt-1.5 ${lesson.available ? 'text-(--app-accent)' : 'text-(--app-text-dim)'}`}
+                className={`self-start mt-1.5 ${lesson.available ? 'text-app-accent' : 'text-app-text-dim'}`}
               />
               <div className="min-w-0 flex-1">
                 <p
                   className={
                     lesson.available
-                      ? 'font-medium text-(--app-text)'
-                      : 'text-(--app-text-muted)'
+                      ? 'font-medium text-app-text'
+                      : 'text-app-text-muted'
                   }
                 >
                   {lesson.title}
@@ -107,7 +107,7 @@ export function PathUnit({ unit, progress, onOpenLesson, placeholder = false }: 
                         <Notehead
                           key={i}
                           kind="filled"
-                          className={`h-2.5 w-3 text-(--app-accent)${i < stars ? '' : ' invisible'}`}
+                          className={`h-2.5 w-3 text-app-accent${i < stars ? '' : ' invisible'}`}
                         />
                       ))}
                     </span>
@@ -115,7 +115,7 @@ export function PathUnit({ unit, progress, onOpenLesson, placeholder = false }: 
                   <span className="sr-only">{`, ${state}`}</span>
                 </p>
                 <p
-                  className={`text-sm ${lesson.available ? 'text-(--app-text-muted)' : 'text-(--app-text-dim)'}`}
+                  className={`text-sm ${lesson.available ? 'text-app-text-muted' : 'text-app-text-dim'}`}
                 >
                   {lesson.summary}
                 </p>

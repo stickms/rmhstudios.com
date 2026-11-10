@@ -37,7 +37,7 @@ const blank = (): Draft => ({
 const fmt = (m: number) =>
   m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? ` ${m % 60}m` : ''}` : `${m}m`;
 
-const inputCls = 'glass-inset h-10 rounded-(--app-radius-sm) px-3 text-sm text-(--app-text)';
+const inputCls = 'glass-inset h-10 rounded-app-sm px-3 text-sm text-app-text';
 
 export default function StudyPlanner() {
   const { t } = useTranslation('f-tools');
@@ -153,7 +153,7 @@ export default function StudyPlanner() {
       <div className="flex-1 p-4 md:p-8">
         <div className="mx-auto max-w-3xl space-y-8">
           <div className="inline-flex items-center gap-2">
-            <CalendarCheck className="h-8 w-8 text-(--app-accent)" aria-hidden />
+            <CalendarCheck className="h-8 w-8 text-app-accent" aria-hidden />
             <h2 className="text-3xl font-bold" style={{ fontFamily: 'var(--app-font-display)' }}>
               {t('plan-heading', { defaultValue: 'Exam planner' })}
             </h2>
@@ -193,10 +193,10 @@ export default function StudyPlanner() {
             )}
           </div>
 
-          <section className="glass-pane space-y-4 rounded-(--app-radius) p-4">
+          <section className="glass-pane space-y-4 rounded-app p-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-1 text-sm">
-                <span className="text-(--app-text-muted)">
+                <span className="text-app-text-muted">
                   {t('plan-title', { defaultValue: 'Plan name' })}
                 </span>
                 <input
@@ -207,7 +207,7 @@ export default function StudyPlanner() {
                 />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="text-(--app-text-muted)">
+                <span className="text-app-text-muted">
                   {t('plan-exam-date', { defaultValue: 'Exam date' })}
                 </span>
                 <input
@@ -266,7 +266,7 @@ export default function StudyPlanner() {
                   </Button>
                 </div>
               ))}
-              <p className="text-xs text-(--app-text-muted)">
+              <p className="text-xs text-app-text-muted">
                 {t('plan-topics-hint', {
                   defaultValue:
                     'Hours you think it needs, and how confident you feel (right is solid).',
@@ -289,7 +289,7 @@ export default function StudyPlanner() {
               </legend>
               <div className="grid grid-cols-7 gap-1.5">
                 {WEEKDAYS.map((d, i) => (
-                  <label key={d} className="space-y-1 text-center text-xs text-(--app-text-muted)">
+                  <label key={d} className="space-y-1 text-center text-xs text-app-text-muted">
                     {d}
                     <input
                       type="number"
@@ -325,7 +325,7 @@ export default function StudyPlanner() {
               aria-label={t('plan-days', { defaultValue: 'Day-by-day plan' })}
             >
               {plan.shortfallHours > 0 && (
-                <p role="status" className="glass-fill rounded-(--app-radius) p-3 text-sm">
+                <p role="status" className="glass-fill rounded-app p-3 text-sm">
                   {t('plan-shortfall', {
                     defaultValue:
                       'This does not fit: you are {{hours}} hours short. Add study time or cut a topic.',
@@ -337,7 +337,7 @@ export default function StudyPlanner() {
                 {plan.days
                   .filter((d) => d.blocks.length > 0)
                   .map((d) => (
-                    <li key={d.date} className="glass-fill rounded-(--app-radius) p-3">
+                    <li key={d.date} className="glass-fill rounded-app p-3">
                       <h3 className="mb-2 text-sm font-semibold">
                         {new Date(`${d.date}T00:00:00`).toLocaleDateString(undefined, {
                           weekday: 'long',
@@ -345,7 +345,7 @@ export default function StudyPlanner() {
                           day: 'numeric',
                         })}
                         {d.date === today && (
-                          <span className="ml-2 text-xs text-(--app-accent)">
+                          <span className="ml-2 text-xs text-app-accent">
                             {t('plan-today', { defaultValue: 'Today' })}
                           </span>
                         )}
@@ -355,7 +355,7 @@ export default function StudyPlanner() {
                           <li key={i} className="flex items-center justify-between gap-2 text-sm">
                             <span>
                               {nameOf(b.topicId)}{' '}
-                              <span className="text-(--app-text-muted)">- {fmt(b.minutes)}</span>
+                              <span className="text-app-text-muted">- {fmt(b.minutes)}</span>
                             </span>
                             <Button
                               variant="outline"

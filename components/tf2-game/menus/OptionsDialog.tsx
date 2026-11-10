@@ -199,14 +199,14 @@ export default function OptionsDialog({ game, settings, onChange, source, initia
     if (c.kind === 'toggle' || c.kind === 'fixed' || c.kind === 'unavailable') {
       return (
         <OptionRow key={c.id} label={label} tooltip={tooltip}>
-          <label className="flex min-w-0 items-center gap-2 text-sm text-(--app-text)" data-cvar={c.cvar || undefined}>
+          <label className="flex min-w-0 items-center gap-2 text-sm text-app-text" data-cvar={c.cvar || undefined}>
             <Toggle label={label} checked={v === true} disabled={c.kind !== 'toggle'} onChange={(on) => set(c, on)} />
             <span className="min-w-0">{label}</span>
           </label>
           {c.kind === 'fixed' ? (
-            <span className="text-xs text-(--app-text-dim)">{t('opt_fixed', { defaultValue: 'Always on in this game' })}</span>
+            <span className="text-xs text-app-text-dim">{t('opt_fixed', { defaultValue: 'Always on in this game' })}</span>
           ) : c.kind === 'unavailable' ? (
-            <span className="text-xs text-(--app-text-dim)">{t('opt_unavailable', { defaultValue: 'Not in this game yet' })}</span>
+            <span className="text-xs text-app-text-dim">{t('opt_unavailable', { defaultValue: 'Not in this game yet' })}</span>
           ) : (
             <span />
           )}
@@ -219,8 +219,8 @@ export default function OptionsDialog({ game, settings, onChange, source, initia
       return (
         <OptionRow key={c.id} label={label} tooltip={tooltip} stacked>
           <div className="flex items-baseline justify-between gap-3 text-sm">
-            <span className="min-w-0 text-(--app-text)">{label}</span>
-            <span className="shrink-0 tabular-nums text-(--app-text-muted)">{formatValue(c, n)}</span>
+            <span className="min-w-0 text-app-text">{label}</span>
+            <span className="shrink-0 tabular-nums text-app-text-muted">{formatValue(c, n)}</span>
           </div>
           <div data-cvar={c.cvar}>
             <RangeField label={label} min={min} max={max} step={c.step ?? 0.01} value={n} onChange={(x) => set(c, x)} />
@@ -230,7 +230,7 @@ export default function OptionsDialog({ game, settings, onChange, source, initia
     }
     return (
       <OptionRow key={c.id} label={label} tooltip={tooltip}>
-        <span className="min-w-0 text-sm text-(--app-text)">{label}</span>
+        <span className="min-w-0 text-sm text-app-text">{label}</span>
         <div data-cvar={c.cvar} className="min-w-36">
           <SelectField value={String(v)} onChange={(e) => set(c, e.target.value)} aria-label={label}>
             {(c.choices ?? []).map((ch) => (
@@ -247,7 +247,7 @@ export default function OptionsDialog({ game, settings, onChange, source, initia
   const advancedToggle = (id: OptionsTab, body: ReactNode) => {
     const open = advanced === id;
     return (
-      <div className="mt-2 border-t border-(--app-border) pt-2">
+      <div className="mt-2 border-t border-app-border pt-2">
         <Btn size="sm" variant="ghost" icon={open ? ChevronDown : ChevronRight} aria-expanded={open} onClick={() => setAdvanced(open ? null : id)}>
           {gameText(source, '#GameUI_AdvancedEllipsis', t('opt_advanced', { defaultValue: 'Advanced…' }))}
         </Btn>
@@ -272,7 +272,7 @@ export default function OptionsDialog({ game, settings, onChange, source, initia
           const active = capturing?.row === r.id;
           return (
             <div key={r.id} className="contents" data-bind-row={r.id}>
-              <span className="min-w-0 text-sm text-(--app-text)">{label}</span>
+              <span className="min-w-0 text-sm text-app-text">{label}</span>
               <Btn
                 size="xs"
                 variant={active ? 'primary' : 'secondary'}
@@ -298,7 +298,7 @@ export default function OptionsDialog({ game, settings, onChange, source, initia
         'keyboard',
         <>
           {tabControls(game, 'keyboard', true).map(control)}
-          <p className="text-[11px] text-(--app-text-dim) pointer-coarse:text-xs">
+          <p className="text-[11px] text-app-text-dim pointer-coarse:text-xs">
             {t('set_dev_console_hint', { defaultValue: 'Open it with the ` key, or from the pause menu.' })}
           </p>
         </>,
@@ -311,7 +311,7 @@ export default function OptionsDialog({ game, settings, onChange, source, initia
     <>
       {game === 'tf2' ? (
       <OptionRow>
-        <span className="min-w-0 text-sm text-(--app-text)">{gameText(source, '#GameUI_PlayerName', t('opt_name', { defaultValue: 'Name' }))}</span>
+        <span className="min-w-0 text-sm text-app-text">{gameText(source, '#GameUI_PlayerName', t('opt_name', { defaultValue: 'Name' }))}</span>
         <div className="min-w-44">
           <TextField
             value={accountName ?? ''}
@@ -323,17 +323,17 @@ export default function OptionsDialog({ game, settings, onChange, source, initia
       </OptionRow>
       ) : null}
       {game === 'tf2' ? (
-        <p className="text-[11px] text-(--app-text-dim) pointer-coarse:text-xs">
+        <p className="text-[11px] text-app-text-dim pointer-coarse:text-xs">
           {t('opt_name_hint', { defaultValue: 'Online, players are named by their account.' })}
         </p>
       ) : null}
       {tabControls(game, 'multiplayer').map(control)}
       <div className="flex items-center gap-3 py-1">
         {/* relative: the glyph is the HUD's centred crosshair, centred here in its box. */}
-        <span className="relative inline-grid size-12 place-items-center rounded-(--app-radius-sm) bg-(--app-bg)" aria-hidden="true">
+        <span className="relative inline-grid size-12 place-items-center rounded-app-sm bg-app-bg" aria-hidden="true">
           <CrosshairGlyph style={crosshair.style} color={crosshair.color} size={32 * crosshair.scale} />
         </span>
-        <span className="text-xs text-(--app-text-dim)">{t('opt_crosshair_preview', { defaultValue: 'Preview' })}</span>
+        <span className="text-xs text-app-text-dim">{t('opt_crosshair_preview', { defaultValue: 'Preview' })}</span>
       </div>
       {game === 'tf2' && advancedItems.length ? advancedToggle(
         'multiplayer',
@@ -357,7 +357,7 @@ export default function OptionsDialog({ game, settings, onChange, source, initia
   const video = (
     <>
       <OptionRow>
-        <span className="min-w-0 text-sm text-(--app-text)">{gameText(source, '#GameUI_DisplayMode', t('opt_display_mode', { defaultValue: 'Display mode' }))}</span>
+        <span className="min-w-0 text-sm text-app-text">{gameText(source, '#GameUI_DisplayMode', t('opt_display_mode', { defaultValue: 'Display mode' }))}</span>
         <Btn
           size="sm"
           icon={Maximize}
@@ -369,10 +369,10 @@ export default function OptionsDialog({ game, settings, onChange, source, initia
         </Btn>
       </OptionRow>
       {!canFullscreen ? (
-        <p className="text-[11px] text-(--app-text-dim) pointer-coarse:text-xs">{t('opt_fullscreen_na', { defaultValue: 'This browser does not allow full screen here.' })}</p>
+        <p className="text-[11px] text-app-text-dim pointer-coarse:text-xs">{t('opt_fullscreen_na', { defaultValue: 'This browser does not allow full screen here.' })}</p>
       ) : null}
       {tabControls(game, 'video').map(control)}
-      <p className="text-[11px] text-(--app-text-dim) pointer-coarse:text-xs">{t('opt_next_load', { defaultValue: 'Quality and detail apply when the next level loads.' })}</p>
+      <p className="text-[11px] text-app-text-dim pointer-coarse:text-xs">{t('opt_next_load', { defaultValue: 'Quality and detail apply when the next level loads.' })}</p>
       {advancedToggle('video', tabControls(game, 'video', true).map(control))}
     </>
   );
@@ -389,7 +389,7 @@ export default function OptionsDialog({ game, settings, onChange, source, initia
         return (
           <>
             {tabControls(game, 'voice').map(control)}
-            <p className="text-xs text-(--app-text-muted)">{t('opt_voice_note', { defaultValue: 'Voice chat is not part of this game yet. Text chat and voice commands work as usual.' })}</p>
+            <p className="text-xs text-app-text-muted">{t('opt_voice_note', { defaultValue: 'Voice chat is not part of this game yet. Text chat and voice commands work as usual.' })}</p>
           </>
         );
       default: {
@@ -409,10 +409,10 @@ export default function OptionsDialog({ game, settings, onChange, source, initia
     <div className="flex flex-col gap-3" data-testid="tf2-options" data-tab={tab}>
       <TfTabs tabs={tabs} value={tab} onChange={(id) => setTab(id as OptionsTab)} size="sm" aria-label={gameText(source, '#GameUI_Options', t('settings', { defaultValue: 'Options' }))} />
       <div className="flex flex-col">{body}</div>
-      <p role="status" aria-live="polite" className="min-h-4 text-xs text-(--app-text-muted)">
+      <p role="status" aria-live="polite" className="min-h-4 text-xs text-app-text-muted">
         {notice}
       </p>
-      <div className="flex justify-end border-t border-(--app-border) pt-3">
+      <div className="flex justify-end border-t border-app-border pt-3">
         <Btn size="sm" variant="ghost" onClick={() => onChange(defaultSettings(game))}>
           {t('settings_reset', { defaultValue: 'Reset all options' })}
         </Btn>

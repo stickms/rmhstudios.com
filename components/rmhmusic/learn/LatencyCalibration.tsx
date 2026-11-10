@@ -137,21 +137,21 @@ export function LatencyCalibration({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-(--app-text-muted)">
+      <p className="text-sm text-app-text-muted">
         {t('latency-intro', {
           defaultValue:
             'You will hear 8 clicks. Play along with each one. This tells lessons how much delay your setup adds.',
         })}
       </p>
-      <p className="font-medium text-(--app-text)">{hint}</p>
+      <p className="font-medium text-app-text">{hint}</p>
 
       <div className="flex justify-center gap-2" aria-hidden="true">
         {Array.from({ length: CLICKS }, (_, i) => (
           <span
             key={i}
             className={cn(
-              'h-3 w-3 rounded-(--app-radius-sm) transition-colors',
-              i <= beat ? 'bg-(--app-accent)' : 'bg-(--app-border-bright)',
+              'h-3 w-3 rounded-app-sm transition-colors',
+              i <= beat ? 'bg-app-accent' : 'bg-app-border-bright',
             )}
           />
         ))}
@@ -159,7 +159,7 @@ export function LatencyCalibration({ onDone }: { onDone: () => void }) {
 
       <button
         type="button"
-        className="glass-inset flex min-h-28 w-full items-center justify-center rounded-(--app-radius) border border-(--app-border-bright) text-lg font-semibold text-(--app-text) select-none"
+        className="glass-inset flex min-h-28 w-full items-center justify-center rounded-app border border-app-border-bright text-lg font-semibold text-app-text select-none"
         style={{ touchAction: 'none' }}
         onPointerDown={(e) => {
           e.preventDefault();
@@ -180,7 +180,7 @@ export function LatencyCalibration({ onDone }: { onDone: () => void }) {
 
       <div aria-live="polite" className="min-h-6 text-sm">
         {phase === 'running' && (
-          <p className="text-(--app-text-muted)">
+          <p className="text-app-text-muted">
             {t('latency-taps', {
               count: taps,
               defaultValue_one: '{{count}} tap heard',
@@ -189,7 +189,7 @@ export function LatencyCalibration({ onDone }: { onDone: () => void }) {
           </p>
         )}
         {phase === 'done' && result !== null && (
-          <p className="font-medium text-(--app-success)">
+          <p className="font-medium text-app-success">
             {t('latency-result', {
               ms: result,
               defaultValue: 'Done. Your setup adds about {{ms}} ms. Lessons will allow for it.',
@@ -197,14 +197,14 @@ export function LatencyCalibration({ onDone }: { onDone: () => void }) {
           </p>
         )}
         {phase === 'retry' && (
-          <p className="text-(--app-warning)">
+          <p className="text-app-warning">
             {t('latency-retry', {
               defaultValue: "We didn't catch enough taps. Try again and play on every click.",
             })}
           </p>
         )}
         {phase === 'no-audio' && (
-          <p className="text-(--app-danger)">
+          <p className="text-app-danger">
             {t('latency-no-audio', {
               defaultValue: "Sound can't play in this browser, so timing can't be checked.",
             })}

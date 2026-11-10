@@ -25,9 +25,9 @@ export default function WatchPartyPanel({ id, onClose }: { id?: string; onClose:
       id={id}
       role="group"
       aria-label={t('party-title', { defaultValue: 'Watch party games' })}
-      className="fixed right-3 top-16 z-50 flex max-h-[min(36rem,calc(100dvh-5rem))] w-[min(26rem,calc(100vw-1.5rem))] flex-col rounded-(--app-radius) app-glass"
+      className="fixed right-3 top-16 z-50 flex max-h-[min(36rem,calc(100dvh-5rem))] w-[min(26rem,calc(100vw-1.5rem))] flex-col rounded-app app-glass"
     >
-      <div className="flex items-center justify-between gap-2 border-b border-(--app-border) p-2">
+      <div className="flex items-center justify-between gap-2 border-b border-app-border p-2">
         <Tabs
           tabs={tabs}
           value={tab}
@@ -40,13 +40,13 @@ export default function WatchPartyPanel({ id, onClose }: { id?: string; onClose:
         <button
           type="button"
           onClick={onClose}
-          className="shrink-0 rounded-(--app-radius-sm) p-1 text-(--app-text-muted) hover:text-(--app-text)"
+          className="shrink-0 rounded-app-sm p-1 text-app-text-muted hover:text-app-text"
           title={t('close', { defaultValue: 'Close' })}
         >
           <X className="h-4 w-4" aria-hidden />
         </button>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto p-3 text-sm text-(--app-text)">
+      <div className="min-h-0 flex-1 overflow-y-auto p-3 text-sm text-app-text">
         {tab === 'predict' && <PredictTab />}
         {tab === 'bingo' && <BingoTab />}
         {tab === 'later' && <LaterTab />}

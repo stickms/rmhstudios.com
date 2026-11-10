@@ -52,7 +52,7 @@ export default function JamPanel({
 
         {jam.status !== 'live' ? (
           <div className="space-y-4">
-            <p className="text-sm text-(--app-text-muted)">
+            <p className="text-sm text-app-text-muted">
               {t('jam-intro', {
                 defaultValue:
                   'Edit one project with up to 3 friends. MIDI and pattern tracks are shared; audio recordings stay on your device.',
@@ -61,8 +61,8 @@ export default function JamPanel({
             <Button variant="accent" disabled={busy} onClick={() => void run(startJam)}>
               {t('jam-start', { defaultValue: 'Start a jam from this project' })}
             </Button>
-            <div className="glass-pane space-y-2 rounded-(--app-radius) p-4">
-              <p className="text-xs text-(--app-text-muted)">
+            <div className="glass-pane space-y-2 rounded-app p-4">
+              <p className="text-xs text-app-text-muted">
                 {t('jam-join-hint', {
                   defaultValue:
                     'Or join with a room code. Your open project is saved to your library first.',
@@ -88,7 +88,7 @@ export default function JamPanel({
         ) : (
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-mono text-lg tracking-widest text-(--app-text)">{jam.code}</span>
+              <span className="font-mono text-lg tracking-widest text-app-text">{jam.code}</span>
               <Button
                 size="xs"
                 variant="ghost"
@@ -103,10 +103,10 @@ export default function JamPanel({
             </div>
             <ul className="space-y-1 text-sm">
               {jam.peers.map((p) => (
-                <li key={p.userId} className="flex justify-between text-(--app-text)">
+                <li key={p.userId} className="flex justify-between text-app-text">
                   <span>{p.name}</span>
                   {p.isHost && (
-                    <span className="text-xs text-(--app-text-dim)">
+                    <span className="text-xs text-app-text-dim">
                       {t('jam-host', { defaultValue: 'host' })}
                     </span>
                   )}
@@ -114,10 +114,10 @@ export default function JamPanel({
               ))}
             </ul>
             <div>
-              <p className="mb-1 text-xs font-medium text-(--app-text-muted)">
+              <p className="mb-1 text-xs font-medium text-app-text-muted">
                 {t('jam-tracks', { defaultValue: 'Track editors' })}
               </p>
-              <ul className="space-y-1 text-xs text-(--app-text-muted)">
+              <ul className="space-y-1 text-xs text-app-text-muted">
                 {tracks
                   .filter((tr) => tr.type !== 'audio')
                   .map((tr) => (
@@ -138,7 +138,7 @@ export default function JamPanel({
                     </li>
                   ))}
               </ul>
-              <p className="mt-2 text-xs text-(--app-text-dim)">
+              <p className="mt-2 text-xs text-app-text-dim">
                 {t('jam-lock-hint', {
                   defaultValue:
                     'Editing a track locks it for you until you pause for a few seconds.',

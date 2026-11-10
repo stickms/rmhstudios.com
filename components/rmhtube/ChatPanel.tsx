@@ -55,7 +55,7 @@ function renderContent(content: string, mentions: string[], names: Map<string, s
 
   return content.split(/(@\w+)/g).map((part, i) =>
     part.startsWith('@') && mentionedNames.has(part.slice(1)) ? (
-      <span key={i} className="font-bold text-(--app-accent)">{part}</span>
+      <span key={i} className="font-bold text-app-accent">{part}</span>
     ) : (
       part
     ),
@@ -118,15 +118,15 @@ const MessageRow = memo(function MessageRow({
 
   return (
     <div
-      className="group relative rounded-(--app-radius-sm) px-2 py-1 transition-colors hover:bg-(--app-surface)"
+      className="group relative rounded-app-sm px-2 py-1 transition-colors hover:bg-app-surface"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
       onContextMenu={canPin ? (e) => onContextMenu(e, msg) : undefined}
     >
       {msg.replyToId && msg.replyToUserName && (
         <div className="flex items-center gap-1 mb-0.5 pl-3">
-          <Reply className="h-3 w-3 text-(--app-text-dim) rotate-180" aria-hidden />
-          <span className="text-xs text-(--app-text-dim) truncate max-w-50">
+          <Reply className="h-3 w-3 text-app-text-dim rotate-180" aria-hidden />
+          <span className="text-xs text-app-text-dim truncate max-w-50">
             <span className="font-semibold">{msg.replyToUserName}</span>
             {': '}
             {msg.replyToContent}
@@ -135,18 +135,18 @@ const MessageRow = memo(function MessageRow({
       )}
 
       <div className="flex items-baseline gap-1.5 text-sm">
-        {isPinned && <Pin className="h-3 w-3 shrink-0 text-(--app-accent) self-center" aria-hidden />}
+        {isPinned && <Pin className="h-3 w-3 shrink-0 text-app-accent self-center" aria-hidden />}
 
         <span
           className={`font-semibold shrink-0 ${
-            msg.userId === hostUserId ? 'text-(--app-accent)' : 'text-(--app-info)'
+            msg.userId === hostUserId ? 'text-app-accent' : 'text-app-info'
           }`}
         >
           {msg.userName}
         </span>
 
         {text && (
-          <span className="text-(--app-text) wrap-break-word min-w-0">
+          <span className="text-app-text wrap-break-word min-w-0">
             {renderContent(text, msg.mentions, memberNames)}
           </span>
         )}
@@ -158,20 +158,20 @@ const MessageRow = memo(function MessageRow({
           canSeek ? (
             <button
               onClick={() => onSeek(msg.timestamp!)}
-              className="shrink-0 text-xs font-mono font-semibold text-(--app-accent) hover:underline"
+              className="shrink-0 text-xs font-mono font-semibold text-app-accent hover:underline"
               title={t('jump-to', { defaultValue: 'Jump to {{time}}', time: formatDuration(msg.timestamp) })}
             >
               {formatDuration(msg.timestamp)}
             </button>
           ) : (
-            <span className="shrink-0 text-xs font-mono font-semibold text-(--app-accent)">
+            <span className="shrink-0 text-xs font-mono font-semibold text-app-accent">
               {formatDuration(msg.timestamp)}
             </span>
           )
         )}
 
         {showTimestamps && (
-          <span className="shrink-0 text-xs text-(--app-text-dim) ml-auto">
+          <span className="shrink-0 text-xs text-app-text-dim ml-auto">
             {formatRelativeTime(msg.createdAt)}
           </span>
         )}
@@ -189,8 +189,8 @@ const MessageRow = memo(function MessageRow({
                 onClick={() => onReact(msg.id, emoji)}
                 className={`inline-flex items-center gap-1 rounded-full glass-fill px-1.5 py-0.5 text-xs transition-colors ${
                   hasReacted
-                    ? 'border-(--app-accent) bg-(--app-accent)/10 text-(--app-accent)'
-                    : 'text-(--app-text-muted) hover:border-(--app-text-muted)'
+                    ? 'border-app-accent bg-app-accent/10 text-app-accent'
+                    : 'text-app-text-muted hover:border-app-text-muted'
                 }`}
                 aria-pressed={hasReacted}
               >
@@ -203,34 +203,34 @@ const MessageRow = memo(function MessageRow({
       )}
 
       {showActions && (
-        <div className="absolute -top-2 right-1 flex items-center gap-0.5 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) shadow-(--app-shadow-sm) z-10">
+        <div className="absolute -top-2 right-1 flex items-center gap-0.5 rounded-app-sm border border-app-border bg-app-bg shadow-app-sm z-10">
           <button
             onClick={(e) => { e.stopPropagation(); onReply(msg); }}
-            className="p-1 rounded-(--app-radius-sm) hover:bg-(--app-surface) transition-colors"
+            className="p-1 rounded-app-sm hover:bg-app-surface transition-colors"
             title={t('reply', { defaultValue: 'Reply' })}
           >
-            <Reply className="h-3.5 w-3.5 text-(--app-text-muted)" aria-hidden />
+            <Reply className="h-3.5 w-3.5 text-app-text-muted" aria-hidden />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); setShowReactionPicker((v) => !v); }}
-            className="p-1 rounded-(--app-radius-sm) hover:bg-(--app-surface) transition-colors"
+            className="p-1 rounded-app-sm hover:bg-app-surface transition-colors"
             title={t('react', { defaultValue: 'React' })}
           >
-            <SmilePlus className="h-3.5 w-3.5 text-(--app-text-muted)" aria-hidden />
+            <SmilePlus className="h-3.5 w-3.5 text-app-text-muted" aria-hidden />
           </button>
         </div>
       )}
 
       {showReactionPicker && (
         <div
-          className="absolute -top-8 right-1 flex items-center gap-0.5 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) shadow-(--app-shadow) px-1 py-0.5 z-20"
+          className="absolute -top-8 right-1 flex items-center gap-0.5 rounded-app-sm border border-app-border bg-app-bg shadow-app px-1 py-0.5 z-20"
           onClick={(e) => e.stopPropagation()}
         >
           {CHAT_REACTION_EMOJIS.map((emoji) => (
             <button
               key={emoji}
               onClick={() => { onReact(msg.id, emoji); setShowReactionPicker(false); }}
-              className="p-1 rounded-(--app-radius-sm) hover:bg-(--app-surface) transition-colors text-sm"
+              className="p-1 rounded-app-sm hover:bg-app-surface transition-colors text-sm"
               title={emoji}
             >
               {emoji}
@@ -447,27 +447,27 @@ export default function ChatPanel() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-3 py-2 border-b border-(--app-border)">
-        <h3 className="text-sm font-semibold text-(--app-text-muted)">{t('chat', { defaultValue: 'Chat' })}</h3>
+      <div className="px-3 py-2 border-b border-app-border">
+        <h3 className="text-sm font-semibold text-app-text-muted">{t('chat', { defaultValue: 'Chat' })}</h3>
       </div>
 
       {/* Pinned message */}
       {pinnedMessage && (
-        <div className="flex items-start gap-2 px-3 py-2 border-b border-(--app-border) bg-(--app-surface)">
-          <Pin className="h-3.5 w-3.5 shrink-0 mt-0.5 text-(--app-accent)" aria-hidden />
+        <div className="flex items-start gap-2 px-3 py-2 border-b border-app-border bg-app-surface">
+          <Pin className="h-3.5 w-3.5 shrink-0 mt-0.5 text-app-accent" aria-hidden />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-(--app-accent)">
+            <p className="text-xs font-semibold text-app-accent">
               {t('pinned-by', { defaultValue: 'Pinned by {{userName}}', userName: pinnedMessage.userName })}
             </p>
-            <p className="text-xs text-(--app-text) truncate">{pinnedMessage.content}</p>
+            <p className="text-xs text-app-text truncate">{pinnedMessage.content}</p>
           </div>
           {isHost && (
             <button
               onClick={() => handlePin(null, false)}
-              className="shrink-0 p-0.5 rounded-(--app-radius-sm) hover:bg-(--app-border) transition-colors"
+              className="shrink-0 p-0.5 rounded-app-sm hover:bg-app-border transition-colors"
               title={t('unpin-message', { defaultValue: 'Unpin message' })}
             >
-              <X className="h-3.5 w-3.5 text-(--app-text-muted)" aria-hidden />
+              <X className="h-3.5 w-3.5 text-app-text-muted" aria-hidden />
             </button>
           )}
         </div>
@@ -478,7 +478,7 @@ export default function ChatPanel() {
         <div ref={containerRef} className="h-full overflow-y-auto px-1.5 py-3">
           <div ref={contentRef} className="space-y-1.5">
             {entries.length === 0 ? (
-              <p className="text-xs text-center py-4 text-(--app-text-dim)">
+              <p className="text-xs text-center py-4 text-app-text-dim">
                 {t('no-messages-yet', { defaultValue: 'No messages yet' })}
               </p>
             ) : (
@@ -487,7 +487,7 @@ export default function ChatPanel() {
                   if (!showSystemMessages) return null;
                   return (
                     <div key={entry.id} className="text-center py-1">
-                      <span className="text-xs italic text-(--app-text-dim)">
+                      <span className="text-xs italic text-app-text-dim">
                         {entry.content}
                         {showTimestamps && (
                           <span className="ml-2 opacity-60">{formatRelativeTime(entry.createdAt)}</span>
@@ -524,7 +524,7 @@ export default function ChatPanel() {
         {!isPinned && entries.length > 0 && (
           <button
             onClick={() => scrollToBottom('smooth')}
-            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full glass-fill px-3 py-1 text-xs font-medium text-(--app-text) transition-colors hover:bg-(--app-surface-hover)"
+            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full glass-fill px-3 py-1 text-xs font-medium text-app-text transition-colors hover:bg-app-surface-hover"
           >
             <ArrowDown className="h-3 w-3" aria-hidden />
             {t('jump-to-latest', { defaultValue: 'Jump to latest' })}
@@ -534,25 +534,25 @@ export default function ChatPanel() {
 
       {/* Typing indicator */}
       {typingText && (
-        <div className="px-3 py-1 border-t border-(--app-border)">
-          <p className="text-xs italic text-(--app-text-dim)">{typingText}</p>
+        <div className="px-3 py-1 border-t border-app-border">
+          <p className="text-xs italic text-app-text-dim">{typingText}</p>
         </div>
       )}
 
       {/* Reply preview */}
       {replyTo && (
-        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-(--app-border) bg-(--app-surface)">
-          <Reply className="h-3.5 w-3.5 shrink-0 text-(--app-accent) rotate-180" aria-hidden />
+        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-app-border bg-app-surface">
+          <Reply className="h-3.5 w-3.5 shrink-0 text-app-accent rotate-180" aria-hidden />
           <div className="flex-1 min-w-0">
-            <span className="text-xs font-semibold text-(--app-accent)">{replyTo.userName}</span>
-            <p className="text-xs text-(--app-text-muted) truncate">{replyTo.content}</p>
+            <span className="text-xs font-semibold text-app-accent">{replyTo.userName}</span>
+            <p className="text-xs text-app-text-muted truncate">{replyTo.content}</p>
           </div>
           <button
             onClick={() => setReplyTo(null)}
-            className="shrink-0 p-0.5 rounded-(--app-radius-sm) hover:bg-(--app-border) transition-colors"
+            className="shrink-0 p-0.5 rounded-app-sm hover:bg-app-border transition-colors"
             aria-label={t('cancel-reply', { defaultValue: 'Cancel reply' })}
           >
-            <X className="h-3.5 w-3.5 text-(--app-text-muted)" aria-hidden />
+            <X className="h-3.5 w-3.5 text-app-text-muted" aria-hidden />
           </button>
         </div>
       )}
@@ -562,16 +562,16 @@ export default function ChatPanel() {
         <div
           data-motion="pop"
           data-state={mentionMenu.state}
-          className="relative mx-3 mb-1 origin-bottom rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) shadow-(--app-shadow) overflow-hidden max-h-32 overflow-y-auto"
+          className="relative mx-3 mb-1 origin-bottom rounded-app-sm border border-app-border bg-app-bg shadow-app overflow-hidden max-h-32 overflow-y-auto"
         >
           {mentionMenu.present.map((member) => (
             <button
               key={member.userId}
               onClick={() => insertMention(member.userName)}
-              className="flex items-center gap-2 w-full px-3 py-1.5 text-left text-sm hover:bg-(--app-surface) transition-colors"
+              className="flex items-center gap-2 w-full px-3 py-1.5 text-left text-sm hover:bg-app-surface transition-colors"
             >
-              <AtSign className="h-3.5 w-3.5 text-(--app-text-dim)" aria-hidden />
-              <span className="text-(--app-text)">{member.userName}</span>
+              <AtSign className="h-3.5 w-3.5 text-app-text-dim" aria-hidden />
+              <span className="text-app-text">{member.userName}</span>
             </button>
           ))}
         </div>
@@ -597,9 +597,9 @@ export default function ChatPanel() {
         isHost={isHost}
         onSet={(seconds) => emit(slowModeEvents('tube').SET, { seconds })}
         tier="app"
-        className="text-(--app-text-dim)"
+        className="text-app-text-dim"
       />
-      <form onSubmit={handleSend} className="flex gap-2 px-1.5 py-3 border-t border-(--app-border)">
+      <form onSubmit={handleSend} className="flex gap-2 px-1.5 py-3 border-t border-app-border">
         <div className="relative flex-1 min-w-0">
           <input
             ref={inputRef}
@@ -613,7 +613,7 @@ export default function ChatPanel() {
                 ? t('reply-to-placeholder', { defaultValue: 'Reply to {{userName}}...', userName: replyTo.userName })
                 : t('type-a-message', { defaultValue: 'Type a message...' })
             }
-            className="w-full px-3 py-2 rounded-(--app-radius-sm) text-sm border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+            className="w-full px-3 py-2 rounded-app-sm text-sm border border-app-border bg-app-bg text-app-text placeholder:text-app-text-dim outline-none focus:ring-1 focus:ring-app-accent"
           />
           {shortcodes.menu}
         </div>
@@ -624,10 +624,10 @@ export default function ChatPanel() {
             aria-pressed={attachTimestamp}
             aria-label={t('attach-timestamp-aria', { defaultValue: 'Attach the current playback time' })}
             title={t('attach-timestamp', { defaultValue: 'Attach the current time' })}
-            className={`shrink-0 rounded-(--app-radius-sm) px-2 py-2 transition-colors ${
+            className={`shrink-0 rounded-app-sm px-2 py-2 transition-colors ${
               attachTimestamp
-                ? 'text-(--app-accent) bg-(--app-accent-dim)'
-                : 'text-(--app-text-dim) hover:text-(--app-accent)'
+                ? 'text-app-accent bg-app-accent-dim'
+                : 'text-app-text-dim hover:text-app-accent'
             }`}
           >
             <Clock className="h-4 w-4" aria-hidden />
@@ -637,7 +637,7 @@ export default function ChatPanel() {
           type="button"
           onClick={() => setShowGifPicker((v) => !v)}
           aria-label={t('add-gif-aria', { defaultValue: 'Add a GIF' })}
-          className="shrink-0 rounded-(--app-radius-sm) px-2 py-2 text-(--app-text-dim) hover:text-(--app-accent) transition-colors"
+          className="shrink-0 rounded-app-sm px-2 py-2 text-app-text-dim hover:text-app-accent transition-colors"
         >
           <ImageIcon className="h-4 w-4" aria-hidden />
         </button>
@@ -645,13 +645,13 @@ export default function ChatPanel() {
           direction="up"
           onSelect={insertEmoji}
           className="flex shrink-0 items-center"
-          buttonClassName="text-(--app-text-dim) hover:text-(--app-accent)"
+          buttonClassName="text-app-text-dim hover:text-app-accent"
         />
         <button
           type="submit"
           disabled={!message.trim() || slowBlock.secondsLeft > 0}
           aria-label={t('send', { defaultValue: 'Send' })}
-          className="shrink-0 rounded-(--app-radius-sm) px-3 py-2 transition-colors disabled:opacity-50 bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
+          className="shrink-0 rounded-app-sm px-3 py-2 transition-colors disabled:opacity-50 bg-app-accent text-app-accent-fg hover:bg-app-accent-hover"
         >
           <Send className="h-4 w-4" aria-hidden />
         </button>
@@ -662,13 +662,13 @@ export default function ChatPanel() {
         <div
           data-motion="pop"
           data-state={pinMenu.state}
-          className="fixed z-50 origin-top-left rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) shadow-(--app-shadow) overflow-hidden py-1 min-w-35"
+          className="fixed z-50 origin-top-left rounded-app-sm border border-app-border bg-app-bg shadow-app overflow-hidden py-1 min-w-35"
           style={{ left: contextMenuPos.x, top: contextMenuPos.y }}
           onClick={(e) => e.stopPropagation()}
         >
           <button
             onClick={() => handlePin(pinTarget.id, pinnedMessage?.id !== pinTarget.id)}
-            className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-(--app-text) hover:bg-(--app-surface) transition-colors"
+            className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-app-text hover:bg-app-surface transition-colors"
           >
             <Pin className="h-3.5 w-3.5" aria-hidden />
             {pinnedMessage?.id === pinTarget.id
@@ -681,7 +681,7 @@ export default function ChatPanel() {
               setContextMenuMessage(null);
               setContextMenuPos(null);
             }}
-            className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-(--app-text) hover:bg-(--app-surface) transition-colors"
+            className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-app-text hover:bg-app-surface transition-colors"
           >
             <Reply className="h-3.5 w-3.5" aria-hidden />
             {t('reply', { defaultValue: 'Reply' })}

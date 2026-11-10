@@ -14,12 +14,12 @@ import { cn } from '@/lib/utils';
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 const VARIANT: Record<Variant, string> = {
-  primary: 'bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)',
+  primary: 'bg-app-accent text-app-accent-fg hover:bg-app-accent-hover',
   secondary:
-    'bg-(--app-surface) text-(--app-text) border border-(--app-border) hover:bg-(--app-surface-hover)',
-  ghost: 'text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)',
+    'bg-app-surface text-app-text border border-app-border hover:bg-app-surface-hover',
+  ghost: 'text-app-text-muted hover:bg-app-surface-hover hover:text-app-text',
   danger:
-    'bg-transparent text-(--app-danger) border border-(--app-danger) hover:bg-(--app-danger-dim)',
+    'bg-transparent text-app-danger border border-app-danger hover:bg-app-danger-dim',
 };
 
 export interface HornButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -41,7 +41,7 @@ export function HornButton({
       type={type}
       data-horn-variant={variant}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-[var(--app-radius-sm)] font-semibold',
+        'inline-flex items-center justify-center gap-2 rounded-app-sm font-semibold',
         'transition-colors disabled:cursor-not-allowed disabled:opacity-45',
         // Minimum heights rather than padding alone: the game is played on a
         // phone, mid-round, under a clock. `sm` is used for icon-only chrome
@@ -113,7 +113,7 @@ export function SeatAvatar({
     <span
       aria-hidden="true"
       className={cn(
-        'grid shrink-0 place-items-center rounded-full bg-(--app-surface-active) font-semibold text-(--app-text-muted)',
+        'grid shrink-0 place-items-center rounded-full bg-app-surface-active font-semibold text-app-text-muted',
         className,
       )}
       style={{ width: size, height: size, fontSize: Math.round(size * 0.42) }}

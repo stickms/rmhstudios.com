@@ -53,7 +53,7 @@ export function QuickPrompt({
       </label>
       <span className="relative min-w-0 flex-1">
         <Sparkles
-          className="pointer-events-none absolute start-2 top-1/2 size-4 -translate-y-1/2 text-(--app-accent-text)"
+          className="pointer-events-none absolute start-2 top-1/2 size-4 -translate-y-1/2 text-app-accent-text"
           aria-hidden
         />
         <TextField
@@ -130,8 +130,8 @@ export function ChipRow({ chips, disabled, label }: { chips: ChipItem[]; disable
 /** "Working out the changes…" with a spinner, as a status message. */
 export function Progress({ children }: { children: ReactNode }) {
   return (
-    <p role="status" className="flex items-center gap-2 text-xs text-(--app-text-muted)">
-      <LoaderCircle className="size-4 shrink-0 animate-spin text-(--app-accent-text)" aria-hidden />
+    <p role="status" className="flex items-center gap-2 text-xs text-app-text-muted">
+      <LoaderCircle className="size-4 shrink-0 animate-spin text-app-accent-text" aria-hidden />
       {children}
     </p>
   );
@@ -150,10 +150,10 @@ export function Note({
     <p
       className={cn(
         'text-xs',
-        tone === 'muted' && 'text-(--app-text-muted)',
-        tone === 'warning' && 'text-(--app-warning)',
-        tone === 'danger' && 'text-(--app-danger)',
-        tone === 'success' && 'text-(--app-success)',
+        tone === 'muted' && 'text-app-text-muted',
+        tone === 'warning' && 'text-app-warning',
+        tone === 'danger' && 'text-app-danger',
+        tone === 'success' && 'text-app-success',
         className,
       )}
     >
@@ -186,12 +186,12 @@ export function QuickBarFrame({
     <section
       aria-labelledby={id}
       className={cn(
-        'flex min-w-0 flex-col gap-2 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg-subtle) p-2.5',
+        'flex min-w-0 flex-col gap-2 rounded-app-sm border border-app-border bg-app-bg-subtle p-2.5',
         className,
       )}
     >
-      <h3 id={id} className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-(--app-text-dim)">
-        <Sparkles className="size-3.5 shrink-0 text-(--app-accent-text)" aria-hidden />
+      <h3 id={id} className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-app-text-dim">
+        <Sparkles className="size-3.5 shrink-0 text-app-accent-text" aria-hidden />
         {title}
       </h3>
       {children}

@@ -43,7 +43,7 @@ export default function PlayerList({
         return (
           <li
             key={player.userId}
-            className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-(--app-radius-sm) bg-(--app-bg) border border-(--app-border) px-4 py-3 transition-colors hover:bg-(--app-surface-hover)"
+            className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-app-sm bg-app-bg border border-app-border px-4 py-3 transition-colors hover:bg-app-surface-hover"
           >
             {/* Avatar */}
             {player.avatarUrl ? (
@@ -61,7 +61,7 @@ export default function PlayerList({
               />
             ) : null}
             <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--app-accent) text-sm font-bold text-(--app-accent-fg)"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-app-accent text-sm font-bold text-app-accent-fg"
               style={player.avatarUrl ? { display: 'none' } : undefined}
             >
               {player.userName.charAt(0).toUpperCase()}
@@ -69,10 +69,10 @@ export default function PlayerList({
 
             {/* Name + host crown */}
             <div className="flex min-w-[6rem] flex-1 items-center gap-2">
-              <span className="truncate font-medium text-(--app-text)">{player.userName}</span>
+              <span className="truncate font-medium text-app-text">{player.userName}</span>
               {isPlayerHost && (
                 <Crown
-                  className="h-4 w-4 shrink-0 text-(--app-warning)"
+                  className="h-4 w-4 shrink-0 text-app-warning"
                   aria-label={t('host', { defaultValue: 'Host' })}
                 />
               )}
@@ -80,7 +80,7 @@ export default function PlayerList({
 
             {/* Score */}
             {player.score > 0 && (
-              <span className="shrink-0 rounded-full bg-(--app-accent)/15 px-2 py-0.5 text-xs font-bold tabular-nums text-(--app-accent)">
+              <span className="shrink-0 rounded-full bg-app-accent/15 px-2 py-0.5 text-xs font-bold tabular-nums text-app-accent">
                 {player.score.toLocaleString()}
               </span>
             )}
@@ -95,7 +95,7 @@ export default function PlayerList({
                   {!isPlayerHost && onTransferHost && (
                     <button
                       onClick={() => onTransferHost(player.userId)}
-                      className="rounded p-1.5 pointer-coarse:flex pointer-coarse:min-h-11 pointer-coarse:min-w-11 pointer-coarse:items-center pointer-coarse:justify-center text-(--app-warning) transition-colors hover:bg-(--app-warning-dim)"
+                      className="rounded p-1.5 pointer-coarse:flex pointer-coarse:min-h-11 pointer-coarse:min-w-11 pointer-coarse:items-center pointer-coarse:justify-center text-app-warning transition-colors hover:bg-app-warning-dim"
                       aria-label={t('transfer-host', { defaultValue: 'Transfer host' })}
                       title={t('transfer-host', { defaultValue: 'Transfer host' })}
                     >
@@ -105,7 +105,7 @@ export default function PlayerList({
                   {onKick && (
                     <button
                       onClick={() => onKick(player.userId)}
-                      className="rounded p-1.5 pointer-coarse:flex pointer-coarse:min-h-11 pointer-coarse:min-w-11 pointer-coarse:items-center pointer-coarse:justify-center text-(--app-danger) transition-colors hover:bg-(--app-danger-dim)"
+                      className="rounded p-1.5 pointer-coarse:flex pointer-coarse:min-h-11 pointer-coarse:min-w-11 pointer-coarse:items-center pointer-coarse:justify-center text-app-danger transition-colors hover:bg-app-danger-dim"
                       aria-label={t('kick-player', { defaultValue: 'Kick player' })}
                       title={t('kick-player', { defaultValue: 'Kick player' })}
                     >
@@ -118,12 +118,12 @@ export default function PlayerList({
               {/* Connection indicator */}
               {player.isConnected ? (
                 <Wifi
-                  className="h-4 w-4 text-(--app-success)"
+                  className="h-4 w-4 text-app-success"
                   aria-label={t('connected', { defaultValue: 'Connected' })}
                 />
               ) : (
                 <WifiOff
-                  className="h-4 w-4 text-(--app-danger)"
+                  className="h-4 w-4 text-app-danger"
                   aria-label={t('disconnected', { defaultValue: 'Disconnected' })}
                 />
               )}
@@ -132,8 +132,8 @@ export default function PlayerList({
               <span
                 className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                   player.isReady
-                    ? 'bg-(--app-success)/20 text-(--app-success)'
-                    : 'bg-(--app-text-muted)/20 text-(--app-text-muted)'
+                    ? 'bg-app-success/20 text-app-success'
+                    : 'bg-app-text-muted/20 text-app-text-muted'
                 }`}
               >
                 {player.isReady

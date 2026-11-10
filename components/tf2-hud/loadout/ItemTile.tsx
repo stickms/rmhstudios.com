@@ -59,7 +59,7 @@ export function ItemIcon({ item, className }: { item: CatalogItem; className?: s
     <span
       aria-hidden
       className={cn(
-        'tf2hud-title flex size-full items-center justify-center text-2xl tracking-wide text-(--app-text-dim)',
+        'tf2hud-title flex size-full items-center justify-center text-2xl tracking-wide text-app-text-dim',
         className,
       )}
     >
@@ -95,7 +95,7 @@ export default function ItemTile({
       {item.hr ? (
         <span
           title={halloween}
-          className="absolute start-1 top-1 inline-flex size-4 items-center justify-center rounded-full bg-(--app-bg) text-(--app-accent)"
+          className="absolute start-1 top-1 inline-flex size-4 items-center justify-center rounded-full bg-app-bg text-app-accent"
         >
           <Ghost className="size-3" aria-hidden />
           <span className="sr-only">{halloween}</span>
@@ -104,15 +104,15 @@ export default function ItemTile({
       {paint ? (
         <span
           aria-hidden
-          className="absolute end-1 top-1 size-3 rounded-full border border-(--app-bg)"
+          className="absolute end-1 top-1 size-3 rounded-full border border-app-bg"
           style={{ background: paint.rgb }}
         />
       ) : null}
     </>
   );
   const common = cn(
-    'relative block aspect-[5/4] w-full overflow-hidden rounded-(--app-radius-sm) border-2 border-(--app-border) bg-(--app-bg) p-1',
-    selected && 'ring-2 ring-(--app-accent)',
+    'relative block aspect-[5/4] w-full overflow-hidden rounded-app-sm border-2 border-app-border bg-app-bg p-1',
+    selected && 'ring-2 ring-app-accent',
     className,
   );
   const accent = qualityAccent(item.q);
@@ -142,7 +142,7 @@ export default function ItemTile({
       style={style}
       className={cn(
         common,
-        'transition-[box-shadow] duration-(--app-duration-fast) hover:ring-2 hover:ring-(--app-border-bright)',
+        'transition-[box-shadow] duration-(--app-duration-fast) hover:ring-2 hover:ring-app-border-bright',
       )}
     >
       {body}

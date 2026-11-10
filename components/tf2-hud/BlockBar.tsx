@@ -51,12 +51,12 @@ export default function BlockBar({
     const { block, member } = inBlock;
     const drifted = currentDrift(block.id).filter((d) => sameMember(d.member, member)).length;
     return (
-      <div className="mt-2 space-y-1.5 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface-hover) p-2">
+      <div className="mt-2 space-y-1.5 rounded-app-sm border border-app-border bg-app-surface-hover p-2">
         <div className="flex flex-wrap items-center gap-1.5">
-          <Boxes className="size-3.5 text-(--app-accent-text)" aria-hidden />
+          <Boxes className="size-3.5 text-app-accent-text" aria-hidden />
           <button
             type="button"
-            className="min-w-0 truncate text-xs font-semibold text-(--app-accent-text) hover:underline"
+            className="min-w-0 truncate text-xs font-semibold text-app-accent-text hover:underline"
             onClick={() => {
               focusBlock(block.id);
               setPref('rightOpen', true);
@@ -65,7 +65,7 @@ export default function BlockBar({
           >
             {block.name}
           </button>
-          <span className="text-[11px] text-(--app-text-dim)">
+          <span className="text-[11px] text-app-text-dim">
             {t('block-panels', {
               defaultValue_one: '{{count}} panel',
               defaultValue_other: '{{count}} panels',
@@ -119,8 +119,8 @@ export default function BlockBar({
 
   if (!similar) return null;
   return (
-    <div className="mt-2 flex items-center justify-between gap-2 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface-hover) p-2">
-      <p className="text-xs text-(--app-text-muted)">
+    <div className="mt-2 flex items-center justify-between gap-2 rounded-app-sm border border-app-border bg-app-surface-hover p-2">
+      <p className="text-xs text-app-text-muted">
         {t('similar-nearby', {
           defaultValue_one: '{{count}} look-alike panel here. Edit them together?',
           defaultValue_other: '{{count}} look-alike panels here. Edit them together?',

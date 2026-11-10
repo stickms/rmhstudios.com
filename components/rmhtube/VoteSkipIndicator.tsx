@@ -31,16 +31,16 @@ export default function VoteSkipIndicator() {
       <button
         onClick={handleVoteSkip}
         disabled={hasVoted}
-        className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-(--app-radius-sm) transition-colors ${
+        className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-app-sm transition-colors ${
           hasVoted
-            ? 'bg-(--app-surface-active) text-(--app-text-dim) cursor-not-allowed'
-            : 'bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text)'
+            ? 'bg-app-surface-active text-app-text-dim cursor-not-allowed'
+            : 'bg-app-surface-hover text-app-text-muted hover:text-app-text'
         }`}
       >
         <SkipForward className="h-3 w-3" />
         {hasVoted ? t("voted", { defaultValue: "Voted" }) : t("vote-skip", { defaultValue: "Vote Skip" })}
       </button>
-      <span className="text-xs text-(--app-text-dim)">
+      <span className="text-xs text-app-text-dim">
         {room.skipVotes.length}/{votesNeeded}
       </span>
     </div>

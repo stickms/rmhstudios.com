@@ -37,8 +37,8 @@ export function StreakChip() {
 
   const sentence = t('streak-days', { count: days, defaultValue: '{{count}} day streak' });
   return (
-    <p className={`${BOX} text-sm font-semibold text-(--app-text)`} title={sentence}>
-      <Flame className="h-4 w-4 shrink-0 text-(--app-warning)" aria-hidden="true" />
+    <p className={`${BOX} text-sm font-semibold text-app-text`} title={sentence}>
+      <Flame className="h-4 w-4 shrink-0 text-app-warning" aria-hidden="true" />
       <span aria-hidden="true" className="tabular-nums">
         {days}
       </span>

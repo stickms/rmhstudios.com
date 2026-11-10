@@ -88,10 +88,10 @@ export default function Tf2Lobby({
   };
 
   // The main column's side padding keeps the cards clear of a landscape phone's notch (--safe-left/right).
-  const card = 'rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-5';
+  const card = 'rounded-app border border-app-border bg-app-bg-subtle p-5';
 
   return (
-    <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
+    <div className="app-page min-h-dvh bg-app-bg text-app-text">
       <Tf2Header
         title={
           view === 'find'
@@ -106,12 +106,12 @@ export default function Tf2Lobby({
         {view === 'offline' ? (
           <section className={card} aria-labelledby="tf2-offline-title">
             <div className="mb-4 flex items-center gap-2">
-              <Bot className="size-5 text-(--app-accent-text)" aria-hidden />
+              <Bot className="size-5 text-app-accent-text" aria-hidden />
               <h2 id="tf2-offline-title" className="tf2hud-title text-2xl">
                 {t('play_offline_title', { defaultValue: 'Offline practice' })}
               </h2>
             </div>
-            <p className="mb-4 text-sm text-(--app-text-muted)">
+            <p className="mb-4 text-sm text-app-text-muted">
               {t('play_offline_body', {
                 defaultValue:
                   'A match against bots that runs entirely in your browser. No account or connection needed once the map has loaded.',
@@ -201,7 +201,7 @@ export default function Tf2Lobby({
           </>
         ) : null}
 
-        <p className="text-center text-xs text-(--app-text-dim)">
+        <p className="text-center text-xs text-app-text-dim">
           {t('play_legal', {
             defaultValue:
               'An independent, clean-room engine. Team Fortress 2 and its content are trademarks and property of Valve Corporation; this fan project is not affiliated with Valve.',

@@ -255,7 +255,7 @@ export default function ServerBrowser({
       to="/login"
       search={{ callbackURL: lobbyReturnPath('/tf2/play', invite) }}
       data-menu-item
-      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-(--app-radius-sm) border border-(--app-border-bright) px-3 text-xs font-semibold text-(--app-text) hover:bg-(--app-surface-hover) sm:pointer-fine:min-h-8"
+      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-app-sm border border-app-border-bright px-3 text-xs font-semibold text-app-text hover:bg-app-surface-hover sm:pointer-fine:min-h-8"
     >
       <LogIn className="size-3.5" aria-hidden />
       {label}
@@ -268,7 +268,7 @@ export default function ServerBrowser({
       <th scope="col" className={cn('px-2 py-1.5 text-start font-semibold', className)} aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
         <button
           type="button"
-          className="inline-flex min-h-8 items-center gap-1 uppercase tracking-wider text-(--app-text-dim) hover:text-(--app-text)"
+          className="inline-flex min-h-8 items-center gap-1 uppercase tracking-wider text-app-text-dim hover:text-app-text"
           onClick={() => setSort({ key, dir: active && sort.dir === 'desc' ? 'asc' : active ? 'desc' : key === 'players' ? 'desc' : 'asc' })}
         >
           {label}
@@ -284,18 +284,18 @@ export default function ServerBrowser({
       ? t('browser_players_bots', { defaultValue: '{{n}}/{{max}} (+{{bots}} bots)', n: r.players, max: r.maxPlayers, bots: r.bots })
       : t('play_room_players', { defaultValue: '{{n}}/{{max}}', n: r.players, max: r.maxPlayers });
 
-  const card = 'rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-5';
+  const card = 'rounded-app border border-app-border bg-app-bg-subtle p-5';
   const savedList = view === 'favorites' ? favorites : recent;
   const selectedRoom = selected ? live.get(selected) ?? details?.room ?? null : null;
 
   return (
     <section ref={root} className={cn(card, 'lg:col-span-2')} aria-labelledby="tf2-online-title">
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Globe className="size-5 text-(--app-accent-text)" aria-hidden />
+        <Globe className="size-5 text-app-accent-text" aria-hidden />
         <h2 id="tf2-online-title" className="tf2hud-title text-2xl">
           {t('play_online_title', { defaultValue: 'Servers' })}
         </h2>
-        <span className="ms-auto text-xs text-(--app-text-dim)" role="status">
+        <span className="ms-auto text-xs text-app-text-dim" role="status">
           {status === 'connected'
             ? hubRtt !== null
               ? t('browser_status_rtt', { defaultValue: 'Connected · {{ms}} ms', ms: Math.round(hubRtt) })
@@ -310,7 +310,7 @@ export default function ServerBrowser({
       </div>
 
       {/* Quick Play: the best open room for a mode or map, else an offer to host or play offline. */}
-      <div className="mb-4 flex flex-wrap items-end gap-2 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-3">
+      <div className="mb-4 flex flex-wrap items-end gap-2 rounded-app-sm border border-app-border bg-app-bg p-3">
         <Field label={t('browser_quick_mode', { defaultValue: 'Mode' })} className="min-w-36 flex-1">
           <SelectField value={quick.mode} onChange={(e) => setQuick({ ...quick, mode: e.target.value as Tf2Mode | '' })}>
             <option value="">{t('browser_any', { defaultValue: 'Any' })}</option>
@@ -340,7 +340,7 @@ export default function ServerBrowser({
         )}
         {quickMiss ? (
           <div className="flex w-full flex-wrap items-center gap-2" role="status">
-            <p className="text-xs text-(--app-text-muted)">
+            <p className="text-xs text-app-text-muted">
               {t('browser_quick_none_host', { defaultValue: 'No open game matches. Host one, or play offline against bots.' })}
             </p>
             <Btn
@@ -376,7 +376,7 @@ export default function ServerBrowser({
           <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <Field label={t('browser_search', { defaultValue: 'Search' })}>
               <div className="relative">
-                <Search className="pointer-events-none absolute start-2 top-1/2 size-3.5 -translate-y-1/2 text-(--app-text-dim)" aria-hidden />
+                <Search className="pointer-events-none absolute start-2 top-1/2 size-3.5 -translate-y-1/2 text-app-text-dim" aria-hidden />
                 <TextField
                   value={filters.search}
                   className="ps-7"
@@ -443,24 +443,24 @@ export default function ServerBrowser({
                       aria-pressed={selected === r.code}
                       onClick={() => setSelected(selected === r.code ? null : r.code)}
                       className={cn(
-                        'grid w-full gap-1 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 py-2 text-start',
-                        selected === r.code && 'border-(--app-accent)',
+                        'grid w-full gap-1 rounded-app-sm border border-app-border bg-app-bg px-3 py-2 text-start',
+                        selected === r.code && 'border-app-accent',
                       )}
                     >
                       <span className="flex min-w-0 items-center gap-2">
                         <span className="min-w-0 flex-1 truncate text-sm font-semibold">{r.name || r.code}</span>
                       </span>
-                      <span className="text-xs text-(--app-text-muted)">
+                      <span className="text-xs text-app-text-muted">
                         {mapTitle(r.map)} · {modeLabel(r.mode)} · {playersLabel(r)}
                       </span>
-                      <span className="text-xs text-(--app-text-dim)">{hostLabel(r)}</span>
+                      <span className="text-xs text-app-text-dim">{hostLabel(r)}</span>
                     </button>
                   </li>
                 ))}
               </ul>
               {/* Wider screens: the game's own columns. */}
               <table className="hidden w-full table-fixed text-sm md:table">
-                <thead className="border-b border-(--app-border) text-[11px]">
+                <thead className="border-b border-app-border text-[11px]">
                   <tr>
                     {sortHeader('name', t('browser_col_name', { defaultValue: 'Name' }), 'w-[28%]')}
                     {sortHeader('map', t('play_map', { defaultValue: 'Map' }))}
@@ -471,7 +471,7 @@ export default function ServerBrowser({
                 </thead>
                 <tbody>
                   {shown.map((r) => (
-                    <tr key={r.code} className={cn('border-b border-(--app-border)', selected === r.code && 'bg-(--app-accent-dim)')}>
+                    <tr key={r.code} className={cn('border-b border-app-border', selected === r.code && 'bg-app-accent-dim')}>
                       <td className="truncate px-2 py-1">
                         <button
                           type="button"
@@ -479,22 +479,22 @@ export default function ServerBrowser({
                           aria-pressed={selected === r.code}
                           onClick={() => setSelected(selected === r.code ? null : r.code)}
                           onDoubleClick={() => signedIn && !isFull(r) && join(r)}
-                          className="block min-h-8 w-full truncate text-start font-semibold hover:text-(--app-accent-text)"
+                          className="block min-h-8 w-full truncate text-start font-semibold hover:text-app-accent-text"
                         >
-                          {favorites.some((f) => f.code === r.code) ? <Star className="me-1 inline size-3 text-(--app-warning)" aria-hidden /> : null}
+                          {favorites.some((f) => f.code === r.code) ? <Star className="me-1 inline size-3 text-app-warning" aria-hidden /> : null}
                           {r.name || r.code}
                         </button>
                       </td>
-                      <td className="truncate px-2 py-1 text-(--app-text-muted)">{mapTitle(r.map)}</td>
-                      <td className="truncate px-2 py-1 text-(--app-text-muted)">{modeLabel(r.mode)}</td>
-                      <td className="px-2 py-1 tabular-nums text-(--app-text-muted)">{playersLabel(r)}</td>
-                      <td className="truncate px-2 py-1 text-(--app-text-muted)">{r.host || '—'}</td>
+                      <td className="truncate px-2 py-1 text-app-text-muted">{mapTitle(r.map)}</td>
+                      <td className="truncate px-2 py-1 text-app-text-muted">{modeLabel(r.mode)}</td>
+                      <td className="px-2 py-1 tabular-nums text-app-text-muted">{playersLabel(r)}</td>
+                      <td className="truncate px-2 py-1 text-app-text-muted">{r.host || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               {total > (rooms?.length ?? 0) ? (
-                <div className="mt-2 flex items-center justify-end gap-2 text-xs text-(--app-text-dim)">
+                <div className="mt-2 flex items-center justify-end gap-2 text-xs text-app-text-dim">
                   {t('browser_page', { defaultValue: '{{from}}–{{to}} of {{total}}', from: offset + 1, to: offset + rooms.length, total })}
                   <Btn size="xs" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - TF2_LIMITS.BROWSE_CAP))}>
                     {t('browser_prev', { defaultValue: 'Previous' })}
@@ -518,7 +518,7 @@ export default function ServerBrowser({
           {savedList.map((s) => {
             const r = live.get(s.code);
             return (
-              <li key={s.code} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 py-2">
+              <li key={s.code} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-app-sm border border-app-border bg-app-bg px-3 py-2">
                 <button
                   type="button"
                   data-menu-item
@@ -527,11 +527,11 @@ export default function ServerBrowser({
                   disabled={!r}
                 >
                   <span className="block truncate text-sm font-semibold">{r?.name || s.name || s.code}</span>
-                  <span className="block text-xs text-(--app-text-muted)">
+                  <span className="block text-xs text-app-text-muted">
                     {mapTitle(r?.map ?? s.map)} · {r ? playersLabel(r) : t('browser_saved_offline', { defaultValue: 'not listed now' })}
                   </span>
                 </button>
-                <span className="font-mono text-xs text-(--app-text-dim)">{s.code}</span>
+                <span className="font-mono text-xs text-app-text-dim">{s.code}</span>
                 {signedIn ? (
                   <Btn size="xs" variant="secondary" onClick={() => join({ code: s.code }, false, s)} disabled={!!r && isFull(r)}>
                     {t('play_join', { defaultValue: 'Join' })}
@@ -565,7 +565,7 @@ export default function ServerBrowser({
       ) : null}
 
       <form
-        className="mt-4 flex flex-wrap items-end gap-2 border-t border-(--app-border) pt-4"
+        className="mt-4 flex flex-wrap items-end gap-2 border-t border-app-border pt-4"
         onSubmit={(e) => {
           e.preventDefault();
           if (codeValid && signedIn) onStart({ kind: 'p2p-join', code: code.trim().toUpperCase() });
@@ -629,9 +629,9 @@ function RoomDetails({
   const round = room.round;
   const [password, setPassword] = useState('');
   return (
-    <section className="mt-4 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) p-4" aria-label={t('browser_details', { defaultValue: 'Server details' })} aria-live="polite">
+    <section className="mt-4 rounded-app-sm border border-app-border-bright bg-app-bg p-4" aria-label={t('browser_details', { defaultValue: 'Server details' })} aria-live="polite">
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        <Share2 className="size-4 text-(--app-accent-text)" aria-hidden />
+        <Share2 className="size-4 text-app-accent-text" aria-hidden />
         <h3 className="min-w-0 flex-1 truncate text-base font-semibold">{room.name || room.code}</h3>
         <IconBtn
           icon={Star}
@@ -645,31 +645,31 @@ function RoomDetails({
       </div>
       <dl className="mb-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs sm:grid-cols-4">
         <div>
-          <dt className="text-(--app-text-dim)">{t('play_map', { defaultValue: 'Map' })}</dt>
+          <dt className="text-app-text-dim">{t('play_map', { defaultValue: 'Map' })}</dt>
           <dd>{mapTitle}</dd>
         </div>
         <div>
-          <dt className="text-(--app-text-dim)">{t('browser_quick_mode', { defaultValue: 'Mode' })}</dt>
+          <dt className="text-app-text-dim">{t('browser_quick_mode', { defaultValue: 'Mode' })}</dt>
           <dd>{modeLabel}</dd>
         </div>
         <div>
-          <dt className="text-(--app-text-dim)">{t('browser_col_players', { defaultValue: 'Players' })}</dt>
+          <dt className="text-app-text-dim">{t('browser_col_players', { defaultValue: 'Players' })}</dt>
           <dd className="tabular-nums">{playersLabel}</dd>
         </div>
         <div>
-          <dt className="text-(--app-text-dim)">{t('browser_round', { defaultValue: 'Round' })}</dt>
+          <dt className="text-app-text-dim">{t('browser_round', { defaultValue: 'Round' })}</dt>
           <dd>{round ? round.state.replace(/_/g, ' ') : '—'}</dd>
         </div>
         <div>
-          <dt className="text-(--app-text-dim)">{t('browser_time_left', { defaultValue: 'Time left' })}</dt>
+          <dt className="text-app-text-dim">{t('browser_time_left', { defaultValue: 'Time left' })}</dt>
           <dd className="tabular-nums">{round?.timeLeft != null ? formatClock(round.timeLeft) : '—'}</dd>
         </div>
         <div>
-          <dt className="text-(--app-text-dim)">{t('browser_score', { defaultValue: 'Score' })}</dt>
+          <dt className="text-app-text-dim">{t('browser_score', { defaultValue: 'Score' })}</dt>
           <dd className="tabular-nums">{room.teamScores ? `${teamNames[2] ?? 'RED'} ${room.teamScores[0]} · ${teamNames[3] ?? 'BLU'} ${room.teamScores[1]}` : '—'}</dd>
         </div>
         <div>
-          <dt className="text-(--app-text-dim)">{t('browser_col_host', { defaultValue: 'Host' })}</dt>
+          <dt className="text-app-text-dim">{t('browser_col_host', { defaultValue: 'Host' })}</dt>
           <dd>{hostLabel}</dd>
         </div>
       </dl>
@@ -682,13 +682,13 @@ function RoomDetails({
           {[...roster]
             .sort((a, b) => a.team - b.team || b.score - a.score)
             .map((p, i) => (
-              <li key={`${p.name}-${i}`} className="flex items-center gap-2 rounded-(--app-radius-sm) bg-(--app-bg-subtle) px-2 py-1">
-                <span className={cn('size-2 shrink-0 rounded-full', p.team === 2 ? 'bg-(--app-danger)' : p.team === 3 ? 'bg-(--app-info)' : 'bg-(--app-text-dim)')} aria-hidden />
+              <li key={`${p.name}-${i}`} className="flex items-center gap-2 rounded-app-sm bg-app-bg-subtle px-2 py-1">
+                <span className={cn('size-2 shrink-0 rounded-full', p.team === 2 ? 'bg-app-danger' : p.team === 3 ? 'bg-app-info' : 'bg-app-text-dim')} aria-hidden />
                 <span className="min-w-0 flex-1 truncate">
                   {p.name}
-                  {p.bot ? <span className="ms-1 text-(--app-text-dim)">{t('scores_bot', { defaultValue: 'BOT' })}</span> : null}
+                  {p.bot ? <span className="ms-1 text-app-text-dim">{t('scores_bot', { defaultValue: 'BOT' })}</span> : null}
                 </span>
-                <span className="text-(--app-text-dim)">{classNames[p.cls] ?? ''}</span>
+                <span className="text-app-text-dim">{classNames[p.cls] ?? ''}</span>
                 <span className="w-8 text-end tabular-nums">{p.score}</span>
               </li>
             ))}

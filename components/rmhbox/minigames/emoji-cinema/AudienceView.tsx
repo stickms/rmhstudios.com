@@ -70,10 +70,10 @@ export default function AudienceView({
   return (
     <div className="flex flex-col items-center gap-3 p-4 w-full max-w-md mx-auto">
       <div className="flex items-center justify-between w-full">
-        <span className="text-xs text-(--app-text-muted)">
-          {t("round-producer", { defaultValue: "Round {{round}} • Producer: ", round: roundNumber })}<span className="font-semibold text-(--app-text)">{producerName}</span>
+        <span className="text-xs text-app-text-muted">
+          {t("round-producer", { defaultValue: "Round {{round}} • Producer: ", round: roundNumber })}<span className="font-semibold text-app-text">{producerName}</span>
         </span>
-        <span className="text-sm font-mono text-(--app-text-muted)">{timeRemaining}s</span>
+        <span className="text-sm font-mono text-app-text-muted">{timeRemaining}s</span>
       </div>
 
       <EmojiSentence emojis={emojis} maxEmojis={maxEmojis} readOnly />
@@ -81,7 +81,7 @@ export default function AudienceView({
       {hasGuessedCorrectly ? (
         <div className="text-center py-4">
           <span className="text-2xl">🎉</span>
-          <p className="text-sm font-semibold text-(--app-success) mt-1">{t("guessed-correctly", { defaultValue: "You guessed correctly!" })}</p>
+          <p className="text-sm font-semibold text-app-success mt-1">{t("guessed-correctly", { defaultValue: "You guessed correctly!" })}</p>
         </div>
       ) : (
         <GuessInput

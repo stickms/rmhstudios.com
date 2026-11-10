@@ -64,7 +64,7 @@ export default function BingoTab() {
   return (
     <div className="space-y-3">
       {bingo.winner && (
-        <p className="rounded-(--app-radius-sm) bg-(--app-accent-dim) p-2 text-center font-medium">
+        <p className="rounded-app-sm bg-app-accent-dim p-2 text-center font-medium">
           {t('bingo-winner', { defaultValue: 'Bingo! {{name}} wins.', name: bingo.winner.name })}
         </p>
       )}
@@ -81,12 +81,12 @@ export default function BingoTab() {
               <div
                 key={i}
                 role="gridcell"
-                className={`flex aspect-square items-center justify-center overflow-hidden rounded-(--app-radius-sm) border p-0.5 text-center text-xs leading-tight ${
+                className={`flex aspect-square items-center justify-center overflow-hidden rounded-app-sm border p-0.5 text-center text-xs leading-tight ${
                   inLine.has(i)
-                    ? 'border-(--app-accent) bg-(--app-accent) text-(--app-accent-fg)'
+                    ? 'border-app-accent bg-app-accent text-app-accent-fg'
                     : marked
-                      ? 'border-(--app-accent) bg-(--app-accent-dim)'
-                      : 'border-(--app-border) bg-(--app-bg)'
+                      ? 'border-app-accent bg-app-accent-dim'
+                      : 'border-app-border bg-app-bg'
                 }`}
               >
                 {cell ?? t('bingo-free', { defaultValue: 'FREE' })}
@@ -108,7 +108,7 @@ export default function BingoTab() {
 
       {isHost && (
         <div className="space-y-2">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-(--app-text-dim)">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-app-text-dim">
             {t('bingo-call', { defaultValue: 'Call squares' })}
           </h4>
           <div className="flex max-h-40 flex-wrap gap-1 overflow-y-auto">
@@ -119,10 +119,10 @@ export default function BingoTab() {
                 aria-pressed={called.has(sq)}
                 disabled={!!bingo.winner}
                 onClick={() => emit(C2S.PARTY_BINGO_CALL, { square: sq })}
-                className={`rounded-(--app-radius-sm) border px-2 py-0.5 text-xs transition-colors ${
+                className={`rounded-app-sm border px-2 py-0.5 text-xs transition-colors ${
                   called.has(sq)
-                    ? 'border-(--app-accent) bg-(--app-accent-dim)'
-                    : 'border-(--app-border) hover:bg-(--app-surface-hover)'
+                    ? 'border-app-accent bg-app-accent-dim'
+                    : 'border-app-border hover:bg-app-surface-hover'
                 }`}
               >
                 {sq}

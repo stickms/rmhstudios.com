@@ -92,12 +92,12 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
       <div className="absolute inset-0 app-scrim" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md max-h-[85dvh] overflow-y-auto rounded-(--app-radius) app-glass p-6">
+      <div className="relative w-full max-w-md max-h-[85dvh] overflow-y-auto rounded-app app-glass p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">{t("add-video", { defaultValue: "Add Video" })}</h3>
           <button
             onClick={onClose}
-            className="rounded-(--app-radius-sm) p-1 transition-colors text-(--app-text-muted) hover:text-(--app-text)"
+            className="rounded-app-sm p-1 transition-colors text-app-text-muted hover:text-app-text"
           >
             <X className="h-5 w-5" />
           </button>
@@ -106,13 +106,13 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {batch ? (
             <div>
-              <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-(--app-text-muted)">
+              <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-app-text-muted">
                 <ListPlus className="h-4 w-4" aria-hidden />
                 {t("batch-count", { defaultValue_one: "{{count}} link found", defaultValue: "{{count}} links found", count: batch.length })}
               </p>
-              <ul className="max-h-48 space-y-1 overflow-y-auto rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-2 text-xs">
+              <ul className="max-h-48 space-y-1 overflow-y-auto rounded-app-sm border border-app-border bg-app-bg p-2 text-xs">
                 {batch.map((link) => (
-                  <li key={link} className="truncate text-(--app-text-muted)" title={link}>
+                  <li key={link} className="truncate text-app-text-muted" title={link}>
                     {link}
                   </li>
                 ))}
@@ -120,7 +120,7 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
               <button
                 type="button"
                 onClick={() => setBatch(null)}
-                className="mt-2 text-xs text-(--app-text-dim) underline hover:text-(--app-text)"
+                className="mt-2 text-xs text-app-text-dim underline hover:text-app-text"
               >
                 {t("batch-cancel", { defaultValue: "Add one link instead" })}
               </button>
@@ -129,11 +129,11 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
           <>
           {/* URL Input */}
           <div>
-            <label htmlFor="media-url" className="block text-sm font-medium mb-1 text-(--app-text-muted)">
+            <label htmlFor="media-url" className="block text-sm font-medium mb-1 text-app-text-muted">
               {t("video-url-label", { defaultValue: "Video URL" })}
             </label>
             <div className="relative">
-              <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-(--app-text-dim)" />
+              <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-app-text-dim" />
               <input
                 ref={inputRef}
                 id="media-url"
@@ -147,7 +147,7 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
                 }}
                 onPaste={handlePaste}
                 placeholder={t("url-placeholder", { defaultValue: "https://youtube.com/watch?v=..." })}
-                className="w-full pl-10 pr-4 py-2.5 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+                className="w-full pl-10 pr-4 py-2.5 rounded-app-sm border border-app-border bg-app-bg text-app-text placeholder:text-app-text-dim outline-none focus:ring-1 focus:ring-app-accent"
               />
             </div>
             {media && (
@@ -158,13 +158,13 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
                     alt=""
                     width={64}
                     height={36}
-                    className="h-9 w-16 shrink-0 rounded-(--app-radius-sm) object-cover"
+                    className="h-9 w-16 shrink-0 rounded-app-sm object-cover"
                   />
                 )}
-                <p className="flex items-center gap-1.5 text-xs text-(--app-success)">
+                <p className="flex items-center gap-1.5 text-xs text-app-success">
                   {t("detected-media-type", { defaultValue: "Detected: {{type}}", type: media.mediaType })}
                   {media.liveHint === 'live' && (
-                    <span className="inline-flex items-center gap-1 font-semibold uppercase tracking-wide text-(--app-danger)">
+                    <span className="inline-flex items-center gap-1 font-semibold uppercase tracking-wide text-app-danger">
                       <Radio className="h-3 w-3" aria-hidden />
                       {t("live", { defaultValue: "Live" })}
                     </span>
@@ -173,21 +173,21 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
               </div>
             )}
             {rawCandidate && (
-              <p className="mt-2 text-xs text-(--app-text-muted)">
+              <p className="mt-2 text-xs text-app-text-muted">
                 {t("raw-link-check", {
                   defaultValue: "Direct link — we'll check it's a playable video when you add it.",
                 })}
               </p>
             )}
             {error && (
-              <p className="mt-1 text-xs text-(--app-danger)">{error}</p>
+              <p className="mt-1 text-xs text-app-danger">{error}</p>
             )}
           </div>
 
           {/* Title Input (optional) */}
           <div>
-            <label htmlFor="media-title" className="block text-sm font-medium mb-1 text-(--app-text-muted)">
-              {t("title-label", { defaultValue: "Title" })} <span className="text-(--app-text-dim)">{t("optional", { defaultValue: "(optional)" })}</span>
+            <label htmlFor="media-title" className="block text-sm font-medium mb-1 text-app-text-muted">
+              {t("title-label", { defaultValue: "Title" })} <span className="text-app-text-dim">{t("optional", { defaultValue: "(optional)" })}</span>
             </label>
             <input
               id="media-title"
@@ -196,15 +196,15 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
               onChange={(e) => setTitle(e.target.value)}
               maxLength={256}
               placeholder={t("title-placeholder", { defaultValue: "Custom title..." })}
-              className="w-full px-4 py-2.5 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+              className="w-full px-4 py-2.5 rounded-app-sm border border-app-border bg-app-bg text-app-text placeholder:text-app-text-dim outline-none focus:ring-1 focus:ring-app-accent"
             />
           </div>
 
           {/* Start offset (optional) — becomes the item's first anchor */}
           {media?.liveHint !== 'live' && (
             <div>
-              <label htmlFor="media-start" className="block text-sm font-medium mb-1 text-(--app-text-muted)">
-                {t("start-at-label", { defaultValue: "Start at" })} <span className="text-(--app-text-dim)">{t("optional", { defaultValue: "(optional)" })}</span>
+              <label htmlFor="media-start" className="block text-sm font-medium mb-1 text-app-text-muted">
+                {t("start-at-label", { defaultValue: "Start at" })} <span className="text-app-text-dim">{t("optional", { defaultValue: "(optional)" })}</span>
               </label>
               <input
                 id="media-start"
@@ -215,7 +215,7 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
                 maxLength={12}
                 placeholder="0:00"
                 aria-invalid={startInvalid || undefined}
-                className="w-32 px-4 py-2.5 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) text-(--app-text) tabular-nums placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+                className="w-32 px-4 py-2.5 rounded-app-sm border border-app-border bg-app-bg text-app-text tabular-nums placeholder:text-app-text-dim outline-none focus:ring-1 focus:ring-app-accent"
               />
             </div>
           )}
@@ -226,7 +226,7 @@ export default function AddMediaModal({ onClose, onAdd }: AddMediaModalProps) {
           <button
             type="submit"
             disabled={!batch && !url.trim()}
-            className="w-full py-2.5 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
+            className="w-full py-2.5 rounded-app-sm font-semibold text-app-accent-fg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-app-accent hover:bg-app-accent-hover"
           >
             {batch
               ? t("add-batch-to-queue", { defaultValue: "Add {{count}} to Queue", count: batch.length })

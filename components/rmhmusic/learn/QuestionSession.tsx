@@ -247,7 +247,7 @@ export function SessionSheet<C, A>({
     <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
       {/* Minimum heights, not clamps: one line and two lines at the normal size (so nothing moves),
           and more at large text, where a clamp would cut the count and the instruction off. */}
-      <h2 className="rmm-display min-h-8 text-2xl leading-8 text-(--app-text)">
+      <h2 className="rmm-display min-h-8 text-2xl leading-8 text-app-text">
         <span
           key={
             lesson.kind === 'asking' || lesson.kind === 'feedback'
@@ -263,7 +263,7 @@ export function SessionSheet<C, A>({
           word a line; at the normal size the sentence's 7rem basis plus Next always fits. */}
       <div className="flex min-h-11 flex-wrap items-center gap-3">
         <div className="flex min-h-10 min-w-0 flex-[1_1_7rem] items-center justify-center">
-          <p key={lineKey} className="text-sm leading-5 break-words text-(--app-text-muted)">
+          <p key={lineKey} className="text-sm leading-5 break-words text-app-text-muted">
             {line}
           </p>
         </div>

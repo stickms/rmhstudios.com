@@ -297,7 +297,7 @@ export default function FileTree() {
               setMenu({ at: { x: e.clientX, y: e.clientY }, path: node.path, isDir: true });
             }}
             style={{ paddingInlineStart: 8 + depth * 12 }}
-            className="flex h-7 w-full items-center gap-1.5 pe-2 text-start text-xs text-(--app-text-muted) hover:bg-(--app-surface-hover)"
+            className="flex h-7 w-full items-center gap-1.5 pe-2 text-start text-xs text-app-text-muted hover:bg-app-surface-hover"
           >
             {expanded ? (
               <ChevronDown className="size-3.5 shrink-0" aria-hidden />
@@ -340,9 +340,9 @@ export default function FileTree() {
             setMenu({ at: { x: e.clientX, y: e.clientY }, path: node.path, isDir: false });
           }}
           style={{ paddingInlineStart: 8 + depth * 12 + 16 }}
-          className="tf2hud-tree-row flex h-7 w-full items-center gap-1.5 pe-2 text-start text-xs text-(--app-text) hover:bg-(--app-surface-hover)"
+          className="tf2hud-tree-row flex h-7 w-full items-center gap-1.5 pe-2 text-start text-xs text-app-text hover:bg-app-surface-hover"
         >
-          <Icon className="size-3.5 shrink-0 text-(--app-text-dim)" aria-hidden />
+          <Icon className="size-3.5 shrink-0 text-app-text-dim" aria-hidden />
           <span className={cn('truncate', status === 'deleted' && 'line-through opacity-60')}>
             {node.name}
           </span>
@@ -351,10 +351,10 @@ export default function FileTree() {
               className={cn(
                 'ms-auto size-1.5 shrink-0 rounded-full',
                 sev === 'error'
-                  ? 'bg-(--app-danger)'
+                  ? 'bg-app-danger'
                   : sev === 'warning'
-                    ? 'bg-(--app-warning)'
-                    : 'bg-(--app-info)',
+                    ? 'bg-app-warning'
+                    : 'bg-app-info',
               )}
               role="img"
               aria-label={t('has-issues', { defaultValue: 'Has {{severity}}', severity: sev })}
@@ -408,7 +408,7 @@ export default function FileTree() {
           </>
         }
       />
-      <div className="space-y-2 border-b border-(--app-border) p-2">
+      <div className="space-y-2 border-b border-app-border p-2">
         <TfTabs
           tabs={tabs}
           value={filter}
@@ -418,7 +418,7 @@ export default function FileTree() {
         />
         <div className="relative">
           <Search
-            className="pointer-events-none absolute start-2 top-1/2 size-3.5 -translate-y-1/2 text-(--app-text-dim)"
+            className="pointer-events-none absolute start-2 top-1/2 size-3.5 -translate-y-1/2 text-app-text-dim"
             aria-hidden
           />
           <input
@@ -427,7 +427,7 @@ export default function FileTree() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('search-files', { defaultValue: 'Search files' })}
             aria-label={t('search-files', { defaultValue: 'Search files' })}
-            className="h-8 w-full rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) ps-7 pe-2 text-xs text-(--app-text) placeholder:text-(--app-text-dim)"
+            className="h-8 w-full rounded-app-sm border border-app-border-bright bg-app-bg ps-7 pe-2 text-xs text-app-text placeholder:text-app-text-dim"
           />
         </div>
       </div>
@@ -443,7 +443,7 @@ export default function FileTree() {
         }}
       >
         {visiblePaths.length === 0 ? (
-          <p className="px-3 py-6 text-center text-xs text-(--app-text-dim)">
+          <p className="px-3 py-6 text-center text-xs text-app-text-dim">
             {filter === 'modified'
               ? t('no-changes', { defaultValue: 'No changed files yet.' })
               : filter === 'problems'

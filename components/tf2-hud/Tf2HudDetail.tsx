@@ -148,12 +148,12 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
 
   if (error) {
     return (
-      <div className="app-page flex min-h-dvh flex-col items-center justify-center gap-4 bg-(--app-bg) p-6 text-center text-(--app-text)">
-        <p className="max-w-md text-sm text-(--app-text-muted)">{error}</p>
+      <div className="app-page flex min-h-dvh flex-col items-center justify-center gap-4 bg-app-bg p-6 text-center text-app-text">
+        <p className="max-w-md text-sm text-app-text-muted">{error}</p>
         <Link
           to="/tf2/workshop"
           search={{ type: 'huds' }}
-          className="rounded-(--app-radius-sm) bg-(--app-accent) px-4 py-2 text-sm font-semibold text-(--app-accent-fg)"
+          className="rounded-app-sm bg-app-accent px-4 py-2 text-sm font-semibold text-app-accent-fg"
         >
           {t('browse-workshop', { defaultValue: 'Browse the workshop' })}
         </Link>
@@ -162,7 +162,7 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
   }
 
   return (
-    <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
+    <div className="app-page min-h-dvh bg-app-bg text-app-text">
       <Tf2Header
         title={detail?.title ?? 'RMH TF2 HUD Editor'}
         backLabel={t('workshop', { defaultValue: 'HUD Workshop' })}
@@ -173,7 +173,7 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
           <div className="min-w-0">
             <h1 className="tf2hud-title text-4xl sm:text-5xl">{detail?.title ?? '…'}</h1>
             {detail ? (
-              <p className="mt-1 text-sm text-(--app-text-muted)">
+              <p className="mt-1 text-sm text-app-text-muted">
                 {detail.author
                   ? t('by', { defaultValue: 'by {{name}}', name: detail.author.name })
                   : null}
@@ -198,7 +198,7 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
               </p>
             ) : null}
             {detail?.description ? (
-              <p className="mt-3 max-w-2xl whitespace-pre-line text-sm text-(--app-text)">
+              <p className="mt-3 max-w-2xl whitespace-pre-line text-sm text-app-text">
                 {detail.description}
               </p>
             ) : null}
@@ -227,7 +227,7 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
               <Link
                 to="/tf2/hud-editor/editor"
                 search={{ hud: detail.id }}
-                className="inline-flex h-8 items-center gap-1.5 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg-subtle) px-3 text-xs font-semibold hover:bg-(--app-surface-hover)"
+                className="inline-flex h-8 items-center gap-1.5 rounded-app-sm border border-app-border-bright bg-app-bg-subtle px-3 text-xs font-semibold hover:bg-app-surface-hover"
               >
                 <Pencil className="size-4" aria-hidden />
                 {t('open-editor', { defaultValue: 'Open in editor' })}
@@ -250,7 +250,7 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
         </div>
 
         {progress ? (
-          <p role="status" className="mb-3 text-xs text-(--app-text-muted)">
+          <p role="status" className="mb-3 text-xs text-app-text-muted">
             {t('loading-hud', {
               defaultValue: 'Downloading files {{done}}/{{total}}…',
               done: progress.done,
@@ -262,7 +262,7 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
           <section
             aria-label={t('preview', { defaultValue: 'Preview' })}
-            className="flex h-[min(70dvh,40rem)] min-h-96 flex-col overflow-hidden rounded-(--app-radius) border border-(--app-border)"
+            className="flex h-[min(70dvh,40rem)] min-h-96 flex-col overflow-hidden rounded-app border border-app-border"
           >
             {overlay ? (
               <SceneProvider>
@@ -270,13 +270,13 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
                 <Preview readOnly />
               </SceneProvider>
             ) : (
-              <div className="flex flex-1 items-center justify-center text-sm text-(--app-text-dim)">
+              <div className="flex flex-1 items-center justify-center text-sm text-app-text-dim">
                 {t('loading', { defaultValue: 'Loading…' })}
               </div>
             )}
           </section>
           <aside aria-label={t('details', { defaultValue: 'Details' })} className="space-y-4">
-            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-3 text-xs text-(--app-text-muted)">
+            <div className="rounded-app border border-app-border bg-app-bg-subtle p-3 text-xs text-app-text-muted">
               <dl className="space-y-1">
                 <div className="flex justify-between">
                   <dt>{t('versions', { defaultValue: 'Version' })}</dt>
@@ -300,13 +300,13 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
                 </div>
               </dl>
             </div>
-            <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle)">
-              <h2 className="tf2hud-panel-head border-b border-(--app-border) px-3 py-2">
+            <div className="rounded-app border border-app-border bg-app-bg-subtle">
+              <h2 className="tf2hud-panel-head border-b border-app-border px-3 py-2">
                 {t('files-changed', { defaultValue: 'Files changed from default' })}
               </h2>
               <ul className="max-h-64 overflow-y-auto py-1">
                 {changed.length === 0 ? (
-                  <li className="px-3 py-3 text-xs text-(--app-text-dim)">
+                  <li className="px-3 py-3 text-xs text-app-text-dim">
                     {t('no-changes-yet', {
                       defaultValue: 'No changes from the TF2 Default HUD yet.',
                     })}
@@ -322,13 +322,13 @@ export default function Tf2HudDetail({ slug, token }: { slug?: string; token?: s
                       >
                         {e.deleted ? 'D' : '•'}
                       </span>
-                      <span className="truncate text-(--app-text-muted)">{e.path}</span>
+                      <span className="truncate text-app-text-muted">{e.path}</span>
                     </li>
                   ))
                 )}
               </ul>
             </div>
-            <p className="text-[11px] text-(--app-text-dim)">
+            <p className="text-[11px] text-app-text-dim">
               {t('license-note', {
                 defaultValue:
                   'Downloads include the LICENSE that comes with the TF2 Default base HUD; see it for the terms that apply.',

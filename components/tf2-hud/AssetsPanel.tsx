@@ -62,7 +62,7 @@ function Thumb({ path }: { path: string }) {
     };
   }, [path, readBytes]);
   return (
-    <span className="tf2hud-checker relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-(--app-radius-sm) border border-(--app-border)">
+    <span className="tf2hud-checker relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-app-sm border border-app-border">
       {src ? <img src={src} alt="" className="max-h-full max-w-full object-contain" /> : null}
     </span>
   );
@@ -176,7 +176,7 @@ export default function AssetsPanel() {
           </Btn>
         }
       />
-      <div className="border-b border-(--app-border) p-2">
+      <div className="border-b border-app-border p-2">
         <TfTabs
           tabs={tabs}
           value={kind}
@@ -187,7 +187,7 @@ export default function AssetsPanel() {
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         {kind === 'sounds' ? (
-          <p className="px-3 pt-2 text-[11px] text-(--app-text-dim)">
+          <p className="px-3 pt-2 text-[11px] text-app-text-dim">
             {t('sound-hint', {
               defaultValue: 'Replace a default sound by uploading a file to the same path, e.g.',
             })}{' '}
@@ -208,12 +208,12 @@ export default function AssetsPanel() {
               return (
                 <li
                   key={p}
-                  className="flex items-center gap-2 border-b border-(--app-border) px-3 py-2"
+                  className="flex items-center gap-2 border-b border-app-border px-3 py-2"
                 >
                   {kind === 'textures' ? <Thumb path={p} /> : null}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-mono text-xs text-(--app-text)">{p}</p>
-                    <p className="flex flex-wrap items-center gap-1 text-[11px] text-(--app-text-dim)">
+                    <p className="truncate font-mono text-xs text-app-text">{p}</p>
+                    <p className="flex flex-wrap items-center gap-1 text-[11px] text-app-text-dim">
                       {inProject ? (
                         <Pill tone="accent">{t('in-hud', { defaultValue: 'in HUD' })}</Pill>
                       ) : (
@@ -223,7 +223,7 @@ export default function AssetsPanel() {
                         <span
                           key={n}
                           style={{ fontFamily: `"${n}"` }}
-                          className="text-(--app-text-muted)"
+                          className="text-app-text-muted"
                         >
                           {n}
                         </span>
@@ -324,14 +324,14 @@ export default function AssetsPanel() {
         }
       >
         <div className="space-y-3">
-          <label className="flex flex-col gap-1 text-xs text-(--app-text-muted)">
+          <label className="flex flex-col gap-1 text-xs text-app-text-muted">
             {t('scheme-name', { defaultValue: 'Scheme font name (used by panels)' })}
             <TextField
               value={reg.schemeName}
               onChange={(e) => setReg({ ...reg, schemeName: e.target.value.replace(/\s+/g, '') })}
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-(--app-text-muted)">
+          <label className="flex flex-col gap-1 text-xs text-app-text-muted">
             {t('face-name', { defaultValue: 'Family name inside the file' })}
             <TextField
               value={reg.face}
@@ -339,7 +339,7 @@ export default function AssetsPanel() {
             />
           </label>
           <div className="flex gap-3">
-            <label className="flex flex-col gap-1 text-xs text-(--app-text-muted)">
+            <label className="flex flex-col gap-1 text-xs text-app-text-muted">
               {t('size', { defaultValue: 'Size' })}
               <NumberField
                 label={t('size', { defaultValue: 'Size' })}
@@ -350,7 +350,7 @@ export default function AssetsPanel() {
                 className="w-24"
               />
             </label>
-            <label className="flex flex-col gap-1 text-xs text-(--app-text-muted)">
+            <label className="flex flex-col gap-1 text-xs text-app-text-muted">
               {t('weight', { defaultValue: 'Weight' })}
               <NumberField
                 label={t('weight', { defaultValue: 'Weight' })}

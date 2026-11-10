@@ -276,7 +276,7 @@ export function FlashcardSession({
     } else if (input === 'keys') {
       region = (
         <div className="rmm-sheet flex h-full items-center justify-center p-4 text-center">
-          <p className="text-sm leading-6 text-(--app-text-muted)">
+          <p className="text-sm leading-6 text-app-text-muted">
             {t('flash-keys-region', {
               defaultValue:
                 'Your computer keys are a piano: A, S, D, F, G, H, J and K play C, D, E, F, G, A, B and C.',
@@ -309,14 +309,14 @@ export function FlashcardSession({
                 aria-disabled={!asking || undefined}
                 onClick={() => answer({ kind: 'letter', letter })}
                 className={cn(
-                  'rmm-display flex h-full min-h-11 min-w-0 items-center justify-center rounded-(--app-radius-sm) border text-[1.375rem] leading-none transition-colors',
+                  'rmm-display flex h-full min-h-11 min-w-0 items-center justify-center rounded-app-sm border text-[1.375rem] leading-none transition-colors',
                   asking
-                    ? 'border-(--app-border-bright) text-(--app-text)'
+                    ? 'border-app-border-bright text-app-text'
                     : isCorrect
-                      ? 'border-(--app-accent) text-(--app-accent)'
+                      ? 'border-app-accent text-app-accent'
                       : isGiven
-                        ? 'rmm-flash__struck border-(--app-border) text-(--app-text-dim)'
-                        : 'border-(--app-border) text-(--app-text-dim)',
+                        ? 'rmm-flash__struck border-app-border text-app-text-dim'
+                        : 'border-app-border text-app-text-dim',
                 )}
               >
                 {letter}

@@ -88,7 +88,7 @@ function HudThumbnail({ hud }: { hud: PreparedHud | null }) {
     return () => r.dispose();
   }, [shown, store, t]);
   return (
-    <div className="tf2hud-backdrop-game relative aspect-video w-full overflow-hidden rounded-(--app-radius-sm) border border-(--app-border)">
+    <div className="tf2hud-backdrop-game relative aspect-video w-full overflow-hidden rounded-app-sm border border-app-border">
       <canvas ref={ref} className="absolute inset-0 h-full w-full" aria-hidden="true" />
     </div>
   );
@@ -105,11 +105,11 @@ function Section({
 }) {
   return (
     <section className="flex flex-col gap-1.5">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-(--app-text-dim)">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-app-text-dim">
         {title}
       </h3>
       {empty ? (
-        <p className="text-xs text-(--app-text-muted)">{empty}</p>
+        <p className="text-xs text-app-text-muted">{empty}</p>
       ) : (
         <div className="flex flex-col gap-1">{children}</div>
       )}
@@ -141,24 +141,24 @@ function HudItem({
       aria-pressed={active}
       onClick={() => void choose(sel)}
       className={cn(
-        'flex min-h-11 w-full items-center gap-2 rounded-(--app-radius-sm) border px-3 py-2 text-start text-sm transition-[color,background-color,border-color] duration-(--app-duration-fast)',
+        'flex min-h-11 w-full items-center gap-2 rounded-app-sm border px-3 py-2 text-start text-sm transition-[color,background-color,border-color] duration-(--app-duration-fast)',
         active
-          ? 'border-(--app-accent) bg-(--app-accent-dim) text-(--app-text)'
-          : 'border-(--app-border) bg-(--app-bg-subtle) text-(--app-text) hover:bg-(--app-surface-hover)',
+          ? 'border-app-accent bg-app-accent-dim text-app-text'
+          : 'border-app-border bg-app-bg-subtle text-app-text hover:bg-app-surface-hover',
       )}
     >
       <span className="min-w-0 flex-1">
         <span className="block truncate font-medium">{label}</span>
         {detail ? (
-          <span className="block truncate text-xs text-(--app-text-muted)">{detail}</span>
+          <span className="block truncate text-xs text-app-text-muted">{detail}</span>
         ) : null}
       </span>
       {pending === key ? (
-        <span className="shrink-0 text-xs text-(--app-text-muted)">
+        <span className="shrink-0 text-xs text-app-text-muted">
           {t('hud_loading', { defaultValue: 'Loading…' })}
         </span>
       ) : active ? (
-        <Check className="size-4 shrink-0 text-(--app-accent-text)" aria-hidden />
+        <Check className="size-4 shrink-0 text-app-accent-text" aria-hidden />
       ) : null}
     </button>
   );
@@ -261,14 +261,14 @@ export default function HudPauseView({
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <HudThumbnail hud={active} />
         <div className="flex min-w-0 flex-col gap-2">
-          <p className="text-xs uppercase tracking-wider text-(--app-text-dim)">
+          <p className="text-xs uppercase tracking-wider text-app-text-dim">
             {t('hud_in_use', { defaultValue: 'In use' })}
           </p>
           <p className="tf2hud-title truncate text-xl">{name}</p>
           {status ? (
             <p
               role="status"
-              className={cn('text-xs', error ? 'text-(--app-danger)' : 'text-(--app-text-muted)')}
+              className={cn('text-xs', error ? 'text-app-danger' : 'text-app-text-muted')}
             >
               {status}
             </p>
@@ -281,7 +281,7 @@ export default function HudPauseView({
               {t('hud_export', { defaultValue: 'Export' })}
             </Btn>
           </div>
-          <p className="text-xs text-(--app-text-muted)">
+          <p className="text-xs text-app-text-muted">
             {t('hud_export_hint', {
               defaultValue:
                 'Export downloads a zip: unzip it into Team Fortress 2’s tf/custom folder.',
@@ -365,24 +365,24 @@ export default function HudPauseView({
             placeholder={t('hud_link_placeholder', { defaultValue: 'Paste a share link' })}
             aria-invalid={linkError}
             aria-describedby={linkError ? 'tf2g-hud-link-error' : undefined}
-            className="h-11 min-w-0 flex-1 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 text-sm pointer-coarse:text-base text-(--app-text) placeholder:text-(--app-text-dim) focus-visible:border-(--app-accent)"
+            className="h-11 min-w-0 flex-1 rounded-app-sm border border-app-border bg-app-bg px-3 text-sm pointer-coarse:text-base text-app-text placeholder:text-app-text-dim focus-visible:border-app-accent"
           />
           <Btn size="md" type="submit" icon={Link2} data-menu-item disabled={!link.trim()}>
             {t('hud_link_use', { defaultValue: 'Use' })}
           </Btn>
         </form>
         {linkError ? (
-          <p id="tf2g-hud-link-error" className="text-xs text-(--app-danger)">
+          <p id="tf2g-hud-link-error" className="text-xs text-app-danger">
             {t('hud_link_invalid', { defaultValue: 'That is not a HUD link.' })}
           </p>
         ) : null}
         {workshop === null ? (
-          <p className="text-xs text-(--app-text-muted)">
+          <p className="text-xs text-app-text-muted">
             {t('hud_loading', { defaultValue: 'Loading…' })}
           </p>
         ) : null}
         {workshop && workshop.length === 0 ? (
-          <p className="text-xs text-(--app-text-muted)">
+          <p className="text-xs text-app-text-muted">
             {t('hud_workshop_empty', { defaultValue: 'No workshop HUDs to show right now.' })}
           </p>
         ) : null}
@@ -407,7 +407,7 @@ export default function HudPauseView({
             <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
           </Suspense>
         ) : (
-          <p role="status" className="text-xs text-(--app-text-muted)">
+          <p role="status" className="text-xs text-app-text-muted">
             {t('hud_export_preparing', { defaultValue: 'Preparing the export…' })}
           </p>
         )

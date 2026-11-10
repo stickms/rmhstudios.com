@@ -80,7 +80,7 @@ export default function HudWorkshopList() {
         </div>
         <div className="relative min-w-48 flex-1">
           <Search
-            className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-(--app-text-dim)"
+            className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-app-text-dim"
             aria-hidden
           />
           <input
@@ -89,27 +89,27 @@ export default function HudWorkshopList() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('search-huds', { defaultValue: 'Search HUDs or tags' })}
             aria-label={t('search-huds', { defaultValue: 'Search HUDs or tags' })}
-            className="h-10 w-full rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) ps-9 pe-3 text-sm text-(--app-text) placeholder:text-(--app-text-dim)"
+            className="h-10 w-full rounded-app-sm border border-app-border-bright bg-app-bg ps-9 pe-3 text-sm text-app-text placeholder:text-app-text-dim"
           />
         </div>
         <Link
           to="/tf2/hud-editor/editor"
           search={{}}
-          className="inline-flex h-10 items-center rounded-(--app-radius-sm) bg-(--app-accent) px-4 text-sm font-semibold text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
+          className="inline-flex h-10 items-center rounded-app-sm bg-app-accent px-4 text-sm font-semibold text-app-accent-fg hover:bg-app-accent-hover"
         >
           {t('new-hud', { defaultValue: 'New HUD' })}
         </Link>
       </div>
 
       {state === 'error' ? (
-        <p role="alert" className="py-12 text-center text-sm text-(--app-danger)">
+        <p role="alert" className="py-12 text-center text-sm text-app-danger">
           {t('workshop-error', { defaultValue: 'Could not load the workshop.' })}{' '}
           <button type="button" className="underline" onClick={() => void load(null)}>
             {t('retry', { defaultValue: 'Retry' })}
           </button>
         </p>
       ) : items.length === 0 && state === 'ready' ? (
-        <p className="py-12 text-center text-sm text-(--app-text-muted)">
+        <p className="py-12 text-center text-sm text-app-text-muted">
           {debounced
             ? t('workshop-no-match', { defaultValue: 'No HUDs match “{{q}}”.', q: debounced })
             : t('workshop-empty', {
@@ -129,7 +129,7 @@ export default function HudWorkshopList() {
                   <Link
                     to="/tf2/hud-editor/editor"
                     search={{ fork: h.id }}
-                    className="inline-flex h-7 items-center rounded-(--app-radius-sm) border border-(--app-border-bright) px-2 text-xs font-semibold text-(--app-text) hover:bg-(--app-surface-hover)"
+                    className="inline-flex h-7 items-center rounded-app-sm border border-app-border-bright px-2 text-xs font-semibold text-app-text hover:bg-app-surface-hover"
                   >
                     {t('edit-copy', { defaultValue: 'Edit a copy' })}
                   </Link>
@@ -141,7 +141,7 @@ export default function HudWorkshopList() {
             ? Array.from({ length: items.length ? 3 : 6 }, (_, i) => (
                 <li
                   key={`sk${i}`}
-                  className="h-40 animate-pulse rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle)"
+                  className="h-40 animate-pulse rounded-app border border-app-border bg-app-bg-subtle"
                   aria-hidden
                 />
               ))

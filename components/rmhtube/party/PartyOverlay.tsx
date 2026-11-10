@@ -63,15 +63,15 @@ export default function PartyOverlay() {
         {active.map((c) => (
           <li
             key={c.id}
-            className="max-w-[70%] truncate rounded-(--app-radius-sm) bg-(--app-scrim) px-2 py-0.5 text-xs text-(--app-text)"
+            className="max-w-[70%] truncate rounded-app-sm bg-app-scrim px-2 py-0.5 text-xs text-app-text"
           >
-            <span className="text-(--app-text-muted)">{c.author}: </span>
+            <span className="text-app-text-muted">{c.author}: </span>
             {c.body}
           </li>
         ))}
       </ul>
       {line && (
-        <p className="mx-auto max-w-[80%] rounded-(--app-radius-sm) bg-(--app-scrim) px-3 py-1 text-center text-sm text-(--app-text)">
+        <p className="mx-auto max-w-[80%] rounded-app-sm bg-app-scrim px-3 py-1 text-center text-sm text-app-text">
           {line}
         </p>
       )}

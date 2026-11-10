@@ -159,7 +159,7 @@ export default function SaveShareDialog({
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-3">
-          <label className="flex flex-col gap-1 text-xs text-(--app-text-muted)">
+          <label className="flex flex-col gap-1 text-xs text-app-text-muted">
             {t('hud-name', { defaultValue: 'HUD name' })}
             <TextField
               value={meta.name}
@@ -168,17 +168,17 @@ export default function SaveShareDialog({
               className="h-10 text-sm"
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-(--app-text-muted)">
+          <label className="flex flex-col gap-1 text-xs text-app-text-muted">
             {t('description', { defaultValue: 'Description' })}
             <textarea
               value={meta.description}
               maxLength={2000}
               rows={4}
               onChange={(e) => setMeta({ description: e.target.value })}
-              className="w-full resize-y rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) p-2 text-xs text-(--app-text)"
+              className="w-full resize-y rounded-app-sm border border-app-border-bright bg-app-bg p-2 text-xs text-app-text"
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-(--app-text-muted)">
+          <label className="flex flex-col gap-1 text-xs text-app-text-muted">
             {t('tags', { defaultValue: 'Tags (comma separated)' })}
             <TextField
               value={tags}
@@ -188,7 +188,7 @@ export default function SaveShareDialog({
           </label>
         </div>
         <div className="space-y-3">
-          <label className="flex flex-col gap-1 text-xs text-(--app-text-muted)">
+          <label className="flex flex-col gap-1 text-xs text-app-text-muted">
             {t('visibility', { defaultValue: 'Visibility' })}
             <SelectField
               value={visibility}
@@ -201,7 +201,7 @@ export default function SaveShareDialog({
               ))}
             </SelectField>
           </label>
-          <label className="flex flex-col gap-1 text-xs text-(--app-text-muted)">
+          <label className="flex flex-col gap-1 text-xs text-app-text-muted">
             {t('version-note', { defaultValue: 'Version note (optional)' })}
             <TextField
               value={message}
@@ -211,7 +211,7 @@ export default function SaveShareDialog({
             />
           </label>
 
-          <label className="flex items-center justify-between gap-3 text-xs text-(--app-text-muted)">
+          <label className="flex items-center justify-between gap-3 text-xs text-app-text-muted">
             {t('cloud-autosave', { defaultValue: 'Autosave changes to my account' })}
             <Toggle
               label={t('cloud-autosave', { defaultValue: 'Autosave changes to my account' })}
@@ -221,7 +221,7 @@ export default function SaveShareDialog({
           </label>
 
           {remoteId ? (
-            <div className="space-y-2 rounded-(--app-radius-sm) border border-(--app-border) p-3">
+            <div className="space-y-2 rounded-app-sm border border-app-border p-3">
               <h3 className="tf2hud-panel-head">{t('share', { defaultValue: 'Share' })}</h3>
               {publicLink ? (
                 <div className="flex items-center gap-1">
@@ -246,7 +246,7 @@ export default function SaveShareDialog({
                     target="_blank"
                     rel="noreferrer"
                     aria-label={t('open', { defaultValue: 'Open' })}
-                    className="inline-flex size-8 items-center justify-center rounded-(--app-radius-sm) text-(--app-text-muted) hover:bg-(--app-surface-hover)"
+                    className="inline-flex size-8 items-center justify-center rounded-app-sm text-app-text-muted hover:bg-app-surface-hover"
                   >
                     <ExternalLink className="size-4" aria-hidden />
                   </a>
@@ -297,7 +297,7 @@ export default function SaveShareDialog({
                   {t('create-link', { defaultValue: 'Create share link' })}
                 </Btn>
               )}
-              <p className="text-[11px] text-(--app-text-dim)">
+              <p className="text-[11px] text-app-text-dim">
                 {t('share-hint', {
                   defaultValue:
                     'A share link opens the latest saved version read-only, even for a private HUD.',
@@ -305,7 +305,7 @@ export default function SaveShareDialog({
               </p>
             </div>
           ) : (
-            <p className="text-xs text-(--app-text-dim)">
+            <p className="text-xs text-app-text-dim">
               {t('save-first', { defaultValue: 'Save once to get share links.' })}
             </p>
           )}
@@ -317,16 +317,16 @@ export default function SaveShareDialog({
           <h3 className="tf2hud-panel-head mb-1">
             {t('version-history', { defaultValue: 'Version history' })}
           </h3>
-          <ul className="max-h-40 divide-y divide-(--app-border) overflow-y-auto rounded-(--app-radius-sm) border border-(--app-border)">
+          <ul className="max-h-40 divide-y divide-app-border overflow-y-auto rounded-app-sm border border-app-border">
             {versions.map((v) => (
               <li
                 key={v.number}
                 className="flex items-center justify-between gap-2 px-3 py-1.5 text-xs"
               >
-                <span className="min-w-0 truncate text-(--app-text)">
+                <span className="min-w-0 truncate text-app-text">
                   v{v.number} · {v.message || t('no-note', { defaultValue: 'no note' })}
                 </span>
-                <span className="shrink-0 text-(--app-text-dim)">
+                <span className="shrink-0 text-app-text-dim">
                   {new Date(v.createdAt).toLocaleString()}
                 </span>
                 <Btn

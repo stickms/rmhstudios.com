@@ -53,13 +53,13 @@ export default function GameSettingsModal({
     <>
       {/* Backdrop */}
       <div
-        className="app-overlay fixed inset-0 z-60 bg-(--app-scrim)"
+        className="app-overlay fixed inset-0 z-60 bg-app-scrim"
         onClick={onClose}
       />
 
       {/* Panel */}
       <div
-        className="app-modal fixed inset-x-4 top-1/2 z-70 mx-auto max-w-md -translate-y-1/2 rounded-(--app-radius) border p-5 shadow-(--app-shadow)"
+        className="app-modal fixed inset-x-4 top-1/2 z-70 mx-auto max-w-md -translate-y-1/2 rounded-app border p-5 shadow-app"
         style={{
           backgroundColor: 'var(--app-surface)',
           borderColor: 'var(--app-border)',
@@ -70,14 +70,14 @@ export default function GameSettingsModal({
       >
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-lg font-bold text-(--app-text)">
-            <Settings className="h-5 w-5 text-(--app-accent)" />
+          <h2 className="flex items-center gap-2 text-lg font-bold text-app-text">
+            <Settings className="h-5 w-5 text-app-accent" />
             {t("game-settings-title", { defaultValue: "{{displayName}} Settings", displayName })}
           </h2>
           <button
             onClick={onClose}
             aria-label={t("close", { defaultValue: "Close" })}
-                className="rounded-(--app-radius-sm) p-2 text-(--app-text-muted) transition-colors hover:text-(--app-text)"
+                className="rounded-app-sm p-2 text-app-text-muted transition-colors hover:text-app-text"
           >
             <X className="h-5 w-5" />
           </button>
@@ -85,7 +85,7 @@ export default function GameSettingsModal({
 
         {/* Subtitle for non-host */}
         {!editable && (
-          <p className="mb-3 text-xs text-(--app-text-muted)">
+          <p className="mb-3 text-xs text-app-text-muted">
             {t("host-only-settings", { defaultValue: "Only the host can change game settings." })}
           </p>
         )}

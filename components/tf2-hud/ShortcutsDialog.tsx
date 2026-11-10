@@ -49,11 +49,11 @@ export default function ShortcutsDialog({
         {groups.map((g) => (
           <section key={g.title}>
             <h3 className="tf2hud-panel-head mb-1">{g.title}</h3>
-            <dl className="divide-y divide-(--app-border)">
+            <dl className="divide-y divide-app-border">
               {g.rows.map(([keys, what]) => (
                 <div key={keys} className="flex items-center justify-between gap-4 py-1.5 text-xs">
-                  <dt className="text-(--app-text-muted)">{what}</dt>
-                  <dd className="shrink-0 rounded-(--app-radius-sm) bg-(--app-bg) px-1.5 py-0.5 font-mono text-[11px] text-(--app-text)">
+                  <dt className="text-app-text-muted">{what}</dt>
+                  <dd className="shrink-0 rounded-app-sm bg-app-bg px-1.5 py-0.5 font-mono text-[11px] text-app-text">
                     {keys}
                   </dd>
                 </div>

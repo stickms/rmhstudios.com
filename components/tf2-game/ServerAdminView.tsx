@@ -65,7 +65,7 @@ function AdminBody({ map, setMap }: { map: string; setMap: (m: string) => void }
     <div className="grid gap-4 text-sm">
       {admin.online ? (
         <section className="grid gap-2" aria-label={t('admin_players', { defaultValue: 'Players' })}>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-(--app-text-dim)">{t('admin_players', { defaultValue: 'Players' })}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-app-text-dim">{t('admin_players', { defaultValue: 'Players' })}</h3>
           {others.length === 0 ? (
             <EmptyNote>{t('p2p_players_empty', { defaultValue: 'Nobody has joined yet. Share the invite link.' })}</EmptyNote>
           ) : (
@@ -75,10 +75,10 @@ function AdminBody({ map, setMap }: { map: string; setMap: (m: string) => void }
                   <span className="min-w-0 flex-1 truncate">
                     {p.name}
                     {p.successor ? (
-                      <span className="ml-2 text-xs text-(--app-text-dim)">{t('admin_successor', { defaultValue: 'next host' })}</span>
+                      <span className="ml-2 text-xs text-app-text-dim">{t('admin_successor', { defaultValue: 'next host' })}</span>
                     ) : null}
                   </span>
-                  <span className="text-xs text-(--app-text-dim)">
+                  <span className="text-xs text-app-text-dim">
                     <ConnectionLabel p={p} />
                   </span>
                   {p.canHost ? (
@@ -106,7 +106,7 @@ function AdminBody({ map, setMap }: { map: string; setMap: (m: string) => void }
             </ul>
           )}
           {admin.online ? (
-            <p className="text-xs text-(--app-text-dim)">
+            <p className="text-xs text-app-text-dim">
               {t('admin_migration_note', {
                 defaultValue: 'If you leave, the match moves to the next host (it keeps going for everyone else).',
               })}
@@ -232,7 +232,7 @@ function AdminBody({ map, setMap }: { map: string; setMap: (m: string) => void }
         </section>
       ) : null}
       {admin.online && others.some((p) => p.canHost) ? (
-        <p className="flex items-center gap-2 text-xs text-(--app-text-dim)">
+        <p className="flex items-center gap-2 text-xs text-app-text-dim">
           <LogOut className="size-4" aria-hidden />
           {t('admin_leave_note', { defaultValue: 'Leave from the menu and the next host takes over.' })}
         </p>

@@ -86,12 +86,12 @@ export default function WikiFrame({
   }, [currentTitle]);
 
   return (
-    <div className="app-glass relative rounded-(--app-radius) overflow-hidden">
+    <div className="app-glass relative rounded-app overflow-hidden">
       {/* Title bar */}
-      <div className="flex items-center justify-between border-b border-(--app-border) bg-(--app-surface) px-4 py-2">
+      <div className="flex items-center justify-between border-b border-app-border bg-app-surface px-4 py-2">
         <h3 className="text-sm font-bold truncate">{currentTitle || t("loading", { defaultValue: "Loading…" })}</h3>
         {isLoading && (
-          <Loader2 size={14} className="animate-spin text-(--app-accent)" />
+          <Loader2 size={14} className="animate-spin text-app-accent" />
         )}
       </div>
 
@@ -102,7 +102,7 @@ export default function WikiFrame({
             animate={{ rotate: 360 }}
             transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
           >
-            <Loader2 size={24} className="text-(--app-accent)" />
+            <Loader2 size={24} className="text-app-accent" />
           </motion.div>
         </div>
       )}

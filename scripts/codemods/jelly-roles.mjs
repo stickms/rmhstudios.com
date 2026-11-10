@@ -102,7 +102,7 @@ function walk(dir, out = []) {
 const CLASS_ATTR =
   /class(?:Name)?\s*=\s*(?:"([^"]*)"|'([^']*)'|`([^`]*)`|\{([\s\S]{0,1200}?)\}\s*(?=[\s/>]))/g;
 
-const SURFACE_BG = /(?<![\w:/-])bg-(?:site-(?:surface|surface-opaque|bg|elevated)|\(--app-surface\))(?:\/[\w.[\]]+)?(?![\w-])/;
+const SURFACE_BG = /(?<![\w:/-])bg-(?:site-(?:surface|surface-opaque|bg|elevated)|app-surface)(?:\/[\w.[\]]+)?(?![\w-])/;
 const ROUNDED = /(?<![\w:/-])rounded(?:-[\w[\]().-]+)?(?![\w-])/;
 const BORDER = /(?<![\w:/-])border(?:-(?:\d|x|y|t|b|l|r|site-border))?[\w/-]*(?![\w-])/;
 const ROLE = /glass-|app-glass|data-liquid/;
@@ -208,7 +208,7 @@ for (const file of files) {
     const value = m[1] ?? m[2] ?? m[3] ?? m[4] ?? '';
     if (!isSurface(value)) continue;
     // `bg-(--app-surface)` is covered by the app-theme adapter (04 §2.4): count, never rewrite.
-    const appAdapter = /bg-\(--app-surface\)/.test(value) && !/bg-site-/.test(value);
+    const appAdapter = /bg-app-surface/.test(value) && !/bg-site-/.test(value);
     hits.push({ m: [...m], index: m.index, appAdapter });
   }
   scanControls(file, src, controls);

@@ -87,7 +87,7 @@ export default function Tf2LoadoutMine() {
   const idx = cat.status === 'ready' ? cat.index : null;
 
   return (
-    <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
+    <div className="app-page min-h-dvh bg-app-bg text-app-text">
       <Tf2Header
         title={t('my-loadouts', { defaultValue: 'My loadouts' })}
         backLabel={t('loadout-builder', { defaultValue: 'Loadout Builder' })}
@@ -118,7 +118,7 @@ export default function Tf2LoadoutMine() {
           </SelectField>
           <div className="relative min-w-48 flex-1">
             <Search
-              className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-(--app-text-dim)"
+              className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-app-text-dim"
               aria-hidden
             />
             <input
@@ -131,13 +131,13 @@ export default function Tf2LoadoutMine() {
               aria-label={t('search-my-loadouts', {
                 defaultValue: 'Search by title or item name',
               })}
-              className="h-10 w-full rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) ps-9 pe-3 text-sm text-(--app-text) placeholder:text-(--app-text-dim)"
+              className="h-10 w-full rounded-app-sm border border-app-border-bright bg-app-bg ps-9 pe-3 text-sm text-app-text placeholder:text-app-text-dim"
             />
           </div>
         </div>
 
         {state === 'error' ? (
-          <p role="alert" className="py-12 text-center text-sm text-(--app-danger)">
+          <p role="alert" className="py-12 text-center text-sm text-app-danger">
             {t('mine-error', { defaultValue: 'Could not load your loadouts.' })}{' '}
             <button type="button" className="underline" onClick={() => void load(null)}>
               {t('retry', { defaultValue: 'Retry' })}
@@ -175,7 +175,7 @@ export default function Tf2LoadoutMine() {
                       <Link
                         to="/tf2/loadout"
                         search={{ id: l.id }}
-                        className="inline-flex h-7 items-center rounded-(--app-radius-sm) bg-(--app-accent) px-2 text-xs font-semibold text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
+                        className="inline-flex h-7 items-center rounded-app-sm bg-app-accent px-2 text-xs font-semibold text-app-accent-fg hover:bg-app-accent-hover"
                       >
                         {t('edit', { defaultValue: 'Edit' })}
                       </Link>
@@ -188,7 +188,7 @@ export default function Tf2LoadoutMine() {
               ? Array.from({ length: items.length ? 3 : 6 }, (_, i) => (
                   <li
                     key={`sk${i}`}
-                    className="h-48 animate-pulse rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle)"
+                    className="h-48 animate-pulse rounded-app border border-app-border bg-app-bg-subtle"
                     aria-hidden
                   />
                 ))
@@ -214,7 +214,7 @@ export default function Tf2LoadoutMine() {
           </>
         }
       >
-        <p className="text-sm text-(--app-text-muted)">
+        <p className="text-sm text-app-text-muted">
           {t('delete-loadout-body', {
             defaultValue: 'It will also disappear from the workshop and any shared links.',
           })}

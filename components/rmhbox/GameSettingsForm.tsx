@@ -112,7 +112,7 @@ function IntegerSetting({
         <button
           disabled={!editable || value <= min}
           onClick={() => onChange(Math.max(min, value - step))}
-          className="flex h-6 w-6 items-center justify-center rounded bg-(--app-bg) border border-(--app-border) text-(--app-text) disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-colors"
+          className="flex h-6 w-6 items-center justify-center rounded bg-app-bg border border-app-border text-app-text disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-colors"
         >
           <Minus className="h-3 w-3" />
         </button>
@@ -127,12 +127,12 @@ function IntegerSetting({
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commitEdit}
             onKeyDown={handleKeyDown}
-            className="w-12 rounded bg-(--app-bg) border border-(--app-accent) text-center text-sm font-semibold text-(--app-text) outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            className="w-12 rounded bg-app-bg border border-app-accent text-center text-sm font-semibold text-app-text outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
         ) : (
           <span
             onClick={startEditing}
-            className={`min-w-[2ch] text-center text-sm font-semibold text-(--app-text) ${editable ? 'cursor-pointer hover:text-(--app-accent) transition-colors' : ''}`}
+            className={`min-w-[2ch] text-center text-sm font-semibold text-app-text ${editable ? 'cursor-pointer hover:text-app-accent transition-colors' : ''}`}
           >
             {value}
           </span>
@@ -140,7 +140,7 @@ function IntegerSetting({
         <button
           disabled={!editable || value >= max}
           onClick={() => onChange(Math.min(max, value + step))}
-          className="flex h-6 w-6 items-center justify-center rounded bg-(--app-bg) border border-(--app-border) text-(--app-text) disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-colors"
+          className="flex h-6 w-6 items-center justify-center rounded bg-app-bg border border-app-border text-app-text disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-colors"
         >
           <Plus className="h-3 w-3" />
         </button>
@@ -159,7 +159,7 @@ function IntegerSetting({
         value={value}
         disabled={!editable}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="flex-1 accent-(--app-accent) disabled:opacity-60"
+        className="flex-1 accent-app-accent disabled:opacity-60"
       />
       {editing ? (
         <input
@@ -172,12 +172,12 @@ function IntegerSetting({
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commitEdit}
           onKeyDown={handleKeyDown}
-          className="w-14 rounded bg-(--app-bg) border border-(--app-accent) text-right text-sm font-semibold text-(--app-text) outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-14 rounded bg-app-bg border border-app-accent text-right text-sm font-semibold text-app-text outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
       ) : (
         <span
           onClick={startEditing}
-          className={`min-w-[2.5ch] text-right text-sm font-semibold text-(--app-text) ${editable ? 'cursor-pointer hover:text-(--app-accent) transition-colors' : ''}`}
+          className={`min-w-[2.5ch] text-right text-sm font-semibold text-app-text ${editable ? 'cursor-pointer hover:text-app-accent transition-colors' : ''}`}
         >
           {value}
         </span>
@@ -212,9 +212,9 @@ function FloatSetting({
         value={value}
         disabled={!editable}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="flex-1 accent-(--app-accent) disabled:opacity-60"
+        className="flex-1 accent-app-accent disabled:opacity-60"
       />
-      <span className="min-w-[3ch] text-right text-sm font-semibold text-(--app-text)">
+      <span className="min-w-[3ch] text-right text-sm font-semibold text-app-text">
         {value.toFixed(decimals)}
       </span>
     </div>
@@ -275,7 +275,7 @@ function TextSetting({
       onChange={(e) => setDraft(e.target.value.toUpperCase())}
       onBlur={() => draft !== value && onChange(draft)}
       onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-      className="h-7 w-24 rounded border border-(--app-border) bg-(--app-bg) px-2 text-center font-mono text-sm uppercase text-(--app-text) disabled:opacity-60"
+      className="h-7 w-24 rounded border border-app-border bg-app-bg px-2 text-center font-mono text-sm uppercase text-app-text disabled:opacity-60"
     />
   );
 }
@@ -298,8 +298,8 @@ function SettingRow({
   return (
     <div className="flex items-center justify-between gap-4 py-2">
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-(--app-text)">{def.label}</div>
-        <div className="text-xs text-(--app-text-muted) leading-tight">{def.description}</div>
+        <div className="text-sm font-medium text-app-text">{def.label}</div>
+        <div className="text-xs text-app-text-muted leading-tight">{def.description}</div>
       </div>
       <div className="shrink-0">
         {def.type === 'boolean' && (
@@ -358,7 +358,7 @@ export default function GameSettingsForm({
 }: GameSettingsFormProps) {
   const { t } = useTranslation('c-rmhbox');
   return (
-    <div className="space-y-1 divide-y divide-(--app-border)">
+    <div className="space-y-1 divide-y divide-app-border">
       {schema.map((def) => (
         <SettingRow
           key={def.key}
@@ -374,7 +374,7 @@ export default function GameSettingsForm({
         <div className="pt-3">
           <button
             onClick={onReset}
-            className="flex items-center gap-1.5 text-xs font-medium text-(--app-text-muted) hover:text-(--app-text) transition-colors"
+            className="flex items-center gap-1.5 text-xs font-medium text-app-text-muted hover:text-app-text transition-colors"
           >
             <RotateCcw className="h-3 w-3" />
             {t('reset-to-defaults', { defaultValue: 'Reset to Defaults' })}

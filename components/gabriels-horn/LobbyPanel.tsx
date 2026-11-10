@@ -121,26 +121,26 @@ export function LobbyPanel({ onLeave, onRules }: { onLeave: () => void; onRules:
 
       <main className="mx-auto flex w-full max-w-md grow flex-col gap-4 px-4 py-6">
         <div className="text-center">
-          <p className="text-xs tracking-[0.14em] text-(--app-text-muted) uppercase">
+          <p className="text-xs tracking-[0.14em] text-app-text-muted uppercase">
             {t('table-code', { defaultValue: 'Table code' })}
           </p>
           <button
             type="button"
             onClick={copyCode}
-            className="ghm-code mt-1 inline-flex min-h-11 items-center gap-2 rounded-[var(--app-radius-sm)] px-2 py-1 text-3xl font-black tracking-[0.25em] text-(--app-accent) transition-colors hover:bg-(--app-surface-hover)"
+            className="ghm-code mt-1 inline-flex min-h-11 items-center gap-2 rounded-app-sm px-2 py-1 text-3xl font-black tracking-[0.25em] text-app-accent transition-colors hover:bg-app-surface-hover"
             aria-label={t('copy-code', { defaultValue: 'Copy the table code' })}
           >
             {lobby.code}
             {copied ? (
-              <Check className="size-4 text-(--app-success)" aria-hidden="true" />
+              <Check className="size-4 text-app-success" aria-hidden="true" />
             ) : (
-              <Copy className="size-4 text-(--app-text-dim)" aria-hidden="true" />
+              <Copy className="size-4 text-app-text-dim" aria-hidden="true" />
             )}
           </button>
           <div className="mt-1">
             <HornButton variant="ghost" size="sm" onClick={copyInviteLink}>
               {linkCopied ? (
-                <Check className="size-3.5 text-(--app-success)" aria-hidden="true" />
+                <Check className="size-3.5 text-app-success" aria-hidden="true" />
               ) : (
                 <Link2 className="size-3.5" aria-hidden="true" />
               )}
@@ -151,7 +151,7 @@ export function LobbyPanel({ onLeave, onRules }: { onLeave: () => void; onRules:
 
         {countdown !== null ? (
           <p
-            className="text-center text-2xl font-black text-(--app-accent)"
+            className="text-center text-2xl font-black text-app-accent"
             role="status"
             aria-live="assertive"
           >
@@ -174,23 +174,23 @@ export function LobbyPanel({ onLeave, onRules }: { onLeave: () => void; onRules:
                 <span className="min-w-0 grow truncate text-sm">
                   {player.name}
                   {player.socketId === selfSocketId ? (
-                    <span className="ms-1 text-(--app-text-dim)">
+                    <span className="ms-1 text-app-text-dim">
                       {t('you-suffix', { defaultValue: '(you)' })}
                     </span>
                   ) : null}
                 </span>
                 {player.isHost ? (
                   <Crown
-                    className="size-3.5 shrink-0 text-(--app-accent)"
+                    className="size-3.5 shrink-0 text-app-accent"
                     aria-label={t('host-label', { defaultValue: 'Host' })}
                   />
                 ) : player.ready ? (
                   <Check
-                    className="size-3.5 shrink-0 text-(--app-success)"
+                    className="size-3.5 shrink-0 text-app-success"
                     aria-label={t('ready-label', { defaultValue: 'Ready' })}
                   />
                 ) : (
-                  <span className="shrink-0 text-xs text-(--app-text-dim)">
+                  <span className="shrink-0 text-xs text-app-text-dim">
                     {t('waiting-label', { defaultValue: 'waiting' })}
                   </span>
                 )}
@@ -215,7 +215,7 @@ export function LobbyPanel({ onLeave, onRules }: { onLeave: () => void; onRules:
         <HouseRulesSummary rules={lobby.rules} />
 
         {error ? (
-          <p className="text-center text-sm text-(--app-danger)" role="status">
+          <p className="text-center text-sm text-app-danger" role="status">
             {message(error)}
           </p>
         ) : null}
@@ -235,17 +235,17 @@ export function LobbyPanel({ onLeave, onRules }: { onLeave: () => void; onRules:
                 checkbox renders 16px square, which is half the size a thumb
                 needs. The label wraps the input so the text is hit area too,
                 and `min-h-11` gives the row a full touch target. */}
-            <label className="flex min-h-11 items-center justify-between gap-2 px-1 text-sm text-(--app-text-muted)">
+            <label className="flex min-h-11 items-center justify-between gap-2 px-1 text-sm text-app-text-muted">
               <span>{t('public-table', { defaultValue: 'Listed publicly' })}</span>
               <input
                 type="checkbox"
                 checked={lobby.isPublic}
                 onChange={(event) => hornNet.settings({ isPublic: event.target.checked })}
-                className="size-6 accent-(--app-accent)"
+                className="size-6 accent-app-accent"
               />
             </label>
             {!canStart ? (
-              <p className="text-center text-xs text-(--app-text-dim)">
+              <p className="text-center text-xs text-app-text-dim">
                 {lobby.players.length < MIN_PLAYERS
                   ? t('need-players', {
                       defaultValue: 'Needs {{min}} players.',
@@ -310,11 +310,11 @@ export function BrowsePanel({ onBack, onRefresh }: { onBack: () => void; onRefre
         <h1 className="ghm-title">{t('open-tables', { defaultValue: 'Open tables' })}</h1>
 
         {browsing ? (
-          <p className="text-sm text-(--app-text-dim)">
+          <p className="text-sm text-app-text-dim">
             {t('browsing', { defaultValue: 'Looking…' })}
           </p>
         ) : lobbies.length === 0 ? (
-          <Panel className="text-sm text-(--app-text-muted)">
+          <Panel className="text-sm text-app-text-muted">
             {t('no-tables', {
               defaultValue: 'Nobody is hosting right now. Host one and send the code around.',
             })}
@@ -325,14 +325,14 @@ export function BrowsePanel({ onBack, onRefresh }: { onBack: () => void; onRefre
               <li key={entry.code}>
                 <Panel tier="fill" className="flex items-center gap-3">
                   <span className="min-w-0 grow">
-                    <span className="block font-mono text-sm tracking-[0.2em] text-(--app-accent)">
+                    <span className="block font-mono text-sm tracking-[0.2em] text-app-accent">
                       {entry.code}
                     </span>
-                    <span className="block truncate text-xs text-(--app-text-muted)">
+                    <span className="block truncate text-xs text-app-text-muted">
                       {t('hosted-by', { defaultValue: 'Hosted by {{name}}', name: entry.hostName })}
                     </span>
                   </span>
-                  <span className="shrink-0 text-xs text-(--app-text-muted) tabular-nums">
+                  <span className="shrink-0 text-xs text-app-text-muted tabular-nums">
                     {entry.playerCount}/{entry.maxPlayers}
                   </span>
                   <HornButton size="sm" onClick={() => hornNet.join(entry.code)}>

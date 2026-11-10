@@ -33,7 +33,7 @@ export const PlayerScene = lazy(() => import('./PlayerScene'));
 
 function Note({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center text-xs text-(--app-text-dim)">
+    <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center text-xs text-app-text-dim">
       <Box className="size-6" aria-hidden />
       <p className="max-w-64">{children}</p>
     </div>
@@ -182,7 +182,7 @@ export default function PlayerViewer({
         role="img"
         aria-label={t('model-view', { defaultValue: '3D model viewer' })}
         className={cn(
-          'h-72 overflow-hidden rounded-(--app-radius) border border-(--app-border) bg-(--app-bg) sm:h-80 lg:h-[clamp(13rem,34dvh,20rem)]',
+          'h-72 overflow-hidden rounded-app border border-app-border bg-app-bg sm:h-80 lg:h-[clamp(13rem,34dvh,20rem)]',
         )}
       >
         {content}
