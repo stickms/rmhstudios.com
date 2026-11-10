@@ -1,0 +1,327 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useBettingCountdown, BettingCountdown } from '@/components/rmhcoins/BettingCountdown';
+import { Button } from '@/components/ui/button';
+import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { useBlackjackStore } from '@features/casino/engine/blackjack/store';
+import { getBlackjackSocket } from '@features/casino/engine/blackjack/socket';
+import { C2S } from '@features/casino/engine/blackjack/events';
+
+interface Props {
+  coins: number;
+}
+
+export function BlackjackControls({ coins }: Props) {
+  const {
+    tablePhase,
+    currentTurnUserId,
+    myUserId,
+    players,
+    bettingCountdown,
+    insuranceTimeout,
+    error,
+  } = useBlackjackStore();
+
+  const [betInput, setBetInput] = useState('5');
+  const countdown = useBettingCountdown(tablePhase, bettingCountdown);
+  const [insCountdown, setInsCountdown] = useState<number | null>(null);
+
+  const { t } = useTranslation("c-rmhcoins");
+
+  const MAX_HANDS = 4;
+
+  const myPlayer = players.find((p) => p.userId === myUserId);
+  const isMyTurn = currentTurnUserId === myUserId;
+  const hasBet = myPlayer?.status === 'betting';
+
+  // The hand the player is currently acting on: a split hand once
+  // activeSplitIndex is 0+, otherwise the main hand. Double/Split must be
+  // evaluated against this hand, not always the main one — otherwise the
+  // buttons reflect the wrong cards while playing split hands.
+  const activeSplit = myPlayer && myPlayer.hasSplit && myPlayer.activeSplitIndex >= 0
+    ? myPlayer.splitHands[myPlayer.activeSplitIndex]
+    : null;
+  const activeCards = activeSplit ? activeSplit.hand : myPlayer?.hand;
+  const activeBet = activeSplit ? activeSplit.bet : (myPlayer?.bet ?? 0);
+  const totalHands = 1 + (myPlayer?.splitHands?.length ?? 0);
+
+  const canDoubleDown = isMyTurn && activeCards?.length === 2 && coins >= activeBet;
+
+  // Can split: an active two-card hand of matching rank (10/J/Q/K all count as
+  // the same), below the max-hands cap, that the player can afford. Re-splitting
+  // a split hand is allowed.
+  const rankVal = (r: string) => (['10', 'J', 'Q', 'K'].includes(r) ? '10' : r);
+  const canSplit = !!(isMyTurn && activeCards?.length === 2
+    && totalHands < MAX_HANDS
+    && activeCards[0] && activeCards[1]
+    && rankVal(activeCards[0].rank) === rankVal(activeCards[1].rank)
+    && coins >= activeBet);
+
+  // Insurance countdown timer
+  useEffect(() => {
+    if (tablePhase === 'insurance' && insuranceTimeout !== null) {
+      setInsCountdown(insuranceTimeout);
+      const interval = setInterval(() => {
+        setInsCountdown((prev) => {
+          if (prev === null || prev <= 0) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setInsCountdown(null);
+    }
+  }, [tablePhase, insuranceTimeout]);
+
+  const emit = useCallback((event: string, payload?: unknown) => {
+    const sock = getBlackjackSocket();
+    if (sock) sock.emit(event, payload);
+  }, []);
+
+  const handlePlaceBet = () => {
+    const amount = Math.max(1, Math.min(parseInt(betInput, 10) || 1, coins));
+    emit(C2S.PLACE_BET, { amount });
+  };
+
+  const setQuickBet = (amount: number) => {
+    const val = Math.min(amount, coins);
+    setBetInput(String(val));
+  };
+
+  // Idle state
+  if (tablePhase === 'idle') {
+    return (
+      <div className="text-center text-site-text-dim py-4">
+        <p className="text-sm">{t("waiting-next-round", { defaultValue: "Waiting for the next round to start..." })}</p>
+      </div>
+    );
+  }
+
+  // Betting phase
+  if (tablePhase === 'betting') {
+    return (
+      <div className="flex flex-col gap-3">
+        <BettingCountdown countdown={countdown} />
+
+        {hasBet ? (
+          <div className="text-center py-2">
+            <p className="text-sm text-site-success font-bold">
+              {t("bet-placed", { defaultValue: "Bet placed: {{coins}} coins", coins: myPlayer?.bet })}
+            </p>
+            <p className="text-xs text-site-text-dim mt-1">{t("waiting-other-players", { defaultValue: "Waiting for other players..." })}</p>
+          </div>
+        ) : (
+          <>
+            {/* Bet input + quick amounts — stacked on mobile */}
+            <div className="flex flex-col gap-2">
+              <div className="relative">
+                <input
+                  type="number"
+                  min={1}
+                  max={coins}
+                  value={betInput}
+                  onChange={(e) => setBetInput(e.target.value)}
+                  className="glass-inset border w-full rounded-site-sm px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
+                />
+                <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
+              </div>
+              <div className="grid grid-cols-4 gap-1.5">
+                {[5, 25, 100, 500].map((amt) => (
+                  <Button
+                    key={amt}
+                    variant="secondary"
+                    onClick={() => setQuickBet(amt)}
+                    className="h-auto min-h-10 px-0 text-xs font-bold text-site-text-dim hover:text-site-text"
+                  >
+                    {amt}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <Button
+              onClick={handlePlaceBet}
+              disabled={coins < 1}
+              variant="accent"
+              className="w-full min-h-11 font-bold rounded-site-sm text-base"
+            >
+              {t("place-bet", { defaultValue: "Place Bet" })}
+            </Button>
+          </>
+        )}
+
+        {error && (
+          <p className="text-sm text-site-danger text-center">{error}</p>
+        )}
+      </div>
+    );
+  }
+
+  // Insurance phase
+  if (tablePhase === 'insurance') {
+    const insuranceCost = Math.floor((myPlayer?.bet ?? 0) / 2);
+    const alreadyDecided = myPlayer?.insuranceBet !== undefined && myPlayer.insuranceBet > 0;
+    const canAffordInsurance = coins >= insuranceCost;
+    const isInRound = myPlayer && myPlayer.status !== 'waiting' && myPlayer.bet > 0;
+    const hasBJ = myPlayer?.status === 'blackjack';
+
+    if (!isInRound || hasBJ) {
+      return (
+        <div className="text-center text-site-text-dim py-4">
+          <p className="text-sm">{t("dealer-ace-insurance-others", { defaultValue: "Dealer showing Ace — Insurance offered to other players..." })}</p>
+          {insCountdown !== null && (
+            <span className="text-xs text-site-accent">{insCountdown}s</span>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="text-center">
+          <p className="text-sm font-bold text-site-accent">{t("insurance-question", { defaultValue: "Insurance?" })}</p>
+          <p className="text-xs text-site-text-dim mt-1">
+            {t("insurance-description", { defaultValue: "Dealer showing Ace. Insurance costs {{cost}} coins (half your bet). Pays 2:1 if dealer has blackjack.", cost: insuranceCost })}
+          </p>
+          {insCountdown !== null && (
+            <span className="text-xs text-site-text-dim mt-1 block">{t("seconds-remaining", { defaultValue: "{{count}}s remaining", count: insCountdown })}</span>
+          )}
+        </div>
+
+        {alreadyDecided ? (
+          <p className="text-sm text-site-success text-center font-bold">{t("insurance-taken", { defaultValue: "Insurance taken!" })}</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={() => emit(C2S.TAKE_INSURANCE)}
+              disabled={!canAffordInsurance}
+              variant="accent"
+              className="min-h-11 font-bold rounded-site-sm"
+            >
+              {t("take-insurance", { defaultValue: "Take ({{cost}})", cost: insuranceCost })}
+            </Button>
+            <Button
+              onClick={() => emit(C2S.DECLINE_INSURANCE)}
+              className="min-h-11 bg-site-surface-active hover:bg-site-surface-hover text-site-text border border-site-border font-bold rounded-site-sm"
+            >
+              {t("no-thanks", { defaultValue: "No Thanks" })}
+            </Button>
+          </div>
+        )}
+
+        {error && <p className="text-sm text-site-danger text-center">{error}</p>}
+      </div>
+    );
+  }
+
+  // Player turns — my turn — grid layout for action buttons
+  if (tablePhase === 'player_turns' && isMyTurn) {
+    const actionCount = 2 + (canDoubleDown ? 1 : 0) + (canSplit ? 1 : 0);
+    const gridCols = actionCount <= 2 ? 'grid-cols-2' : actionCount === 3 ? 'grid-cols-3' : 'grid-cols-2';
+
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="text-sm text-center text-site-accent font-bold animate-pulse">{t("your-turn", { defaultValue: "Your turn!" })}</p>
+        <div className={`grid ${gridCols} gap-2`}>
+          <Button
+            onClick={() => emit(C2S.HIT)}
+            className="min-h-12 bg-casino-green-hover hover:bg-casino-green text-casino-ink font-bold rounded-site-sm text-sm"
+          >
+            {t("hit", { defaultValue: "Hit" })}
+          </Button>
+          <Button
+            onClick={() => emit(C2S.STAND)}
+            className="min-h-12 bg-casino-red hover:bg-casino-red text-casino-ink font-bold rounded-site-sm text-sm"
+          >
+            {t("stand", { defaultValue: "Stand" })}
+          </Button>
+          {canDoubleDown && (
+            <Button
+              onClick={() => emit(C2S.DOUBLE_DOWN)}
+              className="min-h-12 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-site-sm text-sm"
+            >
+              {t("double", { defaultValue: "Double" })}
+            </Button>
+          )}
+          {canSplit && (
+            <Button
+              onClick={() => emit(C2S.SPLIT)}
+              className="min-h-12 bg-casino-seat-1 hover:bg-casino-seat-1 text-casino-ink font-bold rounded-site-sm text-sm"
+            >
+              {t("split", { defaultValue: "Split" })}
+            </Button>
+          )}
+        </div>
+        {error && <p className="text-sm text-site-danger text-center">{error}</p>}
+      </div>
+    );
+  }
+
+  // Player turns — waiting
+  if (tablePhase === 'player_turns') {
+    const currentPlayer = players.find((p) => p.userId === currentTurnUserId);
+    return (
+      <div className="text-center text-site-text-dim py-4">
+        <p className="text-sm">
+          {t("waiting-for-player-blackjack-controls", { defaultValue: "Waiting for {{name}}...", name: currentPlayer?.userName ?? 'player' })}
+        </p>
+      </div>
+    );
+  }
+
+  // Dealer turn
+  if (tablePhase === 'dealer_turn') {
+    return (
+      <div className="text-center text-site-text-dim py-4">
+        <p className="text-sm animate-pulse">{t("dealer-drawing", { defaultValue: "Dealer is drawing..." })}</p>
+      </div>
+    );
+  }
+
+  // Results
+  if (tablePhase === 'results') {
+    const myResult = players.find((p) => p.userId === myUserId);
+    if (!myResult || myResult.result === null) {
+      return (
+        <div className="text-center text-site-text-dim py-4">
+          <p className="text-sm">{t("round-complete", { defaultValue: "Round complete. Next round starting soon..." })}</p>
+        </div>
+      );
+    }
+
+    const resultText: Record<string, { label: string; color: string }> = {
+      blackjack: { label: t("result-blackjack-blackjack-controls", { defaultValue: "Blackjack! (3:2)" }), color: 'text-site-accent' },
+      win: { label: t("result-win-blackjack-controls", { defaultValue: "You win!" }), color: 'text-site-success' },
+      push: { label: t("result-push-blackjack-controls", { defaultValue: "Push" }), color: 'text-casino-seat-1' },
+      lose: { label: t("result-lose-blackjack-controls", { defaultValue: "You lose" }), color: 'text-site-danger' },
+    };
+
+    const r = resultText[myResult.result] ?? { label: '', color: '' };
+
+    return (
+      <div className="text-center py-4">
+        <p className={`text-lg font-bold ${r.color}`}>{r.label}</p>
+        {myResult.payout > 0 && (
+          <p className="text-sm text-site-text-dim mt-1">
+            {t("payout-coins", { defaultValue: "+{{payout}} coins", payout: myResult.payout })}
+          </p>
+        )}
+        {myResult.insuranceBet > 0 && myResult.insuranceResult && (
+          <p className={`text-xs mt-1 ${myResult.insuranceResult === 'won' ? 'text-casino-seat-1' : 'text-site-text-dim'}`}>
+            {myResult.insuranceResult === 'won' ? t("insurance-paid-out", { defaultValue: "Insurance paid out!" }) : t("insurance-lost-blackjack-controls", { defaultValue: "Insurance lost" })}
+          </p>
+        )}
+        <p className="text-xs text-site-text-dim mt-2">{t("next-round-soon", { defaultValue: "Next round starting soon..." })}</p>
+      </div>
+    );
+  }
+
+  // Dealing / payout / other
+  return (
+    <div className="text-center text-site-text-dim py-4">
+      <p className="text-sm animate-pulse">{t("dealing", { defaultValue: "Dealing..." })}</p>
+    </div>
+  );
+}

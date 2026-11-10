@@ -3,11 +3,11 @@ import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { IncidentCard } from '@/components/doctrine/incidents/incident-card';
-import { aggregateReactions } from '@/lib/doctrine/divisiveness';
-import { EMPTY_REACTIONS } from '@/lib/doctrine/types';
+import { IncidentCard } from '@features/doctrine/ui/incidents/incident-card';
+import { aggregateReactions } from '@features/doctrine/engine/divisiveness';
+import { EMPTY_REACTIONS } from '@features/doctrine/engine/types';
 import { api } from '@/lib/contract/client';
-import { listDoctrineIncidentsApi } from '@/lib/doctrine/doctrine.contract';
+import { listDoctrineIncidentsApi } from '@features/doctrine/engine/doctrine.contract';
 
 export const Route = createFileRoute('/strategies/incidents')({
   head: () => ({

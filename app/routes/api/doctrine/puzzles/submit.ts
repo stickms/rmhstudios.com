@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { validateAnswer, calculateScore } from '@/lib/doctrine/puzzle-engine';
-import { awardXp, updateStreak } from '@/lib/doctrine/reputation';
-import { isSahurActive, SAHUR_WINDOW } from '@/lib/doctrine';
+import { validateAnswer, calculateScore } from '@features/doctrine/engine/puzzle-engine';
+import { awardXp, updateStreak } from '@features/doctrine/engine/reputation';
+import { isSahurActive, SAHUR_WINDOW } from '@features/doctrine/engine';
 import { invalidateTag } from '@/lib/cached.server';
 
 export const Route = createFileRoute('/api/doctrine/puzzles/submit')({

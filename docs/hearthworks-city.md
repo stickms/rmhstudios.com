@@ -5,7 +5,7 @@ Roads, zones, utilities and milestones — the part of Isleworks that Hearthwork
 lives inside the same deterministic simulation as the farm, the kitchen and the crime route: plain data in
 `World`, changed only by commands, advanced only by `stepWorld`. Nothing here is a second game.
 
-Every number below is a constant in `lib/hearthworks/content/city.ts`; change it there, and the tests that
+Every number below is a constant in `features/hearthworks/engine/content/city.ts`; change it there, and the tests that
 pin behaviour (not numbers) keep passing.
 
 ## What changed in the loop
@@ -26,17 +26,17 @@ You still farm, cook and sell. The town adds a second way to make a place worth 
 
 | Piece | File |
 | --- | --- |
-| Numbers, zone / utility / milestone tables | `lib/hearthworks/content/city.ts` |
-| State shapes (`CityState`, commands, events) | `lib/hearthworks/world/city-types.ts` |
-| Packed cells, flags, `roadLink` (the one road rule) | `lib/hearthworks/world/city-cells.ts` |
-| Derived data and stepping (`recomputeCity`, `tickCity`) | `lib/hearthworks/world/city.ts` |
-| Command handlers | `lib/hearthworks/world/city-commands.ts` |
-| Pathfinding and walking on roads | `lib/hearthworks/nav/{passable,astar,mover}.ts` |
-| Save format v3 and the v2 / v1 migrations | `lib/hearthworks/save/{format,city-schema}.ts` |
-| Peer command schemas | `lib/hearthworks/net/protocol.ts` |
-| Drag → commands | `lib/hearthworks/city-input.ts` |
-| Road and zone meshes, lot / utility models | `lib/hearthworks/art/{city-mesh,models}.ts` |
-| Scene, panel, dock | `components/hearthworks/scene/City.tsx`, `CityPanel.tsx`, `Hud.tsx` |
+| Numbers, zone / utility / milestone tables | `features/hearthworks/engine/content/city.ts` |
+| State shapes (`CityState`, commands, events) | `features/hearthworks/engine/world/city-types.ts` |
+| Packed cells, flags, `roadLink` (the one road rule) | `features/hearthworks/engine/world/city-cells.ts` |
+| Derived data and stepping (`recomputeCity`, `tickCity`) | `features/hearthworks/engine/world/city.ts` |
+| Command handlers | `features/hearthworks/engine/world/city-commands.ts` |
+| Pathfinding and walking on roads | `features/hearthworks/engine/nav/{passable,astar,mover}.ts` |
+| Save format v3 and the v2 / v1 migrations | `features/hearthworks/engine/save/{format,city-schema}.ts` |
+| Peer command schemas | `features/hearthworks/engine/net/protocol.ts` |
+| Drag → commands | `features/hearthworks/engine/city-input.ts` |
+| Road and zone meshes, lot / utility models | `features/hearthworks/engine/art/{city-mesh,models}.ts` |
+| Scene, panel, dock | `features/hearthworks/ui/scene/City.tsx`, `CityPanel.tsx`, `Hud.tsx` |
 
 ## State
 

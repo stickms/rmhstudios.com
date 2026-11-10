@@ -2,6 +2,12 @@ import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { api } from '@/lib/contract/client';
+import {
+  leaveGroupChatApi,
+  reactGroupMessageApi,
+  voteGroupPollApi,
+} from '@/lib/group-chat/group-chat.contract';
 import { applyOptimisticVote, toggleReactionRow, type Msg } from './group-chat-state';
 
 /** Per-message actions: reactions, poll votes, and leaving the group. */
@@ -33,13 +39,7 @@ export function useGroupMessageActions({
     async (messageId: string, emoji: string) => {
       applyRowToggle(messageId, emoji);
       try {
-        const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}/react`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messageId, emoji }),
-        });
-        if (!res.ok) throw new Error('react failed');
+        await api(reactGroupMessageApi, { params: { id }, body: { messageId, emoji } });
       } catch {
         // Roll back the optimistic toggle (toggling again is its own inverse).
         applyRowToggle(messageId, emoji);
@@ -52,19 +52,8 @@ export function useGroupMessageActions({
     // Optimistic: reflect the choice immediately.
     setMessages((prev) => applyOptimisticVote(prev, messageId, optionIdx));
     try {
-      const res = await fetch(
-        `/api/group-chats/${encodeURIComponent(id)}/messages/${encodeURIComponent(messageId)}/vote`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ optionIdx }),
-        },
-      );
-      if (res.ok) {
-        const data = await res.json();
-        if (data.poll) patchMessage(messageId, { poll: data.poll });
-      }
+      const data = await api(voteGroupPollApi, { params: { id, messageId }, body: { optionIdx } });
+      if (data.poll) patchMessage(messageId, { poll: data.poll as Msg['poll'] });
     } catch {
       /* keep optimistic state */
     }
@@ -78,11 +67,11 @@ export function useGroupMessageActions({
       }))
     )
       return;
-    const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}/leave`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-    if (res.ok) navigate({ to: '/messages', search: { tab: 'groups' } });
+    const left = await api(leaveGroupChatApi, { params: { id } }).then(
+      () => true,
+      () => false,
+    );
+    if (left) navigate({ to: '/messages', search: { tab: 'groups' } });
   }
 
   return { toggleReaction, vote, leave };

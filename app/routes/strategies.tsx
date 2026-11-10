@@ -9,11 +9,11 @@
 import { createFileRoute, Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { appRouteHead } from '@/lib/seo-catalog';
 import { Home, Puzzle, Shield, AlertTriangle, User } from 'lucide-react';
-import { DoctrineNav } from '@/components/doctrine/layout/nav';
-import { BetaBanner } from '@/components/doctrine/layout/beta-banner';
-import { SahurOverlay } from '@/components/doctrine/layout/sahur-overlay';
+import { DoctrineNav } from '@features/doctrine/ui/layout/nav';
+import { BetaBanner } from '@features/doctrine/ui/layout/beta-banner';
+import { SahurOverlay } from '@features/doctrine/ui/layout/sahur-overlay';
 import { useTranslation } from 'react-i18next';
-import { useDoctrineStore } from '@/stores/doctrineStore';
+import { useDoctrineStore } from '@features/doctrine/ui/doctrineStore';
 
 export const Route = createFileRoute('/strategies')({
   head: () => appRouteHead('rmh-strategies'),

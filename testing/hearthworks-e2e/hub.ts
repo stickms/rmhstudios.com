@@ -1,6 +1,6 @@
 /**
  * The hub for the real-browser Hearthworks e2e: a small Node socket.io server running the REAL
- * `registerHearthworksP2pHandlers` (server/socket-server/handlers/hearthworks-p2p.ts) on the real generic
+ * `registerHearthworksP2pHandlers` (features/hearthworks/server/p2p.ts) on the real generic
  * `SignalHub` — the code that runs in production. The only injected piece is authentication: production reads
  * a Better Auth session out of Postgres (server/socket-server/index.ts, soft auth), here a token table maps a
  * token to an account, and the same `socket.data.userId/userName` fields are set from it.
@@ -15,7 +15,7 @@ import {
   handleHearthworksP2pDisconnect,
   registerHearthworksP2pHandlers,
   resetHearthworksP2pForTests,
-} from '../../server/socket-server/handlers/hearthworks-p2p';
+} from '../../features/hearthworks/server/p2p';
 
 export interface HubAccount {
   id: string;

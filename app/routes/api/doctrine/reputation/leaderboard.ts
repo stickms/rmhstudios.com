@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/doctrine/doctrine.contract';
-import { getReputationLeaderboard } from '@/lib/doctrine/reputation';
+import * as C from '@features/doctrine/engine/doctrine.contract';
+import { getReputationLeaderboard } from '@features/doctrine/engine/reputation';
 
 export const Route = createFileRoute('/api/doctrine/reputation/leaderboard')({
   server: {

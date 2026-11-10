@@ -1,19 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { saveShowcaseApi } from '@/lib/cards/steam.contract';
+import { saveShowcaseBody } from '@/lib/cards/steam-schema';
 import { saveShowcase } from '@/lib/games/showcase.server';
 
 /** POST /api/games/showcase — choose the achievements and badges featured on your profile. */
 export const Route = createFileRoute('/api/games/showcase')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        saveShowcaseApi,
         {
           rateLimit: 'write',
-          body: z.object({
-            achievements: z.array(z.string().max(64)).max(12),
-            badges: z.array(z.string().max(80)).max(12),
-          }),
+          body: saveShowcaseBody,
         },
         async ({ userId, body }) => Response.json(await saveShowcase(userId, body)),
       ),

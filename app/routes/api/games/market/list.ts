@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { listCardApi } from '@/lib/cards/steam.contract';
+import { listCardBody } from '@/lib/cards/steam-schema';
 import { listCard } from '@/lib/cards/market.server';
 import { marketResponse } from '@/lib/cards/market-api.server';
 
@@ -8,15 +9,11 @@ import { marketResponse } from '@/lib/cards/market-api.server';
 export const Route = createFileRoute('/api/games/market/list')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        listCardApi,
         {
           rateLimit: 'write',
-          body: z.object({
-            gameId: z.string().min(1).max(64),
-            cardIndex: z.number().int().min(0).max(63),
-            foil: z.boolean().default(false),
-            priceCoins: z.number().int(),
-          }),
+          body: listCardBody,
         },
         ({ userId, body }) =>
           marketResponse(async () => {

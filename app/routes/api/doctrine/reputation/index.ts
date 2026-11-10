@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/doctrine/doctrine.contract';
-import { getReputation } from '@/lib/doctrine/reputation';
+import * as C from '@features/doctrine/engine/doctrine.contract';
+import { getReputation } from '@features/doctrine/engine/reputation';
 
 export const Route = createFileRoute('/api/doctrine/reputation/')({
   server: {

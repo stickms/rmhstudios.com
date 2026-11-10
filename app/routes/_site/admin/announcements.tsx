@@ -22,29 +22,23 @@ import {
   MIN_POLL_OPTIONS,
   MAX_POLL_OPTIONS,
   MAX_ANNOUNCEMENT_IMAGES,
+  type CreateAnnouncementInput,
 } from '@/lib/announcement-schema';
 import { toast } from 'sonner';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  adminAnnouncementCreate,
+  adminAnnouncementDelete,
+  adminAnnouncementUpdate,
+  adminAnnouncementsList,
+  type AdminAnnouncement as Announcement,
+} from '@/lib/admin/announcements.contract';
 
 export const Route = createFileRoute('/_site/admin/announcements')({
   head: () => ({ meta: [{ title: 'Announcements | RMH Studios' }] }),
   component: AdminAnnouncementsPage,
 });
-
-interface Announcement {
-  id: string;
-  title: string;
-  body: string;
-  linkUrl: string | null;
-  linkLabel: string | null;
-  variant: string;
-  active: boolean;
-  pinned: boolean;
-  createdAt: string;
-  expiresAt: string | null;
-  imageUrls?: string[];
-  gifUrl?: string | null;
-  poll?: { id: string; question: string } | null;
-}
 
 const VARIANTS = ['info', 'success', 'warning', 'event'] as const;
 
@@ -101,8 +95,9 @@ function AdminAnnouncementsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/announcements', { credentials: 'include' });
-      if (res.ok) setList((await res.json()).announcements);
+      setList((await api(adminAnnouncementsList)).announcements);
+    } catch {
+      // keep the list we have
     } finally {
       setLoading(false);
     }
@@ -169,12 +164,14 @@ function AdminAnnouncementsPage() {
     if (!title.trim() || !body.trim() || submitting || uploadingCount > 0) return;
     setSubmitting(true);
     try {
-      const payload: Record<string, unknown> = {
+      const payload: CreateAnnouncementInput = {
         title: title.trim(),
         body: body.trim(),
         linkUrl: linkUrl.trim() || undefined,
         linkLabel: linkLabel.trim() || undefined,
         variant,
+        // the server default, spelled out because the contract carries the parsed body
+        pinned: true,
       };
       if (imageUrls.length > 0) payload.imageUrls = imageUrls;
       if (hasGif) payload.gifUrl = gifUrl.trim();
@@ -186,34 +183,21 @@ function AdminAnnouncementsPage() {
           ...(pollDuration > 0 ? { durationHours: pollDuration } : {}),
         };
       }
-      const res = await fetch('/api/admin/announcements', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        toast.success(t('announcement-published', { defaultValue: 'Announcement published' }));
-        resetForm();
-        load();
-      } else {
-        const d = await res.json().catch(() => ({}));
-        toast.error(d.error || t('failed-to-publish', { defaultValue: 'Failed to publish' }));
-      }
-    } catch {
-      toast.error(t('failed-to-publish', { defaultValue: 'Failed to publish' }));
+      await api(adminAnnouncementCreate, { body: payload });
+      toast.success(t('announcement-published', { defaultValue: 'Announcement published' }));
+      resetForm();
+      load();
+    } catch (e) {
+      toast.error(serverError(e) || t('failed-to-publish', { defaultValue: 'Failed to publish' }));
     } finally {
       setSubmitting(false);
     }
   };
 
   const toggleActive = async (a: Announcement) => {
-    await fetch(`/api/admin/announcements/${a.id}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ active: !a.active }),
-    });
+    await api(adminAnnouncementUpdate, { params: { id: a.id }, body: { active: !a.active } }).catch(
+      () => {},
+    );
     load();
   };
 
@@ -225,7 +209,7 @@ function AdminAnnouncementsPage() {
       }))
     )
       return;
-    await fetch(`/api/admin/announcements/${a.id}`, { method: 'DELETE', credentials: 'include' });
+    await api(adminAnnouncementDelete, { params: { id: a.id } }).catch(() => {});
     load();
   };
 

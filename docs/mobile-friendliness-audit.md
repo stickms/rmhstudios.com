@@ -285,7 +285,7 @@ The project helpfully redefines the Tailwind `.h-screen`/`.min-h-screen` utiliti
 - **F16 — User-menu popover positioning (Low).** `components/feed/LeftSidebar.tsx:228-253` computes a `fixed` popover position from `window.innerHeight/innerWidth`; can drift if the visual viewport changes (keyboard/URL bar) between open and render. It clamps to an 8px margin so it won't leave the screen.
 - **F17 — Duplicate `useIsMobile` hook (tech debt).** `hooks/useIsMobile.ts` (breakpoint `max-width: 767px`) and `lib/studio/hooks/useIsMobile.ts` both exist; the shared hook is referenced in only ~4 files. Consolidate and apply more broadly (see F5).
 
-> **Out of scope but noted:** `components/rmhcoins/BlackjackSessionStats.tsx` and `HoldemSessionStats.tsx` have unwrapped 5-column tables (genuine overflow) reached only inside the in-game casino UI. Wrap in `overflow-x-auto` if these become user-facing on mobile.
+> **Out of scope but noted:** `features/casino/ui/BlackjackSessionStats.tsx` and `HoldemSessionStats.tsx` have unwrapped 5-column tables (genuine overflow) reached only inside the in-game casino UI. Wrap in `overflow-x-auto` if these become user-facing on mobile.
 
 ---
 

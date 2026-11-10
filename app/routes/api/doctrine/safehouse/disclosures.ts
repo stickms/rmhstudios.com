@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { getUserTier } from '@/lib/doctrine/tiers';
-import { getDisclosuresForTier } from '@/lib/doctrine/narrative';
-import { aggregateReactions, calculateDivisiveness } from '@/lib/doctrine/divisiveness';
-import type { TierId } from '@/lib/doctrine/types';
+import { getUserTier } from '@features/doctrine/engine/tiers';
+import { getDisclosuresForTier } from '@features/doctrine/engine/narrative';
+import { aggregateReactions, calculateDivisiveness } from '@features/doctrine/engine/divisiveness';
+import type { TierId } from '@features/doctrine/engine/types';
 
 export const Route = createFileRoute('/api/doctrine/safehouse/disclosures')({
   server: {

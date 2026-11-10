@@ -1,20 +1,20 @@
 # Hearthworks character models
 
 Hearthworks draws every person (the player, customers, farmhands, the police, other players, the wardrobe preview)
-through one component, `SkinFigure` (`components/hearthworks/scene/SkinFigure.tsx`). If the skin has a **skinned
+through one component, `SkinFigure` (`features/hearthworks/ui/scene/SkinFigure.tsx`). If the skin has a **skinned
 model** and it has loaded, the person is that model with real skeletal animation. Otherwise it is the
-**procedural figure** (`Figure.tsx`, built from `lib/hearthworks/skins/looks.ts`). The fallback is automatic and
+**procedural figure** (`Figure.tsx`, built from `features/hearthworks/engine/skins/looks.ts`). The fallback is automatic and
 total, so the game is complete with no model at all.
 
 **No model data lives in this repository.** The characters are Valve's (Half-Life 2, Team Fortress 2). They are loaded
 at run time from the site's own asset channels in Cloudflare R2 (`hl2-game/mdl/`, `tf2-game/mdl/`, ...), the ones the
 Source games on this site already use (docs/tf2-game.md "Game assets" and "Models"), which `tf2-assets-sync.yml`
-builds from retail installs downloaded with SteamCMD. `lib/hearthworks/skins/models.manifest.json` (bundled into the app, not fetched: `/models/` is an R2-hosted
+builds from retail installs downloaded with SteamCMD. `features/hearthworks/engine/skins/models.manifest.json` (bundled into the app, not fetched: `/models/` is an R2-hosted
 static directory and the app origin serves nothing there) only says which model, which skin and which sequences. Credits and provenance: `public/models/hearthworks/CREDITS.md`.
 
 ## The contract (manifest v2)
 
-`lib/hearthworks/skins/models.manifest.json`:
+`features/hearthworks/engine/skins/models.manifest.json`:
 
 ```json
 {
@@ -44,7 +44,7 @@ static directory and the app origin serves nothing there) only says which model,
 }
 ```
 
-- `<skinId>` is a key of `SKINS` in `lib/hearthworks/skins/catalog.ts`. Unknown ids are ignored.
+- `<skinId>` is a key of `SKINS` in `features/hearthworks/engine/skins/catalog.ts`. Unknown ids are ignored.
 - `game` is the asset channel (`tf2` | `hl2` | `portal` | `csgo`); `mdl` is the model's path in that channel's index
   (`models/<path>.mdl`, lower case). Paths and URLs anywhere else are rejected.
 - `skin` is the model's material family: TF2 classes **RED = 0, BLU = 1** (the others are invulnerable and zombie
@@ -70,13 +70,13 @@ static directory and the app origin serves nothing there) only says which model,
   the skin does the same.
 - `note` is free text for people reading the file.
 
-The manifest is validated per entry with zod (`lib/hearthworks/skins/model-manifest.ts`): a bad entry is dropped, a
+The manifest is validated per entry with zod (`features/hearthworks/engine/skins/model-manifest.ts`): a bad entry is dropped, a
 wrong `version` (the retired v1 `file` manifest included), invalid JSON means "no models". Nothing here ever
 throws.
 
 ## Loading a model
 
-`loadSkinModel` (`lib/hearthworks/skins/model-loader.ts`):
+`loadSkinModel` (`features/hearthworks/engine/skins/model-loader.ts`):
 
 1. **Index.** `GET /api/<game>-game/assets/mdl/index.json` (`model-index.ts`), once per game, cached. Entries are
    `models/<path>.mdl -> { glb: '<sha1>.glb', anims: '<sha1>.glb', skins, bones, ... }`. A 404 (no R2 behind the route:
@@ -127,17 +127,17 @@ nothing skinned in it, is refused and the procedural figure is used.
 
 ## How it animates
 
-`lib/hearthworks/skins/animator.ts` (`CharacterAnimator`, one `AnimationMixer` per person) turns a plain mutable
+`features/hearthworks/engine/skins/animator.ts` (`CharacterAnimator`, one `AnimationMixer` per person) turns a plain mutable
 `FigureDrive` (`speed`, `air`, `dead`, `busy`, `triggers`) into action weights. The owner fills the drive every frame:
 
-- **Locomotion:** `locomotionBlend(speed)` from `lib/hearthworks/avatar/controller.ts` gives idle/walk/run weights.
+- **Locomotion:** `locomotionBlend(speed)` from `features/hearthworks/engine/avatar/controller.ts` gives idle/walk/run weights.
   Walk and run share one stride phase, advanced by `strideCadence(speed)`, so the playback rate follows the ground
   speed (feet do not skate) and the two clips' feet land together while they blend. Weights are smoothed, so a speed
   that jumps does not pop.
 - **Air:** `jump` / `fall` replace locomotion while the avatar rises or drops (vertical velocity with hysteresis,
   `airFromVelocity`). Each restarts from its first frame.
 - **One-shots:** `shoot`, `reload`, `hurt`, `interact` play once on top and fade out; a newer one interrupts the
-  older. They come from world events (`components/hearthworks/scene/figure-events.ts`: your shots, reloads, wounds
+  older. They come from world events (`features/hearthworks/ui/scene/figure-events.ts`: your shots, reloads, wounds
   and chores; an officer's shots and wounds). `busy` (a farmhand working) keeps replaying `interact`.
 - **Death:** plays once and holds its last frame (a downed player; a fallen officer lies where it fell for a few
   seconds).
@@ -146,7 +146,7 @@ nothing skinned in it, is refused and the procedural figure is used.
   are; without a hand bone they hang at the hip.
 
 **Size:** a model is scaled so its height equals the procedural figure's height (`figureWorldHeight` in
-`lib/hearthworks/skins/figure-scale.ts`, ≈ 0.38 world units × the skin's `look.height`), keeping the contract of a
+`features/hearthworks/engine/skins/figure-scale.ts`, ≈ 0.38 world units × the skin's `look.height`), keeping the contract of a
 person ≈ 0.4 tile and a door 0.44. Change `FIGURE_SCALE` there, not in a model.
 
 ## Who is a model, who is procedural
@@ -179,7 +179,7 @@ asset route has no index (local dev without R2), and for anyone past the budget.
 
 ## Adding or changing a skin
 
-1. Add the skin to `lib/hearthworks/skins/catalog.ts` (and a stand-in look in `looks.ts`) if it is new.
+1. Add the skin to `features/hearthworks/engine/skins/catalog.ts` (and a stand-in look in `looks.ts`) if it is new.
 2. Find its model in the channel's `mdl/index.json` (`curl https://rmhstudios.com/api/<game>-game/assets/mdl/index.json`).
    A model that is not there is not available: use a `stand-in` entry, do not substitute another model.
 3. Add its entry to `models.manifest.json`: `game`, `mdl`, `skin`, `handBone`, and the sequences for `idle` and `walk` at least.
@@ -192,7 +192,7 @@ asset route has no index (local dev without R2), and for anyone past the budget.
 
 ## Testing
 
-Unit tests (`lib/hearthworks/skins/__tests__/`) build a small skinned, animated character **in code**
+Unit tests (`features/hearthworks/engine/skins/__tests__/`) build a small skinned, animated character **in code**
 (`fixture-model.ts`; `fixture-glb.ts` exports it with `GLTFExporter` as a model channel's mesh GLB and a many-animation
 pack, with a fake channel behind `fetch`, so the real GLTFLoader path is tested). No Valve content is in the repo or
 the tests. They cover manifest v2 validation, the index (404 / missing model / retry), pack filtering and pruning,

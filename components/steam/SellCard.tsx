@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { api, errorField } from '@/lib/contract/client';
+import { listCardApi } from '@/lib/cards/steam.contract';
 import { CARD_MAX_PRICE, CARD_MIN_PRICE, marketFee } from '@/lib/cards/market-rules';
 import { marketErrorText } from './market-errors';
 
@@ -28,22 +30,13 @@ export function SellCard({
     if (!valid) return;
     setBusy(true);
     try {
-      const res = await fetch('/api/games/market/list', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ gameId, cardIndex, foil, priceCoins: n }),
-      });
-      if (res.ok) {
-        toast.success(t('steam-market-listed', { defaultValue: 'Listed on the Community Market.' }));
-        setOpen(false);
-        setPrice('');
-        await router.invalidate();
-      } else {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(marketErrorText(body.error, t));
-      }
-    } catch {
-      toast.error(marketErrorText(undefined, t));
+      await api(listCardApi, { body: { gameId, cardIndex, foil, priceCoins: n } });
+      toast.success(t('steam-market-listed', { defaultValue: 'Listed on the Community Market.' }));
+      setOpen(false);
+      setPrice('');
+      await router.invalidate();
+    } catch (e) {
+      toast.error(marketErrorText(errorField<string>(e, 'error'), t));
     } finally {
       setBusy(false);
     }

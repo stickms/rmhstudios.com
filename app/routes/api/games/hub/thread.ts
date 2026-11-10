@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createHubThreadApi } from '@/lib/cards/steam.contract';
+import { createHubThreadBody } from '@/lib/cards/steam-schema';
 import { createThread } from '@/lib/games/hub.server';
 import { hubResponse } from '@/lib/games/hub-api.server';
 
@@ -8,14 +9,11 @@ import { hubResponse } from '@/lib/games/hub-api.server';
 export const Route = createFileRoute('/api/games/hub/thread')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        createHubThreadApi,
         {
           rateLimit: 'write',
-          body: z.object({
-            gameId: z.string().min(1).max(64),
-            title: z.string().max(400),
-            body: z.string().max(20_000),
-          }),
+          body: createHubThreadBody,
         },
         ({ userId, body }) => hubResponse(() => createThread({ userId, ...body })),
       ),

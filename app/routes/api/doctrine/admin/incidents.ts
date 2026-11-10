@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { transitionIncidentStatus, addIncidentEvent } from '@/lib/doctrine/incidents';
+import { transitionIncidentStatus, addIncidentEvent } from '@features/doctrine/engine/incidents';
 import { logAdminAction } from '@/lib/admin-audit.server';
-import type { IncidentStatus } from '@/lib/doctrine/types';
+import type { IncidentStatus } from '@features/doctrine/engine/types';
 
 const VALID_STATUSES: IncidentStatus[] = ['ACTIVE', 'MITIGATED', 'RESOLVED', 'LEGENDARY'];
 

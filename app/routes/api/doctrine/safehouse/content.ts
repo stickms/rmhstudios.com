@@ -2,9 +2,9 @@ import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { getUserTier, checkTierAccess } from '@/lib/doctrine/tiers';
-import { aggregateReactions, calculateDivisiveness } from '@/lib/doctrine/divisiveness';
-import type { TierId } from '@/lib/doctrine/types';
+import { getUserTier, checkTierAccess } from '@features/doctrine/engine/tiers';
+import { aggregateReactions, calculateDivisiveness } from '@features/doctrine/engine/divisiveness';
+import type { TierId } from '@features/doctrine/engine/types';
 
 export const Route = createFileRoute('/api/doctrine/safehouse/content')({
   server: {
