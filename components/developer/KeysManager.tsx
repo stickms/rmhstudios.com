@@ -24,6 +24,14 @@ import { SCOPES, DEFAULT_SCOPES, scopesByGroup } from '@/lib/api/scopes';
 import { DEVELOPER_DOCS_URL } from '@/lib/docs-site';
 import { KeyUsage } from '@/components/developer/KeyUsage';
 import { TestKeyCreator } from '@/components/developer/TestKeyCreator';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  createDeveloperKeyApi,
+  listDeveloperKeysApi,
+  revokeDeveloperKeyApi,
+  updateDeveloperKeyApi,
+} from '@/lib/devplatform/keys.contract';
 
 interface ApiKey {
   id: string;
@@ -58,11 +66,12 @@ export function KeysManager() {
   const [newKey, setNewKey] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/developer/keys', { credentials: 'include' });
-    if (res.ok) {
-      const data = await res.json();
+    try {
+      const data = await api(listDeveloperKeysApi);
       setKeys(data.keys ?? []);
       setHasAccess(!!data.hasApiAccess);
+    } catch {
+      // A failed read leaves the previous list in place.
     }
   }, []);
 
@@ -88,21 +97,14 @@ export function KeysManager() {
     if (!name.trim()) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/developer/keys', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), scopes, expiresInDays: expiryDays || undefined }),
+      const data = await api(createDeveloperKeyApi, {
+        body: { name: name.trim(), scopes, expiresInDays: expiryDays || undefined },
       });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setNewKey(data.key);
-        setName('');
-        await load();
-      } else
-        toast.error(
-          data.error || t('keys-create-failed', { defaultValue: 'Could not create key' }),
-        );
+      setNewKey(data.key);
+      setName('');
+      await load();
+    } catch (e) {
+      toast.error(serverError(e) || t('keys-create-failed', { defaultValue: 'Could not create key' }));
     } finally {
       setCreating(false);
     }
@@ -117,14 +119,10 @@ export function KeysManager() {
       confirmLabel: t('keys-rotate-confirm', { defaultValue: 'Rotate' }),
     });
     if (!confirmed) return;
-    const res = await fetch(`/api/developer/keys/${id}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rotate: true }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok && data.key) {
+    const data = await api(updateDeveloperKeyApi, { params: { id }, body: { rotate: true } }).catch(
+      () => null,
+    );
+    if (data?.key) {
       setNewKey(data.key);
       await load();
     }
@@ -140,11 +138,11 @@ export function KeysManager() {
       danger: true,
     });
     if (!confirmed) return;
-    const res = await fetch(`/api/developer/keys/${id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    if (res.ok) setKeys((k) => k.filter((x) => x.id !== id));
+    const revoked = await api(revokeDeveloperKeyApi, { params: { id } }).then(
+      () => true,
+      () => false,
+    );
+    if (revoked) setKeys((k) => k.filter((x) => x.id !== id));
   }
 
   if (loading)

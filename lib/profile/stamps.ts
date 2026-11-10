@@ -27,6 +27,12 @@ export const STAMP_MAX_PER_DAY = 3;
 export const STAMP_WALL_CAP = 50;
 
 export const STAMP_NAME_MAX = 40;
+/** `GET /api/stamps` query. */
+export const browseStampsQuery = z.object({
+  sort: z.enum(['new', 'popular']).default('new'),
+  cursor: z.string().max(64).optional(),
+});
+
 export const stampNameSchema = z.string().trim().min(1).max(STAMP_NAME_MAX);
 
 export interface StampView {

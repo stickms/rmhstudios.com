@@ -22,6 +22,8 @@ import type { FeatureRequestDTO, RequestBoardPage } from '@/lib/requests/schema'
 import { RequestCard } from './RequestCard';
 import { NewRequestDialog } from './NewRequestDialog';
 import { useRequestStatusLabels } from './RequestStatusBadge';
+import { api } from '@/lib/contract/client';
+import { listRequestsApi } from '@/lib/requests/requests.contract';
 
 const ALL = 'ALL';
 
@@ -50,12 +52,17 @@ export function RequestBoard({ initial, signedIn, isAdmin }: RequestBoardProps) 
   useEffect(() => {
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      const params = new URLSearchParams({ sort });
-      if (filter !== ALL) params.set('status', filter);
-      if (query.trim()) params.set('q', query.trim());
       setLoading(true);
-      fetch(`/api/requests?${params.toString()}`, { signal: controller.signal })
-        .then((res) => (res.ok ? (res.json() as Promise<RequestBoardPage>) : Promise.reject()))
+      api(listRequestsApi, {
+        query: {
+          sort,
+          limit: 20,
+          ...(filter !== ALL ? { status: filter } : {}),
+          ...(query.trim() ? { q: query.trim() } : {}),
+        },
+        signal: controller.signal,
+        retries: 0,
+      })
         .then(setPage)
         .catch(() => {
           /* aborted or offline — keep showing the last good page */

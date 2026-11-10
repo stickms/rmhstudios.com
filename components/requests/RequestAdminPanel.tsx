@@ -12,6 +12,9 @@ import {
 } from '@/lib/requests/status';
 import type { FeatureRequestDTO } from '@/lib/requests/schema';
 import { useRequestStatusLabels } from './RequestStatusBadge';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { updateRequestApi } from '@/lib/requests/requests.contract';
 
 /**
  * The admin controls on a request card.
@@ -41,19 +44,15 @@ export function RequestAdminPanel({
     if (problem) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/requests/${request.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, officialNote: note.trim() || null }),
+      const data = await api(updateRequestApi, {
+        params: { id: request.id },
+        body: { status, officialNote: note.trim() || null },
       });
-      const data = (await res.json().catch(() => ({}))) as FeatureRequestDTO & { error?: string };
-      if (!res.ok) {
-        toast.error(data.error ?? t('request-save-failed', { defaultValue: 'Could not save' }));
-        return;
-      }
       onChanged(data);
       setOpen(false);
       toast.success(t('request-saved', { defaultValue: 'Request updated' }));
+    } catch (e) {
+      toast.error(serverError(e) ?? t('request-save-failed', { defaultValue: 'Could not save' }));
     } finally {
       setSaving(false);
     }

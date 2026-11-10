@@ -20,6 +20,8 @@ export const guideCreateSchema = z.object({
   body: z.string().trim().min(1).max(40_000),
 });
 
+export const guidePublishBody = z.object({ published: z.boolean() });
+
 export const guideUpdateSchema = z.object({
   title: z.string().trim().min(3).max(120).optional(),
   body: z.string().trim().min(1).max(40_000).optional(),

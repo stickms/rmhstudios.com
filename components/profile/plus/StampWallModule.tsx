@@ -16,6 +16,9 @@ import {
 import { useSession } from '@/components/Providers';
 import type { StampView } from '@/lib/profile/stamps';
 import { useJson } from './useJson';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { addStampToWallApi, removeStampFromWallApi } from '@/lib/profile/stamps.contract';
 
 const ReportDialog = lazy(() =>
   import('@/components/moderation/ReportDialog').then((m) => ({ default: m.ReportDialog })),
@@ -66,12 +69,12 @@ export default function StampWallModule({
   async function toggle(stamp: StampView) {
     setBusy(true);
     try {
-      const res = await fetch(`/api/stamps/${stamp.id}/wall`, {
-        method: stamp.onMyWall ? 'DELETE' : 'POST',
-      });
-      const json = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) {
-        toast.error(json.error ?? t('stamp-failed', { defaultValue: "Couldn't update your wall" }));
+      try {
+        await api(stamp.onMyWall ? removeStampFromWallApi : addStampToWallApi, {
+          params: { id: stamp.id },
+        });
+      } catch (e) {
+        toast.error(serverError(e) ?? t('stamp-failed', { defaultValue: "Couldn't update your wall" }));
         return;
       }
       const next = { ...stamp, onMyWall: !stamp.onMyWall };

@@ -14,6 +14,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import type { FeedItem } from '@/lib/feed-types';
 import { MAX_SERIES_TITLE } from '@/lib/posts-plus/constants';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import {
+  deleteSeriesApi,
+  followSeriesApi,
+  getSeriesApi,
+  moveSeriesPostApi,
+  removeSeriesPostApi,
+  unfollowSeriesApi,
+  updateSeriesApi,
+} from '@/lib/posts-plus/series.contract';
 
 // The "add an existing post" picker loads only when the owner opens it.
 const AddSeriesPostDialog = lazy(() => import('./AddSeriesPostDialog'));
@@ -51,16 +62,14 @@ export function SeriesPage({ id }: { id: string }) {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`/api/series/${encodeURIComponent(id)}`, { credentials: 'include' });
-      if (res.status === 404) {
+      const v = await api(getSeriesApi, { params: { id } });
+      setView(v);
+      setTitle(v.series.title);
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 404) {
         setMissing(true);
         return;
       }
-      if (!res.ok) throw new Error(String(res.status));
-      const v = (await res.json()) as View;
-      setView(v);
-      setTitle(v.series.title);
-    } catch {
       toast.error(t('series-load-failed', { defaultValue: 'Could not load the series' }));
     }
   }, [id, t]);
@@ -69,20 +78,14 @@ export function SeriesPage({ id }: { id: string }) {
     void load();
   }, [load]);
 
-  const call = async (url: string, init: RequestInit, failed: string) => {
+  const call = async (run: () => Promise<unknown>, failed: string) => {
     setBusy(true);
     try {
-      const res = await fetch(url, {
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        ...init,
-      });
-      if (!res.ok) {
-        const err = (await res.json().catch(() => null)) as { error?: string } | null;
-        toast.error(err?.error ?? failed);
-        return false;
-      }
+      await run();
       return true;
+    } catch (e) {
+      toast.error(serverError(e) ?? failed);
+      return false;
     } finally {
       setBusy(false);
     }
@@ -122,8 +125,7 @@ export function SeriesPage({ id }: { id: string }) {
   const toggleFollow = async () => {
     const next = !series.following;
     const ok = await call(
-      `/api/series/${encodeURIComponent(id)}/follow`,
-      { method: next ? 'PUT' : 'DELETE' },
+      () => api(next ? followSeriesApi : unfollowSeriesApi, { params: { id } }),
       t('series-follow-failed', { defaultValue: 'Could not update your follow' }),
     );
     if (ok) await load();
@@ -131,8 +133,7 @@ export function SeriesPage({ id }: { id: string }) {
 
   const rename = async () => {
     const ok = await call(
-      `/api/series/${encodeURIComponent(id)}`,
-      { method: 'PATCH', body: JSON.stringify({ title: title.trim() }) },
+      () => api(updateSeriesApi, { params: { id }, body: { title: title.trim() } }),
       t('series-rename-failed', { defaultValue: 'Could not rename the series' }),
     );
     if (ok) {
@@ -152,8 +153,7 @@ export function SeriesPage({ id }: { id: string }) {
     });
     if (!yes) return;
     const ok = await call(
-      `/api/series/${encodeURIComponent(id)}`,
-      { method: 'DELETE' },
+      () => api(deleteSeriesApi, { params: { id } }),
       t('series-delete-failed', { defaultValue: 'Could not delete the series' }),
     );
     if (ok) void navigate({ to: '/series' });
@@ -161,8 +161,7 @@ export function SeriesPage({ id }: { id: string }) {
 
   const move = async (postId: string, direction: 'up' | 'down') => {
     const ok = await call(
-      `/api/series/${encodeURIComponent(id)}/posts/${encodeURIComponent(postId)}`,
-      { method: 'PATCH', body: JSON.stringify({ direction }) },
+      () => api(moveSeriesPostApi, { params: { id, postId }, body: { direction } }),
       t('series-move-failed', { defaultValue: 'Could not reorder the series' }),
     );
     if (ok) await load();
@@ -170,8 +169,7 @@ export function SeriesPage({ id }: { id: string }) {
 
   const take = async (postId: string) => {
     const ok = await call(
-      `/api/series/${encodeURIComponent(id)}/posts/${encodeURIComponent(postId)}`,
-      { method: 'DELETE' },
+      () => api(removeSeriesPostApi, { params: { id, postId } }),
       t('series-remove-failed', { defaultValue: 'Could not remove the post' }),
     );
     if (ok) await load();

@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createGuideApi } from '@/lib/games/guides.contract';
 import { guideCreateSchema } from '@/lib/games/reviews';
 import { createGuide, GameMetaError } from '@/lib/games/meta.server';
 
@@ -7,7 +8,8 @@ import { createGuide, GameMetaError } from '@/lib/games/meta.server';
 export const Route = createFileRoute('/api/guides/')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        createGuideApi,
         {
           rateLimit: { limit: 10, windowMs: 3_600_000, prefix: 'guides' },
           body: guideCreateSchema,

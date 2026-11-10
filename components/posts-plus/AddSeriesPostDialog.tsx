@@ -11,6 +11,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import type { FeedItem } from '@/lib/feed-types';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { addSeriesPostApi } from '@/lib/posts-plus/series.contract';
 
 /**
  * X5 - pick one of your own older public posts to append to a series. Lists the
@@ -56,21 +59,11 @@ export default function AddSeriesPostDialog({
   const add = async (postId: string) => {
     setAdding(postId);
     try {
-      const res = await fetch(`/api/series/${encodeURIComponent(seriesId)}/posts`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId }),
-      });
-      if (!res.ok) {
-        const err = (await res.json().catch(() => null)) as { error?: string } | null;
-        toast.error(
-          err?.error ?? t('series-add-failed', { defaultValue: 'Could not add that post' }),
-        );
-        return;
-      }
+      await api(addSeriesPostApi, { params: { id: seriesId }, body: { postId } });
       setPosts((prev) => prev?.filter((p) => p.id !== postId) ?? prev);
       onAdded();
+    } catch (e) {
+      toast.error(serverError(e) ?? t('series-add-failed', { defaultValue: 'Could not add that post' }));
     } finally {
       setAdding(null);
     }

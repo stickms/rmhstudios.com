@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createSaveFolderApi, listSaveFoldersApi } from '@/lib/saves/saves.contract';
 import { folderCreateSchema } from '@/lib/saves/types';
 import { listFolders, createFolder } from '@/lib/saves/saves.server';
 
@@ -10,11 +11,12 @@ import { listFolders, createFolder } from '@/lib/saves/saves.server';
 export const Route = createFileRoute('/api/saves/folders')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
+      GET: implement(listSaveFoldersApi, {}, async ({ session }) => {
         return Response.json({ folders: await listFolders(session.user.id) });
       }),
 
-      POST: defineHandler(
+      POST: implement(
+        createSaveFolderApi,
         {
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'saves-folder' },
           body: folderCreateSchema,

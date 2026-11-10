@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { addSeriesPostApi } from '@/lib/posts-plus/series.contract';
 import { addPost } from '@/lib/posts-plus/series.server';
 import { seriesAddPostSchema } from '@/lib/posts-plus/schema';
 
@@ -7,7 +8,8 @@ import { seriesAddPostSchema } from '@/lib/posts-plus/schema';
 export const Route = createFileRoute('/api/series/$id/posts')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        addSeriesPostApi,
         { rateLimit: 'write', body: seriesAddPostSchema },
         async ({ userId, params, body }) => {
           const res = await addPost(userId, params.id, body.postId);

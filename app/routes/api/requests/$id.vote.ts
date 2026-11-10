@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { voteRequestApi } from '@/lib/requests/requests.contract';
 import { toggleVote, RequestBoardError } from '@/lib/requests/board.server';
 
 /**
@@ -13,7 +14,8 @@ import { toggleVote, RequestBoardError } from '@/lib/requests/board.server';
 export const Route = createFileRoute('/api/requests/$id/vote')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        voteRequestApi,
         { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'request-vote', scope: 'user' } },
         async ({ params, userId }) => {
           try {

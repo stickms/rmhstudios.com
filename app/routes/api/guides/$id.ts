@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { deleteGuideApi, updateGuideApi } from '@/lib/games/guides.contract';
 import { guideUpdateSchema } from '@/lib/games/reviews';
 import { getGuide, updateGuide, deleteGuide, GameMetaError } from '@/lib/games/meta.server';
 
@@ -16,7 +18,8 @@ export const Route = createFileRoute('/api/guides/$id')({
         if (!guide) return Response.json({ error: 'Not found' }, { status: 404 });
         return Response.json(guide);
       }),
-      PUT: defineHandler(
+      PUT: implement(
+        updateGuideApi,
         { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'guides' }, body: guideUpdateSchema },
         async ({ params, session, body }) => {
           try {
@@ -33,7 +36,8 @@ export const Route = createFileRoute('/api/guides/$id')({
           return Response.json({ ok: true });
         },
       ),
-      DELETE: defineHandler(
+      DELETE: implement(
+        deleteGuideApi,
         { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:guides/:id' } },
         async ({ params, session }) => {
           try {

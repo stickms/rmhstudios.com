@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { seriesNavForPostApi } from '@/lib/posts-plus/series.contract';
 import { navForPost } from '@/lib/posts-plus/series.server';
 
 /**
@@ -10,11 +11,15 @@ import { navForPost } from '@/lib/posts-plus/series.server';
 export const Route = createFileRoute('/api/series/post/$postId')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ userId, params }) => {
-        const nav = await navForPost(params.postId, userId);
-        if (!nav) return Response.json({ error: 'Not found' }, { status: 404 });
-        return Response.json(nav, { headers: { 'Cache-Control': 'private, max-age=30' } });
-      }),
+      GET: implement(
+        seriesNavForPostApi,
+        { auth: 'optional', rateLimit: 'read' },
+        async ({ userId, params }) => {
+          const nav = await navForPost(params.postId, userId);
+          if (!nav) return Response.json({ error: 'Not found' }, { status: 404 });
+          return Response.json(nav, { headers: { 'Cache-Control': 'private, max-age=30' } });
+        },
+      ),
     },
   },
 });

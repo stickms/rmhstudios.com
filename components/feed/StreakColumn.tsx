@@ -6,6 +6,8 @@ import { EmptyState } from'@/components/ui/empty-state';
 import { useTranslation } from'react-i18next';
 import { Reveal, RevealGroup, RevealItem } from'@/components/motion';
 import { LIFT_CARD } from'@/components/feed/motionHelpers';
+import { api } from '@/lib/contract/client';
+import { getStreakApi } from '@/lib/streak.contract';
 import { ColumnHeader } from'./ColumnHeader';
 
 interface StreakState {
@@ -32,8 +34,10 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  let active = true;
  (async () => {
  try {
- const res = await fetch('/api/streak', { credentials:'include'});
- if (res.ok && active) setStreak(await res.json());
+ const data = await api(getStreakApi);
+ if (active) setStreak(data);
+ } catch {
+ // A failed read leaves the empty state below.
  } finally {
  if (active) setLoading(false);
  }

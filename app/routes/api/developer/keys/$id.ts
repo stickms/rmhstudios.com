@@ -1,16 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
-import { z } from 'zod';
+import { revokeDeveloperKeyApi, updateDeveloperKeyApi } from '@/lib/devplatform/keys.contract';
+import { patchKeyBody } from '@/lib/devplatform/keys-schema';
 import { generateApiKey } from '@/lib/api/developer-auth.server';
 import { normalizeScopes } from '@/lib/api/scopes';
-
-const patchSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
-  scopes: z.array(z.string()).optional(),
-  expiresInDays: z.number().int().min(1).max(365).nullable().optional(),
-  rotate: z.boolean().optional(),
-});
 
 /**
  * PATCH  /api/developer/keys/$id — rename, re-scope, change expiry, or rotate
@@ -20,10 +14,11 @@ const patchSchema = z.object({
 export const Route = createFileRoute('/api/developer/keys/$id')({
   server: {
     handlers: {
-      PATCH: defineHandler(
+      PATCH: implement(
+        updateDeveloperKeyApi,
         {
           rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:developer/keys/:id' },
-          body: patchSchema,
+          body: patchKeyBody,
           allowEmptyBody: true,
           verboseValidationErrors: true,
         },
@@ -74,7 +69,8 @@ export const Route = createFileRoute('/api/developer/keys/$id')({
         },
       ),
 
-      DELETE: defineHandler(
+      DELETE: implement(
+        revokeDeveloperKeyApi,
         { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:developer/keys/:id' } },
         async ({ params, session }) => {
           const key = await prisma.developerApiKey.findUnique({

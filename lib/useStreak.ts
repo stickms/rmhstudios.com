@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useIdleReady } from '@/hooks/useIdleReady';
+import { api } from '@/lib/contract/client';
+import { checkInStreakApi, getStreakApi } from '@/lib/streak.contract';
 
 interface StreakState {
   current: number;
@@ -54,13 +56,10 @@ async function runCheckIn() {
 
   try {
     if (already) {
-      const res = await fetch('/api/streak', { credentials: 'include' });
-      if (res.ok) broadcast(await res.json());
+      broadcast(await api(getStreakApi));
       return;
     }
-    const res = await fetch('/api/streak', { method: 'POST', credentials: 'include' });
-    if (!res.ok) return;
-    const data: StreakState = await res.json();
+    const data: StreakState = await api(checkInStreakApi);
     broadcast(data);
     try {
       localStorage.setItem(LAST_CHECKIN_KEY, todayKey());

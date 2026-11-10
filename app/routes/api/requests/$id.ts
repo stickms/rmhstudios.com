@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getRequestApi, updateRequestApi } from '@/lib/requests/requests.contract';
 import { requestUpdateSchema } from '@/lib/requests/schema';
 import { getRequest, updateRequest, RequestBoardError } from '@/lib/requests/board.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
@@ -24,12 +25,17 @@ const STATUS_BY_CODE = {
 export const Route = createFileRoute('/api/requests/$id')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ params, userId }) => {
-        const request = await getRequest(params.id, userId);
-        if (!request) return Response.json({ error: 'Not found' }, { status: 404 });
-        return Response.json(request);
-      }),
-      PATCH: defineHandler(
+      GET: implement(
+        getRequestApi,
+        { auth: 'optional', rateLimit: 'read' },
+        async ({ params, userId }) => {
+          const request = await getRequest(params.id, userId);
+          if (!request) return Response.json({ error: 'Not found' }, { status: 404 });
+          return Response.json(request);
+        },
+      ),
+      PATCH: implement(
+        updateRequestApi,
         { auth: 'admin', rateLimit: 'write', body: requestUpdateSchema },
         async ({ params, userId, body }) => {
           try {
@@ -47,7 +53,10 @@ export const Route = createFileRoute('/api/requests/$id')({
             return Response.json(updated);
           } catch (error) {
             if (error instanceof RequestBoardError) {
-              return Response.json({ error: error.message }, { status: STATUS_BY_CODE[error.code] });
+              return Response.json(
+                { error: error.message },
+                { status: STATUS_BY_CODE[error.code] },
+              );
             }
             throw error;
           }
