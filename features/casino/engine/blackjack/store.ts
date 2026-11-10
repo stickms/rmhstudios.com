@@ -1,8 +1,10 @@
 import { create } from 'zustand';
+import type { RealtimeStatus } from '@/lib/shared/realtime/types';
 import type { TablePhase, PlayerSeatClient, RoundResultEntry, HandResult, RoomListEntry, RoomInfo } from './types';
 import type { Card } from './logic';
 
-type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+/** The shared realtime status contract (lib/shared/realtime/types.ts). */
+type ConnectionStatus = RealtimeStatus;
 type ViewMode = 'lobby' | 'room';
 
 interface BlackjackStore {
