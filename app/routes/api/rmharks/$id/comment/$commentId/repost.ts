@@ -1,8 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { canReadCommentThread } from '@/lib/feed/audience.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { repostCommentApi } from '@/lib/feed/rmhark-actions.contract';
 
 export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId/repost')({
   server: {
@@ -23,7 +25,8 @@ export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId/repost
           reposts.map((r) => ({ ...resolveUser(r.user), repostedAt: r.createdAt })),
         );
       }),
-      POST: defineHandler(
+      POST: implement(
+        repostCommentApi,
         { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'comment-repost' } },
         async ({ params, session }) => {
           const { commentId } = params;

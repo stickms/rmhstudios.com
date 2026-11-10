@@ -36,6 +36,9 @@ import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem, MenuSeparator } from '@/components/ui/menu';
 import { cn } from'@/lib/utils';
 import type { FeedItem } from'@/lib/feed-types';
+import { bookmarkPostApi, pinPostApi, deletePostApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
 
 // These dialogs render only after a menu action — code-split so they stay out of
 // the initial feed chunk and their (per-post) code isn't evaluated during
@@ -153,10 +156,8 @@ export function RMHarkOverflowMenu({
  runBookmark({
  apply: () => setBookmarked(next),
  rollback: () => setBookmarked(!next),
- commit: () =>
- fetch(`/api/rmharks/${actualId}/bookmark`, { method:'POST', credentials:'include'}),
- reconcile: async (res) => {
- const data = await res.json().catch(() => ({}));
+ commit: async () => {
+ const data = await api(bookmarkPostApi, { params: { id: actualId } });
  setBookmarked(!!data.bookmarked);
  onUpdate?.({ bookmarked: !!data.bookmarked });
  toast.success(
@@ -165,8 +166,8 @@ export function RMHarkOverflowMenu({
  : t('bookmark-removed', { defaultValue:'Removed from bookmarks'}),
  );
  },
- onError: (_err, res) => {
- if (res?.status === 401)
+ onError: (err) => {
+ if (err instanceof HttpError && err.status === 401)
  toast.error(t('bookmark-sign-in', { defaultValue:'Please sign in to bookmark posts.'}));
  },
  });
@@ -178,10 +179,8 @@ export function RMHarkOverflowMenu({
  runPin({
  apply: () => setPinned(next),
  rollback: () => setPinned(!next),
- commit: () =>
- fetch(`/api/rmharks/${actualId}/pin`, { method:'POST', credentials:'include'}),
- reconcile: async (res) => {
- const data = await res.json().catch(() => ({}));
+ commit: async () => {
+ const data = await api(pinPostApi, { params: { id: actualId } });
  setPinned(!!data.pinned);
  onUpdate?.({ pinned: !!data.pinned });
  toast.success(
@@ -190,17 +189,8 @@ export function RMHarkOverflowMenu({
  : t('unpinned-success', { defaultValue:'Unpinned'}),
  );
  },
- onError: (_err, res) => {
- if (res) {
- res
- .json()
- .catch(() => ({}))
- .then((data: { error?: string }) =>
- toast.error(data.error || t('pin-error', { defaultValue:'Could not pin post'})),
- );
- } else {
- toast.error(t('pin-error', { defaultValue:'Could not pin post'}));
- }
+ onError: (err) => {
+ toast.error(serverError(err) || t('pin-error', { defaultValue:'Could not pin post'}));
  },
  });
  };
@@ -215,7 +205,7 @@ export function RMHarkOverflowMenu({
  )
  return;
  try {
- await fetch(`/api/rmharks/${actualId}`, { method:'DELETE'});
+ await api(deletePostApi, { params: { id: actualId } });
  onRemove?.();
  } catch {
  // ignore — surface handles its own error UX

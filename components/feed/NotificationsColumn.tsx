@@ -37,6 +37,8 @@ import { SwipeRow } from'@/components/ui/swipe-row';
 import { IconButton } from'@/components/ui/icon-button';
 import type { RemindTarget } from'@/components/reminders/RemindMeDialog';
 import { isSiteRelativePath } from'@/lib/reminders/shared';
+import { getNotificationTogglesApi, setNotificationTogglesApi, markNotificationsReadApi } from '@/lib/preferences/preferences.contract';
+import { api } from '@/lib/contract/client';
 
 const RemindMeDialog = lazy(() => import('@/components/reminders/RemindMeDialog'));
 
@@ -190,10 +192,9 @@ function PreferencesPanel() {
 
  useEffect(() => {
  let cancelled = false;
- fetch('/api/notifications/preferences', { credentials:'include'})
- .then((res) => (res.ok ? res.json() : null))
+ api(getNotificationTogglesApi)
  .then((data) => {
- if (!cancelled && data) setPrefs(data);
+ if (!cancelled) setPrefs(data);
  })
  .catch(() => {});
  return () => {
@@ -209,13 +210,7 @@ function PreferencesPanel() {
  // Previously a failed PUT was swallowed, leaving the switch out of sync
  // with the server — now it reverts.
  rollback: () => setPrefs((p) => (p ? { ...p, [field]: !nextValue } : p)),
- commit: () =>
- fetch('/api/notifications/preferences', {
- method:'PUT',
- headers: {'Content-Type':'application/json'},
- credentials:'include',
- body: JSON.stringify({ [field]: nextValue }),
- }),
+ commit: () => api(setNotificationTogglesApi, { body: { [field]: nextValue } }),
  });
  };
 
@@ -313,12 +308,7 @@ export function NotificationsColumn({
  }
  // Mark everything read server-side, and reflect it locally so rows don't
  // stay visually unread (system notifications can't be"clicked"read).
- fetch('/api/notifications/read', {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- credentials:'include',
- body: JSON.stringify({ all: true }),
- })
+ api(markNotificationsReadApi, { body: { all: true } })
  .then(() => {
  if (active) setItems((prev) => prev.map((n) => ({ ...n, read: true })));
  // Tell the nav badge to refresh now instead of waiting for its poll.
@@ -339,12 +329,7 @@ export function NotificationsColumn({
  // badge-refresh event below change nothing on screen. Yield so the cleared
  // list paints before the request is built rather than after it.
  await yieldToMain();
- await fetch('/api/notifications/read', {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- credentials:'include',
- body: JSON.stringify({ all: true }),
- }).catch(() => {});
+ await api(markNotificationsReadApi, { body: { all: true } }).catch(() => {});
  // Refresh the nav badge immediately rather than on its next poll.
  window.dispatchEvent(new Event(NOTIFICATIONS_READ_EVENT));
  };

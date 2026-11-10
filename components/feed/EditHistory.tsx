@@ -23,11 +23,8 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { diffWords, diffStat, type PostVersion } from '@/lib/feed/word-diff';
 import { cn, relativeTimeShort } from '@/lib/utils';
-
-interface HistoryResponse {
-  postId: string;
-  versions: PostVersion[];
-}
+import { postHistoryApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
 
 /**
  * One version rendered as its diff against the version before it. The oldest
@@ -125,8 +122,7 @@ export function EditHistoryDialog({
     let cancelled = false;
     setLoading(true);
     setFailed(false);
-    fetch(`/api/rmharks/${postId}/history`, { credentials: 'include' })
-      .then((res) => (res.ok ? (res.json() as Promise<HistoryResponse>) : Promise.reject()))
+    api(postHistoryApi, { params: { id: postId } })
       .then((data) => {
         if (!cancelled) setVersions(data.versions);
       })

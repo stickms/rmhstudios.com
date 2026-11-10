@@ -16,6 +16,8 @@ import {
 import { formatClockTime, formatNumberPref } from '@/lib/access/format';
 import { isTouchPhone, motionPermissionGated, requestMotionPermission } from '@/lib/access/shake';
 import { activityNotificationsSupported } from '@/lib/access/activity';
+import { getNotificationMatrixApi } from '@/lib/preferences/preferences.contract';
+import { api } from '@/lib/contract/client';
 
 function Section({
   title,
@@ -110,10 +112,8 @@ export function AccessPrefsPanel() {
     setQuiet(readQuietHours() !== null);
     // Bedtime follows the quiet hours saved with the notification settings; mirror
     // them onto this device so the pre-paint script can read them without a request.
-    fetch('/api/preferences/notifications', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { quietStart?: number | null; quietEnd?: number | null } | null) => {
-        if (!d) return;
+    api(getNotificationMatrixApi)
+      .then((d) => {
         mirrorQuietHours(d.quietStart ?? null, d.quietEnd ?? null);
         setQuiet(readQuietHours() !== null);
       })

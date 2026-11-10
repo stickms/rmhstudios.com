@@ -1,8 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { invalidateNotificationPrefs } from '@/lib/notifications.server';
+import { getNotificationTogglesApi } from '@/lib/preferences/preferences.contract';
+import { setNotificationTogglesApi } from '@/lib/preferences/preferences.contract';
 
 /**
  * GET /api/notifications/preferences — the caller's per-type toggles
@@ -30,7 +32,7 @@ const prefsSchema = z.object({
 export const Route = createFileRoute('/api/notifications/preferences')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
+      GET: implement(getNotificationTogglesApi, {}, async ({ session }) => {
         const prefs = await prisma.notificationPreference.findUnique({
           where: { userId: session.user.id },
         });
@@ -38,17 +40,21 @@ export const Route = createFileRoute('/api/notifications/preferences')({
         return Response.json({ likes, comments, follows, mentions, reposts, system });
       }),
 
-      PUT: defineHandler({ body: prefsSchema }, async ({ session, body }) => {
-        const prefs = await prisma.notificationPreference.upsert({
-          where: { userId: session.user.id },
-          create: { userId: session.user.id, ...body },
-          update: body,
-        });
-        // perf: createNotification() caches mute prefs for 60s; drop it so the toggle is instant.
-        invalidateNotificationPrefs(session.user.id);
-        const { likes, comments, follows, mentions, reposts, system } = prefs;
-        return Response.json({ likes, comments, follows, mentions, reposts, system });
-      }),
+      PUT: implement(
+        setNotificationTogglesApi,
+        { body: prefsSchema },
+        async ({ session, body }) => {
+          const prefs = await prisma.notificationPreference.upsert({
+            where: { userId: session.user.id },
+            create: { userId: session.user.id, ...body },
+            update: body,
+          });
+          // perf: createNotification() caches mute prefs for 60s; drop it so the toggle is instant.
+          invalidateNotificationPrefs(session.user.id);
+          const { likes, comments, follows, mentions, reposts, system } = prefs;
+          return Response.json({ likes, comments, follows, mentions, reposts, system });
+        },
+      ),
     },
   },
 });

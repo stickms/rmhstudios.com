@@ -15,6 +15,8 @@ import { Select } from '@/components/ui/select';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { mergeImportedWords, serializeMutedWords } from '@/lib/feed/muted-import';
 import { MUTE_DURATIONS, type MuteDuration, type MutedExpiries } from '@/lib/feed/muted-expiry';
+import { getMutedWordsApi, setMutedWordsApi } from '@/lib/preferences/preferences.contract';
+import { api } from '@/lib/contract/client';
 
 const MAX_WORDS = 100;
 const MAX_WORD_LEN = 50;
@@ -44,13 +46,14 @@ export function MutedWordsPanel() {
     let active = true;
     (async () => {
       try {
-        const res = await fetch('/api/preferences/muted-words', { credentials: 'include' });
-        if (res.ok && active) {
-          const data = await res.json();
-          setWords(Array.isArray(data.words) ? data.words : []);
-          setExpiries(data.expiries && typeof data.expiries === 'object' ? data.expiries : {});
-        }
-      } finally {
+        const data = await api(getMutedWordsApi);
+ if (active) {
+ setWords(Array.isArray(data.words) ? data.words : []);
+ setExpiries(data.expiries && typeof data.expiries === 'object' ? data.expiries : {});
+ }
+ } catch {
+ // Leave the list empty — same as a non-ok answer before.
+ } finally {
         if (active) setLoading(false);
       }
     })();
@@ -68,19 +71,7 @@ export function MutedWordsPanel() {
     ) => {
       setSaving(true);
       try {
-        const res = await fetch('/api/preferences/muted-words', {
-          method: 'PUT',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ words: next, expiries: nextExpiries }),
-        });
-        if (!res.ok) {
-          setWords(previous); // revert optimistic change
-          setExpiries(previousExpiries);
-          toast.error(t('muted-save-failed', { defaultValue: 'Could not save muted words.' }));
-          return;
-        }
-        const data = await res.json();
+        const data = await api(setMutedWordsApi, { body: { words: next, expiries: nextExpiries } });
         // Trust the server's normalized list.
         if (Array.isArray(data.words)) setWords(data.words);
         if (data.expiries && typeof data.expiries === 'object') setExpiries(data.expiries);

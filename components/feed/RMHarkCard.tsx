@@ -37,6 +37,8 @@ import { useTranslation } from'react-i18next';
 import { useLocaleStore } from'@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from'@/lib/i18n/config';
 import { prefetchPostDetail } from '@/lib/feed/post-detail-prefetch';
+import { reactToPostApi, viewPostApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
 
 interface RMHarkCardProps {
  item: FeedItem;
@@ -98,12 +100,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  const prev = item.reactions;
  updateItem(item.id, { reactions: applyReactionToggle(item.reactions ?? [], emoji) });
  try {
- const res = await fetch(`/api/rmharks/${actualId}/react`, {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ emoji }),
- });
- if (!res.ok) throw new Error('react failed');
+ await api(reactToPostApi, { params: { id: actualId }, body: { emoji } });
  } catch {
  updateItem(item.id, { reactions: prev });
  }
@@ -164,7 +161,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  const track = () => {
  if (viewTracked.current) return;
  viewTracked.current = true;
- fetch(`/api/rmharks/${actualId}/view`, { method:'POST'}).catch(() => {});
+ api(viewPostApi, { params: { id: actualId } }).catch(() => {});
  };
 
  // Fallback for environments without IntersectionObserver: keep the old

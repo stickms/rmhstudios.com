@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { listQuotes } from '@/lib/feed/quotes.server';
+import { postQuotesApi } from '@/lib/feed/rmhark-actions.contract';
 
 /**
  * GET /api/rmharks/$id/quotes — every quote-post of a post, newest first,
@@ -10,7 +11,8 @@ import { listQuotes } from '@/lib/feed/quotes.server';
 export const Route = createFileRoute('/api/rmharks/$id/quotes')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        postQuotesApi,
         {
           auth: 'optional',
           rateLimit: 'read',

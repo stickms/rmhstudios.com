@@ -19,6 +19,9 @@ import { ColumnHeader } from './ColumnHeader';
 import { Tabs } from '@/components/ui/tabs';
 import { Reveal } from '@/components/motion';
 import { ShopWishButton } from '@/components/economy-plus/ShopWishButton';
+import { getShopApi, purchaseShopItemApi, equipShopItemApi } from '@/lib/shop/shop.contract';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
 
 export interface ShopItemView {
   id: string;
@@ -143,13 +146,12 @@ export function ShopColumn({
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/shop', { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setItems(data.items);
-        setCoins(data.coins);
-        setSignedIn(data.signedIn);
-      }
+      const data = await api(getShopApi);
+      setItems(data.items);
+      setCoins(data.coins);
+      setSignedIn(data.signedIn);
+    } catch {
+      // Keep what is on screen — a failed load was silent before too.
     } finally {
       setLoading(false);
     }
@@ -163,22 +165,12 @@ export function ShopColumn({
   const buy = async (item: ShopItemView) => {
     setBusy(item.id);
     try {
-      const res = await fetch('/api/shop/purchase', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ itemId: item.id }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        toast.success(
-          t('purchased-item', { name: item.name, defaultValue: 'Purchased {{name}}!' }),
-        );
-        setCoins(data.newBalance);
-        setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, owned: true } : i)));
-      } else {
-        toast.error(data.error || t('purchase-failed', { defaultValue: 'Purchase failed' }));
-      }
+      const data = await api(purchaseShopItemApi, { body: { itemId: item.id } });
+      toast.success(t('purchased-item', { name: item.name, defaultValue: 'Purchased {{name}}!' }));
+      setCoins(data.newBalance);
+      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, owned: true } : i)));
+    } catch (e) {
+      toast.error(serverError(e) || t('purchase-failed', { defaultValue: 'Purchase failed' }));
     } finally {
       setBusy(null);
     }
@@ -187,19 +179,14 @@ export function ShopColumn({
   const equip = async (item: ShopItemView, equipped: boolean) => {
     setBusy(item.id);
     try {
-      const res = await fetch('/api/shop/equip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ itemId: item.id, equipped }),
-      });
-      if (res.ok) {
-        setItems((prev) =>
-          prev.map((i) =>
-            i.kind === item.kind ? { ...i, equipped: i.id === item.id ? equipped : false } : i,
-          ),
-        );
-      }
+      await api(equipShopItemApi, { body: { itemId: item.id, equipped } });
+      setItems((prev) =>
+        prev.map((i) =>
+          i.kind === item.kind ? { ...i, equipped: i.id === item.id ? equipped : false } : i,
+        ),
+      );
+    } catch {
+      // A failed equip leaves the row as it was — silent before too.
     } finally {
       setBusy(null);
     }

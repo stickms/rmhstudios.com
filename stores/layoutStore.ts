@@ -7,6 +7,9 @@ import {
   LAYOUT_SIDEBAR_KEY,
   LAYOUT_HOMESTACK_KEY,
 } from '@/lib/home-widgets';
+import type { LayoutPrefsInput } from '@/lib/home-widgets-schema';
+import { getLayoutPrefsApi, setLayoutPrefsApi } from '@/lib/preferences/preferences.contract';
+import { api } from '@/lib/contract/client';
 
 /**
  * Layout customization store (§15) — the applied sidebar pin/hide + home widget
@@ -35,11 +38,8 @@ function writeMirror(key: string, value: unknown) {
 
 async function persist(body: { sidebar?: SidebarPref; homeStack?: HomeStackItem[] }) {
   try {
-    await fetch('/api/preferences/layout', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    // The store holds plain string ids; the server validates them against the known set.
+    await api(setLayoutPrefsApi, { body: body as LayoutPrefsInput });
   } catch {
     /* best-effort — the mirror already reflects the change locally */
   }
@@ -89,10 +89,8 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
     });
     set({ sidebar: applied.sidebar, homeStack: applied.homeStack, hydrated: true });
     // Then reconcile with the account (cross-device). 401 for signed-out is fine.
-    fetch('/api/preferences/layout')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { sidebar?: unknown; homeStack?: unknown } | null) => {
-        if (!d) return;
+    api(getLayoutPrefsApi)
+      .then((d) => {
         const server = parseLayoutPref(d);
         const patch: Partial<Pick<LayoutStore, 'sidebar' | 'homeStack'>> = {};
         if (!editedSinceHydrate.sidebar) {

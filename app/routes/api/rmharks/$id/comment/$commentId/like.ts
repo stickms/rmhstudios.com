@@ -1,8 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { canReadCommentThread } from '@/lib/feed/audience.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { likeCommentApi } from '@/lib/feed/rmhark-actions.contract';
 
 export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId/like')({
   server: {
@@ -21,7 +23,8 @@ export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId/like')
         });
         return Response.json(likes.map((l) => ({ ...resolveUser(l.user), likedAt: l.createdAt })));
       }),
-      POST: defineHandler(
+      POST: implement(
+        likeCommentApi,
         { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'comment-like' } },
         async ({ params, session }) => {
           const { commentId } = params;

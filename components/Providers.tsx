@@ -80,7 +80,12 @@ import { recoverViewTransition } from '@/lib/view-transition';
 import { AppTierContext } from '@/components/ui/app-tier-context';
 import { installScrollbarReveal } from '@/lib/scrollbar-reveal';
 import { installSwapReveal } from '@/lib/swap-reveal';
-import { isRetryable, maxRetries, retryDelayMs } from '@/lib/http';
+import { HttpError, isRetryable, maxRetries, retryDelayMs } from '@/lib/http';
+import {
+  getAppearancePrefsApi,
+  setAppearancePrefsApi,
+} from '@/lib/preferences/preferences.contract';
+import { api } from '@/lib/contract/client';
 
 // perf audit §4.3: build the QueryClient PER component instance (via useState
 // below), not once at module scope. A module-scope client is shared by every
@@ -774,12 +779,7 @@ export function Providers({
   // last-saved value so the change-watcher below never echoes it straight back.
   const saveAppearance = useCallback((next: { style: string; accent: string | null }) => {
     lastSavedAppearanceRef.current = next;
-    fetch('/api/preferences/appearance', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(next),
-    }).catch((err) => {
+    api(setAppearancePrefsApi, { body: next }).catch((err) => {
       console.error('Appearance save failed:', err);
     });
   }, []);
@@ -794,81 +794,70 @@ export function Providers({
     // the account sync only reconciles across devices, so it can wait for idle.
     if (!idleReady) return;
     let cancelled = false;
-    fetch('/api/preferences/appearance', { credentials: 'include' })
-      .then((r) => {
+    api(getAppearancePrefsApi)
+      .catch((err: unknown) => {
         // A failed GET is not "no saved preferences" — it means the account's
         // appearance is unknown. Swallowing it silently is how a 500 on every
         // signed-in page load (a missing column, see the appearance migration)
         // went unnoticed while cross-device settings quietly stopped syncing.
-        if (!r.ok) {
-          if (r.status !== 401) {
-            console.error(`Appearance sync failed: ${r.status} ${r.statusText}`);
-          }
-          return null;
+        if (err instanceof HttpError && err.status !== 401) {
+          console.error(`Appearance sync failed: ${err.status}`);
         }
-        return r.json();
+        return null;
       })
-      .then(
-        (
-          remote: {
-            style: string | null;
-            accent: string | null;
-          } | null,
-        ) => {
-          if (cancelled || !remote) return;
-          const store = useThemeStore.getState();
-          // The account wins where it has a saved value; otherwise this device's
-          // current value is kept.
-          const nextStyle =
-            remote.style && SITE_STYLES.some((s) => s.id === remote.style)
-              ? (remote.style as SiteStyle)
-              : store.style;
-          const nextAccent = isAccentId(remote.accent) ? remote.accent : store.accent;
-          if (remote.style !== nextStyle || remote.accent !== nextAccent) {
-            // Server was missing a value this device has → seed the account with the
-            // merged result (also records it as last-saved).
-            saveAppearance({
-              style: nextStyle,
-              accent: nextAccent,
-            });
-          } else {
-            lastSavedAppearanceRef.current = {
-              style: nextStyle,
-              accent: nextAccent,
-            };
-          }
-          store.setStyle(nextStyle);
-          store.setAccent(nextAccent);
-          // Comfort suite (§13): apply account values on this device (account
-          // wins where set; the settings panel persists device changes).
-          const r = remote as typeof remote & {
-            fontScale?: number | null;
-            density?: string | null;
-            readableFont?: boolean | null;
-            customAccent?: string | null;
-            colorVision?: string | null;
-            navTransition?: string | null;
-            alwaysEvertGlobe?: boolean | null;
-            eversionLevel?: string | null;
-            jellyMotion?: string | null;
-            electricArcs?: string | null;
+      .then((remote) => {
+        if (cancelled || !remote) return;
+        const store = useThemeStore.getState();
+        // The account wins where it has a saved value; otherwise this device's
+        // current value is kept.
+        const nextStyle =
+          remote.style && SITE_STYLES.some((s) => s.id === remote.style)
+            ? (remote.style as SiteStyle)
+            : store.style;
+        const nextAccent = isAccentId(remote.accent) ? remote.accent : store.accent;
+        if (remote.style !== nextStyle || remote.accent !== nextAccent) {
+          // Server was missing a value this device has → seed the account with the
+          // merged result (also records it as last-saved).
+          saveAppearance({
+            style: nextStyle,
+            accent: nextAccent,
+          });
+        } else {
+          lastSavedAppearanceRef.current = {
+            style: nextStyle,
+            accent: nextAccent,
           };
-          if ([875, 1000, 1125, 1250].includes(Number(r.fontScale)))
-            store.setFontScale(Number(r.fontScale));
-          if (r.density === 'compact' || r.density === 'cozy') store.setDensity(r.density);
-          if (typeof r.readableFont === 'boolean') store.setReadableFont(r.readableFont);
-          if (typeof r.customAccent === 'string' && HEX_RE.test(r.customAccent))
-            store.setCustomAccent(r.customAccent);
-          if (isColorVisionMode(r.colorVision)) store.setColorVision(r.colorVision);
-          if (isNavTransition(r.navTransition)) store.setNavTransition(r.navTransition);
-          if (typeof r.alwaysEvertGlobe === 'boolean')
-            store.setAlwaysEvertGlobe(r.alwaysEvertGlobe);
-          if (isEversionLevel(r.eversionLevel)) store.setEversionLevel(r.eversionLevel);
-          if (isJellyMotion(r.jellyMotion)) store.setJellyMotion(r.jellyMotion);
-          if (isElectricArcs(r.electricArcs)) store.setElectricArcs(r.electricArcs);
-          appearanceSyncedRef.current = true;
-        },
-      )
+        }
+        store.setStyle(nextStyle);
+        store.setAccent(nextAccent);
+        // Comfort suite (§13): apply account values on this device (account
+        // wins where set; the settings panel persists device changes).
+        const r = remote as typeof remote & {
+          fontScale?: number | null;
+          density?: string | null;
+          readableFont?: boolean | null;
+          customAccent?: string | null;
+          colorVision?: string | null;
+          navTransition?: string | null;
+          alwaysEvertGlobe?: boolean | null;
+          eversionLevel?: string | null;
+          jellyMotion?: string | null;
+          electricArcs?: string | null;
+        };
+        if ([875, 1000, 1125, 1250].includes(Number(r.fontScale)))
+          store.setFontScale(Number(r.fontScale));
+        if (r.density === 'compact' || r.density === 'cozy') store.setDensity(r.density);
+        if (typeof r.readableFont === 'boolean') store.setReadableFont(r.readableFont);
+        if (typeof r.customAccent === 'string' && HEX_RE.test(r.customAccent))
+          store.setCustomAccent(r.customAccent);
+        if (isColorVisionMode(r.colorVision)) store.setColorVision(r.colorVision);
+        if (isNavTransition(r.navTransition)) store.setNavTransition(r.navTransition);
+        if (typeof r.alwaysEvertGlobe === 'boolean') store.setAlwaysEvertGlobe(r.alwaysEvertGlobe);
+        if (isEversionLevel(r.eversionLevel)) store.setEversionLevel(r.eversionLevel);
+        if (isJellyMotion(r.jellyMotion)) store.setJellyMotion(r.jellyMotion);
+        if (isElectricArcs(r.electricArcs)) store.setElectricArcs(r.electricArcs);
+        appearanceSyncedRef.current = true;
+      })
       .catch(() => {});
     return () => {
       cancelled = true;

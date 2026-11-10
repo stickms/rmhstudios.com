@@ -11,6 +11,8 @@ import { relativeTimeShort } from '@/lib/utils';
 import { UserAvatar } from './UserAvatar';
 import type { FeedItem } from '@/lib/feed-types';
 import type { QuotesPage } from '@/lib/feed/quotes';
+import { postQuotesApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
 
 /**
  * X10 — the "Quotes" view for a post: every quote-post of it, newest first,
@@ -74,10 +76,10 @@ export function QuotesDialog({
       setLoading(true);
       setFailed(false);
       try {
-        const qs = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
-        const res = await fetch(`/api/rmharks/${postId}/quotes${qs}`, { credentials: 'include' });
-        if (!res.ok) throw new Error(String(res.status));
-        const next = (await res.json()) as QuotesPage;
+        const next = await api(postQuotesApi, {
+          params: { id: postId },
+          query: cursor ? { cursor } : {},
+        });
         setPage((prev) =>
           cursor && prev
             ? { items: [...prev.items, ...next.items], nextCursor: next.nextCursor }

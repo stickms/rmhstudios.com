@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
@@ -12,6 +13,7 @@ import { getBlockedAuthorIds } from '@/lib/moderation.server';
 import { isLocked } from '@/lib/feed/map-feed-item.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { isExpired } from '@/lib/posts-plus/constants';
+import { deletePostApi } from '@/lib/feed/rmhark-actions.contract';
 
 export const Route = createFileRoute('/api/rmharks/$id')({
   server: {
@@ -146,7 +148,7 @@ export const Route = createFileRoute('/api/rmharks/$id')({
             : undefined,
         });
       }),
-      DELETE: defineHandler({}, async ({ params, session }) => {
+      DELETE: implement(deletePostApi, {}, async ({ params, session }) => {
         const { id } = params;
 
         const rmhark = await prisma.rMHark.findUnique({

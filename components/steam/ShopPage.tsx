@@ -6,6 +6,9 @@ import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { KIND_LABELS, KIND_ORDER, RARITY_COLORS, type ShopItemKind } from '@/lib/shop/catalog';
 import { StoreNav } from './StoreNav';
 import { canBuy, visibleShopItems, type SteamShopItem } from './shop-view';
+import { purchaseShopItemApi, equipShopItemApi } from '@/lib/shop/shop.contract';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
 
 interface ShopPageData {
   coins: number;
@@ -45,21 +48,13 @@ export function ShopPage({ data }: { data: ShopPageData }) {
   const buy = async (item: SteamShopItem) => {
     setBusy(item.id);
     try {
-      const res = await fetch('/api/shop/purchase', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ itemId: item.id }),
-      });
-      const body = (await res.json().catch(() => ({}))) as { newBalance?: number; error?: string };
-      if (res.ok) {
-        toast.success(t('steam-shop-bought', { defaultValue: 'Purchased {{name}}', name: item.name }));
-        if (typeof body.newBalance === 'number') setCoins(body.newBalance);
-        setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, owned: true } : i)));
-      } else {
-        toast.error(body.error ?? t('steam-shop-failed', { defaultValue: 'That purchase did not go through.' }));
-      }
-    } finally {
+      const body = await api(purchaseShopItemApi, { body: { itemId: item.id } });
+ toast.success(t('steam-shop-bought', { defaultValue: 'Purchased {{name}}', name: item.name }));
+ if (typeof body.newBalance === 'number') setCoins(body.newBalance);
+ setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, owned: true } : i)));
+ } catch (e) {
+ toast.error(serverError(e) ?? t('steam-shop-failed', { defaultValue: 'That purchase did not go through.' }));
+ } finally {
       setBusy(null);
     }
   };
@@ -67,22 +62,15 @@ export function ShopPage({ data }: { data: ShopPageData }) {
   const equip = async (item: SteamShopItem, equipped: boolean) => {
     setBusy(item.id);
     try {
-      const res = await fetch('/api/shop/equip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ itemId: item.id, equipped }),
-      });
-      if (res.ok) {
-        setItems((prev) =>
-          prev.map((i) =>
-            i.kind === item.kind ? { ...i, equipped: i.id === item.id ? equipped : false } : i,
-          ),
-        );
-      } else {
-        toast.error(t('steam-shop-equip-failed', { defaultValue: 'Could not change what is equipped.' }));
-      }
-    } finally {
+      await api(equipShopItemApi, { body: { itemId: item.id, equipped } });
+ setItems((prev) =>
+ prev.map((i) =>
+ i.kind === item.kind ? { ...i, equipped: i.id === item.id ? equipped : false } : i,
+ ),
+ );
+ } catch {
+ toast.error(t('steam-shop-equip-failed', { defaultValue: 'Could not change what is equipped.' }));
+ } finally {
       setBusy(null);
     }
   };

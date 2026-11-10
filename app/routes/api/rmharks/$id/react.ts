@@ -1,14 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { z } from 'zod';
 import { isValidReactionEmoji } from '@/lib/social/reactions';
 import { togglePostReaction } from '@/lib/social/reactions.server';
+import { reactToPostApi } from '@/lib/feed/rmhark-actions.contract';
 
 /** POST /api/rmharks/$id/react — toggle an emoji reaction on a post. */
 export const Route = createFileRoute('/api/rmharks/$id/react')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        reactToPostApi,
         { rateLimit: { limit: 60, windowMs: 60_000, prefix: 'reaction' } },
         async ({ request, params, session }) => {
           const { id } = params;

@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { RMHarkCard } from './RMHarkCard';
 import { Reveal } from '@/components/motion';
 import type { FeedItem } from '@/lib/feed-types';
+import { similarPostsApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
 
 /** Topically similar posts ("more like this"), shown under a post. */
 export function RelatedPosts({ postId }: { postId: string }) {
@@ -11,8 +13,7 @@ export function RelatedPosts({ postId }: { postId: string }) {
 
   useEffect(() => {
     let active = true;
-    fetch(`/api/rmharks/${postId}/similar`, { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : { items: [] }))
+    api(similarPostsApi, { params: { id: postId } })
       .then((d) => active && setItems(d.items ?? []))
       .catch(() => {});
     return () => {

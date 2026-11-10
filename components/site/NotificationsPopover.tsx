@@ -17,6 +17,8 @@ import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
 import { timeAgoShort } from '@/lib/utils';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MENU_ITEM_ATTR } from '@/components/ui/menu';
+import { listNotificationsApi, markNotificationsReadApi } from '@/lib/preferences/preferences.contract';
+import { api } from '@/lib/contract/client';
 
 /**
  * Rows the popover asks for — and what the loading skeleton reserves, which only
@@ -93,10 +95,8 @@ export function NotificationsPopover({
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`/api/notifications?limit=${PREVIEW_LIMIT}`, { credentials: 'include' });
-      if (!res.ok) return;
-      const data = await res.json();
-      setItems(data.items ?? []);
+      const data = await api(listNotificationsApi, { query: { limit: PREVIEW_LIMIT } });
+ setItems(data.items ?? []);
     } catch {
       // Leave the spinner; the "see all" link still works.
     }
@@ -115,12 +115,7 @@ export function NotificationsPopover({
 
   const markAllRead = async () => {
     try {
-      await fetch('/api/notifications/read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ all: true }),
-      });
+      await api(markNotificationsReadApi, { body: { all: true } });
       setItems((prev) => prev?.map((n) => ({ ...n, read: true })) ?? prev);
       window.dispatchEvent(new Event(NOTIFICATIONS_READ_EVENT));
       refreshCount();
@@ -132,12 +127,7 @@ export function NotificationsPopover({
   const onItemClick = (n: NotificationItem) => {
     setOpen(false);
     if (!n.read) {
-      fetch('/api/notifications/read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ ids: [n.id] }),
-      })
+      api(markNotificationsReadApi, { body: { ids: [n.id] } })
         .then(() => {
           window.dispatchEvent(new Event(NOTIFICATIONS_READ_EVENT));
           refreshCount();

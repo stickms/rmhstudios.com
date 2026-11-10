@@ -8,6 +8,9 @@ import type { DailyShopView } from '@/lib/shop/daily-shop';
 import { Swatch } from './ShopPage';
 import { StoreNav } from './StoreNav';
 import { timeUntil } from './store-view';
+import { purchaseShopItemApi } from '@/lib/shop/shop.contract';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
 
 /** Today's featured items, drawn as Steam draws its daily deals. */
 export function DailyPage({ data }: { data: DailyShopView }) {
@@ -21,21 +24,13 @@ export function DailyPage({ data }: { data: DailyShopView }) {
   const buy = async (id: string, name: string) => {
     setBusy(id);
     try {
-      const res = await fetch('/api/shop/purchase', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ itemId: id }),
-      });
-      const body = (await res.json().catch(() => ({}))) as { newBalance?: number; error?: string };
-      if (res.ok) {
-        toast.success(t('steam-shop-bought', { defaultValue: 'Purchased {{name}}', name }));
-        if (typeof body.newBalance === 'number') setCoins(body.newBalance);
-        setItems((prev) => prev.map((i) => (i.id === id ? { ...i, owned: true } : i)));
-      } else {
-        toast.error(body.error ?? t('steam-shop-failed', { defaultValue: 'That purchase did not go through.' }));
-      }
-    } finally {
+      const body = await api(purchaseShopItemApi, { body: { itemId: id } });
+ toast.success(t('steam-shop-bought', { defaultValue: 'Purchased {{name}}', name }));
+ if (typeof body.newBalance === 'number') setCoins(body.newBalance);
+ setItems((prev) => prev.map((i) => (i.id === id ? { ...i, owned: true } : i)));
+ } catch (e) {
+ toast.error(serverError(e) ?? t('steam-shop-failed', { defaultValue: 'That purchase did not go through.' }));
+ } finally {
       setBusy(null);
     }
   };

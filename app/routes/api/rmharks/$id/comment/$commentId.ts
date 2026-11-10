@@ -1,12 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
+import { deleteCommentApi } from '@/lib/feed/rmhark-actions.contract';
 
 export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId')({
   server: {
     handlers: {
-      DELETE: defineHandler({}, async ({ params, session }) => {
+      DELETE: implement(deleteCommentApi, {}, async ({ params, session }) => {
         const { commentId } = params;
 
         const comment = await prisma.rMHarkComment.findUnique({
