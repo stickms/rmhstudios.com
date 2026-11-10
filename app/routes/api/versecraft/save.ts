@@ -18,9 +18,9 @@ export const Route = createFileRoute('/api/versecraft/save')({
           saveData: (save?.saveData ?? null) as GameState | null,
           progress: progress
             ? {
-                completedChapters: progress.completedChapters,
-                unlockedEndings: progress.unlockedEndings,
-                completedRoutes: progress.completedRoutes,
+                completedChapters: progress.completedChapters as string[],
+                unlockedEndings: progress.unlockedEndings as string[],
+                completedRoutes: progress.completedRoutes as string[],
                 totalPoemsWritten: progress.totalPoemsWritten,
                 totalPlaytime: progress.totalPlaytime,
               }
@@ -75,13 +75,13 @@ export const Route = createFileRoute('/api/versecraft/save')({
               },
               update: {
                 ...(progress.completedChapters !== undefined && {
-                  completedChapters: progress.completedChapters,
+                  completedChapters: progress.completedChapters as string[],
                 }),
                 ...(progress.unlockedEndings !== undefined && {
-                  unlockedEndings: progress.unlockedEndings,
+                  unlockedEndings: progress.unlockedEndings as string[],
                 }),
                 ...(progress.completedRoutes !== undefined && {
-                  completedRoutes: progress.completedRoutes,
+                  completedRoutes: progress.completedRoutes as string[],
                 }),
                 ...(progress.totalPoemsWritten !== undefined && {
                   totalPoemsWritten: progress.totalPoemsWritten,

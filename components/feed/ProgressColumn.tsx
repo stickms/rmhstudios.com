@@ -29,9 +29,9 @@ import {
  claimBattlePassTierApi,
  claimQuestApi,
  unlockBattlePassApi,
- type BattlePassPayload,
- type ProgressPayload,
+ type QuestView,
 } from'@/lib/battlepass/battlepass.contract';
+import type { PassReward, PassTier } from '@/lib/battlepass/season';
 
 export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } = {}) {
  const { t } = useTranslation('feed');

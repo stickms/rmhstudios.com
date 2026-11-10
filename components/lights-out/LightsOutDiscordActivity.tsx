@@ -91,7 +91,7 @@ async function fetchDailyCompletion(discordId: string, dateKey: string): Promise
         const data = await api(getDiscordEmbedCompletionApi, { query: { discordId, dateKey } });
         if (data.completed) {
             const completion: DailyCompletion = {
-                moves: data.moves,
+                moves: data.moves ?? 0,
                 optimalMoves: null, // not stored in DB
                 ratingLabel: data.ratingLabel ?? 'Solved!',
                 ratingEmoji: data.ratingEmoji ?? '\u{1F4A1}',
@@ -705,7 +705,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
 
                 if (data.completed) {
                     setGrid(createEmptyGrid(shape));
-                    setMoves(data.moves);
+                    setMoves(data.moves ?? 0);
                     setSolved(true);
                     setRatingLabel(data.ratingLabel ?? 'Solved!');
                     setRatingEmoji(data.ratingEmoji ?? '\u{1F4A1}');
@@ -713,7 +713,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
                     setScoreSynced(true);
                     // Notify embed even when revisiting a completed puzzle
                     notifyEmbed(discord, 'completed', todayKey, {
-                        moves: data.moves,
+                        moves: data.moves ?? 0,
                         optimalMoves: opt,
                         ratingEmoji: data.ratingEmoji ?? '\u{1F4A1}',
                         ratingLabel: data.ratingLabel ?? 'Solved!',
@@ -725,7 +725,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
                     } catch {
                         setGrid(initialGrid);
                     }
-                    setMoves(data.moves);
+                    setMoves(data.moves ?? 0);
                 } else {
                     // Fresh puzzle
                     setGrid(initialGrid);
