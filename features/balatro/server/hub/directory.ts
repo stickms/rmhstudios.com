@@ -19,10 +19,10 @@
  */
 
 import type { z } from 'zod';
-import { SignalHub, type HubMember, type HubRoom } from '../p2p/signal-hub';
-import { generateRoomCode } from '../utils';
-import { BALATRO_LIMITS, BALATRO_RELAY_LIMITS } from '../../../features/balatro/engine/net/limits';
-import type { BALATRO_C2S, BALATRO_S2C, LobbyKind, QueueMode } from '../../../features/balatro/engine/net/events';
+import { SignalHub, type HubMember, type HubRoom } from '../../../../server/socket-server/p2p/signal-hub';
+import { generateRoomCode } from '../../../../server/socket-server/utils';
+import { BALATRO_LIMITS, BALATRO_RELAY_LIMITS } from '../../engine/net/limits';
+import type { BALATRO_C2S, BALATRO_S2C, LobbyKind, QueueMode } from '../../engine/net/events';
 
 export type BalatroHostState = z.infer<(typeof BALATRO_C2S)['balatro:p2p:state']>;
 export type BalatroLobbyListing = z.infer<(typeof BALATRO_S2C)['balatro:spectate:lobbies']>['lobbies'][number];
@@ -65,7 +65,7 @@ export const ROSTERS_MAX = 4;
 
 let onHostTimeout: ((room: BalatroRoom) => void) | null = null;
 
-/** The handler (handlers/balatro-p2p.ts) decides what a host timeout does; it owns the sockets. */
+/** The handler (server/p2p.ts) decides what a host timeout does; it owns the sockets. */
 export function setBalatroHostTimeoutHandler(fn: ((room: BalatroRoom) => void) | null): void {
   onHostTimeout = fn;
 }

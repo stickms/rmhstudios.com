@@ -4,7 +4,7 @@
  * Sending: `balatro:invite {code, toUserId}`. The hub only lets a seated
  * player invite a mutual follow into its own lobby, budgets invites per
  * account, delivers `balatro:invited` live and leaves a notification for an
- * invitee with no hub connection (handlers/balatro-queue.ts). The contract
+ * invitee with no hub connection (server/queue.ts). The contract
  * has no success acknowledgement, so the outcome of an invite is "no error
  * within `INVITE_SETTLE_MS`"; invites are sent one at a time so an error is
  * never pinned on the wrong friend.

@@ -21,7 +21,7 @@
  *      down in the match), then the earliest player gets
  *      `matched {role:'host', waiting:n}` and the others `matched {role:'member'}`.
  *   3. **Host claim.** The elected host creates the room with an ordinary
- *      `balatro:p2p:host {kind:'casual'}` (handlers/balatro-p2p.ts). The hub
+ *      `balatro:p2p:host {kind:'casual'}` (server/p2p.ts). The hub
  *      watches for that room (same account, mode and hash) and then sends
  *      each member `matched {role:'member', code, waiting:n}`. If the host
  *      does not host within 15 s, or drops, the match falls through: solo
@@ -42,10 +42,10 @@
  */
 
 import type { Server, Socket } from 'socket.io';
-import { logger } from '../logger';
-import { checkRateLimit } from '../rate-limit';
-import { getPrismaClient } from '../prisma-client';
-import { bindEvents, type Handlers } from '../../shared/typed-socket';
+import { logger } from '../../../server/socket-server/logger';
+import { checkRateLimit } from '../../../server/socket-server/rate-limit';
+import { getPrismaClient } from '../../../server/socket-server/prisma-client';
+import { bindEvents, type Handlers } from '../../../server/shared/typed-socket';
 import {
   BALATRO_S2C_EVENTS,
   type BalatroHubErrorCode,
@@ -53,11 +53,11 @@ import {
   type BalatroS2CPayload,
   type QueueMode,
   zQueueMode,
-} from '../../../features/balatro/engine/net/events';
-import { BALATRO_LIMITS } from '../../../features/balatro/engine/net/limits';
+} from '../engine/net/events';
+import { BALATRO_LIMITS } from '../engine/net/limits';
 import { LOBBY_LINK_PARAM } from '../../../lib/lobby-link';
-import { balatroAccount, pickBalatroEvents } from './balatro-p2p';
-import { balatroHub, casualSeatsByMode, listSpectatableLobbies, seatOf, unseatAll, type BalatroRoom } from '../balatro/directory';
+import { balatroAccount, pickBalatroEvents } from './p2p';
+import { balatroHub, casualSeatsByMode, listSpectatableLobbies, seatOf, unseatAll, type BalatroRoom } from './hub/directory';
 import {
   InviteBudget,
   NotifyDedupe,
@@ -67,7 +67,7 @@ import {
   type QueueMatch,
   type QueuePlayer,
   type QueueTicket,
-} from '../balatro/queue';
+} from './hub/queue';
 
 export const BALATRO_QUEUE_C2S_EVENTS = [
   'balatro:queue:join',

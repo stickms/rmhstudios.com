@@ -1,7 +1,7 @@
 /**
  * Balatro multiplayer needs an account — every inbound `balatro:*` event,
- * enforced on the hub (handlers/balatro-p2p.ts and the matchmaking handler,
- * ../balatro-queue.ts).
+ * enforced on the hub (server/p2p.ts and the matchmaking handler,
+ * ../queue.ts).
  *
  * Single-player Balatro never touches the hub, so nothing is open: every event
  * a signed-out socket sends is refused with `auth-required` (the binary relay
@@ -14,11 +14,11 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { registerBalatroP2pHandlers, resetBalatroP2pForTests } from '../balatro-p2p';
-import { registerBalatroQueueHandlers, resetBalatroQueueForTests } from '../balatro-queue';
+import { registerBalatroP2pHandlers, resetBalatroP2pForTests } from '../p2p';
+import { registerBalatroQueueHandlers, resetBalatroQueueForTests } from '../queue';
 import { BALATRO_C2S, BALATRO_C2S_EVENTS, BALATRO_S2C_EVENTS } from '@features/balatro/engine/net/events';
 import { encodeRelay } from '@/lib/shared/p2p/relay';
-import { all, makeWorld } from '../../test-support/fake-world';
+import { all, makeWorld } from '@/server/socket-server/test-support/fake-world';
 
 const HASH = `${'a'.repeat(24)}-v1`;
 /** Binary hot path: refused silently. */

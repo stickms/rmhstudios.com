@@ -84,7 +84,7 @@ export default defineConfig({
       // server/socket-server/handlers/__tests__/) stay here.
       'features/balatro/engine/mp/**',
       'lib/shared/p2p/**',
-      'server/socket-server/balatro/**',
+      'features/balatro/server/hub/**',
       'scripts/balatro/**',
       // Its browser end-to-end suite: `pnpm test:balatro:e2e` (vitest.balatro-e2e.config.ts).
       'testing/balatro-e2e/**',

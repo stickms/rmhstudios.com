@@ -21,7 +21,7 @@ import { defineConfig } from 'vitest/config';
 export const BALATRO_SUITE_GLOBS = [
   'features/balatro/engine/mp/**/*.test.ts',
   'lib/shared/p2p/**/*.test.ts',
-  'server/socket-server/balatro/**/*.test.ts',
+  'features/balatro/server/hub/**/*.test.ts',
   'scripts/balatro/**/*.test.ts',
 ];
 

@@ -15,7 +15,7 @@
  * (server/CLAUDE.md gotcha 1). Relative imports only (gotcha 7).
  */
 
-import type { BalatroC2SPayload, BalatroS2CPayload } from '../../../features/balatro/engine/net/events';
+import type { BalatroC2SPayload, BalatroS2CPayload } from '../../engine/net/events';
 
 export type LateResult = BalatroS2CPayload<'balatro:match:result'>;
 export type MatchResult = BalatroC2SPayload<'balatro:match:result'>;

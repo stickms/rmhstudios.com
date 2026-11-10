@@ -1,7 +1,7 @@
 /**
  * Balatro multiplayer — the casual matchmaking book (PLAN §3.a hub rules,
  * MM-01/MM-06, D-33; WS12). Pure state, no sockets: the handler
- * (handlers/balatro-queue.ts) feeds it and performs what it decides.
+ * (server/queue.ts) feeds it and performs what it decides.
  *
  *   - **Buckets.** A ticket waits in the bucket of its `queueMode` and
  *     `contentHash` (D-36: two builds never meet).
@@ -21,8 +21,8 @@
  * (server/CLAUDE.md gotcha 1). Relative imports only (gotcha 7).
  */
 
-import { BALATRO_LIMITS } from '../../../features/balatro/engine/net/limits';
-import type { QueueMode } from '../../../features/balatro/engine/net/events';
+import { BALATRO_LIMITS } from '../../engine/net/limits';
+import type { QueueMode } from '../../engine/net/events';
 
 export const QUEUE_TIMING = {
   /** A short group (≥2, below the maximum) matches after its oldest ticket waited this long. */

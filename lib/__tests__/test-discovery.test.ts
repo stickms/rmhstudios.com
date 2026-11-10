@@ -148,7 +148,7 @@ describe('test discovery', () => {
     const balatroRoots = [
       'features/balatro/engine/mp/',
       'lib/shared/p2p/',
-      'server/socket-server/balatro/',
+      'features/balatro/server/hub/',
       'scripts/balatro/',
     ];
     expect(balatro).toContain('features/balatro/engine/mp/__tests__/lua-specs.test.ts');

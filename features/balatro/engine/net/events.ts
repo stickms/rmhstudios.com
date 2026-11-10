@@ -1,7 +1,7 @@
 /**
  * Balatro multiplayer — the Socket.io signalling contract (PLAN §3.a, frozen).
  *
- * The hub (server/socket-server/handlers/balatro-p2p.ts, balatro-queue.ts)
+ * The hub (features/balatro/server/p2p.ts, server/queue.ts)
  * only signals, relays and keeps the seat/queue directory; every game message
  * travels peer-to-peer (features/balatro/engine/mp/wire.ts). Browser-free, relative
  * imports only: the socket server's esbuild bundle pulls this file in as-is.
@@ -88,7 +88,7 @@ export const zQueueCounts = z.object({
 /**
  * HUD-24: the result of a finished match, for one player who had left it (Leave, forfeit, a closed
  * tab). The hub works it out per receiver from the host's `balatro:match:result` and sends it to
- * that account only (handlers/balatro-p2p.ts); the page hands it to Lua as `late_result`.
+ * that account only (server/p2p.ts); the page hands it to Lua as `late_result`.
  */
 export const zLateResult = z.object({
   runId: z.string().min(1).max(32),

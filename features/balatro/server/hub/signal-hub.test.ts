@@ -6,8 +6,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { randomAlnum, SignalHub, type HubAccount } from '../p2p/signal-hub';
-import { relaySlotOf } from '../../../lib/shared/p2p/relay';
+import { randomAlnum, SignalHub, type HubAccount } from '@/server/socket-server/p2p/signal-hub';
+import { relaySlotOf } from '@/lib/shared/p2p/relay';
 
 const acct = (userId: string): HubAccount => ({ userId, name: userId, avatarUrl: null });
 

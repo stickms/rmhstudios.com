@@ -1,7 +1,7 @@
 /**
  * WS12 end to end at the TS level (I-01, I-04; E2E-17/18 without browsers):
  * real session runtimes (WS5) with `attach` on FakeNet links, the real hub
- * handlers (balatro-p2p + balatro-queue) on the fake socket.io world, Lua
+ * handlers (server/p2p + server/queue) on the fake socket.io world, Lua
  * replaced by the validating fake. FIND GAME → matched → casual lobby →
  * ruleset vote → trap vote → draft → match start; a party placed with a
  * solo player; an invite between mutual follows.
@@ -14,7 +14,7 @@ import {
   registerBalatroQueueHandlers,
   resetBalatroQueueForTests,
   setBalatroSocialStoreForTests,
-} from '../../../../../../server/socket-server/handlers/balatro-queue';
+} from '../../../../server/queue';
 import { attach, isQueued, lastParty, RETURN_RETRY_MAX } from '../attach';
 import { activeInviter, Inviter, INVITE_SETTLE_MS } from '../../invites';
 import type { QueueMode } from '../../../net/events';

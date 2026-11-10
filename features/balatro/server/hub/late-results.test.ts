@@ -1,5 +1,5 @@
 /**
- * HUD-24 late results on the hub (handlers/balatro-p2p.ts `balatro:match:result` /
+ * HUD-24 late results on the hub (server/p2p.ts `balatro:match:result` /
  * `balatro:match:pending` over ./results.ts): who may report a finished run, who hears it
  * (only roster players the hub seated who are no longer in the room — never spectators,
  * outsiders or players still linked), push vs queue, once per run, host migration, TTL and the
@@ -7,8 +7,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { handleBalatroP2pDisconnect, registerBalatroP2pHandlers, resetBalatroP2pForTests } from '../handlers/balatro-p2p';
-import { all, last, makeWorld, type FakeSocket } from '../test-support/fake-world';
+import { handleBalatroP2pDisconnect, registerBalatroP2pHandlers, resetBalatroP2pForTests } from '../p2p';
+import { all, last, makeWorld, type FakeSocket } from '@/server/socket-server/test-support/fake-world';
 import { BALATRO_S2C, type BalatroS2CPayload } from '@features/balatro/engine/net/events';
 import { enqueue, LATE_RESULT_LIMITS, queuedCount, resetLateResultsForTests, resultFor, take } from './results';
 import { ROSTERS_MAX } from './directory';

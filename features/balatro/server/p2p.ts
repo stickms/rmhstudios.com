@@ -32,7 +32,7 @@
  *     Balatro pages that asked (`balatro:match:pending`) or queued briefly.
  *
  * The matchmaking / party / invite / spectate-list events are WS12's
- * (handlers/balatro-queue.ts).
+ * (server/queue.ts).
  *
  * NOTE: server code imports `lib/` RELATIVELY — server/CLAUDE.md gotcha 7.
  */
@@ -40,21 +40,21 @@
 import { createHmac } from 'node:crypto';
 import type { Server, Socket } from 'socket.io';
 import type { z } from 'zod';
-import { logger } from '../logger';
-import { checkRateLimit } from '../rate-limit';
-import { sanitizeString } from '../utils';
-import { bindEvents, type Handlers } from '../../shared/typed-socket';
+import { logger } from '../../../server/socket-server/logger';
+import { checkRateLimit } from '../../../server/socket-server/rate-limit';
+import { sanitizeString } from '../../../server/socket-server/utils';
+import { bindEvents, type Handlers } from '../../../server/shared/typed-socket';
 import { buildIceServers } from '../../../lib/call/ice';
 import { clampIceServers, type IceServerConfig } from '../../../lib/shared/p2p/ice';
-import { BALATRO_LIMITS } from '../../../features/balatro/engine/net/limits';
+import { BALATRO_LIMITS } from '../engine/net/limits';
 import {
   BALATRO_EVENTS,
   BALATRO_S2C_EVENTS,
   type BalatroHubErrorCode,
   type BalatroS2CEvent,
   type BalatroS2CPayload,
-} from '../../../features/balatro/engine/net/events';
-import type { HubAccount } from '../p2p/signal-hub';
+} from '../engine/net/events';
+import type { HubAccount } from '../../../server/socket-server/p2p/signal-hub';
 import {
   balatroHub,
   forfeit,
@@ -73,8 +73,8 @@ import {
   unseatAll,
   type BalatroMember,
   type BalatroRoom,
-} from '../balatro/directory';
-import { enqueue, listen, listenersOf, resetLateResultsForTests, resultFor, take, unlisten } from '../balatro/results';
+} from './hub/directory';
+import { enqueue, listen, listenersOf, resetLateResultsForTests, resultFor, take, unlisten } from './hub/results';
 
 /** The events this handler binds (the rest of BALATRO_C2S belongs to the queue handler). */
 export const BALATRO_P2P_C2S_EVENTS = [

@@ -34,7 +34,8 @@ app/
 ```
 
 There is **no `app/lib/`** — shared code is at repo root `lib/`, imported as
-`@/lib/...` (aliases: `@/lib`, `@/components`, `@/hooks`, `@/app`).
+`@/lib/...` (aliases: `@/lib`, `@/components`, `@/hooks`, `@/app`, and `@features/<id>/...` for
+the feature-sliced games in `features/`; a feature's route file stays here and stays thin).
 
 ## File-naming rules (get these exactly right)
 

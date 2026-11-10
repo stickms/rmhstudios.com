@@ -329,7 +329,7 @@ export const config = {
     // HUD-24 late results: one report per finished run (host), one ask per page connect.
     'balatro:match:result': { max: 10, windowMs: 60_000 },
     'balatro:match:pending': { max: 20, windowMs: 60_000 },
-    // Matchmaking, party, invites, spectate list (WS12; handlers/balatro-queue.ts).
+    // Matchmaking, party, invites, spectate list (WS12; server/queue.ts).
     'balatro:queue:join': { max: 20, windowMs: 60_000 },
     'balatro:queue:leave': { max: 30, windowMs: 60_000 },
     'balatro:party:queue': { max: 10, windowMs: 60_000 },

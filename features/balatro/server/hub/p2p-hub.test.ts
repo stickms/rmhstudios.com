@@ -1,6 +1,6 @@
 /**
  * Balatro signalling, relay and seat directory on the hub
- * (handlers/balatro-p2p.ts over p2p/signal-hub.ts and ./directory.ts), against
+ * (server/p2p.ts over p2p/signal-hub.ts and ./directory.ts), against
  * the fake socket.io world: host/join/admit/signal flows, every rejection
  * code, kicks, seats, forfeits, spectators, relay budgets, host grace and
  * promotion, resume and hub-restart reclaim, payload fuzz, and that every
@@ -8,10 +8,10 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { handleBalatroP2pDisconnect, registerBalatroP2pHandlers, resetBalatroP2pForTests } from '../handlers/balatro-p2p';
-import { registerBalatroQueueHandlers, resetBalatroQueueForTests } from '../handlers/balatro-queue';
+import { handleBalatroP2pDisconnect, registerBalatroP2pHandlers, resetBalatroP2pForTests } from '../p2p';
+import { registerBalatroQueueHandlers, resetBalatroQueueForTests } from '../queue';
 import { balatroHub } from './directory';
-import { all, last, makeWorld, type FakeSocket } from '../test-support/fake-world';
+import { all, last, makeWorld, type FakeSocket } from '@/server/socket-server/test-support/fake-world';
 import { BALATRO_S2C, type BalatroS2CPayload } from '@features/balatro/engine/net/events';
 import { BALATRO_LIMITS, BALATRO_RELAY_LIMITS } from '@features/balatro/engine/net/limits';
 import { decodeRelay, encodeRelay, relaySlotOf } from '@/lib/shared/p2p/relay';

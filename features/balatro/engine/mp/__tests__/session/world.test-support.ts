@@ -1,7 +1,7 @@
 /**
  * TEST SUPPORT ONLY — a whole multiplayer world in one Node process:
  *
- * - the REAL Balatro hub handler (server/socket-server/handlers/balatro-p2p.ts)
+ * - the REAL Balatro hub handler (features/balatro/server/p2p.ts)
  *   on the fake socket.io world, each peer's HubLike a fake socket with a
  *   couple of ms of latency and S2C payloads parsed with the frozen schemas;
  * - P2P links on lib/shared/p2p's FakeNet channels, negotiated through the
@@ -20,7 +20,7 @@ import {
   handleBalatroP2pDisconnect,
   registerBalatroP2pHandlers,
   resetBalatroP2pForTests,
-} from '../../../../../../server/socket-server/handlers/balatro-p2p';
+} from '../../../../server/p2p';
 import { BALATRO_S2C, type BalatroC2SEvent, type BalatroS2CEvent, type BalatroS2CPayload } from '../../../net/events';
 import { encodeJsLine, parseBridgeMessage, type J2LData, type J2LType, type L2JData, type L2JType } from '../../bridge-protocol';
 import type { BridgeLike, FsLike, HubLike, HubStatus, PeerAttempt, PeerConnectOptions, PeerConnector, PeerSignalIn, Scheduler } from '../../transport/types';

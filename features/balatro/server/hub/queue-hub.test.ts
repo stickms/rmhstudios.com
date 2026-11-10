@@ -4,7 +4,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { handleBalatroP2pDisconnect, registerBalatroP2pHandlers, resetBalatroP2pForTests } from '../handlers/balatro-p2p';
+import { handleBalatroP2pDisconnect, registerBalatroP2pHandlers, resetBalatroP2pForTests } from '../p2p';
 import {
   balatroQueueSnapshotForTests,
   handleBalatroQueueDisconnect,
@@ -12,10 +12,10 @@ import {
   resetBalatroQueueForTests,
   setBalatroSocialStoreForTests,
   type BalatroSocialStore,
-} from '../handlers/balatro-queue';
+} from '../queue';
 import { balatroHub, seatOf } from './directory';
 import { InviteBudget, NotifyDedupe, QUEUE_TIMING, QueueBook, queueModeMax } from './queue';
-import { all, last, makeWorld, type FakeSocket } from '../test-support/fake-world';
+import { all, last, makeWorld, type FakeSocket } from '@/server/socket-server/test-support/fake-world';
 import { BALATRO_S2C, type BalatroS2CPayload } from '@features/balatro/engine/net/events';
 import { BALATRO_LIMITS } from '@features/balatro/engine/net/limits';
 import { maxPlayersFor } from '@features/balatro/engine/mp/rulesets/options';

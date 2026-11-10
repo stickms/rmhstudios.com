@@ -21,7 +21,7 @@ permission.
 | Layer                | Where                                                  | Owner     |
 | -------------------- | ------------------------------------------------------ | --------- |
 | Signalling contract  | `features/balatro/engine/net/{events,limits}.ts`                   | WS0       |
-| Hub handlers         | `server/socket-server/handlers/balatro-{p2p,queue}.ts` | WS1, WS12 |
+| Hub handlers         | `features/balatro/server/{p2p,queue}.ts` | WS1, WS12 |
 | Shared P2P transport | `lib/shared/p2p/`                                      | WS1       |
 | Domain types         | `features/balatro/engine/mp/types.ts`                              | WS0       |
 | P2P wire catalogue   | `features/balatro/engine/mp/wire.ts`                               | WS0       |
@@ -49,7 +49,7 @@ slot); the slot is the last two hex characters of the member's 12-character peer
 The hub (`SignalHub.relay` in `server/socket-server/p2p/signal-hub.ts`) checks and meters each
 frame (§6).
 
-**The hub** (`server/socket-server/handlers/balatro-p2p.ts` over `balatro/directory.ts`) carries
+**The hub** (`features/balatro/server/p2p.ts` over `balatro/directory.ts`) carries
 no game traffic. It vouches for each joiner's account, gates on the content hash
 (`version-mismatch`), kicks, forfeits, capacity and one seat per account (`seat-held`), and keeps
 the seat directory: a seat survives a dropped socket; the host's own 120 s seat grace decides.
@@ -164,7 +164,7 @@ pnpm balatro:gen-protocol --check   # CI freshness check (protocol-lua.test.ts a
 
 | Suite           | Command                 | What                                                                                                         |
 | --------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Balatro         | `pnpm test:balatro`     | `features/balatro/engine/mp`, `lib/shared/p2p`, `server/socket-server/balatro`, `scripts/balatro`, plus the Lua L1 specs |
+| Balatro         | `pnpm test:balatro`     | `features/balatro/engine/mp`, `lib/shared/p2p`, `features/balatro/server/hub`, `scripts/balatro`, plus the Lua L1 specs |
 | Lua L1 only     | `pnpm test:balatro:lua` | `lua5.1 features/balatro/engine/lua/spec/runner.lua [--filter text] [files…]` (TAP output)                               |
 | E2E (WS14)      | `pnpm test:balatro:e2e` | `harness` · `engine` (L2 specs in love.wasm) · `match` (real browsers + bot peers; needs Postgres)           |
 | Main (critical) | `pnpm test`             | hub auth walk, rate-limit coverage, save-path safety, pack manifest                                          |
@@ -488,7 +488,7 @@ also the event allowlist). Per minute: `p2p:host` 10, `p2p:join` 20, `p2p:admit`
 - a token bucket of `BYTES_PER_SEC` 8 KiB/s with a `BURST_BYTES` 64 KiB burst;
 - frames above `MAX_PACKET_BYTES` (16 KiB + 64 B) are dropped. Unreliable frames (pings) are
   dropped above 1 300 B (`RELAY_MAX_UNRELIABLE_BYTES`), past the bucket, and while the receiver
-  has more than 16 frames waiting (`RELAY_UNRELIABLE_BACKLOG` in `balatro-p2p.ts`);
+  has more than 16 frames waiting (`RELAY_UNRELIABLE_BACKLOG` in `p2p.ts`);
 - reliable frames always pass and run a debt; past `MAX_DEBT_BYTES` (1 MiB) the member is cut off
   the relay (`rate-limited`).
 
@@ -496,7 +496,7 @@ Over P2P each host-member link also limits its peer (40 messages/s, burst 100; �
 
 ### ICE and TURN
 
-The hub mints each account's ICE list (`iceFor` in `balatro-p2p.ts` → `buildIceServers` in
+The hub mints each account's ICE list (`iceFor` in `p2p.ts` → `buildIceServers` in
 `lib/call/ice.ts`, trimmed by `clampIceServers` to ≤ 8 servers × ≤ 8 URLs) and hands it out with
 the room. The browser takes it through `resolveHubIce` (`wire-codec.ts`, the zod-free
 `resolveIceServers`) and falls back to `DEFAULT_ICE_SERVERS` (Google's and Cloudflare's public
@@ -790,8 +790,8 @@ runtime (types only). The generator lowers their schemas into descriptor tables,
 
 ## 10. Matchmaking, party, invites, spectate list (WS12)
 
-Hub: `server/socket-server/handlers/balatro-queue.ts` (events) over the pure book in
-`server/socket-server/balatro/queue.ts`. Client: `features/balatro/engine/mp/queue/attach.ts`, loaded by
+Hub: `features/balatro/server/queue.ts` (events) over the pure book in
+`features/balatro/server/hub/queue.ts`. Client: `features/balatro/engine/mp/queue/attach.ts`, loaded by
 `index.ts` as an extension of the session runtime, plus `queue/{queue-client,casual,party}.ts`,
 `setup/host-driver.ts` and `invites.ts`; the React friends list is
 `features/balatro/ui/mp/InviteFriends.tsx` in the Invite popover's `friends` slot.

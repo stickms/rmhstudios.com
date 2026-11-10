@@ -37,4 +37,4 @@ Rules:
   `@source not` lines in `app/site-tier.css`, update test excludes in `vitest.config.ts` and workflow
   path filters that named the old directories.
 
-Moved so far: see the A1 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md`.
+Moved so far: `balatro` (engine, ui, server) and `void-breaker` (engine, ui). The A1 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.
