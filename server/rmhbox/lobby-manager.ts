@@ -42,6 +42,13 @@ const MAX_CODE_ATTEMPTS = 10;
 /** Delay before a disbanded lobby is fully cleaned up after session results */
 const SESSION_RESULTS_DISBAND_DELAY_MS = 15_000;
 
+/**
+ * A restored lobby's sequence counter restarts this far above the stored
+ * value: saves are coalesced (and countdown ticks skipped), so the stored
+ * number can trail the last one a client saw.
+ */
+export const RESTORED_SEQ_GAP = 1_000;
+
 /** Recipient-independent slice of a client snapshot (see buildSharedClientParts). */
 export interface SharedClientParts {
   players: ClientPlayerInfo[];
@@ -108,6 +115,17 @@ export class LobbyManager {
 
   /** Set during process shutdown: disconnects no longer start grace windows. */
   shuttingDown = false;
+
+  /**
+   * Durable-lobby hooks (lobby-persistence.ts). Unset — the default, and
+   * always unless RMHBOX_DURABLE_LOBBIES=1 found its store at boot — they are
+   * never called and nothing here behaves differently.
+   */
+  onLobbyChanged?: (lobbyId: string) => void;
+  onLobbyRemoved?: (lobbyId: string) => void;
+
+  /** Restored lobbies: one timer each that drops spectators who did not come back (restoreLobby). */
+  private readonly restoredSpectatorTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   onTeardown(fn: (lobbyId: string) => void): void {
     this.teardownListeners.push(fn);
@@ -188,7 +206,11 @@ export class LobbyManager {
     const seq = (this.seqCounters.get(lobbyId) ?? 0) + 1;
     // Don't recreate the counter for a disbanded lobby (a late timer or
     // handler broadcasting after disband used to leak one per lobby).
-    if (this.lobbies.has(lobbyId)) this.seqCounters.set(lobbyId, seq);
+    if (this.lobbies.has(lobbyId)) {
+      this.seqCounters.set(lobbyId, seq);
+      // A countdown tick changes nothing worth persisting (restore re-bases seq).
+      if (action.type !== 'TIMER_TICK') this.markChanged(lobbyId);
+    }
     const fullAction: GameAction = {
       type: action.type,
       payload: action.payload ?? null,
@@ -196,6 +218,20 @@ export class LobbyManager {
       timestamp: Date.now(),
     };
     this.io.to(`lobby:${lobbyId}`).emit(S2C.GAME_ACTION, fullAction);
+  }
+
+  /**
+   * The lobby changed in a way a client can see. The save seam for durable
+   * lobbies: every client-visible mutation reaches broadcastAction or a full
+   * sync, both of which call this. A no-op unless a store is attached.
+   */
+  markChanged(lobbyId: string): void {
+    this.onLobbyChanged?.(lobbyId);
+  }
+
+  /** The lobby's current action sequence number (0 if unknown). */
+  getSeq(lobbyId: string): number {
+    return this.seqCounters.get(lobbyId) ?? 0;
   }
 
   broadcastToPlayers(lobbyId: string, event: string, data: unknown): void {
@@ -314,19 +350,91 @@ export class LobbyManager {
     if (spectator && spectator.socketId !== socket.id) return;
     if (spectator) {
       // Spectators are removed immediately — no grace period
-      lobby.spectators.delete(userId);
-      this.userToLobby.delete(userId);
-      lobby.lastActivityAt = Date.now();
-
-      logger.info({ event: 'spectator_disconnected', userId, lobbyId: lobby.id });
-
-      this.broadcastAction(lobby.id, {
-        type: 'SPECTATOR_LEFT',
-        payload: { userId, userName: spectator.userName },
-      });
-
-      this.addSystemChat(lobby.id, `${spectator.userName} left`);
+      this.dropDisconnectedSpectator(lobby, spectator);
     }
+  }
+
+  private dropDisconnectedSpectator(lobby: RMHboxLobby, spectator: RMHboxSpectator): void {
+    const userId = spectator.userId;
+    lobby.spectators.delete(userId);
+    this.userToLobby.delete(userId);
+    lobby.lastActivityAt = Date.now();
+
+    logger.info({ event: 'spectator_disconnected', userId, lobbyId: lobby.id });
+
+    this.broadcastAction(lobby.id, {
+      type: 'SPECTATOR_LEFT',
+      payload: { userId, userName: spectator.userName },
+    });
+
+    this.addSystemChat(lobby.id, `${spectator.userName} left`);
+  }
+
+  // ─── Restore after a restart (durable lobbies) ─────────────
+
+  /**
+   * Put a lobby read back from the durable store into the indexes, as if
+   * every member had just disconnected. `lobby` has already been through
+   * `planRestore` (WAITING, nobody connected, no running game).
+   *
+   * Players get the same grace hold a normal disconnect starts, so a lobby
+   * nobody returns to empties and disbands exactly as it does today.
+   * Spectators, who normally leave the moment they drop, get one grace window
+   * to come back before they are dropped. The sequence counter continues
+   * above the stored value so no client discards an update as a duplicate.
+   *
+   * Returns false (and changes nothing) when the lobby id is already taken;
+   * a member already indexed in another lobby is left out.
+   */
+  restoreLobby(lobby: RMHboxLobby, storedSeq: number, roundCancelled: boolean): boolean {
+    if (this.lobbies.has(lobby.id)) return false;
+    for (const userId of Array.from(lobby.players.keys())) {
+      if (this.userToLobby.has(userId)) lobby.players.delete(userId);
+    }
+    for (const userId of Array.from(lobby.spectators.keys())) {
+      if (this.userToLobby.has(userId)) lobby.spectators.delete(userId);
+    }
+    if (lobby.players.size === 0 || !lobby.players.has(lobby.hostUserId)) return false;
+
+    this.lobbies.set(lobby.id, lobby);
+    this.seqCounters.set(lobby.id, Math.max(0, storedSeq) + RESTORED_SEQ_GAP);
+    for (const userId of lobby.players.keys()) this.userToLobby.set(userId, lobby.id);
+    for (const userId of lobby.spectators.keys()) this.userToLobby.set(userId, lobby.id);
+    if (lobby.discordChannelKey && !this.channelToLobby.has(lobby.discordChannelKey)) {
+      this.channelToLobby.set(lobby.discordChannelKey, lobby.id);
+    }
+
+    // The spectator sweep is armed BEFORE the player holds: equal timeouts fire
+    // in creation order, so absent spectators are gone before the last absent
+    // player's removal would otherwise promote one of them to an offline host.
+    if (lobby.spectators.size > 0) {
+      const timer = setTimeout(() => {
+        this.restoredSpectatorTimers.delete(lobby.id);
+        const current = this.lobbies.get(lobby.id);
+        if (current !== lobby) return;
+        for (const spectator of Array.from(lobby.spectators.values())) {
+          if (!spectator.isConnected) this.dropDisconnectedSpectator(lobby, spectator);
+        }
+      }, config.DISCONNECT_GRACE_PERIOD_MS);
+      timer.unref?.();
+      this.restoredSpectatorTimers.set(lobby.id, timer);
+    }
+    for (const player of lobby.players.values()) {
+      this.presence.hold(lobby.id, player.userId, player.userName);
+    }
+
+    this.addSystemChat(
+      lobby.id,
+      roundCancelled ? 'The server restarted; the round was cancelled.' : 'The server restarted.',
+    );
+    logger.info({
+      event: 'lobby_restored',
+      lobbyId: lobby.id,
+      players: lobby.players.size,
+      spectators: lobby.spectators.size,
+      roundCancelled,
+    });
+    return true;
   }
 
   /**
@@ -435,6 +543,7 @@ export class LobbyManager {
     this.userToLobby.set(userId, lobbyId);
     this.seqCounters.set(lobbyId, 0);
     if (discordChannelKey) this.channelToLobby.set(discordChannelKey, lobbyId);
+    this.markChanged(lobbyId);
 
     // Join Socket.io rooms
     socket.join(`lobby:${lobbyId}`);
@@ -1041,6 +1150,7 @@ export class LobbyManager {
     // Transition to SESSION_RESULTS
     lobby.state = 'SESSION_RESULTS';
     lobby.lastActivityAt = Date.now();
+    this.markChanged(lobby.id);
 
     logger.info({ event: 'session_ending', lobbyId: lobby.id, userId });
 
@@ -1633,5 +1743,12 @@ export class LobbyManager {
       clearTimeout(disbandTimer);
       this.disbandTimers.delete(lobbyId);
     }
+    const spectatorTimer = this.restoredSpectatorTimers.get(lobbyId);
+    if (spectatorTimer) {
+      clearTimeout(spectatorTimer);
+      this.restoredSpectatorTimers.delete(lobbyId);
+    }
+
+    this.onLobbyRemoved?.(lobbyId);
   }
 }
