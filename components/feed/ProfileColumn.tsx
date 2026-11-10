@@ -30,6 +30,7 @@ import { toggleFollowApi } from '@/lib/profile/follow.contract';
 import { getProfileApi } from '@/lib/profile/profile.contract';
 import { HttpError, serverError } from '@/lib/http';
 import { sendMessageApi } from '@/lib/messages/messages.contract';
+import { joinProfileMembershipApi } from '@/lib/profile/profile-extras.contract';
 
 type ProfileTab ='rmharks'|'likes'|'achievements'|'guestbook'|'shelves'|'kudos';
 
@@ -323,12 +324,7 @@ export function ProfileColumn({
  if (!profile || !session || membershipBusy) return;
  setMembershipBusy(true);
  try {
- const res = await fetch(`/api/profile/${profile.id}/membership`, { method:'POST'});
- const data = await res.json().catch(() => ({}));
- if (!res.ok) {
- toast.error(data.error || t('membership-failed', { defaultValue:'Could not join'}));
- return;
- }
+ await api(joinProfileMembershipApi, { params: { id: profile.id } });
  setProfile((prev) =>
  prev
  ? {
@@ -339,8 +335,8 @@ export function ProfileColumn({
  : prev,
  );
  toast.success(t('membership-joined', { defaultValue:"You're now a member! 🎉"}));
- } catch {
- toast.error(t('membership-failed', { defaultValue:'Could not join'}));
+ } catch (e) {
+ toast.error(serverError(e) || t('membership-failed', { defaultValue:'Could not join'}));
  } finally {
  setMembershipBusy(false);
  }

@@ -36,6 +36,8 @@ import { SavedPlaces } from '@/components/rideshare/SavedPlaces';
 import { estimateFareCents, formatDistance, formatUsd, type RidePlace } from '@/lib/rideshare/geo';
 import { RIDE_CLASSES, rideClassName, type RideClassId } from '@/lib/rideshare/classes';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
+import { api } from '@/lib/contract/client';
+import { listSavedPlacesApi } from '@/lib/rideshare/rideshare.contract';
 
 export const Route = createFileRoute('/_site/rideshare/ride')({
   head: () => ({ meta: [{ title: 'Request a ride — RMH Rideshare' }] }),
@@ -124,20 +126,19 @@ function RequestRidePage() {
   }, []);
 
   const loadPlaces = useCallback(async () => {
-    const res = await fetch('/api/rideshare/places');
-    if (res.ok) {
-      const data = await res.json();
+    try {
+      const data = await api(listSavedPlacesApi, { retries: 0 });
       setSavedPlaces(
-        (data.places ?? []).map(
-          (p: { id: string; label: string; address: string; lat: number; lng: number }) => ({
-            id: p.id,
-            savedLabel: p.label,
-            label: p.address,
-            lat: p.lat,
-            lng: p.lng,
-          }),
-        ),
+        (data.places ?? []).map((p) => ({
+          id: p.id,
+          savedLabel: p.label,
+          label: p.address,
+          lat: p.lat,
+          lng: p.lng,
+        })),
       );
+    } catch {
+      /* a failed read leaves the list as it was */
     }
   }, []);
 

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/slice-it/slice-it.contract';
 import { topArtists, type ArtistSummary } from '@/lib/slice-it/library-query.server';
 
 /**
@@ -24,19 +25,23 @@ const QueryZ = z.object({
 export const Route = createFileRoute('/api/slice-it/songs/artists')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none', query: QueryZ, rateLimit: 'read' }, async ({ query }) => {
-        const artists = await topArtists(query.limit);
-        return new Response(JSON.stringify({ artists } satisfies { artists: ArtistSummary[] }), {
-          headers: {
-            'Content-Type': 'application/json',
-            // Viewer-independent by construction — there is nothing
-            // per-account in the response — so it is safe to cache publicly.
-            // Five minutes: an upload should show up in the facet on the same
-            // visit that made it, not on the next deploy.
-            'Cache-Control': 'public, max-age=60, s-maxage=300',
-          },
-        });
-      }),
+      GET: implement(
+        C.listSliceArtistsApi,
+        { auth: 'none', query: QueryZ, rateLimit: 'read' },
+        async ({ query }) => {
+          const artists = await topArtists(query.limit);
+          return new Response(JSON.stringify({ artists } satisfies { artists: ArtistSummary[] }), {
+            headers: {
+              'Content-Type': 'application/json',
+              // Viewer-independent by construction — there is nothing
+              // per-account in the response — so it is safe to cache publicly.
+              // Five minutes: an upload should show up in the facet on the same
+              // visit that made it, not on the next deploy.
+              'Cache-Control': 'public, max-age=60, s-maxage=300',
+            },
+          });
+        },
+      ),
     },
   },
 });

@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/doctrine/doctrine.contract';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { getSahurStatus, getSahurConfig } from '@/lib/doctrine/temporal';
@@ -7,8 +9,13 @@ import { getSahurStatus, getSahurConfig } from '@/lib/doctrine/temporal';
 export const Route = createFileRoute('/api/doctrine/sahur/status')({
   server: {
     handlers: {
-      GET: defineHandler(
-        { auth: 'none', rateLimit: { limit: 60, windowMs: 60_000, prefix: 'doctrine-sahur' } },
+      GET: implement(
+        C.getDoctrineSahurStatusApi,
+        {
+          auth: 'none',
+          query: z.object({ timezone: z.string().optional() }),
+          rateLimit: { limit: 60, windowMs: 60_000, prefix: 'doctrine-sahur' },
+        },
         async ({ request }) => {
           try {
             // Try to get user's timezone from their profile

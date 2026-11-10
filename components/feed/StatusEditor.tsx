@@ -2,6 +2,8 @@ import { useState } from'react';
 import { useTranslation } from'react-i18next';
 import { toast } from'sonner';
 import { Smile, X } from'lucide-react';
+import { api } from '@/lib/contract/client';
+import { clearProfileStatusApi, setProfileStatusApi } from '@/lib/profile/profile-extras.contract';
 
 import { cn } from'@/lib/utils';
 import { Button } from'@/components/ui/button';
@@ -57,17 +59,13 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
  async function save() {
  setBusy(true);
  try {
- const res = await fetch('/api/profile/status', {
- method:'PUT',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({
+ const data = await api(setProfileStatusApi, {
+ body: {
  emoji: emoji || null,
  text: text || null,
  expiresIn: expiresIn ==='none'? null : expiresIn,
- }),
+ },
  });
- if (!res.ok) throw new Error('save failed');
- const data = (await res.json()) as { status: UserStatus | null };
  setStatus(data.status);
  setOpen(false);
  toast.success(t('saved', { defaultValue:'Status updated'}));
@@ -81,8 +79,7 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
  async function clear() {
  setBusy(true);
  try {
- const res = await fetch('/api/profile/status', { method:'DELETE'});
- if (!res.ok) throw new Error('clear failed');
+ await api(clearProfileStatusApi);
  setStatus(null);
  setOpen(false);
  toast.success(t('cleared', { defaultValue:'Status cleared'}));

@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/slice-it/slice-it.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { optimizeImage } from '@/lib/image-optimize';
@@ -151,25 +153,29 @@ export const Route = createFileRoute('/api/slice-it/songs/$id')({
         },
       ),
 
-      DELETE: defineHandler({ rateLimit: 'write' }, async ({ params, userId, isAdmin }) => {
-        const song = await prisma.song.findUnique({
-          where: { id: params.id },
-          select: { id: true, uploadedBy: true, audioUrl: true, coverUrl: true },
-        });
-        if (!song) return Response.json({ error: 'Song not found' }, { status: 404 });
-        if (song.uploadedBy !== userId && !isAdmin) {
-          return Response.json({ error: 'Forbidden' }, { status: 403 });
-        }
+      DELETE: implement(
+        C.deleteSongApi,
+        { rateLimit: 'write' },
+        async ({ params, userId, isAdmin }) => {
+          const song = await prisma.song.findUnique({
+            where: { id: params.id },
+            select: { id: true, uploadedBy: true, audioUrl: true, coverUrl: true },
+          });
+          if (!song) return Response.json({ error: 'Song not found' }, { status: 404 });
+          if (song.uploadedBy !== userId && !isAdmin) {
+            return Response.json({ error: 'Forbidden' }, { status: 403 });
+          }
 
-        // The row goes first. Cascades take the likes, scores, comments and
-        // plays with it; the files are best-effort cleanup after, because a
-        // storage hiccup must not leave the user staring at a song they just
-        // asked to delete.
-        await prisma.song.delete({ where: { id: params.id } });
-        await deleteSongAssets(song);
+          // The row goes first. Cascades take the likes, scores, comments and
+          // plays with it; the files are best-effort cleanup after, because a
+          // storage hiccup must not leave the user staring at a song they just
+          // asked to delete.
+          await prisma.song.delete({ where: { id: params.id } });
+          await deleteSongAssets(song);
 
-        return Response.json({ success: true });
-      }),
+          return Response.json({ success: true });
+        },
+      ),
     },
   },
 });

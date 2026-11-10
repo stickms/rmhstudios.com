@@ -1,4 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/library/collections.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -23,7 +25,7 @@ async function getViewer(request: Request): Promise<Viewer> {
 export const Route = createFileRoute('/api/library/collections')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ request }) => {
+      GET: implement(C.listLibraryCollectionsApi, { auth: 'none' }, async ({ request }) => {
         const viewer = await getViewer(request);
         const collections = await listCollectionsView(viewer);
         return Response.json({ collections });

@@ -10,6 +10,8 @@ import type { Listing } from '@/lib/homes/types';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
+import { api } from '@/lib/contract/client';
+import { getHomeListingApi } from '@/lib/homes/homes.contract';
 
 export const Route = createFileRoute('/_site/homes/submit')({
   head: () => ({ meta: [{ title: 'RMHHomes — Post a listing' }] }),
@@ -29,11 +31,10 @@ function HomesSubmitPage() {
     setLoading(true);
     (async () => {
       try {
-        const res = await fetch(`/api/homes/listings/${encodeURIComponent(editId)}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.listing?.isOwner) setListing(data.listing);
-        }
+        const data = await api(getHomeListingApi, { params: { id: editId }, retries: 0 });
+        if (data.listing?.isOwner) setListing(data.listing);
+      } catch {
+        /* a listing that cannot be read simply is not editable here */
       } finally {
         setLoading(false);
       }

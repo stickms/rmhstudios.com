@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WidgetFrame } from '@/components/ui/widget-frame';
+import { api } from '@/lib/contract/client';
+import { getSliceItShowcaseApi } from '@/lib/slice-it/slice-it.contract';
 import { DIFFICULTIES, type Difficulty } from '@/lib/slice-it/constants';
 
 /**
@@ -40,10 +42,9 @@ export function SliceItModule({ title, userId }: { title: string; userId: string
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/slice-it/showcase?userId=${encodeURIComponent(userId)}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { stats: SliceItShowcaseStats | null } | null) => {
-        if (!cancelled) setStats(data?.stats ?? null);
+    api(getSliceItShowcaseApi, { query: { userId } })
+      .then((data) => {
+        if (!cancelled) setStats(data.stats ?? null);
       })
       .catch(() => {
         if (!cancelled) setStats(null);

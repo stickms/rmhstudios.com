@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/profile/profile-extras.contract';
 import { TOP_FOUR_SIZE } from '@/lib/profile/modules';
 import { topFourItemSchema } from '@/lib/profile/modules-schema';
 import { getTopFour, setTopFour } from '@/lib/profile/top-four.server';
@@ -13,10 +14,11 @@ import { getTopFour, setTopFour } from '@/lib/profile/top-four.server';
 export const Route = createFileRoute('/api/profile/top-four')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) =>
+      GET: implement(C.getTopFourApi, { rateLimit: 'read' }, async ({ userId }) =>
         Response.json({ items: await getTopFour(userId) }),
       ),
-      PUT: defineHandler(
+      PUT: implement(
+        C.setTopFourApi,
         {
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'profile-top-four' },
           body: z.object({ items: z.array(topFourItemSchema).max(TOP_FOUR_SIZE) }),

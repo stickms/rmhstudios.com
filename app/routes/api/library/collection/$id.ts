@@ -1,4 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/library/collections.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { auth } from '@/lib/auth';
 import { updateCollection, deleteCollection, type Viewer } from '@/lib/library/collections.server';
@@ -35,14 +37,18 @@ export const Route = createFileRoute('/api/library/collection/$id')({
         return Response.json({ ok: true, ...result.value });
       }),
 
-      DELETE: defineHandler({ auth: 'none' }, async ({ request, params }) => {
-        if (!isSafeLibraryId(params.id))
-          return Response.json({ error: 'Not found.' }, { status: 404 });
-        const viewer = await getViewer(request);
-        const result = await deleteCollection(viewer, params.id);
-        if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
-        return Response.json({ ok: true });
-      }),
+      DELETE: implement(
+        C.deleteLibraryCollectionApi,
+        { auth: 'none' },
+        async ({ request, params }) => {
+          if (!isSafeLibraryId(params.id))
+            return Response.json({ error: 'Not found.' }, { status: 404 });
+          const viewer = await getViewer(request);
+          const result = await deleteCollection(viewer, params.id);
+          if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+          return Response.json({ ok: true });
+        },
+      ),
     },
   },
 });

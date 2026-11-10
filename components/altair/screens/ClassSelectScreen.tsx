@@ -14,6 +14,8 @@ import { useAltairToastStore } from '@/lib/altair/stores/toast-store';
 import { HEAT_MAX, clampHeat, heatModifiers } from '@/lib/altair/data/heat';
 import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
 import SpriteIcon from '@/components/altair/hud/SpriteIcon';
+import { api } from '@/lib/contract/client';
+import { getAltairHeatApi } from '@/lib/altair/altair.contract';
 
 interface ClassSelectScreenProps {
   onSelect: (classId: string) => void;
@@ -55,10 +57,9 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
   const [heatUnlocked, setHeatUnlocked] = useState(0);
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/altair/heat')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((body: { unlocked?: unknown } | null) => {
-        if (!cancelled && body) setHeatUnlocked(clampHeat(body.unlocked));
+    api(getAltairHeatApi, { retries: 0 })
+      .then((body) => {
+        if (!cancelled) setHeatUnlocked(clampHeat(body.unlocked));
       })
       .catch(() => {
         /* no Heat without the server: the run is standard */

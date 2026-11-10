@@ -5,6 +5,8 @@ import { Trophy } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RankBadge } from '@/components/doctrine/reputation/rank-badge';
+import { api } from '@/lib/contract/client';
+import { getDoctrinePuzzleLeaderboardApi } from '@/lib/doctrine/doctrine.contract';
 
 export const Route = createFileRoute('/strategies/puzzles/leaderboard')({
   head: () => ({
@@ -23,10 +25,7 @@ function LeaderboardPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['doctrine', 'leaderboard', mode, today],
-    queryFn: async () => {
-      const res = await fetch(`/api/doctrine/puzzles/leaderboard?mode=${mode}&date=${today}&limit=50`);
-      return res.json();
-    },
+    queryFn: () => api(getDoctrinePuzzleLeaderboardApi, { query: { mode, date: today, limit: '50' }, retries: 0 }),
     staleTime: 30_000,
   });
 
@@ -71,7 +70,7 @@ function LeaderboardPage() {
               </tr>
             </thead>
             <tbody>
-              {data?.map?.((entry: { rank: number; user: { name: string; handle: string }; score: number; timeMs: number }, i: number) => (
+              {data?.map?.((entry, i) => (
                 <tr key={i} className="border-t border-white/[0.04] hover:bg-white/[0.02]">
                   <td className="px-2.5 md:px-4 py-2.5 md:py-2 font-mono text-white/60">{entry.rank}</td>
                   <td className="px-2.5 md:px-4 py-2.5 md:py-2 text-white/80">

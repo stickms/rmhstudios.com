@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { IncidentCard } from '@/components/doctrine/incidents/incident-card';
 import { aggregateReactions } from '@/lib/doctrine/divisiveness';
 import { EMPTY_REACTIONS } from '@/lib/doctrine/types';
+import { api } from '@/lib/contract/client';
+import { listDoctrineIncidentsApi } from '@/lib/doctrine/doctrine.contract';
 
 export const Route = createFileRoute('/strategies/incidents')({
   head: () => ({
@@ -19,10 +21,7 @@ function IncidentsPage() {
   const { t } = useTranslation("r-strategies");
   const { data, isLoading } = useQuery({
     queryKey: ['doctrine', 'incidents'],
-    queryFn: async () => {
-      const res = await fetch('/api/doctrine/incidents?limit=20');
-      return res.json();
-    },
+    queryFn: () => api(listDoctrineIncidentsApi, { query: { limit: '20' }, retries: 0 }),
     staleTime: 15_000,
   });
 

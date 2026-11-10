@@ -39,6 +39,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { sendMessageApi } from '@/lib/messages/messages.contract';
+import { deleteHomeListingApi, getHomeListingApi } from '@/lib/homes/homes.contract';
 
 export function ListingDetailView({ id }: { id: string }) {
   const goBack = useBackOrFallback();
@@ -59,11 +60,8 @@ export function ListingDetailView({ id }: { id: string }) {
     setNotFound(false);
     (async () => {
       try {
-        const res = await fetch(`/api/homes/listings/${encodeURIComponent(id)}`);
+        const data = await api(getHomeListingApi, { params: { id }, retries: 0 });
         if (cancelled) return;
-        if (res.status === 404) return setNotFound(true);
-        if (!res.ok) throw new Error('Failed to load listing');
-        const data = await res.json();
         setListing(data.listing);
         setActiveImage(0);
       } catch {
@@ -131,12 +129,17 @@ export function ListingDetailView({ id }: { id: string }) {
     if (!(await confirm({ title: 'Delete this listing? This cannot be undone.', danger: true })))
       return;
     try {
-      const res = await fetch(`/api/homes/listings/${listing.id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Could not delete');
+      await api(deleteHomeListingApi, { params: { id: listing.id } });
       toast.success('Listing deleted');
       navigate({ to: '/homes/manage' });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not delete listing');
+      toast.error(
+        err instanceof HttpError
+          ? 'Could not delete'
+          : err instanceof Error
+            ? err.message
+            : 'Could not delete listing',
+      );
     }
   }, [listing, navigate, confirm]);
 

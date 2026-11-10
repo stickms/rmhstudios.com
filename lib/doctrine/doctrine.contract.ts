@@ -1,0 +1,88 @@
+/**
+ * Contracts for the /api/doctrine/** reads (redesign audit C1, batch 6):
+ * reputation, the Sahur window, incidents and the daily / replay puzzles.
+ * Client-safe: every type is `import type`. Response types are derived from the
+ * server helpers and passed through {@link Json}, because dates cross the wire as
+ * ISO strings. The query slots are strings because the routes read them with
+ * `pageSize()` / `searchParams` themselves.
+ */
+import { endpoint } from '@/lib/contract/endpoint';
+import type { getRecentIncidents } from '@/lib/doctrine/incidents';
+import type { getReputation, getReputationLeaderboard } from '@/lib/doctrine/reputation';
+import type { SahurModeConfig, SahurStatus } from '@/lib/doctrine/types';
+
+/** What a value looks like after `JSON.stringify` → `JSON.parse`. */
+export type Json<T> = T extends Date
+  ? string
+  : T extends readonly (infer U)[]
+    ? Json<U>[]
+    : T extends object
+      ? { [K in keyof T]: Json<T[K]> }
+      : T;
+
+export type DoctrineReputation = Json<Awaited<ReturnType<typeof getReputation>>>;
+export type DoctrineReputationLeaderboard = Json<
+  Awaited<ReturnType<typeof getReputationLeaderboard>>
+>;
+export type DoctrineIncidents = Json<Awaited<ReturnType<typeof getRecentIncidents>>>;
+
+/** A puzzle with its solution stripped. */
+export interface DoctrinePuzzleView {
+  id: string;
+  mode: string;
+  difficulty: number;
+  resetsAt: string;
+  data: unknown;
+}
+
+export interface DoctrineDailyPuzzle extends DoctrinePuzzleView {
+  date: string;
+  isSahur: boolean;
+}
+
+export interface DoctrineLeaderboardRow {
+  rank: number;
+  userId: string;
+  user: { id: string; name: string | null; handle: string | null; image: string | null };
+  score: number;
+  timeMs: number;
+  attempts: number;
+}
+
+/** The signed-in caller's standing. 401 when signed out. */
+export const getDoctrineReputationApi = endpoint<{ res: DoctrineReputation }>()({
+  method: 'GET',
+  path: '/api/doctrine/reputation',
+});
+
+export const getDoctrineReputationLeaderboardApi = endpoint<{
+  query: { limit?: string | undefined };
+  res: DoctrineReputationLeaderboard;
+}>()({ method: 'GET', path: '/api/doctrine/reputation/leaderboard' });
+
+export const getDoctrineSahurStatusApi = endpoint<{
+  query: { timezone?: string | undefined };
+  res: { status: SahurStatus; config: SahurModeConfig | null };
+}>()({ method: 'GET', path: '/api/doctrine/sahur/status' });
+
+export const listDoctrineIncidentsApi = endpoint<{
+  query: { limit?: string | undefined };
+  res: DoctrineIncidents;
+}>()({ method: 'GET', path: '/api/doctrine/incidents' });
+
+/** Today's five puzzles. */
+export const getDoctrineTodayPuzzlesApi = endpoint<{ res: DoctrineDailyPuzzle[] }>()({
+  method: 'GET',
+  path: '/api/doctrine/puzzles/today',
+});
+
+export const getDoctrinePuzzleLeaderboardApi = endpoint<{
+  query: { mode?: string | undefined; date?: string | undefined; limit?: string | undefined };
+  res: DoctrineLeaderboardRow[];
+}>()({ method: 'GET', path: '/api/doctrine/puzzles/leaderboard' });
+
+/** A fresh random puzzle for a mode. 401 signed out, 400 for an unknown mode. */
+export const getDoctrineReplayPuzzleApi = endpoint<{
+  query: { mode?: string | undefined };
+  res: DoctrinePuzzleView;
+}>()({ method: 'GET', path: '/api/doctrine/puzzles/replay' });

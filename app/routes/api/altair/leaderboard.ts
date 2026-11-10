@@ -1,13 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/altair/altair.contract';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 
 export const Route = createFileRoute('/api/altair/leaderboard')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        C.getAltairLeaderboardApi,
         {
           auth: 'none',
+          query: z.object({ type: z.string().optional() }),
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'altair-leaderboard' },
           // Same policy, same reasoning as `void-breaker/leaderboard`: a global
           // top-N with no per-caller branch, so the bytes are identical for

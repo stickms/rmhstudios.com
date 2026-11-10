@@ -1,12 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/doctrine/doctrine.contract';
 import { auth } from '@/lib/auth';
 import { getReputation } from '@/lib/doctrine/reputation';
 
 export const Route = createFileRoute('/api/doctrine/reputation/')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        C.getDoctrineReputationApi,
         { auth: 'none', rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-rep' } },
         async ({ request }) => {
           try {

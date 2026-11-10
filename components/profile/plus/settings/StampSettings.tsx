@@ -25,6 +25,7 @@ import {
   myStampsApi,
   removeStampFromWallApi,
 } from '@/lib/profile/stamps.contract';
+import { getProfileStampsApi } from '@/lib/profile/profile-extras.contract';
 
 type Sort = 'new' | 'popular';
 
@@ -49,8 +50,8 @@ export default function StampSettings({ userId }: { userId: string }) {
   const loadMine = useCallback(async () => {
     const [a, b] = await Promise.all([
       api(myStampsApi).catch((): { stamps: StampView[] } => ({ stamps: [] })),
-      fetch(`/api/profile/${encodeURIComponent(userId)}/stamps`).then((r) =>
-        r.ok ? r.json() : { stamps: [] },
+      api(getProfileStampsApi, { params: { id: userId }, retries: 0 }).catch(
+        (): { stamps: StampView[] } => ({ stamps: [] }),
       ),
     ]);
     setMine((a as { stamps: StampView[] }).stamps);

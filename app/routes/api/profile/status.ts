@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/profile/profile-extras.contract';
 import { prisma } from '@/lib/prisma.server';
 import { statusExpiresAt, resolveStatus } from '@/lib/profile/status';
 import { statusUpdateSchema } from '@/lib/profile/status-schema';
@@ -15,7 +16,8 @@ import { statusUpdateSchema } from '@/lib/profile/status-schema';
 export const Route = createFileRoute('/api/profile/status')({
   server: {
     handlers: {
-      PUT: defineHandler(
+      PUT: implement(
+        C.setProfileStatusApi,
         {
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'profile-status' },
           body: statusUpdateSchema,
@@ -46,7 +48,8 @@ export const Route = createFileRoute('/api/profile/status')({
         },
       ),
 
-      DELETE: defineHandler(
+      DELETE: implement(
+        C.clearProfileStatusApi,
         { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'profile-status' } },
         async ({ session }) => {
           await prisma.userProfile.updateMany({

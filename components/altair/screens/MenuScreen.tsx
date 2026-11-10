@@ -12,6 +12,8 @@ import { CodexBadge } from '../CodexPanel';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
 import { useQuitGame } from '@/hooks/useQuitGame';
+import { api } from '@/lib/contract/client';
+import { getAltairLeaderboardApi } from '@/lib/altair/altair.contract';
 
 interface MenuScreenProps {
   onPlay: () => void;
@@ -235,9 +237,7 @@ function LeaderboardModal({ onClose }: { onClose: () => void }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/altair/leaderboard?type=${cat}`);
-      if (!res.ok) throw new Error('Failed to fetch');
-      const data = await res.json();
+      const data = await api(getAltairLeaderboardApi, { query: { type: cat }, retries: 0 });
       setEntries(data);
     } catch {
       setError('Failed to load leaderboard');

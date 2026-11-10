@@ -23,6 +23,12 @@ import { BlurImage } from '@/components/ui/BlurImage';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import '@/components/library/library.css';
 import '@/components/rmhvibe/vibe.css';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  deleteLibraryCollectionApi,
+  generateLibraryCollectionCoverApi,
+} from '@/lib/library/collections.contract';
 
 /** Cover image styled to fill the 3D book cover (absolute inset-0), with blur-up. */
 const COVER_WRAP = 'absolute inset-0 z-0 h-full w-full rounded-[3px_6px_6px_3px]';
@@ -86,10 +92,11 @@ export function LibraryCollections({
       }))
     )
       return;
-    const res = await fetch(`/api/library/collection/${c.id}`, { method: 'DELETE' }).catch(
-      () => null,
+    const ok = await api(deleteLibraryCollectionApi, { params: { id: c.id } }).then(
+      () => true,
+      () => false,
     );
-    if (res?.ok) await onChanged();
+    if (ok) await onChanged();
   }
 
   async function renameCollection(c: CollectionView) {
@@ -126,16 +133,20 @@ export function LibraryCollections({
 
   async function generateCover(c: CollectionView) {
     setGenerating(c.id);
-    const res = await fetch(`/api/library/collection/${c.id}/cover`, { method: 'POST' }).catch(
-      () => null,
+    let failure: unknown = null;
+    const ok = await api(generateLibraryCollectionCoverApi, { params: { id: c.id } }).then(
+      () => true,
+      (e: unknown) => {
+        failure = e;
+        return false;
+      },
     );
     setGenerating(null);
-    if (res?.ok) {
+    if (ok) {
       await onChanged();
     } else {
-      const err = await res?.json().catch(() => null);
       window.alert(
-        err?.error ?? t('cover-failed', { defaultValue: 'Could not generate a cover.' }),
+        serverError(failure) ?? t('cover-failed', { defaultValue: 'Could not generate a cover.' }),
       );
     }
   }

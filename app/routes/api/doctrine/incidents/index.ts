@@ -1,5 +1,8 @@
+import { z } from 'zod';
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/doctrine/doctrine.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { CACHE_POLICY } from '@/lib/api/cache-policies';
 import { prisma } from '@/lib/prisma.server';
@@ -11,9 +14,11 @@ import type { IncidentSeverity } from '@/lib/doctrine/types';
 export const Route = createFileRoute('/api/doctrine/incidents/')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        C.listDoctrineIncidentsApi,
         {
           auth: 'none',
+          query: z.object({ limit: z.string().optional() }),
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-incidents' },
           // Recent-incident list keyed by ?limit=. A report or reaction clears the
           // in-process cached() copy (15 s TTL), but NOT browser/CDN copies

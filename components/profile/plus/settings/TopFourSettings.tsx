@@ -7,6 +7,8 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Select } from '@/components/ui/select';
 import { TOP_FOUR_SIZE, type TopFourItem } from '@/lib/profile/modules';
 import { resolveTopFour, topFourChoices } from '@/lib/profile/top-four';
+import { api } from '@/lib/contract/client';
+import { getTopFourApi, setTopFourApi } from '@/lib/profile/profile-extras.contract';
 
 const keyOf = (i: TopFourItem) => `${i.kind}:${i.id}`;
 
@@ -19,10 +21,9 @@ export default function TopFourSettings() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/profile/top-four')
-      .then((r) => (r.ok ? (r.json() as Promise<{ items: TopFourItem[] }>) : null))
+    api(getTopFourApi, { retries: 0 })
       .then((json) => {
-        if (!cancelled) setItems(json?.items ?? []);
+        if (!cancelled) setItems(json.items ?? []);
       })
       .catch(() => {
         if (!cancelled) setItems([]);
@@ -46,13 +47,7 @@ export default function TopFourSettings() {
   async function save() {
     setSaving(true);
     try {
-      const res = await fetch('/api/profile/top-four', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items }),
-      });
-      if (!res.ok) throw new Error();
-      const json = (await res.json()) as { items: TopFourItem[] };
+      const json = await api(setTopFourApi, { body: { items: items ?? [] } });
       setItems(json.items);
       toast.success(t('top-four-saved', { defaultValue: 'Top four saved' }));
     } catch {

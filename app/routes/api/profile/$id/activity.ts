@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/profile/profile-extras.contract';
 import { prisma } from '@/lib/prisma.server';
 import { audienceWhereExact, communityVisibleWhere } from '@/lib/feed/audience.server';
 import { getBlockedAuthorIds } from '@/lib/moderation.server';
@@ -15,7 +16,8 @@ import { HEATMAP_WEEKS, bucketByDay, windowStart } from '@/lib/profile/activity'
 export const Route = createFileRoute('/api/profile/$id/activity')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        C.getProfileActivityApi,
         { auth: 'optional', rateLimit: 'read', label: 'profile-activity' },
         async ({ params, userId: viewerId }) => {
           const { id: idOrHandle } = params;

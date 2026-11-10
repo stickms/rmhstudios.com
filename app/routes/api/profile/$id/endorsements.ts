@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/profile/profile-extras.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { getEndorsements, setEndorsement } from '@/lib/profile/endorsements.server';
 
@@ -20,7 +22,8 @@ export const Route = createFileRoute('/api/profile/$id/endorsements')({
           headers: { 'Cache-Control': 'private, no-store' },
         }),
       ),
-      PUT: defineHandler(
+      PUT: implement(
+        C.setEndorsementApi,
         { rateLimit: { limit: 40, windowMs: 60_000, prefix: 'profile-endorse' }, body },
         async ({ params, userId, body: input }) => {
           const result = await setEndorsement(userId, params.id, input.skill, input.on);

@@ -25,6 +25,8 @@ import { AudioManager } from '@/lib/audio/AudioManager';
 import { BEATMAP_VERSION, generateBeatmap, isStaleAnalysis } from './beatmap';
 import { COUNTDOWN_SECONDS } from './constants';
 import { useSliceItStore } from './store';
+import { api } from '@/lib/contract/client';
+import { recordSongPlayApi } from './slice-it.contract';
 import { reportLoaded } from './net/client';
 
 /** How long a song gets to decode before the run is abandoned. */
@@ -85,7 +87,7 @@ export function useStartRun(engine: GameEngine | null) {
 
         if (options.countPlay !== false) {
           // Fire-and-forget: a play count is not worth delaying a song for.
-          void fetch(`/api/slice-it/songs/${songId}/play`, { method: 'POST' }).catch(() => {});
+          void api(recordSongPlayApi, { params: { id: songId } }).catch(() => {});
         }
 
         store.setLoadingProgress(20);

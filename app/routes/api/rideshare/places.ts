@@ -1,4 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/rideshare/rideshare.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
@@ -16,7 +18,7 @@ const createSchema = z.object({
 export const Route = createFileRoute('/api/rideshare/places')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
+      GET: implement(C.listSavedPlacesApi, {}, async ({ session }) => {
         const places = await prisma.rideSavedPlace.findMany({
           where: { userId: session.user.id },
           orderBy: { createdAt: 'asc' },

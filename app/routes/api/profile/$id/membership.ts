@@ -1,4 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/profile/profile-extras.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { joinOrRenewMembership } from '@/lib/memberships.server';
@@ -22,7 +24,8 @@ async function resolveCreatorId(idOrHandle: string): Promise<string | null> {
 export const Route = createFileRoute('/api/profile/$id/membership')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        C.joinProfileMembershipApi,
         { rateLimit: { limit: 15, windowMs: 60_000, prefix: 'membership-join' } },
         async ({ params, session }) => {
           const creatorId = await resolveCreatorId(params.id);
