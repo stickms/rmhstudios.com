@@ -90,11 +90,36 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
     `MINIGAME_SERVER_REGISTRY` in `game-coordinator.ts` (import + map entry);
     (3) add client metadata + settings schema in
     `lib/rmhbox/minigame-registry.ts`. The two registries must stay in sync.
-  - Lobbies are in-memory only (lost on restart); 120s disconnect grace;
-    match results persist fire-and-forget via `leaderboard.ts`.
+  - Lobbies live in memory; 15 s disconnect grace (`PEER_GRACE_MS`); match
+    results persist fire-and-forget via `leaderboard.ts`.
+  - **Durable lobbies (redesign D2 step 2, OFF by default).** Enabled only when
+    `RMHBOX_DURABLE_LOBBIES=1` AND `REDIS_STATE_URL` (the `redis-state` plane:
+    AOF, noeviction — never the cache-plane `REDIS_URL`) is reachable at boot;
+    otherwise `openLobbyStore()` returns `null`, no hook is installed and lobbies
+    are lost on restart exactly as before. `lobby-store.ts` holds the pure
+    `serializeLobby` / `deserializeLobby` / `planRestore`, the `LobbyStore`
+    contract and its Redis (`rmhbox:lobby:<id>` JSON `{ v: 1, … }`, 30 min TTL
+    refreshed per save, set index `rmhbox:lobbies`) and in-memory
+    implementations. `lobby-persistence.ts` wires it in: `LobbyManager.markChanged`
+    (called from `broadcastAction`, except `TIMER_TICK`, and from
+    `StateSyncService.broadcastFullSync`, lobby creation and session end) arms one
+    coalesced save per lobby (500 ms); disband removes the key; `shutdown()` in
+    `index.ts` awaits a full `saveAll()` before exit (bounded by the forced-exit
+    timer); boot restores before `listen()`.
+    **Survives a restart:** the lobby, host, settings, seats, cumulative scores,
+    match history, round number, chat, the Discord voice-channel binding.
+    **Does not:** a round in progress (or a vote / game-settings draft) — the
+    lobby returns to `WAITING` with "The server restarted; the round was
+    cancelled.", round scores cleared. Lobbies in `SESSION_RESULTS` are not
+    restored. Every restored member starts disconnected: players get the normal
+    grace hold, spectators one grace window, so a lobby nobody returns to
+    disbands as it does today; `attemptReconnect` hands a returning user their
+    seat because `userToLobby` is restored. Sequence numbers continue
+    `RESTORED_SEQ_GAP` above the stored value. Corrupt or wrong-version entries
+    are logged and deleted. Tests: `rmhbox/__tests__/durable-lobbies.test.ts`.
 - **`rmhtube/`** — watch-together hub, port 7003, path `/rmhtube-ws/`.
   Hard auth. Leader-authoritative sync (2s heartbeat), media queue, chat.
-  **Restores rooms from DB on boot** (unlike rmhbox).
+  **Restores rooms from DB on boot** (rmhbox restores lobbies only with durable lobbies on; see above).
 - **`ladder-worker/`** — RMHLadder job-discovery pipeline consumer. No port. The
   schedule is a **pg-boss cron** (queue `ladder.pipeline`, `exclusive`, UTC,
   `LADDER_CRON_SCHEDULE`, default every 12h): the worker registers the queue +
@@ -226,8 +251,10 @@ history if a rollback ever needs it.
    `REALTIME_REDIS_ADAPTER=1` (and `REDIS_URL` reachable at boot;
    `shared/redis-adapter.ts`; otherwise logged, in-memory adapter, hub still
    starts) but that only lays the backplane: **room/lobby/
-   stake state still lives in process memory** (durable rooms are the next D2
-   slice), so running two replicas is NOT yet safe. Do not raise replica counts.
+   stake state still lives in process memory**. rmhbox's opt-in durable lobbies
+   (above) survive a restart of ONE instance; they are not a shared live store
+   (each process still owns its Maps), so running two replicas is NOT yet safe.
+   Do not raise replica counts.
 2. **Auth.** Every hub validates a Better Auth session through
    `shared/session-auth.ts` (`createSessionAuth().resolveSocketSession`): the
    credential is the raw token in socket.io `handshake.auth.token` (no hub
@@ -238,7 +265,9 @@ history if a rollback ever needs it.
    (`AUTH_REQUIRED` / `AUTH_FAILED` / `SESSION_EXPIRED`). Discord Activity OAuth
    (rmhbox `discordToken`, socket-server `discordToken`) is a different
    credential and stays in the hubs.
-3. rmhtube persists rooms; rmhbox doesn't.
+3. rmhtube persists rooms; rmhbox persists lobbies only with
+   `RMHBOX_DURABLE_LOBBIES=1` + `REDIS_STATE_URL` (off by default), and never a
+   round in progress.
 4. Leaderboard/match writes are fire-and-forget — never block gameplay on DB
    success.
 5. Per-socket rate limits reset on reconnect; the rule maps in each

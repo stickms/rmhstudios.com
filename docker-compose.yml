@@ -351,6 +351,10 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - RMHBOX_PORT=${PORT_RMHBOX:-7676}
+      # Durable lobbies (redesign D2, server/rmhbox/lobby-store.ts): empty = off.
+      # Needs RMHBOX_DURABLE_LOBBIES=1 AND the redis-state service (profile-gated, below).
+      - RMHBOX_DURABLE_LOBBIES=${RMHBOX_DURABLE_LOBBIES:-}
+      - REDIS_STATE_URL=${REDIS_STATE_URL:-}
       # Pool sizes: see the connection budget on the web service.
       - SERVER_DB_POOL_SIZE=${SERVER_DB_POOL_SIZE:-5}
       - AUTH_DB_POOL_SIZE=${AUTH_DB_POOL_SIZE:-4}
