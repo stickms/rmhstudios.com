@@ -1,9 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { invalidateMutedWords } from '@/lib/feed/timeline';
 import { activeMutedWords, cleanExpiries, parseExpiries } from '@/lib/feed/muted-expiry';
+import { getMutedWordsApi } from '@/lib/preferences/preferences.contract';
+import { setMutedWordsApi } from '@/lib/preferences/preferences.contract';
 
 /**
  * GET  /api/preferences/muted-words — the caller's muted words.
@@ -41,7 +43,7 @@ function normalize(words: string[]): string[] {
 export const Route = createFileRoute('/api/preferences/muted-words')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
+      GET: implement(getMutedWordsApi, {}, async ({ session }) => {
         const row = await prisma.userProfile.findUnique({
           where: { userId: session.user.id },
           select: { mutedWords: true, mutedWordExpiries: true },
@@ -52,7 +54,8 @@ export const Route = createFileRoute('/api/preferences/muted-words')({
         return Response.json({ words, expiries: cleanExpiries(words, stored, now) });
       }),
 
-      PUT: defineHandler(
+      PUT: implement(
+        setMutedWordsApi,
         { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'muted-words' }, body: schema },
         async ({ session, body }) => {
           const now = Date.now();

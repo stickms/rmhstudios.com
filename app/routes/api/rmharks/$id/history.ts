@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { canViewPost } from '@/lib/feed/audience.server';
 import { buildVersions } from '@/lib/feed/word-diff';
+import { postHistoryApi } from '@/lib/feed/rmhark-actions.contract';
 
 /**
  * GET /api/rmharks/:id/history — the post's public edit history (F23).
@@ -25,7 +26,7 @@ import { buildVersions } from '@/lib/feed/word-diff';
 export const Route = createFileRoute('/api/rmharks/$id/history')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(postHistoryApi,
         { auth: 'optional', rateLimit: 'read', label: 'GET /api/rmharks/$id/history' },
         async ({ params, userId }) => {
           const post = await prisma.rMHark.findUnique({

@@ -45,6 +45,13 @@ import { ReactionMenu } from '@/components/shared/ReactionMenu';
 import { ReactionChips } from '@/components/shared/ReactionChips';
 import { useReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 import { HideReplyMenuItem, HiddenRepliesGroup } from './HiddenReplies';
+import {
+  viewCommentApi,
+  likeCommentApi,
+  repostCommentApi,
+  deleteCommentApi,
+} from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
 
 export interface Comment {
   id: string;
@@ -206,7 +213,7 @@ export function CommentItem({
   useEffect(() => {
     if (viewTracked.current) return;
     viewTracked.current = true;
-    fetch(`/api/rmharks/${postId}/comment/${comment.id}/view`, { method: 'POST' })
+    api(viewCommentApi, { params: { id: postId, commentId: comment.id } })
       .then(() => setViewCount((v) => v + 1))
       .catch(() => {});
   }, [postId, comment.id]);
@@ -227,7 +234,7 @@ export function CommentItem({
         setLiked(wasLiked);
         setLikeCount(prevCount);
       },
-      commit: () => fetch(`/api/rmharks/${postId}/comment/${comment.id}/like`, { method: 'POST' }),
+      commit: () => api(likeCommentApi, { params: { id: postId, commentId: comment.id } }),
     });
   };
 
@@ -247,8 +254,7 @@ export function CommentItem({
         setReposted(wasReposted);
         setRepostCount(prevCount);
       },
-      commit: () =>
-        fetch(`/api/rmharks/${postId}/comment/${comment.id}/repost`, { method: 'POST' }),
+      commit: () => api(repostCommentApi, { params: { id: postId, commentId: comment.id } }),
     });
   };
 
@@ -279,10 +285,8 @@ export function CommentItem({
     )
       return;
     try {
-      const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}`, { method: 'DELETE' });
-      if (res.ok) {
-        onCommentRemoved?.(comment.id);
-      }
+      await api(deleteCommentApi, { params: { id: postId, commentId: comment.id } });
+      onCommentRemoved?.(comment.id);
     } catch (error) {
       console.error('Delete comment error:', error);
     }

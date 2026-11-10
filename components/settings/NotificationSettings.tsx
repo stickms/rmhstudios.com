@@ -16,6 +16,11 @@ import {
   type NotifyCategory,
   type NotifyMatrix,
 } from '@/lib/notify/categories';
+import {
+  getNotificationMatrixApi,
+  setNotificationMatrixApi,
+} from '@/lib/preferences/preferences.contract';
+import { api } from '@/lib/contract/client';
 
 type Channel = 'inapp' | 'push' | 'email';
 const CHANNELS: Channel[] = ['inapp', 'push', 'email'];
@@ -85,10 +90,8 @@ export function NotificationSettings() {
   const [open, setOpen] = useState<NotifyCategory | null>(null);
 
   useEffect(() => {
-    fetch('/api/preferences/notifications')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: Prefs | null) => {
-        if (!d) return;
+    api(getNotificationMatrixApi)
+      .then((d) => {
         mirrorQuietHours(d.quietStart ?? null, d.quietEnd ?? null);
         setPrefs({
           matrix: d.matrix ?? {},
@@ -103,11 +106,9 @@ export function NotificationSettings() {
   function persist(next: Prefs) {
     setPrefs(next);
     mirrorQuietHours(next.quietStart, next.quietEnd);
-    fetch('/api/preferences/notifications', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(next),
-    }).catch(() => toast.error(t('error', { defaultValue: 'Something went wrong' })));
+    api(setNotificationMatrixApi, { body: next }).catch(() =>
+      toast.error(t('error', { defaultValue: 'Something went wrong' })),
+    );
   }
 
   function setChannel(category: NotifyCategory, channel: Channel, value: boolean) {

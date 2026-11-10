@@ -4,6 +4,8 @@ import { Eye, Heart, MessageCircle, Repeat, Bookmark, TrendingUp, Unlock } from'
 import { Spinner } from'@/components/ui/spinner';
 import { Dialog, DialogContent, DialogTitle } from'@/components/ui/dialog';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
+import { postInsightsApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
 
 interface Insights {
  createdAt: string;
@@ -37,9 +39,9 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
  if (!open) return;
  setLoading(true);
  setData(null);
- fetch(`/api/rmharks/${postId}/insights`, { credentials:'include'})
- .then((res) => (res.ok ? res.json() : null))
+ api(postInsightsApi, { params: { id: postId } })
  .then(setData)
+ .catch(() => setData(null))
  .catch(console.error)
  .finally(() => setLoading(false));
  }, [open, postId]);

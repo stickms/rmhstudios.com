@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { getShopData } from '@/lib/shop/list.server';
+import { getShopApi } from '@/lib/shop/shop.contract';
 
 /**
  * GET /api/shop — the catalog plus, for a signed-in user, their coin balance
@@ -9,7 +10,7 @@ import { getShopData } from '@/lib/shop/list.server';
 export const Route = createFileRoute('/api/shop/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ session }) => {
+      GET: implement(getShopApi, { auth: 'optional' }, async ({ session }) => {
         return Response.json(await getShopData(session?.user.id ?? null));
       }),
     },

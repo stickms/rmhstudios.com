@@ -10,6 +10,8 @@ import {
   type PresenceVisibility,
 } from '@/lib/presence-types';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { getPresencePrefsApi, setPresencePrefsApi } from '@/lib/preferences/preferences.contract';
+import { api } from '@/lib/contract/client';
 
 /**
  * PresencePrivacyControls (§9) — who may see the user in the Friends rail /
@@ -24,25 +26,19 @@ export function PresencePrivacyControls() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    fetch('/api/preferences/presence', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { presenceVisibility?: PresenceVisibility; presenceDetail?: boolean } | null) => {
-        if (d) {
-          if (d.presenceVisibility) setVisibility(d.presenceVisibility);
-          if (typeof d.presenceDetail === 'boolean') setDetail(d.presenceDetail);
-        }
+    api(getPresencePrefsApi)
+      .then((d) => {
+        if (d.presenceVisibility) setVisibility(d.presenceVisibility);
+        if (typeof d.presenceDetail === 'boolean') setDetail(d.presenceDetail);
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
   }, []);
 
   function persist(body: { presenceVisibility?: PresenceVisibility; presenceDetail?: boolean }) {
-    fetch('/api/preferences/presence', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(body),
-    }).catch(() => toast.error(t('presence-save-error', { defaultValue: 'Could not save' })));
+    api(setPresencePrefsApi, { body }).catch(() =>
+      toast.error(t('presence-save-error', { defaultValue: 'Could not save' })),
+    );
   }
 
   const VIS_LABEL: Record<PresenceVisibility, string> = {
