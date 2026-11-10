@@ -18,6 +18,8 @@ import { looksHostile } from '@/lib/safety/reconsider.server';
 import { noteReply } from '@/lib/safety/pile-on.server';
 import { recordLinkDomains } from '@/lib/safety/link-risk.server';
 
+import { implement } from '@/lib/api/implement.server';
+import { createCommentApi } from '@/lib/feed/rmhark-actions.contract';
 /** Top-level comments returned per page (keyset-paginated, newest-first). */
 const TOP_LEVEL_PAGE = 20;
 /** Direct replies eagerly hydrated per parent; the rest load via `?parentId=`. */
@@ -233,7 +235,8 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
       // comment, so the write is deduplicated by `Idempotency-Key`. The wrapper
       // consumes the body to hash it, which is why validation moved to `body:`:
       // a second `request.json()` in the handler would throw on a used stream.
-      POST: defineHandler(
+      POST: implement(
+        createCommentApi,
         { body: createCommentSchema, verboseValidationErrors: true, idempotent: true },
         async ({ request, params, session, body: input }) => {
           const ban = await getActiveBan(session.user.id);

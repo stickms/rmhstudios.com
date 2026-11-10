@@ -26,6 +26,8 @@ import {
   type SearchTab,
 } from '@/lib/search/types';
 
+import { api } from '@/lib/contract/client';
+import { universalSearchApi } from '@/lib/feed/compose-assist.contract';
 /**
  * Tabs the discovery panel understands; the rest fall back to its `top` mix.
  *
@@ -194,11 +196,9 @@ export function ExploreColumn({
     const id = ++requestId.current;
     setLoading(true);
     try {
-      const params = new URLSearchParams({ q, tab: type });
-      if (assist) params.set('assist', '1');
-      const res = await fetch(`/api/search?${params}`, { credentials: 'include' });
-      if (!res.ok) return;
-      const data: SearchResponse = await res.json();
+      const data = await api(universalSearchApi, {
+        query: { q, tab: type, ...(assist ? { assist: '1' as const } : {}) },
+      });
       // A slower earlier request must not overwrite a newer one's results.
       if (id === requestId.current) setResults(data);
     } catch {

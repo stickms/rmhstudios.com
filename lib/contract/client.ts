@@ -33,6 +33,12 @@ import {
   type ResOf,
 } from './endpoint';
 
+/**
+ * Model calls are slower than the 15s default `api()` timeout (the raw fetches
+ * they replace had none), so they pass this ceiling (`timeoutMs: AI_TIMEOUT_MS`).
+ */
+export const AI_TIMEOUT_MS = 60_000;
+
 type Transport = Pick<FetchJsonOptions, 'signal' | 'timeoutMs' | 'retries' | 'headers'>;
 
 /** Keys whose type is `undefined` become absent; the rest are required. */

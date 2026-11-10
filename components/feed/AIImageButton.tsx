@@ -1,3 +1,6 @@
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { aiGenerateImageApi } from '@/lib/feed/compose-assist.contract';
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useState } from'react';
 import { Wand2, Loader2, Sparkles, Lock } from'lucide-react';
@@ -51,21 +54,12 @@ export function AIImageButton({
  setLoading(true);
  setError(null);
  try {
- const res = await fetch('/api/rmharks/ai-image', {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ draft }),
- });
- const data = await res.json().catch(() => ({}));
- if (!res.ok) {
- setError(data?.error || t('ai-image-failed', { defaultValue:'Failed to generate image'}));
- return;
- }
+ const data = await api(aiGenerateImageApi, { body: { draft }, timeoutMs: AI_TIMEOUT_MS });
  if (typeof data?.url ==='string'&& data.url) {
  onGenerated(data.url);
  }
- } catch {
- setError(t('ai-image-failed', { defaultValue:'Failed to generate image'}));
+ } catch (e) {
+ setError(serverError(e) || t('ai-image-failed', { defaultValue:'Failed to generate image'}));
  } finally {
  setLoading(false);
  }

@@ -1,3 +1,6 @@
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { transformTextApi } from '@/lib/feed/compose-assist.contract';
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useState } from'react';
 import { Sparkles, Loader2 } from'lucide-react';
@@ -26,21 +29,15 @@ export function ComposeAssist({ value, onChange }: { value: string; onChange: (v
  const run = async (action: Action) => {
  setBusy(action);
  try {
- const res = await fetch('/api/ai/transform', {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- credentials:'include',
- body: JSON.stringify({ text: value, action }),
- });
- if (res.status === 503) {
+ const data = await api(transformTextApi, { body: { text: value, action }, timeoutMs: AI_TIMEOUT_MS });
+ if (data.text) onChange(data.text);
+ else toast.error(t('could-not-rewrite', { defaultValue:'Could not rewrite'}));
+ } catch (e) {
+ if (e instanceof HttpError && e.status === 503) {
  toast.error(t('ai-unavailable', { defaultValue:'AI assist is unavailable right now.'}));
- return;
+ } else {
+ toast.error(serverError(e) || t('could-not-rewrite', { defaultValue:'Could not rewrite'}));
  }
- const data = await res.json().catch(() => ({}));
- if (res.ok && data.text) onChange(data.text);
- else toast.error(data.error || t('could-not-rewrite', { defaultValue:'Could not rewrite'}));
- } catch {
- toast.error(t('could-not-rewrite', { defaultValue:'Could not rewrite'}));
  } finally {
  setBusy(null);
  }

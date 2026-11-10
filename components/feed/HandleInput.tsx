@@ -3,6 +3,8 @@ import { useTranslation } from'react-i18next';
 import { BadgeCheck } from'lucide-react';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 
+import { api } from '@/lib/contract/client';
+import { mentionSearchApi } from '@/lib/feed/feed-reads.contract';
 interface UserSuggestion {
  id: string;
  name: string | null;
@@ -88,9 +90,8 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  setOpen(true);
  const timer = setTimeout(async () => {
  try {
- const res = await fetch(`/api/feed/mention-search?q=${encodeURIComponent(token)}`, { credentials:'include'});
+ const data = await api(mentionSearchApi, { query: { q: token } });
  if (seq !== requestSeq.current) return;
- const data = await res.json();
  setSuggestions(data.users ?? []);
  setActiveIndex(0);
  } catch {

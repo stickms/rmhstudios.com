@@ -55,6 +55,7 @@ import {
 } from '@/lib/feed/rmhark-actions.contract';
 import { api } from '@/lib/contract/client';
 
+import { createCommentApi } from '@/lib/feed/rmhark-actions.contract';
 export interface Comment {
   id: string;
   content: string;
@@ -311,24 +312,20 @@ export function CommentItem({
     if (!replyContent.trim() || submitting) return;
     setSubmitting(true);
     try {
-      const res = await reconsider((confirmReconsider) =>
-        fetch(`/api/rmharks/${postId}/comment`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+      const newReply = await reconsider((confirmReconsider) =>
+        api(createCommentApi, {
+          params: { id: postId },
+          body: {
             content: replyContent.trim(),
             parentId: comment.id,
             confirmReconsider,
-          }),
+          },
         }),
       );
-      if (!res) return;
-      if (res.ok) {
-        const newReply = await res.json();
-        onReplyAdded?.(comment.id, newReply);
-        setReplyContent('');
-        setReplyOpen(false);
-      }
+      if (!newReply) return;
+      onReplyAdded?.(comment.id, newReply as Comment);
+      setReplyContent('');
+      setReplyOpen(false);
     } catch (error) {
       console.error('Reply error:', error);
     } finally {

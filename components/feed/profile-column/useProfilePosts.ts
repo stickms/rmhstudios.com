@@ -8,6 +8,8 @@ import { takeOrFetch } from '@/lib/route/intent-fetch';
 import { collectFeedUsers } from './profile-column-state';
 import type { ProfilePostsPage, ProfileTab } from './profile-column-state';
 
+import { api } from '@/lib/contract/client';
+import { profileLikesApi, profilePostsApi } from '@/lib/feed/feed-reads.contract';
 export interface PostList {
   items: FeedItem[];
   loadingItems: boolean;
@@ -73,10 +75,7 @@ export function useProfilePosts(
     try {
       let data: ProfilePostsPage;
       if (cursor) {
-        const params = new URLSearchParams({ limit: '20', cursor });
-        const res = await fetch(`/api/profile/${encodeURIComponent(userId)}/rmharks?${params}`);
-        if (!res.ok) return;
-        data = (await res.json()) as ProfilePostsPage;
+        data = await api(profilePostsApi, { params: { id: userId }, query: { limit: 20, cursor } });
       } else {
         // The first page may already be in flight from the route's beforeLoad
         // (lib/feed/profile-prefetch); take it rather than asking twice.
@@ -102,11 +101,10 @@ export function useProfilePosts(
     if (loadingLiked) return;
     setLoadingLiked(true);
     try {
-      const params = new URLSearchParams({ limit: '20' });
-      if (likedCursor) params.set('cursor', likedCursor);
-      const res = await fetch(`/api/profile/${encodeURIComponent(userId)}/likes?${params}`);
-      if (!res.ok) return;
-      const data = (await res.json()) as ProfilePostsPage;
+      const data = await api(profileLikesApi, {
+        params: { id: userId },
+        query: { limit: 20, ...(likedCursor ? { cursor: likedCursor } : {}) },
+      });
       // Update user display cache
       const likeUsers = collectFeedUsers(data.items);
       if (likeUsers.length > 0) useUserDisplayStore.getState().setUsers(likeUsers);
