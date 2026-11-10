@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { getRecoveryHoldApi } from '@/lib/recovery/recovery.contract';
 import { getRecoveryHold } from '@/lib/recovery/hold.server';
 
 /**
@@ -13,13 +14,13 @@ import { getRecoveryHold } from '@/lib/recovery/hold.server';
 export const Route = createFileRoute('/api/account/recovery/hold')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) => {
+      GET: implement(getRecoveryHoldApi, { rateLimit: 'read' }, async ({ userId }) => {
         const hold = await getRecoveryHold(userId);
-        return Response.json({
+        return {
           active: hold.active,
           until: hold.until ? hold.until.toISOString() : null,
           recoveredAt: hold.recoveredAt ? hold.recoveredAt.toISOString() : null,
-        });
+        };
       }),
     },
   },

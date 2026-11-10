@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { listTrustedContactsApi, nominateTrustedContactApi } from '@/lib/recovery/recovery.contract';
 import { HANDLE_MAX_LENGTH } from '@/lib/handle';
 import {
   listTrustedContacts,
@@ -24,15 +25,16 @@ const nominateSchema = z.object({
 export const Route = createFileRoute('/api/account/recovery/contacts')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) => {
+      GET: implement(listTrustedContactsApi, { rateLimit: 'read' }, async ({ userId }) => {
         const [contacts, trustedFor] = await Promise.all([
           listTrustedContacts(userId),
           listTrustedFor(userId),
         ]);
-        return Response.json({ contacts, trustedFor });
+        return { contacts, trustedFor };
       }),
 
-      POST: defineHandler(
+      POST: implement(
+        nominateTrustedContactApi,
         { rateLimit: 'write', body: nominateSchema, verboseValidationErrors: true },
         async ({ userId, body }) => {
           const result = await nominateTrustedContact(userId, body.handle.replace(/^@/, ''));
@@ -42,7 +44,7 @@ export const Route = createFileRoute('/api/account/recovery/contacts')({
               { status: result.reason === 'unknown-account' ? 404 : 400 },
             );
           }
-          return Response.json({ contact: result.contact });
+          return { contact: result.contact };
         },
       ),
     },

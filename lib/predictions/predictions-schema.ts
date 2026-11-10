@@ -14,6 +14,9 @@ export const createPredictionSchema = z.object({
   closesAt: z.string().datetime().nullable().optional(),
 });
 
+/** `GET /api/predictions?filter=` — `open` (default), `resolved` or `mine`. */
+export const predictionListQuery = z.object({ filter: z.string().optional() });
+
 export const tradeSchema = z.object({
   side: z.enum(['YES', 'NO']),
   amount: z.number().int().min(MIN_TRADE_AMOUNT).max(MAX_TRADE_AMOUNT),

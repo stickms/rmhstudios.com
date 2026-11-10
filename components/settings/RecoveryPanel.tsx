@@ -22,6 +22,16 @@ import { Spinner } from '@/components/ui/spinner';
 import { CopyButton } from '@/components/ui/copy-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  cancelRecoveryRequestApi,
+  completeRecoveryApi,
+  generateRecoveryCodesApi,
+  getRecoveryCodeStatusApi,
+  getRecoveryHoldApi,
+  listRecoveryRequestsApi,
+} from '@/lib/recovery/recovery.contract';
 
 interface CodeStatus {
   remaining: number;
@@ -80,17 +90,17 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
       }
       if (!quiet) setLoading(true);
       try {
-        const [codesRes, holdRes, requestsRes] = await Promise.all([
-          fetch('/api/account/recovery/codes'),
-          fetch('/api/account/recovery/hold'),
-          fetch('/api/account/recovery/requests'),
+        // Each part fails on its own: a failed call leaves that part empty.
+        const [codes, holdState, requestList] = await Promise.all([
+          api(getRecoveryCodeStatusApi).catch(() => null),
+          api(getRecoveryHoldApi).catch(() => null),
+          api(listRecoveryRequestsApi).catch(() => null),
         ]);
-        if (codesRes.ok) setStatus((await codesRes.json()) as CodeStatus);
-        if (holdRes.ok) setHold((await holdRes.json()) as HoldState);
-        if (requestsRes.ok) {
-          const data = (await requestsRes.json()) as { mine: RequestRow[] };
+        if (codes) setStatus(codes);
+        if (holdState) setHold(holdState);
+        if (requestList) {
           setRequests(
-            data.mine.filter((row) => row.phase !== 'expired' && row.phase !== 'rejected'),
+            requestList.mine.filter((row) => row.phase !== 'expired' && row.phase !== 'rejected'),
           );
         }
       } catch {
@@ -119,18 +129,14 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
     if (!confirmed) return;
     setGenerating(true);
     try {
-      const res = await fetch('/api/account/recovery/codes', { method: 'POST' });
-      const data = (await res.json().catch(() => ({}))) as { codes?: string[]; error?: string };
-      if (!res.ok || !data.codes) {
-        toast.error(
-          data.error ?? t('recovery-codes-failed', { defaultValue: 'Could not generate codes.' }),
-        );
-        return;
-      }
+      const data = await api(generateRecoveryCodesApi);
       setFreshCodes(data.codes);
       await load(true);
-    } catch {
-      toast.error(t('recovery-codes-failed', { defaultValue: 'Could not generate codes.' }));
+    } catch (e) {
+      toast.error(
+        serverError(e) ??
+          t('recovery-codes-failed', { defaultValue: 'Could not generate codes.' }),
+      );
     } finally {
       setGenerating(false);
     }
@@ -149,15 +155,7 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
     if (!confirmed) return;
     setCancellingId(row.id);
     try {
-      const res = await fetch(`/api/account/recovery/requests/${encodeURIComponent(row.id)}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) {
-        toast.error(
-          t('recovery-cancel-failed', { defaultValue: 'Could not cancel that request.' }),
-        );
-        return;
-      }
+      await api(cancelRecoveryRequestApi, { params: { id: row.id } });
       setRequests((prev) => prev.filter((item) => item.id !== row.id));
       toast.success(t('recovery-cancelled', { defaultValue: 'Recovery request cancelled.' }));
     } catch {
@@ -172,24 +170,19 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
     if (!completion) return;
     setCompleting(true);
     try {
-      const res = await fetch('/api/account/recovery/complete', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
+      await api(completeRecoveryApi, {
+        body: {
           requestId: completion.requestId,
           token: completion.token,
           email: completionEmail.trim(),
-        }),
+        },
       });
-      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-      if (!res.ok || !data.ok) {
-        toast.error(
-          data.error ??
-            t('recovery-complete-failed', { defaultValue: 'That recovery link did not work.' }),
-        );
-        return;
-      }
       setCompleted(true);
+    } catch (e) {
+      toast.error(
+        serverError(e) ??
+          t('recovery-complete-failed', { defaultValue: 'That recovery link did not work.' }),
+      );
     } finally {
       setCompleting(false);
     }

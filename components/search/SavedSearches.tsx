@@ -8,6 +8,13 @@ import { useClipboard } from '@/hooks/useClipboard';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 import type { SavedSearchView } from '@/lib/search/saved';
+import { api } from '@/lib/contract/client';
+import {
+  createSavedSearchApi,
+  deleteSavedSearchApi,
+  listSavedSearchesApi,
+  updateSavedSearchApi,
+} from '@/lib/search/saved.contract';
 
 /** The search operators shown as copyable examples. */
 const OPERATOR_EXAMPLES = [
@@ -35,9 +42,8 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
   }
 
   useEffect(() => {
-    fetch('/api/search/saved')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { saved: SavedSearchView[] } | null) => setSaved(d?.saved ?? []))
+    api(listSavedSearchesApi)
+      .then((d) => setSaved(d.saved))
       .catch(() => setSaved([]));
   }, []);
 
@@ -47,13 +53,7 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
   async function saveCurrent() {
     if (!q) return;
     try {
-      const res = await fetch('/api/search/saved', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: q }),
-      });
-      if (!res.ok) throw new Error();
-      const { saved: row } = (await res.json()) as { saved: SavedSearchView };
+      const { saved: row } = await api(createSavedSearchApi, { body: { query: q } });
       setSaved((prev) => [row, ...(prev ?? [])]);
       toast.success(t('saved', { defaultValue: 'Search saved' }));
     } catch {
@@ -63,17 +63,15 @@ export function SavedSearches({ currentQuery }: { currentQuery: string }) {
 
   async function remove(id: string) {
     setSaved((prev) => prev?.filter((s) => s.id !== id) ?? null);
-    await fetch(`/api/search/saved/${id}`, { method: 'DELETE' }).catch(() => {});
+    await api(deleteSavedSearchApi, { params: { id } }).catch(() => {});
   }
 
   async function toggleAlert(s: SavedSearchView) {
     const next = !s.alerts;
     setSaved((prev) => prev?.map((x) => (x.id === s.id ? { ...x, alerts: next } : x)) ?? null);
-    await fetch(`/api/search/saved/${s.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ alerts: next }),
-    }).catch(() => {});
+    await api(updateSavedSearchApi, { params: { id: s.id }, body: { alerts: next } }).catch(
+      () => {},
+    );
   }
 
   if (saved === null) return null;

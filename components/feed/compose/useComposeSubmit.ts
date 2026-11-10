@@ -5,6 +5,9 @@ import { postWithOutbox } from '@/lib/offline/outbox';
 import { yieldToMain } from '@/lib/scheduler';
 import { useFeedStore } from '@/stores/feedStore';
 import type { FeedItem } from '@/lib/feed-types';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { createScheduledApi } from '@/lib/scheduled/scheduled.contract';
 
 /**
  * Everything that sends the composer's contents somewhere: the optimistic home
@@ -161,17 +164,8 @@ export function useComposeSubmit<Draft>({
     setSubmitting(true);
     setSavedMsg(null);
     try {
-      const body = { ...buildBody(), scheduledAt: scheduledAtIso };
-      const res = await fetch('/api/scheduled', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setSavedMsg(data.error ?? t('could-not-save', { defaultValue: 'Could not save' }));
-        return;
-      }
+      const body = { content: '', ...buildBody(), scheduledAt: scheduledAtIso };
+      await api(createScheduledApi, { body });
       resetForm();
       setSavedMsg(
         scheduledAtIso
@@ -180,8 +174,9 @@ export function useComposeSubmit<Draft>({
       );
       setTimeout(() => setSavedMsg(null), 3000);
     } catch (error) {
-      console.error('Save draft error:', error);
-      setSavedMsg(t('could-not-save', { defaultValue: 'Could not save' }));
+      // A rejected save (HttpError) is a normal outcome; only transport failures are logged.
+      if (!(error instanceof HttpError)) console.error('Save draft error:', error);
+      setSavedMsg(serverError(error) ?? t('could-not-save', { defaultValue: 'Could not save' }));
     } finally {
       setSubmitting(false);
     }

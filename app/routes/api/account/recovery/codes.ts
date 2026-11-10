@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { generateRecoveryCodesApi, getRecoveryCodeStatusApi } from '@/lib/recovery/recovery.contract';
 import { generateRecoveryCodes, getRecoveryCodeStatus } from '@/lib/recovery/codes.server';
 
 /**
@@ -14,11 +15,12 @@ import { generateRecoveryCodes, getRecoveryCodeStatus } from '@/lib/recovery/cod
 export const Route = createFileRoute('/api/account/recovery/codes')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) =>
-        Response.json(await getRecoveryCodeStatus(userId)),
+      GET: implement(getRecoveryCodeStatusApi, { rateLimit: 'read' }, async ({ userId }) =>
+        getRecoveryCodeStatus(userId),
       ),
 
-      POST: defineHandler(
+      POST: implement(
+        generateRecoveryCodesApi,
         {
           // Generating is cheap for the caller and expensive for us (ten scrypt
           // hashes), and each call silently destroys the previous set.

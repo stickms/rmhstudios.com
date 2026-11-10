@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { publishScheduledApi } from '@/lib/scheduled/scheduled.contract';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { getActiveBan } from '@/lib/admin-audit.server';
@@ -9,7 +10,7 @@ import { publishScheduledPost } from '@/lib/scheduled/publish.server';
 export const Route = createFileRoute('/api/scheduled/$id/publish')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ request, params, session }) => {
+      POST: implement(publishScheduledApi, {}, async ({ request, params, session }) => {
         const ban = await getActiveBan(session.user.id);
         if (ban) {
           return Response.json(
@@ -40,7 +41,7 @@ export const Route = createFileRoute('/api/scheduled/$id/publish')({
         }
 
         const postId = await publishScheduledPost(sp);
-        return Response.json({ success: true, postId });
+        return { success: true as const, postId };
       }),
     },
   },

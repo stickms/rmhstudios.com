@@ -1,5 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler, notFound } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { notFound } from '@/lib/api/handler.server';
+import {
+  deleteProfileLinkApi,
+  updateProfileLinkApi,
+} from '@/lib/profile-links/profile-links.contract';
 import { profileLinkUpdateSchema } from '@/lib/profile-links/schema';
 import {
   deleteProfileLink,
@@ -17,19 +22,20 @@ import {
 export const Route = createFileRoute('/api/profile-links/$id/')({
   server: {
     handlers: {
-      PATCH: defineHandler(
+      PATCH: implement(
+        updateProfileLinkApi,
         { rateLimit: 'write', body: profileLinkUpdateSchema, verboseValidationErrors: true },
         async ({ userId, params, body }) => {
           const row = await updateProfileLink(userId, params.id, body);
           if (!row) return notFound('Link not found');
-          return Response.json({ link: toProfileLinkDTO(row) });
+          return { link: toProfileLinkDTO(row) };
         },
       ),
 
-      DELETE: defineHandler({ rateLimit: 'write' }, async ({ userId, params }) => {
+      DELETE: implement(deleteProfileLinkApi, { rateLimit: 'write' }, async ({ userId, params }) => {
         const removed = await deleteProfileLink(userId, params.id);
         if (!removed) return notFound('Link not found');
-        return Response.json({ ok: true });
+        return { ok: true as const };
       }),
     },
   },

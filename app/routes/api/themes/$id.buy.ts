@@ -1,17 +1,19 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { buyThemeApi } from '@/lib/themes/themes.contract';
 import { buyTheme, ThemeError } from '@/lib/themes/themes.server';
 
 /** POST /api/themes/:id/buy — purchase a published theme with coins. */
 export const Route = createFileRoute('/api/themes/$id/buy')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        buyThemeApi,
         { rateLimit: { limit: 20, windowMs: 60_000, prefix: 'theme-buy' } },
         async ({ params, session }) => {
           try {
             const result = await buyTheme(session.user.id, params.id);
-            return Response.json({ ok: true, balance: result.balance });
+            return { ok: true as const, balance: result.balance };
           } catch (e) {
             if (e instanceof ThemeError) {
               const status = e.message === 'NOT_FOR_SALE' ? 404 : 400;

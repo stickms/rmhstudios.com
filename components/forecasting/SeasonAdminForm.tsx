@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { api } from '@/lib/contract/client';
+import { listPredictionsApi } from '@/lib/predictions/predictions.contract';
 
 interface MarketOption {
   id: string;
@@ -20,9 +22,8 @@ export function SeasonAdminForm({ onCreated }: { onCreated: () => void }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    fetch('/api/predictions?filter=open')
-      .then((r) => r.json())
-      .then((d) => setMarkets(d.markets ?? []))
+    api(listPredictionsApi, { query: { filter: 'open' } })
+      .then((d) => setMarkets(d.markets))
       .catch(() => setMarkets([]));
   }, []);
 

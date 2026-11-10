@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { deleteSavedSearchApi, updateSavedSearchApi } from '@/lib/search/saved.contract';
 import { savedSearchUpdateSchema } from '@/lib/search/saved';
 import { updateSaved, deleteSaved, SavedSearchError } from '@/lib/search/saved.server';
 
@@ -10,29 +11,32 @@ import { updateSaved, deleteSaved, SavedSearchError } from '@/lib/search/saved.s
 export const Route = createFileRoute('/api/search/saved/$id')({
   server: {
     handlers: {
-      PATCH: defineHandler(
-        { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:search/saved.:id' } },
-        async ({ request, params, session }) => {
-          const body = await request.json().catch(() => null);
-          const parsed = savedSearchUpdateSchema.safeParse(body);
-          if (!parsed.success || parsed.data.alerts === undefined) {
+      PATCH: implement(
+        updateSavedSearchApi,
+        {
+          rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:search/saved.:id' },
+          body: savedSearchUpdateSchema,
+        },
+        async ({ params, session, body }) => {
+          if (body.alerts === undefined) {
             return Response.json({ error: 'Invalid input' }, { status: 400 });
           }
           try {
-            await updateSaved(session.user.id, params.id, parsed.data.alerts);
+            await updateSaved(session.user.id, params.id, body.alerts);
           } catch (e) {
             if (e instanceof SavedSearchError)
               return Response.json({ error: e.message }, { status: 404 });
             throw e;
           }
-          return Response.json({ ok: true });
+          return { ok: true as const };
         },
       ),
-      DELETE: defineHandler(
+      DELETE: implement(
+        deleteSavedSearchApi,
         { rateLimit: { policy: 'write', scope: 'user', prefix: 'mutation:search/saved.:id' } },
         async ({ params, session }) => {
           await deleteSaved(session.user.id, params.id);
-          return Response.json({ ok: true });
+          return { ok: true as const };
         },
       ),
     },

@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler, notFound } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { approveRecoveryRequestApi, cancelRecoveryRequestApi } from '@/lib/recovery/recovery.contract';
+import { notFound } from '@/lib/api/handler.server';
 import { approveRecoveryRequest, cancelRecoveryRequest } from '@/lib/recovery/requests.server';
 
 /**
@@ -14,7 +16,8 @@ import { approveRecoveryRequest, cancelRecoveryRequest } from '@/lib/recovery/re
 export const Route = createFileRoute('/api/account/recovery/requests/$id')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        approveRecoveryRequestApi,
         {
           rateLimit: {
             limit: 10,
@@ -31,14 +34,14 @@ export const Route = createFileRoute('/api/account/recovery/requests/$id')({
               { status: result.reason === 'not-found' ? 404 : 400 },
             );
           }
-          return Response.json({ ok: true, approvals: result.approvals, phase: result.phase });
+          return { ok: true as const, approvals: result.approvals, phase: result.phase };
         },
       ),
 
-      DELETE: defineHandler({ rateLimit: 'write' }, async ({ userId, params }) => {
+      DELETE: implement(cancelRecoveryRequestApi, { rateLimit: 'write' }, async ({ userId, params }) => {
         const cancelled = await cancelRecoveryRequest(userId, params.id);
         if (!cancelled) return notFound('No open recovery request with that id');
-        return Response.json({ ok: true });
+        return { ok: true as const };
       }),
     },
   },

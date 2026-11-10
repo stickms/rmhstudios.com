@@ -19,6 +19,16 @@ import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  approveRecoveryRequestApi,
+  confirmTrustedContactApi,
+  listRecoveryRequestsApi,
+  listTrustedContactsApi,
+  nominateTrustedContactApi,
+  removeTrustedContactApi,
+} from '@/lib/recovery/recovery.contract';
 
 interface ContactUser {
   id: string;
@@ -61,22 +71,16 @@ export function TrustedContactsPanel() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [contactsRes, requestsRes] = await Promise.all([
-        fetch('/api/account/recovery/contacts'),
-        fetch('/api/account/recovery/requests'),
+      // Each part fails on its own: a failed call leaves that part empty.
+      const [contactData, requestData] = await Promise.all([
+        api(listTrustedContactsApi).catch(() => null),
+        api(listRecoveryRequestsApi).catch(() => null),
       ]);
-      if (contactsRes.ok) {
-        const data = (await contactsRes.json()) as {
-          contacts: ContactRow[];
-          trustedFor: ContactRow[];
-        };
-        setContacts(data.contacts);
-        setTrustedFor(data.trustedFor);
+      if (contactData) {
+        setContacts(contactData.contacts);
+        setTrustedFor(contactData.trustedFor);
       }
-      if (requestsRes.ok) {
-        const data = (await requestsRes.json()) as { approvable: ApprovableRequest[] };
-        setApprovable(data.approvable);
-      }
+      if (requestData) setApprovable(requestData.approvable);
     } catch {
       // Leave the panel empty rather than throwing at the user.
     } finally {
@@ -93,22 +97,17 @@ export function TrustedContactsPanel() {
     if (!handle.trim()) return;
     setAdding(true);
     try {
-      const res = await fetch('/api/account/recovery/contacts', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ handle: handle.trim().replace(/^@/, '') }),
+      const data = await api(nominateTrustedContactApi, {
+        body: { handle: handle.trim().replace(/^@/, '') },
       });
-      const data = (await res.json().catch(() => ({}))) as { contact?: ContactRow; error?: string };
-      if (!res.ok || !data.contact) {
-        toast.error(
-          data.error ?? t('contacts-add-failed', { defaultValue: 'Could not add that person.' }),
-        );
-        return;
-      }
-      setContacts((prev) => [...prev, data.contact as ContactRow]);
+      setContacts((prev) => [...prev, data.contact]);
       setHandle('');
       toast.success(
         t('contacts-added', { defaultValue: 'Invitation sent. They have to accept it.' }),
+      );
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('contacts-add-failed', { defaultValue: 'Could not add that person.' }),
       );
     } finally {
       setAdding(false);
@@ -118,15 +117,11 @@ export function TrustedContactsPanel() {
   const remove = async (row: ContactRow) => {
     setBusyId(row.id);
     try {
-      const res = await fetch(`/api/account/recovery/contacts/${encodeURIComponent(row.id)}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) {
-        toast.error(t('contacts-remove-failed', { defaultValue: 'Could not remove that.' }));
-        return;
-      }
+      await api(removeTrustedContactApi, { params: { id: row.id } });
       setContacts((prev) => prev.filter((item) => item.id !== row.id));
       setTrustedFor((prev) => prev.filter((item) => item.id !== row.id));
+    } catch {
+      toast.error(t('contacts-remove-failed', { defaultValue: 'Could not remove that.' }));
     } finally {
       setBusyId(null);
     }
@@ -135,18 +130,14 @@ export function TrustedContactsPanel() {
   const accept = async (row: ContactRow) => {
     setBusyId(row.id);
     try {
-      const res = await fetch(`/api/account/recovery/contacts/${encodeURIComponent(row.id)}`, {
-        method: 'POST',
-      });
-      if (!res.ok) {
-        toast.error(t('contacts-accept-failed', { defaultValue: 'Could not accept that.' }));
-        return;
-      }
+      await api(confirmTrustedContactApi, { params: { id: row.id } });
       setTrustedFor((prev) =>
         prev.map((item) =>
           item.id === row.id ? { ...item, confirmedAt: new Date().toISOString() } : item,
         ),
       );
+    } catch {
+      toast.error(t('contacts-accept-failed', { defaultValue: 'Could not accept that.' }));
     } finally {
       setBusyId(null);
     }
@@ -166,25 +157,20 @@ export function TrustedContactsPanel() {
     if (!confirmed) return;
     setBusyId(request.id);
     try {
-      const res = await fetch(`/api/account/recovery/requests/${encodeURIComponent(request.id)}`, {
-        method: 'POST',
-      });
-      const data = (await res.json().catch(() => ({}))) as { error?: string; approvals?: number };
-      if (!res.ok) {
-        toast.error(
-          data.error ?? t('contacts-approve-failed', { defaultValue: 'Could not approve that.' }),
-        );
-        return;
-      }
+      const data = await api(approveRecoveryRequestApi, { params: { id: request.id } });
       setApprovable((prev) =>
         prev.map((item) =>
           item.id === request.id
-            ? { ...item, approvedByMe: true, approvals: data.approvals ?? item.approvals + 1 }
+            ? { ...item, approvedByMe: true, approvals: data.approvals }
             : item,
         ),
       );
       toast.success(
         t('contacts-approved', { defaultValue: 'Approved.' }) + (who ? ` (${who})` : ''),
+      );
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('contacts-approve-failed', { defaultValue: 'Could not approve that.' }),
       );
     } finally {
       setBusyId(null);

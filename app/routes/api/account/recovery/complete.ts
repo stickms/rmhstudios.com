@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { completeRecoveryApi } from '@/lib/recovery/recovery.contract';
 import { completeRecoveryRequest } from '@/lib/recovery/requests.server';
 
 /**
@@ -25,7 +26,8 @@ const completeSchema = z.object({
 export const Route = createFileRoute('/api/account/recovery/complete')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        completeRecoveryApi,
         {
           auth: 'none',
           rateLimit: {
@@ -50,7 +52,7 @@ export const Route = createFileRoute('/api/account/recovery/complete')({
               { status: result.reason === 'email-taken' ? 409 : 400 },
             );
           }
-          return Response.json({ ok: true });
+          return { ok: true as const };
         },
       ),
     },
