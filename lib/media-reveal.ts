@@ -9,7 +9,7 @@
  *
  * How, and why this way:
  *
- *  - `MEDIA_REVEAL_SCRIPT` runs in <head>, before any <img> exists, and installs
+ *  - `mediaRevealStep` (lib/prepaint/media-reveal.ts) runs in <head>, before any <img> exists, and installs
  *    ONE capture-phase `load`/`error` listener on the document (load events do
  *    not bubble, but they do capture). It marks each image `data-loaded` as it
  *    finishes — server-rendered, hydrated, lazy and client-inserted alike —
@@ -25,4 +25,4 @@
  * would never fire `load`) is never hidden. Any image can opt out with
  * `data-no-reveal`.
  */
-export const MEDIA_REVEAL_SCRIPT = `(function(){try{var d=document,m=function(e){var t=e.target;if(t&&t.tagName==="IMG"&&!t.hasAttribute("data-loaded"))t.setAttribute("data-loaded","")};d.addEventListener("load",m,true);d.addEventListener("error",m,true);d.documentElement.classList.add("media-reveal")}catch(e){}})()`;
+export {};

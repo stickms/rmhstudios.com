@@ -60,6 +60,8 @@
     "docs:api:check": "pnpm exec tsx scripts/generate-api-docs.ts --check",
     "facts:generate": "pnpm exec tsx scripts/gen-repo-facts.ts",
     "facts:check": "pnpm exec tsx scripts/gen-repo-facts.ts --check",
+    "prepaint:build": "pnpm exec tsx scripts/build-prepaint.ts",
+    "prepaint:check": "pnpm exec tsx scripts/build-prepaint.ts --check",
     "docs:site": "pnpm exec tsx scripts/generate-site-reference.ts",
     "docs:site:check": "pnpm exec tsx scripts/generate-site-reference.ts --check",
     "media:migrate": "pnpm exec tsx scripts/migrate-media-to-r2.ts",

@@ -5,8 +5,8 @@
  * root route can import the pre-paint script without pulling anything heavy.
  *
  * One JSON blob under `rmh-access`; `applyAccessPrefs` is the only DOM writer and
- * `ACCESS_PREPAINT_SCRIPT` is its ES5 twin for before first paint — change both
- * together. Everything lands as a custom property / attribute on <html> once,
+ * `accessStep` (lib/prepaint/access.ts) is its twin for before first paint, bundled
+ * into the generated pre-paint script — change both together. Everything lands as a custom property / attribute on <html> once,
  * never per frame.
  */
 
@@ -177,9 +177,3 @@ export function subscribeAccessPrefs(cb: () => void): () => void {
     window.removeEventListener('storage', onStorage);
   };
 }
-
-/**
- * Pre-paint twin of `applyAccessPrefs` (ES5, try/catch — it runs before any bundle
- * does). Serialized from the same constants so it cannot drift from them.
- */
-export const ACCESS_PREPAINT_SCRIPT = `(function(){try{var r=localStorage.getItem(${JSON.stringify(ACCESS_KEY)});if(!r)return;var p=JSON.parse(r)||{};var h=document.documentElement,s=h.style;var SV=${JSON.stringify(SPACING_VARS)};var CS=${JSON.stringify(CAPTION_SCALE)};var CB=${JSON.stringify(CAPTION_BG_CSS)};if(SV.hasOwnProperty(p.spacing)){var v=SV[p.spacing];h.setAttribute("data-text-spacing",p.spacing);s.setProperty("--rmh-ts-lh",v.lh);s.setProperty("--rmh-ts-ls",v.ls);s.setProperty("--rmh-ts-ws",v.ws)}if(CS.hasOwnProperty(p.captionSize))s.setProperty("--rmh-cue-scale",CS[p.captionSize]);if(CB.hasOwnProperty(p.captionBg))s.setProperty("--rmh-cue-bg",CB[p.captionBg]);if(p.bedtime===true){var q=(localStorage.getItem(${JSON.stringify(QUIET_HOURS_KEY)})||"").split(",");var a=+q[0],b=+q[1];if(q.length===2&&a!==b){var d=new Date(),m=d.getHours()*60+d.getMinutes();if(a<b?(m>=a&&m<b):(m>=a||m<b))h.setAttribute("data-bedtime","1")}}}catch(e){}})()`;

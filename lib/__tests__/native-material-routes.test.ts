@@ -6,7 +6,9 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { runPrepaint } from './prepaint-harness';
 import {
+  NATIVE_MATERIAL_BASES,
   NATIVE_MATERIAL_CLASS,
   isNativeMaterialRoute,
   syncNativeMaterialClass,
@@ -75,9 +77,13 @@ describe('wiring', () => {
   });
 
   it('the theme script stamps it before first paint, from the same route list', () => {
-    const src = read('app/routes/__root.tsx');
-    expect(src).toContain('var NM=${JSON.stringify(NATIVE_MATERIAL_BASES)}');
-    expect(src).toMatch(/classList\.add\("native-material"\)/);
+    // The GENERATED pre-paint code, run against every native-material base and its neighbours.
+    for (const base of NATIVE_MATERIAL_BASES) {
+      expect(runPrepaint({ path: base }).classes.has(NATIVE_MATERIAL_CLASS)).toBe(true);
+      expect(runPrepaint({ path: `${base}/x/y` }).classes.has(NATIVE_MATERIAL_CLASS)).toBe(true);
+      expect(runPrepaint({ path: `${base}x` }).classes.has(NATIVE_MATERIAL_CLASS)).toBe(false);
+    }
+    expect(runPrepaint({ path: '/' }).classes.has(NATIVE_MATERIAL_CLASS)).toBe(false);
   });
 
   it('the woken haze is scoped off it', () => {

@@ -10,9 +10,6 @@
  * only for a non-default value; the default (`lively`) is expressed by absence.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { join, dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 const { getSession, upsert, findUnique } = vi.hoisted(() => ({
   getSession: vi.fn(),
@@ -38,8 +35,8 @@ import {
 import { appearanceComfortSchema } from '@/lib/appearance/prefs-schema';
 import { accountAppearanceSeed } from '@/lib/appearance/account-seed';
 import { useThemeStore } from '@/stores/themeStore';
+import { runPrepaint } from './prepaint-harness';
 
-const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 type Handler = (ctx: { params: object; request: Request }) => Promise<Response>;
 const handlers = (
@@ -185,14 +182,16 @@ describe('jellyMotion resolution, store, seed and applier', () => {
   });
 
   it('the pre-paint script stamps exactly the non-default values from the cache key', () => {
-    const root = readFileSync(join(REPO, 'app/routes/__root.tsx'), 'utf8');
-    const nonDefaults = JELLY_MOTION_LEVELS.filter((v) => v !== DEFAULT_JELLY_MOTION);
-    expect(root).toContain(`localStorage.getItem("rmh-jelly-motion")`);
-    expect(root).toContain(`setAttribute("data-jelly-motion"`);
-    const cond = nonDefaults.map((v) => `jm==="${v}"`).join('||');
-    expect(root).toContain(
-      `if(${cond}){document.documentElement.setAttribute("data-jelly-motion",jm)}`,
-    );
+    // Runs the GENERATED pre-paint code (lib/prepaint/generated.ts) against each stored value.
+    for (const v of JELLY_MOTION_LEVELS) {
+      const run = runPrepaint({ storage: { 'rmh-jelly-motion': v } });
+      if (v === DEFAULT_JELLY_MOTION) expect(run.attrs.has('data-jelly-motion')).toBe(false);
+      else expect(run.attrs.get('data-jelly-motion')).toBe(v);
+    }
+    expect(
+      runPrepaint({ storage: { 'rmh-jelly-motion': 'bogus' } }).attrs.has('data-jelly-motion'),
+    ).toBe(false);
+    expect(runPrepaint().attrs.has('data-jelly-motion')).toBe(false);
   });
 
   it('round-trips through the localStorage cache key (signed-out path)', () => {
