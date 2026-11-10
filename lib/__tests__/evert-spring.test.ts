@@ -12,7 +12,6 @@
  * degradation tiers stand it down centrally.
  */
 
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -22,9 +21,10 @@ import {
   springSettleTime,
   springStep,
 } from '@/lib/fluid';
+import { readCss } from './css-source';
 
 const ROOT = join(__dirname, '..', '..');
-const CSS = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
+const CSS = readCss(join(ROOT, 'app', 'globals.css'));
 const SECTION = (() => {
   const start = CSS.indexOf('/* Section 7.3 Eversion');
   const end = CSS.indexOf('/* ─── Scoped shared-element View Transitions', start);
@@ -131,7 +131,7 @@ describe('§7.3 — the layer costs what the design language allows', () => {
 });
 
 describe('ordinary controls keep immediate feedback', () => {
-  const read = (p: string) => readFileSync(join(ROOT, p), 'utf8');
+  const read = (p: string) => readCss(join(ROOT, p));
   it('does not install the retired control eversion listener or mini globe renderer', () => {
     expect(read('components/Providers.tsx')).not.toContain('useEvertPointLayer');
     expect(read('components/radial/eversion/EversionRoot.tsx')).not.toContain(

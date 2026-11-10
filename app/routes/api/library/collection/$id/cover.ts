@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/library/collections.contract';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { generateCollectionCover, type Viewer } from '@/lib/library/collections.server';
@@ -19,29 +20,33 @@ async function getViewer(request: Request): Promise<Viewer> {
 export const Route = createFileRoute('/api/library/collection/$id/cover')({
   server: {
     handlers: {
-      POST: defineHandler({ auth: 'none' }, async ({ request, params }) => {
-        if (!isSafeLibraryId(params.id))
-          return Response.json({ error: 'Not found.' }, { status: 404 });
-        const viewer = await getViewer(request);
-        if (!viewer) return Response.json({ error: 'You must be signed in.' }, { status: 401 });
+      POST: implement(
+        C.generateLibraryCollectionCoverApi,
+        { auth: 'none' },
+        async ({ request, params }) => {
+          if (!isSafeLibraryId(params.id))
+            return Response.json({ error: 'Not found.' }, { status: 404 });
+          const viewer = await getViewer(request);
+          if (!viewer) return Response.json({ error: 'You must be signed in.' }, { status: 401 });
 
-        const ip = getClientIp(request);
-        const { allowed, retryAfter } = rateLimit(ip, {
-          limit: 10,
-          windowMs: 60 * 60_000,
-          prefix: 'library-collection-cover',
-        });
-        if (!allowed) {
-          return Response.json(
-            { error: 'Too many cover generations. Try again later.' },
-            { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-          );
-        }
+          const ip = getClientIp(request);
+          const { allowed, retryAfter } = rateLimit(ip, {
+            limit: 10,
+            windowMs: 60 * 60_000,
+            prefix: 'library-collection-cover',
+          });
+          if (!allowed) {
+            return Response.json(
+              { error: 'Too many cover generations. Try again later.' },
+              { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+            );
+          }
 
-        const result = await generateCollectionCover(viewer, params.id);
-        if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
-        return Response.json({ ok: true, ...result.value });
-      }),
+          const result = await generateCollectionCover(viewer, params.id);
+          if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+          return Response.json({ ok: true, ...result.value });
+        },
+      ),
     },
   },
 });

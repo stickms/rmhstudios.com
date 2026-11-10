@@ -21,15 +21,16 @@
  *  - the legacy opacity press cue (globals.css) stands down exactly where the soft body springs (D-B1);
  *  - the hub's compose pill presses as one body (D-C6); the hook mounts the pointer variable, not physics.
  */
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { CSS_BODY_SIZE_FALLBACK_PX, CSS_SIZE_FALLBACK_PX } from '@/lib/jelly/soft-policy';
 import { GLOBE_SELECTOR } from '@/lib/jelly/tiers';
+import { readCss } from './css-source';
 
 const ROOT = process.cwd();
-const read = (p: string) => readFileSync(join(ROOT, p), 'utf8');
+const read = (p: string) => readCss(join(ROOT, p));
 const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 const flat = (s: string) =>
   s.replace(/\s+/g, ' ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').trim();

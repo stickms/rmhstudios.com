@@ -5,6 +5,8 @@ import { Link } from '@tanstack/react-router';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { formatCount } from '@/lib/utils';
+import { api } from '@/lib/contract/client';
+import { getCreatorAnalyticsApi } from '@/lib/profile/profile-extras.contract';
 
 interface Analytics {
   summary: {
@@ -36,9 +38,8 @@ export function AnalyticsDashboard() {
 
   useEffect(() => {
     let alive = true;
-    fetch('/api/profile/analytics')
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: Analytics) => {
+    api(getCreatorAnalyticsApi, { retries: 0 })
+      .then((d) => {
         if (alive) setData(d);
       })
       .catch(() => alive && setFailed(true))

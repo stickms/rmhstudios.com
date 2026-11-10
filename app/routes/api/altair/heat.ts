@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/altair/altair.contract';
 import { maxUnlockedHeat } from '@/lib/altair/solo/heat.server';
 import { HEAT_MAX } from '@/lib/altair/data/heat';
 
@@ -10,10 +11,14 @@ import { HEAT_MAX } from '@/lib/altair/data/heat';
 export const Route = createFileRoute('/api/altair/heat')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ userId }) => {
-        const unlocked = userId ? await maxUnlockedHeat(userId) : 0;
-        return Response.json({ unlocked, max: HEAT_MAX });
-      }),
+      GET: implement(
+        C.getAltairHeatApi,
+        { auth: 'optional', rateLimit: 'read' },
+        async ({ userId }) => {
+          const unlocked = userId ? await maxUnlockedHeat(userId) : 0;
+          return Response.json({ unlocked, max: HEAT_MAX });
+        },
+      ),
     },
   },
 });

@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/profile/profile-extras.contract';
 import { getWall } from '@/lib/profile/stamps.server';
 
 /**
@@ -10,11 +11,14 @@ import { getWall } from '@/lib/profile/stamps.server';
 export const Route = createFileRoute('/api/profile/$id/stamps')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ params, userId }) =>
-        Response.json(
-          { stamps: await getWall(params.id, userId) },
-          { headers: { 'Cache-Control': 'private, no-store' } },
-        ),
+      GET: implement(
+        C.getProfileStampsApi,
+        { auth: 'optional', rateLimit: 'read' },
+        async ({ params, userId }) =>
+          Response.json(
+            { stamps: await getWall(params.id, userId) },
+            { headers: { 'Cache-Control': 'private, no-store' } },
+          ),
       ),
     },
   },

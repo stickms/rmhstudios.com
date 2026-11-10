@@ -9,15 +9,15 @@
  * admission rule (the registry, the pointer-variable hook's opt-out, click arcs) drops the globe
  * through the one shared `GLOBE_SELECTOR` even if a role were put on it by mistake.
  */
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { pressHost } from '../arcs/clicks';
 import { REGISTRY_EXCLUDE, isJellyHost } from '../registry';
 import { GLOBE_SELECTOR, JELLY_SELECTOR, OPT_OUT_SELECTOR, jellyOptedOut } from '../tiers';
+import { readCss } from '../../__tests__/css-source';
 
 const ROOT = join(__dirname, '..', '..', '..');
-const read = (p: string) => readFileSync(join(ROOT, p), 'utf8');
+const read = (p: string) => readCss(join(ROOT, p));
 
 /**
  * A tiny fake DOM (the suite runs in node; same approach as registry.test.ts): an element matches a selector list when

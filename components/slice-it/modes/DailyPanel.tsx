@@ -25,6 +25,8 @@ import { CalendarDays, Loader2, Trophy } from 'lucide-react';
 import { useSliceItStore } from '@/lib/slice-it/store';
 import type { GameEngine } from '@/lib/slice-it/engine';
 import type { DailyState } from '@/lib/slice-it/daily.server';
+import { api } from '@/lib/contract/client';
+import { getDailyApi, submitDailyApi } from '@/lib/slice-it/slice-it.contract';
 import { armRunFinish } from './runTracker';
 
 interface DailyPanelProps {
@@ -53,9 +55,7 @@ export function DailyPanel({ engine, onPlay, onBack }: DailyPanelProps) {
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/slice-it/daily');
-      if (!res.ok) throw new Error(String(res.status));
-      const data = (await res.json()) as DailyState;
+      const data = await api(getDailyApi);
       setState(data);
       setRemaining(data.resetsInMs);
       setError(null);
@@ -92,16 +92,14 @@ export function DailyPanel({ engine, onPlay, onBack }: DailyPanelProps) {
 
     armRunFinish(engine, (stats) => {
       useSliceItStore.getState().setModifiers(restore);
-      void fetch('/api/slice-it/daily/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      void api(submitDailyApi, {
+        body: {
           songId: selection.songId,
           score: Math.max(0, Math.round(stats.score)),
           accuracy: Math.max(0, Math.min(100, stats.accuracy)),
           maxCombo: Math.max(0, Math.round(stats.maxCombo)),
           cleared: !stats.failed,
-        }),
+        },
       }).catch(() => {});
     });
 

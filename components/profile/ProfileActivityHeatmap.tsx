@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HEATMAP_WEEKS, heatLevel, postingStreaks, windowDays } from '@/lib/profile/activity';
+import { api } from '@/lib/contract/client';
+import { getProfileActivityApi } from '@/lib/profile/profile-extras.contract';
 
 /** Opacity of the accent per shade; 0 is the empty-cell wash. */
 const LEVEL_MIX = [14, 30, 50, 72, 100] as const;
@@ -15,8 +17,7 @@ export default function ProfileActivityHeatmap({ userId }: { userId: string }) {
 
   useEffect(() => {
     let active = true;
-    fetch(`/api/profile/${encodeURIComponent(userId)}/activity`, { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
+    api(getProfileActivityApi, { params: { id: userId }, retries: 0 })
       .then((json) => {
         if (active && json && typeof json.days === 'object') setData(json);
       })

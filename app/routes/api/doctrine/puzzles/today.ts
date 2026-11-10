@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/doctrine/doctrine.contract';
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
 import { generatePuzzle, getSeedForDate, stripSolution } from '@/lib/doctrine/puzzle-engine';
@@ -10,7 +11,8 @@ const MODES: PuzzleMode[] = ['alibi', 'spectrum', 'outcast', 'chainlink', 'impos
 export const Route = createFileRoute('/api/doctrine/puzzles/today')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        C.getDoctrineTodayPuzzlesApi,
         {
           auth: 'none',
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-today' },

@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/profile/profile-extras.contract';
 import { getClientIp } from '@/lib/rate-limit';
 import { readVisitCount, recordProfileVisit } from '@/lib/profile/plus.server';
 
@@ -18,7 +19,8 @@ const BOT_UA = /bot|crawl|spider|slurp|preview|facebookexternalhit|headless/i;
 export const Route = createFileRoute('/api/profile/$id/visit')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        C.recordProfileVisitApi,
         {
           auth: 'optional',
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'profile-visit' },

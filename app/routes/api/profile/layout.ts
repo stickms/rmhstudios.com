@@ -1,4 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/profile/profile-extras.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { layoutSchema, parseLayout } from '@/lib/profile/modules-schema';
@@ -17,7 +19,8 @@ export const Route = createFileRoute('/api/profile/layout')({
         });
         return Response.json({ modules: parseLayout(row?.modules) });
       }),
-      PUT: defineHandler(
+      PUT: implement(
+        C.setProfileLayoutApi,
         {
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'profile-layout' },
           body: layoutSchema,

@@ -1,0 +1,1017 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Handheld tier — the THIRD device axis (§6.4/§10).
+
+   `html.ios-webkit` means "this compositor behaves differently". It does not
+   describe the fact this block is about, and that gap is why phones were paying
+   full price:
+
+     - There was never a "weak machine" class that a current phone reached: the
+       old low-end signals are Chromium-only except hardwareConcurrency, which
+       iOS reports as 4–6, and a mid-range Android clears the thresholds too.
+     - `ios-webkit` DID freeze the aurora, but only on iOS. Android Chrome ran
+       the full animated backdrop with no equivalent.
+
+   What is true of every handheld regardless of how fast its SoC is: it renders
+   at 2–3× device pixel ratio, it is thermally limited, and it is on battery.
+   A `position: fixed` full-viewport gradient running two infinite transform
+   animations underneath ~46 `backdrop-filter` surfaces means the compositor
+   re-derives every one of those blurs on every frame, over ~9× the physical
+   pixels a 1× desktop covers — for ambient decoration nobody is looking at
+   during a cold load.
+
+   So: keep the material (tint, glint, depth, blur — the identity), and stop
+   paying for MOTION underneath it. This is what iOS has had all along; Android
+   phones now match, which makes the two consistent rather than divergent.
+
+   Deliberately `(pointer: coarse)` AND a width bound, not width alone: a
+   desktop browser resized narrow is still a desktop and keeps the full effect,
+   and a coarse-pointer TV or kiosk above 1024px is not thermally limited in the
+   way this block assumes. CSS-only demotion — no component branches. */
+@media (pointer: coarse) and (max-width: 1024px) {
+  html {
+    /* Blur radius is the dominant term in backdrop-filter cost, and it is the
+       one this site can give up cheaply on a phone: the `max-width: 767.98px`
+       block above already raises every glass tier's tint opacity floor, so the
+       material there is substantially more opaque and reads far less of the
+       backdrop through it. Cutting the radius to 60% is close to invisible
+       against that floor (18px → 10.8px panes, 20px → 12px chrome, 30px → 18px
+       overlays) while removing a large, per-frame, full-screen GPU cost.
+       A cap, never a raise — this composes with the device budget. */
+    --glass-blur-cap-viewport: 0.6;
+  }
+
+  /* The ambient drift and the pointer/motion parallax, both aurora layers. This
+     is the change that actually matters: a STATIC backdrop lets the compositor
+     cache each backdrop-filter region instead of re-blurring it every frame.
+     The aurora itself stays — same gradient, same colours, same depth — it just
+     stops moving, exactly as it already does under html.ios-webkit. */
+  html:not(.app-route) .site-aurora::before,
+  html:not(.app-route) .site-aurora::after {
+    animation: none;
+    translate: none;
+    transition: none;
+    will-change: auto;
+  }
+}
+
+/* §5.47 true liquid morphing — the goo underlay. An absolutely-positioned,
+   capsule-only layer behind a control's active capsule that carries the
+   #glass-goo metaball filter so the moving capsule and its trailing droplet fuse
+   into a stretching teardrop.
+   Constraints (hard):
+     - `contain: layout paint` isolates the filter region and clips the droplet.
+     - It hosts ONLY plain accent-tint blobs — never a backdrop-filter element
+       (nesting a backdrop sampler in a filtered subtree re-rasterizes it) and
+       never labels/icons (alpha thresholding destroys glyph edges; those live in
+       the sibling layer above at z-index ≥ 1).
+   Degradations: high-contrast drops the whole underlay so only the
+   plain layoutId spring slide remains (the capsule above is untouched). Reduced
+   motion never mounts it in the first place (the components gate on
+   useReducedMotion), so no CSS rule is needed for that path. */
+.lg-goo {
+  filter: url(#glass-goo);
+  contain: layout paint;
+  pointer-events: none;
+}
+
+/* Success toast rim-flash (§5.5). Sonner portals its toasts to <body> and tags
+   them data-type; a success toast flashes a bright success-tinted rim that
+   settles into the standard L4 rim (--site-shadow, which the sonner toastOptions
+   set inline) over 0.8s. No `forwards` → after the flash the box-shadow reverts
+   to that resting inline value. The global reduced-motion reset collapses it. */
+@keyframes toast-success-flash {
+  from {
+    box-shadow:
+      inset 0 1px 0 var(--site-success),
+      inset 0 0 0 1px color-mix(in srgb, var(--site-success) 55%, transparent),
+      var(--site-glass-depth);
+  }
+  to {
+    box-shadow: var(--site-shadow);
+  }
+}
+[data-sonner-toast][data-type='success'] {
+  animation: toast-success-flash 0.8s ease-out;
+}
+
+/* Toast travel on the site's spring. Sonner moves a toast (in, out, restack,
+   swipe-back) with `transition: transform 400ms, opacity 400ms, height 400ms`
+   and no timing function — CSS `ease`, which creeps out of rest and is the
+   most web-looking curve there is. Its durations are kept exactly (its
+   unmount timers are written against them); only the shape changes, to the
+   smooth spring's response compressed into that window — the same
+   fast-out-long-landing a UIKit banner has. A transition, so a toast that is
+   restacked mid-move retargets from where it is. `html` for specificity:
+   sonner injects its stylesheet after ours. */
+html [data-sonner-toast] {
+  transition-timing-function:
+    var(--spring-smooth), var(--spring-smooth), var(--spring-smooth), ease;
+}
+
+/* ── Global degradations ──────────────────────────────────────────────────── */
+/* All remaining optics dead (§4.35 simplified pseudo set): the aside blur carrier,
+   the refract lens band, and the far aurora. (The pointer hotspot used to be
+   switched off here too; it no longer exists on any tier.) */
+
+/* ── Evening service ────────────────────────────────────────────────────────
+   Midnight's site chrome is blue-black; a dining room is not. This is the same
+   plaster under tungsten — warm charcoal, bone ink — so the page reads as the
+   hour changing rather than as a different restaurant. The pearls and the
+   sulphur do not move: the food is lit, not repainted. */
+.style-graphite {
+  --rebar-paper: #191713;
+  --rebar-paper-sunk: #110f0d;
+  --rebar-paper-raised: #232019;
+  --rebar-ink: #f3efe6;
+  --rebar-ink-soft: #a8a196;
+  --rebar-ink-faint: #6d675d;
+  --rebar-line: #35302a;
+  --rebar-line-strong: #f3efe6;
+}
+
+/* iOS/WebKit compositor safety tier. WebKit can wedge the page while compositing
+   an animated fixed gradient through SVG-displaced surfaces; when that happens
+   JS timers and recovery watchdogs cannot run either. Keep the visible CSS glass
+   material (tint, blur, glint and depth) plus ordinary component animations, but
+   make the full-screen backdrop static and remove the expensive displacement /
+   ambient-motion layers so navigation and interaction always retain a frame. */
+html.ios-webkit:not(.app-route) .site-aurora::before {
+  animation: none;
+  transition: none;
+  will-change: auto;
+  translate: none;
+  transform: scale(1.08);
+}
+html.ios-webkit .site-aurora::after,
+html.ios-webkit .glass-chrome--aside::before,
+html.ios-webkit .glass-refract::before,
+html.ios-webkit .lg-goo {
+  display: none;
+}
+html.ios-webkit .glass-liquid::after {
+  display: none;
+}
+
+/* iOS 26 Safari tints the strips behind its status bar and floating toolbar from
+   `position: fixed` / sticky layers at the screen edge, and a layer with a paint of its own (the aurora
+   canvas, here) is read as one flat colour and filled in as an opaque band that covers the content
+   scrolling under it. Transparency, `pointer-events: none`, transforms and `backdrop-filter` do not
+   reliably opt a layer out. Sites that show their page behind the bars (apple.com, reddit.com) have no
+   fixed layer at the edges: their ground is the document's own background, and anything fixed sits well
+   clear of an edge.
+
+   So on iOS WebKit the full-viewport fixed decoration is not rendered at all, on every page: the aurora
+   and the ring backdrop (the document background above already carries the canvas on site pages) and the
+   arc canvas. Page-level headers and banners that were pinned flush to the top edge (the call banners,
+   the Kaikai ledger bar, the Rebar masthead) are inset from it the same way the shell's top capsule is. The sticky top
+   capsule and the orb and compose button already sit well off the edges (radial.css). Content then runs
+   under both bars with Safari's own soft edge, not a flat band. */
+html.ios-webkit :is(.site-aurora, .radial-backdrop, .jelly-arc-layer) {
+  display: none;
+}
+
+/* Theme-aware raster maps (RMHHomes). The tint is applied to the tile canvas
+   only — the coloured price pins live in a separate MapLibre marker overlay
+   above the canvas, so they stay vivid. Dark themes invert the light OSM tiles
+   into a dark map; light themes (which set --site-map-filter: none) keep them. */
+.homes-map .maplibregl-canvas {
+  filter: var(--site-map-filter, none);
+}
+
+/* Route-CSS FOUC guard for /library. library.css is imported from the library
+   route chunk, so on client-side navigation the shelf paints a frame before that
+   stylesheet arrives — and unstyled, each book cover has no width cap and flashes
+   at full column width (a "really wide" book) before collapsing into the grid.
+   Bound the critical dimensions here in the always-loaded sheet; library.css
+   then layers on the full 3D shelf (it loads later, so it wins). */
+.lib__shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  column-gap: clamp(18px, 3vw, 44px);
+  row-gap: 40px;
+}
+.lib-book__cover {
+  width: min(100%, 150px);
+}
+
+/* ── Appearance & accessibility comfort suite (§13) ─────────────────────────
+   Account-level toggles applied by components/Providers.tsx and the no-flash
+   inline script in app/routes/__root.tsx. Font scale is set as a root
+   font-size (rem-based UI scales with it); the rules below cover the class /
+   attribute driven knobs. */
+
+/* High-legibility body font. Bundling a dedicated face (Atkinson Hyperlegible /
+   OpenDyslexic) is a follow-up; this legible system stack + loosened tracking
+   works with zero network cost today. Headings keep the theme display face. */
+html.readable-font body {
+  font-family: 'Atkinson Hyperlegible', Verdana, Tahoma, system-ui, sans-serif;
+  letter-spacing: 0.012em;
+  word-spacing: 0.06em;
+  line-height: 1.65;
+}
+
+/* Compact density takes the already-compact default one step tighter for people
+   who explicitly prefer maximum information density. Font sizes and touch
+   targets remain unchanged. */
+:root[data-density='compact'] [data-slot='card'] {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  gap: 0.625rem;
+}
+:root[data-density='compact']
+  [data-slot='card']
+  :is([data-slot='card-header'], [data-slot='card-content'], [data-slot='card-footer']) {
+  padding-inline: 1rem;
+}
+
+/* The PICKER ships two themes (stores/themeStore.ts, SITE_STYLES): Daylight
+   (`default` — the bare :root, restated as .style-default only so the settings
+   gallery can preview it) and Midnight (.style-graphite). Accent presets layer
+   on top of either (lib/appearance.ts). Midnight is DEFAULT_STYLE (what a visitor with nothing stored gets);
+   persisted-but-unknown ids self-heal to it during hydration. */
+
+@theme inline {
+  /* Site design system tokens */
+  --color-site-bg: var(--site-bg);
+  --color-site-bg-subtle: var(--site-bg-subtle);
+  --color-site-surface: var(--site-surface);
+  --color-site-surface-hover: var(--site-surface-hover);
+  --color-site-surface-active: var(--site-surface-active);
+  --color-site-border: var(--site-border);
+  --color-site-border-bright: var(--site-border-bright);
+  --color-site-text: var(--site-text);
+  --color-site-text-muted: var(--site-text-muted);
+  --color-site-text-dim: var(--site-text-dim);
+  --color-site-accent: var(--site-accent);
+  --color-site-accent-fg: var(--site-accent-fg, #fff);
+  --color-site-accent-hover: var(--site-accent-hover);
+  --color-site-accent-dim: var(--site-accent-dim);
+  /* The ink-gel primary action (#989) → bg-gel-ink / text-on-ink. */
+  --color-gel-ink: var(--gel-ink);
+  --color-on-ink: var(--on-ink);
+  --color-focus-ring: var(--focus-ring);
+  --color-site-success: var(--site-success);
+  --color-site-success-fg: var(--site-success-fg, #fff);
+  --color-site-media-scrim: var(--site-media-scrim);
+  --color-site-media-scrim-strong: var(--site-media-scrim-strong);
+  --color-site-media-scrim-hover: var(--site-media-scrim-hover);
+  --color-site-media-veil: var(--site-media-veil);
+  --color-site-media-ink: var(--site-media-ink);
+  --color-site-podium-gold: var(--site-podium-gold);
+  --color-site-podium-silver: var(--site-podium-silver);
+  --color-site-podium-bronze: var(--site-podium-bronze);
+
+  /* Casino table group → bg-casino-* / text-casino-* / border-casino-* utilities.
+     Scoped domain colours, not theme tokens — see the group's note in :root. */
+  --color-casino-card: var(--casino-card);
+  --color-casino-card-ink: var(--casino-card-ink);
+  --color-casino-card-red: var(--casino-card-red);
+  --color-casino-card-edge: var(--casino-card-edge);
+  --color-casino-card-back: var(--casino-card-back);
+  --color-casino-felt: var(--casino-felt);
+  --color-casino-felt-raised: var(--casino-felt-raised);
+  --color-casino-ink: var(--casino-ink);
+  --color-casino-red: var(--casino-red);
+  --color-casino-red-hover: var(--casino-red-hover);
+  --color-casino-green: var(--casino-green);
+  --color-casino-green-hover: var(--casino-green-hover);
+  --color-casino-seat-1: var(--casino-seat-1);
+  --color-casino-seat-2: var(--casino-seat-2);
+  --color-casino-seat-3: var(--casino-seat-3);
+  --color-casino-seat-4: var(--casino-seat-4);
+
+  /* Spherification group → bg-rebar-* / text-rebar-* / border-rebar-* utilities.
+     Scoped domain colours, not theme tokens — see the group's note in :root. */
+  --color-rebar-sulphur: var(--rebar-sulphur);
+  --color-rebar-sulphur-ink: var(--rebar-sulphur-ink);
+  --color-rebar-pearl-birch: var(--rebar-pearl-birch);
+  --color-rebar-pearl-rye: var(--rebar-pearl-rye);
+  --color-rebar-pearl-oyster: var(--rebar-pearl-oyster);
+  --color-rebar-pearl-rutabaga: var(--rebar-pearl-rutabaga);
+  --color-rebar-pearl-cod: var(--rebar-pearl-cod);
+  --color-rebar-pearl-marrow: var(--rebar-pearl-marrow);
+  --color-rebar-pearl-reindeer: var(--rebar-pearl-reindeer);
+  --color-rebar-pearl-cloudberry: var(--rebar-pearl-cloudberry);
+  --color-rebar-pearl-gravel: var(--rebar-pearl-gravel);
+  /* The room's own surfaces → bg-rebar-paper / text-rebar-ink / border-rebar-line. */
+  --color-rebar-paper: var(--rebar-paper);
+  --color-rebar-paper-sunk: var(--rebar-paper-sunk);
+  --color-rebar-paper-raised: var(--rebar-paper-raised);
+  --color-rebar-ink: var(--rebar-ink);
+  --color-rebar-ink-soft: var(--rebar-ink-soft);
+  --color-rebar-ink-faint: var(--rebar-ink-faint);
+  --color-rebar-line: var(--rebar-line);
+  --color-rebar-line-strong: var(--rebar-line-strong);
+  --color-site-danger: var(--site-danger);
+  /* Guaranteed-legible ink for text/icons ON a --site-danger fill. Falls back to
+     white for themes that predate the token; every built-in theme sets it. */
+  --color-site-danger-fg: var(--site-danger-fg, #fff);
+  --color-site-warning: var(--site-warning);
+  /* Ink that tracks the --site-warning fill, same contract as -danger-fg above.
+     Themes whose warning is a dark brown take white; the bright golds take
+     near-black. Never hardcode ink on a warning fill. */
+  --color-site-warning-fg: var(--site-warning-fg, #fff);
+
+  /* Glass material tokens → bg-site-glass-tint, ring-site-glass-rim-soft, … */
+  --color-site-glass-tint: var(--site-glass-tint);
+  --color-site-glass-tint-strong: var(--site-glass-tint-strong);
+  --color-site-glass-ink: var(--site-glass-ink);
+  --color-site-glass-rim: var(--site-glass-rim);
+  --color-site-glass-rim-soft: var(--site-glass-rim-soft);
+  --color-site-glass-light: var(--site-glass-light);
+
+  /* Site radius scale → rounded-site / rounded-site-sm (theme-aware) */
+  --radius-site: var(--site-radius);
+  --radius-site-sm: var(--site-radius-sm);
+  /* Site elevation → shadow-site (prominent) / shadow-site-sm (resting) */
+  --shadow-site: var(--site-shadow);
+  --shadow-site-sm: var(--site-shadow-sm);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-neon-pink: var(--neon-pink);
+  --color-neon-cyan: var(--neon-cyan);
+  --color-neon-yellow: var(--neon-yellow);
+  --color-neon-green: var(--neon-green);
+  --color-neon-orange: var(--neon-orange);
+  --color-neon-purple: var(--neon-purple);
+  --color-neon-blue: var(--neon-blue);
+
+  /* ── Font utilities resolve through the THEME contract ────────────────────
+     These three used to name webfonts directly (Inter, JetBrains Mono)
+     — while the theme contract published `--site-font-body` / `--site-font-mono` /
+     `--site-font-display` beside them. So the site had two parallel type systems
+     and the utilities were wired to the wrong one:
+
+       • `font-mono` (74 call sites across 48 files) bypassed `--site-font-mono`
+         entirely. A theme that sets its own mono face — `ultra` does — changed
+         nothing, anywhere. It also lost the fallback chain: the bare webfont token
+         alone has no `sans-serif` behind it, so a failed webfont fetch dropped
+         those elements to the browser default rather than to a system face.
+       • `font-display` resolved to the body webfont, while `--site-font-display` is the
+         theme's display face. The two names meant opposite things, which is why
+         31 files write the mouthful `font-(family-name:--site-font-display)` to
+         get the display font — the obvious utility was already taken by the wrong
+         one.
+       • `font-sans` skipped `--site-font-body`, so the theme's body face applied
+         to `<body>` by inheritance but was overridden by any element that said
+         `font-sans` to mean "not mono".
+
+     Pointing all three at the tokens fixes every existing call site without
+     touching one of them, and makes `font-display` and
+     `font-(family-name:--site-font-display)` the same thing. There is no
+     `font-serif` token: the site has no serif face. */
+  --font-sans: var(--site-font-body);
+  --font-mono: var(--site-font-mono);
+  --font-display: var(--site-font-display);
+  --breakpoint-xs: 480px;
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  /* Slice It specific logic (Tailwind bindings) */
+  --color-slice-bg: var(--slice-bg);
+  --color-slice-text: var(--slice-text);
+  --color-slice-text-darker: var(--slice-text-darker);
+  --color-slice-text-muted: var(--slice-text-muted);
+  --color-slice-text-light: var(--slice-text-light);
+  --color-slice-shadow-dark: var(--slice-shadow-dark);
+  --color-slice-shadow-light: var(--slice-shadow-light);
+  --color-slice-card-bg: var(--slice-card-bg);
+  --color-slice-bg-alt: var(--slice-bg-alt);
+  --color-slice-label: var(--slice-label);
+  --color-slice-paper: var(--slice-paper);
+  --color-slice-surface-hover: var(--slice-surface-hover);
+  --color-slice-border: var(--slice-border);
+  --color-slice-primary: var(--slice-primary);
+  --color-slice-accent: var(--slice-accent);
+  --color-slice-danger: var(--slice-danger);
+  /* `--slice-input-bg`/`--slice-input-border` were defined in slice-it.css for
+     both the light and dark token sets but never bound here, so every
+     `bg-slice-input-bg` / `border-slice-input-border` in the game compiled to
+     nothing — nine of them, across the AI search bar, the setlist panel, the
+     lobby and the song details panel. The visible result was the worst kind:
+     the fields fell through to `glass-inset`'s own light background and kept
+     the game's light-on-dark ink, so the AI search box rendered #f0f0f0 text
+     on rgba(255,255,255,.9) — a contrast ratio of about 1.1:1, i.e. typing
+     into an invisible field. Binding them fixes all nine at the source. */
+  --color-slice-input-bg: var(--slice-input-bg);
+  --color-slice-input-border: var(--slice-input-border);
+
+  /* `animate-pulse-settle` — Tailwind's pulse, three times, then at rest. For
+     an indicator that has to catch the eye on arrival (a LIVE dot, a call to
+     action) without keeping the page from ever going idle: an `animate-pulse`
+     that never stops is one perpetual animation, and one is enough to make the
+     compositor render every vsync for as long as the tab is open (perf audit
+     2026-10-08). Loading placeholders keep plain `animate-pulse` — they are
+     transient by construction. */
+  --animate-pulse-settle: pulse 2s var(--ease-pulse) 3;
+
+  /* Altair Specific */
+  --color-neon-glow: #d8b4fe;
+  --animate-pulse-slow: pulse 3s var(--ease-pulse) infinite;
+  --shadow-neon: 0 0 10px var(--neon-purple), 0 0 20px var(--neon-purple);
+}
+
+/* Bottom inset shared by floating mobile UI (FAB, mini-player, back-to-top)
+   and content columns (the legacy-named .pb-dock utility).
+
+   Just env(safe-area-inset-bottom) — deliberately. On iOS Safari, including
+   iOS 26's floating tab bar, position:fixed is anchored to the VISUAL viewport,
+   which already sits ABOVE the browser's bottom bar; and env(safe-area-inset-
+   bottom) reports 0 while that bar is shown, then the home-indicator inset once
+   it collapses on scroll. So env() alone lands fixed UI just above whatever is
+   at the bottom (browser bar or home indicator) in every state. Do NOT add the
+   toolbar height (100lvh − 100dvh) on top — verified on-device that it stacks a
+   second bar's worth of space and floats controls ~100px too high. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /* On-device note kept for whoever next builds a position:fixed surface that has
+     to reach the PHYSICAL screen bottom on iOS. No CSS viewport unit expresses
+     that region: 100dvh stops at the visual viewport (above Safari's bar) and even
+     100lvh stops at the bar's MINIMIZED pill — measured on an iPhone 17 Pro /
+     iOS 26 simulator, lvh left a 248px-tall (device px) strip where content showed
+     through behind the translucent bar. The document itself fills that strip
+     because page flow isn't capped at 100lvh; a fixed element can't, and needs a
+     decorative overhang (~83 CSS px covers Safari's minimized bar + home indicator
+     on that device class) plus matching bottom padding to keep its own content
+     on-screen. The `--drawer-bleed` token that encoded this was removed with the
+     mobile drawer — the radial shell has no fixed full-height surface, so nothing
+     needs it today. */
+}
+
+@layer utilities {
+  /* ── Full-screen app/game layout helpers ─────────────────────────────────────
+ *
+ * Global rather than per-app because every full-screen experience wants them,
+ * including the games with their own design systems (Altair, Velum, Kowloon,
+ * Temple of Joy) that never import `components/shared/app-theme.css`.
+ *
+ * `.app-viewport` exists because `h-screen` is `100vh`, and on mobile `100vh`
+ * is the LARGEST viewport — the height the page has only once the browser
+ * toolbars have scrolled away. A fixed app shell sized that way puts its
+ * bottom chrome under the toolbar until the user scrolls, which in a
+ * non-scrolling app is never. `dvh` tracks the live viewport; the `vh` line
+ * above it is the fallback, which is why this is a utility rather than
+ * Tailwind's `h-dvh` (one declaration, no fallback).
+ */
+
+  /* The `--kb-inset` subtraction is the software keyboard. A shell this size
+   cannot scroll, and `dvh` tracks the browser's toolbars rather than the
+   keyboard — so when a field is focused the engine has no legitimate way to
+   reveal it and moves the visual viewport instead, panning and, where the field
+   still will not fit, scaling. Players read that as the app zooming when they
+   try to type. `hooks/useKeyboardInset` publishes the keyboard's measured
+   height (AppShell mounts it for the app tier; games mount it themselves), so
+   the shell simply ENDS where the keyboard begins and there is nothing left to
+   reveal. The property is absent at rest, so the `0px` fallback keeps this
+   identical to the plain `dvh` rule everywhere else. */
+  .app-viewport {
+    height: 100vh;
+    height: calc(100dvh - var(--kb-inset, 0px));
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── `.app-page` — a full-screen screen that is a DOCUMENT ─────────────────
+   *
+   * `.app-viewport` is right for a surface that never scrolls — a game world, a
+   * video room, a running typing test — where pinning to the live viewport is
+   * what keeps the bottom chrome out from under the browser's toolbars. It is
+   * wrong for the app tier's landings, lobbies and results screens, which are
+   * documents: a column of cards you read top to bottom. Those were built as a
+   * viewport-height shell with a `flex-1 overflow-y-auto` body, and the cost of
+   * that is invisible on a desktop and expensive on a phone — the DOCUMENT then
+   * never scrolls, and mobile Safari only collapses its address/tab bars for
+   * document scroll. The bars stayed at full height for the whole page, so every
+   * one of these screens ran ~110px shorter than the feed, which gives that
+   * space back on the first swipe. (The feed's own note is in
+   * `components/radial/radial.css` §The feed.)
+   *
+   * So: no fixed height, and no inner scroller. `svh` — the SMALLEST viewport —
+   * is the floor, so a screen shorter than the window still fills it with the
+   * toolbars showing and never invents a scrollbar; anything longer just makes
+   * the document taller, which is exactly what the feed does.
+   *
+   * Column layout is part of the contract: these screens are a header plus a
+   * body that takes the rest, and the body keeps its `flex-1` so a short one
+   * still reaches the bottom of the window instead of floating in the middle.
+   *
+   * The bottom padding is `.pb-dock`'s reasoning for the app tier: with
+   * `viewport-fit=cover` the document runs edge-to-edge, so the last row of a
+   * page needs the home-indicator inset (which `env()` reports once Safari's bar
+   * collapses) plus a calm gutter, or it ends flush against the screen edge.
+   */
+  .app-page {
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: calc(var(--safe-bottom) + var(--site-mobile-content-end));
+  }
+  @media (min-width: 768px) {
+    .app-page {
+      padding-bottom: var(--safe-bottom);
+    }
+  }
+
+  /* A page ground that fills the window without overshooting it: `svh` is the
+   SMALLEST viewport, so no phantom scroll while the toolbars are showing. */
+  .app-ground {
+    min-height: 100vh;
+    min-height: 100svh;
+  }
+
+  /* ── `.app-screen` — a menu/results screen that survives a short viewport ───
+   *
+   * The pattern under every game's front screen is "fill the window, centre the
+   * content": `height: 100dvh; display: flex; align-items: center`. It is right
+   * until the content is taller than the window — a landscape handset is ~340px
+   * tall, and a title, a blurb, a feature list, a start button and a settings
+   * panel are not — and then it fails twice over. The parent clips (games set
+   * `overflow: hidden` so the world can't be scrolled away), and even without
+   * that, `align-items: center` on an overflowing flex container pushes the
+   * content off BOTH ends, and the part above the top is unreachable because
+   * scroll offsets cannot go negative. The primary action ends up somewhere the
+   * player cannot get to.
+   *
+   * `safe center` is the one-word answer: centre while it fits, fall back to
+   * start alignment the moment it does not, so everything stays reachable. The
+   * plain `center` line before it is the fallback for engines that drop the
+   * keyword — those get the old behaviour, not a broken one.
+   */
+  .app-screen {
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    justify-content: safe center;
+    align-items: center;
+    align-items: safe center;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: calc(1rem + var(--safe-top)) calc(1rem + var(--safe-right))
+      calc(1rem + var(--safe-bottom)) calc(1rem + var(--safe-left));
+  }
+
+  /* A scroll region that behaves on touch: momentum on older iOS, no scroll
+   chaining into whatever is behind it, and a stable gutter so content doesn't
+   shift sideways by the scrollbar width when one appears. */
+  .app-scroll-y {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+  }
+
+  .app-scroll-x {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Notch and home-indicator clearance, on the edges an app actually touches.
+   `env()` resolves to 0px on every non-inset device and on engines that don't
+   know the function, so these are safe unconditionally. */
+  .app-safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .app-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .app-safe-x {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  /* All four at once, for a surface that is itself full-bleed but whose
+   contents must stay clear of the hardware. */
+  .app-safe-pad {
+    padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  }
+
+  /* ── `.app-hud` — game chrome that clears the hardware ──────────────────────
+   *
+   * A full-screen game paints its world edge to edge, and that is right: the
+   * artwork SHOULD run under the notch and behind the home indicator. Its
+   * controls must not. The habit across this codebase is an
+   * `absolute inset-0` overlay whose children pin themselves with plain offsets
+   * (`top-3`, `left-3`, `bottom-4`) — which puts a pause button underneath an
+   * iPhone's sensor housing the moment the phone is turned sideways, i.e. in the
+   * orientation these games are actually played in.
+   *
+   * `.app-hud` is that same full-bleed layer inset by the device's own safe
+   * area, so an offset measured from ITS edges is measured from the first pixel
+   * the hardware does not cover. Children keep their ordinary `top-3`; on a
+   * device with no insets every `env()` is `0px` and the layer is byte-for-byte
+   * the old `inset-0`.
+   *
+   * Geometry only — `pointer-events` is left alone deliberately. It is an
+   * INHERITED property, so a layer that declared `none` would silently kill
+   * every control inside markup that never opted back in. Games already manage
+   * that themselves.
+   */
+  .app-hud {
+    position: absolute;
+    top: var(--safe-top);
+    right: var(--safe-right);
+    bottom: var(--safe-bottom);
+    left: var(--safe-left);
+  }
+
+  /* Same layer for chrome that escapes its stacking context and pins to the
+   window instead (touch controls, exit buttons drawn over a WebGL canvas). */
+  .app-hud-fixed {
+    position: fixed;
+    top: var(--safe-top);
+    right: var(--safe-right);
+    bottom: var(--safe-bottom);
+    left: var(--safe-left);
+  }
+
+  /* ── `.app-stage` — a fixed-aspect playfield that fits any viewport ─────────
+   *
+   * A game with a fixed logical resolution has exactly one correct layout at
+   * every window shape: the largest box of its own aspect that fits the
+   * available area, centred, the remainder left as letterbox. Written by hand
+   * that is usually
+   *
+   *     width: 100%; max-height: 100%; aspect-ratio: W / H;
+   *
+   * which is subtly and consequentially wrong. `aspect-ratio` only derives the
+   * axis that is `auto`, so `max-height` shortens the box WITHOUT narrowing it:
+   * the ratio breaks and the playfield is squashed. That is the mechanism behind
+   * Void Breaker flattening on a landscape phone and House Always Wins' 400×256
+   * pixel art stretching to fill a portrait one.
+   *
+   * Container query units state it exactly. `100cqw`/`100cqh` ARE the parent's
+   * inner dimensions, so `min()` of the two candidate sizes is the fit — no
+   * measuring, no JS, no resize listener, and correct on the first paint rather
+   * than one frame later. Both axes are given explicitly, so neither is `auto`
+   * and no clamp can move one without the other.
+   *
+   * Usage — the aspect travels as a custom property, so one pair of classes
+   * serves every game:
+   *
+   *     <div class="app-stage-fit">
+   *       <div class="app-stage" style={{ '--app-stage-ar': '400 / 256' }}>
+   *         <canvas class="absolute inset-0 h-full w-full" />
+   *         <div class="app-hud"> … </div>
+   *       </div>
+   *     </div>
+   *
+   * Putting the HUD INSIDE `.app-stage` is the point of the second element: HUD
+   * coordinates then track the playfield rather than the window, so a marker
+   * over a world position stays over it in the letterboxed case too.
+   *
+   * `--app-stage-ar` accepts either form CSS accepts — `16 / 9` or `1.7778`.
+   *
+   * Caveat worth knowing: `container-type: size` implies size containment, so
+   * `.app-stage-fit` must get its height from its own context (a flex child, a
+   * grid area, `absolute inset-0`) and never from its contents. In auto height
+   * it computes to zero — which is the same constraint the JS measuring version
+   * of this has, only louder.
+   */
+  .app-stage-fit {
+    container-type: size;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .app-stage {
+    --app-stage-ar: 16 / 9;
+    position: relative;
+    /* Pre-container-query fallback: correct on whichever axis binds, and it
+       never overflows. The `@supports` block below makes it exact. */
+    max-width: 100%;
+    max-height: 100%;
+    aspect-ratio: var(--app-stage-ar);
+  }
+
+  @supports (container-type: size) {
+    .app-stage {
+      width: min(100cqw, 100cqh * (var(--app-stage-ar)));
+      height: min(100cqh, 100cqw / (var(--app-stage-ar)));
+    }
+  }
+
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .h-screen {
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  /* Center-column bottom padding. Mobile _site pages scroll the DOCUMENT, so
+     content flows behind Safari chrome and the home indicator. The old 92px
+     reserve belonged to a bottom dock that no longer exists; keeping it left a
+     conspicuous empty shelf at the end of every mobile page. Reserve only the
+     safe area plus a calm content-ending gutter. */
+  .pb-dock {
+    padding-bottom: calc(var(--safe-bottom) + var(--site-mobile-content-end));
+  }
+  @media (min-width: 768px) {
+    .pb-dock {
+      padding-bottom: 0;
+    }
+  }
+
+  /* ── Media overlay legibility ─────────────────────────────────────────────
+     Text placed on top of a photo / video / decorative SVG can land on ANY
+     luminance, so a theme text token (or a bare browser default) is never a safe
+     colour there — that is what produces white-on-white / black-on-black titles
+     over thumbnails. These utilities guarantee contrast independently of the
+     image and of the active theme:
+       • .text-on-media — force a light ink + shadow halo on the text itself, so
+         it stays legible even where the scrim is thin.
+
+     The `--site-media-*` tokens in `:root` are the CHIP half (the backing behind
+     a control that sits on media); `.text-on-media` reads the same tokens, so
+     change the scrim once and a chip and this halo move together. */
+  .text-on-media {
+    color: var(--site-media-ink);
+    text-shadow:
+      0 1px 2px var(--site-media-scrim-hover),
+      0 2px 10px var(--site-media-scrim);
+  }
+
+  .text-on-media :is(svg, img) {
+    filter: drop-shadow(0 1px 2px var(--site-media-scrim-strong));
+  }
+
+  /* ── Bottom-anchored fixed UI that follows Safari's toolbar, in CSS only ───────────────────────────────────────
+     iOS Safari lays `position: fixed` elements out against a container it resizes LATE while its toolbar grows and
+     shrinks, whereas `dvh` (the dynamic viewport) follows the toolbar as it moves. For a fixed element a percentage in
+     `bottom` is a percentage of that container, so `100% - 100dvh` is exactly how far the container's bottom is above
+     (positive) or below the visible bottom: adding it to `bottom` keeps the element on the visible area, resolved by
+     layout every frame with no script reading or writing anything. (An earlier JS correction measured the same gap
+     from a 1px probe once per frame on the main thread, which is never faster than the main thread and competed with
+     the page's own scroll work. It is gone: the hub orb, the open menu and the docked globe follow the same way, the
+     globe's pose being a CSS function of `dvh`; components/radial/radial.css.)
+     Only iOS WebKit has the lag; `0px` everywhere else, so nothing changes there. */
+  :root {
+    --vv-follow: 0px;
+  }
+  @supports (height: 100dvh) {
+    html.ios-webkit {
+      --vv-follow: calc(100% - 100dvh);
+    }
+  }
+
+  /* Fixed floating UI shares one safe, visually consistent viewport edge. */
+  .bottom-above-dock {
+    /* `--vv-follow`: where iOS Safari's changing toolbar has left the fixed container, as a pure CSS length (below,
+       `:root`) — no script in the loop, so no floating-stack member trails the tab bar. */
+    bottom: calc(var(--safe-bottom) + var(--site-floating-edge) + var(--vv-follow, 0px));
+  }
+
+  /* ── The bottom-right FAB lane ──────────────────────────────────────────
+     One row, shared by the feed's compose FAB and the back-to-top button.
+
+     They used to be STACKED — back-to-top floating a FAB's height above the
+     compose button (and, on pages with no FAB, a hub orb's height above the
+     orb). That put a solid disc in the middle of the right edge, well inside
+     the reading column, where it landed on whatever the page happened to have
+     there: on a full-width call-to-action it simply sat on the button. The
+     bottom row is where floating chrome belongs, and it is already the row the
+     orb's own legibility scrim fades content into.
+
+     So both controls sit on this row, side by side, and back-to-top steps left
+     by exactly the width the compose button occupies. That width cannot be
+     written here: the FAB is icon-only below 560px, carries a label above it,
+     and the label is translated — "Compose" is not the same width as
+     "Verfassen". `RadialFeed` measures the rendered button and publishes
+     `--float-fab-lane` (its width plus the gap); it is absent everywhere the
+     FAB is not rendered, so the `0px` fallback leaves back-to-top on the right
+     edge by itself, which is exactly right on every non-feed page. */
+  .floating-fab-lane {
+    right: calc(var(--site-fab-row-right) + var(--float-fab-lane, 0px));
+    bottom: calc(var(--safe-bottom) + var(--site-fab-row-bottom) + var(--vv-follow, 0px));
+  }
+
+  /* The tripwire back-to-top watches instead of a scroll listener: a 1px marker
+     parked `threshold` pixels down the page, whose leaving the top of the
+     viewport IS the condition. Inert in every other respect — no size worth
+     laying out, nothing to paint, no pointer, and out of the a11y tree. */
+  .back-to-top-sentinel {
+    position: absolute;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  /* §5.5x A.1 — floating-bottom stack. The radial hub orb, the feed's compose
+     button, the cookie bar, the mini-player and the back-to-top button
+     can all be visible at once; without coordination they pile up on the same
+     bottom edge. Each element declares data-floating; when a LOWER member is
+     present (:has on the .vibe-app shell that hosts them all), the ones above
+     it are lifted clear by that member's reserved height. Absent members
+     contribute 0, so a lone element keeps its natural bottom-above-dock
+     position (no regression). Heights are generous constants (CSS can't read a
+     sibling's measured height) covering the tallest state — the narrow flex-col
+     cookie card, the mini-player bar.
+
+     The hub orb is the BOTTOM of the stack: it is the site's only navigation
+     control on mobile, it is fixed bottom-centre on every _site page, and the
+     feed's compose FAB shares its row (bottom-right, and shorter than the orb,
+     so the orb's reserve covers both). Its lift is derived from the orb's own
+     geometry tokens rather than a magic number, so the two can never drift
+     apart; --site-floating-edge is subtracted because members already include
+     it, and the trailing gap keeps a visible margin above the orb.
+
+     This used to be gated to `max-width: 767.98px` on the theory that desktop
+     members carried their own `md:bottom-*`. That holds for the bottom-RIGHT
+     lane (mini-player, back-to-top — coordinated against the compose FAB by
+     radial.css §A.1 at md+), but not for the cookie bar: it is a centred
+     max-w-2xl card, so it shares the orb's bottom-CENTRE lane at every width
+     and the orb sat on its copy and its "Learn more" link on every _site page
+     ≥768px. So the stack is width-independent now and the cookie bar dropped
+     its `md:bottom-4`; the right-lane members keep theirs (a `utilities`-layer
+     class outranks these `components`-layer rules), which leaves their desktop
+     placement exactly as it was. */
+  .vibe-app {
+    --float-lift-hub: 0px;
+    --float-lift-cookie: 0px;
+    --float-lift-miniplayer: 0px;
+  }
+  .vibe-app:has([data-floating='hub']) {
+    --float-lift-hub: calc(
+      var(--site-hub-orb-size) + var(--site-hub-orb-inset) - var(--site-floating-edge) + 0.75rem
+    );
+  }
+  .vibe-app:has([data-floating='cookie']) {
+    --float-lift-cookie: 156px;
+  }
+  /* The notice is server-rendered for everyone (lib/cookie-consent.ts) and
+     hidden pre-paint for a visitor who already answered. Until hydration
+     unmounts it, it is still IN the DOM, so the `:has()` lift above would
+     still match — this keeps the floating stack exactly where it would be
+     without it, so there is nothing to shift when it goes. (0,2,1) beats the
+     (0,2,0) above. */
+  html.cookie-consented .vibe-app {
+    --float-lift-cookie: 0px;
+  }
+  html.cookie-consented [data-floating='cookie'] {
+    display: none;
+  }
+  .vibe-app:has([data-floating='miniplayer']) {
+    --float-lift-miniplayer: 68px;
+  }
+  /* Cookie bar rides above the hub orb. */
+  .vibe-app:has([data-floating='hub']) [data-floating='cookie'] {
+    bottom: calc(
+      var(--safe-bottom) + var(--site-floating-edge) + var(--vv-follow, 0px) + var(--float-lift-hub)
+    );
+  }
+  /* Mini-player rides above the hub orb and the cookie bar. */
+  .vibe-app:has([data-floating='hub']) [data-floating='miniplayer'],
+  .vibe-app:has([data-floating='cookie']) [data-floating='miniplayer'] {
+    bottom: calc(
+      var(--safe-bottom) + var(--site-floating-edge) + var(--vv-follow, 0px) + var(--float-lift-hub) +
+        var(--float-lift-cookie)
+    );
+  }
+  /* Back-to-top rides above the cookie bar and the mini-player (the vars add;
+     an absent one is 0). It is not lifted by the orb DIRECTLY: the orb is
+     bottom-CENTRE and this is the right lane, so there is nothing to clear
+     there — and that lift is what used to push the button up into the reading
+     column. It shares the compose FAB's row instead (`.floating-fab-lane`),
+     stepping sideways rather than upwards.
+
+     But it must inherit the orb's lift TRANSITIVELY, and that is what the first
+     rule below is for. The two members it stacks on are themselves hub-lifted,
+     and on a phone both span the full width — the cookie bar is
+     `inset-x-3 mx-auto max-w-2xl` and the mini-player is
+     `left-2 right-2 mx-auto max-w-sm` — so both DO occupy the right lane there.
+     Without the hub term the sum is one member short and the button lands
+     inside them: at 390px with the orb up, back-to-top sat at safe+172→safe+216
+     while the cookie card spanned safe+88→safe+244, i.e. directly on top of
+     "Essential only" / "Accept all"; against the mini-player it covered
+     play/close. Above `md` the mini-player moves to the right lane with its own
+     `md:bottom-4` (a utilities-layer class, which outranks this rule) and the
+     centred cookie card no longer reaches the right lane, so the extra term is
+     mobile-shaped in practice even though it is written width-independently —
+     the same reasoning the stack above uses. */
+  .vibe-app:has([data-floating='hub']):is(
+      :has([data-floating='cookie']),
+      :has([data-floating='miniplayer'])
+    )
+    [data-floating='backtotop'] {
+    bottom: calc(
+      var(--safe-bottom) + var(--site-fab-row-bottom) + var(--vv-follow, 0px) + var(--float-lift-hub) +
+        var(--float-lift-cookie) + var(--float-lift-miniplayer)
+    );
+  }
+  .vibe-app:not(:has([data-floating='hub'])):is(
+      :has([data-floating='cookie']),
+      :has([data-floating='miniplayer'])
+    )
+    [data-floating='backtotop'] {
+    bottom: calc(
+      var(--safe-bottom) + var(--site-fab-row-bottom) + var(--vv-follow, 0px) + var(--float-lift-cookie) +
+        var(--float-lift-miniplayer)
+    );
+  }
+
+  /* §5.5x B — touch target: the 16px slider thumb (volume, playback and other
+     slider) needs a ≥44px hit area on coarse pointers (WCAG 2.5.8) without growing
+     its visual size. An invisible centred ::after expands the tap target; fine
+     pointers keep the precise 16px thumb and the ability to click the track. */
+  @media (pointer: coarse) {
+    /* Native range inputs (the full-screen apps use these rather than the Radix
+       slider) get the height from the control itself — a 16px thumb in a 4px
+       track is a hard thing to grab on a phone. */
+    input[type='range'] {
+      min-height: var(--site-touch-target);
+    }
+
+    [data-slot='slider-thumb'] {
+      position: relative;
+    }
+    [data-slot='slider-thumb']::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 44px;
+      height: 44px;
+      transform: translate(-50%, -50%);
+    }
+  }
+
+  .horizontal-scroller__viewport {
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-padding-inline: 12px;
+    touch-action: pan-x pan-y;
+  }
+  .horizontal-scroller__viewport::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 3D card flip utilities */
+  .perspective-500 {
+    perspective: 500px;
+  }
+
+  .transform-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+}

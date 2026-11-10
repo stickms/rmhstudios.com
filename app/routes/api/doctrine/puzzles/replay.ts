@@ -7,6 +7,9 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/doctrine/doctrine.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
@@ -29,8 +32,13 @@ export const Route = createFileRoute('/api/doctrine/puzzles/replay')({
        * GET /api/doctrine/puzzles/replay?mode=alibi
        * Returns a freshly generated puzzle with a random seed.
        */
-      GET: defineHandler(
-        { auth: 'none', rateLimit: { limit: 20, windowMs: 60_000, prefix: 'doctrine-replay-gen' } },
+      GET: implement(
+        C.getDoctrineReplayPuzzleApi,
+        {
+          auth: 'none',
+          query: z.object({ mode: z.string().optional() }),
+          rateLimit: { limit: 20, windowMs: 60_000, prefix: 'doctrine-replay-gen' },
+        },
         async ({ request }) => {
           try {
             const session = await auth.api.getSession({ headers: request.headers });

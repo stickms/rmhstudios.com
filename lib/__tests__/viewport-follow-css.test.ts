@@ -1,6 +1,7 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readCss } from './css-source';
 
 /**
  * iOS Safari lays `position: fixed` elements out against a container it resizes late while its toolbar grows and shrinks.
@@ -11,7 +12,7 @@ import { describe, expect, it } from 'vitest';
  * globe's pose is a CSS function of the visible height, so nothing measures the toolbar. The earlier script path
  * (`--vv-shift`, a 1px probe read in a rAF loop) trailed the toolbar by at least a frame and is gone.
  */
-const read = (p: string) => readFileSync(join(__dirname, '../..', p), 'utf8');
+const read = (p: string) => readCss(join(__dirname, '../..', p));
 const globals = read('app/globals.css');
 const radial = read('components/radial/radial.css');
 

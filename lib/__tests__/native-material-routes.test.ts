@@ -2,7 +2,6 @@
  * `html.native-material`: the CSS-only material (the woken haze, app/jelly-material.css §3b) has no install step a
  * native-material route can skip, so those routes are marked on <html> and the material's rules are scoped off them.
  */
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -13,6 +12,7 @@ import {
   isNativeMaterialRoute,
   syncNativeMaterialClass,
 } from '@/lib/native-material-routes';
+import { readCss } from './css-source';
 
 function fakeRoot() {
   const set = new Set<string>();
@@ -67,7 +67,7 @@ describe('syncNativeMaterialClass', () => {
 });
 
 describe('wiring', () => {
-  const read = (f: string) => readFileSync(join(process.cwd(), f), 'utf8');
+  const read = (f: string) => readCss(join(process.cwd(), f));
 
   it('Providers keeps the class in step with the pathname, next to useJellyPointer', () => {
     const src = read('components/Providers.tsx');

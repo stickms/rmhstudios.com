@@ -15,17 +15,17 @@
  * excluded below. `.glass-inset` is not positioned (fields are mostly replaced `<input>`s with no pseudo-elements at
  * all), so it keeps the static floor only.
  */
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { GLOBE_SELECTOR, OPT_OUT_SCOPE_SELECTOR, OPT_OUT_SELECTOR } from '@/lib/jelly/tiers';
+import { readCss } from './css-source';
 
 const ROOT = process.cwd();
 const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 const flat = (s: string) =>
   s.replace(/\s+/g, ' ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').trim();
-const CSS = strip(readFileSync(join(ROOT, 'app/jelly-material.css'), 'utf8'));
+const CSS = strip(readCss(join(ROOT, 'app/jelly-material.css')));
 
 /** Innermost `selector { body }` pairs, with the at-rule preludes that wrap them. */
 interface Rule {

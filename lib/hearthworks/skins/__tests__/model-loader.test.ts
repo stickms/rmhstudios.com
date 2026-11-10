@@ -455,7 +455,9 @@ describe('model cache and the channel', () => {
     expect(model!.bytes).toBeGreaterThan(1000);
     // and the loaded model animates
     const inst = instantiate(model!, 1);
-    const anim = new CharacterAnimator(inst.skeletonRoot, model!.clips, model!.entry);
+    // A fixed seed: without one the animator picks a random stride phase, and for about 1 phase in 200 (seed ≈ 0.54)
+    // the leg ends 20 frames later within 5e-4 of where it started, so this check failed at random in CI.
+    const anim = new CharacterAnimator(inst.skeletonRoot, model!.clips, model!.entry, { seed: 0.25 });
     const drive = newDrive();
     drive.speed = 1.6;
     const start = inst.skeletonRoot.getObjectByName('LegL')!.quaternion.x;

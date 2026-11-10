@@ -27,13 +27,14 @@
  * below every child. Nothing jelly paints at z ≥ 0 inside a host. The one body-level exception is the arc layer (03 D1), which is
  * `pointer-events: none` and stacks on the named `--z-arcs` token.
  */
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readCss } from './css-source';
 
 const ROOT = process.cwd();
 const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
-const read = (file: string) => strip(readFileSync(join(ROOT, file), 'utf8'));
+const read = (file: string) => strip(readCss(join(ROOT, file)));
 
 function collectCss(dir: string, out: string[] = []): string[] {
   let entries;
@@ -57,7 +58,11 @@ const SHEETS = [
     .filter((f) => f.endsWith('.css'))
     .map((f) => `app/${f}`),
   ...['ui', 'radial', 'feed', 'site'].flatMap((d) => collectCss(`components/${d}`)),
-].sort();
+]
+  // A split entry sheet (`radial.css` + `radial/*.css`, redesign E4) is scanned once, through its entry: `read`
+  // inlines the partials, so listing them too would count every rule twice under a second file name.
+  .filter((f) => !existsSync(join(ROOT, `${f.slice(0, f.lastIndexOf('/'))}.css`)))
+  .sort();
 
 /** Innermost `selector { declarations }` pairs — nested @media/@layer bodies match at their leaves. */
 function rules(css: string): Array<{ selector: string; body: string }> {

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/slice-it/slice-it.contract';
 import { submitDailyEntry } from '@/lib/slice-it/daily.server';
 
 /**
@@ -30,7 +31,8 @@ const DailySubmitZ = z.object({
 export const Route = createFileRoute('/api/slice-it/daily/submit')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        C.submitDailyApi,
         { rateLimit: { limit: 10, windowMs: 60_000, prefix: 'slice-daily' }, body: DailySubmitZ },
         async ({ userId, body }) => {
           const result = await submitDailyEntry(userId, body);

@@ -36,11 +36,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { readCss } from './css-source';
 
 const ROOT = join(__dirname, '..', '..');
-const read = (path: string) => readFileSync(join(ROOT, path), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+const read = (path: string) => readCss(join(ROOT, path)).replace(/\/\*[\s\S]*?\*\//g, '');
 
 const GLOBALS = read('app/globals.css');
 const RADIAL = read('components/radial/radial.css');

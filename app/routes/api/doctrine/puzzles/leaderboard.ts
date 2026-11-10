@@ -1,6 +1,8 @@
+import { z } from 'zod';
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/doctrine/doctrine.contract';
 import { CACHE_POLICY } from '@/lib/api/cache-policies';
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
@@ -8,9 +10,15 @@ import { cached } from '@/lib/cached.server';
 export const Route = createFileRoute('/api/doctrine/puzzles/leaderboard')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        C.getDoctrinePuzzleLeaderboardApi,
         {
           auth: 'none',
+          query: z.object({
+            mode: z.string().optional(),
+            date: z.string().optional(),
+            limit: z.string().optional(),
+          }),
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'doctrine-lb' },
           // (mode, date, limit) are all query params, hence part of the key.
           // Opt out of the 30 s micro-cache: puzzles/submit invalidates the board's cache tag.

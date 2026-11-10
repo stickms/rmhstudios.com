@@ -33,11 +33,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { readCss } from './css-source';
 
 const ROOT = join(__dirname, '..', '..');
-const read = (path: string) => readFileSync(join(ROOT, path), 'utf8');
+const read = (path: string) => readCss(join(ROOT, path));
 
 /**
  * The one query. Deliberately `(pointer: coarse)` AND a width bound rather than

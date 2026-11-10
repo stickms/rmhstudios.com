@@ -279,12 +279,13 @@ if [ -n "$n2_hits" ]; then
   printf '%s    → %s%s\n' "$dim" 'Components take jelly through role classes and data-jelly* attributes: the soft body is CSS (app/jelly-material.css §8) and the services mount once from hooks/useJellyPointer.ts (docs/plasmatic-jelly-system.md).' "$off"
 fi
 
-# The two sanctioned haze keyframes (jelly-drift / jelly-current) in app/jelly-material.css are filtered out: the
+# The two sanctioned haze keyframes (jelly-drift / jelly-current) in app/jelly-material.css (and its partials under
+# app/jelly-material/, E4 split) are filtered out: the
 # vitest gate (site-infinite-animation N3) pins the exact selectors they may run on (the woken-haze layer, paused until
 # hover or focus) and stays the authority for those lines.
-n3_hits=$(scan '^(app/[^/]*|components/(ui|radial|feed|site)/.*)\.css$' \
+n3_hits=$(scan '^(app/([^/]*|globals/[^/]*|jelly-material/[^/]*)|components/(ui|radial|feed|site)/.*)\.css$' \
   '(animation[^:;]*:[^;]*infinite|animation-iteration-count:[[:space:]]*infinite)' |
-  grep -Ev '^  app/jelly-material\.css:[0-9]+[[:space:]].*jelly-(drift|current)' || true)
+  grep -Ev '^  app/jelly-material(\.css|/[^:]+\.css):[0-9]+[[:space:]].*jelly-(drift|current)' || true)
 if [ -n "$n3_hits" ]; then
   fail "Perpetual CSS animation (N3)"
   printf '%s\n' "$n3_hits"

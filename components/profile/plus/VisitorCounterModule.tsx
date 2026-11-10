@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Eye } from 'lucide-react';
 import { WidgetFrame } from '@/components/ui/widget-frame';
 import { useIdleReady } from '@/hooks/useIdleReady';
+import { api } from '@/lib/contract/client';
+import { recordProfileVisitApi } from '@/lib/profile/profile-extras.contract';
 
 /**
  * P9 — the retro hit counter. Only rendered for a profile whose owner switched
@@ -18,10 +20,9 @@ export default function VisitorCounterModule({ title, userId }: { title: string;
   useEffect(() => {
     if (!idle) return;
     let cancelled = false;
-    fetch(`/api/profile/${encodeURIComponent(userId)}/visit`, { method: 'POST' })
-      .then((r) => (r.ok ? (r.json() as Promise<{ count: number }>) : null))
+    api(recordProfileVisitApi, { params: { id: userId } })
       .then((json) => {
-        if (!cancelled && json) setCount(json.count);
+        if (!cancelled) setCount(json.count);
       })
       .catch(() => {});
     return () => {

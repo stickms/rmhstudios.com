@@ -10,13 +10,13 @@
  *
  * Retune a spring or a pose in TypeScript, then paste the regenerated literal; never loosen this test.
  */
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { CSS_SOFT_BODY, CSS_SPRINGS, cssEdgeReach } from '@/lib/jelly/soft-policy';
 import { dampedSpringLinear, springSettleMs } from '@/lib/jelly/spring-curves';
+import { readCss } from './css-source';
 
-const MATERIAL = readFileSync(join(process.cwd(), 'app', 'jelly-material.css'), 'utf8').replace(
+const MATERIAL = readCss(join(process.cwd(), 'app', 'jelly-material.css')).replace(
   /\/\*[\s\S]*?\*\//g,
   '',
 );

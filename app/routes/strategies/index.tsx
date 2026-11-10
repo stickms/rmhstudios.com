@@ -18,6 +18,8 @@ import { StreakDisplay } from '@/components/doctrine/puzzles/streak-display';
 import { CrisisBanner } from '@/components/doctrine/coalition/crisis-banner';
 import { ProjectCard } from '@/components/doctrine/coalition/project-card';
 import { CountdownTimer } from '@/components/doctrine/countdown-timer';
+import { api } from '@/lib/contract/client';
+import { getDoctrineTodayPuzzlesApi, listDoctrineIncidentsApi } from '@/lib/doctrine/doctrine.contract';
 
 export const Route = createFileRoute('/strategies/')({
   head: () => appRouteHead('rmh-strategies'),
@@ -31,19 +33,13 @@ function DashboardPage() {
 
   const { data: incidents } = useQuery({
     queryKey: ['doctrine', 'incidents'],
-    queryFn: async () => {
-      const res = await fetch('/api/doctrine/incidents?limit=3');
-      return res.json();
-    },
+    queryFn: () => api(listDoctrineIncidentsApi, { query: { limit: '3' }, retries: 0 }),
     staleTime: 30_000,
   });
 
   const { data: puzzles } = useQuery({
     queryKey: ['doctrine', 'puzzles', 'today'],
-    queryFn: async () => {
-      const res = await fetch('/api/doctrine/puzzles/today');
-      return res.json();
-    },
+    queryFn: () => api(getDoctrineTodayPuzzlesApi, { retries: 0 }),
     staleTime: 60_000,
   });
 

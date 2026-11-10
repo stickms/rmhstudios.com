@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/slice-it/slice-it.contract';
 import { getDailyState } from '@/lib/slice-it/daily.server';
 
 /**
@@ -18,7 +19,7 @@ import { getDailyState } from '@/lib/slice-it/daily.server';
 export const Route = createFileRoute('/api/slice-it/daily/')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional', rateLimit: 'read' }, async ({ userId }) => {
+      GET: implement(C.getDailyApi, { auth: 'optional', rateLimit: 'read' }, async ({ userId }) => {
         return Response.json(await getDailyState(userId));
       }),
     },

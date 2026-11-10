@@ -6,6 +6,8 @@
  *   DELETE /api/homes/listings/$id   → delete (owner only)
  */
 import { createFileRoute } from '@tanstack/react-router';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/homes/homes.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
 import {
@@ -47,7 +49,7 @@ const statusSchema = z.object({
 export const Route = createFileRoute('/api/homes/listings/$id')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ params, session }) => {
+      GET: implement(C.getHomeListingApi, { auth: 'optional' }, async ({ params, session }) => {
         const listing = await getListing(params.id, session?.user.id ?? null);
         if (!listing) return Response.json({ error: 'Listing not found' }, { status: 404 });
         return Response.json({ listing });
@@ -108,7 +110,7 @@ export const Route = createFileRoute('/api/homes/listings/$id')({
         },
       ),
 
-      DELETE: defineHandler({}, async ({ params, session }) => {
+      DELETE: implement(C.deleteHomeListingApi, {}, async ({ params, session }) => {
         const ok = await deleteListing(params.id, session.user.id);
         if (!ok) return Response.json({ error: 'Not found' }, { status: 404 });
         return Response.json({ ok: true });

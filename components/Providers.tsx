@@ -86,6 +86,7 @@ import {
   setAppearancePrefsApi,
 } from '@/lib/preferences/preferences.contract';
 import { api } from '@/lib/contract/client';
+import { getMyProfileDisplayApi } from '@/lib/profile/profile-extras.contract';
 
 // perf audit §4.3: build the QueryClient PER component instance (via useState
 // below), not once at module scope. A module-scope client is shared by every
@@ -463,10 +464,9 @@ export function Providers({
       : null,
   );
   const fetchResolvedUser = useCallback(() => {
-    fetch('/api/profile/me')
-      .then((r) => (r.ok ? r.json() : null))
+    api(getMyProfileDisplayApi, { retries: 0 })
       .then((data) => {
-        if (data) setResolvedUser(data);
+        setResolvedUser(data);
       })
       .catch(() => {});
   }, []);

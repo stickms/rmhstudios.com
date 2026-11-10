@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/profile/profile-extras.contract';
 import { prisma } from '@/lib/prisma.server';
 import { pronunciationUrl } from '@/lib/profile/plus';
 import { plusUpdateSchema } from '@/lib/profile/plus-schema';
@@ -31,10 +32,11 @@ async function ownView(userId: string) {
 export const Route = createFileRoute('/api/profile/plus')({
   server: {
     handlers: {
-      GET: defineHandler({ rateLimit: 'read' }, async ({ userId }) =>
+      GET: implement(C.getOwnProfilePlusApi, { rateLimit: 'read' }, async ({ userId }) =>
         Response.json(await ownView(userId), { headers: { 'Cache-Control': 'private, no-store' } }),
       ),
-      PUT: defineHandler(
+      PUT: implement(
+        C.updateOwnProfilePlusApi,
         {
           rateLimit: { limit: 30, windowMs: 60_000, prefix: 'profile-plus' },
           body: plusUpdateSchema,

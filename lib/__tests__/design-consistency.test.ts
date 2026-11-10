@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { FULLSCREEN_TIER_DIRS, isSiteTier } from '../../eslint-local-rules/design-scope.js';
+import { readCss } from './css-source';
 
 /**
  * §16.2 — the "global website design scheme" as an EXECUTABLE gate.
@@ -440,14 +441,15 @@ function cssViolations(src: string): { hex: number; radius: number } {
  * the 2026-10-22 route audit.)
  */
 const CSS_DEBT: Record<string, { hex: number; radius: number }> = {
-  'components/library/library.css': { hex: 31, radius: 12 },
+  'components/library/library/catalog-reader.css': { hex: 7, radius: 10 },
+  'components/library/library/sections-refresh.css': { hex: 24, radius: 2 },
   'components/rmhtech/rmhtech.css': { hex: 16, radius: 5 },
   'components/library/album-viewer.css': { hex: 7, radius: 3 },
   'components/creator-studio/storefront.css': { hex: 5, radius: 0 },
   'components/security/security.css': { hex: 0, radius: 4 },
   'components/rmhcalculator/rmhcalculator.css': { hex: 0, radius: 3 },
   'components/library/book-3d.css': { hex: 1, radius: 2 },
-  'components/radial/radial.css': { hex: 2, radius: 0 },
+  'components/radial/radial/overlay-globe.css': { hex: 2, radius: 0 },
 };
 
 const SITE_CSS = collectCss('components').filter((f) => {
@@ -701,7 +703,7 @@ describe('design consistency — no eyebrows (owner decision, 2026-11-03)', () =
 
   it('the shared eyebrow classes are sentence case', () => {
     const css = [
-      readFileSync(join(ROOT, 'app/globals.css'), 'utf8'),
+      readCss(join(ROOT, 'app/globals.css')),
       readFileSync(join(ROOT, 'components/feed/feed.css'), 'utf8'),
     ].join('\n');
     for (const selector of [

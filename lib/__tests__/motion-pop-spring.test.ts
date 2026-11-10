@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { POP_COLLAPSE_MS } from '@/lib/motion';
-const CSS = readFileSync(join(__dirname, '../../app/globals.css'), 'utf8');
+import { readCss } from './css-source';
+const CSS = readCss(join(__dirname, '../../app/globals.css'));
 const DIALOG = readFileSync(join(__dirname, '../../components/ui/dialog.css'), 'utf8');
 
 describe('reversible floating surfaces', () => {

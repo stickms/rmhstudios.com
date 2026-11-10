@@ -1,14 +1,18 @@
+import { z } from 'zod';
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/doctrine/doctrine.contract';
 import { getReputationLeaderboard } from '@/lib/doctrine/reputation';
 
 export const Route = createFileRoute('/api/doctrine/reputation/leaderboard')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        C.getDoctrineReputationLeaderboardApi,
         {
           auth: 'none',
+          query: z.object({ limit: z.string().optional() }),
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'doctrine-rep-lb' },
           // Anonymous-invariant global top-N — the same bytes for every caller,
           // which is what `public` claims. Matches `void-breaker/leaderboard`.

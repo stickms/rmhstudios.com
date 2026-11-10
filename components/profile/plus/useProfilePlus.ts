@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ProfilePlusView } from '@/lib/profile/plus';
+import { api } from '@/lib/contract/client';
+import { getProfilePlusApi } from '@/lib/profile/profile-extras.contract';
 
 /**
  * A member's public identity extras (`/api/profile/$id/plus`), fetched once per
@@ -12,9 +14,7 @@ const cache = new Map<string, Promise<ProfilePlusView | null>>();
 function load(userId: string): Promise<ProfilePlusView | null> {
   let hit = cache.get(userId);
   if (!hit) {
-    hit = fetch(`/api/profile/${encodeURIComponent(userId)}/plus`)
-      .then((r) => (r.ok ? (r.json() as Promise<ProfilePlusView>) : null))
-      .catch(() => null);
+    hit = api(getProfilePlusApi, { params: { id: userId }, retries: 0 }).catch(() => null);
     cache.set(userId, hit);
     // A failed lookup must not stick for the rest of the session.
     void hit.then((v) => {

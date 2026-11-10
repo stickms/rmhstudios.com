@@ -17,6 +17,7 @@
  * - **Rest:** with no input and no arc in flight the click runtime requests no animation frame.
  * - **Teardown** leaves no arc node behind, and the page throws nothing.
  */
+import { readCssInlined } from '../../scripts/css-inline.mjs';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -60,7 +61,7 @@ const js = await bundle({
 
 // The default theme's token block from globals.css (the one that carries the jelly tokens), so the role knobs resolve
 // exactly as on the site without pulling Tailwind into the fixture.
-const globals = readFileSync(resolve(root, 'app/globals.css'), 'utf8');
+const globals = readCssInlined(resolve(root, 'app/globals.css'));
 const tokenAt = globals.indexOf('--site-jelly-haze-fill');
 const tokens = globals.slice(
   globals.lastIndexOf('\n:root {', tokenAt),

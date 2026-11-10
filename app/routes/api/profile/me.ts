@@ -1,12 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/profile/profile-extras.contract';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 
 export const Route = createFileRoute('/api/profile/me')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
+      GET: implement(C.getMyProfileDisplayApi, {}, async ({ session }) => {
         const user = await prisma.user.findUnique({
           where: { id: session.user.id },
           select: {

@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/slice-it/slice-it.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay, userDisplaySelect } from '@/lib/user-display';
@@ -25,7 +27,8 @@ const CommentQueryZ = z.object({
 export const Route = createFileRoute('/api/slice-it/songs/$id/comments')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        C.listSongCommentsApi,
         { auth: 'optional', query: CommentQueryZ, rateLimit: 'read' },
         async ({ params, query, userId }) => {
           const song = await prisma.song.findUnique({
@@ -66,7 +69,8 @@ export const Route = createFileRoute('/api/slice-it/songs/$id/comments')({
         },
       ),
 
-      POST: defineHandler(
+      POST: implement(
+        C.createSongCommentApi,
         {
           body: CommentBodyZ,
           rateLimit: { limit: 15, windowMs: 60_000, prefix: 'slice-comments', scope: 'user' },
@@ -132,7 +136,6 @@ export const Route = createFileRoute('/api/slice-it/songs/$id/comments')({
     },
   },
 });
-
 
 function format(
   row: {
