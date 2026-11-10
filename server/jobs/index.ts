@@ -62,6 +62,7 @@ import {
   PROFILE_VISIT_SWEEP_QUEUE,
   registerProfileVisitSweepCron,
 } from '@/lib/profile/visit-sweep.server';
+import { registerDiscordBot, stopDiscordBot } from '../discord-bot/jobs';
 
 // Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
 installProcessGuards({ service: 'jobs' });
@@ -90,13 +91,13 @@ async function shutdown(sig: string): Promise<void> {
       /* best-effort */
     }
   }
-  if (bossRef) {
-    try {
-      await bossRef.stop({ graceful: true, timeout: 30_000 });
-    } catch {
-      /* best-effort */
-    }
-  }
+  // In parallel: the Discord bot closes its gateway and lets in-flight replies finish (up to
+  // DISCORD_BOT_DRAIN_GRACE, 60 s) while pg-boss drains its handlers (30 s), both inside the
+  // container's 90 s stop_grace_period.
+  await Promise.all([
+    stopDiscordBot().catch(() => undefined),
+    bossRef ? bossRef.stop({ graceful: true, timeout: 30_000 }).catch(() => undefined) : undefined,
+  ]);
   process.exit(0);
 }
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
@@ -158,6 +159,10 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   // D3: RMHVibe gallery thumbnails (ported from the Go worker): every minute, render up to 5 stale pages
   // in headless Chromium (PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH, in this image) and upload to object storage.
   { queue: VIBE_THUMB_QUEUE, register: registerVibeThumbnailCron },
+  // D3: the Discord bot (ported from the Go supervisor), only with DISCORD_BOT_RUNTIME=node: the gateway connection
+  // lives in this process and its periodic work (care tick, tracker flush, identity poll, summarizer) are crons here.
+  // Unset, it registers nothing and the Go supervisor runs the bot (server/discord-bot/jobs.ts).
+  { queue: 'discord-bot', register: registerDiscordBot },
   // D4: data-lifecycle cleanup (sessions, verifications, notifications, comment views), daily at 04:00 UTC.
   // Moved from a node-cron + worker-lease in the ladder worker; the `exclusive` policy is the lock now.
   { queue: CLEANUP_QUEUE, register: registerCleanupCron },

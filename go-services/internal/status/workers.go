@@ -184,6 +184,18 @@ type workerWatch struct {
 	lastPanics   map[string]float64
 	panicWindow  map[string][]float64
 	gatewayEarUp bool // the gateway has been seen connected at least once
+	// nodeDiscordBot: the bot runs on Node (DISCORD_BOT_RUNTIME=node), so the
+	// supervisor's gateway gauge is 0 by design and B07 is not evaluated from it.
+	nodeDiscordBot bool
+}
+
+// withNodeDiscordBot records which runtime owns the Discord gateway. Nil-safe,
+// because newWorkerWatch returns nil when nothing is configured.
+func (w *workerWatch) withNodeDiscordBot(node bool) *workerWatch {
+	if w != nil {
+		w.nodeDiscordBot = node
+	}
+	return w
 }
 
 func newWorkerWatch(metricsURL string, client *oncall.Client, logger Warner, jobLastSuccess func(ctx context.Context) (map[string]time.Time, error), puzzlesReadyFor func(ctx context.Context) (time.Time, error)) *workerWatch {
@@ -249,7 +261,7 @@ func (w *workerWatch) evaluate(samples []promSample, now time.Time) []workerCond
 				active: age > limit, forChecks: 1, clearCk: 1,
 			})
 		case "rmh_discord_gateway_connected":
-			if svc != "discord-bot" {
+			if svc != "discord-bot" || w.nodeDiscordBot {
 				continue
 			}
 			if s.value == 1 {
