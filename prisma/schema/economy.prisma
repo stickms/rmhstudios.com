@@ -598,9 +598,8 @@ model CreatorTier {
   active     Boolean  @default(true)
   createdAt  DateTime @default(now())
 
-  creator      User                @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  memberships  CreatorMembership[]
-  creatorPosts CreatorPost[]
+  creator     User                @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  memberships CreatorMembership[]
 
   @@index([creatorId, active])
   @@map("creator_tier")
@@ -717,27 +716,6 @@ model AchievementRarity {
 
   @@index([pct])
   @@map("achievement_rarity")
-}
-
-/// Cross-app quest chain progress (F19).
-///
-/// `UserQuest` tracks per-game objectives; nothing spanned the platform, so
-/// nobody discovered the app tier from the arcade or the reverse — the biggest
-/// internal cross-sell opportunity, unused. Chains are deliberately relaxed in
-/// pace: a cross-app chain on a daily cadence becomes an obligation, and
-/// obligation is what makes people leave.
-model QuestChainProgress {
-  userId    String
-  chainId   String    @db.VarChar(40)
-  /// Per-step counters keyed by step index.
-  steps     Json      @default("{}")
-  claimedAt DateTime?
-  updatedAt DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([userId, chainId])
-  @@map("quest_chain_progress")
 }
 
 /// Group gifting and pooled purchases (F20).

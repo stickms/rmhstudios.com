@@ -78,7 +78,6 @@ model User {
   // Slice-It Library Relations
   uploadedSongs     Song[]            @relation("SongUploader")
   songLikes         SongLike[]
-  songRatings       SongRating[]
   songComments      SongComment[]
   songScores        SongLeaderboard[]
   songPlays         SongPlay[]
@@ -93,7 +92,6 @@ model User {
   rmhtubeHostedRooms RmhTubeRoom[]       @relation("RmhTubeHostedRooms")
   rmhtubeRoomMembers RmhTubeRoomMember[]
   rmhtubeQueueItems  RmhTubeQueueItem[]
-  rmhtubePlaylists   RmhTubePlaylist[]
   rmhtubeStats       RmhTubeUserStats?
 
   // Site Feedback
@@ -104,7 +102,6 @@ model User {
   rmharkLikes            RMHarkLike[]
   rmharkComments         RMHarkComment[]
   rmharkReposts          RMHarkRepost[]
-  rmharkViews            RMHarkView[]
   rmharkCommentLikes     RMHarkCommentLike[]
   rmharkCommentReposts   RMHarkCommentRepost[]
   rmharkCommentViews     RMHarkCommentView[]
@@ -256,12 +253,12 @@ model User {
   buildViews    BuildView[]
 
   // ─── Doctrine Engine (RMH Strategies) ─────────────────────────
-  doctrineTier                String                       @default("PUBLIC") // PUBLIC | INSIDER | OPERATOR
+  doctrineTier                String                     @default("PUBLIC") // PUBLIC | INSIDER | OPERATOR
   doctrineTierChangedAt       DateTime?
-  doctrineTimezone            String                       @default("America/New_York")
+  doctrineTimezone            String                     @default("America/New_York")
   doctrineRecruitedById       String?
-  doctrineRecruitedBy         User?                        @relation("DoctrineRecruitment", fields: [doctrineRecruitedById], references: [id])
-  doctrineRecruits            User[]                       @relation("DoctrineRecruitment")
+  doctrineRecruitedBy         User?                      @relation("DoctrineRecruitment", fields: [doctrineRecruitedById], references: [id])
+  doctrineRecruits            User[]                     @relation("DoctrineRecruitment")
   doctrineReputation          DoctrineReputation?
   doctrinePuzzleSubmissions   DoctrinePuzzleSubmission[]
   doctrinePuzzleReplays       DoctrinePuzzleReplay[]
@@ -269,7 +266,6 @@ model User {
   doctrineIncidentReports     DoctrineIncidentReport[]
   doctrineReactions           DoctrineReaction[]
   doctrineRecruitmentCodes    DoctrineRecruitmentCode[]
-  doctrineSahurParticipations DoctrineSahurParticipation[]
 
   // RMH Ladder Relations
   ladderPrefs             LadderUserPrefs?
@@ -418,13 +414,7 @@ model User {
   featureRequests     FeatureRequest[]
   featureRequestVotes FeatureRequestVote[]
 
-  creatorPosts           CreatorPost[]
-  referralMilestones     ReferralMilestone[]
-  profileBlocks          ProfileBlock[]
-  readingRooms           ReadingRoom[]
   remixEdges             RemixEdge[]
-  appSeasonStats         AppSeasonStat[]
-  questChainProgresses   QuestChainProgress[]
   pools                  Pool[]
   poolContributions      PoolContribution[]
   communityPageRevisions CommunityPageRevision[]
@@ -467,8 +457,6 @@ model User {
   velumContractsHeld         VelumContract[]              @relation("VelumContractHolder")
   versecraftSeedListings     VersecraftSeedListing[]
   versecraftSeedRatings      VersecraftSeedRating[]
-  marchSignals               MarchSignal[]
-  marchSignalVotes           MarchSignalVote[]
   nightrailTricks            NightrailTrick[]
   nightrailTrickVotes        NightrailTrickVote[]
   translationVotes           TranslationVote[]
@@ -888,28 +876,6 @@ model HandleChange {
   @@index([userId, createdAt(sort: Desc)])
   @@index([oldHandle])
   @@map("handle_change")
-}
-
-/// Referral milestones, paid on ACTIVATION rather than signup (F6).
-///
-/// `Referral` already records who invited whom. What was missing is the loop:
-/// a referrer who brings ten active people and one who brings ten bounces were
-/// indistinguishable. Rewarding activation is also the anti-fraud posture —
-/// signup is free to fake, three separate active days is not.
-model ReferralMilestone {
-  id        String   @id @default(cuid())
-  userId    String
-  /// Count of ACTIVATED referrals this milestone was granted for.
-  threshold Int
-  coins     Int      @default(0)
-  cosmetic  String?  @db.VarChar(60)
-  grantedAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, threshold])
-  @@index([userId])
-  @@map("referral_milestone")
 }
 
 // ─── Responsible play (W8, 2026-09-19) ────────────────────────────────────

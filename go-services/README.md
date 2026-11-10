@@ -22,8 +22,7 @@ the **Bazel workspace root is the repo root** (`MODULE.bazel` at `/`).
 | `assets` | 7007 | Range-aware S3/R2 streaming CDN for `/library` `/music` `/models` `/sprites` |
 
 The other `cmd/` binaries (`bot-worker`, `discord-bot`, `vibe-worker`) exist so a worker can be run standalone, but in
-production they run **inside `supervisor`**. `internal/ledger` is implemented but
-wired into no binary — not built, not deployed.
+production they run **inside `supervisor`**.
 
 > **Removed in the rewrite (design §5.2):** the earlier full-Go realtime
 > topology — a `gateway` fronting Go `gamehub`/`rmhbox`/`rmhtube`/`rmhmusic`

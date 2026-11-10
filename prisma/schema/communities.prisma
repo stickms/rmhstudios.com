@@ -248,31 +248,6 @@ model UserListMember {
   @@map("user_list_member")
 }
 
-/// Synchronised reading (F9).
-///
-/// `RmhTubeRoom` synchronises a playhead; this synchronises a *position*.
-/// Followers who scroll away enter an independent state with a "back to host"
-/// affordance rather than being yanked — automatic re-sync fighting the
-/// reader's scroll is the failure mode every implementation of this hits.
-model ReadingRoom {
-  id        String   @id @default(cuid())
-  docId     String
-  hostId    String
-  /// Host's anchor: { page, fraction, anchorId }.
-  anchor    Json     @default("{}")
-  /// Per-user positions, so "I'm ahead" is visible instead of a scroll fight.
-  positions Json     @default("{}")
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  host User @relation(fields: [hostId], references: [id], onDelete: Cascade)
-
-  @@index([docId, active])
-  @@index([hostId])
-  @@map("reading_room")
-}
-
 /// Collaboratively edited community pages (F21).
 ///
 /// Deliberately shaped like `GameGuide`/`GameGuideRevision` rather than as a

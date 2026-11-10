@@ -285,7 +285,6 @@ runs the changed-file subset of all three. Test suites and what gates them:
 | 7003      | rmhtube                          | Node               | Apache `/rmhtube-ws/`       |
 | 7007      | assets                           | Go                 | internal (Apache off-disk CDN path) |
 | 7008      | status                           | Go                 | dashboard                   |
-| 7100      | ledger                           | Go                 | not deployed (internal/ledger, no binary) |
 | 9090      | supervisor metrics               | Go                 | internal (Prometheus)       |
 | 6379      | redis (LRU cache) · redis-state (durable, dormant) | infra | internal        |
 | 9000/9001 | MinIO                            | infra              | internal                    |

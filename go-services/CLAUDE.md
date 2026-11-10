@@ -62,11 +62,8 @@ ported to the Node `jobs` worker (`lib/streak-reminders.server.ts`,
 `lib/lights-out/recap.server.ts`, `lib/doctrine/jobs.server.ts`, D3); `status`
 reads their freshness from pg-boss's job table (B06) and the daily-puzzle alarm
 (A19) straight from `doctrine_puzzle`. (`status`, `assets`, and `supervisor` are the three
-non-worker `cmd/` binaries.) `internal/ledger`
-(a Go artifact/provenance store, `LEDGER_ADDR :7100` in docs only) is also
-`internal/`-only — implemented but wired into no binary, not built, not
-deployed. Don't confuse **`ledger`** with **`ladder-worker`** (the Node
-RMHLadder job cron, not ported).
+non-worker `cmd/` binaries.) The dead `internal/ledger` artifact store and its
+`ledger_*` tables were deleted (audit C3).
 
 ### Shared packages (pkg/)
 
@@ -160,9 +157,8 @@ make images         # build + load every service image into Docker (Bazel)
 2. The legacy `go-services/Makefile` `SERVICES` list and the root `Makefile`
    image loop both lag the real service set — check `images/BUILD.bazel` for
    what's actually buildable.
-3. There is no `cmd/ledger`: `internal/ledger` (Go artifact/provenance store)
-   is implemented but wired into no binary — not built, not deployed. The
-   `ledger_*` schema tables remain.
+3. There is no `cmd/ledger`: the old `internal/ledger` package and the
+   `ledger_*` tables were removed (audit C3).
 4. Discord bot commands are `/chat` + the Alex tamagotchi
    ([`docs/alex-tamagotchi/`](../docs/alex-tamagotchi/README.md)); there is no
    `/rmhbot` command (old README claim is stale). The `/liquid` Liquid Globe
