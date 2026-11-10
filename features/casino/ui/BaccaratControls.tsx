@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { useBettingCountdown, BettingCountdown } from './BettingCountdown';
-import { CoinIcon } from './CoinIcon';
-import { useBaccaratStore } from '@/lib/baccarat/store';
-import { getBaccaratSocket } from '@/lib/baccarat/socket';
-import { C2S } from '@/lib/baccarat/events';
-import type { BetType } from '@/lib/baccarat/types';
+import { useBettingCountdown, BettingCountdown } from '@/components/rmhcoins/BettingCountdown';
+import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { useBaccaratStore } from '@features/casino/engine/baccarat/store';
+import { getBaccaratSocket } from '@features/casino/engine/baccarat/socket';
+import { C2S } from '@features/casino/engine/baccarat/events';
+import type { BetType } from '@features/casino/engine/baccarat/types';
 
 interface Props {
   coins: number;

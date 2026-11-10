@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBaccaratStore } from '@/lib/baccarat/store';
-import { handValue, isNatural } from '@/lib/baccarat/logic';
-import type { Card, BaccaratResult } from '@/lib/baccarat/logic';
-import type { BetType } from '@/lib/baccarat/types';
-import { CoinIcon } from './CoinIcon';
+import { useBaccaratStore } from '@features/casino/engine/baccarat/store';
+import { handValue, isNatural } from '@features/casino/engine/baccarat/logic';
+import type { Card, BaccaratResult } from '@features/casino/engine/baccarat/logic';
+import type { BetType } from '@features/casino/engine/baccarat/types';
+import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 
 // ── Card Rendering with Flip Animation ─────────────────────────────
 

@@ -6,7 +6,7 @@
  */
 
 import type { Server, Socket } from 'socket.io';
-import { getPrismaClient } from '../prisma-client';
+import { getPrismaClient } from '../../../server/socket-server/prisma-client';
 import { debitCoinsOn, creditCoinsOn, getBalanceOn } from '../../../lib/economy/ledger-core';
 import {
   InFlight,
@@ -14,8 +14,8 @@ import {
   type ShutdownRefundSummary,
   type StakeClaim,
 } from './casino-shutdown';
-import { checkRateLimit } from '../rate-limit';
-import { logger } from '../logger';
+import { checkRateLimit } from '../../../server/socket-server/rate-limit';
+import { logger } from '../../../server/socket-server/logger';
 import {
   type Card,
   type HandRank,
@@ -23,7 +23,7 @@ import {
   evaluateBestHand,
   compareHands,
   type EvaluatedHand,
-} from '../../../lib/holdem/logic';
+} from '../engine/holdem/logic';
 
 // ── Event Constants ────────────────────────────────────────────────
 
@@ -1792,7 +1792,7 @@ export function handleHoldemDisconnect(_io: Server, socket: Socket): void {
 // `privacy: 'unlisted'` for the same reason Kowloon's party rooms are private:
 // a table on the public list can be taken by strangers before the party lands.
 
-import { registerPartyGame, type PartyMember, type RoomRef } from '../party-contract';
+import { registerPartyGame, type PartyMember, type RoomRef } from '../../../server/socket-server/party-contract';
 
 registerPartyGame('holdem', {
   maxPartySize: MAX_PLAYERS_CAP,

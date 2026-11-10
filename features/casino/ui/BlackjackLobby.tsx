@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Plus, Users, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
-import { useBlackjackStore } from '@/lib/blackjack/store';
-import { getBlackjackSocket } from '@/lib/blackjack/socket';
-import { C2S } from '@/lib/blackjack/events';
+import { useBlackjackStore } from '@features/casino/engine/blackjack/store';
+import { getBlackjackSocket } from '@features/casino/engine/blackjack/socket';
+import { C2S } from '@features/casino/engine/blackjack/events';
 
 export function BlackjackLobby() {
   const { t } = useTranslation("c-rmhcoins");

@@ -1,21 +1,22 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { useTranslation } from "react-i18next";
-import { useHoldemStore } from '@/lib/holdem/store';
-import { CoinIcon } from './CoinIcon';
+import { useBlackjackStore } from '@features/casino/engine/blackjack/store';
+import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 
-export function HoldemSessionStats() {
-  const players = useHoldemStore((s) => s.players);
-  const myUserId = useHoldemStore((s) => s.myUserId);
+export function BlackjackSessionStats() {
+  const players = useBlackjackStore((s) => s.players);
+  const myUserId = useBlackjackStore((s) => s.myUserId);
   const { t } = useTranslation("c-rmhcoins");
   const [expanded, setExpanded] = useState(false);
 
   const sorted = [...players].sort((a, b) => {
-    const aNet = a.totalChips - a.sessionStats.totalBuyIn;
-    const bNet = b.totalChips - b.sessionStats.totalBuyIn;
+    const aNet = a.sessionStats.totalWon - a.sessionStats.totalBet;
+    const bNet = b.sessionStats.totalWon - b.sessionStats.totalBet;
     return bNet - aNet;
   });
 
+  // Don't show if no hands played yet
   const anyPlayed = sorted.some((p) => p.sessionStats.handsPlayed > 0);
   if (!anyPlayed) return null;
 
@@ -25,7 +26,7 @@ export function HoldemSessionStats() {
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-site-text-dim hover:text-site-text transition-colors"
       >
-        <span>{t("session-ledger", { defaultValue: "Session Ledger" })}</span>
+        <span>{t("session-stats", { defaultValue: "Session Stats" })}</span>
         {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
       </button>
 
@@ -34,32 +35,31 @@ export function HoldemSessionStats() {
           <table className="w-full text-xs">
             <thead>
               <tr className="text-site-text-dim border-b border-site-border">
-                <th className="text-left py-1 font-medium">{t("col-player", { defaultValue: "Player" })}</th>
-                <th className="text-right py-1 font-medium">{t("col-buy-in", { defaultValue: "Buy-in" })}</th>
-                <th className="text-right py-1 font-medium">{t("col-stack", { defaultValue: "Stack" })}</th>
-                <th className="text-right py-1 font-medium">{t("col-net", { defaultValue: "Net" })}</th>
-                <th className="text-right py-1 font-medium">{t("col-wl", { defaultValue: "W/L" })}</th>
+                <th className="text-left py-1 font-medium">{t("player", { defaultValue: "Player" })}</th>
+                <th className="text-right py-1 font-medium">{t("bet", { defaultValue: "Bet" })}</th>
+                <th className="text-right py-1 font-medium">{t("won", { defaultValue: "Won" })}</th>
+                <th className="text-right py-1 font-medium">{t("net", { defaultValue: "Net" })}</th>
+                <th className="text-right py-1 font-medium">{t("wl", { defaultValue: "W/L" })}</th>
               </tr>
             </thead>
             <tbody>
               {sorted.map((p) => {
-                const net = p.totalChips - p.sessionStats.totalBuyIn;
+                const net = p.sessionStats.totalWon - p.sessionStats.totalBet;
                 const isMe = p.userId === myUserId;
                 return (
                   <tr key={p.userId} className={isMe ? 'text-site-accent' : 'text-site-text'}>
                     <td className="py-1 font-bold truncate max-w-20">
                       {isMe ? t("you", { defaultValue: "You" }) : p.userName}
-                      {p.sittingOut && <span className="text-casino-seat-3 ml-1 text-tiny">{t("sitting-out-holdem-session-stats", { defaultValue: "(out)" })}</span>}
                     </td>
                     <td className="text-right py-1">
                       <span className="inline-flex items-center gap-0.5">
-                        {p.sessionStats.totalBuyIn}
+                        {p.sessionStats.totalBet}
                         <CoinIcon className="w-2.5 h-2.5" />
                       </span>
                     </td>
                     <td className="text-right py-1">
                       <span className="inline-flex items-center gap-0.5">
-                        {p.totalChips}
+                        {p.sessionStats.totalWon}
                         <CoinIcon className="w-2.5 h-2.5" />
                       </span>
                     </td>
@@ -68,6 +68,9 @@ export function HoldemSessionStats() {
                     </td>
                     <td className="text-right py-1 text-site-text-dim">
                       {p.sessionStats.handsWon}/{p.sessionStats.handsPlayed}
+                      {p.sessionStats.blackjacks > 0 && (
+                        <span className="text-site-accent ml-0.5">({p.sessionStats.blackjacks} BJ)</span>
+                      )}
                     </td>
                   </tr>
                 );

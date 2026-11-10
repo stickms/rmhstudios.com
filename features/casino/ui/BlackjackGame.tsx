@@ -2,14 +2,14 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLobbyInviteJoin } from '@/hooks/useLobbyLink';
 import { Circle } from 'lucide-react';
-import { connectToHoldem, disconnectFromHoldem, getHoldemSocket, onHoldemBalanceUpdate } from '@/lib/holdem/socket';
-import { useHoldemStore } from '@/lib/holdem/store';
-import { C2S } from '@/lib/holdem/events';
-import { HoldemLobby } from './HoldemLobby';
-import { TableInvite } from './TableInvite';
-import { HoldemTable } from './HoldemTable';
-import { HoldemControls } from './HoldemControls';
-import { HoldemSessionStats } from './HoldemSessionStats';
+import { connectToBlackjack, disconnectFromBlackjack, getBlackjackSocket, onBalanceUpdate } from '@features/casino/engine/blackjack/socket';
+import { useBlackjackStore } from '@features/casino/engine/blackjack/store';
+import { C2S } from '@features/casino/engine/blackjack/events';
+import { BlackjackLobby } from './BlackjackLobby';
+import { TableInvite } from '@/components/rmhcoins/TableInvite';
+import { BlackjackTable } from './BlackjackTable';
+import { BlackjackControls } from './BlackjackControls';
+import { BlackjackSessionStats } from './BlackjackSessionStats';
 import { Spinner } from '@/components/ui/spinner';
 
 interface Props {
@@ -17,33 +17,35 @@ interface Props {
   setCoins: (coins: number) => void;
 }
 
-export function HoldemGame({ coins, setCoins }: Props) {
+export function BlackjackGame({ coins, setCoins }: Props) {
   const { t } = useTranslation("c-rmhcoins");
-  const connectionStatus = useHoldemStore((s) => s.connectionStatus);
-  const viewMode = useHoldemStore((s) => s.viewMode);
-  const roomInfo = useHoldemStore((s) => s.roomInfo);
-  const players = useHoldemStore((s) => s.players);
-  const error = useHoldemStore((s) => s.error);
+  const connectionStatus = useBlackjackStore((s) => s.connectionStatus);
+  const viewMode = useBlackjackStore((s) => s.viewMode);
+  const roomInfo = useBlackjackStore((s) => s.roomInfo);
+  const players = useBlackjackStore((s) => s.players);
   const connectedRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
 
-    connectToHoldem()
+    connectToBlackjack()
       .then((sock) => {
         if (mounted && !connectedRef.current) {
           connectedRef.current = true;
+          // Request room list on connect
           sock.emit(C2S.LIST_ROOMS);
         }
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error('Failed to connect to blackjack:', err);
+      });
 
     return () => {
       mounted = false;
       connectedRef.current = false;
-      const sock = getHoldemSocket();
+      const sock = getBlackjackSocket();
       if (sock) sock.emit(C2S.LEAVE_ROOM);
-      disconnectFromHoldem();
+      disconnectFromBlackjack();
     };
   }, []);
 
@@ -51,11 +53,13 @@ export function HoldemGame({ coins, setCoins }: Props) {
   // showing the room list. The server rejects a code that no longer exists, and
   // the lobby's own error path says so.
   useLobbyInviteJoin(connectionStatus === 'connected' && !roomInfo, (code) => {
-    getHoldemSocket()?.emit(C2S.JOIN_ROOM, { joinCode: code.toUpperCase() });
+    getBlackjackSocket()?.emit(C2S.JOIN_ROOM, { joinCode: code.toUpperCase() });
   });
 
   useEffect(() => {
-    return onHoldemBalanceUpdate((newBalance) => setCoins(newBalance));
+    return onBalanceUpdate((newBalance) => {
+      setCoins(newBalance);
+    });
   }, [setCoins]);
 
   if (connectionStatus === 'connecting') {
@@ -75,57 +79,64 @@ export function HoldemGame({ coins, setCoins }: Props) {
     );
   }
 
+  // Status indicator color
   const statusColor =
     connectionStatus === 'connected' ? 'text-site-success' : 'text-casino-card-red';
 
+  // Lobby view
   if (viewMode === 'lobby' || !roomInfo) {
     return (
       <div className="flex flex-col gap-4 px-3 sm:px-4 py-4 sm:py-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-site-text">{t("texas-holdem-rooms", { defaultValue: "Texas Hold'em Rooms" })}</h3>
+          <h3 className="text-sm font-bold text-site-text">{t("blackjack-rooms", { defaultValue: "Blackjack Rooms" })}</h3>
           <Circle className={`h-3 w-3 fill-current ${statusColor}`} />
         </div>
         <div className="max-w-125 mx-auto w-full">
-          <HoldemLobby coins={coins} />
-          {error && <p className="text-sm text-site-danger text-center mt-3">{error}</p>}
+          <BlackjackLobby />
         </div>
       </div>
     );
   }
 
+  // Room view
   const handleLeave = () => {
-    const sock = getHoldemSocket();
+    const sock = getBlackjackSocket();
     if (sock) sock.emit(C2S.LEAVE_ROOM);
   };
 
   return (
     <div className="flex flex-col gap-4 px-3 sm:px-4 py-4 sm:py-6">
+      {/* Room header */}
       <div className="flex items-center justify-between gap-2 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
-          <button onClick={handleLeave} className="shrink-0 min-h-8 px-2 text-xs text-site-text-dim hover:text-site-text transition-colors">
+          <button
+            onClick={handleLeave}
+            className="shrink-0 min-h-8 px-2 text-xs text-site-text-dim hover:text-site-text transition-colors"
+          >
             &larr; {t("leave", { defaultValue: "Leave" })}
           </button>
-          <h3 className="text-sm font-bold text-site-text truncate">{roomInfo.name}</h3>
+          <h3 className="text-sm font-bold text-site-text truncate">
+            {roomInfo.name}
+          </h3>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {roomInfo.joinCode && <TableInvite game="holdem" joinCode={roomInfo.joinCode} />}
+          {roomInfo.joinCode && <TableInvite game="blackjack" joinCode={roomInfo.joinCode} />}
           <span className="text-micro sm:text-xs text-site-text-dim">
-            {roomInfo.smallBlind}/{roomInfo.bigBlind}
+            {players.length}/{roomInfo.maxPlayers}
           </span>
-          <span className="text-micro sm:text-xs text-site-text-dim">{players.length}/{roomInfo.maxPlayers}</span>
           <Circle className={`h-3 w-3 fill-current shrink-0 ${statusColor}`} />
         </div>
       </div>
 
       <div className="w-full flex flex-col lg:flex-row lg:items-start gap-4">
         <div className="glass-pane flex-1 min-w-0 rounded-site-sm p-3 sm:p-5">
-          <HoldemTable />
+          <BlackjackTable />
         </div>
         <div className="w-full lg:w-80 shrink-0 flex flex-col gap-3">
           <div className="glass-pane rounded-site-sm p-3 sm:p-4">
-            <HoldemControls />
+            <BlackjackControls coins={coins} />
           </div>
-          <HoldemSessionStats />
+          <BlackjackSessionStats />
         </div>
       </div>
     </div>

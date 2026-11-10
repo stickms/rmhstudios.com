@@ -1,22 +1,21 @@
 /**
- * Baccarat — Room-based multiplayer handler.
+ * Roulette — Room-based multiplayer handler.
  *
  * Players create or join rooms. Each room runs its own table.
- * All players bet on the same player/banker hands.
- * Standard baccarat rules with side bets (pairs, dragon bonus).
- * 8-deck shoe, 5% banker commission.
+ * European single-zero roulette (0-36).
+ * Phases: idle → betting (25s) → spinning → results (5s) → betting.
  */
 
 import type { Server, Socket } from 'socket.io';
-import { getPrismaClient } from '../prisma-client';
+import { getPrismaClient } from '../../../server/socket-server/prisma-client';
 import {
   debitCoinsOn,
   creditCoinsOn,
   getBalanceOn,
   getBalancesOn,
 } from '../../../lib/economy/ledger-core';
-import { checkRateLimit } from '../rate-limit';
-import { logger } from '../logger';
+import { checkRateLimit } from '../../../server/socket-server/rate-limit';
+import { logger } from '../../../server/socket-server/logger';
 import {
   InFlight,
   settleShutdownClaims,
@@ -24,41 +23,32 @@ import {
   type StakeClaim,
 } from './casino-shutdown';
 import {
-  type Card,
-  createShoe,
-  handValue,
-  isNatural,
-  playerDrawsThird,
-  bankerDrawsThird,
-  determineResult,
-  calculateSideBets,
-  bankerWinMultiplier,
-  PAYOUTS,
-} from '../../../lib/baccarat/logic';
-import { C2S, S2C } from '../../../lib/baccarat/events';
+  type Bet,
+  type BetType,
+  spin,
+  getPayoutMultiplier,
+  calculatePayout,
+  getNumberColor,
+  getOutsideBetNumbers,
+  DOUBLE_ZERO,
+} from '../engine/roulette/logic';
+import { C2S, S2C } from '../engine/roulette/events';
 import type {
   TablePhase,
-  BetType,
-  PlayerBets,
-  PlayerSeatClient,
-  SessionStats,
   TableStateSnapshot,
-  CardRevealPayload,
+  PlayerSeatClient,
+  SpinResultPayload,
   RoundResultPayload,
-} from '../../../lib/baccarat/types';
-import type { BaccaratResult } from '../../../lib/baccarat/logic';
-
-// ── Constants ──────────────────────────────────────────────────────
-
-const DEFAULT_MAX_PLAYERS = 10;
-const MAX_PLAYERS_CAP = 10;
-const BETTING_DURATION_MS = 20_000;
-const RESULTS_DISPLAY_MS = 5_000;
-const CARD_REVEAL_DELAY_MS = 800;
-const RESHUFFLE_THRESHOLD = 75;
-const MIN_BET = 1;
+  SessionStats,
+} from '../engine/roulette/types';
 
 // ── Types ──────────────────────────────────────────────────────────
+
+interface PlayerBet {
+  type: BetType;
+  numbers: number[];
+  amount: number;
+}
 
 interface PlayerSeat {
   seatIndex: number;
@@ -66,16 +56,16 @@ interface PlayerSeat {
   userId: string;
   userName: string;
   avatarUrl: string | null;
-  bets: PlayerBets;
+  bets: PlayerBet[];
   totalBetThisRound: number;
   lastPayout: number;
   sessionStats: SessionStats;
   // Set when a player leaves/disconnects mid-round but still has an active bet.
-  // The seat is kept until the round resolves so the payout still lands, then pruned.
+  // The seat is kept until the spin resolves so the payout still lands.
   pendingRemoval?: boolean;
 }
 
-interface BaccaratRoom {
+interface RouletteRoom {
   roomId: string;
   name: string;
   ownerId: string;
@@ -85,35 +75,107 @@ interface BaccaratRoom {
   joinCode: string;
   phase: TablePhase;
   players: Map<string, PlayerSeat>;
-  shoe: Card[];
-  playerHand: Card[];
-  bankerHand: Card[];
-  // Cards revealed so far (for table state serialization)
-  revealedPlayerCards: Card[];
-  revealedBankerCards: Card[];
   bettingTimer: ReturnType<typeof setTimeout> | null;
   resultsTimer: ReturnType<typeof setTimeout> | null;
+  spinTimer: ReturnType<typeof setTimeout> | null;
   // The 2s "nobody bet, try again" restart. It was untracked, so a join during
   // the gap started betting and the stray timer then restarted it, zeroing
   // every debited bet.
   restartTimer: ReturnType<typeof setTimeout> | null;
-  // True from the moment resolveRound has computed this round's payouts (its
-  // settlement transaction then owns every bet) until the next betting phase.
-  // The phase stays 'dealing'/'drawing' across that await, so shutdown reads
-  // this to tell a deal still owed a refund from one already being paid.
+  // True from the moment resolvePayouts has computed this round's payouts
+  // (its settlement transaction then owns every bet) until the next betting
+  // phase. The phase stays 'spinning' across that await, so shutdown reads
+  // this to tell a spin still owed a refund from one already being paid.
   settling: boolean;
   roundNumber: number;
   bettingDeadline: number | null;
-  history: BaccaratResult[];
+  lastResult: number | null;
+  history: number[];
+}
+
+// ── Constants ──────────────────────────────────────────────────────
+
+const DEFAULT_MAX_PLAYERS = 10;
+const MAX_PLAYERS_CAP = 10;
+const BETTING_DURATION_MS = 25_000;
+const RESULTS_DISPLAY_MS = 8_000;
+const SPIN_ANIMATION_DELAY_MS = 5_000;
+const MIN_BET = 1;
+const MAX_HISTORY = 50;
+
+// ── Bet Validation ─────────────────────────────────────────────────
+
+const INSIDE_BET_COUNTS: Record<string, number> = {
+  straight: 1,
+  split: 2,
+  street: 3,
+  corner: 4,
+  topline: 5,
+  line: 6,
+};
+
+const OUTSIDE_BET_TYPES = new Set<BetType>([
+  'red',
+  'black',
+  'odd',
+  'even',
+  'low',
+  'high',
+  'dozen1',
+  'dozen2',
+  'dozen3',
+  'column1',
+  'column2',
+  'column3',
+]);
+
+const ALL_BET_TYPES = new Set<BetType>([
+  'straight',
+  'split',
+  'street',
+  'corner',
+  'line',
+  'topline',
+  ...OUTSIDE_BET_TYPES,
+]);
+
+function isValidBetType(type: string): type is BetType {
+  return ALL_BET_TYPES.has(type as BetType);
+}
+
+function validateBetNumbers(type: BetType, numbers: number[]): boolean {
+  // All numbers must be valid: -1 (00), 0-36
+  if (!numbers.every((n) => Number.isInteger(n) && n >= DOUBLE_ZERO && n <= 36)) return false;
+
+  // Outside bets: numbers must match the predefined set
+  if (OUTSIDE_BET_TYPES.has(type)) {
+    const expected = getOutsideBetNumbers(type);
+    if (numbers.length !== expected.length) return false;
+    const expectedSet = new Set(expected);
+    return numbers.every((n) => expectedSet.has(n));
+  }
+
+  // Topline: must be exactly [0, -1, 1, 2, 3]
+  if (type === 'topline') {
+    const expected = new Set([0, DOUBLE_ZERO, 1, 2, 3]);
+    return numbers.length === 5 && numbers.every((n) => expected.has(n));
+  }
+
+  // Inside bets: must have correct count and unique numbers
+  const expectedCount = INSIDE_BET_COUNTS[type];
+  if (!expectedCount || numbers.length !== expectedCount) return false;
+  if (new Set(numbers).size !== numbers.length) return false;
+
+  return true;
 }
 
 // ── State ──────────────────────────────────────────────────────────
 
-const rooms = new Map<string, BaccaratRoom>();
+const rooms = new Map<string, RouletteRoom>();
 const socketToUserId = new Map<string, string>();
 const userToRoom = new Map<string, string>();
 let ioRef: Server;
-// Set once by refundBaccaratOnShutdown(): from then on no room is live.
+// Set once by refundRouletteOnShutdown(): from then on no room is live.
 let closing = false;
 // Debits, refunds and payout transactions still awaiting the database.
 const inFlight = new InFlight();
@@ -121,10 +183,10 @@ const inFlight = new InFlight();
 // Socket.io room that lobby browsers join so room-list updates reach only the
 // clients currently viewing the lobby — not every connected socket on the
 // server (which sprayed all ~18 games on every casino room mutation).
-const LOBBY_ROOM = 'bacc:lobby';
+const LOBBY_ROOM = 'rl:lobby';
 
 function roomKey(roomId: string): string {
-  return `bacc:${roomId}`;
+  return `rl:${roomId}`;
 }
 
 function generateRoomId(): string {
@@ -136,54 +198,15 @@ function generateRoomId(): string {
   return id;
 }
 
-// ── Shoe Management ────────────────────────────────────────────────
-
-function drawCard(room: BaccaratRoom): Card {
-  if (room.shoe.length < RESHUFFLE_THRESHOLD) {
-    room.shoe = createShoe(8);
-  }
-  return room.shoe.pop()!;
-}
-
-// ── Helpers ────────────────────────────────────────────────────────
-
-function emptyBets(): PlayerBets {
-  return {
-    player: 0,
-    banker: 0,
-    tie: 0,
-    playerPair: 0,
-    bankerPair: 0,
-    playerDragon: 0,
-    bankerDragon: 0,
-  };
-}
-
-function totalBets(bets: PlayerBets): number {
-  return (
-    bets.player +
-    bets.banker +
-    bets.tie +
-    bets.playerPair +
-    bets.bankerPair +
-    bets.playerDragon +
-    bets.bankerDragon
-  );
-}
-
-function hasBets(bets: PlayerBets): boolean {
-  return totalBets(bets) > 0;
-}
-
 // ── Table State Serialization ──────────────────────────────────────
 
-function serializeTableState(room: BaccaratRoom): TableStateSnapshot {
+function serializeTableState(room: RouletteRoom): TableStateSnapshot {
   const players: PlayerSeatClient[] = Array.from(room.players.values()).map((p) => ({
     userId: p.userId,
     userName: p.userName,
     avatarUrl: p.avatarUrl,
     seatIndex: p.seatIndex,
-    bets: p.bets,
+    bets: p.bets.map((b) => ({ type: b.type, numbers: b.numbers, amount: b.amount })),
     totalBetThisRound: p.totalBetThisRound,
     lastPayout: p.lastPayout,
     sessionStats: p.sessionStats,
@@ -194,17 +217,15 @@ function serializeTableState(room: BaccaratRoom): TableStateSnapshot {
     phase: room.phase,
     roundNumber: room.roundNumber,
     players,
-    // Only send cards that have been revealed already
-    playerHand: room.revealedPlayerCards.slice(),
-    bankerHand: room.revealedBankerCards.slice(),
     bettingCountdown: room.bettingDeadline
       ? Math.max(0, Math.ceil((room.bettingDeadline - Date.now()) / 1000))
       : null,
+    lastResult: room.lastResult,
     history: room.history,
   };
 }
 
-function broadcastTableState(room: BaccaratRoom) {
+function broadcastTableState(room: RouletteRoom) {
   ioRef.to(roomKey(room.roomId)).emit(S2C.TABLE_STATE, serializeTableState(room));
 }
 
@@ -224,7 +245,7 @@ function broadcastRoomList() {
 
 // ── Seat Assignment ────────────────────────────────────────────────
 
-function getNextSeatIndex(room: BaccaratRoom): number {
+function getNextSeatIndex(room: RouletteRoom): number {
   const taken = new Set(Array.from(room.players.values()).map((p) => p.seatIndex));
   for (let i = 0; i < room.maxPlayers; i++) {
     if (!taken.has(i)) return i;
@@ -232,9 +253,9 @@ function getNextSeatIndex(room: BaccaratRoom): number {
   return -1;
 }
 
-// ── Timer Helpers ──────────────────────────────────────────────────
+// ── Round Lifecycle ────────────────────────────────────────────────
 
-function clearTimers(room: BaccaratRoom) {
+function clearTimers(room: RouletteRoom) {
   if (room.bettingTimer) {
     clearTimeout(room.bettingTimer);
     room.bettingTimer = null;
@@ -243,14 +264,18 @@ function clearTimers(room: BaccaratRoom) {
     clearTimeout(room.resultsTimer);
     room.resultsTimer = null;
   }
+  if (room.spinTimer) {
+    clearTimeout(room.spinTimer);
+    room.spinTimer = null;
+  }
   if (room.restartTimer) {
     clearTimeout(room.restartTimer);
     room.restartTimer = null;
   }
 }
 
-/** Cards are out or results are showing: stakes are committed. */
-function roundInProgress(room: BaccaratRoom): boolean {
+/** The wheel is spinning or showing results: stakes are committed. */
+function roundInProgress(room: RouletteRoom): boolean {
   return room.phase !== 'idle' && room.phase !== 'betting';
 }
 
@@ -258,25 +283,16 @@ function roundInProgress(room: BaccaratRoom): boolean {
  * The room is still the live one for this id (not destroyed while we awaited),
  * and the hub is not shutting down (its stakes were refunded at shutdown).
  */
-function isLive(room: BaccaratRoom): boolean {
+function isLive(room: RouletteRoom): boolean {
   return !closing && rooms.get(room.roomId) === room;
 }
 
-/** The async deal for `round` may continue (room alive, same round, still dealing). */
-function stillDealing(room: BaccaratRoom, round: number): boolean {
-  return (
-    isLive(room) &&
-    room.roundNumber === round &&
-    (room.phase === 'dealing' || room.phase === 'drawing')
-  );
-}
-
-/** Return a stake that never reached a deal. Errors are logged, never thrown. */
-function refundStake(room: BaccaratRoom, userId: string, amount: number, note: string) {
+/** Return a stake that never reached a spin. Errors are logged, never thrown. */
+function refundStake(room: RouletteRoom, userId: string, amount: number, note: string) {
   return inFlight.track(refundStakeNow(room, userId, amount, note));
 }
 
-async function refundStakeNow(room: BaccaratRoom, userId: string, amount: number, note: string) {
+async function refundStakeNow(room: RouletteRoom, userId: string, amount: number, note: string) {
   if (amount <= 0) return;
   try {
     const prisma = getPrismaClient();
@@ -284,7 +300,7 @@ async function refundStakeNow(room: BaccaratRoom, userId: string, amount: number
       await creditCoinsOn(tx, userId, amount, {
         tx,
         type: 'WAGER',
-        entityType: 'baccarat',
+        entityType: 'roulette',
         entityId: room.roomId,
         note,
       });
@@ -294,19 +310,11 @@ async function refundStakeNow(room: BaccaratRoom, userId: string, amount: number
       if (uid === userId) ioRef.sockets.sockets.get(sid)?.emit(S2C.BALANCE_UPDATE, { coins: balance });
     }
   } catch (err) {
-    logger.error({ event: 'bacc_refund_error', roomId: room.roomId, userId, amount, error: String(err) });
+    logger.error({ event: 'rl_refund_error', roomId: room.roomId, userId, amount, error: String(err) });
   }
 }
 
-// ── Async Delay ────────────────────────────────────────────────────
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-// ── Round Lifecycle ────────────────────────────────────────────────
-
-function startBettingPhase(room: BaccaratRoom) {
+function startBettingPhase(room: RouletteRoom) {
   if (room.restartTimer) {
     clearTimeout(room.restartTimer);
     room.restartTimer = null;
@@ -322,13 +330,9 @@ function startBettingPhase(room: BaccaratRoom) {
   room.phase = 'betting';
   room.settling = false;
   room.roundNumber++;
-  room.playerHand = [];
-  room.bankerHand = [];
-  room.revealedPlayerCards = [];
-  room.revealedBankerCards = [];
 
   for (const p of room.players.values()) {
-    p.bets = emptyBets();
+    p.bets = [];
     p.totalBetThisRound = 0;
     p.lastPayout = 0;
   }
@@ -345,22 +349,21 @@ function startBettingPhase(room: BaccaratRoom) {
   room.bettingTimer = setTimeout(() => endBettingPhase(room), BETTING_DURATION_MS);
 }
 
-// checkAllBetsPlaced removed — let the timer run so players can adjust bets
-
-function endBettingPhase(room: BaccaratRoom) {
+function endBettingPhase(room: RouletteRoom) {
   if (room.phase !== 'betting') return;
   room.bettingTimer = null;
   room.bettingDeadline = null;
 
-  // Check if anyone bet
-  let anyBets = false;
+  // Check if any player placed bets
+  let hasBets = false;
   for (const p of room.players.values()) {
-    if (hasBets(p.bets)) {
-      anyBets = true;
+    if (p.bets.length > 0) {
+      hasBets = true;
+      break;
     }
   }
 
-  if (!anyBets) {
+  if (!hasBets) {
     room.phase = 'idle';
     broadcastTableState(room);
     if (room.players.size > 0) {
@@ -372,202 +375,62 @@ function endBettingPhase(room: BaccaratRoom) {
     return;
   }
 
-  dealCards(room);
+  startSpinPhase(room);
 }
 
-// ── Card Dealing & Reveal ──────────────────────────────────────────
+function startSpinPhase(room: RouletteRoom) {
+  room.phase = 'spinning';
 
-async function dealCards(room: BaccaratRoom) {
-  room.phase = 'dealing';
-  // The reveal is a chain of awaited delays that clearTimers/destroyRoom can't
-  // cancel; every step re-checks it is still this round's deal.
-  const round = room.roundNumber;
+  // Determine result server-side
+  const result = spin();
 
-  if (room.shoe.length < RESHUFFLE_THRESHOLD) {
-    room.shoe = createShoe(8);
-  }
+  // Store result on room so broadcastTableState includes it
+  room.lastResult = result;
 
-  // Draw all initial cards (but don't reveal yet)
-  const pCard1 = drawCard(room);
-  const bCard1 = drawCard(room);
-  const pCard2 = drawCard(room);
-  const bCard2 = drawCard(room);
-
-  room.playerHand = [pCard1, pCard2];
-  room.bankerHand = [bCard1, bCard2];
+  // Send spin result immediately so client can start animation
+  const spinPayload: SpinResultPayload = { result };
+  ioRef.to(roomKey(room.roomId)).emit(S2C.SPIN_RESULT, spinPayload);
 
   broadcastTableState(room);
 
-  // Reveal cards one at a time with delays
-  // Order: Player card 1, Banker card 1, Player card 2, Banker card 2
-  await revealCard(room, 'player', pCard1, 0);
-  await delay(CARD_REVEAL_DELAY_MS);
-  if (!stillDealing(room, round)) return;
-
-  await revealCard(room, 'banker', bCard1, 0);
-  await delay(CARD_REVEAL_DELAY_MS);
-  if (!stillDealing(room, round)) return;
-
-  await revealCard(room, 'player', pCard2, 1);
-  await delay(CARD_REVEAL_DELAY_MS);
-  if (!stillDealing(room, round)) return;
-
-  await revealCard(room, 'banker', bCard2, 1);
-  await delay(CARD_REVEAL_DELAY_MS);
-  if (!stillDealing(room, round)) return;
-
-  // Check for naturals
-  const playerNat = isNatural(room.playerHand);
-  const bankerNat = isNatural(room.bankerHand);
-
-  if (playerNat || bankerNat) {
-    // No drawing phase — go straight to results
-    void inFlight.track(resolveRound(room));
-    return;
-  }
-
-  // Third card drawing phase
-  room.phase = 'drawing';
-  broadcastTableState(room);
-
-  let playerThirdCard: Card | null = null;
-
-  // Player third card
-  if (playerDrawsThird(room.playerHand)) {
-    playerThirdCard = drawCard(room);
-    room.playerHand.push(playerThirdCard);
-    await revealCard(room, 'player', playerThirdCard, 2);
-    await delay(CARD_REVEAL_DELAY_MS);
-  if (!stillDealing(room, round)) return;
-  }
-
-  // Banker third card
-  if (bankerDrawsThird(room.bankerHand, playerThirdCard)) {
-    const bankerThirdCard = drawCard(room);
-    room.bankerHand.push(bankerThirdCard);
-    await revealCard(room, 'banker', bankerThirdCard, 2);
-    await delay(CARD_REVEAL_DELAY_MS);
-  if (!stillDealing(room, round)) return;
-  }
-
-  void inFlight.track(resolveRound(room));
+  // Wait for client animation to complete, then resolve payouts
+  room.spinTimer = setTimeout(() => {
+    room.spinTimer = null;
+    void inFlight.track(resolvePayouts(room, result));
+  }, SPIN_ANIMATION_DELAY_MS);
 }
 
-async function revealCard(
-  room: BaccaratRoom,
-  target: 'player' | 'banker',
-  card: Card,
-  cardIndex: number,
-) {
-  // Track revealed cards
-  if (target === 'player') {
-    room.revealedPlayerCards.push(card);
-  } else {
-    room.revealedBankerCards.push(card);
-  }
-
-  const payload: CardRevealPayload = { target, card, cardIndex };
-  ioRef.to(roomKey(room.roomId)).emit(S2C.CARD_REVEAL, payload);
-}
-
-// ── Payouts ───────────────────────────────────────────────────────
-
-async function resolveRound(room: BaccaratRoom) {
-  if (!isLive(room) || (room.phase !== 'dealing' && room.phase !== 'drawing')) return;
+async function resolvePayouts(room: RouletteRoom, result: number) {
+  if (room.phase !== 'spinning' || !isLive(room)) return;
   // From here the settlement below owns every bet on the table (see `settling`).
   room.settling = true;
-  const result = determineResult(room.playerHand, room.bankerHand);
-  const sideBets = calculateSideBets(room.playerHand, room.bankerHand, result);
-
-  const pVal = handValue(room.playerHand);
-  const bVal = handValue(room.bankerHand);
-
-  // Add to history (last 50)
-  room.history.push(result);
-  if (room.history.length > 50) {
-    room.history.shift();
+  room.lastResult = result;
+  room.history.unshift(result);
+  if (room.history.length > MAX_HISTORY) {
+    room.history = room.history.slice(0, MAX_HISTORY);
   }
 
-  // Emit round result
-  const roundResult: RoundResultPayload = {
-    result,
-    playerHand: room.playerHand,
-    bankerHand: room.bankerHand,
-    playerValue: pVal,
-    bankerValue: bVal,
-    isNatural: isNatural(room.playerHand) || isNatural(room.bankerHand),
-    sideBets: {
-      playerPair: sideBets.playerPair,
-      bankerPair: sideBets.bankerPair,
-      playerDragonBonus: sideBets.playerDragonBonus,
-      bankerDragonBonus: sideBets.bankerDragonBonus,
-    },
-  };
-
-  ioRef.to(roomKey(room.roomId)).emit(S2C.ROUND_RESULT, roundResult);
-
-  // Calculate payouts per player
-  const payoutUpdates: { userId: string; totalPayout: number }[] = [];
+  const payoutUpdates: { userId: string; totalPayout: number; netGain: number }[] = [];
 
   for (const p of room.players.values()) {
-    if (!hasBets(p.bets)) continue;
+    if (p.bets.length === 0) continue;
 
-    let payout = 0;
-
-    // Main bets
-    if (result === 'player') {
-      payout += p.bets.player * (1 + PAYOUTS.player); // bet + winnings
-    } else if (result === 'banker') {
-      payout += p.bets.player * 0; // lost
-    } else {
-      // Tie — main player/banker bets push (returned)
-      payout += p.bets.player;
+    let totalPayout = 0;
+    for (const bet of p.bets) {
+      totalPayout += calculatePayout(bet, result);
     }
 
-    if (result === 'banker') {
-      // No-commission: even money, except a banker win on 6 pays half.
-      payout += p.bets.banker * (1 + PAYOUTS.banker * bankerWinMultiplier(room.bankerHand));
-    } else if (result === 'player') {
-      payout += p.bets.banker * 0; // lost
-    } else {
-      // Tie — banker bets push
-      payout += p.bets.banker;
-    }
-
-    // Tie bet
-    if (result === 'tie') {
-      payout += p.bets.tie * (1 + PAYOUTS.tie); // bet + 8x winnings
-    }
-    // Tie bet lost (no return) if not tie — already 0
-
-    // Pair bets
-    if (sideBets.playerPair) {
-      payout += p.bets.playerPair * (1 + PAYOUTS.playerPair); // bet + 11x
-    }
-    if (sideBets.bankerPair) {
-      payout += p.bets.bankerPair * (1 + PAYOUTS.bankerPair); // bet + 11x
-    }
-
-    // Dragon bonus bets
-    if (sideBets.playerDragonBonus > 0) {
-      payout += p.bets.playerDragon * (1 + sideBets.playerDragonBonus);
-    }
-    if (sideBets.bankerDragonBonus > 0) {
-      payout += p.bets.bankerDragon * (1 + sideBets.bankerDragonBonus);
-    }
-
-    payout = Math.floor(payout);
-    p.lastPayout = payout;
+    const netGain = totalPayout - p.totalBetThisRound;
+    p.lastPayout = totalPayout;
 
     // Update session stats
     p.sessionStats.totalBet += p.totalBetThisRound;
-    p.sessionStats.totalWon += payout;
+    p.sessionStats.totalWon += totalPayout;
     p.sessionStats.roundsPlayed++;
 
-    payoutUpdates.push({ userId: p.userId, totalPayout: payout });
+    payoutUpdates.push({ userId: p.userId, totalPayout, netGain });
   }
 
-  // Deposit payouts via Prisma
   try {
     const prisma = getPrismaClient();
     const balanceMap = new Map<string, number>();
@@ -581,9 +444,9 @@ async function resolveRound(room: BaccaratRoom) {
           await creditCoinsOn(tx, update.userId, update.totalPayout, {
             tx,
             type: 'WAGER',
-            entityType: 'baccarat',
+            entityType: 'roulette',
             entityId: room.roomId,
-            note: 'Baccarat payout',
+            note: 'Roulette payout',
           });
         }
       }
@@ -602,7 +465,17 @@ async function resolveRound(room: BaccaratRoom) {
       }
     });
 
-    // Send balance updates to each player
+    const roundResult: RoundResultPayload = {
+      result,
+      payouts: payoutUpdates.map((u) => ({
+        userId: u.userId,
+        payout: u.totalPayout,
+        netGain: u.netGain,
+      })),
+    };
+
+    ioRef.to(roomKey(room.roomId)).emit(S2C.ROUND_RESULT, roundResult);
+
     for (const [userId, balance] of balanceMap) {
       const player = room.players.get(userId);
       if (player) {
@@ -611,7 +484,7 @@ async function resolveRound(room: BaccaratRoom) {
       }
     }
   } catch (err) {
-    logger.error({ event: 'bacc_payout_error', roomId: room.roomId, error: String(err) });
+    logger.error({ event: 'rl_payout_error', roomId: room.roomId, error: String(err) });
   }
 
   if (!isLive(room)) return;
@@ -620,7 +493,7 @@ async function resolveRound(room: BaccaratRoom) {
 
   room.resultsTimer = setTimeout(() => {
     room.resultsTimer = null;
-    // Prune players who left or disconnected (now that their payout has settled).
+    // Prune players who left or disconnected, now that payouts have settled.
     for (const [uid, p] of room.players) {
       const sock = p.socketId ? ioRef.sockets.sockets.get(p.socketId) : null;
       if (p.pendingRemoval || !sock || !sock.connected) {
@@ -630,7 +503,6 @@ async function resolveRound(room: BaccaratRoom) {
           .to(roomKey(room.roomId))
           .emit(S2C.PLAYER_LEFT, { userId: uid, seatIndex: p.seatIndex });
 
-        // Transfer ownership if the owner departed.
         if (room.ownerId === uid && room.players.size > 0) {
           const newOwner = room.players.values().next().value!;
           room.ownerId = newOwner.userId;
@@ -665,7 +537,7 @@ function destroyRoom(roomId: string) {
   if (room) {
     clearTimers(room);
     rooms.delete(roomId);
-    logger.info({ event: 'bacc_room_destroyed', roomId });
+    logger.info({ event: 'rl_room_destroyed', roomId });
     broadcastRoomList();
   }
 }
@@ -724,7 +596,7 @@ function onCreateRoom(socket: Socket, payload: unknown) {
   const roomId = generateRoomId();
   const joinCode = generateRoomId();
 
-  const room: BaccaratRoom = {
+  const room: RouletteRoom = {
     roomId,
     name,
     ownerId: userId,
@@ -734,22 +606,19 @@ function onCreateRoom(socket: Socket, payload: unknown) {
     joinCode,
     phase: 'idle',
     players: new Map(),
-    shoe: createShoe(8),
-    playerHand: [],
-    bankerHand: [],
-    revealedPlayerCards: [],
-    revealedBankerCards: [],
     bettingTimer: null,
     resultsTimer: null,
+    spinTimer: null,
     restartTimer: null,
     settling: false,
     roundNumber: 0,
     bettingDeadline: null,
+    lastResult: null,
     history: [],
   };
 
   rooms.set(roomId, room);
-  logger.info({ event: 'bacc_room_created', roomId, userId, name });
+  logger.info({ event: 'rl_room_created', roomId, userId, name });
 
   joinRoom(room, socket);
 
@@ -823,7 +692,7 @@ function onJoinRoom(socket: Socket, payload: unknown) {
   joinRoom(room, socket);
 }
 
-function joinRoom(room: BaccaratRoom, socket: Socket) {
+function joinRoom(room: RouletteRoom, socket: Socket) {
   const userId = socket.data.userId as string;
   const userName = (socket.data.userName as string) || 'Player';
   const avatarUrl = (socket.data.avatarUrl as string | null) || null;
@@ -840,7 +709,7 @@ function joinRoom(room: BaccaratRoom, socket: Socket) {
     userId,
     userName,
     avatarUrl,
-    bets: emptyBets(),
+    bets: [],
     totalBetThisRound: 0,
     lastPayout: 0,
     sessionStats: { totalBet: 0, totalWon: 0, roundsPlayed: 0 },
@@ -852,7 +721,7 @@ function joinRoom(room: BaccaratRoom, socket: Socket) {
   socket.join(roomKey(room.roomId));
   socket.leave(LOBBY_ROOM); // entering a table → stop receiving lobby updates
 
-  logger.info({ event: 'bacc_player_joined', roomId: room.roomId, userId, userName, seatIndex });
+  logger.info({ event: 'rl_player_joined', roomId: room.roomId, userId, userName, seatIndex });
 
   socket.emit(S2C.ROOM_JOINED, {
     roomId: room.roomId,
@@ -905,9 +774,8 @@ function leaveRoom(userId: string, socketId: string) {
 
   const seatIndex = player.seatIndex;
 
-  // If the player leaves while a round is in progress and still has an active
-  // bet, keep the seat so the pending payout still settles. Detach the socket
-  // now; the seat is pruned once the round resolves.
+  // If the player leaves while the wheel is spinning / showing results and
+  // still has an active bet, keep the seat so the pending payout settles.
   const roundActive = roundInProgress(room);
   if (roundActive && player.totalBetThisRound > 0) {
     player.pendingRemoval = true;
@@ -919,16 +787,16 @@ function leaveRoom(userId: string, socketId: string) {
       leavingSock.leave(roomKey(roomId));
       leavingSock.emit(S2C.ROOM_LEFT, { roomId });
     }
-    logger.info({ event: 'bacc_player_left_pending_payout', roomId, userId, seatIndex });
+    logger.info({ event: 'rl_player_left_pending_payout', roomId, userId, seatIndex });
     return;
   }
 
-  // Bets placed this betting phase never reached a deal: give them back (they
+  // Bets placed this betting phase never reached a spin: give them back (they
   // used to vanish with the deleted seat).
   const uncommitted = player.totalBetThisRound;
-  player.bets = emptyBets();
+  player.bets = [];
   player.totalBetThisRound = 0;
-  void refundStake(room, userId, uncommitted, 'Baccarat bet refund (left table)');
+  void refundStake(room, userId, uncommitted, 'Roulette bet refund (left table)');
 
   room.players.delete(userId);
   userToRoom.delete(userId);
@@ -940,7 +808,7 @@ function leaveRoom(userId: string, socketId: string) {
     sock.emit(S2C.ROOM_LEFT, { roomId });
   }
 
-  logger.info({ event: 'bacc_player_left', roomId, userId, seatIndex });
+  logger.info({ event: 'rl_player_left', roomId, userId, seatIndex });
 
   ioRef.to(roomKey(roomId)).emit(S2C.PLAYER_LEFT, { userId, seatIndex });
 
@@ -1016,16 +884,6 @@ function onUpdateRoom(socket: Socket, payload: unknown) {
 
 // ── Player Action Handlers ─────────────────────────────────────────
 
-const VALID_BET_TYPES: BetType[] = [
-  'player',
-  'banker',
-  'tie',
-  'playerPair',
-  'bankerPair',
-  'playerDragon',
-  'bankerDragon',
-];
-
 async function onPlaceBet(socket: Socket, payload: unknown) {
   const userId = socketToUserId.get(socket.id);
   if (!userId) {
@@ -1052,15 +910,24 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
 
   const data = payload as any;
   const betType = typeof data?.type === 'string' ? data.type : '';
+  const numbers = Array.isArray(data?.numbers) ? data.numbers : [];
   const amount = typeof data?.amount === 'number' ? Math.floor(data.amount) : 0;
 
-  if (!VALID_BET_TYPES.includes(betType as BetType)) {
+  // Validate bet type
+  if (!isValidBetType(betType)) {
     socket.emit(S2C.ERROR, { message: 'Invalid bet type.' });
     return;
   }
 
+  // Validate amount
   if (amount < MIN_BET) {
     socket.emit(S2C.ERROR, { message: `Bet must be at least ${MIN_BET}.` });
+    return;
+  }
+
+  // Validate numbers match bet type
+  if (!validateBetNumbers(betType, numbers)) {
+    socket.emit(S2C.ERROR, { message: 'Invalid numbers for this bet type.' });
     return;
   }
 
@@ -1076,9 +943,9 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
       await debitCoinsOn(tx, userId, amount, {
         tx,
         type: 'WAGER',
-        entityType: 'baccarat',
+        entityType: 'roulette',
         entityId: room.roomId,
-        note: 'Baccarat bet',
+        note: 'Roulette bet',
       });
       return getBalanceOn(tx, userId);
     });
@@ -1091,12 +958,11 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
       room.players.get(userId) !== player
     ) {
       socket.emit(S2C.ERROR, { message: 'Betting closed — your bet was refunded.' });
-      await refundStake(room, userId, amount, 'Baccarat bet refund (betting closed)');
+      await refundStake(room, userId, amount, 'Roulette bet refund (betting closed)');
       return;
     }
 
-    // Add to the specific bet type
-    player.bets[betType as BetType] += amount;
+    player.bets.push({ type: betType, numbers, amount });
     player.totalBetThisRound += amount;
 
     socket.emit(S2C.BALANCE_UPDATE, { coins: result });
@@ -1105,7 +971,7 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
     if (err instanceof Error && err.message === 'INSUFFICIENT_COINS') {
       socket.emit(S2C.ERROR, { message: 'Not enough coins.' });
     } else {
-      logger.error({ event: 'bacc_bet_error', userId, error: String(err) });
+      logger.error({ event: 'rl_bet_error', userId, error: String(err) });
       socket.emit(S2C.ERROR, { message: 'Failed to place bet.' });
     }
   }
@@ -1135,13 +1001,17 @@ async function onClearBets(socket: Socket) {
   const player = room.players.get(userId);
   if (!player) return;
 
+  if (player.bets.length === 0) {
+    socket.emit(S2C.ERROR, { message: 'No bets to clear.' });
+    return;
+  }
+
   // Take exactly the bets being cleared off the seat now, synchronously: a bet
   // whose debit commits while this refund awaits is kept, not wiped unrefunded.
   const cleared = player.bets;
-  const refundAmount = totalBets(cleared);
-  if (refundAmount <= 0) return;
+  const refundAmount = cleared.reduce((sum, b) => sum + b.amount, 0);
   const round = room.roundNumber;
-  player.bets = emptyBets();
+  player.bets = [];
   player.totalBetThisRound -= refundAmount;
 
   try {
@@ -1152,9 +1022,9 @@ async function onClearBets(socket: Socket) {
       await creditCoinsOn(tx, userId, refundAmount, {
         tx,
         type: 'WAGER',
-        entityType: 'baccarat',
+        entityType: 'roulette',
         entityId: room.roomId,
-        note: 'Baccarat bet cleared',
+        note: 'Roulette bet cleared',
       });
       return getBalanceOn(tx, userId);
     });
@@ -1162,15 +1032,15 @@ async function onClearBets(socket: Socket) {
     socket.emit(S2C.BALANCE_UPDATE, { coins: result });
     broadcastTableState(room);
   } catch (err) {
-    logger.error({ event: 'bacc_clear_bets_error', userId, error: String(err) });
+    logger.error({ event: 'rl_clear_bets_error', userId, error: String(err) });
     // The refund didn't land: put the bets back if they can still play.
     if (isLive(room) && room.roundNumber === round && room.players.get(userId) === player && room.phase === 'betting') {
-      for (const k of Object.keys(cleared) as BetType[]) player.bets[k] += cleared[k];
+      player.bets = [...cleared, ...player.bets];
       player.totalBetThisRound += refundAmount;
       broadcastTableState(room);
     } else {
       // Too late to play them: retry the refund once instead of losing them.
-      void refundStake(room, userId, refundAmount, 'Baccarat bet cleared (retry)');
+      void refundStake(room, userId, refundAmount, 'Roulette bet cleared (retry)');
     }
     socket.emit(S2C.ERROR, { message: 'Failed to clear bets.' });
   }
@@ -1178,12 +1048,12 @@ async function onClearBets(socket: Socket) {
 
 // ── Public API ─────────────────────────────────────────────────────
 
-export function initializeBaccarat(io: Server): void {
+export function initializeRoulette(io: Server): void {
   ioRef = io;
-  logger.info({ event: 'bacc_handler_initialized' });
+  logger.info({ event: 'rl_handler_initialized' });
 }
 
-export function registerBaccaratHandlers(io: Server, socket: Socket): void {
+export function registerRouletteHandlers(io: Server, socket: Socket): void {
   ioRef = io;
 
   socket.on(C2S.LIST_ROOMS, () => onListRooms(socket));
@@ -1196,7 +1066,7 @@ export function registerBaccaratHandlers(io: Server, socket: Socket): void {
   socket.on(C2S.CLEAR_BETS, () => inFlight.track(onClearBets(socket)));
 }
 
-export function handleBaccaratDisconnect(_io: Server, socket: Socket): void {
+export function handleRouletteDisconnect(_io: Server, socket: Socket): void {
   const userId = socketToUserId.get(socket.id);
   if (!userId) return;
 
@@ -1220,10 +1090,11 @@ export function handleBaccaratDisconnect(_io: Server, socket: Socket): void {
     return;
   }
 
+  // In idle or betting phase, fully remove the player
   if (!roundInProgress(room)) {
     leaveRoom(userId, socket.id);
   } else {
-    // Mid-round: keep the player seat so they get payouts, just remove socket mapping
+    // During spinning/results, just mark socket as stale — cleanup after results
     socketToUserId.delete(socket.id);
   }
 }
@@ -1231,39 +1102,39 @@ export function handleBaccaratDisconnect(_io: Server, socket: Socket): void {
 // ── Shutdown ───────────────────────────────────────────────────────
 
 /**
- * Hub shutdown: refund every bet on a table that is betting or dealing and has
- * not started settling, then kill every room. A round whose payout transaction
- * is already in flight (`settling`) is left to it — that transaction computed
- * every seat's credit before awaiting, and shutdown waits for it via
- * `inFlight`. `results` is settled; `idle` holds no bets.
+ * Hub shutdown: refund every bet on a table that is betting or spinning and
+ * has not started settling, then kill every room. A spin whose payout
+ * transaction is already in flight (`settling`) is left to it — that
+ * transaction computed every seat's credit before awaiting, and shutdown waits
+ * for it via `inFlight`. `results` is settled; `idle` holds no bets.
  *
  * Exactly-once: bets are read and zeroed synchronously, before anything
- * awaits, and `closing` makes every room not-live, so the deal's reveal steps
- * (`stillDealing`), resolveRound, the results sweep, leave/disconnect and the
- * post-debit re-checks can no longer reach them. A bet whose debit is still in
- * flight is not on the seat yet; its handler refunds it when it sees the room
- * is gone, and the returned promise waits for that too.
+ * awaits, and `closing` makes every room not-live, so the spin timer, the
+ * results sweep, leave/disconnect and the post-debit re-checks can no longer
+ * reach them. A bet whose debit is still in flight is not on the seat yet; its
+ * handler refunds it when it sees the room is gone, and the returned promise
+ * waits for that too.
  */
-export function refundBaccaratOnShutdown(deadlineMs?: number): Promise<ShutdownRefundSummary> {
+export function refundRouletteOnShutdown(deadlineMs?: number): Promise<ShutdownRefundSummary> {
   closing = true;
   const claims: StakeClaim[] = [];
   for (const room of rooms.values()) {
     clearTimers(room);
     const unsettled =
-      room.phase === 'betting' ||
-      ((room.phase === 'dealing' || room.phase === 'drawing') && !room.settling);
+      room.phase === 'betting' || (room.phase === 'spinning' && !room.settling);
     for (const p of room.players.values()) {
-      const amount = unsettled ? totalBets(p.bets) : 0;
-      p.bets = emptyBets();
+      const amount = unsettled ? p.bets.reduce((sum, b) => sum + b.amount, 0) : 0;
+      const count = p.bets.length;
+      p.bets = [];
       p.totalBetThisRound = 0;
       if (amount > 0) {
         claims.push({
-          game: 'baccarat',
+          game: 'roulette',
           roomId: room.roomId,
           userId: p.userId,
           amount,
           round: room.roundNumber,
-          detail: `phase=${room.phase}`,
+          detail: `phase=${room.phase} bets=${count}`,
         });
       }
     }
@@ -1271,5 +1142,5 @@ export function refundBaccaratOnShutdown(deadlineMs?: number): Promise<ShutdownR
   rooms.clear();
   userToRoom.clear();
   socketToUserId.clear();
-  return settleShutdownClaims('baccarat', claims, inFlight, deadlineMs);
+  return settleShutdownClaims('roulette', claims, inFlight, deadlineMs);
 }

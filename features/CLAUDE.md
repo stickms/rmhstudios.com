@@ -37,4 +37,4 @@ Rules:
   `@source not` lines in `app/site-tier.css`, update test excludes in `vitest.config.ts` and workflow
   path filters that named the old directories.
 
-Moved so far: `hearthworks`, `balatro`, `altair`, `slice-it` (engine, ui, server), `void-breaker` and `nightrail` (engine, ui). The A1 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.
+Moved so far: `hearthworks`, `casino`, `balatro`, `altair`, `slice-it` (engine, ui, server), `void-breaker` and `nightrail` (engine, ui). The A1 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.

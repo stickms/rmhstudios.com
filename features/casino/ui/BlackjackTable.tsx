@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBlackjackStore } from '@/lib/blackjack/store';
-import { formatHandValue } from '@/lib/blackjack/logic';
-import type { Card } from '@/lib/blackjack/logic';
-import type { PlayerSeatClient } from '@/lib/blackjack/types';
-import { CoinIcon } from './CoinIcon';
+import { useBlackjackStore } from '@features/casino/engine/blackjack/store';
+import { formatHandValue } from '@features/casino/engine/blackjack/logic';
+import type { Card } from '@features/casino/engine/blackjack/logic';
+import type { PlayerSeatClient } from '@features/casino/engine/blackjack/types';
+import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 
 // ── Card Rendering with Flip Animation ─────────────────────────────
 

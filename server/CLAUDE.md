@@ -60,9 +60,9 @@ Consequences:
   - **Handler contract**: `handlers/<game>.ts` exports
     `register<Game>Handlers(io, socket)` + `handle<Game>Disconnect(io,
 socket)` (casino games also `initialize<Game>(io)` at boot, and a
-    `…OnShutdown()` that `shutdown()` in `index.ts` calls before `io.close()` to
+    `…OnShutdown()` (casino: now `features/casino/server/`, order in `CASINO_SHUTDOWN_REFUNDS`) that `shutdown()` in `index.ts` calls before `io.close()` to
     refund every debited-but-unsettled stake and kill the tables — contract in
-    `handlers/casino-shutdown.ts`; a new casino game needs one). Registered
+    `features/casino/server/casino-shutdown.ts`; a new casino game needs one). Registered
     per-connection in `index.ts`. Isolation is by event-name prefix
     (`rmhtype:*`, `altair:*`, `bj:*`, …) + socket.io rooms — **no namespaces**.
   - **Feature handlers (redesign A1):** a moved feature keeps its handlers in

@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { CoinIcon } from './CoinIcon';
-import { useHoldemStore } from '@/lib/holdem/store';
-import { getHoldemSocket } from '@/lib/holdem/socket';
-import { C2S } from '@/lib/holdem/events';
-import { evaluateBestHand, HAND_RANK_LABELS } from '@/lib/holdem/logic';
-import type { Card } from '@/lib/holdem/logic';
+import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { useHoldemStore } from '@features/casino/engine/holdem/store';
+import { getHoldemSocket } from '@features/casino/engine/holdem/socket';
+import { C2S } from '@features/casino/engine/holdem/events';
+import { evaluateBestHand, HAND_RANK_LABELS } from '@features/casino/engine/holdem/logic';
+import type { Card } from '@features/casino/engine/holdem/logic';
 
 function MyHandRank({ holeCards, communityCards }: { holeCards: (Card | null)[] | null; communityCards: Card[] }) {
   const { t } = useTranslation("c-rmhcoins");

@@ -24,7 +24,7 @@ const mocks = vi.hoisted(() => ({
   spin: vi.fn(),
 }));
 
-vi.mock('../../prisma-client', () => ({
+vi.mock('../../../../server/socket-server/prisma-client', () => ({
   getPrismaClient: () => ({
     $transaction: async (fn: (tx: unknown) => unknown) => fn({}),
   }),
@@ -35,15 +35,15 @@ vi.mock('../../../../lib/economy/ledger-core', () => ({
   getBalanceOn: async () => 100,
   getBalancesOn: async (_tx: unknown, ids: string[]) => new Map(ids.map((id) => [id, 100])),
 }));
-vi.mock('../../rate-limit', () => ({ checkRateLimit: () => true }));
-vi.mock('../../logger', () => ({
+vi.mock('../../../../server/socket-server/rate-limit', () => ({ checkRateLimit: () => true }));
+vi.mock('../../../../server/socket-server/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 // A stacked shoe, so the blackjack round reaches a split + double + insurance.
 // drawCard pops from the end: player 8, 8; dealer A, 9; then 3 (split hand 1),
 // 10 (its double → 21), 5 (split hand 2 → 13, still to act).
-vi.mock('../../../../lib/blackjack/logic', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../../lib/blackjack/logic')>();
+vi.mock('../../engine/blackjack/logic', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../engine/blackjack/logic')>();
   const order = ['8', '8', 'A', '9', '3', '10', '5'];
   return {
     ...actual,
@@ -53,8 +53,8 @@ vi.mock('../../../../lib/blackjack/logic', async (importOriginal) => {
     ],
   };
 });
-vi.mock('../../../../lib/roulette/logic', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../../lib/roulette/logic')>();
+vi.mock('../../engine/roulette/logic', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../engine/roulette/logic')>();
   return { ...actual, spin: () => mocks.spin() };
 });
 

@@ -28,8 +28,8 @@
 
 import { createHash, randomUUID } from 'crypto';
 import { creditCoinsOn } from '../../../lib/economy/ledger-core';
-import { getPrismaClient } from '../prisma-client';
-import { logger } from '../logger';
+import { getPrismaClient } from '../../../server/socket-server/prisma-client';
+import { logger } from '../../../server/socket-server/logger';
 
 export type CasinoGame = 'blackjack' | 'roulette' | 'baccarat' | 'holdem';
 

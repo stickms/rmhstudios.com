@@ -20,14 +20,14 @@ import { SignedOutLobby } from './SignedOutLobby';
  */
 const PlinkoGame = lazy(() => import('./PlinkoGame').then((m) => ({ default: m.PlinkoGame })));
 const BlackjackGame = lazy(() =>
-  import('./BlackjackGame').then((m) => ({ default: m.BlackjackGame })),
+  import('@features/casino/ui/BlackjackGame').then((m) => ({ default: m.BlackjackGame })),
 );
-const HoldemGame = lazy(() => import('./HoldemGame').then((m) => ({ default: m.HoldemGame })));
+const HoldemGame = lazy(() => import('@features/casino/ui/HoldemGame').then((m) => ({ default: m.HoldemGame })));
 const BaccaratGame = lazy(() =>
-  import('./BaccaratGame').then((m) => ({ default: m.BaccaratGame })),
+  import('@features/casino/ui/BaccaratGame').then((m) => ({ default: m.BaccaratGame })),
 );
 const RouletteGame = lazy(() =>
-  import('./RouletteGame').then((m) => ({ default: m.RouletteGame })),
+  import('@features/casino/ui/RouletteGame').then((m) => ({ default: m.RouletteGame })),
 );
 
 /**

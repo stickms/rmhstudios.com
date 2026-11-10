@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useHoldemStore } from '@/lib/holdem/store';
-import { HAND_RANK_LABELS } from '@/lib/holdem/logic';
-import type { Card } from '@/lib/holdem/logic';
-import type { PlayerSeatClient } from '@/lib/holdem/types';
-import { CoinIcon } from './CoinIcon';
+import { useHoldemStore } from '@features/casino/engine/holdem/store';
+import { HAND_RANK_LABELS } from '@features/casino/engine/holdem/logic';
+import type { Card } from '@features/casino/engine/holdem/logic';
+import type { PlayerSeatClient } from '@features/casino/engine/holdem/types';
+import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 
 const SUIT_SYMBOLS: Record<string, string> = { H: '\u2665', D: '\u2666', C: '\u2663', S: '\u2660' };
 const SUIT_COLORS: Record<string, string> = { H: 'text-casino-card-red', D: 'text-casino-card-red', C: 'text-casino-card-ink', S: 'text-casino-card-ink' };

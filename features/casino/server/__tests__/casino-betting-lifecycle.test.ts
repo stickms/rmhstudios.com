@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => ({
   credit: vi.fn(),
 }));
 
-vi.mock('../../prisma-client', () => ({
+vi.mock('../../../../server/socket-server/prisma-client', () => ({
   getPrismaClient: () => ({
     $transaction: async (fn: (tx: unknown) => unknown) => fn({}),
   }),
@@ -28,8 +28,8 @@ vi.mock('../../../../lib/economy/ledger-core', () => ({
   getBalanceOn: async () => 100,
   getBalancesOn: async (_tx: unknown, ids: string[]) => new Map(ids.map((id) => [id, 100])),
 }));
-vi.mock('../../rate-limit', () => ({ checkRateLimit: () => true }));
-vi.mock('../../logger', () => ({
+vi.mock('../../../../server/socket-server/rate-limit', () => ({ checkRateLimit: () => true }));
+vi.mock('../../../../server/socket-server/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 

@@ -7,15 +7,15 @@
  */
 
 import type { Server, Socket } from 'socket.io';
-import { getPrismaClient } from '../prisma-client';
+import { getPrismaClient } from '../../../server/socket-server/prisma-client';
 import {
   debitCoinsOn,
   creditCoinsOn,
   getBalanceOn,
   getBalancesOn,
 } from '../../../lib/economy/ledger-core';
-import { checkRateLimit } from '../rate-limit';
-import { logger } from '../logger';
+import { checkRateLimit } from '../../../server/socket-server/rate-limit';
+import { logger } from '../../../server/socket-server/logger';
 import {
   InFlight,
   settleShutdownClaims,
@@ -28,7 +28,7 @@ import {
   handValue,
   isBlackjack,
   isBusted,
-} from '../../../lib/blackjack/logic';
+} from '../engine/blackjack/logic';
 
 // ── Event Constants ────────────────────────────────────────────────
 

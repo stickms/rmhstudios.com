@@ -36,35 +36,7 @@ import {
   handleKowloonKnockoutDisconnect,
 } from './handlers/kowloon-knockout';
 import { registerStudioJamHandlers } from './handlers/studio-jam';
-import {
-  registerBlackjackHandlers,
-  handleBlackjackDisconnect,
-  initializeBlackjackPublicTable,
-  listPublicRooms as listBlackjackRooms,
-  refundBlackjackOnShutdown,
-} from './handlers/blackjack';
-import {
-  registerHoldemHandlers,
-  handleHoldemDisconnect,
-  initializeHoldem,
-  listPublicRooms as listHoldemRooms,
-  cashOutHoldemOnShutdown,
-} from './handlers/holdem';
-import {
-  registerBaccaratHandlers,
-  handleBaccaratDisconnect,
-  initializeBaccarat,
-  listPublicRooms as listBaccaratRooms,
-  refundBaccaratOnShutdown,
-} from './handlers/baccarat';
-import {
-  registerRouletteHandlers,
-  handleRouletteDisconnect,
-  initializeRoulette,
-  listPublicRooms as listRouletteRooms,
-  refundRouletteOnShutdown,
-} from './handlers/roulette';
-import { CASINO_SHUTDOWN_DEADLINE_MS } from './handlers/casino-shutdown';
+import { initializeCasino, listCasinoRooms, CASINO_SHUTDOWN_REFUNDS, CASINO_SHUTDOWN_DEADLINE_MS } from '../../features/casino/server';
 import { registerLightsOutHandlers, handleLightsOutDisconnect } from './handlers/lights-out';
 import { registerDoctrineHandlers, handleDoctrineDisconnect } from './handlers/doctrine';
 import { registerVelumHandlers, handleVelumDisconnect } from './handlers/velum';
@@ -365,12 +337,7 @@ function requestHandler(_req: IncomingMessage, res: ServerResponse): void {
       'Cache-Control': 'no-store',
     });
     res.end(
-      JSON.stringify({
-        blackjack: listBlackjackRooms(),
-        holdem: listHoldemRooms(),
-        baccarat: listBaccaratRooms(),
-        roulette: listRouletteRooms(),
-      }),
+      JSON.stringify(listCasinoRooms()),
     );
     return;
   }
@@ -428,10 +395,7 @@ io.on('connection', (socket) => {
   registerFeatureHandlers(io, socket, 'altair');
   registerKowloonKnockoutHandlers(io, socket);
   registerStudioJamHandlers(io, socket); // F13: self-cleans on disconnect
-  registerBlackjackHandlers(io, socket);
-  registerHoldemHandlers(io, socket);
-  registerBaccaratHandlers(io, socket);
-  registerRouletteHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'casino'); // blackjack, holdem, baccarat, roulette (features/casino/server)
   registerLightsOutHandlers(io, socket);
   registerDoctrineHandlers(io, socket);
   registerVelumHandlers(io, socket);
@@ -479,10 +443,7 @@ io.on('connection', (socket) => {
     handleRmhStudyDisconnect(io, socket);
     handleFeatureDisconnects(io, socket, 'altair');
     handleKowloonKnockoutDisconnect(io, socket);
-    handleBlackjackDisconnect(io, socket);
-    handleHoldemDisconnect(io, socket);
-    handleBaccaratDisconnect(io, socket);
-    handleRouletteDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'casino');
     handleLightsOutDisconnect(io, socket);
     handleDoctrineDisconnect(io, socket);
     handleVelumDisconnect(io, socket);
@@ -532,12 +493,7 @@ function shutdown(signal: string): void {
       return Promise.resolve();
     }
   };
-  const casinoRefunds = Promise.allSettled([
-    refundCasino('blackjack', refundBlackjackOnShutdown),
-    refundCasino('roulette', refundRouletteOnShutdown),
-    refundCasino('baccarat', refundBaccaratOnShutdown),
-    refundCasino('holdem', cashOutHoldemOnShutdown),
-  ]);
+  const casinoRefunds = Promise.allSettled(CASINO_SHUTDOWN_REFUNDS.map(([game, run]) => refundCasino(game, run)));
 
   io.close(() => {
     logger.info({ event: 'sockets_closed' });
@@ -571,10 +527,7 @@ const bootedAt = new Date();
 void adapterReady.then(() => httpServer.listen(config.PORT, () => {
   logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
   if (config.DATABASE_URL) void warmPrismaClient(getPrismaClient(), logger);
-  initializeBlackjackPublicTable(io);
-  initializeHoldem(io);
-  initializeBaccarat(io);
-  initializeRoulette(io);
+  initializeCasino(io);
 }));
 
 // Close group-call rows a previous process died holding. History hygiene only:

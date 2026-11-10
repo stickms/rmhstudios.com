@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBettingCountdown, BettingCountdown } from './BettingCountdown';
+import { useBettingCountdown, BettingCountdown } from '@/components/rmhcoins/BettingCountdown';
 import { Button } from '@/components/ui/button';
-import { CoinIcon } from './CoinIcon';
-import { useBlackjackStore } from '@/lib/blackjack/store';
-import { getBlackjackSocket } from '@/lib/blackjack/socket';
-import { C2S } from '@/lib/blackjack/events';
+import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { useBlackjackStore } from '@features/casino/engine/blackjack/store';
+import { getBlackjackSocket } from '@features/casino/engine/blackjack/socket';
+import { C2S } from '@features/casino/engine/blackjack/events';
 
 interface Props {
   coins: number;

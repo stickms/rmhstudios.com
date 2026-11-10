@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Plus, Users, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
-import { useHoldemStore } from '@/lib/holdem/store';
-import { getHoldemSocket } from '@/lib/holdem/socket';
-import { C2S } from '@/lib/holdem/events';
+import { useHoldemStore } from '@features/casino/engine/holdem/store';
+import { getHoldemSocket } from '@features/casino/engine/holdem/socket';
+import { C2S } from '@features/casino/engine/holdem/events';
 
 interface Props {
   coins: number;

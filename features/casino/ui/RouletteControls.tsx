@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from "react-i18next";
-import { useBettingCountdown, BettingCountdown } from './BettingCountdown';
+import { useBettingCountdown, BettingCountdown } from '@/components/rmhcoins/BettingCountdown';
 import { Button } from '@/components/ui/button';
-import { CoinIcon } from './CoinIcon';
-import { useRouletteStore } from '@/lib/roulette/store';
-import { getRouletteSocket } from '@/lib/roulette/socket';
-import { C2S } from '@/lib/roulette/events';
-import { getNumberColor, getOutsideBetNumbers, numberLabel, DOUBLE_ZERO } from '@/lib/roulette/logic';
-import type { BetType } from '@/lib/roulette/logic';
+import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { useRouletteStore } from '@features/casino/engine/roulette/store';
+import { getRouletteSocket } from '@features/casino/engine/roulette/socket';
+import { C2S } from '@features/casino/engine/roulette/events';
+import { getNumberColor, getOutsideBetNumbers, numberLabel, DOUBLE_ZERO } from '@features/casino/engine/roulette/logic';
+import type { BetType } from '@features/casino/engine/roulette/logic';
 import { setSelectedChipValue, getSelectedChipValue } from './RouletteTable';
 
 interface Props {

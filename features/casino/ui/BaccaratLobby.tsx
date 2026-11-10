@@ -3,13 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { Plus, Users, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
-import { useRouletteStore } from '@/lib/roulette/store';
-import { getRouletteSocket } from '@/lib/roulette/socket';
-import { C2S } from '@/lib/roulette/events';
+import { useBaccaratStore } from '@features/casino/engine/baccarat/store';
+import { getBaccaratSocket } from '@features/casino/engine/baccarat/socket';
+import { C2S } from '@features/casino/engine/baccarat/events';
 
-export function RouletteLobby() {
+export function BaccaratLobby() {
   const { t } = useTranslation("c-rmhcoins");
-  const roomList = useRouletteStore((s) => s.roomList);
+  const roomList = useBaccaratStore((s) => s.roomList);
   const [showCreate, setShowCreate] = useState(false);
   const [joinCodeInput, setJoinCodeInput] = useState('');
   const [roomName, setRoomName] = useState('');
@@ -18,7 +18,7 @@ export function RouletteLobby() {
 
   // Poll room list
   useEffect(() => {
-    const sock = getRouletteSocket();
+    const sock = getBaccaratSocket();
     if (!sock) return;
     sock.emit(C2S.LIST_ROOMS);
     const interval = setInterval(() => sock.emit(C2S.LIST_ROOMS), 5000);
@@ -26,7 +26,7 @@ export function RouletteLobby() {
   }, []);
 
   const handleCreate = () => {
-    const sock = getRouletteSocket();
+    const sock = getBaccaratSocket();
     if (!sock) return;
     sock.emit(C2S.CREATE_ROOM, {
       name: roomName.trim() || undefined,
@@ -38,21 +38,21 @@ export function RouletteLobby() {
   };
 
   const handleJoin = (roomId: string) => {
-    const sock = getRouletteSocket();
+    const sock = getBaccaratSocket();
     if (!sock) return;
     sock.emit(C2S.JOIN_ROOM, { roomId });
   };
 
   const handleJoinByCode = () => {
     if (!joinCodeInput.trim()) return;
-    const sock = getRouletteSocket();
+    const sock = getBaccaratSocket();
     if (!sock) return;
     sock.emit(C2S.JOIN_ROOM, { joinCode: joinCodeInput.trim().toUpperCase() });
     setJoinCodeInput('');
   };
 
   const handleRefresh = () => {
-    const sock = getRouletteSocket();
+    const sock = getBaccaratSocket();
     if (sock) sock.emit(C2S.LIST_ROOMS);
   };
 
@@ -106,8 +106,8 @@ export function RouletteLobby() {
                 value={privacy}
                 onChange={(e) => setPrivacy(e.target.value as 'public' | 'unlisted')}
               >
-                <option value="public">{t("privacy-public", { defaultValue: "Public" })}</option>
-                <option value="unlisted">{t("privacy-unlisted", { defaultValue: "Unlisted" })}</option>
+                <option value="public">{t("public", { defaultValue: "Public" })}</option>
+                <option value="unlisted">{t("unlisted", { defaultValue: "Unlisted" })}</option>
               </Select>
             </div>
           </div>
@@ -164,7 +164,7 @@ export function RouletteLobby() {
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-bold text-site-text">{room.name}</span>
                 <span className="text-xs text-site-text-dim">
-                  {t("hosted-by", { defaultValue: "hosted by {{ownerName}}", ownerName: room.ownerName })}
+                  {t("hosted-by-baccarat-lobby", { defaultValue: "hosted by {{name}}", name: room.ownerName })}
                   {room.inProgress && (
                     <span className="ml-1.5 text-site-accent">{t("in-progress", { defaultValue: "In progress" })}</span>
                   )}
