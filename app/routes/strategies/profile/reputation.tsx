@@ -38,7 +38,7 @@ function ReputationPage() {
               </tr>
             </thead>
             <tbody>
-              {data?.map?.((entry: { rank: number; user: { name: string; handle: string }; totalXp: number; currentStreak: number; level: { name: string; badge: string } }, i: number) => (
+              {data?.map?.((entry, i) => (
                 <tr key={i} className="border-t border-white/[0.04] hover:bg-white/[0.02]">
                   <td className="px-4 py-2 font-mono text-white/60">{entry.rank}</td>
                   <td className="px-4 py-2 text-white/80">{entry.user?.name ?? entry.user?.handle ?? t("anonymous", { defaultValue: "Anonymous" })}</td>
