@@ -1,8 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { auth } from '@/lib/auth';
+import { implement } from '@/lib/api/implement.server';
+import { askFeedApi } from '@/lib/feed/compose-assist.contract';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { askFeed, isAITextConfigured } from '@/lib/ai/text.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
@@ -32,19 +31,18 @@ const STOPWORDS = new Set([
 export const Route = createFileRoute('/api/ai/ask-feed')({
   server: {
     handlers: {
-      POST: defineHandler(
-        { auth: 'none', body: schema, allowEmptyBody: true },
-        async ({ request, body }) => {
+      POST: implement(
+        askFeedApi,
+        {
+          rateLimit: { limit: 10, windowMs: 60_000, prefix: 'ask-feed' },
+          body: schema,
+          allowEmptyBody: true,
+        },
+        async ({ userId, body }) => {
           if (!isAITextConfigured())
             return Response.json({ error: 'AI is unavailable' }, { status: 503 });
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-          const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, { limit: 10, windowMs: 60_000, prefix: 'ask-feed' });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
-          const hidden = await getHiddenAuthorIds(session.user.id);
+          const hidden = await getHiddenAuthorIds(userId);
           const terms = body.question
             .toLowerCase()
             .replace(/[^\w\s]/g, ' ')
@@ -56,7 +54,7 @@ export const Route = createFileRoute('/api/ai/ask-feed')({
             deletedAt: null,
             audience: 'PUBLIC' as const,
             // A private community's posts only feed the answer of its own members.
-            ...communityVisibleWhere(session.user.id),
+            ...communityVisibleWhere(userId),
             unlockPrice: null,
             ...(hidden.length ? { userId: { notIn: hidden } } : {}),
             ...(terms.length
@@ -80,7 +78,7 @@ export const Route = createFileRoute('/api/ai/ask-feed')({
               where: {
                 deletedAt: null,
                 audience: 'PUBLIC',
-                ...communityVisibleWhere(session.user.id),
+                ...communityVisibleWhere(userId),
                 unlockPrice: null,
                 ...(hidden.length ? { userId: { notIn: hidden } } : {}),
               },
@@ -90,7 +88,7 @@ export const Route = createFileRoute('/api/ai/ask-feed')({
             });
           }
           if (posts.length === 0) {
-            return Response.json({ answer: "There aren't enough posts to answer that yet." });
+            return { answer: "There aren't enough posts to answer that yet." };
           }
 
           const answer = await askFeed(
@@ -100,7 +98,7 @@ export const Route = createFileRoute('/api/ai/ask-feed')({
               content: p.content,
             })),
           );
-          return Response.json({ answer, sourceCount: posts.length });
+          return { answer, sourceCount: posts.length };
         },
       ),
     },

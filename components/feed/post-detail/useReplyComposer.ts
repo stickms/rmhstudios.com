@@ -7,6 +7,9 @@ import type { FeedItem } from '@/lib/feed-types';
 import type { Comment } from '../CommentItem';
 import { withCommentDelta } from './post-detail-state';
 
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { createCommentApi } from '@/lib/feed/rmhark-actions.contract';
 export interface ReplyComposerState {
   commentContent: string;
   setCommentContent: Dispatch<SetStateAction<string>>;
@@ -30,29 +33,27 @@ export function useReplyComposer(
     if (!commentContent.trim() || submitting) return;
     setSubmitting(true);
     try {
-      const res = await reconsider((confirmReconsider) =>
-        fetch(`/api/rmharks/${postId}/comment`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: commentContent.trim(), confirmReconsider }),
+      const created = await reconsider((confirmReconsider) =>
+        api(createCommentApi, {
+          params: { id: postId },
+          body: { content: commentContent.trim(), confirmReconsider },
         }),
       );
-      if (!res) return;
-      if (res.ok) {
-        const comment = (await res.json()) as Comment;
-        setComments((prev) => [comment, ...prev]);
-        setCommentContent('');
-        setPost((prev) => withCommentDelta(prev, 1));
-        bumpFeedComment(1);
-      } else {
-        // Surfaces the reply-control 403 ("The author limited who can reply…").
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        toast.error(
-          data.error || t('comment-failed', { defaultValue: 'Could not post your reply' }),
-        );
-      }
+      if (!created) return;
+      const comment = created as Comment;
+      setComments((prev) => [comment, ...prev]);
+      setCommentContent('');
+      setPost((prev) => withCommentDelta(prev, 1));
+      bumpFeedComment(1);
     } catch (error) {
-      console.error('Comment error:', error);
+      // Surfaces the reply-control 403 ("The author limited who can reply…").
+      if (error instanceof HttpError) {
+        toast.error(
+          serverError(error) || t('comment-failed', { defaultValue: 'Could not post your reply' }),
+        );
+      } else {
+        console.error('Comment error:', error);
+      }
     } finally {
       setSubmitting(false);
     }

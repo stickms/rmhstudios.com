@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { smartRepliesApi } from '@/lib/feed/compose-assist.contract';
 /**
  * One-tap reply chips above a DM composer.
  *
@@ -52,15 +54,12 @@ export function SmartReplies({
       fetchedFor.current = replyToMessageId;
       setLoading(true);
       try {
-        const res = await fetch('/api/ai/smart-replies', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ conversationId }),
+        const data = await api(smartRepliesApi, {
+          body: { conversationId },
+          timeoutMs: AI_TIMEOUT_MS,
         });
         if (cancelled) return;
-        const data = await res.json().catch(() => ({}));
-        setReplies(res.ok && Array.isArray(data.replies) ? data.replies : []);
+        setReplies(Array.isArray(data.replies) ? data.replies : []);
       } catch {
         // Fail silent: no chips is a perfectly good chat composer.
         if (!cancelled) setReplies([]);

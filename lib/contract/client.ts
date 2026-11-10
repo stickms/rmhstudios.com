@@ -33,6 +33,20 @@ import {
   type ResOf,
 } from './endpoint';
 
+/**
+ * Model calls are slower than the 15s default `api()` timeout (the raw fetches
+ * they replace had none), so they pass this ceiling (`timeoutMs: AI_TIMEOUT_MS`).
+ */
+export const AI_TIMEOUT_MS = 60_000;
+
+/**
+ * Image generation chains a prompt call, the image model, a download and an upload, and
+ * can run well past a minute. Aborting first would report a failure for an image the
+ * server still finishes (and pays for), so these calls wait up to just under the front
+ * door's own limit (`ProxyTimeout 300` in deploy/apache/rmhstudios.conf).
+ */
+export const AI_IMAGE_TIMEOUT_MS = 240_000;
+
 type Transport = Pick<FetchJsonOptions, 'signal' | 'timeoutMs' | 'retries' | 'headers'>;
 
 /** Keys whose type is `undefined` become absent; the rest are required. */

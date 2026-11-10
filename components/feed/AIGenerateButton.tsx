@@ -1,3 +1,6 @@
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { aiGeneratePostApi } from '@/lib/feed/compose-assist.contract';
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useState } from'react';
 import { Sparkles, Loader2 } from'lucide-react';
@@ -44,21 +47,12 @@ export function AIGenerateButton({
  setLoading(true);
  setError(null);
  try {
- const res = await fetch('/api/rmharks/ai-generate', {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify(request),
- });
- const data = await res.json().catch(() => ({}));
- if (!res.ok) {
- setError(data?.error || t('ai-generate-failed', { defaultValue:'Failed to generate'}));
- return;
- }
+ const data = await api(aiGeneratePostApi, { body: request, timeoutMs: AI_TIMEOUT_MS });
  if (typeof data?.content ==='string'&& data.content.trim()) {
  onGenerated(data.content);
  }
- } catch {
- setError(t('ai-generate-failed', { defaultValue:'Failed to generate'}));
+ } catch (e) {
+ setError(serverError(e) || t('ai-generate-failed', { defaultValue:'Failed to generate'}));
  } finally {
  setLoading(false);
  }

@@ -1,3 +1,6 @@
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { editPostApi } from '@/lib/feed/compose-assist.contract';
 import { useRef, useState } from'react';
 import { useTranslation } from'react-i18next';
 import { X } from'lucide-react';
@@ -49,22 +52,15 @@ export function EditPostModal({
  if ((!trimmed && !gifUrl.trim()) || trimmed.length > MAX_RMHARK_LENGTH) return;
  setSaving(true);
  try {
- const res = await fetch(`/api/rmharks/${postId}`, {
- method:'PATCH',
- headers: {'Content-Type':'application/json'},
- credentials:'include',
- body: JSON.stringify({ content: trimmed, gifUrl: gifUrl.trim() || null }),
+ await api(editPostApi, {
+ params: { id: postId },
+ body: { content: trimmed, gifUrl: gifUrl.trim() || null },
  });
- const data = await res.json().catch(() => ({}));
- if (res.ok) {
  onSaved(trimmed, gifUrl.trim() || null);
  onOpenChange(false);
  toast.success(t('post-updated', { defaultValue:'Post updated'}));
- } else {
- toast.error(
- data.error || t('could-not-update-post', { defaultValue:'Could not update post'}),
- );
- }
+ } catch (e) {
+ toast.error(serverError(e) || t('could-not-update-post', { defaultValue:'Could not update post'}));
  } finally {
  setSaving(false);
  }

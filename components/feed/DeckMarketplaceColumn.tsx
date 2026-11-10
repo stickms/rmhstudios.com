@@ -11,6 +11,7 @@ import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { cloneDeckApi } from '@/lib/study/decks.contract';
 
+import { deckMarketplaceApi } from '@/lib/feed/feed-reads.contract';
 interface MarketplaceDeck {
  id: string;
  title: string;
@@ -38,13 +39,10 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  const search = useCallback(async (q: string) => {
  setLoading(true);
  try {
- const res = await fetch(`/api/study/marketplace?q=${encodeURIComponent(q)}`, {
- credentials:'include',
- });
- if (res.ok) {
- const data = (await res.json()) as MarketplaceData;
+ const data = await api(deckMarketplaceApi, { query: { q } });
  setDecks(data.decks);
- }
+ } catch {
+ // A failed search keeps the decks on screen.
  } finally {
  setLoading(false);
  }

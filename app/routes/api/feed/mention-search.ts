@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
-import { auth } from '@/lib/auth';
+import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
 import { cached } from '@/lib/cached.server';
+import { mentionSearchApi } from '@/lib/feed/feed-reads.contract';
 import { searchMentionUsers } from '@/lib/feed/mention-search.server';
 
 /**
@@ -15,21 +16,22 @@ import { searchMentionUsers } from '@/lib/feed/mention-search.server';
 export const Route = createFileRoute('/api/feed/mention-search')({
   server: {
     handlers: {
-      GET: defineHandler(
+      GET: implement(
+        mentionSearchApi,
         {
-          auth: 'none',
+          auth: 'optional',
           rateLimit: {
             limit: 40,
             windowMs: 60_000,
             prefix: 'mention-search',
             message: 'Rate limited',
           },
+          // A missing or non-string `q` is the empty query (the default suggestions), not a 400.
+          query: z.object({ q: z.string().trim().catch('') }),
         },
-        async ({ request }) => {
-          const q = new URL(request.url).searchParams.get('q')?.trim() ?? '';
-
-          const session = await auth.api.getSession({ headers: request.headers });
-          const viewerId = session?.user?.id;
+        async ({ userId, query }) => {
+          const q = query.q;
+          const viewerId = userId ?? undefined;
 
           // perf: autocomplete fires per keystroke; a ~30s per-(viewer,q) cache
           // absorbs repeat prefixes/backspacing. Cost: follow-graph changes take
@@ -40,7 +42,7 @@ export const Route = createFileRoute('/api/feed/mention-search')({
             () => searchMentionUsers(q, viewerId),
           );
 
-          return Response.json({ users });
+          return { users };
         },
       ),
     },

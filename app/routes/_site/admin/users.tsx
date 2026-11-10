@@ -128,10 +128,12 @@ function AdminUsersPage() {
     if (updating !== null) return;
     setUpdating(userId);
     try {
-      const res = await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, [field]: !currentValue }) });
-      if (res.ok) { const updated = await res.json(); setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updated } : u)); }
-      else { const err = await res.text(); toast.error(t("alert-update-user-failed", { err, defaultValue: "Failed to update user: {{err}}" })); }
-    } catch (error) { console.error("Failed to update user", error); toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
+      const updated = await api(updateAdminUserApi, { body: { userId, [field]: !currentValue } });
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updated } : u));
+    } catch (error) {
+      if (error instanceof HttpError) { const err = error.text ?? serverError(error) ?? ''; toast.error(t("alert-update-user-failed", { err, defaultValue: "Failed to update user: {{err}}" })); }
+      else { console.error("Failed to update user", error); toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); }
+    } finally { setUpdating(null); }
   };
 
   const grantMembership = async (userId: string) => {

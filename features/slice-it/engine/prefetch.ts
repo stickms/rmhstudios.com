@@ -1,3 +1,5 @@
+import { api } from '@/lib/contract/client';
+import { getSliceSongApi } from '@features/slice-it/engine/play.contract';
 /**
  * Slice It — start fetching before the countdown does (`O5`).
  *
@@ -46,16 +48,11 @@ export async function prefetchRun(songId: string, options: PrefetchOptions = {})
   options.signal?.addEventListener('abort', onAbort, { once: true });
 
   try {
-    const query = options.difficulty ? `?difficulty=${encodeURIComponent(options.difficulty)}` : '';
-    const response = await fetch(`/api/slice-it/songs/${songId}${query}`, {
+    const song = await api(getSliceSongApi, {
+      params: { id: songId },
+      query: options.difficulty ? { difficulty: options.difficulty } : {},
       signal: controller.signal,
-      // `no-store` would defeat the entire purpose; be explicit rather than
-      // relying on the default, because the default is what a future edit to
-      // the fetch wrapper would change.
-      cache: 'default',
     });
-    if (!response.ok) return;
-    const song = (await response.json()) as { audioUrl?: string };
     if (!song.audioUrl) return;
 
     // The audio is the expensive half — megabytes against the chart's

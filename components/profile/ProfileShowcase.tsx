@@ -26,6 +26,7 @@ import { SliceItModule } from '@/components/profile/modules/SliceItModule';
 import { api } from '@/lib/contract/client';
 import { setProfileLayoutApi } from '@/lib/profile/profile-extras.contract';
 
+import { getPublicWishlistApi } from '@/lib/wishlist/wishlist.contract';
 // P05 (Top Four, /now, stamps, webrings, skills, counter) — fetched only when a
 // profile actually carries one of these modules.
 const PlusModules = lazy(() => import('@/components/profile/plus/PlusModules'));
@@ -323,11 +324,8 @@ function WishlistModule({ title, userId }: { title: string; userId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/users/${userId}/wishlist`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then(
-        (data: { items: WishlistItemView[] } | null) => !cancelled && setItems(data?.items ?? []),
-      )
+    api(getPublicWishlistApi, { params: { id: userId } })
+      .then((data) => !cancelled && setItems(data.items))
       .catch(() => !cancelled && setItems([]));
     return () => {
       cancelled = true;

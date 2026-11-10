@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { PRONUNCIATION_MAX_MS } from '@/lib/profile/plus';
 import type { RecordedClip, VoiceRecorder } from '@/lib/voice/recorder';
 
+import { api } from '@/lib/contract/client';
+import { removePronunciationApi } from '@/lib/profile/pronunciation.contract';
 /**
  * P3 — record the 5-second "this is how you say my name" clip. Uses the same
  * `MediaRecorder` wrapper as DM voice notes (it releases the microphone on every
@@ -134,11 +136,11 @@ export function PronunciationRecorder({
   async function remove() {
     setBusy(true);
     try {
-      const res = await fetch('/api/profile/pronunciation', { method: 'DELETE' });
-      if (res.ok) {
-        onChange(null);
-        toast.success(t('pron-removed', { defaultValue: 'Pronunciation removed' }));
-      }
+      await api(removePronunciationApi);
+      onChange(null);
+      toast.success(t('pron-removed', { defaultValue: 'Pronunciation removed' }));
+    } catch {
+      // Not removed: the clip stays and the button is usable again.
     } finally {
       setBusy(false);
     }

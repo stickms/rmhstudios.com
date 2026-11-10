@@ -7,6 +7,8 @@ import {
 } from './profile-edit-state';
 import type { ProfileEditForm } from './useProfileEditForm';
 
+import { api } from '@/lib/contract/client';
+import { checkHandleApi } from '@/lib/feed/feed-reads.contract';
 /**
  * Debounced handle availability check. Each check takes a token; a response
  * for a handle the user has since edited away from is dropped instead of
@@ -28,8 +30,7 @@ export function useHandleCheck(
       }
       setHandleStatus('checking');
       try {
-        const res = await fetch(`/api/handle/check?handle=${encodeURIComponent(value)}`);
-        const data = (await res.json()) as { available?: boolean; reason?: string };
+        const data = await api(checkHandleApi, { query: { handle: value } });
         if (seq !== handleCheckSeq.current) return;
         setHandleStatus(remoteHandleStatus(data));
       } catch {
