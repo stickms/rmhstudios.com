@@ -35,6 +35,7 @@ const CLIENTS = [
   'features/balatro/engine/mp/hub-client.ts',
   'features/hearthworks/engine/net/hub-client-core.ts',
   'features/casino/engine/table-client.ts',
+  'features/altair/engine/multiplayer/socket.ts',
 ];
 
 /**

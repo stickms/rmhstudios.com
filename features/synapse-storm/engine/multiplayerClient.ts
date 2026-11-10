@@ -3,8 +3,9 @@
  * Manages connection, lobby state, match state, and reconnection.
  */
 
-import { io, Socket } from 'socket.io-client';
-import { ensureTrailingSlash } from '@/lib/url';
+import type { Socket } from 'socket.io-client';
+import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
+import type { RealtimeStatus } from '@/lib/shared/realtime/types';
 
 export interface SSPlayer {
     id: string;
@@ -55,7 +56,11 @@ export type SSEventHandler = {
     onReturnToLobby?: () => void;
 };
 
-const SOCKET_URL = ensureTrailingSlash(import.meta.env.VITE_SOCKET_URL || "http://localhost:7001");
+/** The shared client's six states, folded onto the four this game's UI knows. */
+function toConnectionStatus(status: RealtimeStatus): SSConnectionStatus {
+    if (status === 'connecting' || status === 'connected' || status === 'reconnecting') return status;
+    return 'disconnected';
+}
 
 const STORAGE_KEY_USER_ID = 'ss_mp_userId';
 const STORAGE_KEY_DISPLAY_NAME = 'ss_mp_displayName';
@@ -112,7 +117,7 @@ export function setStoredLobbyCode(code: string | null): void {
 }
 
 export class SynapseStormMultiplayerClient {
-    private socket: Socket | null = null;
+    private client: RealtimeClient | null = null;
     private handlers: SSEventHandler = {};
     private userId: string = '';
     private displayName: string = '';
@@ -131,58 +136,39 @@ export class SynapseStormMultiplayerClient {
     }
 
     connect(userId: string, displayName: string): void {
-        if (this.socket?.connected || this.socket?.active) return;
-
         this.userId = userId;
         this.displayName = displayName;
-        this._connectionStatus = 'connecting';
-        this.handlers.onConnectionChange?.('connecting');
+        if (this.client) {
+            this.client.reconnectNow();
+            return;
+        }
 
-        this.socket = io(SOCKET_URL, {
+        // No credential is sent today (as before the move to the shared client),
+        // so the hub's soft auth seats every player as a guest.
+        this.client = createRealtimeClient({
+            name: 'SynapseStorm',
+            url: import.meta.env.VITE_SOCKET_URL,
             path: '/socket/',
-            transports: ['websocket'],
-            reconnection: true,
-            reconnectionAttempts: 5,
-            reconnectionDelay: 1000,
-            reconnectionDelayMax: 5000,
+            auth: () => ({}),
+            onStatus: (status) => {
+                this._connectionStatus = toConnectionStatus(status);
+                this.handlers.onConnectionChange?.(this._connectionStatus);
+            },
+            onConnect: (socket) => {
+                // Request time sync
+                socket.emit('ss:timeSync', { clientTime: Date.now() });
+
+                // The server keyed the seat by socket id and that id just changed: re-join the lobby.
+                if (this.lobbyCode) this.joinLobby(this.lobbyCode);
+            },
+            bind: (socket) => this.bindEvents(socket),
         });
+    }
 
-        this.socket.on('connect', () => {
-            this._connectionStatus = 'connected';
-            this.handlers.onConnectionChange?.('connected');
-
-            // Request time sync
-            this.socket?.emit('ss:timeSync', { clientTime: Date.now() });
-
-            // Auto-rejoin lobby if we have one stored
-            const storedCode = getStoredLobbyCode();
-            if (storedCode && this.lobbyCode === storedCode) {
-                this.joinLobby(storedCode);
-            }
-        });
-
-        this.socket.on('disconnect', () => {
-            this._connectionStatus = 'disconnected';
-            this.handlers.onConnectionChange?.('disconnected');
-        });
-
-        this.socket.on('reconnect_attempt', () => {
-            this._connectionStatus = 'reconnecting';
-            this.handlers.onConnectionChange?.('reconnecting');
-        });
-
-        this.socket.on('reconnect', () => {
-            this._connectionStatus = 'connected';
-            this.handlers.onConnectionChange?.('connected');
-            // Re-join lobby
-            if (this.lobbyCode) {
-                this.joinLobby(this.lobbyCode);
-            }
-        });
-
+    private bindEvents(socket: Socket): void {
         // ─── Event listeners ───
 
-        this.socket.on('ss:lobbyUpdate', (data: SSLobbyState) => {
+        socket.on('ss:lobbyUpdate', (data: SSLobbyState) => {
             if (data.code && !this.lobbyCode) {
                 this.lobbyCode = data.code;
                 setStoredLobbyCode(data.code);
@@ -190,87 +176,84 @@ export class SynapseStormMultiplayerClient {
             this.handlers.onLobbyUpdate?.(data);
         });
 
-        this.socket.on('ss:countdown', (data: { countdownEndsAt: number }) => {
+        socket.on('ss:countdown', (data: { countdownEndsAt: number }) => {
             this.handlers.onMatchCountdown?.(data.countdownEndsAt);
         });
 
-        this.socket.on('ss:matchStart', (data: SSMatchState) => {
+        socket.on('ss:matchStart', (data: SSMatchState) => {
             this.handlers.onMatchStart?.(data);
         });
 
-        this.socket.on('ss:leaderboardUpdate', (data: { leaderboard: SSLeaderboardEntry[] }) => {
+        socket.on('ss:leaderboardUpdate', (data: { leaderboard: SSLeaderboardEntry[] }) => {
             this.handlers.onLeaderboardUpdate?.(data.leaderboard);
         });
 
-        this.socket.on('ss:matchFinished', (data: { leaderboard: SSLeaderboardEntry[] }) => {
+        socket.on('ss:matchFinished', (data: { leaderboard: SSLeaderboardEntry[] }) => {
             this.handlers.onMatchFinished?.(data.leaderboard);
         });
 
-        this.socket.on('ss:timeSync', (data: { serverTime: number; clientTime: number }) => {
+        socket.on('ss:timeSync', (data: { serverTime: number; clientTime: number }) => {
             const now = Date.now();
             const roundTrip = now - data.clientTime;
             this.serverTimeOffset = data.serverTime - now + roundTrip / 2;
             this.handlers.onTimeSync?.(data.serverTime);
         });
 
-        this.socket.on('ss:error', (data: { message: string }) => {
+        socket.on('ss:error', (data: { message: string }) => {
             this.handlers.onError?.(data.message);
         });
 
-        this.socket.on('ss:returnToLobby', () => {
+        socket.on('ss:returnToLobby', () => {
             this.handlers.onReturnToLobby?.();
         });
     }
 
     disconnect(): void {
-        if (this.socket) {
-            this.socket.removeAllListeners();
-            this.socket.disconnect();
-            this.socket = null;
-        }
+        this.client?.destroy();
+        this.client = null;
         this._connectionStatus = 'disconnected';
         this.lobbyCode = null;
         setStoredLobbyCode(null);
     }
 
     createLobby(): void {
-        this.socket?.emit('ss:createLobby', {
+        this.client?.emit('ss:createLobby', {
             userId: this.userId,
             displayName: this.displayName,
-        });
+        }, { queue: true });
     }
 
     joinLobby(code: string): void {
         this.lobbyCode = code;
         setStoredLobbyCode(code);
-        this.socket?.emit('ss:joinLobby', {
+        this.client?.emit('ss:joinLobby', {
             code,
             userId: this.userId,
             displayName: this.displayName,
-        });
+        }, { queue: true });
     }
 
     leaveLobby(): void {
-        this.socket?.emit('ss:leaveLobby', {
+        this.client?.emit('ss:leaveLobby', {
             code: this.lobbyCode,
             userId: this.userId,
-        });
+        }, { queue: true });
         this.lobbyCode = null;
         setStoredLobbyCode(null);
     }
 
     toggleReady(): void {
-        this.socket?.emit('ss:toggleReady', {
+        this.client?.emit('ss:toggleReady', {
             code: this.lobbyCode,
             userId: this.userId,
-        });
+        }, { queue: true });
     }
 
     startMatch(): void {
-        this.socket?.emit('ss:startMatch', {
+        this.client?.emit('ss:startMatch', {
             code: this.lobbyCode,
             userId: this.userId,
-        });
+        }, { queue: true });
     }
 
     sendScoreUpdate(data: {
@@ -280,7 +263,7 @@ export class SynapseStormMultiplayerClient {
         puzzlesSolved: number;
         puzzlesMissed: number;
     }): void {
-        this.socket?.emit('ss:scoreUpdate', {
+        this.client?.emit('ss:scoreUpdate', {
             ...data,
             userId: this.userId,
             displayName: this.displayName,
@@ -294,18 +277,18 @@ export class SynapseStormMultiplayerClient {
         puzzlesSolved: number;
         puzzlesMissed: number;
     }): void {
-        this.socket?.emit('ss:finishMatch', {
+        this.client?.emit('ss:finishMatch', {
             ...data,
             userId: this.userId,
             displayName: this.displayName,
-        });
+        }, { queue: true });
     }
 
     returnToLobby(): void {
-        this.socket?.emit('ss:returnToLobby', {
+        this.client?.emit('ss:returnToLobby', {
             code: this.lobbyCode,
             userId: this.userId,
-        });
+        }, { queue: true });
     }
 }
 

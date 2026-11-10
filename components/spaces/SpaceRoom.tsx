@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { io, type Socket } from 'socket.io-client';
 import { Radio, Send, Pin, PinOff, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useSession } from '@/components/Providers';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { authClient } from '@/lib/auth-client';
-import { ensureTrailingSlash } from '@/lib/url';
+import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import { SPACE_C2S, SPACE_S2C } from '@/lib/spaces/events';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
@@ -131,7 +130,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   const [startingLive, setStartingLive] = useState(false);
   const [ending, setEnding] = useState(false);
 
-  const socketRef = useRef<Socket | null>(null);
+  const clientRef = useRef<RealtimeClient | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const pushBurst = useCallback(
@@ -153,69 +152,62 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
     const base = import.meta.env.VITE_SOCKET_URL;
     if (!base) return;
 
-    const socket = io(ensureTrailingSlash(base), {
+    const client = createRealtimeClient({
+      name: 'Spaces',
+      url: base,
       path: '/socket/',
-      auth: (cb) => {
-        authClient
-          .getSession()
-          .then((s) => cb({ token: s?.data?.session?.token }))
-          .catch(() => cb({}));
+      auth: async () => {
+        const session = await authClient.getSession();
+        return { token: session?.data?.session?.token };
       },
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 10000,
-      timeout: 10000,
-    });
-    socketRef.current = socket;
-
-    socket.on('connect', () => {
-      setConnected(true);
-      socket.emit(SPACE_C2S.JOIN, { spaceId: initialSpace.id });
-    });
-    socket.on('disconnect', () => {
-      setConnected(false);
-      setEnding(false);
-    });
-    socket.on(
-      SPACE_S2C.STATE,
-      (s: {
-        audience?: AudienceMember[];
-        audienceCount?: number;
-        pinned?: SpacePinned | null;
-        status?: SpaceStatus;
-      }) => {
-        if (Array.isArray(s.audience)) setAudience(s.audience);
-        if (typeof s.audienceCount === 'number') setAudienceCount(s.audienceCount);
-        setPinned(s.pinned ?? null);
-        if (s.status) setStatus(s.status);
+      onStatus: (status) => {
+        setConnected(status === 'connected');
+        if (status !== 'connected') setEnding(false);
       },
-    );
-    socket.on(SPACE_S2C.MESSAGE, (m: LiveMessage) => {
-      setMessages((prev) => [...prev.slice(-199), m]);
+      // Every connect, reconnects included: the hub forgot this socket's room.
+      onConnect: (socket) => socket.emit(SPACE_C2S.JOIN, { spaceId: initialSpace.id }),
+      bind: (socket) => {
+        socket.on(
+          SPACE_S2C.STATE,
+          (s: {
+            audience?: AudienceMember[];
+            audienceCount?: number;
+            pinned?: SpacePinned | null;
+            status?: SpaceStatus;
+          }) => {
+            if (Array.isArray(s.audience)) setAudience(s.audience);
+            if (typeof s.audienceCount === 'number') setAudienceCount(s.audienceCount);
+            setPinned(s.pinned ?? null);
+            if (s.status) setStatus(s.status);
+          },
+        );
+        socket.on(SPACE_S2C.MESSAGE, (m: LiveMessage) => {
+          setMessages((prev) => [...prev.slice(-199), m]);
+        });
+        socket.on(SPACE_S2C.REACTION, (r: { emoji?: string }) => {
+          if (r?.emoji) pushBurst(r.emoji);
+        });
+        socket.on(SPACE_S2C.PINNED, (p: { pinned?: SpacePinned | null }) =>
+          setPinned(p?.pinned ?? null),
+        );
+        socket.on(SPACE_S2C.ENDED, () => {
+          setEnding(false);
+          setStatus('ENDED');
+          toast(t('space-ended', { defaultValue: 'This Space has ended' }));
+        });
+        bindSlowModeEvents(socket, 'space');
+        socket.on(SPACE_S2C.ERROR, (e: { message?: string }) => {
+          setEnding(false);
+          if (e?.message) toast.error(e.message);
+        });
+      },
     });
-    socket.on(SPACE_S2C.REACTION, (r: { emoji?: string }) => {
-      if (r?.emoji) pushBurst(r.emoji);
-    });
-    socket.on(SPACE_S2C.PINNED, (p: { pinned?: SpacePinned | null }) =>
-      setPinned(p?.pinned ?? null),
-    );
-    socket.on(SPACE_S2C.ENDED, () => {
-      setEnding(false);
-      setStatus('ENDED');
-      toast(t('space-ended', { defaultValue: 'This Space has ended' }));
-    });
-    bindSlowModeEvents(socket, 'space');
-    socket.on(SPACE_S2C.ERROR, (e: { message?: string }) => {
-      setEnding(false);
-      if (e?.message) toast.error(e.message);
-    });
+    clientRef.current = client;
 
     return () => {
-      socket.emit(SPACE_C2S.LEAVE, { spaceId: initialSpace.id });
-      socket.removeAllListeners();
-      socket.disconnect();
-      socketRef.current = null;
+      client.emit(SPACE_C2S.LEAVE, { spaceId: initialSpace.id });
+      client.destroy();
+      clientRef.current = null;
     };
   }, [initialSpace.id, ended, pushBurst, t]);
 
@@ -233,14 +225,14 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
       toast.error(t('space-sign-in-to-chat', { defaultValue: 'Sign in to chat' }));
       return;
     }
-    socketRef.current?.emit(SPACE_C2S.CHAT, { spaceId: initialSpace.id, body });
+    clientRef.current?.emit(SPACE_C2S.CHAT, { spaceId: initialSpace.id, body }, { queue: true });
     setDraft('');
   }, [draft, viewerId, initialSpace.id, t, slowBlock.secondsLeft]);
 
   const react = useCallback(
     (emoji: string) => {
       if (!viewerId) return;
-      socketRef.current?.emit(SPACE_C2S.REACT, { spaceId: initialSpace.id, emoji });
+      clientRef.current?.emit(SPACE_C2S.REACT, { spaceId: initialSpace.id, emoji });
       pushBurst(emoji);
     },
     [viewerId, initialSpace.id, pushBurst],
@@ -265,21 +257,21 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   // flips the status. Until then the socket stays up so an error can arrive.
   const endSpace = useCallback(() => {
     if (ending) return;
-    const socket = socketRef.current;
-    if (!socket?.connected) {
+    const client = clientRef.current;
+    if (client?.status !== 'connected') {
       toast.error(
         t('space-end-offline', { defaultValue: 'Not connected. Try again in a moment.' }),
       );
       return;
     }
     setEnding(true);
-    socket.emit(SPACE_C2S.END, { spaceId: initialSpace.id });
+    client.emit(SPACE_C2S.END, { spaceId: initialSpace.id });
   }, [ending, initialSpace.id, t]);
 
   const submitPin = useCallback(() => {
     const ref = pinDraft.trim();
     if (!ref) return;
-    socketRef.current?.emit(SPACE_C2S.PIN, {
+    clientRef.current?.emit(SPACE_C2S.PIN, {
       spaceId: initialSpace.id,
       pinned: { kind: 'url', ref },
     });
@@ -287,7 +279,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   }, [pinDraft, initialSpace.id]);
 
   const unpin = useCallback(() => {
-    socketRef.current?.emit(SPACE_C2S.PIN, { spaceId: initialSpace.id, pinned: null });
+    clientRef.current?.emit(SPACE_C2S.PIN, { spaceId: initialSpace.id, pinned: null });
   }, [initialSpace.id]);
 
   const transcript = useMemo(
@@ -467,7 +459,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
             scope="space"
             isHost={isHost}
             onSet={(seconds) =>
-              socketRef.current?.emit(slowModeEvents('space').SET, {
+              clientRef.current?.emit(slowModeEvents('space').SET, {
                 spaceId: initialSpace.id,
                 seconds,
               })
