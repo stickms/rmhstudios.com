@@ -121,10 +121,26 @@ import { ConversationView } from '../ConversationView';
 
 // useState ordinals in the thread's render (see file header).
 const S = {
-  messages: 0, loading: 1, olderCursor: 2, hasOlder: 3, loadingOlder: 4, otherUser: 5,
-  input: 6, sending: 7, error: 8, notFound: 9, otherTyping: 10, showGifPicker: 11,
-  attachOpen: 12, gifUrl: 13, imageUrls: 14, uploading: 15, reactionMenu: 16,
-  editingId: 17, savingEdit: 18, voiceActive: 19,
+  otherTyping: 0,
+  messages: 1,
+  loading: 2,
+  olderCursor: 3,
+  hasOlder: 4,
+  loadingOlder: 5,
+  otherUser: 6,
+  notFound: 7,
+  reactionMenu: 8,
+  editingId: 9,
+  savingEdit: 10,
+  input: 11,
+  sending: 12,
+  error: 13,
+  showGifPicker: 14,
+  attachOpen: 15,
+  gifUrl: 16,
+  imageUrls: 17,
+  uploading: 18,
+  voiceActive: 19,
 } as const;
 
 const OTHER = { id: 'ana', name: 'Ana', image: '/ana.png', username: 'ana_k' };
@@ -177,7 +193,8 @@ function render(seed: Partial<Record<keyof typeof S, unknown>> = {}, props: obje
   // is not markup under test.
   return renderToString(
     <ConversationView conversationId="c1" initialOtherUser={OTHER} {...props} />,
-  ).replace(/<template data-msg="[^"]*"/g, '<template data-msg="<ssr-abort>"')
+  )
+    .replace(/<template data-msg="[^"]*"/g, '<template data-msg="<ssr-abort>"')
     .replace(/ data-c?stck="[^"]*"/g, '');
 }
 

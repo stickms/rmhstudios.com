@@ -1,33 +1,5 @@
 import { lazy, Suspense, useState, useRef, useEffect, useCallback } from 'react';
-// `m as motion`, not `motion`: `Providers` wraps the app in `LazyMotion`, and `m`
-// is the component that honours it — `motion` bundles its own full feature
-// implementation, which lands in the SHARED ENTRY CHUNK when the module is
-// reachable from a route's top level. Nine modules did this, together putting
-// ~36 KB of framer-motion on the critical path of every page.
-import { m as motion } from 'framer-motion';
-import { modalContent } from '@/lib/motion';
-import {
-  Plus,
-  BarChart3,
-  History,
-  ImagePlay,
-  X,
-  ImagePlus,
-  Globe,
-  Users,
-  Lock,
-  Star,
-  Coins,
-  Type,
-  FileText,
-  CalendarClock,
-  Check,
-  MessageCircle,
-  AtSign,
-  AlertTriangle,
-} from 'lucide-react';
-import { GifEmbed } from './GifEmbed';
-import { GifPicker } from './GifPicker';
+import { ImagePlus, Check } from 'lucide-react';
 import { AIGenerateButton } from './AIGenerateButton';
 import { AIImageButton } from './AIImageButton';
 import { ComposeAssist } from './ComposeAssist';
@@ -36,63 +8,65 @@ import { MentionTextarea } from './MentionTextarea';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { useSession, useResolvedUser } from '@/components/Providers';
-import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/select';
-import { AnchoredMenu } from '@/components/ui/anchored-menu';
-import { OverlayPanel } from '@/components/ui/overlay-panel';
 import { ScheduleControl } from '@/components/ui/schedule-control';
-import { useSmartPaste, type MediaRejection } from '@/hooks/useSmartPaste';
-import { postWithOutbox, subscribeOutbox } from '@/lib/offline/outbox';
-import { yieldToMain } from '@/lib/scheduler';
-import { useFeedStore } from '@/stores/feedStore';
-import {
-  MAX_RMHARK_LENGTH,
-  MAX_POLL_QUESTION_LENGTH,
-  MAX_POLL_OPTION_LENGTH,
-  MIN_POLL_OPTIONS,
-  MAX_POLL_OPTIONS,
-  MAX_IMAGE_ALT_LENGTH,
-} from '@/lib/rmhark-limits';
+import { useSmartPaste } from '@/hooks/useSmartPaste';
+import { MAX_RMHARK_LENGTH } from '@/lib/rmhark-limits';
 import { Link } from '@tanstack/react-router';
-import { TakeMenuItem, TakeChip } from './TakeCompose';
+import { TakeChip } from './TakeCompose';
 import { AltTextNotice, useRequireAltText } from './AltTextNotice';
 import {
   PostsPlusChips,
   PostsPlusDialogs,
-  PostsPlusMenuItems,
   usePostsPlusCompose,
 } from '@/components/posts-plus/PostsPlusCompose';
 import {
   CodeEmbedChip,
   CodeEmbedDialog,
-  CodeEmbedMenuItem,
   useCodeEmbedCompose,
 } from '@/components/code-embed/CodeEmbedCompose';
 import { missingAltIndexes } from '@/lib/feed/alt-text';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import type { FeedItem } from '@/lib/feed-types';
 import {
   readComposeDraft,
   clearComposeDraft,
   useComposeDraftAutosave,
   type ComposeDraft,
 } from '@/hooks/useComposeDraft';
-
-const MAX_IMAGES = 4;
+import { ComposerAvatar, ContentWarningPill, UnlockPricePill } from './compose/ComposeChips';
+import { DraftRestoreBanner } from './compose/DraftRestoreBanner';
+import { PollEditor } from './compose/PollEditor';
+import { GifAttachment } from './compose/GifAttachment';
+import { ImagePreviewStrip } from './compose/ImagePreviewStrip';
+import { ComposeMenu } from './compose/ComposeMenu';
+import { AudiencePickerDialog, ReplyPickerDialog } from './compose/PickerDialogs';
+import { AltTextDialog, CheatSheetDialog, UnlockPriceDialog } from './compose/ComposeDialogs';
+import { useComposeUploads } from './compose/useComposeUploads';
+import { useComposeSubmit } from './compose/useComposeSubmit';
+import {
+  MAX_IMAGES,
+  appendImages,
+  buildComposeBody,
+  buildOptimisticItem,
+  computeCanSubmit,
+  counterToneClass,
+  emptyPoll,
+  isComposerEmpty,
+  isGifPostable,
+  isPollPostable,
+  prependFailedContent,
+  removeAt,
+  threadBlockedBy,
+  type Attachment,
+  type AudienceValue,
+  type PollDraft,
+  type ReplyControlValue,
+  type SessionUserShape,
+} from './compose/compose-state';
 
 // X1: the "Post as thread" preview + splitter. Mounted only once a draft is
 // longer than one post, so it is a separate chunk almost nobody downloads.
 const ThreadPostPanel = lazy(() => import('./ThreadPostPanel'));
-
-type Attachment = 'poll' | 'gif' | null;
-
-interface PollDraft {
-  question: string;
-  options: string[];
-  multiSelect: boolean;
-}
 
 export function ComposeBox({
   communityId,
@@ -105,10 +79,8 @@ export function ComposeBox({
   extraBody?: Record<string, unknown>;
 } = {}) {
   const [content, setContent] = useState('');
-  const [audience, setAudience] = useState<'PUBLIC' | 'FOLLOWERS' | 'PRIVATE' | 'CIRCLE'>('PUBLIC');
-  const [replyControl, setReplyControl] = useState<'EVERYONE' | 'FOLLOWING' | 'MENTIONED'>(
-    'EVERYONE',
-  );
+  const [audience, setAudience] = useState<AudienceValue>('PUBLIC');
+  const [replyControl, setReplyControl] = useState<ReplyControlValue>('EVERYONE');
   const [replyOpen, setReplyOpen] = useState(false);
   const [isSensitive, setIsSensitive] = useState(false);
   const [isTake, setIsTake] = useState(false); // X6: readers vote agree/disagree
@@ -120,22 +92,23 @@ export function ComposeBox({
   const [attachment, setAttachment] = useState<Attachment>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [audienceOpen, setAudienceOpen] = useState(false);
-  const [poll, setPoll] = useState<PollDraft>({
-    question: '',
-    options: ['', ''],
-    multiSelect: false,
-  });
+  const [poll, setPoll] = useState<PollDraft>(emptyPoll);
   const [gifUrl, setGifUrl] = useState('');
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
-  // Per-image alt text, aligned by index with imageUrls. A missing/empty entry
-  // means"no description"; the ALT pill on each preview opens the editor.
-  const [imageAlts, setImageAlts] = useState<string[]>([]);
-  const [altEditIndex, setAltEditIndex] = useState<number | null>(null);
-  const [imageError, setImageError] = useState<string | null>(null);
-  // Uploads in flight. Posting waits for them, and `uploadEpochRef` (bumped by
-  // every reset) drops URLs that arrive after the post they belonged to.
-  const [uploadingCount, setUploadingCount] = useState(0);
-  const uploadEpochRef = useRef(0);
+  const {
+    imageUrls,
+    setImageUrls,
+    imageAlts,
+    setImageAlts,
+    altEditIndex,
+    setAltEditIndex,
+    imageError,
+    setImageError,
+    uploadingCount,
+    uploadEpochRef,
+    uploadImages,
+    handleImageFiles,
+    explainRejection,
+  } = useComposeUploads();
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduleAt, setScheduleAt] = useState(''); // datetime-local value
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
@@ -143,7 +116,6 @@ export function ComposeBox({
   const [showPriceModal, setShowPriceModal] = useState(false); // unlock-price popover
   const [showCheatSheet, setShowCheatSheet] = useState(false); // markdown cheat sheet
   const imageInputRef = useRef<HTMLInputElement>(null);
-  const menuBtnRef = useRef<HTMLButtonElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
 
@@ -153,13 +125,6 @@ export function ComposeBox({
   useEffect(() => {
     setPendingDraft(readComposeDraft());
   }, []);
-  const { prependItem, removeItem, reconcileItem } = useFeedStore();
-
-  // Idempotency key -> the optimistic card that is waiting on it (B10). A write
-  // the service worker parked keeps its dimmed"posting"row on screen; when the
-  // worker finally sends it, the real post swaps in through the same reconcile
-  // path a normal post uses.
-  const queuedPosts = useRef(new Map<string, string>());
 
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
@@ -176,87 +141,24 @@ export function ComposeBox({
   // check on the trigger's wrapper.
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
-  const hasPoll =
-    attachment === 'poll' &&
-    poll.question.trim() &&
-    poll.options.filter((o) => o.trim()).length >= MIN_POLL_OPTIONS;
-  const hasGif = attachment === 'gif' && gifUrl.trim().length > 0;
+  const hasPoll = isPollPostable(attachment, poll);
+  const hasGif = isGifPostable(attachment, gifUrl);
   const hasImages = imageUrls.length > 0;
   const hasContent = content.trim().length > 0;
   // X12: with "Require alt text" on, every attached image needs a description.
   const requireAlt = useRequireAltText(hasImages);
   const missingAlt = requireAlt ? missingAltIndexes(imageUrls, imageAlts) : [];
-  const canSubmit =
-    (hasContent || hasPoll || hasGif || hasImages || !!codeEmbed.embed) &&
-    remaining >= 0 &&
-    !submitting &&
-    uploadingCount === 0 &&
-    missingAlt.length === 0;
-
-  const uploadImages = useCallback(async (files: File[]) => {
-    if (files.length === 0) return;
-    setImageError(null);
-    const epoch = uploadEpochRef.current;
-    const form = new FormData();
-    files.forEach((f) => form.append('images', f));
-    setUploadingCount((n) => n + 1);
-    try {
-      const res = await fetch('/api/rmharks/image', { method: 'POST', body: form });
-      if (epoch !== uploadEpochRef.current) return;
-      if (!res.ok) {
-        const { error } = await res.json().catch(() => ({ error: 'Upload failed' }));
-        setImageError(error ?? 'Upload failed');
-        return;
-      }
-      const { urls } = await res.json();
-      if (epoch !== uploadEpochRef.current) return;
-      setImageUrls((prev) => [...prev, ...urls].slice(0, MAX_IMAGES));
-    } catch {
-      if (epoch === uploadEpochRef.current) setImageError('Upload failed');
-    } finally {
-      setUploadingCount((n) => Math.max(0, n - 1));
-    }
-  }, []);
-
-  const handleImageFiles = (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    void uploadImages(Array.from(files).slice(0, MAX_IMAGES - imageUrls.length));
-  };
-
-  // ── Paste / drop (B16) ───────────────────────────────────────────────────
-  // Files are screened against the media policy BEFORE the upload starts, so an
-  // over-quota drop is refused in the same frame instead of after 20 MB has gone
-  // up the wire. The hook ships reason CODES, not sentences — it has no `t()` —
-  // so this maps them to copy.
-  const explainRejection = useCallback(
-    (rejections: MediaRejection[]) => {
-      const [first] = rejections;
-      if (!first) return;
-      if (first.reason === 'too-large') {
-        setImageError(
-          t('image-too-large', {
-            name: first.file.name,
-            defaultValue: '{{name}} is too large — images must be under 5 MB.',
-          }),
-        );
-      } else if (first.reason === 'unsupported-type') {
-        setImageError(
-          t('image-unsupported', {
-            name: first.file.name,
-            defaultValue: "{{name}} isn't a supported image (PNG, JPEG, GIF or WebP).",
-          }),
-        );
-      } else {
-        setImageError(
-          t('image-over-limit', {
-            count: MAX_IMAGES,
-            defaultValue: 'You can attach at most {{count}} images.',
-          }),
-        );
-      }
-    },
-    [t],
-  );
+  const canSubmit = computeCanSubmit({
+    hasContent,
+    hasPoll,
+    hasGif,
+    hasImages,
+    hasCodeEmbed: !!codeEmbed.embed,
+    remaining,
+    submitting,
+    uploadingCount,
+    missingAltCount: missingAlt.length,
+  });
 
   const smartPaste = useSmartPaste({
     onFiles: (files) => void uploadImages(files),
@@ -281,37 +183,26 @@ export function ComposeBox({
     },
   });
 
-  const buildBody = (): Record<string, unknown> => {
-    const body: Record<string, unknown> = {};
-    if (content.trim()) body.content = content.trim();
-    if (hasPoll) {
-      body.poll = {
-        question: poll.question.trim(),
-        options: poll.options.filter((o) => o.trim()).map((o) => o.trim()),
-        multiSelect: poll.multiSelect,
-        ...(pollDuration > 0 ? { durationHours: pollDuration } : {}),
-      };
-    }
-    if (hasGif) body.gifUrl = gifUrl.trim();
-    if (hasImages) {
-      body.imageUrls = imageUrls;
-      // Only send alts when the author described at least one image; send the
-      // full index-aligned array so the server can pair them by position.
-      if (imageAlts.some((a) => a?.trim())) {
-        body.imageAlts = imageUrls.map((_, i) => imageAlts[i]?.trim() ?? '');
-      }
-    }
-    if (audience !== 'PUBLIC') body.audience = audience;
-    if (isSensitive) body.isSensitive = true;
-    if (isTake) body.isTake = true;
-    if (replyControl !== 'EVERYONE') body.replyControl = replyControl;
-    const price = parseInt(unlockPrice, 10);
-    if (price > 0) body.unlockPrice = price;
-    if (communityId) body.communityId = communityId;
-    if (extraBody) Object.assign(body, extraBody);
-    Object.assign(body, postsPlus.bodyFields, codeEmbed.bodyFields);
-    return body;
-  };
+  const buildBody = (): Record<string, unknown> =>
+    buildComposeBody({
+      content,
+      hasPoll,
+      poll,
+      pollDuration,
+      hasGif,
+      gifUrl,
+      hasImages,
+      imageUrls,
+      imageAlts,
+      audience,
+      isSensitive,
+      isTake,
+      replyControl,
+      unlockPrice,
+      communityId,
+      extraBody,
+      featureFields: [postsPlus.bodyFields, codeEmbed.bodyFields],
+    });
 
   const resetForm = () => {
     uploadEpochRef.current += 1;
@@ -324,7 +215,7 @@ export function ComposeBox({
     setIsTake(false);
     setUnlockPrice('');
     setAttachment(null);
-    setPoll({ question: '', options: ['', ''], multiSelect: false });
+    setPoll(emptyPoll());
     setGifUrl('');
     setImageUrls([]);
     setImageAlts([]);
@@ -375,12 +266,13 @@ export function ComposeBox({
   // next post meanwhile, the failed text is prepended instead of overwriting it.
   const composerEmptyRef = useRef(true);
   useEffect(() => {
-    composerEmptyRef.current =
-      !content.trim() &&
-      attachment === null &&
-      imageUrls.length === 0 &&
-      !gifUrl.trim() &&
-      !codeEmbed.embed;
+    composerEmptyRef.current = isComposerEmpty({
+      content,
+      attachment,
+      imageCount: imageUrls.length,
+      gifUrl,
+      hasCodeEmbed: !!codeEmbed.embed,
+    });
   });
   const restoreFailedDraft = (d: ReturnType<typeof snapshotDraft>) => {
     if (composerEmptyRef.current) {
@@ -388,210 +280,38 @@ export function ComposeBox({
       return;
     }
     if (d.content.trim()) {
-      setContent((cur) => (cur.trim() ? `${d.content}\n\n${cur}` : d.content));
+      setContent((cur) => prependFailedContent(d.content, cur));
     }
   };
 
-  // Build the post the user *would* see, so it can appear at the top of the
-  // feed the instant they hit Post — before the server has replied. The real
-  // record (correct id, poll option ids, etc.) is swapped in on reconcile.
-  const buildOptimisticItem = (id: string): FeedItem => {
-    const price = parseInt(unlockPrice, 10);
-    const sessionUser = session!.user as {
-      id: string;
-      name?: string | null;
-      image?: string | null;
-      handle?: string | null;
-      username?: string | null;
-      isVerified?: boolean;
-      isAdmin?: boolean;
-    };
-    return {
-      id,
-      type: 'rmhark',
-      createdAt: new Date().toISOString(),
-      content: content.trim() || undefined,
-      user: {
-        id: sessionUser.id,
-        name: resolvedUser?.name ?? sessionUser.name ?? null,
-        image: resolvedUser?.image ?? sessionUser.image ?? null,
-        handle: resolvedUser?.handle ?? sessionUser.handle ?? null,
-        username: sessionUser.username ?? null,
-        isVerified: sessionUser.isVerified,
-        isAdmin: sessionUser.isAdmin,
-      },
-      imageUrls: hasImages ? imageUrls : undefined,
-      imageAlts: hasImages ? imageUrls.map((_, i) => imageAlts[i]?.trim() ?? '') : undefined,
-      isSensitive,
-      isTake: isTake || undefined,
-      replyControl,
-      gifUrl: hasGif ? gifUrl.trim() : undefined,
-      poll: hasPoll
-        ? {
-            id: `${id}-poll`,
-            question: poll.question.trim(),
-            multiSelect: poll.multiSelect,
-            totalVotes: 0,
-            options: poll.options
-              .filter((o) => o.trim())
-              .map((o, i) => ({ id: `${id}-opt-${i}`, text: o.trim(), voteCount: 0 })),
-          }
-        : undefined,
-      likeCount: 0,
-      commentCount: 0,
-      repostCount: 0,
-      viewCount: 0,
-      liked: false,
-      reposted: false,
-      bookmarked: false,
-      // The author always sees their own content, even a paid post.
-      locked: false,
-      unlockPrice: price > 0 ? price : undefined,
-      pending: true,
-    };
-  };
-
-  const handleSubmit = async () => {
-    if (!canSubmit) return;
-    const body = buildBody();
-
-    // Scoped surfaces (e.g. a community) let the parent own the list, so keep
-    // the simple awaited insert there rather than reaching into the home feed.
-    if (onPosted) {
-      setSubmitting(true);
-      try {
-        const { response, data, queued } = await postWithOutbox<Record<string, unknown>>(
-          '/api/rmharks',
-          body,
-        );
-        if (queued) {
-          toast.info(
-            t('post-queued', { defaultValue: "Saved — it'll post when you're back online" }),
-          );
-          resetForm();
-          return;
-        }
-        if (!response.ok) {
-          const message = (data as { error?: string } | null)?.error;
-          toast.error(message || t('post-error', { defaultValue: 'Could not post' }));
-          return;
-        }
-        onPosted(data);
-        resetForm();
-      } catch (error) {
-        console.error('Post error:', error);
-        toast.error(t('post-error', { defaultValue: 'Could not post' }));
-      } finally {
-        setSubmitting(false);
-      }
-      return;
-    }
-
-    // Home feed: optimistic insert. The post shows at the top immediately in a
-    // dimmed"posting"state, the form clears, and we reconcile (or roll back
-    // and restore the draft) once the server responds.
-    const tempId = `temp-${crypto.randomUUID()}`;
-    const optimistic = buildOptimisticItem(tempId);
-    const draft = snapshotDraft();
-    prependItem(optimistic);
-    resetForm();
-
-    // OPT-34. Posting is the site's heaviest single interaction: the two calls
-    // above insert a card at the head of the timeline and tear the composer
-    // back down (text, media previews, poll rows, the schedule control), which
-    // is a large React commit — and `postWithOutbox` then installs the service
-    // worker message bridge and stringifies the whole body, including base64
-    // media, before the request leaves. All of that in one task means the post
-    // the user just wrote does not appear until the upload has been assembled.
-    // Yield once, here: the optimistic card and the emptied composer are the
-    // frame the user is waiting for, and everything after this line is work
-    // they never see. No layout is read after the yield, and this is not a
-    // cancelable-event handler — the Cmd+Enter path deliberately lets the
-    // keystroke through, and the button path is a plain click.
-    await yieldToMain();
-
-    try {
-      const { response, data, queued, idempotencyKey } = await postWithOutbox<
-        Record<string, unknown>
-      >('/api/rmharks', body);
-
-      // Parked by the service worker (B10). The optimistic card STAYS, still in
-      // its dimmed pending state, and the queue listener below reconciles or
-      // rolls it back when the worker finishes — a queue nobody can see is worse
-      // than the failure it replaced.
-      if (queued) {
-        queuedPosts.current.set(idempotencyKey, tempId);
-        toast.info(
-          t('post-queued', { defaultValue: "Saved — it'll post when you're back online" }),
-        );
-        return;
-      }
-
-      if (!response.ok) {
-        const message = (data as { error?: string } | null)?.error;
-        removeItem(tempId);
-        restoreFailedDraft(draft);
-        toast.error(message || t('post-error', { defaultValue: 'Could not post' }));
-        return;
-      }
-      // A 2xx with an unparseable body cannot replace the optimistic card —
-      // reconciling with null would blank the post the user just wrote. Roll back
-      // and restore the draft, same as an explicit failure.
-      if (!data) {
-        removeItem(tempId);
-        restoreFailedDraft(draft);
-        toast.error(t('post-error', { defaultValue: 'Could not post' }));
-        return;
-      }
-      reconcileItem(tempId, data as unknown as FeedItem);
-    } catch (error) {
-      console.error('Post error:', error);
-      removeItem(tempId);
-      restoreFailedDraft(draft);
-      toast.error(t('post-error', { defaultValue: 'Could not post' }));
-    }
-  };
-
-  // X1: the thread endpoint already created the whole chain; show its root at
-  // the top of the feed exactly as a single post would appear.
-  const handleThreadPosted = (root: FeedItem) => {
-    prependItem(root);
-    onPosted?.(root);
-    resetForm();
-  };
-
-  // Save the composer contents as a draft (scheduledAt = null) or, when a time
-  // is given, as a scheduled post.
-  const handleSaveScheduled = async (scheduledAtIso: string | null) => {
-    if (!canSubmit) return;
-    setSubmitting(true);
-    setSavedMsg(null);
-    try {
-      const body = { ...buildBody(), scheduledAt: scheduledAtIso };
-      const res = await fetch('/api/scheduled', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setSavedMsg(data.error ?? t('could-not-save', { defaultValue: 'Could not save' }));
-        return;
-      }
-      resetForm();
-      setSavedMsg(
-        scheduledAtIso
-          ? t('scheduled-msg', { defaultValue: 'Scheduled' })
-          : t('saved-to-drafts-msg', { defaultValue: 'Saved to drafts' }),
-      );
-      setTimeout(() => setSavedMsg(null), 3000);
-    } catch (error) {
-      console.error('Save draft error:', error);
-      setSavedMsg(t('could-not-save', { defaultValue: 'Could not save' }));
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const { handleSubmit, handleThreadPosted, handleSaveScheduled } = useComposeSubmit({
+    canSubmit,
+    buildBody,
+    buildOptimisticItem: (id) =>
+      buildOptimisticItem({
+        id,
+        content,
+        sessionUser: session!.user as SessionUserShape,
+        resolvedUser: resolvedUser ?? null,
+        hasImages,
+        imageUrls,
+        imageAlts,
+        isSensitive,
+        isTake,
+        replyControl,
+        hasGif,
+        gifUrl,
+        hasPoll,
+        poll,
+        unlockPrice,
+      }),
+    snapshotDraft,
+    restoreFailedDraft,
+    resetForm,
+    onPosted,
+    setSubmitting,
+    setSavedMsg,
+  });
 
   if (!session) {
     return (
@@ -607,46 +327,6 @@ export function ComposeBox({
       </div>
     );
   }
-
-  const audienceOptions = [
-    { value: 'PUBLIC', label: t('audience-everyone', { defaultValue: 'Everyone' }), icon: Globe },
-    {
-      value: 'FOLLOWERS',
-      label: t('audience-followers', { defaultValue: 'Followers' }),
-      icon: Users,
-    },
-    {
-      value: 'CIRCLE',
-      label: t('audience-circle', { defaultValue: 'Close friends' }),
-      icon: Star,
-    },
-    { value: 'PRIVATE', label: t('audience-only-me', { defaultValue: 'Only me' }), icon: Lock },
-  ] as const;
-  const currentAudience = audienceOptions.find((o) => o.value === audience) ?? audienceOptions[0];
-  const CurrentAudienceIcon = currentAudience.icon;
-
-  const replyOptions = [
-    {
-      value: 'EVERYONE',
-      label: t('reply-everyone', { defaultValue: 'Everyone can reply' }),
-      short: t('reply-everyone-short', { defaultValue: 'Everyone' }),
-      icon: Globe,
-    },
-    {
-      value: 'FOLLOWING',
-      label: t('reply-following', { defaultValue: 'Accounts you follow' }),
-      short: t('reply-following-short', { defaultValue: 'Following' }),
-      icon: Users,
-    },
-    {
-      value: 'MENTIONED',
-      label: t('reply-mentioned', { defaultValue: 'Only accounts you mention' }),
-      short: t('reply-mentioned-short', { defaultValue: 'Mentioned' }),
-      icon: AtSign,
-    },
-  ] as const;
-  const currentReply = replyOptions.find((o) => o.value === replyControl) ?? replyOptions[0];
-  const CurrentReplyIcon = currentReply.icon;
 
   return (
     // Floating composer slab (§8.3): its own L2 .glass-pane over the aurora
@@ -673,64 +353,30 @@ export function ComposeBox({
         </div>
       )}
       {pendingDraft && !content && (
-        <div className="mb-3 flex items-center gap-2 rounded-site glass-fill px-3 py-2">
-          <History className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
-          <p className="min-w-0 flex-1 truncate text-xs text-site-text-muted">
-            {t('draft-restore-prompt', { defaultValue: 'You have an unsent draft:' })}
-            {''}
-            <span className="text-site-text">{pendingDraft.content}</span>
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setContent(pendingDraft.content);
-              if (pendingDraft.gifUrl) {
-                // `hasGif` needs the attachment too, or the GIF is restored
-                // invisibly and never posted.
-                setAttachment('gif');
-                setGifUrl(pendingDraft.gifUrl);
-              }
-              setPendingDraft(null);
-            }}
-            className="shrink-0 text-xs font-semibold text-site-accent hover:underline"
-          >
-            {t('draft-restore', { defaultValue: 'Restore' })}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              clearComposeDraft();
-              setPendingDraft(null);
-            }}
-            className="shrink-0 text-xs text-site-text-dim hover:text-site-text"
-          >
-            {t('draft-discard', { defaultValue: 'Discard' })}
-          </button>
-        </div>
+        <DraftRestoreBanner
+          draft={pendingDraft}
+          onRestore={() => {
+            setContent(pendingDraft.content);
+            if (pendingDraft.gifUrl) {
+              // `hasGif` needs the attachment too, or the GIF is restored
+              // invisibly and never posted.
+              setAttachment('gif');
+              setGifUrl(pendingDraft.gifUrl);
+            }
+            setPendingDraft(null);
+          }}
+          onDiscard={() => {
+            clearComposeDraft();
+            setPendingDraft(null);
+          }}
+        />
       )}
       <div className="flex gap-3">
         {/* Avatar */}
-        <div className="w-10 h-10 rounded-full bg-site-surface-hover flex items-center justify-center text-site-text font-bold text-sm ring-2 ring-site-bg shrink-0">
-          {resolvedUser?.image || session.user.image ? (
-            // Optimized at ~2x the 40px display size (avoids the raw CDN original).
-            <img
-              src={buildOptimizedUrl(resolvedUser?.image || session.user.image!, 80, 80)}
-              alt={
-                resolvedUser?.name || session.user.name || t('user-alt', { defaultValue: 'User' })
-              }
-              loading="eager"
-              decoding="async"
-              width={40}
-              height={40}
-              className="w-full h-full rounded-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/images/social/default_avatar.png';
-              }}
-            />
-          ) : (
-            ((resolvedUser?.name || session.user.name)?.[0] || 'U').toUpperCase()
-          )}
-        </div>
+        <ComposerAvatar
+          image={resolvedUser?.image || session.user.image}
+          name={resolvedUser?.name || session.user.name}
+        />
 
         {/* Compose area */}
         <div className="flex-1 min-w-0">
@@ -767,58 +413,28 @@ export function ComposeBox({
             <Suspense fallback={null}>
               <ThreadPostPanel
                 content={content}
-                blockedBy={
-                  hasImages || hasGif || hasPoll
-                    ? 'attachments'
-                    : audience !== 'PUBLIC' ||
-                        isSensitive ||
-                        replyControl !== 'EVERYONE' ||
-                        parseInt(unlockPrice, 10) > 0
-                      ? 'options'
-                      : null
-                }
+                blockedBy={threadBlockedBy({
+                  hasImages,
+                  hasGif,
+                  hasPoll,
+                  audience,
+                  isSensitive,
+                  replyControl,
+                  unlockPrice,
+                })}
                 onPosted={handleThreadPosted}
               />
             </Suspense>
           )}
 
           {parseInt(unlockPrice, 10) > 0 && (
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowPriceModal(true)}
-                title={t('edit-unlock-price-title', { defaultValue: 'Edit unlock price' })}
-                className="inline-flex items-center gap-1 rounded-full border border-site-accent/40 bg-site-accent/10 px-3 py-1 text-xs font-medium text-site-accent transition-colors hover:bg-site-accent/20"
-              >
-                <Lock className="h-3.5 w-3.5" />
-                <span>
-                  {t('unlock-price-pill', {
-                    price: parseInt(unlockPrice, 10),
-                    defaultValue: 'Locked · {{price}} coins',
-                  })}
-                </span>
-              </button>
-            </div>
+            <UnlockPricePill
+              price={parseInt(unlockPrice, 10)}
+              onEdit={() => setShowPriceModal(true)}
+            />
           )}
 
-          {/* Active content-warning pill — the toggle lives in the (+) menu, so
- this keeps an enabled CW visible and one-tap removable. */}
-          {isSensitive && (
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setIsSensitive(false)}
-                title={t('mark-sensitive-title', {
-                  defaultValue: 'Mark media as sensitive (content warning)',
-                })}
-                className="inline-flex items-center gap-1 rounded-full border border-site-warning/50 bg-site-warning/10 px-3 py-1 text-xs font-medium text-site-warning transition-colors hover:bg-site-warning/20"
-              >
-                <AlertTriangle className="h-3.5 w-3.5" />
-                <span>{t('mark-sensitive-short', { defaultValue: 'CW' })}</span>
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          )}
+          {isSensitive && <ContentWarningPill onRemove={() => setIsSensitive(false)} />}
 
           {isTake && <TakeChip onRemove={() => setIsTake(false)} />}
           <CodeEmbedChip ce={codeEmbed} />
@@ -826,210 +442,42 @@ export function ComposeBox({
 
           {/* Poll creator */}
           {attachment === 'poll' && (
-            <div className="glass-fill mt-2 rounded-site px-4 py-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-site-text-dim">
-                  {t('poll-heading', { defaultValue: 'Poll' })}
-                </span>
-                <button
-                  onClick={() => {
-                    setAttachment(null);
-                    setPoll({ question: '', options: ['', ''], multiSelect: false });
-                  }}
-                  className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <input
-                type="text"
-                value={poll.question}
-                onChange={(e) => setPoll((p) => ({ ...p, question: e.target.value }))}
-                placeholder={t('poll-question-placeholder', { defaultValue: 'Ask a question…' })}
-                aria-label={t('poll-question-aria', { defaultValue: 'Poll question' })}
-                maxLength={MAX_POLL_QUESTION_LENGTH}
-                className="w-full glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors mb-2"
-              />
-
-              <div className="space-y-2">
-                {poll.options.map((opt, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={opt}
-                      onChange={(e) => {
-                        const newOptions = [...poll.options];
-                        newOptions[i] = e.target.value;
-                        setPoll((p) => ({ ...p, options: newOptions }));
-                      }}
-                      placeholder={t('poll-option-placeholder', {
-                        index: i + 1,
-                        defaultValue: 'Option {{index}}',
-                      })}
-                      aria-label={t('poll-option-aria', {
-                        count: i + 1,
-                        defaultValue: 'Poll option {{count}}',
-                      })}
-                      maxLength={MAX_POLL_OPTION_LENGTH}
-                      className="flex-1 glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors"
-                    />
-                    {poll.options.length > MIN_POLL_OPTIONS && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newOptions = poll.options.filter((_, j) => j !== i);
-                          setPoll((p) => ({ ...p, options: newOptions }));
-                        }}
-                        aria-label={t('poll-remove-option', {
-                          count: i + 1,
-                          defaultValue: 'Remove option {{count}}',
-                        })}
-                        className="p-2 rounded-full text-site-text-dim hover:text-site-danger hover:bg-site-danger/10 transition-colors"
-                      >
-                        <X className="w-3.5 h-3.5" aria-hidden="true" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {poll.options.length < MAX_POLL_OPTIONS && (
-                <button
-                  onClick={() => setPoll((p) => ({ ...p, options: [...p.options, ''] }))}
-                  className="mt-2 text-xs text-site-accent hover:text-site-accent-hover transition-colors"
-                >
-                  {t('poll-add-option', { defaultValue: '+ Add option' })}
-                </button>
-              )}
-
-              <label className="flex items-center gap-2 mt-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={poll.multiSelect}
-                  onChange={(e) => setPoll((p) => ({ ...p, multiSelect: e.target.checked }))}
-                  className="rounded border-site-border text-site-accent focus:ring-site-accent"
-                />
-                <span className="text-xs text-site-text-dim">
-                  {t('poll-multi-select', { defaultValue: 'Allow multiple selections' })}
-                </span>
-              </label>
-
-              <label className="mt-3 flex items-center gap-2">
-                <span className="text-xs text-site-text-dim">
-                  {t('poll-length-label', { defaultValue: 'Poll length' })}
-                </span>
-                <Select
-                  controlSize="sm"
-                  value={pollDuration}
-                  onChange={(e) => setPollDuration(Number(e.target.value))}
-                  containerClassName="inline-block w-auto"
-                  className="w-auto min-w-28"
-                >
-                  <option value={0}>
-                    {t('poll-duration-no-limit', { defaultValue: 'No limit' })}
-                  </option>
-                  <option value={1}>{t('poll-duration-1h', { defaultValue: '1 hour' })}</option>
-                  <option value={6}>{t('poll-duration-6h', { defaultValue: '6 hours' })}</option>
-                  <option value={24}>{t('poll-duration-1d', { defaultValue: '1 day' })}</option>
-                  <option value={72}>{t('poll-duration-3d', { defaultValue: '3 days' })}</option>
-                  <option value={168}>{t('poll-duration-1w', { defaultValue: '1 week' })}</option>
-                </Select>
-              </label>
-            </div>
+            <PollEditor
+              poll={poll}
+              setPoll={setPoll}
+              pollDuration={pollDuration}
+              setPollDuration={setPollDuration}
+              onRemove={() => {
+                setAttachment(null);
+                setPoll(emptyPoll());
+              }}
+            />
           )}
 
           {/* GIF picker */}
           {attachment === 'gif' && (
-            <div className="glass-fill mt-2 rounded-site px-4 py-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-site-text-dim">
-                  {t('gif-heading', { defaultValue: 'GIF' })}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAttachment(null);
-                    setGifUrl('');
-                  }}
-                  className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {gifUrl.trim() ? (
-                <div className="relative">
-                  <GifEmbed url={gifUrl.trim()} />
-                  <button
-                    type="button"
-                    onClick={() => setGifUrl('')}
-                    aria-label={t('remove-gif-aria', { defaultValue: 'Remove GIF' })}
-                    className="absolute top-1 right-1 p-1 rounded-full bg-site-media-scrim-strong text-site-media-ink hover:bg-site-media-scrim-hover transition-colors"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ) : (
-                <GifPicker onSelect={(u) => setGifUrl(u)} />
-              )}
-            </div>
+            <GifAttachment
+              gifUrl={gifUrl}
+              onSelect={(u) => setGifUrl(u)}
+              onClear={() => setGifUrl('')}
+              onClose={() => {
+                setAttachment(null);
+                setGifUrl('');
+              }}
+            />
           )}
 
           {/* Uploaded image preview strip */}
           {imageUrls.length > 0 && (
-            <div
-              className={`mt-2 grid gap-1 ${imageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}
-            >
-              {imageUrls.map((url, i) => {
-                const hasAlt = !!imageAlts[i]?.trim();
-                return (
-                  <div key={url} className="relative group">
-                    <img
-                      src={url}
-                      alt={imageAlts[i]?.trim() || ''}
-                      loading="lazy"
-                      className="w-full rounded-site-sm object-cover max-h-48"
-                    />
-                    {/* ALT pill — accent when described, so authors can see at a
- glance which images still need a description. */}
-                    <button
-                      type="button"
-                      onClick={() => setAltEditIndex(i)}
-                      aria-label={
-                        hasAlt
-                          ? t('edit-alt-text-aria', { defaultValue: 'Edit image description' })
-                          : t('add-alt-text-aria', { defaultValue: 'Add image description' })
-                      }
-                      title={
-                        imageAlts[i]?.trim() ||
-                        t('alt-text-title', {
-                          defaultValue: 'Describe this image for screen readers',
-                        })
-                      }
-                      className={`absolute bottom-1 left-1 rounded-full px-2 py-1 text-xs font-bold uppercase leading-none transition-colors ${
-                        hasAlt
-                          ? 'bg-site-accent text-site-accent-fg'
-                          : 'bg-site-media-scrim-strong text-site-media-ink/90 hover:bg-site-media-scrim-hover'
-                      }`}
-                    >
-                      {t('alt-badge', { defaultValue: 'Alt' })}
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={t('remove-image-aria', { defaultValue: 'Remove image' })}
-                      onClick={() => {
-                        setImageUrls((prev) => prev.filter((_, j) => j !== i));
-                        setImageAlts((prev) => prev.filter((_, j) => j !== i));
-                      }}
-                      className="absolute top-1 right-1 flex size-11 items-center justify-center rounded-full bg-site-media-scrim-strong text-site-media-ink transition-opacity sm:size-auto sm:p-0.5 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+            <ImagePreviewStrip
+              imageUrls={imageUrls}
+              imageAlts={imageAlts}
+              onEditAlt={setAltEditIndex}
+              onRemove={(i) => {
+                setImageUrls((prev) => removeAt(prev, i));
+                setImageAlts((prev) => removeAt(prev, i));
+              }}
+            />
           )}
           <AltTextNotice missing={missingAlt} onFix={setAltEditIndex} />
           {imageError && <p className="text-xs text-site-danger mt-1">{imageError}</p>}
@@ -1071,15 +519,7 @@ export function ComposeBox({
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center gap-2">
               {/* Character counter */}
-              <span
-                className={`text-xs font-mono ${
-                  remaining <= 0
-                    ? 'text-site-danger'
-                    : remaining <= 20
-                      ? 'text-site-warning'
-                      : 'text-site-text-dim'
-                }`}
-              >
+              <span className={`text-xs font-mono ${counterToneClass(remaining)}`}>
                 {remaining}
               </span>
             </div>
@@ -1097,184 +537,39 @@ export function ComposeBox({
                 draft={content}
                 locked={!canGenerateImage}
                 disabled={imageUrls.length >= MAX_IMAGES}
-                onGenerated={(url) => setImageUrls((prev) => [...prev, url].slice(0, MAX_IMAGES))}
+                onGenerated={(url) => setImageUrls((prev) => appendImages(prev, [url]))}
               />
 
               {/* Emoji picker — sits next to the GIF/poll (+) menu */}
               <EmojiPickerButton direction="down" onSelect={insertEmoji} />
 
-              {/* Plus button — image upload, GIF, poll, draft, schedule.
- The panel is an AnchoredMenu: it portals to <body> (in place it is
- trapped inside `.radial-frame`'s stacking context, so the top bar and
- the floating chrome paint over it) and it opens on whichever side of
- the composer has room, rather than being shoved back down the screen
- by a viewport clamp. */}
-              <button
-                ref={menuBtnRef}
-                type="button"
-                onClick={() => setMenuOpen((v) => !v)}
-                aria-label={t('add-to-post-aria', { defaultValue: 'Add to post' })}
-                aria-haspopup="menu"
-                aria-expanded={menuOpen}
-                className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
-              >
-                <Plus className="w-4.5 h-4.5" />
-              </button>
-
-              <AnchoredMenu
-                open={menuOpen}
-                onClose={closeMenu}
-                anchorRef={menuBtnRef}
-                label={t('add-to-post-aria', { defaultValue: 'Add to post' })}
-                side="top"
-                align="end"
-                className="w-56"
-              >
-                {/* Post visibility (audience) — opens a picker modal */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAudienceOpen(true);
-                    setMenuOpen(false);
-                  }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
-                >
-                  <CurrentAudienceIcon className="w-4 h-4 text-site-text-dim" />
-                  <span className="flex-1 text-left">
-                    {t('menu-audience', { defaultValue: 'Visibility' })}
-                  </span>
-                  <span className="text-xs text-site-text-dim">{currentAudience.label}</span>
-                </button>
-                {/* Who can reply — opens a picker modal */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setReplyOpen(true);
-                    setMenuOpen(false);
-                  }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
-                >
-                  <CurrentReplyIcon className="w-4 h-4 text-site-text-dim" />
-                  <span className="flex-1 text-left">
-                    {t('menu-reply-control', { defaultValue: 'Replies' })}
-                  </span>
-                  <span className="text-xs text-site-text-dim">{currentReply.short}</span>
-                </button>
-                {/* Content-warning toggle — flips in place so the check is
- visible; the active pill above mirrors the state. */}
-                <button
-                  type="button"
-                  onClick={() => setIsSensitive((v) => !v)}
-                  aria-pressed={isSensitive}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
-                >
-                  <AlertTriangle
-                    className={`w-4 h-4 ${isSensitive ? 'text-site-warning' : 'text-site-text-dim'}`}
-                  />
-                  <span className="flex-1 text-left">
-                    {t('menu-content-warning', { defaultValue: 'Content warning' })}
-                  </span>
-                  {isSensitive && <Check className="w-4 h-4 text-site-warning" />}
-                </button>
-                <TakeMenuItem active={isTake} onToggle={() => setIsTake((v) => !v)} />
-                <CodeEmbedMenuItem ce={codeEmbed} onPick={() => setMenuOpen(false)} />
-                <PostsPlusMenuItems pp={postsPlus} onPick={() => setMenuOpen(false)} />
-                <div className="my-1 border-t border-site-border" />
-                <button
-                  type="button"
-                  disabled={imageUrls.length >= MAX_IMAGES}
-                  onClick={() => {
-                    imageInputRef.current?.click();
-                    setMenuOpen(false);
-                  }}
-                  title={
-                    imageUrls.length >= MAX_IMAGES
-                      ? t('max-images-title', { defaultValue: 'Maximum 4 images' })
-                      : undefined
-                  }
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <ImagePlus className="w-4 h-4 text-site-text-dim" />
-                  {t('menu-add-image', { defaultValue: 'Add Image' })}
-                </button>
-                <button
-                  onClick={() => {
-                    if (attachment === 'gif') setGifUrl('');
-                    setAttachment((a) => (a === 'gif' ? null : 'gif'));
-                    setPoll({ question: '', options: ['', ''], multiSelect: false });
-                    setMenuOpen(false);
-                  }}
-                  aria-pressed={attachment === 'gif'}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
-                >
-                  <ImagePlay className="w-4 h-4 text-site-text-dim" />
-                  {t('menu-add-gif', { defaultValue: 'Add GIF' })}
-                </button>
-                <button
-                  onClick={() => {
-                    setAttachment('poll');
-                    setGifUrl('');
-                    setMenuOpen(false);
-                  }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
-                >
-                  <BarChart3 className="w-4 h-4 text-site-text-dim" />
-                  {t('menu-create-poll', { defaultValue: 'Create Poll' })}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowPriceModal(true);
-                    setMenuOpen(false);
-                  }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
-                >
-                  <Coins className="w-4 h-4 text-site-text-dim" />
-                  {t('menu-set-unlock-price', { defaultValue: 'Set unlock price' })}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCheatSheet(true);
-                    setMenuOpen(false);
-                  }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
-                >
-                  <Type className="w-4 h-4 text-site-text-dim" />
-                  {t('menu-markdown-cheatsheet', { defaultValue: 'Formatting help' })}
-                </button>
-                <div className="my-1 border-t border-site-border" />
-                <button
-                  onClick={() => {
-                    handleSaveScheduled(null);
-                    setMenuOpen(false);
-                  }}
-                  disabled={!canSubmit}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <FileText className="w-4 h-4 text-site-text-dim" />
-                  {t('menu-save-draft', { defaultValue: 'Save as draft' })}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowSchedule(true);
-                    setMenuOpen(false);
-                  }}
-                  disabled={!canSubmit}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <CalendarClock className="w-4 h-4 text-site-text-dim" />
-                  {t('menu-schedule', { defaultValue: 'Schedule…' })}
-                </button>
-                <Link
-                  to="/drafts"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text-muted hover:bg-site-surface-hover hover:text-site-text transition-colors"
-                >
-                  <FileText className="w-4 h-4 text-site-text-dim" />
-                  {t('menu-view-drafts', { defaultValue: 'View drafts' })}
-                </Link>
-              </AnchoredMenu>
+              {/* Plus button — image upload, GIF, poll, draft, schedule. */}
+              <ComposeMenu
+                menuOpen={menuOpen}
+                setMenuOpen={setMenuOpen}
+                closeMenu={closeMenu}
+                imageInputRef={imageInputRef}
+                audience={audience}
+                replyControl={replyControl}
+                setAudienceOpen={setAudienceOpen}
+                setReplyOpen={setReplyOpen}
+                isSensitive={isSensitive}
+                setIsSensitive={setIsSensitive}
+                isTake={isTake}
+                setIsTake={setIsTake}
+                codeEmbed={codeEmbed}
+                postsPlus={postsPlus}
+                imageCount={imageUrls.length}
+                attachment={attachment}
+                setAttachment={setAttachment}
+                setGifUrl={setGifUrl}
+                setPoll={setPoll}
+                setShowPriceModal={setShowPriceModal}
+                setShowCheatSheet={setShowCheatSheet}
+                canSubmit={canSubmit}
+                onSaveDraft={() => handleSaveScheduled(null)}
+                setShowSchedule={setShowSchedule}
+              />
 
               <Button variant="accent" size="sm" disabled={!canSubmit} onClick={handleSubmit}>
                 {submitting
@@ -1296,314 +591,43 @@ export function ComposeBox({
 
       {/* Post visibility (audience) picker — opened from the (+) menu */}
       {audienceOpen && (
-        <OverlayPanel open onClose={() => setAudienceOpen(false)}>
-          <motion.div
-            variants={modalContent}
-            initial="initial"
-            animate="animate"
-            className="relative w-full max-w-xs p-2 glass-overlay"
-          >
-            <div className="mb-1 flex items-center justify-between px-3 pt-1">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-site-text">
-                <CurrentAudienceIcon className="h-4 w-4 text-site-text-muted" />
-                {t('audience-group-label', { defaultValue: 'Who can see this post' })}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setAudienceOpen(false)}
-                aria-label={t('close', { defaultValue: 'Close' })}
-                className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div role="listbox" className="py-1">
-              {audienceOptions.map(({ value, label, icon: Icon }) => (
-                <button
-                  key={value}
-                  type="button"
-                  role="option"
-                  aria-selected={audience === value}
-                  onClick={() => {
-                    setAudience(value);
-                    setAudienceOpen(false);
-                  }}
-                  className={`flex items-center gap-2 w-full rounded-site-sm px-3 py-2 text-sm transition-colors hover:bg-site-surface-hover ${
-                    audience === value ? 'text-site-accent' : 'text-site-text'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 text-site-text-dim" />
-                  <span className="flex-1 text-left">{label}</span>
-                  {audience === value && <Check className="w-4 h-4" />}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        </OverlayPanel>
+        <AudiencePickerDialog
+          audience={audience}
+          onSelect={setAudience}
+          onClose={() => setAudienceOpen(false)}
+        />
       )}
 
       {/* Who-can-reply picker — opened from the (+) menu */}
       {replyOpen && (
-        <OverlayPanel open onClose={() => setReplyOpen(false)}>
-          <motion.div
-            variants={modalContent}
-            initial="initial"
-            animate="animate"
-            className="relative w-full max-w-xs p-2 glass-overlay"
-          >
-            <div className="mb-1 flex items-center justify-between px-3 pt-1">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-site-text">
-                <CurrentReplyIcon className="h-4 w-4 text-site-text-muted" />
-                {t('reply-control-heading', { defaultValue: 'Who can reply?' })}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setReplyOpen(false)}
-                aria-label={t('close', { defaultValue: 'Close' })}
-                className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div role="listbox" className="py-1">
-              {replyOptions.map(({ value, label, icon: Icon }) => (
-                <button
-                  key={value}
-                  type="button"
-                  role="option"
-                  aria-selected={replyControl === value}
-                  onClick={() => {
-                    setReplyControl(value);
-                    setReplyOpen(false);
-                  }}
-                  className={`flex items-center gap-2 w-full rounded-site-sm px-3 py-2 text-sm transition-colors hover:bg-site-surface-hover ${
-                    replyControl === value ? 'text-site-accent' : 'text-site-text'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 text-site-text-dim" />
-                  <span className="flex-1 text-left">{label}</span>
-                  {replyControl === value && <Check className="w-4 h-4" />}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        </OverlayPanel>
+        <ReplyPickerDialog
+          replyControl={replyControl}
+          onSelect={setReplyControl}
+          onClose={() => setReplyOpen(false)}
+        />
       )}
 
       {/* Unlock-price popover — opened from the (+) menu */}
       {showPriceModal && (
-        <OverlayPanel open onClose={() => setShowPriceModal(false)}>
-          <motion.div
-            variants={modalContent}
-            initial="initial"
-            animate="animate"
-            className="relative w-full max-w-xs p-4 glass-overlay"
-          >
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-site-text">
-                <Lock className="h-4 w-4 text-site-text-muted" />
-                {t('unlock-price-label', { defaultValue: 'Unlock price' })}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowPriceModal(false)}
-                aria-label={t('close', { defaultValue: 'Close' })}
-                className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <p className="mb-3 text-xs text-site-text-muted">
-              {t('unlock-price-help', {
-                defaultValue: 'Charge coins to unlock this post. Leave empty to keep it free.',
-              })}
-            </p>
-            <div className="flex items-center gap-2 rounded-site glass-fill px-3 py-2">
-              <Coins className="h-4 w-4 text-site-text-muted" />
-              <input
-                type="number"
-                inputMode="numeric"
-                min={0}
-                autoFocus
-                value={unlockPrice}
-                onChange={(e) => setUnlockPrice(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') setShowPriceModal(false);
-                }}
-                placeholder={t('unlock-price-placeholder', { defaultValue: 'free' })}
-                aria-label={t('unlock-price-aria', {
-                  defaultValue: 'Coins required to unlock this post',
-                })}
-                className="w-full bg-transparent text-sm text-site-text placeholder:text-site-text-dim focus:outline-none"
-              />
-            </div>
-            <div className="mt-3 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setUnlockPrice('');
-                  setShowPriceModal(false);
-                }}
-                className="rounded-full px-3 py-2 text-xs font-medium text-site-text-muted hover:text-site-text transition-colors"
-              >
-                {t('unlock-price-clear', { defaultValue: 'Make free' })}
-              </button>
-              <Button variant="accent" size="sm" onClick={() => setShowPriceModal(false)}>
-                {t('done', { defaultValue: 'Done' })}
-              </Button>
-            </div>
-          </motion.div>
-        </OverlayPanel>
+        <UnlockPriceDialog
+          unlockPrice={unlockPrice}
+          setUnlockPrice={setUnlockPrice}
+          onClose={() => setShowPriceModal(false)}
+        />
       )}
 
       {/* Markdown cheat sheet — opened from the (+) menu */}
-      {showCheatSheet && (
-        <OverlayPanel open onClose={() => setShowCheatSheet(false)}>
-          <motion.div
-            variants={modalContent}
-            initial="initial"
-            animate="animate"
-            className="relative w-full max-w-sm p-4 glass-overlay"
-          >
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-site-text">
-                <Type className="h-4 w-4 text-site-text-muted" />
-                {t('cheatsheet-title', { defaultValue: 'Formatting cheat sheet' })}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowCheatSheet(false)}
-                aria-label={t('close', { defaultValue: 'Close' })}
-                className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="text-xs font-medium text-site-text-dim">
-                  <th className="pb-2 font-medium">
-                    {t('cheatsheet-col-type', { defaultValue: 'Type this' })}
-                  </th>
-                  <th className="pb-2 font-medium">
-                    {t('cheatsheet-col-result', { defaultValue: 'Result' })}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="align-top">
-                {[
-                  {
-                    code: '**bold**',
-                    node: (
-                      <strong className="font-bold">
-                        {t('cheatsheet-bold', { defaultValue: 'bold' })}
-                      </strong>
-                    ),
-                  },
-                  {
-                    code: '*italic*',
-                    node: (
-                      <em className="italic">
-                        {t('cheatsheet-italic', { defaultValue: 'italic' })}
-                      </em>
-                    ),
-                  },
-                  {
-                    code: '~~strike~~',
-                    node: <del>{t('cheatsheet-strike', { defaultValue: 'strike' })}</del>,
-                  },
-                  {
-                    code: '||spoiler||',
-                    node: (
-                      <span className="rounded bg-site-text/15 px-1 text-transparent [filter:blur(3px)]">
-                        {t('cheatsheet-spoiler', { defaultValue: 'spoiler' })}
-                      </span>
-                    ),
-                  },
-                ].map((row) => (
-                  <tr key={row.code} className="border-t border-site-border">
-                    <td className="py-2 pr-3">
-                      <code className="rounded bg-site-surface px-1.5 py-0.5 text-xs text-site-text">
-                        {row.code}
-                      </code>
-                    </td>
-                    <td className="py-2 text-site-text">{row.node}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </motion.div>
-        </OverlayPanel>
-      )}
+      {showCheatSheet && <CheatSheetDialog onClose={() => setShowCheatSheet(false)} />}
 
       {/* Image alt-text editor — opened from the ALT pill on a preview image */}
       {altEditIndex !== null && imageUrls[altEditIndex] && (
-        <OverlayPanel open onClose={() => setAltEditIndex(null)}>
-          <motion.div
-            variants={modalContent}
-            initial="initial"
-            animate="animate"
-            className="relative w-full max-w-md p-4 glass-overlay"
-          >
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-site-text">
-                {t('alt-text-heading', { defaultValue: 'Describe this image' })}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setAltEditIndex(null)}
-                aria-label={t('close', { defaultValue: 'Close' })}
-                className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <p className="mb-3 text-xs text-site-text-muted">
-              {t('alt-text-help', {
-                defaultValue:
-                  "Alt text lets people who use screen readers understand your image. Describe what's in it.",
-              })}
-            </p>
-            <img
-              src={imageUrls[altEditIndex]}
-              alt={imageAlts[altEditIndex]?.trim() || ''}
-              className="mb-3 max-h-40 w-full rounded-site-sm object-contain bg-site-surface"
-            />
-            <label htmlFor="alt-text-input" className="sr-only">
-              {t('alt-text-heading', { defaultValue: 'Describe this image' })}
-            </label>
-            <textarea
-              id="alt-text-input"
-              autoFocus
-              rows={3}
-              maxLength={MAX_IMAGE_ALT_LENGTH}
-              value={imageAlts[altEditIndex] ?? ''}
-              onChange={(e) => {
-                const value = e.target.value;
-                setImageAlts((prev) => {
-                  const next = [...prev];
-                  // Pad so the edited index is addressable even if earlier
-                  // images have no description yet.
-                  while (next.length <= altEditIndex) next.push('');
-                  next[altEditIndex] = value;
-                  return next;
-                });
-              }}
-              placeholder={t('alt-text-placeholder', {
-                defaultValue: 'e.g. A golden retriever running on a beach at sunset',
-              })}
-              className="w-full resize-none rounded-site-sm glass-inset px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim outline-none focus:border-site-accent transition-colors"
-            />
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-xs font-mono text-site-text-dim">
-                {MAX_IMAGE_ALT_LENGTH - (imageAlts[altEditIndex]?.length ?? 0)}
-              </span>
-              <Button variant="accent" size="sm" onClick={() => setAltEditIndex(null)}>
-                {t('done', { defaultValue: 'Done' })}
-              </Button>
-            </div>
-          </motion.div>
-        </OverlayPanel>
+        <AltTextDialog
+          imageUrl={imageUrls[altEditIndex]}
+          imageAlts={imageAlts}
+          index={altEditIndex}
+          setImageAlts={setImageAlts}
+          onClose={() => setAltEditIndex(null)}
+        />
       )}
     </div>
   );

@@ -112,10 +112,9 @@ function render(seed: Partial<Record<keyof typeof S, unknown>> = {}, props: obje
   // The lazy ThreadPostPanel cannot load under SSR, so React embeds the abort
   // reason (component stack, absolute paths, line:col) in a template; that is
   // not markup under test.
-  return renderToString(<ComposeBox {...props} />).replace(
-    /<template data-msg="[^"]*"/g,
-    '<template data-msg="<ssr-abort>"',
-  ).replace(/ data-c?stck="[^"]*"/g, '');
+  return renderToString(<ComposeBox {...props} />)
+    .replace(/<template data-msg="[^"]*"/g, '<template data-msg="<ssr-abort>"')
+    .replace(/ data-c?stck="[^"]*"/g, '');
 }
 
 beforeEach(() => {
