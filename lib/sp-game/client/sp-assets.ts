@@ -21,10 +21,10 @@
  * Browser and workers (fetch only).
  */
 
-import type { Vec3 } from '../core/vec';
-import type { BspFile } from '../formats/bsp';
-import type { HullTable, MapManifest } from '../assets/map-manifest';
-import { gameAssetUrl } from '../assets/urls';
+import type { Vec3 } from '@/lib/tf2-game/core/vec';
+import type { BspFile } from '@/lib/tf2-game/formats/bsp';
+import type { HullTable, MapManifest } from '@/lib/tf2-game/assets/map-manifest';
+import { gameAssetUrl } from '@/lib/tf2-game/assets/urls';
 import { createEmptyAssets, normalizeModelPath, type SpAssets, type SpMaterialInfo, type SpModelInfo } from '@/lib/sp-game/assets';
 import { VCD_EVENT_NAMES, type VcdEvent, type VcdScene } from '@/lib/sp-game/formats/scene-image';
 import type { MdlSequence } from '@/lib/sp-game/formats/mdl-sequences';

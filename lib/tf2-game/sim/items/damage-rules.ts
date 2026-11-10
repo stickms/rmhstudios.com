@@ -38,7 +38,6 @@ import { remapClamped } from '../../core/vec';
 import { TF_DMG_CUSTOM } from '../../data/damage';
 import { TF_COND } from '../conditions';
 import {
-  applyPushFromDamage,
   CRIT_FULL,
   CRIT_MINI,
   CRIT_NONE,
@@ -55,7 +54,8 @@ import {
   resetDamageInfo,
   TF_DMG_CUSTOM_BACKSTAB,
   type DamageInfo,
-} from '../damage';
+} from '../damage-info';
+import { applyPushFromDamage } from '../damage-push';
 import type { Entity } from '../entity';
 import type { Player } from '../player';
 import type { Weapon } from '../weapon-api';
@@ -77,7 +77,7 @@ import {
   WID,
   wornItem,
 } from './effects';
-import { damageWeapon, inAirDueToExplosion } from './hooks';
+import { damageWeapon, inAirDueToExplosion } from './damage-query';
 
 /** condition_to_attribute_translation (tf_shareddefs.cpp): or_crit_vs_playercond's bits. */
 const CRIT_VS_COND: readonly number[] = [

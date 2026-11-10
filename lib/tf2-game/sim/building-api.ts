@@ -22,7 +22,7 @@ import { NET_OBJECT, type NetRecord, type NetSchema } from './net-schema';
 import { DMG_BLAST, type DamageInfo } from './damage';
 import type { Player } from './player';
 import { hookWeapon } from './items/attributes';
-import { damageWeapon } from './items/hooks';
+import { damageWeapon } from './items/damage-query';
 import { TF_DMG_CUSTOM } from '../data/damage';
 
 /** PLASMA_DISABLE_TIME (tf_obj.cpp): a charged Cow Mangler shot disables a building this long. */

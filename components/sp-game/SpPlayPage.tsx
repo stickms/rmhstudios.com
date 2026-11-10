@@ -3,7 +3,7 @@
  * GameCanvas. The menu is GameUI's own (SourceMainMenu: the game's background, title, gamemenu.res,
  * New Game and Options dialogs, from the `<game>-menu` channel); before that channel is published, a
  * plain menu with the same choices stands in. "Continue" / Load Game is a level start saved in
- * localStorage (lib/tf2-game/client/sp-save.ts); a level the asset channel has not published shows as
+ * localStorage (lib/sp-game/client/sp-save.ts); a level the asset channel has not published shows as
  * unavailable.
  */
 
@@ -16,10 +16,10 @@ import GameCanvas from '@/components/tf2-game/GameCanvas';
 import { GAME_MAPS } from '@/lib/tf2-game/assets/game-maps';
 import { fetchGameJson } from '@/lib/tf2-game/assets/urls';
 import type { MapIndex } from '@/lib/tf2-game/assets/map-manifest';
-import { createSpClient } from '@/lib/tf2-game/client/sp-client';
+import { createSpClient } from '@/lib/sp-game/client/sp-client';
 import { loadMenuChannel, type MenuChannel } from '@/lib/tf2-game/client/menus/source-gameui';
 import { languageForSite } from '@/lib/tf2-hud/localisation';
-import { clearSave, loadSave, type SpGameId, type SpSave } from '@/lib/tf2-game/client/sp-save';
+import { clearSave, loadSave, type SpGameId, type SpSave } from '@/lib/sp-game/client/sp-save';
 import type { TransitionData } from '@/lib/sp-game/level/transition';
 import { cn } from '@/lib/utils';
 import SourceLoadingScreen from './SourceLoadingScreen';

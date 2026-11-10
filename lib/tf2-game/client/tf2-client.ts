@@ -335,7 +335,7 @@ export class Tf2Client implements GameClient {
       const mapName = map ?? s.map;
       const info = this.findMap(mapName);
       if (!info) throw new ClientFailure({ code: 'map-missing', detail: `unknown map ${mapName}`, retryable: false });
-      const worker = new Worker(new URL('./net/listen-worker.ts', import.meta.url), { type: 'module', name: 'tf2-listen-server' });
+      const worker = this.profile.createListenWorker();
       this.worker = worker;
       worker.onerror = (e) => this.fail(new ClientFailure({ code: 'map-failed', detail: `listen server: ${e.message}`, retryable: true }));
       const opts: MatchOptions = {
@@ -447,7 +447,7 @@ export class Tf2Client implements GameClient {
     promoted: { hosted: P2pHostedPayload; checkpoint: Uint8Array; localPlayerId: number } | null,
   ): void {
     this.role = 'p2p-host';
-    const worker = new Worker(new URL('./net/listen-worker.ts', import.meta.url), { type: 'module', name: 'tf2-listen-server' });
+    const worker = this.profile.createListenWorker();
     this.worker = worker;
     worker.onerror = (e) => this.fail(new ClientFailure({ code: 'map-failed', detail: `listen server: ${e.message}`, retryable: true }));
     let host: P2pHostController | null = null;

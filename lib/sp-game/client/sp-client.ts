@@ -24,35 +24,35 @@
  * Browser only.
  */
 
-import { indexFromEntities } from '../console/entity-complete';
-import { IN_ATTACK, IN_ATTACK2, MASK_OPAQUE, SURF_SKY, TICK_INTERVAL } from '../core/constants';
-import { emptyTrace } from '../core/types';
-import type { Vec3 } from '../core/vec';
-import type { GameId } from '../assets/versions';
-import { gameAssetUrl } from '../assets/urls';
-import { GAME_MAPS } from '../assets/game-maps';
-import { SOURCE_UNIT } from '../render/coords';
-import { WorldRenderer } from '../render/world-renderer';
+import { indexFromEntities } from '@/lib/tf2-game/console/entity-complete';
+import { IN_ATTACK, IN_ATTACK2, MASK_OPAQUE, SURF_SKY, TICK_INTERVAL } from '@/lib/tf2-game/core/constants';
+import { emptyTrace } from '@/lib/tf2-game/core/types';
+import type { Vec3 } from '@/lib/tf2-game/core/vec';
+import type { GameId } from '@/lib/tf2-game/assets/versions';
+import { gameAssetUrl } from '@/lib/tf2-game/assets/urls';
+import { GAME_MAPS } from '@/lib/tf2-game/assets/game-maps';
+import { SOURCE_UNIT } from '@/lib/tf2-game/render/coords';
+import { WorldRenderer } from '@/lib/tf2-game/render/world-renderer';
 import {
   EntityRenderer,
   ModelLibrary,
   SpViewModelRenderer,
   type EntityState as RenderEntity,
   type NetValue,
-} from '../render/entities';
-import type { AudioEngine } from '../audio/engine';
-import { soundlevelForRadius } from '../audio/attenuation';
+} from '@/lib/tf2-game/render/entities';
+import type { AudioEngine } from '@/lib/tf2-game/audio/engine';
+import { soundlevelForRadius } from '@/lib/tf2-game/audio/attenuation';
 import { Tf2GLTFLoader } from '@/lib/tf2-loadout/gltf-loader';
 import { SpWorld, type SpSnapshot } from '@/lib/sp-game/world/sp-world';
 import type { SpEvent } from '@/lib/sp-game/world/events';
 import type { SpUserCmd } from '@/lib/sp-game/player/sp-player';
 import type { TransitionData } from '@/lib/sp-game/level/transition';
-import { adaptHl2Suit, adaptPortalGun, captionStyle, HudEventLog } from './hud-adapter';
-import { emptyHudState, type HudFade } from './hud-state';
-import type { HudCommand, HudStore } from './hud-store';
-import { zoomSensitivityScale, type GameSettings } from './settings';
-import { applyLook, buildUserCmd, drainImpulses, heldButtons } from './input';
-import { FixedStep, GameLoop, type FrameInfo } from './loop';
+import { adaptHl2Suit, adaptPortalGun, captionStyle, HudEventLog } from '@/lib/tf2-game/client/hud-adapter';
+import { emptyHudState, type HudFade } from '@/lib/tf2-game/client/hud-state';
+import type { HudCommand, HudStore } from '@/lib/tf2-game/client/hud-store';
+import { zoomSensitivityScale, type GameSettings } from '@/lib/tf2-game/client/settings';
+import { applyLook, buildUserCmd, drainImpulses, heldButtons } from '@/lib/tf2-game/client/input';
+import { FixedStep, GameLoop, type FrameInfo } from '@/lib/tf2-game/client/loop';
 import {
   applyVolumes,
   ClientFailure,
@@ -67,12 +67,12 @@ import {
   type ClientMount,
   type ClientStats,
   type GameClient,
-} from './game-client';
+} from '@/lib/tf2-game/client/game-client';
 import { createHttpSpAssets } from './sp-assets';
 import { makeSave, writeSave, type SpGameId } from './sp-save';
-import { FovState, StairSmoother, calcFirstPerson } from './view';
+import { FovState, StairSmoother, calcFirstPerson } from '@/lib/tf2-game/client/view';
 import { PortalView } from './portal-view';
-import { attachConsoleHost, type ConsoleLink } from '../console/runtime';
+import { attachConsoleHost, type ConsoleLink } from '@/lib/tf2-game/console/runtime';
 import { SpServerConsole } from '../console/sp-server';
 
 export interface SpClientOptions extends ClientMount {

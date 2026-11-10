@@ -29,7 +29,7 @@ import {
   type SourceMenuAction,
 } from '@/lib/tf2-game/client/menus/source-gameui';
 import { loadSettings, saveSettings, type GameSettings } from '@/lib/tf2-game/client/settings';
-import type { SpGameId } from '@/lib/tf2-game/client/sp-save';
+import type { SpGameId } from '@/lib/sp-game/client/sp-save';
 import { cn } from '@/lib/utils';
 import OptionsDialog from '../tf2-game/menus/OptionsDialog';
 import { useMenuSource } from '../tf2-game/menus/use-menu-source';

@@ -4,7 +4,7 @@
  * set from the CS records, scopes and aim punch, CS's renderables and view model, and the HUD's CS
  * state (money, the round, the bomb).
  *
- * Loaded on demand by `loadClientProfile('csgo')`, so the TF2 client never carries it. Browser only.
+ * Loaded on demand by `loadClientProfile('csgo')` (registered by ./register-profile.ts), so the TF2 client never carries it. Browser only.
  */
 
 import { findGameMap } from '../../tf2-game/assets/game-maps';
@@ -48,6 +48,7 @@ export const CSGO_PROFILE: ClientGameProfile = {
   preloadModels: () => preloadCsModels(),
   createWorld: (init, map) => new CsWorld({ ...init, mode: map.mode === 'dm' ? 'dm' : 'de' }),
   restorePlayer: (player, rec, weapons) => restoreCsPlayerFromRecords(player as CsPlayer, rec, weapons),
+  createListenWorker: () => new Worker(new URL('./listen-worker.ts', import.meta.url), { type: 'module', name: 'csgo-listen-server' }),
   eyeHeight: (rec: NetRecord | null) => (rec && rec.ducked ? CS_DUCK_VIEW_Z : CS_VIEW_Z),
   entityFactory: csEntityFactory,
   createViewModel: (fx) => new CsViewModel(fx),

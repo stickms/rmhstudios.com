@@ -83,6 +83,8 @@ export interface ClientGameProfile {
   prepare(): Promise<void>;
   /** Models every match shows (bodies and arms), preloaded so nobody pops in. */
   preloadModels(): readonly string[];
+  /** Starts the listen-server worker that hosts this game's match (a bundler worker entry of the game's own). */
+  createListenWorker(): Worker;
   /** The prediction world on the client (CS:GO's has CS players and rules). */
   createWorld(init: GameWorldInit, map: ProfileMap): GameWorld;
   /** Sets the predicted player from its authoritative records. */
@@ -116,10 +118,24 @@ export const TF2_PROFILE: ClientGameProfile = {
   createWorld: (init) => new GameWorld(init),
   restorePlayer: restorePlayerFromRecords,
   eyeHeight: (rec) => classEyeHeight(num(rec, 'cls')),
+  createListenWorker: () => new Worker(new URL('./net/listen-worker.ts', import.meta.url), { type: 'module', name: 'tf2-listen-server' }),
 };
 
-/** The profile of a game: TF2's here, another game's from its own module (loaded on demand). */
+type ProfileLoader = () => Promise<ClientGameProfile>;
+const profileLoaders = new Map<RoomGame, ProfileLoader>();
+
+/**
+ * A game other than TF2 registers how to load its profile (lazily, so TF2's bundle never carries it);
+ * the game's module does this from its own side (CS:GO: lib/csgo-game/client/register-profile.ts, which
+ * the pages that can start one of its sessions import).
+ */
+export function registerClientProfile(game: RoomGame, load: ProfileLoader): void {
+  profileLoaders.set(game, load);
+}
+
+/** The profile of a game: TF2's here, another game's from the loader it registered (loaded on demand). */
 export async function loadClientProfile(game: RoomGame | undefined): Promise<ClientGameProfile> {
-  if (game === 'csgo') return (await import('../../csgo-game/client/profile')).CSGO_PROFILE;
-  return TF2_PROFILE;
+  const load = game && game !== 'tf2' ? profileLoaders.get(game) : undefined;
+  if (game && game !== 'tf2' && !load) throw new Error(`no client profile registered for game "${game}"`);
+  return load ? load() : TF2_PROFILE;
 }

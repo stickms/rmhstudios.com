@@ -128,7 +128,8 @@ import {
   UNLOCK_MOVE_CONDS,
 } from './items/effects';
 import { onUnlockChargeEnd, unlockOnDamaged, unlockOnKill, unlockPreventsDamage } from './items/damage-rules';
-import { aliveDamageModifiers, applyOnHitAttributes, applyOnKillAttributes, damageWeapon, inAirDueToExplosion } from './items/hooks';
+import { aliveDamageModifiers, applyOnHitAttributes, applyOnKillAttributes } from './items/hooks';
+import { damageWeapon, inAirDueToExplosion } from './items/damage-query';
 import type { LoadoutSlots } from '../../tf2-loadout/catalog-types';
 import { TF_DEATH_DOMINATION, TF_DEATH_REVENGE, TF_DEATH_ASSISTER_DOMINATION, TF_DEATH_ASSISTER_REVENGE } from './events';
 import { hitboxSet as tfHitboxSet, type Hitbox } from './hitboxes';

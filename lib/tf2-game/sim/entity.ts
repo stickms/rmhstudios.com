@@ -16,7 +16,7 @@ import { MOVETYPE_NONE } from '../core/constants';
 import type { BspEntity } from '../formats/keyvalues';
 import { EntityOutput, parseAddOutput, parseOutputAction } from './io';
 import { NET_BRUSH, NET_ENTITY, type NetRecord, type NetSchema } from './net-schema';
-import { createDamageInfo, DMG_GENERIC, type DamageInfo } from './damage';
+import { createDamageInfo, DMG_GENERIC, type DamageInfo } from './damage-info';
 import type { GameWorld } from './world';
 
 // ─── Solidity (const.h SolidType_t / SolidFlags_t) ─────────────────────────

@@ -7,6 +7,8 @@
 
 /** Server tick: TF2 runs at 66.67 Hz (interval_per_tick 0.015). */
 export const TICK_INTERVAL = 0.015;
+/** Player entity ids are 1…MAX_PLAYERS. */
+export const MAX_PLAYERS = 32;
 export const TICK_RATE = 1 / TICK_INTERVAL;
 export const timeToTicks = (t: number): number => Math.floor(0.5 + t / TICK_INTERVAL);
 export const ticksToTime = (ticks: number): number => ticks * TICK_INTERVAL;
