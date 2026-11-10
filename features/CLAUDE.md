@@ -77,4 +77,5 @@ bare document instead of the router. Void Breaker was the first.
 - `lib/__tests__/islands.test.ts` holds it together: manifest ↔ route, no site-shell import in the
   island graph, every reached component scanned by the island sheet.
 
-Islands so far: `void-breaker`, `nightrail` and `vega` (the last under the `/secret` layout). The B1 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.
+Islands so far: `void-breaker`, `nightrail`, `vega` and `signal-forge` (the last two under the
+`/secret` layout). The B1 ledger line in `docs/plans/2026-11-09-ground-up-redesign-audit.md` tracks the rest.
