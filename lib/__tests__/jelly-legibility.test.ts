@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { contrastRatio, relativeLuminance, toHex } from '@/lib/appearance/contrast';
+import { readCss } from './css-source';
 
 /**
  * Plasmatic Jelly legibility, as an executable bound
@@ -33,9 +34,9 @@ import { contrastRatio, relativeLuminance, toHex } from '@/lib/appearance/contra
 
 const ROOT = process.cwd();
 const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
-const GLOBALS = strip(readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8'));
+const GLOBALS = strip(readCss(join(ROOT, 'app', 'globals.css')));
 const LIQUID = strip(readFileSync(join(ROOT, 'app', 'glass-roles.css'), 'utf8'));
-const MATERIAL = strip(readFileSync(join(ROOT, 'app', 'jelly-material.css'), 'utf8'));
+const MATERIAL = strip(readCss(join(ROOT, 'app', 'jelly-material.css')));
 const APP = strip(readFileSync(join(ROOT, 'components', 'shared', 'app-theme.css'), 'utf8'));
 
 type Tokens = Record<string, string>;

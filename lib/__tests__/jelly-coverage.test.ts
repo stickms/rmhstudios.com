@@ -43,6 +43,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SHARD_DIR, loadShards, writeShards } from './jelly-coverage-shards';
+import { readCss } from './css-source';
 
 const ROOT = process.cwd();
 
@@ -243,7 +244,7 @@ describe('jelly coverage — the hand-rolled debt only goes down (04 §2.5, N5)'
  * and the primitives it keys on from drifting apart: a renamed `data-slot` silently drops a surface off the material,
  * and an inline `background` on the toaster erases the haze floor without any error.
  */
-const read = (f: string) => readFileSync(join(ROOT, f), 'utf8');
+const read = (f: string) => readCss(join(ROOT, f));
 const stripCssComments = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '');
 const normSel = (s: string) => s.replace(/"/g, "'").replace(/\s+/g, ' ').trim();
 /** Innermost `selector { body }` rules — enough for flat, @layer- or @media-nested sheets. */

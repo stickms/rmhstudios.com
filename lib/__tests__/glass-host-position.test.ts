@@ -1,6 +1,6 @@
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readCss } from './css-source';
 
 /**
  * A glass role host hangs its haze and rim canvases off `position: absolute;
@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest';
  * whole page behind /shop (and every page with a `.glass-chrome` header).
  */
 describe('de-stuck page chrome stays a positioned glass host', () => {
-  const css = readFileSync(resolve(__dirname, '../../components/radial/radial.css'), 'utf8');
+  const css = readCss(resolve(__dirname, '../../components/radial/radial.css'));
 
   it('unpins sticky chrome with relative, never static', () => {
     const at = css.indexOf('.radial-shell__main .sticky:not(.site-sticky-pinned)');

@@ -1,0 +1,1488 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   RMH Studios — Library catalog, collections, upload flows, and readers.
+   The catalog opts into the shared liquid-glass system at the end of this file;
+   reader controls continue to reuse the RMHVibe toolbar primitives.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.lib {
+  width: 100%;
+  padding-bottom: 64px;
+  /* Background lives on .vibe-screen.lib in the editorial-shell section below —
+     one declaration, so the "sits on the glass aurora" override can't silently
+     lose the cascade again. */
+}
+
+/* ─── Bookshelf ─────────────────────────────────────────────────────────────── */
+.lib__shelf {
+  --col: 168px;
+  --cover-h: 224px;
+  --cap-h: 64px;
+  --row-h: calc(var(--cover-h) + var(--cap-h));
+  --row-gap: 46px;
+
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--col), 1fr));
+  grid-auto-rows: var(--row-h);
+  column-gap: clamp(18px, 3vw, 44px);
+  row-gap: var(--row-gap);
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 18px clamp(16px, 4vw, 44px) 0;
+
+  /* Continuous shelf ledges: one hairline + soft drop shadow under every row of
+     covers. Period matches the fixed grid row pitch (row-h + row-gap), and the
+     ledge sits at the bottom of the cover area so books appear to stand on it. */
+  background-origin: content-box;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--cover-h) - 1px),
+    rgba(245, 245, 247, 0.16) calc(var(--cover-h) - 1px),
+    rgba(245, 245, 247, 0.16) var(--cover-h),
+    rgba(0, 0, 0, 0.55) var(--cover-h),
+    rgba(0, 0, 0, 0) calc(var(--cover-h) + 18px),
+    transparent calc(var(--row-h) + var(--row-gap))
+  );
+}
+
+@media (max-width: 560px) {
+  .lib__shelf {
+    --col: 132px;
+    --cover-h: 184px;
+    --cap-h: 68px;
+    --row-gap: 38px;
+  }
+}
+
+/* Each book: cover standing on the ledge + caption beneath it. */
+.lib-book {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  height: var(--row-h);
+}
+
+/* A hovered book lifts off the ledge and spins, extending past its grid cell —
+   raise it above its neighbours (and the shelf ledges) so the 3D turn draws over
+   everything instead of being clipped by later-DOM siblings. */
+.lib-book:hover,
+.lib-book:focus-within,
+.lib-coll-tile:hover,
+.lib-coll-tile:focus-within {
+  z-index: 20;
+}
+
+/* Coordinated entrance: an item is hidden until the shared reveal observer
+   (LibraryReveal.tsx) sets `data-revealed`, so blog → collections → books always
+   cascade in document order regardless of which data loaded first. The stagger
+   delay within a revealed batch is set inline by the observer. */
+.lib-reveal {
+  opacity: 0;
+}
+.lib-reveal[data-revealed='true'] {
+  animation: lib-rise 0.55s var(--ease-smooth) both;
+}
+
+@keyframes lib-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Cover area — fixed height so its base meets the shelf ledge. A subtle glass
+   tint keeps a coverless book reading as a slab of glass on every theme
+   (formerly the .style-liquid-glass .lib-volume patch, now token-based). */
+.lib-book__3d {
+  position: relative;
+  height: var(--cover-h);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  perspective: 1100px;
+  background: var(--site-glass-tint);
+}
+.lib-volume:hover .lib-book__3d {
+  background: var(--site-glass-tint-strong);
+}
+
+.lib-book__cover {
+  --pad: 14px;
+  --thick: 22px; /* physical page-block thickness (the book's depth) */
+  position: relative;
+  width: min(100%, 150px);
+  height: calc(var(--cover-h) - 14px);
+  display: flex;
+  flex-direction: column;
+  padding: var(--pad) var(--pad) var(--pad) calc(var(--pad) + 8px);
+  border-radius: 3px 6px 6px 3px;
+  overflow: visible;
+  /* Charcoal cover with a faint per-book hue, kept low-sat for the monochrome feel. */
+  background: linear-gradient(
+    150deg,
+    hsl(var(--book-hue, 220) 16% 17%),
+    hsl(var(--book-hue, 220) 14% 9%)
+  );
+  /* No framing outline — the cover reads as a solid object via its gradient,
+     3D side face, and soft depth shadow (removed the 0.5px rim that cropped the
+     cover art). */
+  border: none;
+  /* Soft, straight-down glass depth (no harsh offset blob). */
+  box-shadow:
+    0 8px 20px rgba(2, 10, 28, 0.38),
+    0 2px 5px rgba(2, 10, 28, 0.26);
+  /* A real 3D volume: the fore-edge (::after) is an actual side face that the
+     cover swings to reveal when it spins on hover. */
+  transform-style: preserve-3d;
+  transform-origin: left center;
+  transition:
+    transform 420ms var(--ease-overshoot),
+    box-shadow 420ms ease;
+  will-change: transform;
+}
+
+/* Spine band on the left edge. */
+.lib-book__edge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  border-radius: 3px 0 0 3px;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.55),
+    rgba(255, 255, 255, 0.12) 45%,
+    rgba(0, 0, 0, 0.32)
+  );
+}
+
+/* The fore-edge: a REAL right-hand side face (a block of stacked pages) standing
+   perpendicular to the cover. Edge-on and invisible at rest; the spin on hover
+   swings the cover so this page-block reads as the book's physical thickness. */
+.lib-book__cover::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: var(--thick);
+  transform-origin: right center;
+  transform: rotateY(90deg);
+  border-radius: 0 2px 2px 0;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.28), transparent 40%),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(245, 245, 247, 0.92) 0,
+      rgba(245, 245, 247, 0.92) 1px,
+      rgba(120, 120, 125, 0.55) 1px,
+      rgba(120, 120, 125, 0.55) 3px
+    );
+}
+
+/* Spin on hover: the book lifts off the ledge and turns on its Y axis (pivoting
+   at the spine) to show its full three-dimensional form, then eases back. */
+.lib-book:hover .lib-book__cover,
+.lib-book:focus-visible .lib-book__cover,
+.lib-coll-tile__btn:hover .lib-book__cover,
+.lib-coll-tile__btn:focus-visible .lib-book__cover {
+  transform: translateY(-12px) rotateY(-38deg) scale(1.02);
+  /* Soft, straight-down depth that grows with the lift — no harsh diagonal blob. */
+  box-shadow:
+    0 24px 46px rgba(2, 10, 28, 0.45),
+    0 8px 16px rgba(2, 10, 28, 0.34);
+}
+
+/* Tactile press feedback: a clicked book/collection tile settles back slightly. */
+.lib-book:active .lib-book__cover,
+.lib-coll-tile__btn:active .lib-book__cover {
+  transform: translateY(-6px) rotateY(-38deg) scale(0.99);
+  transition-duration: 140ms;
+}
+
+/* Respect reduced motion: keep the 3D thickness but don't spin. */
+
+/* Cover image (rendered first page). Fills the cover, clipped to its rounded
+   shape; the spine band + page badge sit on top. */
+.lib-book__cover.has-cover {
+  padding: 0;
+  background: #fff;
+}
+
+.lib-book__edge {
+  z-index: 2;
+}
+
+.lib-book__pages-badge {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  z-index: 2;
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+  color: rgba(245, 245, 247, 0.95);
+  background: rgba(0, 0, 0, 0.55);
+  padding: 2px 7px;
+  border-radius: 9999px;
+  corner-shape: round;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  white-space: nowrap;
+}
+
+.lib-book__title {
+  /* Covers use the same display face as the rest of the site; the former serif
+     treatment made these cards feel disconnected from the library UI. */
+  font-family: var(--site-font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+  /* The cover art is a dark navy slab on EVERY theme, so its printed title must
+     stay light. var(--site-text) flips dark on light themes (e.g. Sepia) and
+     the title vanished against the cover — pin it light like the page badge. */
+  color: #f5f5f7;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.lib-book__mark {
+  margin-top: auto;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  /* On the always-dark cover, keep the imprint light on every theme. */
+  color: rgba(245, 245, 247, 0.72);
+}
+
+/* Caption under the shelf ledge — fixed height keeps every row aligned. */
+.lib-book__meta {
+  height: var(--cap-h);
+  padding: 12px 4px 0;
+  overflow: hidden;
+}
+
+.lib-book__name {
+  /* Book, collection, and volume titles stay in the site display system. */
+  font-family: var(--site-font-display);
+  font-size: 0.84rem;
+  font-weight: 650;
+  color: var(--site-text);
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+  text-shadow: none;
+  position: relative;
+  z-index: 21;
+  /* Up to three lines of the title before truncating. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ─── Reader ────────────────────────────────────────────────────────────────── */
+.lib-reader {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.lib-reader__bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px clamp(14px, 4vw, 32px);
+  background: color-mix(in srgb, var(--site-bg) 72%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  border-bottom: 0.5px solid var(--site-border);
+  z-index: 5;
+}
+
+.lib-reader__title {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--site-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lib-reader__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lib-reader__count {
+  font-size: 0.78rem;
+  color: var(--site-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Counter doubles as a "jump to page" trigger. */
+.lib-reader__count--btn {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 4px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+.lib-reader__count--btn:hover {
+  color: var(--site-text);
+  background: var(--site-surface);
+}
+.lib-reader__count--btn:active {
+  transform: scale(0.95);
+}
+
+/* Inline page-number editor (replaces the counter while jumping). */
+.lib-reader__jump {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--site-text-muted);
+}
+.lib-reader__jump-input {
+  width: 56px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: var(--site-surface-hover);
+  border: 0.5px solid var(--site-border);
+  color: var(--site-text);
+  /* Floored on touch so focusing it can't zoom the page — see
+     `--site-field-font-floor` in globals.css. */
+  font-size: max(0.78rem, var(--site-field-font-floor));
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  outline: none;
+}
+.lib-reader__jump-input:focus {
+  border-color: var(--site-border-bright);
+}
+.lib-reader__jump-total {
+  white-space: nowrap;
+}
+
+/* Chapter (TOC) dropdown. */
+.lib-reader__chapters {
+  position: relative;
+  display: flex;
+}
+.lib-reader__chapters-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  /* Pinned by its own top-right corner, just under the toolbar button — the
+     anchor the shared bloom unfurls from, so it drops out of the control that
+     opened it (globals.css §7.1, `data-motion="pop"`). */
+  --motion-origin: top right;
+  z-index: 20;
+  margin: 0;
+  padding: 6px;
+  width: max-content;
+  min-width: 180px;
+  max-width: min(78vw, 340px);
+  max-height: min(60vh, 460px);
+  overflow-y: auto;
+  border-radius: var(--site-radius-sm);
+  background: var(--site-surface);
+  border: 0.5px solid var(--site-border);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+}
+/* Lists inside the popover shell reset their native styling. */
+.lib-reader__chapters-list,
+.lib-reader__quality-menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lib-reader__chapter {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: var(--site-radius-sm);
+  background: none;
+  color: var(--site-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 130ms ease,
+    color 130ms ease;
+}
+.lib-reader__chapter:hover {
+  background: var(--site-surface);
+  color: var(--site-text);
+}
+.lib-reader__chapter.is-active {
+  color: var(--site-text);
+  background: var(--site-surface);
+  font-weight: 600;
+}
+.lib-reader__chapter-title {
+  flex: 1;
+  min-width: 0;
+}
+.lib-reader__chapter-page {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: var(--site-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.lib-reader__quality-menu .lib-reader__chapter-page {
+  color: var(--site-success);
+}
+
+/* ─── Bookmarks & notes panel ────────────────────────────────────────────────── */
+.lib-reader__marks-menu {
+  width: min(86vw, 360px);
+  max-width: min(86vw, 360px);
+}
+.lib-marks {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.lib-marks__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lib-marks__head {
+  margin: 0;
+  padding: 2px 6px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--site-text-muted);
+}
+.lib-marks__empty {
+  margin: 0;
+  padding: 0 6px 4px;
+  font-size: 0.78rem;
+  color: var(--site-text-dim);
+}
+.lib-marks__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lib-marks__item {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  border-radius: var(--site-radius-sm);
+}
+.lib-marks__item:hover {
+  background: var(--site-surface);
+}
+.lib-marks__jump {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  background: none;
+  color: var(--site-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--site-radius-sm);
+}
+.lib-marks__jump:hover {
+  color: var(--site-text);
+}
+.lib-marks__item-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lib-marks__item-page {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: var(--site-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.lib-marks__item--note .lib-marks__jump {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+.lib-marks__note-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+}
+.lib-marks__del {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: var(--site-radius-sm);
+  background: none;
+  color: var(--site-text-dim);
+  cursor: pointer;
+  transition:
+    background 130ms ease,
+    color 130ms ease,
+    transform 130ms ease;
+}
+.lib-marks__del:hover {
+  background: color-mix(in srgb, var(--site-danger) 20%, transparent);
+  color: var(--site-danger);
+}
+.lib-marks__del:active {
+  transform: scale(0.9);
+}
+.lib-marks__compose {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 4px;
+}
+.lib-marks__textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: var(--site-radius-sm);
+  background: var(--site-surface);
+  border: 0.5px solid var(--site-border);
+  color: var(--site-text);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-family: inherit;
+  outline: none;
+}
+.lib-marks__textarea:focus {
+  border-color: var(--site-border-bright);
+}
+.lib-marks__add {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  corner-shape: round;
+  border: 0.5px solid var(--site-border);
+  background: var(--site-surface);
+  color: var(--site-text);
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 130ms ease,
+    transform 130ms ease;
+}
+.lib-marks__add:hover:not(:disabled) {
+  background: var(--site-surface-hover);
+}
+.lib-marks__add:active:not(:disabled) {
+  transform: scale(0.95);
+}
+.lib-marks__add:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ─── Scrubber (fast page travel) ────────────────────────────────────────────── */
+.lib-reader__scrub {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(10px, 2.4vw, 22px);
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(620px, 84vw);
+  padding: 9px 16px;
+  border-radius: 9999px;
+  corner-shape: round;
+  background: var(--site-surface);
+  border: 0.5px solid var(--site-border);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  backdrop-filter: saturate(180%) blur(18px);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  opacity: 0.4;
+  transition: opacity 180ms ease;
+}
+.lib-reader__stage:hover .lib-reader__scrub,
+.lib-reader__scrub:hover,
+.lib-reader__scrub:focus-within {
+  opacity: 1;
+}
+.lib-reader__scrub-num {
+  font-size: 0.7rem;
+  color: var(--site-text);
+  font-variant-numeric: tabular-nums;
+  min-width: 1.5em;
+  text-align: center;
+}
+.lib-reader__scrub-track {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+.lib-reader__scrub-tick {
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 9px;
+  margin-top: -4.5px;
+  margin-left: -1.5px;
+  border-radius: 1px;
+  background: var(--site-accent);
+  pointer-events: none;
+  z-index: 1;
+}
+.lib-reader__scrub-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 9999px;
+  corner-shape: round;
+  background: var(--site-surface-hover);
+  outline: none;
+  cursor: pointer;
+}
+.lib-reader__scrub-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--site-text);
+  border: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  cursor: grab;
+}
+.lib-reader__scrub-input::-webkit-slider-thumb:active {
+  cursor: grabbing;
+}
+.lib-reader__scrub-input::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--site-text);
+  border: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  cursor: grab;
+}
+
+/* The bookmark toggle / marks button lit state in the toolbar. */
+.lib-reader__bar .vibe-toolbar__icon.is-on {
+  color: var(--site-accent);
+}
+
+/* ─── EPUB reader ────────────────────────────────────────────────────────────── */
+/* Font-size + theme controls. */
+.lib-epub__settings {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 200px;
+  padding: 2px;
+}
+.lib-epub__set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.lib-epub__themes {
+  display: flex;
+  gap: 8px;
+}
+.lib-epub__theme {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  corner-shape: round;
+  cursor: pointer;
+  border: 1.5px solid var(--site-border-bright);
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease;
+}
+.lib-epub__theme:hover {
+  transform: scale(1.08);
+}
+.lib-epub__theme:active {
+  transform: scale(0.92);
+}
+.lib-epub__theme.is-active {
+  border-color: var(--site-accent);
+}
+.lib-epub__theme--light {
+  background: #f7f6f3;
+}
+.lib-epub__theme--sepia {
+  background: #f4ecd8;
+}
+.lib-epub__theme--dark {
+  background: #16161a;
+}
+
+/* ─── Collections / series ───────────────────────────────────────────────────── */
+.lib-collections {
+  margin-top: 8px;
+}
+.lib-collections__head {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 44px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.lib-collections__head .lib__section-title {
+  padding: 0;
+  margin: 0;
+}
+.lib-collections__head-actions {
+  display: flex;
+  gap: 8px;
+}
+.lib-collections__empty {
+  max-width: 1320px;
+  margin: 8px auto 0;
+  padding: 0 clamp(16px, 4vw, 44px);
+}
+.lib-collections__group-titles {
+  min-width: 0;
+}
+.lib-collections__group-desc {
+  margin: 3px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--site-text-muted);
+  max-width: 64ch;
+}
+.lib-collections__shelf {
+  margin-top: 12px;
+}
+
+/* The continuous shelf-ledge band (the dark hairline + drop shadow that
+   .lib__shelf paints under every cover row) is meant to read as a shelf when a
+   row is full of books. A Collections row usually holds a single tile or two,
+   so that band renders as a stray dark smear cutting across a lone cover. Drop
+   the ledge for collection shelves — the tiles float cleanly on the page. */
+.lib-collections .lib__shelf {
+  background-image: none;
+}
+
+/* Sub-groups within Collections: curated series vs reader collections. */
+.lib-collections__group-wrap + .lib-collections__group-wrap {
+  margin-top: 18px;
+}
+.lib-collections__subhead {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--site-text-muted);
+  margin: 0 0 10px;
+}
+
+/* ── Collection tiles (a collection shown as a single book-like cover) ──────── */
+.lib-coll-tile__btn {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  width: 100%;
+  cursor: pointer;
+  text-align: inherit;
+}
+/* Stacked-pages hint behind the cover so a collection reads as a set of books. */
+.lib-coll-tile__stack {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 78%;
+  height: 92%;
+  transform: translateX(-50%) rotate(-4deg);
+  transform-origin: bottom center;
+  border-radius: 3px 6px 6px 3px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(2, 10, 28, 0.22));
+  /* Soft, straight-down glass depth to match the book covers (was a harsh
+     0 6px 14px rgba(0,0,0,0.35) blob). */
+  box-shadow: 0 10px 22px rgba(2, 10, 28, 0.26);
+  z-index: 0;
+  transition: box-shadow 420ms ease;
+}
+/* When the volume lifts + spins on hover, keep the stack's shadow soft. */
+.lib-coll-tile__btn:hover .lib-coll-tile__stack {
+  box-shadow: 0 14px 28px rgba(2, 10, 28, 0.3);
+}
+.lib-coll-tile .lib-book__cover {
+  position: relative;
+  z-index: 1;
+}
+/* Member-count badge. */
+.lib-coll-tile__badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  corner-shape: round;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(10, 10, 10, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+/* Cover-generation spinner overlay. */
+.lib-coll-tile__gen {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 8, 8, 0.55);
+  color: #fff;
+  border-radius: inherit;
+  corner-shape: inherit;
+}
+/* Collection view modal — wider so the book shelf breathes. */
+.lib-coll-modal {
+  max-width: min(920px, 94vw);
+}
+.lib-coll-modal .lib-collections__shelf {
+  max-height: 64vh;
+  max-height: 64dvh;
+  overflow-y: auto;
+}
+/* Add-books picker list (inside the modal). */
+.lib-collections__picker {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  max-height: 50vh;
+  max-height: 50dvh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lib-collections__picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  border-radius: var(--site-radius-sm);
+}
+.lib-collections__picker-row:hover {
+  background: var(--site-surface);
+}
+.lib-collections__picker-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88rem;
+  color: var(--site-text-muted);
+}
+.lib-collections__picker-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  corner-shape: round;
+  border: 1px solid var(--site-border);
+  background: var(--site-surface);
+  color: var(--site-text);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    transform 140ms ease;
+}
+.lib-collections__picker-btn:hover {
+  background: var(--site-surface-hover);
+}
+.lib-collections__picker-btn:active {
+  transform: scale(0.95);
+}
+.lib-collections__picker-btn.is-added {
+  background: color-mix(in srgb, var(--site-success) 18%, transparent);
+  border-color: color-mix(in srgb, var(--site-success) 50%, transparent);
+  color: var(--site-success);
+}
+.lib-collections__picker-empty {
+  padding: 18px 6px;
+  font-size: 0.85rem;
+  color: var(--site-text-muted);
+  text-align: center;
+}
+
+.lib-reader__stage {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 3vw, 32px);
+  perspective: 2600px;
+  overflow: hidden;
+}
+
+.lib-reader__status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--site-text-muted);
+  font-size: 0.9rem;
+}
+
+.lib-reader__fallback {
+  color: var(--site-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* The 3D book canvas fills the stage; pointer drags drive the page turn, so we
+   suppress native touch scrolling/selection over it. */
+.lib-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+.lib-canvas-wrap:active {
+  cursor: grabbing;
+}
+.lib-canvas-wrap canvas {
+  outline: none;
+}
+
+/* Nav arrows. */
+.lib-reader__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  corner-shape: round;
+  background: var(--site-surface);
+  border: 0.5px solid var(--site-border);
+  color: var(--site-text);
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition:
+    background 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+.lib-reader__nav--prev {
+  left: clamp(8px, 2vw, 24px);
+}
+.lib-reader__nav--next {
+  right: clamp(8px, 2vw, 24px);
+}
+.lib-reader__nav:hover:not(:disabled) {
+  background: var(--site-surface-hover);
+}
+.lib-reader__nav:active:not(:disabled) {
+  transform: translateY(-50%) scale(0.9);
+}
+.lib-reader__nav:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lib-spin {
+  animation: lib-spin 0.9s linear infinite;
+}
+@keyframes lib-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Upload: header button + modal ─────────────────────────────────────── */
+.lib-upload__open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 7px 13px;
+  /* 7px around 13px type is a 31px button, and on a phone the label collapses
+     to the glyph alone (43×31 measured). This one is a standalone control with
+     room around it, so it takes the real 44px rather than the ::after trick the
+     inline metadata links need. */
+  min-height: var(--site-touch-target);
+  min-width: var(--site-touch-target);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--site-text);
+  background: var(--site-surface);
+  border: 1px solid var(--site-border);
+  border-radius: 999px;
+  corner-shape: round;
+  cursor: pointer;
+  transition:
+    background 0.18s,
+    border-color 0.18s,
+    transform 0.15s ease;
+  white-space: nowrap;
+}
+.lib-upload__open:hover {
+  background: var(--site-surface-hover);
+  border-color: var(--site-border-bright);
+}
+.lib-upload__open:active {
+  transform: scale(0.95);
+}
+@media (max-width: 520px) {
+  .lib-upload__open-label {
+    display: none;
+  }
+}
+
+.lib-upload__overlay {
+  position: fixed;
+  inset: 0;
+  /* Body-level — every consumer goes through `LibraryDialogShell`, which
+     portals. In place this was measured inside `.radial-frame`'s stacking
+     context (pinned at 1), so 120 bought nothing and the shell's chrome painted
+     over the scrim. At <body> the ordinary dialog band is correct. */
+  z-index: var(--z-dialog);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.72);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+/* Surface comes from `.glass-overlay` on the element (the L4 floating-UI role), so
+   the dialog takes the shared material, its jelly body and every degradation tier.
+   It used to hand-roll a `--site-bg-subtle` fill, hairline, radius and a dark drop
+   shadow. Size and padding stay here. */
+.lib-upload {
+  width: 100%;
+  max-width: 560px;
+  color: var(--site-text);
+  padding: 20px;
+}
+.lib-upload__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.lib-upload__title {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0;
+}
+.lib-upload__close {
+  background: none;
+  border: 0;
+  color: var(--site-text-muted);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    transform 140ms ease;
+}
+.lib-upload__close:hover {
+  color: var(--site-text);
+}
+.lib-upload__close:active {
+  transform: scale(0.9);
+}
+.lib-upload__drop {
+  width: 100%;
+  padding: 40px 20px;
+  border: 1.5px dashed var(--site-border-bright);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-surface);
+  color: var(--site-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    border-color 0.18s,
+    background 0.18s;
+}
+.lib-upload__drop:hover {
+  border-color: var(--site-border-bright);
+  background: var(--site-surface);
+}
+.lib-upload__cover {
+  flex: 0 0 132px;
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius-sm);
+  overflow: hidden;
+  background: var(--site-surface);
+}
+.lib-upload__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lib-upload__cover--blank {
+  width: 100%;
+  height: 100%;
+}
+.lib-upload__pages {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--site-text);
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+}
+.lib-upload__fields {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Multi-file upload queue (admins) ─────────────────────────────────────── */
+.lib-upload--multi {
+  max-width: 720px;
+}
+.lib-upload__queue {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 60vh;
+  max-height: 60dvh;
+  overflow-y: auto;
+}
+.lib-upload__row {
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-surface);
+}
+.lib-upload__row.is-done {
+  opacity: 0.7;
+}
+.lib-upload__row.is-error {
+  border-color: color-mix(in srgb, var(--site-danger) 40%, transparent);
+}
+.lib-upload__row-cover {
+  flex: 0 0 70px;
+  aspect-ratio: 3 / 4;
+}
+.lib-upload__row-fields {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+}
+.lib-upload__row-fields .lib-upload__textarea {
+  min-height: 48px;
+}
+.lib-upload__row-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--site-success);
+}
+.lib-upload__row-err {
+  font-size: 12px;
+  color: var(--site-danger);
+}
+.lib-upload__row-remove {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--site-radius-sm);
+  border: 1px solid var(--site-border);
+  background: transparent;
+  color: var(--site-text-muted);
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+.lib-upload__row-remove:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--site-danger) 18%, transparent);
+  color: var(--site-danger);
+}
+.lib-upload__row-remove:active:not(:disabled) {
+  transform: scale(0.9);
+}
+.lib-upload__row-remove:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.lib-upload__addmore {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+  padding: 9px;
+  border: 1px dashed var(--site-border);
+  border-radius: var(--site-radius-sm);
+  background: transparent;
+  color: var(--site-text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    transform 140ms ease;
+}
+.lib-upload__addmore:hover:not(:disabled) {
+  background: var(--site-surface);
+}
+.lib-upload__addmore:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.lib-upload__addmore:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Storage-misconfigured warning (uploads won't persist). */
+.lib-upload__warn {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--site-danger);
+  padding: 9px 11px;
+  margin-bottom: 12px;
+  border: 1px solid color-mix(in srgb, var(--site-danger) 40%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--site-danger) 10%, transparent);
+}
+
+/* ── Quota gate (regular user at their upload cap) ────────────────────────── */
+.lib-upload__gate {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lib-upload__gate-head {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--site-text);
+}
+.lib-upload__gate-sub {
+  font-size: 13px;
+  color: var(--site-text-muted);
+  margin-bottom: 4px;
+}
+.lib-upload__gate-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 38vh;
+  max-height: 38dvh;
+  overflow-y: auto;
+}
+.lib-upload__gate-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--site-border);
+  border-radius: 7px;
+}
+.lib-upload__gate-row .lib-upload__row-cover {
+  flex: 0 0 36px;
+}
+.lib-upload__gate-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--site-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lib-upload__gate-pending {
+  font-size: 13px;
+  color: var(--site-warning);
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--site-warning) 30%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--site-warning) 8%, transparent);
+}
+.lib-upload__gate-appeal {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+.lib-upload__gate-appeal-btn {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+.lib-upload__label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--site-text-muted);
+}
+/* Fill, edge colour and radius come from `.glass-inset` on the element (the field
+   role). The edge keeps its width here so the focus colour below has a line to tint. */
+.lib-upload__input {
+  width: 100%;
+  border-width: 1px;
+  border-style: solid;
+  color: var(--site-text);
+  font-size: 14px;
+  padding: 9px 11px;
+}
+.lib-upload__input:focus {
+  outline: none;
+  border-color: var(--site-border-bright);
+}
+.lib-upload__textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+.lib-upload__error {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--site-danger);
+}
+.lib-upload__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+.lib-upload__btn {
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 999px;
+  corner-shape: round;
+  border: 1px solid var(--site-border);
+  background: transparent;
+  color: var(--site-text);
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+.lib-upload__btn:hover:not(:disabled) {
+  background: var(--site-surface);
+}
+.lib-upload__btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.lib-upload__btn--primary {
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  border-color: var(--site-accent);
+}
+.lib-upload__btn--primary:hover:not(:disabled) {
+  background: var(--site-accent-hover);
+}
+.lib-upload__btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+@media (max-width: 480px) {
+  .lib-upload__cover {
+    flex-basis: auto;
+    max-width: 132px;
+  }
+}

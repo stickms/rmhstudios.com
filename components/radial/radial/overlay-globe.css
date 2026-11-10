@@ -1,0 +1,1424 @@
+/* ── Radial navigation overlay ────────────────────────────────────────── */
+/* Driven by the phase on `.radial-hub`: hidden when `closed`; `open`/`closing`
+   keep it mounted so every layer can animate IN and OUT. There is NO drawn
+   colour disc — an expanding CIRCULAR VEIL grows from the centre and the liquid
+   globe blooms over it, all in sync with the orb gliding to the middle and
+   swelling into the sphere. */
+.radial-hub__overlay {
+  position: fixed;
+  /* Clear of every edge, symmetric (so the globe's centre does not move), and narrower than 90% of the width:
+     a fixed layer that wide and that near an edge is what iOS Safari fills its status bar and tab bar strips
+     from, and with the globe open that was a solid band under it. The veil below paints out to the screen's
+     edges (it takes no pointer, so Safari does not see it); the drag surface is the overlay's own box. */
+  top: 1.5rem;
+  right: 10%;
+  left: 10%;
+  /* Its bottom edge is 1.5rem above the VISIBLE bottom, not the fixed container's: `--vv-follow` (app/globals.css)
+     is where iOS Safari's changing toolbar has left the container, so the overlay, the foot capsule inside it and
+     the drag surface follow the toolbar in layout with no script. A percentage in this `bottom` is a percentage of
+     the viewport container, which is what `--vv-follow` is measured in. */
+  bottom: calc(1.5rem + var(--vv-follow, 0px));
+  z-index: var(--z-hub-overlay);
+  display: grid;
+  place-items: center;
+  visibility: hidden;
+  pointer-events: none;
+}
+.radial-hub[data-phase='open'] .radial-hub__overlay,
+.radial-hub[data-phase='closing'] .radial-hub__overlay {
+  visibility: visible;
+  pointer-events: auto;
+}
+/* EVERTING — the hub has handed the screen to the eversion and is fading out
+   over the canvas underneath it (see the `everting` block below). The overlay
+   has to stay visible for that fade, and must stop taking input: from this
+   frame on a press belongs to the effect's fast-forward, not to the globe. */
+.radial-hub[data-phase='everting'] .radial-hub__overlay,
+.radial-hub[data-phase='landing'] .radial-hub__overlay {
+  visibility: visible;
+  pointer-events: none;
+}
+/* LANDING: nothing on the overlay takes a pointer, so the page the visitor has already arrived at is usable. */
+.radial-hub[data-phase='landing'] .radial-hub__overlay * {
+  pointer-events: none;
+}
+/* The first-open rehearsal (RadialHub `rehearsing`): the globe mounted once,
+   invisibly, while the page is idle, so the first real open is not the first
+   time its code runs, its canvas is allocated or its layers rasterise. Laid out
+   exactly like the open overlay (fixed, centred grid) so the globe takes its
+   real size. 1% opacity rather than 0: a layer at zero opacity can be skipped
+   outright, which would warm nothing; 1% of the wireframe on any theme's ground
+   is below a single 8-bit step. It is up for ~600ms, once per page load. */
+.radial-hub__rehearsal {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-hub-overlay);
+  display: grid;
+  place-items: center;
+  opacity: 0.01;
+  pointer-events: none;
+  contain: layout paint;
+}
+/* Warms the GPU programs the open uses on the PAGE, not the globe: the blur the
+   shell layers take (same radius) and the veil's circular mask over a radial
+   gradient. Tiny, because a program is per effect, not per pixel. */
+.radial-hub__rehearsal-fx {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: 4rem;
+  block-size: 4rem;
+  background: radial-gradient(circle, var(--site-bg), transparent);
+  clip-path: circle(40% at 50% 50%);
+  filter: blur(var(--hub-page-blur, 6px));
+}
+/* Transparent full-screen click-catcher (closes on an outside tap); sits below
+   the veil + globe so only empty regions dismiss the menu.
+
+   Its own class, and it keeps it. It used to share `.radial-hub__scrim` with
+   the (now removed) decorative fade under the docked orb — a different element
+   in a different part of the tree wanting the opposite geometry — and two
+   single-class rules on one class name do not coexist, they overwrite each
+   other. This one inherited the fade's `width: min(24rem, 92vw)`, its ~92px
+   height and its `translateX(-50%)`, so the "full-screen" catcher was really a
+   359x92 box hanging half off the left edge (measured headless at 390x844).
+   Every tap outside the globe missed it and landed on the overlay, which has no
+   handler — so the documented way out (RadialHub: "Escape, the foot's X and an
+   outside tap") silently had only two doors. Give any new hub layer its own
+   name rather than reaching for this one. */
+.radial-hub__catcher {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: none;
+  padding: 0;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  /* `inset: 0` is not enough on its own, and the reason is easy to miss: the
+     overlay is `display: grid; place-items: center`, and an absolutely
+     positioned grid child still takes its container's alignment. `center`
+     replaces the stretch `inset: 0` would otherwise resolve to, which would
+     shrink-wrap this box all over again even with the class collision gone. */
+  place-self: stretch;
+  /* Empty space around the globe reads as a handle, because it is one — the
+     globe's gesture claims this surface (LiquidGlobe, `data-globe-surface`). */
+  cursor: grab;
+}
+/* Background scroll is blocked by the OVERLAY, not by a CSS scroll-lock on the
+   document. Both overflow:hidden and the position:fixed body technique clip the
+   document to the visual viewport, which on iOS clips away the content that
+   normally scrolls under Safari's floating bottom bar and leaves the bare page
+   background showing there as a stray coloured band — established on-device for
+   the mobile push-drawer this hub replaced, which blocked background scroll from
+   its scrim for exactly this reason. touch-action:none makes the covered page
+   unpannable while the menu is up, so the document keeps flowing behind the
+   browser chrome exactly as it does when the menu is closed. Taps are
+   unaffected. */
+.radial-hub[data-phase='open'] .radial-hub__overlay,
+.radial-hub[data-phase='closing'] .radial-hub__overlay {
+  touch-action: none;
+  /* The whole overlay turns the globe (LiquidGlobe's surface listener), not
+     just the sphere — so the guarantees the stage has always given the gesture
+     have to hold across all of it: a drag that crosses the foot capsule must
+     not start selecting the visitor's own display name, and a press on empty
+     space must not flash a tap highlight on a surface whose job is to be
+     dragged. `touch-action` above is the third, and was already here.
+
+     `-webkit-touch-callout` is the fourth, and it is not a duplicate of the
+     `user-select` under it: iOS's long-press menu is a separate mechanism that
+     fires over links and images no matter what the selection is set to. The
+     menu is up for one gesture — hold on a destination and let go — and that
+     hold is exactly the ~500ms iOS spends deciding to offer "Open in New Tab"
+     over whichever pin, avatar or foot link the finger came down on. Set here,
+     on the overlay, because the property inherits: one declaration covers the
+     sphere, the pins, the title card and the foot. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.radial-hub__overlay:has(.radial-globe__stage[data-grabbing='true']) .radial-hub__catcher {
+  cursor: grabbing;
+}
+/* The expanding circular VEIL — the menu's "surface". A disc grows from the
+   centre (where the orb now sits) out to the viewport corners, sinking the page
+   behind it as it goes.
+
+   It is NOT a `backdrop-filter`, and must not become one again. It used to be
+   (`.radial-hub__blur`, `blur(20px) saturate(118%)`), which was affordable only
+   because nothing ever moved above it. The liquid globe moves above it
+   continuously, and Chromium invalidates a backdrop-filter as a WHOLE ELEMENT
+   rather than per damaged rect — so a viewport-covering blur under an animating
+   element re-blurs the entire viewport every frame. Measured in this exact stack
+   at 1920x1080, vsync on: 60fps with nothing moving above the blurred layer,
+   ~10.7fps with a single 24px dot wiggling above it, and 60fps again with the
+   backdrop-filter removed. Radius barely mattered (blur(6px) still measured
+   11.9fps); only the blurred layer's AREA did. See components/radial/README.md.
+
+   A painted veil gets the same "the page sinks away" read for free, and the
+   frosted-glass material still ships on the foot capsule, which is small and
+   sits still. */
+.radial-hub__veil {
+  position: absolute;
+  /* Out to the screen's edges, past the narrower overlay it sits in. */
+  inset: -1.5rem -10vw;
+  z-index: 1;
+  pointer-events: none;
+  /* Denser toward the rim than the middle, so the globe sits in a pool of light
+     rather than on a flat plate. Every stop is the theme's own ground.
+
+     Translucent, not opaque: the page underneath is ALREADY blurred (the three
+     shell layers take `filter: blur(20px)` while the hub is open, further down
+     this file), and at 82–100% ground none of that was visible — the menu read
+     as a blank screen with a globe on it rather than as the page sinking away
+     behind frosted glass. Letting it through costs nothing extra, because the
+     blurred layers are frozen while the hub is open (their ambient animations
+     pause, see the blur rule) so the blur rasterises once and is then a cached
+     texture the globe moves over.
+
+     This is NOT an invitation to put a `backdrop-filter` here. A viewport-sized
+     backdrop-filter under a continuously-moving globe re-blurs in full on every
+     frame — measured at ~10fps in this exact stack (components/radial/README.md).
+     The blur comes from the layers below, which hold still; the veil only tints. */
+  background: radial-gradient(
+    circle farthest-corner at 50% 50%,
+    color-mix(in srgb, var(--site-bg) 30%, transparent) 0%,
+    color-mix(in srgb, var(--site-bg) 38%, transparent) 42%,
+    color-mix(in srgb, var(--site-bg) 50%, transparent) 76%,
+    color-mix(in srgb, var(--site-bg) 60%, transparent) 100%
+  );
+  /* The disc only ever has to reach the farthest CORNER — half the viewport
+     diagonal, which at any aspect ratio is at most 0.708vmax*100. This used to
+     open to 150vmax, better than twice what it needs, and that overshoot is free
+     on the way out but ruinous on the way back: the contraction is eased-OUT, so
+     the radius has already fallen past the corner (the first frame you can
+     actually SEE) inside the curve's first eighth, and the whole visible half of
+     the shrink then plays out in its slow tail. The orb was home while a blurred
+     blob was still dissolving in the middle of the screen. Sized to the corner,
+     every frame of the transition is a frame that reads. */
+  --veil-r: 72vmax;
+  clip-path: circle(0 at 50% 50%);
+  opacity: 0;
+  /* CLOSING — the base state is what a closing hub transitions back to. The
+     radius rides the orb home on the orb's own curve; the opacity fade lands
+     first so the last handful of pixels, which no easing can shrink fast enough
+     to stop reading as a smudge, are already gone when the circle arrives. */
+  transition:
+    clip-path 0.5s var(--ease-glass, var(--ease-smooth)),
+    opacity 0.3s ease-in;
+}
+.radial-hub[data-phase='open'] .radial-hub__veil {
+  clip-path: circle(var(--veil-r) at 50% 50%);
+  opacity: 1;
+  /* OPENING — the veil is at full strength from the first frame, so only the
+     circle animates and the reveal stays a wipe rather than a cross-fade. */
+  transition:
+    clip-path 0.5s var(--ease-glass, var(--ease-smooth)),
+    opacity 0.12s ease;
+}
+/* ── Sinking the page behind the globe ─────────────────────────────────────
+   The veil alone dims the page but leaves it legible, so the globe reads as
+   sitting ON the page rather than in front of it. This blurs the page itself.
+
+   It is `filter` on the PAGE, not `backdrop-filter` on the overlay, and the
+   difference is the whole reason this is affordable. A backdrop-filter must
+   re-sample everything behind it whenever anything above it moves — and the
+   globe above it moves continuously, which is the ~10fps measurement recorded
+   over `.radial-hub__veil`. A `filter` on a subtree that is ITSELF static
+   rasterises once and is then just a cached texture the compositor reuses; the
+   globe animating in a layer above never invalidates it. Same visual, opposite
+   cost curve.
+
+   The blur is deliberately LIGHT (6px, `--hub-page-blur`): the globe lenses and blurs the page behind it itself (the
+   coat reads the page snapshot at a high mip level), so a heavy blur around it is a second blur on top of the first and
+   leaves the page as a grey wash instead of something still recognisably there.
+
+   Applied to the three shell siblings rather than to `.radial-shell`, because
+   the hub is also a child of the shell and must stay sharp.
+
+   `filter` establishes a containing block for fixed-position descendants, and
+   `.radial-frame` has exactly one — the feed's compose FAB — which would be
+   re-anchored to the frame (i.e. thrown to the bottom of the document) for as
+   long as the filter is live. It sits under the overlay and is invisible the
+   whole time anyway, so it is hidden rather than left to slide about behind the
+   veil. This is also why the resting state is `filter: none` and not
+   `blur(0)`: a zero-radius blur still creates the containing block. */
+.radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-backdrop,
+.radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-topbar,
+.radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-frame,
+.radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting']))
+  > [data-floating]:not([data-floating='hub']) {
+  filter: blur(var(--hub-page-blur, 6px));
+  /* The transition lives HERE, on the open state, so it governs the way IN and
+     NOT the way out. That asymmetry is the fix for a reported bug: the whole
+     feed disappeared for the length of the close and then popped back.
+
+     Why it looked like the close's fault when it is really the open's. A
+     `filter` is only cheap on a subtree that HOLDS STILL and fits in a
+     rasterised buffer, and `.radial-frame` is neither small nor bounded — it is
+     the entire document-height feed. When that buffer cannot be maintained the
+     layer renders EMPTY, which is exactly the bet this block's own `ios-webkit`
+     note describes losing. While the menu is open you cannot see it, because
+     the veil is painted over the top. On close the veil's opacity lands first
+     (0.3s, ahead of its 0.5s clip-path, by its own design) while the filter was
+     still transitioning for 0.32s — so the veil got out of the way and revealed
+     a blank page, and the feed snapped back the instant `filter` reached `none`.
+
+     Dropping the filter instantly on close removes the window entirely: the
+     feed is back on the first frame of the close and is revealed by the
+     shrinking veil, which is what the wipe was always supposed to show. It also
+     stops 320ms of document-height re-rasterisation during the exact gesture
+     that is spending its whole budget on being smooth — so this is cheaper as
+     well as correct.
+
+     If a blank ever shows on the way IN too (the same buffer, during the 0.32s
+     before the growing veil covers it), the answer is not a longer transition —
+     it is to stop filtering `.radial-frame` at all and let the veil carry the
+     separation alone, which is already what `reduce-transparency` and
+     `ios-webkit` do a few rules below. */
+  transition: filter 0.32s var(--ease-glass, var(--ease-smooth));
+}
+/* …and the "rasterises once" above is only true if the blurred layer HOLDS
+   STILL. `.radial-backdrop` used to own breathing rings and a drifting blob
+   field that animated forever, so this block once had to pause them while the
+   menu was open. The backdrop is static now on every tier (see the note above
+   `.radial-backdrop__field`), so there is nothing left to pause. */
+.radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='closing'], [data-phase='everting']))
+  .radial-feed__compose {
+  visibility: hidden;
+}
+.radial-backdrop,
+.radial-topbar,
+.radial-frame {
+  filter: none;
+  /* No `transition` here on purpose — see the note on the `[data-phase='open']`
+     rule above. It used to sit on this base rule, which made it govern BOTH
+     directions; the 0.32s it then spent unwinding on the way out is what left
+     the feed blank for the length of the close. The way in still eases, because
+     that transition is declared on the open state itself. */
+}
+
+/* `reduce-transparency` opts out and leans on the veil, which is already opaque
+   enough to carry the separation on its own: a visitor who asked for less
+   see-through material did not ask for a blurrier one.
+
+   `ios-webkit` joins it, and for a reason that is worth separating: it is not
+   that the visitor asked for less, it is that the premise above does not hold
+   on WebKit. "A `filter` on a
+   static subtree rasterises once and is then a cached texture" is a CHROMIUM
+   measurement. `.radial-frame` is the whole feed — a subtree as tall as the
+   document, holding every lazy-loaded card — and asking a phone to keep a
+   blurred copy of it alive at device pixel ratio 3 while a canvas animates
+   above is a memory-pressure bet, not a cached texture. Losing that bet means
+   re-rasterising a document-height blur per frame, underneath the one gesture
+   on the site that spends its entire budget on being smooth.
+
+   This module already treats WebKit's compositor as its own axis in exactly
+   this way — `hooks/useLiquidBackground.ts` detaches wholesale on `ios-webkit`
+   because "moving a fixed, oversized gradient underneath multiple translucent
+   surfaces can wedge WebKit's compositor". Same engine, same shape of problem. */
+html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-backdrop,
+html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-topbar,
+html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) .radial-frame,
+html.ios-webkit .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) > [data-floating]:not([data-floating='hub']) {
+  filter: none;
+}
+/* The veil is translucent ONLY because the page behind it is blurred (see its
+   own note). Wherever that blur is off, it has to carry the separation alone or
+   the menu opens onto a legible, unblurred page with a tint over it. */
+html.ios-webkit .radial-hub__veil {
+  background: var(--site-bg);
+}
+
+/* ── Phones: the page stays visible behind the globe ────────────────────────
+   On a phone the menu used to black the page out: iOS Safari is one of the tiers
+   above that skip the blur, so its veil was opaque `--site-bg`. The page now stays
+   there, very slightly blurred, with only a light tint over it for the globe's
+   labels. Only `reduce-transparency` keeps the opaque veil: it asked for less see-through material.
+
+   WebKit is the one engine the note above warns about (a blur of the document-tall
+   feed is a memory bet there). The radius is kept to 3px for that reason, and the
+   feed layer is the single thing to drop (`filter: none`, here) if it ever renders
+   blank on a device. The veil's tint then has to go back to opaque with it. */
+@media (max-width: 767.98px) {
+  .radial-shell {
+    --hub-page-blur: 3px;
+  }
+  /* `html:root` matches the specificity of the `html.ios-webkit` rules above (this block wins on order, as it always
+     has on iOS). */
+  html:root .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) :is(.radial-backdrop, .radial-topbar, .radial-frame),
+html:root .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) > [data-floating]:not([data-floating='hub']) {
+    filter: blur(var(--hub-page-blur, 3px));
+  }
+  html:root .radial-hub__veil {
+    /* A gradient, not a flat colour: Safari reads a plain full-width background colour at the screen's edge as
+       the page's edge and fills its tab bar with it (the band that showed while the menu was open). */
+    background: linear-gradient(
+      color-mix(in srgb, var(--site-bg) 24%, transparent),
+      color-mix(in srgb, var(--site-bg) 24%, transparent)
+    );
+  }
+}
+
+/* ── The strips behind Safari's bars while the menu is open (2026-10-29) ────────────────────────────────────────────
+   The veil and the blurred page only exist INSIDE the viewport box, but on iOS 26 Safari the status-bar strip and the
+   floating tab bar are tinted from the ROOT's canvas (globals.css "The page's ground on iOS WebKit"), which the menu
+   never touched: the menu opened as a tinted screen between two strips of untinted page. So while the menu is up the
+   root carries the veil's own tint over the canvas, and the strips take the menu's colour — with no fixed layer at the
+   edge, which is what would bring the flat bands back. It follows the veil exactly: opaque `--site-bg` where the veil is
+   opaque (iPad and wider), 24% on phones where the page stays visible behind the globe. Not on `closing`: the veil
+   shrinks away from the edges first, and the strips should be the first thing to hand the page back. */
+html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) {
+  background-image:
+    linear-gradient(var(--site-bg), var(--site-bg)),
+    var(--site-canvas);
+}
+@media (max-width: 767.98px) {
+  html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) {
+    background-image:
+      linear-gradient(
+        color-mix(in srgb, var(--site-bg) 24%, transparent),
+        color-mix(in srgb, var(--site-bg) 24%, transparent)
+      ),
+      var(--site-canvas);
+  }
+}
+
+/* ── The liquid globe navigator ────────────────────────────────────────────
+   The navigator itself: a glass sphere with one pin per destination, which you
+   TURN to find where you want to go. Bring a place into the reticle at the front
+   of the sphere, hold, and the reticle's ring fills; let go once it is full and
+   you land there. Geometry, projection and the dwell gesture live in
+   `LiquidGlobe.tsx` — everything DRAWN is here.
+
+   Three layers, in paint order:
+     __sphere  a real CSS 3D wireframe cage. Meridians are circles turned about Y;
+               parallels are the same circle laid flat and lifted along it. ONE
+               transform on the parent turns the whole cage, so the cage costs one
+               style write a frame however many rings it carries.
+     __glass   a flat disc of shading over the cage, so the wireframe reads as
+               structure suspended INSIDE a liquid ball rather than a drawing on
+               top of one. It is flat on purpose: a sphere's silhouette does not
+               change as it spins, so nothing here needs to be in the 3D cage.
+     __pins    the destinations, projected in JS and billboarded — flat, crisp
+               type that never skews with the sphere, and real links, so click,
+               Enter and a screen reader all work without the gesture.
+
+   NOTHING here may take a `backdrop-filter`, and nothing beneath it may either:
+   this layer animates continuously, and a viewport-covering backdrop-filter under
+   an animating element re-blurs in full every frame. The measurements are in the
+   note above `.radial-hub__veil`. */
+.radial-globe {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  /* Real clearance, not a hairline. The stage is a SQUARE and the sphere is the
+     circle inscribed in it, so the corners are empty — but a pin near the bottom
+     of the sphere carries its label BELOW itself, which lands in that empty band
+     and can reach the stage's bottom edge. A token gap let those labels collide
+     with the title; this reserves the band they need. */
+  gap: clamp(1.35rem, 5vw, 2.25rem);
+  /* The stage is square. Its size is the one number the rest of the globe is
+     drawn against; `--globe-persp` and `--reticle-d` are supplied INLINE by
+     LiquidGlobe from the same constants its projection and hit test use, so the
+     circle you aim at is exactly the circle that locks, and the pins stay glued
+     to the wireframe they are supposed to be standing on. */
+  /* `svh`, not `dvh`: the small viewport height does not change while Safari's toolbar grows and shrinks, so the
+     globe's layout size (and everything measured from it, RadialHub `measureDock`) holds still through the animation. */
+  --globe-size: min(86vw, 48svh, 30rem);
+  /* Clears the foot capsule, which is absolutely positioned at the overlay's
+     bottom edge. The overlay centres this element's MARGIN box, so the globe
+     rides up by half of this rather than being pushed off the top — enough to
+     keep the readout clear of the capsule on a 320px-tall-ish phone, and not so
+     much that the sphere ends up stranded in the top third of the screen. */
+  margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 3rem);
+  /* Focus lands here when the menu opens (see RadialHub) — programmatic focus on
+     a container should not draw a ring around the whole globe. */
+  outline: none;
+  /* The whole globe is a gesture, not just the sphere.
+     `.radial-globe__stage` below already refuses selection, but the stage is
+     only the square the sphere is inscribed in — this ROOT also holds the title
+     card ("RMH Presents" / "The Liquid Globe"), and the two sit in one grid a
+     thumb's width apart. So a spin that starts on the sphere and travels
+     downward, or a hold that lands just below it, anchors a selection in the
+     wordmark and drags a highlight across it for the rest of the gesture. The
+     stage cannot prevent that: the selection never began inside the stage.
+     The title is a marquee, not prose — there is nothing here anyone copies —
+     so the guard belongs on the container that owns the gesture. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Blooms out of the orb and collapses back into it. KEYFRAMES, not a transition:
+   the globe is mounted only while the menu is up, and an element that is created
+   already in its open state has no previous style to transition FROM. */
+.radial-hub[data-phase='open'] .radial-globe {
+  animation: globe-in 0.5s var(--ease-glass, var(--ease-smooth)) both;
+}
+.radial-hub[data-phase='closing'] .radial-globe {
+  animation: globe-out 0.42s var(--ease-glass, var(--ease-smooth)) both;
+}
+/* The globe leaves from, and returns to, the docked orb's pose: the same place and size, so the orb and the
+   globe read as one object travelling and growing (RadialHub measures the three variables on the tap). */
+@keyframes globe-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--globe-from-dy, 0px)) scale(var(--globe-from-scale, 0.24));
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes globe-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(var(--globe-from-dy, 0px)) scale(var(--globe-from-scale, 0.24));
+  }
+}
+
+.radial-globe__stage {
+  position: relative;
+  width: var(--globe-size);
+  height: var(--globe-size);
+  /* The globe owns every gesture inside it: the browser must not pan, scroll,
+     select, long-press-select or offer a link menu while the sphere is being
+     turned. The overlay above sets the same four (it is the whole drag
+     surface); they are repeated here because the stage is the part that is
+     unconditionally the globe — the overlay's copy is gated on the hub's
+     phase, and the sphere must not depend on that to stay un-highlightable. */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: grab;
+  perspective: calc(var(--globe-size) * var(--globe-persp, 3.1));
+  perspective-origin: 50% 50%;
+}
+.radial-globe__stage[data-grabbing='true'] {
+  cursor: grabbing;
+}
+
+/* ── The wireframe cage ────────────────────────────────────────────────────
+   One canvas, stroked by LiquidGlobe every frame. It used to be a
+   `preserve-3d` div holding thirteen `border-radius: 50%` elements, each turned
+   into place by its own 3D transform — six meridians by `rotateY(--a)`, seven
+   parallels by `translateY(--ty) rotateX(90deg) scale(--s)`.
+
+   That drew the right picture and cost half the frame rate of the whole
+   gesture. A rotated 3D transform is the slow path for an antialiased
+   elliptical border: nothing can be reused between frames, because every frame
+   projects every ring differently, so thirteen of them were re-rasterised
+   individually inside a 3D sorting context at device pixel ratio. Measured on a
+   6x-throttled phone profile, interleaved and repeated: a drag ran at a 33.3ms
+   median frame with this cage and 16.7ms without it — while hiding the glass
+   disc, hiding the pins, dropping the `color-mix` from the borders and
+   promoting each ring to its own layer all changed nothing at all.
+
+   The geometry moved to `LiquidGlobe.tsx` unchanged — the same circles, through
+   the same perspective as the pins — so the only thing that is different is
+   what rasterises it. The colours stay here, where every theme can own them.
+   They are registered as `<color>` so their COMPUTED value is a resolved colour
+   the canvas can take; an unregistered custom property would hand it the
+   literal text `color-mix(in srgb, …)`. */
+@property --cage-minor {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --cage-parallel {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --cage-major {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+/* The ripple crest — the light on a wave crossing the glass. Registered as a
+   `<color>` for the same reason the cage ink is: the canvas needs a RESOLVED
+   colour, and an unregistered custom property hands it the literal
+   `color-mix(in srgb, …)` text, which `strokeStyle` silently ignores (leaving
+   the crest black). LiquidGlobe reads it once per size change and mixes its own
+   fallback from the element's `color` if the engine does not register it. */
+@property --cage-ripple {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+.radial-globe__cage {
+  position: absolute;
+  /* Deliberately LARGER than the stage, and hanging outside it on every side.
+     The sphere's limb already reaches the stage edge at rest, so when a ripple
+     swells the surface the wave crossed the edge of the backing store and was
+     clipped square — a poke near the rim looked cut off by a window instead of
+     travelling over a ball. The bleed gives the swell somewhere to go.
+
+     `--cage-bleed` is the single source of truth for the geometry: LiquidGlobe
+     reads the SAME fraction (`CAGE_BLEED`) to size the backing store and to put
+     the drawing origin at the middle of this box, so the two stay concentric and
+     the globe's drawn radius is unchanged. Change one and change the other. */
+  --cage-bleed: 11%;
+  top: calc(var(--cage-bleed) * -1);
+  left: calc(var(--cage-bleed) * -1);
+  /* Sized EXPLICITLY, never by `width: auto` against four insets. A `<canvas>`
+     is a REPLACED element, so `auto` resolves to its intrinsic size — the
+     `width`/`height` ATTRIBUTES, which are in device pixels — and not to the
+     box the insets describe. On a 1x display the two happen to be the same
+     number and it looks correct; at 2x the cage renders at twice its size,
+     anchored to the top-left inset, so the wireframe is huge and shifted down
+     and right of the sphere it belongs to. */
+  width: calc(100% + 2 * var(--cage-bleed));
+  height: calc(100% + 2 * var(--cage-bleed));
+  pointer-events: none;
+  /* Never painted (a canvas has no text) — it is the cage's ink, resolved, as
+     the fallback the drawing code mixes its own colours from on an engine that
+     does not register the custom properties below. */
+  color: var(--site-text);
+  /* Both faces of every ring are drawn, as they always were — the see-through
+     cage IS the globe, and it is what tells you there is more sphere behind the
+     one you are looking at. */
+  --cage-minor: color-mix(in srgb, var(--site-text) 20%, transparent);
+  --cage-parallel: color-mix(in srgb, var(--site-text) 13%, transparent);
+  /* The equator and the prime meridian are the globe's horizon: drawn firmer, so
+     there is always something to read the current tilt and spin against. */
+  --cage-major: color-mix(in srgb, var(--site-text) 34%, transparent);
+  /* Brighter than anything else on the sphere — a specular, not structure — but
+     it is also the only thing here that moves on its own, so it stops well
+     short of competing with the reticle for the eye. Its opacity is faded down
+     over the wave's life by the renderer; this is its full strength. */
+  --cage-ripple: color-mix(in srgb, var(--site-text) 50%, transparent);
+  --cage-width: var(--site-border-width, 1px);
+}
+
+/* ── The glass body ──────────────────────────────────────────────────────── */
+.radial-globe__glass {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  corner-shape: round;
+  pointer-events: none;
+  overflow: hidden;
+  /* Liquid Glass, held still: a specular bloom up-left, a thickening toward the
+     limb where a sphere's glass is deepest, and a bright rim where it turns away.
+     Every stop is mixed from the theme's own ink, so it resolves on a light theme
+     and a dark one without a second set of values. */
+  background: radial-gradient(
+    circle closest-side,
+    transparent 62%,
+    color-mix(in srgb, var(--site-text) 12%, transparent)
+  );
+  box-shadow:
+    inset 0 0 0 var(--site-border-width, 1px) var(--site-border),
+    inset 0 -20px 36px -24px color-mix(in srgb, var(--site-text) 16%, transparent),
+    0 30px 70px -34px rgba(0, 0, 0, 0.5);
+}
+.radial-globe__contact {
+  position: absolute;
+  left: 32%;
+  top: 32%;
+  width: 36%;
+  height: 36%;
+  border-radius: 50%;
+  corner-shape: round;
+  opacity: 0;
+  background:
+    radial-gradient(
+      ellipse at 52% 58%,
+      color-mix(in srgb, var(--site-text) 15%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse at 45% 38%,
+      transparent 42%,
+      color-mix(in srgb, var(--site-glass-light) 55%, transparent) 60%,
+      transparent 74%
+    );
+  pointer-events: none;
+}
+/* Static fallback highlight. Contact and the shared soft body own movement;
+   the fallback never starts an idle sheen loop. */
+.radial-globe__glass::after {
+  content: '';
+  position: absolute;
+  left: 12%;
+  top: 8%;
+  width: 44%;
+  height: 30%;
+  border-radius: 50%;
+  corner-shape: round;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--site-text) 12%, transparent),
+    transparent
+  );
+}
+/* ── The jelly material ────────────────────────────────────────────────────
+   The shader layer (`components/radial/jelly-glass.ts`): reflection, Fresnel rim,
+   specular, transmission, caustic and the accent's subsurface tint, drawn over
+   the cage inside the glass disc — so it takes the soft body's affine transform
+   with the disc, and its own shader follows the local lobe. LiquidGlobe sets
+   `data-globe-coat="on"` on the stage once the material has drawn its first frame
+   (NOT `data-jelly`: that attribute is the site material's opt-in, and on the
+   square stage it made jelly-coverage.css paint a rectangular rim, haze floor and
+   plasma glow round the ball — the globe's jelly is drawn by its own round shader);
+   until then (and wherever it is not eligible — high contrast, reduced
+   transparency, a software renderer, no WebGL) the CSS glass above is the material.
+
+   The disc keeps its rim hairline and its drop shadow (box-shadow); only the
+   painted gradients and the drifting sheen are the shader's now. That also
+   retires the sheen's infinite animation while the material is up, so an
+   untouched globe composites nothing of its own. */
+/* The canvas hangs outside the disc on every side by the SAME fraction of its diameter that `JELLY_BLEED` in
+   `jelly-glass.ts` bakes into the shader's coordinates (and that the cage uses): the dough can push the silhouette
+   past its rest position, and the shader draws that silhouette itself. Change one and change the other. */
+.radial-globe__jelly {
+  --jelly-bleed: 11%;
+  position: absolute;
+  top: calc(var(--jelly-bleed) * -1);
+  left: calc(var(--jelly-bleed) * -1);
+  width: calc(100% + 2 * var(--jelly-bleed));
+  height: calc(100% + 2 * var(--jelly-bleed));
+  pointer-events: none;
+  /* The coat arrives as a cross-fade, not a swap: it fades in OVER the CSS glass (`data-globe-coat="entering"`, both
+     drawn) and LiquidGlobe flips the stage to `on` — the CSS disc steps aside — as the fade lands (`COAT_FADE_MS`,
+     the same number). Browsers without `@starting-style` show it at once, as before. Opacity only. */
+  transition: opacity var(--globe-coat-fade) var(--ease-smooth);
+}
+@starting-style {
+  .radial-globe__jelly {
+    opacity: 0;
+  }
+}
+/* The shader owns the body, rim hairline and silhouette now, so the CSS disc stops clipping and stops drawing them.
+   Only the drop shadow stays CSS (a static ellipse on the surface below: it does not need to deform). */
+.radial-globe__stage[data-globe-coat='on'] .radial-globe__glass {
+  background: none;
+  overflow: visible;
+  border-radius: 0;
+  box-shadow: none;
+}
+.radial-globe__stage[data-globe-coat='on'] .radial-globe__glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  corner-shape: round;
+  box-shadow: 0 30px 70px -34px rgba(0, 0, 0, 0.5);
+}
+.radial-globe__stage[data-globe-coat='on'] .radial-globe__contact {
+  display: none;
+}
+.radial-globe__stage[data-globe-coat='on'] .radial-globe__glass::after {
+  content: none;
+  animation: none;
+}
+
+/* ── Pins ────────────────────────────────────────────────────────────────── */
+.radial-globe__pins {
+  position: absolute;
+  inset: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+/* A ZERO-SIZE anchor point that JS moves. The link inside centres itself on it,
+   so a single `translate3d(…) scale(…)` per frame both positions the pin and
+   foreshortens it — no layout, no percentage arithmetic against a box whose size
+   depends on its own label. Depth also drives `opacity`, `z-index` and whether
+   the pin takes a click at all (the far hemisphere never does). */
+.radial-globe__pin-wrap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  will-change: transform, opacity;
+}
+.radial-globe__pin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  gap: 0.32rem;
+  width: max-content;
+  max-width: calc(var(--globe-size) * 0.44);
+  text-align: center;
+  text-decoration: none;
+  color: var(--site-text);
+  /* A pin is an anchor — that is what makes it clickable, focusable and
+     readable by a screen reader — and an anchor is the one element iOS will
+     interrupt a hold on. The overlay's inherited `-webkit-touch-callout` covers
+     it; this is the belt to that braces, stated at the element the gesture
+     actually ends on so a future refactor that moves the pins out of the
+     overlay cannot silently hand the link menu back. */
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+/* Pins arrive after the sphere, one after another, so the globe reads as
+     something that assembles rather than something that pops. */
+.radial-hub[data-phase='open'] .radial-globe__pin {
+    animation: globe-pin-in 0.42s ease both calc(140ms + var(--i, 0) * 26ms);
+  }
+@keyframes globe-pin-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+}
+.radial-globe__pin-dot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 999px;
+  corner-shape: round;
+  /* `--site-surface` is itself a translucent tint, so a tint of it would vanish
+     over a light page. Built on the solid companion and mixed a few percent
+     toward the ink, which separates the pin from the globe on every theme. */
+  background: color-mix(in srgb, var(--site-surface-opaque) 90%, var(--site-text) 10%);
+  border: var(--site-border-width, 1px) solid var(--site-border);
+  box-shadow: none;
+  color: inherit;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s var(--ease-glass, var(--ease-smooth));
+}
+.radial-globe__pin-dot svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+/* "Design for the hand": the DRAWN pin stays small enough that a dozen of them
+   fit on a phone-sized sphere, while the TOUCHABLE pin is grown to the 44px
+   minimum by an invisible pad. Visual density and hit density are different
+   problems and this is the only honest way to solve both.
+   It is inset-based rather than a bigger box so it cannot disturb the layout,
+   and it inherits the dot's `pointer-events` — a pin on the back of the globe
+   has hit-testing switched off at the wrapper, so its pad is inert too and can
+   never steal a tap from the pin in front of it. */
+.radial-globe__pin-dot::after {
+  content: '';
+  position: absolute;
+  inset: calc((2.75rem - 2.15rem) / -2);
+  border-radius: inherit;
+  corner-shape: inherit;
+}
+/* The name resolves only for the pins actually facing you — `--near` is written
+   per frame from the pin's depth — so a dozen labels never pile up in the middle
+   of the sphere. */
+.radial-globe__pin-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  color: var(--site-text);
+  opacity: var(--near, 0);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  hyphens: none;
+}
+.radial-globe__pin:hover .radial-globe__pin-dot {
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+}
+.radial-globe__pin:focus-visible {
+  outline: none;
+}
+.radial-globe__pin:focus-visible .radial-globe__pin-dot {
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  outline: 3px solid var(--site-text);
+  outline-offset: 3px;
+}
+.radial-globe__pin:focus-visible .radial-globe__pin-name {
+  opacity: 1;
+}
+/* Locked on: the pin the reticle holds, and the one a full ring will open.
+   Keyed on the WRAPPER, not on the link. The lock changes several times during
+   a single turn of the globe, and while it was a React prop on the link every
+   one of those changes re-rendered all twelve pins — twelve `<Link>`s, each
+   re-resolving its router props — in the middle of the one gesture that has to
+   stay at frame rate. The frame loop already owns this element (it writes its
+   transform); toggling one class on it from there costs a class change on one
+   node and no render at all. */
+/* The page you are on (`aria-current`, from LiquidGlobe): an accent ring around
+   the pin and its name in the accent, with a halo breathing out of it, so
+   "you are here" reads at a glance without looking like the hover / lock fill.
+   The halo is `transform` + `opacity` only (the compositor).
+
+   The ring is the signal; the halo only announces it. It breathes THREE times
+   when the pin becomes current (the pseudo-element is created then, so every
+   navigation replays it) and then rests. It used to breathe forever — on the
+   DOCKED globe too, i.e. on every desktop page at rest, under `still` included
+   (2026-10-23, H1). `still` and the degraded tiers skip it entirely. */
+.radial-globe__pin[aria-current='page'] .radial-globe__pin-dot {
+  outline: 2px solid var(--site-accent);
+  outline-offset: 2px;
+}
+.radial-globe__pin[aria-current='page'] .radial-globe__pin-dot::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  corner-shape: inherit;
+  border: 2px solid var(--site-accent);
+  pointer-events: none;
+  opacity: 0;
+  animation: globe-current-halo 2.4s ease-out 3;
+}
+html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-globe__pin-dot::before {
+  animation: none;
+}
+.radial-globe__pin[aria-current='page'] .radial-globe__pin-name {
+  color: var(--site-accent);
+}
+@keyframes globe-current-halo {
+  from {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+.radial-globe__pin-wrap.is-locked .radial-globe__pin-dot {
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  transform: scale(1.1);
+  box-shadow: none;
+}
+.radial-globe__pin-wrap.is-locked .radial-globe__pin-name {
+  opacity: 1;
+}
+/* Below 420px the sphere is too small to carry a dozen names at once; the readout
+   under it names whatever is locked on, which is the only one that matters. */
+@media (max-width: 419px) {
+  .radial-globe__pin-name {
+    display: none;
+  }
+  /* …except the one the reticle is holding. Below this width it is the only
+     label on screen, so there is nothing for it to crowd — and since the title
+     card under the sphere is fixed branding rather than a live readout, this is
+     now the ONLY place a destination is named on a phone. Focus gets the same
+     treatment so the keyboard path is never left unlabelled either. */
+  .radial-globe__pin-wrap.is-locked .radial-globe__pin-name,
+  .radial-globe__pin:focus-visible .radial-globe__pin-name {
+    display: block;
+  }
+  .radial-globe__pin-dot {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+  /* The drawn pin shrinks on a phone; the 44px touch pad does not. */
+  .radial-globe__pin-dot::after {
+    inset: calc((2.75rem - 1.9rem) / -2);
+  }
+  .radial-globe__pin-dot svg {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+/* ── Reticle ──────────────────────────────────────────────────────────────
+   The target at the front of the globe, and the ring that fills while a
+   destination is held in it. `--reticle-d` is derived by LiquidGlobe from the very
+   constant its hit test uses, so the drawn circle and the locking circle cannot
+   drift apart; `--fill` is the dwell fraction, written per frame. */
+.radial-globe__reticle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--reticle-d, 31%);
+  height: var(--reticle-d, 31%);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  corner-shape: round;
+  pointer-events: none;
+  z-index: 400;
+  --fill: 0;
+}
+/* Resting: a faint dashed target that firms up the moment something locks in. */
+.radial-globe__reticle::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  corner-shape: round;
+  border: var(--site-border-width, 1px) dashed color-mix(in srgb, var(--site-text) 34%, transparent);
+  transition:
+    border-color 0.2s ease,
+    border-style 0.2s ease;
+}
+.radial-globe[data-locked='true'] .radial-globe__reticle::before {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--site-text) 58%, transparent);
+}
+.radial-globe[data-ready='true'] .radial-globe__reticle::before {
+  border-color: var(--site-accent);
+  border-width: 2px;
+}
+/* The dwell ring: a conic sweep masked down to a hairline annulus just OUTSIDE
+   the target, so the progress never covers the pin it is describing. */
+.radial-globe__reticle-ring {
+  position: absolute;
+  inset: -9%;
+  border-radius: 50%;
+  corner-shape: round;
+  background: conic-gradient(
+    from -90deg,
+    var(--site-accent) 0deg calc(var(--fill) * 360deg),
+    transparent calc(var(--fill) * 360deg) 360deg
+  );
+  -webkit-mask: radial-gradient(
+    circle closest-side,
+    transparent calc(100% - 3px),
+    #000 calc(100% - 3px)
+  );
+  mask: radial-gradient(circle closest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));
+}
+/* Armed — the ring is full, and letting go opens the page. */
+.radial-globe[data-ready='true'] .radial-globe__reticle {
+    animation: globe-armed 0.9s ease-in-out infinite alternate;
+  }
+@keyframes globe-armed {
+  from {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+
+/* ── Title ────────────────────────────────────────────────────────────────
+   A fixed billing card under the sphere, not a running commentary. It is
+   deliberately STATIC: a caption that changed on every lock pulled the eye down
+   and away from the reticle, which is the one place the gesture actually asks
+   you to look. The destination names itself AT the pin instead — see the
+   locked-label rule in the small-screen block above. */
+.radial-globe__title {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 0.2rem;
+  max-width: min(22rem, 88vw);
+  text-align: center;
+  /* Nothing here takes a pointer: the sphere above owns the whole gesture, and a
+     stray press on the wordmark must never interrupt a drag. */
+  pointer-events: none;
+}
+.radial-globe__wordmark {
+  margin: 0;
+  font-size: clamp(1.35rem, 6vw, 1.85rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--site-text);
+  text-wrap: balance;
+}
+.radial-hub__foot {
+  position: absolute;
+  /* Centred by auto margins across the full width, NOT by `left: 50%` + a
+     translate. An absolutely positioned shrink-to-fit box may only use the space
+     between its `left` and the container's edge, so `left: 50%` capped this
+     capsule at half the viewport — and since the identity pill is the only
+     flexible item in the row, that cap came straight out of the signed-in user's
+     name, which ellipsed while the row still had room. */
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: max-content;
+  /* Same safe-area reasoning as the orb: this pill carries identity, settings,
+     sign-out and close, so it cannot sit under the home indicator. */
+  /* Where it always sat on the screen: the overlay is 1.5rem in from the bottom edge now. */
+  /* At least 1.75rem off the screen's edge: a fixed element near the bottom centre is what iOS Safari can fill
+     its tab bar strip from while the menu is open (the overlay is 1.5rem in, so subtract that). The overlay's own
+     bottom edge follows Safari's toolbar (`.radial-hub__overlay`), so this pill does too, with nothing of its own. */
+  bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(1.75rem, 5vw, 2.25rem) - 1.5rem);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rad-1);
+  padding: 0.4rem 0.5rem;
+  border-radius: 999px;
+  corner-shape: round;
+  max-width: calc(100vw - 2rem);
+  /* One jelly pill, the compose button's material: the same lit sphere shading, and the jelly soft body
+     (`data-fluid-press` on the parent in RadialHub). Everything inside is plain ink on it, with no body of its
+     own (`data-jelly="off"`), so there is one body, not five stacked. */
+  background: radial-gradient(
+    ellipse 90% 140% at 30% 20%,
+    color-mix(in srgb, var(--site-accent) 62%, var(--site-accent-fg)) 0%,
+    var(--site-accent) 52%,
+    color-mix(in srgb, var(--site-accent) 70%, var(--site-bg)) 100%
+  );
+  color: var(--site-accent-fg);
+  /* Grows out of its own centre, like the compose pill's arrow: the pill opens outward and the contents are
+     uncovered, not scaled. The clip's end is negative so the jelly's squash is never cropped. */
+  clip-path: inset(-1.25rem calc(50% - 1.6rem) -1.25rem round 999px);
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    clip-path 0.5s var(--ease-smooth),
+    opacity 0.3s var(--ease-smooth),
+    transform 0.5s var(--ease-smooth);
+}
+.radial-hub[data-phase='open'] .radial-hub__foot {
+  clip-path: inset(-1.25rem -1.25rem -1.25rem -1.25rem round 999px);
+  opacity: 1;
+  transform: none;
+}
+/* The overlay mounts with the open (RadialHub: a closed dialog left mounted
+   would hold Radix's Escape layer), so the veil and the foot are created
+   already open and have no closed style to transition FROM. These give them
+   one — the same closed base state — so the open is the one motion it was.
+   Browsers without `@starting-style` show them at once; the close is unchanged. */
+@starting-style {
+  .radial-hub[data-phase='open'] .radial-hub__veil {
+    clip-path: circle(0 at 50% 50%);
+    opacity: 0;
+  }
+  .radial-hub[data-phase='open'] .radial-hub__foot {
+    clip-path: inset(-1.25rem calc(50% - 1.6rem) -1.25rem round 999px);
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* ── PHONES: the one docked globe ─────────────────────────────────────────────────────────────────
+   RadialHub renders the real globe once (`.radial-hub__dock`), laid out at its full size in the middle of the
+   VISIBLE area and held SMALL on the orb's footprint by two individual properties, `translate` and `scale`.
+   The hub measures only what layout fixes (`--dock-dx`, `--dock-kc`, `--dock-scale`, origin `--dock-ox/oy`: the
+   sphere's centre, so it scales about itself); the vertical offset also depends on the visible height, which iOS
+   Safari's toolbar changes, so that part is CSS (see `translate` below) and nothing is re-measured when it moves.
+   Open is the same element with both set to rest, so a touch only moves and grows it, and what it shows is sharp
+   because it is drawn at full size. `scale` is the property LiquidGlobe waits on to re-place the page it refracts.
+
+   While docked it is a dot globe: the icons and labels cannot be read at this size, so only the pins' discs show,
+   and the icons arrive as it grows. It takes no pointer: the orb above it is the touch target. */
+.radial-hub__dock {
+  position: fixed;
+  /* A box about the globe's own size, centred on the screen, where the globe is laid out. It used to be a
+     full-width box 12px off the top and bottom edges: a transparent fixed layer that wide, that near an edge, is
+     what iOS Safari can read as the page's edge (it shifts fixed layers by about 10px while its toolbar collapses),
+     and it filled the strip behind its tab bar with one flat colour. This is under 90% of the width and far from
+     both edges. */
+  /* The box is centred on the VISIBLE area: the container's middle (50%) less half of `--vv-follow`, the amount iOS
+     Safari's changing toolbar has left the fixed container taller than the visible area (app/globals.css), so
+     it moves with the toolbar in layout and the open globe stays centred on what can be seen. */
+  top: calc(50% - var(--vv-follow, 0px) / 2);
+  left: 50%;
+  width: min(86vw, 48svh, 30rem);
+  translate: -50% -50%;
+  z-index: calc(var(--z-floating) - 1);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.radial-hub:is([data-phase='open'], [data-phase='closing'], [data-phase='landing'], [data-phase='everting'])
+  .radial-hub__dock {
+  /* Above the veil for the whole open, close and landing, so the globe never dips under it mid-move. */
+  z-index: calc(var(--z-hub-overlay) + 1);
+}
+.radial-hub[data-phase] .radial-hub__dock .radial-globe {
+  transform-origin: var(--dock-ox, 50%) var(--dock-oy, 50%);
+  /* The sphere's centre is moved onto the orb's. The orb is fixed to the visible bottom and the dock box is centred
+     on the visible area, so the orb's centre is `--hub-half-vh - --orb-bottom - orb/2` BELOW the box's centre
+     whatever the toolbar is doing, and that is the whole of the vertical travel, plus `--dock-kc`: how far the
+     sphere's centre sits above the box's own centre in layout (measured; fixed until the dock or the globe is
+     resized). `--hub-half-vh` is half the visible height, so the toolbar moving changes this length in the same
+     style recalc as the orb's `bottom`. */
+  translate: var(--dock-dx, 0px)
+    calc(var(--hub-half-vh) - var(--orb-bottom) - var(--site-hub-orb-size) / 2 + var(--dock-kc, 0px));
+  scale: var(--dock-scale, 0.2);
+  /* The overlay's keyframe open/close is for the wider screens; here the same element just moves. */
+  animation: none;
+  pointer-events: none;
+  /* Docked, the pose follows the orb at once (both follow Safari's toolbar in CSS, `--vv-follow` / `dvh`): a
+     transition on `translate` here would be the globe lagging behind the tab bar. It only moves smoothly between
+     docked and open (the two rules below). */
+  transition: opacity 0.4s var(--ease-smooth);
+}
+.radial-hub:is([data-phase='open'], [data-phase='closing']) .radial-hub__dock .radial-globe {
+  transition:
+    translate 0.5s var(--ease-glass, var(--ease-smooth)),
+    scale 0.5s var(--ease-glass, var(--ease-smooth)),
+    opacity 0.4s var(--ease-smooth);
+}
+.radial-hub[data-phase='open'] .radial-hub__dock .radial-globe {
+  translate: 0 0;
+  scale: 1;
+}
+/* LANDING: the page has already changed (RadialHub `landOnOrb`) and the globe comes home over the length of its own
+   self-eversion, so the run ends on the docked globe. Same element, same two properties, slower. */
+.radial-hub[data-phase='landing'] .radial-hub__dock .radial-globe {
+  transition:
+    translate var(--land-ms, 1500ms) var(--ease-smooth),
+    scale var(--land-ms, 1500ms) var(--ease-smooth),
+    opacity 0.4s var(--ease-smooth);
+}
+/* A globe that mounts at its docked pose fades in rather than appearing; one mounted by a tap before it was ready
+   grows in from the orb. */
+@starting-style {
+  .radial-hub[data-phase] .radial-hub__dock .radial-globe {
+    opacity: 0;
+  }
+}
+.radial-hub[data-phase='open'] .radial-hub__dock .radial-globe__stage {
+  pointer-events: auto;
+}
+/* The sun behind the docked globe: a pale glow and rays of light round it, over a soft frost of the page ground, so
+   the globe and its points read against any page (a small globe over busy content is hard to see). Drawn with
+   gradients only: no filter and no backdrop-filter (Safari's bars), no animation (the globe is what moves), and it
+   takes no pointer. It is centred on the orb (`--sun-x/y`, measured with the dock's pose) and is for the docked globe
+   only: it fades out as the globe opens and comes back as it lands. */
+.radial-hub__sun {
+  position: absolute;
+  /* The orb's centre inside the dock box, in CSS like the globe's pose (the box's middle, then down to the orb by
+     the visible half-height less the orb's own distance from the bottom). Nothing is measured. */
+  left: 50%;
+  top: calc(50% + var(--hub-half-vh) - var(--orb-bottom) - var(--site-hub-orb-size) / 2);
+  width: calc(var(--site-hub-orb-size) * 1.6);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  corner-shape: round;
+  pointer-events: none;
+  /* The light's colour: the theme's haze, lifted toward white where the theme's glass light is white (Daylight), so
+     the rays still show on a pale page. */
+  --sun-ray: color-mix(in srgb, var(--site-jelly-haze-strong) 40%, var(--site-glass-light, transparent));
+  background:
+    /* the glow hugging the globe */
+    radial-gradient(
+      circle,
+      color-mix(in srgb, var(--sun-ray) 62%, transparent) 0%,
+      color-mix(in srgb, var(--sun-ray) 26%, transparent) 25%,
+      transparent 44%
+    ),
+    /* long rays, soft at both edges */
+    repeating-conic-gradient(
+      from 4deg,
+      transparent 0deg,
+      color-mix(in srgb, var(--sun-ray) 55%, transparent) 2.4deg,
+      transparent 5.4deg,
+      transparent 15deg
+    ),
+    /* short rays between them */
+    repeating-conic-gradient(
+      from 11.5deg,
+      transparent 0deg,
+      color-mix(in srgb, var(--sun-ray) 34%, transparent) 1.6deg,
+      transparent 3.6deg,
+      transparent 15deg
+    ),
+    /* frost: the page ground, thickest right behind the globe */
+    radial-gradient(
+      circle,
+      color-mix(in srgb, var(--site-bg) 58%, transparent) 0%,
+      color-mix(in srgb, var(--site-bg) 30%, transparent) 30%,
+      transparent 52%
+    );
+  -webkit-mask-image: radial-gradient(circle, rgb(0 0 0) 0%, rgb(0 0 0) 32%, transparent 70%);
+  mask-image: radial-gradient(circle, rgb(0 0 0) 0%, rgb(0 0 0) 32%, transparent 70%);
+  opacity: 1;
+  transition: opacity 0.4s var(--ease-smooth);
+}
+.radial-hub[data-phase='open'] .radial-hub__sun {
+  opacity: 0;
+}
+/* It comes back as the globe lands, not while it is still big. */
+.radial-hub[data-phase='landing'] .radial-hub__sun {
+  transition-delay: calc(var(--land-ms, 1500ms) * 0.55);
+}
+/* The marquee, the reticle and the readout are for the open globe. */
+.radial-hub__dock .radial-globe__title,
+.radial-hub__dock .radial-globe__reticle {
+  transition: opacity 0.3s var(--ease-smooth);
+}
+.radial-hub:not([data-phase='open']) .radial-hub__dock .radial-globe__title,
+.radial-hub:not([data-phase='open']) .radial-hub__dock .radial-globe__reticle {
+  opacity: 0;
+}
+/* Dots: icons and labels step aside while it is small. */
+.radial-hub__dock .radial-globe__pin-dot svg,
+.radial-hub__dock .radial-globe__pin-name {
+  transition: opacity 0.3s var(--ease-smooth);
+}
+.radial-hub:not([data-phase='open']) .radial-hub__dock .radial-globe__pin-dot svg,
+.radial-hub:not([data-phase='open']) .radial-hub__dock .radial-globe__pin-name {
+  opacity: 0;
+}
+
+/* ── EVERTING — the hub hands the screen to the Globe Eversion ──────────────
+   (docs/plans/2026-10-17-globe-eversion.md §9.2 step 3; amended 2026-10-19.)
+   By the commit the destination is captured and the frozen picture of the page
+   being left is up one z-step beneath the hub's overlay. Nothing here FADES OUT
+   beside the effect; every part of the hub hands over by moving (the owner: "no
+   element should simply appear or fade in, everything should morph smoothly"):
+
+   - the veil contracts into the globe (its own closing motion, the circle riding
+     in, toward the globe instead of the orb) while the frozen picture's blur is
+     pulled to sharp underneath, over `--eversion-delay` (`HOLD_FADE_MS`);
+   - the glass globe then swells and travels exactly as the effect's sphere does
+     during WRAP (`--eversion-swell`, `--eversion-dx/dy`, `--eversion-wrap`: the
+     run's `EversionHandover`, set on `.radial-hub` by RadialHub), so the page
+     wraps up INTO it, and it dissolves into the planet the page has become in
+     the second half of WRAP - the same sphere, glass turning into page;
+   - the foot capsule drops off the bottom edge.
+
+   The orb is opaque from here (pointer-events off) and glides home under the
+   picture and the canvas, which cover it until the final dissolve: the
+   destination picture carries it docked (capture.ts), so it unwraps into place
+   with the page instead of fading in after the run.
+
+   Each property is named (never `transition-all`); the veil RESTATES nothing it
+   does not move. */
+.radial-hub[data-phase='everting'] .radial-hub__veil {
+  clip-path: circle(0px at calc(50% - var(--eversion-dx, 0px)) calc(50% - var(--eversion-dy, 0px)));
+  opacity: 1;
+  transition: clip-path var(--eversion-delay, 250ms)
+    var(--ease-glass, var(--ease-smooth));
+}
+/* KEYFRAMES, not a transition, for the same reason the bloom is: the open globe
+   is held by `globe-in` (fill `both`), and a property an animation was driving
+   does not transition when that animation is taken away. Measured in Chromium:
+   with a transition here the globe jumped to its swollen, invisible end state in
+   the commit's first frame. The `from` frames are `globe-in`'s end, so the
+   change of animation is seamless.
+
+   It starts when the effect's sphere starts, and moves as that sphere moves
+   (amended 2026-10-20, the owner: "a lot of jittering when the animation
+   begins"). It used to start on a fixed `--eversion-delay` from the commit, while
+   the sphere starts after the focus pull's frames and its own first frame, so a
+   commit that cost the main thread anything put the glass globe ahead of the
+   sphere it was dissolving into, on a different curve: two spheres disagreeing
+   about their size for the length of the dissolve. Now the runner reports the
+   sphere's first frame (`onFirstFrame`, `cover`) and RadialHub sets
+   `data-eversion-swell` then; the curve is the timeline's own radius and centre
+   channels, a quintic from rest to rest over WRAP, i.e. smootherstep
+   (`--eversion-ease-wrap`). Until then the globe holds still where the bloom left it. */
+.radial-hub[data-phase='everting'] .radial-globe {
+  transform-origin: 50% calc(var(--globe-size) / 2);
+}
+.radial-hub[data-phase='everting'][data-eversion-swell] .radial-globe {
+  animation:
+    globe-swell var(--eversion-wrap, 700ms) var(--eversion-ease-wrap) both,
+    globe-dissolve calc(var(--eversion-wrap, 700ms) * 0.45) var(--ease-exit-in)
+      calc(var(--eversion-wrap, 700ms) * 0.45) both;
+}
+@keyframes globe-swell {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: translate(var(--eversion-dx, 0px), var(--eversion-dy, 0px))
+      scale(var(--eversion-swell, 1));
+  }
+}
+@keyframes globe-dissolve {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.radial-hub[data-phase='everting'] .radial-hub__foot {
+  opacity: 1;
+  transform: translateY(
+    calc(100% + env(safe-area-inset-bottom, 0px) + clamp(1rem, 4vw, 2rem) + 1rem)
+  );
+  pointer-events: none;
+  transition: transform calc(var(--eversion-delay, 250ms) + 150ms) var(--ease-evert-in);
+}
+.radial-hub[data-phase='everting'] .radial-hub__orb {
+  opacity: 1;
+  pointer-events: none;
+  transition: transform 0.5s var(--ease-glass, var(--ease-smooth));
+}
+.radial-hub__identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.6rem 0.25rem 0.3rem;
+  border-radius: 999px;
+  corner-shape: round;
+  color: inherit;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  /* Room for a real display name before the ellipsis has to do any work. */
+  max-width: min(26rem, 52vw);
+  /* The pill is the only flexible item in the foot row, and it has to be able
+     to shrink: a flex item's default `min-width: auto` is its CONTENT, so a
+     long display name kept the pill at full width and pushed its avatar disc
+     on top of the settings gear beside it. `min-width: 0` lets it give way,
+     and the name (not the avatar) is what ellipses. */
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.radial-hub__identity > :first-child {
+  flex: none;
+}
+
+.radial-hub__identity > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.radial-hub__identity:hover,
+.radial-hub__foot-btn:hover {
+  /* A soft glow behind the ink, as on the dropdown rows: no fill, edge or transform of its own. */
+  background: color-mix(in srgb, var(--site-accent-fg) 16%, transparent);
+}
+.radial-hub__foot-btn {
+  display: inline-grid;
+  place-items: center;
+  /* Never squeezed by the identity pill beside it. */
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  corner-shape: round;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background-color 0.18s var(--ease-smooth);
+}
+.radial-hub__foot-btn svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+.radial-hub__signin {
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  corner-shape: round;
+  color: inherit;
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-decoration: none;
+  transition: background-color 0.18s var(--ease-smooth);
+}
+.radial-hub__signin:hover {
+  background: color-mix(in srgb, var(--site-accent-fg) 16%, transparent);
+}

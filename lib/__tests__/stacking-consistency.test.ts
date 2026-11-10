@@ -47,6 +47,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readCss } from './css-source';
 
 const ROOT = process.cwd();
 
@@ -312,7 +313,7 @@ describe('§4 — nothing `fixed` inside a deformable jelly host (R3, N4)', () =
     'app/jelly-coverage.css',
     'components/shared/app-theme.css',
   ])('no role has blur: %s', (sheet) => {
-    const css = readFileSync(join(ROOT, sheet), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const css = readCss(join(ROOT, sheet)).replace(/\/\*[\s\S]*?\*\//g, '');
     const ROLE = /\.glass-[\w-]+|\[data-jelly[\]=\w-]*|\.app-glass\b/;
     const blurred = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
       .filter((m) => ROLE.test(m[1]))
@@ -329,12 +330,12 @@ describe('§4 — nothing `fixed` inside a deformable jelly host (R3, N4)', () =
   it('the role sheets exist and define the roles (the scan above is not vacuous)', () => {
     const css = readFileSync(join(ROOT, 'app', 'glass-roles.css'), 'utf8');
     expect(css).toMatch(/\.glass-fill/);
-    expect(readFileSync(join(ROOT, 'app', 'jelly-material.css'), 'utf8')).toMatch(/\.glass-pane/);
+    expect(readCss(join(ROOT, 'app', 'jelly-material.css'))).toMatch(/\.glass-pane/);
   });
 });
 
 describe('§5.6 — the shell stacking scale stays one scale (R4)', () => {
-  const css = readFileSync(join(ROOT, 'app', 'globals.css'), 'utf8');
+  const css = readCss(join(ROOT, 'app', 'globals.css'));
   const tokens = [...css.matchAll(/^\s*(--z-[a-z-]+):\s*(\d+);/gm)].map(
     (m) => [m[1], Number(m[2])] as const,
   );
@@ -373,7 +374,7 @@ describe('§5.6 — the shell stacking scale stays one scale (R4)', () => {
 
   it('the scale is declared only in globals.css', () => {
     const elsewhere = listSourceFiles(['components', 'app'], ['.css'])
-      .filter((f) => f !== 'app/globals.css')
+      .filter((f) => f !== 'app/globals.css' && !f.startsWith('app/globals/'))
       .filter((f) => /^\s*--z-[a-z-]+:\s*\d+;/m.test(readFileSync(join(ROOT, f), 'utf8')));
     expect(
       elsewhere,

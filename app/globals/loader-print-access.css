@@ -1,0 +1,591 @@
+/* ==========================================================================
+   The radial loading mark (.rad-loader)
+   Rendered by components/radial/RadialLoader.tsx and, through it, by the shared
+   <Spinner> primitive — so every loading state on the site speaks the radial
+   language. It lives HERE rather than in radial.css because it is used outside
+   the `_site` shell too (games, /login, legal pages), which never load that
+   stylesheet. radial.css layers the goo filter on top where it is available.
+   Colour is `currentColor` throughout, so it inherits its context.
+   ========================================================================== */
+.rad-loader {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+  color: inherit;
+}
+.rad-loader__core,
+.rad-loader__blob {
+  position: absolute;
+  border-radius: 50%;
+  corner-shape: round;
+  background: currentColor;
+}
+/* The core pulses at the centre — the RMH orb in miniature. */
+.rad-loader__core {
+  left: 50%;
+  top: 50%;
+  width: 34%;
+  height: 34%;
+  margin: -17% 0 0 -17%;
+}
+/* Three blobs orbit it on evenly-spaced phases, the way the hub's wedges bloom
+   around the orb. Each is positioned at the centre and thrown outward by its
+   own rotation, so one keyframe drives all three. */
+.rad-loader__blob {
+  left: 50%;
+  top: 50%;
+  width: 26%;
+  height: 26%;
+  margin: -13% 0 0 -13%;
+  transform: rotate(calc(var(--i) * 120deg)) translateX(115%);
+}
+.rad-loader__core {
+  animation: rad-loader-pulse 1.4s ease-in-out infinite;
+}
+.rad-loader__blob {
+  animation: rad-loader-orbit 1.4s var(--ease-out-expo) infinite;
+  animation-delay: calc(var(--i) * -0.466s);
+}
+@keyframes rad-loader-pulse {
+  0%,
+  100% {
+    transform: scale(0.82);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+}
+/* Out and back on each cycle: at the inner extreme the blob overlaps the core,
+   which is where the shell's goo filter fuses them into one liquid body. */
+@keyframes rad-loader-orbit {
+  0%,
+  100% {
+    transform: rotate(calc(var(--i) * 120deg)) translateX(38%) scale(0.7);
+  }
+  50% {
+    transform: rotate(calc(var(--i) * 120deg + 180deg)) translateX(125%) scale(1);
+  }
+}
+
+/* ==========================================================================
+   Tabs — the segmented control (2026-10-09)
+   ------------------------------------------------------------------------
+   A neutral raised THUMB on a flush TRACK, one row, labels never truncated.
+   The reasoning is in the `tabs.tsx` docblock; the short version:
+
+     - the active tab used to be a solid accent pill — on the default theme the
+       exact black pill every primary BUTTON is, so "where you are" and "what you
+       can do" looked identical. The accent is for actions now; selection is a
+       raised neutral thumb, Apple's segmented-control grammar.
+     - the strip used to be a wrapping grid of equal columns, which ellipsed long
+       labels ("RMHH…", "Everyt…") and turned six tabs into a 2×3 button grid on
+       a phone. It is one row now: equal segments up to four tabs, label-sized
+       beyond that, and a horizontal scroll with an edge fade when even that
+       doesn't fit.
+
+   The thumb's paint is three custom properties on the strip so a theme or a game
+   (Slice It!) re-skins it without forking the component.
+   ========================================================================== */
+[data-slot='liquid-tabs'] {
+  --tab-radius: var(--site-control-radius);
+  /* Opaque in light themes; in dark ones a lifted grey, because the opaque
+     surface there is near-black and would sink INTO the track instead of
+     sitting on it. `light-dark()` keys on each theme's own `color-scheme`. The
+     first declaration is the fallback for an engine without `light-dark()`. */
+  --tab-thumb-bg: var(--site-surface-opaque);
+  --tab-thumb-bg: light-dark(
+    var(--site-surface-opaque),
+    color-mix(in srgb, var(--site-surface-opaque) 78%, var(--site-text))
+  );
+  --tab-thumb-ink: var(--site-text);
+  --tab-thumb-border: color-mix(in srgb, var(--site-border) 80%, transparent);
+
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  /* One row; overflow scrolls, never wraps. */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+[data-slot='liquid-tabs']::-webkit-scrollbar {
+  display: none;
+}
+
+/* Flex basis per mode. Items carry `min-w-max shrink-0`, so in both modes a
+   segment can grow to fill the track but can never be squeezed below its label. */
+[data-slot='liquid-tabs'][data-tab-fit='equal'] > * {
+  flex: 1 0 0%;
+}
+[data-slot='liquid-tabs'][data-tab-fit='content'] > * {
+  flex: 1 0 auto;
+}
+
+/* The edge fade — only on a side that actually has more tabs past it. Set by
+   `tabs.tsx` on the strip's own scroll; the mask is on the scroller, so
+   it fades the viewport edge, not a particular tab. */
+[data-slot='liquid-tabs'][data-fade-start='true'] {
+  mask-image: linear-gradient(to right, transparent, #000 2rem);
+}
+[data-slot='liquid-tabs'][data-fade-end='true'] {
+  mask-image: linear-gradient(to left, transparent, #000 2rem);
+}
+[data-slot='liquid-tabs'][data-fade-start='true'][data-fade-end='true'] {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 2rem,
+    #000 calc(100% - 2rem),
+    transparent
+  );
+}
+[dir='rtl'] [data-slot='liquid-tabs'][data-fade-start='true'] {
+  mask-image: linear-gradient(to left, transparent, #000 2rem);
+}
+[dir='rtl'] [data-slot='liquid-tabs'][data-fade-end='true'] {
+  mask-image: linear-gradient(to right, transparent, #000 2rem);
+}
+[dir='rtl'] [data-slot='liquid-tabs'][data-fade-start='true'][data-fade-end='true'] {
+  mask-image: linear-gradient(to left, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
+}
+
+/* The track. It rides `.glass-inset` (the field tier) and takes a touch more of
+   the theme's ink than a text field, so the opaque thumb separates from it on
+   Daylight (white on near-white would vanish) and on Midnight alike. It is a
+   flush fill like every field, not a recessed well — see `.glass-inset`. */
+[data-slot='liquid-tabs-sheet'] {
+  background: color-mix(in srgb, var(--site-text) 7%, var(--site-glass-tint-strong));
+  border-radius: var(--site-control-radius);
+}
+[data-slot='liquid-tabs-sheet'] > [data-slot='liquid-tabs'] {
+  --tab-radius: max(0px, calc(var(--site-control-radius) - 0.25rem));
+}
+
+/* A control stays on the small radius even if a legacy call site uses the
+   panel utility. Explicit circles/square edges and app-owned controls keep
+   their shape. Tabs use the inset radius shared by their hover and thumb. */
+:where(.vibe-app)
+  :is(
+    button,
+    a[data-slot='button'],
+    [role='button'],
+    textarea,
+    select,
+    input:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='hidden'])
+  ):not(:where(.rounded-full, .rounded-none, [data-liquid-material='off'], .app-theme *)) {
+  border-radius: var(--tab-radius, var(--site-control-radius));
+}
+
+/* The thumb. */
+[data-tab-thumb] {
+  background: var(--tab-thumb-bg);
+  border: var(--site-border-width) solid var(--tab-thumb-border);
+  box-shadow: none;
+}
+
+/* Ink on the thumb. Keyed on the thumb's PRESENCE, not on `aria-selected`: the
+   thumb is a separate element (framer-motion owns its projection), and on high
+   contrast a label in accent-fg with no thumb behind it once measured 1.0:1 — a
+   tab strip with no visible tabs. Keying the flip on the thumb means the failure
+   mode is "no highlight", never "no text". */
+[data-slot='liquid-tabs'] [data-tab-active='true']:has([data-tab-capsule]),
+/* Link mode puts the thumb beside the control rather than inside it, so the
+   ink has to reach one level down. */
+[data-slot='liquid-tabs']
+  [data-tab-active='true']:has([data-tab-capsule])
+  > :where(a, button) {
+  color: var(--tab-thumb-ink);
+}
+
+/* §5.5x B — the strip is primary navigation on several routes, and its pills
+   were 36–38px on touch. Grow the hit area on coarse pointers only; fine
+   pointers keep the compact strip. */
+@media (pointer: coarse) {
+  [data-slot='liquid-tabs'] :is(button, a) {
+    min-height: var(--site-touch-target);
+  }
+}
+
+/* ==========================================================================
+   Compact tab strips on small screens
+   ------------------------------------------------------------------------
+   Labels stay at every width: a strip of near-interchangeable glyphs as the
+   entirety of a page's navigation is recall, not recognition (radio-waves =
+   "Spaces", storefront vs bag on /market). What phones give up instead is the
+   ICON — the label is the information and the glyph is decoration.
+   `iconOnly` callers are the exception: there the glyph IS the label, so it
+   stays and its text goes sr-only below md.
+   ========================================================================== */
+@media (max-width: 767.98px) {
+  /* sr-only technique, never display:none, so the accessible name survives. */
+  [data-slot='liquid-tabs'] .liquid-tabs__label--compact {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* `> svg`, NOT `> svg:first-child`: the ACTIVE tab renders the thumb as its
+     first child, so `:first-child` matched every tab except the active one. */
+  [data-slot='liquid-tabs']:not([data-tab-icon-only]) :is(button, a) > svg {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   Foreground pairing — text and icons always track the surface they sit on
+   ------------------------------------------------------------------------
+   A filled surface only stays readable if the ink on it comes from that
+   surface's PAIRED foreground token. In practice that pairing was easy to
+   forget: an element would set `bg-site-accent` and inherit the ambient
+   `--site-text` instead, which is the theme's ink for the PAGE — so on a dark
+   accent you got near-black on near-black, and a light accent (bright yellow)
+   got white on white. ~74 call sites were relying on inheritance this way.
+
+   These rules supply the correct ink by default. They are wrapped in `:where()`
+   so they carry ZERO specificity: any element that states its own colour still
+   wins, and this only fills in where nothing was chosen. Because lucide icons
+   paint with `currentColor`, fixing `color` fixes icons and text together.
+
+   Only tokens with a real, per-theme foreground are listed — `--site-accent-fg`
+   is contrast-checked at runtime by `ensureReadableAccent()` (lib/appearance/
+   contrast.ts), and `--site-danger-fg` / `--site-warning-fg` / `--site-success-fg`
+   are authored per theme. Surfaces without a paired token are left alone rather
+   than guessed at.
+
+   `--site-success-fg` was the hole in this table. `--site-success` swings from a
+   dark forest green (`default`) to a bright mint (`nocturne`) across the theme
+   set, so there was no ink that worked for both and callers were reaching for a
+   literal `text-white` — correct in the themes where success is dark, invisible
+   in the ones where it is not. Every theme now authors the pair, chosen for ≥4.5:1
+   against its own green.
+   ========================================================================== */
+:where(.bg-site-accent, .bg-site-accent-hover, .hover\:bg-site-accent:hover) {
+  color: var(--site-accent-fg);
+}
+:where(.bg-site-danger) {
+  color: var(--site-danger-fg);
+}
+:where(.bg-site-success) {
+  color: var(--site-success-fg);
+}
+:where(.bg-site-warning) {
+  color: var(--site-warning-fg);
+}
+/* The inverse surfaces carry a complete contract of their own, so pair those
+   too rather than letting them inherit the page's ink. */
+:where([data-contrast='inverse'], .site-inverse) {
+  color: var(--site-inverse-text);
+}
+
+/* ==========================================================================
+   Print (B19) — the paper rendering of a page
+   ------------------------------------------------------------------------
+   Printing (and "Save as PDF", which is the same code path and is how people
+   actually keep a receipt, a guide, an article or a ladder answer) was never
+   designed for, so it inherited the screen design in the worst possible way:
+   the aurora backdrop and every glass surface printed as solid ink, the nav
+   ring / top bar / rails each took a column of paper and repeated on every
+   page, and a dark theme printed a black page.
+
+   Four decisions, all of them the opposite of the screen rules elsewhere in
+   this file, and deliberately so:
+
+   1. **Literal colours, not `--site-*` tokens.** The token contract exists so
+      every THEME works; paper is not a theme. Whatever the visitor chose,
+      ink is black and the sheet is white — resolving `--site-bg` here is how
+      you print a black rectangle. This is the one place in the stylesheet
+      where a hardcoded colour is the correct answer.
+   2. **Chrome is deleted, not restyled.** Navigation is not actionable on
+      paper. `[data-print='hide']` is the opt-in hook for anything else a page
+      knows is screen-only (a composer, a vote widget, an ad slot).
+   3. **The material comes off.** `.glass-*` carries blur, tint, rim glints and
+      shadows; every one of those costs toner and lowers contrast, and none
+      survives a monochrome printer as anything but grey mud. The layout the
+      class also carries stays; only the material goes.
+   4. **Link targets are printed.** A URL that only exists as an underline is
+      lost the moment the page is paper. Restricted to prose containers
+      (`p`, `li`, `blockquote`) on purpose: doing it for every `a` would print
+      a URL after every card, avatar and icon button on the page.
+
+   Unlayered on purpose — these rules must beat the utilities in `@layer`.
+   ========================================================================== */
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  /* ── 1. Chrome, decoration and floating UI ─────────────────────────────── */
+  .glass-chrome,
+  .radial-skip,
+  .radial-backdrop,
+  .radial-topbar,
+  .radial-hub,
+  .radial-globe,
+  .rad-rail,
+  .glass-scrim,
+  [data-sonner-toaster],
+  [data-print='hide'] {
+    display: none !important;
+  }
+
+  /* ── 2. Ink ────────────────────────────────────────────────────────────── */
+  html {
+    /* Stop the UA from re-deriving a dark form-control palette from the theme. */
+    color-scheme: light;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* ── 3. Strip the glass material ───────────────────────────────────────── */
+  .glass-fill,
+  .glass-pane,
+  .glass-overlay,
+  .glass-inset,
+  .glass-opaque,
+  .glass-interactive,
+  .glass-refract,
+  .glass-liquid,
+  .glass-bevel-sm {
+    background: none !important;
+    background-image: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    /* A hairline the printer can actually resolve; the token border is a
+       translucent rim that disappears on paper. */
+    border-color: #bbb !important;
+  }
+
+  /* The three decorative pseudo-elements the material hangs its rim glint,
+     refraction and liquid sheen on. */
+  .glass-chrome--aside::before,
+  .glass-refract::before,
+  .glass-refract--prism::before,
+  .glass-liquid::after {
+    display: none !important;
+  }
+
+  /* ── 4. Give the content the whole sheet ───────────────────────────────── */
+  main,
+  #main-content,
+  .radial-shell,
+  .radial-shell__main,
+  .radial-frame,
+  .page-root,
+  [data-slot='site-main-column'] {
+    display: block !important;
+    width: auto !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    /* Sticky/fixed positioning repeats an element on every printed page. */
+    position: static !important;
+  }
+
+  /* Any remaining sticky element inside the article (column headers, tab
+     strips, action bars) flows with the text instead of following the page. */
+  .sticky,
+  .fixed {
+    position: static !important;
+  }
+
+  /* ── 5. Typography and page breaks ─────────────────────────────────────── */
+  body {
+    /* Points, not px: print output is a physical medium. */
+    font-size: 11pt;
+    line-height: 1.45;
+  }
+
+  p,
+  li,
+  blockquote {
+    orphans: 3;
+    widows: 3;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    break-after: avoid-page;
+  }
+
+  figure,
+  img,
+  pre,
+  blockquote,
+  table {
+    break-inside: avoid;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* ── 6. Print where the links went ─────────────────────────────────────── */
+  main p a[href^='http']::after,
+  main li a[href^='http']::after,
+  main blockquote a[href^='http']::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.85em;
+    word-break: break-all;
+  }
+
+  /* Site-relative links need the origin added or the printout is unusable
+     away from the browser that made it. */
+  main p a[href^='/']::after,
+  main li a[href^='/']::after,
+  main blockquote a[href^='/']::after {
+    content: ' (rmhstudios.com' attr(href) ')';
+    font-size: 0.85em;
+    word-break: break-all;
+  }
+
+  /* In-page jumps have no destination off the screen. */
+  main a[href^='#']::after {
+    content: none;
+  }
+}
+
+/* ── Access & comfort additions (lib/access/prefs.ts) ─────────────────────────
+   Every value below arrives as a custom property or attribute on <html>, set
+   once before first paint and again only when the member changes a setting. */
+
+/* Text spacing (WCAG 1.4.12). Unlayered on purpose: it must beat the `leading-*`
+   and `tracking-*` utilities, which live in the utilities layer. */
+html[data-text-spacing] body,
+html[data-text-spacing]
+  body
+  :where(
+    p,
+    li,
+    dd,
+    dt,
+    td,
+    th,
+    label,
+    blockquote,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    span,
+    a,
+    button,
+    input,
+    textarea,
+    select
+  ) {
+  line-height: var(--rmh-ts-lh);
+  letter-spacing: var(--rmh-ts-ls);
+  word-spacing: var(--rmh-ts-ws);
+}
+
+/* Caption style for native WebVTT tracks. */
+video::cue {
+  font-size: calc(100% * var(--rmh-cue-scale, 1));
+  background-color: var(--rmh-cue-bg, rgb(0 0 0 / 0.6));
+  color: white;
+}
+
+/* Bedtime mode: during the member's quiet hours, one dimming layer and one
+   desaturating layer over the whole page. Fixed, inert, and skipped entirely by
+   print. */
+html[data-bedtime]::before,
+html[data-bedtime]::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-bedtime);
+}
+html[data-bedtime]::before {
+  background: gray;
+  mix-blend-mode: saturation;
+  opacity: 0.4;
+}
+html[data-bedtime]::after {
+  background: black;
+  opacity: 0.22;
+}
+@media print {
+  html[data-bedtime]::before,
+  html[data-bedtime]::after {
+    content: none;
+  }
+}
+/* iOS 26 Safari fills the strips behind its status bar and tab bar from any fixed layer that touches an
+   edge (see the iOS edge note in the compositor safety tier above), and these two layers cover the whole
+   viewport: while bedtime was on, both strips turned into opaque bands over the page. On iOS WebKit the
+   dimming is not drawn, so the page keeps running under the bars like every other site. */
+html.ios-webkit[data-bedtime]::before,
+html.ios-webkit[data-bedtime]::after {
+  content: none;
+}
+
+/* ── Delight: April Fools mode (lib/delight/season.ts) ────────────────────────
+   `fools` is set on <html> before first paint (`season-*` classes are too, but carry no
+   styling: the seasonal top-edge ribbon was removed). Nothing here exists unless the class
+   does. */
+/* April Fools: copy-free, purely cosmetic swaps. The member's off switch removes
+   the class (components/delight/DelightMount.tsx). */
+html.fools h1::after {
+  content: ' 🤡';
+  content: ' 🤡' / '';
+}
+html.fools h2::after {
+  content: ' 🎈';
+  content: ' 🎈' / '';
+}
+html.fools .radial-core__mark {
+  font-size: 0;
+}
+html.fools .radial-core__mark::after {
+  content: 'RMHaha';
+  font-size: clamp(1rem, 4vw, 1.3rem);
+}
+
+/* ── Route progress (components/ui/NavigationProgress.tsx) ────────────────────────────────────────────────────────
+   The bar creeps toward 90% on ONE transition, not a script that sets a width every 160ms: it leaves fast and slows
+   as it nears 90%, like the trickle it replaces (each step covered 18% of what was left). `@starting-style` gives it its
+   start (8%) the moment it enters the box tree. `done` snaps to the end quickly; the component then takes it out. */
+[data-nav-progress] {
+  transform: scaleX(0.08);
+}
+[data-nav-progress][data-phase='running'] {
+  transform: scaleX(0.9);
+  transition: transform 3.2s var(--ease-crawl);
+}
+[data-nav-progress][data-phase='done'] {
+  transform: scaleX(1);
+  transition: transform calc(var(--site-transition-speed, 200ms) * 0.75) ease-out;
+}
+@starting-style {
+  [data-nav-progress][data-phase='running'] {
+    transform: scaleX(0.08);
+  }
+}

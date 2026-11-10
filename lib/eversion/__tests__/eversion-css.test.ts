@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { COVER_CLASS, HOLD_FADE_MS, HUB_FADE_MS, SETTLE_ATTRIBUTE } from '../constants';
+import { readCss } from '../../__tests__/css-source';
 
 /**
  * T19 — the stylesheet half of the effect hangs on three names and one number
@@ -11,7 +11,7 @@ import { COVER_CLASS, HOLD_FADE_MS, HUB_FADE_MS, SETTLE_ATTRIBUTE } from '../con
  * which is invisible until the cover fails to hide the shell. This pins them.
  */
 
-const read = (rel: string) => readFileSync(join(process.cwd(), rel), 'utf8');
+const read = (rel: string) => readCss(join(process.cwd(), rel));
 const eversion = read('components/radial/eversion/eversion.css');
 const radial = read('components/radial/radial.css');
 const globals = read('app/globals.css');

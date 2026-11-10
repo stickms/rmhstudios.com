@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MOTION_BOUNDS } from '../../tiers';
 import { NUDGE, createArcNudge, nudgeOffset, shouldVibrate } from '../nudge';
 import { FakeEl, fakeEnv, type FakeEnv } from './arc-dom';
+import { readCss } from '../../../__tests__/css-source';
 
 describe('nudge offset (pure)', () => {
   it('pushes inward along the strike normal, at most the nudge bound, scaled by energy and calm', () => {
@@ -99,7 +100,7 @@ describe('arc nudge on the struck hosts', () => {
     expect(css).toMatch(
       /\[data-jelly-arc-nudge='settle'\][^{]*\{[^}]*translate var\(--spring-release-dur\) var\(--spring-release\)/,
     );
-    const material = readFileSync(join(process.cwd(), 'app/jelly-material.css'), 'utf8');
+    const material = readCss(join(process.cwd(), 'app/jelly-material.css'));
     const dur = (name: string) =>
       Number(new RegExp(`--spring-${name}-dur:\\s*(\\d+)ms`).exec(material)![1]);
     expect(NUDGE.settleMs).toBeGreaterThanOrEqual(dur('release'));

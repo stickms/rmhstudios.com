@@ -6,12 +6,12 @@
  *
  *   node scripts/probe-z-index.mjs
  */
-import { readFileSync } from 'node:fs';
+import { readCssInlined } from './css-inline.mjs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const read = (f) => readFileSync(join(root, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+const read = (f) => readCssInlined(join(root, f)).replace(/\/\*[\s\S]*?\*\//g, '');
 const globals = read('app/globals.css');
 const tokens = new Map([...globals.matchAll(/^\s*(--z-[a-z-]+):\s*(-?\d+);/gm)].map((m) => [m[1], Number(m[2])]));
 

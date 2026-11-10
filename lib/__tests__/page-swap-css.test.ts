@@ -1,7 +1,7 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { readCss } from './css-source';
 
-const css = readFileSync(new URL('../../app/globals.css', import.meta.url), 'utf8');
+const css = readCss(new URL('../../app/globals.css', import.meta.url));
 const flat = css.replace(/\s+/g, ' ');
 
 describe('the quick page swap (docs/superpowers/specs/2026-10-27-smooth-transitions-design.md)', () => {
