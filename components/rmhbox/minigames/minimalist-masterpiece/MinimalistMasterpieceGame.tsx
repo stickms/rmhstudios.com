@@ -382,15 +382,15 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
           initial="initial"
           animate="animate"
         >
-          <h2 className="text-2xl font-bold text-(--app-text)">{t("draw-label", { defaultValue: "Draw:" })}</h2>
-          <p className="text-xl text-(--app-accent)">{prompt || t("get-ready", { defaultValue: "Get ready..." })}</p>
+          <h2 className="text-2xl font-bold text-app-text">{t("draw-label", { defaultValue: "Draw:" })}</h2>
+          <p className="text-xl text-app-accent">{prompt || t("get-ready", { defaultValue: "Get ready..." })}</p>
         </motion.div>
       );
 
     case 'DRAWING':
       return (
         <div className="flex flex-col items-center gap-3 p-4">
-          <p className="text-lg font-semibold text-(--app-text)">&quot;{prompt}&quot;</p>
+          <p className="text-lg font-semibold text-app-text">&quot;{prompt}&quot;</p>
           <DrawingCanvas
             strokes={strokes}
             setStrokes={trackingSetStrokes}
@@ -413,7 +413,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
 
           {/* Stroke width slider */}
           <div className="flex items-center gap-2 w-full max-w-72">
-            <span className="text-xs text-(--app-text-muted)">{t("width-label", { defaultValue: "Width:" })}</span>
+            <span className="text-xs text-app-text-muted">{t("width-label", { defaultValue: "Width:" })}</span>
             <input
               type="range"
               min={MIN_WIDTH}
@@ -421,7 +421,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
               step={1}
               value={selectedWidth}
               onChange={(e) => setSelectedWidth(Number(e.target.value))}
-              className="flex-1 accent-(--app-accent)"
+              className="flex-1 accent-app-accent"
               aria-label={t("stroke-width-aria", { defaultValue: "Stroke width" })}
             />
             {/* Preview: shows a colored dot scaled to the actual rendered width.
@@ -434,7 +434,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
               const contrastText = isLightColor(selectedColor) ? '#eee' : '#333';
               return (
                 <span
-                  className="flex items-center justify-center rounded-full border border-(--app-border)"
+                  className="flex items-center justify-center rounded-full border border-app-border"
                   style={{
                     width: '40px',
                     height: '40px',
@@ -475,7 +475,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
 
           <div className="flex items-center gap-4">
             <StrokeCounter current={strokes.length} max={maxStrokes} />
-            <span className="text-xs text-(--app-text-muted)">
+            <span className="text-xs text-app-text-muted">
               {t("auto-saving-timer", { defaultValue: "Auto-saving • {{seconds}}s", seconds: timeRemaining })}
               {drawingSubmitStatus && (
                 <span className="ml-2">
@@ -488,10 +488,10 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
             <button
               onClick={handleSubmitDrawing}
               disabled={drawingSubmitted}
-              className={`mt-1 rounded-(--app-radius-sm) px-6 py-2 text-sm font-semibold transition-colors ${
+              className={`mt-1 rounded-app-sm px-6 py-2 text-sm font-semibold transition-colors ${
                 drawingSubmitted
-                  ? 'bg-(--app-border) text-(--app-text-muted) cursor-not-allowed'
-                  : 'bg-(--app-accent) text-(--app-accent-fg) hover:opacity-90'
+                  ? 'bg-app-border text-app-text-muted cursor-not-allowed'
+                  : 'bg-app-accent text-app-accent-fg hover:opacity-90'
               }`}
             >
               {drawingSubmitted ? t("drawing-submitted", { defaultValue: "Drawing Submitted ✓" }) : t("submit-drawing", { defaultValue: "Submit Drawing" })}
@@ -503,8 +503,8 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
     case 'GALLERY':
       return (
         <div className="flex flex-col items-center gap-4 p-4">
-          <h2 className="text-xl font-bold text-(--app-text)">{t("gallery-walk", { defaultValue: "Gallery Walk" })}</h2>
-          <p className="text-sm text-(--app-text-muted)">{t("prompt-label-market-results-screen", { defaultValue: "Prompt:" })} &quot;{prompt}&quot;</p>
+          <h2 className="text-xl font-bold text-app-text">{t("gallery-walk", { defaultValue: "Gallery Walk" })}</h2>
+          <p className="text-sm text-app-text-muted">{t("prompt-label-market-results-screen", { defaultValue: "Prompt:" })} &quot;{prompt}&quot;</p>
           <GalleryCarousel drawings={galleryDrawings} />
         </div>
       );
@@ -512,8 +512,8 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
     case 'AUCTION':
       return (
         <div className="flex flex-col items-center gap-4 p-4">
-          <h2 className="text-xl font-bold text-(--app-text)">{t("auction-phase", { defaultValue: "Auction Phase" })}</h2>
-          <p className="text-sm text-(--app-text-muted)">
+          <h2 className="text-xl font-bold text-app-text">{t("auction-phase", { defaultValue: "Auction Phase" })}</h2>
+          <p className="text-sm text-app-text-muted">
             {t("auction-remaining", { defaultValue: "Remaining: {{currency}} coins • Time: {{seconds}}s", currency, seconds: timeRemaining })}
             {bidSubmitStatus && (
               <span className="ml-2" aria-label={t("bid-submit-aria", { defaultValue: "{{submitted}} of {{total}} players submitted bids", submitted: bidSubmitStatus.submitted, total: bidSubmitStatus.total })}>
@@ -531,10 +531,10 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
             <button
               onClick={handleSubmitBids}
               disabled={bidSubmitted}
-              className={`mt-2 rounded-(--app-radius-sm) px-6 py-2 text-sm font-semibold transition-colors ${
+              className={`mt-2 rounded-app-sm px-6 py-2 text-sm font-semibold transition-colors ${
                 bidSubmitted
-                  ? 'bg-(--app-border) text-(--app-text-muted) cursor-not-allowed'
-                  : 'bg-(--app-accent) text-(--app-accent-fg) hover:opacity-90'
+                  ? 'bg-app-border text-app-text-muted cursor-not-allowed'
+                  : 'bg-app-accent text-app-accent-fg hover:opacity-90'
               }`}
             >
               {bidSubmitted ? t("bids-submitted", { defaultValue: "Bids Submitted ✓" }) : t("submit-bids", { defaultValue: "Submit Bids" })}

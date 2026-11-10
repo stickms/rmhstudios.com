@@ -14,9 +14,9 @@ import { useValidationContext } from './validation-context';
 
 const ICON = { error: CircleAlert, warning: AlertTriangle, info: Info } as const;
 const TONE: Record<Severity, string> = {
-  error: 'text-(--app-danger)',
-  warning: 'text-(--app-warning)',
-  info: 'text-(--app-info)',
+  error: 'text-app-danger',
+  warning: 'text-app-warning',
+  info: 'text-app-info',
 };
 
 export default function ProblemsPanel() {
@@ -32,12 +32,12 @@ export default function ProblemsPanel() {
       <PanelHead
         title={t('problems', { defaultValue: 'Problems' })}
         actions={
-          <span className="text-[11px] text-(--app-text-muted)">
+          <span className="text-[11px] text-app-text-muted">
             {counts.error} · {counts.warning} · {counts.info}
           </span>
         }
       />
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-(--app-border) px-3 py-2 text-xs text-(--app-text-muted)">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-app-border px-3 py-2 text-xs text-app-text-muted">
         <label className="flex items-center gap-2">
           <Toggle
             label={t('check-all', { defaultValue: 'Check every file' })}
@@ -71,12 +71,12 @@ export default function ProblemsPanel() {
                   <button
                     type="button"
                     onClick={() => jump(i.path, i.offset ?? 0)}
-                    className="flex min-w-0 flex-1 items-start gap-2 px-3 py-2 text-start hover:bg-(--app-surface-hover)"
+                    className="flex min-w-0 flex-1 items-start gap-2 px-3 py-2 text-start hover:bg-app-surface-hover"
                   >
                     <Icon className={cn('mt-0.5 size-4 shrink-0', TONE[i.severity])} aria-hidden />
                     <span className="min-w-0">
-                      <span className="block text-xs text-(--app-text)">{i.message}</span>
-                      <span className="block truncate font-mono text-[11px] text-(--app-text-dim)">
+                      <span className="block text-xs text-app-text">{i.message}</span>
+                      <span className="block truncate font-mono text-[11px] text-app-text-dim">
                         {i.path}
                         {i.line ? `:${i.line}` : ''}
                       </span>

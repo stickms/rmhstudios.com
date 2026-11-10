@@ -22,7 +22,7 @@ export default function Tf2Workshop({ type }: { type: WorkshopType }) {
   ];
 
   return (
-    <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
+    <div className="app-page min-h-dvh bg-app-bg text-app-text">
       <Tf2Header
         title={t('workshop-title', { defaultValue: 'TF2 Workshop' })}
         backLabel={t('tf2-hub', { defaultValue: 'TF2 Hub' })}

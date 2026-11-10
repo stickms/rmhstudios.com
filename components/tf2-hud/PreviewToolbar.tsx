@@ -64,7 +64,7 @@ export default function PreviewToolbar() {
   };
 
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-(--app-border) bg-(--app-bg-subtle) px-3 py-2">
+    <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-app-border bg-app-bg-subtle px-3 py-2">
       <SelectField
         aria-label={t('page', { defaultValue: 'HUD page' })}
         value={pageId}
@@ -106,7 +106,7 @@ export default function PreviewToolbar() {
       </SelectField>
 
       {view.resolution === 'custom' ? (
-        <div className="flex items-center gap-1 text-xs text-(--app-text-muted)">
+        <div className="flex items-center gap-1 text-xs text-app-text-muted">
           <input
             type="number"
             aria-label={t('width', { defaultValue: 'Width' })}
@@ -114,7 +114,7 @@ export default function PreviewToolbar() {
             min={320}
             max={7680}
             onChange={(e) => setView({ custom: { ...view.custom, w: Number(e.target.value) } })}
-            className="h-8 w-16 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) px-1.5 text-xs"
+            className="h-8 w-16 rounded-app-sm border border-app-border-bright bg-app-bg px-1.5 text-xs"
           />
           ×
           <input
@@ -124,7 +124,7 @@ export default function PreviewToolbar() {
             min={320}
             max={7680}
             onChange={(e) => setView({ custom: { ...view.custom, h: Number(e.target.value) } })}
-            className="h-8 w-16 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) px-1.5 text-xs"
+            className="h-8 w-16 rounded-app-sm border border-app-border-bright bg-app-bg px-1.5 text-xs"
           />
           <IconBtn
             icon={ArrowLeftRight}
@@ -164,7 +164,7 @@ export default function PreviewToolbar() {
       ) : null}
 
       <span
-        className="hidden font-mono text-[11px] text-(--app-text-dim) xl:inline"
+        className="hidden font-mono text-[11px] text-app-text-dim xl:inline"
         title={t('virtual-hint', {
           defaultValue:
             'Proportional values lay out on a canvas 480 units high; this is its width.',
@@ -248,10 +248,10 @@ export default function PreviewToolbar() {
           aria-pressed={view.minmode}
           onClick={() => setView({ minmode: !view.minmode })}
           title={t('minmode-hint', { defaultValue: 'Preview the compact "minmode" layout' })}
-          className={`h-8 rounded-(--app-radius-sm) px-2 text-xs font-semibold ${
+          className={`h-8 rounded-app-sm px-2 text-xs font-semibold ${
             view.minmode
-              ? 'bg-(--app-accent-dim) text-(--app-accent-text)'
-              : 'text-(--app-text-muted) hover:bg-(--app-surface-hover)'
+              ? 'bg-app-accent-dim text-app-accent-text'
+              : 'text-app-text-muted hover:bg-app-surface-hover'
           }`}
         >
           {t('minmode', { defaultValue: 'Minmode' })}

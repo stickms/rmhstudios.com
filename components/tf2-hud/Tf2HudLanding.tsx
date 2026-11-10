@@ -85,7 +85,7 @@ export default function Tf2HudLanding() {
   ];
 
   return (
-    <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
+    <div className="app-page min-h-dvh bg-app-bg text-app-text">
       <Tf2Header
         heading={false}
         title="RMH TF2 HUD Editor"
@@ -98,10 +98,10 @@ export default function Tf2HudLanding() {
             className="mb-2 h-20 sm:h-24"
             label={t('game-name', { defaultValue: 'Team Fortress 2' })}
           />
-          <h1 className="tf2hud-title text-5xl text-(--app-text) sm:text-7xl">
+          <h1 className="tf2hud-title text-5xl text-app-text sm:text-7xl">
             {t('hero', { defaultValue: 'Build your TF2 HUD' })}
           </h1>
-          <p className="mx-auto mt-3 max-w-xl text-(--app-text-muted)">
+          <p className="mx-auto mt-3 max-w-xl text-app-text-muted">
             {t('hero-body', {
               defaultValue:
                 'Edit, preview, test and share custom Team Fortress 2 HUDs without leaving your browser.',
@@ -125,7 +125,7 @@ export default function Tf2HudLanding() {
             <Link
               to="/tf2/workshop"
               search={{ type: 'huds' }}
-              className="inline-flex h-10 items-center gap-1.5 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg-subtle) px-4 text-sm font-semibold text-(--app-text) hover:bg-(--app-surface-hover)"
+              className="inline-flex h-10 items-center gap-1.5 rounded-app-sm border border-app-border-bright bg-app-bg-subtle px-4 text-sm font-semibold text-app-text hover:bg-app-surface-hover"
             >
               <Globe className="size-4" aria-hidden />
               {t('browse-workshop', { defaultValue: 'Browse the workshop' })}
@@ -154,23 +154,23 @@ export default function Tf2HudLanding() {
               </h2>
               <Link
                 to="/tf2/hud-editor/mine"
-                className="text-xs font-semibold text-(--app-accent-text) hover:underline"
+                className="text-xs font-semibold text-app-accent-text hover:underline"
               >
                 {t('my-saved-huds', { defaultValue: 'My saved HUDs' })}
               </Link>
             </div>
-            <ul className="divide-y divide-(--app-border) rounded-(--app-radius) border border-(--app-border)">
+            <ul className="divide-y divide-app-border rounded-app border border-app-border">
               {drafts.slice(0, 6).map((d) => (
                 <li key={d.id} className="flex items-center gap-3 px-3 py-2">
-                  <FolderOpen className="size-4 shrink-0 text-(--app-text-dim)" aria-hidden />
+                  <FolderOpen className="size-4 shrink-0 text-app-text-dim" aria-hidden />
                   <Link
                     to="/tf2/hud-editor/editor"
                     search={{ draft: d.id }}
-                    className="min-w-0 flex-1 truncate text-sm font-medium text-(--app-text) hover:underline"
+                    className="min-w-0 flex-1 truncate text-sm font-medium text-app-text hover:underline"
                   >
                     {d.meta.name}
                   </Link>
-                  <span className="shrink-0 text-xs text-(--app-text-dim)">
+                  <span className="shrink-0 text-xs text-app-text-dim">
                     {t('n-changed', { defaultValue: '{{count}} changed', count: d.fileCount })} ·{' '}
                     {new Date(d.updatedAt).toLocaleDateString()}
                   </span>
@@ -200,16 +200,16 @@ export default function Tf2HudLanding() {
           {features.map((f) => (
             <div
               key={f.title}
-              className="rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-4"
+              className="rounded-app border border-app-border bg-app-bg-subtle p-4"
             >
-              <f.icon className="mb-2 size-5 text-(--app-accent-text)" aria-hidden />
+              <f.icon className="mb-2 size-5 text-app-accent-text" aria-hidden />
               <h2 className="tf2hud-title text-xl">{f.title}</h2>
-              <p className="mt-1 text-sm text-(--app-text-muted)">{f.body}</p>
+              <p className="mt-1 text-sm text-app-text-muted">{f.body}</p>
             </div>
           ))}
         </section>
 
-        <p className="mt-10 text-center text-xs text-(--app-text-dim)">
+        <p className="mt-10 text-center text-xs text-app-text-dim">
           {t('legal', {
             defaultValue:
               'Team Fortress 2 is a trademark of Valve Corporation. This is an unofficial fan tool.',

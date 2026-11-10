@@ -123,18 +123,18 @@ export default function CategoryInput({
       {/* Header: letter + timer */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-(--app-radius) border-2 border-(--app-accent) bg-(--app-accent)/10 text-2xl font-bold text-(--app-accent)">
+          <div className="flex h-12 w-12 items-center justify-center rounded-app border-2 border-app-accent bg-app-accent/10 text-2xl font-bold text-app-accent">
             {letter}
           </div>
-          <div className="text-sm text-(--app-text-muted)">
+          <div className="text-sm text-app-text-muted">
             {t("answered-count", { defaultValue: "{{filled}}/{{total}} answered", filled: filledCount, total: categories.length })}
           </div>
         </div>
         <div
-          className={`flex items-center gap-1.5 rounded-(--app-radius-sm) px-3 py-1.5 text-sm font-medium ${
+          className={`flex items-center gap-1.5 rounded-app-sm px-3 py-1.5 text-sm font-medium ${
             isUrgent
-              ? 'bg-(--app-danger-dim) text-(--app-danger) animate-pulse'
-              : 'bg-(--app-surface) text-(--app-text-muted)'
+              ? 'bg-app-danger-dim text-app-danger animate-pulse'
+              : 'bg-app-surface text-app-text-muted'
           }`}
         >
           <Clock size={14} />
@@ -158,16 +158,16 @@ export default function CategoryInput({
               className="flex flex-col gap-1"
             >
               <label className="flex items-center gap-2 text-sm font-medium">
-                <span className="text-(--app-text-muted)">{i + 1}.</span>
+                <span className="text-app-text-muted">{i + 1}.</span>
                 {cat.name}
                 {cat.difficulty && (
                   <span
                     className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
                       cat.difficulty === 'hard'
-                        ? 'bg-(--app-danger-dim) text-(--app-danger)'
+                        ? 'bg-app-danger-dim text-app-danger'
                         : cat.difficulty === 'medium'
-                          ? 'bg-(--app-warning-dim) text-(--app-warning)'
-                          : 'bg-(--app-success-dim) text-(--app-success)'
+                          ? 'bg-app-warning-dim text-app-warning'
+                          : 'bg-app-success-dim text-app-success'
                     }`}
                   >
                     {cat.difficulty}
@@ -175,7 +175,7 @@ export default function CategoryInput({
                 )}
               </label>
               <div className="relative">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-(--app-accent)/40">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-app-accent/40">
                   {letter.toUpperCase()}
                 </span>
                 <input
@@ -188,14 +188,14 @@ export default function CategoryInput({
                   disabled={isLocked}
                   maxLength={50}
                   placeholder={`${letter.toUpperCase()}...`}
-                  className={`glass-inset w-full rounded-(--app-radius-sm) border px-3 py-2 pl-9 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-(--app-accent)/50 disabled:opacity-50 ${
+                  className={`glass-inset w-full rounded-app-sm border px-3 py-2 pl-9 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-app-accent/50 disabled:opacity-50 ${
                     !startsCorrectly
-                      ? 'border-(--app-danger)/50 ring-1 ring-(--app-danger)/30'
-                      : 'border-(--app-border)'
+                      ? 'border-app-danger/50 ring-1 ring-app-danger/30'
+                      : 'border-app-border'
                   }`}
                 />
                 {!startsCorrectly && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-(--app-danger)">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-app-danger">
                     {t("must-start-with", { defaultValue: "Must start with {{letter}}", letter: letter.toUpperCase() })}
                   </span>
                 )}

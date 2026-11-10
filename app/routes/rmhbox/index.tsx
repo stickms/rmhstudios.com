@@ -122,9 +122,9 @@ function RMHboxLanding() {
   }, []);
 
   const connected = connectionStatus === 'connected';
-  const card = 'flex min-w-0 flex-col gap-3 rounded-(--app-radius) border border-(--app-border) bg-(--app-surface) px-4 py-4 md:px-6 md:py-5';
+  const card = 'flex min-w-0 flex-col gap-3 rounded-app border border-app-border bg-app-surface px-4 py-4 md:px-6 md:py-5';
   const primaryBtn =
-    'rounded-(--app-radius-sm) bg-(--app-accent) px-6 py-3 font-semibold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover) disabled:cursor-not-allowed disabled:opacity-50';
+    'rounded-app-sm bg-app-accent px-6 py-3 font-semibold text-app-accent-fg transition-colors hover:bg-app-accent-hover disabled:cursor-not-allowed disabled:opacity-50';
 
   return (
     // A landing is a DOCUMENT (design-language §12.1 rule 6): `.app-page`, so the
@@ -139,7 +139,7 @@ function RMHboxLanding() {
           {/* Create Lobby */}
           <section className={card}>
             <h2 className="text-xl font-semibold">{t("create-lobby", { defaultValue: "Create Lobby" })}</h2>
-            <p className="flex-1 text-sm text-(--app-text-muted)">
+            <p className="flex-1 text-sm text-app-text-muted">
               {t("create-lobby-desc", { defaultValue: "Start a new game session and invite friends." })}
             </p>
             <button
@@ -155,7 +155,7 @@ function RMHboxLanding() {
           {/* Join Lobby */}
           <section className={card}>
             <h2 className="text-xl font-semibold">{t("join-lobby", { defaultValue: "Join Lobby" })}</h2>
-            <p className="text-sm text-(--app-text-muted)">
+            <p className="text-sm text-app-text-muted">
               {t("join-lobby-desc", { defaultValue: "Enter a 6-character room code to join." })}
             </p>
             <form onSubmit={(e) => { e.preventDefault(); handleJoinLobby(); }} className="flex gap-2">
@@ -171,7 +171,7 @@ function RMHboxLanding() {
                 autoCapitalize="characters"
                 autoComplete="off"
                 spellCheck={false}
-                className="min-w-0 flex-1 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 py-3 text-center font-mono text-lg uppercase tracking-widest text-(--app-text) placeholder:text-(--app-text-dim)"
+                className="min-w-0 flex-1 rounded-app-sm border border-app-border bg-app-bg px-3 py-3 text-center font-mono text-lg uppercase tracking-widest text-app-text placeholder:text-app-text-dim"
               />
               <button
                 type="submit"
@@ -191,13 +191,13 @@ function RMHboxLanding() {
             <button
               type="button"
               onClick={handleBrowse}
-              className="rounded-(--app-radius-sm) bg-(--app-surface-hover) px-3 py-2 pointer-coarse:min-h-11 text-sm text-(--app-text-muted) transition-colors hover:text-(--app-text)"
+              className="rounded-app-sm bg-app-surface-hover px-3 py-2 pointer-coarse:min-h-11 text-sm text-app-text-muted transition-colors hover:text-app-text"
             >
               {t("refresh", { defaultValue: "Refresh" })}
             </button>
           </div>
           {publicLobbies.length === 0 ? (
-            <p className="py-4 text-center text-sm text-(--app-text-muted)">
+            <p className="py-4 text-center text-sm text-app-text-muted">
               {t("no-public-lobbies", { defaultValue: "No public lobbies available. Create one!" })}
             </p>
           ) : (
@@ -206,7 +206,7 @@ function RMHboxLanding() {
                 <li key={lobby.lobbyId}>
                   <button
                     type="button"
-                    className="flex w-full items-center justify-between gap-3 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 py-3 text-left transition-colors hover:bg-(--app-surface-hover)"
+                    className="flex w-full items-center justify-between gap-3 rounded-app-sm border border-app-border bg-app-bg px-3 py-3 text-left transition-colors hover:bg-app-surface-hover"
                     onClick={() => {
                       setJoinCode(lobby.lobbyId);
                       emit(C2S.LOBBY_JOIN, { lobbyId: lobby.lobbyId });
@@ -214,14 +214,14 @@ function RMHboxLanding() {
                   >
                     <span className="min-w-0">
                       <span className="font-mono font-bold">{lobby.lobbyId}</span>
-                      <span className="ml-3 text-sm text-(--app-text-muted)">
+                      <span className="ml-3 text-sm text-app-text-muted">
                         {t("host-name", { defaultValue: "Host: {{name}}", name: lobby.hostName })}
                       </span>
                       {lobby.selectedGame && (
-                        <span className="ml-2 text-xs text-(--app-accent)">· {lobby.selectedGame}</span>
+                        <span className="ml-2 text-xs text-app-accent">· {lobby.selectedGame}</span>
                       )}
                     </span>
-                    <span className="shrink-0 text-sm text-(--app-text-muted)">
+                    <span className="shrink-0 text-sm text-app-text-muted">
                       {t("player-count-of-max", { defaultValue: "{{count}}/{{max}} players", count: lobby.playerCount, max: lobby.maxPlayers })}
                     </span>
                   </button>
@@ -235,7 +235,7 @@ function RMHboxLanding() {
         <button
           type="button"
           onClick={() => navigate({ to: '/rmhbox/minigames' })}
-          className="glass-fill flex w-full items-center justify-center gap-2 rounded-(--app-radius) px-4 py-3 font-semibold text-(--app-text) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-accent)"
+          className="glass-fill flex w-full items-center justify-center gap-2 rounded-app px-4 py-3 font-semibold text-app-text transition-colors hover:bg-app-surface-hover hover:text-app-accent"
           data-testid="view-minigames-btn"
         >
           <Gamepad2 className="h-5 w-5" aria-hidden />
@@ -249,7 +249,7 @@ function RMHboxLanding() {
         <button
           type="button"
           onClick={quit}
-          className="glass-fill flex w-full items-center justify-center gap-2 rounded-(--app-radius) px-4 py-3 font-semibold text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-text)"
+          className="glass-fill flex w-full items-center justify-center gap-2 rounded-app px-4 py-3 font-semibold text-app-text-muted transition-colors hover:bg-app-surface-hover hover:text-app-text"
           data-testid="quit-btn"
         >
           <LogOut className="h-5 w-5" aria-hidden />

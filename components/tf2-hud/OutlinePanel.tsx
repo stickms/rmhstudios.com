@@ -45,7 +45,7 @@ export default function OutlinePanel() {
           <button
             type="button"
             onClick={resetForce}
-            className="text-[11px] font-semibold text-(--app-text-muted) hover:text-(--app-text)"
+            className="text-[11px] font-semibold text-app-text-muted hover:text-app-text"
           >
             {t('reset-visibility', { defaultValue: 'Reset visibility' })}
           </button>
@@ -59,7 +59,7 @@ export default function OutlinePanel() {
         ) : (
           groups.map(([file, nodes]) => (
             <div key={file}>
-              <h3 className="truncate px-3 pt-2 pb-1 font-mono text-[11px] text-(--app-text-dim)">
+              <h3 className="truncate px-3 pt-2 pb-1 font-mono text-[11px] text-app-text-dim">
                 {file.replace('resource/', '')}
               </h3>
               <ul>
@@ -67,8 +67,8 @@ export default function OutlinePanel() {
                   <li
                     key={n.id}
                     className={cn(
-                      'group flex items-center gap-1 pe-1 hover:bg-(--app-surface-hover)',
-                      (selectedId === n.id || selectedIds.has(n.id)) && 'bg-(--app-accent-dim)',
+                      'group flex items-center gap-1 pe-1 hover:bg-app-surface-hover',
+                      (selectedId === n.id || selectedIds.has(n.id)) && 'bg-app-accent-dim',
                     )}
                     onPointerEnter={() => hover(n.id)}
                     onPointerLeave={() => hover(null)}
@@ -83,11 +83,11 @@ export default function OutlinePanel() {
                       className={cn(
                         'flex min-w-0 flex-1 items-center gap-2 py-1 text-start text-xs',
                         n.isFrame ? 'ps-3 font-semibold' : 'ps-6',
-                        n.shown ? 'text-(--app-text)' : 'text-(--app-text-dim)',
+                        n.shown ? 'text-app-text' : 'text-app-text-dim',
                       )}
                     >
                       <span className="truncate">{n.name}</span>
-                      <span className="ms-auto shrink-0 text-[10px] text-(--app-text-dim)">
+                      <span className="ms-auto shrink-0 text-[10px] text-app-text-dim">
                         {n.control}
                       </span>
                     </button>

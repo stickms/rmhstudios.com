@@ -142,7 +142,7 @@ export default function RmhTubeLanding() {
 
   return (
     <div className="app-page">
-      <div className="border-b border-(--app-border)">
+      <div className="border-b border-app-border">
         <RmhTubeHeader backLabel={t("apps", { defaultValue: "Apps" })} backHref="/apps" />
       </div>
 
@@ -152,7 +152,7 @@ export default function RmhTubeLanding() {
           {/* Hero */}
           <div className="text-center py-8">
             <div className="inline-flex items-center gap-3 mb-2">
-              <MonitorPlay className="h-8 w-8 text-(--app-accent)" />
+              <MonitorPlay className="h-8 w-8 text-app-accent" />
               <h2
                 className="text-3xl font-bold"
                 style={{ fontFamily: 'var(--app-font-display)' }}
@@ -160,7 +160,7 @@ export default function RmhTubeLanding() {
                 {t("watch-together", { defaultValue: "Watch Together" })}
               </h2>
             </div>
-            <p className="text-sm text-(--app-text-muted)">
+            <p className="text-sm text-app-text-muted">
               {t("hero-subtitle", { defaultValue: "Create a room, share the link, and watch YouTube, Twitch, or direct videos in sync." })}
             </p>
           </div>
@@ -168,24 +168,24 @@ export default function RmhTubeLanding() {
           {/* Create & Join */}
           <div className="grid md:grid-cols-2 gap-6" data-jelly-group>
             {/* Create Room */}
-            <div className="rounded-(--app-radius) app-glass p-6">
+            <div className="rounded-app app-glass p-6">
               <h2 className="text-xl font-semibold mb-4">{t("create-room", { defaultValue: "Create Room" })}</h2>
-              <p className="text-sm mb-4 text-(--app-text-muted)">
+              <p className="text-sm mb-4 text-app-text-muted">
                 {t("create-room-desc", { defaultValue: "Start a new watch session and invite friends." })}
               </p>
               <button
                 onClick={handleCreateRoom}
                 disabled={connectionStatus !== 'connected'}
-                className="w-full py-3 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                className="w-full py-3 rounded-app-sm font-semibold text-app-accent-fg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-app-accent hover:bg-app-accent-hover"
               >
                 {t("create-room", { defaultValue: "Create Room" })}
               </button>
             </div>
 
             {/* Join Room */}
-            <div className="rounded-(--app-radius) app-glass p-6">
+            <div className="rounded-app app-glass p-6">
               <h2 className="text-xl font-semibold mb-4">{t("join-room", { defaultValue: "Join Room" })}</h2>
-              <p className="text-sm mb-4 text-(--app-text-muted)">
+              <p className="text-sm mb-4 text-app-text-muted">
                 {t("join-room-desc", { defaultValue: "Enter a 6-character room code to join." })}
               </p>
               <form onSubmit={(e) => { e.preventDefault(); handleJoinRoom(); }} className="flex gap-2">
@@ -197,12 +197,12 @@ export default function RmhTubeLanding() {
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                   placeholder="ABCDEF"
-                  className="w-10 min-w-0 flex-1 px-4 py-3 rounded-(--app-radius-sm) font-mono text-lg uppercase tracking-widest text-center border border-(--app-border) bg-(--app-bg) text-(--app-text) placeholder:text-(--app-text-dim) outline-none focus:ring-1 focus:ring-(--app-accent)"
+                  className="w-10 min-w-0 flex-1 px-4 py-3 rounded-app-sm font-mono text-lg uppercase tracking-widest text-center border border-app-border bg-app-bg text-app-text placeholder:text-app-text-dim outline-none focus:ring-1 focus:ring-app-accent"
                 />
                 <button
                   type="submit"
                   disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
-                  className="px-6 py-3 rounded-(--app-radius-sm) font-semibold text-(--app-accent-fg) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-accent) hover:bg-(--app-accent-hover)"
+                  className="px-6 py-3 rounded-app-sm font-semibold text-app-accent-fg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-app-accent hover:bg-app-accent-hover"
                 >
                   {t("join", { defaultValue: "Join" })}
                 </button>
@@ -212,9 +212,9 @@ export default function RmhTubeLanding() {
 
           {/* Favorite Rooms (Phase 4) */}
           {favoriteRooms.length > 0 && (
-            <div className="rounded-(--app-radius) app-glass p-6">
+            <div className="rounded-app app-glass p-6">
               <div className="flex items-center gap-2 mb-4">
-                <Star className="h-5 w-5 text-(--app-warning)" />
+                <Star className="h-5 w-5 text-app-warning" />
                 <h2 className="text-xl font-semibold">{t("favorites", { defaultValue: "Favorites" })}</h2>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -224,16 +224,16 @@ export default function RmhTubeLanding() {
                     <button
                       key={favRoomId}
                       onClick={() => emit(C2S.ROOM_JOIN, { roomId: favRoomId })}
-                      className="flex items-center gap-2 px-3 py-2 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) hover:bg-(--app-surface-hover) transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 rounded-app-sm border border-app-border bg-app-bg hover:bg-app-surface-hover transition-colors"
                     >
                       <span className="font-mono font-bold text-sm">{favRoomId}</span>
                       {historyEntry?.roomName && (
-                        <span className="text-xs text-(--app-text-muted)">{historyEntry.roomName}</span>
+                        <span className="text-xs text-app-text-muted">{historyEntry.roomName}</span>
                       )}
                       <span
                         role="button"
                         onClick={(e) => { e.stopPropagation(); toggleFavoriteRoom(favRoomId); }}
-                        className="text-(--app-warning) hover:text-(--app-warning)"
+                        className="text-app-warning hover:text-app-warning"
                         title={t("remove-from-favorites", { defaultValue: "Remove from favorites" })}
                       >
                         <StarOff className="h-3.5 w-3.5" />
@@ -246,18 +246,18 @@ export default function RmhTubeLanding() {
           )}
 
           {/* Public Rooms */}
-          <div className="rounded-(--app-radius) app-glass p-6">
+          <div className="rounded-app app-glass p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">{t("public-rooms", { defaultValue: "Public Rooms" })}</h2>
               <button
                 onClick={handleBrowse}
-                className="text-sm px-3 py-1 rounded-(--app-radius-sm) transition-colors bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text)"
+                className="text-sm px-3 py-1 rounded-app-sm transition-colors bg-app-surface-hover text-app-text-muted hover:text-app-text"
               >
                 {t("refresh", { defaultValue: "Refresh" })}
               </button>
             </div>
             {publicRooms.length === 0 ? (
-              <p className="text-sm text-center py-4 text-(--app-text-muted)">
+              <p className="text-sm text-center py-4 text-app-text-muted">
                 {t("no-public-rooms", { defaultValue: "No public rooms available. Create one!" })}
               </p>
             ) : (
@@ -265,7 +265,7 @@ export default function RmhTubeLanding() {
                 {publicRooms.map((room) => (
                   <div
                     key={room.roomId}
-                    className="flex items-center justify-between p-3 rounded-(--app-radius-sm) cursor-pointer transition-colors border border-(--app-border) bg-(--app-bg) hover:bg-(--app-surface-hover)"
+                    className="flex items-center justify-between p-3 rounded-app-sm cursor-pointer transition-colors border border-app-border bg-app-bg hover:bg-app-surface-hover"
                     onClick={() => {
                       setJoinCode(room.roomId);
                       emit(C2S.ROOM_JOIN, { roomId: room.roomId });
@@ -273,23 +273,23 @@ export default function RmhTubeLanding() {
                   >
                     <div className="flex items-center gap-2">
                       <span className="font-mono font-bold">{room.roomId}</span>
-                      {room.hasPassword && <Lock className="h-3.5 w-3.5 text-(--app-text-dim)" />}
-                      <span className="text-sm text-(--app-text-muted)">
+                      {room.hasPassword && <Lock className="h-3.5 w-3.5 text-app-text-dim" />}
+                      <span className="text-sm text-app-text-muted">
                         {t("host-name", { defaultValue: "Host: {{name}}", name: room.hostName })}
                       </span>
                       {room.currentVideo && (
-                        <span className="text-xs text-(--app-accent) truncate max-w-48">
+                        <span className="text-xs text-app-accent truncate max-w-48">
                           · {room.currentVideo}
                         </span>
                       )}
                       {room.scheduledFor && room.scheduledFor > Date.now() && (
-                        <span className="text-xs text-(--app-info) flex items-center gap-0.5">
+                        <span className="text-xs text-app-info flex items-center gap-0.5">
                           <Clock className="h-3 w-3" />
                           {t("scheduled", { defaultValue: "Scheduled" })}
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-(--app-text-muted) whitespace-nowrap flex items-center gap-1">
+                    <div className="text-sm text-app-text-muted whitespace-nowrap flex items-center gap-1">
                       <Users className="h-3.5 w-3.5" />
                       {room.memberCount}/{room.maxMembers}
                     </div>
@@ -301,9 +301,9 @@ export default function RmhTubeLanding() {
 
           {/* Recent Rooms — only shows rooms that are currently open */}
           {openRecentRooms.length > 0 && (
-            <div className="rounded-(--app-radius) app-glass p-6">
+            <div className="rounded-app app-glass p-6">
               <div className="flex items-center gap-2 mb-4">
-                <History className="h-5 w-5 text-(--app-info)" />
+                <History className="h-5 w-5 text-app-info" />
                 <h2 className="text-xl font-semibold">{t("recent-rooms", { defaultValue: "Recent Rooms" })}</h2>
               </div>
               <div className="space-y-2">
@@ -313,36 +313,36 @@ export default function RmhTubeLanding() {
                   return (
                     <div
                       key={entry.roomId}
-                      className="flex items-center justify-between p-3 rounded-(--app-radius-sm) cursor-pointer transition-colors border border-(--app-border) bg-(--app-bg) hover:bg-(--app-surface-hover)"
+                      className="flex items-center justify-between p-3 rounded-app-sm cursor-pointer transition-colors border border-app-border bg-app-bg hover:bg-app-surface-hover"
                       onClick={() => emit(C2S.ROOM_JOIN, { roomId: entry.roomId })}
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <span className="font-mono font-bold text-sm">{entry.roomId}</span>
-                        <span className="text-sm text-(--app-text-muted) truncate">
+                        <span className="text-sm text-app-text-muted truncate">
                           {entry.roomName ?? t("host-name", { defaultValue: "Host: {{name}}", name: status.hostName ?? entry.hostName })}
                         </span>
                         {status.currentVideo && (
-                          <span className="text-xs text-(--app-accent) truncate max-w-48">
+                          <span className="text-xs text-app-accent truncate max-w-48">
                             · {status.currentVideo}
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs text-(--app-text-dim) flex items-center gap-1">
+                        <span className="text-xs text-app-text-dim flex items-center gap-1">
                           <Users className="h-3 w-3" />
                           {status.memberCount}/{status.maxMembers}
                         </span>
-                        <span className="text-xs text-(--app-text-dim) flex items-center gap-1">
+                        <span className="text-xs text-app-text-dim flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {formatRelativeTime(entry.lastVisited)}
                         </span>
                         <span
                           role="button"
                           onClick={(e) => { e.stopPropagation(); toggleFavoriteRoom(entry.roomId); }}
-                          className={`rounded-(--app-radius-sm) p-1 transition-colors ${
+                          className={`rounded-app-sm p-1 transition-colors ${
                             isFavorite
-                              ? 'text-(--app-warning)'
-                              : 'text-(--app-text-dim) hover:text-(--app-warning)'
+                              ? 'text-app-warning'
+                              : 'text-app-text-dim hover:text-app-warning'
                           }`}
                           title={isFavorite ? t("remove-from-favorites", { defaultValue: "Remove from favorites" }) : t("add-to-favorites", { defaultValue: "Add to favorites" })}
                         >

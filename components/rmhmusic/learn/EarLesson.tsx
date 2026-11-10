@@ -330,18 +330,18 @@ export function EarLesson({
               aria-describedby={lesson.kind === 'asking' && !open ? listenFirstId : undefined}
               onClick={() => answer({ name })}
               className={cn(
-                'rmm-display flex h-11 w-full items-center justify-center rounded-(--app-radius-sm) border text-[1.375rem] leading-none transition-colors',
+                'rmm-display flex h-11 w-full items-center justify-center rounded-app-sm border text-[1.375rem] leading-none transition-colors',
                 // Waiting and finished answers read by ink and edge, never by opacity or the dim
                 // ink (2.8:1): the muted ink holds 4.5:1 on the tile in every theme.
                 lesson.kind === 'asking'
                   ? open
-                    ? 'border-(--app-border-bright) text-(--app-text)'
-                    : 'border-(--app-border) text-(--app-text-muted)'
+                    ? 'border-app-border-bright text-app-text'
+                    : 'border-app-border text-app-text-muted'
                   : isCorrect
-                    ? 'border-(--app-accent) text-(--app-accent)'
+                    ? 'border-app-accent text-app-accent'
                     : isGiven
-                      ? 'rmm-flash__struck border-(--app-border) text-(--app-text-muted)'
-                      : 'border-(--app-border) text-(--app-text-muted)',
+                      ? 'rmm-flash__struck border-app-border text-app-text-muted'
+                      : 'border-app-border text-app-text-muted',
               )}
             >
               {nameOf(name)}

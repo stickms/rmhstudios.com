@@ -40,12 +40,12 @@ function Row({ id, icon: Icon, title, description, action, children }: RowProps)
       {/* The action sits beside the title while the title keeps 6rem; past that (large text, a
           narrow phone, the long "Not supported" note) it wraps below, at the end. */}
       <div className="flex min-h-11 flex-wrap items-center gap-3">
-        <Icon className="h-5 w-5 shrink-0 text-(--app-accent)" aria-hidden="true" />
-        <p className="min-w-24 flex-1 font-medium text-(--app-text)">{title}</p>
+        <Icon className="h-5 w-5 shrink-0 text-app-accent" aria-hidden="true" />
+        <p className="min-w-24 flex-1 font-medium text-app-text">{title}</p>
         <div className="ms-auto shrink-0">{action}</div>
       </div>
       <div className="space-y-3 ps-8">
-        <p className="text-sm text-(--app-text-muted)">{description}</p>
+        <p className="text-sm text-app-text-muted">{description}</p>
         {children}
       </div>
     </li>
@@ -87,7 +87,7 @@ export function InputChooser({ onCalibrate }: InputChooserProps) {
   const action = (id: LearnInput, name: string) => {
     if (busy === id) {
       return (
-        <span className="inline-flex min-h-11 items-center gap-2 text-sm text-(--app-text-muted)">
+        <span className="inline-flex min-h-11 items-center gap-2 text-sm text-app-text-muted">
           <Loader2 className="app-spin h-4 w-4" aria-hidden="true" />
           {t('input-starting', { defaultValue: 'Starting…' })}
         </span>
@@ -95,7 +95,7 @@ export function InputChooser({ onCalibrate }: InputChooserProps) {
     }
     if (inUse(id)) {
       return (
-        <span className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-(--app-success)">
+        <span className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-app-success">
           <Check className="h-4 w-4" aria-hidden="true" />
           {t('input-in-use', { defaultValue: 'In use' })}
         </span>
@@ -130,7 +130,7 @@ export function InputChooser({ onCalibrate }: InputChooserProps) {
 
   return (
     <div className="space-y-3">
-      <ul className="divide-y divide-(--app-border)">
+      <ul className="divide-y divide-app-border">
         <Row
           id="screen"
           icon={Piano}
@@ -161,14 +161,14 @@ export function InputChooser({ onCalibrate }: InputChooserProps) {
             midiSupported ? (
               action('midi', names.midi)
             ) : (
-              <span className="inline-flex min-h-11 max-w-36 items-center text-end text-sm text-(--app-text-dim)">
+              <span className="inline-flex min-h-11 max-w-36 items-center text-end text-sm text-app-text-dim">
                 {t('midi-unsupported', { defaultValue: 'Not supported in this browser' })}
               </span>
             )
           }
         >
           {!midiSupported ? (
-            <p className="text-sm text-(--app-text-muted)">
+            <p className="text-sm text-app-text-muted">
               {t('midi-unsupported-hint', {
                 defaultValue:
                   'iPhone and iPad browsers cannot use MIDI. Use the on-screen keys or the microphone, or open this page in Chrome or Edge on a computer.',
@@ -192,7 +192,7 @@ export function InputChooser({ onCalibrate }: InputChooserProps) {
       </ul>
 
       {(saveFailed || storeError === 'unauthorized') && (
-        <p role="status" className="text-sm text-(--app-danger)">
+        <p role="status" className="text-sm text-app-danger">
           {storeError === 'unauthorized'
             ? t('error-signed-out', {
                 defaultValue: 'Your session ended. Sign in again to continue.',
@@ -202,8 +202,8 @@ export function InputChooser({ onCalibrate }: InputChooserProps) {
       )}
 
       {onCalibrate && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-(--app-border) pt-3">
-          <p className="flex items-center gap-2 text-sm text-(--app-text-muted)">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-app-border pt-3">
+          <p className="flex items-center gap-2 text-sm text-app-text-muted">
             <Timer className="h-4 w-4 shrink-0" aria-hidden="true" />
             {t('latency-current', { ms: latency, defaultValue: 'Timing offset: {{ms}} ms' })}
           </p>

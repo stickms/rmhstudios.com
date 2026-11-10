@@ -582,13 +582,13 @@ function ProposalCard({
   const files = new Set(applied.map((c) => c.file)).size;
   const shown = all ? applied : applied.slice(0, 4);
   return (
-    <div className="flex min-w-0 flex-col gap-2 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) p-2">
+    <div className="flex min-w-0 flex-col gap-2 rounded-app-sm border border-app-border bg-app-bg p-2">
       {proposal.summary ? <p className="text-xs break-words">{proposal.summary}</p> : null}
       <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,16rem)]">
         <div className="flex min-w-0 flex-col gap-1">
           {applied.length ? (
             <>
-              <p className="text-xs font-semibold text-(--app-text-muted)">
+              <p className="text-xs font-semibold text-app-text-muted">
                 {t('ai_hud_diff_summary', {
                   defaultValue: '{{count}} changes in {{files}} files',
                   count: applied.length,
@@ -601,7 +601,7 @@ function ProposalCard({
                     <span className="block truncate font-semibold" title={`${c.file}: ${keyLabel(c)}`}>
                       {keyLabel(c)}
                     </span>
-                    <span className="block truncate text-(--app-text-muted)">
+                    <span className="block truncate text-app-text-muted">
                       {c.before ?? t('ai_unset', { defaultValue: '(not set)' })}
                       <span aria-hidden> → </span>
                       <span className="sr-only"> {t('ai_to', { defaultValue: 'to' })} </span>
@@ -615,7 +615,7 @@ function ProposalCard({
                   type="button"
                   data-menu-item
                   aria-expanded={all}
-                  className="self-start text-xs text-(--app-accent-text) underline pointer-coarse:min-h-11"
+                  className="self-start text-xs text-app-accent-text underline pointer-coarse:min-h-11"
                   onClick={() => setAll((a) => !a)}
                 >
                   {all

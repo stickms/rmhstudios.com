@@ -174,11 +174,11 @@ export const OPT_OUT_SCOPE_SELECTOR =
 /**
  * Every jelly host: the glass role classes, the app tier's `.app-glass`, the explicit opt-in, eversion hosts, solid
  * controls and fields, toasts, anything tagged `data-jelly`, and the app tier's adapter surfaces
- * (`[data-liquid-surface]`, `.app-theme` boxes on `bg-(--app-surface)`). The registry admits these, so arcs land on
+ * (`[data-liquid-surface]`, `.app-theme` boxes on `bg-app-surface`). The registry admits these, so arcs land on
  * exactly the surfaces that carry the material, and more.
  */
 export const JELLY_SELECTOR =
-  '.glass-pane,.glass-fill,.glass-chrome,.glass-overlay,.glass-inset,.glass-interactive,.app-glass,[data-liquid-glass],[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"],[data-sonner-toast],[data-jelly],[data-liquid-surface],.app-theme [class~="bg-(--app-surface)"]';
+  '.glass-pane,.glass-fill,.glass-chrome,.glass-overlay,.glass-inset,.glass-interactive,.app-glass,[data-liquid-glass],[data-evert],[data-slot="button"],[data-slot="input"],[data-slot="textarea"],[data-sonner-toast],[data-jelly],[data-liquid-surface],.app-theme [class~="bg-app-surface"]';
 
 /**
  * The nodes the jelly services inject into `<body>` that React never knows about: the arc layer. Never hosts, never

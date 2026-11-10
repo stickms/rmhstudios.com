@@ -23,7 +23,7 @@ export function SoloSourcePicker({
   ];
   return (
     <div>
-      <span className="mb-2 block text-sm font-medium text-(--app-text-muted)">
+      <span className="mb-2 block text-sm font-medium text-app-text-muted">
         {t('type-source-label', { defaultValue: 'Passage source' })}
       </span>
       <Tabs
@@ -35,7 +35,7 @@ export function SoloSourcePicker({
         aria-label={t('type-source-label', { defaultValue: 'Passage source' })}
       />
       {value !== 'standard' && (
-        <p className="mt-1.5 text-xs text-(--app-text-muted)">
+        <p className="mt-1.5 text-xs text-app-text-muted">
           {value === 'code'
             ? t('type-source-code-hint', {
                 defaultValue:
@@ -54,7 +54,7 @@ export function SoloSourcePicker({
 export function SourcePracticeNote({ source }: { source: SoloSource }) {
   const { t } = useTranslation('f-tools');
   return (
-    <p className="text-sm text-(--app-text-muted) mb-4">
+    <p className="text-sm text-app-text-muted mb-4">
       {source === 'code'
         ? t('type-practice-code', {
             defaultValue: 'Code run - practice only, so it is not posted to the leaderboard.',

@@ -388,7 +388,7 @@ export default function BalatroPage() {
   const progress = stage.kind === 'booting' ? (stage.progress ?? 0) : 1;
 
   return (
-    <main className="balatro-page app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
+    <main className="balatro-page app-page min-h-dvh bg-app-bg text-app-text">
       <div ref={frameRef} className="balatro-frame" data-jelly-zone="playfield">
         <canvas
           ref={canvasRef}
@@ -400,7 +400,7 @@ export default function BalatroPage() {
         />
         {stage.kind === 'booting' && (
           <div className="balatro-boot" role="status">
-            <span className="font-mono text-xs uppercase tracking-widest text-(--app-text-dim)">
+            <span className="font-mono text-xs uppercase tracking-widest text-app-text-dim">
               {stage.phase === 'download'
                 ? t('phase_download', { defaultValue: 'Downloading' })
                 : stage.phase === 'unpack'

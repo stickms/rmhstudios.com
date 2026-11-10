@@ -100,8 +100,8 @@ export function Dice({
       </div>
 
       {total !== null ? (
-        <p className="text-center text-sm text-(--app-text-muted)">
-          <span className="font-semibold text-(--app-text)">
+        <p className="text-center text-sm text-app-text-muted">
+          <span className="font-semibold text-app-text">
             {t('dice-total', { defaultValue: 'Total {{total}}', total })}
           </span>
           {glimpsed ? (
@@ -112,7 +112,7 @@ export function Dice({
           ) : null}
         </p>
       ) : (
-        <p className="text-center text-sm text-(--app-text-dim)">
+        <p className="text-center text-sm text-app-text-dim">
           {t('dice-hidden-note', { defaultValue: 'You cannot see these. Ask the table.' })}
         </p>
       )}

@@ -34,13 +34,13 @@ export default function LoadoutCard({
       })
     : [];
   return (
-    <article className="relative flex flex-col gap-2 rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-4 hover:border-(--app-border-bright)">
+    <article className="relative flex flex-col gap-2 rounded-app border border-app-border bg-app-bg-subtle p-4 hover:border-app-border-bright">
       <div className="flex items-start justify-between gap-2">
         <h2 className="tf2hud-title min-w-0 truncate text-xl">
           <Link
             to="/tf2/loadout/l/$slug"
             params={{ slug: loadout.slug }}
-            className="block truncate hover:underline after:absolute after:inset-0 after:content-[''] focus-visible:after:rounded-(--app-radius)"
+            className="block truncate hover:underline after:absolute after:inset-0 after:content-[''] focus-visible:after:rounded-app"
           >
             {loadout.title}
           </Link>
@@ -58,7 +58,7 @@ export default function LoadoutCard({
           ) : null}
         </div>
       </div>
-      <p className="text-xs text-(--app-text-dim)">
+      <p className="text-xs text-app-text-dim">
         {loadout.author
           ? t('by', { defaultValue: 'by {{name}}', name: loadout.author.name })
           : null}
@@ -76,10 +76,10 @@ export default function LoadoutCard({
         </ul>
       ) : null}
       {loadout.description ? (
-        <p className="line-clamp-2 text-sm text-(--app-text-muted)">{loadout.description}</p>
+        <p className="line-clamp-2 text-sm text-app-text-muted">{loadout.description}</p>
       ) : null}
       <div className="mt-auto flex items-center justify-between gap-2 pt-1">
-        <span className="flex items-center gap-3 text-xs text-(--app-text-muted)">
+        <span className="flex items-center gap-3 text-xs text-app-text-muted">
           <span
             className="inline-flex items-center gap-1"
             title={t('likes', { defaultValue: 'Likes' })}

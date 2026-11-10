@@ -67,7 +67,7 @@ export default function GameShell({
     : null;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-(--app-bg) text-(--app-text)">
+    <div className="flex h-full flex-col overflow-hidden bg-app-bg text-app-text">
       {/* Game content */}
       <main className="flex-1 overflow-y-auto p-4" style={{ scrollbarGutter: 'stable both-edges' }}>
         <div className="flex min-h-full items-start justify-center">
@@ -76,28 +76,28 @@ export default function GameShell({
       </main>
 
       {/* Footer */}
-      <footer data-jelly-zone="hud" className="relative flex shrink-0 items-center border-t border-(--app-border) px-4 py-1.5 pb-[calc(0.375rem+var(--safe-bottom))] pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))] text-sm">
+      <footer data-jelly-zone="hud" className="relative flex shrink-0 items-center border-t border-app-border px-4 py-1.5 pb-[calc(0.375rem+var(--safe-bottom))] pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))] text-sm">
         <span className="font-mono font-semibold">
-          {t("score-label", { defaultValue: "Score:" })} <span className="text-(--app-accent)">{displayScore}</span>
+          {t("score-label", { defaultValue: "Score:" })} <span className="text-app-accent">{displayScore}</span>
         </span>
         {/* Center — round counter or host "Next" button for infinite phases */}
         <div className="absolute inset-0 flex items-center justify-center">
           {showNextButton ? (
             <button
               onClick={handleNext}
-              className="flex items-center gap-1 rounded-full px-4 py-1 text-xs font-semibold text-(--app-accent-fg) transition hover:brightness-110 active:scale-95 animate-pulse"
+              className="flex items-center gap-1 rounded-full px-4 py-1 text-xs font-semibold text-app-accent-fg transition hover:brightness-110 active:scale-95 animate-pulse"
               style={{ backgroundColor: 'var(--app-accent)' }}
             >
               {t("next", { defaultValue: "Next" })}
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
           ) : roundLabel ? (
-            <span className="rounded-full bg-(--app-surface) px-2 py-0.5 text-xs font-medium text-(--app-text-muted) pointer-events-none">
+            <span className="rounded-full bg-app-surface px-2 py-0.5 text-xs font-medium text-app-text-muted pointer-events-none">
               {roundLabel}
             </span>
           ) : null}
         </div>
-        <span className="ml-auto flex items-center gap-1 text-(--app-text-muted)">
+        <span className="ml-auto flex items-center gap-1 text-app-text-muted">
           <Users className="h-4 w-4" /> {playerCount}
         </span>
       </footer>

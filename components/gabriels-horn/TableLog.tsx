@@ -120,14 +120,14 @@ export function TableLog({ log }: { log: LogEntry[] }) {
 
   if (log.length === 0) {
     return (
-      <p className="text-xs text-(--app-text-dim)">
+      <p className="text-xs text-app-text-dim">
         {t('log-empty', { defaultValue: 'Nothing has happened yet.' })}
       </p>
     );
   }
 
   return (
-    <ol className="app-scroll-y max-h-40 space-y-1 text-xs text-(--app-text-muted)">
+    <ol className="app-scroll-y max-h-40 space-y-1 text-xs text-app-text-muted">
       {log.map((entry, index) => (
         <li key={entry.id} ref={index === log.length - 1 ? endRef : undefined}>
           {line(entry)}

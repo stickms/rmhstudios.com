@@ -34,10 +34,10 @@ interface GameVotingProps {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  word: 'bg-(--app-info)/20 text-(--app-info)',
-  trivia: 'bg-(--app-success)/20 text-(--app-success)',
-  action: 'bg-(--app-danger)/20 text-(--app-danger)',
-  creative: 'bg-(--app-rare)/20 text-(--app-rare)',
+  word: 'bg-app-info/20 text-app-info',
+  trivia: 'bg-app-success/20 text-app-success',
+  action: 'bg-app-danger/20 text-app-danger',
+  creative: 'bg-app-rare/20 text-app-rare',
 };
 
 export default function GameVoting({ candidates, durationSeconds, endsAt, onVote }: GameVotingProps) {
@@ -90,9 +90,9 @@ export default function GameVoting({ candidates, durationSeconds, endsAt, onVote
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-4">
       {/* Timer */}
-      <div className="flex items-center justify-center gap-2 text-lg font-bold text-(--app-text)">
-        <Timer className="h-5 w-5 text-(--app-accent)" />
-        <span className={remaining <= 10 ? 'text-(--app-danger)' : ''}>
+      <div className="flex items-center justify-center gap-2 text-lg font-bold text-app-text">
+        <Timer className="h-5 w-5 text-app-accent" />
+        <span className={remaining <= 10 ? 'text-app-danger' : ''}>
           {remaining}s
         </span>
       </div>
@@ -107,38 +107,38 @@ export default function GameVoting({ candidates, durationSeconds, endsAt, onVote
             <button
               key={c.minigameId}
               onClick={() => handleVote(c.minigameId)}
-              className={`glass-fill relative overflow-hidden rounded-(--app-radius) border p-4 text-left transition-colors ${
+              className={`glass-fill relative overflow-hidden rounded-app border p-4 text-left transition-colors ${
                 isSelected
-                  ? 'border-(--app-accent) bg-(--app-accent)/10 ring-2 ring-(--app-accent)'
-                  : 'border-(--app-border) hover:bg-(--app-surface-hover)'
+                  ? 'border-app-accent bg-app-accent/10 ring-2 ring-app-accent'
+                  : 'border-app-border hover:bg-app-surface-hover'
               }`}
             >
               <div className="flex items-start gap-3">
                 {/* Icon */}
-                <GameIcon icon={c.icon} className="h-6 w-6 shrink-0 text-(--app-accent)" />
+                <GameIcon icon={c.icon} className="h-6 w-6 shrink-0 text-app-accent" />
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-(--app-text)">{c.displayName}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${CATEGORY_COLORS[c.category] ?? 'bg-(--app-surface-hover)/20 text-(--app-text-muted)'}`}>
+                    <span className="font-semibold text-app-text">{c.displayName}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${CATEGORY_COLORS[c.category] ?? 'bg-app-surface-hover/20 text-app-text-muted'}`}>
                       {c.category}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-xs text-(--app-text-muted)">{c.description}</p>
+                  <p className="mt-0.5 text-xs text-app-text-muted">{c.description}</p>
                 </div>
 
                 {/* Vote count */}
                 {tally > 0 && (
-                  <span className="shrink-0 rounded-full bg-(--app-accent)/20 px-2 py-0.5 text-xs font-bold text-(--app-accent)">
+                  <span className="shrink-0 rounded-full bg-app-accent/20 px-2 py-0.5 text-xs font-bold text-app-accent">
                     {tally}
                   </span>
                 )}
               </div>
 
               {/* Tally bar */}
-              <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-(--app-border)">
+              <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-app-border">
                 <div
-                  className="h-full bg-(--app-accent) w-full origin-left transition-transform duration-300"
+                  className="h-full bg-app-accent w-full origin-left transition-transform duration-300"
                   style={{ transform: `scaleX(${((tally / maxTally) * 100) / 100})` }}
                 />
               </div>

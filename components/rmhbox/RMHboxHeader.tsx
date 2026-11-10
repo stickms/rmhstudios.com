@@ -103,21 +103,21 @@ function TimerRing({
       </svg>
       {/* Center content: number or ∞, with pause/play overlay for host on hover */}
       <span
-        className={`absolute flex items-center justify-center text-xs font-bold ${paused ? 'text-(--app-warning)' : 'text-(--app-text)'}`}
+        className={`absolute flex items-center justify-center text-xs font-bold ${paused ? 'text-app-warning' : 'text-app-text'}`}
       >
         {/* Host hover: show pause/play icon replacing the number */}
         {interactive && hovered ? (
           paused ? (
-            <Play className="h-3.5 w-3.5 text-(--app-warning)" />
+            <Play className="h-3.5 w-3.5 text-app-warning" />
           ) : (
-            <Pause className="h-3.5 w-3.5 text-(--app-text-muted)" />
+            <Pause className="h-3.5 w-3.5 text-app-text-muted" />
           )
         ) : paused ? (
           /* Paused (not hovering): show Play icon instead of a stale number */
           interactive ? (
-            <Play className="h-3.5 w-3.5 text-(--app-warning)" />
+            <Play className="h-3.5 w-3.5 text-app-warning" />
           ) : (
-            <Pause className="h-3.5 w-3.5 text-(--app-warning)" />
+            <Pause className="h-3.5 w-3.5 text-app-warning" />
           )
         ) : infinite ? (
           <InfinityIcon className="h-4 w-4" />
@@ -170,11 +170,11 @@ export default function RMHboxHeader({
 
   const statusIcon =
     connectionStatus === 'connected' ? (
-      <Circle className="h-2.5 w-2.5 fill-(--app-success) text-(--app-success) inline-block" />
+      <Circle className="h-2.5 w-2.5 fill-app-success text-app-success inline-block" />
     ) : connectionStatus === 'connecting' ? (
-      <Circle className="h-2.5 w-2.5 fill-(--app-warning) text-(--app-warning) inline-block" />
+      <Circle className="h-2.5 w-2.5 fill-app-warning text-app-warning inline-block" />
     ) : (
-      <Circle className="h-2.5 w-2.5 fill-(--app-danger) text-(--app-danger) inline-block" />
+      <Circle className="h-2.5 w-2.5 fill-app-danger text-app-danger inline-block" />
     );
 
   const statusText =
@@ -187,13 +187,13 @@ export default function RMHboxHeader({
           : t('connection-error', { defaultValue: 'Error' });
 
   return (
-    <header className="grid h-16 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border-b border-(--app-border) bg-(--app-bg) px-3 sm:px-4">
+    <header className="grid h-16 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border-b border-app-border bg-app-bg px-3 sm:px-4">
       {/* Left side */}
       <div className="flex min-w-0 items-center gap-2">
         {hasBackLink && (
           <Link
             to={backHref ?? '/rmhbox'}
-            className="text-sm font-medium text-(--app-text-muted) hover:text-(--app-accent) transition-colors text-nowrap"
+            className="text-sm font-medium text-app-text-muted hover:text-app-accent transition-colors text-nowrap"
             // when in a lobby, the back link becomes a "Leave" action that also disconnects from the lobby
             onClick={(e) => {
               if (context === 'lobby') {
@@ -233,7 +233,7 @@ export default function RMHboxHeader({
       {/* Centre column — a real grid track, so a long minigame name truncates
           instead of running through the back link or the controls. */}
       <h1
-        className="min-w-0 truncate px-2 text-center text-xl font-bold leading-tight text-(--app-accent) sm:text-2xl"
+        className="min-w-0 truncate px-2 text-center text-xl font-bold leading-tight text-app-accent sm:text-2xl"
         style={{ fontFamily: 'var(--app-font-display)' }}
       >
         {displayTitle}
@@ -243,7 +243,7 @@ export default function RMHboxHeader({
       <div className="flex min-w-0 items-center justify-end gap-2">
         {showConnection && (
           <span
-            className="flex items-center gap-1.5 text-sm text-(--app-text-muted)"
+            className="flex items-center gap-1.5 text-sm text-app-text-muted"
             title={statusText}
           >
             {statusIcon}

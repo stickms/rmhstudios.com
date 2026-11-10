@@ -40,12 +40,12 @@ export interface AppHeaderProps {
 }
 
 const DOT_TONE: Record<RealtimeStatus, string> = {
-  idle: 'text-(--app-text-dim)',
-  connecting: 'text-(--app-warning)',
-  connected: 'text-(--app-success)',
-  reconnecting: 'text-(--app-warning)',
-  disconnected: 'text-(--app-text-dim)',
-  error: 'text-(--app-danger)',
+  idle: 'text-app-text-dim',
+  connecting: 'text-app-warning',
+  connected: 'text-app-success',
+  reconnecting: 'text-app-warning',
+  disconnected: 'text-app-text-dim',
+  error: 'text-app-danger',
 };
 
 export default function AppHeader({
@@ -64,7 +64,7 @@ export default function AppHeader({
   const goBack = useBackOrFallback();
 
   const backClasses =
-    'flex items-center gap-1.5 text-sm font-medium text-(--app-text-muted) transition-colors hover:text-(--app-text)';
+    'flex items-center gap-1.5 text-sm font-medium text-app-text-muted transition-colors hover:text-app-text';
 
   const statusLabel: Record<RealtimeStatus, string> = {
     idle: t('not-connected', { defaultValue: 'Not connected' }),
@@ -79,7 +79,7 @@ export default function AppHeader({
     <header
       data-liquid-surface
       className={`grid h-16 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-3 sm:px-4 ${
-        bordered ? 'border-b border-(--app-border)' : ''
+        bordered ? 'border-b border-app-border' : ''
       }`}
     >
       <div className="flex min-w-0 items-center gap-2">
@@ -122,7 +122,7 @@ export default function AppHeader({
           <button
             type="button"
             onClick={onCopyCode}
-            className="flex items-center gap-1.5 rounded-(--app-radius-sm) bg-(--app-surface) px-2 py-1 font-mono text-sm font-bold tracking-widest text-(--app-text) transition-colors hover:bg-(--app-surface-hover)"
+            className="flex items-center gap-1.5 rounded-app-sm bg-app-surface px-2 py-1 font-mono text-sm font-bold tracking-widest text-app-text transition-colors hover:bg-app-surface-hover"
             title={t('copy-room-code', { defaultValue: 'Copy room code' })}
           >
             <span className="truncate">{roomCode}</span>

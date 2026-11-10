@@ -81,12 +81,12 @@ export default function TopBar({
   };
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-(--app-border) bg-(--app-bg-subtle) px-2 sm:px-3">
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-app-border bg-app-bg-subtle px-2 sm:px-3">
       {onBackToGame ? (
         <button
           type="button"
           onClick={onBackToGame}
-          className="flex shrink-0 items-center gap-1.5 rounded-(--app-radius-sm) px-2 py-1 text-sm font-medium text-(--app-text-muted) hover:text-(--app-text)"
+          className="flex shrink-0 items-center gap-1.5 rounded-app-sm px-2 py-1 text-sm font-medium text-app-text-muted hover:text-app-text"
         >
           <ArrowLeft className="size-4 rtl-flip" aria-hidden />
           <span className="hidden sm:inline">
@@ -99,7 +99,7 @@ export default function TopBar({
       ) : (
         <Link
           to="/tf2/hud-editor"
-          className="flex shrink-0 items-center gap-1.5 rounded-(--app-radius-sm) px-2 py-1 text-sm font-medium text-(--app-text-muted) hover:text-(--app-text)"
+          className="flex shrink-0 items-center gap-1.5 rounded-app-sm px-2 py-1 text-sm font-medium text-app-text-muted hover:text-app-text"
         >
           <ArrowLeft className="size-4 rtl-flip" aria-hidden />
           <span className="hidden sm:inline">{t('back', { defaultValue: 'Back' })}</span>
@@ -111,7 +111,7 @@ export default function TopBar({
         maxLength={80}
         onChange={(e) => setMeta({ name: e.target.value })}
         aria-label={t('hud-name', { defaultValue: 'HUD name' })}
-        className="tf2hud-title h-9 min-w-0 max-w-64 flex-1 rounded-(--app-radius-sm) border border-transparent bg-transparent px-2 text-xl text-(--app-text) hover:border-(--app-border-bright) focus-visible:border-(--app-accent)"
+        className="tf2hud-title h-9 min-w-0 max-w-64 flex-1 rounded-app-sm border border-transparent bg-transparent px-2 text-xl text-app-text hover:border-app-border-bright focus-visible:border-app-accent"
       />
       <span className="hidden md:inline">
         <Pill tone={status[saveState].tone}>{status[saveState].label}</Pill>
@@ -136,7 +136,7 @@ export default function TopBar({
             setPref('rightOpen', true);
             setPref('rightTab', 'diff');
           }}
-          className="hidden h-8 items-center gap-1.5 rounded-(--app-radius-sm) px-2 text-xs font-semibold text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text) sm:inline-flex"
+          className="hidden h-8 items-center gap-1.5 rounded-app-sm px-2 text-xs font-semibold text-app-text-muted hover:bg-app-surface-hover hover:text-app-text sm:inline-flex"
           aria-label={t('changed-count', {
             defaultValue: '{{count}} changed files',
             count: changed,

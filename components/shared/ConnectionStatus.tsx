@@ -220,7 +220,7 @@ export function PeerWaitOverlay({ waiting, onSkip, skipLabel }: PeerWaitOverlayP
           <button
             type="button"
             onClick={onSkip}
-            className="w-full rounded-(--app-radius-sm) px-4 py-2 text-sm font-medium"
+            className="w-full rounded-app-sm px-4 py-2 text-sm font-medium"
             style={{
               background: 'var(--app-surface-hover, #313238)',
               color: 'var(--app-text, #e8e8ec)',
@@ -282,7 +282,7 @@ export function RealtimeLoading({ status, label, onRetry }: RealtimeLoadingProps
         <button
           type="button"
           onClick={onRetry}
-          className="inline-flex items-center gap-2 rounded-(--app-radius-sm) px-4 py-2 text-sm font-medium"
+          className="inline-flex items-center gap-2 rounded-app-sm px-4 py-2 text-sm font-medium"
           style={{
             background: 'var(--app-accent, #6ea8d9)',
             color: 'var(--app-accent-fg, #06121c)',

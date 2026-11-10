@@ -133,12 +133,12 @@ export function KnobControl({
       </div>
 
       {isDragging && (
-        <span className="text-xs tabular-nums text-(--app-accent)">
+        <span className="text-xs tabular-nums text-app-accent">
           {displayValue}{unit}
         </span>
       )}
       {label && !isDragging && (
-        <span className="text-xs text-(--app-text-muted)">{label}</span>
+        <span className="text-xs text-app-text-muted">{label}</span>
       )}
     </div>
   );

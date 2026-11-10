@@ -100,7 +100,7 @@ export function CardFace({
   const body = (
     <>
       <span className="flex items-start justify-between">
-        <span className="font-mono text-[0.625rem] leading-none text-(--app-text-dim)">
+        <span className="font-mono text-[0.625rem] leading-none text-app-text-dim">
           {card.rank}
         </span>
         {isSwap ? (

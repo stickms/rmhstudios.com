@@ -105,14 +105,14 @@ export function NoteValues({
           aria-current={asked === value ? 'true' : undefined}
           className={cn(
             'flex flex-col items-center',
-            asked === null || asked === value ? 'text-(--app-text)' : 'text-(--app-text-muted)',
+            asked === null || asked === value ? 'text-app-text' : 'text-app-text-muted',
           )}
         >
           <Glyph value={value} />
           <span
             className={cn(
               'mt-1 h-6 border-b-2 text-sm leading-5',
-              asked === value ? 'border-(--app-accent)' : 'border-transparent',
+              asked === value ? 'border-app-accent' : 'border-transparent',
             )}
           >
             {valueName(t, value)}
@@ -124,7 +124,7 @@ export function NoteValues({
           )}
           <span
             className={cn(
-              'h-6 text-center text-xs leading-6 text-(--app-text-muted)',
+              'h-6 text-center text-xs leading-6 text-app-text-muted',
               !counts && 'invisible',
             )}
           >

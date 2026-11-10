@@ -124,11 +124,11 @@ export default function SpPlayPage({ game, title, subtitle, chapters }: SpPlayPa
 
   return (
     <AppShell appClassName={theme}>
-      <main className={cn('spg-menu app-page min-h-dvh bg-(--app-bg) text-(--app-text)', `spg-${game}`)}>
+      <main className={cn('spg-menu app-page min-h-dvh bg-app-bg text-app-text', `spg-${game}`)}>
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 pr-[calc(1rem_+_var(--safe-right,0px))] pb-16 pl-[calc(1rem_+_var(--safe-left,0px))] pt-[calc(var(--safe-top,0px)+1rem)]">
           <header>
             <h1 className="spg-title text-5xl sm:text-6xl">{title}</h1>
-            <p className="mt-2 text-sm text-(--app-text-muted)">{subtitle}</p>
+            <p className="mt-2 text-sm text-app-text-muted">{subtitle}</p>
           </header>
 
           <nav aria-label={t('play_menu', { defaultValue: 'Main menu' })} className="flex flex-col items-start gap-1">
@@ -160,7 +160,7 @@ export default function SpPlayPage({ game, title, subtitle, chapters }: SpPlayPa
           </nav>
 
           <section aria-labelledby="spg-chapters">
-            <h2 id="spg-chapters" className="mb-3 text-xs font-semibold uppercase tracking-widest text-(--app-text-dim)">
+            <h2 id="spg-chapters" className="mb-3 text-xs font-semibold uppercase tracking-widest text-app-text-dim">
               {t('play_chapters', { defaultValue: 'Chapters' })}
             </h2>
             <ul className="grid gap-2 sm:grid-cols-2">
@@ -174,13 +174,13 @@ export default function SpPlayPage({ game, title, subtitle, chapters }: SpPlayPa
                       disabled={!ok}
                       onClick={() => start(m.name, null)}
                     >
-                      <span className="text-xs tabular-nums text-(--app-text-dim)">
+                      <span className="text-xs tabular-nums text-app-text-dim">
                         {t('play_chapter_n', { defaultValue: 'Chapter {{n}}', n: i + 1 })}
                       </span>
                       <span className="block text-base font-semibold">{chapters[m.name] ?? m.title}</span>
-                      <span className="block font-mono text-xs text-(--app-text-dim)">{m.name}</span>
+                      <span className="block font-mono text-xs text-app-text-dim">{m.name}</span>
                       {!ok ? (
-                        <span className="block text-xs text-(--app-text-muted)">
+                        <span className="block text-xs text-app-text-muted">
                           {t('play_not_available', { defaultValue: 'Not available yet' })}
                         </span>
                       ) : null}
@@ -191,7 +191,7 @@ export default function SpPlayPage({ game, title, subtitle, chapters }: SpPlayPa
             </ul>
           </section>
 
-          <p className="text-xs text-(--app-text-dim)">
+          <p className="text-xs text-app-text-dim">
             {t('play_valve_legal', {
               defaultValue:
                 'Runs on an independent, clean-room browser engine. Half-Life 2 and Portal and their content are trademarks and property of Valve Corporation; this fan project is not affiliated with Valve.',

@@ -50,7 +50,7 @@ export function EarSoundRow({
   if (sound === 'none' || sound === 'loading') {
     return (
       <p
-        className={cn('px-2 text-sm leading-5 text-(--app-text-muted)', !inSession && 'invisible')}
+        className={cn('px-2 text-sm leading-5 text-app-text-muted', !inSession && 'invisible')}
       >
         {problem}
       </p>

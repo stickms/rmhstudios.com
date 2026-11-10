@@ -50,7 +50,7 @@ export default function CodePane() {
   const tabs: TfTab[] = openPaths.map((p) => ({ id: p, label: basename(p) }));
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center gap-1 border-b border-(--app-border) p-1.5">
+      <div className="flex items-center gap-1 border-b border-app-border p-1.5">
         <div className="min-w-0 flex-1">
           <TfTabs
             tabs={tabs}
@@ -66,7 +66,7 @@ export default function CodePane() {
           onClick={() => closeFile(activePath)}
         />
       </div>
-      <p className="truncate border-b border-(--app-border) px-3 py-1 font-mono text-[11px] text-(--app-text-dim)">
+      <p className="truncate border-b border-app-border px-3 py-1 font-mono text-[11px] text-app-text-dim">
         {activePath}
       </p>
       <div className="min-h-0 flex-1">

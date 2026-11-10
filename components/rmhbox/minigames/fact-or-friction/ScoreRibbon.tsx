@@ -30,11 +30,11 @@ export default function ScoreRibbon({
 }: ScoreRibbonProps) {
   const { t } = useTranslation("c-rmhbox");
   return (
-    <div className="flex w-full items-center justify-between rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-4 py-2">
+    <div className="flex w-full items-center justify-between rounded-app-sm border border-app-border bg-app-bg px-4 py-2">
       {/* Score */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-(--app-text-muted)">{t("score", { defaultValue: "Score" })}</span>
-        <span className="text-lg font-bold tabular-nums text-(--app-text)">{score}</span>
+        <span className="text-sm text-app-text-muted">{t("score", { defaultValue: "Score" })}</span>
+        <span className="text-lg font-bold tabular-nums text-app-text">{score}</span>
         <AnimatePresence>
           {scoreChange != null && scoreChange !== 0 && (
             <motion.span
@@ -44,7 +44,7 @@ export default function ScoreRibbon({
               exit={{ opacity: 0, y: 8 }}
               transition={{ duration: 0.3 }}
               className={`text-sm font-bold ${
-                scoreChange > 0 ? 'text-(--app-success)' : 'text-(--app-danger)'
+                scoreChange > 0 ? 'text-app-success' : 'text-app-danger'
               }`}
             >
               {scoreChange > 0 ? '+' : ''}{scoreChange}
@@ -54,14 +54,14 @@ export default function ScoreRibbon({
       </div>
 
       {/* Players answered */}
-      <div className="flex items-center gap-1 text-xs text-(--app-text-muted)">
+      <div className="flex items-center gap-1 text-xs text-app-text-muted">
         <Users className="h-3.5 w-3.5" />
         <span>{playersAnswered}/{totalPlayers}</span>
       </div>
 
       {/* Timer */}
       <span className={`text-sm font-bold tabular-nums ${
-        timeRemaining <= 5 ? 'text-(--app-danger)' : 'text-(--app-text-muted)'
+        timeRemaining <= 5 ? 'text-app-danger' : 'text-app-text-muted'
       }`}>
         {timeRemaining}s
       </span>
@@ -71,7 +71,7 @@ export default function ScoreRibbon({
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={onPass}
-          className="flex items-center gap-1 rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-surface-hover) px-3 py-1.5 text-xs font-medium text-(--app-text-muted) transition-colors hover:text-(--app-text)"
+          className="flex items-center gap-1 rounded-app-sm border border-app-border bg-app-surface-hover px-3 py-1.5 text-xs font-medium text-app-text-muted transition-colors hover:text-app-text"
         >
           <SkipForward className="h-3.5 w-3.5" />
           {t("pass", { defaultValue: "Pass" })}

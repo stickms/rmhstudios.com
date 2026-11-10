@@ -67,19 +67,19 @@ export default function HostGameCard({
     onStart({ kind: 'p2p-host', room: common, playerName: accountName });
   };
 
-  const card = 'rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-5';
+  const card = 'rounded-app border border-app-border bg-app-bg-subtle p-5';
 
   return (
     <section className={card} aria-labelledby="tf2-host-title">
       <div className="mb-3 flex items-center gap-2">
-        <Server className="size-5 text-(--app-accent-text)" aria-hidden />
+        <Server className="size-5 text-app-accent-text" aria-hidden />
         <h2 id="tf2-host-title" className="tf2hud-title text-2xl">
           {t('host_title', { defaultValue: 'Host a game' })}
         </h2>
       </div>
       {!signedIn ? (
         <div className="grid gap-3">
-          <p className="text-sm text-(--app-text-muted)">
+          <p className="text-sm text-app-text-muted">
             {t('mp_sign_in_body', {
               defaultValue: 'Online play needs an account: other players see your account name. Offline practice works without one.',
             })}
@@ -88,7 +88,7 @@ export default function HostGameCard({
             to="/login"
             search={{ callbackURL: lobbyReturnPath('/tf2/play', invite) }}
             data-menu-item
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-(--app-radius-sm) bg-(--app-accent) px-4 text-sm font-semibold text-(--app-accent-fg) hover:bg-(--app-accent-hover) sm:w-fit sm:pointer-fine:min-h-9"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-app-sm bg-app-accent px-4 text-sm font-semibold text-app-accent-fg hover:bg-app-accent-hover sm:w-fit sm:pointer-fine:min-h-9"
           >
             <LogIn className="size-4" aria-hidden />
             {t('mp_sign_in', { defaultValue: 'Sign in to play online' })}
@@ -102,7 +102,7 @@ export default function HostGameCard({
             submit();
           }}
         >
-          <p className="text-sm text-(--app-text-muted)">
+          <p className="text-sm text-app-text-muted">
             {t('host_p2p_body', {
               defaultValue: 'The match runs in your browser and your friends connect to you directly. You play with no lag; keep this tab open.',
             })}
@@ -156,7 +156,7 @@ export default function HostGameCard({
           </div>
           <label className="flex items-center gap-2 text-sm">
             <Toggle checked={room.private} onChange={(v) => setRoom({ ...room, private: v })} label={t('play_private', { defaultValue: 'Private (join by code only)' })} />
-            <Lock className="size-3.5 text-(--app-text-muted)" aria-hidden />
+            <Lock className="size-3.5 text-app-text-muted" aria-hidden />
             {t('play_private', { defaultValue: 'Private (join by code only)' })}
           </label>
           <label className="flex items-center gap-2 text-sm">
@@ -167,12 +167,12 @@ export default function HostGameCard({
                 defaultValue: 'Instant respawn (back 1 second after dying)',
               })}
             />
-            <Timer className="size-3.5 text-(--app-text-muted)" aria-hidden />
+            <Timer className="size-3.5 text-app-text-muted" aria-hidden />
             {t('play_instant_respawn', {
               defaultValue: 'Instant respawn (back 1 second after dying)',
             })}
           </label>
-          <p className="flex gap-2 text-xs text-(--app-text-muted)">
+          <p className="flex gap-2 text-xs text-app-text-muted">
             <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
             {t('host_p2p_migration', {
               defaultValue: "If you leave, the match moves to another player's browser and goes on. Up to 12 players.",

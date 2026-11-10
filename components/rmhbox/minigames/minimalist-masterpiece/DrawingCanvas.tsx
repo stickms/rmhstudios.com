@@ -176,10 +176,10 @@ export default function DrawingCanvas({
         ref={svgRef}
         data-jelly-zone="playfield"
         viewBox="0 0 300 300"
-        className={`w-72 h-72 rounded-(--app-radius-sm) border-2 touch-none outline-none ${
+        className={`w-72 h-72 rounded-app-sm border-2 touch-none outline-none ${
           canDraw
-            ? 'border-(--app-accent) cursor-crosshair'
-            : 'border-(--app-border) cursor-not-allowed'
+            ? 'border-app-accent cursor-crosshair'
+            : 'border-app-border cursor-not-allowed'
         }`}
         style={{ backgroundColor }}
         onPointerDown={handlePointerDown}
@@ -233,7 +233,7 @@ export default function DrawingCanvas({
       {strokes.length > 0 && !disabled && (
         <button
           onClick={onUndo}
-          className="glass-fill absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full text-(--app-text) hover:bg-(--app-border) transition-colors"
+          className="glass-fill absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full text-app-text hover:bg-app-border transition-colors"
           title={t("undo-last-stroke", { defaultValue: "Undo last stroke" })}
           aria-label={t("undo-last-stroke", { defaultValue: "Undo last stroke" })}
         >
@@ -243,7 +243,7 @@ export default function DrawingCanvas({
 
       {/* Pending indicator — pointer-events-none so it doesn't block endpoint placement */}
       {pendingStart && (
-        <span className="absolute bottom-2 left-2 text-xs text-(--app-text-muted) bg-(--app-surface)/80 px-2 py-0.5 rounded pointer-events-none select-none">
+        <span className="absolute bottom-2 left-2 text-xs text-app-text-muted bg-app-surface/80 px-2 py-0.5 rounded pointer-events-none select-none">
           {t("click-to-place-endpoint", { defaultValue: "Click to place endpoint (Esc to cancel)" })}
         </span>
       )}

@@ -930,12 +930,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
 
   if (!url) {
     return (
-      <div className="relative w-full aspect-video rounded-(--app-radius) overflow-hidden bg-(--app-surface) flex items-center justify-center">
+      <div className="relative w-full aspect-video rounded-app overflow-hidden bg-app-surface flex items-center justify-center">
         <div className="text-center">
-          <p className="text-lg font-medium text-(--app-text-muted)">
+          <p className="text-lg font-medium text-app-text-muted">
             {t('no-video-playing', { defaultValue: 'No video playing' })}
           </p>
-          <p className="text-sm text-(--app-text-dim) mt-1">
+          <p className="text-sm text-app-text-dim mt-1">
             {isLeader
               ? t('add-video-to-queue', { defaultValue: 'Add a video to the queue to get started' })
               : t('waiting-for-host-video', { defaultValue: 'Waiting for the host to play a video' })}
@@ -946,7 +946,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
   }
 
   return (
-    <div ref={containerRef} className="relative w-full aspect-video rounded-(--app-radius) overflow-hidden bg-black">
+    <div ref={containerRef} className="relative w-full aspect-video rounded-app overflow-hidden bg-black">
       <Suspense fallback={null}>
         <ReactPlayer
           ref={playerRef}
@@ -970,8 +970,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       </Suspense>
 
       {isLive && (
-        <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 rounded-full bg-black/70 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-(--app-text)">
-          <Radio className="h-3 w-3 text-(--app-danger)" aria-hidden />
+        <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 rounded-full bg-black/70 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-app-text">
+          <Radio className="h-3 w-3 text-app-danger" aria-hidden />
           {t('live', { defaultValue: 'Live' })}
         </div>
       )}
@@ -981,10 +981,10 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(function Vid
       {needsGesture && (
         <button
           onClick={handleGestureTap}
-          className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-black/60 text-(--app-text) backdrop-blur-sm"
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-black/60 text-app-text backdrop-blur-sm"
         >
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-(--app-accent)">
-            <Play className="h-7 w-7 text-(--app-accent-fg)" aria-hidden />
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-app-accent">
+            <Play className="h-7 w-7 text-app-accent-fg" aria-hidden />
           </span>
           <span className="text-sm font-medium">
             {t('paused-tap-to-resync', { defaultValue: 'Paused — tap to resync' })}

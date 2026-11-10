@@ -57,7 +57,7 @@ export function FaceSample({
 }) {
   return (
     <span
-      className={cn('block truncate text-(--app-text)', className)}
+      className={cn('block truncate text-app-text', className)}
       style={{
         fontFamily: fontFamilyFor(def.name),
         fontWeight: cssWeight(def.weight),
@@ -88,7 +88,7 @@ export function FontSummary({
   const info = describeFont(scheme, name, screenH);
   if (!info) {
     return (
-      <p className="text-[11px] text-(--app-warning)">
+      <p className="text-[11px] text-app-warning">
         {t('font-unknown', { defaultValue: 'No scheme font named “{{name}}”', name })}
       </p>
     );
@@ -98,7 +98,7 @@ export function FontSummary({
   return (
     <div className="min-w-0 space-y-0.5">
       <FaceSample def={active.def} px={active.px} />
-      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-(--app-text-dim)">
+      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-app-text-dim">
         <span className="font-mono">
           {active.def.name} · {Math.round(active.px * 10) / 10}px
           {active.proportional ? ' (scales)' : ''} · {active.def.weight || 400}
@@ -151,10 +151,10 @@ export function FontField({
         aria-label={label}
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="flex h-8 w-full items-center justify-between gap-2 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) px-2 text-start text-xs text-(--app-text) hover:border-(--app-accent)"
+        className="flex h-8 w-full items-center justify-between gap-2 rounded-app-sm border border-app-border-bright bg-app-bg px-2 text-start text-xs text-app-text hover:border-app-accent"
       >
         <span className="truncate">{value || t('none', { defaultValue: '(none)' })}</span>
-        <ChevronDown className="size-3.5 shrink-0 text-(--app-text-dim)" aria-hidden />
+        <ChevronDown className="size-3.5 shrink-0 text-app-text-dim" aria-hidden />
       </button>
       {value ? <FontSummary scheme={scheme} name={value} screenH={screenH} /> : null}
       <Popover
@@ -189,14 +189,14 @@ export function FontField({
                     setOpen(false);
                   }}
                   className={cn(
-                    'block w-full rounded-(--app-radius-sm) px-2 py-1 text-start hover:bg-(--app-surface-hover)',
-                    n.toLowerCase() === value.toLowerCase() && 'bg-(--app-accent-dim)',
+                    'block w-full rounded-app-sm px-2 py-1 text-start hover:bg-app-surface-hover',
+                    n.toLowerCase() === value.toLowerCase() && 'bg-app-accent-dim',
                   )}
                 >
-                  <span className="flex items-baseline justify-between gap-2 text-[11px] text-(--app-text-muted)">
+                  <span className="flex items-baseline justify-between gap-2 text-[11px] text-app-text-muted">
                     <span className="truncate font-semibold">{n}</span>
                     {active ? (
-                      <span className="shrink-0 font-mono text-(--app-text-dim)">
+                      <span className="shrink-0 font-mono text-app-text-dim">
                         {Math.round(active.px)}px
                       </span>
                     ) : null}
@@ -246,13 +246,13 @@ export function FacePicker({ value, onChange }: { value: string; onChange: (v: s
           setOpen(false);
         }}
         className={cn(
-          'block w-full rounded-(--app-radius-sm) px-2 py-1 text-start hover:bg-(--app-surface-hover)',
-          name.toLowerCase() === value.toLowerCase() && 'bg-(--app-accent-dim)',
+          'block w-full rounded-app-sm px-2 py-1 text-start hover:bg-app-surface-hover',
+          name.toLowerCase() === value.toLowerCase() && 'bg-app-accent-dim',
         )}
       >
-        <span className="block text-[11px] text-(--app-text-muted)">{name}</span>
+        <span className="block text-[11px] text-app-text-muted">{name}</span>
         <span
-          className="block truncate text-lg text-(--app-text)"
+          className="block truncate text-lg text-app-text"
           style={{ fontFamily: fontFamilyFor(name) }}
         >
           {sampleFor(name)}
@@ -276,7 +276,7 @@ export function FacePicker({ value, onChange }: { value: string; onChange: (v: s
         aria-label={t('browse-faces', { defaultValue: 'Browse typefaces' })}
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="h-8 shrink-0 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--tf2-panel) px-2 text-xs font-semibold text-(--app-text) hover:bg-(--app-surface-hover)"
+        className="h-8 shrink-0 rounded-app-sm border border-app-border-bright bg-(--tf2-panel) px-2 text-xs font-semibold text-app-text hover:bg-app-surface-hover"
       >
         <ChevronDown className="size-4" aria-hidden />
       </button>

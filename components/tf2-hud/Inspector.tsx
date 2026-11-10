@@ -180,15 +180,15 @@ export default function Inspector() {
     return (
       <div key={key} className="space-y-0.5">
         <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-2">
-          <span className="flex min-w-0 items-center gap-1 text-xs text-(--app-text-muted)">
+          <span className="flex min-w-0 items-center gap-1 text-xs text-app-text-muted">
             <span className="truncate" title={keyFor(key)}>
               {key}
-              {keyFor(key) !== key ? <span className="text-(--app-text-dim)"> ·min</span> : null}
+              {keyFor(key) !== key ? <span className="text-app-text-dim"> ·min</span> : null}
             </span>
             {inBlock && isSharable(key) && pinnedHere(key) ? (
               <button
                 type="button"
-                className="inline-flex shrink-0 items-center text-(--app-info)"
+                className="inline-flex shrink-0 items-center text-app-info"
                 title={t('override-reset', {
                   defaultValue: 'Overrides the block. Click to follow the block again.',
                 })}
@@ -202,7 +202,7 @@ export default function Inspector() {
               </button>
             ) : inBlock && isSharable(key) && key in inBlock.block.shared ? (
               <span
-                className="size-1.5 shrink-0 rounded-full bg-(--app-accent)"
+                className="size-1.5 shrink-0 rounded-full bg-app-accent"
                 title={t('follows-block', { defaultValue: 'Follows the block' })}
               />
             ) : null}
@@ -210,7 +210,7 @@ export default function Inspector() {
           {control}
         </div>
         {detail ? (
-          <p className="ps-[7rem] text-[11px] leading-snug text-(--app-text-dim)">{detail}</p>
+          <p className="ps-[7rem] text-[11px] leading-snug text-app-text-dim">{detail}</p>
         ) : null}
         {detailNode ? <div className="ps-[7rem]">{detailNode}</div> : null}
       </div>
@@ -285,12 +285,12 @@ export default function Inspector() {
           {!node.visible ? (
             <Pill tone="warning">{t('hidden', { defaultValue: 'hidden' })}</Pill>
           ) : null}
-          <span className="truncate font-mono text-[11px] text-(--app-text-dim)">
+          <span className="truncate font-mono text-[11px] text-app-text-dim">
             {node.file.replace('resource/', '')}
           </span>
         </div>
         <BlockBar node={node} doc={blocksDoc} inBlock={inBlock} />
-        <p className="text-[11px] text-(--app-text-dim)">
+        <p className="text-[11px] text-app-text-dim">
           {Math.round(node.rect.w)}×{Math.round(node.rect.h)} px at ({Math.round(node.rect.x)},{' '}
           {Math.round(node.rect.y)})
         </p>
@@ -311,7 +311,7 @@ export default function Inspector() {
                 key={`${c.key.start}`}
                 className="grid grid-cols-[6.5rem_minmax(0,1fr)_auto] items-center gap-2"
               >
-                <span className="truncate text-xs text-(--app-text-muted)" title={c.key.text}>
+                <span className="truncate text-xs text-app-text-muted" title={c.key.text}>
                   {c.key.text}
                 </span>
                 <TextField

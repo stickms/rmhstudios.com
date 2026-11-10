@@ -188,8 +188,8 @@ export default function LoadoutAssistant({
       <div className="flex min-h-48 flex-col gap-3" aria-live="polite">
         {messages.length === 0 ? (
           <div className="flex flex-col items-start gap-3">
-            <p className="flex items-center gap-2 text-sm text-(--app-text-muted)">
-              <Sparkles className="size-4 shrink-0 text-(--app-accent)" aria-hidden />
+            <p className="flex items-center gap-2 text-sm text-app-text-muted">
+              <Sparkles className="size-4 shrink-0 text-app-accent" aria-hidden />
               {t('ai-try', { defaultValue: 'Try one of these, or type your own:' })}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -207,8 +207,8 @@ export default function LoadoutAssistant({
             key={m.id}
             className={
               m.role === 'user'
-                ? 'ms-auto max-w-[85%] rounded-(--app-radius-sm) bg-(--app-accent)/15 px-3 py-2 text-sm'
-                : 'max-w-full rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 py-2 text-sm'
+                ? 'ms-auto max-w-[85%] rounded-app-sm bg-app-accent/15 px-3 py-2 text-sm'
+                : 'max-w-full rounded-app-sm border border-app-border bg-app-bg px-3 py-2 text-sm'
             }
           >
             <p className="whitespace-pre-wrap break-words">{m.text}</p>
@@ -227,7 +227,7 @@ export default function LoadoutAssistant({
                         <span className="truncate text-xs font-semibold" title={item.n}>
                           {item.n}
                         </span>
-                        <span className="truncate text-[11px] text-(--app-text-dim)">
+                        <span className="truncate text-[11px] text-app-text-dim">
                           {[a.slot.replace(/(\d+)$/, ' $1'), paint?.n, effect?.n]
                             .filter(Boolean)
                             .join(' · ')}
@@ -262,7 +262,7 @@ export default function LoadoutAssistant({
         ))}
 
         {busy ? (
-          <p role="status" className="text-sm text-(--app-text-dim)">
+          <p role="status" className="text-sm text-app-text-dim">
             {t('ai-thinking', { defaultValue: 'Thinking…' })}
           </p>
         ) : null}

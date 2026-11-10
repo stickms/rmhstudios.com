@@ -229,7 +229,7 @@ function EmbedItem({ embed }: { embed: MediaEmbedInfo }) {
 
   if (error) {
     return (
-      <div className="mt-1 inline-flex items-center gap-1.5 px-2 py-1 rounded-(--app-radius-sm) bg-(--app-surface) text-(--app-text-dim) text-xs">
+      <div className="mt-1 inline-flex items-center gap-1.5 px-2 py-1 rounded-app-sm bg-app-surface text-app-text-dim text-xs">
         <ImageOff className="h-3.5 w-3.5" aria-hidden />
         {t('failed-to-load-media', { defaultValue: 'Failed to load media' })}
       </div>
@@ -242,7 +242,7 @@ function EmbedItem({ embed }: { embed: MediaEmbedInfo }) {
 
   return (
     <div
-      className="mt-1 overflow-hidden rounded-(--app-radius-sm) app-glass"
+      className="mt-1 overflow-hidden rounded-app-sm app-glass"
       style={box}
     >
       {src ? (

@@ -30,10 +30,10 @@ export function ResultsPanel({
   const backfired = results.standings.find((row) => row.endBackfired);
 
   return (
-    <div className="gh-scene app-page app-safe-x text-(--app-text)">
+    <div className="gh-scene app-page app-safe-x text-app-text">
       <main className="mx-auto flex w-full max-w-md grow flex-col justify-center-safe gap-4 px-4 py-8">
         <div className="text-center">
-          <Trophy className="mx-auto size-8 text-(--app-accent)" aria-hidden="true" />
+          <Trophy className="mx-auto size-8 text-app-accent" aria-hidden="true" />
           <h1 className="mt-2 text-2xl font-black">
             {results.abandoned
               ? t('results-abandoned', { defaultValue: 'The table broke up' })
@@ -42,7 +42,7 @@ export function ResultsPanel({
                 : t('results-none', { defaultValue: 'No winner' })}
           </h1>
           {winner && !results.abandoned ? (
-            <p className="mt-1 text-sm text-(--app-text-muted)">
+            <p className="mt-1 text-sm text-app-text-muted">
               {t('results-with', { defaultValue_one: 'Holding {{count}} card after {{rounds}} rounds.',
                 defaultValue: 'Holding {{count}} cards after {{rounds}} rounds.',
                 count: winner.handCount,
@@ -53,8 +53,8 @@ export function ResultsPanel({
         </div>
 
         {backfired ? (
-          <p className="flex items-start gap-2 rounded-[var(--app-radius-sm)] border border-(--app-danger) bg-(--app-danger-dim) p-3 text-sm text-(--app-text)">
-            <Megaphone className="mt-0.5 size-4 shrink-0 text-(--app-danger)" aria-hidden="true" />
+          <p className="flex items-start gap-2 rounded-app-sm border border-app-danger bg-app-danger-dim p-3 text-sm text-app-text">
+            <Megaphone className="mt-0.5 size-4 shrink-0 text-app-danger" aria-hidden="true" />
             <span>
               {t('results-backfired', {
                 defaultValue:
@@ -69,20 +69,20 @@ export function ResultsPanel({
           <ol className="space-y-2">
             {results.standings.map((row) => (
               <li key={row.socketId} className="flex items-center gap-2">
-                <span className="w-5 shrink-0 text-end font-mono text-sm text-(--app-text-dim)">
+                <span className="w-5 shrink-0 text-end font-mono text-sm text-app-text-dim">
                   {row.place}
                 </span>
                 <SeatAvatar name={row.name} avatarUrl={row.avatarUrl} size={28} />
                 <span className="min-w-0 grow truncate text-sm">
                   {row.name}
                   {row.socketId === selfSocketId ? (
-                    <span className="ms-1 text-(--app-text-dim)">
+                    <span className="ms-1 text-app-text-dim">
                       {t('you-suffix', { defaultValue: '(you)' })}
                     </span>
                   ) : null}
                   {row.calledEnd ? (
                     <Megaphone
-                      className="ms-1 inline size-3 align-baseline text-(--app-accent)"
+                      className="ms-1 inline size-3 align-baseline text-app-accent"
                       aria-label={t('sounded-the-horn', { defaultValue: 'Sounded the horn' })}
                     />
                   ) : null}

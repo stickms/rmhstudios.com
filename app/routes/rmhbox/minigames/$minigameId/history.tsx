@@ -57,7 +57,7 @@ function SortButton({
       type="button"
       onClick={() => onSort(field)}
       className={`flex min-h-11 items-center gap-1 text-xs font-medium transition-colors ${
-        active ? 'text-(--app-accent)' : 'text-(--app-text-muted) hover:text-(--app-text)'
+        active ? 'text-app-accent' : 'text-app-text-muted hover:text-app-text'
       }`}
     >
       {label}
@@ -245,7 +245,7 @@ function MinigameHistoryPage() {
       <main className="mx-auto w-full max-w-4xl px-4 pt-4 pb-12 md:px-8 md:pt-8">
           {/* Search bar */}
           <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-(--app-text-muted)" aria-hidden />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-app-text-muted" aria-hidden />
             <input
               type="text"
               value={searchQuery}
@@ -260,14 +260,14 @@ function MinigameHistoryPage() {
                     })
                   : t('search-games', { defaultValue: 'Search games...' })
               }
-              className="w-full rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) py-3 pl-10 pr-4 text-sm text-(--app-text) placeholder:text-(--app-text-dim)"
+              className="w-full rounded-app-sm border border-app-border bg-app-bg py-3 pl-10 pr-4 text-sm text-app-text placeholder:text-app-text-dim"
               data-testid="history-search"
             />
           </div>
 
           {/* Sort controls */}
           <div className="mb-4 flex flex-wrap items-center gap-x-4 px-1">
-            <span className="text-xs text-(--app-text-muted)">
+            <span className="text-xs text-app-text-muted">
               {t('sort-by', { defaultValue: 'Sort by:' })}
             </span>
             <SortButton
@@ -307,7 +307,7 @@ function MinigameHistoryPage() {
                 className="flex flex-wrap items-center gap-3 mb-4 px-1"
                 data-testid="history-filters"
               >
-                <Filter className="h-4 w-4 text-(--app-text-muted)" aria-hidden />
+                <Filter className="h-4 w-4 text-app-text-muted" aria-hidden />
                 {selectFields.map((field) => (
                   <Select
                     key={field.key}
@@ -346,11 +346,11 @@ function MinigameHistoryPage() {
 
           {/* Match list */}
           {loading ? (
-            <p className="text-sm text-center py-12 text-(--app-text-muted)">
+            <p className="text-sm text-center py-12 text-app-text-muted">
               {t('loading-history', { defaultValue: 'Loading history...' })}
             </p>
           ) : filteredMatches.length === 0 ? (
-            <p className="text-sm text-center py-12 text-(--app-text-muted)">
+            <p className="text-sm text-center py-12 text-app-text-muted">
               {searchQuery || Object.keys(activeFilters).length > 0
                 ? t('no-matches-found', { defaultValue: 'No matches found.' })
                 : t('no-game-history', { defaultValue: 'No game history yet.' })}
@@ -364,56 +364,56 @@ function MinigameHistoryPage() {
                 return (
                   <div
                     key={match.id}
-                    className="glass-fill rounded-(--app-radius-sm) overflow-hidden"
+                    className="glass-fill rounded-app-sm overflow-hidden"
                     data-testid={`history-entry-${match.id}`}
                   >
                     {/* Summary row */}
                     <button
                       onClick={() => handleExpand(match.id)}
-                      className="w-full flex items-center gap-4 p-4 text-left hover:bg-(--app-surface-hover) transition-colors"
+                      className="w-full flex items-center gap-4 p-4 text-left hover:bg-app-surface-hover transition-colors"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 text-sm">
-                          <span className="text-(--app-text-muted)">
+                          <span className="text-app-text-muted">
                             {formatDate(match.startedAt)}
                           </span>
-                          <span className="text-(--app-text-muted)">·</span>
-                          <span className="text-(--app-text)">
+                          <span className="text-app-text-muted">·</span>
+                          <span className="text-app-text">
                             {t('player-count', {
                               defaultValue: '{{count}} players',
                               count: match.playerCount,
                             })}
                           </span>
-                          <span className="text-(--app-text-muted)">·</span>
-                          <span className="text-(--app-text-muted)">
+                          <span className="text-app-text-muted">·</span>
+                          <span className="text-app-text-muted">
                             {formatDuration(match.durationMs)}
                           </span>
                         </div>
                         {match.gameLog && historyConfig && (
                           <p
-                            className="text-sm mt-1 text-(--app-text) truncate"
+                            className="text-sm mt-1 text-app-text truncate"
                             data-testid={`history-summary-${match.id}`}
                           >
                             {historyConfig.getSummary(match.gameLog)}
                           </p>
                         )}
-                        <div className="text-xs mt-1 text-(--app-text-muted)">
+                        <div className="text-xs mt-1 text-app-text-muted">
                           {t('winner-label', { defaultValue: 'Winner:' })}{' '}
-                          <span className="text-(--app-accent) font-medium">
+                          <span className="text-app-accent font-medium">
                             {winner?.userName ?? t('winner-none', { defaultValue: 'None' })}
                           </span>
                         </div>
                       </div>
                       {isExpanded ? (
-                        <ChevronUp className="h-4 w-4 text-(--app-text-muted) shrink-0" aria-hidden />
+                        <ChevronUp className="h-4 w-4 text-app-text-muted shrink-0" aria-hidden />
                       ) : (
-                        <ChevronDown className="h-4 w-4 text-(--app-text-muted) shrink-0" aria-hidden />
+                        <ChevronDown className="h-4 w-4 text-app-text-muted shrink-0" aria-hidden />
                       )}
                     </button>
 
                     {/* Expanded detail */}
                     {isExpanded && (
-                      <div className="border-t border-(--app-border) p-4 bg-(--app-bg)">
+                      <div className="border-t border-app-border p-4 bg-app-bg">
                         {match.gameLog && DetailComponent ? (
                           // Detail views are registered lazily (see
                           // lib/rmhbox/history-display-registrations.ts) so they
@@ -421,7 +421,7 @@ function MinigameHistoryPage() {
                           // covers the one fetch on first expand.
                           <Suspense
                             fallback={
-                              <p className="text-sm text-center py-4 text-(--app-text-muted)">
+                              <p className="text-sm text-center py-4 text-app-text-muted">
                                 {t('loading-detail', { defaultValue: 'Loading details…' })}
                               </p>
                             }
@@ -433,11 +433,11 @@ function MinigameHistoryPage() {
                             />
                           </Suspense>
                         ) : match.gameLog ? (
-                          <pre className="text-xs overflow-auto text-(--app-text-muted) max-h-64">
+                          <pre className="text-xs overflow-auto text-app-text-muted max-h-64">
                             {JSON.stringify(match.gameLog, null, 2)}
                           </pre>
                         ) : (
-                          <p className="text-sm text-center py-4 text-(--app-text-muted)">
+                          <p className="text-sm text-center py-4 text-app-text-muted">
                             {t('game-log-unavailable', { defaultValue: 'Game log not available.' })}
                           </p>
                         )}
@@ -455,11 +455,11 @@ function MinigameHistoryPage() {
               <button
                 onClick={() => setOffset((o) => Math.max(0, o - limit))}
                 disabled={offset === 0}
-                className="min-h-11 px-4 py-2 text-sm rounded-(--app-radius-sm) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text)"
+                className="min-h-11 px-4 py-2 text-sm rounded-app-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-app-surface-hover text-app-text-muted hover:text-app-text"
               >
                 {t('pagination-previous', { defaultValue: 'Previous' })}
               </button>
-              <span className="text-sm text-(--app-text-muted)">
+              <span className="text-sm text-app-text-muted">
                 {t('pagination-range', {
                   defaultValue: '{{from}}–{{to}} of {{total}}',
                   from: offset + 1,
@@ -470,7 +470,7 @@ function MinigameHistoryPage() {
               <button
                 onClick={() => setOffset((o) => o + limit)}
                 disabled={offset + limit >= total}
-                className="min-h-11 px-4 py-2 text-sm rounded-(--app-radius-sm) transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--app-surface-hover) text-(--app-text-muted) hover:text-(--app-text)"
+                className="min-h-11 px-4 py-2 text-sm rounded-app-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-app-surface-hover text-app-text-muted hover:text-app-text"
               >
                 {t('pagination-next', { defaultValue: 'Next' })}
               </button>

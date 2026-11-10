@@ -63,8 +63,8 @@ export default function SpectatorBanner({
   }, [dropdownOpen]);
 
   return (
-    <div className="sticky top-0 z-30 flex h-12 items-center justify-center gap-4 bg-(--app-surface)/50 border-b border-(--app-border) px-4 pointer-events-none">
-      <span className="flex items-center gap-1.5 text-sm font-medium text-(--app-text) pointer-events-auto">
+    <div className="sticky top-0 z-30 flex h-12 items-center justify-center gap-4 bg-app-surface/50 border-b border-app-border px-4 pointer-events-none">
+      <span className="flex items-center gap-1.5 text-sm font-medium text-app-text pointer-events-auto">
         <Eye className="h-4 w-4" /> {t("you-are-spectating", { defaultValue: "You are spectating" })}
       </span>
 
@@ -73,7 +73,7 @@ export default function SpectatorBanner({
         <div className="relative pointer-events-auto" ref={dropdownRef}>
           <button
             onClick={() => setDropdownOpen((o) => !o)}
-            className="glass-fill flex items-center gap-1.5 rounded-(--app-radius-sm) px-3 py-1 text-xs font-semibold text-(--app-text) transition-colors hover:bg-(--app-surface-hover)"
+            className="glass-fill flex items-center gap-1.5 rounded-app-sm px-3 py-1 text-xs font-semibold text-app-text transition-colors hover:bg-app-surface-hover"
           >
             {t("viewing-player", { defaultValue: "Viewing: {{name}}", name: spectatorTarget.targetPlayerName })}
             <ChevronDown className="h-3 w-3" />
@@ -82,7 +82,7 @@ export default function SpectatorBanner({
             <div
               data-motion="pop"
               data-state={playerMenu.state}
-              className="absolute top-full left-0 mt-1 min-w-40 origin-top-left rounded-(--app-radius-sm) app-glass py-1"
+              className="absolute top-full left-0 mt-1 min-w-40 origin-top-left rounded-app-sm app-glass py-1"
             >
               {spectatorTarget.availablePlayers.map((p) => (
                 <button
@@ -91,10 +91,10 @@ export default function SpectatorBanner({
                     onSelectPlayer?.(p.userId);
                     setDropdownOpen(false);
                   }}
-                  className={`block w-full px-3 py-1.5 text-left text-xs transition-colors hover:bg-(--app-surface-hover) ${
+                  className={`block w-full px-3 py-1.5 text-left text-xs transition-colors hover:bg-app-surface-hover ${
                     p.userId === spectatorTarget.targetPlayerId
-                      ? 'font-bold text-(--app-accent)'
-                      : 'text-(--app-text)'
+                      ? 'font-bold text-app-accent'
+                      : 'text-app-text'
                   }`}
                 >
                   {p.userName}
@@ -109,7 +109,7 @@ export default function SpectatorBanner({
       {canJoin && (
         <button
           onClick={onRequestPromotion}
-          className="rounded-(--app-radius-sm) bg-(--app-accent) px-3 py-1 text-xs font-semibold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover) pointer-events-auto"
+          className="rounded-app-sm bg-app-accent px-3 py-1 text-xs font-semibold text-app-accent-fg transition-colors hover:bg-app-accent-hover pointer-events-auto"
         >
           {t("join-as-player", { defaultValue: "Join as Player" })}
         </button>

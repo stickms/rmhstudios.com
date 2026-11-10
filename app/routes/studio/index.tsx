@@ -20,10 +20,10 @@ function StudioPage() {
     <StudioAppShell>
     <Suspense
       fallback={
-        <div className="app-viewport items-center justify-center bg-(--app-bg)">
+        <div className="app-viewport items-center justify-center bg-app-bg">
           <div className="flex flex-col items-center gap-4">
             <Spinner size={32} label={t("loading", { defaultValue: "Loading RMH Studio..." })} />
-            <p className="text-sm text-(--app-text-muted)">{t("loading", { defaultValue: "Loading RMH Studio..." })}</p>
+            <p className="text-sm text-app-text-muted">{t("loading", { defaultValue: "Loading RMH Studio..." })}</p>
           </div>
         </div>
       }

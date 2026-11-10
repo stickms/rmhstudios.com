@@ -40,17 +40,17 @@ type BtnVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type BtnSize = 'xs' | 'sm' | 'md';
 
 const BTN_BASE =
-  'inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-(--app-radius-sm) border font-semibold transition-[color,background-color,border-color,opacity] duration-(--app-duration-fast) disabled:pointer-events-none disabled:opacity-45 [&_svg]:size-4 [&_svg]:shrink-0';
+  'inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-app-sm border font-semibold transition-[color,background-color,border-color,opacity] duration-(--app-duration-fast) disabled:pointer-events-none disabled:opacity-45 [&_svg]:size-4 [&_svg]:shrink-0';
 
 const BTN_VARIANT: Record<BtnVariant, string> = {
   primary:
-    'border-transparent bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)',
+    'border-transparent bg-app-accent text-app-accent-fg hover:bg-app-accent-hover',
   secondary:
-    'border-(--app-border-bright) bg-(--tf2-panel) text-(--app-text) hover:bg-(--app-surface-hover)',
+    'border-app-border-bright bg-(--tf2-panel) text-app-text hover:bg-app-surface-hover',
   ghost:
-    'border-transparent text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)',
+    'border-transparent text-app-text-muted hover:bg-app-surface-hover hover:text-app-text',
   danger:
-    'border-transparent bg-(--app-danger-dim) text-(--app-danger) hover:bg-(--app-danger) hover:text-(--app-bg)',
+    'border-transparent bg-app-danger-dim text-app-danger hover:bg-app-danger hover:text-app-bg',
 };
 
 // On a touch-first device (`pointer: coarse`) every size is a 44px target.
@@ -103,10 +103,10 @@ export const IconBtn = forwardRef<HTMLButtonElement, IconBtnProps>(function Icon
       title={label}
       aria-pressed={active}
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-(--app-radius-sm) border border-transparent text-(--app-text-muted) transition-[color,background-color] duration-(--app-duration-fast) hover:bg-(--app-surface-hover) hover:text-(--app-text) disabled:pointer-events-none disabled:opacity-40 [&_svg]:size-4',
+        'inline-flex shrink-0 items-center justify-center rounded-app-sm border border-transparent text-app-text-muted transition-[color,background-color] duration-(--app-duration-fast) hover:bg-app-surface-hover hover:text-app-text disabled:pointer-events-none disabled:opacity-40 [&_svg]:size-4',
         size === 'xs' ? 'size-7' : 'size-8',
         'pointer-coarse:size-11',
-        active && 'bg-(--app-accent-dim) text-(--app-accent-text)',
+        active && 'bg-app-accent-dim text-app-accent-text',
         className,
       )}
       {...rest}
@@ -120,7 +120,7 @@ export const IconBtn = forwardRef<HTMLButtonElement, IconBtnProps>(function Icon
 
 // Touch: a 44px field with 16px text (iOS Safari zooms the page into a field set smaller than 16px).
 const FIELD =
-  'h-8 w-full min-w-0 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) px-2 text-xs text-(--app-text) placeholder:text-(--app-text-dim) focus-visible:border-(--app-accent) disabled:opacity-50 pointer-coarse:h-11 pointer-coarse:text-base';
+  'h-8 w-full min-w-0 rounded-app-sm border border-app-border-bright bg-app-bg px-2 text-xs text-app-text placeholder:text-app-text-dim focus-visible:border-app-accent disabled:opacity-50 pointer-coarse:h-11 pointer-coarse:text-base';
 
 export const TextField = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   function TextField({ className, ...rest }, ref) {
@@ -269,7 +269,7 @@ export const SelectField = forwardRef<HTMLButtonElement, SelectHTMLAttributes<HT
           )}
         >
           <span className="min-w-0 flex-1 truncate">{selected?.label ?? ''}</span>
-          <ChevronDown className="size-3.5 shrink-0 text-(--app-text-dim)" aria-hidden />
+          <ChevronDown className="size-3.5 shrink-0 text-app-text-dim" aria-hidden />
         </button>
         <Popover
           anchor={anchor}
@@ -293,7 +293,7 @@ export const SelectField = forwardRef<HTMLButtonElement, SelectHTMLAttributes<HT
                   {header ? (
                     <li
                       role="presentation"
-                      className="px-2 pt-1.5 pb-0.5 text-[11px] font-semibold text-(--app-text-dim)"
+                      className="px-2 pt-1.5 pb-0.5 text-[11px] font-semibold text-app-text-dim"
                     >
                       {header}
                     </li>
@@ -309,14 +309,14 @@ export const SelectField = forwardRef<HTMLButtonElement, SelectHTMLAttributes<HT
                     onClick={() => pick(o)}
                     onPointerMove={() => !o.disabled && setActive(i)}
                     className={cn(
-                      'flex cursor-pointer items-center gap-2 rounded-(--app-radius-sm) px-2 py-1.5 text-xs pointer-coarse:min-h-11 pointer-coarse:text-sm',
-                      i === active && 'bg-(--app-surface-hover)',
+                      'flex cursor-pointer items-center gap-2 rounded-app-sm px-2 py-1.5 text-xs pointer-coarse:min-h-11 pointer-coarse:text-sm',
+                      i === active && 'bg-app-surface-hover',
                       o.disabled && 'cursor-default opacity-45',
                     )}
                   >
                     <span className="min-w-0 flex-1 truncate">{o.label}</span>
                     {o.value === current ? (
-                      <Check className="size-3.5 shrink-0 text-(--app-accent-text)" aria-hidden />
+                      <Check className="size-3.5 shrink-0 text-app-accent-text" aria-hidden />
                     ) : null}
                   </li>
                 </Fragment>
@@ -345,12 +345,12 @@ export function Field({
     <div className={cn('flex flex-col gap-1', className)}>
       <label
         htmlFor={id}
-        className="text-[11px] font-semibold uppercase tracking-wider text-(--app-text-dim) pointer-coarse:text-xs"
+        className="text-[11px] font-semibold uppercase tracking-wider text-app-text-dim pointer-coarse:text-xs"
       >
         {label}
       </label>
       <div id={id}>{children}</div>
-      {hint ? <p className="text-[11px] text-(--app-text-dim) pointer-coarse:text-xs">{hint}</p> : null}
+      {hint ? <p className="text-[11px] text-app-text-dim pointer-coarse:text-xs">{hint}</p> : null}
     </div>
   );
 }
@@ -439,7 +439,7 @@ export function RangeField({
       step={step}
       value={value}
       onChange={(e) => onChange(Number(e.target.value))}
-      className="h-5 w-full min-w-0 cursor-pointer accent-(--app-accent) pointer-coarse:h-11"
+      className="h-5 w-full min-w-0 cursor-pointer accent-app-accent pointer-coarse:h-11"
     />
   );
 }
@@ -447,7 +447,7 @@ export function RangeField({
 export function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex min-h-8 items-center justify-between gap-3">
-      <span className="min-w-0 truncate text-xs text-(--app-text-muted)">{label}</span>
+      <span className="min-w-0 truncate text-xs text-app-text-muted">{label}</span>
       <div className="flex min-w-0 shrink-0 items-center gap-2">{children}</div>
     </div>
   );
@@ -467,7 +467,7 @@ export function PanelHead({
   return (
     <div
       className={cn(
-        'flex h-9 shrink-0 items-center justify-between gap-2 border-b border-(--app-border) px-3 pointer-coarse:h-auto pointer-coarse:min-h-11',
+        'flex h-9 shrink-0 items-center justify-between gap-2 border-b border-app-border px-3 pointer-coarse:h-auto pointer-coarse:min-h-11',
         className,
       )}
     >
@@ -487,17 +487,17 @@ export function Pill({
   className?: string;
 }) {
   const tones = {
-    neutral: 'bg-(--app-surface-hover) text-(--app-text-muted)',
-    accent: 'bg-(--app-accent-dim) text-(--app-accent-text)',
-    success: 'bg-(--app-success-dim) text-(--app-success)',
-    warning: 'bg-(--app-warning-dim) text-(--app-warning)',
-    danger: 'bg-(--app-danger-dim) text-(--app-danger)',
-    info: 'bg-(--app-info-dim) text-(--app-info)',
+    neutral: 'bg-app-surface-hover text-app-text-muted',
+    accent: 'bg-app-accent-dim text-app-accent-text',
+    success: 'bg-app-success-dim text-app-success',
+    warning: 'bg-app-warning-dim text-app-warning',
+    danger: 'bg-app-danger-dim text-app-danger',
+    info: 'bg-app-info-dim text-app-info',
   } as const;
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-(--app-radius-sm) px-1.5 py-0.5 text-[11px] font-semibold pointer-coarse:text-xs',
+        'inline-flex items-center gap-1 rounded-app-sm px-1.5 py-0.5 text-[11px] font-semibold pointer-coarse:text-xs',
         tones[tone],
         className,
       )}
@@ -508,7 +508,7 @@ export function Pill({
 }
 
 export function EmptyNote({ children }: { children: ReactNode }) {
-  return <p className="px-3 py-6 text-center text-xs text-(--app-text-dim)">{children}</p>;
+  return <p className="px-3 py-6 text-center text-xs text-app-text-dim">{children}</p>;
 }
 
 /* ─────────────────────────────── modal ─────────────────────────────── */
@@ -554,19 +554,19 @@ export function Modal({
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal container={container ?? undefined}>
-        <DialogPrimitive.Overlay className="app-overlay fixed inset-0 z-50 bg-(--app-scrim)" />
+        <DialogPrimitive.Overlay className="app-overlay fixed inset-0 z-50 bg-app-scrim" />
         <DialogPrimitive.Content
           className={cn(
-            'fixed z-50 flex flex-col border border-(--app-border-bright) bg-(--app-bg-subtle) text-(--app-text) shadow-(--app-shadow)',
+            'fixed z-50 flex flex-col border border-app-border-bright bg-app-bg-subtle text-app-text shadow-app',
             sheet
-              ? 'app-sheet inset-x-0 bottom-0 h-[calc(100dvh-2.5rem)] rounded-t-(--app-radius) pr-(--safe-right) pb-(--safe-bottom) pl-(--safe-left)'
-              : 'app-modal tf2hud-dialog -translate-x-1/2 -translate-y-1/2 rounded-(--app-radius)',
+              ? 'app-sheet inset-x-0 bottom-0 h-[calc(100dvh-2.5rem)] rounded-t-app pr-(--safe-right) pb-(--safe-bottom) pl-(--safe-left)'
+              : 'app-modal tf2hud-dialog -translate-x-1/2 -translate-y-1/2 rounded-app',
             !sheet && (wide ? 'max-w-3xl' : 'max-w-md'),
             skin?.className,
           )}
           style={skin?.style}
         >
-          <div className="flex items-start justify-between gap-3 border-b border-(--app-border) px-4 py-3">
+          <div className="flex items-start justify-between gap-3 border-b border-app-border px-4 py-3">
             {onBack ? (
               <IconBtn
                 icon={ArrowLeft}
@@ -580,7 +580,7 @@ export function Modal({
                 {title}
               </DialogPrimitive.Title>
               {description ? (
-                <DialogPrimitive.Description className="mt-0.5 text-xs text-(--app-text-muted)">
+                <DialogPrimitive.Description className="mt-0.5 text-xs text-app-text-muted">
                   {description}
                 </DialogPrimitive.Description>
               ) : (
@@ -595,7 +595,7 @@ export function Modal({
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">{children}</div>
           {footer ? (
-            <div className="flex flex-wrap items-center justify-end gap-2 border-t border-(--app-border) px-4 py-3">
+            <div className="flex flex-wrap items-center justify-end gap-2 border-t border-app-border px-4 py-3">
               {footer}
             </div>
           ) : null}
@@ -669,7 +669,7 @@ export function ContextMenu({
       ref={ref}
       role="menu"
       style={{ left: pos.x, top: pos.y }}
-      className="fixed z-60 min-w-44 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg-subtle) p-1 shadow-(--app-shadow)"
+      className="fixed z-60 min-w-44 rounded-app-sm border border-app-border-bright bg-app-bg-subtle p-1 shadow-app"
     >
       {items.map((item) => (
         <button
@@ -682,8 +682,8 @@ export function ContextMenu({
             item.onSelect();
           }}
           className={cn(
-            'flex w-full items-center gap-2 rounded-(--app-radius-sm) px-2 py-1.5 text-left text-xs hover:bg-(--app-surface-hover) disabled:opacity-40',
-            item.danger ? 'text-(--app-danger)' : 'text-(--app-text)',
+            'flex w-full items-center gap-2 rounded-app-sm px-2 py-1.5 text-left text-xs hover:bg-app-surface-hover disabled:opacity-40',
+            item.danger ? 'text-app-danger' : 'text-app-text',
           )}
         >
           {item.icon ? (
@@ -795,7 +795,7 @@ export function Popover({
         width: Math.min(width, window.innerWidth - 16),
       }}
       className={cn(
-        'fixed z-60 rounded-(--app-radius) border border-(--app-border-bright) bg-(--app-bg-subtle) p-3 text-(--app-text) shadow-(--app-shadow)',
+        'fixed z-60 rounded-app border border-app-border-bright bg-app-bg-subtle p-3 text-app-text shadow-app',
         className,
       )}
     >
@@ -909,7 +909,7 @@ export function SearchSelect({
         aria-label={label}
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          'flex h-8 w-full min-w-0 items-center justify-between gap-2 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) px-2 text-start text-xs text-(--app-text) focus-visible:border-(--app-accent)',
+          'flex h-8 w-full min-w-0 items-center justify-between gap-2 rounded-app-sm border border-app-border-bright bg-app-bg px-2 text-start text-xs text-app-text focus-visible:border-app-accent',
           className,
         )}
       >
@@ -917,20 +917,20 @@ export function SearchSelect({
           {current?.swatch ? (
             <span
               aria-hidden
-              className="size-3 shrink-0 rounded-full border border-(--app-border-bright)"
+              className="size-3 shrink-0 rounded-full border border-app-border-bright"
               style={{ background: current.swatch }}
             />
           ) : null}
-          <span className={cn('truncate', !current && 'text-(--app-text-dim)')}>
+          <span className={cn('truncate', !current && 'text-app-text-dim')}>
             {current?.label ?? noneLabel}
           </span>
         </span>
-        <ChevronDown className="size-3.5 shrink-0 text-(--app-text-dim)" aria-hidden />
+        <ChevronDown className="size-3.5 shrink-0 text-app-text-dim" aria-hidden />
       </button>
       <Popover anchor={anchor} open={open} onClose={close} label={label} width={300}>
         <div className="relative mb-2">
           <Search
-            className="pointer-events-none absolute start-2 top-1/2 size-3.5 -translate-y-1/2 text-(--app-text-dim)"
+            className="pointer-events-none absolute start-2 top-1/2 size-3.5 -translate-y-1/2 text-app-text-dim"
             aria-hidden
           />
           <input
@@ -966,27 +966,27 @@ export function SearchSelect({
               onClick={() => pick(o)}
               onPointerMove={() => setActive(i)}
               className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-(--app-radius-sm) px-2 py-1.5 text-xs',
-                i === active ? 'bg-(--app-surface-hover)' : '',
-                !o && 'text-(--app-text-dim)',
+                'flex cursor-pointer items-center gap-2 rounded-app-sm px-2 py-1.5 text-xs',
+                i === active ? 'bg-app-surface-hover' : '',
+                !o && 'text-app-text-dim',
               )}
             >
               {o?.swatch ? (
                 <span
                   aria-hidden
-                  className="size-3 shrink-0 rounded-full border border-(--app-border-bright)"
+                  className="size-3 shrink-0 rounded-full border border-app-border-bright"
                   style={{ background: o.swatch }}
                 />
               ) : null}
               <span className="min-w-0 flex-1 truncate">{o?.label ?? noneLabel}</span>
               {(o ? o.id === value : value === undefined) ? (
-                <Check className="size-3.5 shrink-0 text-(--app-accent-text)" aria-hidden />
+                <Check className="size-3.5 shrink-0 text-app-accent-text" aria-hidden />
               ) : null}
             </li>
           ))}
           {shown < rows.length ? <li ref={more} aria-hidden className="h-px" /> : null}
           {rows.length === 0 ? (
-            <li className="px-2 py-3 text-center text-xs text-(--app-text-dim)">—</li>
+            <li className="px-2 py-3 text-center text-xs text-app-text-dim">—</li>
           ) : null}
         </ul>
       </Popover>

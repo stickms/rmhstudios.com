@@ -24,7 +24,7 @@ export default function PromptReveal({ prompts, round, totalRounds }: PromptReve
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="flex items-center gap-2 text-lg font-semibold text-(--app-text-muted)"
+        className="flex items-center gap-2 text-lg font-semibold text-app-text-muted"
       >
         <Sparkles className="h-5 w-5" />
         <span>{t("round-of", { defaultValue: "Round {{round}} of {{totalRounds}}", round, totalRounds })}</span>
@@ -34,7 +34,7 @@ export default function PromptReveal({ prompts, round, totalRounds }: PromptReve
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.4 }}
-        className="text-2xl font-bold text-(--app-text)"
+        className="text-2xl font-bold text-app-text"
       >
         {t("your-prompts", { defaultValue: "Your Prompts" })}
       </motion.h2>
@@ -46,12 +46,12 @@ export default function PromptReveal({ prompts, round, totalRounds }: PromptReve
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 + idx * 0.3, duration: 0.4 }}
-            className="app-glass rounded-(--app-radius) p-5"
+            className="app-glass rounded-app p-5"
           >
-            <div className="text-xs font-medium text-(--app-text-muted) mb-2">
+            <div className="text-xs font-medium text-app-text-muted mb-2">
               {t("prompt-number", { defaultValue: "Prompt {{number}}", number: idx + 1 })}
             </div>
-            <div className="text-lg font-medium text-(--app-text)">
+            <div className="text-lg font-medium text-app-text">
               {prompt.promptText}
             </div>
           </motion.div>
@@ -62,7 +62,7 @@ export default function PromptReveal({ prompts, round, totalRounds }: PromptReve
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.2, duration: 0.4 }}
-        className="text-sm text-(--app-text-muted) text-center"
+        className="text-sm text-app-text-muted text-center"
       >
         {t("get-ready-to-write", { defaultValue: "Get ready to write your answers..." })}
       </motion.p>

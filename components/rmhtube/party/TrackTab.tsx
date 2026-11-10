@@ -75,7 +75,7 @@ export default function TrackTab() {
   return (
     <div className="space-y-4">
       <section className="space-y-1">
-        <h4 className="text-xs font-semibold uppercase tracking-wide text-(--app-text-dim)">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-app-text-dim">
           {t('track-play', { defaultValue: 'Play alongside' })}
         </h4>
         {tracks === null ? (
@@ -111,7 +111,7 @@ export default function TrackTab() {
       </section>
 
       <section className="space-y-2">
-        <h4 className="text-xs font-semibold uppercase tracking-wide text-(--app-text-dim)">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-app-text-dim">
           {t('track-record', { defaultValue: 'Record yours' })}
         </h4>
         {!recording ? (
@@ -145,7 +145,7 @@ export default function TrackTab() {
             <ul className="max-h-32 space-y-0.5 overflow-y-auto">
               {lines.map((l, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="w-12 shrink-0 tabular-nums text-(--app-text-muted)">
+                  <span className="w-12 shrink-0 tabular-nums text-app-text-muted">
                     {formatDuration(l.t)}
                   </span>
                   <span className="truncate">{l.text}</span>

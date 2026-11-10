@@ -64,7 +64,7 @@ function OnFirstOpen({ open, children }: { open: boolean; children: ReactNode })
 function PanelFallback() {
   const { t } = useTranslation('c-tf2-hud');
   return (
-    <p role="status" className="p-4 text-xs text-(--app-text-dim)">
+    <p role="status" className="p-4 text-xs text-app-text-dim">
       {t('loading-panel', { defaultValue: 'Loading…' })}
     </p>
   );
@@ -445,7 +445,7 @@ export default function Tf2HudEditor({ draft, hud, fork, embedded }: Props) {
 
   const rightBody = (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 border-b border-(--app-border) p-1.5">
+      <div className="shrink-0 border-b border-app-border p-1.5">
         <TfTabs
           tabs={rightTabs}
           value={rightTab}
@@ -472,7 +472,7 @@ export default function Tf2HudEditor({ draft, hud, fork, embedded }: Props) {
 
   const leftBody = (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 border-b border-(--app-border) p-1.5">
+      <div className="shrink-0 border-b border-app-border p-1.5">
         <TfTabs
           tabs={leftTabs}
           value={leftTab}
@@ -494,11 +494,11 @@ export default function Tf2HudEditor({ draft, hud, fork, embedded }: Props) {
 
   if (error) {
     return (
-      <div className="app-page flex min-h-dvh flex-col items-center justify-center gap-4 bg-(--app-bg) p-6 text-center text-(--app-text)">
-        <p className="max-w-md text-sm text-(--app-text-muted)">{error}</p>
+      <div className="app-page flex min-h-dvh flex-col items-center justify-center gap-4 bg-app-bg p-6 text-center text-app-text">
+        <p className="max-w-md text-sm text-app-text-muted">{error}</p>
         <a
           href="/tf2/hud-editor"
-          className="rounded-(--app-radius-sm) bg-(--app-accent) px-4 py-2 text-sm font-semibold text-(--app-accent-fg)"
+          className="rounded-app-sm bg-app-accent px-4 py-2 text-sm font-semibold text-app-accent-fg"
         >
           {t('back-to-start', { defaultValue: 'Back to start' })}
         </a>
@@ -515,7 +515,7 @@ export default function Tf2HudEditor({ draft, hud, fork, embedded }: Props) {
   return (
     <SceneProvider>
       <ValidationProvider>
-        <div className="app-viewport flex h-dvh min-h-0 flex-col bg-(--app-bg) text-(--app-text)">
+        <div className="app-viewport flex h-dvh min-h-0 flex-col bg-app-bg text-app-text">
           <TopBar
             onImport={() => zipInput.current?.click()}
             onExport={() => setExportOpen(true)}
@@ -527,7 +527,7 @@ export default function Tf2HudEditor({ draft, hud, fork, embedded }: Props) {
           />
           {loading ? (
             <div
-              className="shrink-0 bg-(--app-accent-dim) px-3 py-1 text-center text-xs text-(--app-text)"
+              className="shrink-0 bg-app-accent-dim px-3 py-1 text-center text-xs text-app-text"
               role="status"
             >
               {loading === 'init' || baseStatus === 'loading'
@@ -541,7 +541,7 @@ export default function Tf2HudEditor({ draft, hud, fork, embedded }: Props) {
           ) : null}
           {baseStatus === 'error' ? (
             <div
-              className="shrink-0 bg-(--app-danger-dim) px-3 py-1 text-center text-xs text-(--app-danger)"
+              className="shrink-0 bg-app-danger-dim px-3 py-1 text-center text-xs text-app-danger"
               role="alert"
             >
               {t('base-error', {
@@ -558,32 +558,32 @@ export default function Tf2HudEditor({ draft, hud, fork, embedded }: Props) {
                     defaultSize="20%"
                     minSize="14%"
                     maxSize="32%"
-                    className="min-h-0 bg-(--app-bg-subtle)"
+                    className="min-h-0 bg-app-bg-subtle"
                   >
                     {leftBody}
                   </ResizablePanel>
-                  <ResizableHandle className="bg-(--app-border)" />
+                  <ResizableHandle className="bg-app-border" />
                 </>
               ) : null}
               <ResizablePanel defaultSize="46%" minSize="24%" className="min-h-0">
                 {center}
               </ResizablePanel>
-              <ResizableHandle className="bg-(--app-border)" />
+              <ResizableHandle className="bg-app-border" />
               <ResizablePanel
                 defaultSize="34%"
                 minSize="22%"
                 maxSize="60%"
-                className="min-h-0 bg-(--app-bg-subtle)"
+                className="min-h-0 bg-app-bg-subtle"
               >
                 {rightBody}
               </ResizablePanel>
             </ResizablePanelGroup>
           ) : (
             <>
-              <div className="min-h-0 flex-1 bg-(--app-bg-subtle)">
+              <div className="min-h-0 flex-1 bg-app-bg-subtle">
                 {mobile === 'files' ? leftBody : mobile === 'preview' ? center : rightBody}
               </div>
-              <div className="shrink-0 border-t border-(--app-border) p-1.5 pb-[max(0.375rem,var(--app-safe-bottom))]">
+              <div className="shrink-0 border-t border-app-border p-1.5 pb-[max(0.375rem,var(--app-safe-bottom))]">
                 <TfTabs
                   tabs={mobileTabs}
                   value={mobile}

@@ -13,9 +13,9 @@
  * ## What is counted (identical to `node scripts/codemods/jelly-roles.mjs --report`)
  *
  * 1. **Hand-rolled surfaces** — a `className` (same capture as design-consistency.test.ts) holding a surface
- *    background (`bg-site-surface|surface-opaque|bg|elevated`, or the app tier's `bg-(--app-surface)`), a `rounded*`
+ *    background (`bg-site-surface|surface-opaque|bg|elevated`, or the app tier's `bg-app-surface`), a `rounded*`
  *    and a `border`, with no `glass-` / `app-glass` / `data-liquid`. Every tier is counted (site, apps, games), as the
- *    codemod's report does; the app adapter in `app-theme.css` covers `bg-(--app-surface)` visually, but the count
+ *    codemod's report does; the app adapter in `app-theme.css` covers `bg-app-surface` visually, but the count
  *    keeps the role debt honest.
  * 2. **Raw `role="dialog"` / `role="switch"`** outside `components/ui`: a hand-built dialog or switch bypasses the
  *    primitive that carries the jelly (and the focus trap, and the keyboard contract).
@@ -69,7 +69,7 @@ const FILES = ['components', 'app'].flatMap((d) => collectTsx(d)).sort();
 const CLASS_ATTR =
   /class(?:Name)?\s*=\s*(?:"([^"]*)"|'([^']*)'|`([^`]*)`|\{([\s\S]{0,1200}?)\}\s*(?=[\s/>]))/g;
 const SURFACE_BG =
-  /(?<![\w:/-])bg-(?:site-(?:surface|surface-opaque|bg|elevated)|\(--app-surface\))(?:\/[\w.[\]]+)?(?![\w-])/;
+  /(?<![\w:/-])bg-(?:site-(?:surface|surface-opaque|bg|elevated)|app-surface)(?:\/[\w.[\]]+)?(?![\w-])/;
 const ROUNDED = /(?<![\w:/-])rounded(?:-[\w[\]().-]+)?(?![\w-])/;
 const BORDER = /(?<![\w:/-])border(?:-(?:\d|x|y|t|b|l|r|site-border))?[\w/-]*(?![\w-])/;
 const ROLE = /glass-|app-glass|data-liquid/;

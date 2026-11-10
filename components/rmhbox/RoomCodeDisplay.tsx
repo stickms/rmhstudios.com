@@ -38,12 +38,12 @@ export default function RoomCodeDisplay({ code, onLeave }: RoomCodeDisplayProps)
   }, [code]);
 
   return (
-    <div className="flex items-center gap-3 rounded-(--app-radius) app-glass px-6 py-4">
+    <div className="flex items-center gap-3 rounded-app app-glass px-6 py-4">
       {/* Leave button — left side, icon flipped to point left */}
       {onLeave && (
         <button
           onClick={onLeave}
-          className="mr-2 rounded-(--app-radius-sm) p-2 text-(--app-danger) transition-colors hover:bg-(--app-danger)/15 hover:text-(--app-danger)"
+          className="mr-2 rounded-app-sm p-2 text-app-danger transition-colors hover:bg-app-danger/15 hover:text-app-danger"
           aria-label={t("leave-lobby", { defaultValue: "Leave lobby" })}
           title={t("leave-lobby", { defaultValue: "Leave lobby" })}
         >
@@ -52,25 +52,25 @@ export default function RoomCodeDisplay({ code, onLeave }: RoomCodeDisplayProps)
       )}
 
       <span
-        className="font-mono text-4xl font-bold tracking-[0.3em] text-(--app-text) select-all"
+        className="font-mono text-4xl font-bold tracking-[0.3em] text-app-text select-all"
         aria-label={t("room-code-label", { defaultValue: "Room code: {{code}}", code: code.split('').join(' ') })}
       >
         {code}
       </span>
       <button
         onClick={handleCopy}
-        className="ml-2 rounded-(--app-radius-sm) p-2 text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-accent)"
+        className="ml-2 rounded-app-sm p-2 text-app-text-muted transition-colors hover:bg-app-surface-hover hover:text-app-accent"
         aria-label={copied ? t("copied", { defaultValue: "Copied" }) : t("copy-room-code", { defaultValue: "Copy room code" })}
       >
-        {copied ? <Check className="h-5 w-5 text-(--app-success)" /> : <Copy className="h-5 w-5" />}
+        {copied ? <Check className="h-5 w-5 text-app-success" /> : <Copy className="h-5 w-5" />}
       </button>
       <button
         onClick={() => void copyLink()}
-        className="rounded-(--app-radius-sm) p-2 text-(--app-text-muted) transition-colors hover:bg-(--app-surface-hover) hover:text-(--app-accent)"
+        className="rounded-app-sm p-2 text-app-text-muted transition-colors hover:bg-app-surface-hover hover:text-app-accent"
         aria-label={linkCopied ? t("copied", { defaultValue: "Copied" }) : t("copy-invite-link", { defaultValue: "Copy invite link" })}
         title={t("copy-invite-link", { defaultValue: "Copy invite link" })}
       >
-        {linkCopied ? <Check className="h-5 w-5 text-(--app-success)" /> : <Link2 className="h-5 w-5" />}
+        {linkCopied ? <Check className="h-5 w-5 text-app-success" /> : <Link2 className="h-5 w-5" />}
       </button>
     </div>
   );

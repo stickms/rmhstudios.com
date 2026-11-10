@@ -49,7 +49,7 @@ export default function Tf2HubLanding() {
   ] as const;
 
   return (
-    <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
+    <div className="app-page min-h-dvh bg-app-bg text-app-text">
       <Tf2Header
         heading={false}
         title="RMH TF2 Hub"
@@ -58,14 +58,14 @@ export default function Tf2HubLanding() {
       />
       <main className="mx-auto w-full max-w-4xl px-4 pb-16">
         <section className="py-10 text-center sm:py-16">
-          <h1 className="tf2hud-title text-5xl text-(--app-text) sm:text-7xl">
+          <h1 className="tf2hud-title text-5xl text-app-text sm:text-7xl">
             <Tf2Logo
               className="mb-2 h-20 sm:h-24"
               label={t('game-name', { defaultValue: 'Team Fortress 2' })}
             />
             {t('hub-hero-word', { defaultValue: 'Hub' })}
           </h1>
-          <p className="mx-auto mt-3 max-w-xl text-(--app-text-muted)">
+          <p className="mx-auto mt-3 max-w-xl text-app-text-muted">
             {t('hub-hero-body', {
               defaultValue: 'Tools for Team Fortress 2 players, right in your browser.',
             })}
@@ -77,12 +77,12 @@ export default function Tf2HubLanding() {
             <li key={tool.to} className="contents">
               <Link
                 to={tool.to}
-                className={`group flex flex-col gap-3 rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-6 transition-[background-color,border-color] duration-(--app-duration-fast) hover:border-(--app-accent) hover:bg-(--app-surface-hover)${tool.to === '/tf2/play' ? ' sm:col-span-2' : ''}`}
+                className={`group flex flex-col gap-3 rounded-app border border-app-border bg-app-bg-subtle p-6 transition-[background-color,border-color] duration-(--app-duration-fast) hover:border-app-accent hover:bg-app-surface-hover${tool.to === '/tf2/play' ? ' sm:col-span-2' : ''}`}
               >
-                <tool.icon className="size-8 text-(--app-accent-text)" aria-hidden />
+                <tool.icon className="size-8 text-app-accent-text" aria-hidden />
                 <h2 className="tf2hud-title text-3xl">{tool.title}</h2>
-                <p className="text-sm text-(--app-text-muted)">{tool.body}</p>
-                <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-semibold text-(--app-accent-text)">
+                <p className="text-sm text-app-text-muted">{tool.body}</p>
+                <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-semibold text-app-accent-text">
                   {tool.cta}
                   <ArrowRight className="size-4 rtl-flip" aria-hidden />
                 </span>
@@ -95,14 +95,14 @@ export default function Tf2HubLanding() {
           <Link
             to="/tf2/workshop"
             search={{ type: 'huds' }}
-            className="flex items-center gap-3 rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-4 transition-[background-color,border-color] duration-(--app-duration-fast) hover:border-(--app-accent) hover:bg-(--app-surface-hover)"
+            className="flex items-center gap-3 rounded-app border border-app-border bg-app-bg-subtle p-4 transition-[background-color,border-color] duration-(--app-duration-fast) hover:border-app-accent hover:bg-app-surface-hover"
           >
-            <Globe className="size-5 shrink-0 text-(--app-accent-text)" aria-hidden />
+            <Globe className="size-5 shrink-0 text-app-accent-text" aria-hidden />
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold">
                 {t('hub-workshop-title', { defaultValue: 'Workshop' })}
               </span>
-              <span className="block text-xs text-(--app-text-muted)">
+              <span className="block text-xs text-app-text-muted">
                 {t('hub-workshop-body', {
                   defaultValue: 'Browse HUDs and loadouts shared by the community.',
                 })}
@@ -112,7 +112,7 @@ export default function Tf2HubLanding() {
           </Link>
         </div>
 
-        <p className="mt-10 text-center text-xs text-(--app-text-dim)">
+        <p className="mt-10 text-center text-xs text-app-text-dim">
           {t('legal', {
             defaultValue:
               'Team Fortress 2 is a trademark of Valve Corporation. This is an unofficial fan tool.',

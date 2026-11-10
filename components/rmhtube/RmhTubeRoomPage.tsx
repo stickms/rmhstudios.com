@@ -329,11 +329,11 @@ export default function RmhTubeRoomPage() {
   if (!room) {
     return (
       <div className={`app-viewport ${densityClass}`}>
-        <div className="border-b border-(--app-border)">
+        <div className="border-b border-app-border">
           <RmhTubeHeader backLabel={t("leave", { defaultValue: "Leave" })} onBack={handleLeave} roomCode={roomId} onCopyCode={handleCopyCode} />
         </div>
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-(--app-text-muted)">
+          <p className="text-app-text-muted">
             {connectionStatus === 'connecting' ? t("connecting", { defaultValue: "Connecting..." }) : t("joining-room", { defaultValue: "Joining room..." })}
           </p>
         </div>
@@ -353,7 +353,7 @@ export default function RmhTubeRoomPage() {
   return (
     <div ref={rootRef} className={`app-viewport ${densityClass} ${theaterMode ? 'rmhtube-theater-mode' : ''}`}>
       {/* Header */}
-      <div className="flex items-center border-b border-(--app-border)">
+      <div className="flex items-center border-b border-app-border">
         <div className="flex-1">
           <RmhTubeHeader
             backLabel={t("leave", { defaultValue: "Leave" })}
@@ -366,7 +366,7 @@ export default function RmhTubeRoomPage() {
           {isHost && (
             <button
               onClick={() => setShowBanList(true)}
-              className="rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+              className="rounded-app-sm p-2 transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
               title={t("ban-list", { defaultValue: "Ban List" })}
               aria-label={t("ban-list", { defaultValue: "Ban List" })}
             >
@@ -376,7 +376,7 @@ export default function RmhTubeRoomPage() {
           {isHost && (
             <button
               onClick={() => setShowInviteModal(true)}
-              className="rounded-(--app-radius-sm) p-2 transition-colors text-(--app-text-muted) hover:text-(--app-text) hover:bg-(--app-surface-hover)"
+              className="rounded-app-sm p-2 transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
               title={t("create-invite", { defaultValue: "Create Invite" })}
               aria-label={t("create-invite", { defaultValue: "Create Invite" })}
             >
@@ -394,7 +394,7 @@ export default function RmhTubeRoomPage() {
           /* Desktop layout */
           <div className={`grid h-full ${theaterMode ? 'grid-cols-1' : 'grid-cols-[1fr_320px]'}`}>
             {/* Left column: Video + Controls + Queue */}
-            <div className={`flex flex-col min-h-0 overflow-hidden ${!theaterMode ? 'border-r border-(--app-border)' : ''}`}>
+            <div className={`flex flex-col min-h-0 overflow-hidden ${!theaterMode ? 'border-r border-app-border' : ''}`}>
               {/* Video player */}
               <div className={`relative shrink-0 p-4 pb-2 *:max-h-full rmhtube-video-container ${theaterMode ? 'max-h-[85%]' : 'max-h-[70%]'}`}>
                 {popOut.win ? <PoppedOutNotice onReturn={popOut.close} /> : player}
@@ -427,13 +427,13 @@ export default function RmhTubeRoomPage() {
             {/* Right column: Members + Chat + Reactions */}
             {!theaterMode ? (
               <div className="flex flex-col min-h-0 overflow-hidden">
-                <div className="shrink-0 max-h-60 overflow-hidden border-b border-(--app-border)">
+                <div className="shrink-0 max-h-60 overflow-hidden border-b border-app-border">
                   <MemberList />
                 </div>
                 <div className="flex-1 min-h-0 overflow-hidden">
                   <ChatPanel />
                 </div>
-                <div className="shrink-0 border-t border-(--app-border) py-1">
+                <div className="shrink-0 border-t border-app-border py-1">
                   <ReactionOverlay />
                 </div>
               </div>
@@ -442,19 +442,19 @@ export default function RmhTubeRoomPage() {
               <>
                 <button
                   onClick={() => setSidebarOpen((s) => !s)}
-                  className="fixed right-4 top-20 z-40 rounded-(--app-radius-sm) app-glass px-3 py-1.5 text-xs font-medium transition-colors text-(--app-text-muted) hover:text-(--app-text)"
+                  className="fixed right-4 top-20 z-40 rounded-app-sm app-glass px-3 py-1.5 text-xs font-medium transition-colors text-app-text-muted hover:text-app-text"
                 >
                   {sidebarOpen ? t("hide-chat", { defaultValue: "Hide Chat" }) : t("show-chat", { defaultValue: "Show Chat" })}
                 </button>
                 <div className={`rmhtube-sidebar ${sidebarOpen ? 'rmhtube-sidebar-open' : ''}`}>
                   <div className="flex flex-col h-full">
-                    <div className="shrink-0 max-h-48 overflow-hidden border-b border-(--app-border)">
+                    <div className="shrink-0 max-h-48 overflow-hidden border-b border-app-border">
                       <MemberList />
                     </div>
                     <div className="flex-1 min-h-0 overflow-hidden">
                       <ChatPanel />
                     </div>
-                    <div className="shrink-0 border-t border-(--app-border) py-1">
+                    <div className="shrink-0 border-t border-app-border py-1">
                       <ReactionOverlay />
                     </div>
                   </div>
@@ -486,15 +486,15 @@ export default function RmhTubeRoomPage() {
             </div>
 
             {/* Tab navigation */}
-            <div className="shrink-0 flex border-b border-(--app-border)">
+            <div className="shrink-0 flex border-b border-app-border">
               {(['queue', 'chat', 'members'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setMobileTab(tab)}
                   className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
                     mobileTab === tab
-                      ? 'text-(--app-accent) border-b-2 border-(--app-accent)'
-                      : 'text-(--app-text-muted)'
+                      ? 'text-app-accent border-b-2 border-app-accent'
+                      : 'text-app-text-muted'
                   }`}
                 >
                   {tab === 'queue' ? t("queue-count", { defaultValue: "Queue ({{count}})", count: room.queue.length }) : tab === 'chat' ? t("chat", { defaultValue: "Chat" }) : t("members-count", { defaultValue: "Members ({{count}})", count: room.members.length })}
@@ -515,10 +515,10 @@ export default function RmhTubeRoomPage() {
       {popOut.win && (
         <PopOutPortal
           win={popOut.win}
-          themeClassName={`${rootRef.current?.closest('.app-theme')?.className ?? 'app-theme'} app-viewport bg-(--app-bg)`}
+          themeClassName={`${rootRef.current?.closest('.app-theme')?.className ?? 'app-theme'} app-viewport bg-app-bg`}
         >
           <div className="shrink-0">{player}</div>
-          <div className="flex-1 min-h-0 overflow-hidden border-t border-(--app-border)">
+          <div className="flex-1 min-h-0 overflow-hidden border-t border-app-border">
             <ChatPanel />
           </div>
         </PopOutPortal>
@@ -535,15 +535,15 @@ export default function RmhTubeRoomPage() {
 function PoppedOutNotice({ onReturn }: { onReturn: () => void }) {
   const { t } = useTranslation('c-rmhtube');
   return (
-    <div className="relative flex w-full aspect-video flex-col items-center justify-center gap-3 rounded-(--app-radius) bg-(--app-surface) text-center">
-      <PictureInPicture2 className="h-8 w-8 text-(--app-text-muted)" aria-hidden />
-      <p className="text-sm text-(--app-text-muted)">
+    <div className="relative flex w-full aspect-video flex-col items-center justify-center gap-3 rounded-app bg-app-surface text-center">
+      <PictureInPicture2 className="h-8 w-8 text-app-text-muted" aria-hidden />
+      <p className="text-sm text-app-text-muted">
         {t('popped-out', { defaultValue: 'Playing in a pop-out window' })}
       </p>
       <button
         type="button"
         onClick={onReturn}
-        className="rounded-(--app-radius-sm) border border-(--app-border) px-3 py-1.5 text-sm font-medium text-(--app-text) transition-colors hover:bg-(--app-surface-hover)"
+        className="rounded-app-sm border border-app-border px-3 py-1.5 text-sm font-medium text-app-text transition-colors hover:bg-app-surface-hover"
       >
         {t('bring-back', { defaultValue: 'Bring it back' })}
       </button>

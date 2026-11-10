@@ -113,7 +113,7 @@ import { createAuthCache, createSessionAuth } from '../shared/session-auth';
 
 // The Better Auth session check (token -> session JOIN user, expiry, bounded
 // 60 s positive cache, pool) is shared by every hub: server/shared/session-auth.ts.
-// Soft-auth semantics stay here: any non-`ok` outcome leaves the socket anonymous.
+// Soft-auth semantics stay here, so every non-`ok` outcome leaves the socket anonymous.
 const sessionAuth = createSessionAuth({
   service: 'socket-server',
   databaseUrl: config.DATABASE_URL,

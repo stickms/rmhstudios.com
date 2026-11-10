@@ -1,0 +1,58 @@
+/* Tailwind registration of the full-screen app tier's `--app-*` contract
+   (components/shared/app-theme.css). Same pattern as the `--color-site-*` block in
+   globals.css: `inline` makes each utility emit `var(--app-x)` directly, so the
+   compiled CSS is identical to the old escaped arbitrary form (`bg-(--app-surface)`)
+   and a per-app palette that overrides `--app-*` on `.app-theme` still wins.
+
+     bg-app-surface  text-app-text-muted  border-app-border  ring-app-accent
+     rounded-app  rounded-app-sm  shadow-app
+
+   Only tokens that map to one Tailwind namespace are registered (colours, radius,
+   shadow). Durations/eases/density stay `var(--app-*)` in CSS. The `app` infix keeps
+   every name clear of the `site` and `casino`/`rebar` colour groups. */
+@theme inline {
+  /* Surfaces */
+  --color-app-bg: var(--app-bg);
+  --color-app-bg-subtle: var(--app-bg-subtle);
+  --color-app-surface: var(--app-surface);
+  --color-app-surface-hover: var(--app-surface-hover);
+  --color-app-surface-active: var(--app-surface-active);
+  --color-app-scrim: var(--app-scrim);
+
+  /* Lines */
+  --color-app-border: var(--app-border);
+  --color-app-border-bright: var(--app-border-bright);
+
+  /* Ink */
+  --color-app-text: var(--app-text);
+  --color-app-text-muted: var(--app-text-muted);
+  --color-app-text-dim: var(--app-text-dim);
+
+  /* Accent */
+  --color-app-accent: var(--app-accent);
+  --color-app-accent-fg: var(--app-accent-fg);
+  --color-app-accent-hover: var(--app-accent-hover);
+  --color-app-accent-dim: var(--app-accent-dim);
+  --color-app-accent-text: var(--app-accent-text);
+
+  /* Status */
+  --color-app-success: var(--app-success);
+  --color-app-success-dim: var(--app-success-dim);
+  --color-app-danger: var(--app-danger);
+  --color-app-danger-dim: var(--app-danger-dim);
+  --color-app-warning: var(--app-warning);
+  --color-app-warning-dim: var(--app-warning-dim);
+  --color-app-info: var(--app-info);
+  --color-app-info-dim: var(--app-info-dim);
+  --color-app-rare: var(--app-rare);
+  --color-app-rare-dim: var(--app-rare-dim);
+
+  /* Shape */
+  --radius-app: var(--app-radius);
+  --radius-app-sm: var(--app-radius-sm);
+  --radius-app-lg: var(--app-radius-lg);
+
+  /* Depth */
+  --shadow-app: var(--app-shadow);
+  --shadow-app-sm: var(--app-shadow-sm);
+}

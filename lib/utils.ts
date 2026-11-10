@@ -1,7 +1,23 @@
 import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { extendTailwindMerge } from "tailwind-merge"
 import { hydratedNumberFormat } from "@/lib/access/prefs"
  
+/**
+ * `rounded-app*` / `shadow-app*` are the app tier's registered theme values
+ * (`app/app-theme-tokens.css`). tailwind-merge only knows t-shirt sizes for those
+ * namespaces, so without this `cn('rounded-xl', 'rounded-app')` would keep both
+ * (the old `rounded-(--app-radius)` arbitrary form was recognised and deduped).
+ * Colour utilities (`bg-app-surface`, …) need nothing: any colour value is accepted.
+ */
+const twMerge = extendTailwindMerge({
+  extend: {
+    theme: {
+      radius: ["app", "app-sm", "app-lg"],
+      shadow: ["app", "app-sm"],
+    },
+  },
+})
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }

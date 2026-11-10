@@ -125,7 +125,7 @@ export default function Tf2LoadoutBuilder({
   // From `lg` the whole page — header included — is exactly the window, so only the columns scroll.
   // Sizing just the <main> to the window left the page one header taller than it, and it scrolled too.
   return (
-    <div className="app-page flex min-h-dvh flex-col bg-(--app-bg) text-(--app-text) lg:h-dvh lg:overflow-hidden">
+    <div className="app-page flex min-h-dvh flex-col bg-app-bg text-app-text lg:h-dvh lg:overflow-hidden">
       <Tf2Header
         title={t('loadout-title', { defaultValue: 'Loadout Builder' })}
         backLabel={t('tf2-hub', { defaultValue: 'TF2 Hub' })}
@@ -133,7 +133,7 @@ export default function Tf2LoadoutBuilder({
         rightActions={
           <Link
             to="/tf2/loadout/mine"
-            className="inline-flex h-8 items-center gap-1.5 rounded-(--app-radius-sm) border border-(--app-border-bright) px-3 text-xs font-semibold hover:bg-(--app-surface-hover)"
+            className="inline-flex h-8 items-center gap-1.5 rounded-app-sm border border-app-border-bright px-3 text-xs font-semibold hover:bg-app-surface-hover"
           >
             <FolderOpen className="size-4" aria-hidden />
             {t('my-loadouts', { defaultValue: 'My loadouts' })}
@@ -141,11 +141,11 @@ export default function Tf2LoadoutBuilder({
         }
       />
       {cat.status === 'loading' ? (
-        <p role="status" className="p-10 text-center text-sm text-(--app-text-muted)">
+        <p role="status" className="p-10 text-center text-sm text-app-text-muted">
           {t('catalog-loading', { defaultValue: 'Loading the item catalog…' })}
         </p>
       ) : cat.status === 'error' ? (
-        <p role="alert" className="p-10 text-center text-sm text-(--app-danger)">
+        <p role="alert" className="p-10 text-center text-sm text-app-danger">
           {t('catalog-error', { defaultValue: 'Could not load the item catalog.' })}{' '}
           <button type="button" className="underline" onClick={cat.retry}>
             {t('retry', { defaultValue: 'Retry' })}
@@ -603,7 +603,7 @@ function Builder({
                     setExtraCosmetics(Math.max(0, cosmeticKeys.length - COSMETIC_SLOTS) + 1);
                     setSelected(cosmeticKey(cosmeticKeys.length));
                   }}
-                  className="flex aspect-square min-w-0 flex-col items-center justify-center gap-1 rounded-(--app-radius-sm) border border-dashed border-(--app-border) text-xs text-(--app-text-dim) hover:border-(--app-accent) hover:text-(--app-text)"
+                  className="flex aspect-square min-w-0 flex-col items-center justify-center gap-1 rounded-app-sm border border-dashed border-app-border text-xs text-app-text-dim hover:border-app-accent hover:text-app-text"
                 >
                   <Plus className="size-5" aria-hidden />
                   {t('add-cosmetic-slot', { defaultValue: 'Add slot' })}
@@ -624,7 +624,7 @@ function Builder({
                 />
               ))}
             </SlotGroup>
-            <p className="text-xs text-(--app-text-dim)">
+            <p className="text-xs text-app-text-dim">
               {t('catalog-source', {
                 defaultValue: 'Items from {{source}}, updated automatically.',
                 source: catalog.source.label,
@@ -636,7 +636,7 @@ function Builder({
         {isDesktop ? (
           <section
             aria-label={t('item-picker', { defaultValue: 'Item picker' })}
-            className="min-h-96 overflow-y-auto overscroll-contain rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) lg:min-h-0"
+            className="min-h-96 overflow-y-auto overscroll-contain rounded-app border border-app-border bg-app-bg-subtle lg:min-h-0"
           >
             {selected ? (
               <Picker
@@ -758,13 +758,13 @@ function RulesPanel({
   const { t } = useTranslation('c-tf2-hud');
   if (!warnings.length) return null;
   return (
-    <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle) p-3 text-xs">
+    <div className="rounded-app border border-app-border bg-app-bg-subtle p-3 text-xs">
       {warnings.length ? (
         <div
           role="status"
-          className="rounded-(--app-radius-sm) border border-(--app-warning)/50 bg-(--app-warning)/10 p-2.5"
+          className="rounded-app-sm border border-app-warning/50 bg-app-warning/10 p-2.5"
         >
-          <p className="flex items-center gap-1.5 font-semibold text-(--app-warning)">
+          <p className="flex items-center gap-1.5 font-semibold text-app-warning">
             <AlertTriangle className="size-4 shrink-0" aria-hidden />
             {t('not-possible', { defaultValue: 'Not possible in the game' })}
           </p>
@@ -777,7 +777,7 @@ function RulesPanel({
 
 export function SlotGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-(--app-radius) border border-(--app-border) bg-(--app-bg-subtle)">
+    <div className="rounded-app border border-app-border bg-app-bg-subtle">
       <PanelHead title={title} />
       <div className="grid grid-cols-3 gap-2 p-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-3">
         {children}
@@ -810,7 +810,7 @@ export function SlotCell({
   const effect = entry?.effect !== undefined ? idx.effect(entry.effect) : undefined;
   return (
     <div className="flex min-w-0 flex-col gap-1" data-slot={slotKey}>
-      <span className="truncate text-[11px] pointer-coarse:text-xs font-semibold uppercase tracking-wider text-(--app-text-dim)">
+      <span className="truncate text-[11px] pointer-coarse:text-xs font-semibold uppercase tracking-wider text-app-text-dim">
         {label}
       </span>
       {item ? (
@@ -836,17 +836,17 @@ export function SlotCell({
                 })
               : t('empty-slot', { defaultValue: '{{slot}}: empty', slot: label })
           }
-          className={`flex aspect-[5/4] w-full items-center justify-center rounded-(--app-radius-sm) border-2 border-dashed text-xs text-(--app-text-dim) transition-[box-shadow] duration-(--app-duration-fast) hover:ring-2 hover:ring-(--app-border-bright) ${
+          className={`flex aspect-[5/4] w-full items-center justify-center rounded-app-sm border-2 border-dashed text-xs text-app-text-dim transition-[box-shadow] duration-(--app-duration-fast) hover:ring-2 hover:ring-app-border-bright ${
             selected
-              ? 'border-(--app-accent) ring-2 ring-(--app-accent)'
-              : 'border-(--app-border-bright)'
+              ? 'border-app-accent ring-2 ring-app-accent'
+              : 'border-app-border-bright'
           }`}
           disabled={!ready}
         >
           {entry ? `#${entry.item}` : <Plus className="size-4" aria-hidden />}
         </button>
       )}
-      <span className="min-h-4 truncate text-xs text-(--app-text-muted)">
+      <span className="min-h-4 truncate text-xs text-app-text-muted">
         {item?.n ?? ''}
         {effect ? ` · ${effect.n}` : ''}
       </span>
@@ -957,7 +957,7 @@ export function Picker({
         <PanelHead
           title={label}
           // A landscape phone has no height for two sticky bars over the items: they scroll away there.
-          className="sticky top-0 z-10 bg-(--app-bg-subtle) [@media(max-height:560px)]:static"
+          className="sticky top-0 z-10 bg-app-bg-subtle [@media(max-height:560px)]:static"
           actions={
             <>
               {entry ? (
@@ -969,7 +969,7 @@ export function Picker({
                 type="button"
                 onClick={onClose}
                 aria-label={t('close', { defaultValue: 'Close' })}
-                className="inline-flex size-7 items-center justify-center rounded-(--app-radius-sm) text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text) pointer-coarse:size-11"
+                className="inline-flex size-7 items-center justify-center rounded-app-sm text-app-text-muted hover:bg-app-surface-hover hover:text-app-text pointer-coarse:size-11"
               >
                 <X className="size-4" aria-hidden />
               </button>
@@ -979,7 +979,7 @@ export function Picker({
       )}
 
       {current ? (
-        <div className="grid gap-3 border-b border-(--app-border) p-3 sm:grid-cols-[13rem_minmax(0,1fr)]">
+        <div className="grid gap-3 border-b border-app-border p-3 sm:grid-cols-[13rem_minmax(0,1fr)]">
           <ItemModelViewer
             itemId={modelItemId(current)}
             cls={cls}
@@ -997,7 +997,7 @@ export function Picker({
               >
                 {current.n}
               </p>
-              <p className="truncate text-xs text-(--app-text-dim)">{current.t}</p>
+              <p className="truncate text-xs text-app-text-dim">{current.t}</p>
             </div>
             {customizable && entry ? (
               <div className="flex flex-wrap items-center gap-1.5">
@@ -1008,7 +1008,7 @@ export function Picker({
                   <Pill>
                     <span
                       aria-hidden
-                      className="me-1 inline-block size-2.5 rounded-full border border-(--app-border-bright)"
+                      className="me-1 inline-block size-2.5 rounded-full border border-app-border-bright"
                       style={{ background: idx.paint(entry.paint)!.rgb }}
                     />
                     {idx.paint(entry.paint)!.n}
@@ -1036,7 +1036,7 @@ export function Picker({
                   <Pill>
                     <span
                       aria-hidden
-                      className="me-1 inline-block size-2.5 rounded-full border border-(--app-border-bright)"
+                      className="me-1 inline-block size-2.5 rounded-full border border-app-border-bright"
                       style={{ background: rarityColor(current.rt) }}
                     />
                     {tierName(current)}
@@ -1050,13 +1050,13 @@ export function Picker({
 
       <div
         className={cn(
-          'sticky z-10 flex flex-wrap gap-2 border-b border-(--app-border) bg-(--app-bg-subtle) p-3 [@media(max-height:560px)]:static',
+          'sticky z-10 flex flex-wrap gap-2 border-b border-app-border bg-app-bg-subtle p-3 [@media(max-height:560px)]:static',
           embedded ? 'top-0' : 'top-9',
         )}
       >
         <div className="relative min-w-40 flex-1">
           <Search
-            className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-(--app-text-dim)"
+            className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-app-text-dim"
             aria-hidden
           />
           <TextField
@@ -1089,7 +1089,7 @@ export function Picker({
             ))}
           </SelectField>
         ) : null}
-        <p role="status" className="basis-full text-[11px] text-(--app-text-dim) pointer-coarse:text-xs">
+        <p role="status" className="basis-full text-[11px] text-app-text-dim pointer-coarse:text-xs">
           {t('showing-count', {
             defaultValue: 'Showing {{shown}} of {{total}}',
             shown: Math.min(shown, matches.length),
@@ -1274,7 +1274,7 @@ function SaveDialog({
             rows={3}
             onChange={(e) => setDescription(e.target.value)}
             aria-label={t('description', { defaultValue: 'Description' })}
-            className="w-full rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) p-2 text-xs text-(--app-text) focus-visible:border-(--app-accent)"
+            className="w-full rounded-app-sm border border-app-border-bright bg-app-bg p-2 text-xs text-app-text focus-visible:border-app-accent"
           />
         </Field>
         <Field
@@ -1296,7 +1296,7 @@ function SaveDialog({
           </SelectField>
         </Field>
         {visibility === 'PUBLIC' ? (
-          <p className="flex items-center gap-1.5 text-xs text-(--app-text-muted)">
+          <p className="flex items-center gap-1.5 text-xs text-app-text-muted">
             <Globe className="size-3.5" aria-hidden />
             {t('public-note', { defaultValue: 'Anyone can find, like and copy this loadout.' })}
           </p>

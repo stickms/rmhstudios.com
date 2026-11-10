@@ -126,8 +126,8 @@ function ColorTargetPopover({
       label={t('color-popover', { defaultValue: 'Change colour' })}
       width={300}
     >
-      <p className="mb-2 truncate text-xs text-(--app-text-muted)">
-        <strong className="text-(--app-text)">{node.name}</strong> · {label(slot.key)}
+      <p className="mb-2 truncate text-xs text-app-text-muted">
+        <strong className="text-app-text">{node.name}</strong> · {label(slot.key)}
       </p>
       {slot.hops.length ? (
         <fieldset className="mb-3 space-y-1">
@@ -138,13 +138,13 @@ function ColorTargetPopover({
             <input
               type="radio"
               name="color-target"
-              className="mt-0.5 accent-(--app-accent)"
+              className="mt-0.5 accent-app-accent"
               checked={target === null}
               onChange={() => setTarget(null)}
             />
             <span>
               {t('color-this-element', { defaultValue: 'This element only' })}
-              <span className="block text-(--app-text-dim)">
+              <span className="block text-app-text-dim">
                 {t('color-this-element-hint', {
                   defaultValue: 'Choosing a number detaches it from {{name}}.',
                   name: slot.hops[0].name,
@@ -157,13 +157,13 @@ function ColorTargetPopover({
               <input
                 type="radio"
                 name="color-target"
-                className="mt-0.5 accent-(--app-accent)"
+                className="mt-0.5 accent-app-accent"
                 checked={target?.name === h.name}
                 onChange={() => setTarget(h)}
               />
               <span>
                 {t('color-everywhere', { defaultValue: '{{name}}, everywhere', name: h.name })}
-                <span className="block text-(--app-text-dim)">
+                <span className="block text-app-text-dim">
                   {others(h)
                     ? t('color-used', {
                         defaultValue_one:
@@ -195,7 +195,7 @@ function ColorTargetPopover({
       />
       <button
         type="button"
-        className="mt-3 flex w-full items-center gap-1.5 rounded-(--app-radius-sm) px-1.5 py-1 text-xs text-(--app-accent-text) hover:bg-(--app-surface-hover)"
+        className="mt-3 flex w-full items-center gap-1.5 rounded-app-sm px-1.5 py-1 text-xs text-app-accent-text hover:bg-app-surface-hover"
         onClick={() => {
           askAssistant({
             context: panelContext({ panel: node, props, scheme }),
@@ -268,7 +268,7 @@ export default function ColorChips({
         ref={bar}
         role="toolbar"
         aria-label={t('color-chips', { defaultValue: 'Colours of the selected panel' })}
-        className="pointer-events-auto absolute flex max-w-full flex-wrap items-center gap-1 rounded-(--app-radius-sm) border border-(--app-border-bright) bg-(--app-bg) p-1 text-[11px]"
+        className="pointer-events-auto absolute flex max-w-full flex-wrap items-center gap-1 rounded-app-sm border border-app-border-bright bg-app-bg p-1 text-[11px]"
         style={{ left, top }}
       >
         {slots.map((s) => (
@@ -282,14 +282,14 @@ export default function ColorChips({
               setOpen(open === s.key ? null : s.key);
             }}
             className={cn(
-              'flex items-center gap-1.5 rounded-(--app-radius-sm) px-1.5 py-1 text-(--app-text) hover:bg-(--app-surface-hover)',
-              open === s.key && 'bg-(--app-accent-dim)',
+              'flex items-center gap-1.5 rounded-app-sm px-1.5 py-1 text-app-text hover:bg-app-surface-hover',
+              open === s.key && 'bg-app-accent-dim',
             )}
           >
             <Swatch color={s.rgba} className="size-4" />
             <span>{label(s.key)}</span>
             {s.hops[0] ? (
-              <span className="font-mono text-(--app-text-dim)">{s.hops[0].name}</span>
+              <span className="font-mono text-app-text-dim">{s.hops[0].name}</span>
             ) : null}
           </button>
         ))}
@@ -302,7 +302,7 @@ export default function ColorChips({
               setAnchor(e.currentTarget);
               setOpen(key);
             }}
-            className="flex items-center gap-1 rounded-(--app-radius-sm) px-1.5 py-1 text-(--app-text-muted) hover:bg-(--app-surface-hover)"
+            className="flex items-center gap-1 rounded-app-sm px-1.5 py-1 text-app-text-muted hover:bg-app-surface-hover"
           >
             <Plus className="size-3.5" aria-hidden />
             {t('color-add', { defaultValue: 'Add a colour' })}

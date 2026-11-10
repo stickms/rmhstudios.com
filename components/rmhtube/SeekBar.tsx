@@ -82,10 +82,10 @@ export default function SeekBar({ duration, isLeader }: { duration: number; isLe
   };
 
   return (
-    <div className="flex items-center gap-2 px-4 pb-2 pt-1 bg-(--app-bg-subtle)">
+    <div className="flex items-center gap-2 px-4 pb-2 pt-1 bg-app-bg-subtle">
       <span
         ref={timeRef}
-        className="w-12 shrink-0 text-right text-xs tabular-nums text-(--app-text-dim)"
+        className="w-12 shrink-0 text-right text-xs tabular-nums text-app-text-dim"
       >
         {dragValue !== null ? formatDuration(dragValue) : formatDuration(0)}
       </span>
@@ -100,7 +100,7 @@ export default function SeekBar({ duration, isLeader }: { duration: number; isLe
           defaultValue={0}
           aria-label={t('seek-bar', { defaultValue: 'Seek' })}
           aria-valuetext={dragValue !== null ? formatDuration(dragValue) : undefined}
-          className="h-1 w-full cursor-pointer accent-(--app-accent)"
+          className="h-1 w-full cursor-pointer accent-app-accent"
           onPointerDown={() => {
             draggingRef.current = true;
           }}
@@ -122,18 +122,18 @@ export default function SeekBar({ duration, isLeader }: { duration: number; isLe
           aria-label={t('seek-bar-readonly', { defaultValue: 'Playback position' })}
           aria-valuemin={0}
           aria-valuemax={Math.round(duration)}
-          className="relative h-1 w-full overflow-hidden rounded-full bg-(--app-surface-active)"
+          className="relative h-1 w-full overflow-hidden rounded-full bg-app-surface-active"
         >
           <div
             ref={fillRef}
-            className="absolute inset-y-0 left-0 bg-(--app-accent)"
+            className="absolute inset-y-0 left-0 bg-app-accent"
             style={{ width: '0%' }}
           />
         </div>
       )}
       <HeatStrip duration={duration} />
       </div>
-      <span className="w-12 shrink-0 text-xs tabular-nums text-(--app-text-dim)">
+      <span className="w-12 shrink-0 text-xs tabular-nums text-app-text-dim">
         {formatDuration(duration)}
       </span>
     </div>

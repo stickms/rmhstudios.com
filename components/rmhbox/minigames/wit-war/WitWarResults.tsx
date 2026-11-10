@@ -45,11 +45,11 @@ export default function WitWarResults({
             animate={{ opacity: 1, scale: 1 }}
             className="flex flex-col items-center gap-2"
           >
-            <Crown className="h-10 w-10 text-(--app-warning)" />
-            <h2 className="text-2xl font-black text-(--app-text)">{t("final-results", { defaultValue: "Final Results" })}</h2>
+            <Crown className="h-10 w-10 text-app-warning" />
+            <h2 className="text-2xl font-black text-app-text">{t("final-results", { defaultValue: "Final Results" })}</h2>
           </motion.div>
         ) : (
-          <h2 className="text-xl font-bold text-(--app-text)">
+          <h2 className="text-xl font-bold text-app-text">
             {t("round-standings", { round, totalRounds, defaultValue: "Round {{round}} of {{totalRounds}} — Standings" })}
           </h2>
         )}
@@ -63,24 +63,24 @@ export default function WitWarResults({
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.08 }}
-            className={`glass-fill flex items-center justify-between rounded-(--app-radius) border p-3 ${
+            className={`glass-fill flex items-center justify-between rounded-app border p-3 ${
               idx === 0
-                ? 'border-(--app-warning)/40 bg-(--app-warning)/10'
-                : 'border-(--app-border)'
+                ? 'border-app-warning/40 bg-app-warning/10'
+                : 'border-app-border'
             }`}
           >
             <div className="flex items-center gap-3">
               <span className={`text-lg font-black w-8 text-center ${
-                idx === 0 ? 'text-(--app-warning)' : 'text-(--app-text-muted)'
+                idx === 0 ? 'text-app-warning' : 'text-app-text-muted'
               }`}>
                 {idx === 0 ? <Trophy className="h-5 w-5 mx-auto" /> : `#${idx + 1}`}
               </span>
-              <span className="font-semibold text-(--app-text)">
+              <span className="font-semibold text-app-text">
                 {entry.userName}
               </span>
             </div>
             <span className={`text-lg font-bold ${
-              idx === 0 ? 'text-(--app-warning)' : 'text-(--app-text)'
+              idx === 0 ? 'text-app-warning' : 'text-app-text'
             }`}>
               {entry.score.toLocaleString()}
             </span>
@@ -91,7 +91,7 @@ export default function WitWarResults({
       {/* Matchup summary */}
       {matchups.length > 0 && (
         <div className="flex flex-col gap-3">
-          <h3 className="text-sm font-semibold text-(--app-text-muted) uppercase tracking-wider">
+          <h3 className="text-sm font-semibold text-app-text-muted uppercase tracking-wider">
             {t("round-matchups", { defaultValue: "Round Matchups" })}
           </h3>
           {matchups.map((m, idx) => (
@@ -100,26 +100,26 @@ export default function WitWarResults({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 + idx * 0.05 }}
-              className="glass-fill rounded-(--app-radius-sm) p-3"
+              className="glass-fill rounded-app-sm p-3"
             >
-              <div className="text-xs text-(--app-text-muted) mb-1">{m.promptText}</div>
+              <div className="text-xs text-app-text-muted mb-1">{m.promptText}</div>
               <div className="flex items-center justify-between gap-2 text-sm">
-                <div className={`flex-1 ${m.winnerId === m.playerA ? 'font-bold text-(--app-success)' : 'text-(--app-text)'}`}>
+                <div className={`flex-1 ${m.winnerId === m.playerA ? 'font-bold text-app-success' : 'text-app-text'}`}>
                   &ldquo;{m.answerA}&rdquo;
-                  <span className="text-xs text-(--app-text-muted) ml-1">
+                  <span className="text-xs text-app-text-muted ml-1">
                     ({m.playerAName ?? 'A'}) {m.votePercentA}%
                   </span>
                 </div>
-                <span className="text-(--app-text-muted) text-xs shrink-0">{t("vs", { defaultValue: "vs" })}</span>
-                <div className={`flex-1 text-right ${m.winnerId === m.playerB ? 'font-bold text-(--app-success)' : 'text-(--app-text)'}`}>
+                <span className="text-app-text-muted text-xs shrink-0">{t("vs", { defaultValue: "vs" })}</span>
+                <div className={`flex-1 text-right ${m.winnerId === m.playerB ? 'font-bold text-app-success' : 'text-app-text'}`}>
                   &ldquo;{m.answerB}&rdquo;
-                  <span className="text-xs text-(--app-text-muted) ml-1">
+                  <span className="text-xs text-app-text-muted ml-1">
                     ({m.playerBName ?? 'B'}) {m.votePercentB}%
                   </span>
                 </div>
               </div>
               {m.isWitWham && (
-                <div className="flex items-center gap-1 mt-1 text-xs text-(--app-warning) font-bold">
+                <div className="flex items-center gap-1 mt-1 text-xs text-app-warning font-bold">
                   <Zap className="h-3 w-3" /> WIT-WHAM!
                 </div>
               )}

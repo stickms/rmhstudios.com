@@ -57,7 +57,7 @@ function Swatch({ value }: { value: string | null }) {
   return (
     <span
       aria-hidden
-      className="inline-block size-3 shrink-0 rounded-sm border border-(--app-border-bright)"
+      className="inline-block size-3 shrink-0 rounded-sm border border-app-border-bright"
       style={{ background: `rgb(${m[1]} ${m[2]} ${m[3]} / ${a})` }}
     />
   );
@@ -281,13 +281,13 @@ export default function HudAssistant({
         footer={
           <div className="flex w-full flex-col gap-2">
             {ctx ? (
-              <p className="flex items-center gap-1.5 text-xs text-(--app-text-muted)">
+              <p className="flex items-center gap-1.5 text-xs text-app-text-muted">
                 <span className="min-w-0 truncate">
                   {t('hud-ai-about', { defaultValue: 'About: {{what}}', what: ctx.label })}
                 </span>
                 <button
                   type="button"
-                  className="inline-flex shrink-0 items-center rounded-(--app-radius-sm) p-0.5 hover:bg-(--app-surface-hover)"
+                  className="inline-flex shrink-0 items-center rounded-app-sm p-0.5 hover:bg-app-surface-hover"
                   aria-label={t('hud-ai-forget', { defaultValue: 'Stop talking about this' })}
                   onClick={() => setCtx(null)}
                 >
@@ -326,8 +326,8 @@ export default function HudAssistant({
         <div className="flex min-h-48 flex-col gap-3" aria-live="polite">
           {messages.length === 0 ? (
             <div className="flex flex-col items-start gap-3">
-              <p className="flex items-center gap-2 text-sm text-(--app-text-muted)">
-                <Sparkles className="size-4 shrink-0 text-(--app-accent)" aria-hidden />
+              <p className="flex items-center gap-2 text-sm text-app-text-muted">
+                <Sparkles className="size-4 shrink-0 text-app-accent" aria-hidden />
                 {t('ai-try', { defaultValue: 'Try one of these, or type your own:' })}
               </p>
               <div className="flex flex-wrap gap-2">
@@ -345,15 +345,15 @@ export default function HudAssistant({
               key={m.id}
               className={
                 m.role === 'user'
-                  ? 'ms-auto max-w-[85%] rounded-(--app-radius-sm) bg-(--app-accent)/15 px-3 py-2 text-sm'
-                  : 'max-w-full rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 py-2 text-sm'
+                  ? 'ms-auto max-w-[85%] rounded-app-sm bg-app-accent/15 px-3 py-2 text-sm'
+                  : 'max-w-full rounded-app-sm border border-app-border bg-app-bg px-3 py-2 text-sm'
               }
             >
               <p className="whitespace-pre-wrap break-words">{m.text}</p>
               {m.proposal ? (
                 <div className="mt-2 flex flex-col gap-2">
                   {m.proposal.applied.length ? (
-                    <p className="text-xs font-semibold text-(--app-text-muted)">
+                    <p className="text-xs font-semibold text-app-text-muted">
                       {m.proposal.state === 'applied'
                         ? t('hud-ai-what-changed', { defaultValue: 'What changed' })
                         : t('hud-ai-what-would', { defaultValue: 'What would change' })}
@@ -364,13 +364,13 @@ export default function HudAssistant({
                       {m.proposal.applied.map((c, i) => (
                         <li
                           key={i}
-                          className="rounded-(--app-radius-sm) border border-(--app-border) px-2 py-1.5"
+                          className="rounded-app-sm border border-app-border px-2 py-1.5"
                         >
-                          <span className="block truncate text-(--app-text-dim)" title={c.file}>
+                          <span className="block truncate text-app-text-dim" title={c.file}>
                             {c.file.split('/').pop()}
                           </span>
                           <span className="block break-words font-semibold">{label(c)}</span>
-                          <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-(--app-text-muted)">
+                          <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-app-text-muted">
                             <Swatch value={c.before} />
                             <span className="break-all">
                               {c.before ?? t('hud-ai-unset', { defaultValue: '(not set)' })}
@@ -385,14 +385,14 @@ export default function HudAssistant({
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-xs text-(--app-text-dim)">
+                    <p className="text-xs text-app-text-dim">
                       {t('hud-ai-nothing', {
                         defaultValue: 'Nothing in the files needs to change.',
                       })}
                     </p>
                   )}
                   {m.proposal.rejected.length + m.proposal.malformed ? (
-                    <p className="text-xs text-(--app-warning)">
+                    <p className="text-xs text-app-warning">
                       {t('hud-ai-skipped', {
                         defaultValue:
                           '{{count}} suggested change could not be used and was skipped.',
@@ -423,7 +423,7 @@ export default function HudAssistant({
                     ) : null}
                     {m.proposal.state === 'applied' ? (
                       <>
-                        <span className="flex items-center gap-1 text-xs text-(--app-success)">
+                        <span className="flex items-center gap-1 text-xs text-app-success">
                           <Check className="size-4" aria-hidden />
                           {t('hud-ai-applied', { defaultValue: 'Applied. One undo reverts it.' })}
                         </span>
@@ -441,7 +441,7 @@ export default function HudAssistant({
                       </>
                     ) : null}
                     {m.proposal.state === 'discarded' ? (
-                      <span className="text-xs text-(--app-text-dim)">
+                      <span className="text-xs text-app-text-dim">
                         {t('hud-ai-discarded', { defaultValue: 'Not applied.' })}
                       </span>
                     ) : null}
@@ -452,7 +452,7 @@ export default function HudAssistant({
           ))}
 
           {step ? (
-            <p role="status" className="text-sm text-(--app-text-dim)">
+            <p role="status" className="text-sm text-app-text-dim">
               {step === 'select'
                 ? t('hud-ai-finding', { defaultValue: 'Finding the right files…' })
                 : t('hud-ai-editing', { defaultValue: 'Working out the changes…' })}

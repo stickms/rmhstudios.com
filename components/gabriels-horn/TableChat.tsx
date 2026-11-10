@@ -30,7 +30,7 @@ export function TableChat() {
     <div className="flex flex-col gap-2">
       <ol className="app-scroll-y max-h-32 space-y-1 text-xs">
         {chat.length === 0 ? (
-          <li className="text-(--app-text-dim)">
+          <li className="text-app-text-dim">
             {t('chat-empty', { defaultValue: 'Say something. Lying is allowed.' })}
           </li>
         ) : (
@@ -39,13 +39,13 @@ export function TableChat() {
               <span
                 className={
                   message.socketId === selfSocketId
-                    ? 'font-semibold text-(--app-accent)'
-                    : 'font-semibold text-(--app-text)'
+                    ? 'font-semibold text-app-accent'
+                    : 'font-semibold text-app-text'
                 }
               >
                 {message.name}
               </span>
-              <span className="text-(--app-text-muted)">: {message.text}</span>
+              <span className="text-app-text-muted">: {message.text}</span>
             </li>
           ))
         )}
@@ -71,7 +71,7 @@ export function TableChat() {
           onChange={(event) => setText(event.target.value)}
           placeholder={t('chat-placeholder', { defaultValue: 'Talk to the table…' })}
           autoComplete="off"
-          className="min-w-0 grow rounded-[var(--app-radius-sm)] border border-(--app-border) bg-(--app-bg-subtle) px-3 py-1.5 text-sm text-(--app-text) placeholder:text-(--app-text-dim) focus-visible:border-(--app-accent)"
+          className="min-w-0 grow rounded-app-sm border border-app-border bg-app-bg-subtle px-3 py-1.5 text-sm text-app-text placeholder:text-app-text-dim focus-visible:border-app-accent"
         />
         <HornButton
           type="submit"

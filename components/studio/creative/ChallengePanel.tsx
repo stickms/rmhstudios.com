@@ -57,11 +57,11 @@ function List({ onOpen }: { onOpen: (id: string) => void }) {
       voting: t('phase-voting', { defaultValue: 'Voting' }),
       finished: t('phase-finished', { defaultValue: 'Finished' }),
     })[p];
-  if (q.isLoading) return <div className="glass-fill h-24 rounded-(--app-radius)" aria-hidden />;
+  if (q.isLoading) return <div className="glass-fill h-24 rounded-app" aria-hidden />;
   const items = q.data?.challenges ?? [];
   if (items.length === 0) {
     return (
-      <p className="text-sm text-(--app-text-muted)">
+      <p className="text-sm text-app-text-muted">
         {t('challenge-none', { defaultValue: 'No sample flip is running yet. Check back soon.' })}
       </p>
     );
@@ -73,13 +73,13 @@ function List({ onOpen }: { onOpen: (id: string) => void }) {
           <button
             type="button"
             onClick={() => onOpen(c.id)}
-            className="glass-fill glass-interactive w-full rounded-(--app-radius) p-4 text-left"
+            className="glass-fill glass-interactive w-full rounded-app p-4 text-left"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="font-medium text-(--app-text)">{c.title}</span>
-              <span className="text-xs text-(--app-text-muted)">{phaseLabel(c.phase)}</span>
+              <span className="font-medium text-app-text">{c.title}</span>
+              <span className="text-xs text-app-text-muted">{phaseLabel(c.phase)}</span>
             </div>
-            <p className="mt-1 text-xs text-(--app-text-dim)">
+            <p className="mt-1 text-xs text-app-text-dim">
               {t('challenge-entries', { defaultValue: '{{n}} entries', n: c.entryCount })}
             </p>
           </button>
@@ -101,7 +101,7 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
     queryFn: () => fetchJson<ChallengeDetail>(`/api/studio/challenges/${id}`),
   });
   const c = q.data;
-  if (!c) return <div className="glass-fill h-24 rounded-(--app-radius)" aria-hidden />;
+  if (!c) return <div className="glass-fill h-24 rounded-app" aria-hidden />;
 
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -150,11 +150,11 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
         {t('challenge-back', { defaultValue: 'All challenges' })}
       </Button>
       <div>
-        <h3 className="font-semibold text-(--app-text)">{c.title}</h3>
-        {c.brief && <p className="mt-1 text-sm text-(--app-text-muted)">{c.brief}</p>}
-        <p className="mt-2 text-xs text-(--app-text-dim)">{c.sampleName}</p>
+        <h3 className="font-semibold text-app-text">{c.title}</h3>
+        {c.brief && <p className="mt-1 text-sm text-app-text-muted">{c.brief}</p>}
+        <p className="mt-2 text-xs text-app-text-dim">{c.sampleName}</p>
         <audio controls preload="none" src={c.sampleUrl} className="mt-1 w-full" />
-        <p className="mt-2 text-xs text-(--app-text-dim)">
+        <p className="mt-2 text-xs text-app-text-dim">
           {t('challenge-dates', {
             defaultValue: 'Submissions close {{close}}. Voting ends {{vote}}.',
             close: new Date(c.endsAt).toLocaleString(),
@@ -164,8 +164,8 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
       </div>
 
       {c.phase === 'open' && (
-        <div className="glass-pane space-y-2 rounded-(--app-radius) p-4">
-          <p className="text-sm font-medium text-(--app-text)">
+        <div className="glass-pane space-y-2 rounded-app p-4">
+          <p className="text-sm font-medium text-app-text">
             {c.myEntryId
               ? t('entry-replace', { defaultValue: 'Replace your entry' })
               : t('entry-new', { defaultValue: 'Submit your flip' })}
@@ -184,7 +184,7 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
             value={link}
             onChange={(e) => setLink(e.target.value)}
           />
-          <label className="flex items-center gap-2 text-xs text-(--app-text-muted)">
+          <label className="flex items-center gap-2 text-xs text-app-text-muted">
             <Upload className="h-3.5 w-3.5" aria-hidden />
             <input
               type="file"
@@ -207,7 +207,7 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
       )}
 
       {c.phase === 'voting' && (
-        <p className="text-sm text-(--app-text-muted)">
+        <p className="text-sm text-app-text-muted">
           {c.myVoteEntryId
             ? t('vote-done', { defaultValue: 'You voted. Results appear when voting ends.' })
             : t('vote-hint', {
@@ -218,24 +218,24 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
 
       <ul className="space-y-2">
         {c.entries.map((e) => (
-          <li key={e.id} className="glass-fill rounded-(--app-radius) p-4">
+          <li key={e.id} className="glass-fill rounded-app p-4">
             <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-1.5 font-medium text-(--app-text)">
+              <span className="flex items-center gap-1.5 font-medium text-app-text">
                 {e.isWinner && (
                   <Trophy
-                    className="h-4 w-4 text-(--app-accent)"
+                    className="h-4 w-4 text-app-accent"
                     aria-label={t('winner', { defaultValue: 'Winner' })}
                   />
                 )}
                 {e.title}
               </span>
               {c.phase === 'finished' && (
-                <span className="text-xs text-(--app-text-muted)">
+                <span className="text-xs text-app-text-muted">
                   {t('votes', { defaultValue: '{{n}} votes', n: e.voteCount })}
                 </span>
               )}
             </div>
-            <p className="text-xs text-(--app-text-dim)">{e.author.name ?? e.author.handle}</p>
+            <p className="text-xs text-app-text-dim">{e.author.name ?? e.author.handle}</p>
             {e.audioUrl && (
               <audio controls preload="none" src={e.audioUrl} className="mt-1 w-full" />
             )}
@@ -244,7 +244,7 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
                 href={e.linkUrl}
                 target="_blank"
                 rel="noopener noreferrer nofollow ugc"
-                className="mt-1 block truncate text-xs text-(--app-accent) underline"
+                className="mt-1 block truncate text-xs text-app-accent underline"
               >
                 {e.linkUrl}
               </a>
@@ -262,14 +262,14 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
               </Button>
             )}
             {c.myVoteEntryId === e.id && (
-              <p className="mt-2 text-xs text-(--app-accent)">
+              <p className="mt-2 text-xs text-app-accent">
                 {t('vote-yours', { defaultValue: 'Your vote' })}
               </p>
             )}
           </li>
         ))}
         {c.entries.length === 0 && (
-          <li className="text-sm text-(--app-text-muted)">
+          <li className="text-sm text-app-text-muted">
             {t('entries-none', { defaultValue: 'No entries yet.' })}
           </li>
         )}

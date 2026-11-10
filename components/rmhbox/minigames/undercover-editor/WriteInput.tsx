@@ -66,25 +66,25 @@ export default function WriteInput({
   };
 
   return (
-    <div className="flex w-full max-w-xl flex-col gap-4 text-(--app-text)">
+    <div className="flex w-full max-w-xl flex-col gap-4 text-app-text">
       {/* Timer */}
-      <div className="flex items-center justify-center gap-2 text-sm text-(--app-text-muted)">
+      <div className="flex items-center justify-center gap-2 text-sm text-app-text-muted">
         <Clock className="h-4 w-4" />
         <span className="font-mono font-semibold">{timeRemaining}s</span>
       </div>
 
       {/* Story so far — prompt shown as first sentence, full height */}
-      <div className="glass-fill rounded-(--app-radius-sm) p-3">
-        <p className="mb-2 text-[10px] uppercase tracking-wider text-(--app-text-muted)">
+      <div className="glass-fill rounded-app-sm p-3">
+        <p className="mb-2 text-[10px] uppercase tracking-wider text-app-text-muted">
           {t("story-so-far", { defaultValue: "Story {{storyNumber}} so far", storyNumber })}
         </p>
         <div className="space-y-1.5">
           {/* Prompt displayed as a sentence */}
-          <p className="text-sm leading-relaxed text-(--app-text)">
+          <p className="text-sm leading-relaxed text-app-text">
             <span className="opacity-50 text-xs">({t("prompt-label", { defaultValue: "prompt" })})</span> {storyPrompt}
           </p>
           {storyContext.map((s, i) => (
-            <p key={i} className="text-sm leading-relaxed text-(--app-text)">
+            <p key={i} className="text-sm leading-relaxed text-app-text">
               <span className="opacity-50 text-xs">({s.authorName})</span> {s.text}
             </p>
           ))}
@@ -101,16 +101,16 @@ export default function WriteInput({
           disabled={submitted}
           placeholder={t("continue-placeholder", { defaultValue: "Continue the story with a sentence…" })}
           rows={3}
-          className="glass-inset w-full resize-none rounded-(--app-radius-sm) border border-(--app-border) px-4 py-3 text-sm text-(--app-text) placeholder:text-(--app-text-muted) focus:outline-none focus:ring-2 focus:ring-(--app-accent) disabled:opacity-50"
+          className="glass-inset w-full resize-none rounded-app-sm border border-app-border px-4 py-3 text-sm text-app-text placeholder:text-app-text-muted focus:outline-none focus:ring-2 focus:ring-app-accent disabled:opacity-50"
         />
         {/* Character counter */}
         <span
           className={`absolute bottom-2 right-3 text-[10px] font-mono ${
             charCount < MIN_LENGTH
-              ? 'text-(--app-text-muted)'
+              ? 'text-app-text-muted'
               : charCount >= MAX_LENGTH
-                ? 'text-(--app-danger)'
-                : 'text-(--app-success)'
+                ? 'text-app-danger'
+                : 'text-app-success'
           }`}
         >
           {charCount}/{MAX_LENGTH}
@@ -119,7 +119,7 @@ export default function WriteInput({
 
       {/* Hint */}
       {charCount > 0 && charCount < MIN_LENGTH && (
-        <p className="text-center text-[10px] text-(--app-text-muted)">
+        <p className="text-center text-[10px] text-app-text-muted">
           {t("chars-needed", { defaultValue: "{{count}} more character needed", defaultValue_other: "{{count}} more characters needed", count: MIN_LENGTH - charCount })}
         </p>
       )}
@@ -128,7 +128,7 @@ export default function WriteInput({
       <button
         onClick={handleSubmit}
         disabled={!isValid || submitted}
-        className="flex items-center justify-center gap-2 rounded-(--app-radius-sm) bg-(--app-accent) px-4 py-2.5 text-sm font-medium text-(--app-accent-fg) transition-opacity hover:opacity-90 disabled:opacity-40"
+        className="flex items-center justify-center gap-2 rounded-app-sm bg-app-accent px-4 py-2.5 text-sm font-medium text-app-accent-fg transition-opacity hover:opacity-90 disabled:opacity-40"
       >
         <Send className="h-4 w-4" />
         {submitted ? t("submitted", { defaultValue: "Submitted!" }) : t("submit-sentence", { defaultValue: "Submit Sentence" })}

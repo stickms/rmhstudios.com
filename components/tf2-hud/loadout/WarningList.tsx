@@ -40,7 +40,7 @@ export default function WarningList({
     }
   };
   return (
-    <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-xs text-(--app-text-muted)">
+    <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-xs text-app-text-muted">
       {warnings.map((w, i) => (
         <li key={i}>{line(w)}</li>
       ))}

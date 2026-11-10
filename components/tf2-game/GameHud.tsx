@@ -307,7 +307,7 @@ function HudBody({
       label: t('hud', { defaultValue: 'HUD' }),
       wide: true,
       render: ({ back }) => (
-        <Suspense fallback={<p className="text-sm text-(--app-text-muted)">{t('hud_loading', { defaultValue: 'Loading…' })}</p>}>
+        <Suspense fallback={<p className="text-sm text-app-text-muted">{t('hud_loading', { defaultValue: 'Loading…' })}</p>}>
           <HudPauseView
             onBack={back}
             onEdit={() => {

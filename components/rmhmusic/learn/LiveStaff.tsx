@@ -60,7 +60,7 @@ export function LiveStaff({ source, note, announce = true, className }: LiveStaf
         viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
         role="img"
         aria-labelledby={titleId}
-        className="block h-auto w-full text-(--app-text)"
+        className="block h-auto w-full text-app-text"
       >
         <title id={titleId}>{label}</title>
         <g stroke="currentColor" strokeWidth="1" opacity="0.55">
@@ -73,7 +73,7 @@ export function LiveStaff({ source, note, announce = true, className }: LiveStaf
         <path d={CLEF} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
         <circle cx="19" cy={TOP + 52} r="3" fill="currentColor" />
         {fit && (
-          <g className="text-(--app-accent)" stroke="currentColor" fill="currentColor">
+          <g className="text-app-accent" stroke="currentColor" fill="currentColor">
             {fit.ledgerYs.map((y) => (
               <line key={y} x1={NOTE_X - 12} x2={NOTE_X + 12} y1={y} y2={y} strokeWidth="1.4" />
             ))}
@@ -109,7 +109,7 @@ export function LiveStaff({ source, note, announce = true, className }: LiveStaf
       </svg>
       <figcaption
         aria-hidden="true"
-        className="min-h-9 text-center font-(family-name:--app-font-mono) text-2xl font-bold text-(--app-accent)"
+        className="min-h-9 text-center font-(family-name:--app-font-mono) text-2xl font-bold text-app-accent"
       >
         {name}
       </figcaption>
