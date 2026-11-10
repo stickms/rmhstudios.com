@@ -45,6 +45,8 @@
 @source not "../features/hearthworks/engine";
 @source not "../features/hearthworks/ui";
 @source not "../features/hearthworks/server";
+/* The island route helpers (redesign B1): reached only by island routes, and they render no classes. */
+@source not "../lib/islands";
 @source not "../components/blm";
 @source not "../components/breaches";
 @source not "../components/covid";

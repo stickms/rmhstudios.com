@@ -11,8 +11,9 @@ export default defineFeature({
     'app/routes/api/void-breaker/leaderboard.ts',
     'app/routes/api/void-breaker/score.ts',
   ],
-  // The catalog card's strings; the game itself has no namespace of its own.
-  namespaces: ['c-void-breaker'],
+  // The game's strings (`c-void-breaker`) and the Boss Rush menu's (`f-action`). An island's
+  // document hands the reader's locale for these to its first render (lib/islands/document.server.ts).
+  namespaces: ['c-void-breaker', 'f-action'],
   catalog: 'features/void-breaker/catalog.ts',
   listed: true,
 });

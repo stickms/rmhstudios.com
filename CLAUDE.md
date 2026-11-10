@@ -58,7 +58,7 @@ pnpm format                  # prettier
 pnpm test                    # main test suite (mission-critical scope — docs/testing.md; time it with `time pnpm test`)
 pnpm test:epic               # epic content-build suite (needs Chromium)
 pnpm test:integration        # real flows vs a running app + throwaway Postgres (docs/testing.md §8)
-pnpm build                   # vibe-packages → vite build → esbuild 6 server bundles
+pnpm build                   # vibe-packages → islands (vite.islands.config.ts) → vite build → esbuild server bundles
 pnpm i18n:extract            # after adding t() strings
 pnpm facts:generate          # refresh docs/_generated/facts.json (model/route/test/namespace counts; facts:check gates it)
 pnpm check:consistency       # THE COMMIT GATE — run before every commit (see below)

@@ -166,8 +166,16 @@ describe('entry stylesheet tiers', () => {
     ).toEqual([]);
   }, 30_000); // same graph walk as above (~2.5s on CI)
 
-  it('the app-tier sheet is the unfiltered superset', () => {
-    expect(sourceNots('app-tier.css')).toEqual([]);
+  it('the app-tier sheet is the unfiltered superset (minus islands, which no site document renders)', () => {
+    // A feature with an `island.tsx` is built and styled on its own (redesign B1,
+    // vite.islands.config.ts) and never renders in a site document, so it is the one
+    // exclusion the superset carries — exactly the set of islands, no more, no less.
+    const islands = readdirSync(join(ROOT, 'features'))
+      .filter((id) => existsSync(join(ROOT, 'features', id, 'island.tsx')))
+      .map((id) => `features/${id}`)
+      .sort();
+    expect(sourceNots('app-tier.css').sort()).toEqual(islands);
+    for (const dir of islands) expect(tierExcluded, `site-tier.css must skip ${dir} too`).toContain(dir);
     const css = readFileSync(join(APP, 'app-tier.css'), 'utf8');
     expect(css).toMatch(/@import 'tailwindcss';\s*@import '\.\/globals\.css';/);
     expect(readFileSync(join(APP, 'site-tier.css'), 'utf8')).toMatch(

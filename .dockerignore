@@ -9,6 +9,8 @@ node_modules
 .vinxi
 .tanstack
 dist-server
+# Built inside the image (Dockerfile vite-builder), never copied from a local checkout.
+dist-islands
 .pnpm-store
 # CI incremental caches (tsc/eslint) — never part of the image, and keeping a
 # stray local copy out of the context avoids busting the vite COPY layer.

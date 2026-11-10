@@ -52,7 +52,11 @@ describe('the jelly haze tile is preloaded at high priority', () => {
   // Without it the tile queues behind the module preloads and its first paint
   // (inside the first glass slab) becomes a ~5 s LCP on slow phones.
   it('the root head preloads the tile the stylesheet references', () => {
-    const root = readFileSync(resolve(__dirname, '../../app/routes/__root.tsx'), 'utf8');
+    // The preload lives in lib/root-head.ts, shared by __root.tsx and the island document (B1).
+    const root = readFileSync(resolve(__dirname, '../../lib/root-head.ts'), 'utf8');
+    expect(readFileSync(resolve(__dirname, '../../app/routes/__root.tsx'), 'utf8')).toContain(
+      'ROOT_HAZE_PRELOAD',
+    );
     const css = readCss(resolve(__dirname, '../../app/jelly-material.css'));
     const url = css.match(/--jelly-tile:\s*url\('([^']+)'\)/)?.[1];
     expect(url).toBe('/jelly/haze-tile.webp');

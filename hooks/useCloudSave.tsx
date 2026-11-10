@@ -22,7 +22,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { useSession } from '@/components/Providers';
+import { useSession } from '@/components/session/session-context';
 import type { CloudSave } from '@/lib/game-saves/cloud-save';
 import type { SaveOrigin, SaveSummary } from '@/lib/game-saves/conflict';
 import { SaveConflictDialog } from '@/components/shared/SaveConflictDialog';

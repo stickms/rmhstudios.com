@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { Link } from '@tanstack/react-router';
+import { useSiteNavigate } from '@/hooks/useSiteNavigate';
 import { useTranslation } from 'react-i18next';
 import { reportClientError } from '@/lib/client-errors';
 import { isStaleBuildError, reloadForStaleBuild } from '@/lib/stale-build';
@@ -24,6 +24,9 @@ function GameErrorUI({
   onRetry: () => void;
 }) {
   const { t } = useTranslation('shared');
+  // Not a router `<Link>`: a game can run as an island with no router above it
+  // (redesign audit B1). Inside the site this is still a client navigation.
+  const navigate = useSiteNavigate();
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center gap-6 bg-black p-8 text-center">
       <h2 className="text-2xl font-bold text-white">
@@ -41,12 +44,17 @@ function GameErrorUI({
         >
           {t('try-again', { defaultValue: 'Try Again' })}
         </button>
-        <Link
-          to="/"
+        <a
+          href="/"
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+            e.preventDefault();
+            navigate('/');
+          }}
           className="rounded-site-sm bg-white px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-white/90"
         >
           {t('return-home', { defaultValue: 'Return Home' })}
-        </Link>
+        </a>
       </div>
     </div>
   );
