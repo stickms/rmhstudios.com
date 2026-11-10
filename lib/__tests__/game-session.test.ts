@@ -55,7 +55,9 @@ function walk(dir: string, out: string[] = []): string[] {
 }
 
 function usesHook(id: string): boolean {
-  const dirs = DIRS[id] ?? [`components/${id}`];
+  const dirs = DIRS[id] ?? [
+    existsSync(join(ROOT, 'features', id, 'ui')) ? `features/${id}/ui` : `components/${id}`,
+  ];
   return dirs.some((d) =>
     walk(join(ROOT, d)).some((file) => /\buseGameSession\(/.test(readFileSync(file, 'utf8'))),
   );

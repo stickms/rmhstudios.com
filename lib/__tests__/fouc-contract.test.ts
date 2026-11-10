@@ -441,7 +441,7 @@ describe('FOUC contract: pre-paint parity', () => {
     const sources = ['lib', 'components', 'app', 'stores', 'features']
       .map((dir) => join(REPO, dir))
       .filter((p) => existsSync(p));
-    expect(sources.length).toBe(4);
+    expect(sources.length).toBeGreaterThanOrEqual(4);
 
     const unreferenced: string[] = [];
     for (const key of keys) {

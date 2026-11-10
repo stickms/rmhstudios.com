@@ -25,7 +25,7 @@ export const FeatureManifestSchema = z.object({
   routes: z.array(z.string()),
   /** i18n namespaces this feature loads (must be registered in lib/i18n/config.ts NAMESPACES). */
   namespaces: z.array(z.string()),
-  /** Where the user-facing catalog entry lives, e.g. `lib/game/registry.ts#void-breaker`. */
+  /** Where the user-facing catalog entry lives, e.g. `lib/catalog/games/void-breaker.ts`. */
   catalog: z.string().optional(),
   /** Hidden/unlisted features say so explicitly (audit Appendix 3). */
   listed: z.boolean().default(true),

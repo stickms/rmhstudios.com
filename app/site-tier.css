@@ -87,7 +87,7 @@
 @source not "../components/vega";
 @source not "../components/velum2099";
 @source not "../components/versecraft";
-@source not "../components/void-breaker";
+@source not "../features/void-breaker";
 @source not "../lib/altair";
 @source not "../lib/audio";
 @source not "../lib/balatro";
@@ -135,7 +135,6 @@
 @source not "../lib/vega";
 @source not "../lib/velum2099";
 @source not "../lib/versecraft";
-@source not "../lib/void-breaker";
 
 /* Their route files (top-level routes that render one of the directories above). */
 @source not "./routes/adaptive-intelligence.tsx";

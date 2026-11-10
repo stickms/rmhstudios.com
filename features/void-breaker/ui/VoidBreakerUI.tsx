@@ -7,15 +7,15 @@ import { Play, RotateCcw, Trophy, Volume2, VolumeX, BookOpen, ArrowLeft, Setting
 import {
   META_NODES, nodeCost, nodeLevel, canBuy, isCharUnlocked, isWeaponUnlocked,
   type MetaState, type MetaNodeId,
-} from '@/lib/void-breaker/metaProgression';
-import { CHARACTERS, getCharacter, type CharacterId } from '@/lib/void-breaker/characters';
-import { WEAPONS, getWeapon, type WeaponId } from '@/lib/void-breaker/weapons';
-import { MODIFIERS, combineModifiers, type ModifierId } from '@/lib/void-breaker/modifiers';
+} from '@features/void-breaker/engine/metaProgression';
+import { CHARACTERS, getCharacter, type CharacterId } from '@features/void-breaker/engine/characters';
+import { WEAPONS, getWeapon, type WeaponId } from '@features/void-breaker/engine/weapons';
+import { MODIFIERS, combineModifiers, type ModifierId } from '@features/void-breaker/engine/modifiers';
 import { parseHandicap } from '@/lib/ranked/handicap';
 import { useSession } from '@/components/Providers';
 import { useNavigate } from '@tanstack/react-router';
 import { useQuitGame } from '@/hooks/useQuitGame';
-import type { RunStats } from '@/lib/void-breaker/types';
+import type { RunStats } from '@features/void-breaker/engine/types';
 import { BossRushMenu, BossRushResult } from './BossRush';
 
 type LBEntry = { username: string; highScore: number };

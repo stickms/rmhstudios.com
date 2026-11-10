@@ -329,7 +329,7 @@ const ALLOW = new Set<string>([
   'components/ui/anchored-menu.tsx',
   'components/ui/tabs.tsx',
   'components/velum2099/game/main.ts',
-  'components/void-breaker/VoidBreakerGame.tsx',
+  'features/void-breaker/ui/VoidBreakerGame.tsx',
   'hooks/useCelebration.ts',
   'hooks/useDeviceAttitude.ts',
   'hooks/useLiquidBackground.ts',

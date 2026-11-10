@@ -2,35 +2,35 @@ import { useGameSession } from '@/hooks/useGameSession';
 import { useRef, useEffect, useCallback, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { asset } from '@/lib/storage/asset';
-import { VoidBreakerEngine } from '@/lib/void-breaker/game';
-import { VoidBreakerRenderer } from '@/lib/void-breaker/renderer';
-import { VoidBreakerRenderer3D, type VBRenderer } from '@/lib/void-breaker/renderer3d';
-import { VoidBreakerAudio } from '@/lib/void-breaker/audio';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, MAX_SHARDS, DET_MIN_SHARDS, DASH_COOLDOWN, FOCUS_COOLDOWN } from '@/lib/void-breaker/constants';
-import type { InputState, RunStats, HUDState } from '@/lib/void-breaker/types';
-import type { UpgradeId } from '@/lib/void-breaker/upgrades';
+import { VoidBreakerEngine } from '@features/void-breaker/engine/game';
+import { VoidBreakerRenderer } from '@features/void-breaker/engine/renderer';
+import { VoidBreakerRenderer3D, type VBRenderer } from '@features/void-breaker/engine/renderer3d';
+import { VoidBreakerAudio } from '@features/void-breaker/engine/audio';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, MAX_SHARDS, DET_MIN_SHARDS, DASH_COOLDOWN, FOCUS_COOLDOWN } from '@features/void-breaker/engine/constants';
+import type { InputState, RunStats, HUDState } from '@features/void-breaker/engine/types';
+import type { UpgradeId } from '@features/void-breaker/engine/upgrades';
 import {
   loadMeta, metaBonuses, buyNode, awardCores, emptyMeta,
   isCharUnlocked, canUnlockChar, unlockChar,
   isWeaponUnlocked, canUnlockWeapon, unlockWeapon,
   type MetaState, type MetaNodeId,
-} from '@/lib/void-breaker/metaProgression';
+} from '@features/void-breaker/engine/metaProgression';
 import {
   persistVoidBreakerMeta,
   summarizeVoidBreakerSave,
   voidBreakerSave,
-} from '@/lib/void-breaker/cloud';
+} from '@features/void-breaker/engine/cloud';
 import { useCloudSave } from '@/hooks/useCloudSave';
-import { getCharacter, isCharacterId, type CharacterId } from '@/lib/void-breaker/characters';
-import { getWeapon, isWeaponId, type WeaponId } from '@/lib/void-breaker/weapons';
+import { getCharacter, isCharacterId, type CharacterId } from '@features/void-breaker/engine/characters';
+import { getWeapon, isWeaponId, type WeaponId } from '@features/void-breaker/engine/weapons';
 import { canvasGlowEnabled } from '@/lib/render/canvas2d-fx';
-import { markBossRushUnlocked } from '@/lib/void-breaker/bossRush';
-import { combineModifiers, isModifierId, type ModifierId } from '@/lib/void-breaker/modifiers';
+import { markBossRushUnlocked } from '@features/void-breaker/engine/bossRush';
+import { combineModifiers, isModifierId, type ModifierId } from '@features/void-breaker/engine/modifiers';
 import { parseHandicap } from '@/lib/ranked/handicap';
 import { VoidBreakerUI } from './VoidBreakerUI';
 import { VoidBreakerTouchControls } from './VoidBreakerTouchControls';
-import { saveGame, loadGame, deleteSave, getSaveInfo } from '@/lib/void-breaker/saveSystem';
-import { ABILITY_COOLDOWNS } from '@/lib/void-breaker/abilityProgression';
+import { saveGame, loadGame, deleteSave, getSaveInfo } from '@features/void-breaker/engine/saveSystem';
+import { ABILITY_COOLDOWNS } from '@features/void-breaker/engine/abilityProgression';
 
 /** localStorage that never throws (Safari private mode / blocked site data). */
 const safeStore = {
@@ -160,7 +160,7 @@ export function VoidBreakerGame() {
   }, []);
 
   // Cores, upgrades and unlocks follow the account when there is one. The
-  // mid-run resume above stays local — see `lib/void-breaker/cloud.ts`.
+  // mid-run resume above stays local — see `features/void-breaker/engine/cloud.ts`.
   useEffect(() => {
     if (cloud.status !== 'ready') return;
     setMeta(cloud.save ?? loadMeta());

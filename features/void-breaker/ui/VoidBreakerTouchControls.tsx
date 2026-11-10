@@ -1,6 +1,6 @@
 import type { MutableRefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { InputState } from '@/lib/void-breaker/types';
+import type { InputState } from '@features/void-breaker/engine/types';
 
 interface Props {
   inputRef: MutableRefObject<InputState>;

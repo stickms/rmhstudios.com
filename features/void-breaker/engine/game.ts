@@ -141,7 +141,7 @@ export class VoidBreakerEngine {
   particles: Particle[] = [];
 
   /**
-   * Per-pool cursor for free-slot acquisition. See lib/void-breaker/pool.ts for
+   * Per-pool cursor for free-slot acquisition. See features/void-breaker/engine/pool.ts for
    * why searches resume instead of restarting at index 0.
    */
   private poolCursors = { projectiles: 0, shards: 0, particles: 0, heartPickups: 0 };

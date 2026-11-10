@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Skull, Lock, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { BOSS_RUSH_GAME_ID, isBossRushUnlocked } from '@/lib/void-breaker/bossRush';
-import type { RunStats } from '@/lib/void-breaker/types';
+import { BOSS_RUSH_GAME_ID, isBossRushUnlocked } from '@features/void-breaker/engine/bossRush';
+import type { RunStats } from '@features/void-breaker/engine/types';
 
 type Row = { rank: number; username: string; score: number; progress: number | null };
 
