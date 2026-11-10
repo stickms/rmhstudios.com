@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { CalendarClock, Circle } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { buildMeta, buildCanonical } from '@/lib/seo';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { scheduleQuery } from '@/lib/schedule/schedule.queries';
 import type { SlotKind } from '@/lib/schedule/slots';
 
 /**
@@ -40,6 +42,7 @@ export const Route = createFileRoute('/_site/schedule')({
     }),
     links: [buildCanonical('/schedule')],
   }),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, scheduleQuery<GridView>()),
   component: SchedulePage,
 });
 
@@ -58,15 +61,9 @@ const KIND_TINT: Record<string, string> = {
 
 function SchedulePage() {
   const { t, i18n } = useTranslation('site');
-  const [grid, setGrid] = useState<GridView | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    fetch('/api/schedule?days=7')
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((d: GridView) => setGrid(d))
-      .catch(() => setFailed(true));
-  }, []);
+  const query = useQuery(scheduleQuery<GridView>());
+  const grid: GridView | null = query.data ?? null;
+  const failed = query.isError;
 
   const time = (iso: string) =>
     new Date(iso).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });

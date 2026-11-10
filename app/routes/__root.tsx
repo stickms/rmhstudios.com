@@ -2,7 +2,7 @@
 import {
   Outlet,
   Scripts,
-  createRootRoute,
+  createRootRouteWithContext,
   useRouter,
   useRouterState,
   useNavigate,
@@ -13,6 +13,7 @@ import { getRequest } from '@tanstack/react-start/server';
 // NOT from '@/lib/discord-sdk' — that module imports @discord/embedded-app-sdk,
 // which would put 135 KB of Activity SDK into the entry chunk of every page.
 import { isDiscordActivity } from '@/lib/discord-activity';
+import type { QueryClient } from '@tanstack/react-query';
 import { Providers } from '@/components/Providers';
 import { PREPAINT_BODY_SCRIPT, prepaintHeadScripts } from '@/lib/prepaint/config';
 import { GlassFilter } from '@/components/ui/glass-filter';
@@ -254,7 +255,7 @@ function isDiscordRoute(pathname: string): boolean {
   return pathname.startsWith('/discord/') || pathname === '/discord';
 }
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   // perf audit §4.1: without this the root loader default-stales at 0ms and
   // refires on EVERY client navigation — two server-fn round trips (a full
   // Better Auth session resolution + re-serializing the locale payload) per

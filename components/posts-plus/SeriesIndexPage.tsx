@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -13,7 +14,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { MAX_SERIES_TITLE } from '@/lib/posts-plus/constants';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
-import { createSeriesApi, listSeriesApi } from '@/lib/posts-plus/series.contract';
+import { createSeriesApi } from '@/lib/posts-plus/series.contract';
+import { seriesQuery } from '@/lib/posts-plus/series.queries';
 
 interface Summary {
   id: string;
@@ -28,22 +30,23 @@ interface Summary {
 export function SeriesIndexPage() {
   const { t } = useTranslation('f-posts-plus');
   const { data: session, isPending } = useSession();
-  const [data, setData] = useState<{ mine: Summary[]; following: Summary[] } | null>(null);
   const [title, setTitle] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      setData(await api(listSeriesApi));
-    } catch {
-      setData({ mine: [], following: [] });
+  // Seeded by the /series loader; fetched here only when the loader had no session to use.
+  const list = useQuery({ ...seriesQuery(), enabled: !!session, retry: false });
+  const data: { mine: Summary[]; following: Summary[] } | null = list.isError
+    ? { mine: [], following: [] }
+    : (list.data ?? null);
+  const loadFailed = list.isError;
+  useEffect(() => {
+    if (loadFailed) {
       toast.error(t('series-load-failed', { defaultValue: 'Could not load the series' }));
     }
-  }, [t]);
-
-  useEffect(() => {
-    if (session) void load();
-  }, [session, load]);
+  }, [loadFailed, t]);
+  const load = async () => {
+    await list.refetch();
+  };
 
   const create = async () => {
     setBusy(true);
