@@ -75,8 +75,8 @@ flowchart LR
       BOX["rmhbox :7676<br/>party games"]
       TUBE["rmhtube :7003<br/>watch-together"]
       JOBS["jobs<br/>pg-boss queues"]
-      LAD["ladder-worker<br/>cron"]
-      HOM["homes-worker<br/>cron"]
+      LAD["ladder-worker<br/>pg-boss consumer"]
+      HOM["homes-worker<br/>pg-boss consumer"]
     end
 
     subgraph Go["Go tier (Bazel)"]

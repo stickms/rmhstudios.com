@@ -292,9 +292,6 @@ importers:
       nanoid:
         specifier: ^6.0.2
         version: 6.0.2
-      node-cron:
-        specifier: ^4.6.0
-        version: 4.6.0
       node-html-parser:
         specifier: ^9.0.6
         version: 9.0.6
@@ -6584,10 +6581,6 @@ packages:
     resolution: {integrity: sha512-54gANPi62O8rfMvepiJUVuIzEIinYfpeHbebywlLxvVTgIYXDwSvpaU9Id+0sJOBjBx0wC1/CVYXJkH7SY+l0g==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
-
-  node-cron@4.6.0:
-    resolution: {integrity: sha512-Si/bzYiKRHOB8/a99T2+SDGN582ONDMSTlJr5oCkT6GtnqPjZ2s10eoQRYkW9ZHwjVxONL+W8Fb+qR0AHMQsdg==}
-    engines: {node: '>=20'}
 
   node-html-parser@9.0.6:
     resolution: {integrity: sha512-q3ETJ2gU+VlERyYbiJ5JQ6+mMVV1Bc6mZQ7MdJ30moq+h3oN0kQGj3rWDORaSX1SOLSkPbY/bN+sBzDlliVOBA==}
@@ -14401,8 +14394,6 @@ snapshots:
       srvx: 1.0.5
       unenv: 2.0.0-rc.24
       unstorage: 2.0.0-alpha.10
-
-  node-cron@4.6.0: {}
 
   node-html-parser@9.0.6:
     dependencies:

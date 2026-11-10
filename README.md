@@ -58,8 +58,8 @@ the status dashboard, and the asset streamer. All container ports bind to
 | `socket` | 7001 | Games realtime hub (Socket.IO) |
 | `rmhbox` | 7676 | Party-game lobby hub (Socket.IO) |
 | `rmhtube` | 7003 | Watch-together hub (Socket.IO) |
-| `ladder-worker` | — | RMHLadder job-discovery cron (`node-cron`) |
-| `homes-worker` | — | RMHHomes listings-scraper cron (`node-cron`) |
+| `ladder-worker` | — | RMHLadder job-discovery cron (pg-boss queue `ladder.pipeline`) |
+| `homes-worker` | — | RMHHomes listings-scraper cron (pg-boss queue `homes.scrape`) |
 | `jobs` | — | Durable async backbone (pg-boss): progression, event reminders, weekly digest |
 
 **Go services** (`go-services/`)

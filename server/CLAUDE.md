@@ -88,13 +88,19 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
 - **`rmhtube/`** — watch-together hub, port 7003, path `/rmhtube-ws/`.
   Hard auth. Leader-authoritative sync (2s heartbeat), media queue, chat.
   **Restores rooms from DB on boot** (unlike rmhbox).
-- **`ladder-worker/`** — RMHLadder job-discovery cron. No port. `node-cron`
-  schedule `LADDER_CRON_SCHEDULE` (default every 12h) around
-  `lib/rmhladder/pipeline`. Self-bootstraps an empty DB on startup
-  (seed → probe sources → run pipeline). Manual triggers:
-  `pnpm ladder:seed | ladder:probe | ladder:run`.
-- **`homes-worker/`** — RMHHomes listings-scraper cron. No port. `node-cron`
-  schedule `HOMES_CRON_SCHEDULE` (default every 6h). Aggregates public housing
+- **`ladder-worker/`** — RMHLadder job-discovery pipeline consumer. No port. The
+  schedule is a **pg-boss cron** (queue `ladder.pipeline`, `exclusive`, UTC,
+  `LADDER_CRON_SCHEDULE`, default every 12h): the worker registers the queue +
+  schedule through `lib/jobs/scheduled-consumer.server.ts` and consumes it, the
+  `jobs` worker's timekeeper fires it (D4: there is no `node-cron` anywhere). The
+  DB worker-lease stays as a second guard against a redelivered run. Self-bootstraps
+  an empty DB on startup (seed → probe sources → queue a run if empty/stale). Manual
+  triggers: `pnpm ladder:seed | ladder:probe | ladder:run`. The daily data-lifecycle
+  cleanup that used to live here is the `ops.data-cleanup` cron in `jobs`
+  (`lib/cleanup-job.server.ts`).
+- **`homes-worker/`** — RMHHomes listings-scraper consumer. No port. pg-boss cron
+  (queue `homes.scrape`, `exclusive`, UTC, `HOMES_CRON_SCHEDULE`, default every 6h),
+  same `scheduled-consumer` pattern as the ladder worker. Aggregates public housing
   feeds (Craigslist/RSS) into `EXTERNAL` `HomeListing` rows and notifies
   watchers. Self-bootstraps default sources + a first run on an empty DB. Built
   by `pnpm build` and run as its own compose service.
@@ -118,7 +124,10 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   samples the DeepSeek account balance into `deepseek_balance_snapshot` for
   `/admin/deepseek` and prunes rows older than 400 days; it skips silently when
   `DEEPSEEK_API_KEY` is unset.
-  Owns pg-boss queue maintenance/scheduling (the web tier is send-only).
+  `ops.data-cleanup` (daily 04:00 UTC session/verification/notification/comment-view purge, `exclusive`, no retries).
+  Owns pg-boss queue maintenance/scheduling (the web tier is send-only). **It is the only scheduler (D4):** background
+  work is a pg-boss cron here, or a queue its own worker consumes (ladder, homes); `lib/__tests__/scheduler-ratchet.test.ts`
+  allowlists the per-process `setInterval`s that remain (SSE keepalives, cache GC, hub game ticks) and fails on a new one.
   Degrades safely: with no `DATABASE_URL` it exits and the web tier runs the
   work inline. Logic lives in `lib/jobs/` + `lib/social/engagement-effects.server.ts`.
   `jobs/index.ts` is a boot sequence plus one `REGISTRATIONS` table (a new queue
@@ -270,7 +279,9 @@ on boot. Also confirm:
       event allowlist, so a new event needs an entry or it is silently dropped.
 - [ ] **Auth strictness matches the hub** (socket-server soft; rmhbox / rmhtube
       hard), and gameplay never blocks on a leaderboard/match write.
-- [ ] **No new cron in the web tier** — background work belongs in a worker
-      process or the Go supervisor.
+- [ ] **No new cron or `setInterval` sweep** — periodic background work is a
+      pg-boss cron registered in `jobs/index.ts` (`exclusive` where reentrancy
+      matters, a deliberate `retryLimit`, ticks that catch their own errors).
+      `scheduler-ratchet.test.ts` fails on a new server-side `setInterval`.
 - [ ] The service still starts: `pnpm dev` boots all six workers/hubs, and a
       broken import surfaces immediately there.
