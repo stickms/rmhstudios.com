@@ -3,8 +3,8 @@
  * walking the real route tree and the product catalogs:
  *
  *   app/routes/**            → every page route and every API route
- *   lib/games.ts             → the game catalog
- *   lib/apps.ts              → the app catalog
+ *   lib/catalog              → the game catalog
+ *   lib/catalog              → the app catalog
  *
  * The point is completeness. Hand-written docs explain *why* something works
  * the way it does; this generator guarantees that nothing on the site is
@@ -19,8 +19,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { games } from '../lib/games';
-import { apps } from '../lib/apps';
+import { games, apps } from '../lib/catalog';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ROUTES = join(ROOT, 'app', 'routes');
@@ -32,7 +31,7 @@ const stale: string[] = [];
 const GENERATED_HEADER = [
   '<!--',
   '  GENERATED FILE — do not edit by hand.',
-  '  Source: app/routes/, lib/games.ts, lib/apps.ts.',
+  '  Source: app/routes/, lib/catalog.',
   '  Regenerate with `pnpm docs:site`.',
   '-->',
   '',
@@ -476,7 +475,7 @@ emit(
   renderCatalog(
     'Games',
     games,
-    'lib/games.ts',
+    'lib/catalog',
     'Every game on the platform — browser games of every shape: real-time multiplayer, 3D, puzzle, casino, idle and narrative.',
   ),
 );
@@ -485,7 +484,7 @@ emit(
   renderCatalog(
     'Apps',
     apps,
-    'lib/apps.ts',
+    'lib/catalog',
     'The full applications that sit alongside the games — synced media, learning and productivity tools, and the creator surfaces.',
   ),
 );

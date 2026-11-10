@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import { LOCALES } from '@/lib/i18n/config';
 import type { NoticeSegment } from '@/lib/ops/schema';
 import { send, useInsight } from './api';

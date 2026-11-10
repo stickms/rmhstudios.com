@@ -37,8 +37,7 @@
  * `lib/__tests__/pwa-protocol-target.test.ts`.
  */
 
-import { apps } from '@/lib/apps';
-import { games } from '@/lib/games';
+import { apps, games } from '@/lib/catalog';
 
 /** The custom scheme, as `URL#protocol` reports it. Must start with `web+`. */
 export const PROTOCOL_SCHEME = 'web+rmh:';

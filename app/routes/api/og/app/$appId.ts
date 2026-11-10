@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { apps } from '@/lib/apps';
+import { apps } from '@/lib/catalog';
 import { renderPageCard } from '@/lib/og/page-card.server';
 
 /**

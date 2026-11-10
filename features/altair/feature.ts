@@ -22,6 +22,6 @@ export default defineFeature({
     'app/routes/api/altair/score.ts',
   ],
   namespaces: ['c-altair', 'r-altair'],
-  catalog: 'lib/catalog/games/altair.ts',
+  catalog: 'features/altair/catalog.ts',
   listed: true,
 });

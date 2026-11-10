@@ -10,6 +10,7 @@ six roots (`lib/<x>`, `components/<x>`, `server/socket-server/handlers/<x>.ts`, 
 ```
 features/<id>/
   feature.ts     manifest: defineFeature({ id, kind, basePath, delivery, routes, namespaces, catalog, listed })
+  catalog.ts     the game/app card (`GameInfo`/`AppInfo`, incl. `scoring` rules); composed into lib/catalog
   engine/        non-React logic (was lib/<id>/) — must not import components or features/<id>/ui
   ui/            React components (was components/<id>/)
   net/           client realtime/API wrappers, if split out of engine
@@ -24,6 +25,12 @@ Rules:
 - **Manifest.** `feature.ts` default-exports `defineFeature({...})` from `@/lib/core/feature`.
   It imports zod, so client code never imports a manifest; `lib/__tests__/feature-manifests.test.ts`
   checks every manifest (id = folder, route files exist, namespaces registered in `lib/i18n/config.ts`).
+- **Catalog.** A feature with a card owns it: `features/<id>/catalog.ts` default-exports the entry and
+  the manifest's `catalog` names that path. `lib/catalog/index.ts` imports it in its static feature list
+  (no generator: the list is checked in both directions by `feature-manifests.test.ts` and `catalog.test.ts`,
+  and `catalog-contract.test.ts` snapshots the composed catalog). Moving a feature that has a card in
+  `lib/catalog/{games,apps}/` means moving that file, repointing `catalog`, and swapping its import line.
+  Scoring rules ride on the entry (`scoring`); `lib/game/registry.ts` derives from them.
 - **Server handlers** live in `features/<id>/server/` and are registered by the hub's
   `server/socket-server/features.ts` list (order = registration order). A feature whose handlers sat between other hand-written calls sets `slot` and the hub calls `registerFeatureHandlers(io, socket, '<slot>')` at that spot. The esbuild
   server bundle follows the imports; the Dockerfile `server-builder` stage copies `features/`.

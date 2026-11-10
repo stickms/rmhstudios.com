@@ -55,6 +55,6 @@ export default defineFeature({
     'app/routes/slice-it/player.$handle.tsx',
   ],
   namespaces: ['r-slice-it'],
-  catalog: 'lib/catalog/games/slice-it.ts',
+  catalog: 'features/slice-it/catalog.ts',
   listed: true,
 });

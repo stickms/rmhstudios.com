@@ -29,7 +29,7 @@ import { useShortcuts } from '@/lib/shortcuts/useShortcuts';
  * single-player run (or omit it) and still get the wake lock and restart.
  */
 export interface GameSessionOptions {
-  /** Catalog id (`lib/catalog/games/<id>.ts`) — scopes the shortcut. */
+  /** Catalog id (`lib/catalog`) — scopes the shortcut. */
   id: string;
   /** True while a run is in progress (not on menus or results). */
   active: boolean;

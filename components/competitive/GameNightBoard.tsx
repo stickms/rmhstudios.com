@@ -10,7 +10,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Gamepad2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import { lobbyLink, lobbyPathLink } from '@/lib/lobby-link';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';

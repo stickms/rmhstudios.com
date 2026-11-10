@@ -18,7 +18,7 @@
  * and the "games with a bespoke visual identity" note in §12) — Temple of Joy is
  * SUPPOSED to be candlelit, and forcing it onto site tokens would make it look
  * like a different product, not a more consistent one. This is the same split
- * `lib/games.ts` / `lib/apps.ts` publish; it is duplicated here rather than
+ * `lib/catalog` publishes; it is duplicated here rather than
  * imported because those modules pull in far more than a static scan needs.
  *
  * `rmhladder`, `rmhcalculator` and `homes` are NOT listed: they are `usesSiteTheme`

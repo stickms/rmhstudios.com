@@ -10,8 +10,10 @@ A single web platform: a social feed (RMHarks), 18 browser games (several
 multiplayer/3D), 12 full apps (RMHTube, RMHMusic, RMHType, RMHStudy, RMHCode,
 RMHLadder, …), a blog/news/library system, a coin economy with Stripe
 memberships, and a scoped developer API — served by a React SSR tier with Node
-realtime hubs and a Go worker fleet behind it. The catalogs in `lib/games.ts`
-and `lib/apps.ts` are the single source of truth for what exists.
+realtime hubs and a Go worker fleet behind it. The catalog in `lib/catalog`
+(`games` / `apps`) is the single source of truth for what exists: an entry lives in
+`features/<id>/catalog.ts` once its game or app has a feature folder, otherwise under
+`lib/catalog/{games,apps}/`.
 
 ## Stack of record
 

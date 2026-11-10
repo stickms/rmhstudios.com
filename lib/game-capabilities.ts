@@ -1,5 +1,5 @@
 /**
- * What each game in `lib/games.ts` actually *is*, as opposed to how it is sold.
+ * What each game in `lib/catalog` actually *is*, as opposed to how it is sold.
  *
  * `GameInfo` is a marketing card — title, blurb, gradient, icon, free-text
  * `tags`. Nothing in it answers the questions a player asks before spending a

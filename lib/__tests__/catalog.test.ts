@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import * as lucide from 'lucide-react';
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 import { appEntrySchema, gameEntrySchema } from '@/lib/catalog/types';
 
 /**
@@ -31,12 +30,26 @@ import { appEntrySchema, gameEntrySchema } from '@/lib/catalog/types';
  */
 
 const CATALOG_DIR = join(process.cwd(), 'lib/catalog');
+const FEATURES_DIR = join(process.cwd(), 'features');
 
+/** Entry ids that a feature folder owns (`features/<id>/catalog.ts`), by catalog kind. */
+function featureEntryIds(kind: 'games' | 'apps'): string[] {
+  return readdirSync(FEATURES_DIR, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && existsSync(join(FEATURES_DIR, e.name, 'catalog.ts')))
+    .flatMap((e) => {
+      const src = readFileSync(join(FEATURES_DIR, e.name, 'catalog.ts'), 'utf8');
+      const isApp = src.includes('AppInfo');
+      const id = /^\s*id: '([^']+)'/m.exec(src)?.[1];
+      return (kind === 'apps') === isApp && id ? [id] : [];
+    });
+}
+
+/** Hand-kept entry files under lib/catalog/<kind>/ plus the entries features own. */
 function entryFileIds(kind: 'games' | 'apps'): string[] {
-  return readdirSync(join(CATALOG_DIR, kind))
+  const handKept = readdirSync(join(CATALOG_DIR, kind))
     .filter((f) => f.endsWith('.ts'))
-    .map((f) => f.replace(/\.ts$/, ''))
-    .sort();
+    .map((f) => f.replace(/\.ts$/, ''));
+  return [...handKept, ...featureEntryIds(kind)].sort();
 }
 
 describe('catalog barrel', () => {
@@ -44,9 +57,10 @@ describe('catalog barrel', () => {
     ['games', () => games, () => entryFileIds('games')],
     ['apps', () => apps, () => entryFileIds('apps')],
   ] as const)('%s: every entry file is imported by the barrel', (_kind, list, files) => {
-    // A file added under lib/catalog/<kind>/ without a matching import line in
-    // lib/catalog/index.ts compiles, ships, and does nothing. The filename is
-    // held equal to the entry id so this check is possible at all.
+    // A file added under lib/catalog/<kind>/ (or a features/<id>/catalog.ts)
+    // without a matching import line in lib/catalog/index.ts compiles, ships,
+    // and does nothing. A hand-kept filename is held equal to the entry id so
+    // this check is possible at all.
     expect(
       list()
         .map((e) => e.id)

@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 import { GAME_CAPABILITIES, playabilityFor, type GameCapabilities } from '@/lib/game-capabilities';
 import { SHARED_SAVE_GAMES } from '@/lib/game-saves/registry';
 import { WAGER_ELIGIBLE_GAMES } from '@/lib/wager/eligible-games';

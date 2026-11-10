@@ -9,8 +9,7 @@
  * Pure/static — safe to import on both server and client.
  */
 
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 
 export type CuratedKind = 'game' | 'app';
 

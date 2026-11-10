@@ -13,8 +13,7 @@
  * the catalog gives its page a correct head for free.
  */
 
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 import { buildCanonical, buildMeta, ogCardPath, SITE_URL } from '@/lib/seo';
 import { breadcrumbSchema, jsonLdScript, videoGameSchema } from '@/lib/schema';
 import { preloadFont } from '@/lib/fonts/self-hosted';

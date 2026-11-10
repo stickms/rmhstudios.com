@@ -1,6 +1,6 @@
 <!--
   GENERATED FILE — do not edit by hand.
-  Source: app/routes/, lib/games.ts, lib/apps.ts.
+  Source: app/routes/, lib/catalog.
   Regenerate with `pnpm docs:site`.
 -->
 

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 import { GAME_SCORE_RULES } from '@/lib/game/registry';
 
 /**

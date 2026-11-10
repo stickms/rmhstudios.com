@@ -5,7 +5,7 @@
  */
 import { aiChat, isAITextConfigured } from '@/lib/ai/text.server';
 import { SAFETY_FRAME, asData } from '@/lib/ai/prompts';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 
 export const aiAvailable = isAITextConfigured;
 

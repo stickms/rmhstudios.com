@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import { countPublishedGuides, getRatingAgg } from '@/lib/games/meta.server';
 import { renderPageCard } from '@/lib/og/page-card.server';
 
