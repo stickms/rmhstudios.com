@@ -26,6 +26,9 @@ import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { bulkKindCopy, bulkStatusCopy } from '@/components/trash/copy';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { cancelBulkOperationApi, listBulkOperationsApi } from '@/lib/bulk/bulk.contract';
 import {
   BULK_KINDS,
   bulkProgress,
@@ -87,10 +90,13 @@ export function BulkCleanupPanel() {
   const operations = useQuery({
     queryKey: ['bulk-operations'],
     queryFn: async (): Promise<{ operations: BulkOperationView[] }> => {
-      const res = await fetch('/api/bulk', { credentials: 'include' });
-      const body = (await res.json().catch(() => ({}))) as UpgradeBody;
-      if (!res.ok) throw new BulkError(res.status, body);
-      return body as unknown as { operations: BulkOperationView[] };
+      try {
+        return await api(listBulkOperationsApi);
+      } catch (e) {
+        // A 402 carries the membership upgrade envelope the UI upsells from.
+        if (e instanceof HttpError) throw new BulkError(e.status, (e.body ?? {}) as UpgradeBody);
+        throw e;
+      }
     },
     // Poll only while something is moving. An idle page makes no requests.
     refetchInterval: (q) =>
@@ -178,11 +184,7 @@ export function BulkCleanupPanel() {
 
   const cancelMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/bulk/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('cancel failed');
+      await api(cancelBulkOperationApi, { params: { id } });
     },
     onSuccess: () => {
       toast.success(t('bulk-cancelled-toast', { defaultValue: 'Stopping…' }));

@@ -14,6 +14,9 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import type { EventDTO, EventVenueKindValue } from '@/lib/events.server';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createEventApi } from '@/lib/events.contract';
 import {
   NO_RECURRENCE,
   RecurrenceFields,
@@ -110,11 +113,8 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
     const endIso = endsAt ? new Date(endsAt).toISOString() : undefined;
     setSubmitting(true);
     try {
-      const res = await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
+      const data = await api(createEventApi, {
+        body: {
           title: title.trim(),
           description: description.trim() || undefined,
           communityId: communityId ?? undefined,
@@ -124,19 +124,16 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
           venueRef: venueRef.trim() || undefined,
           capacity: capacity ? Number(capacity) : undefined,
           recurrence: buildRecurrence(recurrence),
-        }),
+        },
       });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.event) {
-        toast.success(t('event-created', { defaultValue: 'Event created!' }));
-        onCreated?.(data.event as EventDTO);
-        reset();
-        onOpenChange(false);
-      } else {
-        toast.error(
-          data.error || t('event-create-error', { defaultValue: 'Could not create event' }),
-        );
-      }
+      toast.success(t('event-created', { defaultValue: 'Event created!' }));
+      onCreated?.(data.event);
+      reset();
+      onOpenChange(false);
+    } catch (e) {
+      toast.error(
+        serverError(e) || t('event-create-error', { defaultValue: 'Could not create event' }),
+      );
     } finally {
       setSubmitting(false);
     }

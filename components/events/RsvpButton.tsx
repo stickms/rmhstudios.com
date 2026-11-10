@@ -4,6 +4,9 @@ import { Check, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { JellyGroup } from '@/components/ui/jelly-group';
 import type { RsvpStatus, RsvpResult } from '@/lib/events.server';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { rsvpEventApi, withdrawRsvpApi } from '@/lib/events.contract';
 
 interface RsvpButtonProps {
   eventId: string;
@@ -38,26 +41,18 @@ export function RsvpButton({
     setBusy(true);
     try {
       const withdrawing = status === next;
-      const res = withdrawing
-        ? await fetch(`/api/events/${eventId}/rsvp`, { method: 'DELETE', credentials: 'include' })
-        : await fetch(`/api/events/${eventId}/rsvp`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ status: next }),
-          });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        onChange?.(data as RsvpResult);
-      } else if (res.status === 401) {
+      const result = withdrawing
+        ? await api(withdrawRsvpApi, { params: { id: eventId }, query: {} })
+        : await api(rsvpEventApi, { params: { id: eventId }, body: { status: next } });
+      onChange?.(result);
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 401) {
         toast.error(t('sign-in-to-rsvp', { defaultValue: 'Sign in to RSVP.' }));
-      } else if (res.status === 409) {
-        toast.error(data.error || t('event-full', { defaultValue: 'This event is full.' }));
+      } else if (e instanceof HttpError && e.status === 409) {
+        toast.error(serverError(e) || t('event-full', { defaultValue: 'This event is full.' }));
       } else {
-        toast.error(data.error || t('rsvp-error', { defaultValue: 'Could not update RSVP.' }));
+        toast.error(serverError(e) || t('rsvp-error', { defaultValue: 'Could not update RSVP.' }));
       }
-    } catch {
-      toast.error(t('rsvp-error', { defaultValue: 'Could not update RSVP.' }));
     } finally {
       setBusy(false);
     }

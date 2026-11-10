@@ -6,31 +6,37 @@
 // =============================================================================
 
 import { singleFlight } from '@/lib/shared/realtime/single-flight';
-import { io, Socket } from 'socket.io-client';
-import { ensureTrailingSlash } from '@/lib/url';
+import type { Socket } from 'socket.io-client';
+import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
+import type { RealtimeStatus } from '@/lib/shared/realtime/types';
 import { authClient } from '@/lib/auth-client';
 import { useAltairMultiplayerStore } from './store';
 import { C2S, S2C } from './events';
 
 // ── Module-Level Socket Reference ────────────────────────────────
 
-let socket: Socket | null = null;
+let client: RealtimeClient | null = null;
+
+/** The shared client's six states, folded onto the four the Altair store knows. */
+function toStoreStatus(status: RealtimeStatus): AltairMultiplayerStatus {
+  if (status === 'connected' || status === 'error') return status;
+  // `reconnecting` stays `connecting`: the lobby UI has no separate state for it.
+  return status === 'connecting' || status === 'reconnecting' ? 'connecting' : 'disconnected';
+}
+type AltairMultiplayerStatus = ReturnType<typeof useAltairMultiplayerStore.getState>['connectionStatus'];
 
 // ── Connection ───────────────────────────────────────────────────
 
 /**
  * Connect to the Altair multiplayer WebSocket server.
- * Gets the current auth session token, creates a Socket.io connection,
- * and sets up event listeners for state synchronization.
+ * Gets the current auth session token, creates a Socket.io connection through the
+ * shared realtime client, and sets up event listeners for state synchronization.
  */
 async function connectToAltairInner(): Promise<Socket> {
-  if (socket?.connected) return socket;
-
-  // Tear down stale socket
-  if (socket) {
-    socket.removeAllListeners();
-    socket.disconnect();
-    socket = null;
+  if (client) {
+    // An existing client re-joins on connect; a second call only nudges a stalled one.
+    client.reconnectNow();
+    return client.socket;
   }
 
   const store = useAltairMultiplayerStore.getState();
@@ -43,50 +49,30 @@ async function connectToAltairInner(): Promise<Socket> {
     throw new Error('Not authenticated');
   }
 
-  const serverUrl = ensureTrailingSlash(import.meta.env.VITE_SOCKET_URL);
-
-  socket = io(serverUrl, {
+  client = createRealtimeClient({
+    name: 'Altair',
+    url: import.meta.env.VITE_SOCKET_URL,
     path: '/socket/',
-    auth: (cb) => {
-      authClient
-        .getSession()
-        .then((s) => cb({ token: s?.data?.session?.token ?? token }))
-        .catch(() => cb({ token }));
+    auth: async () => {
+      // Per attempt; the token from connect time stands in if the session read fails.
+      const current = await authClient.getSession().catch(() => null);
+      return { token: current?.data?.session?.token ?? token };
     },
-    reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 10000,
-    timeout: 10000,
+    onStatus: (status) => useAltairMultiplayerStore.getState().setConnectionStatus(toStoreStatus(status)),
+    onConnect: (socket, { isReconnect }) => {
+      // A RE-connect while we hold a lobby: re-announce ourselves. Inside the hub's 10 s grace
+      // this is a no-op reconnect; after it expired the hub already removed us, and this is how a
+      // returning guest rejoins the running match (as their old class).
+      const lobbyId = useAltairMultiplayerStore.getState().lobby?.lobbyId;
+      if (isReconnect && lobbyId) socket.emit(C2S.LOBBY_JOIN, { lobbyId });
+    },
+    bind: bindHandlers,
   });
 
-  // ── Connection lifecycle ──────────────────────────────────────
+  return client.socket;
+}
 
-  let connectedBefore = false;
-  socket.on('connect', () => {
-    const st = useAltairMultiplayerStore.getState();
-    st.setConnectionStatus('connected');
-    // A RE-connect while we hold a lobby: re-announce ourselves. Inside the hub's 10 s grace
-    // this is a no-op reconnect; after it expired the hub already removed us, and this is how a
-    // returning guest rejoins the running match (as their old class).
-    if (connectedBefore && st.lobby?.lobbyId) socket?.emit(C2S.LOBBY_JOIN, { lobbyId: st.lobby.lobbyId });
-    connectedBefore = true;
-  });
-
-  socket.on('disconnect', (reason) => {
-    if (reason === 'io server disconnect' || reason === 'io client disconnect') {
-      useAltairMultiplayerStore.getState().setConnectionStatus('disconnected');
-    } else {
-      useAltairMultiplayerStore.getState().setConnectionStatus('connecting');
-    }
-  });
-
-  socket.on('connect_error', (err) => {
-    if (err.message?.includes('auth') || err.message?.includes('token') || err.message?.includes('unauthorized')) {
-      useAltairMultiplayerStore.getState().setConnectionStatus('error');
-    }
-  });
-
+function bindHandlers(socket: Socket): void {
   // ── Lobby state sync ──────────────────────────────────────────
 
   socket.on(S2C.LOBBY_STATE_SNAPSHOT, (fullState) => {
@@ -155,36 +141,22 @@ async function connectToAltairInner(): Promise<Socket> {
   socket.on(S2C.ERROR, (error: { code?: string; message?: string }) => {
     console.error(`[Altair] Server error [${error?.code}]: ${error?.message}`);
   });
-
-  // ── Visibility change (tab return) ────────────────────────────
-
-  if (typeof document !== 'undefined') {
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && socket && !socket.connected) {
-        socket.connect();
-      }
-    });
-  }
-
-  return socket;
 }
+
 
 /**
  * Get the current socket instance (may be null if not connected).
  */
 export function getSocket(): Socket | null {
-  return socket;
+  return client?.socket ?? null;
 }
 
 /**
  * Disconnect from the Altair multiplayer server.
  */
 export function disconnectFromAltair(): void {
-  if (socket) {
-    socket.removeAllListeners();
-    socket.disconnect();
-    socket = null;
-  }
+  client?.destroy();
+  client = null;
   useAltairMultiplayerStore.getState().reset();
 }
 
@@ -192,9 +164,7 @@ export function disconnectFromAltair(): void {
  * Emit an event to the server.
  */
 export function emit(event: string, data?: unknown): void {
-  if (socket?.connected) {
-    socket.emit(event, data);
-  }
+  client?.emit(event, data);
 }
 
 /** Concurrent callers share one in-flight connect (see single-flight.ts). */

@@ -1,13 +1,14 @@
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/components/Providers';
+import { api } from '@/lib/contract/client';
+import { getExperimentAssignmentsApi } from '@/lib/experiments.contract';
 
 export type ExperimentVariant = 'control' | 'test';
 
 async function fetchAssignments(): Promise<Record<string, ExperimentVariant>> {
-  const res = await fetch('/api/experiments', { credentials: 'include' });
-  if (!res.ok) return {};
-  return ((await res.json()) as { assignments: Record<string, ExperimentVariant> }).assignments;
+  const res = await api(getExperimentAssignmentsApi).catch(() => null);
+  return res?.assignments ?? {};
 }
 
 const exposed = new Set<string>();

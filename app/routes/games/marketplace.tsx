@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { browse } from '@/lib/market/market.server';
-import type { MarketListingView } from '@/components/market/ListingCard';
+import type { MarketListingView } from '@/lib/market/market.contract';
 import { MarketplacePage } from '@/components/steam/MarketplacePage';
 import { noindexHead } from '@/lib/seo';
 

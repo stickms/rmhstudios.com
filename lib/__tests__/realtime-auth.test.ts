@@ -34,15 +34,21 @@ const CLIENTS = [
   'lib/tf2-game/net/client.ts',
   'features/balatro/engine/mp/hub-client.ts',
   'features/hearthworks/engine/net/hub-client-core.ts',
+  'features/casino/engine/table-client.ts',
+  'features/altair/engine/multiplayer/socket.ts',
+  'features/synapse-storm/engine/multiplayerClient.ts',
+  'features/dream-rift/engine/net/connection.ts',
+  'components/spaces/SpaceRoom.tsx',
 ];
 
 /**
  * The `auth:` property of a `createRealtimeClient({ … })` call, up to the next
- * top-level option. Crude, but the call sites are all written the same way and
- * a regex that misses would fail loudly below rather than pass quietly.
+ * closing brace at the start of a line, at any indent. Crude, but the call sites
+ * are all written the same way and a regex that misses would fail loudly below
+ * rather than pass quietly.
  */
 function authResolvers(source: string): string[] {
-  return [...source.matchAll(/\bauth:\s*(?:async\s*)?\(\)\s*=>\s*\{([\s\S]*?)\n {4}\},/g)].map(
+  return [...source.matchAll(/\bauth:\s*(?:async\s*)?\(\)\s*=>\s*\{([\s\S]*?)\n[ \t]*\},/g)].map(
     (m) => m[1],
   );
 }

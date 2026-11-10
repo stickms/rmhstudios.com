@@ -8,6 +8,8 @@ import { useEffect, useState } from'react';
 import { useTranslation } from'react-i18next';
 import { Trophy } from'lucide-react';
 import { TIER_COLORS } from'@/lib/achievements/catalog';
+import { api } from'@/lib/contract/client';
+import { getUserAchievementsApi } from'@/lib/achievements/achievements.contract';
 import {
  pickAchievementStrip,
  type AchievementStripData,
@@ -36,14 +38,7 @@ export function AchievementBadgeStrip({
  let cancelled = false;
  (async () => {
  try {
- const res = await fetch(`/api/achievements/${encodeURIComponent(userId)}`, {
- credentials:'include',
- });
- if (!res.ok) return;
- const data = (await res.json()) as {
- stats: { unlocked: number };
- achievements: StripAchievement[];
- };
+ const data = await api(getUserAchievementsApi, { params: { userId } });
  if (cancelled) return;
  const strip = pickAchievementStrip(data);
  setTop(strip.top);

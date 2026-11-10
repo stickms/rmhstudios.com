@@ -17,6 +17,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WatchStateDTO, WatchTickDTO } from '@/lib/sohumtracker/types';
+import { api } from '@/lib/contract/client';
+import { getWatchActivityApi } from '@/lib/sohumtracker/activity.contract';
 
 const STREAM_URL = '/api/sohumtracker/stream';
 
@@ -128,11 +130,7 @@ export function useWatchState(initial: WatchStateDTO, days: number): WatchStateH
 
   const refresh = useCallback(() => {
     setRefreshing(true);
-    fetch(`/api/sohumtracker/activity?days=${days}`, { headers: { accept: 'application/json' } })
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.json() as Promise<WatchStateDTO>;
-      })
+    api(getWatchActivityApi, { query: { days } })
       .then(setState)
       .catch(() => {
         // The last good dossier is still on screen and still broadly true, so a

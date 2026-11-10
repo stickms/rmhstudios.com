@@ -1,5 +1,7 @@
 /** T3: a thin "most replayed" heat strip under the seek bar. Fetched when idle; absent until there is data. */
 import { useEffect, useState } from 'react';
+import { api } from '@/lib/contract/client';
+import { getHeatApi } from '@/lib/rmhtube/heat.contract';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { HEAT_BUCKET_SEC, mediaKey } from '@/lib/rmhtube/party';
 
@@ -14,12 +16,8 @@ export default function HeatStrip({ duration }: { duration: number }) {
     if (!url) return;
     let cancelled = false;
     const id = setTimeout(() => {
-      fetch(`/api/rmhtube/heat?url=${encodeURIComponent(mediaKey(url))}`)
-        .then((r) => (r.ok ? r.json() : null))
-        .then(
-          (j: { buckets: { b: number; n: number }[] } | null) =>
-            !cancelled && j && setBuckets(j.buckets),
-        )
+      api(getHeatApi, { query: { url: mediaKey(url) } })
+        .then((j) => !cancelled && setBuckets(j.buckets))
         .catch(() => {});
     }, 1500);
     return () => {

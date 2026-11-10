@@ -1,8 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import {
   listItem,
   browse,
@@ -49,37 +47,33 @@ export const Route = createFileRoute('/api/market/listings/')({
         },
       ),
 
-      POST: async ({ request }) => {
-        try {
-          const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-          const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, { limit: 15, windowMs: 60_000, prefix: 'market-list' });
-          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
-
-          const body = await request.json().catch(() => ({}));
-          const parsed = createSchema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
-
-          const listing = await listItem({
-            sellerId: session.user.id,
-            itemId: parsed.data.itemId,
-            priceCoins: parsed.data.priceCoins,
-          });
-          void watchMarketListing(listing).catch(() => {});
-          return Response.json({ success: true, listing });
-        } catch (error) {
-          if (error instanceof MarketError) {
-            return Response.json(
-              { error: error.message, code: error.code },
-              { status: error.status },
-            );
+      POST: defineHandler(
+        {
+          rateLimit: { limit: 15, windowMs: 60_000, prefix: 'market-list' },
+          body: createSchema,
+          allowEmptyBody: true,
+          invalid: () => Response.json({ error: 'Invalid input' }, { status: 400 }),
+        },
+        async ({ session, body }) => {
+          try {
+            const listing = await listItem({
+              sellerId: session.user.id,
+              itemId: body.itemId,
+              priceCoins: body.priceCoins,
+            });
+            void watchMarketListing(listing).catch(() => {});
+            return Response.json({ success: true, listing });
+          } catch (error) {
+            if (error instanceof MarketError) {
+              return Response.json(
+                { error: error.message, code: error.code },
+                { status: error.status },
+              );
+            }
+            throw error;
           }
-          console.error('market list error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-        }
-      },
+        },
+      ),
     },
   },
 });

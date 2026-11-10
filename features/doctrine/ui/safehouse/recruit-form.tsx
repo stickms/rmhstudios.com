@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Copy, Check, UserPlus } from 'lucide-react';
 import { useTranslation } from "react-i18next";
+import { api } from '@/lib/contract/client';
+import { createRecruitmentApi } from '@features/doctrine/engine/doctrine.contract';
 
 export function RecruitForm() {
   const { t } = useTranslation("c-doctrine");
@@ -15,18 +17,13 @@ export function RecruitForm() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/doctrine/recruitment/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await api(createRecruitmentApi, {
+        body: {
           personalMessage: message,
           targetSkills: skills.split(',').map(s => s.trim()).filter(Boolean),
           maxUses: 5,
-        }),
+        },
       });
-
-      if (!res.ok) throw new Error('Failed to create code');
-      const data = await res.json();
       setCode(data.code);
     } catch {
       // Error handling

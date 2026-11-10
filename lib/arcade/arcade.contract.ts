@@ -4,6 +4,7 @@
  */
 import { endpoint } from '@/lib/contract/endpoint';
 import type { PlayStatus } from '@/lib/arcade/backlog';
+import type { ArcadeState } from '@/lib/quests/arcade';
 
 export interface BacklogView {
   stats: { medianMinutes: number | null; count: number };
@@ -86,3 +87,73 @@ export const publishPatchNoteApi = endpoint<{
   body: { gameId: string; version: string; title: string; body: string };
   res: { ok: true };
 }>()({ method: 'POST', path: '/api/arcade/patch-notes' });
+
+export interface BoardRow {
+  rank: number;
+  score: number;
+  isMe: boolean;
+  user: { name?: string | null; handle?: string | null };
+}
+
+type RunOptions = Record<string, string | number>;
+
+/** Today's arcade challenges and streak for the viewer. */
+export const getArcadeStateApi = endpoint<{ res: ArcadeState }>()({
+  method: 'GET',
+  path: '/api/arcade/',
+});
+
+/** Claim a completed challenge. 400 `{ error }` when it is not claimable. */
+export const claimArcadeChallengeApi = endpoint<{
+  body: { challengeId: string };
+  res: { success: true; xp?: number; coins?: number };
+}>()({ method: 'POST', path: '/api/arcade/claim' });
+
+/** Today's Laundry Sort basket, its board and the caller's attempt (public). */
+export const getBasketApi = endpoint<{
+  res: {
+    basket: { day: string; seed: number; options: RunOptions };
+    board: BoardRow[];
+    mine: { finishedAt: string | null } | null;
+  };
+}>()({ method: 'GET', path: '/api/arcade/basket' });
+
+/** Claim today's one counted basket attempt. */
+export const startBasketApi = endpoint<{
+  res: { counted: boolean; basket: { day: string; seed: number; options: RunOptions } };
+}>()({ method: 'POST', path: '/api/arcade/basket/start' });
+
+/** File the counted basket attempt's score. */
+export const finishBasketApi = endpoint<{
+  body: {
+    score: number;
+    detail: { sorted: number; wrong: number; missed: number; bestCombo: number };
+  };
+  res: { counted: boolean };
+}>()({ method: 'POST', path: '/api/arcade/basket/finish' });
+
+/** Claim today's one counted daily-mutator attempt. */
+export const startDailyRunApi = endpoint<{
+  res: {
+    counted: boolean;
+    mutator: { gameId: string; seed: number; modifier: { id: string; options: RunOptions } };
+  };
+}>()({ method: 'POST', path: '/api/arcade/daily/start' });
+
+/** Finish a daily attempt or record a run on a shared seed. */
+export const submitArcadeRunApi = endpoint<{
+  body: {
+    kind: 'daily' | 'seed';
+    gameId: string;
+    seedKey: string;
+    score: number;
+    detail?: Record<string, number> | undefined;
+  };
+  res: { counted: boolean; best: number | null };
+}>()({ method: 'POST', path: '/api/arcade/runs' });
+
+/** The mini leaderboard for one shared seed. */
+export const getSeedBoardApi = endpoint<{
+  query: { gameId: string; seedKey: string };
+  res: { board: BoardRow[] };
+}>()({ method: 'GET', path: '/api/arcade/runs' });

@@ -15,6 +15,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { SerializedTier, PerkKey } from '@/lib/creator/tiers.server';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { saveTiersApi } from '@/lib/creator/tiers.contract';
 
 // Client-side mirrors of the server bounds (importing the server module's
 // values into a client bundle would resolve to `undefined`). The server is the
@@ -146,22 +149,23 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
     }
     setSaving(true);
     try {
-      const res = await fetch('/api/studio/tiers', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tiers: drafts.map((d, i) => ({
-            id: d.id,
-            name: d.name.trim(),
-            priceCoins: d.priceCoins,
-            perks: d.perks,
-            sortOrder: i,
-          })),
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error ?? t('tiers-save-failed', { defaultValue: 'Could not save tiers' }));
+      let data: { tiers: SerializedTier[] };
+      try {
+        data = await api(saveTiersApi, {
+          body: {
+            tiers: drafts.map((d, i) => ({
+              id: d.id,
+              name: d.name.trim(),
+              priceCoins: d.priceCoins,
+              perks: d.perks,
+              sortOrder: i,
+            })),
+          },
+        });
+      } catch (e) {
+        toast.error(
+          serverError(e) ?? t('tiers-save-failed', { defaultValue: 'Could not save tiers' }),
+        );
         return;
       }
       const saved: SerializedTier[] = data.tiers ?? [];

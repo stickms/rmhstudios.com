@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { games } from '@/lib/catalog';
+import { api } from '@/lib/contract/client';
+import { publishPatchNoteApi } from '@/lib/arcade/arcade.contract';
 
 /** Publish a short patch note; players see it once on their next launch of that game. */
 export function AdminPatchNotes() {
@@ -20,13 +22,12 @@ export function AdminPatchNotes() {
 
   async function publish() {
     setBusy(true);
-    const res = await fetch('/api/arcade/patch-notes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gameId, version, title, body }),
-    }).catch(() => null);
+    const ok = await api(publishPatchNoteApi, { body: { gameId, version, title, body } }).then(
+      () => true,
+      () => false,
+    );
     setBusy(false);
-    if (res?.ok) {
+    if (ok) {
       toast.success(t('admin-published', { defaultValue: 'Patch note published' }));
       setVersion('');
       setTitle('');
