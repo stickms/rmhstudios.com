@@ -45,7 +45,7 @@ const JobQueueStreak = "streak.reminder-sweep"
 
 // pg-boss queues of the Node recap and Doctrine Sahur jobs
 // (lib/lights-out/recap.server.ts RECAP_QUEUE,
-// lib/doctrine/jobs.server.ts DOCTRINE_SAHUR_QUEUE).
+// features/doctrine/engine/jobs.server.ts DOCTRINE_SAHUR_QUEUE).
 const (
 	JobQueueRecap = "lights-out.recap"
 	JobQueueSahur = "doctrine.sahur-activation"

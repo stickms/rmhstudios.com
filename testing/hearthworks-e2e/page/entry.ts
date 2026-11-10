@@ -2,7 +2,7 @@
  * The page every e2e player runs in a real Chromium: the REAL Hearthworks multiplayer stack, bundled by
  * esbuild (build.ts) and driven by Playwright through `window.hw`.
  *
- *   - hub client:  lib/hearthworks/net/hub-client-core.ts on the real shared realtime client + socket.io-client
+ *   - hub client:  features/hearthworks/engine/net/hub-client-core.ts on the real shared realtime client + socket.io-client
  *   - transport:   `webrtcConnector()` → `DirectConnection` → real `RTCPeerConnection` + two negotiated
  *                  DataChannels → `ReliableLink` → `channelPairToLink`
  *   - sessions:    `HostSession` / `PeerSession` / `HearthworksConnector` and the game store, bound by the driver
@@ -11,13 +11,13 @@
  * Only the session lookup behind the hub differs from production.
  */
 
-import { createHearthworksStore } from '../../../lib/hearthworks/store';
-import { bindConnectorToStore } from '../../../lib/hearthworks/net/driver';
-import { HearthworksConnector, type HostRoomOptions } from '../../../lib/hearthworks/net/connector';
-import { createHubClientWith } from '../../../lib/hearthworks/net/hub-client-core';
+import { createHearthworksStore } from '../../../features/hearthworks/engine/store';
+import { bindConnectorToStore } from '../../../features/hearthworks/engine/net/driver';
+import { HearthworksConnector, type HostRoomOptions } from '../../../features/hearthworks/engine/net/connector';
+import { createHubClientWith } from '../../../features/hearthworks/engine/net/hub-client-core';
 import { webrtcConnector } from '../../../lib/shared/p2p/connector';
-import type { LocalCommand } from '../../../lib/hearthworks/store';
-import { encodeSnapshot } from '../../../lib/hearthworks/net/protocol';
+import type { LocalCommand } from '../../../features/hearthworks/engine/store';
+import { encodeSnapshot } from '../../../features/hearthworks/engine/net/protocol';
 
 interface Config {
   hubUrl: string;

@@ -675,7 +675,7 @@ describe('design consistency — no eyebrows (owner decision, 2026-11-03)', () =
     const offenders: Violation[] = [];
     // Surfaces with a scheme of their own keep it (like the games and apps): a themed restaurant microsite, the casino
     // tables, the Balatro lane, game replays and result screens.
-    const OWN_SCHEME = /(^|\/)(rebar-rutabaga|rmhcoins|balatro|replays|games)\//;
+    const OWN_SCHEME = /(^|\/)(rebar-rutabaga|rmhcoins|casino|balatro|replays|games)\//;
     for (const file of SITE_FILES) {
       if (OWN_SCHEME.test(file) || file.includes('rebar-rutabaga')) continue;
       const src = readFileSync(join(ROOT, file), 'utf8');

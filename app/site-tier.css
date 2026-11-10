@@ -35,6 +35,8 @@
 /* Full-screen games and apps — components/ and lib/ directories no site page imports. */
 @source not "../features/altair";
 @source not "../features/balatro";
+@source not "../features/doctrine";
+@source not "../features/hearthworks";
 @source not "../components/blm";
 @source not "../components/breaches";
 @source not "../components/covid";
@@ -42,13 +44,11 @@
 @source not "../components/cursed-logic";
 @source not "../components/daily-puzzles";
 @source not "../components/design";
-@source not "../components/doctrine";
 @source not "../components/dream-rift";
 @source not "../components/dunesday";
 @source not "../components/gabriels-horn";
 @source not "../components/games";
 @source not "../components/house-always-wins";
-@source not "../components/hearthworks";
 @source not "../components/kaikai-debt";
 @source not "../components/kowloon-knockout";
 @source not "../components/laundry-sort";
@@ -93,7 +93,6 @@
 @source not "../lib/controller";
 @source not "../lib/cursed-logic";
 @source not "../lib/daily-puzzles";
-@source not "../lib/doctrine";
 @source not "../lib/dream-rift";
 @source not "../lib/elections";
 @source not "../lib/fonts";
@@ -101,7 +100,6 @@
 @source not "../lib/game-saves";
 @source not "../lib/globeset";
 @source not "../lib/house-always-wins";
-@source not "../lib/hearthworks";
 @source not "../lib/kaikai-debt";
 @source not "../lib/kowloon-knockout";
 @source not "../lib/laundry-sort";

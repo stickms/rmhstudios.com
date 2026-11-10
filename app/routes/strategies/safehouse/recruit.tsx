@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { noindexHead } from '@/lib/seo';
-import { RecruitForm } from '@/components/doctrine/safehouse/recruit-form';
+import { RecruitForm } from '@features/doctrine/ui/safehouse/recruit-form';
 import { UserPlus } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 

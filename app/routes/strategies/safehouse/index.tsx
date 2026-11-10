@@ -3,9 +3,9 @@ import { noindexHead } from '@/lib/seo';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDoctrineStore } from '@/stores/doctrineStore';
-import { ContentCard } from '@/components/doctrine/safehouse/content-card';
-import { AccessGate } from '@/components/doctrine/safehouse/access-gate';
+import { useDoctrineStore } from '@features/doctrine/ui/doctrineStore';
+import { ContentCard } from '@features/doctrine/ui/safehouse/content-card';
+import { AccessGate } from '@features/doctrine/ui/safehouse/access-gate';
 import { Shield } from 'lucide-react';
 
 export const Route = createFileRoute('/strategies/safehouse/')({

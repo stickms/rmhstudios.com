@@ -9,10 +9,10 @@ seeds give the same tables.
 pnpm exec tsx scripts/hearthworks/balance.ts                    # everything, 24 seeds, the default 32-tile island
 pnpm exec tsx scripts/hearthworks/balance.ts --seeds 8 --size 48
 pnpm exec tsx scripts/hearthworks/balance.ts --only guns,fights,hustler,heat,gunman,perf,stuck,economy --out report.json
-pnpm exec vitest run lib/hearthworks/world/__tests__/balance.test.ts   # the targets that are pinned as tests
+pnpm exec vitest run features/hearthworks/engine/world/__tests__/balance.test.ts   # the targets that are pinned as tests
 ```
 
-The harness (`lib/hearthworks/world/__tests__/balance-sim.ts`) runs scripted players inside the real `stepWorld` against
+The harness (`features/hearthworks/engine/world/__tests__/balance-sim.ts`) runs scripted players inside the real `stepWorld` against
 the real police: a **farmer** (never breaks the law), **hustlers** (deal in batches, optionally run when hunted), a
 **gunman** (buys or is given a gun, closes to its best range, fires at the nearest officer in sight, restocks), plus
 fixed scenes: parked-dummy **duels** (shots and time to kill) and pitched **fights** (a squad of N hunts an armed

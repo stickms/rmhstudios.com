@@ -3,9 +3,9 @@ import { noindexHead } from '@/lib/seo';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { DivisivenessBadge } from '@/components/doctrine/divisiveness-badge';
-import { ReactionBar } from '@/components/doctrine/reaction-bar';
-import { EMPTY_REACTIONS } from '@/lib/doctrine/types';
+import { DivisivenessBadge } from '@features/doctrine/ui/divisiveness-badge';
+import { ReactionBar } from '@features/doctrine/ui/reaction-bar';
+import { EMPTY_REACTIONS } from '@features/doctrine/engine/types';
 
 export const Route = createFileRoute('/strategies/safehouse/drops')({
   head: () => noindexHead('Safehouse Drops'),

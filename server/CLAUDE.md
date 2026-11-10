@@ -52,17 +52,17 @@ Consequences:
   Lights Out, Doctrine, Velum, Dream Rift, RMH TF2 (server
   browser and peer-to-peer signaling only — every match runs in a player's
   browser; see `docs/tf2-game.md` §Multiplayer hosting; Hearthworks
-  co-op signaling and host migration, `handlers/hearthworks-p2p.ts` over the
-  generic `p2p/signal-hub.ts`, contract `lib/hearthworks/net/events.ts` — the hub
+  co-op signaling and host migration, `features/hearthworks/server/p2p.ts` over the
+  generic `p2p/signal-hub.ts`, contract `features/hearthworks/engine/net/events.ts` — the hub
   never carries game state).
   - **Soft auth**: anonymous connections allowed; a valid Better Auth session
     token attaches `socket.data.userId/userName/avatarUrl`.
   - **Handler contract**: `handlers/<game>.ts` exports
     `register<Game>Handlers(io, socket)` + `handle<Game>Disconnect(io,
 socket)` (casino games also `initialize<Game>(io)` at boot, and a
-    `…OnShutdown()` that `shutdown()` in `index.ts` calls before `io.close()` to
+    `…OnShutdown()` (casino: now `features/casino/server/`, order in `CASINO_SHUTDOWN_REFUNDS`) that `shutdown()` in `index.ts` calls before `io.close()` to
     refund every debited-but-unsettled stake and kill the tables — contract in
-    `handlers/casino-shutdown.ts`; a new casino game needs one). Registered
+    `features/casino/server/casino-shutdown.ts`; a new casino game needs one). Registered
     per-connection in `index.ts`. Isolation is by event-name prefix
     (`rmhtype:*`, `altair:*`, `bj:*`, …) + socket.io rooms — **no namespaces**.
   - **Feature handlers (redesign A1):** a moved feature keeps its handlers in
@@ -151,7 +151,7 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   service has `mem_limit` 1280m and `HOME=/tmp` for it), WebP to object storage, optimistic `updatedAt` clear;
   `exclusive`, no retries; always registered),
   and `doctrine.*` (`daily-puzzles` 00:00 UTC + at boot, `sahur-activation` every minute,
-  `reputation-decay` hourly on Mondays; `lib/doctrine/jobs.server.ts`). The status service
+  `reputation-decay` hourly on Mondays; `features/doctrine/engine/jobs.server.ts`). The status service
   watches the recap and sahur queues in pg-boss (B06) and `doctrine_puzzle` itself (A19). Hourly `ops.deepseek-balance` (`:05` UTC, `lib/jobs/maintenance.server.ts`)
   samples the DeepSeek account balance into `deepseek_balance_snapshot` for
   `/admin/deepseek` and prunes rows older than 400 days; it skips silently when

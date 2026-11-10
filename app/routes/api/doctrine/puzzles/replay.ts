@@ -9,7 +9,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
-import * as C from '@/lib/doctrine/doctrine.contract';
+import * as C from '@features/doctrine/engine/doctrine.contract';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
@@ -18,9 +18,9 @@ import {
   validateAnswer,
   calculateScore,
   stripSolution,
-} from '@/lib/doctrine/puzzle-engine';
-import { awardXp } from '@/lib/doctrine/reputation';
-import type { PuzzleMode } from '@/lib/doctrine/types';
+} from '@features/doctrine/engine/puzzle-engine';
+import { awardXp } from '@features/doctrine/engine/reputation';
+import type { PuzzleMode } from '@features/doctrine/engine/types';
 
 const VALID_MODES: PuzzleMode[] = ['alibi', 'spectrum', 'outcast', 'chainlink', 'impostor'];
 const REPLAY_XP = 3;

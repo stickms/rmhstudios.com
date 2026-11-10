@@ -13,12 +13,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 import { ArrowLeft, RotateCcw, ArrowUpDown, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { PuzzleShell } from '@/components/doctrine/puzzles/puzzle-shell';
-import { ResultCard } from '@/components/doctrine/puzzles/result-card';
-import { useDoctrinePuzzleState } from '@/hooks/useDoctrinePuzzleState';
-import { useDoctrineSound } from '@/hooks/useDoctrineSound';
+import { PuzzleShell } from '@features/doctrine/ui/puzzles/puzzle-shell';
+import { ResultCard } from '@features/doctrine/ui/puzzles/result-card';
+import { useDoctrinePuzzleState } from '@features/doctrine/ui/hooks/useDoctrinePuzzleState';
+import { useDoctrineSound } from '@features/doctrine/ui/hooks/useDoctrineSound';
 import { api } from '@/lib/contract/client';
-import { getDoctrineReplayPuzzleApi, getDoctrineTodayPuzzlesApi } from '@/lib/doctrine/doctrine.contract';
+import { getDoctrineReplayPuzzleApi, getDoctrineTodayPuzzlesApi } from '@features/doctrine/engine/doctrine.contract';
 
 export const Route = createFileRoute('/strategies/puzzles/$mode')({
   head: () => noindexHead('Strategies Puzzle'),

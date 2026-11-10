@@ -36,37 +36,8 @@ import {
   handleKowloonKnockoutDisconnect,
 } from './handlers/kowloon-knockout';
 import { registerStudioJamHandlers } from './handlers/studio-jam';
-import {
-  registerBlackjackHandlers,
-  handleBlackjackDisconnect,
-  initializeBlackjackPublicTable,
-  listPublicRooms as listBlackjackRooms,
-  refundBlackjackOnShutdown,
-} from './handlers/blackjack';
-import {
-  registerHoldemHandlers,
-  handleHoldemDisconnect,
-  initializeHoldem,
-  listPublicRooms as listHoldemRooms,
-  cashOutHoldemOnShutdown,
-} from './handlers/holdem';
-import {
-  registerBaccaratHandlers,
-  handleBaccaratDisconnect,
-  initializeBaccarat,
-  listPublicRooms as listBaccaratRooms,
-  refundBaccaratOnShutdown,
-} from './handlers/baccarat';
-import {
-  registerRouletteHandlers,
-  handleRouletteDisconnect,
-  initializeRoulette,
-  listPublicRooms as listRouletteRooms,
-  refundRouletteOnShutdown,
-} from './handlers/roulette';
-import { CASINO_SHUTDOWN_DEADLINE_MS } from './handlers/casino-shutdown';
+import { initializeCasino, listCasinoRooms, CASINO_SHUTDOWN_REFUNDS, CASINO_SHUTDOWN_DEADLINE_MS } from '../../features/casino/server';
 import { registerLightsOutHandlers, handleLightsOutDisconnect } from './handlers/lights-out';
-import { registerDoctrineHandlers, handleDoctrineDisconnect } from './handlers/doctrine';
 import { registerVelumHandlers, handleVelumDisconnect } from './handlers/velum';
 import { registerDreamRiftHandlers, handleDreamRiftDisconnect } from './handlers/dream-rift';
 import { registerLaundrySortHandlers, handleLaundrySortDisconnect } from './handlers/laundry-sort';
@@ -78,7 +49,6 @@ import { registerGlobeSetHandlers, handleGlobeSetDisconnect } from './handlers/g
 import { registerTf2GameHandlers, handleTf2GameDisconnect } from './handlers/tf2-game';
 import { registerTf2P2pHandlers, handleTf2P2pDisconnect } from './handlers/tf2-p2p';
 import { registerFeatureHandlers, handleFeatureDisconnects } from './features';
-import { registerHearthworksP2pHandlers, handleHearthworksP2pDisconnect } from './handlers/hearthworks-p2p';
 import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/spaces';
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
 import { registerMatchmakingHandlers, handleMatchmakingDisconnect } from './handlers/matchmaking';
@@ -366,12 +336,7 @@ function requestHandler(_req: IncomingMessage, res: ServerResponse): void {
       'Cache-Control': 'no-store',
     });
     res.end(
-      JSON.stringify({
-        blackjack: listBlackjackRooms(),
-        holdem: listHoldemRooms(),
-        baccarat: listBaccaratRooms(),
-        roulette: listRouletteRooms(),
-      }),
+      JSON.stringify(listCasinoRooms()),
     );
     return;
   }
@@ -429,12 +394,9 @@ io.on('connection', (socket) => {
   registerFeatureHandlers(io, socket, 'altair');
   registerKowloonKnockoutHandlers(io, socket);
   registerStudioJamHandlers(io, socket); // F13: self-cleans on disconnect
-  registerBlackjackHandlers(io, socket);
-  registerHoldemHandlers(io, socket);
-  registerBaccaratHandlers(io, socket);
-  registerRouletteHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'casino'); // blackjack, holdem, baccarat, roulette (features/casino/server)
   registerLightsOutHandlers(io, socket);
-  registerDoctrineHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'doctrine');
   registerVelumHandlers(io, socket);
   registerDreamRiftHandlers(io, socket);
   registerLaundrySortHandlers(io, socket);
@@ -445,10 +407,9 @@ io.on('connection', (socket) => {
   // TF2 peer-to-peer rooms: signaling (and a capped relay fallback) only — the match runs in the host's browser.
   registerTf2P2pHandlers(io, socket);
   // Feature-sliced handlers (redesign A1 step 3; features/<id>/server/, listed in ./features.ts):
-  // Balatro multiplayer — signalling, relay fallback, the seat directory, matchmaking/party/invites.
+  // Balatro multiplayer — signalling, relay fallback, the seat directory, matchmaking/party/invites;
+  // Hearthworks multiplayer — room list, signalling, relay fallback, host migration (the world runs in the host's browser).
   registerFeatureHandlers(io, socket);
-  // Hearthworks multiplayer: room list, signalling, relay fallback and host migration — the world runs in the host's browser.
-  registerHearthworksP2pHandlers(io, socket);
 
   // Platform expansion (§4, §5): live Spaces + cross-game party.
   registerSpacesHandlers(io, socket);
@@ -481,12 +442,9 @@ io.on('connection', (socket) => {
     handleRmhStudyDisconnect(io, socket);
     handleFeatureDisconnects(io, socket, 'altair');
     handleKowloonKnockoutDisconnect(io, socket);
-    handleBlackjackDisconnect(io, socket);
-    handleHoldemDisconnect(io, socket);
-    handleBaccaratDisconnect(io, socket);
-    handleRouletteDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'casino');
     handleLightsOutDisconnect(io, socket);
-    handleDoctrineDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'doctrine');
     handleVelumDisconnect(io, socket);
     handleDreamRiftDisconnect(io, socket);
     handleLaundrySortDisconnect(io, socket);
@@ -495,7 +453,6 @@ io.on('connection', (socket) => {
     handleTf2GameDisconnect(io, socket);
     handleTf2P2pDisconnect(io, socket);
     handleFeatureDisconnects(io, socket);
-    handleHearthworksP2pDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });
@@ -535,12 +492,7 @@ function shutdown(signal: string): void {
       return Promise.resolve();
     }
   };
-  const casinoRefunds = Promise.allSettled([
-    refundCasino('blackjack', refundBlackjackOnShutdown),
-    refundCasino('roulette', refundRouletteOnShutdown),
-    refundCasino('baccarat', refundBaccaratOnShutdown),
-    refundCasino('holdem', cashOutHoldemOnShutdown),
-  ]);
+  const casinoRefunds = Promise.allSettled(CASINO_SHUTDOWN_REFUNDS.map(([game, run]) => refundCasino(game, run)));
 
   io.close(() => {
     logger.info({ event: 'sockets_closed' });
@@ -574,10 +526,7 @@ const bootedAt = new Date();
 void adapterReady.then(() => httpServer.listen(config.PORT, () => {
   logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
   if (config.DATABASE_URL) void warmPrismaClient(getPrismaClient(), logger);
-  initializeBlackjackPublicTable(io);
-  initializeHoldem(io);
-  initializeBaccarat(io);
-  initializeRoulette(io);
+  initializeCasino(io);
 }));
 
 // Close group-call rows a previous process died holding. History hygiene only:

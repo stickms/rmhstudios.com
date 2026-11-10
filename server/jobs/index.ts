@@ -50,7 +50,7 @@ import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
 import { registerRecipeJobs } from '@/lib/devplatform/recipes.server';
 import { STREAK_REMINDER_QUEUE, registerStreakReminderCron } from '@/lib/streak-reminders.server';
 import { RECAP_QUEUE, registerRecapCron } from '@/lib/lights-out/recap.server';
-import { registerDoctrineJobs } from '@/lib/doctrine/jobs.server';
+import { registerDoctrineJobs } from '@features/doctrine/engine/jobs.server';
 import { CLEANUP_QUEUE, registerCleanupCron } from '@/lib/cleanup-job.server';
 import { registerBotWorkerJobs } from '@/lib/rmhark-ai/bot-worker.server';
 import {

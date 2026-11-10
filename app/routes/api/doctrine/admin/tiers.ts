@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { setUserTier } from '@/lib/doctrine/tiers';
+import { setUserTier } from '@features/doctrine/engine/tiers';
 import { logAdminAction } from '@/lib/admin-audit.server';
-import type { TierId } from '@/lib/doctrine/types';
+import type { TierId } from '@features/doctrine/engine/types';
 
 const VALID_TIERS: TierId[] = ['PUBLIC', 'INSIDER', 'OPERATOR'];
 
