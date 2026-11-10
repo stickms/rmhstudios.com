@@ -198,10 +198,11 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  * a line in the PR body naming the user-visible feature that bought the bytes.
  */
 const BUDGETS = {
-  // New enforced ceiling freezes the October 23 baseline (~46 KB), including
-  // all shipped jelly layers. The older 40 KB advisory remains in perf-budgets.
+  // B5 (redesign audit): the July target of 40 KB, enforced. Measured 39.4 KB
+  // after fonts stopped being inlined into the sheet as base64 (vite.config.ts
+  // `assetsInlineLimit`); the 40 KB ceiling leaves ~0.6 KB of headroom.
   // Existing required JavaScript budgets are unchanged.
-  siteCssBrotli: 48 * 1024,
+  siteCssBrotli: 40 * 1024,
   entryRaw: 537_900,
   criticalPathRaw: 1_291_000,
   criticalPathBrotli: 359_500,

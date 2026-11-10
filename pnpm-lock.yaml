@@ -130,12 +130,6 @@ importers:
       '@fontsource-variable/space-grotesk':
         specifier: ^5.3.0
         version: 5.3.0
-      '@fontsource/bangers':
-        specifier: ^5.3.0
-        version: 5.3.0
-      '@fontsource/bebas-neue':
-        specifier: ^5.3.0
-        version: 5.3.0
       '@fontsource/great-vibes':
         specifier: ^5.3.0
         version: 5.3.0
@@ -1467,12 +1461,6 @@ packages:
 
   '@fontsource-variable/space-grotesk@5.3.0':
     resolution: {integrity: sha512-2IxmvfB08i9vnGB3Ym/AXvhRE+8XOjWMXIyDum03c+tPwH0FUoMNQfGpU8NXPxjbws0Vvss3AH0Zqt4oJBBAdw==}
-
-  '@fontsource/bangers@5.3.0':
-    resolution: {integrity: sha512-tSRpmWwkqrO9PCqo9wjA/99/5sLOIWm5cf51G3ooEHd8qZus8sVSSJoWp/7EvM5rIgZMjKRG6XtY9yeisKxE7g==}
-
-  '@fontsource/bebas-neue@5.3.0':
-    resolution: {integrity: sha512-nCxMEb9Bg9sjNWm9TIOsvHKDMLRUfEZPWpLgYu6m9KavZZVSA/WoHzI5wROwqA+eNwEi/PNBAcB5Co7HA3S0Cw==}
 
   '@fontsource/great-vibes@5.3.0':
     resolution: {integrity: sha512-1w60cXzXnC9V4y943po8044O1mqRQBiTTK75h7OpZE+1VQtx+KlAAzoIyEE5KNzu05gUpxaCQg7cbL7ITSwegQ==}
@@ -9188,10 +9176,6 @@ snapshots:
   '@fontsource-variable/playfair-display@5.3.0': {}
 
   '@fontsource-variable/space-grotesk@5.3.0': {}
-
-  '@fontsource/bangers@5.3.0': {}
-
-  '@fontsource/bebas-neue@5.3.0': {}
 
   '@fontsource/great-vibes@5.3.0': {}
 
