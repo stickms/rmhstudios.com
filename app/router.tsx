@@ -1,4 +1,5 @@
 import { createRouter as createTanStackRouter } from '@tanstack/react-router';
+import { createIsomorphicFn } from '@tanstack/react-start';
 import { dehydrate, hydrate, type DehydratedState } from '@tanstack/react-query';
 import { makeQueryClient } from '@/lib/query/make-query-client';
 import { routeTree } from './routeTree.gen';
@@ -16,14 +17,18 @@ import { mintRequestCspNonce } from '@/lib/csp/nonce.server';
 // read back from the `<meta property="csp-nonce">` the router emits, so client-side
 // tags carry the same value the server rendered. Browsers hide a script's nonce
 // attribute after parsing, which is why the meta is the source of truth there.
-function cspNonce(): string | undefined {
-  if (typeof document !== 'undefined') {
-    return (
-      document.querySelector<HTMLMetaElement>('meta[property="csp-nonce"]')?.content || undefined
-    );
-  }
-  return typeof mintRequestCspNonce === 'function' ? mintRequestCspNonce() : undefined;
-}
+//
+// createIsomorphicFn, not a `typeof document` branch: Start's compiler drops the
+// `.server()` half (and with it the `.server` import) from the client graph. A plain
+// import of nonce.server here is denied by Start's import protection in `vite dev`,
+// whose stub then fails to resolve, so the client router never loaded in dev (the
+// production build masked it through stubServerFiles).
+const cspNonce = createIsomorphicFn()
+  .server((): string | undefined => mintRequestCspNonce())
+  .client(
+    (): string | undefined =>
+      document.querySelector<HTMLMetaElement>('meta[property="csp-nonce"]')?.content || undefined,
+  );
 
 // `getRouter()` runs once per client page load and once per SSR request. The
 // style-tier preload is a browser-only, page-lifetime singleton, so it is
