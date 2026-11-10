@@ -27,6 +27,7 @@ import { StateSyncService } from './state-sync';
 import { cleanupRateLimits } from './rate-limit';
 import { disconnectPrisma } from './prisma-client';
 import { logger } from './logger';
+import { protocolGuard, protocolLogger } from '../shared/protocol';
 import { attachRedisAdapter } from '../shared/redis-adapter';
 import { openLobbyStore } from './lobby-store';
 import { LobbyPersistence } from './lobby-persistence';
@@ -83,6 +84,10 @@ instrumentHub(io, 'rmhbox');
 
 // ─── Auth middleware (applied server-wide — no namespace) ────────
 
+// Protocol version first (no DB round-trip): an outdated tab is told so instead of
+// silently no-op'ing mid-match (server/shared/protocol.ts, E2). Lenient: a client that
+// sends no version still gets in.
+io.use(protocolGuard(protocolLogger(logger)));
 io.use(authMiddleware);
 
 // ─── Service layer bootstrap ────────────────────────────────────

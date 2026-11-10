@@ -151,3 +151,41 @@ describe('checkProtocol', () => {
     expect(server.checkProtocol(42, 'v1')).toBe('absent');
   });
 });
+
+describe('protocolLogger', () => {
+  it('passes rejections through and folds absent clients into one line per window', () => {
+    const lines: Array<Record<string, unknown>> = [];
+    let t = 0;
+    const log = server.protocolLogger({ warn: (e) => lines.push(e) }, 60_000, () => t);
+    log.warn({ event: 'protocol_absent', expected: 'x' }); // first one of the window: logged
+    log.warn({ event: 'protocol_absent', expected: 'x' });
+    log.warn({ event: 'protocol_absent', expected: 'x' });
+    log.warn({ event: 'protocol_outdated', expected: 'x', received: 'y' });
+    t = 60_001;
+    log.warn({ event: 'protocol_absent', expected: 'x' });
+    expect(lines).toEqual([
+      { event: 'protocol_absent', expected: 'x', count: 1, windowMs: 60_000 },
+      { event: 'protocol_outdated', expected: 'x', received: 'y' },
+      { event: 'protocol_absent', expected: 'x', count: 3, windowMs: 60_000 },
+    ]);
+  });
+});
+
+describe('every hub installs the guard', () => {
+  // The guard existed for weeks without being wired into any hub (found by the phase 25
+  // fallback sweep). Each hub must install it, and before its auth middleware so an
+  // outdated tab is refused without a database round-trip.
+  it.each(['server/socket-server/index.ts', 'server/rmhbox/index.ts', 'server/rmhtube/index.ts'])(
+    '%s',
+    async (file) => {
+      const { readFileSync } = await import('node:fs');
+      const { join } = await import('node:path');
+      const src = readFileSync(join(__dirname, '..', '..', file), 'utf8');
+      const guard = src.indexOf('io.use(protocolGuard(');
+      const auth = src.search(/io\.use\((?:soft)?[aA]uthMiddleware\)/);
+      expect(guard, 'io.use(protocolGuard(...)) missing').toBeGreaterThan(-1);
+      expect(auth).toBeGreaterThan(-1);
+      expect(guard).toBeLessThan(auth);
+    },
+  );
+});

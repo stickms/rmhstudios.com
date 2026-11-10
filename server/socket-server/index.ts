@@ -14,6 +14,7 @@ import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { Server } from 'socket.io';
 import { config } from './config';
 import { logger } from './logger';
+import { protocolGuard, protocolLogger } from '../shared/protocol';
 import { disconnectPrisma, getPrismaClient } from './prisma-client';
 import { warmPrismaClient } from '../shared/prisma-client';
 import { cleanupRateLimits } from './rate-limit';
@@ -366,6 +367,10 @@ instrumentHub(io, 'socket');
 
 // ─── Auth middleware ────────────────────────────────────────────
 
+// Protocol version first (no DB round-trip): an outdated tab is told so instead of
+// silently no-op'ing mid-match (server/shared/protocol.ts, E2). Lenient: a client that
+// sends no version still gets in.
+io.use(protocolGuard(protocolLogger(logger)));
 io.use(softAuthMiddleware);
 
 // ─── Connection handler ─────────────────────────────────────────
