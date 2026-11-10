@@ -13,6 +13,7 @@
  */
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { connectToRMHbox, emit } from '@/lib/rmhbox/socket';
@@ -403,5 +404,6 @@ function LobbyPage() {
 }
 
 export const Route = createFileRoute('/rmhbox/$lobbyId')({
+  head: () => noindexHead('RMHBox Lobby'),
   component: LobbyPage,
 });

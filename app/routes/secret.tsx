@@ -3,8 +3,10 @@
  */
 
 import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 
 export const Route = createFileRoute('/secret')({
+  head: () => noindexHead('Secret'),
   component: SecretLayout,
 });
 

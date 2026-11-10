@@ -6,6 +6,7 @@
 
 import { Suspense } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { gameRouteHead } from '@/lib/seo-catalog';
 import { createServerFn } from '@tanstack/react-start'
 import { getRequestSession } from '@/lib/auth-session.server'
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
@@ -41,6 +42,7 @@ function VersecraftPage() {
 }
 
 export const Route = createFileRoute('/versecraft/')({
+  head: () => gameRouteHead('versecraft'),
   loader: () => checkLoginStatus(),
   component: VersecraftPage,
 })

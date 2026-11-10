@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useDoctrineReputation } from '@/hooks/useDoctrineReputation';
@@ -6,6 +7,10 @@ import { StreakDisplay } from '@/components/doctrine/puzzles/streak-display';
 import { Puzzle } from 'lucide-react';
 
 export const Route = createFileRoute('/strategies/puzzles/')({
+  head: () => ({
+    meta: buildMeta({ title: 'Puzzles | RMH Strategies | RMH Studios', description: 'Daily and practice puzzles for RMH Strategies.', path: '/strategies/puzzles' }),
+    links: [buildCanonical('/strategies/puzzles')],
+  }),
   component: PuzzlesIndex,
 });
 

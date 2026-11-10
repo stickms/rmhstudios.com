@@ -1,9 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { RecruitForm } from '@/components/doctrine/safehouse/recruit-form';
 import { UserPlus } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute('/strategies/safehouse/recruit')({
+  head: () => noindexHead('Safehouse Recruiting'),
   component: RecruitPage,
 });
 

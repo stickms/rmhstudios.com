@@ -6,6 +6,7 @@
  */
 
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { appRouteHead } from '@/lib/seo-catalog';
 import { Puzzle, Shield, AlertTriangle, Moon, Trophy, Flame } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -19,6 +20,7 @@ import { ProjectCard } from '@/components/doctrine/coalition/project-card';
 import { CountdownTimer } from '@/components/doctrine/countdown-timer';
 
 export const Route = createFileRoute('/strategies/')({
+  head: () => appRouteHead('rmh-strategies'),
   component: DashboardPage,
 });
 

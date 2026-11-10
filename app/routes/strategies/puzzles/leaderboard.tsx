@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useQuery } from '@tanstack/react-query';
 import { Trophy } from 'lucide-react';
 import { useState } from 'react';
@@ -6,6 +7,10 @@ import { useTranslation } from 'react-i18next';
 import { RankBadge } from '@/components/doctrine/reputation/rank-badge';
 
 export const Route = createFileRoute('/strategies/puzzles/leaderboard')({
+  head: () => ({
+    meta: buildMeta({ title: 'Puzzle Leaderboard | RMH Strategies | RMH Studios', description: 'Top solvers across RMH Strategies puzzles.', path: '/strategies/puzzles/leaderboard' }),
+    links: [buildCanonical('/strategies/puzzles/leaderboard')],
+  }),
   component: LeaderboardPage,
 });
 

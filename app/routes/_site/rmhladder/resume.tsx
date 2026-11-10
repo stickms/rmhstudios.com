@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createFileRoute, Link, redirect, useRouter } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { CheckCircle2, Download, FileText, Sparkles, Trash2, Upload } from 'lucide-react';
@@ -24,6 +25,7 @@ const loadResumeCenter = createServerFn({ method: 'GET' }).handler(async () => {
 });
 
 export const Route = createFileRoute('/_site/rmhladder/resume')({
+  head: () => noindexHead('Resume | RMH Ladder'),
   loader: () => loadResumeCenter(),
   component: ResumePage,
 });

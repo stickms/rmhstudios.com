@@ -199,6 +199,13 @@ export default tseslint.config(
     },
   },
 
+  // F8: every page route declares head(). Zero backlog since 2026-11-10, so "error".
+  {
+    files: ['app/routes/**/*.tsx'],
+    plugins: { local },
+    rules: { 'local/route-needs-head': 'error' },
+  },
+
   // ── Repo-local rules ──────────────────────────────────────────────────────
   // Conventions no published plugin can know about. Kept at "warn" for the same
   // reason as the jsx-a11y backlog above: there are existing violations, and a

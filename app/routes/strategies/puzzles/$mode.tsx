@@ -8,6 +8,7 @@
  */
 
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 import { ArrowLeft, RotateCcw, ArrowUpDown, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
@@ -18,6 +19,7 @@ import { useDoctrinePuzzleState } from '@/hooks/useDoctrinePuzzleState';
 import { useDoctrineSound } from '@/hooks/useDoctrineSound';
 
 export const Route = createFileRoute('/strategies/puzzles/$mode')({
+  head: () => noindexHead('Strategies Puzzle'),
   component: PuzzleModePage,
 });
 

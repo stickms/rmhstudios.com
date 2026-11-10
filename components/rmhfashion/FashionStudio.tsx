@@ -421,7 +421,7 @@ function Swatches({
               aria-label={names[id]}
               // The chip IS the colour, so selection cannot be a tint — it is a
               // ring, which reads under every colour-vision mode.
-              className={`rmhfash-chip touch-target size-6 rounded-full transition-transform ${
+              className={`rmhfash-chip hit-slop size-6 rounded-full transition-transform ${
                 on ? 'ring-2 ring-site-accent scale-110' : 'hover:scale-105'
               }`}
               style={{ background: `var(${swatchVar(id)})` }}

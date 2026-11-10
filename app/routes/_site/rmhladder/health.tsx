@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
@@ -67,6 +68,7 @@ const fetchHealth = createServerFn({ method: 'GET' }).handler(async () => {
 });
 
 export const Route = createFileRoute('/_site/rmhladder/health')({
+  head: () => noindexHead('Health | RMH Ladder'),
   loader: () => fetchHealth(),
   component: HealthPage,
 });

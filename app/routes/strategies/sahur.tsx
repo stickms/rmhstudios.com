@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useEffect } from 'react';
 import { Moon, Zap, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +9,10 @@ import { CountdownTimer } from '@/components/doctrine/countdown-timer';
 import { SAHUR_WINDOW } from '@/lib/doctrine/constants';
 
 export const Route = createFileRoute('/strategies/sahur')({
+  head: () => ({
+    meta: buildMeta({ title: 'Sahur | RMH Strategies | RMH Studios', description: 'Countdown to the next sahur window in RMH Strategies.', path: '/strategies/sahur' }),
+    links: [buildCanonical('/strategies/sahur')],
+  }),
   component: SahurPage,
 });
 

@@ -234,6 +234,7 @@ describe('the woken haze layer', () => {
     // `::after` is already used on these: the nav rail's selection layer and the coarse-pointer hit area.
     expect(HOST).toContain("[data-evert~='select']");
     expect(HOST).toContain('.touch-target');
+    expect(HOST).toContain('.hit-slop');
   });
 });
 

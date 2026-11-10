@@ -9,6 +9,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { useEffect, useState, useCallback, useMemo, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Select } from '@/components/ui/select';
@@ -482,5 +483,6 @@ function MinigameHistoryPage() {
 }
 
 export const Route = createFileRoute('/rmhbox/minigames/$minigameId/history')({
+  head: () => noindexHead('Minigame History'),
   component: MinigameHistoryPage,
 });

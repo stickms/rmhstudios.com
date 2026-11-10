@@ -6,6 +6,7 @@
  */
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { noindexHead } from '@/lib/seo';
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
@@ -226,5 +227,6 @@ function AltairLobbyPage() {
 }
 
 export const Route = createFileRoute('/altair/multiplayer/$lobbyId')({
+  head: () => noindexHead('Altair Lobby'),
   component: AltairLobbyPage,
 })

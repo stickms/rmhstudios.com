@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import {
@@ -91,6 +92,7 @@ const doKeyword = createServerFn({ method: 'POST' })
   });
 
 export const Route = createFileRoute('/_site/rmhladder/settings')({
+  head: () => noindexHead('Settings | RMH Ladder'),
   loader: () => fetchSettings(),
   component: SettingsPage,
 });
