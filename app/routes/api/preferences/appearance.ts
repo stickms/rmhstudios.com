@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { invalidateCached } from '@/lib/cached.server';
@@ -8,6 +8,8 @@ import { SITE_STYLES } from '@/stores/themeStore';
 import { ACCENT_PRESETS } from '@/lib/appearance';
 import { appearanceComfortSchema } from '@/lib/appearance/prefs-schema';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
+import { getAppearancePrefsApi } from '@/lib/preferences/preferences.contract';
+import { setAppearancePrefsApi } from '@/lib/preferences/preferences.contract';
 
 /**
  * GET  /api/preferences/appearance — the caller's saved theme + accent (nulls
@@ -40,7 +42,7 @@ const schema = z
 export const Route = createFileRoute('/api/preferences/appearance')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ session }) => {
+      GET: implement(getAppearancePrefsApi, {}, async ({ session }) => {
         const row = await prisma.appearancePreference.findUnique({
           where: { userId: session.user.id },
         });
@@ -60,7 +62,8 @@ export const Route = createFileRoute('/api/preferences/appearance')({
         });
       }),
 
-      PUT: defineHandler(
+      PUT: implement(
+        setAppearancePrefsApi,
         { rateLimit: { limit: 30, windowMs: 60_000, prefix: 'appearance-prefs' }, body: schema },
         async ({ session, body }) => {
           const {

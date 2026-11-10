@@ -2,6 +2,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, Loader2 } from 'lucide-react';
+import { postSummaryApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
 
 /**
  *"Summarize thread"affordance shown above a busy comment section. Lazy — only
@@ -22,18 +25,20 @@ export function ThreadSummary({ postId, commentCount }: { postId: string; commen
     setError(null);
     setRequested(true);
     try {
-      const res = await fetch(`/api/rmharks/${postId}/summary`, { credentials: 'include' });
-      if (res.status === 503) {
+      const data = await api(postSummaryApi, { params: { id: postId } });
+      if (data.summary) setSummary(data.summary);
+      else setError(t('not-enough-to-summarize', { defaultValue: 'Not enough to summarize yet.' }));
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 503) {
         setError(
           t('summaries-unavailable', { defaultValue: 'Summaries are unavailable right now.' }),
         );
-        return;
+      } else if (e instanceof HttpError) {
+        // Same as before: any other error answer carried no summary.
+        setError(t('not-enough-to-summarize', { defaultValue: 'Not enough to summarize yet.' }));
+      } else {
+        setError(t('summarize-error', { defaultValue: 'Could not summarize this thread.' }));
       }
-      const data = await res.json();
-      if (data.summary) setSummary(data.summary);
-      else setError(t('not-enough-to-summarize', { defaultValue: 'Not enough to summarize yet.' }));
-    } catch {
-      setError(t('summarize-error', { defaultValue: 'Could not summarize this thread.' }));
     } finally {
       setLoading(false);
     }

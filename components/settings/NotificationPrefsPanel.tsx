@@ -8,6 +8,11 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  getNotificationTogglesApi,
+  setNotificationTogglesApi,
+} from '@/lib/preferences/preferences.contract';
+import { api } from '@/lib/contract/client';
 
 const PREF_KEYS = ['likes', 'comments', 'follows', 'mentions', 'reposts', 'system'] as const;
 type PrefKey = (typeof PREF_KEYS)[number];
@@ -29,8 +34,7 @@ export function NotificationPrefsPanel() {
 
   useEffect(() => {
     let active = true;
-    fetch('/api/notifications/preferences', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))))
+    api(getNotificationTogglesApi)
       .then((data) => {
         if (active) setPrefs(data);
       })
@@ -47,13 +51,7 @@ export function NotificationPrefsPanel() {
     const previous = prefs;
     setPrefs({ ...prefs, [key]: value });
     try {
-      const res = await fetch('/api/notifications/preferences', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ [key]: value }),
-      });
-      if (!res.ok) throw new Error(`${res.status}`);
+      await api(setNotificationTogglesApi, { body: { [key]: value } });
     } catch {
       setPrefs(previous);
       toast.error(

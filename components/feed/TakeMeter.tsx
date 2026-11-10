@@ -6,6 +6,9 @@ import { useSession } from '@/components/Providers';
 import { useSignInPrompt } from '@/hooks/useSignInPrompt';
 import { useNearViewport } from '@/hooks/useNearViewport';
 import { takeSplit, type TakeState, type TakeVote } from '@/lib/feed/take';
+import { getTakeApi, voteTakeApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
 
 /**
  * X6 — the take meter under a post its author marked as a take.
@@ -28,10 +31,9 @@ export default function TakeMeter({ postId }: { postId: string }) {
   useEffect(() => {
     if (!visible) return;
     let cancelled = false;
-    fetch(`/api/rmharks/${postId}/take`, { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((s: TakeState | null) => {
-        if (!cancelled && s) setState(s);
+    api(getTakeApi, { params: { id: postId } })
+      .then((s) => {
+        if (!cancelled) setState(s);
       })
       .catch(() => {});
     return () => {
@@ -48,23 +50,12 @@ export default function TakeMeter({ postId }: { postId: string }) {
       }
       setBusy(true);
       try {
-        const res = await fetch(`/api/rmharks/${postId}/take`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ vote: choice }),
-        });
-        const data = await res.json().catch(() => null);
-        if (!res.ok || !data) {
-          toast.error(
-            (data as { error?: string } | null)?.error ??
-              t('take-vote-failed', { defaultValue: 'Could not record your vote' }),
-          );
-          return;
-        }
-        setState(data as TakeState);
-      } catch {
-        toast.error(t('take-vote-failed', { defaultValue: 'Could not record your vote' }));
+        const data = await api(voteTakeApi, { params: { id: postId }, body: { vote: choice } });
+        setState(data);
+      } catch (e) {
+        toast.error(
+          serverError(e) ?? t('take-vote-failed', { defaultValue: 'Could not record your vote' }),
+        );
       } finally {
         setBusy(false);
       }

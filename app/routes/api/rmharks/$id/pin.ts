@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
+import { pinPostApi } from '@/lib/feed/rmhark-actions.contract';
 
 /**
  * POST /api/rmharks/$id/pin — toggle pinning your own post to your profile.
@@ -9,7 +10,7 @@ import { prisma } from '@/lib/prisma.server';
 export const Route = createFileRoute('/api/rmharks/$id/pin')({
   server: {
     handlers: {
-      POST: defineHandler({}, async ({ params, session }) => {
+      POST: implement(pinPostApi, {}, async ({ params, session }) => {
         const { id } = params;
         const post = await prisma.rMHark.findUnique({
           where: { id },

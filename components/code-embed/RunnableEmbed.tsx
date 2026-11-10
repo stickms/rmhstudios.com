@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { buildSrcdoc, type CodeEmbed } from '@/lib/code-embed/shared';
+import { buildSrcdoc } from '@/lib/code-embed/shared';
+import { postEmbedApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
 
 /**
  * A post's code snippet (F14). Nothing is fetched or run until the reader presses
@@ -19,9 +21,7 @@ export function RunnableEmbed({ postId }: { postId: string }) {
     setLoading(true);
     setFailed(false);
     try {
-      const res = await fetch(`/api/rmharks/${encodeURIComponent(postId)}/embed`);
-      if (!res.ok) throw new Error('embed');
-      setDoc(buildSrcdoc((await res.json()) as CodeEmbed));
+      setDoc(buildSrcdoc(await api(postEmbedApi, { params: { id: postId } })));
     } catch {
       setFailed(true);
     } finally {

@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { summarizeThread, isSummarizerConfigured } from '@/lib/ai/summarize.server';
 import { canReadThread } from '@/lib/feed/audience.server';
 import { isLocked } from '@/lib/feed/map-feed-item.server';
+import { postSummaryApi } from '@/lib/feed/rmhark-actions.contract';
 
 type AuthorShape = {
   name: string | null;
@@ -27,7 +28,7 @@ const TTL_MS = 10 * 60 * 1000;
 export const Route = createFileRoute('/api/rmharks/$id/summary')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'none' }, async ({ request, params }) => {
+      GET: implement(postSummaryApi, { auth: 'none' }, async ({ request, params }) => {
         if (!isSummarizerConfigured()) {
           return Response.json({ error: 'Summaries are not available' }, { status: 503 });
         }

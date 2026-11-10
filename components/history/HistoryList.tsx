@@ -19,6 +19,13 @@ import {
 } from '@/lib/history/constants';
 import type { HistoryView } from '@/lib/history/history.server';
 import { Tabs } from '@/components/ui/tabs';
+import {
+  listHistoryApi,
+  setHistoryPausedApi,
+  clearHistoryApi,
+  removeHistoryEntryApi,
+} from '@/lib/shop/shop.contract';
+import { api } from '@/lib/contract/client';
 
 interface HistoryData {
   items: HistoryView[];
@@ -40,12 +47,12 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
     async (f: HistoryEntityType | 'all', append = false, cur?: string | null) => {
       setLoading(true);
       try {
-        const params = new URLSearchParams();
-        if (f !== 'all') params.set('type', f);
-        if (append && cur) params.set('cursor', cur);
-        const res = await fetch(`/api/history?${params.toString()}`);
-        if (!res.ok) throw new Error('load failed');
-        const data = (await res.json()) as HistoryData;
+        const data = await api(listHistoryApi, {
+          query: {
+            ...(f !== 'all' ? { type: f } : {}),
+            ...(append && cur ? { cursor: cur } : {}),
+          },
+        });
         setItems((prev) => (append ? [...prev, ...data.items] : data.items));
         setCursor(data.nextCursor);
       } catch {
@@ -69,11 +76,7 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
   async function togglePause(next: boolean) {
     setPaused(next);
     try {
-      await fetch('/api/history', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paused: next }),
-      });
+      await api(setHistoryPausedApi, { body: { paused: next } });
     } catch {
       setPaused(!next);
       toast.error(t('save-error', { defaultValue: "Couldn't update the setting" }));
@@ -90,7 +93,7 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
     setItems([]);
     setCursor(null);
     try {
-      await fetch('/api/history', { method: 'DELETE' });
+      await api(clearHistoryApi);
       toast.success(t('cleared', { defaultValue: 'History cleared' }));
     } catch {
       toast.error(t('save-error', { defaultValue: "Couldn't update the setting" }));
@@ -100,7 +103,7 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
   async function removeOne(id: string) {
     setItems((prev) => prev.filter((i) => i.id !== id));
     try {
-      await fetch(`/api/history/${id}`, { method: 'DELETE' });
+      await api(removeHistoryEntryApi, { params: { id } });
     } catch {
       /* best-effort */
     }

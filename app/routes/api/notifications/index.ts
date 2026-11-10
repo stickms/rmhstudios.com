@@ -1,7 +1,8 @@
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { listNotifications } from '@/lib/notifications.server';
+import { listNotificationsApi } from '@/lib/preferences/preferences.contract';
 
 /**
  * GET /api/notifications — the current user's notifications, newest first.
@@ -10,7 +11,7 @@ import { listNotifications } from '@/lib/notifications.server';
 export const Route = createFileRoute('/api/notifications/')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ request, session }) => {
+      GET: implement(listNotificationsApi, {}, async ({ request, session }) => {
         const url = new URL(request.url);
         const cursor = url.searchParams.get('cursor');
         const limit = pageSize(url.searchParams.get('limit'), 20, 50);

@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { setReplyHidden } from '@/lib/feed/hidden-replies.server';
+import { hideCommentApi } from '@/lib/feed/rmhark-actions.contract';
 
 /**
  * POST /api/rmharks/$id/comment/$commentId/hide — hide or unhide a reply in
@@ -11,7 +12,8 @@ import { setReplyHidden } from '@/lib/feed/hidden-replies.server';
 export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId/hide')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        hideCommentApi,
         { rateLimit: 'write', body: z.object({ hidden: z.boolean() }) },
         async ({ userId, params, body }) => {
           const result = await setReplyHidden(params.id, params.commentId, userId, body.hidden);

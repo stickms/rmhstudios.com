@@ -1,9 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { HISTORY_ENTITY_TYPES, type HistoryEntityType } from '@/lib/history/constants';
 import { listHistory, clearHistory } from '@/lib/history/history.server';
+import { listHistoryApi } from '@/lib/shop/shop.contract';
+import { setHistoryPausedApi } from '@/lib/shop/shop.contract';
+import { clearHistoryApi } from '@/lib/shop/shop.contract';
 
 const pauseSchema = z.object({ paused: z.boolean() });
 
@@ -15,7 +18,7 @@ const pauseSchema = z.object({ paused: z.boolean() });
 export const Route = createFileRoute('/api/history/')({
   server: {
     handlers: {
-      GET: defineHandler({}, async ({ request, session }) => {
+      GET: implement(listHistoryApi, {}, async ({ request, session }) => {
         const url = new URL(request.url);
         const typeParam = url.searchParams.get('type');
         const type =
@@ -34,12 +37,13 @@ export const Route = createFileRoute('/api/history/')({
         return Response.json({ ...result, paused: profile?.historyPaused ?? false });
       }),
 
-      DELETE: defineHandler({}, async ({ session }) => {
+      DELETE: implement(clearHistoryApi, {}, async ({ session }) => {
         await clearHistory(session.user.id);
         return Response.json({ ok: true });
       }),
 
-      PUT: defineHandler(
+      PUT: implement(
+        setHistoryPausedApi,
         {
           rateLimit: { limit: 20, windowMs: 60_000, prefix: 'history-settings' },
           body: pauseSchema,

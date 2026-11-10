@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { MenuItem } from '@/components/ui/menu';
+import { hideCommentApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
 
 /**
  * X2 — hidden replies, the two UI pieces.
@@ -35,13 +37,7 @@ export function HideReplyMenuItem({
     onDone();
     const next = !hidden;
     try {
-      const res = await fetch(`/api/rmharks/${postId}/comment/${commentId}/hide`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hidden: next }),
-      });
-      if (!res.ok) throw new Error(String(res.status));
+      await api(hideCommentApi, { params: { id: postId, commentId }, body: { hidden: next } });
       onChanged(next);
       toast.success(
         next
