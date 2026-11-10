@@ -354,7 +354,7 @@ const ALLOW = new Set<string>([
   // DOM.
   'lib/render/refresh-rate.ts',
   'lib/rmhvibe/vibe.server.ts',
-  'lib/vega/VegaGame.ts',
+  'features/vega/engine/VegaGame.ts',
   // The browser TF2 / Half-Life 2 / Portal clients' ONE frame loop (`GameLoop`). Every
   // part of a running game — input, simulation/command ticks, rendering, audio, the
   // HUD — rides this callback; nothing else in lib/tf2-game or components/tf2-game

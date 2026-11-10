@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
-import { submitVegaScoreApi } from '@/lib/vega/vega.contract';
-import { vegaScoreBody } from '@/lib/vega/score-schema';
+import { submitVegaScoreApi } from '@features/vega/engine/vega.contract';
+import { vegaScoreBody } from '@features/vega/engine/score-schema';
 import { prisma } from '@/lib/prisma.server';
 import { recordGamePlay } from '@/lib/quests/engine.server';
 
