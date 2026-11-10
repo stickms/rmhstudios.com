@@ -4,6 +4,9 @@ import { IconButton } from '@/components/ui/icon-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { deleteBlogPostApi } from '@/lib/admin/admin-tools.contract';
 export function DeleteBlogButton({ slug, title }: { slug: string; title: string }) {
   const { t } = useTranslation('c-admin');
   const confirm = useConfirm();
@@ -23,15 +26,12 @@ export function DeleteBlogButton({ slug, title }: { slug: string; title: string 
 
     setIsDeleting(true);
     try {
-      const res = await fetch(`/api/admin/blog?slug=${slug}`, {
-        method: 'DELETE',
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
+      try {
+        await api(deleteBlogPostApi, { query: { slug } });
+      } catch (error) {
         throw new Error(
-          data.error || t('delete-failed', { defaultValue: 'Failed to delete post' }),
+          serverError(error) || t('delete-failed', { defaultValue: 'Failed to delete post' }),
+          { cause: error },
         );
       }
 

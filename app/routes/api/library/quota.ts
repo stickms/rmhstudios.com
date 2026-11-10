@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { auth } from '@/lib/auth';
+import { z } from 'zod';
+import { implement } from '@/lib/api/implement.server';
+import { getLibraryQuotaApi, requestLibraryQuotaApi } from '@/lib/library/upload.contract';
 import { getQuotaStatus, requestQuota } from '@/lib/library/quota.server';
 
 /**
@@ -7,31 +9,31 @@ import { getQuotaStatus, requestQuota } from '@/lib/library/quota.server';
  *   GET  — the signed-in user's library usage, cap, own uploads, pending appeal.
  *   POST — file an appeal for a higher cap ({ requestedTotal, reason }).
  */
-async function getViewer(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) return null;
-  return { id: session.user.id, isAdmin: Boolean((session.user as { isAdmin?: boolean }).isAdmin) };
-}
+
+/**
+ * `requestQuota` owns the validation and answers with the reason, so a bad
+ * number or a missing reason must reach it as NaN / '' rather than a bare 400.
+ */
+const appealBody = z.object({
+  requestedTotal: z.coerce.number().catch(Number.NaN),
+  reason: z.string().catch(''),
+});
 
 export const Route = createFileRoute('/api/library/quota')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const viewer = await getViewer(request);
-        if (!viewer) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        const status = await getQuotaStatus(viewer.id, viewer.isAdmin);
-        return Response.json(status);
-      },
-      POST: async ({ request }) => {
-        const viewer = await getViewer(request);
-        if (!viewer) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        const body = (await request.json().catch(() => ({}))) as { requestedTotal?: unknown; reason?: unknown };
-        const requestedTotal = Number(body.requestedTotal);
-        const reason = typeof body.reason === 'string' ? body.reason : '';
-        const result = await requestQuota(viewer.id, requestedTotal, reason);
-        if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
-        return Response.json({ ok: true });
-      },
+      GET: implement(getLibraryQuotaApi, {}, async ({ userId, isAdmin }) =>
+        getQuotaStatus(userId, isAdmin),
+      ),
+      POST: implement(
+        requestLibraryQuotaApi,
+        { body: appealBody, allowEmptyBody: true },
+        async ({ userId, body }) => {
+          const result = await requestQuota(userId, body.requestedTotal, body.reason);
+          if (!result.ok) return Response.json({ error: result.error }, { status: result.status });
+          return { ok: true as const };
+        },
+      ),
     },
   },
 });

@@ -13,6 +13,8 @@ import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
 import { listAdminRedemptionsApi } from '@/lib/admin/admin-ops.contract';
 
+import { serverError } from '@/lib/http';
+import { reviewRedemptionApi } from '@/lib/admin/admin-tools.contract';
 export const Route = createFileRoute('/_site/admin/redemptions')({
   head: () => ({ meta: [{ title: 'Redemption Queue | RMH Studios' }] }),
   component: AdminRedemptionsPage,
@@ -56,15 +58,12 @@ function AdminRedemptionsPage() {
   const act = async (id: string, action: 'approve' | 'reject' | 'fulfill') => {
     setBusyId(id);
     try {
-      const res = await fetch(`/api/admin/redemptions/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ action }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error ?? t('action-failed-appeals', { defaultValue: 'Action failed' }));
+      try {
+        await api(reviewRedemptionApi, { params: { id }, body: { action } });
+      } catch (error) {
+        toast.error(
+          serverError(error) ?? t('action-failed-appeals', { defaultValue: 'Action failed' }),
+        );
         return;
       }
       toast.success(

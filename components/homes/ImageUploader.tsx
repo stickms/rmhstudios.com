@@ -5,6 +5,9 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { generateHomeAiImageApi, getHomeAiImageAvailabilityApi } from '@/lib/homes/homes.contract';
 interface ImageUploaderProps {
   value: string[];
   /** Subset of `value` that was AI-generated. */
@@ -33,8 +36,7 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/homes/ai-image')
-      .then((r) => (r.ok ? r.json() : { available: false }))
+    api(getHomeAiImageAvailabilityApi)
       .then((d) => {
         if (!cancelled) setAiAvailable(Boolean(d.available));
       })
@@ -89,13 +91,12 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
     }
     setGenerating(true);
     try {
-      const res = await fetch('/api/homes/ai-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.url) throw new Error(data.error || 'Could not generate an image.');
+      const data = await api(generateHomeAiImageApi, { body: { prompt }, timeoutMs: AI_TIMEOUT_MS }).catch(
+        (error: unknown) => {
+          throw new Error(serverError(error) || 'Could not generate an image.');
+        },
+      );
+      if (!data.url) throw new Error('Could not generate an image.');
       onChange([...value, data.url].slice(0, max), [...aiImages, data.url]);
       setAiPrompt('');
       toast.success('Image generated');

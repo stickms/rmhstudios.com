@@ -152,7 +152,6 @@ const KNOWN_UNWRAPPED: readonly string[] = [
   'app/routes/api/internal/predictions-tick.ts',
   'app/routes/api/internal/streak-push.ts',
   'app/routes/api/library/file/$id.ts',
-  'app/routes/api/library/quota.ts',
   'app/routes/api/moments/index.ts',
   'app/routes/api/news/approve.ts',
   'app/routes/api/news/reject.ts',
@@ -197,13 +196,10 @@ const KNOWN_UNWRAPPED: readonly string[] = [
  * `auth.api.getSession` in the handler body.
  */
 const KNOWN_BYPASSES_WRAPPER: readonly string[] = [
-  'app/routes/api/ai/ask-feed.ts',
-  'app/routes/api/ai/search.ts',
   'app/routes/api/ai/transform.ts',
   'app/routes/api/doctrine/puzzles/replay.ts',
   'app/routes/api/doctrine/sahur/status.ts',
   'app/routes/api/events/$id/index.ts',
-  'app/routes/api/feed/mention-search.ts',
   'app/routes/api/homes/listings.ts',
   'app/routes/api/library/collection/$id.ts',
   'app/routes/api/library/collection/$id/cover.ts',

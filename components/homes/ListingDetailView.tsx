@@ -39,7 +39,11 @@ import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
 import { HttpError, serverError } from '@/lib/http';
 import { sendMessageApi } from '@/lib/messages/messages.contract';
-import { deleteHomeListingApi, getHomeListingApi } from '@/lib/homes/homes.contract';
+import {
+  deleteHomeListingApi,
+  getHomeListingApi,
+  setHomeListingStatusApi,
+} from '@/lib/homes/homes.contract';
 
 export function ListingDetailView({ id }: { id: string }) {
   const goBack = useBackOrFallback();
@@ -107,16 +111,11 @@ export function ListingDetailView({ id }: { id: string }) {
       if (!listing) return;
       setSavingStatus(true);
       try {
-        const res = await fetch(`/api/homes/listings/${listing.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status }),
-        });
-        if (!res.ok) throw new Error('Could not update status');
+        await api(setHomeListingStatusApi, { params: { id: listing.id }, body: { status } });
         setListing({ ...listing, status });
         toast.success(`Marked ${statusLabel(status).toLowerCase()}`);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Could not update status');
+        toast.error(serverError(err) ?? 'Could not update status');
       } finally {
         setSavingStatus(false);
       }

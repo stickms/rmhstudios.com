@@ -17,6 +17,9 @@ import { ReadabilityMeter } from '@/components/reading/ReadabilityMeter';
 import { markdownComponents } from '@/components/blog/MDXAnimations';
 import { toast } from 'sonner';
 
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { saveBlogPostApi } from '@/lib/admin/admin-tools.contract';
 export function MDXEditor({
   initialData,
   isEdit = false,
@@ -90,17 +93,13 @@ export function MDXEditor({
         isEdit,
       };
 
-      const res = await fetch('/api/admin/blog', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
+      try {
+        await api(saveBlogPostApi, { body: payload });
+      } catch (error) {
         throw new Error(
-          data.error || t('failed-to-create-post', { defaultValue: 'Failed to create post' }),
+          serverError(error) ||
+            t('failed-to-create-post', { defaultValue: 'Failed to create post' }),
+          { cause: error },
         );
       }
 
