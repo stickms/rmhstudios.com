@@ -50,8 +50,11 @@ const PACK_BUDGET = JSON.parse(
 const KB = 1024;
 const MB = 1024 * KB;
 export const BUDGETS = {
-  // 2.5 KB for MP's hooks in the page + 2.5 KB for later single-player features (680cb73a).
-  spEntryDeltaGzip: (2.5 + 2.5) * KB,
+  // 2.5 KB for MP's hooks in the page + 2.5 KB for later single-player features (680cb73a),
+  // + 0.5 KB for lib/core/persist (redesign A4): the one storage helper that replaced the
+  // hand-rolled try/catch copies lands in its own 0.25 KB gzip shared chunk on this path
+  // (BalatroPage and lib/game-saves/cloud-save.ts both use it).
+  spEntryDeltaGzip: (2.5 + 2.5 + 0.5) * KB,
   mpChunksGzip: 70 * KB,
   p2pGzip: 15 * KB,
   // Read from data/balatro-mp/pack-budget.json, the budget the pack builder enforces, so the
