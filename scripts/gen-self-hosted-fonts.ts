@@ -9,7 +9,7 @@
  *
  * Fontsource ships `@font-face` rules pinned to `font-display: swap`, and
  * `font-display` is a DESCRIPTOR — nothing outside the rule can change it. `swap`
- * is right for Inter, which is the body text and has a metric-matched fallback
+ * is right for Geist, which is the body text and has a metric-matched fallback
  * (`globals.css` §OPT-17). It is wrong for a DISPLAY face: the heading paints in
  * Georgia, the face lands, and the heading changes shape and width in front of
  * the reader. That was every decorative family on the site, loaded from Google
@@ -60,21 +60,22 @@ const GROUPS: Group[] = [
     usedBy:
       'app/globals.css (@import) — the --font-* tokens and the themes whose display/mono stacks name these families',
     sources: [
-      // The site's mono (eyebrows, kickers and data — CLAUDE.md "Identity").
+      // The site's mono (data and code — CLAUDE.md "Identity"). Geist, the sans,
+      // is imported from Fontsource directly in globals.css with `swap`.
       { pkg: '@fontsource-variable/geist-mono', css: ['wght.css'], family: 'Geist Mono' },
-      { pkg: '@fontsource-variable/jetbrains-mono', css: ['wght.css'], family: 'JetBrains Mono' },
-      {
-        pkg: '@fontsource-variable/playfair-display',
-        css: ['wght.css'],
-        family: 'Playfair Display',
-      },
-      { pkg: '@fontsource-variable/cinzel', css: ['wght.css'], family: 'Cinzel' },
     ],
   },
   {
-    out: 'app/fonts/outfit.css',
-    usedBy: 'app/routes/slice-it.tsx',
-    sources: [{ pkg: '@fontsource-variable/outfit', css: ['wght.css'], family: 'Outfit' }],
+    out: 'app/fonts/dream-rift.css',
+    usedBy: 'app/routes/dream-rift.tsx (Cinzel caps + Playfair body: the game’s Touhou-style lettering, also drawn on its canvas HUD)',
+    sources: [
+      { pkg: '@fontsource-variable/cinzel', css: ['wght.css'], family: 'Cinzel' },
+      {
+        pkg: '@fontsource-variable/playfair-display',
+        css: ['wght.css', 'wght-italic.css'],
+        family: 'Playfair Display',
+      },
+    ],
   },
   {
     out: 'app/fonts/press-start-2p.css',
@@ -83,9 +84,15 @@ const GROUPS: Group[] = [
   },
   {
     out: 'app/fonts/eb-garamond.css',
-    usedBy: 'app/routes/versecraft.tsx (EB Garamond, plus the Patrick Hand handwriting face only versecraft uses)',
+    usedBy: 'app/routes/versecraft.tsx (EB Garamond, Cinzel and Playfair Display for its lettering, plus the Patrick Hand handwriting face only versecraft uses)',
     sources: [
       { pkg: '@fontsource-variable/eb-garamond', css: ['wght.css'], family: 'EB Garamond' },
+      { pkg: '@fontsource-variable/cinzel', css: ['wght.css'], family: 'Cinzel' },
+      {
+        pkg: '@fontsource-variable/playfair-display',
+        css: ['wght.css'],
+        family: 'Playfair Display',
+      },
       { pkg: '@fontsource/patrick-hand', css: ['400.css'], family: 'Patrick Hand' },
     ],
   },
@@ -102,11 +109,11 @@ const GROUPS: Group[] = [
   },
   {
     out: 'app/fonts/covid.css',
-    usedBy: 'app/routes/covid.tsx (Playfair italics on top of the site-wide uprights)',
+    usedBy: 'app/routes/covid.tsx (Playfair Display, upright and italic, plus Great Vibes)',
     sources: [
       {
         pkg: '@fontsource-variable/playfair-display',
-        css: ['wght-italic.css'],
+        css: ['wght.css', 'wght-italic.css'],
         family: 'Playfair Display',
       },
       { pkg: '@fontsource/great-vibes', css: ['400.css'], family: 'Great Vibes' },

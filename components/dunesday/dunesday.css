@@ -32,7 +32,7 @@
 
 .ds {
   --ds-font:
-    'Segoe UI', 'Frutiger', 'Frutiger Linotype', 'Myriad Pro', 'Nunito', 'Inter', system-ui,
+    'Segoe UI', 'Frutiger', 'Frutiger Linotype', 'Myriad Pro', 'Nunito', system-ui,
     sans-serif;
   --ds-sky-top: #2f8fe6;
   --ds-sky-mid: #7cc9ff;

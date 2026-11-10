@@ -5,7 +5,7 @@
    one continuous navy ground, white ink, a Didone display serif for
    the wordmark and the numbered case, a tracked grotesque for chrome
    and labels, and a blue signature script as the one flourish.
-   Playfair Display + Inter + Great Vibes.
+   Playfair Display + Geist + Great Vibes.
 
    Scoped under .cvd-root so none of it leaks into RMH Studios, which
    is a separate design language entirely (docs/design-language.md).
@@ -29,7 +29,7 @@
   --hair-soft: rgba(255, 255, 255, 0.1);
 
   --serif: 'Playfair Display', 'Times New Roman', Georgia, serif;
-  --sans: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sans: 'Geist Variable', 'Geist', system-ui, sans-serif;
   --script: 'Great Vibes', 'Segoe Script', cursive;
 
   --maxw: 1240px;

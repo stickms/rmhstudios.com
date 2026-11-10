@@ -410,7 +410,7 @@ export function DialogueScreen() {
             className="text-base md:text-lg leading-relaxed min-h-[3em]"
             style={{
               fontFamily: currentNode.speaker
-                ? 'var(--font-nunito, sans-serif)'
+                ? 'var(--font-geist), system-ui, sans-serif'
                 : 'var(--font-patrick-hand, serif)',
               color: currentNode.speaker ? '#e8e0d0' : '#a89888',
               fontStyle: currentNode.speaker ? 'normal' : 'italic',

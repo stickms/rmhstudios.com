@@ -437,7 +437,7 @@ function LoginPage() {
         {/* Brand + heading */}
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="glass-inset mb-3 flex size-12 items-center justify-center rounded-site">
-            <span className="font-serif text-lg font-bold tracking-tight text-site-text">R</span>
+            <span className="font-display text-lg font-bold tracking-tight text-site-text">R</span>
           </div>
           <p className="site-kicker">
             RMH Studios

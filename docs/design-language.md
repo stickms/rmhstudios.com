@@ -340,7 +340,7 @@ class):
 | Duration       | `duration-site` (the theme's `--site-transition-speed`), `duration-site-fast` (0.75×), `duration-site-slow` (1.5×) — Tailwind has no duration theme namespace, so these are `@utility` classes                                                                                          |
 | Radius         | `rounded-site`, `rounded-site-sm` (theme-aware — do not use `rounded-lg`/`rounded-xl` for site chrome)                                                                                                                                                                                  |
 | Shadow         | `shadow-site` (prominent), `shadow-site-sm` (resting)                                                                                                                                                                                                                                   |
-| Fonts          | `font-body` / `font-sans` (`--site-font-body`), `font-mono` (`--site-font-mono`), `font-display` (`--site-font-display`), `font-serif` (Playfair), `font-comic` (Bangers) — the first three resolve through the theme contract, so a theme that sets its own faces is obeyed everywhere |
+| Fonts          | `font-body` / `font-sans` (`--site-font-body`), `font-mono` (`--site-font-mono`), `font-display` (`--site-font-display`), `font-comic` (Bangers) — there is no `font-serif`; the first three resolve through the theme contract, so a theme that sets its own faces is obeyed everywhere |
 
 Extra breakpoint: `xs` = 480px (defined in the `@theme inline` block).
 
@@ -517,20 +517,23 @@ mode list, the CSS blocks, the pre-paint script) is CI-enforced — §13.
   always through `--site-font-body` /
   `--site-font-display` / `--site-font-mono` (`font-body`, `font-display`,
   `font-mono`) — never a literal family in a component. A theme may swap the
-  faces through the same tokens. _Status (2026-10-23):_ the default stacks still
-  lead with the system face / Inter and JetBrains Mono; moving them to Geist is a
-  token change in `app/globals.css` (plus a font load), never a per-component one.
+  faces through the same tokens. _Status (2026-11-10, owner decision):_ Geist and Geist Mono
+  are the only faces of the main site **and** the full-screen app tier
+  (`--app-font-*` in `components/shared/app-theme.css`). Both stacks are
+  `Geist (+ 'Geist Fallback' metric face)` then `system-ui, sans-serif` (mono:
+  `ui-monospace, SFMono-Regular, Menlo, monospace`), so non-Latin scripts fall back to the OS
+  face rather than a second webfont. Inter, JetBrains Mono, Playfair Display, Cinzel, Outfit and
+  the other old faces are gone from both tiers. A game or standalone page keeps its own display face
+  but loads it from its own route (`app/fonts/*.css` via `?url`, like `versecraft.tsx`), never
+  from `globals.css`; `pnpm fonts:generate` writes those sheets.
 
 - Body default is `font-body antialiased` (set on `<body>` in `__root.tsx`), which
-  resolves to `--site-font-body`. `font-sans` is its alias; `font-nunito` still
-  exists but names one literal face and is not the body default.
-- Fonts load from **Google Fonts `<link>`s**, not @fontsource, for site chrome:
-  Nunito + Inter are critical (loaded in `__root.tsx` head); decorative theme
-  fonts (JetBrains Mono, Playfair Display, Bangers, Bebas Neue, Orbitron,
-  Cinzel, Pacifico, Space Grotesk, Permanent Marker, Caveat, Dancing Script,
-  Patrick Hand) are deferred via `requestIdleCallback` (`deferredFontsScript`).
-  `@fontsource/ibm-plex-*` and `@fontsource/newsreader` are used by specific
-  games only.
+  resolves to `--site-font-body`. `font-sans` is its alias.
+- Fonts are **self-hosted Fontsource files**: Geist (`swap`, Latin subset
+  preloaded in `__root.tsx`) and Geist Mono (`optional`, `app/fonts/site-display.css`)
+  are the only ones `globals.css` loads. Any other face belongs to one game or
+  standalone page and loads from that route (`app/fonts/<name>.css`,
+  `scripts/gen-self-hosted-fonts.ts`).
 - Recurring text patterns:
   - Page `<h1>`: `font-display font-bold text-lg text-site-text`
   - Body: `text-site-text`; secondary: `text-sm text-site-text-muted`; faint: `text-site-text-dim`

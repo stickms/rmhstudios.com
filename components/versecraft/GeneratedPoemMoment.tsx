@@ -107,7 +107,7 @@ export function GeneratedPoemMoment() {
               <div className="text-sm mb-3" style={{ color: accent }}>
                 {result.score >= 85 ? 'It lands perfectly.' : result.score >= 68 ? 'It resonates.' : 'It connects.'} (+{Math.round(result.score / 12)} closeness)
               </div>
-              <p className="text-base italic mb-6" style={{ color: '#e8e0d0', fontFamily: 'var(--font-nunito, sans-serif)' }}>{result.reaction}</p>
+              <p className="text-base italic mb-6" style={{ color: '#e8e0d0', fontFamily: 'var(--font-geist), system-ui, sans-serif' }}>{result.reaction}</p>
               <button onClick={() => void advanceGeneratedChapter()}
                 className="px-6 py-2.5 rounded tracking-wide"
                 style={{ backgroundColor: `${accent}30`, border: `1px solid ${accent}66`, color: '#fff', fontFamily: 'var(--font-playfair, serif)' }}>

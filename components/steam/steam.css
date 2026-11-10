@@ -55,7 +55,7 @@
   /* The bottom bar's height, which it keeps pinned (below) and the sticky sidebar leaves room for. */
   --stm-bottom-h: calc(40px + env(safe-area-inset-bottom));
 
-  font-family: var(--font-inter), 'Inter Fallback', 'Motiva Sans', Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist), 'Motiva Sans', Arial, Helvetica, sans-serif;
   font-size: 14px;
   line-height: 1.4;
   color: var(--stm-text);
