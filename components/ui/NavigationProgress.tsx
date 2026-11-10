@@ -47,6 +47,7 @@ export function NavigationProgress() {
     // edge (opacity or not) as the source of the status-bar tint, and this one is full width.
     <div
       aria-hidden
+      // eslint-disable-next-line local/no-arbitrary-type-size -- body-level router progress bar that must outrank every surface; its 300 is the documented exception (lib/__tests__/stacking-consistency.test.ts BODY_LEVEL_MOUNTS)
       className={`pointer-events-none fixed inset-x-0 top-0 z-[300] h-0.5 ${phase === 'idle' ? 'hidden' : 'block'}`}
     >
       <div data-nav-progress data-phase={phase} className="h-full origin-left bg-site-accent" />

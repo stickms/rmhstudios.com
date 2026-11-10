@@ -543,7 +543,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  defaultValue:'Describe this image for screen readers',
  })
  }
- className={`absolute bottom-1 left-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none transition-colors ${
+ className={`absolute bottom-1 left-1 rounded-full px-1.5 py-0.5 text-micro font-bold uppercase leading-none transition-colors ${
  hasAlt
  ?'bg-site-accent text-site-accent-fg'
  :'bg-site-media-scrim-strong text-site-media-ink/90 hover:bg-site-media-scrim-hover'

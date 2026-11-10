@@ -113,7 +113,7 @@ export function GifPicker({ onSelect, onClose, className ='', initialQuery ='' }
  <div ref={sentinelRef} className="h-2"/>
  </div>
 
- <div className="pt-1.5 text-[10px] text-site-text-dim text-right">
+ <div className="pt-1.5 text-micro text-site-text-dim text-right">
  {t('powered-by-klipy', { defaultValue:'Powered by KLIPY'})}
  </div>
  </div>

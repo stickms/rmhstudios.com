@@ -185,7 +185,7 @@ export function MetricChart({
 
       <div className="mt-3 flex gap-2">
         <div
-          className="relative h-40 w-12 shrink-0 text-right text-[10px] tabular-nums text-site-text-dim"
+          className="relative h-40 w-12 shrink-0 text-right text-micro tabular-nums text-site-text-dim"
           aria-hidden
         >
           {ticks.map((v) => (
@@ -283,7 +283,7 @@ export function MetricChart({
               />
             )}
           </div>
-          <div className="mt-1 flex justify-between text-[10px] text-site-text-dim" aria-hidden>
+          <div className="mt-1 flex justify-between text-micro text-site-text-dim" aria-hidden>
             <span>{fmtTime(t0, withDate)}</span>
             <span>{fmtTime(t1, withDate)}</span>
           </div>

@@ -408,12 +408,12 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
  {item.content && (
  <RMHarkContent
  text={item.content}
- className="text-site-text text-[15px] mt-1 whitespace-pre-wrap break-words"
+ className="text-site-text text-body mt-1 whitespace-pre-wrap break-words"
  />
  )}
  {/* AI translation (toggled from the ⋯ menu) */}
  {showTranslated && translatedText && (
- <p className="mt-2 whitespace-pre-wrap break-words rounded-site glass-fill px-4 py-3 text-[15px] text-site-text">
+ <p className="mt-2 whitespace-pre-wrap break-words rounded-site glass-fill px-4 py-3 text-body text-site-text">
  {translatedText}
  </p>
  )}

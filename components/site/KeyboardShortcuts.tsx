@@ -57,7 +57,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="inline-flex min-w-6 items-center justify-center rounded-site-sm border border-site-border bg-site-glass-tint px-1.5 py-0.5 text-[11px] font-medium text-site-text-muted shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]">
+    <kbd className="inline-flex min-w-6 items-center justify-center rounded-site-sm border border-site-border bg-site-glass-tint px-1.5 py-0.5 text-caption font-medium text-site-text-muted shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]">
       {children}
     </kbd>
   );
@@ -151,11 +151,11 @@ export function KeyboardShortcuts() {
       )}
       <DialogPrimitive.Root open={helpOpen} onOpenChange={setHelpOpen}>
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay data-motion="fade" className="fixed inset-0 z-[90] glass-scrim" />
+          <DialogPrimitive.Overlay data-motion="fade" className="fixed inset-0 z-hub-overlay glass-scrim" />
           <DialogPrimitive.Content
             aria-describedby={undefined}
             data-motion="rise"
-            className="glass-overlay fixed left-1/2 top-1/2 z-[91] max-h-[80dvh] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto p-4"
+            className="glass-overlay fixed left-1/2 top-1/2 z-palette max-h-[80dvh] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto p-4"
           >
             <DialogPrimitive.Title className="text-base font-bold text-site-text">
               {t('kbd-title', { defaultValue: 'Keyboard shortcuts' })}

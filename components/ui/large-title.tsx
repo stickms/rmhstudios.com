@@ -130,6 +130,7 @@ export function LargeTitle({
         )}
         <p
           aria-hidden
+          // eslint-disable-next-line local/no-arbitrary-type-size -- the iOS large-title size (34pt = 2.125rem) is a one-off with no step; a type-scale decision, not a cleanup
           className="font-display text-[2.125rem] font-semibold leading-tight tracking-[-0.024em] text-site-text"
         >
           {title}

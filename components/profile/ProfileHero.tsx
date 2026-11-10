@@ -407,7 +407,7 @@ export function ProfileHero({
           </div>
 
           {profile.bio ? (
-            <p className="mt-4 max-w-2xl whitespace-pre-wrap break-words text-[15px] leading-relaxed text-site-text">
+            <p className="mt-4 max-w-2xl whitespace-pre-wrap break-words text-body leading-relaxed text-site-text">
               {profile.bio}
             </p>
           ) : profile.isOwnProfile ? (

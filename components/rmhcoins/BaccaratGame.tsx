@@ -119,7 +119,7 @@ export function BaccaratGame({ coins, setCoins }: Props) {
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {roomInfo.joinCode && <TableInvite game="baccarat" joinCode={roomInfo.joinCode} />}
-          <span className="text-[10px] sm:text-xs text-site-text-dim">
+          <span className="text-micro sm:text-xs text-site-text-dim">
             {players.length}/{roomInfo.maxPlayers}
           </span>
           <Circle className={`h-3 w-3 fill-current shrink-0 ${statusColor}`} />

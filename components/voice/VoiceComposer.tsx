@@ -290,7 +290,7 @@ export function VoiceComposer({
           <div className="min-w-0 flex-1 text-site-accent">
             <VoiceWaveform peaks={livePeaks} progress={1} />
           </div>
-          <span className="shrink-0 text-[11px] tabular-nums text-site-text-dim">
+          <span className="shrink-0 text-caption tabular-nums text-site-text-dim">
             −{formatDuration(remainingMs)}
           </span>
           <button

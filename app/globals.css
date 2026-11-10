@@ -201,6 +201,57 @@
   transition-duration: calc(var(--site-transition-speed, 200ms) * 1.5);
 }
 
+/* E2 type scale — NAMED STEPS FOR THE SIZES THE SITE TIER ALREADY USES (@e2-type-scale).
+   Each step is the exact value of the arbitrary `text-[…]` it replaced, so this slice changes
+   nothing on screen; `scripts/probe-type-scale.mjs` compiles both forms with Tailwind and fails
+   unless the emitted declarations are identical. No `--text-*--line-height` is declared on purpose:
+   a named step that carried a line-height would no longer match `text-[10px]`, which sets only
+   font-size. `inline` so the utility emits the literal value, not a var() indirection.
+   Raising anything under 11px is a separate visual decision (docs/plans/…-ground-up-redesign-audit.md E2),
+   and then it is a one-line edit here. The px steps and the rem steps are different units on
+   purpose — a rem step scales with the user's root font size, a px step does not. */
+@theme inline {
+  --text-pico: 7px;
+  --text-nano: 8px;
+  --text-tiny: 9px;
+  --text-micro: 10px;
+  --text-caption: 11px;
+  --text-body: 15px;
+  --text-body-rem: 0.9375rem;
+  --text-rem-60: 0.6rem;
+  --text-rem-62: 0.62rem;
+  --text-rem-64: 0.64rem;
+  --text-rem-65: 0.65rem;
+  --text-rem-68: 0.68rem;
+  --text-rem-70: 0.7rem;
+  --text-rem-72: 0.72rem;
+}
+
+/* E2 layers (@e2-layers) — `z-<name>` for the values the site tier writes. Each reads a `--z-*`
+   token from the §5.6 scale in :root, so the order lives in one place (stacking-consistency.test.ts).
+   Same numbers as the `z-[N]` they replace; probe-type-scale.mjs proves the emitted declaration. */
+@utility z-content {
+  z-index: var(--z-content);
+}
+@utility z-topbar {
+  z-index: var(--z-topbar);
+}
+@utility z-hub-overlay {
+  z-index: var(--z-hub-overlay);
+}
+@utility z-palette {
+  z-index: var(--z-palette);
+}
+@utility z-popover {
+  z-index: var(--z-popover);
+}
+@utility z-call {
+  z-index: var(--z-call);
+}
+@utility z-call-dialog {
+  z-index: var(--z-call-dialog);
+}
+
 /* A full radius is a circle or a capsule, never a squircle: it keeps the circular corner next to Tailwind's own
    `border-radius` (Tailwind merges both declarations, and every variant such as `md:rounded-full`). The universal
    squircle default is in `@layer base` (see "Corner shape" there). */
@@ -606,6 +657,13 @@
   --z-floating: 80;
   --z-hub-overlay: 90;
   --z-hub-orb-open: 95;
+  /* The command palette / shortcut sheet sit one above the hub overlay's scrim band (90). */
+  --z-palette: 91;
+  /* A body-level popover that must clear page chrome (the language menu, a reaction picker). */
+  --z-popover: 100;
+  /* The in-call banner, and the call dialogs opened from it one layer above. */
+  --z-call: 120;
+  --z-call-dialog: 121;
   /* Body-level, not shell-level: the top bar's quick panels portal out of the
      shell (the bar's `backdrop-filter` would otherwise be their containing
      block). 40 sits above `.radial-shell` — which participates at z-auto — and

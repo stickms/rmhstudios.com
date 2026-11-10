@@ -312,6 +312,7 @@ export default tseslint.config(
     rules: {
       'local/no-hardcoded-radius': 'error',
       'local/no-raw-palette-color': 'error',
+      'local/no-arbitrary-type-size': 'error',
       'local/no-inline-motion': 'error',
     },
   },

@@ -538,7 +538,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay
             data-motion="fade"
-            className="fixed inset-0 z-[90] glass-scrim"
+            className="fixed inset-0 z-hub-overlay glass-scrim"
           />
           {/* Plain `glass-overlay` — no `glass-refract`/`--prism` here any more.
               The displacement lens those classes exist to carry is PARKED (see
@@ -550,7 +550,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
               unspent than spent on an artifact. */}
           <DialogPrimitive.Content
             data-motion="rise"
-            className="glass-overlay fixed left-1/2 top-[12dvh] z-[91] w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden"
+            className="glass-overlay fixed left-1/2 top-[12dvh] z-palette w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden"
             aria-describedby={undefined}
           >
             <DialogPrimitive.Title className="sr-only">
@@ -583,9 +583,9 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
                 placeholder={t('palette-placeholder', {
                   defaultValue: 'Search pages, people, posts, games…',
                 })}
-                className="w-full bg-transparent py-4 text-[0.9375rem] text-site-text placeholder:text-site-text-dim focus:outline-none"
+                className="w-full bg-transparent py-4 text-body-rem text-site-text placeholder:text-site-text-dim focus:outline-none"
               />
-              <kbd className="hidden shrink-0 rounded-[var(--site-radius-sm)] border border-site-border px-1.5 py-0.5 text-[10px] font-medium uppercase text-site-text-dim sm:block">
+              <kbd className="hidden shrink-0 rounded-[var(--site-radius-sm)] border border-site-border px-1.5 py-0.5 text-micro font-medium uppercase text-site-text-dim sm:block">
                 esc
               </kbd>
             </div>

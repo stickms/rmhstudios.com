@@ -1288,7 +1288,7 @@ export function ConversationView({
                           </>
                         )}
                         <p
-                          className={`text-[10px] mt-1 ${isSelf ? 'text-site-bg/60' : 'text-site-bg/55'}`}
+                          className={`text-micro mt-1 ${isSelf ? 'text-site-bg/60' : 'text-site-bg/55'}`}
                         >
                           {formatTime(msg.createdAt)}
                           {msg.editedAt && !deleted && (

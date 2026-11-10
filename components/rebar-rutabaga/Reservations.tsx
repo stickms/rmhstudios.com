@@ -73,7 +73,7 @@ export function Reservations() {
     >
       <div className="mx-auto max-w-[86rem] px-6 py-24 sm:px-10 sm:py-32">
         <Reveal>
-          <p className="font-mono text-[0.7rem] uppercase tracking-[0.26em] text-rebar-ink-faint">
+          <p className="font-mono text-rem-70 uppercase tracking-[0.26em] text-rebar-ink-faint">
             {t('book.eyebrow', { defaultValue: 'Reservations' })}
           </p>
         </Reveal>
@@ -89,7 +89,7 @@ export function Reservations() {
               </h2>
             </Reveal>
             <Reveal delay={0.1}>
-              <p className="mt-4 font-mono text-[0.7rem] uppercase tracking-[0.2em] text-rebar-ink-faint">
+              <p className="mt-4 font-mono text-rem-70 uppercase tracking-[0.2em] text-rebar-ink-faint">
                 {t('book.perGuest', { defaultValue: 'Per guest · nine courses' })}
               </p>
             </Reveal>
@@ -127,7 +127,7 @@ export function Reservations() {
               {facts.map(([label, value], i) => (
                 <Reveal key={label} delay={stagger(i, 0.045)}>
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-6 border-b border-rebar-line py-3.5">
-                    <dt className="font-mono text-[0.68rem] uppercase tracking-[0.16em] text-rebar-ink-faint">
+                    <dt className="font-mono text-rem-68 uppercase tracking-[0.16em] text-rebar-ink-faint">
                       {label}
                     </dt>
                     <dd className="text-right font-mono text-sm tabular-nums text-rebar-ink">
@@ -141,7 +141,7 @@ export function Reservations() {
 
           <div className="lg:pt-6">
             <Reveal>
-              <h3 className="font-mono text-[0.7rem] uppercase tracking-[0.26em] text-rebar-ink-faint">
+              <h3 className="font-mono text-rem-70 uppercase tracking-[0.26em] text-rebar-ink-faint">
                 {t('book.house', { defaultValue: 'The house' })}
               </h3>
             </Reveal>

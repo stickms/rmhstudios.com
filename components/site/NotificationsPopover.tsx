@@ -209,7 +209,7 @@ export function NotificationsPopover({
                         <span className="mt-0.5 block text-xs">
                           <Skeleton className="skeleton-line w-3/5" />
                         </span>
-                        <span className="mt-0.5 block text-[11px]">
+                        <span className="mt-0.5 block text-caption">
                           <Skeleton className="skeleton-line w-10" />
                         </span>
                       </span>
@@ -257,7 +257,7 @@ export function NotificationsPopover({
                                 {n.preview}
                               </span>
                             )}
-                            <span className="mt-0.5 block text-[11px] text-site-text-dim">
+                            <span className="mt-0.5 block text-caption text-site-text-dim">
                               {timeAgoShort(n.createdAt)}
                             </span>
                           </span>

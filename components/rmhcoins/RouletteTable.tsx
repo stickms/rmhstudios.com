@@ -189,7 +189,7 @@ function ChipOverlay({
   const amount = getChipAmount(type, numbers);
   if (amount <= 0) return null;
   return (
-    <div className="absolute -top-1 -right-1 z-30 flex items-center gap-0.5 bg-site-accent text-site-accent-fg text-[8px] font-bold rounded-full px-1 py-0.5 shadow-site border border-site-accent/60">
+    <div className="absolute -top-1 -right-1 z-30 flex items-center gap-0.5 bg-site-accent text-site-accent-fg text-nano font-bold rounded-full px-1 py-0.5 shadow-site border border-site-accent/60">
       <CoinIcon className="w-2 h-2" />
       {amount}
     </div>
@@ -212,7 +212,7 @@ function EdgeChip({
   if (amount <= 0) return null;
   return (
     <div
-      className="absolute z-30 flex items-center justify-center bg-site-accent text-site-accent-fg text-[7px] font-bold rounded-full shadow-site border border-site-accent/60"
+      className="absolute z-30 flex items-center justify-center bg-site-accent text-site-accent-fg text-pico font-bold rounded-full shadow-site border border-site-accent/60"
       style={{ width: 18, height: 18, ...style }}
     >
       {amount}
@@ -311,7 +311,7 @@ export function RouletteTable({ coins }: Props) {
               type="button"
               variant="secondary"
               onClick={() => handlePlaceBet('topline', [0, DOUBLE_ZERO, 1, 2, 3])}
-              className="h-auto w-full min-h-7 whitespace-normal px-2 text-[10px] font-bold rounded"
+              className="h-auto w-full min-h-7 whitespace-normal px-2 text-micro font-bold rounded"
             >
               {t('top-line-bet', { defaultValue: 'Top Line (0, 00, 1-3) 6:1' })}
               <ChipOverlay
@@ -464,7 +464,7 @@ export function RouletteTable({ coins }: Props) {
                 key={type}
                 onClick={() => handlePlaceBet(type, getOutsideBetNumbers(type))}
                 disabled={!isBetting}
-                className={`h-auto min-h-9 whitespace-normal px-2 text-[10px] sm:text-[11px] font-bold rounded ${
+                className={`h-auto min-h-9 whitespace-normal px-2 text-micro sm:text-caption font-bold rounded ${
                   isBetting ? 'cursor-pointer' : 'cursor-default'
                 }`}
               >
@@ -487,7 +487,7 @@ export function RouletteTable({ coins }: Props) {
                 key={type}
                 onClick={() => handlePlaceBet(type, getOutsideBetNumbers(type))}
                 disabled={!isBetting}
-                className={`h-auto min-h-9 whitespace-normal px-2 text-[10px] sm:text-[11px] font-bold rounded ${
+                className={`h-auto min-h-9 whitespace-normal px-2 text-micro sm:text-caption font-bold rounded ${
                   isBetting ? 'cursor-pointer' : 'cursor-default'
                 }`}
               >
@@ -519,7 +519,7 @@ export function RouletteTable({ coins }: Props) {
                 key={type}
                 onClick={() => handlePlaceBet(type, getOutsideBetNumbers(type))}
                 disabled={!isBetting}
-                className={`relative min-h-9 text-[11px] font-bold rounded transition-transform active:scale-95 ${
+                className={`relative min-h-9 text-caption font-bold rounded transition-transform active:scale-95 ${
                   isBetting ? 'cursor-pointer' : 'cursor-default'
                 } ${
                   type === 'red'
@@ -544,7 +544,7 @@ export function RouletteTable({ coins }: Props) {
       {/* History */}
       {history.length > 0 && (
         <div className="flex flex-col items-center gap-1 w-full">
-          <span className="text-[10px] text-site-text-dim uppercase tracking-wider font-bold">
+          <span className="text-micro text-site-text-dim uppercase tracking-wider font-bold">
             {t('history', { defaultValue: 'History' })}
           </span>
           <div className="flex gap-1 flex-wrap justify-center">
@@ -553,7 +553,7 @@ export function RouletteTable({ coins }: Props) {
               return (
                 <span
                   key={`${n}-${i}`}
-                  className={`inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full text-[9px] sm:text-[10px] font-bold text-casino-ink ${
+                  className={`inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full text-tiny sm:text-micro font-bold text-casino-ink ${
                     color === 'red'
                       ? 'bg-casino-red'
                       : color === 'green'
@@ -595,18 +595,18 @@ export function RouletteTable({ coins }: Props) {
                   {player.totalBetThisRound > 0 && (
                     <div className="flex items-center gap-0.5">
                       <CoinIcon className="w-3 h-3" />
-                      <span className="text-[10px] text-site-warning font-bold">
+                      <span className="text-micro text-site-warning font-bold">
                         {player.totalBetThisRound}
                       </span>
                     </div>
                   )}
                   {tablePhase === 'results' && myPayout && myPayout.netGain > 0 && (
-                    <span className="text-[10px] text-site-success font-bold animate-bounce">
+                    <span className="text-micro text-site-success font-bold animate-bounce">
                       +{myPayout.payout}
                     </span>
                   )}
                   {tablePhase === 'results' && myPayout && myPayout.netGain < 0 && (
-                    <span className="text-[10px] text-site-danger font-bold">
+                    <span className="text-micro text-site-danger font-bold">
                       {myPayout.netGain}
                     </span>
                   )}

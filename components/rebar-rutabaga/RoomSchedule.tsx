@@ -45,7 +45,7 @@ export function RoomSchedule() {
         <div className="grid gap-10 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-20">
           <div className="lg:sticky lg:top-28 lg:self-start">
             <Reveal>
-              <p className="font-mono text-[0.7rem] uppercase tracking-[0.26em] text-rebar-ink-faint">
+              <p className="font-mono text-rem-70 uppercase tracking-[0.26em] text-rebar-ink-faint">
                 {t('room.caption', {
                   defaultValue: 'Materials schedule — foundry hall, rev. C',
                 })}
@@ -81,19 +81,19 @@ export function RoomSchedule() {
                 <tr>
                   <th
                     scope="col"
-                    className="w-20 py-4 pr-5 font-mono text-[0.64rem] font-normal uppercase tracking-[0.16em] text-rebar-ink-faint"
+                    className="w-20 py-4 pr-5 font-mono text-rem-64 font-normal uppercase tracking-[0.16em] text-rebar-ink-faint"
                   >
                     {t('room.ref', { defaultValue: 'Ref' })}
                   </th>
                   <th
                     scope="col"
-                    className="w-[13rem] py-4 pr-5 font-mono text-[0.64rem] font-normal uppercase tracking-[0.16em] text-rebar-ink-faint"
+                    className="w-[13rem] py-4 pr-5 font-mono text-rem-64 font-normal uppercase tracking-[0.16em] text-rebar-ink-faint"
                   >
                     {t('room.element', { defaultValue: 'Element' })}
                   </th>
                   <th
                     scope="col"
-                    className="py-4 font-mono text-[0.64rem] font-normal uppercase tracking-[0.16em] text-rebar-ink-faint"
+                    className="py-4 font-mono text-rem-64 font-normal uppercase tracking-[0.16em] text-rebar-ink-faint"
                   >
                     {t('room.spec', { defaultValue: 'Specification' })}
                   </th>

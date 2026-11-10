@@ -121,6 +121,7 @@ export const MarkdownCode = ({ className, ...props }: El<'code'>) => {
   return (
     <code
       className={cn(
+        // eslint-disable-next-line local/no-arbitrary-type-size -- relative em: inline code scales with the surrounding prose, which no absolute step can express
         'rounded-site-sm bg-site-text/10 px-1.5 py-0.5 font-mono text-[0.9em] text-site-text',
         className,
       )}

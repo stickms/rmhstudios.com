@@ -86,7 +86,7 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
                   }`}
                 >
                   {tierOpt === 'pro' ? 'Pro' : 'HARD-R'}
-                  <span className="mt-0.5 flex items-center justify-center gap-0.5 text-[11px] text-site-text-dim">
+                  <span className="mt-0.5 flex items-center justify-center gap-0.5 text-caption text-site-text-dim">
                     <CoinIcon className="h-3 w-3" /> {PRICES[tierOpt].toLocaleString()}/mo
                   </span>
                 </button>
