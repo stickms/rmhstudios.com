@@ -1,19 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/communities/communities.contract';
 import { prisma } from '@/lib/prisma.server';
 import { getCommunityBySlug, getRole, canModerate } from '@/lib/communities/access.server';
-import { z } from 'zod';
+import { createAnnouncementBody } from '@/lib/communities/communities-schema';
 
 /**
  * GET  /api/communities/$slug/announcements — list announcements (newest first).
  * POST /api/communities/$slug/announcements — post one (mods/admins only).
  */
-const createSchema = z.object({ body: z.string().trim().min(1).max(2000) });
-
 export const Route = createFileRoute('/api/communities/$slug/announcements')({
   server: {
     handlers: {
-      GET: defineHandler({ auth: 'optional' }, async ({ params, session }) => {
+      GET: implement(C.listCommunityAnnouncementsApi, { auth: 'optional' }, async ({ params, session }) => {
         const community = await getCommunityBySlug(params.slug);
         if (!community) return Response.json({ error: 'Not found' }, { status: 404 });
         // Members-only: a private community's announcements are invisible to
@@ -37,7 +36,7 @@ export const Route = createFileRoute('/api/communities/$slug/announcements')({
           announcements: announcements.map((a) => ({ ...a, createdAt: a.createdAt.toISOString() })),
         });
       }),
-      POST: defineHandler(
+      POST: implement(C.createCommunityAnnouncementApi, 
         {
           rateLimit: {
             limit: 20,
@@ -45,7 +44,7 @@ export const Route = createFileRoute('/api/communities/$slug/announcements')({
             prefix: 'community-announce',
             message: 'Too many announcements. Try later.',
           },
-          body: createSchema,
+          body: createAnnouncementBody,
           allowEmptyBody: true,
           verboseValidationErrors: true,
         },

@@ -29,9 +29,10 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { uuidv7 } from './editor/uuid';
+import { MAX_SETLIST_SONGS } from './setlist-schema';
 
 /** Hard cap on entries. A setlist is a set, not a library export. */
-export const MAX_SETLIST_SONGS = 50;
+export { MAX_SETLIST_SONGS };
 /** How many setlists one account may keep. */
 export const MAX_SETLISTS_PER_USER = 50;
 /** Page size for the public browse. */

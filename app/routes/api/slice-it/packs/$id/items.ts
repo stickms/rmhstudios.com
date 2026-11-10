@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/slice-it/packs.contract';
 import { prisma } from '@/lib/prisma.server';
 import { PackItemsZ } from '@/lib/slice-it/packs';
 import { addSongsToPack, ownedPack, packSongIds, reorderPack } from '@/lib/slice-it/packs.server';
@@ -23,7 +24,7 @@ const ParamsZ = z.object({ id: z.string().uuid() });
 export const Route = createFileRoute('/api/slice-it/packs/$id/items')({
   server: {
     handlers: {
-      PATCH: defineHandler(
+      PATCH: implement(C.patchPackItemsApi, 
         { body: PackItemsZ, rateLimit: 'write' },
         async ({ userId, params, body }) => {
           const parsed = ParamsZ.safeParse(params);

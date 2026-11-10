@@ -17,6 +17,8 @@ import { Reveal } from '@/components/motion';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
+import { api } from '@/lib/contract/client';
+import { deleteUserBuildApi, listUserBuildsApi } from '@/lib/user-builds.contract';
 
 export const Route = createFileRoute('/_site/user-builds/manage')({
   // `noindex`: one account's own builds (and `Disallow`ed in robots.txt).
@@ -39,11 +41,8 @@ function ManageContent() {
     if (!session?.user?.id) return;
     (async () => {
       try {
-        const res = await fetch(`/api/user-builds?userId=${session.user.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setBuilds(data.items);
-        }
+        const data = await api(listUserBuildsApi, { query: { userId: session.user.id } });
+        setBuilds(data.items);
       } catch (error) {
         console.error('Error fetching builds:', error);
       } finally {
@@ -65,10 +64,8 @@ function ManageContent() {
       return;
     setDeleting(build.id);
     try {
-      const res = await fetch(`/api/user-builds/${build.id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setBuilds((prev) => prev.filter((b) => b.id !== build.id));
-      }
+      await api(deleteUserBuildApi, { params: { id: build.id } });
+      setBuilds((prev) => prev.filter((b) => b.id !== build.id));
     } catch (error) {
       console.error('Error deleting build:', error);
     } finally {

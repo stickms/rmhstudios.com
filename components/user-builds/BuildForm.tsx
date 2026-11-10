@@ -9,6 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  createUserBuildApi,
+  updateUserBuildApi,
+  userBuildCategoriesApi,
+} from '@/lib/user-builds.contract';
 
 const FIELD_LABEL = 'block text-sm font-medium text-site-text';
 
@@ -76,8 +83,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
 
   // Fetch categories
   useEffect(() => {
-    fetch('/api/user-builds/categories')
-      .then((res) => res.json())
+    api(userBuildCategoriesApi)
       .then((data) => setCategories(data.categories || []))
       .catch(console.error);
   }, []);
@@ -104,20 +110,17 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         price: price ? Math.max(0, parseInt(price, 10) || 0) : 0,
       };
 
-      const res = await fetch(isEditing ? `/api/user-builds/${build.id}` : '/api/user-builds', {
-        method: isEditing ? 'PATCH' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
+      let savedBuild: Build;
+      try {
+        savedBuild = isEditing
+          ? await api(updateUserBuildApi, { params: { id: build.id }, body })
+          : await api(createUserBuildApi, { body });
+      } catch (err) {
         throw new Error(
-          data.error || t('failed-to-save', { defaultValue: 'Failed to save build' }),
+          serverError(err) || t('failed-to-save', { defaultValue: 'Failed to save build' }),
+          { cause: err },
         );
       }
-
-      const savedBuild = await res.json();
 
       if (onSuccess) {
         onSuccess(savedBuild);

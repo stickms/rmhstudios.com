@@ -21,6 +21,15 @@ import { formatCount } from '@/lib/utils';
 import { safeHref } from '@/lib/url-safety';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  deleteUserBuildApi,
+  getUserBuildApi,
+  likeUserBuildApi,
+  unlockUserBuildApi,
+  viewUserBuildApi,
+} from '@/lib/user-builds.contract';
 
 interface BuildDetailProps {
   build: Build;
@@ -58,10 +67,9 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
   useEffect(() => {
     if (!build.locked || !session) return;
     let active = true;
-    fetch(`/api/user-builds/${build.id}`, { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
+    api(getUserBuildApi, { params: { id: build.id } })
       .then((data) => {
-        if (active && data && !data.locked) setBuild((prev) => ({ ...prev, ...data }));
+        if (active && !data.locked) setBuild((prev) => ({ ...prev, ...data }));
       })
       .catch(() => {});
     return () => {
@@ -74,23 +82,18 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
     if (unlocking) return;
     setUnlocking(true);
     try {
-      const res = await fetch(`/api/user-builds/${build.id}/unlock`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setBuild((prev) => ({
-          ...prev,
-          locked: false,
-          unlocked: true,
-          readme: data.readme ?? prev.readme,
-          repoUrl: data.repoUrl ?? prev.repoUrl,
-          demoUrl: data.demoUrl ?? prev.demoUrl,
-        }));
-      } else if (data?.error) {
-        toast.error(data.error);
-      }
+      const data = await api(unlockUserBuildApi, { params: { id: build.id } });
+      setBuild((prev) => ({
+        ...prev,
+        locked: false,
+        unlocked: true,
+        readme: data.readme ?? prev.readme,
+        repoUrl: data.repoUrl ?? prev.repoUrl,
+        demoUrl: data.demoUrl ?? prev.demoUrl,
+      }));
+    } catch (error) {
+      const message = serverError(error);
+      if (message) toast.error(message);
     } finally {
       setUnlocking(false);
     }
@@ -101,10 +104,8 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
 
     setDeleting(true);
     try {
-      const res = await fetch(`/api/user-builds/${build.id}`, { method: 'DELETE' });
-      if (res.ok) {
-        navigate({ to: '/create/builds' });
-      }
+      await api(deleteUserBuildApi, { params: { id: build.id } });
+      navigate({ to: '/create/builds' });
     } catch (error) {
       console.error('Error deleting build:', error);
     } finally {
@@ -116,7 +117,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
   useEffect(() => {
     if (viewTrackedRef.current) return;
     viewTrackedRef.current = true;
-    fetch(`/api/user-builds/${build.id}/view`, { method: 'POST' }).catch(() => {});
+    api(viewUserBuildApi, { params: { id: build.id } }).catch(() => {});
   }, [build.id]);
 
   const handleLike = () => {
@@ -130,9 +131,8 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
           likeCount: prev.liked ? prev.likeCount - 1 : prev.likeCount + 1,
         })),
       rollback: () => setBuild((prev) => ({ ...prev, liked: wasLiked, likeCount: prevCount })),
-      commit: () => fetch(`/api/user-builds/${build.id}/like`, { method: 'POST' }),
-      reconcile: async (res) => {
-        const data = await res.json();
+      commit: async () => {
+        const data = await api(likeUserBuildApi, { params: { id: build.id } });
         setBuild((prev) => ({ ...prev, liked: data.liked, likeCount: data.likeCount }));
       },
     });

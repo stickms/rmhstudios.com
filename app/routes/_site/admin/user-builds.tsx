@@ -14,6 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { IconButton } from '@/components/ui/icon-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
+import { api } from '@/lib/contract/client';
+import { updateUserBuildApi } from '@/lib/user-builds.contract';
 
 interface Build {
   id: string;
@@ -85,12 +87,7 @@ function AdminUserBuildsPage() {
     if (!build) return;
     setBuilds(prev => prev.map(b => b.id === buildId ? { ...b, featured: !b.featured } : b));
     try {
-      const res = await fetch(`/api/user-builds/${buildId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ featured: !build.featured }),
-      });
-      if (!res.ok) throw new Error('Failed to toggle curated badge');
+      await api(updateUserBuildApi, { params: { id: buildId }, body: { featured: !build.featured } });
     } catch {
       setBuilds(prev => prev.map(b => b.id === buildId ? { ...b, featured: build.featured } : b));
     }

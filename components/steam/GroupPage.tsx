@@ -8,6 +8,9 @@ import type { SteamAnnouncement, SteamGroupPost } from '@/lib/games/group-posts'
 import { CommunityNav } from './CommunityNav';
 import { PersonAvatar } from './SteamPeople';
 import { TitleArt } from './TitleArt';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { joinCommunityApi } from '@/lib/communities/communities.contract';
 
 /** A Steam group page: the group's header, what it is about, and who is in it. */
 export function GroupPage({
@@ -27,17 +30,15 @@ export function GroupPage({
   const toggleJoin = async () => {
     setBusy(true);
     try {
-      const res = await fetch(`/api/communities/${group.slug}/join`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const body = (await res.json().catch(() => ({}))) as { joined?: boolean; error?: string };
-      if (res.ok && typeof body.joined === 'boolean') {
+      const body = await api(joinCommunityApi, { params: { slug: group.slug }, body: {} });
+      if (typeof body.joined === 'boolean') {
         if (body.joined !== isMember) setMemberCount((n) => n + (body.joined ? 1 : -1));
         setIsMember(body.joined);
       } else {
-        toast.error(body.error ?? t('steam-group-join-failed', { defaultValue: 'Could not update membership.' }));
+        toast.error(t('steam-group-join-failed', { defaultValue: 'Could not update membership.' }));
       }
+    } catch (err) {
+      toast.error(serverError(err) ?? t('steam-group-join-failed', { defaultValue: 'Could not update membership.' }));
     } finally {
       setBusy(false);
     }
