@@ -393,7 +393,7 @@ dc() {
 
 # ── Helper: prune stale SHA-tagged rollback images ──────────────────────────
 # Each deploy tags ${IMAGE_NAME}:${GIT_SHA} for instant rollback. These images
-# are large (full node_modules + .output + Chromium, multiple GB each) and
+# are large (full node_modules + .output + Chromium on the slim image, multiple GB each) and
 # `docker image prune` never touches them because they're tagged. Keep the 2
 # newest (current + one rollback target), remove the rest — the older SHAs are
 # almost never used and are the single biggest avoidable disk cost.
@@ -402,7 +402,7 @@ dc() {
 # to a full build-cache wipe that would evict the warm pnpm-store/.vinxi mounts.
 prune_rollback_images() {
     # Default keep=1 (one rollback target per image). These images are LARGE
-    # (this monorepo's node_modules + ~1.5GB .output + Chromium on the full image),
+    # (this monorepo's node_modules + ~1.5GB .output + Chromium on the slim image),
     # and on the small root disk each retained SHA is several GB of unique layers.
     # Keeping 1 instead of 2 frees a full image set and is the cheapest way to stop
     # the disk-pressure cache wipes. Callers pass an explicit count to override.
@@ -761,7 +761,7 @@ fi
 # to R2"), so Apache no longer touches them and no chmod dance is needed.
 
 IMAGE_NAME="${PROJECT_NAME}-app"
-# Full image (Go supervisor/status: + Go bins, Chromium, git). Built from the
+# Full image (Go supervisor/status: + Go bins, git). Built from the
 # same Dockerfile as the slim web image, target runner-full. Must match the
 # `image:` for the supervisor/status services in docker-compose.yml.
 FULL_IMAGE_NAME="${IMAGE_NAME}-full"
@@ -848,7 +848,7 @@ else
 fi
 
 # Pull both images CONCURRENTLY. They are separate repos but share most base
-# layers; the full image's unique layers (Chromium ~300 MB, Go bins) can transfer
+# layers; the full image's unique layers (Go bins) can transfer
 # while the web image's layers extract, instead of strictly after. Docker's
 # per-layer locking makes shared-layer pulls safe to overlap. Each pull's log is
 # captured to its own file so a failure still reports WHICH image and why, exactly
@@ -1388,13 +1388,13 @@ step_done
 # NOTE: web is intentionally NOT checked here — the hotswap in Step 4b already
 # proved the new web container serves traffic before flipping Apache to it, and
 # web now listens on the blue/green port, not the fixed $PORT_WEB.
-# The supervisor /health gate (the two Go background workers) can take up to
+# The supervisor /health gate (the Go discord-bot worker) can take up to
 # ~120s (it covers the DB WaitForReachable before the metrics server binds). It
 # used to run AFTER the port checks, serializing the two waits. Run it as one
 # more background job in the same wave so its long poll OVERLAPS the port checks —
 # total health time becomes max(port, supervisor), not their sum.
-# discord-bot / vibe-worker run as
-# goroutines inside the single `supervisor` process; it serves a MERGED
+# discord-bot runs as a
+# goroutine inside the `supervisor` process; it serves a MERGED
 # /health + /metrics on METRICS_ADDR (:9090), NOT host-published, so we probe it
 # from INSIDE the container with `dc exec`.
 stage health
@@ -1419,12 +1419,12 @@ if [ -n "$failed_services" ]; then
     exit 1
 fi
 
-# Confirm the merged metrics registry exposes both workers. A missing label
+# Confirm the merged metrics registry exposes the worker. A missing label
 # means one worker silently failed to register inside the shared process (not
 # that the process is down) — log it for the post-deploy watch rather than
 # blocking the deploy.
 SUP_METRICS=$(dc exec -T supervisor curl -fsS "http://localhost:${SUPERVISOR_METRICS_PORT}/metrics" 2>/dev/null || echo "")
-for w in discord-bot vibe-worker; do
+for w in discord-bot; do
     printf '%s' "$SUP_METRICS" | grep -q "service=\"$w\"" || \
         log "WARNING: supervisor /metrics missing service=\"$w\" label — check that worker."
 done

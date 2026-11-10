@@ -11,7 +11,7 @@ model VibePage {
   // persisted, or "error" if generation failed. Existing/legacy rows default "ready".
   status              String   @default("ready") // "generating" | "ready" | "error"
   thumbnailUrl        String? // "/api/vibe/thumb/<slug>?v=<ts>" once the screenshot is captured
-  thumbnailStale      Boolean  @default(true) // true → the vibe-worker (re)renders the screenshot
+  thumbnailStale      Boolean  @default(true) // true → the jobs thumbnail worker (re)renders the screenshot
   conversationHistory Json // array of { role, content } turns for "customize" follow-ups
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt

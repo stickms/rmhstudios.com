@@ -6,10 +6,10 @@
 BAZEL    ?= bazelisk
 PLATFORM ?= linux_amd64   # target arch for images; override with PLATFORM=linux_arm64
 # Realtime hubs (gateway/gamehub/rmhmusic/rmhtube/rmhbox) + the Helm/k8s deploy
-# path were removed in the rewrite (design §5.2). Production Go is the three
+# path were removed in the rewrite (design §5.2). Production Go is the
 # background workers, built into the app-full image; the Node hubs serve
 # realtime. What remains here builds/pushes the standalone worker images.
-SERVICES := vibe-worker discord-bot
+SERVICES := discord-bot
 SHA      := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 REGISTRY ?=
 GUARD    := ./scripts/preflight.sh --guard
@@ -36,11 +36,9 @@ build: ## build artifacts: all Go binaries + frontend bundle
 	$(BAZEL) build //go-services/cmd/...
 	$(BAZEL) run //:frontend
 
-base-images: ## build + push the special runtime bases (chromium/git)
+base-images: ## build + push the special runtime bases (git)
 	@$(GUARD)
-	docker build -f deploy/docker/base-chromium.Dockerfile -t ghcr.io/rmhstudios/rmhstudios-go-base-chromium:latest deploy/docker
 	docker build -f deploy/docker/base-git.Dockerfile      -t ghcr.io/rmhstudios/rmhstudios-go-base-git:latest      deploy/docker
-	docker push ghcr.io/rmhstudios/rmhstudios-go-base-chromium:latest
 	docker push ghcr.io/rmhstudios/rmhstudios-go-base-git:latest
 
 images: ## build + load every service image into Docker
