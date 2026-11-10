@@ -66,7 +66,7 @@ the status dashboard, and the asset streamer. All container ports bind to
 
 | Service | Port | Role |
 |---|---|---|
-| `supervisor` | 9090 (metrics) | Runs two background workers as goroutines: discord-bot, vibe-worker |
+| `supervisor` | 9090 (metrics) | Runs the discord-bot background worker as a goroutine |
 | `status` | 7008 | Standalone health dashboard (`/`, `/api/status`); survives outages |
 | `assets` | 7007 | Range-aware S3/R2 streaming for `/library` `/music` `/models` `/sprites` |
 
@@ -89,7 +89,7 @@ In production the Go binaries are compiled by the root `Dockerfile`'s
 image — Bazel is the CI unit-test gate, not the production build. `docker-compose.yml`
 runs everything from two images built off that one `Dockerfile` (`rmhstudios-app`
 slim for the Node services, `rmhstudios-app-full` for the Go services +
-Chromium/git). MinIO provides the S3-compatible bucket the `assets` service
+git; the slim image also carries Chromium for the jobs worker's vibe thumbnails). MinIO provides the S3-compatible bucket the `assets` service
 streams from locally.
 
 ## Project Structure

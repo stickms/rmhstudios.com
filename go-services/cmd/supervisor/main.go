@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/rmhstudios/rmh-go/internal/discordbot"
-	"github.com/rmhstudios/rmh-go/internal/vibeworker"
 	"github.com/rmhstudios/rmh-go/pkg/config"
 	"github.com/rmhstudios/rmh-go/pkg/db"
 	"github.com/rmhstudios/rmh-go/pkg/httpx"
@@ -38,7 +37,6 @@ func main() {
 	defer database.Close()
 
 	runs := map[string]worker.RunFunc{
-		"vibe-worker": vibeworker.Run,
 		"discord-bot": discordbot.Run,
 	}
 

@@ -30,10 +30,9 @@ Current production (Docker Compose on the VPS):
 
 Consequences:
 
-- `server/vibe-worker/`, `server/status/` were **replaced by Go** (they run as
-  goroutines inside the Go `supervisor`, or as the Go `status` binary) and their
-  dead Node source was **deleted in the rewrite reap (R0-T5)**; `server/bot-worker/` was deleted too and
-  its Go replacement has since moved to the `jobs` worker (D3, below) — recover from
+- `server/status/` was **replaced by Go** (the Go `status` binary) and its
+  dead Node source was **deleted in the rewrite reap (R0-T5)**; `server/vibe-worker/` and `server/bot-worker/` were deleted too and
+  their Go replacements have since moved to the `jobs` worker (D3, below) — recover from
   git history (or the `pre-rewrite-*` tags) if a rollback ever needs them.
 - The Go realtime hubs (gamehub/rmhbox/rmhtube) and the `gateway` were
   **removed in the rewrite** — they never served production traffic. Apache
@@ -108,6 +107,11 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   `bot-worker.*` (the RMHark synthetic users, `lib/rmhark-ai/bot-worker.server.ts`: `maintain` every minute
   gated by the admin interval, `post` / `reply` every `BOT_POST_TICK_MS` / `BOT_REPLY_TICK_MS` (default 5 min),
   `dm` every `BOT_DM_TICK_MS` (default 1 min); registers nothing without `DEEPSEEK_API_KEY`),
+  `vibe-worker.thumbnails` (RMHVibe gallery thumbnails, `lib/rmhvibe/thumbnail-worker.server.ts`: every minute, up to 5
+  `thumbnailStale` pages per batch (drains while batches are full and progressing), Playwright against the OS
+  Chromium (`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`, in the slim image's `runtime-chromium` layer; the `jobs`
+  service has `mem_limit` 1280m and `HOME=/tmp` for it), WebP to object storage, optimistic `updatedAt` clear;
+  `exclusive`, no retries; always registered),
   and `doctrine.*` (`daily-puzzles` 00:00 UTC + at boot, `sahur-activation` every minute,
   `reputation-decay` hourly on Mondays; `lib/doctrine/jobs.server.ts`). The status service
   watches the recap and sahur queues in pg-boss (B06) and `doctrine_puzzle` itself (A19). Hourly `ops.deepseek-balance` (`:05` UTC, `lib/jobs/maintenance.server.ts`)
@@ -158,9 +162,8 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
 
 The dead Node fallbacks — `vibe-worker/` (Playwright thumbnail renderer), `bot-worker/` (synthetic
 AI feed users), `status/` (status page) —
-were removed in the rewrite reap (R0-T5). `vibe-worker` and `status` live in
-`go-services/internal/<svc>/` (run by the Go `supervisor`, or the Go `status`
-binary) — see `go-services/CLAUDE.md`; the bot-worker now runs in `jobs`. Recover the old Node source from git
+were removed in the rewrite reap (R0-T5). `status` lives in
+`go-services/internal/status/` (the Go `status` binary) — see `go-services/CLAUDE.md`; the bot-worker and the vibe-worker now run in `jobs`. Recover the old Node source from git
 history if a rollback ever needs it.
 
 ## Dev, build, prod

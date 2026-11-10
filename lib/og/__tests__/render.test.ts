@@ -7,8 +7,16 @@ const SVG =
 
 describe('og render helpers', () => {
   it('svgToPng matches the synchronous Resvg output byte for byte', async () => {
+    // Same options as svgToPng. Without `loadSystemFonts: false` the reference render scans every
+    // system font first (no <text> here, so it changes no byte), which on a loaded CI runner pushed
+    // this test past the 5 s timeout (deploy run 42750505482).
     const sync = Buffer.from(
-      new Resvg(SVG, { fitTo: { mode: 'width', value: 200 } }).render().asPng(),
+      new Resvg(SVG, {
+        fitTo: { mode: 'width', value: 200 },
+        font: { loadSystemFonts: false },
+      })
+        .render()
+        .asPng(),
     );
     expect((await svgToPng(SVG, 200)).equals(sync)).toBe(true);
   });

@@ -1,7 +1,7 @@
 /**
  * Backfill / re-render gallery thumbnails for vibe pages.
  *
- * Normally the vibe-worker (Go) handles this — it polls for pages flagged
+ * Normally the jobs thumbnail worker handles this — it polls for pages flagged
  * `thumbnailStale` and renders them. This script is a manual fallback that
  * renders inline (Node Playwright): useful locally, when the worker is down, or
  * to recover after thumbnails were lost from object storage (the gallery shows

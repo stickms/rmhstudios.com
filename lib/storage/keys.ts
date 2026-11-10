@@ -135,7 +135,7 @@ export function userBannerFilename(url: string): string | null {
   return null;
 }
 
-// Vibe-page gallery thumbnails. Rendered by the vibe-worker (Go) / the Node
+// Vibe-page gallery thumbnails. Rendered by the vibe thumbnail worker (jobs) / the Node
 // screenshot fallback, stored as WebP in object storage so the db/ volume can be
 // reclaimed; served from the CDN in prod.
 export const VIBE_THUMB_PREFIX = "vibe-thumbs/";

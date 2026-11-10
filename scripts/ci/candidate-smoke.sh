@@ -35,4 +35,23 @@ done
 if [ "$ready" != true ]; then docker logs "$name"; exit 1; fi
 BASE_URL=http://127.0.0.1:7005 ORIGIN_HOST= bash deploy/smoke-test.sh
 docker run --rm --entrypoint sh "$full_ref" -ec \
-  'test -x /app/bin/supervisor && test -x /app/bin/status && test -x /app/bin/assets && chromium-browser --version'
+  'test -x /app/bin/supervisor && test -x /app/bin/status && test -x /app/bin/assets'
+# Chromium lives in the slim image now: the Node `jobs` worker renders vibe thumbnails with
+# Playwright against the OS Chromium (D3). Launch it the way lib/rmhvibe/vibe-screenshot.server.ts
+# does, under the jobs service's runtime (read-only root, /tmp tmpfs, HOME=/tmp), and take a real
+# screenshot, so a Playwright/Alpine-Chromium mismatch fails here instead of in production.
+docker run --rm --read-only --tmpfs /tmp -e HOME=/tmp --entrypoint node "$web_ref" -e '
+  const { chromium } = require("playwright");
+  (async () => {
+    const b = await chromium.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+      executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
+    });
+    const page = await b.newPage({ viewport: { width: 1200, height: 750 } });
+    await page.setContent("<h1>smoke</h1>");
+    const png = await page.screenshot();
+    await b.close();
+    if (png.length < 1000) throw new Error("screenshot too small: " + png.length);
+    console.log("[smoke] ok   chromium thumbnail render (" + png.length + " bytes)");
+  })().catch((e) => { console.error(e); process.exit(1); });'
