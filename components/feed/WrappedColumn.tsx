@@ -21,6 +21,8 @@ import { Button } from'@/components/ui/button';
 import { PinnedHero } from'@/components/feed/PinnedHero';
 import { Reveal, RevealGroup, RevealItem } from'@/components/motion';
 import { LIFT_CARD } from'@/components/feed/motionHelpers';
+import { api } from'@/lib/contract/client';
+import { getWrappedApi } from'@/lib/wrapped/wrapped.contract';
 
 interface Wrapped {
  year: number;
@@ -62,8 +64,7 @@ export function WrappedColumn({
 
  useEffect(() => {
  if (seeded.current) return;
- fetch('/api/wrapped', { credentials:'include'})
- .then((r) => (r.ok ? r.json() : null))
+ api(getWrappedApi)
  .then(setData)
  .catch(console.error)
  .finally(() => setLoading(false));

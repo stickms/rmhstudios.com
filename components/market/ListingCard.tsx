@@ -14,26 +14,9 @@ import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { RARITY_COLORS, type Rarity, type ShopItemKind } from '@/lib/shop/catalog';
+import type { MarketListingView } from '@/lib/market/market.contract';
 
-export interface MarketListingView {
-  id: string;
-  itemId: string;
-  priceCoins: number;
-  /**
-   * HELD = frozen for admin review after an anomalously priced buy. The API only
-   * returns HELD listings to their own seller. Absent on older payloads (ACTIVE).
-   */
-  status?: 'ACTIVE' | 'HELD';
-  createdAt: string;
-  item: {
-    id: string;
-    name: string;
-    kind: ShopItemKind;
-    rarity: Rarity;
-    data: { color?: string; gradient?: string; emoji?: string };
-  } | null;
-  seller: { id: string; name: string | null; handle: string | null; image: string | null };
-}
+export type { MarketListingView };
 
 /** Kind-specific swatch, matching `ShopColumn`/`ProfileCosmetics` previews. */
 export function MarketItemPreview({

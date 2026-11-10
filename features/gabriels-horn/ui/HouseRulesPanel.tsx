@@ -26,6 +26,8 @@ import {
   clampHouseRules,
   diffHouseRules,
 } from '@features/gabriels-horn/engine/house-rules';
+import { api } from '@/lib/contract/client';
+import { proposeHouseRuleApi } from '@features/gabriels-horn/engine/gabriels-horn.contract';
 import { hornNet } from '@features/gabriels-horn/engine/net/client';
 import { HornButton, Panel } from './ui';
 
@@ -135,13 +137,7 @@ export function HouseRulesPanel({
     setBusy(true);
     setProposal(null);
     try {
-      const response = await fetch('/api/gabriels-horn/house-rule', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, current, state }),
-      });
-      if (!response.ok) throw new Error(String(response.status));
-      setProposal((await response.json()) as Proposal);
+      setProposal(await api(proposeHouseRuleApi, { body: { prompt, current, state } }));
     } catch {
       // The endpoint itself does not fail, so reaching here means the NETWORK
       // did. Say so plainly rather than pretending the balancer refused.

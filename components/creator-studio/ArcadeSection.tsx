@@ -32,6 +32,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { ArcadeHub } from '@/components/arcade/ArcadeHub';
 import { LeaderboardColumn } from '@/components/feed/LeaderboardColumn';
+import { api } from '@/lib/contract/client';
+import { playerLeaderboardApi } from '@/lib/leaderboard.contract';
 
 import type { ArcadeSubTab } from './arcade-tabs';
 
@@ -57,15 +59,9 @@ export function ArcadeSection({
     let active = true;
     void (async () => {
       try {
-        const res = await fetch('/api/leaderboards/players?scope=global', {
-          credentials: 'include',
-        });
+        const res = await api(playerLeaderboardApi, { query: { scope: 'global' } });
         if (!active) return;
-        if (!res.ok) {
-          setBoardFailed(true);
-          return;
-        }
-        setBoard((await res.json()) as LeaderboardData);
+        setBoard(res as LeaderboardData);
       } catch {
         if (active) setBoardFailed(true);
       }

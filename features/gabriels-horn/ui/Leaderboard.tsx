@@ -9,6 +9,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { hornLeaderboardApi } from '@features/gabriels-horn/engine/gabriels-horn.contract';
 
 interface Row {
   username: string;
@@ -20,9 +22,7 @@ interface Row {
 }
 
 async function fetchBoard(): Promise<Row[]> {
-  const response = await fetch('/api/gabriels-horn/leaderboard?limit=8');
-  if (!response.ok) throw new Error(String(response.status));
-  const data = (await response.json()) as { rows?: Row[] };
+  const data = await api(hornLeaderboardApi, { query: { limit: 8 } });
   return Array.isArray(data.rows) ? data.rows : [];
 }
 

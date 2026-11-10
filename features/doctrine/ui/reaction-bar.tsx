@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { m as motion } from 'framer-motion';
 import type { ReactionCount, Reaction } from '@features/doctrine/engine/types';
+import { api } from '@/lib/contract/client';
+import { doctrineReactApi } from '@features/doctrine/engine/doctrine.contract';
 
 const REACTIONS: Array<{ key: Reaction; emoji: string; label: string; color: string }> = [
   { key: 'fire', emoji: '🔥', label: 'Fire', color: 'var(--doctrine-reaction-fire, #F97316)' },
@@ -27,16 +29,14 @@ export function ReactionBar({ reactions, userReaction, targetType, targetId, onR
     setSubmitting(true);
 
     try {
-      const body: Record<string, string> = { reaction: reaction.toUpperCase() };
+      const body: { reaction: string; safehouseId?: string; disclosureId?: string; incidentId?: string } = {
+        reaction: reaction.toUpperCase(),
+      };
       if (targetType === 'safehouse') body.safehouseId = targetId;
       if (targetType === 'disclosure') body.disclosureId = targetId;
       if (targetType === 'incident') body.incidentId = targetId;
 
-      await fetch('/api/doctrine/reactions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+      await api(doctrineReactApi, { body });
 
       onReact?.(reaction);
     } catch {

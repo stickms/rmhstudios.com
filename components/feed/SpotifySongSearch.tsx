@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Search, Check, X, Music } from 'lucide-react';
+import { api } from '@/lib/contract/client';
+import { searchSpotifyApi } from '@/lib/spotify.contract';
 
 export interface SpotifyTrack {
  id: string;
@@ -37,11 +39,8 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  }
  setLoading(true);
  try {
- const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(q.trim())}`);
- if (res.ok) {
- const data = await res.json();
+ const data = await api(searchSpotifyApi, { query: { q: q.trim() } });
  setResults(data.tracks ?? []);
- }
  } catch {
  // silently fail
  } finally {

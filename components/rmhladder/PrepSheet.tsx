@@ -23,6 +23,9 @@ import { CalendarClock, Lightbulb, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import type { PrepSheet as PrepSheetData } from '@/lib/rmhladder/prep.server';
 import type { UpgradeRequiredBody } from '@/lib/entitlements/features';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { buildPrepSheetApi } from '@/lib/rmhladder/prep.contract';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -50,26 +53,20 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
     setLoading(true);
     setUpgrade(null);
     try {
-      const res = await fetch('/api/rmhladder/prep', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ applicationId }),
-      });
-      const data = await res.json().catch(() => ({}));
-
-      // `defineHandler`'s membership gate answers with a 402 carrying the
-      // upgrade envelope, precisely so this can name the plan and link to it
-      // instead of rendering "Forbidden".
-      if (res.status === 402) {
-        setUpgrade(data as UpgradeRequiredBody);
-        return;
+      let data: { sheet: PrepSheetData };
+      try {
+        data = await api(buildPrepSheetApi, { body: { applicationId } });
+      } catch (e) {
+        // `defineHandler`'s membership gate answers with a 402 carrying the
+        // upgrade envelope, precisely so this can name the plan and link to it
+        // instead of rendering "Forbidden".
+        if (e instanceof HttpError && e.status === 402) {
+          setUpgrade((e.body ?? {}) as UpgradeRequiredBody);
+          return;
+        }
+        throw new Error(serverError(e) ?? 'Could not build a prep sheet.', { cause: e });
       }
-      if (!res.ok) {
-        throw new Error(
-          typeof data?.error === 'string' ? data.error : 'Could not build a prep sheet.',
-        );
-      }
-      setSheet(data.sheet as PrepSheetData);
+      setSheet(data.sheet);
     } catch (error) {
       toast.error(
         error instanceof Error

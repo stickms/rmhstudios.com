@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { parseScoreMoment, ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
 import { GHOST_MODES, type GhostMode, type GhostTrace } from '@/lib/neon-driftway/ghost';
 import { useTranslation } from 'react-i18next';
+import { neonDriftwayLeaderboardApi } from '@/lib/neon-driftway/neon-driftway.contract';
 import { Button } from '@/components/ui/button';
 import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users, Glasses, Compass, Eye, Ghost, LogOut } from 'lucide-react';
 import { useSession } from '@/components/Providers';
@@ -75,9 +76,7 @@ export function NeonDriftwayUI({
 
   const fetchLeaderboard = useCallback(async () => {
     try {
-      const res = await fetch('/api/neon-driftway/leaderboard');
-      if (!res.ok) return;
-      const data = await res.json();
+      const data = await api(neonDriftwayLeaderboardApi);
       setLeaderboard(Array.isArray(data) ? data : []);
     } catch { /* ignore */ }
   }, []);

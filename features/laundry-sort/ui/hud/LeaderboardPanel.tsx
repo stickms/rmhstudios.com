@@ -13,6 +13,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
+import { api } from '@/lib/contract/client';
+import { laundryLeaderboardApi } from '@features/laundry-sort/engine/laundry.contract';
 
 interface Row {
   username: string;
@@ -39,11 +41,10 @@ export function LeaderboardPanel({ refreshKey = 0 }: { refreshKey?: number }) {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/laundry-sort/leaderboard?mode=${which}&limit=10`, {
+        const data = await api(laundryLeaderboardApi, {
+          query: { mode: which, limit: 10 },
           signal,
         });
-        if (!response.ok) throw new Error(String(response.status));
-        const data = (await response.json()) as Row[];
         setRows(Array.isArray(data) ? data : []);
       } catch (cause) {
         if ((cause as Error)?.name === 'AbortError') return;

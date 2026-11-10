@@ -21,6 +21,8 @@ import { getShopItem } from '@/lib/shop/catalog';
 import { ListingCard, type MarketListingView } from '@/components/market/ListingCard';
 import { WatchControl } from '@/components/discovery/WatchControl';
 import { SellSheet } from '@/components/market/SellSheet';
+import { api } from '@/lib/contract/client';
+import { browseListingsApi } from '@/lib/market/market.contract';
 
 interface PriceHistoryView {
   sales: { price: number; at: string }[];
@@ -79,10 +81,9 @@ export function MarketColumn({
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const qs = new URLSearchParams({ sort });
-      if (itemFilter) qs.set('item', itemFilter);
-      const res = await fetch(`/api/market/listings?${qs.toString()}`, { credentials: 'include' });
-      const data = await res.json().catch(() => ({ listings: [] }));
+      const data = await api(browseListingsApi, {
+        query: itemFilter ? { sort, item: itemFilter } : { sort },
+      }).catch(() => ({ listings: [] as MarketListingView[], history: null }));
       setListings(data.listings ?? []);
       setHistory(data.history ?? null);
     } finally {
