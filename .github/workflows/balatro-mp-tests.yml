@@ -50,8 +50,9 @@ on:
     paths:
       - 'features/balatro/engine/**'
       - 'scripts/balatro/**'
-      - 'server/socket-server/handlers/balatro-*'
-      - 'server/socket-server/balatro/**'
+      - 'features/balatro/server/**'
+      - 'features/balatro/feature.ts'
+      - 'server/socket-server/features.ts'
       - 'server/socket-server/p2p/**'
       - 'lib/shared/p2p/**'
       - 'data/balatro-mp/**'
@@ -65,8 +66,9 @@ on:
     paths:
       - 'features/balatro/engine/**'
       - 'scripts/balatro/**'
-      - 'server/socket-server/handlers/balatro-*'
-      - 'server/socket-server/balatro/**'
+      - 'features/balatro/server/**'
+      - 'features/balatro/feature.ts'
+      - 'server/socket-server/features.ts'
       - 'server/socket-server/p2p/**'
       - 'lib/shared/p2p/**'
       - 'data/balatro-mp/**'
