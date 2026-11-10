@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from '@/lib/rmhtube/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { api, roomPosition, usePartyStore, type LoadedTrack } from '@/lib/rmhtube/party-store';
 import { mediaKey, type CommentaryLine } from '@/lib/rmhtube/party';

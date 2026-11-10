@@ -3,7 +3,7 @@
  * a fake socket.io world (the approach of
  * handlers/__tests__/bums-rush-security.test.ts, plus `volatile` and a
  * recorded `disconnect`) and a polling `until` for asynchronous round trips.
- * Moved from tf2/helpers.ts, which re-exports it.
+ * Moved from tf2/helpers.ts; every test imports it from here.
  */
 
 import type { Server, Socket } from 'socket.io';

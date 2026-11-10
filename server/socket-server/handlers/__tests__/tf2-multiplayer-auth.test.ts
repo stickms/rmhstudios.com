@@ -19,7 +19,7 @@ import { registerTf2GameHandlers } from '../tf2-game';
 import { registerTf2P2pHandlers, resetTf2P2pForTests } from '../tf2-p2p';
 import { TF2_C2S, TF2_S2C, type ErrorPayload } from '@/lib/tf2-game/net/events';
 import { encodeRelay } from '@/lib/tf2-game/net/p2p/signal';
-import { all, makeWorld } from '../../tf2/helpers';
+import { all, makeWorld } from '../../test-support/fake-world';
 
 /** Public on purpose: the server browser, its details pane, and the ping column. */
 const OPEN = new Set<string>([TF2_C2S.LIST_ROOMS, TF2_C2S.ROOM_DETAILS, TF2_C2S.PING]);

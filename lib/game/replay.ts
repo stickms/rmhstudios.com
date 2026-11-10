@@ -398,7 +398,3 @@ export function getReplayable(game: string): ReplayableGame | undefined {
 
 /** Games that can be captured, for UI menus. */
 export const REPLAYABLE_GAME_IDS = Object.keys(replayableGames);
-
-// Titles and version tags live in a zod-free module so route definitions can
-// read them without pulling this file's schemas into the entry chunk.
-export { REPLAY_GAME_TITLES } from './replay-meta';

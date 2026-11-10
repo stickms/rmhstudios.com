@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createJellyBus } from '../../bus';
 import { ARC_BUDGET } from '../rate';
-import { mulberry32 } from '../rng';
+import { mulberry32 } from '@/lib/core/rng';
 import {
   MODAL_SELECTOR,
   QUIET,

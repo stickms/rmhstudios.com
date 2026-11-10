@@ -10,7 +10,7 @@ import {
   type Point,
   type RoundedRect,
 } from '../geometry';
-import { mulberry32 } from '../rng';
+import { mulberry32 } from '@/lib/core/rng';
 
 /** Distance from a point to a rounded rect's core: equals r exactly when the point is on the rim. */
 function coreDistance(p: Point, rr: RoundedRect): number {

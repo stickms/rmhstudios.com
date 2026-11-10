@@ -36,7 +36,7 @@ import { extrapolate } from '@/lib/rmhtube/sync-math';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { formatDuration } from '@/lib/rmhtube/utils';
 import { PLAYBACK_SPEEDS } from '@/lib/rmhtube/constants';
-import { toast } from '@/lib/rmhtube/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import type { VideoState, ClientQueueItem } from '@/lib/rmhtube/types';
 
 interface HostControlsProps {

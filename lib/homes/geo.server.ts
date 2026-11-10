@@ -10,10 +10,6 @@
 import { cached } from '@/lib/cached.server';
 import type { SearchCenter } from './types';
 
-// Re-exported for callers that historically imported it from here; the
-// implementation now lives in the dependency-free ./distance module.
-export { haversineKm } from './distance';
-
 const USER_AGENT =
   process.env.HOMES_USER_AGENT || 'RMHHomes/1.0 (https://rmhstudios.com; homes@rmhstudios.com)';
 

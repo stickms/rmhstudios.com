@@ -35,7 +35,8 @@ import { CHAT_EXPIRY_QUEUE, registerChatExpiryCron } from '@/lib/chat-plus/expir
 import { STUDY_BUDDY_QUEUE, registerStudyBuddyCron } from '@/lib/calendar/study-buddy-jobs.server';
 import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@features/slice-it/engine/analysis-queue.server';
 import { REGEN_QUEUE, registerRegenCron } from '@features/slice-it/engine/regen.server';
-import { PF2E_REMINDER_QUEUE, registerPf2eReminderCron } from '@/lib/pf2ecal/reminders.server';
+import { registerPf2eReminderCron } from '@/lib/pf2ecal/reminders.server';
+import { PF2E_REMINDER_QUEUE } from '@/lib/pf2ecal/reminders';
 import { DUNESDAY_DAILY_QUEUE, registerDunesdayDailyCron } from '@/lib/dunesday/sync.server';
 import {
   SOHUMTRACKER_ALERT_QUEUE,

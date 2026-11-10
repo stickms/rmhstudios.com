@@ -17,7 +17,7 @@
  */
 
 import { pointToRoundedRect, type Point, type RoundedRect } from './geometry';
-import { mulberry32 } from './rng';
+import { mulberry32 } from '@/lib/core/rng';
 
 export const REFRACTION = {
   /** The gel's index (water-like jelly). */

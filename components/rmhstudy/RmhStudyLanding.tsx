@@ -10,7 +10,7 @@ import { BookOpen, Clock, Users, Globe, RefreshCw, Layers, ArrowRight } from 'lu
 import { connectToRmhStudy, getSocket, disconnectFromRmhStudy, emit } from '@/lib/rmhstudy/socket';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
 import { C2S, S2C } from '@/lib/rmhstudy/events';
-import { toast } from '@/lib/rmhstudy/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import RmhStudyHeader from '@/components/rmhstudy/RmhStudyHeader';
 import type { PublicStudyRoomInfo } from '@/lib/rmhstudy/types';
 import { useRouter } from '@tanstack/react-router';

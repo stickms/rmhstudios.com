@@ -5,7 +5,7 @@ import { setActivityStatus, type DiscordContext } from '@/lib/discord-sdk';
 import { connectToRMHbox, getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { S2C, C2S } from '@/lib/rmhbox/events';
-import { toast } from '@/lib/rmhbox/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import type { VoteCandidate, PlayerRanking, SessionStanding, Award, RoundResultsPayload, MatchSummary } from '@/lib/rmhbox/types';
 import RMHboxShell from '@/components/rmhbox/RMHboxShell';
 import LobbyView from '@/components/rmhbox/LobbyView';

@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Users } from 'lucide-react';
-import { toast } from '@/lib/rmhstudy/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import { api } from '@/components/calendar/api';
 import {
   STUDY_LENGTHS,

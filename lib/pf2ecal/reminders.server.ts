@@ -30,20 +30,10 @@ import { buildReminderPayload, postToWebhook, type ReminderSession } from './dis
 import { calendarWindow, personSelect, syncRule } from './sessions.server';
 import { getSettings, type BoardSettings } from './settings.server';
 
-export { getSettings, SETTINGS_ID, type BoardSettings } from './settings.server';
-
 // The pure decision half lives in `./reminders` so a unit test can import it
 // without this module's `prisma` import constructing a client (and failing on
-// DATABASE_URL). Re-exported here so every existing importer is unchanged.
+// DATABASE_URL). Callers import its names from there.
 import { isReminderDue, PF2E_REMINDER_QUEUE, PF2E_REMINDER_CRON } from './reminders';
-
-export {
-  PF2E_REMINDER_QUEUE,
-  PF2E_REMINDER_CRON,
-  REMINDER_GRACE_HOURS,
-  reminderInstantFor,
-  isReminderDue,
-} from './reminders';
 
 const reminderSelect = {
   id: true,

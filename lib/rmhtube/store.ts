@@ -10,7 +10,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
 import { acceptServerAnchor, initialVideoState, type PendingLocalAnchor } from './sync-math';
-import { toast } from './toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import type {
   ClientRoomState,
   ClientMemberInfo,

@@ -8,7 +8,7 @@ import { MatchRunner, MAX_CATCH_UP_TICKS, TICK_INTERVAL_MS } from '@/lib/tf2-gam
 import { EchoMatchHost, createEchoMatch } from '@/lib/tf2-game/server/echo-host';
 import type { MatchFactory, MatchHost, MatchOptions } from '@/lib/tf2-game/server/match-host';
 import type { FromWorker } from '@/lib/tf2-game/server/worker-protocol';
-import { until } from './helpers';
+import { until } from '../test-support/fake-world';
 
 const opts = (matchId: string): MatchOptions => ({
   matchId,

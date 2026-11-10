@@ -26,7 +26,7 @@ import {
 import { Select } from '@/components/ui/select';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { useStudioStore } from '@/lib/studio/store';
-import { useIsMobile } from '@/lib/studio/hooks/useIsMobile';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { useKeybinds } from '@/lib/studio/hooks/useKeybinds';
 import { useTransport } from '@/lib/studio/hooks/useTransport';
 import { StudioEngine } from '@/lib/studio/engine/StudioEngine';

@@ -12,7 +12,7 @@ import { Crown, Copy, Play, Pause, SkipForward, RotateCcw, Plus, Check, Trash2, 
 import { connectToRmhStudy, emit, getSocket } from '@/lib/rmhstudy/socket';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
 import { C2S } from '@/lib/rmhstudy/events';
-import { toast } from '@/lib/rmhstudy/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import RmhStudyHeader from '@/components/rmhstudy/RmhStudyHeader';
 import BanListModal from '@/components/shared/BanListModal';
 import RmhStudyFlashcards from '@/components/rmhstudy/RmhStudyFlashcards';

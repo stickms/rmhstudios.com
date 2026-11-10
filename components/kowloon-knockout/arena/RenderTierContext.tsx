@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback, type ReactNode } from 'react';
 import { useThree } from '@react-three/fiber';
-import { useIsMobile } from '@/lib/studio/hooks/useIsMobile';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { detectTier, TIER_FLAGS, type RenderTier } from '@/lib/kowloon-knockout/render/tier';
 import { gpuTierFromRendererString } from '@/lib/kowloon-knockout/render/probe';
 import { nextLowerTier } from '@/lib/kowloon-knockout/render/governor';

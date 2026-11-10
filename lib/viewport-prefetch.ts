@@ -1,5 +1,5 @@
 import type { AnyRouter } from '@tanstack/react-router';
-import { prefersLessData, shouldSpeculate } from '@/lib/network-quality';
+import { shouldSpeculate } from '@/lib/network-quality';
 
 /**
  * OPT-33 — viewport prefetch for the first on-screen links, connection-aware.
@@ -72,11 +72,6 @@ const REARM_DELAY_MS = 1200;
  *   - `/admin/*`  — expensive to render and never the "next post" a reader taps.
  */
 const NEVER_PREFETCH = [/^\/api(\/|$)/, /^\/login/, /^\/logout/, /^\/checkout/, /^\/admin(\/|$)/];
-
-// The network/data policy lives in lib/network-quality (one reader of
-// `navigator.connection` for the whole client, and the only one that honours the
-// site's own Data Saver setting). Re-exported so existing importers keep working.
-export { prefersLessData, shouldSpeculate };
 
 /**
  * Resolve an anchor to a route path we are allowed to prefetch, or `null`.

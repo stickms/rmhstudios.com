@@ -13,7 +13,7 @@ import {
   pickWeighted,
   totalRate,
 } from '../rate';
-import { mulberry32 } from '../rng';
+import { mulberry32 } from '@/lib/core/rng';
 
 describe('pairRate', () => {
   it('is λ0 at contact, monotone decreasing, and 0 beyond maxGap', () => {

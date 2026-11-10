@@ -13,7 +13,7 @@ import { isTypingTarget } from '@/lib/shortcuts/registry';
 import { summarizeGrades } from '@/lib/rmhstudy/session-summary';
 import { useTranslation } from 'react-i18next';
 import { Layers, Loader2, ArrowLeft, ExternalLink, RotateCw } from 'lucide-react';
-import { toast } from '@/lib/rmhstudy/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { reviewCardApi } from '@/lib/study/decks.contract';

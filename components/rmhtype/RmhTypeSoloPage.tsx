@@ -9,7 +9,7 @@ import { Copy, RotateCcw, Sparkles, Trophy, User } from 'lucide-react';
 import { connectToRmhType, emit } from '@/lib/rmhtype/socket';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
 import { C2S } from '@/lib/rmhtype/events';
-import { toast } from '@/lib/rmhtype/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
 import type { Difficulty, PassageLength } from '@/lib/rmhtype/types';
 import { useRouter } from '@tanstack/react-router';

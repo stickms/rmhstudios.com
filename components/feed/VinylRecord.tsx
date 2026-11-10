@@ -1,5 +1,5 @@
 import { useTranslation } from'react-i18next';
-import { Pause, Play } from'@/lib/icons';
+import { Pause, Play } from 'lucide-react';
 
 interface VinylRecordProps {
  albumArt: string;

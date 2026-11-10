@@ -13,8 +13,8 @@
  * Rolldown cannot tree-shake it away: the SDK's module scope has side effects, so
  * importing any binding from `lib/discord-sdk.ts` retains all of it.
  *
- * So: anything on a shared path imports the detector from HERE. `lib/discord-sdk`
- * re-exports it for the `/discord/*` call sites, which have the SDK loaded anyway.
+ * So: every caller imports the detector from HERE; `lib/discord-sdk` does not
+ * re-export it.
  */
 
 /**
