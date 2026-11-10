@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, Link2, Send, Share2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
+import { api } from '@/lib/contract/client';
+import { createRMHarkApi } from '@/lib/feed/compose-assist.contract';
 
 const enc = encodeURIComponent;
 
@@ -42,13 +44,8 @@ export function ShareBar({
       // 280 is the feed's limit: the link always survives, the text is trimmed to fit.
       const room = 280 - url.length - 1;
       const content = `${text.length > room ? `${text.slice(0, Math.max(0, room - 1))}…` : text} ${url}`.trim();
-      const res = await fetch('/api/rmharks', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ content }),
-      });
-      setPosted(res.ok ? 'done' : 'error');
+      await api(createRMHarkApi, { body: { content } });
+      setPosted('done');
     } catch {
       setPosted('error');
     }

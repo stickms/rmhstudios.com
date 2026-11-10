@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useChatUpdates } from '@/components/chat-plus/hooks';
 import { applyChatUpdate } from '@/lib/chat-plus/apply-update';
+import { api } from '@/lib/contract/client';
+import { getGroupChatApi } from '@/lib/group-chat/group-chat.contract';
+import { HttpError } from '@/lib/http';
 import type { ChatRef } from '@/lib/chat-plus/types';
-import { appendUnique, isNearBottom, type Group, type Msg } from './group-chat-state';
+import { appendUnique, isNearBottom } from './group-chat-state';
+import type { Group, Msg } from '@/lib/group-chat/types';
 import { useGroupLiveUpdates } from './useGroupLiveUpdates';
 
 /**
@@ -60,22 +64,14 @@ export function useGroupThread(id: string, currentUserId: string, chatRef: ChatR
     historyIds.current = new Set();
     (async () => {
       try {
-        const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}`, {
-          credentials: 'include',
-        });
+        const data = await api(getGroupChatApi, { params: { id } });
         if (!active) return;
-        if (res.status === 404) {
-          setNotFound(true);
-          return;
-        }
-        if (res.ok) {
-          const data = await res.json();
-          if (!active) return;
-          setGroup(data.group);
-          setMsgs(data.group.messages ?? []);
-        }
-      } catch {
-        /* network failure: fall through to the loaded (empty) state */
+        setGroup(data.group);
+        setMsgs(data.group.messages ?? []);
+      } catch (e) {
+        if (!active) return;
+        if (e instanceof HttpError && e.status === 404) setNotFound(true);
+        /* any other failure: fall through to the loaded (empty) state */
       } finally {
         if (active) setLoading(false);
       }

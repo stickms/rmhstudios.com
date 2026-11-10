@@ -1,6 +1,8 @@
 import { pageSize } from '@/lib/pagination';
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { createRMHarkApi } from '@/lib/feed/compose-assist.contract';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { checkRateLimit } from '@/lib/rate-limit.server';
@@ -111,7 +113,8 @@ export const Route = createFileRoute('/api/rmharks')({
       // key-based deduplication is a double post. The wrapper reads the body once
       // (to hash it for the key), so validation MUST go through `body:` here: a
       // second `request.json()` inside the handler would throw on a used stream.
-      POST: defineHandler(
+      POST: implement(
+        createRMHarkApi,
         { body: createRMHarkSchema, verboseValidationErrors: true, idempotent: true },
         async ({ request, session, body: input }) => {
           const ban = await getActiveBan(session.user.id);

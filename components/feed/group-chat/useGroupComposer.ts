@@ -3,8 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useSlashCommands } from '@/components/chat-plus/useSlashCommands';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { sendGroupMessageApi } from '@/lib/group-chat/group-chat.contract';
+import { uploadImagesApi } from '@/lib/media/upload.contract';
 import type { ChatRef } from '@/lib/chat-plus/types';
-import { MAX_IMAGES, buildPollPayload, type Msg, type PollDraft } from './group-chat-state';
+import { MAX_IMAGES, buildPollPayload, type PollDraft } from './group-chat-state';
+import type { Msg } from '@/lib/group-chat/types';
 
 /**
  * The group composer: draft text, pending GIF/images/poll, uploads, slash
@@ -56,12 +61,9 @@ export function useGroupComposer({
       Array.from(files)
         .slice(0, remaining)
         .forEach((f) => form.append('images', f));
-      const res = await fetch('/api/rmharks/image', { method: 'POST', body: form });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.urls))
-          setImageUrls((prev) => [...prev, ...data.urls].slice(0, MAX_IMAGES));
-      }
+      const data = await api(uploadImagesApi, { body: form }).catch(() => null);
+      if (data && Array.isArray(data.urls))
+        setImageUrls((prev) => [...prev, ...data.urls].slice(0, MAX_IMAGES));
     } finally {
       setUploading(false);
       if (imageInputRef.current) imageInputRef.current.value = '';
@@ -92,31 +94,22 @@ export function useGroupComposer({
     setImageUrls([]);
     setPollDraft(null);
     try {
-      const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}/messages`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await api(sendGroupMessageApi, {
+        params: { id },
+        body: {
           ...(text ? { content: text } : {}),
           ...(pendingGif ? { gifUrl: pendingGif } : {}),
           ...(pendingImages.length ? { imageUrls: pendingImages } : {}),
           ...(poll ? { poll } : {}),
-        }),
+        },
       });
-      if (res.ok) {
-        const data = await res.json();
-        appendMessages([data.message]);
-      } else {
-        // Restore the draft (poll included) on failure.
-        restore();
-        const data = await res.json().catch(() => ({}));
-        toast.error(
-          data.error || t('failed-to-send-message', { defaultValue: 'Failed to send message' }),
-        );
-      }
-    } catch {
+      appendMessages([data.message]);
+    } catch (e) {
+      // Restore the draft (poll included) on failure.
       restore();
-      toast.error(t('failed-to-send-message', { defaultValue: 'Failed to send message' }));
+      toast.error(
+        serverError(e) || t('failed-to-send-message', { defaultValue: 'Failed to send message' }),
+      );
     } finally {
       setSending(false);
     }

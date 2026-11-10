@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { sendGroupMessageApi } from '@/lib/group-chat/group-chat.contract';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
@@ -61,7 +63,7 @@ export const Route = createFileRoute('/api/group-chats/$id/messages')({
         return Response.json({ messages: await serializeGroupMessages(messages, userId) });
       }),
 
-      POST: defineHandler({}, async ({ request, params, session }) => {
+      POST: implement(sendGroupMessageApi, {}, async ({ request, params, session }) => {
         const userId = session.user.id;
 
         const ban = await getActiveBan(userId);
