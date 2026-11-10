@@ -11,7 +11,8 @@ import type { useItemReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 import { isCardKind, isLineKind, type ChatRef } from '@/lib/chat-plus/types';
 import { PostImageGrid } from '../PostImageGrid';
 import { UserAvatar } from '../UserAvatar';
-import { memberDisplayName, type Group, type Msg } from './group-chat-state';
+import { memberDisplayName } from './group-chat-state';
+import type { Group, Msg } from '@/lib/group-chat/types';
 import { PollView } from './PollView';
 
 /** One message in the group thread: a centred line, or an avatar + bubble row. */

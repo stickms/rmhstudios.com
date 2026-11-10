@@ -7,9 +7,8 @@ import {
   memberDisplayName,
   memberSuggestions,
   toggleReactionRow,
-  type Msg,
-  type Sender,
 } from './group-chat-state';
+import type { Msg, Sender } from '@/lib/group-chat/types';
 
 const ana: Sender = { id: 'ana', name: 'Ana', handle: 'ana_k', image: '/a.png' };
 const zed: Sender = { id: 'zed', name: null, handle: 'zed_h', image: null };

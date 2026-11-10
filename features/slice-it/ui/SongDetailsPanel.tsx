@@ -42,7 +42,7 @@ import { useTranslation } from 'react-i18next';
 import { isHeicCover, normalizeCover } from '@features/slice-it/engine/cover-image';
 import { whenIdle } from '@/lib/shared/platform';
 
-import { toggleSongLikeApi } from '@features/slice-it/engine/slice-it.contract';
+import { toggleSongLikeApi, updateSongApi } from '@features/slice-it/engine/slice-it.contract';
 /**
  * Holds a deferred section's height while it is still deferred.
  *
@@ -294,15 +294,7 @@ export function SongDetailsPanel({
       formData.append('description', editDescription);
       if (editCoverFile) formData.append('cover', editCoverFile);
 
-      const res = await fetch(`/api/slice-it/songs/${song.id}`, {
-        method: 'PATCH',
-        body: formData,
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error ?? `HTTP ${res.status}`);
-      }
-      const data = await res.json();
+      const data = await api(updateSongApi, { params: { id: song.id }, body: formData });
       const newCoverUrl = data.song?.coverUrl ?? song.coverUrl;
       const newBpm = parseFloat(editBpm) || song.bpm;
       onSongUpdated?.({

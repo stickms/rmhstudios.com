@@ -44,7 +44,11 @@ export interface ContractTypes {
   params?: Record<string, string>;
   /** Parsed `?query` (what the route's `query` schema infers). */
   query?: Record<string, unknown>;
-  /** Parsed JSON body (what the route's `body` schema infers). */
+  /**
+   * Parsed JSON body (what the route's `body` schema infers). Declare `FormData` for a
+   * multipart upload: `api()` sends it untouched (no `Content-Type`, so the browser adds
+   * the boundary) and the route reads `request.formData()` itself, with no zod body.
+   */
   body?: unknown;
   /** The JSON the route returns on success. */
   res: unknown;

@@ -9,6 +9,7 @@ import { endpoint } from '@/lib/contract/endpoint';
 import type { CommentBodyZ } from '@features/slice-it/engine/api-schemas';
 import type { ChartSummary } from '@features/slice-it/engine/charts.server';
 import type { DailyBoardRow, DailyState } from '@features/slice-it/engine/daily.server';
+import type { SliceSong } from '@features/slice-it/engine/types';
 import type { ArtistSummary } from '@features/slice-it/engine/library-query.server';
 import type { SliceItShowcaseStats } from '@features/slice-it/engine/showcase.server';
 
@@ -71,6 +72,15 @@ export const getSliceItShowcaseApi = endpoint<{
   query: { userId: string };
   res: { stats: SliceItShowcaseStats | null };
 }>()({ method: 'GET', path: '/api/slice-it/showcase' });
+
+/**
+ * Edit a song's details and replace its cover. Multipart: `title`, `artist`, `bpm`,
+ * `description`, `isPublic` and an optional `cover` image. Owner or admin only.
+ */
+export const updateSongApi = endpoint<{
+  body: FormData;
+  res: { success: true; song: SliceSong };
+}>()({ method: 'PATCH', path: '/api/slice-it/songs/$id' });
 
 /** Owner or admin only. */
 export const deleteSongApi = endpoint<{ res: { success: true } }>()({

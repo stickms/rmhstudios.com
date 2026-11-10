@@ -13,6 +13,11 @@ import { Button } from'@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { MenuItem } from '@/components/ui/menu';
 import { usePopPresence } from '@/hooks/usePopPresence';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createRMHarkApi } from '@/lib/feed/compose-assist.contract';
+import type { CreateRMHarkInput } from '@/lib/rmhark-schema';
+import { uploadImagesApi } from '@/lib/media/upload.contract';
 import { useFeedStore } from'@/stores/feedStore';
 import {
  MAX_RMHARK_LENGTH,
@@ -134,18 +139,11 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  const epoch = uploadEpochRef.current;
  setUploadingCount((n) => n + 1);
  try {
- const res = await fetch('/api/rmharks/image', { method:'POST', body: form });
- if (epoch !== uploadEpochRef.current) return;
- if (!res.ok) {
- const { error } = await res.json().catch(() => ({ error:'Upload failed'}));
- setImageError(error ??'Upload failed');
- return;
- }
- const { urls } = await res.json();
+ const { urls } = await api(uploadImagesApi, { body: form });
  if (epoch !== uploadEpochRef.current) return;
  setImageUrls((prev) => [...prev, ...urls].slice(0, MAX_IMAGES));
- } catch {
- if (epoch === uploadEpochRef.current) setImageError('Upload failed');
+ } catch (e) {
+ if (epoch === uploadEpochRef.current) setImageError(serverError(e) ??'Upload failed');
  } finally {
  setUploadingCount((n) => Math.max(0, n - 1));
  }
@@ -156,8 +154,8 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  setSubmitting(true);
  try {
- const body: Record<string, unknown> = {};
- if (content.trim()) body.content = content.trim();
+ // The server defaults an absent `content` to '', so sending '' is the same post.
+ const body: CreateRMHarkInput = { content: content.trim() };
  if (hasPoll) {
  body.poll = {
  question: poll.question.trim(),
@@ -174,19 +172,11 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  }
  if (quoteItem) body.originalId = quoteItem.id;
 
- const res = await fetch('/api/rmharks', {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify(body),
+ const item = await api(createRMHarkApi, { body }).catch((e: unknown) => {
+ console.error('Post error:', serverError(e));
+ return null;
  });
-
- if (!res.ok) {
- const data = await res.json();
- console.error('Post error:', data.error);
- return;
- }
-
- const item = await res.json();
+ if (!item) return;
  uploadEpochRef.current += 1;
  prependItem(item);
  if (!quoteItem && !initialContent) clearComposeDraft();

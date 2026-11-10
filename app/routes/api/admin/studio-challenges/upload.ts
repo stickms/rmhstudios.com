@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { uploadChallengeSampleApi } from '@/lib/creator/challenge-upload.contract';
 import { saveChallengeAudio } from '@/lib/studio/challenge/challenge.server';
 import { CHALLENGE_AUDIO_MAX_BYTES } from '@/lib/studio/challenge/shared';
 
@@ -7,7 +8,7 @@ import { CHALLENGE_AUDIO_MAX_BYTES } from '@/lib/studio/challenge/shared';
 export const Route = createFileRoute('/api/admin/studio-challenges/upload')({
   server: {
     handlers: {
-      POST: defineHandler({ auth: 'admin', rateLimit: 'write' }, async ({ request, userId }) => {
+      POST: implement(uploadChallengeSampleApi, { auth: 'admin', rateLimit: 'write' }, async ({ request, userId }) => {
         if (
           Number(request.headers.get('content-length') ?? 0) >
           CHALLENGE_AUDIO_MAX_BYTES + 64 * 1024

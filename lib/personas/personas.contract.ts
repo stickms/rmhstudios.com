@@ -1,6 +1,5 @@
 /**
- * Contracts for /api/personas (redesign audit C1, batch 3), minus the chat
- * route (an AI call, handled separately). Client-safe: request types come from
+ * Contracts for /api/personas (redesign audit C1, batches 3 and 9). Client-safe: request types come from
  * the zod schema by `import type`.
  */
 import type { z } from 'zod';
@@ -50,3 +49,9 @@ export const deletePersonaApi = endpoint<{ res: { success: true } }>()({
   method: 'DELETE',
   path: '/api/personas/$id',
 });
+
+/** One chat turn with a persona (a model call: pass `AI_TIMEOUT_MS`). */
+export const chatWithPersonaApi = endpoint<{
+  body: { message: string };
+  res: { reply: string };
+}>()({ method: 'POST', path: '/api/personas/$id/chat' });

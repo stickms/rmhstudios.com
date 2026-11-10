@@ -21,6 +21,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { CookieConsent } from '@/components/site/CookieConsent';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { api } from '@/lib/contract/client';
+import { uploadAvatarApi } from '@/lib/profile.contract';
 
 export const Route = createFileRoute('/login')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -248,7 +250,7 @@ function LoginPage() {
                 try {
                   const formData = new FormData();
                   formData.append('avatar', avatarFile);
-                  await fetch('/api/profile/avatar', { method: 'POST', body: formData });
+                  await api(uploadAvatarApi, { body: formData });
                 } catch {
                   // Account creation succeeded; avatar upload is best-effort.
                 }
@@ -439,9 +441,7 @@ function LoginPage() {
           <div className="glass-inset mb-3 flex size-12 items-center justify-center rounded-site">
             <span className="font-display text-lg font-bold tracking-tight text-site-text">R</span>
           </div>
-          <p className="site-kicker">
-            RMH Studios
-          </p>
+          <p className="site-kicker">RMH Studios</p>
           <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-site-text">
             {isSignUp
               ? t('create-account-heading', { defaultValue: 'Create your account' })

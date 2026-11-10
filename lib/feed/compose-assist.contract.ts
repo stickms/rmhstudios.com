@@ -4,11 +4,12 @@
  * "rewrite" actions, AI drafts and images, threads, and the post edit.
  * Client-safe: types only, by `import type`.
  *
- * Not here on purpose: the multipart image uploads, and the streamed
- * (`stream: true`) half of /api/ai/transform.
+ * Not here on purpose: the streamed (`stream: true`) half of /api/ai/transform.
+ * The multipart image upload is `lib/media/upload.contract.ts`.
  */
 import { endpoint } from '@/lib/contract/endpoint';
 import type { FeedItem } from '@/lib/feed-types';
+import type { CreateRMHarkInput } from '@/lib/rmhark-schema';
 import type { SearchResponse, SearchTab } from '@/lib/search/types';
 
 /** An answer grounded in recent public posts. 503 when AI is not configured. */
@@ -68,6 +69,15 @@ export const aiGenerateImageApi = endpoint<{
   body: { draft?: string | undefined };
   res: { url: string };
 }>()({ method: 'POST', path: '/api/rmharks/ai-image' });
+
+/**
+ * Publish a post. Answers 201 with the new FeedItem (the route may also hold a post
+ * for review, 202). Safe to replay: the route is idempotency-keyed for the offline outbox.
+ */
+export const createRMHarkApi = endpoint<{ body: CreateRMHarkInput; res: FeedItem }>()({
+  method: 'POST',
+  path: '/api/rmharks',
+});
 
 /** Create an authored thread (2-25 segments); answers 201 with the root as a FeedItem. */
 export const createThreadApi = endpoint<{

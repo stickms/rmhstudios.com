@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { uploadAvatarApi } from '@/lib/profile.contract';
 import { prisma } from '@/lib/prisma.server';
 import { ingest, IngestError } from '@/lib/media/ingest.server';
 import { deleteObject, s3Configured } from '@/lib/storage/s3.server';
@@ -38,7 +40,8 @@ async function removeStoredAvatar(url: string | null | undefined): Promise<void>
 export const Route = createFileRoute('/api/profile/avatar')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        uploadAvatarApi,
         {
           rateLimit: {
             limit: 5,

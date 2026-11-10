@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { uploadImagesApi } from '@/lib/media/upload.contract';
 import { ingest, IngestError } from '@/lib/media/ingest.server';
 
 /**
@@ -27,7 +28,8 @@ const MAX_IMAGES = 4;
 export const Route = createFileRoute('/api/rmharks/image')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        uploadImagesApi,
         {
           rateLimit: {
             limit: 10,

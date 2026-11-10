@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { defineHandler } from '@/lib/api/handler.server';
+import { implement } from '@/lib/api/implement.server';
+import { recordPlaytimeBeatApi } from '@/lib/playtime/playtime.contract';
 import { isTrackableTitle } from '@/lib/games/route-match';
 import { recordHeartbeat } from '@/lib/playtime/playtime.server';
 import { grantDueDrops } from '@/lib/cards/cards.server';
@@ -18,7 +19,8 @@ import type { GrantedDrop } from '@/lib/cards/types';
 export const Route = createFileRoute('/api/games/playtime')({
   server: {
     handlers: {
-      POST: defineHandler(
+      POST: implement(
+        recordPlaytimeBeatApi,
         {
           rateLimit: {
             policy: 'write',
@@ -44,7 +46,7 @@ export const Route = createFileRoute('/api/games/playtime')({
               console.error('[cards] grantDueDrops failed:', err);
             }
           }
-          return Response.json({ ...beat, drops });
+          return { ...beat, drops };
         },
       ),
     },

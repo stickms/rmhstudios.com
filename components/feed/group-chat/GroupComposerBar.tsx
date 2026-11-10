@@ -10,7 +10,8 @@ import { ComposerLengthCounter } from '@/components/messages/ComposerLengthCount
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import type { ChatRef } from '@/lib/chat-plus/types';
 import { MentionTextarea } from '../MentionTextarea';
-import { MAX_IMAGES, memberSuggestions, type Group, type Msg } from './group-chat-state';
+import { MAX_IMAGES, memberSuggestions } from './group-chat-state';
+import type { Group, Msg } from '@/lib/group-chat/types';
 import type { GroupComposer } from './useGroupComposer';
 
 /** The composer row: attach (+) menu, emoji, checklist, text field and send. */

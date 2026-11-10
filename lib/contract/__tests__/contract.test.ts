@@ -12,7 +12,7 @@ import { z } from 'zod';
 vi.mock('@/lib/auth', () => ({ auth: { api: { getSession: vi.fn() } } }));
 
 import { buildPath, buildQuery, endpoint } from '@/lib/contract/endpoint';
-import { api, apiQuery, apiUrl } from '@/lib/contract/client';
+import { api, apiQuery, apiUrl, UPLOAD_TIMEOUT_MS } from '@/lib/contract/client';
 import { implement } from '@/lib/api/implement.server';
 
 const itemBody = z.object({ name: z.string() });
@@ -25,6 +25,14 @@ const getItem = endpoint<{ res: z.infer<typeof item> }>()({
 const createItem = endpoint<{ body: z.infer<typeof itemBody>; res: z.infer<typeof item> }>()({
   method: 'POST',
   path: '/api/things/$id/items',
+});
+const uploadItem = endpoint<{ body: FormData; res: { urls: string[] } }>()({
+  method: 'POST',
+  path: '/api/things/upload',
+});
+const beat = endpoint<{ body: { n: number }; res: { ok: true } }>()({
+  method: 'POST',
+  path: '/api/things/beat',
 });
 const listItems = endpoint<{ query: { cursor?: string; tag?: string[] }; res: { items: unknown[] } }>()(
   { method: 'GET', path: '/api/items' },
@@ -73,6 +81,66 @@ describe('api()', () => {
     expect(init.body).toBe('{"name":"x"}');
   });
 
+  it('sends FormData untouched, with no Content-Type so the browser sets the boundary', async () => {
+    fetchMock.mockResolvedValue(Response.json({ urls: ['u'] }));
+    const form = new FormData();
+    form.append('images', new File(['x'], 'a.png', { type: 'image/png' }));
+    const res = await api(uploadItem, { body: form });
+    expect(res).toEqual({ urls: ['u'] });
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe('/api/things/upload');
+    expect(init.method).toBe('POST');
+    expect(init.body).toBe(form);
+    expect(init.headers).toBeUndefined();
+    expect(init.credentials).toBe('include');
+  });
+
+  it('keeps caller headers on an upload but never adds a Content-Type', async () => {
+    fetchMock.mockResolvedValue(Response.json({ urls: [] }));
+    await api(uploadItem, { body: new FormData(), headers: { 'X-Test': '1' } });
+    expect(fetchMock.mock.calls[0]![1].headers).toEqual({ 'X-Test': '1' });
+  });
+
+  it('gives uploads the long timeout unless the call sets its own', async () => {
+    vi.useFakeTimers();
+    try {
+      const abortedAfter = async (timeoutMs?: number) => {
+        let aborted = false;
+        fetchMock.mockImplementationOnce(
+          (_u: string, init: RequestInit) =>
+            new Promise((_r, rej) => {
+              init.signal!.addEventListener('abort', () => {
+                aborted = true;
+                rej(new Error('aborted'));
+              });
+            }),
+        );
+        const p = api(uploadItem, { body: new FormData(), ...(timeoutMs ? { timeoutMs } : {}) }).catch(
+          () => undefined,
+        );
+        await vi.advanceTimersByTimeAsync(30_000);
+        const at30s = aborted;
+        await vi.advanceTimersByTimeAsync(UPLOAD_TIMEOUT_MS);
+        await p;
+        return { at30s, end: aborted };
+      };
+      expect(await abortedAfter()).toEqual({ at30s: false, end: true });
+      expect((await abortedAfter(10_000)).at30s).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('passes keepalive through, and omits it otherwise', async () => {
+    fetchMock.mockImplementation(async () => Response.json({ ok: true }));
+    await api(beat, { body: { n: 1 }, keepalive: true });
+    expect(fetchMock.mock.calls[0]![1].keepalive).toBe(true);
+    expect(fetchMock.mock.calls[0]![1].body).toBe('{"n":1}');
+    expect(fetchMock.mock.calls[0]![1].headers).toMatchObject({ 'Content-Type': 'application/json' });
+    await api(beat, { body: { n: 2 } });
+    expect(fetchMock.mock.calls[1]![1]).not.toHaveProperty('keepalive');
+  });
+
   it('surfaces the server error envelope as an HttpError', async () => {
     fetchMock.mockResolvedValue(Response.json({ error: 'Not found' }, { status: 404 }));
     await expect(api(getItem, { params: { id: 'a', itemId: 'b' } })).rejects.toMatchObject({
@@ -100,12 +168,30 @@ describe('api()', () => {
       // @ts-expect-error a wrong body type is rejected
       void api(createItem, { params: { id: 'x' }, body: { name: 1 } });
       void api(listItems); // query is always optional
+      // @ts-expect-error a multipart contract takes FormData, not a JSON object
+      void api(uploadItem, { body: { a: 1 } });
+      // @ts-expect-error the form is required
+      void api(uploadItem);
     };
     expect(typeof typeOnly).toBe('function');
   });
 });
 
 describe('implement()', () => {
+  it('binds a multipart contract with no zod body and reads request.formData()', async () => {
+    const handler = implement(uploadItem, { auth: 'none' }, async ({ request }) => {
+      const fd = await request.formData();
+      return { urls: fd.getAll('images').map((f) => (f as File).name) };
+    });
+    const fd = new FormData();
+    fd.append('images', new File(['x'], 'a.png'));
+    const res = await handler({
+      params: {},
+      request: new Request('https://rmhstudios.com/api/things/upload', { method: 'POST', body: fd }),
+    });
+    expect(await res.json()).toEqual({ urls: ['a.png'] });
+  });
+
   it('serialises a plain return as JSON through defineHandler', async () => {
     const handler = implement(
       createItem,

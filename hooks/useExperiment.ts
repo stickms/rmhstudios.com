@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/components/Providers';
 import { api } from '@/lib/contract/client';
-import { getExperimentAssignmentsApi } from '@/lib/experiments.contract';
+import { getExperimentAssignmentsApi, recordExperimentEventApi } from '@/lib/experiments.contract';
 
 export type ExperimentVariant = 'control' | 'test';
 
@@ -14,13 +14,7 @@ async function fetchAssignments(): Promise<Record<string, ExperimentVariant>> {
 const exposed = new Set<string>();
 
 function send(key: string, event: 'expose' | 'convert') {
-  void fetch('/api/experiments', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ key, event }),
-    keepalive: true,
-  }).catch(() => {});
+  void api(recordExperimentEventApi, { body: { key, event }, keepalive: true }).catch(() => {});
 }
 
 /** Count a goal for an experiment. Safe to call repeatedly; the server keeps the first. */

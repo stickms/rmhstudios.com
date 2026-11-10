@@ -8,9 +8,9 @@ import { EmptyState } from'@/components/ui/empty-state';
 import { Spinner } from'@/components/ui/spinner';
 import { useConfirm } from'@/components/ui/confirm-dialog';
 import { liquidVTName } from'@/lib/view-transition';
-import { api } from'@/lib/contract/client';
-import { HttpError } from'@/lib/http';
-import { deletePersonaApi, getPersonaApi } from'@/lib/personas/personas.contract';
+import { AI_TIMEOUT_MS, api } from'@/lib/contract/client';
+import { HttpError, serverError } from'@/lib/http';
+import { chatWithPersonaApi, deletePersonaApi, getPersonaApi } from'@/lib/personas/personas.contract';
 
 interface Msg {
  role: string;
@@ -92,21 +92,19 @@ export function PersonaChatColumn({
  setMessages((m) => [...m, { role:'user', content: text }]);
  setSending(true);
  try {
- const res = await fetch(`/api/personas/${encodeURIComponent(id)}/chat`, {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ message: text }),
+ try {
+ const data = await api(chatWithPersonaApi, {
+ params: { id },
+ body: { message: text },
+ timeoutMs: AI_TIMEOUT_MS,
  });
- const data = await res.json().catch(() => ({}));
- if (res.ok) {
  setMessages((m) => [...m, { role:'assistant', content: data.reply }]);
- } else {
+ } catch (e) {
  setMessages((m) => [
  ...m,
  {
  role:'assistant',
- content: `(${data.error ?? t('chat-error', { defaultValue:'Something went wrong'})})`,
+ content: `(${serverError(e) ?? t('chat-error', { defaultValue:'Something went wrong'})})`,
  },
  ]);
  }

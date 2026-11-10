@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import { api } from '@/lib/contract/client';
+import { recordHistoryBeatApi } from '@/lib/history/history.contract';
 import { HISTORY_BEAT_INTERVAL_MS, type HistoryEntityType } from '@/lib/history/constants';
 
 /**
@@ -31,21 +33,19 @@ export function useHistoryBeat(
     if (!entityId || !active) return;
 
     const send = (useBeacon = false) => {
-      const body = JSON.stringify({
+      const payload = {
         entityType,
         entityId,
         position: getPosition?.(),
         duration: getDuration?.(),
-      });
+      };
       if (useBeacon && typeof navigator !== 'undefined' && navigator.sendBeacon) {
-        navigator.sendBeacon('/api/history/beat', new Blob([body], { type: 'application/json' }));
+        navigator.sendBeacon(
+          '/api/history/beat',
+          new Blob([JSON.stringify(payload)], { type: 'application/json' }),
+        );
       } else {
-        void fetch('/api/history/beat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body,
-          keepalive: true,
-        }).catch(() => {});
+        void api(recordHistoryBeatApi, { body: payload, keepalive: true }).catch(() => {});
       }
     };
 

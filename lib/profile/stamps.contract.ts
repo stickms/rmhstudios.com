@@ -1,6 +1,5 @@
 /**
- * Contracts for the JSON half of /api/stamps (redesign audit C1, batch 4).
- * Client-safe. Not covered on purpose: `POST /api/stamps` (multipart upload).
+ * Contracts for /api/stamps (redesign audit C1, batches 4 and 9). Client-safe.
  * Failures carry the server's `{ error }` text as the `HttpError` message.
  */
 import type { z } from 'zod';
@@ -12,6 +11,12 @@ export const browseStampsApi = endpoint<{
   query: z.infer<typeof browseStampsQuery>;
   res: { stamps: StampView[]; nextCursor: string | null };
 }>()({ method: 'GET', path: '/api/stamps' });
+
+/** Multipart: `image` (the artwork) and `name`. Answers 201 with the new stamp. */
+export const createStampApi = endpoint<{ body: FormData; res: { stamp: StampView } }>()({
+  method: 'POST',
+  path: '/api/stamps',
+});
 
 /** The stamps the caller has made. */
 export const myStampsApi = endpoint<{ res: { stamps: StampView[] } }>()({

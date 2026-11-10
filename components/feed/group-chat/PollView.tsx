@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { Poll } from './group-chat-state';
+import type { Poll } from '@/lib/group-chat/types';
 
 export function PollView({ poll, onVote }: { poll: Poll; onVote: (idx: number) => void }) {
   const { t } = useTranslation('feed');

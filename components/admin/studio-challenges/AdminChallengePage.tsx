@@ -6,7 +6,9 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { fetchJson } from '@/lib/http';
+import { api } from '@/lib/contract/client';
+import { fetchJson, serverError } from '@/lib/http';
+import { uploadChallengeSampleApi } from '@/lib/creator/challenge-upload.contract';
 
 const DAY = 24 * 60 * 60_000;
 // <input type="datetime-local"> wants local wall-clock time without a zone.
@@ -33,9 +35,10 @@ export function AdminChallengePage() {
     try {
       const form = new FormData();
       form.set('audio', file);
-      const up = await fetch('/api/admin/studio-challenges/upload', { method: 'POST', body: form });
-      const data = (await up.json()) as { key?: string; error?: string };
-      if (!up.ok || !data.key) throw new Error(data.error ?? 'Upload failed');
+      const data = await api(uploadChallengeSampleApi, { body: form }).catch((e: unknown) => {
+        throw new Error(serverError(e) ?? 'Upload failed');
+      });
+      if (!data.key) throw new Error('Upload failed');
       await fetchJson('/api/admin/studio-challenges', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -27,6 +27,7 @@ import { getSliceSongApi } from '@features/slice-it/engine/play.contract';
 import {
   listChartRevisionsApi,
   publishChartApi,
+  saveChartApi,
   seedChartsApi,
 } from '@features/slice-it/engine/charts.contract';
 export class ChartApiError extends Error {
@@ -37,14 +38,6 @@ export class ChartApiError extends Error {
     super(message);
     this.name = 'ChartApiError';
   }
-}
-
-async function json<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as { error?: string } | null;
-    throw new ChartApiError(body?.error ?? `Request failed (${response.status})`, response.status);
-  }
-  return (await response.json()) as T;
 }
 
 /** Run a contract call, surfacing a failure as the editor's own {@link ChartApiError}. */
@@ -161,25 +154,22 @@ export interface SaveChartInput {
 }
 
 export async function saveChart(input: SaveChartInput): Promise<ChartDto> {
-  return json<ChartDto>(
-    await fetch(`/api/slice-it/charts/${encodeURIComponent(input.chartId)}`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
+  return asChartApiError(() =>
+    api(saveChartApi, {
+      params: { id: input.chartId },
+      body: {
         notes: input.notes,
         kind: input.kind ?? 'autosave',
         ...(input.timingPoints ? { timingPoints: input.timingPoints } : {}),
         ...(input.svPoints ? { svPoints: input.svPoints } : {}),
-      }),
-      keepalive: input.keepalive,
-      signal: input.signal,
+      },
+      ...(input.keepalive !== undefined ? { keepalive: input.keepalive } : {}),
+      ...(input.signal ? { signal: input.signal } : {}),
     }),
   );
 }
 
 export async function listRevisions(chartId: string): Promise<ChartRevisionDto[]> {
-  const body = await asChartApiError(() =>
-    api(listChartRevisionsApi, { params: { id: chartId } }),
-  );
+  const body = await asChartApiError(() => api(listChartRevisionsApi, { params: { id: chartId } }));
   return body.revisions;
 }

@@ -2,7 +2,7 @@ import { useEffect, type MutableRefObject } from 'react';
 import type { ReactionRow } from '@/lib/social/reactions';
 import { emitChatUpdate } from '@/lib/chat-plus/client-bus';
 import type { ChatUpdate } from '@/lib/chat-plus/types';
-import type { Msg } from './group-chat-state';
+import type { Msg } from '@/lib/group-chat/types';
 
 /**
  * Live updates for an open group: prefer SSE, fall back to `?after=` polling.
