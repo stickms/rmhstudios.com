@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { implement } from '@/lib/api/implement.server';
 import { z } from 'zod';
+import { getNotificationToggles } from '@/lib/settings/prefs.server';
 import { prisma } from '@/lib/prisma.server';
 import { invalidateNotificationPrefs } from '@/lib/notifications.server';
 import { getNotificationTogglesApi } from '@/lib/preferences/preferences.contract';
@@ -11,14 +12,6 @@ import { setNotificationTogglesApi } from '@/lib/preferences/preferences.contrac
  * (defaults when no row exists yet).
  * PUT /api/notifications/preferences — save toggles (upsert).
  */
-const DEFAULTS = {
-  likes: true,
-  comments: true,
-  follows: true,
-  mentions: true,
-  reposts: true,
-  system: true,
-};
 
 const prefsSchema = z.object({
   likes: z.boolean().optional(),
@@ -32,13 +25,9 @@ const prefsSchema = z.object({
 export const Route = createFileRoute('/api/notifications/preferences')({
   server: {
     handlers: {
-      GET: implement(getNotificationTogglesApi, {}, async ({ session }) => {
-        const prefs = await prisma.notificationPreference.findUnique({
-          where: { userId: session.user.id },
-        });
-        const { likes, comments, follows, mentions, reposts, system } = prefs ?? DEFAULTS;
-        return Response.json({ likes, comments, follows, mentions, reposts, system });
-      }),
+      GET: implement(getNotificationTogglesApi, {}, async ({ session }) =>
+        Response.json(await getNotificationToggles(session.user.id)),
+      ),
 
       PUT: implement(
         setNotificationTogglesApi,

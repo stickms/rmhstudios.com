@@ -13,7 +13,7 @@ import { defineHandler } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/call/calls.contract';
 import { prisma } from '@/lib/prisma.server';
-import { userChipSelect } from '@/lib/user-display';
+import { listActiveCallMutes } from '@/lib/settings/prefs.server';
 import { CALL_MUTE_DURATION_KEYS, muteUntil, type CallMuteDuration } from '@/lib/call/mute';
 
 const userId = z.string().min(1).max(64);
@@ -22,17 +22,9 @@ export const Route = createFileRoute('/api/calls/mute')({
   server: {
     handlers: {
       // Active mutes only: a lapsed row is inert, so listing it would just be noise.
-      GET: implement(C.listCallMutesApi, { rateLimit: 'read' }, async ({ userId: me }) => {
-        const rows = await prisma.callMute.findMany({
-          where: { userId: me, until: { gt: new Date() } },
-          orderBy: { until: 'asc' },
-          take: 100,
-          select: { until: true, muted: { select: userChipSelect } },
-        });
-        return Response.json({
-          mutes: rows.map((r) => ({ until: r.until.toISOString(), user: r.muted })),
-        });
-      }),
+      GET: implement(C.listCallMutesApi, { rateLimit: 'read' }, async ({ userId: me }) =>
+        Response.json(await listActiveCallMutes(me)),
+      ),
 
       POST: defineHandler(
         {

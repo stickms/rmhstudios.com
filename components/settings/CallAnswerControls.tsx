@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { PhoneMissed } from 'lucide-react';
 import { toast } from 'sonner';
@@ -6,7 +7,8 @@ import { toast } from 'sonner';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/contract/client';
-import { getCallAnswerApi, setCallAnswerApi } from '@/lib/call/calls.contract';
+import { setCallAnswerApi } from '@/lib/call/calls.contract';
+import { callAnswerQuery } from '@/lib/settings/prefs.queries';
 import {
   CALL_ANSWER_MODES,
   CALL_BUSY_NOTE_MAX,
@@ -26,47 +28,37 @@ import {
  */
 export function CallAnswerControls() {
   const { t } = useTranslation('site');
-  const [mode, setMode] = useState<CallAnswerMode>(DEFAULT_CALL_ANSWER_MODE);
-  const [note, setNote] = useState('');
-  const [loaded, setLoaded] = useState(false);
+  const queryClient = useQueryClient();
+  const query = callAnswerQuery();
+  const { data, isPending } = useQuery(query);
+  const loaded = !isPending;
+  const mode: CallAnswerMode = isCallAnswerMode(data?.mode) ? data.mode : DEFAULT_CALL_ANSWER_MODE;
   // The note as last saved, so leaving the field unchanged does not write.
-  const savedNote = useRef('');
-
-  useEffect(() => {
-    api(getCallAnswerApi, { retries: 0 })
-      .catch(() => null)
-      .then((d: { mode?: unknown; note?: unknown } | null) => {
-        if (d && isCallAnswerMode(d.mode)) setMode(d.mode);
-        if (d && typeof d.note === 'string') {
-          setNote(d.note);
-          savedNote.current = d.note;
-        }
-        setLoaded(true);
-      })
-      .catch(() => setLoaded(true));
-  }, []);
+  const savedNote = typeof data?.note === 'string' ? data.note : '';
+  // What is typed in the field; null until the member edits it.
+  const [draft, setDraft] = useState<string | null>(null);
+  const note = draft ?? savedNote;
 
   function save(body: { mode: CallAnswerMode; note?: string }, onFail: () => void) {
-    api(setCallAnswerApi, { body })
-      .catch(() => {
-        onFail();
-        toast.error(t('call-privacy-save-error', { defaultValue: 'Could not save' }));
-      });
+    api(setCallAnswerApi, { body }).catch(() => {
+      onFail();
+      toast.error(t('call-privacy-save-error', { defaultValue: 'Could not save' }));
+    });
   }
 
   function choose(next: CallAnswerMode) {
-    const previous = mode;
-    setMode(next);
-    save({ mode: next }, () => setMode(previous));
+    const previous = data;
+    queryClient.setQueryData(query.queryKey, { mode: next, note: savedNote });
+    save({ mode: next }, () => queryClient.setQueryData(query.queryKey, previous));
   }
 
   function commitNote() {
-    if (note === savedNote.current) return;
-    const previous = savedNote.current;
-    savedNote.current = note;
+    if (note === savedNote) return;
+    const previous = data;
+    queryClient.setQueryData(query.queryKey, { mode, note });
     save({ mode, note }, () => {
-      savedNote.current = previous;
-      setNote(previous);
+      queryClient.setQueryData(query.queryKey, previous);
+      setDraft(null);
     });
   }
 
@@ -129,7 +121,9 @@ export function CallAnswerControls() {
       {mode !== 'ring' && (
         <div className="border-t border-site-border pt-3">
           <label htmlFor="call-busy-note" className="mb-1 block text-sm font-medium text-site-text">
-            {t('call-answer-note-label', { defaultValue: 'Why you might be unavailable (optional)' })}
+            {t('call-answer-note-label', {
+              defaultValue: 'Why you might be unavailable (optional)',
+            })}
           </label>
           <Textarea
             id="call-busy-note"
@@ -140,7 +134,7 @@ export function CallAnswerControls() {
             placeholder={t('call-answer-note-placeholder', {
               defaultValue: 'e.g. In class until 3pm',
             })}
-            onChange={(e) => setNote(e.target.value)}
+            onChange={(e) => setDraft(e.target.value)}
             onBlur={commitNote}
             className="min-h-0"
           />

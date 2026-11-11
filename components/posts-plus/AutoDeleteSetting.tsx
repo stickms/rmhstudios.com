@@ -1,4 +1,5 @@
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -6,6 +7,7 @@ import { Hourglass } from 'lucide-react';
 import { Select } from '@/components/ui/select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { AUTO_DELETE_MONTHS, type AutoDeleteMonths } from '@/lib/posts-plus/constants';
+import { autoDeleteSettingQuery } from '@/lib/settings/prefs.queries';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { api } from '@/lib/contract/client';
 import { getAutoDeleteApi, setAutoDeleteApi } from '@/lib/posts-plus/auto-delete.contract';
@@ -23,31 +25,18 @@ export function AutoDeleteSetting() {
   const confirm = useConfirm();
   const labelId = useId();
   const hintId = useId();
-  const [months, setMonths] = useState<AutoDeleteMonths | null>(null);
-  const [ready, setReady] = useState(false);
+  const queryClient = useQueryClient();
+  const query = autoDeleteSettingQuery();
+  const { data, isPending } = useQuery(query);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    api(getAutoDeleteApi)
-      .then((d) => {
-        if (cancelled) return;
-        setMonths(d.months ?? null);
-        setReady(true);
-      })
-      .catch(() => {
-        if (!cancelled) setReady(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const months: AutoDeleteMonths | null = data?.months ?? null;
+  const ready = !isPending;
 
   const save = async (next: AutoDeleteMonths | null) => {
     setSaving(true);
     try {
-      await api(setAutoDeleteApi, { body: { months: next } });
-      setMonths(next);
+      const saved = await api(setAutoDeleteApi, { body: { months: next } });
+      queryClient.setQueryData(query.queryKey, saved);
     } catch {
       toast.error(t('autodelete-failed', { defaultValue: 'Could not save that setting' }));
     } finally {

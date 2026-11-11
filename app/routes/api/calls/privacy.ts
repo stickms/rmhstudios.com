@@ -10,19 +10,15 @@ import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/call/calls.contract';
 import { prisma } from '@/lib/prisma.server';
 import { invalidateNotificationPrefs } from '@/lib/notifications.server';
-import { CALL_PRIVACY_VALUES, DEFAULT_CALL_PRIVACY, isCallPrivacy } from '@/lib/call/state';
+import { CALL_PRIVACY_VALUES } from '@/lib/call/state';
+import { getCallPrivacy } from '@/lib/settings/prefs.server';
 
 export const Route = createFileRoute('/api/calls/privacy')({
   server: {
     handlers: {
-      GET: implement(C.getCallPrivacyApi, { rateLimit: 'read' }, async ({ userId }) => {
-        const prefs = await prisma.notificationPreference.findUnique({
-          where: { userId },
-          select: { callPrivacy: true },
-        });
-        const value = prefs?.callPrivacy;
-        return Response.json({ callPrivacy: isCallPrivacy(value) ? value : DEFAULT_CALL_PRIVACY });
-      }),
+      GET: implement(C.getCallPrivacyApi, { rateLimit: 'read' }, async ({ userId }) =>
+        Response.json(await getCallPrivacy(userId)),
+      ),
       PUT: implement(
         C.setCallPrivacyApi,
         {

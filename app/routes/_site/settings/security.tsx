@@ -11,6 +11,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { KeyRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { profileLinksQuery } from '@/lib/profile-links/profile-links.queries';
+import {
+  recoveryCodeStatusQuery,
+  recoveryHoldQuery,
+  recoveryRequestsQuery,
+  trustedContactsQuery,
+} from '@/lib/recovery/recovery.queries';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { PasskeyManager } from '@/components/site/PasskeyManager';
 import { SessionManager } from '@/components/site/SessionManager';
@@ -36,6 +44,16 @@ export const Route = createFileRoute('/_site/settings/security')({
   head: () => ({
     meta: [{ title: 'Security | RMH Studios' }],
   }),
+  loader: async ({ context }) => {
+    await Promise.all([
+      prefetchRouteQuery(context.queryClient, profileLinksQuery()),
+      prefetchRouteQuery(context.queryClient, recoveryCodeStatusQuery()),
+      prefetchRouteQuery(context.queryClient, recoveryHoldQuery()),
+      prefetchRouteQuery(context.queryClient, recoveryRequestsQuery()),
+      prefetchRouteQuery(context.queryClient, trustedContactsQuery()),
+    ]);
+    return undefined;
+  },
   component: SecuritySettingsPage,
 });
 
@@ -53,7 +71,9 @@ function SecuritySettingsPage() {
   return (
     <PageLayout
       title={title}
-      description={t('security-subtitle', { defaultValue: 'Manage how you sign in to your account.' })}
+      description={t('security-subtitle', {
+        defaultValue: 'Manage how you sign in to your account.',
+      })}
       wide
       backTo="/settings"
       backLabel={settingsLabel}

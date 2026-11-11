@@ -8,6 +8,12 @@ import { Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import { playLimitsQuery, playtimeSettingsQuery } from '@/lib/settings/privacy.queries';
+import {
+  callAnswerQuery,
+  callMutesQuery,
+  callPrivacyQuery,
+  presencePrefsQuery,
+} from '@/lib/settings/prefs.queries';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { DataExportPanel } from '@/components/site/DataExportPanel';
 import { DeleteAccountPanel } from '@/components/site/DeleteAccountPanel';
@@ -30,6 +36,10 @@ export const Route = createFileRoute('/_site/settings/privacy')({
     await Promise.all([
       prefetchRouteQuery(context.queryClient, playtimeSettingsQuery()),
       prefetchRouteQuery(context.queryClient, playLimitsQuery()),
+      prefetchRouteQuery(context.queryClient, presencePrefsQuery()),
+      prefetchRouteQuery(context.queryClient, callPrivacyQuery()),
+      prefetchRouteQuery(context.queryClient, callMutesQuery()),
+      prefetchRouteQuery(context.queryClient, callAnswerQuery()),
     ]);
     return undefined;
   },

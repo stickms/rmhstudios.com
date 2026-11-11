@@ -1,52 +1,41 @@
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { ImageOff } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { api } from '@/lib/contract/client';
-import { getAltTextSettingApi, setAltTextSettingApi } from '@/lib/feed/alt-text.contract';
+import { setAltTextSettingApi } from '@/lib/feed/alt-text.contract';
+import { altTextSettingQuery } from '@/lib/settings/prefs.queries';
 
 /**
  * X12 — the "Require alt text" switch, in Settings → Content preferences.
  *
  * Off by default. When on, the composer will not publish (or schedule) a post
  * with an image that has no description, and neither will the server, so the
- * rule holds from any client. The read is deferred to the effect and the row
- * renders its off state meanwhile — a failed read just leaves it off.
+ * rule holds from any client. The value is seeded by the route loader; a failed
+ * read just leaves the switch off.
  */
 export function RequireAltTextSetting() {
   const { t } = useTranslation('f-feed-plus');
   const labelId = useId();
   const hintId = useId();
-  const [value, setValue] = useState(false);
-  const [ready, setReady] = useState(false);
+  const queryClient = useQueryClient();
+  const query = altTextSettingQuery();
+  const { data, isPending } = useQuery(query);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    api(getAltTextSettingApi)
-      .then((d) => {
-        if (cancelled) return;
-        setValue(d.requireAltText ?? false);
-        setReady(true);
-      })
-      .catch(() => {
-        if (!cancelled) setReady(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const value = data?.requireAltText ?? false;
+  const ready = !isPending;
 
   const change = async (next: boolean) => {
     setSaving(true);
-    const prev = value;
-    setValue(next);
+    const prev = data;
+    queryClient.setQueryData(query.queryKey, { requireAltText: next });
     try {
       await api(setAltTextSettingApi, { body: { requireAltText: next } });
     } catch {
-      setValue(prev);
+      queryClient.setQueryData(query.queryKey, prev);
       toast.error(t('alt-setting-failed', { defaultValue: 'Could not save that setting' }));
     } finally {
       setSaving(false);

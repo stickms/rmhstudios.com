@@ -11,7 +11,8 @@
  *    real owner can press it.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { AlertTriangle, KeyRound, ShieldCheck } from 'lucide-react';
@@ -28,10 +29,12 @@ import {
   cancelRecoveryRequestApi,
   completeRecoveryApi,
   generateRecoveryCodesApi,
-  getRecoveryCodeStatusApi,
-  getRecoveryHoldApi,
-  listRecoveryRequestsApi,
 } from '@/lib/recovery/recovery.contract';
+import {
+  recoveryCodeStatusQuery,
+  recoveryHoldQuery,
+  recoveryRequestsQuery,
+} from '@/lib/recovery/recovery.queries';
 
 interface CodeStatus {
   remaining: number;
@@ -68,10 +71,26 @@ function formatDate(iso: string): string {
 export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProps) {
   const { t } = useTranslation('feed');
   const confirm = useConfirm();
-  const [status, setStatus] = useState<CodeStatus | null>(null);
-  const [hold, setHold] = useState<HoldState | null>(null);
-  const [requests, setRequests] = useState<RequestRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const statusQuery = recoveryCodeStatusQuery();
+  const holdQuery = recoveryHoldQuery();
+  const requestsQuery = recoveryRequestsQuery();
+  // Each part fails on its own: a failed read leaves that part empty. Signed out, nothing is read.
+  const { data: statusData, isPending: statusPending } = useQuery({
+    ...statusQuery,
+    enabled: signedIn,
+  });
+  const { data: holdData, isPending: holdPending } = useQuery({ ...holdQuery, enabled: signedIn });
+  const { data: requestData, isPending: requestsPending } = useQuery({
+    ...requestsQuery,
+    enabled: signedIn,
+  });
+  const loading = signedIn && (statusPending || holdPending || requestsPending);
+  const status: CodeStatus | null = statusData ?? null;
+  const hold: HoldState | null = holdData ?? null;
+  const requests: RequestRow[] = (requestData?.mine ?? []).filter(
+    (row) => row.phase !== 'expired' && row.phase !== 'rejected',
+  );
   const [freshCodes, setFreshCodes] = useState<string[] | null>(null);
   const [generating, setGenerating] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -79,42 +98,6 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
   const [completionEmail, setCompletionEmail] = useState('');
   const [completing, setCompleting] = useState(false);
   const [completed, setCompleted] = useState(false);
-
-  // `quiet` refreshes in place: after generating, the one-time codes are on
-  // screen and must not vanish behind the loading spinner while it reloads.
-  const load = useCallback(
-    async (quiet = false) => {
-      if (!signedIn) {
-        setLoading(false);
-        return;
-      }
-      if (!quiet) setLoading(true);
-      try {
-        // Each part fails on its own: a failed call leaves that part empty.
-        const [codes, holdState, requestList] = await Promise.all([
-          api(getRecoveryCodeStatusApi).catch(() => null),
-          api(getRecoveryHoldApi).catch(() => null),
-          api(listRecoveryRequestsApi).catch(() => null),
-        ]);
-        if (codes) setStatus(codes);
-        if (holdState) setHold(holdState);
-        if (requestList) {
-          setRequests(
-            requestList.mine.filter((row) => row.phase !== 'expired' && row.phase !== 'rejected'),
-          );
-        }
-      } catch {
-        // Leave the panel in its empty state rather than throwing at the user.
-      } finally {
-        setLoading(false);
-      }
-    },
-    [signedIn],
-  );
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   const generate = async () => {
     const confirmed = await confirm({
@@ -131,11 +114,11 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
     try {
       const data = await api(generateRecoveryCodesApi);
       setFreshCodes(data.codes);
-      await load(true);
+      // Refresh in place: the one-time codes stay on screen while the status reloads.
+      await queryClient.invalidateQueries({ queryKey: ['account', 'recovery'] });
     } catch (e) {
       toast.error(
-        serverError(e) ??
-          t('recovery-codes-failed', { defaultValue: 'Could not generate codes.' }),
+        serverError(e) ?? t('recovery-codes-failed', { defaultValue: 'Could not generate codes.' }),
       );
     } finally {
       setGenerating(false);
@@ -156,7 +139,9 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
     setCancellingId(row.id);
     try {
       await api(cancelRecoveryRequestApi, { params: { id: row.id } });
-      setRequests((prev) => prev.filter((item) => item.id !== row.id));
+      queryClient.setQueryData(requestsQuery.queryKey, (old) =>
+        old ? { ...old, mine: old.mine.filter((item) => item.id !== row.id) } : old,
+      );
       toast.success(t('recovery-cancelled', { defaultValue: 'Recovery request cancelled.' }));
     } catch {
       toast.error(t('recovery-cancel-failed', { defaultValue: 'Could not cancel that request.' }));

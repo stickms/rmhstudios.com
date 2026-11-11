@@ -10,30 +10,16 @@ import { z } from 'zod';
 import { implement } from '@/lib/api/implement.server';
 import * as C from '@/lib/call/calls.contract';
 import { prisma } from '@/lib/prisma.server';
+import { getCallAnswer } from '@/lib/settings/prefs.server';
 import { invalidateNotificationPrefs } from '@/lib/notifications.server';
-import {
-  CALL_ANSWER_MODES,
-  CALL_BUSY_NOTE_MAX,
-  DEFAULT_CALL_ANSWER_MODE,
-  isCallAnswerMode,
-  normalizeBusyNote,
-} from '@/lib/call/answer';
+import { CALL_ANSWER_MODES, CALL_BUSY_NOTE_MAX, normalizeBusyNote } from '@/lib/call/answer';
 
 export const Route = createFileRoute('/api/calls/answer')({
   server: {
     handlers: {
-      GET: implement(C.getCallAnswerApi, { rateLimit: 'read' }, async ({ userId }) => {
-        const prefs = await prisma.notificationPreference.findUnique({
-          where: { userId },
-          select: { callAnswerMode: true, callBusyNote: true },
-        });
-        return Response.json({
-          mode: isCallAnswerMode(prefs?.callAnswerMode)
-            ? prefs.callAnswerMode
-            : DEFAULT_CALL_ANSWER_MODE,
-          note: prefs?.callBusyNote ?? '',
-        });
-      }),
+      GET: implement(C.getCallAnswerApi, { rateLimit: 'read' }, async ({ userId }) =>
+        Response.json(await getCallAnswer(userId)),
+      ),
 
       PUT: implement(
         C.setCallAnswerApi,

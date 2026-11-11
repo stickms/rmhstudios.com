@@ -3,15 +3,13 @@
  * Toggles save optimistically and roll back (with a toast) on failure.
  */
 
-import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  getNotificationTogglesApi,
-  setNotificationTogglesApi,
-} from '@/lib/preferences/preferences.contract';
+import { setNotificationTogglesApi } from '@/lib/preferences/preferences.contract';
+import { notificationTogglesQuery } from '@/lib/settings/prefs.queries';
 import { api } from '@/lib/contract/client';
 
 const PREF_KEYS = ['likes', 'comments', 'follows', 'mentions', 'reposts', 'system'] as const;
@@ -29,31 +27,18 @@ const COPY: Record<PrefKey, { label: string; hint: string }> = {
 
 export function NotificationPrefsPanel() {
   const { t } = useTranslation('feed');
-  const [prefs, setPrefs] = useState<Prefs | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    api(getNotificationTogglesApi)
-      .then((data) => {
-        if (active) setPrefs(data);
-      })
-      .catch(() => {
-        if (active) setFailed(true);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
+  const queryClient = useQueryClient();
+  const query = notificationTogglesQuery();
+  const { data: prefs, isError: failed } = useQuery(query);
 
   const toggle = async (key: PrefKey, value: boolean) => {
     if (!prefs) return;
     const previous = prefs;
-    setPrefs({ ...prefs, [key]: value });
+    queryClient.setQueryData<Prefs>(query.queryKey, { ...prefs, [key]: value });
     try {
       await api(setNotificationTogglesApi, { body: { [key]: value } });
     } catch {
-      setPrefs(previous);
+      queryClient.setQueryData<Prefs>(query.queryKey, previous);
       toast.error(
         t('settings-notif-save-failed', {
           defaultValue: 'Could not save that setting. Try again.',

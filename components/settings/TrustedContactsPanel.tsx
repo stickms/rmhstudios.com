@@ -8,7 +8,8 @@
  * it is a phishing target with extra steps.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Check, ShieldQuestion, UserPlus, X } from 'lucide-react';
@@ -24,73 +25,49 @@ import { serverError } from '@/lib/http';
 import {
   approveRecoveryRequestApi,
   confirmTrustedContactApi,
-  listRecoveryRequestsApi,
-  listTrustedContactsApi,
   nominateTrustedContactApi,
   removeTrustedContactApi,
 } from '@/lib/recovery/recovery.contract';
+import type { RecoveryRequestDTO } from '@/lib/recovery/requests.server';
+import type { TrustedContactDTO } from '@/lib/recovery/trusted-contacts.server';
+import { recoveryRequestsQuery, trustedContactsQuery } from '@/lib/recovery/recovery.queries';
 
-interface ContactUser {
-  id: string;
-  name: string | null;
-  handle: string | null;
-  image: string | null;
-}
-
-interface ContactRow {
-  id: string;
-  confirmedAt: string | null;
-  createdAt: string;
-  user: ContactUser;
-}
-
-interface ApprovableRequest {
-  id: string;
-  createdAt: string;
-  expiresAt: string;
-  approvals: number;
-  approvalsNeeded: number;
-  phase: string;
-  owner?: ContactUser;
-  approvedByMe?: boolean;
-}
+type ContactRow = TrustedContactDTO;
+type ApprovableRequest = RecoveryRequestDTO;
 
 const MAX_CONTACTS = 3;
 
 export function TrustedContactsPanel() {
   const { t } = useTranslation('feed');
   const confirm = useConfirm();
-  const [contacts, setContacts] = useState<ContactRow[]>([]);
-  const [trustedFor, setTrustedFor] = useState<ContactRow[]>([]);
-  const [approvable, setApprovable] = useState<ApprovableRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const contactsQuery = trustedContactsQuery();
+  const requestsQuery = recoveryRequestsQuery();
+  // Each part fails on its own: a failed read leaves that part empty.
+  const { data: contactData, isPending: contactsPending } = useQuery(contactsQuery);
+  const { data: requestData, isPending: requestsPending } = useQuery(requestsQuery);
+  const loading = contactsPending || requestsPending;
+  const contacts: ContactRow[] = contactData?.contacts ?? [];
+  const trustedFor: ContactRow[] = contactData?.trustedFor ?? [];
+  const approvable: ApprovableRequest[] = requestData?.approvable ?? [];
+  const setContacts = (update: (prev: ContactRow[]) => ContactRow[]) =>
+    queryClient.setQueryData(contactsQuery.queryKey, (old) => ({
+      contacts: update(old?.contacts ?? []),
+      trustedFor: old?.trustedFor ?? [],
+    }));
+  const setTrustedFor = (update: (prev: ContactRow[]) => ContactRow[]) =>
+    queryClient.setQueryData(contactsQuery.queryKey, (old) => ({
+      contacts: old?.contacts ?? [],
+      trustedFor: update(old?.trustedFor ?? []),
+    }));
+  const setApprovable = (update: (prev: ApprovableRequest[]) => ApprovableRequest[]) =>
+    queryClient.setQueryData(requestsQuery.queryKey, (old) => ({
+      mine: old?.mine ?? [],
+      approvable: update(old?.approvable ?? []),
+    }));
   const [handle, setHandle] = useState('');
   const [adding, setAdding] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Each part fails on its own: a failed call leaves that part empty.
-      const [contactData, requestData] = await Promise.all([
-        api(listTrustedContactsApi).catch(() => null),
-        api(listRecoveryRequestsApi).catch(() => null),
-      ]);
-      if (contactData) {
-        setContacts(contactData.contacts);
-        setTrustedFor(contactData.trustedFor);
-      }
-      if (requestData) setApprovable(requestData.approvable);
-    } catch {
-      // Leave the panel empty rather than throwing at the user.
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   const nominate = async (event: React.FormEvent) => {
     event.preventDefault();
