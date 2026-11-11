@@ -124,7 +124,7 @@ export function CodeEmbedDialog({ ce }: { ce: CodeEmbedCompose }) {
             {t('embed-cancel', { defaultValue: 'Cancel' })}
           </Button>
           <Button
-            variant="accent"
+            variant="default"
             disabled={!valid}
             onClick={() => {
               ce.setEmbed(draft);

@@ -141,7 +141,7 @@ export function ArcadeSection({
                 defaultValue: 'Sign in to play the daily arcade challenges',
               })}
               action={
-                <Button asChild variant="accent">
+                <Button asChild variant="default">
                   <Link to="/login" search={{ callbackURL: '/games' }}>
                     {t('sign-in', { defaultValue: 'Sign in' })}
                   </Link>

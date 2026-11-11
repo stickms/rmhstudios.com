@@ -73,11 +73,11 @@ export function ListingCard({
           />
         </div>
         <div className="absolute left-2 top-2 flex gap-1">
-          <Badge variant={listing.listingType === 'RENT' ? 'accent' : 'solid'} size="sm">
+          <Badge variant={listing.listingType === 'RENT' ? 'default' : 'solid'}>
             {listing.listingType === 'RENT' ? 'Rent' : 'Sale'}
           </Badge>
           {showStatus && listing.status !== 'ACTIVE' && (
-            <Badge variant="warning" size="sm">
+            <Badge variant="warning">
               {statusLabel(listing.status)}
             </Badge>
           )}
@@ -98,7 +98,7 @@ export function ListingCard({
           <span className="text-lg font-bold text-site-text font-display">
             {formatPrice(listing.price, listing.listingType)}
           </span>
-          <Badge variant="outline" size="sm">
+          <Badge variant="default">
             {propertyTypeLabel(listing.propertyType)}
           </Badge>
         </div>

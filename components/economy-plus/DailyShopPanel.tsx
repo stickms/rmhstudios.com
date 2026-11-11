@@ -182,7 +182,7 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
           </div>
           {signedIn ? (
             <Button
-              variant="accent"
+              variant="default"
               size="sm"
               disabled={!full}
               loading={bundle.isPending}
@@ -234,7 +234,7 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
                   ) : signedIn ? (
                     <>
                       <Button
-                        variant={picked ? 'accent' : 'outline'}
+                        variant={picked ? 'default' : 'default'}
                         size="sm"
                         aria-pressed={picked}
                         disabled={!picked && selected.length >= BUNDLE_SIZE}
@@ -244,7 +244,7 @@ export default function DailyShopPanel({ signedIn }: { signedIn: boolean }) {
                         {t('bundle-toggle', { defaultValue: 'Bundle' })}
                       </Button>
                       <Button
-                        variant="accent-outline"
+                        variant="default"
                         size="sm"
                         loading={buy.isPending && buy.variables?.id === item.id}
                         onClick={() => buy.mutate(item)}
@@ -412,7 +412,7 @@ function LoadoutsSection({ onApplied }: { onApplied: () => void }) {
         />
         <Button
           type="submit"
-          variant="accent"
+          variant="default"
           size="sm"
           disabled={!name.trim() || loadouts.length >= LOADOUT_MAX_PRESETS}
           loading={save.isPending}
@@ -447,7 +447,7 @@ function LoadoutsSection({ onApplied }: { onApplied: () => void }) {
                 </p>
               </div>
               <Button
-                variant="accent-outline"
+                variant="default"
                 size="sm"
                 disabled={l.active}
                 loading={apply.isPending && apply.variables === l.id}

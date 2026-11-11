@@ -110,7 +110,7 @@ export default function CanvasReplay({ event }: { event: CanvasEventView }) {
       />
       <div className="flex items-center gap-3">
         <Button
-          variant="secondary"
+          variant="default"
           size="icon-sm"
           aria-label={
             playing

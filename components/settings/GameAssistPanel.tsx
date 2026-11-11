@@ -106,7 +106,7 @@ export function GameAssistPanel() {
             `aria-labelledby` pointing at the text instead, which is what a
             screen reader actually reads. */}
         {SWITCHES.map((s) => (
-          <div key={s.key} className="flex items-start justify-between gap-4">
+          <div key={s.key} className="chrome-row flex items-start justify-between gap-4">
             <span>
               <span id={`assist-${s.key}`} className="block text-sm font-medium text-site-text">
                 {s.label}

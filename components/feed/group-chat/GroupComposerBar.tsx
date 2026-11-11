@@ -150,7 +150,7 @@ export function GroupComposerBar({
           />
           <ComposerLengthCounter used={input.length} />
         </div>
-        <Button variant="accent" size="sm" disabled={!canSend} onClick={send} className="h-9">
+        <Button variant="default" size="sm" disabled={!canSend} onClick={send} className="h-9">
           <Send className="h-4 w-4" />
         </Button>
       </div>

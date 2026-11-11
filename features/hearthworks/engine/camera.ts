@@ -11,7 +11,7 @@
  * mid-flight turns around from exactly the frame it is on — no jump, no restart.
  */
 
-import { EASE } from '@/lib/motion';
+import { EASE } from '@/lib/app-motion';
 import { lerp } from '@/lib/core/math';
 
 export type Vec3 = readonly [number, number, number];

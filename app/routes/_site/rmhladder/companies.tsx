@@ -259,7 +259,7 @@ function CompaniesPage() {
                   >
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="default"
                       size="icon-sm"
                       aria-label={t('ladder.companies.higherPriority', { defaultValue: 'Higher priority' })}
                       disabled={priority <= 1}
@@ -270,7 +270,7 @@ function CompaniesPage() {
                     <span className="rl-mono min-w-4 text-center">{priority}</span>
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="default"
                       size="icon-sm"
                       aria-label={t('ladder.companies.lowerPriority', { defaultValue: 'Lower priority' })}
                       disabled={priority >= 5}
@@ -289,13 +289,12 @@ function CompaniesPage() {
                       return (
                         <Badge
                           key={p}
-                          size="sm"
                           variant={
                             status === 'active'
                               ? 'success'
                               : status === 'error' || status === 'blocked'
                                 ? 'danger'
-                                : 'outline'
+                                : 'default'
                           }
                           title={label}
                         >
@@ -347,7 +346,7 @@ function CompaniesPage() {
                 <td data-label={t('ladder.companies.details', { defaultValue: 'Details' })}>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="default"
                     size="sm"
                     aria-expanded={isExpanded}
                     onClick={() => setExpanded(isExpanded ? null : (c.id as string))}
@@ -370,7 +369,7 @@ function CompaniesPage() {
                       {sources.map((s) => (
                         <li key={s.id as string} className="rl-mono">
                           {s.platform as string} · {(s.slug ?? s.url ?? '—') as string} ·{' '}
-                          <Badge size="sm" variant="outline">{s.status as string}</Badge> ·{' '}
+                          <Badge variant="default">{s.status as string}</Badge> ·{' '}
                           {s.lastSuccessAt
                             ? t('ladder.companies.okAgo', {
                                 defaultValue: 'ok {{ago}}',
@@ -391,7 +390,7 @@ function CompaniesPage() {
       {rows.length > limit && (
         <Button
           type="button"
-          variant="outline"
+          variant="default"
           className="w-full"
           onClick={() => setLimit((n) => n + PAGE)}
         >

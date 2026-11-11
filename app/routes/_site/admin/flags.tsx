@@ -152,7 +152,7 @@ function FlagsPage() {
             placeholder={t('flags-description-placeholder', { defaultValue: 'What does it gate?' })}
             aria-label={t('flags-description-placeholder', { defaultValue: 'What does it gate?' })}
           />
-          <Button variant="accent" onClick={create} disabled={busy || !keyValid || keyTaken}>
+          <Button variant="default" onClick={create} disabled={busy || !keyValid || keyTaken}>
             {t('flags-create', { defaultValue: 'Create flag' })}
           </Button>
         </div>

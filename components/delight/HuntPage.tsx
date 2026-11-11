@@ -135,7 +135,7 @@ export function HuntPage() {
                       aria-label={t('hunt-answer', { defaultValue: 'Your answer' })}
                       placeholder={t('hunt-answer', { defaultValue: 'Your answer' })}
                     />
-                    <Button type="submit" variant="accent" loading={busy} disabled={!answer.trim()}>
+                    <Button type="submit" variant="default" loading={busy} disabled={!answer.trim()}>
                       {t('hunt-submit', { defaultValue: 'Submit' })}
                     </Button>
                   </div>

@@ -308,7 +308,7 @@ export function ShopColumn({
                 ) : item.owned ? (
                   <Button
                     size="sm"
-                    variant={item.equipped ? 'accent' : 'secondary'}
+                    variant={item.equipped ? 'default' : 'default'}
                     disabled={busy === item.id}
                     onClick={() => equip(item, !item.equipped)}
                   >
@@ -322,7 +322,7 @@ export function ShopColumn({
                   </Button>
                 ) : (
                   <Button
-                    variant="accent-outline"
+                    variant="default"
                     disabled={busy === item.id}
                     onClick={() => buy(item)}
                     // The visible label is just a price ("R 100"), so nothing —

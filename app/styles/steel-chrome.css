@@ -1,0 +1,131 @@
+/* Steel chrome (docs/plans/2026-11-11-steel-design-implementation.md section 4.1, 4.2, 4.3 V2 to V4, 11).
+
+   This is one of the two stylesheets allowed a gradient (R2, B2; lib/__tests__/steel-flat.test.ts).
+
+   WHAT IS HERE
+     --c            one registered number, 0 to 1. Every stop of the thumb gradient is mixed from the flat colour by it, so
+                    the browser animates a single value and paints nothing as chrome until it is needed (C2 to C4).
+     .chrome-host   the element that owns --c: the switch's wrapper span and the slider root. It carries the 20px
+                    proximity zone as a transparent ::before with inset -20px (C6). There is NO pointer-move listener.
+     .chrome-row    optional: any ancestor row. Hovering the row makes the thumbs in it chrome (C3, "over the control's
+                    row"). A row opts in with the class; nothing is measured.
+     .chrome-thumb  the thumb itself: the C1 gradient mixed by --c, and the outline shadow driven by --c.
+     .chrome-globe  the globe's static first paint (4.2). Used by phase 3; nothing mounts it yet.
+     --m1 to --m5   the motion durations of section 11.
+
+   HOW THE RENDERER FINDS A THUMB (section 4.3 V4: components do not import it)
+     Every thumb is a REAL element, never a pseudo-element, and carries data-chrome="pill":
+       toggle   components/ui/switch.tsx:  <span data-chrome="pill" class="chrome-thumb ..." aria-hidden>
+                inside the role=switch button. Border box 22 x 12px, rounded-full (6px), moved with `translate` (0 or 18px).
+       slider   components/ui/slider.tsx:  the Radix Thumb itself (role=slider, tabindex 0) carries
+                data-chrome="pill" and class chrome-thumb. Border box 22 x 10px, rounded-full (5px). Radix positions it.
+     Each is position: relative with overflow: hidden, so the renderer can append a <canvas> (position absolute, inset 0,
+     pointer-events none, border-radius inherit) and give it opacity: var(--c). --c is inherited from .chrome-host
+     (registered with inherits: true). The CSS gradient below stays underneath as first paint and fallback. The pill's
+     radius is read from the element, so the renderer needs no size table.
+
+   TOUCH (C5): there is no hover, so a thumb is chrome only while pressed or focused. The proximity and row rules sit in
+   (hover: hover) and (pointer: fine); :active and keyboard focus apply everywhere.
+   C7: a browser without @property switches instantly. No script fallback. */
+
+@property --c {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+:root {
+  /* Section 11. */
+  --m1: 90ms; /* hover and press fills */
+  --m2: 140ms; /* tab underline, toggle slide */
+  --m3: 280ms; /* chrome activation (--c) */
+  --m4: 360ms; /* globe open and close */
+  --m5: 160ms; /* overlay in and out */
+  --m4-curve: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@layer components {
+  .chrome-host {
+    position: relative;
+    transition: --c var(--m3) ease;
+  }
+
+  /* C6: the proximity zone. Behind the control's neighbours (z-index -1, and the host makes no stacking context), so a
+     neighbour inside the 20px is still clickable; it only has to be hovered to count. */
+  .chrome-host::before {
+    content: '';
+    position: absolute;
+    inset: -20px;
+    z-index: -1;
+  }
+
+  /* Pressed or focused: every pointer. */
+  .chrome-host:active,
+  .chrome-host:has(:active),
+  .chrome-host:has(:focus-visible) {
+    --c: 1;
+  }
+
+  /* Near, or over the row: fine pointers only (C5). */
+  @media (hover: hover) and (pointer: fine) {
+    .chrome-host:hover,
+    .chrome-row:hover .chrome-host {
+      --c: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .chrome-host {
+      transition: none;
+    }
+  }
+
+  /* C1 mixed by --c over --chrome-flat, and the outline of 4.1 driven by the same number. */
+  .chrome-thumb {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--chrome-1) calc(var(--c) * 100%), var(--chrome-flat)) 0,
+      color-mix(in srgb, var(--chrome-2) calc(var(--c) * 100%), var(--chrome-flat)) 30%,
+      color-mix(in srgb, var(--chrome-3) calc(var(--c) * 100%), var(--chrome-flat)) 49%,
+      color-mix(in srgb, var(--chrome-4) calc(var(--c) * 100%), var(--chrome-flat)) 50.5%,
+      color-mix(in srgb, var(--chrome-5) calc(var(--c) * 100%), var(--chrome-flat)) 76%,
+      color-mix(in srgb, var(--chrome-6) calc(var(--c) * 100%), var(--chrome-flat)) 100%
+    );
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, calc(0.45 * var(--c))),
+      0 1px 2px rgba(0, 0, 0, calc(0.3 * var(--c)));
+  }
+
+  /* 4.2: the globe's static first paint. Day by default, Night under .style-graphite. --d is the diameter. */
+  .chrome-globe {
+    background:
+      radial-gradient(ellipse 22% 14% at 33% 22%, #fff 0 40%, transparent 78%),
+      linear-gradient(
+        180deg,
+        var(--chrome-1) 0,
+        var(--chrome-2) 30%,
+        var(--chrome-3) 49%,
+        var(--chrome-4) 50.5%,
+        var(--chrome-5) 76%,
+        var(--chrome-6) 100%
+      );
+    box-shadow:
+      inset 0 0 calc(var(--d) * 0.12) calc(var(--d) * 0.02) rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(0, 0, 0, 0.4);
+  }
+  .style-graphite .chrome-globe {
+    background:
+      radial-gradient(ellipse 20% 12% at 33% 22%, #fff 0 30%, transparent 78%),
+      linear-gradient(
+        180deg,
+        var(--chrome-1) 0,
+        var(--chrome-2) 30%,
+        var(--chrome-3) 49%,
+        var(--chrome-4) 50.5%,
+        var(--chrome-5) 76%,
+        var(--chrome-6) 100%
+      );
+  }
+}

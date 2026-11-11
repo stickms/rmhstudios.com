@@ -71,7 +71,7 @@ export default function TopFourModule({
         defaultValue: 'Pick four games or apps that say the most about you.',
       })}
       emptyAction={
-        <Button asChild variant="accent" size="sm">
+        <Button asChild variant="default" size="sm">
           <Link to="/settings/profile">
             <Pencil aria-hidden />
             {t('top-four-choose', { defaultValue: 'Choose' })}

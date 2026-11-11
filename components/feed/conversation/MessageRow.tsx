@@ -2,7 +2,7 @@ import { m as motion } from 'framer-motion';
 import { Reply } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { SwipeRow } from '@/components/ui/swipe-row';
-import { APPLE_SPRING } from '@/lib/motion';
+import { transition } from '@/lib/motion';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { PostImageGrid } from '../PostImageGrid';
 import ChatMediaEmbed, {
@@ -115,7 +115,7 @@ export function MessageRow({
     <motion.div
       initial={animateIn ? { opacity: 0, y: 8 } : false}
       animate={{ opacity: 1, y: 0 }}
-      transition={APPLE_SPRING.snappy}
+      transition={transition}
     >
       {showDate && (
         <div className="flex items-center justify-center my-4">

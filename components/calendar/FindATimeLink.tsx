@@ -23,7 +23,7 @@ export function FindATimeLink({
   if (variant === 'button') {
     return (
       <Link to="/when" search={search}>
-        <Button size="sm" variant="outline">
+        <Button size="sm" variant="default">
           <CalendarCheck /> {label}
         </Button>
       </Link>

@@ -202,7 +202,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
               </Button>
               <Button
                 type="button"
-                variant="accent"
+                variant="default"
                 onClick={handleSave}
                 loading={submitting}
                 loadingText={t('saving', { defaultValue: 'Saving…' })}

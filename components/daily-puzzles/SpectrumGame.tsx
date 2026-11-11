@@ -292,7 +292,7 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
                 {/* Lock In button */}
                 {!locked && (
                     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                        <Button type="button" variant="accent" size="lg" className="w-full" onClick={handleLockIn}>
+                        <Button type="button" variant="default" size="lg" className="w-full" onClick={handleLockIn}>
                             <Lock aria-hidden />
                             {t("lock-in", { defaultValue: "Lock In" })}
                         </Button>

@@ -203,7 +203,7 @@ function AdminEconomyPage() {
                       {data.byType.map((row) => (
                         <tr key={row.type} className="border-t border-site-border">
                           <td className="py-3">
-                            <Badge variant="outline" size="sm">
+                            <Badge variant="default">
                               {row.type}
                             </Badge>
                           </td>

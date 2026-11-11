@@ -55,7 +55,7 @@ export function VerificationBadge({
 
   return (
     <Tooltip content={reason ? `${label} — ${reason}` : tierHint}>
-      <Badge variant={variant} size="sm">
+      <Badge variant={variant}>
         {label}
       </Badge>
     </Tooltip>

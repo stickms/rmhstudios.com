@@ -150,7 +150,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
             {build.featured && (
               <Badge variant="warning">{t("curated", { defaultValue: "Curated" })}</Badge>
             )}
-            {build.visibility !== 'PUBLIC' && <Badge variant="outline">{build.visibility}</Badge>}
+            {build.visibility !== 'PUBLIC' && <Badge variant="default">{build.visibility}</Badge>}
           </div>
         )}
 
@@ -176,7 +176,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
 
           {isOwner && (
             <div className="ml-auto flex items-center gap-2">
-              <Button asChild variant="secondary" size="sm">
+              <Button asChild variant="default" size="sm">
                 <Link to={`/user-builds/submit?edit=${build.id}` as string}>
                   <Edit aria-hidden />
                   {t("edit", { defaultValue: "Edit" })}
@@ -214,7 +214,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
         {/* Actions */}
         <div className="flex flex-wrap items-center gap-3">
           {build.repoUrl && (
-            <Button asChild variant="secondary">
+            <Button asChild variant="default">
               <a href={safeHref(build.repoUrl)} target="_blank" rel="noopener noreferrer">
                 <GitBranch aria-hidden />
                 {t("view-source", { defaultValue: "View Source" })}
@@ -222,7 +222,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
             </Button>
           )}
           {build.demoUrl && (
-            <Button asChild variant="accent">
+            <Button asChild variant="default">
               <a href={safeHref(build.demoUrl)} target="_blank" rel="noopener noreferrer">
                 <ExternalLink aria-hidden />
                 {t("live-demo", { defaultValue: "Live Demo" })}
@@ -280,7 +280,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
               {t("premium-build-desc", { defaultValue: "Unlock the README, source, and live demo for this build." })}
             </p>
             <Button
-              variant="accent"
+              variant="default"
               onClick={handleUnlock}
               disabled={!session}
               loading={unlocking}

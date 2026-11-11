@@ -58,7 +58,7 @@ export default function JamPanel({
                   'Edit one project with up to 3 friends. MIDI and pattern tracks are shared; audio recordings stay on your device.',
               })}
             </p>
-            <Button variant="accent" disabled={busy} onClick={() => void run(startJam)}>
+            <Button variant="default" disabled={busy} onClick={() => void run(startJam)}>
               {t('jam-start', { defaultValue: 'Start a jam from this project' })}
             </Button>
             <div className="glass-pane space-y-2 rounded-app p-4">
@@ -149,7 +149,7 @@ export default function JamPanel({
               {isHost && (
                 <Button
                   size="sm"
-                  variant="secondary"
+                  variant="default"
                   onClick={() =>
                     void saveLocalProject().then(() =>
                       toast.success(

@@ -70,7 +70,7 @@ function PackCard({
         <Button
           type="button"
           size="sm"
-          variant={pack.subscribed ? 'outline' : 'accent'}
+          variant={pack.subscribed ? 'default' : 'default'}
           loading={busy}
           onClick={() => onToggle(pack)}
           className="shrink-0"
@@ -209,7 +209,7 @@ function EmojiPacksPage() {
             />
             <Button
               type="button"
-              variant="accent"
+              variant="default"
               loading={creating}
               disabled={!newName.trim()}
               onClick={() => void createPack()}

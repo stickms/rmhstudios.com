@@ -262,7 +262,7 @@ export function CarFamily() {
         <p className="mt-4 text-sm text-site-text-muted">{copy[active.info.id].drivetrain}</p>
 
         <div className="mt-4">
-          <Button asChild variant="accent">
+          <Button asChild variant="default">
             <Link to="/rideshare">
               {t('cars-cta', { defaultValue: 'Request a ride' })}
               <ArrowRight className="size-4" aria-hidden />

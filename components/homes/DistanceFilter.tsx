@@ -223,7 +223,7 @@ export function DistanceFilter({ unit = 'mi', onChange }: DistanceFilterProps) {
                   <Button
                     type="button"
                     size="sm"
-                    variant={isActive ? 'accent' : 'outline'}
+                    variant={isActive ? 'default' : 'default'}
                     aria-pressed={isActive}
                     onClick={() => selectPlace(isActive ? null : place.id)}
                     className="min-h-11 rounded-r-none"
@@ -233,7 +233,7 @@ export function DistanceFilter({ unit = 'mi', onChange }: DistanceFilterProps) {
                   <Button
                     type="button"
                     size="icon-sm"
-                    variant="outline"
+                    variant="default"
                     onClick={() => deletePlace(place.id)}
                     aria-label={t('homes.distanceRemove', {
                       defaultValue: 'Remove {{label}}',

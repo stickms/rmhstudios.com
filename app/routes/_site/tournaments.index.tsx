@@ -108,7 +108,7 @@ function TournamentsPage() {
                     </p>
                   </div>
                   {tourney.status === 'LIVE' && (
-                    <Badge variant="accent">{t('live', { defaultValue: 'Live' })}</Badge>
+                    <Badge variant="default">{t('live', { defaultValue: 'Live' })}</Badge>
                   )}
                   {tourney.status === 'COMPLETE' && (
                     <Badge variant="success">{t('done', { defaultValue: 'Done' })}</Badge>

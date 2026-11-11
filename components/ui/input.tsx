@@ -11,7 +11,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         data-slot="input"
         type={type}
         className={cn(
-          'glass-inset flex h-12 w-full rounded-site-sm px-5 py-3 text-base sm:text-sm text-site-text transition-[color,border-color,background-color] duration-site-fast placeholder:text-site-text-muted hover:border-site-text focus-visible:border-site-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/30 aria-invalid:border-site-danger aria-invalid:ring-site-danger/30 disabled:cursor-not-allowed disabled:opacity-50',
+          // Steel K4: 40px high, surface fill, 1px border, 12px side padding, muted placeholder. Focus is the global K10 outline.
+          'flex h-10 w-full rounded-site border border-site-border bg-site-surface px-3 text-base sm:text-sm text-site-text transition-[border-color] duration-(--m1) ease-[ease] placeholder:text-site-text-muted aria-invalid:border-site-danger disabled:cursor-not-allowed disabled:opacity-50',
           className,
         )}
         ref={ref}

@@ -89,7 +89,7 @@ export function TagColumn({
 
  {hasMore && (
  <div className="flex justify-center px-4 pt-4 pb-12">
- <Button variant="secondary"size="sm"onClick={loadMore} disabled={loadingMore}>
+ <Button variant="default"size="sm"onClick={loadMore} disabled={loadingMore}>
  {loadingMore ? (
  <Loader2 className="h-4 w-4 animate-spin"/>
  ) : (

@@ -324,7 +324,7 @@ export function GlobeSetXr(props: GlobeSetXrProps) {
                 {props.sets}
               </Figure>
             </dl>
-            <Button type="button" variant="secondary" size="sm" onClick={endSession}>
+            <Button type="button" variant="default" size="sm" onClick={endSession}>
               <X aria-hidden />
               {t('globeset-ar-exit', { defaultValue: 'Leave' })}
             </Button>

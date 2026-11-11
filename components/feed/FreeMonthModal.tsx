@@ -91,7 +91,7 @@ export function FreeMonthModal() {
  <p className="mx-auto mt-2 max-w-xs text-sm text-site-text-muted">
  {t("claimed-body", { defaultValue:"Your free month of Pro is active. Enjoy the perks — including the developer API."})}
  </p>
- <Button variant="accent"className="mt-6 w-full"onClick={() => setOpen(false)}>
+ <Button variant="default"className="mt-6 w-full"onClick={() => setOpen(false)}>
  {t("lets-go", { defaultValue:"Let’s go"})}
  </Button>
  </>
@@ -104,7 +104,7 @@ export function FreeMonthModal() {
  {t("offer-body", { defaultValue:"Try RMH Pro free for one month — no payment, no card. Unlock the developer API, the profile badge, and more."})}
  </p>
  <div className="mt-6 flex flex-col gap-2">
- <Button variant="accent"loading={claiming} onClick={claim} className="w-full">
+ <Button variant="default"loading={claiming} onClick={claim} className="w-full">
  {!claiming && <Gift className="h-4 w-4"/>}
  {t("claim-free-month", { defaultValue:"Claim free month"})}
  </Button>

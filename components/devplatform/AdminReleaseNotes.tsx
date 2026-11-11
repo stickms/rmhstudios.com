@@ -95,7 +95,7 @@ export function AdminReleaseNotes() {
           })}
         />
         <Button
-          variant="accent"
+          variant="default"
           size="sm"
           disabled={busy || prs.trim().length < 10}
           onClick={draft}
@@ -145,7 +145,7 @@ export function AdminReleaseNotes() {
             {t('admin-saveDraft', { defaultValue: 'Save draft' })}
           </Button>
           <Button
-            variant="accent"
+            variant="default"
             size="sm"
             disabled={busy || !version.trim() || !title.trim() || !body.trim()}
             onClick={() => save(true)}

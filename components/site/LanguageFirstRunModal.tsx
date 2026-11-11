@@ -105,7 +105,7 @@ export function LanguageFirstRunModal() {
         </div>
 
         <div className="mt-6 flex justify-center">
-          <Button variant="accent" size="sm" onClick={() => finish()}>
+          <Button variant="default" size="sm" onClick={() => finish()}>
             {t('lang-firstrun-continue', { defaultValue: 'Continue in {{lang}}', lang: LOCALE_LABELS[locale] })}
           </Button>
         </div>

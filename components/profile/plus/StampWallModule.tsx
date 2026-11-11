@@ -105,7 +105,7 @@ export default function StampWallModule({
         defaultValue: 'Make a stamp or collect other members’ stamps.',
       })}
       emptyAction={
-        <Button asChild variant="accent" size="sm">
+        <Button asChild variant="default" size="sm">
           <Link to="/settings/profile">{t('stamps-manage', { defaultValue: 'Get stamps' })}</Link>
         </Button>
       }
@@ -151,7 +151,7 @@ export default function StampWallModule({
                 {signedIn ? (
                   <>
                     <Button
-                      variant={open.onMyWall ? 'outline' : 'accent'}
+                      variant={open.onMyWall ? 'default' : 'default'}
                       loading={busy}
                       onClick={() => void toggle(open)}
                     >

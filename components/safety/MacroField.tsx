@@ -147,7 +147,7 @@ export function MacroField({
             <Button
               type="button"
               size="sm"
-              variant="accent"
+              variant="default"
               disabled={!title.trim()}
               onClick={save}
             >

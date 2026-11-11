@@ -80,7 +80,7 @@ export function HighlightsSection({
           <Button
             type="button"
             size="sm"
-            variant="outline"
+            variant="default"
             disabled={!kit.hasSelection}
             onClick={() => kit.beginFromSelection(false)}
           >
@@ -89,7 +89,7 @@ export function HighlightsSection({
           <Button
             type="button"
             size="sm"
-            variant="outline"
+            variant="default"
             disabled={!kit.hasSelection}
             onClick={() => kit.beginFromSelection(true)}
           >

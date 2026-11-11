@@ -62,7 +62,7 @@ export function HowToPlay({ gameId }: { gameId: string }) {
               aria-label={t('howToPlay-ask', { defaultValue: 'Ask about this game' })}
               placeholder={t('howToPlay-ask', { defaultValue: 'Ask about this game' })}
             />
-            <Button type="submit" variant="accent" size="sm" disabled={busy || q.trim().length < 2}>
+            <Button type="submit" variant="default" size="sm" disabled={busy || q.trim().length < 2}>
               {t('howToPlay-submit', { defaultValue: 'Ask' })}
             </Button>
           </form>

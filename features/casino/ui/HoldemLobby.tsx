@@ -128,7 +128,7 @@ export function HoldemLobby({ coins }: Props) {
               className="flex-1 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-site-sm text-sm">
               {t("create-table", { defaultValue: "Create Table" })}
             </Button>
-            <Button onClick={() => setShowCreate(false)} variant="outline" className="flex-1 rounded-site-sm text-sm">
+            <Button onClick={() => setShowCreate(false)} variant="default" className="flex-1 rounded-site-sm text-sm">
               {t("cancel", { defaultValue: "Cancel" })}
             </Button>
           </div>
@@ -139,7 +139,7 @@ export function HoldemLobby({ coins }: Props) {
             className="flex-1 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-site-sm text-sm">
             <Plus className="w-4 h-4 mr-1" /> {t("create-table", { defaultValue: "Create Table" })}
           </Button>
-          <Button variant="secondary" size="icon" onClick={handleRefresh}
+          <Button variant="default" size="icon" onClick={handleRefresh}
             className="text-site-text-muted hover:text-site-text">
             <RefreshCw className="w-4 h-4" />
           </Button>

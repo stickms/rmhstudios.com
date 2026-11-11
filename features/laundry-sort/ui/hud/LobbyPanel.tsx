@@ -247,7 +247,7 @@ export function LobbyPanel({ onLeave }: { onLeave: () => void }) {
           ) : (
             <Button
               onClick={() => laundryNet.ready(!me?.ready)}
-              variant={me?.ready ? 'outline' : 'default'}
+              variant={me?.ready ? 'default' : 'default'}
               size="lg"
               className="w-full"
               disabled={countdown !== null}

@@ -85,7 +85,7 @@ export function MessageEditor({
           <X className="size-4" />
         </Button>
         <Button
-          variant="accent"
+          variant="default"
           size="sm"
           onClick={() => onSave(value)}
           disabled={saving || unchanged}

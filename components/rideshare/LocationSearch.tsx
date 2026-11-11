@@ -199,7 +199,7 @@ export function LocationSearch({
               {allowCurrentLocation && (
                 <Button
                   type="button"
-                  variant="accent-outline"
+                  variant="default"
                   size="sm"
                   className="min-h-11 rounded-full"
                   onClick={useCurrentLocation}
@@ -213,7 +213,7 @@ export function LocationSearch({
                 <Button
                   key={p.id}
                   type="button"
-                  variant="outline"
+                  variant="default"
                   size="sm"
                   className="min-h-11 rounded-full"
                   onClick={() => choose(p)}

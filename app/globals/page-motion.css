@@ -518,13 +518,13 @@ html[data-page-leaving='sibling']
    Everything here is gated on no-preference, and the global reduce rule in
    §REDUCED MOTION collapses it anyway. */
 :root {
-  --motion-in: 0.22s;
-  --motion-out: 0.1s;
-  --motion-bloom: 0.26s;
-  --motion-collapse: 0.11s;
-  --motion-ease-in: var(--ease-smooth);
-  /* Smooth at both ends: a dismissal that ends at full speed reads as a cut. */
-  --motion-ease-out: cubic-bezier(0.45, 0, 0.55, 1);
+  /* Steel M5: every overlay enters and leaves in 160 ms, opacity only. */
+  --motion-in: 0.16s;
+  --motion-out: 0.16s;
+  --motion-bloom: 0.16s;
+  --motion-collapse: 0.16s;
+  --motion-ease-in: ease;
+  --motion-ease-out: ease;
   /* An exit that has a long way to travel (a phone sheet leaving through the
      bottom edge). `--motion-out` is right for a panel that fades where it
      stands; 0.1s across a whole screen height is a teleport, not a dismissal.
@@ -708,20 +708,15 @@ html[data-page-leaving='sibling']
   pointer-events: none;
 }
 
-/* Transitions retarget from the current frame when a surface is reopened
-     during its exit. Longhand scale preserves each surface's positioning. */
+/* Transitions retarget from the current frame when a surface is reopened during its exit. M5: opacity only. */
 
 :is([data-motion='pop'], [data-motion='rise'], [data-motion='fade']) {
   opacity: 1;
-  scale: 1;
-  transition:
-    opacity var(--motion-collapse) var(--motion-ease-out),
-    scale var(--site-transition-speed) var(--motion-ease-in);
+  transition: opacity var(--motion-collapse) var(--motion-ease-out);
 }
 
 :is([data-motion='pop'], [data-motion='rise'], [data-motion='fade'])[data-state='closed'] {
   opacity: 0;
-  scale: 0.98;
   pointer-events: none;
   transition-duration: var(--motion-collapse);
   /* Radix Presence holds the node until animationend; visibility is constant
@@ -732,7 +727,6 @@ html[data-page-leaving='sibling']
 @starting-style {
   :is([data-motion='pop'], [data-motion='rise'], [data-motion='fade']):not([data-state='closed']) {
     opacity: 0;
-    scale: 0.98;
   }
 }
 @keyframes motion-presence {
@@ -928,19 +922,7 @@ html.nav-pop .page-root > * {
 /* Legacy variant tint tokens remain for selected/pressed consumers. Hover uses
    the shared coat/optical tilt; the CSS build policy removes hover colour swaps. */
 @layer components {
-  [data-slot='button']:is(
-    [data-variant='default'],
-    [data-variant='accent'],
-    [data-variant='signal']
-  ) {
-    --evert-tint: var(--site-accent-hover);
-    --evert-rest-opacity: 1;
-  }
-  [data-slot='button']:is(
-    [data-variant='outline'],
-    [data-variant='secondary'],
-    [data-variant='ghost']
-  ),
+  [data-slot='button']:is([data-variant='default'], [data-variant='ghost']),
   [data-slot='menu-item'],
   [data-slot='select-item'],
   [data-slot='select'][data-evert],
@@ -966,41 +948,12 @@ html.nav-pop .page-root > * {
     --evert-tint: color-mix(in srgb, var(--site-accent) 22%, transparent);
     --evert-rest-opacity: 1;
   }
-  [data-slot='button']:is([data-variant='accent-outline'], [data-variant='accent-ghost']) {
-    --evert-tint: var(--site-bg-subtle);
-    --evert-rest-opacity: 1;
-  }
   [data-slot='menu-item'][data-tone='danger'] {
     --evert-tint: color-mix(in srgb, var(--site-danger) 10%, transparent);
   }
 }
 
 /* Focus is immediate; a keyboard user never waits for a ring to animate. */
-/* Switch: the "on" colour everts out of the knob as the knob travels, and swallows
-   back into it. The origin is the knob's resting place on the off side. */
-@layer components {
-  [data-slot='switch']::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    corner-shape: inherit;
-    background: var(--site-accent);
-    opacity: 0;
-    transition: opacity var(--site-transition-speed) var(--ease-glass);
-    pointer-events: none;
-  }
-  [data-slot='switch'][aria-checked='true']::before {
-    opacity: 1;
-  }
-  [data-slot='switch'] > [data-switch-knob] {
-    position: relative;
-    transition:
-      translate var(--site-transition-speed) var(--ease-glass),
-      background-color var(--site-transition-speed) var(--ease-glass);
-  }
-}
-
 /* Native checkbox and radio: the accent everts out from the centre and the mark
    springs in after it. Drawn with pseudo-elements, which Gecko does not render on
    inputs, so Firefox keeps the native control (in the accent, via accent-color),

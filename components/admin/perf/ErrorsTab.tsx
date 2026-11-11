@@ -40,7 +40,7 @@ export function ErrorsTab({ overview }: { overview: PerfOverview }) {
             className="glass-fill space-y-2 rounded-site p-5"
           >
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="danger" size="sm">
+              <Badge variant="danger">
                 {e.status}
               </Badge>
               <span className="font-mono text-xs break-all text-site-text">{e.route}</span>

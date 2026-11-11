@@ -15,7 +15,7 @@ import { useState, useEffect, useCallback } from 'react';
 // implementation, which lands in the SHARED ENTRY CHUNK when the module is
 // reachable from a route's top level.
 import { m as motion } from 'framer-motion';
-import { fade } from '@/lib/motion';
+import { fade } from '@/lib/app-motion';
 import { useTranslation } from 'react-i18next';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { playSound } from '@/lib/rmhbox/audio';

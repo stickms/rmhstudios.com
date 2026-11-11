@@ -61,7 +61,7 @@ export function DailyMutatorPage() {
               </div>
               <div className="flex flex-col items-start gap-2 sm:items-end">
                 {signedIn ? (
-                  <Button asChild variant="accent">
+                  <Button asChild variant="default">
                     <a href={`${game.path}?daily=1`}>
                       <Play className="h-4 w-4" aria-hidden />
                       {used
@@ -70,7 +70,7 @@ export function DailyMutatorPage() {
                     </a>
                   </Button>
                 ) : (
-                  <Button asChild variant="accent">
+                  <Button asChild variant="default">
                     <a href="/login">{t('sign-in', { defaultValue: 'Sign in to play' })}</a>
                   </Button>
                 )}

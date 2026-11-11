@@ -41,7 +41,7 @@ export default function NowModule({
       empty={view !== undefined && !text}
       emptyTitle={t('now-empty', { defaultValue: 'What are you up to these days?' })}
       emptyAction={
-        <Button asChild variant="accent" size="sm">
+        <Button asChild variant="default" size="sm">
           <Link to="/settings/profile">{t('now-write', { defaultValue: 'Write your /now' })}</Link>
         </Button>
       }

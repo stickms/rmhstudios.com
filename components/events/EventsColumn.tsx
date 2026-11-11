@@ -110,7 +110,7 @@ export function EventsColumn({ embedded = false }: { embedded?: boolean }) {
         sticky={!embedded}
         actions={
           signedIn && (
-            <Button size="sm" variant="accent" onClick={() => setComposerOpen(true)}>
+            <Button size="sm" variant="default" onClick={() => setComposerOpen(true)}>
               <Plus aria-hidden /> {t('new-button', { defaultValue: 'New' })}
             </Button>
           )

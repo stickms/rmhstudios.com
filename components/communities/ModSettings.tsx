@@ -128,7 +128,7 @@ export function ModSettings({
       </label>
 
       <div className="flex justify-end">
-        <Button type="submit" variant="accent" size="sm" loading={saving}>
+        <Button type="submit" variant="default" size="sm" loading={saving}>
           {t('settings-save', { defaultValue: 'Save settings' })}
         </Button>
       </div>

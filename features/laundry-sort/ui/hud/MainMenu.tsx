@@ -130,7 +130,7 @@ export function MainMenu({
                 </Button>
                 <Button
                   onClick={onQuickMatch}
-                  variant="outline"
+                  variant="default"
                   className="w-full"
                   size="lg"
                   disabled={connecting}
@@ -175,7 +175,7 @@ export function MainMenu({
                     enterKeyHint="go"
                     maxLength={8}
                   />
-                  <Button type="submit" variant="outline" disabled={connecting || code.length < 4}>
+                  <Button type="submit" variant="default" disabled={connecting || code.length < 4}>
                     {t('join', { defaultValue: 'Join' })}
                   </Button>
                 </form>

@@ -171,7 +171,7 @@ export function CommunityPlusBody({
             >
               <Button
                 size="xs"
-                variant={flairFilter ? 'outline' : 'accent'}
+                variant={flairFilter ? 'default' : 'default'}
                 onClick={() => setFlairFilter(null)}
               >
                 {t('flair-all', { defaultValue: 'All posts' })}

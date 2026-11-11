@@ -142,7 +142,7 @@ export function QuotaAppealsPanel() {
               <div className="flex shrink-0 items-center gap-2">
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="default"
                   disabled={busy === req.id}
                   onClick={() => decide(req, false)}
                 >

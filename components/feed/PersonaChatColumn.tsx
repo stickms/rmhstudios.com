@@ -142,7 +142,7 @@ export function PersonaChatColumn({
  title={t('persona-not-found', { defaultValue:'Persona not found'})}
  action={
  <Link to="/personas">
- <Button variant="outline">
+ <Button variant="default">
  {t('browse-personas', { defaultValue:'Browse personas'})}
  </Button>
  </Link>
@@ -230,7 +230,7 @@ export function PersonaChatColumn({
  className="max-h-32 flex-1 resize-none rounded-site glass-inset px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
  />
  <Button
- variant="accent"
+ variant="default"
  size="sm"
  disabled={!input.trim() || sending}
  onClick={send}

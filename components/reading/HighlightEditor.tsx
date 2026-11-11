@@ -164,13 +164,13 @@ export function HighlightEditor({
         </div>
         <DialogFooter className="gap-2 sm:justify-between">
           {state?.mode === 'edit' ? (
-            <Button type="button" variant="outline" onClick={remove} disabled={busy}>
+            <Button type="button" variant="default" onClick={remove} disabled={busy}>
               {t('remove-highlight', { defaultValue: 'Remove highlight' })}
             </Button>
           ) : (
             <span />
           )}
-          <Button type="button" variant="accent" onClick={save} loading={busy}>
+          <Button type="button" variant="default" onClick={save} loading={busy}>
             {t('save', { defaultValue: 'Save' })}
           </Button>
         </DialogFooter>

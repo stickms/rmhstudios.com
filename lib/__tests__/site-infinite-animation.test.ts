@@ -117,13 +117,6 @@ const BASELINE = new Map<string, string>([
     'app/globals.css :: dr-title-glow',
     'Dream Rift landing title glow (its game landing, not a surface)',
   ],
-  ['app/globals.css :: shimmer', 'skeleton shimmer — exists only until content arrives'],
-  [
-    'app/globals.css :: liquid-skeleton-drift',
-    'skeleton drift — exists only until content arrives',
-  ],
-  ['app/globals.css :: rad-loader-pulse', 'route loader — exists only while a route loads'],
-  ['app/globals.css :: rad-loader-orbit', 'route loader — exists only while a route loads'],
   ['components/radial/radial.css :: radial-pulse-soft', 'unread / live dots, a few px'],
   [
     'components/radial/radial.css :: globe-armed',

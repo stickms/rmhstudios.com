@@ -114,7 +114,7 @@ export function RunPanel({
             : t('run-seed', { defaultValue: 'Seed {{seed}}', seed: run.seed })}
         </span>
         {run.kind !== 'daily' ? (
-          <Button size="xs" variant="outline" onClick={() => void share()}>
+          <Button size="xs" variant="default" onClick={() => void share()}>
             <Link2 aria-hidden />
             {t('share-seed', { defaultValue: 'Share this seed' })}
           </Button>

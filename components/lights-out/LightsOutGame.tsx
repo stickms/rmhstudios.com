@@ -297,7 +297,7 @@ export function LightsOutGame() {
                 </>}
             >
                 {!isToday && (
-                    <Button type="button" variant="outline" size="sm" onClick={() => handleSelectDate(todayKey)}>
+                    <Button type="button" variant="default" size="sm" onClick={() => handleSelectDate(todayKey)}>
                         <ArrowLeft aria-hidden />
                         {t("back-to-todays-puzzle", { defaultValue: "Back to today's puzzle" })}
                     </Button>
@@ -422,7 +422,7 @@ export function LightsOutGame() {
                 <div className="flex flex-wrap items-center justify-center gap-2">
                     <Button
                         type="button"
-                        variant="secondary"
+                        variant="default"
                         onClick={handleHint}
                         disabled={solved || hintsUsed >= 3}
                         title={t("hint-title", { defaultValue: "Highlight next move (3 per day)" })}
@@ -433,7 +433,7 @@ export function LightsOutGame() {
                     {hintsUsed >= 3 && !solved && (
                         <Button
                             type="button"
-                            variant="outline"
+                            variant="default"
                             className="border-site-danger/50 text-site-danger"
                             onClick={handleGiveUp}
                             title={t("give-up-title", { defaultValue: "End puzzle with DNF" })}
@@ -444,7 +444,7 @@ export function LightsOutGame() {
                     )}
                     <Button
                         type="button"
-                        variant="secondary"
+                        variant="default"
                         onClick={handleUndo}
                         disabled={solved || moveHistory.length === 0}
                         title={t("undo-title", { defaultValue: "Take back your last move" })}
@@ -454,7 +454,7 @@ export function LightsOutGame() {
                     </Button>
                     <Button
                         type="button"
-                        variant="secondary"
+                        variant="default"
                         onClick={initPuzzle}
                         disabled={solved}
                         title={t("restart-title", { defaultValue: "Restart this puzzle" })}
@@ -558,7 +558,7 @@ export function LightsOutGame() {
             <div className="mt-6 flex flex-col gap-3">
                 <Button
                     type="button"
-                    variant="secondary"
+                    variant="default"
                     className="w-full"
                     onClick={() => setShowHistory((prev) => !prev)}
                     aria-expanded={showHistory}
@@ -605,7 +605,7 @@ export function LightsOutGame() {
                                                     </span>
                                                 </>
                                             ) : (
-                                                <Button type="button" variant="outline" size="sm" onClick={() => handleSelectDate(p.dateKey)}>
+                                                <Button type="button" variant="default" size="sm" onClick={() => handleSelectDate(p.dateKey)}>
                                                     <Play aria-hidden />
                                                     {t("play-btn", { defaultValue: "Play" })}
                                                 </Button>

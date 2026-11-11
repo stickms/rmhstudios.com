@@ -133,7 +133,7 @@ export function DeepseekPanel() {
             {t('live-unknown', { defaultValue: 'Live status unknown' })}
           </Badge>
         )}
-        <Button size="xs" variant="outline" onClick={() => void onRefresh()} disabled={refreshing}>
+        <Button size="xs" variant="default" onClick={() => void onRefresh()} disabled={refreshing}>
           <RefreshCw aria-hidden className={refreshing ? 'animate-spin' : undefined} />
           {t('refresh-now', { defaultValue: 'Refresh now' })}
         </Button>

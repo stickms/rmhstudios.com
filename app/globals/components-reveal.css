@@ -97,41 +97,6 @@ html.nav-restoring .feed-card-cv {
   animation: content-item-enter 0.2s var(--ease-smooth) backwards;
 }
 
-/* ─── Skeleton shimmer ───────────────────────────────────────────────────
- * A moving light sweep for loading placeholders, an upgrade on the plain
- * opacity pulse: it reads as "content streaming in" and improves perceived
- * speed. Opt in via `<Skeleton shimmer />` (the default stays `animate-pulse`
- * so existing skeletons are unchanged). The gradient rides on top of the
- * element's `bg-site-surface`, so it stays theme-correct everywhere.
- * `--site-text` at low alpha keeps the highlight subtle on both light and dark
- * themes. */
-@keyframes shimmer {
-  from {
-    background-position: 200% 0;
-  }
-  to {
-    background-position: -200% 0;
-  }
-}
-.animate-shimmer {
-  background-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    color-mix(in oklab, var(--site-text) 10%, transparent) 50%,
-    transparent 100%
-  );
-  background-size: 200% 100%;
-  background-repeat: no-repeat;
-  animation: shimmer 1.25s ease-in-out infinite;
-}
-/* The sweep reads as light travelling through liquid glass: a soft elliptical
-   highlight rather than a hard band, so skeletons match the radial language the
-   loading mark and the hub speak. Applies to both skeleton modes. */
-[data-slot='skeleton'] {
-  overflow: hidden;
-  position: relative;
-}
-
 /* One line of placeholder text, sized by the element it stands in.
    A menu that fetches on open renders its loading state, ANIMATES ITSELF TO
    THAT HEIGHT, and then jumps when the rows arrive — the box moved after the
@@ -148,34 +113,6 @@ html.nav-restoring .feed-card-cv {
   height: 1em;
   height: 1lh;
 }
-[data-slot='skeleton']::after {
-  content: '';
-  position: absolute;
-  inset: -40%;
-  border-radius: 50%;
-  corner-shape: round;
-  background: radial-gradient(
-    circle at 50% 50%,
-    color-mix(in oklab, var(--site-text) 12%, transparent),
-    transparent 62%
-  );
-  animation: liquid-skeleton-drift 2.6s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes liquid-skeleton-drift {
-  0%,
-  100% {
-    transform: translateX(-32%) scale(0.85);
-    opacity: 0.5;
-  }
-  50% {
-    transform: translateX(32%) scale(1.15);
-    opacity: 0.9;
-  }
-}
-/* A travelling sweep is more distracting than the pulse we preserve elsewhere,
- * so under reduced motion drop it back to a static themed surface. */
-
 /* ─── Inverse surfaces ──────────────────────────────────────────────────────
  * A few editorial surfaces (the news hero, the design story's CTA) flip to the
  * opposite end of the palette. They carry a COMPLETE colour contract of their

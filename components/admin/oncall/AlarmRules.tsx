@@ -126,7 +126,7 @@ function RuleRow({ rule, onSaved }: { rule: RuleView; onSaved: () => void }) {
         {rule.overridden && (
           <Button
             size="sm"
-            variant="outline"
+            variant="default"
             disabled={saving}
             onClick={() => void save({ threshold: null, muted: false })}
           >

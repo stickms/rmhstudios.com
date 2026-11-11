@@ -36,15 +36,12 @@ export function SiteToaster({ theme }: { theme: 'light' | 'dark' }) {
         right: '0.75rem',
       }}
       toastOptions={{
-        // Toasts are L4 floating UI and get the matching fill inline. It is written out here rather than by
-        // adding `.glass-overlay` because that class also sets position, max sizes and overflow — all of
-        // which sonner owns for its own stacking. The jelly material (haze floor, CSS rim, carrier) comes
-        // from `[data-sonner-toast]` in app/jelly-coverage.css, so only longhands are set here: a
-        // `background` / `box-shadow` inline would erase the floor and the rim. No backdrop-filter — no
-        // glass role has one (docs/liquid-glass-system.md); the overlay fill is the legibility floor.
+        // Steel S5: a toast is an overlay. It gets `.glass-overlay`'s fill, border, radius and T4 shadow inline,
+        // because that class also sets position, max sizes and overflow, all of which sonner owns for its own
+        // stacking. No blur. Its 160 ms fade (M5) is app/styles/steel-overlay.css.
         style: {
-          // The SAME expression `.glass-overlay` uses (globals.css §L4), not a third answer.
           backgroundColor: 'var(--site-surface)',
+          boxShadow: `0 8px 24px rgba(0, 0, 0, ${theme === 'dark' ? 0.5 : 0.12})`,
           border: '1px solid var(--site-border)',
           // A toast is a panel, not a control: `--site-radius`, the
           // same curve every other floating panel takes.

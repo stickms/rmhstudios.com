@@ -132,7 +132,7 @@ export default function MarathonPlanner() {
             </option>
           ))}
         </Select>
-        <Button variant="outline" size="sm" onClick={() => setDraft(blank())}>
+        <Button variant="default" size="sm" onClick={() => setDraft(blank())}>
           <Plus /> {t('marathon-new', { defaultValue: 'New list' })}
         </Button>
         {draft.id && (
@@ -232,7 +232,7 @@ export default function MarathonPlanner() {
               value={newMin}
               onChange={(e) => setNewMin(Number(e.target.value))}
             />
-            <Button variant="outline" size="sm" onClick={add}>
+            <Button variant="default" size="sm" onClick={add}>
               <Plus /> {t('marathon-add', { defaultValue: 'Add' })}
             </Button>
           </div>
@@ -243,7 +243,7 @@ export default function MarathonPlanner() {
             <Save /> {t('marathon-save', { defaultValue: 'Save list' })}
           </Button>
           {draft.shareId && (
-            <Button variant="outline" onClick={copyLink}>
+            <Button variant="default" onClick={copyLink}>
               <Link2 /> {t('marathon-share', { defaultValue: 'Copy share link' })}
             </Button>
           )}

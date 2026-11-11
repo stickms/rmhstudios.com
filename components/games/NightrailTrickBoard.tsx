@@ -86,7 +86,7 @@ export function NightrailTrickBoard({
           })}
         </p>
       )}
-      <Button size="sm" variant="outline" onClick={toggle} aria-expanded={open}>
+      <Button size="sm" variant="default" onClick={toggle} aria-expanded={open}>
         {t('trick-vote-open', { defaultValue: 'Vote on this week’s tricks' })}
       </Button>
       {open ? (
@@ -110,7 +110,7 @@ export function NightrailTrickBoard({
                 <Button
                   size="sm"
                   className="ms-auto shrink-0"
-                  variant={data.myVoteTrickId === trick.id ? 'accent' : 'outline'}
+                  variant={data.myVoteTrickId === trick.id ? 'default' : 'default'}
                   aria-pressed={data.myVoteTrickId === trick.id}
                   disabled={!signedIn || trick.mine}
                   onClick={() => void vote(trick.id)}

@@ -75,7 +75,7 @@ export default function HallOfFamePanel({ slug }: { slug: string }) {
       {cursor && (
         <div className="flex justify-center py-4">
           <Button
-            variant="secondary"
+            variant="default"
             size="sm"
             loading={loadingMore}
             onClick={async () => {

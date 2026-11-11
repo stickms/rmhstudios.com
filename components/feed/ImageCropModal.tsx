@@ -214,7 +214,7 @@ export function ImageCropModal({
  <Button variant="ghost"onClick={onCancel}>
  {t('cancel', { defaultValue:'Cancel'})}
  </Button>
- <Button variant="accent"disabled={saving} onClick={handleSave}>
+ <Button variant="default"disabled={saving} onClick={handleSave}>
  {saving
  ? t('applying', { defaultValue:'Applying...'})
  : t('apply', { defaultValue:'Apply'})}

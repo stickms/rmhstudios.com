@@ -29,7 +29,7 @@ import {
   type PlanEntry,
 } from '@/lib/dunesday/schedule';
 import { buildIcs, encodeShare, titleById, type DunesdayState } from '@/lib/dunesday/state';
-import { DURATION, EASE } from '@/lib/motion';
+import { DURATION, EASE } from '@/lib/app-motion';
 import { cn } from '@/lib/utils';
 import { fmtDay, LONG, SHORT } from './format';
 import { bubbleBurst } from './fx';

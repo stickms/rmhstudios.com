@@ -93,7 +93,7 @@ function AuditLogPage() {
           />
         </div>
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <Button asChild variant="outline" size="sm" className="gap-2">
+          <Button asChild variant="default" size="sm" className="gap-2">
             <a href={`/api/admin/audit-log?format=csv${query ? `&${query}` : ''}`} download>
               <Download className="h-4 w-4" aria-hidden />
               {t('audit-export-csv', { defaultValue: 'Export CSV' })}

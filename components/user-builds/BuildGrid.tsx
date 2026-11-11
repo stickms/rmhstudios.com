@@ -5,7 +5,7 @@ import { LayoutGroup, m as motion } from 'framer-motion';
 import { BuildCard } from './BuildCard';
 import type { Build, BuildSortOption } from '@/lib/user-builds-types';
 import { Reveal } from '@/components/motion';
-import { LAYOUT_SPRING } from '@/lib/motion';
+import { transition } from '@/lib/motion';
 import { api } from '@/lib/contract/client';
 import { likeUserBuildApi, listUserBuildsApi } from '@/lib/user-builds.contract';
 
@@ -173,7 +173,7 @@ export function BuildGrid({
             <motion.div
               key={build.id}
               layout
-              transition={LAYOUT_SPRING}
+              transition={{ layout: transition }}
             >
               <BuildCard build={build} onLike={handleLike} />
             </motion.div>

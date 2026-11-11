@@ -154,7 +154,7 @@ export function GlobeSetRoom(props: GlobeSetRoomProps) {
             </Figure>
             <Figure label={t('globeset-stat-sets', { defaultValue: 'Sets' })}>{props.sets}</Figure>
           </dl>
-          <Button type="button" variant="secondary" size="sm" onClick={props.onExit}>
+          <Button type="button" variant="default" size="sm" onClick={props.onExit}>
             <X aria-hidden />
             {t('globeset-ar-exit', { defaultValue: 'Leave' })}
           </Button>

@@ -23,7 +23,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { games } from '@/lib/catalog';
-import { APPLE_SPRING } from '@/lib/motion';
+import { APPLE_SPRING } from '@/lib/app-motion';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { claimArcadeChallengeApi, getArcadeStateApi } from '@/lib/arcade/arcade.contract';
@@ -272,7 +272,7 @@ function ChallengeCard({
           </span>
         ) : claimable ? (
           <Button
-            variant="accent"
+            variant="default"
             loading={busy}
             onClick={onClaim}
             className="w-full sm:w-auto"
@@ -283,7 +283,7 @@ function ChallengeCard({
         ) : game ? (
           // asChild: a <button> inside an <a> is invalid HTML and gives keyboard
           // users two focus stops for one action.
-          <Button asChild variant="outline" className="w-full sm:w-auto">
+          <Button asChild variant="default" className="w-full sm:w-auto">
             <Link to={game.href}>
               <Play className="h-3.5 w-3.5" aria-hidden />
               {t('arcade-play-now', { defaultValue: 'Play now' })}

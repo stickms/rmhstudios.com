@@ -226,7 +226,7 @@ export default function CanvasBoard({
       </div>
       <div className="absolute right-3 bottom-3 flex gap-2">
         <Button
-          variant="secondary"
+          variant="default"
           size="icon-sm"
           aria-label={t('zoom-out', { defaultValue: 'Zoom out' })}
           onClick={() => zoomAt(0.8)}
@@ -234,7 +234,7 @@ export default function CanvasBoard({
           <Minus />
         </Button>
         <Button
-          variant="secondary"
+          variant="default"
           size="icon-sm"
           aria-label={t('zoom-in', { defaultValue: 'Zoom in' })}
           onClick={() => zoomAt(1.25)}

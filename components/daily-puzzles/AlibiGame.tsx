@@ -244,7 +244,7 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
                             </p>
                         </div>
                     </PuzzleSection>
-                    <Button type="button" variant="accent" size="lg" className="w-full" onClick={startReading}>
+                    <Button type="button" variant="default" size="lg" className="w-full" onClick={startReading}>
                         <Eye aria-hidden />
                         {t("start-puzzle", { defaultValue: "Start Puzzle" })}
                     </Button>
@@ -311,12 +311,12 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
                                             <span className="truncate font-semibold text-site-text">{suspect.name}</span>
                                         </span>
                                         {cleared && (
-                                            <Badge variant="success" size="sm">
+                                            <Badge variant="success">
                                                 {t("cleared", { defaultValue: "Cleared" })}
                                             </Badge>
                                         )}
                                         {accused && (
-                                            <Badge variant="danger" size="sm">
+                                            <Badge variant="danger">
                                                 {t("guilty", { defaultValue: "Guilty" })}
                                             </Badge>
                                         )}

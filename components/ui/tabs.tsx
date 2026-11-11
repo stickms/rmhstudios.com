@@ -1,71 +1,35 @@
 /**
- * Tabs — the shared tab-strip renderer. A thin, presentational
- * tablist (a styled radiogroup, not a router): the caller owns `value`/`onChange`
- * and any URL/panel wiring. The active capsule is one framer-motion `layoutId`
- * element that morphs between tab positions with SPRING.snappy, so switching tabs
- * looks like liquid settling into place.
+ * Tabs — the shared tab-strip renderer. A thin, presentational tablist (a styled radiogroup, not a router): the caller
+ * owns `value`/`onChange` and any URL/panel wiring.
+ *
+ * ## Steel K5 (docs/plans/2026-11-11-steel-design-implementation.md section 6): words on a rule
+ *
+ * On the site there is ONE appearance: the labels sit on a 1px `--site-border` rule, 22px apart, 10px of vertical
+ * padding. Inactive: muted, 500. Active: ink with a 2px ink underline sitting on the rule (A2: state is never colour
+ * alone). No pills, no segment backgrounds, no icons, no sheet. The underline changes in 140 ms (M2).
+ *
+ * The full-screen games and apps keep their own look (L8): under `AppTierContext` the strip is the raised thumb on a
+ * track, one framer-motion `layoutId` capsule that morphs between tabs. That branch is the app tier's and is not
+ * restyled; `size`, `sheet` and `iconOnly` apply to it only.
  *
  * Two modes, one look:
- *  - **Tablist mode** (default): each tab is a `role="tab"` button; `onChange`
- *    + roving arrow-key nav drive selection; the active tab is `aria-selected`.
- *    `idBase` wires `aria-controls` to caller-rendered `role="tabpanel"`s.
- *  - **Link mode** (`renderTab`, §16.2): each tab is rendered by the caller —
- *    typically a TanStack `<Link>` — so route tabs stay crawlable/prefetched.
- *    The container becomes a `<nav>` and the active item is `aria-current="page"`
- *    (not `aria-selected`); Tabs still owns the sheet, capsule and morph.
- *    Selection is the browser's job (href), so `onChange`/roving-arrow selection
- *    don't apply — every link is reachable with Tab/Shift+Tab as usual.
+ *  - **Tablist mode** (default): each tab is a `role="tab"` button; `onChange` + roving arrow-key nav drive selection;
+ *    the active tab is `aria-selected`. `idBase` wires `aria-controls` to caller-rendered `role="tabpanel"`s.
+ *  - **Link mode** (`renderTab`, §16.2): each tab is rendered by the caller, typically a TanStack `<Link>`, so route
+ *    tabs stay crawlable and prefetched. The container becomes a `<nav>` and the active item is `aria-current="page"`.
  *
  * Constraints:
- *  - `layoutId` is `useId()`-scoped so several Tabs on one page never
- *    share a capsule and morph into each other.
- *  - Roving arrow-key nav (WAI-ARIA tabs pattern): ←/→/↑/↓ move, Home/End jump,
- *    focus follows selection (tablist mode only).
- *  - The capsule uses the shared spring on every account and device.
+ *  - Roving arrow-key nav (WAI-ARIA tabs pattern): ←/→/↑/↓ move, Home/End jump, focus follows selection (tablist mode).
+ *  - One row. Labels never truncate: a row that does not fit scrolls horizontally, with an edge fade on whichever side
+ *    has more, and the active tab is kept in view.
  *  - No i18n here: labels/aria-label come from callers (already translated).
- *  - `sheet` (default true, §5.45): the tablist rides its own flush track so
- *    a tab strip reads as a standalone control placed BELOW a hero/title (never
- *    buried in header chrome). Pass `sheet={false}` where the caller supplies
- *    its own container. Track and segments share the control-radius contract.
- *
- * ## Selection reads as selection, not as a button (2026-10-09)
- *
- * The active tab used to be a solid accent capsule — on the default theme a
- * black pill with white ink, which is ALSO exactly what every primary button on
- * the site looks like ("New", "Create a community", "Sign in"). A page with a
- * tab strip and a primary action therefore showed two identical black pills
- * with opposite meanings: one is where you are, the other is something you can
- * do. It is now Apple's segmented-control grammar instead — a neutral, raised
- * THUMB (opaque surface, hairline, small shadow) on a flush track, with the
- * label in full-strength ink. The accent fill is reserved for actions.
- * High contrast keeps the filled accent thumb, because there the material is
- * gone and a hairline-on-black thumb would be the only cue (see globals.css).
- * The thumb's colours are `--tab-thumb-*` custom properties on the strip, so a
- * game that re-skins it (Slice It!) sets two variables rather than forking.
- *
- * ## One row. Labels never truncate. (2026-10-09)
- *
- * The strip used to be a CSS grid of equal columns that WRAPPED onto further
- * rows when the tabs stopped fitting. In practice that produced two failures,
- * both measured on the live site:
- *   - equal columns ellipsed long labels long before the strip wrapped —
- *     /services rendered six product names as "RMHH…", "RMHL…", "Rebar …",
- *     /library showed "Everyt…" and "Collect…" at 1440px;
- *   - and when it did wrap, a phone got a 2×3 grid of identical buttons that
- *     no longer read as tabs and spent ~150px of the first screen.
- * Now: up to {@link EQUAL_SEGMENT_MAX} tabs split the track into equal segments
- * (the segmented control); more than that size to their own labels. Either way
- * a segment never shrinks below its label. If the row still doesn't fit, it
- * scrolls horizontally — with an edge fade on whichever side has more, and the
- * active tab kept in view — rather than wrapping. A partly visible label at a
- * faded edge is the affordance a wrapped grid never had.
  */
 
 import { useCallback, useEffect, useId, useRef } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { SPRING } from '@/lib/motion';
+import { SPRING } from '@/lib/app-motion';
 import { NotificationBadge } from '@/components/ui/notification-badge';
 import { useIsAppTier } from '@/components/ui/app-tier-context';
 
@@ -101,7 +65,7 @@ export interface TabRenderProps {
   id: string;
   /** `'page'` on the active item — link mode marks the current route this way. */
   'aria-current': 'page' | undefined;
-  /** Thumb appearance only (games/apps): route tabs press like button tabs, a control-mode jelly body (the CSS soft body, `app/jelly-material.css` §8). Absent in the flat glow, where the whole strip is one opted-out subtree. */
+  /** App tier only (games/apps): route tabs press like button tabs. Absent on the site. */
   'data-fluid-press'?: string;
   /** Class string matching a tablist-mode tab (pad + accent-on-active). */
   className: string;
@@ -148,12 +112,6 @@ interface TabsProps {
   renderTab?: (tab: TabItem, props: TabRenderProps) => React.ReactNode;
   /** Accessible name for the tablist / nav (already translated). */
   'aria-label'?: string;
-  /**
-   * How the selected tab is drawn. `glow` (the main-site default, whatever the name): a flat neutral capsule with a hairline inset ring lying on the track,
-   * and the tabs are flat members of it (not jelly bodies). `thumb` (the default on game/app routes, from
-   * `AppTierContext`): the raised thumb the full-screen games and apps keep for their own design scheme.
-   */
-  appearance?: 'glow' | 'thumb';
 }
 
 export function Tabs({
@@ -166,12 +124,10 @@ export function Tabs({
   iconOnly = false,
   idBase,
   renderTab,
-  appearance: appearanceProp,
   'aria-label': ariaLabel,
 }: TabsProps) {
-  // Games and apps keep the raised thumb; the main site gets the flat glow. An explicit prop wins.
+  // Games and apps keep the raised thumb (L8); the main site is Steel's words on a rule (K5).
   const appTier = useIsAppTier();
-  const appearance = appearanceProp ?? (appTier ? 'thumb' : 'glow');
   const uid = useId();
   const listRef = useRef<HTMLElement>(null);
   // useId scopes the capsule's layoutId so multiple Tabs never collide.
@@ -183,7 +139,6 @@ export function Tabs({
   const panelId = (id: string) => (idBase ? `${idBase}-panel-${id}` : undefined);
 
   const link = Boolean(renderTab);
-  const glow = appearance === 'glow';
 
   // Roving keyboard nav (WAI-ARIA tabs pattern): ←/→/↑/↓ move, Home/End jump to
   // the ends, and focus follows. Disabled tabs are skipped. Tablist mode only —
@@ -231,7 +186,20 @@ export function Tabs({
       ? 'min-h-9 pointer-coarse:min-h-11 px-3.5 py-2 text-xs'
       : 'min-h-10 pointer-coarse:min-h-11 px-4.5 py-2.5 text-sm';
 
-  const equal = tabs.length <= EQUAL_SEGMENT_MAX;
+  const equal = appTier && tabs.length <= EQUAL_SEGMENT_MAX;
+
+  // K5: words on a rule. The 2px ink underline is the item's own ::after, sitting on the strip's rule (-1px), shown
+  // only on the active item (M2: 140 ms). Link mode draws it on the wrapper (`ruleClass`), tablist mode on the button.
+  const ruleClass = (active: boolean) =>
+    cn(
+      "relative flex shrink-0 whitespace-nowrap after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-site-text after:transition-opacity after:duration-(--m2) after:ease-[ease] after:content-['']",
+      active ? 'after:opacity-100' : 'after:opacity-0',
+    );
+  const steelItem = (active: boolean) =>
+    cn(
+      'flex min-h-9 items-center gap-1.5 py-2.5 text-sm font-medium whitespace-nowrap transition-colors duration-(--m1) ease-[ease] pointer-coarse:min-h-11 disabled:cursor-not-allowed disabled:opacity-40',
+      active ? 'text-site-text' : 'text-site-text-muted hover:text-site-text',
+    );
 
   const itemClass = (active: boolean) =>
     cn(
@@ -252,6 +220,7 @@ export function Tabs({
         ? 'text-[color:var(--app-text,var(--site-text))]'
         : 'text-[color:var(--app-text-muted,var(--site-text-muted))] hover:text-[color:var(--app-text,var(--site-text))]',
     );
+  const siteItem = (active: boolean) => (appTier ? itemClass(active) : steelItem(active));
 
   // The active thumb — identical material in both modes. Outer element owns the
   // layoutId projection (position morph); the inner span carries the material,
@@ -259,7 +228,7 @@ export function Tabs({
   // itself (`--tab-thumb-*`) lives in globals.css so themes and games re-skin it
   // with two custom properties.
   const capsule = (active: boolean) =>
-    active ? (
+    appTier && active ? (
       <motion.span
         layoutId={layoutId}
         aria-hidden
@@ -279,8 +248,8 @@ export function Tabs({
   // a tab that has an icon hides its label visually but keeps it as the
   // `sr-only` accessible name (the button/link also gets a `title` tooltip).
   const content = (tab: TabItem) => {
-    const Icon = tab.icon;
-    const compactLabel = iconOnly && Boolean(Icon);
+    const Icon = appTier ? tab.icon : undefined;
+    const compactLabel = appTier && iconOnly && Boolean(Icon);
     return (
       <>
         {Icon && (
@@ -303,7 +272,7 @@ export function Tabs({
           {tab.label}
         </span>
         {typeof tab.count === 'number' && (
-          <span className="relative z-1 text-xs opacity-70 tabular-nums">{tab.count}</span>
+          <span className={cn('relative z-1 text-xs tabular-nums', appTier && 'opacity-70')}>{tab.count}</span>
         )}
         {typeof tab.badge === 'number' && (
           <NotificationBadge count={tab.badge} className="relative z-1" />
@@ -410,7 +379,9 @@ export function Tabs({
 
   // The strip is its own scroller, so its padding (not the sheet's) is what keeps
   // the thumb's shadow from being clipped at the scroll box edge.
-  const innerClass = cn('relative w-full min-w-0', sheet ? 'p-1' : className);
+  const innerClass = appTier
+    ? cn('relative w-full min-w-0', sheet ? 'p-1' : className)
+    : cn('relative w-full min-w-0', className);
 
   const items = tabs.map((tab) => {
     const active = tab.id === value;
@@ -422,20 +393,22 @@ export function Tabs({
       return (
         <div
           key={tab.id}
-          data-has-icon={tab.icon ? '' : undefined}
+          data-has-icon={appTier && tab.icon ? '' : undefined}
           data-tab-active={active ? 'true' : 'false'}
-          // The eversion layer sits on the wrapper so it stays under the thumb (globals.css §7.3).
-          data-evert=""
-          className="relative flex min-w-max shrink-0 rounded-[var(--tab-radius,var(--site-control-radius))]"
+          className={
+            appTier
+              ? 'relative flex min-w-max shrink-0 rounded-[var(--tab-radius,var(--site-control-radius))]'
+              : ruleClass(active)
+          }
         >
           {capsule(active)}
           {renderTab!(tab, {
             active,
             id: tabId(tab.id),
             'aria-current': active ? 'page' : undefined,
-            'data-fluid-press': glow ? undefined : '',
-            className: cn(itemClass(active), 'flex-1'),
-            title: tab.icon ? tab.label : undefined,
+            'data-fluid-press': appTier ? '' : undefined,
+            className: cn(siteItem(active), 'flex-1'),
+            title: appTier && tab.icon ? tab.label : undefined,
             children: content(tab),
           })}
         </div>
@@ -455,13 +428,11 @@ export function Tabs({
         onClick={() => onChange?.(tab.id)}
         // A tooltip whenever the label can be hidden — by `iconOnly`, or by the
         // phone breakpoint that hides labels on any icon-bearing tab.
-        title={tab.icon ? tab.label : undefined}
-        data-has-icon={tab.icon ? '' : undefined}
+        title={appTier && tab.icon ? tab.label : undefined}
+        data-has-icon={appTier && tab.icon ? '' : undefined}
         data-tab-active={active ? 'true' : 'false'}
-        // Hover and press turn a tint out of the tab, under the thumb (globals.css §7.3).
-        data-evert=""
-        data-fluid-press={glow ? undefined : ''}
-        className={itemClass(active)}
+        data-fluid-press={appTier ? '' : undefined}
+        className={appTier ? itemClass(active) : cn(steelItem(active), ruleClass(active))}
       >
         {capsule(active)}
         {content(tab)}
@@ -476,10 +447,8 @@ export function Tabs({
     'data-slot': 'liquid-tabs',
     'data-tab-size': size,
     'data-tab-fit': equal ? 'equal' : 'content',
-    'data-tab-appearance': appearance,
-    // Flat members: one opted-out subtree, so no tab (button or a caller's <Link>) is a jelly body of its own.
-    'data-jelly-scope': glow ? 'off' : undefined,
-    'data-tab-icon-only': iconOnly ? '' : undefined,
+    'data-tab-appearance': appTier ? 'thumb' : 'rule',
+    'data-tab-icon-only': appTier && iconOnly ? '' : undefined,
     'data-fade-start': 'false',
     'data-fade-end': 'false',
     className: innerClass,
@@ -502,22 +471,13 @@ export function Tabs({
     </div>
   );
 
-  if (!sheet) return list;
+  if (!appTier || !sheet) return list;
 
   return (
     <div
       data-slot="liquid-tabs-sheet"
       className={cn(
-        // Always full width: the track spans its container.
-        //
-        // `.glass-inset` (the field tier): a segmented control's track is a
-        // flush fill on the page and the thumb sits raised on it — the same
-        // role an input field plays. It also supplies the degradation rules
-        // (high contrast, reduced transparency, print) for free. globals.css
-        // tints the track neutrally so a white thumb reads on a white page.
-        //
-        // Like buttons and fields, the track uses the control radius. Its
-        // segments subtract the track padding to keep the corners concentric.
+        // The app tier's track: always full width, the field tier surface the raised thumb sits on.
         'glass-inset w-full min-w-0 max-w-full rounded-[var(--site-control-radius)]',
         className,
       )}

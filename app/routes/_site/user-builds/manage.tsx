@@ -109,7 +109,7 @@ function ManageContent() {
       backTo="/user-builds"
       wide
       headerRight={
-        <Button asChild variant="accent">
+        <Button asChild variant="default">
           <Link to="/user-builds/submit">
             <Plus aria-hidden /> {t('new-build', { defaultValue: 'New Build' })}
           </Link>
@@ -129,7 +129,7 @@ function ManageContent() {
               defaultValue: 'Create your first build and share it with the community.',
             })}
             action={
-              <Button asChild variant="accent">
+              <Button asChild variant="default">
                 <Link to="/user-builds/submit">
                   <Plus aria-hidden /> {t('create-build', { defaultValue: 'Create Build' })}
                 </Link>
@@ -163,7 +163,6 @@ function ManageContent() {
                   <p className="truncate text-sm text-site-text-muted">{build.description}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-site-text-muted">
                     <Badge
-                      size="sm"
                       variant={
                         build.visibility === 'PUBLIC'
                           ? 'success'

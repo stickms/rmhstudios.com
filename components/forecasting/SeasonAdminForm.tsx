@@ -99,7 +99,7 @@ export function SeasonAdminForm({ onCreated }: { onCreated: () => void }) {
           ))}
         </ul>
         <Button
-          variant="accent"
+          variant="default"
           size="sm"
           className="self-end"
           loading={busy}

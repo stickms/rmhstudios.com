@@ -492,7 +492,7 @@ function RideCard({
         <span className="flex items-center gap-2 text-sm font-semibold text-site-text">
           {rideClassName(ride.rideClass)}
           {ride.status === 'SCHEDULED' && ride.scheduledFor && (
-            <Badge variant="accent" icon={<CalendarClock aria-hidden />}>
+            <Badge variant="default" icon={<CalendarClock aria-hidden />}>
               {format(new Date(ride.scheduledFor), 'EEE h:mm a')}
             </Badge>
           )}

@@ -63,7 +63,7 @@ function AlertsPage() {
     <div className="space-y-4">
       {unread > 0 && (
         <div className="flex justify-end">
-          <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => void markAllRead()}>
+          <Button type="button" size="sm" variant="default" className="min-h-11" onClick={() => void markAllRead()}>
             <CheckCheck aria-hidden />
             {t('ladder.markAllRead', { defaultValue: 'Mark all as read' })}
           </Button>
@@ -91,7 +91,7 @@ function AlertsPage() {
               <>
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={alert.readAt ? 'outline' : 'accent'} size="sm">
+                    <Badge variant={alert.readAt ? 'default' : 'default'}>
                       {TYPE_LABELS[alert.type as string] ?? (alert.type as string)}
                     </Badge>
                     {!alert.readAt && <span className="sr-only">{t('ladder.unread', { defaultValue: 'Unread' })}</span>}

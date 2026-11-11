@@ -117,7 +117,7 @@ export default function NotebookTab() {
           className="glass-inset h-9 min-w-0 flex-1 rounded-site-sm px-3 text-sm text-site-text"
         />
         <Button
-          variant="outline"
+          variant="default"
           size="sm"
           onClick={() => {
             setNb({ id: null, title: '', body: '' });

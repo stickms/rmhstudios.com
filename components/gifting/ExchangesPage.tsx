@@ -132,7 +132,7 @@ function CreateForm() {
       <div className="flex justify-end">
         <Button
           type="submit"
-          variant="accent"
+          variant="default"
           size="sm"
           disabled={!valid}
           loading={create.isPending}

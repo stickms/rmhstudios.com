@@ -409,13 +409,13 @@ page.setAttribute('data-animate', '');
           scrollCue="Our commitment"
           actions={
             <>
-              <Button asChild variant="accent" size="lg">
+              <Button asChild variant="default" size="lg">
                 <a href="#blm-commitment">
                 Read our commitment
                 <ArrowRight aria-hidden="true" />
               </a>
               </Button>
-              <Button asChild variant="outline" size="lg">
+              <Button asChild variant="default" size="lg">
                 <a href="#blm-action">
                 <Megaphone aria-hidden="true" />
                 Ways to take action
@@ -750,7 +750,7 @@ page.setAttribute('data-animate', '');
                   we build, who we build it with, and who we build it for. We won’t
                   always get it right. We will always keep working at it.
                 </p>
-                <Button asChild variant="accent" size="lg">
+                <Button asChild variant="default" size="lg">
                   <a href="/security">
                   How we keep you safe
                   <ArrowRight aria-hidden="true" />

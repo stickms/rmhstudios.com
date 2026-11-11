@@ -128,7 +128,7 @@ export function DocEditor({
           </Button>
         ) : null}
         <Button
-          variant="accent"
+          variant="default"
           size="sm"
           loading={busy}
           disabled={!valid}

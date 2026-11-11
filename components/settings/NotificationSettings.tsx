@@ -159,7 +159,7 @@ export function NotificationSettings() {
                 {expanded ? (
                   <div className="pb-3 ps-1">
                     {CHANNELS.map((c) => (
-                      <label key={c} className="flex items-center justify-between py-2">
+                      <label key={c} className="chrome-row flex items-center justify-between py-2">
                         <span className="text-sm text-site-text">{channelLabel(t, c)}</span>
                         <Switch checked={ch[c]} onCheckedChange={(v) => setChannel(cat, c, v)} />
                       </label>

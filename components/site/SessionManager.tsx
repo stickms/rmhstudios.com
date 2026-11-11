@@ -203,7 +203,7 @@ export function SessionManager() {
       )}
 
       {otherCount > 0 && (
-        <Button variant="outline" onClick={revokeOthers} disabled={busy} className="gap-2">
+        <Button variant="default" onClick={revokeOthers} disabled={busy} className="gap-2">
           <LogOut className="h-4 w-4" aria-hidden />
           {t('sessions-revoke-others', { defaultValue: 'Log out of all other devices' })}
         </Button>

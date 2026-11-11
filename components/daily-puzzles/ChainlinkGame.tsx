@@ -337,16 +337,16 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
                 <div className="mt-6 flex flex-col gap-3">
                     <div className="flex flex-wrap items-center justify-center gap-2">
                         {chain.length < MAX_MIDDLE_LINKS && (
-                            <Button type="button" variant="secondary" onClick={handleAddLink}>
+                            <Button type="button" variant="default" onClick={handleAddLink}>
                                 <Plus aria-hidden />
                                 {t("add-link", { defaultValue: "Add Link" })}
                             </Button>
                         )}
-                        <Button type="button" variant="accent" onClick={handleSubmit}>
+                        <Button type="button" variant="default" onClick={handleSubmit}>
                             <Send aria-hidden />
                             {t("submit-chain", { defaultValue: "Submit Chain" })}
                         </Button>
-                        <Button type="button" variant="outline" onClick={handleGiveUp}>
+                        <Button type="button" variant="default" onClick={handleGiveUp}>
                             <X aria-hidden />
                             {t("give-up", { defaultValue: "Give Up" })}
                         </Button>

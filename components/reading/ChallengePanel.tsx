@@ -102,7 +102,7 @@ export default function ChallengePanel({ compact = false }: { compact?: boolean 
             <option value="books">{t('unit-books', { defaultValue: 'books' })}</option>
             <option value="pages">{t('unit-pages', { defaultValue: 'pages' })}</option>
           </Select>
-          <Button type="submit" variant="accent" size="sm" loading={set.isPending}>
+          <Button type="submit" variant="default" size="sm" loading={set.isPending}>
             {goal
               ? t('challenge-update', { defaultValue: 'Update goal' })
               : t('challenge-start', { defaultValue: 'Start challenge' })}

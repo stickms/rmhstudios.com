@@ -60,10 +60,10 @@ export function EarningsTab() {
     if (s === 'FULFILLED')
       return <Badge variant="success">{t('fulfilled', { defaultValue: 'Fulfilled' })}</Badge>;
     if (s === 'APPROVED')
-      return <Badge variant="accent">{t('approved', { defaultValue: 'Approved' })}</Badge>;
+      return <Badge variant="default">{t('approved', { defaultValue: 'Approved' })}</Badge>;
     if (s === 'REJECTED')
       return <Badge variant="danger">{t('rejected', { defaultValue: 'Declined' })}</Badge>;
-    return <Badge variant="outline">{t('pending', { defaultValue: 'Pending' })}</Badge>;
+    return <Badge variant="default">{t('pending', { defaultValue: 'Pending' })}</Badge>;
   };
 
   const overMax = cost > (earnings?.redeemable ?? 0);

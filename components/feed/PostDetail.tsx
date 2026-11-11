@@ -55,7 +55,7 @@ export function PostDetail({ postId }: PostDetailProps) {
           {t('post-not-found-detail', { defaultValue: "This post doesn't exist or was deleted." })}
         </p>
         <Link to="/">
-          <Button variant="accent" size="sm">
+          <Button variant="default" size="sm">
             {t('go-home', { defaultValue: 'Go Home' })}
           </Button>
         </Link>

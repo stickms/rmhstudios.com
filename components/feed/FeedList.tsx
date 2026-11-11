@@ -344,7 +344,7 @@ export function FeedList({
  defaultValue:'Something went wrong. Check your connection and try again.',
  })}
  action={
- <Button variant="accent" onClick={retry}>
+ <Button variant="default" onClick={retry}>
  {t('retry', { defaultValue:'Try again'})}
  </Button>
  }
@@ -364,7 +364,7 @@ export function FeedList({
  })}
  action={
  onSwitchToForYou ? (
- <Button variant="accent" onClick={onSwitchToForYou}>
+ <Button variant="default" onClick={onSwitchToForYou}>
  {t('browse-for-you', { defaultValue:'Browse For You'})}
  </Button>
  ) : undefined
@@ -386,7 +386,7 @@ export function FeedList({
  <p className="text-sm text-site-text-muted">
  {t('load-more-error', { defaultValue:"Couldn't load more posts."})}
  </p>
- <Button variant="outline" size="sm" onClick={retry}>
+ <Button variant="default" size="sm" onClick={retry}>
  {t('retry', { defaultValue:'Try again'})}
  </Button>
  </div>

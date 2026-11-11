@@ -116,7 +116,7 @@ export function FilterChips({ search, onUpdate, showPersonalPresets = false }: F
             key={value}
             type="button"
             size="sm"
-            variant={search.preset === value ? 'accent' : 'outline'}
+            variant={search.preset === value ? 'default' : 'default'}
             className="min-h-11"
             aria-pressed={search.preset === value}
             onClick={() => togglePreset(value)}
@@ -137,7 +137,7 @@ export function FilterChips({ search, onUpdate, showPersonalPresets = false }: F
               key={value}
               type="button"
               size="xs"
-              variant={(search.programTypes ?? []).includes(value) ? 'accent' : 'ghost'}
+              variant={(search.programTypes ?? []).includes(value) ? 'default' : 'ghost'}
               className="min-h-11"
               aria-pressed={(search.programTypes ?? []).includes(value)}
               onClick={() => toggleProgramType(value)}

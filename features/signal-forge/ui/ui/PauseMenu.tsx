@@ -49,7 +49,7 @@ export function PauseMenu({ onClose, onAbandonRun, onReturnToLanding }: Props) {
           </Button>
           <Button
             onClick={() => setShowLeaderboard(true)}
-            variant="outline"
+            variant="default"
             className="w-full border-cyan-500 text-cyan-400 hover:bg-cyan-900 hover:bg-opacity-20 py-2 rounded-lg"
           >
             {t("view-leaderboard", { defaultValue: "View Leaderboard" })}

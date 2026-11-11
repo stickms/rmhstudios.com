@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import { IconButton } from '@/components/ui/icon-button';
-import { SPRING } from '@/lib/motion';
+import { transition } from '@/lib/motion';
 
 /**
  * SortableList (groundwork G2) — drag-to-reorder on pointer devices, with
@@ -101,7 +101,7 @@ function SortableRow<T extends SortableItem>({
  value={item}
  dragListener={false}
  dragControls={controls}
- transition={SPRING.soft}
+ transition={transition}
  // L1 .glass-fill row — cheap, unlimited, matches list surfaces.
  className="glass-fill flex items-center gap-2 rounded-site px-3 py-2 text-site-text"
  >

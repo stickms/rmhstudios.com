@@ -304,7 +304,7 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-        <Button variant="secondary" onClick={addTier} disabled={drafts.length >= MAX_TIERS}>
+        <Button variant="default" onClick={addTier} disabled={drafts.length >= MAX_TIERS}>
           <Plus aria-hidden />
           {t('add-tier', { defaultValue: 'Add tier' })}
           <span className="text-site-text-muted">

@@ -166,12 +166,9 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
           maxWidth: `calc(100vw - ${VIEWPORT_MARGIN * 2}px)`,
         }}
         className={cn(
-          'px-2.5 py-1 text-xs font-medium tracking-[-0.01em] text-site-text',
-          // Floating UI → L4 surface on the themed radius. This used to force
-          // Tailwind's own 2xl radius, a fixed 18px that ignored every theme's
-          // radius scale (high-contrast squares its corners to 8px; the tooltip
-          // stayed round).
-          'glass-overlay rounded-site-sm',
+          'px-2.5 py-1 text-xs font-medium text-site-text',
+          // Steel S5: the one raised surface (`--site-surface`, 1px border, 8px radius, the T4 shadow).
+          'glass-overlay',
           className,
         )}
       >

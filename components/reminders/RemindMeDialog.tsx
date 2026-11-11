@@ -136,7 +136,7 @@ export default function RemindMeDialog({
               className="mt-1"
             />
           </label>
-          <Button type="submit" variant="accent" loading={saving}>
+          <Button type="submit" variant="default" loading={saving}>
             {t('remind-save', { defaultValue: 'Set' })}
           </Button>
         </form>

@@ -136,7 +136,7 @@ export default function SavingsGoalsPanel() {
             defaultValue: 'Set a goal for a store item, a market item, or any amount.',
           })}
           action={
-            <Button variant="accent" size="sm" onClick={() => setAdding(true)}>
+            <Button variant="default" size="sm" onClick={() => setAdding(true)}>
               <Plus /> {t('goals-add', { defaultValue: 'Add a goal' })}
             </Button>
           }
@@ -251,7 +251,7 @@ export default function SavingsGoalsPanel() {
             </Button>
             <Button
               type="submit"
-              variant="accent"
+              variant="default"
               size="sm"
               disabled={!canSave}
               loading={create.isPending}
@@ -261,7 +261,7 @@ export default function SavingsGoalsPanel() {
           </div>
         </form>
       ) : data.goals.length > 0 && data.goals.length < data.max ? (
-        <Button variant="outline" size="sm" onClick={() => setAdding(true)}>
+        <Button variant="default" size="sm" onClick={() => setAdding(true)}>
           <Plus /> {t('goals-add', { defaultValue: 'Add a goal' })}
         </Button>
       ) : null}

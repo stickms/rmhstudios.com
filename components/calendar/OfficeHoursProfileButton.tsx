@@ -32,7 +32,7 @@ export function OfficeHoursProfileButton({ userId }: { userId: string }) {
   if (!available) return null;
   return (
     <Link to="/office-hours/$userId" params={{ userId }}>
-      <Button variant="outline">
+      <Button variant="default">
         <CalendarClock aria-hidden />
         <span className="hidden xs:inline">
           {t('book-office-hours', { defaultValue: 'Book office hours' })}

@@ -153,7 +153,7 @@ export function ListDetailView({ list, members }: { list: ListView; members: Res
 
       {cursor ? (
         <div className="mt-4 flex justify-center">
-          <Button variant="outline" onClick={loadMore}>
+          <Button variant="default" onClick={loadMore}>
             {t('load-more', { defaultValue: 'Load more' })}
           </Button>
         </div>

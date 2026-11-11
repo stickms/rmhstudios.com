@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { Share2, Trophy, X } from 'lucide-react';
 import { m as motion } from 'framer-motion';
 import { useCelebration } from '@/hooks/useCelebration';
-import { SPRING } from '@/lib/motion';
+import { SPRING } from '@/lib/app-motion';
 import type { ScoreMomentView } from './result-moment-slot';
 
 const ShareMomentSheet = lazy(() =>

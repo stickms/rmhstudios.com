@@ -96,7 +96,7 @@ export function SpacesColumn() {
               className="min-w-0 flex-1"
             />
             <Button
-              variant="accent"
+              variant="default"
               onClick={() => void create()}
               loading={creating}
               disabled={!title.trim()}

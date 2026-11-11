@@ -128,7 +128,7 @@ export function StakingCard() {
  />
  <Button
  size="sm"
- variant="accent"
+ variant="default"
  loading={busy ==='deposit'}
  disabled={!validAmt || busy !== null}
  onClick={() => act('/api/staking/deposit', { amount: amt },'deposit')}
@@ -137,7 +137,7 @@ export function StakingCard() {
  </Button>
  <Button
  size="sm"
- variant="outline"
+ variant="default"
  loading={busy ==='unstake'}
  disabled={!validAmt || busy !== null || amt > data.principal}
  onClick={() => act('/api/staking/withdraw', { amount: amt },'unstake')}

@@ -400,7 +400,7 @@ function UploadRow({
       </div>
 
       {it.status === 'error' && !it.permanent && (
-        <Button type="button" variant="accent-outline" size="xs" onClick={() => onRetry(it.id)}>
+        <Button type="button" variant="default" size="xs" onClick={() => onRetry(it.id)}>
           <RotateCw aria-hidden="true" /> Retry
         </Button>
       )}

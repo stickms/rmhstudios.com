@@ -154,13 +154,13 @@ function PipelinePage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap justify-end gap-2">
-        <Button asChild size="sm" variant="outline" className="min-h-11">
+        <Button asChild size="sm" variant="default" className="min-h-11">
           <a href="/api/rmhladder/export?kind=applications" download>
             <Download aria-hidden />{' '}
             {t('ladder.pipeline.exportApplications', { defaultValue: 'Export applications' })}
           </a>
         </Button>
-        <Button asChild size="sm" variant="outline" className="min-h-11">
+        <Button asChild size="sm" variant="default" className="min-h-11">
           <a href="/api/rmhladder/calendar" download>
             <CalendarDays aria-hidden />{' '}
             {t('ladder.pipeline.exportCalendar', { defaultValue: 'Export calendar' })}
@@ -364,7 +364,7 @@ function ApplicationEditor({
           />
           <Button
             type="button"
-            variant="outline"
+            variant="default"
             disabled={!interviewDraft || interviewDates.length >= 25}
             onClick={() => {
               const next = new Date(interviewDraft);

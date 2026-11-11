@@ -247,7 +247,7 @@ export function BulkCleanupPanel() {
             })}
           </p>
           {listGate.upgradeHref ? (
-            <Button variant="accent" className="mt-3" asChild>
+            <Button variant="default" className="mt-3" asChild>
               <a href={listGate.upgradeHref}>
                 <Sparkles aria-hidden />
                 {t('bulk-upgrade-cta', { defaultValue: 'See membership' })}
@@ -272,7 +272,7 @@ export function BulkCleanupPanel() {
             })}
           </p>
           {upsell.upgradeHref ? (
-            <Button variant="accent" className="mt-3" asChild>
+            <Button variant="default" className="mt-3" asChild>
               <a href={upsell.upgradeHref}>
                 <Sparkles aria-hidden />
                 {t('bulk-upgrade-cta', { defaultValue: 'See membership' })}
@@ -382,7 +382,7 @@ export function BulkCleanupPanel() {
         ) : null}
 
         <Button
-          variant="secondary"
+          variant="default"
           className="self-start"
           loading={previewMutation.isPending}
           disabled={!!active}
@@ -437,7 +437,7 @@ export function BulkCleanupPanel() {
         <div className="glass-pane flex flex-col gap-3 rounded-site p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-semibold text-site-text">{kinds[active.kind].label}</p>
-            <Badge size="sm" variant="accent">
+            <Badge variant="default">
               {statuses[active.status] ?? active.status}
             </Badge>
           </div>
@@ -464,7 +464,7 @@ export function BulkCleanupPanel() {
             })}
           </p>
           <Button
-            variant="secondary"
+            variant="default"
             className="self-start"
             loading={cancelMutation.isPending}
             onClick={() => cancelMutation.mutate(active.id)}
@@ -494,7 +494,6 @@ export function BulkCleanupPanel() {
                     })}
                   </span>
                   <Badge
-                    size="sm"
                     variant={
                       op.status === 'DONE'
                         ? 'success'

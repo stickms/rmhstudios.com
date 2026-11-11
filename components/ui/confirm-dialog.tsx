@@ -98,7 +98,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
  {pending.description && <DialogDescription>{pending.description}</DialogDescription>}
  </DialogHeader>
  <DialogFooter>
- <Button variant="outline" onClick={() => settle(false)}>
+ <Button variant="default" onClick={() => settle(false)}>
  {pending.cancelLabel ?? t('cancel', { defaultValue: 'Cancel' })}
  </Button>
  <Button variant={pending.danger ? 'danger' : 'default'} onClick={() => settle(true)}>

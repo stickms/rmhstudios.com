@@ -103,7 +103,7 @@ export default function TokenGenerator() {
           <Button
             onClick={generateToken}
             disabled={generating}
-            variant="accent"
+            variant="default"
             className=""
           >
             {generating ? (
@@ -136,7 +136,7 @@ export default function TokenGenerator() {
             <code className="glass-inset flex-1 rounded-site-sm p-2 text-sm font-mono text-site-text break-all">
               {newToken}
             </code>
-            <CopyButton value={newToken} label={t("copy-token-label", { defaultValue: "Copy token" })} variant="outline" className="shrink-0" />
+            <CopyButton value={newToken} label={t("copy-token-label", { defaultValue: "Copy token" })} variant="default" className="shrink-0" />
           </div>
           <p className="text-xs text-site-text-muted mt-2">
             {t("token-auth-instruction-pre", { defaultValue: "Run" })} <code className="break-all text-site-accent">rmhcode login --token YOUR_TOKEN</code> {t("token-auth-instruction-post", { defaultValue: "to authenticate." })}
@@ -180,7 +180,7 @@ export default function TokenGenerator() {
                       </span>
                     )}
                     {tokenExpiry(token.expiresAt) === 'soon' && (
-                      <Badge variant="warning" size="sm">
+                      <Badge variant="warning">
                         {t("expires-soon", { defaultValue: "Expires soon" })}
                       </Badge>
                     )}

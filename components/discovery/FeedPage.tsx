@@ -116,7 +116,7 @@ export function FeedPage({ id }: { id: string }) {
           </p>
           {!feed.isOwner && session && (
             <Button
-              variant={feed.subscribed ? 'outline' : 'accent'}
+              variant={feed.subscribed ? 'default' : 'default'}
               size="sm"
               loading={busy}
               onClick={async () => {
@@ -132,18 +132,18 @@ export function FeedPage({ id }: { id: string }) {
           )}
           {!feed.isOwner && !session && (
             <Link to="/login" search={{ callbackURL: `/feeds/${id}` }}>
-              <Button variant="accent" size="sm">
+              <Button variant="default" size="sm">
                 {t('feeds-signin-cta', { defaultValue: 'Sign in' })}
               </Button>
             </Link>
           )}
           {feed.isOwner && (
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setEditing((e) => !e)}>
+              <Button variant="default" size="sm" onClick={() => setEditing((e) => !e)}>
                 <Pencil aria-hidden /> {t('feed-edit', { defaultValue: 'Edit' })}
               </Button>
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 loading={busy}
                 onClick={async () => {
@@ -191,7 +191,7 @@ export function FeedPage({ id }: { id: string }) {
         )}
         {view.nextCursor && (
           <div className="flex justify-center">
-            <Button variant="outline" size="sm" onClick={() => void load(view.nextCursor!)}>
+            <Button variant="default" size="sm" onClick={() => void load(view.nextCursor!)}>
               {t('feed-more', { defaultValue: 'Load more' })}
             </Button>
           </div>

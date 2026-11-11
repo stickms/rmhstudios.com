@@ -90,7 +90,7 @@ export default function FortuneCard() {
               />
               <Button
                 type="submit"
-                variant="accent"
+                variant="default"
                 loading={busy}
                 disabled={text.trim().length < 8}
               >

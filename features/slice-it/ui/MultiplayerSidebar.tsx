@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { AnimatePresence, LayoutGroup, m as motion } from 'framer-motion';
 import { useSliceItStore } from '@features/slice-it/engine/store';
-import { transition } from '@/lib/motion';
+import { transition } from '@/lib/app-motion';
 import type { LobbyPlayer, TeamId } from '@features/slice-it/engine/net/events';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
 

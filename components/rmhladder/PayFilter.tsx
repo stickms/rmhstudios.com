@@ -33,7 +33,7 @@ export function PayFilter({
       <Button
         type="button"
         size="sm"
-        variant={byPay ? 'accent' : 'outline'}
+        variant={byPay ? 'default' : 'default'}
         aria-pressed={byPay}
         className="min-h-11"
         onClick={() => onUpdate({ sort: byPay ? undefined : 'pay' })}

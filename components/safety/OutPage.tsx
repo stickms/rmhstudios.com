@@ -64,7 +64,7 @@ export default function OutPage({ url }: { url: string }) {
               <Button variant="ghost" onClick={() => window.history.back()}>
                 {t('out-back', { defaultValue: 'Go back' })}
               </Button>
-              <Button asChild variant={risk === 'deny' ? 'outline' : 'accent'}>
+              <Button asChild variant={risk === 'deny' ? 'default' : 'default'}>
                 <a href={url} rel="noopener noreferrer nofollow">
                   {t('out-continue', { defaultValue: 'Continue to site' })}
                   <ExternalLink aria-hidden />

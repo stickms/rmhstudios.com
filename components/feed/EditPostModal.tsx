@@ -146,7 +146,7 @@ export function EditPostModal({
  {t('cancel', { defaultValue:'Cancel'})}
  </Button>
  <Button
- variant="accent"
+ variant="default"
  onClick={save}
  disabled={saving || (!content.trim() && !gifUrl.trim()) || remaining < 0}
  >

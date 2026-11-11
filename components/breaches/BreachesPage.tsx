@@ -322,13 +322,13 @@ page.setAttribute('data-animate', '');
           scrollCue="Read the post-mortem"
           actions={
             <>
-              <Button asChild variant="accent" size="lg">
+              <Button asChild variant="default" size="lg">
                 <a href="#brc-incident">
                 What happened
                 <ArrowRight aria-hidden="true" />
               </a>
               </Button>
-              <Button asChild variant="outline" size="lg">
+              <Button asChild variant="default" size="lg">
                 <a href="/security">
                 <ShieldCheck aria-hidden="true" />
                 How we protect you

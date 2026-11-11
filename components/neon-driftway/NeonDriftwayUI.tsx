@@ -434,7 +434,7 @@ export function NeonDriftwayUI({
             </Button>
             <Button
               onClick={onGoToLevelSelect}
-              variant="outline"
+              variant="default"
               className="flex-1 border-zinc-600 text-zinc-300 hover:bg-zinc-800"
             >
               {t("level-select", { defaultValue: "Level Select" })}
@@ -521,7 +521,7 @@ export function NeonDriftwayUI({
             </Button>
             <Button
               onClick={onGoToLevelSelect}
-              variant="outline"
+              variant="default"
               className="flex-1 border-zinc-600 text-zinc-300 hover:bg-zinc-800"
             >
               {t("level-select", { defaultValue: "Level Select" })}

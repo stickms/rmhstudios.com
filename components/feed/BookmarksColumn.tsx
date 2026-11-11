@@ -77,7 +77,7 @@ export function BookmarksColumn({
 
  {hasMore && (
  <div className="flex justify-center py-4">
- <Button variant="secondary"size="sm"onClick={loadMore} disabled={loadingMore}>
+ <Button variant="default"size="sm"onClick={loadMore} disabled={loadingMore}>
  {loadingMore ? (
  <Loader2 className="h-4 w-4 animate-spin"/>
  ) : (

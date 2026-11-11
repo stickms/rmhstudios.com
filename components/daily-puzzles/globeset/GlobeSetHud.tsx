@@ -67,7 +67,7 @@ export function GlobeSetHud({
         </dl>
 
         <div className="flex items-center gap-2">
-          <Button type="button" variant="secondary" size="sm" onClick={onHint} disabled={locked}>
+          <Button type="button" variant="default" size="sm" onClick={onHint} disabled={locked}>
             <Lightbulb className="h-4 w-4" aria-hidden />
             {hints > 0
               ? t('globeset-hint-again', { defaultValue: 'Hint ({{n}})', n: hints })

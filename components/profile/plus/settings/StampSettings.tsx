@@ -191,7 +191,7 @@ export default function StampSettings({ userId }: { userId: string }) {
         </div>
         <div className="flex items-center gap-3">
           <Button
-            variant="accent"
+            variant="default"
             size="sm"
             loading={creating}
             disabled={!file || !name.trim() || mine.length >= STAMP_MAX_CREATED}
@@ -293,7 +293,7 @@ export default function StampSettings({ userId }: { userId: string }) {
                   {s.name}
                 </span>
                 <Button
-                  variant={s.onMyWall ? 'outline' : 'accent-outline'}
+                  variant={s.onMyWall ? 'default' : 'default'}
                   size="xs"
                   onClick={() => void setOnWall(s, !s.onMyWall)}
                 >
@@ -308,7 +308,7 @@ export default function StampSettings({ userId }: { userId: string }) {
         )}
         {cursor ? (
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             loading={loadingGallery}
             onClick={() => void loadGallery(false, cursor)}

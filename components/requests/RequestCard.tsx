@@ -58,7 +58,7 @@ export function RequestCard({
     <article className="glass-fill rounded-site px-4 py-3">
       <div className="flex items-start gap-3">
         <Button
-          variant={request.hasVoted ? 'accent' : 'outline'}
+          variant={request.hasVoted ? 'default' : 'default'}
           size="sm"
           className="h-auto shrink-0 flex-col gap-0.5 px-3 py-2"
           onClick={vote}

@@ -198,7 +198,7 @@ export function TrustedContactsPanel() {
                   </div>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="default"
                     size="sm"
                     className="mt-2"
                     disabled={request.approvedByMe || busyId === request.id}
@@ -306,7 +306,7 @@ export function TrustedContactsPanel() {
                     {row.confirmedAt ? null : (
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="default"
                         size="sm"
                         disabled={busyId === row.id}
                         onClick={() => void accept(row)}

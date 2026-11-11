@@ -77,7 +77,7 @@ export default function StatementPanel() {
             ))}
           </Select>
         </div>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="default" size="sm">
           <a href={`/api/coins/statement?month=${month}&format=csv`} download>
             <Download /> {t('stmt-download', { defaultValue: 'Download CSV' })}
           </a>

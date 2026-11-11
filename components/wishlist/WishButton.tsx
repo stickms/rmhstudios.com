@@ -49,7 +49,7 @@ export function WishButton({
   return (
     <Button
       type="button"
-      variant={wished ? 'accent-outline' : 'outline'}
+      variant={wished ? 'default' : 'default'}
       size="sm"
       onClick={toggle}
       disabled={busy}

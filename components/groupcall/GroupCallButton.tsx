@@ -84,7 +84,7 @@ export function GroupCallButton({
     <>
       <Button
         type="button"
-        variant={variant === 'icon' ? 'ghost' : 'outline'}
+        variant={variant === 'icon' ? 'ghost' : 'default'}
         disabled={busy}
         onClick={() => setOpen(true)}
         aria-label={variant === 'icon' ? label : undefined}

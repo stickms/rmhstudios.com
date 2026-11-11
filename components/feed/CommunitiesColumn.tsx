@@ -145,7 +145,7 @@ export function CommunitiesColumn({
             aria-label={t('search-communities', { defaultValue: 'Search communities' })}
           />
           {session && (
-            <Button size="sm" variant="accent" onClick={() => setCreateOpen(true)}>
+            <Button size="sm" variant="default" onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" /> {t('new-button', { defaultValue: 'New' })}
             </Button>
           )}
@@ -157,7 +157,7 @@ export function CommunitiesColumn({
             title={t('communities-heading', { defaultValue: 'Communities' })}
             actions={
               session && (
-                <Button size="sm" variant="accent" onClick={() => setCreateOpen(true)}>
+                <Button size="sm" variant="default" onClick={() => setCreateOpen(true)}>
                   <Plus className="h-4 w-4" /> {t('new-button', { defaultValue: 'New' })}
                 </Button>
               )
@@ -199,7 +199,7 @@ export function CommunitiesColumn({
           }
           action={
             session ? (
-              <Button variant="accent" onClick={() => setCreateOpen(true)}>
+              <Button variant="default" onClick={() => setCreateOpen(true)}>
                 <Plus className="h-4 w-4" aria-hidden />{' '}
                 {t('create-community-title', { defaultValue: 'Create a community' })}
               </Button>
@@ -323,7 +323,7 @@ export function CommunitiesColumn({
               {t('cancel-button', { defaultValue: 'Cancel' })}
             </Button>
             <Button
-              variant="accent"
+              variant="default"
               onClick={create}
               disabled={submitting || name.trim().length < 2}
             >

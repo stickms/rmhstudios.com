@@ -194,7 +194,7 @@ export default function ThreadSheet({
             />
             <Button
               type="submit"
-              variant="accent"
+              variant="default"
               size="icon"
               disabled={!draft.trim() || sending}
               aria-label={t('thread-send', { defaultValue: 'Send reply' })}

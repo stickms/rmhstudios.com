@@ -286,7 +286,7 @@ function SettingsPage() {
                     key={pt}
                     type="button"
                     size="sm"
-                    variant={on ? 'accent' : 'outline'}
+                    variant={on ? 'default' : 'default'}
                     className="min-h-11"
                     aria-pressed={on}
                     onClick={() =>
@@ -405,7 +405,7 @@ function SettingsPage() {
                   key={d}
                   type="button"
                   size="sm"
-                  variant={prefs.digestFrequency === d ? 'accent' : 'outline'}
+                  variant={prefs.digestFrequency === d ? 'default' : 'default'}
                   className="min-h-11"
                   aria-pressed={prefs.digestFrequency === d}
                   onClick={() => void patchPrefs({ digestFrequency: d })}
@@ -434,7 +434,7 @@ function SettingsPage() {
                     key={key}
                     type="button"
                     size="sm"
-                    variant={on ? 'accent' : 'outline'}
+                    variant={on ? 'default' : 'default'}
                     className="min-h-11"
                     aria-pressed={on}
                     onClick={() => void patchPrefs({ [key]: !on } as PrefsPatch)}
@@ -500,7 +500,7 @@ function SettingsPage() {
               disabled={newKeyword.type === 'block'}
               onChange={(e) => setNewKeyword((k) => ({ ...k, weight: Number(e.target.value) }))}
             />
-            <Button type="button" variant="outline" onClick={() => void addKeyword()}>
+            <Button type="button" variant="default" onClick={() => void addKeyword()}>
               {t('ladder.settings.add', { defaultValue: 'Add' })}
             </Button>
           </div>
@@ -572,7 +572,7 @@ function SettingsPage() {
             </Select>
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               disabled={!watchlistChoice}
               onClick={() => void setWatchlist(watchlistChoice, true)}
             >
@@ -627,7 +627,7 @@ function SettingsPage() {
                   <Button
                     type="button"
                     size="sm"
-                    variant={search.alertsOn ? 'accent' : 'outline'}
+                    variant={search.alertsOn ? 'default' : 'default'}
                     className="min-h-11"
                     aria-pressed={Boolean(search.alertsOn)}
                     onClick={() => void updateSavedSearch(search, !search.alertsOn)}
@@ -639,7 +639,7 @@ function SettingsPage() {
                   <Button
                     type="button"
                     size="sm"
-                    variant="outline"
+                    variant="default"
                     className="min-h-11"
                     onClick={() => void deleteSavedSearch(search.id as string)}
                   >

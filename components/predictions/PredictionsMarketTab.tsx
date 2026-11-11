@@ -74,7 +74,7 @@ export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
           aria-label={t('filter-aria-label', { defaultValue: 'Filter markets' })}
         />
         <Button
-          variant="accent"
+          variant="default"
           size="sm"
           className="ml-auto"
           onClick={() =>

@@ -320,7 +320,7 @@ export function ComposeBox({
           {t('sign-in-prompt', { defaultValue: 'Sign in to post RMHarks' })}
         </p>
         <Link to="/login" search={{ callbackURL: undefined }}>
-          <Button variant="accent" size="sm">
+          <Button variant="default" size="sm">
             {t('sign-in', { defaultValue: 'Sign in' })}
           </Button>
         </Link>
@@ -571,7 +571,7 @@ export function ComposeBox({
                 setShowSchedule={setShowSchedule}
               />
 
-              <Button variant="accent" size="sm" disabled={!canSubmit} onClick={handleSubmit}>
+              <Button variant="default" size="sm" disabled={!canSubmit} onClick={handleSubmit}>
                 {submitting
                   ? t('posting', { defaultValue: 'Posting…' })
                   : t('post-button', { defaultValue: 'Post' })}

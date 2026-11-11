@@ -190,7 +190,7 @@ function LobbyCodeForm({ night, onSaved }: { night: Night; onSaved: () => void }
         placeholder={t('gn-code-ph', { defaultValue: 'Lobby code for the live game' })}
         aria-label={t('gn-code', { defaultValue: 'Lobby code' })}
       />
-      <Button variant="secondary" onClick={save}>
+      <Button variant="default" onClick={save}>
         {t('gn-post-code', { defaultValue: 'Post code' })}
       </Button>
     </div>

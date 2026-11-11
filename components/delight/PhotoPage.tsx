@@ -125,7 +125,7 @@ export function PhotoPage() {
               aria-label={t('potd-caption', { defaultValue: 'Caption (optional)' })}
               placeholder={t('potd-caption', { defaultValue: 'Caption (optional)' })}
             />
-            <Button type="submit" variant="accent" loading={busy}>
+            <Button type="submit" variant="default" loading={busy}>
               <Camera className="size-4" aria-hidden />
               {t('potd-nominate', { defaultValue: 'Nominate' })}
             </Button>
@@ -161,7 +161,7 @@ export function PhotoPage() {
                     {session && !n.mine && (
                       <Button
                         size="sm"
-                        variant={d.votedFor === n.id ? 'accent' : 'ghost'}
+                        variant={d.votedFor === n.id ? 'default' : 'ghost'}
                         disabled={busy || d.votedFor !== null}
                         onClick={() =>
                           void act(() =>

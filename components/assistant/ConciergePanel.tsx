@@ -249,7 +249,7 @@ export function ConciergePanel({ className }: { className?: string }) {
             />
             <Button
               type="submit"
-              variant="accent"
+              variant="default"
               size="icon"
               disabled={loading || !input.trim()}
               aria-label={t('concierge-send', { defaultValue: 'Send' })}

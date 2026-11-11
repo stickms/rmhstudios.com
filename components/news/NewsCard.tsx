@@ -50,7 +50,6 @@ export function NewsCard({ article, index }: NewsCardProps) {
           {article.category && (
             <div>
               <Badge
-                size="sm"
                 className={`${categoryColor.bg} ${categoryColor.text} ${categoryColor.border}`}
               >
                 {article.category}
@@ -80,7 +79,7 @@ export function NewsCard({ article, index }: NewsCardProps) {
           {article.tags && article.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {article.tags.slice(0, 3).map((tag) => (
-                <Badge key={tag} size="sm" variant="outline">
+                <Badge key={tag} variant="default">
                   {tag}
                 </Badge>
               ))}

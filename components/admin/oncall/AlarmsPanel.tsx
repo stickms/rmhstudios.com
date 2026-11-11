@@ -148,7 +148,7 @@ export function AlarmsPanel() {
                   'The watchdog did not answer. Paging runs on the watchdog itself, so alerts still reach #rmh-oncall — check there.',
               })}
         </p>
-        <Button className="mt-4" variant="outline" onClick={() => void reload()} disabled={loading}>
+        <Button className="mt-4" variant="default" onClick={() => void reload()} disabled={loading}>
           <RefreshCw className="size-4" aria-hidden />
           {t('retry', { defaultValue: 'Retry' })}
         </Button>
@@ -172,7 +172,7 @@ export function AlarmsPanel() {
             when: formatRelativeTime(data.now),
           })}
         </p>
-        <Button variant="outline" size="sm" onClick={() => void reload()} disabled={loading}>
+        <Button variant="default" size="sm" onClick={() => void reload()} disabled={loading}>
           <RefreshCw className="size-4" aria-hidden />
           {t('refresh', { defaultValue: 'Refresh' })}
         </Button>

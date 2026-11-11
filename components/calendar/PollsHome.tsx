@@ -61,7 +61,7 @@ export default function PollsHome({ attach }: { attach: WhenSearch }) {
           })}
         </p>
         {!creating && (
-          <Button variant="accent" size="sm" onClick={() => setCreating(true)}>
+          <Button variant="default" size="sm" onClick={() => setCreating(true)}>
             <Plus /> {t('home-new', { defaultValue: 'New poll' })}
           </Button>
         )}
@@ -281,10 +281,10 @@ function CreatePollForm({ attach, onCancel }: { attach: WhenSearch; onCancel: ()
         })}
       />
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="default" onClick={onCancel}>
           {t('cancel', { defaultValue: 'Cancel' })}
         </Button>
-        <Button type="submit" variant="accent" disabled={busy}>
+        <Button type="submit" variant="default" disabled={busy}>
           {t('form-create', { defaultValue: 'Create poll' })}
         </Button>
       </div>

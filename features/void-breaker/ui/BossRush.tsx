@@ -57,7 +57,7 @@ export function BossRushMenu({ onStart }: { onStart: () => void }) {
       <Button
         onClick={onStart}
         disabled={!unlocked}
-        variant="outline"
+        variant="default"
         className="w-full py-2 flex items-center justify-center gap-2 border-red-500/30 text-red-300 hover:bg-red-500/10"
       >
         {unlocked ? <Skull className="w-4 h-4" /> : <Lock className="w-4 h-4" />}

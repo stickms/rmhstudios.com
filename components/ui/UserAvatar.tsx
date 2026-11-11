@@ -17,9 +17,8 @@ const DEFAULT_AVATAR = '/images/social/default_avatar.png';
  * Proxies external avatar URLs through the image optimizer for WebP conversion
  * and proper sizing. Falls back to initials or default avatar.
  *
- * `data-slot="avatar"` gives it the tier-L jelly rim (a 1px lit ring, app/jelly-coverage.css §7):
- * no haze over faces, and no press of its own — when the avatar is a control, the button or link
- * around it is the soft body.
+ * Steel K11: a circle. No ring, no glow, no status dot. When the avatar is a control, the button or link around
+ * it is the control.
  */
 export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }: UserAvatarProps) {
  // When the (possibly proxied) avatar fails to load — e.g. a 502 from the

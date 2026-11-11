@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 import { m as motion } from 'framer-motion';
 import { Check, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { modalContent } from '@/lib/motion';
+import { fade } from '@/lib/motion';
 import { OverlayPanel } from '@/components/ui/overlay-panel';
 import type { AudienceValue, ReplyControlValue } from './compose-state';
 import { useAudienceOptions, useReplyOptions } from './compose-options';
@@ -29,7 +29,7 @@ function OptionPicker<V extends string>({
   return (
     <OverlayPanel open onClose={onClose}>
       <motion.div
-        variants={modalContent}
+        variants={fade}
         initial="initial"
         animate="animate"
         className="relative w-full max-w-xs p-2 glass-overlay"

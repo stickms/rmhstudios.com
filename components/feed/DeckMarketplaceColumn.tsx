@@ -148,7 +148,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  ) : (
  <Button
  type="button"
- variant="secondary"
+ variant="default"
  onClick={() => clone(deck)}
  disabled={st ==='cloning'}
  className="h-auto gap-1.5 px-3 py-1.5 text-xs font-semibold hover:border-site-accent hover:text-site-accent has-[>svg]:px-3 disabled:opacity-60"

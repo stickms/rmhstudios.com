@@ -230,7 +230,7 @@ function SeriesDialog({ pp, onClose }: { pp: PostsPlusCompose; onClose: () => vo
           />
           <Button
             type="submit"
-            variant="accent"
+            variant="default"
             disabled={title.trim().length < 2}
             loading={creating}
           >
@@ -330,7 +330,7 @@ function CapsuleDialog({
               key={q.key}
               type="button"
               size="sm"
-              variant="outline"
+              variant="default"
               onClick={() => setValue(localValueIn(q.ms))}
             >
               {q.label}
@@ -370,7 +370,7 @@ function CapsuleDialog({
           </Button>
           <Button
             type="button"
-            variant="accent"
+            variant="default"
             disabled={!canSubmit || !value}
             loading={busy}
             onClick={() => void seal()}

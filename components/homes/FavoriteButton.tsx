@@ -71,7 +71,7 @@ export function FavoriteButton({ listingId, favorited, onChange, compact }: Favo
   return (
     <Button
       type="button"
-      variant={isFav ? 'accent-outline' : 'secondary'}
+      variant={isFav ? 'default' : 'default'}
       onClick={toggle}
       loading={busy}
       className={isFav ? 'border-site-danger/40 text-site-danger hover:bg-site-danger/10' : ''}

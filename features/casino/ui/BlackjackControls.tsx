@@ -132,7 +132,7 @@ export function BlackjackControls({ coins }: Props) {
                 {[5, 25, 100, 500].map((amt) => (
                   <Button
                     key={amt}
-                    variant="secondary"
+                    variant="default"
                     onClick={() => setQuickBet(amt)}
                     className="h-auto min-h-10 px-0 text-xs font-bold text-site-text-muted hover:text-site-text"
                   >
@@ -144,7 +144,7 @@ export function BlackjackControls({ coins }: Props) {
             <Button
               onClick={handlePlaceBet}
               disabled={coins < 1}
-              variant="accent"
+              variant="default"
               className="w-full min-h-11 font-bold rounded-site-sm text-base"
             >
               {t("place-bet", { defaultValue: "Place Bet" })}
@@ -197,7 +197,7 @@ export function BlackjackControls({ coins }: Props) {
             <Button
               onClick={() => emit(C2S.TAKE_INSURANCE)}
               disabled={!canAffordInsurance}
-              variant="accent"
+              variant="default"
               className="min-h-11 font-bold rounded-site-sm"
             >
               {t("take-insurance", { defaultValue: "Take ({{cost}})", cost: insuranceCost })}

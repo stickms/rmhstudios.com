@@ -12,8 +12,8 @@ import './sheet.css';
  * `docs/plans/2026-07-20-parity-qol-customization-design.md`. It is a Radix
  * Dialog (focus-trapped, Escape/backdrop close, portalled) that renders as a
  * **bottom sheet on mobile** (< 768px) and a **centered dialog on desktop**,
- * both on the L4 `.glass-overlay` material over a `.glass-scrim` backdrop — the
- * exact glass Dialog uses. On mobile it also gets a drag handle and
+ * both on the Steel S5 `.glass-overlay` surface over a `.glass-scrim` backdrop, the
+ * same overlay Dialog uses. On mobile it also gets a drag handle and
  * swipe-down-to-dismiss, and pads the iOS home-indicator safe area.
  *
  * API mirrors Dialog so every "picker/sheet" in the spec is a drop-in:
@@ -85,8 +85,8 @@ const SheetContent = React.forwardRef<
  data-mobile-fullscreen={mobileFullscreen || undefined}
  style={dragY ? { transform: `translateY(${dragY}px)`, transition: 'none' } : undefined}
  className={cn(
- // L4 .glass-overlay for both layouts — it owns the tint, the blur, the rim
- // glint and the (transparent) border, exactly as it does for Dialog.
+ // Steel S5 `.glass-overlay` for both layouts: surface fill, 1px border, 8px radius, the T4
+ // shadow, no blur, exactly as for Dialog.
  'glass-overlay fixed z-50 flex flex-col text-site-text',
  // Mobile: a horizontally-centered floating bottom sheet by default;
  // complex editors can opt into the full visual viewport instead.
@@ -121,7 +121,7 @@ const SheetContent = React.forwardRef<
  ref={closeRef}
  className={cn(
  // Same control as DialogContent's close: 44px, control radius, right-3.
- 'absolute right-3 inline-flex size-11 items-center justify-center rounded-[var(--site-control-radius)] text-site-text-muted opacity-80 outline-none transition-opacity hover:bg-site-surface-hover hover:opacity-100 focus-visible:ring-2 focus-visible:ring-site-accent/50 disabled:pointer-events-none',
+ 'absolute right-3 inline-flex size-11 items-center justify-center rounded-site text-site-text-muted transition-colors duration-(--m1) ease-[ease] hover:bg-site-bg-subtle hover:text-site-text disabled:pointer-events-none',
  mobileFullscreen ? 'top-[max(0.5rem,env(safe-area-inset-top))] md:top-3' : 'top-2 md:top-3',
  )}
  >
@@ -154,7 +154,7 @@ const SheetTitle = React.forwardRef<
  <DialogPrimitive.Title
  ref={ref}
  className={cn(
- 'font-display text-lg font-semibold leading-none tracking-[-0.022em]',
+ 't-heading',
  className,
  )}
  {...props}

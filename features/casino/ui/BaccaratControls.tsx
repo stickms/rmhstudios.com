@@ -132,7 +132,7 @@ export function BaccaratControls({ coins }: Props) {
           {SIDE_BET_OPTIONS.map((opt) => (
             <Button
               key={opt.type}
-              variant="secondary"
+              variant="default"
               onClick={() => handlePlaceBet(opt.type)}
               disabled={coins - totalBet < chipAmount}
               className="h-auto min-h-11 flex-col gap-0.5 p-2.5 has-[>svg]:px-2.5"
@@ -150,7 +150,7 @@ export function BaccaratControls({ coins }: Props) {
             {[5, 25, 100, 500].map((amt) => (
               <Button
                 key={amt}
-                variant={chipAmount === amt ? 'default' : 'secondary'}
+                variant={chipAmount === amt ? 'default' : 'default'}
                 aria-pressed={chipAmount === amt}
                 onClick={() => setChipAmount(amt)}
                 className={`h-auto min-h-10 flex-1 px-0 text-xs font-bold ${

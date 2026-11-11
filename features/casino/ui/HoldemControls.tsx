@@ -90,7 +90,7 @@ export function HoldemControls() {
       {t("sit-in", { defaultValue: "Sit In" })}
     </Button>
   ) : myPlayer && !isSittingOut && (phase === 'waiting' || phase === 'results') ? (
-    <Button onClick={() => emit(C2S.SIT_OUT)} variant="outline"
+    <Button onClick={() => emit(C2S.SIT_OUT)} variant="default"
       className="min-h-10 rounded-site-sm text-sm">
       {t("sit-out", { defaultValue: "Sit Out" })}
     </Button>
@@ -160,19 +160,19 @@ export function HoldemControls() {
                 <p className="text-xs text-site-text-muted">{t("show-your-cards", { defaultValue: "Show your cards?" })}</p>
                 <div className="flex gap-2">
                   <Button onClick={() => toggleCard(0)}
-                    variant={showingCards[0] ? 'default' : 'secondary'}
+                    variant={showingCards[0] ? 'default' : 'default'}
                     aria-pressed={showingCards[0]}
                     className={`h-auto min-h-10 px-3 py-1.5 text-xs font-semibold ${showingCards[0] ? '' : 'text-site-text-muted hover:border-site-accent'}`}>
                     {t("card-1", { defaultValue: "Card 1" })}
                   </Button>
                   <Button onClick={() => toggleCard(1)}
-                    variant={showingCards[1] ? 'default' : 'secondary'}
+                    variant={showingCards[1] ? 'default' : 'default'}
                     aria-pressed={showingCards[1]}
                     className={`h-auto min-h-10 px-3 py-1.5 text-xs font-semibold ${showingCards[1] ? '' : 'text-site-text-muted hover:border-site-accent'}`}>
                     {t("card-2", { defaultValue: "Card 2" })}
                   </Button>
                   <Button onClick={toggleBoth}
-                    variant={showingCards[0] && showingCards[1] ? 'default' : 'secondary'}
+                    variant={showingCards[0] && showingCards[1] ? 'default' : 'default'}
                     aria-pressed={showingCards[0] && showingCards[1]}
                     className={`h-auto min-h-10 px-3 py-1.5 text-xs font-semibold ${showingCards[0] && showingCards[1] ? '' : 'text-site-text-muted hover:border-site-accent'}`}>
                     {t("both", { defaultValue: "Both" })}
@@ -280,13 +280,13 @@ export function HoldemControls() {
               .filter((p) => p.value >= minRaiseTotal && p.value < myChips + (myPlayer?.currentBet ?? 0))
               .map((p) => (
                 <Button key={p.label} onClick={() => setRaiseAmount(String(p.value))}
-                  variant="secondary"
+                  variant="default"
                   className="h-auto min-h-9 px-2.5 py-1 text-xs font-semibold text-site-text-muted hover:border-site-accent hover:text-site-accent">
                   {p.label}
                 </Button>
               ))}
             <Button onClick={() => setRaiseAmount(String(minRaiseTotal))}
-              variant="secondary"
+              variant="default"
               className="h-auto min-h-9 px-2.5 py-1 text-xs font-semibold text-site-text-muted hover:border-site-accent hover:text-site-accent">
               Min
             </Button>
@@ -301,7 +301,7 @@ export function HoldemControls() {
                 className="glass-inset border w-full rounded-site-sm px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40" />
               <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
             </div>
-            <Button onClick={handleRaise} variant="accent"
+            <Button onClick={handleRaise} variant="default"
               className="min-h-11 font-bold rounded-site-sm">
               {t("raise", { defaultValue: "Raise" })}
             </Button>

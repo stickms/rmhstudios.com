@@ -4,7 +4,7 @@ import * as React from 'react';
 // implementation, which lands in the SHARED ENTRY CHUNK when the module is
 // reachable from a route's top level.
 import { AnimatePresence, m as motion } from 'framer-motion';
-import { APPLE_SPRING, DURATION, EASE, scaleIn } from '@/lib/motion';
+import { APPLE_SPRING, DURATION, EASE, scaleIn } from '@/lib/app-motion';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';

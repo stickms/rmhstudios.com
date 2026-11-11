@@ -130,7 +130,7 @@ export function CreatorSection({
             </p>
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               size="sm"
               className="mt-3"
               onClick={onOpenCosmetics}

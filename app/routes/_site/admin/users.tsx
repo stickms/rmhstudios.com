@@ -281,7 +281,7 @@ function AdminUsersPage() {
                           {user.isVerified && <CheckCircle className="size-4 shrink-0 text-site-accent" role="img" aria-label={t("title-verified", { defaultValue: "Verified" })} />}
                           {user.isAdmin && <Shield className="size-4 shrink-0 text-site-danger" role="img" aria-label={t("title-admin", { defaultValue: "Admin" })} />}
                           {user.isBot && (
-                            <Badge variant="accent" size="sm" icon={<Bot aria-hidden />}>
+                            <Badge variant="default" icon={<Bot aria-hidden />}>
                               {t("badge-bot", { defaultValue: "Bot" })}
                             </Badge>
                           )}
@@ -300,7 +300,7 @@ function AdminUsersPage() {
                                 maxLength={20}
                                 onKeyDown={(e) => { if (e.key === 'Enter') saveHandle(user.id); if (e.key === 'Escape') cancelEditHandle(); }}
                               />
-                              <IconButton icon={Check} size="icon-xs" variant="outline" label={t("save-handle", { defaultValue: "Save handle" })} onClick={() => saveHandle(user.id)} disabled={busy} />
+                              <IconButton icon={Check} size="icon-xs" variant="default" label={t("save-handle", { defaultValue: "Save handle" })} onClick={() => saveHandle(user.id)} disabled={busy} />
                               <IconButton icon={X} size="icon-xs" variant="ghost" label={t("cancel-handle", { defaultValue: "Cancel" })} onClick={cancelEditHandle} />
                               {handleError && <span className="text-xs text-site-danger">{handleError}</span>}
                             </div>
@@ -325,7 +325,7 @@ function AdminUsersPage() {
                       <IconButton
                         icon={CheckCircle}
                         size="icon-sm"
-                        variant={user.isVerified ? 'accent-outline' : 'outline'}
+                        variant={user.isVerified ? 'default' : 'default'}
                         disabled={busy}
                         onClick={() => toggleStatus(user.id, 'isVerified', user.isVerified)}
                         aria-pressed={user.isVerified}
@@ -333,12 +333,12 @@ function AdminUsersPage() {
                       />
                     </div>
                     <div className="flex w-32 shrink-0 justify-center gap-2">
-                      <IconButton icon={Coins} size="icon-sm" variant="outline" disabled={busy} onClick={() => setCoins(user)} label={t("title-set-coins", { coins: user.profile?.coins ?? 0, defaultValue: "Set RMH coins (currently {{coins}})" })} />
-                      <IconButton icon={Crown} size="icon-sm" variant="outline" disabled={busy} onClick={() => grantMembership(user.id)} label={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })} />
+                      <IconButton icon={Coins} size="icon-sm" variant="default" disabled={busy} onClick={() => setCoins(user)} label={t("title-set-coins", { coins: user.profile?.coins ?? 0, defaultValue: "Set RMH coins (currently {{coins}})" })} />
+                      <IconButton icon={Crown} size="icon-sm" variant="default" disabled={busy} onClick={() => grantMembership(user.id)} label={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })} />
                       <IconButton
                         icon={Shield}
                         size="icon-sm"
-                        variant="outline"
+                        variant="default"
                         className={user.isAdmin ? 'border-site-danger/40 text-site-danger' : undefined}
                         disabled={busy}
                         onClick={() => toggleStatus(user.id, 'isAdmin', user.isAdmin)}

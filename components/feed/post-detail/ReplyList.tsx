@@ -3,7 +3,7 @@ import { MessageCircle } from 'lucide-react';
 import { m as motion } from 'framer-motion';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
-import { staggerContainer, staggerItem } from '@/lib/motion';
+import { fade } from '@/lib/motion';
 import { CommentItem } from '../CommentItem';
 import type { Comment } from '../CommentItem';
 import { HiddenRepliesGroup } from '../HiddenReplies';
@@ -65,7 +65,7 @@ export function ReplyList({
         <>
           <motion.div
             className="post-page__replies"
-            variants={staggerContainer(0.03)}
+            variants={fade}
             initial={false}
             animate="animate"
           >
@@ -84,7 +84,7 @@ export function ReplyList({
                   />
                 );
                 return i < 8 ? (
-                  <motion.div key={comment.id} variants={staggerItem}>
+                  <motion.div key={comment.id} variants={fade}>
                     {node}
                   </motion.div>
                 ) : (

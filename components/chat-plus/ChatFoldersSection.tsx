@@ -96,7 +96,7 @@ export function ChatFoldersSection({ chat }: { chat: ChatRef }) {
           />
           <Button
             type="submit"
-            variant="outline"
+            variant="default"
             size="sm"
             disabled={!name.trim()}
             loading={create.isPending}

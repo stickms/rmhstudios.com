@@ -128,7 +128,7 @@ export function ModFlairs({
               defaultValue: '{{count}} of {{max}} flairs',
             })}
           </span>
-          <Button type="submit" variant="accent" size="sm" loading={saving} disabled={!name.trim()}>
+          <Button type="submit" variant="default" size="sm" loading={saving} disabled={!name.trim()}>
             {t('flair-add', { defaultValue: 'Add flair' })}
           </Button>
         </div>

@@ -144,7 +144,7 @@ export function ProfilerTab() {
             <Download aria-hidden />
             {t('profile-capture', { defaultValue: 'Capture CPU profile' })}
           </Button>
-          <Button variant="outline" onClick={() => void run('summary')} disabled={busy !== null}>
+          <Button variant="default" onClick={() => void run('summary')} disabled={busy !== null}>
             <Flame aria-hidden />
             {t('profile-summarise', { defaultValue: 'Capture & summarise' })}
           </Button>

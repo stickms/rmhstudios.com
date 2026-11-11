@@ -75,7 +75,7 @@ export function NotificationPrefsPanel() {
         return (
           <li
             key={key}
-            className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
+            className="chrome-row flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
           >
             <div className="min-w-0">
               <p id={labelId} className="text-sm font-medium text-site-text">

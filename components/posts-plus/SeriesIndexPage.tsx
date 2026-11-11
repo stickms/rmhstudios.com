@@ -115,7 +115,7 @@ export function SeriesIndexPage() {
             />
             <Button
               type="submit"
-              variant="accent"
+              variant="default"
               loading={busy}
               disabled={title.trim().length < 2}
             >

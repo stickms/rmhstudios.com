@@ -122,7 +122,7 @@ export default function ExchangeDetail({ id }: { id: string }) {
         </p>
         {ex.canJoin ? (
           <Button
-            variant="accent"
+            variant="default"
             size="sm"
             loading={act.isPending}
             onClick={() => act.mutate({ path: '/join', method: 'POST' })}
@@ -142,7 +142,7 @@ export default function ExchangeDetail({ id }: { id: string }) {
         {ex.isOrganizer && open ? (
           <div className="flex flex-wrap gap-2">
             <Button
-              variant="accent"
+              variant="default"
               size="sm"
               disabled={ex.members.length < EXCHANGE_MIN_MEMBERS}
               onClick={() => act.mutate({ path: '/draw', method: 'POST' })}
@@ -235,7 +235,7 @@ export default function ExchangeDetail({ id }: { id: string }) {
               />
               <Button
                 type="submit"
-                variant="accent"
+                variant="default"
                 size="sm"
                 loading={act.isPending}
                 disabled={Number(amount) < 10 || Number(amount) > (ex.budget ?? 10000)}

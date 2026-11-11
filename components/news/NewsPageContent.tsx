@@ -41,7 +41,7 @@ export function NewsPageContent({ articles, featured, rightSidebar }: NewsPageCo
         // under the 44px floor. It is a labelled ghost Button now.
         <Button
           id="news-filter-toggle"
-          variant={filtersOpen ? 'secondary' : 'ghost'}
+          variant={filtersOpen ? 'default' : 'ghost'}
           onClick={() => setFiltersOpen(!filtersOpen)}
           aria-pressed={filtersOpen}
           aria-expanded={filtersOpen}

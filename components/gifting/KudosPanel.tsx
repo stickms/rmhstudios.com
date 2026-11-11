@@ -103,7 +103,7 @@ export default function KudosPanel({ ownerId, isOwner }: { ownerId: string; isOw
               {t('kudos-note', { defaultValue: 'Free, one per person per day.' })}
             </p>
             <Button
-              variant="accent"
+              variant="default"
               size="sm"
               loading={busy}
               disabled={draft.trim().length < 3}

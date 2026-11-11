@@ -240,7 +240,7 @@ export function BugBountyForm() {
       <div className="sec-form__actions">
         <Button
           type="submit"
-          variant="accent"
+          variant="default"
           size="lg"
           loading={submitting}
           loadingText="Submitting…"

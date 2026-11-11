@@ -98,7 +98,7 @@ export default function AddSeriesPostDialog({
                   </span>
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="default"
                     loading={adding === p.id}
                     onClick={() => void add(p.id)}
                   >

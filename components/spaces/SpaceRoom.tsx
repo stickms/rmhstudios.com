@@ -295,7 +295,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
 
   const statusBadge = (
     <Badge
-      variant={status === 'LIVE' ? 'danger' : status === 'SCHEDULED' ? 'default' : 'outline'}
+      variant={status === 'LIVE' ? 'danger' : status === 'SCHEDULED' ? 'default' : 'default'}
       icon={false}
       className="gap-2"
     >
@@ -313,12 +313,12 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   const hostActions = isHost ? (
     <>
       {status === 'SCHEDULED' && (
-        <Button size="sm" variant="accent" onClick={goLive} loading={startingLive}>
+        <Button size="sm" variant="default" onClick={goLive} loading={startingLive}>
           {t('space-go-live', { defaultValue: 'Go live' })}
         </Button>
       )}
       {status === 'LIVE' && (
-        <Button size="sm" variant="outline" onClick={endSpace} loading={ending}>
+        <Button size="sm" variant="default" onClick={endSpace} loading={ending}>
           {t('space-end', { defaultValue: 'End' })}
         </Button>
       )}
@@ -445,7 +445,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
               <Button
                 key={emoji}
                 type="button"
-                variant="outline"
+                variant="default"
                 size="icon-sm"
                 onClick={() => react(emoji)}
                 className="rounded-full text-base"
@@ -488,7 +488,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
             <Button
               type="submit"
               size="sm"
-              variant="accent"
+              variant="default"
               disabled={!draft.trim() || !viewerId || slowBlock.secondsLeft > 0}
               aria-label={t('space-send', { defaultValue: 'Send' })}
             >

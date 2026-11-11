@@ -252,7 +252,7 @@ export function DebtLog({
         {!loading && error && (
           <>
             <p className="text-sm text-site-danger">{error}</p>
-            <Button size="sm" variant="outline" onClick={() => void loadMore()}>
+            <Button size="sm" variant="default" onClick={() => void loadMore()}>
               {t('log.retry', { defaultValue: 'Try again' })}
             </Button>
           </>
@@ -270,7 +270,7 @@ export function DebtLog({
                   'You’ve outrun the archive. More of his history is being written right now — it’ll appear in a moment.',
               })}
             </p>
-            <Button size="sm" variant="outline" onClick={() => void loadMore()}>
+            <Button size="sm" variant="default" onClick={() => void loadMore()}>
               {t('log.digDeeper', { defaultValue: 'Dig deeper' })}
             </Button>
           </div>

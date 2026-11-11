@@ -613,7 +613,7 @@ export function CommentItem({
                     </button>
                     <EmojiPickerButton direction="up" onSelect={insertEmoji} />
                     <Button
-                      variant="accent"
+                      variant="default"
                       size="sm"
                       disabled={!replyContent.trim() || remaining < 0 || submitting}
                       onClick={handleSubmitReply}

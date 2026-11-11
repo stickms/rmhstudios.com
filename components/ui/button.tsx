@@ -5,49 +5,32 @@ import { Loader2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
-// Hover is the shared optical glass response (tilted reflections and rim light).
-// Resting variant colours stay stable; focus keeps the site-wide ring (§8).
+// Steel K1 to K3 (docs/plans/2026-11-11-steel-design-implementation.md section 6): 8px radius, 1px border, 500 weight,
+// 14px text, 36px high on a fine pointer and 44px on touch. Hover is a fill change in 90 ms (M1); nothing scales, glows
+// or lifts. Focus is the global K10 outline: no component here sets a ring.
 const buttonVariants = cva(
-  "relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--site-control-radius)] border border-transparent text-sm font-medium tracking-[-0.01em] disabled:pointer-events-none disabled:opacity-45 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
+  "relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-site border border-transparent text-sm font-medium transition-[background-color,border-color,color,opacity] duration-(--m1) ease-[ease] disabled:pointer-events-none disabled:opacity-45 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 aria-invalid:border-site-danger",
   {
     variants: {
       variant: {
-        // Flat at rest, like the globe menu's buttons: just the label on the ground (`data-jelly-rest="flat"`; the
-        // degraded tiers give it an opaque slab, app/glass-roles.css).
-        default: 'font-semibold text-site-accent hover:text-site-accent-hover',
-        destructive: 'bg-site-danger text-site-danger-fg hover:opacity-85',
-        danger: 'bg-site-danger text-site-danger-fg hover:opacity-85',
-        // The featured-tier fill (/pricing, /store). Existed only as an inline
-        // `style={{ background: 'var(--site-warning)' }}` on a hand-rolled
-        // button, which is exactly the local copy §5.2 exists to prevent.
-        warning: 'bg-site-warning text-site-warning-fg hover:opacity-85',
-        // Hover was border-brighten-only, which on a transparent fill is close
-        // to imperceptible — the outline button reads as inert until clicked.
-        // A surface tint gives it the same feedback every other variant has.
-        outline: 'text-site-text',
-        secondary: 'text-site-text',
-        ghost: 'text-site-text',
-        link: 'text-site-accent underline-offset-4 hover:underline',
-        accent: 'font-semibold text-site-accent hover:text-site-accent-hover',
-        'accent-outline': 'text-site-accent',
-        'accent-ghost': 'text-site-accent',
-        // The ink-gel primary action (#989): ONE per view. A dense gel of the
-        // theme's ink (`--gel-ink`, `--on-ink`), which darkens toward its base
-        // through the shared gel coat and wakes its plasma on hover
-        // (app/jelly-material.css). Focus is the solid 2px `--focus-ring`,
-        // stated here as well so no tier's ring rule can swap in a glow.
-        signal:
-          'bg-gel-ink text-on-ink font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-focus-ring',
+        // K1: surface fill, border, ink text.
+        default: 'border-site-border bg-site-surface text-site-text hover:bg-site-bg-subtle',
+        // K2: ink fill. One per view (R4).
+        primary: 'bg-site-accent text-site-accent-fg hover:opacity-88',
+        // K3: no border, no fill.
+        ghost: 'text-site-text hover:bg-site-bg-subtle',
+        // A destructive action: the K1 body with danger text and border (the label names the action; A2).
+        danger: 'border-site-danger bg-site-surface text-site-danger hover:bg-site-bg-subtle',
       },
       size: {
-        default: 'h-11 px-5.5 py-2.5 has-[>svg]:px-4.5',
-        xs: "h-7 gap-1 px-3.5 text-xs has-[>svg]:px-2.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: 'h-9 gap-1.5 px-4.5 has-[>svg]:px-3.5',
-        lg: 'h-12 px-7 text-body-rem has-[>svg]:px-5',
-        icon: 'size-11',
-        'icon-xs': "size-7 [&_svg:not([class*='size-'])]:size-3",
-        'icon-sm': 'size-9',
-        'icon-lg': 'size-12',
+        default: 'h-9 px-4 pointer-coarse:h-11 has-[>svg]:px-3',
+        xs: "h-7 gap-1 px-3 text-xs pointer-coarse:h-11 has-[>svg]:px-2 [&_svg:not([class*='size-'])]:size-3",
+        sm: 'h-9 gap-1.5 px-4 pointer-coarse:h-11 has-[>svg]:px-3',
+        lg: 'h-9 px-4 pointer-coarse:h-11 has-[>svg]:px-3',
+        icon: 'size-9 pointer-coarse:size-11',
+        'icon-xs': "size-7 pointer-coarse:size-11 [&_svg:not([class*='size-'])]:size-3",
+        'icon-sm': 'size-9 pointer-coarse:size-11',
+        'icon-lg': 'size-9 pointer-coarse:size-11',
       },
     },
     defaultVariants: {
@@ -56,21 +39,6 @@ const buttonVariants = cva(
     },
   },
 );
-
-/**
- * Variants that sit flat on the ground at rest and grow a body only while touched. `signal` (the one ink primary per
- * view) and the semantic fills (`destructive`, `danger`, `warning`) keep their slab: their colour is their meaning.
- */
-const FLAT_VARIANTS = new Set<string | null | undefined>([
-  'default',
-  'outline',
-  'secondary',
-  'ghost',
-  'link',
-  'accent',
-  'accent-outline',
-  'accent-ghost',
-]);
 
 function Button({
   className,
@@ -104,15 +72,8 @@ function Button({
     <Comp
       data-slot="button"
       data-variant={variant}
-      data-jelly-rest={FLAT_VARIANTS.has(variant) ? 'flat' : undefined}
       data-size={size}
       data-loading={loading ? '' : undefined}
-      // A control-mode jelly body: the CSS soft body (app/jelly-material.css §8)
-      // dents it under a hovering mouse, squashes it while pressed and springs
-      // it back on release, for every variant. Its transition and the plain
-      // 0.98 press off the jelly scope live in app/globals.css (`[data-slot='button']`),
-      // not in the variants above, so the soft body's spring can join the list.
-      data-fluid-press=""
       className={cn(buttonVariants({ variant, size, className }))}
       disabled={asChild ? disabled : disabled || loading}
       aria-busy={loading || undefined}
@@ -146,7 +107,7 @@ function Button({
       ) : !asChild && (typeof children === 'string' || typeof children === 'number') ? (
         // A plain-text label gets a layout-neutral (`display: contents`) element of its own, so the button is never
         // "text-only" to React: React rewrites a lone string child with `textContent`, which would wipe any node a
-        // service injected into the button (the jelly services used to inject a flow carrier).
+        // service injected into the button.
         <span data-slot="button-label" className="contents">
           {children}
         </span>

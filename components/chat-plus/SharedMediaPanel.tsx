@@ -139,7 +139,7 @@ export function SharedMediaPanel({ chat, tab }: { chat: ChatRef; tab: 'media' | 
       {q.hasNextPage && (
         <div className="mt-3 flex justify-center">
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             loading={q.isFetchingNextPage}
             onClick={() => void q.fetchNextPage()}

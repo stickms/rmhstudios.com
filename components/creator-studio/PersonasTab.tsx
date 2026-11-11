@@ -166,7 +166,7 @@ export function PersonasTab({ seed }: { seed: number }) {
         <div className="store-personas__bar">
           <Button
             size="sm"
-            variant="accent"
+            variant="default"
             aria-expanded={showForm}
             onClick={() => setShowForm((v) => !v)}
           >
@@ -241,7 +241,7 @@ export function PersonasTab({ seed }: { seed: number }) {
               <Button
                 type="button"
                 size="sm"
-                variant="outline"
+                variant="default"
                 aria-pressed={form.isPublic}
                 onClick={() => setForm((f) => ({ ...f, isPublic: !f.isPublic }))}
               >
@@ -257,7 +257,7 @@ export function PersonasTab({ seed }: { seed: number }) {
               )}
               <Button
                 size="sm"
-                variant="accent"
+                variant="default"
                 loading={busy}
                 disabled={!validForm}
                 onClick={create}

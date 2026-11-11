@@ -179,7 +179,7 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
         </span>
         <Button
           size="sm"
-          variant="accent"
+          variant="default"
           onClick={graduate}
           disabled={!status.allDone || claiming}
         >

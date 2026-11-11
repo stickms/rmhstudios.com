@@ -581,7 +581,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
                 )}
                 <Button
                   size="sm"
-                  variant={isHost || lobby.vote ? 'default' : 'outline'}
+                  variant={isHost || lobby.vote ? 'default' : 'default'}
                   onClick={() => setShowSongSelect(true)}
                   disabled={!isHost && !lobby.vote}
                   className="shrink-0"
@@ -733,7 +733,7 @@ export function MultiplayerLobby({ onBack, onOpenSettings }: MultiplayerLobbyPro
           </div>
 
           <Button
-            variant="outline"
+            variant="default"
             className="w-full rounded-xl border border-slice-border"
             onClick={() => net.createLobby(false)}
             disabled={connection !== 'connected'}
@@ -1030,7 +1030,7 @@ function VotePanel({
 
       <Button
         size="sm"
-        variant="outline"
+        variant="default"
         className="w-full rounded-xl"
         onClick={onNominate}
         disabled={disabled}

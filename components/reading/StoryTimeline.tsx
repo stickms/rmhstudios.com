@@ -47,7 +47,7 @@ export function StoryTimeline({
                     params={{ slug: a.slug }}
                     className="glass-fill glass-interactive mt-2 block rounded-site px-4 py-3"
                   >
-                    <Badge size="sm" className={`mb-2 ${color.bg} ${color.text} ${color.border}`}>
+                    <Badge className={`mb-2 ${color.bg} ${color.text} ${color.border}`}>
                       {a.category}
                     </Badge>
                     <h2 className="text-lg font-semibold leading-snug text-site-text">{a.title}</h2>

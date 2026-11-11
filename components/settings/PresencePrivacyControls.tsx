@@ -81,7 +81,7 @@ export function PresencePrivacyControls() {
         </div>
       </fieldset>
 
-      <div className="flex items-center justify-between gap-3 border-t border-site-border pt-3">
+      <div className="chrome-row flex items-center justify-between gap-3 border-t border-site-border pt-3">
         <div className="min-w-0">
           <p className="text-sm font-medium text-site-text">
             {t('presence-detail', { defaultValue: 'Show activity detail' })}

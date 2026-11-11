@@ -1,6 +1,5 @@
-/* AnchoredMenu — placement only. The surface (blur, tint, rim, radius, shadow)
-   comes from `.glass-overlay`, the shared L4 floating-UI material in
-   globals.css; nothing here re-rolls it. */
+/* AnchoredMenu — placement only. The surface (fill, border, radius, shadow) comes from `.glass-overlay`, the
+   Steel S5 overlay (app/styles/steel-surfaces.css); nothing here re-rolls it. */
 
 .anchored-menu {
   position: fixed;

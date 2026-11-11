@@ -147,7 +147,7 @@ function TagSection({
           aria-label={t('add-tag', { defaultValue: 'Add a hashtag' })}
         />
         <Button
-          variant="outline"
+          variant="default"
           aria-label={t('add-tag', { defaultValue: 'Add a hashtag' })}
           onClick={() => {
             onAdd(draft);

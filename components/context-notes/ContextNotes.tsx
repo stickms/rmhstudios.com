@@ -62,7 +62,7 @@ export default function ContextNotes({ postId }: { postId: string }) {
       <div className="flex items-center gap-2">
         <Button
           size="xs"
-          variant={n.myRating === true ? 'accent' : 'secondary'}
+          variant={n.myRating === true ? 'default' : 'default'}
           aria-pressed={n.myRating === true}
           disabled={busy}
           onClick={() => void rate(n, true)}
@@ -72,7 +72,7 @@ export default function ContextNotes({ postId }: { postId: string }) {
         </Button>
         <Button
           size="xs"
-          variant={n.myRating === false ? 'accent' : 'secondary'}
+          variant={n.myRating === false ? 'default' : 'default'}
           aria-pressed={n.myRating === false}
           disabled={busy}
           onClick={() => void rate(n, false)}
@@ -160,7 +160,7 @@ export default function ContextNotes({ postId }: { postId: string }) {
           <Button
             type="submit"
             size="sm"
-            variant="accent"
+            variant="default"
             loading={busy}
             disabled={draft.trim().length < 10}
           >

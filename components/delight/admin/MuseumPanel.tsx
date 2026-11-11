@@ -109,7 +109,7 @@ export default function MuseumPanel() {
         <div className="flex gap-2">
           <Button
             type="submit"
-            variant="accent"
+            variant="default"
             loading={busy}
             disabled={!form.eraDate || form.title.trim().length < 2 || form.body.trim().length < 2}
           >

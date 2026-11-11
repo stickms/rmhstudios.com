@@ -139,7 +139,7 @@ export function ListingCard({
             {rarity}
           </span>
           {held && (
-            <Badge variant="warning" size="sm">
+            <Badge variant="warning">
               {t('market-under-review', { defaultValue: 'Under review' })}
             </Badge>
           )}
@@ -171,11 +171,11 @@ export function ListingCard({
           <CoinIcon className="h-4 w-4" /> {listing.priceCoins.toLocaleString()}
         </span>
         {isOwn ? (
-          <Button size="sm" variant="secondary" loading={busy} onClick={cancel}>
+          <Button size="sm" variant="default" loading={busy} onClick={cancel}>
             {t('market-cancel', { defaultValue: 'Cancel' })}
           </Button>
         ) : canBuy && !held ? (
-          <Button size="sm" variant="accent" loading={busy} onClick={buy}>
+          <Button size="sm" variant="default" loading={busy} onClick={buy}>
             {t('market-buy', { defaultValue: 'Buy' })}
           </Button>
         ) : null}

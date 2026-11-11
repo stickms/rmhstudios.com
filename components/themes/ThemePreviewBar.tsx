@@ -80,7 +80,7 @@ export function ThemePreviewBar() {
         {preview.name ? <span className="font-semibold"> {preview.name}</span> : null}
       </span>
       {preview.purchasable && preview.priceCoins != null ? (
-        <Button variant="accent" size="sm" onClick={buy} loading={busy}>
+        <Button variant="default" size="sm" onClick={buy} loading={busy}>
           {t('buy-for', { defaultValue: 'Buy' })} · {preview.priceCoins}
         </Button>
       ) : null}

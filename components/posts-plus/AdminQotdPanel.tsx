@@ -139,7 +139,7 @@ export function AdminQotdPanel() {
               onChange={(e) => setDayKey(e.target.value)}
             />
           </label>
-          <Button type="submit" variant="accent" loading={busy} disabled={text.trim().length < 8}>
+          <Button type="submit" variant="default" loading={busy} disabled={text.trim().length < 8}>
             {t('admin-add', { defaultValue: 'Add prompt' })}
           </Button>
         </form>

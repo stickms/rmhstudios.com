@@ -194,7 +194,7 @@ export function RecipesManager() {
         )}
         <div className="flex justify-end">
           <Button
-            variant="accent"
+            variant="default"
             size="sm"
             disabled={busy || !ready || (recipes?.length ?? 0) >= MAX_RECIPES}
             onClick={create}

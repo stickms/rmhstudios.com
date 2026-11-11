@@ -7,7 +7,7 @@ import { AnimatePresence, m as motion } from 'framer-motion';
 import { WidgetFrame } from '@/components/ui/widget-frame';
 import { IconButton } from '@/components/ui/icon-button';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { APPLE_SPRING } from '@/lib/motion';
+import { transition } from '@/lib/motion';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { WIDGET_CATALOG, type WidgetKind } from '@/lib/home-widgets';
 import { iconFor } from './layout-icons';
@@ -129,7 +129,7 @@ export function WidgetStack({ className }: { className?: string }) {
                     animate="open"
                     exit="closed"
                     transition={
-                      reduced ? { duration: 0 } : APPLE_SPRING.smooth
+                      reduced ? { duration: 0 } : transition
                     }
                     className="overflow-hidden"
                   >

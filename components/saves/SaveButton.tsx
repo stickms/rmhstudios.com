@@ -24,7 +24,7 @@ export function SaveButton({
   entityId: string;
   initialSaved?: boolean;
   size?: 'icon-xs' | 'icon-sm' | 'icon' | 'icon-lg';
-  variant?: 'ghost' | 'outline' | 'secondary';
+  variant?: 'ghost' | 'default';
 }) {
   const { t } = useTranslation('c-saves');
   const [saved, setSaved] = useState(initialSaved);

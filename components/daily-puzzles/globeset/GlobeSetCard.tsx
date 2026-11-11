@@ -19,7 +19,7 @@ import { memo } from 'react';
 import { m as motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { DOT_COLORS, dotsOf, type Card, type DotColor } from '@/lib/globeset/cards';
-import { APPLE_SPRING } from '@/lib/motion';
+import { APPLE_SPRING } from '@/lib/app-motion';
 import { cn } from '@/lib/utils';
 
 /** Dot centres on a 3-wide, 2-tall grid, in a 100×72 viewBox. */

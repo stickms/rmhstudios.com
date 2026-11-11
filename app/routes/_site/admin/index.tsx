@@ -82,7 +82,7 @@ function AdminDashboardPage() {
             })}
             badge={
               counts.reports > 0 ? (
-                <Badge variant="danger" size="sm" icon={false}>
+                <Badge variant="danger" icon={false}>
                   {counts.reports}
                 </Badge>
               ) : undefined
@@ -107,7 +107,7 @@ function AdminDashboardPage() {
             })}
             badge={
               counts.appeals > 0 ? (
-                <Badge variant="danger" size="sm" icon={false}>
+                <Badge variant="danger" icon={false}>
                   {counts.appeals}
                 </Badge>
               ) : undefined
@@ -123,7 +123,7 @@ function AdminDashboardPage() {
             })}
             badge={
               counts.emojiPacks > 0 ? (
-                <Badge variant="danger" size="sm" icon={false}>
+                <Badge variant="danger" icon={false}>
                   {counts.emojiPacks}
                 </Badge>
               ) : undefined
@@ -139,7 +139,7 @@ function AdminDashboardPage() {
             })}
             badge={
               counts.market > 0 ? (
-                <Badge variant="danger" size="sm" icon={false}>
+                <Badge variant="danger" icon={false}>
                   {counts.market}
                 </Badge>
               ) : undefined

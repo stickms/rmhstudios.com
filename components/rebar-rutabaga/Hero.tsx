@@ -30,7 +30,7 @@
 
 import { m as motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { editorialTransition } from '@/lib/motion';
+import { editorialTransition } from '@/lib/app-motion';
 import { MENU_PRICE_SEK } from '@/lib/rebar-rutabaga/menu';
 
 /** The page's curve, matching `--rebar-ease`. See `Reveal.tsx`. */

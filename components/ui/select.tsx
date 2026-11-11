@@ -150,7 +150,7 @@ export interface SelectProps extends Omit<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
   'onChange' | 'value' | 'defaultValue' | 'type'
 > {
-  /** Compact controls for toolbars; standard form selects keep the 44px target. */
+  /** Compact controls for toolbars (36px); standard form selects are 40px (K4). */
   controlSize?: 'sm' | 'default';
   /** Layout classes for the chevron-owning wrapper. */
   containerClassName?: string;
@@ -171,27 +171,13 @@ export interface SelectProps extends Omit<
 /** Per-tier classes. Same structure, two palettes. */
 const TIER_CLASSES = {
   site: {
-    // Type is the site's own body font at the same `text-sm` as `Input` and
-    // `Button`. It used to be `font-mono text-xs font-bold uppercase
-    // tracking-wider` — a fourth typeface on a form, in a size below the body
-    // scale, shouting in caps — which made a row of fields read as three
-    // different design systems and pushed any real value ("Bahasa Indonesia",
-    // an email address) into truncation far earlier than the box needed. The
-    // mono is for code; a select is a control you read a value out of.
+    // Steel K4 (a 40px field: surface fill, 1px border) and S5 (the list is an overlay: `--site-surface`, 1px border,
+    // 8px radius, the T4 shadow, no blur). Rows are plain text; the highlighted row takes `--site-bg-subtle` (M1). The
+    // focus ring is the global K10 outline.
     trigger:
-      'glass-inset rounded-site-sm text-site-text hover:border-site-text text-base sm:text-sm focus-visible:border-site-accent focus-visible:ring-2 focus-visible:ring-site-accent/30',
-    // `--site-radius`, NOT `--site-control-radius`. The trigger is a control and
-    // takes the small radius; the POPUP is a panel — a stack of rows — and a 9999px
-    // radius on it does not read as "very rounded", it reads as a lozenge, with
-    // the first and last rows sliced by the curve and a bulge of empty material
-    // at each end. The panel takes the panel radius and CLIPS its rows (the
-    // base class carries `overflow-hidden py-1.5`): the rows are plain text with no
-    // fill or radius of their own, and hover wakes a soft glow behind the text
-    // (globals.css §7.3) instead of repeating a pill inside the panel.
-    content: 'glass-overlay rounded-[var(--site-radius)] text-site-text',
-    // Rows match the trigger, so the value you pick looks like the value you
-    // then see sitting in the control.
-    item: 'rounded-none text-sm text-site-text data-[state=checked]:text-site-accent',
+      'rounded-site border border-site-border bg-site-surface text-site-text text-base sm:text-sm aria-invalid:border-site-danger',
+    content: 'glass-overlay text-site-text',
+    item: 'rounded-none text-sm text-site-text data-[highlighted]:bg-site-bg-subtle data-[state=checked]:font-semibold',
     label: 'text-site-text-muted',
     scrollButton: 'text-site-text-muted',
     chevron: 'text-site-text-muted',
@@ -200,11 +186,11 @@ const TIER_CLASSES = {
     // Inset trigger — the neumorphic rule is that a value you read out of a
     // control is recessed, and the thing you press is raised.
     trigger:
-      'rounded-xl border-0 bg-(--slice-bg) text-(--slice-text) text-sm shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] focus-visible:ring-2 focus-visible:ring-(--slice-primary)',
+      'rounded-[var(--slice-radius,12px)] border-0 bg-(--slice-bg) text-(--slice-text) text-sm shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] focus-visible:ring-2 focus-visible:ring-(--slice-primary)',
     // The popup is a raised panel sitting above the surface, so it takes the
     // outward pair — the mirror of the trigger it came out of.
     content:
-      'rounded-2xl border-0 bg-(--slice-bg) text-(--slice-text) shadow-[6px_6px_14px_var(--slice-shadow-dark),-6px_-6px_14px_var(--slice-shadow-light)]',
+      'rounded-[var(--slice-radius-lg,16px)] border-0 bg-(--slice-bg) text-(--slice-text) shadow-[6px_6px_14px_var(--slice-shadow-dark),-6px_-6px_14px_var(--slice-shadow-light)]',
     item: 'rounded-none text-sm text-(--slice-text) [--evert-tint:color-mix(in_srgb,var(--slice-shadow-dark)_30%,transparent)] data-[state=checked]:text-(--slice-primary) data-[state=checked]:font-bold',
     label: 'text-(--slice-text-light)',
     scrollButton: 'text-(--slice-text-muted)',
@@ -273,10 +259,6 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
         value={toItemValue(option.value)}
         disabled={option.disabled}
         data-slot="select-item"
-        // Radix's roving highlight (`data-highlighted`) turns the row's eversion layer out (globals.css §7.3).
-        data-evert=""
-        // A row is text, not a body: no rim slab, no soft body (lib/jelly/tiers.ts opt-out). Hover glows via `data-evert`.
-        data-jelly="off"
         className={cn(
           // The same row metrics as `MenuItem` (components/ui/menu.tsx), because
           // a select's list and an overflow menu are the same object to whoever
@@ -309,20 +291,11 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
           <SelectPrimitive.Trigger
             ref={ref}
             data-slot="select"
-            data-evert=""
             className={cn(
-              // Radius and elevation come from the tier's control tokens, like
-              // Button/Input/Badge, so a select squares off and swaps its
-              // elevation for a hairline ring in the themes that do that.
-              'flex w-full cursor-pointer appearance-none items-center justify-between gap-2 transition-colors duration-site-fast',
-              // Full-size fields match Input at 48px; compact actions stay 36px, not the
-              // `h-10` / `h-8` this used to carry. A select is the third control
-              // in a form row beside those two, and 4px short is not a subtle
-              // difference when the three sit on one line: the baselines stop
-              // agreeing and the row reads as assembled from two kits. 44px is
-              // also the touch floor, which `h-10` was under.
-              controlSize === 'sm' ? 'h-9 px-4.5 py-1 pr-9' : 'h-12 px-5 py-2 pr-11',
-              'focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+              'flex w-full cursor-pointer appearance-none items-center justify-between gap-2 transition-colors duration-(--m1) ease-[ease]',
+              // Full-size selects match Input (K4, 40px); compact ones are 36px.
+              controlSize === 'sm' ? 'h-9 px-3 py-1 pr-9' : 'h-10 px-3 py-2 pr-9',
+              'disabled:cursor-not-allowed disabled:opacity-50',
               // The value can be longer than the control: clip it rather than let
               // it push the chevron out of the box.
               '[&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:text-left',
@@ -346,12 +319,8 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
           <SelectPrimitive.Portal container={appContainer ?? undefined}>
             <SelectPrimitive.Content
               data-slot="select-content"
-              // The shared bloom (globals.css §7.1). It needs nothing from this
-              // component beyond the attribute: `position="popper"` makes Radix
-              // publish `--radix-popper-transform-origin` on the wrapper it
-              // portals, which the bloom reads as its anchor — so a list that
-              // collision-flips above a trigger near the bottom of the screen
-              // unfurls upward out of it without either side being told.
+              // M5: an overlay fades in and out in 160 ms (no scale, no slide) via `data-motion="pop"`, which
+              // app/styles/steel-overlay.css reduces to an opacity transition.
               data-motion="pop"
               position="popper"
               sideOffset={6}

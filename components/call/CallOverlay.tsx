@@ -205,7 +205,7 @@ export function CallOverlay() {
           </Button>
           <Button
             type="button"
-            variant="destructive"
+            variant="danger"
             className="h-9 w-9 shrink-0 rounded-full p-0"
             onClick={() => declineCall()}
             aria-label={t('call-decline', { defaultValue: 'Decline' })}
@@ -214,7 +214,7 @@ export function CallOverlay() {
           </Button>
           <Button
             type="button"
-            variant="accent"
+            variant="default"
             className="h-9 w-9 shrink-0 rounded-full p-0"
             onClick={() => void acceptCall()}
             aria-label={t('call-accept', { defaultValue: 'Accept' })}
@@ -344,7 +344,7 @@ export function CallOverlay() {
             )}
             <Button
               type="button"
-              variant="destructive"
+              variant="danger"
               className="h-9 w-9 rounded-full p-0"
               onClick={() => hangUp()}
               aria-label={t('call-hang-up', { defaultValue: 'Hang up' })}

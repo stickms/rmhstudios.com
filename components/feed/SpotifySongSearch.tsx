@@ -122,7 +122,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
  {!showSearch && !selected ? (
  <Button
  type="button"
- variant="secondary"
+ variant="default"
  onClick={() => setShowSearch(true)}
  className="h-auto w-full justify-start gap-2 p-3 font-normal text-site-text-muted hover:border-site-accent has-[>svg]:px-3"
  >

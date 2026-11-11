@@ -104,7 +104,7 @@ export function FeedsPage() {
             title={t('feeds-signin', { defaultValue: 'Sign in to build and follow feeds' })}
             action={
               <Link to="/login" search={{ callbackURL: '/feeds' }}>
-                <Button variant="accent">
+                <Button variant="default">
                   {t('feeds-signin-cta', { defaultValue: 'Sign in' })}
                 </Button>
               </Link>
@@ -123,7 +123,7 @@ export function FeedsPage() {
                 onCancel={() => setCreating(false)}
               />
             ) : (
-              <Button variant="accent" size="sm" onClick={() => setCreating(true)}>
+              <Button variant="default" size="sm" onClick={() => setCreating(true)}>
                 <Plus aria-hidden /> {t('feeds-new', { defaultValue: 'New feed' })}
               </Button>
             )}

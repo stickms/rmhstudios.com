@@ -20,7 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { colorParity, DOT_COLORS, type Card } from '@/lib/globeset/cards';
 import { X } from 'lucide-react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { APPLE_SPRING } from '@/lib/motion';
+import { APPLE_SPRING } from '@/lib/app-motion';
 import { Button } from '@/components/ui/button';
 import { GlobeSetCard } from './GlobeSetCard';
 

@@ -139,7 +139,7 @@ export function AchievementTipsDialog({
             <div className="flex justify-end">
               <Button
                 size="sm"
-                variant="accent"
+                variant="default"
                 loading={busy}
                 disabled={draft.trim().length < 8}
                 onClick={() => void post()}

@@ -57,7 +57,7 @@ export function SpeedrunBoard({ entries, metric, tier, version, viewerId }: Spee
         <section key={bucket.version} className="flex flex-col gap-2">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-site-text-muted">
             {t('speedrun-version-heading', { defaultValue: 'Game version' })}
-            <Badge variant="outline" size="sm">
+            <Badge variant="default">
               {bucket.version}
             </Badge>
           </h3>
@@ -158,7 +158,7 @@ export function SpeedrunQueue({
               <span className="font-mono text-sm tabular-nums text-site-text-muted">
                 {formatRunTime(entry.timeMs)}
               </span>
-              <Badge variant="outline" size="sm">
+              <Badge variant="default">
                 {entry.version}
               </Badge>
               <VerificationBadge status={entry.status} tier={tier} reason={entry.rejectReason} />

@@ -106,7 +106,7 @@ export default function ManageFoldersDialog({ onClose }: { onClose: () => void }
             />
             <Button
               type="submit"
-              variant="outline"
+              variant="default"
               size="sm"
               disabled={!name.trim()}
               loading={create.isPending}
@@ -154,7 +154,7 @@ function FolderRow({
       {dirty ? (
         <Button
           size="icon"
-          variant="accent"
+          variant="default"
           aria-label={t('folder-save', { defaultValue: 'Save name' })}
           onClick={() => onRename(value.trim())}
         >

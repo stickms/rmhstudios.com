@@ -135,7 +135,7 @@ function AdminMarketPage() {
                       </div>
                     </div>
                     <Badge
-                      variant="outline"
+                      variant="default"
                       icon={<Coins className="text-site-warning" aria-hidden />}
                     >
                       {r.priceCoins.toLocaleString()}

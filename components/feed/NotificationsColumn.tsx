@@ -392,7 +392,7 @@ export function NotificationsColumn({
  <>
  {push.supported && (
  <Button
- variant="accent-ghost"
+ variant="ghost"
  size="sm"
  disabled={push.busy}
  onClick={async () => {
@@ -437,12 +437,12 @@ export function NotificationsColumn({
  </span>
  </Button>
  )}
- <Button variant="accent-ghost"size="sm"onClick={markAllRead}>
+ <Button variant="ghost"size="sm"onClick={markAllRead}>
  <CheckCheck className="h-4 w-4"/>
  {t('mark-all-read', { defaultValue:'Mark all read'})}
  </Button>
  <Button
- variant="accent-ghost"
+ variant="ghost"
  size="sm"
  onClick={() => setPrefsOpen((v) => !v)}
  aria-expanded={prefsOpen}
@@ -622,7 +622,7 @@ export function NotificationsColumn({
 
  {nextCursor && (
  <div className="flex justify-center py-4">
- <Button variant="secondary"size="sm"onClick={loadMore} loading={loadingMore}>
+ <Button variant="default"size="sm"onClick={loadMore} loading={loadingMore}>
  {t('load-more', { defaultValue:'Load more'})}
  </Button>
  </div>

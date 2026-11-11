@@ -189,8 +189,9 @@ function scanAll(): {
       }
     }
 
+    // Steel K5: the shared renderer IS the one place that draws the active tab's 2px ink underline.
     let m: RegExpExecArray | null;
-    while ((m = ariaSelected.exec(src))) {
+    while (file !== RENDERER && (m = ariaSelected.exec(src))) {
       const tag = enclosingTag(src, m.index);
       const marker = borderBottom.test(tag)
         ? 'border-b'

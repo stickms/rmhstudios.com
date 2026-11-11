@@ -96,7 +96,7 @@ function HeapSection() {
         <h2 className="site-section-label">
           {t('heap-title', { defaultValue: 'V8 heap spaces' })}
         </h2>
-        <Button size="xs" variant="outline" onClick={() => void reload()} disabled={loading}>
+        <Button size="xs" variant="default" onClick={() => void reload()} disabled={loading}>
           <RefreshCw aria-hidden />
           {t('diag-reload', { defaultValue: 'Reload' })}
         </Button>

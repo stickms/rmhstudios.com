@@ -73,7 +73,7 @@ export default function CommunityGoalsPanel() {
 
       {data.viewerIsAdmin ? (
         <div>
-          <Button variant="outline" size="sm" onClick={() => setCreating(true)}>
+          <Button variant="default" size="sm" onClick={() => setCreating(true)}>
             <Plus /> {t('cg-new', { defaultValue: 'New community goal' })}
           </Button>
         </div>
@@ -111,7 +111,7 @@ export default function CommunityGoalsPanel() {
 function statusBadge(g: CommunityGoalView, t: (k: string, o: { defaultValue: string }) => string) {
   switch (g.status) {
     case 'OPEN':
-      return <Badge variant="accent">{t('cg-status-open', { defaultValue: 'Open' })}</Badge>;
+      return <Badge variant="default">{t('cg-status-open', { defaultValue: 'Open' })}</Badge>;
     case 'FUNDED':
       return <Badge variant="success">{t('cg-status-funded', { defaultValue: 'Funded' })}</Badge>;
     case 'FULFILLED':
@@ -304,7 +304,7 @@ function GoalCard({
               <Button
                 key={v}
                 type="button"
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={() => setCoins(String(v))}
               >
@@ -313,7 +313,7 @@ function GoalCard({
             ))}
           <Button
             type="button"
-            variant="outline"
+            variant="default"
             size="sm"
             onClick={() => setCoins(String(remaining))}
           >
@@ -321,7 +321,7 @@ function GoalCard({
           </Button>
           <Button
             type="submit"
-            variant="accent"
+            variant="default"
             size="sm"
             disabled={!valid}
             loading={pledge.isPending}
@@ -335,7 +335,7 @@ function GoalCard({
         <div className="flex flex-wrap gap-2 border-t border-site-border pt-3">
           {g.status === 'FUNDED' ? (
             <Button
-              variant="secondary"
+              variant="default"
               size="sm"
               loading={admin.isPending}
               onClick={async () => {
@@ -353,7 +353,7 @@ function GoalCard({
             </Button>
           ) : null}
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             loading={admin.isPending}
             onClick={async () => {
@@ -483,7 +483,7 @@ function CreateGoalDialog({ onClose, onCreated }: { onClose: () => void; onCreat
             <Button type="button" variant="ghost" onClick={onClose}>
               {t('cancel', { defaultValue: 'Cancel' })}
             </Button>
-            <Button type="submit" variant="accent" disabled={!valid} loading={create.isPending}>
+            <Button type="submit" variant="default" disabled={!valid} loading={create.isPending}>
               {t('cg-open', { defaultValue: 'Open goal' })}
             </Button>
           </DialogFooter>

@@ -447,22 +447,6 @@ textarea,
   -webkit-tap-highlight-color: transparent;
 }
 
-/* The shared Button's own transition and plain press (components/ui/button.tsx), stated here rather than as
-   utilities. Components layer, so a caller's `transition-*` / `active:scale-*` utility still wins. Phase 2 rebuilds
-   Button to K1 to K3 and takes this with it. */
-@layer components {
-  [data-slot='button'] {
-    transition:
-      color calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out),
-      background-color calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out),
-      border-color calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out),
-      opacity calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out);
-  }
-  [data-slot='button']:not(:disabled, [aria-disabled='true']):active {
-    scale: 0.98;
-  }
-}
-
 /* Press feedback on tap/click — opacity only, so there's never a layout
    shift, and it reads on both touch and mouse. Disabled controls stay inert.
    Material-press elements opt OUT (§5.3): the springy scale on Button

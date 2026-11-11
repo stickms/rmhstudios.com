@@ -8,6 +8,7 @@ import { installNotFoundHeadGuard } from '@/lib/router/not-found-head';
 import { installStyleTierPreload } from '@/lib/style-tier';
 import { installPageTransitions } from '@/lib/page-transition';
 import { installHistoryTrail } from '@/lib/router/history-trail';
+import { installChrome } from '@/lib/chrome/install';
 import appTierCss from '@/app/app-tier.css?url';
 import { mintRequestCspNonce } from '@/lib/csp/nonce.server';
 
@@ -36,6 +37,7 @@ const cspNonce = createIsomorphicFn()
 let styleTierPreloadInstalled = false;
 let pageTransitionsInstalled = false;
 let historyTrailInstalled = false;
+let chromeInstalled = false;
 
 export function getRouter() {
   const nonce = cspNonce();
@@ -134,6 +136,12 @@ export function getRouter() {
   if (typeof document !== 'undefined' && !historyTrailInstalled) {
     historyTrailInstalled = true;
     installHistoryTrail(router);
+  }
+
+  // Steel 4.3: chrome reflections load at idle, on pages that have a chrome element.
+  if (typeof document !== 'undefined' && !chromeInstalled) {
+    chromeInstalled = true;
+    installChrome(router);
   }
 
   return router;

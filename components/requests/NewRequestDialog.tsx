@@ -89,7 +89,7 @@ export function NewRequestDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {t('request-cancel', { defaultValue: 'Cancel' })}
           </Button>
-          <Button variant="accent" onClick={submit} loading={saving} disabled={!valid}>
+          <Button variant="default" onClick={submit} loading={saving} disabled={!valid}>
             {t('request-submit', { defaultValue: 'File request' })}
           </Button>
         </div>

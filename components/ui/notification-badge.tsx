@@ -1,32 +1,28 @@
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 
 interface NotificationBadgeProps {
- count: number
- /** Cap before showing "{max}+" (default 99). */
- max?: number
- className?: string
+  count: number;
+  /** Cap before showing "{max}+" (default 99). */
+  max?: number;
+  className?: string;
 }
 
 /**
- * Canonical unread-count pill. Replaces the hardcoded `bg-red-500 text-white`
- * badges across the nav and inbox surfaces with a single token-driven component.
+ * Canonical unread-count mark (Steel G8: a small `--site-danger` number). A count is text, so it is Geist Mono, 500,
+ * on a solid danger fill with `--site-danger-fg` (4.5:1 in both editions). It is a tag-radius box, not a pill.
  */
 export function NotificationBadge({ count, max = 99, className }: NotificationBadgeProps) {
- if (!count || count <= 0) return null
- const display = count > max ? `${max}+` : String(count)
- return (
- <span
- // Tier L jelly (04 §1): static rim only — a pulsing count would be motion that carries
- // meaning. The rim lives in app/jelly-coverage.css §7. Deliberately not a `data-jelly`
- // host: it sits inside buttons, and would swallow their press.
- data-slot="notification-badge"
- className={cn(
- // Danger glass capsule — solid danger core for legibility, plus a top rim.
- "inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-site-danger px-1 text-micro font-bold leading-none text-site-danger-fg",
- className
- )}
- >
- {display}
- </span>
- )
+  if (!count || count <= 0) return null;
+  const display = count > max ? `${max}+` : String(count);
+  return (
+    <span
+      data-slot="notification-badge"
+      className={cn(
+        'inline-flex h-4 min-w-4 items-center justify-center rounded-site-sm bg-site-danger px-1 font-mono text-caption leading-none font-medium text-site-danger-fg',
+        className,
+      )}
+    >
+      {display}
+    </span>
+  );
 }

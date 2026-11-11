@@ -117,7 +117,7 @@ export function NoteInspector() {
           )}
 
           <Button
-            variant="destructive"
+            variant="danger"
             size="sm"
             onClick={() => apply(nestedDelete(nestingMode, charts, active, selection))}
           >

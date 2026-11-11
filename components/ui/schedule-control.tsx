@@ -108,7 +108,7 @@ export function ScheduleControl({
 
       <Button
         size="sm"
-        variant="accent"
+        variant="default"
         disabled={disabled || !valid || inPast}
         loading={submitting}
         onClick={() => {

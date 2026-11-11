@@ -25,7 +25,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { spring, type Spring } from '@/lib/fluid';
-import { APPLE_SPRING, EASE, SMOOTH_EASE_CSS } from '@/lib/motion';
+import { APPLE_SPRING, EASE, SMOOTH_EASE_CSS } from '@/lib/app-motion';
 import { readCss } from './css-source';
 
 const ROOT = join(__dirname, '..', '..');
@@ -55,12 +55,6 @@ function cssVar(name: string): string {
   const m = new RegExp(`${name}:\\s*([^;]+);`).exec(GLOBALS);
   expect(m, `${name} is missing from globals.css`).not.toBeNull();
   return m![1].trim();
-}
-
-function transformIn(body: string): string {
-  const m = /transform:\s*([^;]+);/.exec(body);
-  expect(m, 'keyframe has no transform').not.toBeNull();
-  return m![1].replace(/\s+/g, ' ').trim();
 }
 
 const SPRINGS: Record<'smooth' | 'snappy' | 'sheet', { duration: number; bounce: number }> = {
@@ -95,33 +89,19 @@ describe('§7.1 — the CSS springs are APPLE_SPRING, sampled', () => {
 });
 
 describe('dialog and sheet: one path both ways, readable on the quick clock', () => {
-  it('dialogs use an interruptible scale transition for both directions', () => {
-    expect(DIALOG).toContain('scale var(--motion-in) var(--motion-ease-in)');
+  it('dialogs fade by opacity alone in both directions, interruptibly (M5: no scale)', () => {
+    expect(DIALOG).toContain('opacity var(--motion-out) ease');
     expect(DIALOG).toContain('@starting-style');
+    expect(DIALOG.replace(/\/\*[\s\S]*?\*\//g, '')).not.toMatch(/scale|transform/);
   });
 
-  it('sheets are interruptible transitions whose exit ends on the frame the open starts from', () => {
-    // Transitions, not keyframes: a sheet closed mid-rise turns around from the frame it is on.
+  it('sheets are interruptible opacity transitions: the exit ends on the frame the open starts from (M5)', () => {
+    // Transitions, not keyframes: a sheet closed mid-fade turns around from the frame it is on. No slide, no scale.
     expect(SHEET).toContain('@starting-style');
     expect(SHEET).not.toMatch(/@keyframes ui-sheet-content-(in|out)/);
-    const closed = /\[data-slot="sheet-content"\]\[data-state="closed"\]\s*\{([^}]*)\}/g;
-    const starting =
-      /@starting-style\s*\{[^@]*?\[data-slot="sheet-content"\]\[data-state="open"\]\s*\{([^}]*)\}/g;
-    const exits = [...SHEET.matchAll(closed)].map((m) => transformIn(m[1]));
-    const enters = [...SHEET.matchAll(starting)].map((m) => transformIn(m[1]));
-    // Phone and desktop, each one path both ways.
-    expect(exits).toHaveLength(2);
-    expect(enters).toEqual(exits);
-  });
-
-  it('a spring-driven enter takes its opacity from a separate short animation', () => {
-    for (const [css, rule] of [
-      [SHEET, /\[data-slot="sheet-content"\]\[data-state="open"\]\s*\{([^}]*)\}/],
-    ] as const) {
-      const body = rule.exec(css)?.[1] ?? '';
-      expect(body, String(rule)).toMatch(/var\(--spring-\w+-duration\)\s+var\(--spring-\w+\)/);
-      expect(body, String(rule)).toMatch(/var\(--motion-in\)\s+var\(--motion-ease-in\)/);
-    }
+    expect(SHEET.replace(/\/\*[\s\S]*?\*\//g, '')).not.toMatch(/translate|scale|transform:/);
+    expect(SHEET).toMatch(/\[data-state='closed'\]\s*\{[^}]*opacity: 0/);
+    expect(SHEET).toMatch(/@starting-style\s*\{[^@]*?\[data-state='open'\]\s*\{[^}]*opacity: 0/);
   });
 });
 

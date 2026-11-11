@@ -98,7 +98,7 @@ export function WidgetEditor() {
               return (
                 <Button
                   key={kind}
-                  variant="outline"
+                  variant="default"
                   size="sm"
                   onClick={() => addWidget(kind)}
                   className="gap-1.5"

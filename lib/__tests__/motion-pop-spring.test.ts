@@ -8,14 +8,13 @@ const CSS = readCss(join(__dirname, '../../app/globals.css'));
 const DIALOG = readFileSync(join(__dirname, '../../components/ui/dialog.css'), 'utf8');
 
 describe('reversible floating surfaces', () => {
-  it('changes opacity and independent scale without replacing positioning transforms', () => {
+  it('changes opacity alone (Steel M5: no scale, no slide) and never replaces positioning transforms', () => {
     const start = CSS.indexOf('/* Transitions retarget');
     const end = CSS.indexOf('@keyframes motion-presence', start);
     const rules = CSS.slice(start, end);
     expect(rules).toContain('transition:');
-    expect(rules).toContain('scale: 0.98');
     expect(rules).toContain('@starting-style');
-    expect(rules).not.toMatch(/transform:|rotate:|clip-path:/);
+    expect(rules.replace(/\/\*[\s\S]*?\*\//g, '')).not.toMatch(/scale:|transform:|rotate:|clip-path:/);
   });
   it('lets Radix Presence wait for the transition without animating a second property', () => {
     expect(CSS).toMatch(/animation: motion-presence var\(--motion-collapse\)/);
@@ -26,10 +25,10 @@ describe('reversible floating surfaces', () => {
     const collapse = /--motion-collapse:\s*([\d.]+)s/.exec(CSS);
     expect(collapse).not.toBeNull();
     expect(Math.round(Number(collapse![1]) * 1000)).toBe(POP_COLLAPSE_MS);
+    expect(POP_COLLAPSE_MS).toBe(160);
   });
-  it('dialogs open and close on the same scale with the scrim fading alongside', () => {
+  it('dialogs open and close by opacity alone, with the scrim fading alongside (M5)', () => {
     expect(DIALOG).toContain('@starting-style');
-    expect(DIALOG.match(/scale: 0.98/g)).toHaveLength(2);
-    expect(DIALOG).not.toMatch(/transform:|translateY|rotate/);
+    expect(DIALOG).not.toMatch(/scale:|transform:|translateY|rotate/);
   });
 });

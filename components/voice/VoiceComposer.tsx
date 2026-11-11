@@ -285,7 +285,7 @@ export function VoiceComposer({
             <Trash2 className="size-4" />
           </button>
           <Button
-            variant="accent"
+            variant="default"
             size="sm"
             onClick={stopRecording}
             disabled={phase === 'stopping'}
@@ -327,7 +327,7 @@ export function VoiceComposer({
               {t('voice-discard', { defaultValue: 'Discard' })}
             </Button>
             <Button
-              variant="accent"
+              variant="default"
               size="sm"
               onClick={send}
               disabled={phase === 'sending'}

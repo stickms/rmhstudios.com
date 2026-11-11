@@ -127,7 +127,7 @@ export function ExperimentsTab() {
                   <Badge variant={x.status === 'RUNNING' ? 'success' : 'default'}>{x.status}</Badge>
                 </div>
                 {x.status === 'RUNNING' ? (
-                  <Button size="xs" variant="outline" onClick={() => setStatus(x.id, 'STOPPED')}>
+                  <Button size="xs" variant="default" onClick={() => setStatus(x.id, 'STOPPED')}>
                     {t('exp-stop', { defaultValue: 'Stop' })}
                   </Button>
                 ) : (

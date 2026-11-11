@@ -3,7 +3,7 @@
 // implementation, which lands in the SHARED ENTRY CHUNK when the module is
 // reachable from a route's top level.
 import { m as motion } from 'framer-motion';
-import { popIn } from '@/lib/motion';
+import { popIn } from '@/lib/app-motion';
 import { useTranslation } from 'react-i18next';
 import { useSliceItStore } from '@features/slice-it/engine/store';
 import type { GameEngine } from '@features/slice-it/engine/engine';

@@ -160,7 +160,7 @@ export function ProfileCosmetics() {
             'Buy name colors, badges, frames, banners and premium themes with coins, then equip them here.',
         })}
         action={
-          <Button asChild variant="accent" size="sm">
+          <Button asChild variant="default" size="sm">
             <Link to="/store" search={{ tab: 'shop' }}>
               {t('profile-cosmetics-empty-cta', { defaultValue: 'Go to the shop' })}
             </Link>
@@ -216,7 +216,7 @@ export function ProfileCosmetics() {
                   <div className="shrink-0">
                     <Button
                       size="sm"
-                      variant={item.equipped ? 'accent' : 'secondary'}
+                      variant={item.equipped ? 'default' : 'default'}
                       aria-pressed={item.equipped}
                       aria-label={
                         item.equipped

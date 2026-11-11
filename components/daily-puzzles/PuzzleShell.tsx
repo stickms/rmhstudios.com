@@ -290,13 +290,13 @@ export function PuzzleShareRow({
       <CopyButton
         value={shareText}
         icon={Share2}
-        variant="accent"
+        variant="default"
         toastOnCopy={false}
         disabled={disabled}
       >
         {shareLabel ?? t('share-result', { defaultValue: 'Share Result' })}
       </CopyButton>
-      <Button asChild variant="secondary">
+      <Button asChild variant="default">
         <Link to="/daily">
           <ArrowLeft aria-hidden />
           {t('all-puzzles', { defaultValue: 'All Puzzles' })}

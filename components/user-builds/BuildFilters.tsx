@@ -87,7 +87,7 @@ export function BuildFilters({
           aria-label={t('search-builds', { defaultValue: 'Search builds...' })}
           containerClassName="flex-1"
         />
-        <Button asChild variant="accent">
+        <Button asChild variant="default">
           <Link to="/user-builds/submit">
             <Plus aria-hidden />
             <span className="hidden sm:inline">{t('submit', { defaultValue: 'Submit' })}</span>
@@ -102,7 +102,7 @@ export function BuildFilters({
         <div className="relative">
           <Button
             ref={categoryTriggerRef}
-            variant="outline"
+            variant="default"
             onClick={() => setShowCategories(!showCategories)}
             aria-haspopup="menu"
             aria-expanded={showCategories}
@@ -156,7 +156,7 @@ export function BuildFilters({
         <div className="relative">
           <Button
             ref={sortTriggerRef}
-            variant="outline"
+            variant="default"
             onClick={() => setShowSort(!showSort)}
             aria-haspopup="menu"
             aria-expanded={showSort}
@@ -193,7 +193,7 @@ export function BuildFilters({
 
         {/* Curated Toggle */}
         <Button
-          variant="outline"
+          variant="default"
           aria-pressed={curated}
           onClick={() => onCuratedChange(!curated)}
           className={
@@ -207,7 +207,7 @@ export function BuildFilters({
         {/* My Builds Toggle */}
         {session?.user && (
           <Button
-            variant="outline"
+            variant="default"
             aria-pressed={myBuilds}
             onClick={() => onMyBuildsChange(!myBuilds)}
             className={`ml-auto ${myBuilds ? 'border-site-accent/40 bg-site-accent/10 text-site-accent' : ''}`}

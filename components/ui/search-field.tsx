@@ -52,13 +52,9 @@ export const SearchField = React.forwardRef<HTMLInputElement, SearchFieldProps>(
           value={value}
           onChange={(event) => onValueChange(event.target.value)}
           className={cn(
-            // `.glass-inset` — the field tier, which is what a field is, and what
-            // `Input` already takes. The hand-rolled box painted the same shape and
-            // none of the material, so this one field degraded nowhere: every
-            // high-contrast / reduced-transparency rule in globals.css
-            // targets the glass classes and nothing else.
-            'glass-inset h-12 w-full rounded-site-sm py-3 pl-10 pr-11 text-base sm:text-sm text-site-text transition-colors duration-site-fast',
-            'placeholder:text-site-text-muted focus:border-site-accent focus:outline-none',
+            // Steel K4: a 40px field with the K4 surface, border and a leading icon.
+            'h-10 w-full rounded-site border border-site-border bg-site-surface py-2 pl-10 pr-11 text-base sm:text-sm text-site-text transition-[border-color] duration-(--m1) ease-[ease]',
+            'placeholder:text-site-text-muted',
             className,
           )}
           {...props}
@@ -75,7 +71,7 @@ export const SearchField = React.forwardRef<HTMLInputElement, SearchFieldProps>(
             <button
               type="button"
               onClick={() => onValueChange('')}
-              className="absolute right-1 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full text-site-text-muted hover:text-site-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+              className="absolute right-1 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-site text-site-text-muted hover:bg-site-bg-subtle hover:text-site-text pointer-coarse:size-11"
               aria-label={t('clear-search', { defaultValue: 'Clear search' })}
             >
               <X className="h-3.5 w-3.5" aria-hidden />

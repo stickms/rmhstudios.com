@@ -108,7 +108,7 @@ export function ReferralBoard() {
         </p>
         <Button
           type="button"
-          variant={offerOpen ? 'outline' : 'accent'}
+          variant={offerOpen ? 'default' : 'default'}
           className="min-h-11"
           aria-expanded={offerOpen}
           onClick={() => setOfferOpen((v) => !v)}
@@ -142,7 +142,7 @@ export function ReferralBoard() {
                       <span className="font-normal text-site-text-muted">· {o.roles}</span>
                     </CardTitle>
                     <div className="flex items-center gap-2">
-                      <Badge variant={o.status === 'open' ? 'success' : 'outline'} size="sm">
+                      <Badge variant={o.status === 'open' ? 'success' : 'default'}>
                         {o.status === 'open'
                           ? t('rb-open', { defaultValue: 'Open' })
                           : t('rb-closed', { defaultValue: 'Closed' })}
@@ -171,7 +171,7 @@ export function ReferralBoard() {
                         <div key={r.id} className="glass-inset rounded-site-sm p-3 text-sm">
                           <div className="flex flex-wrap items-center gap-2">
                             <PersonLink p={r.applicant} />
-                            <Badge variant="outline" size="sm">
+                            <Badge variant="default">
                               {statusLabel[r.status] ?? r.status}
                             </Badge>
                             {r.status === 'pending' && (
@@ -179,7 +179,7 @@ export function ReferralBoard() {
                                 <Button
                                   type="button"
                                   size="sm"
-                                  variant="accent"
+                                  variant="default"
                                   className="min-h-11"
                                   disabled={act.isPending}
                                   onClick={() => act.mutate({ id: r.id, action: 'accept' })}
@@ -190,7 +190,7 @@ export function ReferralBoard() {
                                 <Button
                                   type="button"
                                   size="sm"
-                                  variant="outline"
+                                  variant="default"
                                   className="min-h-11"
                                   disabled={act.isPending}
                                   onClick={() => act.mutate({ id: r.id, action: 'pass' })}
@@ -224,7 +224,7 @@ export function ReferralBoard() {
                   >
                     <span className="font-medium text-site-text">{r.companyName}</span>
                     <span className="text-site-text-muted">{r.roles}</span>
-                    <Badge variant={r.status === 'accepted' ? 'success' : 'outline'} size="sm">
+                    <Badge variant={r.status === 'accepted' ? 'success' : 'default'}>
                       {statusLabel[r.status] ?? r.status}
                     </Badge>
                     {r.status === 'accepted' && (
@@ -281,7 +281,7 @@ export function ReferralBoard() {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold text-site-text">{o.companyName}</span>
                       <span className="text-sm text-site-text-muted">{o.roles}</span>
-                      <Badge variant="outline" size="sm">
+                      <Badge variant="default">
                         {t('rb-spots', {
                           defaultValue: '{{count}} spots left',
                           count: o.spotsLeft,
@@ -298,7 +298,7 @@ export function ReferralBoard() {
                     )}
                     <div className="mt-3">
                       {o.myRequest ? (
-                        <Badge variant="outline">
+                        <Badge variant="default">
                           {t('rb-asked', {
                             defaultValue: 'You asked — {{status}}',
                             status: statusLabel[o.myRequest] ?? o.myRequest,
@@ -316,7 +316,7 @@ export function ReferralBoard() {
                         <Button
                           type="button"
                           size="sm"
-                          variant="outline"
+                          variant="default"
                           className="min-h-11"
                           onClick={() => setAskingId(o.id)}
                         >

@@ -66,7 +66,7 @@ export function AddToListSheet({ targetUserId }: { targetUserId: string }) {
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={load}>
+      <Button variant="default" size="sm" onClick={load}>
         <ListPlus className="h-4 w-4" aria-hidden />
         {t('add-to-list', { defaultValue: 'Add to list' })}
       </Button>

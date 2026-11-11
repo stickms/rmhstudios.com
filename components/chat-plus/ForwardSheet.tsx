@@ -192,7 +192,7 @@ export default function ForwardSheet({ target }: { target: ForwardTarget }) {
           )}
         </div>
         <Button
-          variant="accent"
+          variant="default"
           disabled={picked.length === 0 || sending}
           loading={sending}
           onClick={() => void send()}

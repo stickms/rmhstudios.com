@@ -84,7 +84,7 @@ export function WatchManager() {
         title="No alerts yet"
         description="Run a search on Browse and tap “Watch” to get notified when a new matching listing is posted."
         action={
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="default" size="sm">
             <Link to="/homes">
               <Search className="h-4 w-4" /> Browse listings
             </Link>

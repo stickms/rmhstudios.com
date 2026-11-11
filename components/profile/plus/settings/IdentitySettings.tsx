@@ -147,7 +147,7 @@ export default function IdentitySettings({ userId }: { userId: string }) {
             ))}
           </Select>
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             onClick={() => {
               const here = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -225,7 +225,7 @@ export default function IdentitySettings({ userId }: { userId: string }) {
         </div>
       </div>
 
-      <Button variant="accent" loading={saving} onClick={() => void save()}>
+      <Button variant="default" loading={saving} onClick={() => void save()}>
         {t('identity-save', { defaultValue: 'Save' })}
       </Button>
     </div>

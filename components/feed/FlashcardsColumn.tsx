@@ -145,7 +145,7 @@ export function FlashcardsColumn({
             {signedIn && (
               <Button
                 size="sm"
-                variant="accent"
+                variant="default"
                 className="gap-1"
                 onClick={() => setShowForm((v) => !v)}
               >
@@ -221,7 +221,7 @@ export function FlashcardsColumn({
               {error && <p className="text-xs text-site-danger">{error}</p>}
               <Button
                 size="sm"
-                variant="accent"
+                variant="default"
                 disabled={busy || form.title.trim().length < 1}
                 onClick={create}
               >
@@ -259,7 +259,7 @@ export function FlashcardsColumn({
               })}
               action={
                 signedIn ? (
-                  <Button variant="accent" className="gap-1" onClick={() => setShowForm(true)}>
+                  <Button variant="default" className="gap-1" onClick={() => setShowForm(true)}>
                     <Plus className="h-4 w-4" aria-hidden />{' '}
                     {t('new-deck', { defaultValue: 'New deck' })}
                   </Button>

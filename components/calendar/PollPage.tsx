@@ -232,7 +232,7 @@ export default function PollPage({ id }: { id: string }) {
         })}
         action={
           <Link to="/when">
-            <Button variant="accent">
+            <Button variant="default">
               {t('poll-missing-cta', { defaultValue: 'Your polls' })}
             </Button>
           </Link>
@@ -314,13 +314,13 @@ export default function PollPage({ id }: { id: string }) {
           </div>
           <div className="flex flex-wrap gap-2">
             <a href={`/api/when/${poll.id}/ics`} download>
-              <Button variant="accent" size="sm">
+              <Button variant="default" size="sm">
                 <Download /> {t('locked-ics', { defaultValue: 'Add to calendar' })}
               </Button>
             </a>
             {poll.lockedEventId && (
               <Link to="/communities" search={{ tab: 'events' }}>
-                <Button variant="outline" size="sm">
+                <Button variant="default" size="sm">
                   {t('locked-event', { defaultValue: 'See the event' })}
                 </Button>
               </Link>
@@ -342,7 +342,7 @@ export default function PollPage({ id }: { id: string }) {
         <CopyButton
           value={shareUrl}
           icon={LinkIcon}
-          variant="outline"
+          variant="default"
           size="sm"
           label={t('share', { defaultValue: 'Copy link' })}
         >
@@ -475,7 +475,7 @@ export default function PollPage({ id }: { id: string }) {
                   </p>
                 </div>
                 {poll.viewer.canLock && (
-                  <Button size="sm" variant="accent" onClick={() => setLockRun(run)}>
+                  <Button size="sm" variant="default" onClick={() => setLockRun(run)}>
                     <Lock /> {t('lock-in', { defaultValue: 'Lock in' })}
                   </Button>
                 )}
@@ -524,7 +524,7 @@ export default function PollPage({ id }: { id: string }) {
       {poll.viewer.isCreator && (
         <div className="pt-2">
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             onClick={async () => {
               const sure = await confirm({
@@ -652,10 +652,10 @@ function LockDialog({
           <p className="text-sm font-semibold text-site-text">{fmtRange(startMin, endMin)}</p>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="default" onClick={onClose}>
             {t('cancel', { defaultValue: 'Cancel' })}
           </Button>
-          <Button variant="accent" onClick={confirm} disabled={busy}>
+          <Button variant="default" onClick={confirm} disabled={busy}>
             <Lock /> {t('lock-in', { defaultValue: 'Lock in' })}
           </Button>
         </DialogFooter>

@@ -220,7 +220,7 @@ export function ProfileShowcase({
           {addable.length > 0 && modules.length < MAX_MODULES ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {addable.map((k) => (
-                <Button key={k} variant="outline" size="sm" onClick={() => addModule(k)}>
+                <Button key={k} variant="default" size="sm" onClick={() => addModule(k)}>
                   <Plus className="h-4 w-4" aria-hidden />
                   {t(`module-${k}`, { defaultValue: MODULE_LABELS[k] })}
                 </Button>
@@ -229,7 +229,7 @@ export function ProfileShowcase({
           ) : null}
 
           <SheetFooter>
-            <Button variant="accent" onClick={save} loading={saving}>
+            <Button variant="default" onClick={save} loading={saving}>
               {t('save', { defaultValue: 'Save' })}
             </Button>
           </SheetFooter>

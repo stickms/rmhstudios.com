@@ -109,7 +109,7 @@ export function DiscoverySettings() {
           />
           <Button
             type="submit"
-            variant="accent"
+            variant="default"
             loading={busy}
             disabled={draft.trim().length < 2 || (alerts?.length ?? 0) >= MAX_ALERTS}
           >

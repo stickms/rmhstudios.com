@@ -111,7 +111,7 @@ export function CreatePredictionModal({ open, onClose, onCreated }: Props) {
         </div>
 
         <DialogFooter>
-          <Button variant="accent" onClick={submit} loading={submitting}>
+          <Button variant="default" onClick={submit} loading={submitting}>
             {t('submit', { defaultValue: 'Submit for review' })}
           </Button>
         </DialogFooter>

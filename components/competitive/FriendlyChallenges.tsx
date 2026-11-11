@@ -169,7 +169,7 @@ export default function FriendlyChallenges() {
                     </Button>
                     <Button
                       size="xs"
-                      variant="outline"
+                      variant="default"
                       onClick={() => act(r.id, { action: 'decline' })}
                       disabled={busy}
                     >
@@ -188,7 +188,7 @@ export default function FriendlyChallenges() {
                     )}
                     <Button
                       size="xs"
-                      variant="outline"
+                      variant="default"
                       onClick={() => act(r.id, { action: 'report', result: 'win' })}
                       disabled={busy}
                     >
@@ -196,7 +196,7 @@ export default function FriendlyChallenges() {
                     </Button>
                     <Button
                       size="xs"
-                      variant="outline"
+                      variant="default"
                       onClick={() => act(r.id, { action: 'report', result: 'loss' })}
                       disabled={busy}
                     >

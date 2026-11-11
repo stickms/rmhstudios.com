@@ -97,7 +97,7 @@ export function MarketPanel({ marketId, signedIn, held }: Props) {
       {aiAvailable && signedIn && (
         <div className="flex flex-col gap-2">
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             className="self-start"
             onClick={advocate}
@@ -132,7 +132,7 @@ export function MarketPanel({ marketId, signedIn, held }: Props) {
             aria-label={t('placeholder', { defaultValue: 'Share your reasoning' })}
           />
           <Button
-            variant="accent"
+            variant="default"
             size="sm"
             className="self-end"
             onClick={post}

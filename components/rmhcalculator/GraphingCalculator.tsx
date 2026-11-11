@@ -188,7 +188,7 @@ export function GraphingCalculator({ model }: { model: CalcModel }) {
         </div>
 
         <Button
-          variant="accent"
+          variant="default"
           className="w-full"
           onClick={plot}
           loading={computing}

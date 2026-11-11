@@ -224,14 +224,14 @@ export function CommunityColumn({
  )}
  {session && community.joined && <WatchControl kind="community"targetId={community.id}/>}
  {session && (
- <Button size="sm"variant="outline"onClick={() => setMembersOpen(true)}>
+ <Button size="sm"variant="default"onClick={() => setMembersOpen(true)}>
  {t('members-button', { defaultValue:'Members'})}
  </Button>
  )}
  {session && (
  <Button
  size="sm"
- variant={community.joined ?'outline':'accent'}
+ variant={community.joined ?'default':'default'}
  disabled={joining}
  onClick={toggleJoin}
  >
@@ -397,7 +397,7 @@ function AnnounceDialog({
  <Button variant="ghost"onClick={onClose} disabled={submitting}>
  {t('cancel-button', { defaultValue:'Cancel'})}
  </Button>
- <Button variant="accent"onClick={submit} disabled={submitting || !body.trim()}>
+ <Button variant="default"onClick={submit} disabled={submitting || !body.trim()}>
  <Send className="h-4 w-4"/>{''}
  {submitting
  ? t('posting', { defaultValue:'Posting…'})

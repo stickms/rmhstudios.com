@@ -135,7 +135,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
               className="w-40"
               autoFocus
             />
-            <Button size="sm" variant="accent" onClick={createFolder}>
+            <Button size="sm" variant="default" onClick={createFolder}>
               {t('add', { defaultValue: 'Add' })}
             </Button>
           </span>
@@ -174,7 +174,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
 
       {filter === REMINDERS ? null : cursor ? (
         <div className="mt-4 flex justify-center">
-          <Button variant="outline" onClick={() => load(filter, true, cursor)} loading={loading}>
+          <Button variant="default" onClick={() => load(filter, true, cursor)} loading={loading}>
             {t('load-more', { defaultValue: 'Load more' })}
           </Button>
         </div>

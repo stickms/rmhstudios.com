@@ -34,7 +34,7 @@ export function SoundToggle() {
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="default"
       size="sm"
       onClick={() => toggleMuted()}
       aria-label={label}

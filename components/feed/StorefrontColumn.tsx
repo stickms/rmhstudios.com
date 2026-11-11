@@ -215,7 +215,7 @@ export function StorefrontColumn({
  isOwner && (
  <Button
  size="sm"
- variant="accent"
+ variant="default"
  onClick={() => setShowForm((v) => !v)}
  >
  <Plus className="h-3.5 w-3.5"/> {t('new-product', { defaultValue:'New product'})}
@@ -288,7 +288,7 @@ export function StorefrontColumn({
  <div className="flex justify-end">
  <Button
  size="sm"
- variant="accent"
+ variant="default"
  disabled={!validForm || busy !== null}
  onClick={create}
  >
@@ -352,7 +352,7 @@ export function StorefrontColumn({
  <>
  <Button
  size="sm"
- variant="outline"
+ variant="default"
  disabled={busy !== null}
  onClick={() => toggleActive(p)}
  >
@@ -382,7 +382,7 @@ export function StorefrontColumn({
  ) : (
  <Button
  size="sm"
- variant="accent"
+ variant="default"
  disabled={!signedIn || busy !== null}
  onClick={() => buy(p.id)}
  >

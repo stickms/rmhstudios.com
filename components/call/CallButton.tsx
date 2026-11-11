@@ -47,7 +47,7 @@ export function CallButton({ user, conversationId, viewerId, variant = 'icon', c
   return (
     <Button
       type="button"
-      variant={variant === 'icon' ? 'ghost' : 'outline'}
+      variant={variant === 'icon' ? 'ghost' : 'default'}
       // Disabled rather than hidden while a call is live: the control vanishing
       // mid-call would read as a bug.
       disabled={busy}

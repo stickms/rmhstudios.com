@@ -115,7 +115,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>{t("cancel", { defaultValue: "Cancel" })}</Button>
-          <Button variant="accent" onClick={submit} disabled={submitting || amount < TIP_MIN}>
+          <Button variant="default" onClick={submit} disabled={submitting || amount < TIP_MIN}>
             {submitting ? t("sending", { defaultValue: "Sending…" }) : (<span className="inline-flex items-center gap-1">{t("tip-btn", { defaultValue: "Tip" })} <CoinIcon className="h-4 w-4" /> {amount}</span>)}
           </Button>
         </DialogFooter>

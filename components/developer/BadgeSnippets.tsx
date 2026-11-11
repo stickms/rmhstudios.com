@@ -39,7 +39,7 @@ export function BadgeSnippets({ userId }: { userId: string }) {
             </div>
             <CopyButton
               value={md}
-              variant="accent"
+              variant="default"
               size="icon-sm"
               label={t('badges-copy', { defaultValue: 'Copy Markdown' })}
             />

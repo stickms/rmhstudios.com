@@ -8,28 +8,29 @@ const tabs = [
   { id: 'b', label: 'Beta' },
 ];
 
-describe('Tabs appearance', () => {
-  it('is the flat glow on the main site by default, and its tabs are flat members', () => {
+describe('Tabs (Steel K5)', () => {
+  it('is words on a rule on the site: one appearance, no thumb, no track, no press body', () => {
     const html = renderToStaticMarkup(<Tabs tabs={tabs} value="a" aria-label="t" />);
-    expect(html).toContain('data-tab-appearance="glow"');
-    // The strip is one opted-out subtree: no tab inside it is a jelly body, whichever element a caller renders.
-    expect(html).toContain('data-jelly-scope="off"');
-    // The track is a field-tier surface (fields never move) and the old physics never squashed it, so a tab strip is
-    // not a press body (Task 8 kept that): its tabs press nothing.
-    expect(html).not.toContain('data-jelly-press-body');
+    expect(html).toContain('data-tab-appearance="rule"');
+    expect(html).not.toContain('data-tab-capsule');
+    expect(html).not.toContain('data-tab-thumb');
+    expect(html).not.toContain('liquid-tabs-sheet');
     expect(html).not.toContain('data-fluid-press');
+    expect(html).not.toContain('data-jelly');
   });
 
-  it('keeps the raised thumb, and its pressable tabs, when a game or app asks for it', () => {
+  it('marks the active tab with a 2px ink underline, and the strip carries no icons', () => {
     const html = renderToStaticMarkup(
-      <Tabs tabs={tabs} value="a" aria-label="t" appearance="thumb" />,
+      <Tabs tabs={[{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }]} value="b" aria-label="t" />,
     );
-    expect(html).toContain('data-tab-appearance="thumb"');
-    expect(html.match(/data-fluid-press=""/g)).toHaveLength(2);
-    expect(html).not.toContain('data-jelly-scope');
+    // Exactly one item shows the underline (A2: state is never colour alone).
+    expect(html.match(/after:opacity-100/g)).toHaveLength(1);
+    expect(html.match(/after:opacity-0/g)).toHaveLength(1);
+    expect(html).toContain('after:h-0.5');
+    expect(html).toContain('after:bg-site-text');
   });
 
-  it('defaults to the raised thumb on a game/app route, with its pressable tabs untouched', () => {
+  it('keeps the raised thumb, and its pressable tabs, on a game/app route (L8)', () => {
     const html = renderToStaticMarkup(
       <AppTierContext.Provider value={true}>
         <Tabs tabs={tabs} value="a" aria-label="t" />
@@ -37,42 +38,30 @@ describe('Tabs appearance', () => {
     );
     expect(html).toContain('data-tab-appearance="thumb"');
     expect(html.match(/data-fluid-press=""/g)).toHaveLength(2);
-    expect(html).not.toContain('data-jelly-scope');
+    expect(html).toContain('data-tab-capsule');
+    expect(html).toContain('liquid-tabs-sheet');
   });
 
-  it('an explicit appearance beats the route', () => {
-    const html = renderToStaticMarkup(
-      <AppTierContext.Provider value={true}>
-        <Tabs tabs={tabs} value="a" aria-label="t" appearance="glow" />
-      </AppTierContext.Provider>,
-    );
-    expect(html).toContain('data-tab-appearance="glow"');
-  });
-
-  it('keeps its ARIA contract in both appearances', () => {
-    for (const appearance of ['glow', 'thumb'] as const) {
+  it('keeps its ARIA contract in both tiers', () => {
+    for (const app of [false, true]) {
       const html = renderToStaticMarkup(
-        <Tabs tabs={tabs} value="b" aria-label="t" appearance={appearance} />,
+        <AppTierContext.Provider value={app}>
+          <Tabs tabs={tabs} value="b" aria-label="t" />
+        </AppTierContext.Provider>,
       );
       expect(html).toMatch(/aria-selected="true"[^>]*>[\s\S]*Beta/);
       expect(html.match(/aria-selected="false"/g)).toHaveLength(1);
     }
   });
 
-  it('link mode marks the current route with aria-current and stays inside the opted-out strip', () => {
+  it('link mode marks the current route with aria-current and draws the rule underline on the wrapper', () => {
     const html = renderToStaticMarkup(
       <Tabs
         tabs={tabs}
         value="a"
         aria-label="t"
         renderTab={(tab, props) => (
-          <a
-            href={`/${tab.id}`}
-            id={props.id}
-            aria-current={props['aria-current']}
-            className={props.className}
-            data-fluid-press={props['data-fluid-press']}
-          >
+          <a href={`/${tab.id}`} id={props.id} aria-current={props['aria-current']} className={props.className}>
             {props.children}
           </a>
         )}
@@ -80,7 +69,7 @@ describe('Tabs appearance', () => {
     );
     expect(html).toContain('<nav');
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
-    expect(html).toContain('data-jelly-scope="off"');
+    expect(html.match(/after:opacity-100/g)).toHaveLength(1);
     expect(html).not.toContain('data-fluid-press');
   });
 });

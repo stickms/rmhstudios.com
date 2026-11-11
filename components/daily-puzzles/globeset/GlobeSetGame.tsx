@@ -669,7 +669,7 @@ export function GlobeSetGame() {
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
-            variant={view === 'globe' ? 'accent-outline' : 'ghost'}
+            variant={view === 'globe' ? 'default' : 'ghost'}
             size="sm"
             onClick={toggleView}
             aria-pressed={view === 'globe'}
@@ -688,7 +688,7 @@ export function GlobeSetGame() {
           {view === 'globe' && tilt.supported && (
             <Button
               type="button"
-              variant={tilt.enabled ? 'accent-outline' : 'ghost'}
+              variant={tilt.enabled ? 'default' : 'ghost'}
               size="sm"
               onClick={() => {
                 if (tilt.enabled) {
@@ -732,7 +732,7 @@ export function GlobeSetGame() {
           )}
           <Button
             type="button"
-            variant={shapes ? 'accent-outline' : 'ghost'}
+            variant={shapes ? 'default' : 'ghost'}
             size="sm"
             onClick={toggleShapes}
             aria-pressed={shapes}

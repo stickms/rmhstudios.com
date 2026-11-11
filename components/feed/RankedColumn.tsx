@@ -243,7 +243,7 @@ export function RankedColumn({
  </div>
  <Button
  size="sm"
- variant="accent"
+ variant="default"
  loading={busy ==='send'}
  disabled={!opponent.trim() || busy !== null}
  onClick={sendChallenge}
@@ -281,7 +281,7 @@ export function RankedColumn({
  <div className="flex gap-2">
  <Button
  size="sm"
- variant="accent"
+ variant="default"
  disabled={busy !== null}
  onClick={() => act(c.id, { action:'accept'}, `a:${c.id}`)}
  >
@@ -443,7 +443,7 @@ function ReportButtons({
  </span>
  <Button
  size="xs"
- variant="outline"
+ variant="default"
  disabled={busy !== null}
  onClick={() => act(id, { action:'report', result:'win'}, `r:${id}`)}
  >
@@ -451,7 +451,7 @@ function ReportButtons({
  </Button>
  <Button
  size="xs"
- variant="outline"
+ variant="default"
  disabled={busy !== null}
  onClick={() => act(id, { action:'report', result:'loss'}, `r:${id}`)}
  >

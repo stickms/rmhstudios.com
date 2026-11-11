@@ -69,7 +69,7 @@ export default function RingPage({ slug }: { slug: string }) {
       <EmptyState
         title={t('ring-missing', { defaultValue: 'That ring doesn’t exist' })}
         action={
-          <Button asChild variant="accent" size="sm">
+          <Button asChild variant="default" size="sm">
             <Link to="/rings">{t('rings-browse', { defaultValue: 'Browse rings' })}</Link>
           </Button>
         }
@@ -97,7 +97,7 @@ export default function RingPage({ slug }: { slug: string }) {
           {signedIn ? (
             ring.isMember ? (
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 loading={busy}
                 onClick={() => void membership(false)}
@@ -107,7 +107,7 @@ export default function RingPage({ slug }: { slug: string }) {
               </Button>
             ) : (
               <Button
-                variant="accent"
+                variant="default"
                 size="sm"
                 loading={busy}
                 onClick={() => void membership(true)}
@@ -117,7 +117,7 @@ export default function RingPage({ slug }: { slug: string }) {
               </Button>
             )
           ) : (
-            <Button asChild variant="accent" size="sm">
+            <Button asChild variant="default" size="sm">
               <Link to="/login" search={{ callbackURL: `/rings/${slug}` }}>
                 {t('ring-sign-in', { defaultValue: 'Sign in to join' })}
               </Link>

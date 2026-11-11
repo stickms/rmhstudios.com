@@ -229,7 +229,7 @@ function Section({
  <div className="mt-3 flex items-center gap-2">
  <Button
  size="sm"
- variant="accent"
+ variant="default"
  loading={busy === `p:${r.id}`}
  onClick={() => onPublish(r.id)}
  >

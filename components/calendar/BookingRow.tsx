@@ -37,11 +37,11 @@ export function BookingRow({
       </div>
       <div className="flex gap-2">
         <a href={`/api/office-hours/bookings/${booking.id}/ics`} download>
-          <Button size="sm" variant="outline">
+          <Button size="sm" variant="default">
             <Download /> {t('oh-ics', { defaultValue: 'Calendar file' })}
           </Button>
         </a>
-        <Button size="sm" variant="outline" onClick={onCancel}>
+        <Button size="sm" variant="default" onClick={onCancel}>
           <X /> {t('oh-cancel', { defaultValue: 'Cancel' })}
         </Button>
       </div>

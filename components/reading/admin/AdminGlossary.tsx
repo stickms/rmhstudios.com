@@ -143,7 +143,7 @@ export default function AdminGlossary() {
           />
         </div>
         <div className="flex gap-2">
-          <Button type="submit" variant="accent" size="sm" loading={save.isPending}>
+          <Button type="submit" variant="default" size="sm" loading={save.isPending}>
             {t('save', { defaultValue: 'Save' })}
           </Button>
           {draft.id ? (

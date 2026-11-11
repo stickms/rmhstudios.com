@@ -145,7 +145,7 @@ export function SubmitRunPanel({ game, slug, openVersions, onSubmitted }: Submit
                         {replay.score}
                       </span>
                     )}
-                    <Badge variant="outline" size="sm">
+                    <Badge variant="default">
                       {replay.version}
                     </Badge>
                     {!boardOpen && (

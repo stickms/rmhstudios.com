@@ -121,7 +121,7 @@ export function LinksSection({
         {links.length < MAX_PROFILE_LINKS ? (
           <Button
             type="button"
-            variant="outline"
+            variant="default"
             size="sm"
             className="mt-3"
             onClick={() => setLinks((current) => [...current, { label: '', url: '' }])}

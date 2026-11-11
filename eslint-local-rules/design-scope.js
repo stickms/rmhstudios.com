@@ -181,9 +181,6 @@ export function isSiteTier(file) {
  * fails when an entry no longer breaks a rule, so the list cannot go stale.
  */
 export const STEEL_PALETTE_BASELINE = {
-  // Phase 2 (controls): shared primitives.
-  'components/ui/notification-badge.tsx': 'phase 2: badge on K9 tokens',
-  'components/ui/select.tsx': 'phase 2: select rebuilt to K4/S5 (rounded-xl, rounded-2xl)',
   // Phase 4 and 5 (recipes): the feed, article and profile pages.
   'components/feed/ShareModal.tsx': 'phase 4: share sheet on S5',
   'components/blog/MDXAnimations.tsx': 'phase 5: article recipe',

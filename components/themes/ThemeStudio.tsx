@@ -133,7 +133,7 @@ export function ThemeStudio({
           <SettingsSection
             title={t('my-themes', { defaultValue: 'My themes' })}
             action={
-              <Button variant="accent" size="sm" onClick={() => setEditing('new')}>
+              <Button variant="default" size="sm" onClick={() => setEditing('new')}>
                 <Plus className="h-4 w-4" aria-hidden />
                 {t('new-theme', { defaultValue: 'New theme' })}
               </Button>
@@ -203,7 +203,7 @@ export function ThemeStudio({
                 </p>
               </div>
             </div>
-            <Button asChild variant="accent" size="sm" className="w-full sm:ms-auto sm:w-auto">
+            <Button asChild variant="default" size="sm" className="w-full sm:ms-auto sm:w-auto">
               <ViewTransitionLink to="/store">
                 {t('member-gate-cta', { defaultValue: 'Become a member' })}
               </ViewTransitionLink>
@@ -301,7 +301,7 @@ export function ThemeStudio({
                       />
                     ) : (
                       <Button
-                        variant="accent"
+                        variant="default"
                         size="sm"
                         onClick={() => buy(theme)}
                         disabled={!signedIn}
@@ -334,14 +334,14 @@ function ApplyControl({
 }) {
   if (active) {
     return (
-      <Button variant="outline" size="sm" onClick={onRemove}>
+      <Button variant="default" size="sm" onClick={onRemove}>
         <Check className="h-4 w-4 text-site-success" aria-hidden />
         {t('remove', { defaultValue: 'Remove' })}
       </Button>
     );
   }
   return (
-    <Button variant="outline" size="sm" onClick={onApply}>
+    <Button variant="default" size="sm" onClick={onApply}>
       {t('apply', { defaultValue: 'Apply' })}
     </Button>
   );

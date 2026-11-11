@@ -140,9 +140,11 @@ describe('ordinary controls keep immediate feedback', () => {
   });
   it('buttons acknowledge hover and press without replacing the surface', () => {
     const button = read('components/ui/button.tsx');
-    // Flat at rest: the slab is the engine's, admitted on touch — no hand-rolled hover fill.
-    expect(button).toContain('data-jelly-rest');
-    expect(button).toContain('data-fluid-press');
+    // Steel K1 to K3: a hover fill in 90 ms (M1), no material, no soft body, no press scale.
+    expect(button).toContain('hover:bg-site-bg-subtle');
+    expect(button).toContain('duration-(--m1)');
+    expect(button).not.toContain('data-jelly');
+    expect(button).not.toContain('data-fluid-press');
     expect(button).not.toContain('data-evert=');
   });
 });

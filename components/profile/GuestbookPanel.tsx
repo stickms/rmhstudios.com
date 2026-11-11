@@ -207,7 +207,7 @@ export default function GuestbookPanel({
             </span>
             <Button
               type="submit"
-              variant="accent"
+              variant="default"
               size="sm"
               loading={sending}
               disabled={!draft.trim()}
@@ -290,7 +290,7 @@ export default function GuestbookPanel({
 
       {page.nextCursor ? (
         <div className="flex justify-center">
-          <Button variant="secondary" size="sm" onClick={() => void more()} loading={loadingMore}>
+          <Button variant="default" size="sm" onClick={() => void more()} loading={loadingMore}>
             {t('guestbook-more', { defaultValue: 'Load more' })}
           </Button>
         </div>

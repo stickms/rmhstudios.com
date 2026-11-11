@@ -85,7 +85,7 @@ export function RankedSummary() {
           <p className="flex items-center gap-2 font-semibold text-site-text">
             {t('ranked', { defaultValue: 'Ranked' })}
             {incoming > 0 && (
-              <Badge variant="accent" size="sm">
+              <Badge variant="default">
                 {t('ranked-summary-challenges', { count: incoming, defaultValue: '{{count}} new' })}
               </Badge>
             )}
@@ -96,7 +96,7 @@ export function RankedSummary() {
         <div className="flex w-full items-center gap-2 sm:w-auto">
           <Button
             type="button"
-            variant="outline"
+            variant="default"
             size="sm"
             className="flex-1 sm:flex-none"
             aria-expanded={open}
@@ -110,7 +110,7 @@ export function RankedSummary() {
               aria-hidden
             />
           </Button>
-          <Button asChild variant="accent-outline" size="sm" className="flex-1 sm:flex-none">
+          <Button asChild variant="default" size="sm" className="flex-1 sm:flex-none">
             <Link to="/ranked">
               {t('ranked-summary-view-all', { defaultValue: 'View all' })}
               <ArrowUpRight className="size-4" aria-hidden />
@@ -142,7 +142,7 @@ export function RankedSummary() {
           ) : (
             <div className="flex flex-wrap gap-2">
               {games.map((g) => (
-                <Badge key={g.id} variant="outline">
+                <Badge key={g.id} variant="default">
                   {g.name}
                 </Badge>
               ))}

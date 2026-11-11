@@ -162,7 +162,7 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
 
       {cursor ? (
         <div className="mt-4 flex justify-center">
-          <Button variant="outline" onClick={() => load(filter, true, cursor)} loading={loading}>
+          <Button variant="default" onClick={() => load(filter, true, cursor)} loading={loading}>
             {t('load-more', { defaultValue: 'Load more' })}
           </Button>
         </div>

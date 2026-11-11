@@ -57,7 +57,7 @@ function DiagnosticsSection() {
   const header = (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <SectionTitle>{t('diag-title', { defaultValue: 'Postgres diagnostics' })}</SectionTitle>
-      <Button size="xs" variant="outline" onClick={() => void reload()} disabled={loading}>
+      <Button size="xs" variant="default" onClick={() => void reload()} disabled={loading}>
         <RefreshCw aria-hidden />
         {t('diag-reload', { defaultValue: 'Reload' })}
       </Button>

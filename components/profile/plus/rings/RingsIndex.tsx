@@ -149,7 +149,7 @@ export default function RingsIndex() {
             </div>
             <div className="flex items-center gap-3">
               <Button
-                variant="accent"
+                variant="default"
                 loading={creating}
                 disabled={name.trim().length < 3}
                 onClick={() => void create()}
