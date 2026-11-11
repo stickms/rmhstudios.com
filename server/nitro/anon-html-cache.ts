@@ -276,6 +276,25 @@ export function decideCacheControl(
  * for that URL at that edge for a year, and every later lazy import of it fails
  * with "Expected a JavaScript module script" -> the "Something went wrong" page.
  */
+/**
+ * True when the response's ENFORCED Content-Security-Policy authorises scripts by nonce.
+ *
+ * A nonce is only worth anything if it cannot be known before the response is sent. A
+ * shared cache replays one response, nonce and all, to every visitor for the whole
+ * `s-maxage` + `stale-while-revalidate` window (150 s for the index pages, a day for
+ * articles), and anyone can read it by fetching the page. So such a response must be
+ * rendered per request: the plugin leaves it without a shared policy.
+ *
+ * Today the nonce policy ships Report-Only (lib/csp/nonce.server.ts, docs/csp.md) and the
+ * enforced policy carries no nonce, so this returns false and anonymous pages stay
+ * cacheable. It exists so that turning enforcement on cannot quietly ship a shared nonce:
+ * the edge cache stops, visibly (synthetic-perf and the cache hit rate), until cacheable
+ * documents move to a hash-only policy (third-pass audit, RT3).
+ */
+export function carriesEnforcedNonce(headers: Pick<Headers, 'get'>): boolean {
+  return /'nonce-/.test(headers.get('Content-Security-Policy') ?? '');
+}
+
 export function isUncacheableAssetError(pathname: string, status: number | undefined): boolean {
   return pathname.startsWith('/assets/') && typeof status === 'number' && status >= 400;
 }
@@ -342,6 +361,9 @@ export default function anonHtmlCachePlugin(nitroApp: {
 
       // Anonymous, default-locale, allowlisted path — and only if the route
       // didn't already set its own policy, which always wins.
+      // A response whose ENFORCED policy names a nonce is never handed to a shared
+      // cache: see carriesEnforcedNonce.
+      if (carriesEnforcedNonce(headers)) return;
       if (!headers.get('Cache-Control')) {
         headers.set('Cache-Control', decision.value);
         // Backstop for compliant shared caches that key on it; the edge rule's

@@ -50,7 +50,7 @@ item has `evidence`, `target`, `steps`, a `stub` where code helps, and a
 | 5 | [AR3](#ar3--api-routes-from-a-registry) | 987 API route files become a registry behind one dispatcher; the 1.26 MB route tree shrinks to pages | structure | L | M |
 | 6 | [AR4](#ar4--the-source-engine-port-is-its-own-package) | The Source-engine port (about 190k lines, a third of `lib/`) leaves the site's compile and test path | structure | L | M |
 | 7 | [OP1](#op1--a-commit-gate-that-runs-here) | A commit gate that runs on a 15 GB machine. It was skipped on every commit of phases 28–32 | practice | L | S |
-| 8 | [OP2](#op2--perf-assertions-that-do-not-flake) | Perf assertions on shared CI runners that compare medians, not one sample | practice | M | S |
+| 8 | [OP2](#op2--perf-assertions-that-do-not-flake) | A wall-clock perf backstop that failed on a noisy runner with every work budget in bounds | practice | M | S |
 | 9 | [RT2](#rt2--an-edge-cache-that-is-measured) | The anonymous HTML cache and its Cloudflare rule exist; nothing checks the edge returns a HIT, and two of the busiest page types are not on the allowlist | perf | M | S |
 | 10 | [DT1](#dt1--a-census-before-any-schema-work) | A table and product census (rows, last write, 30-day actives) so pruning is decided by data | structure | M | S |
 | 11 | [OP3](#op3--one-realtime-process-that-can-restart) | One realtime process with state outside it and a drain | reliability | L | L |
@@ -153,11 +153,13 @@ Broadsheet P1 deletes, and it survives any change of identity.
    the nonce is then the same for every visitor for up to 150 seconds and
    anyone can read it. A nonce that an attacker can fetch is not a nonce. This
    is harmless while the policy is report-only and becomes a real weakness the
-   day it is enforced (first audit F5, Broadsheet B4). See RT3.
+   day it is enforced (first audit F5, Broadsheet B4). `docs/csp.md` already
+   listed this as a known limitation with the decision left open. See RT3.
 2. **A perf assertion failed once and passed on re-run** with no code change
-   between (`perf_spec`: `frame_ratio 1.366 > 1.35`, pull request #1563). It
-   compares one multiplayer run with one single-player run on a shared
-   runner. See OP2.
+   between (`perf_spec`: `frame_ratio 1.366 > 1.35`, pull request #1563). The
+   work-based budgets (instructions, draw calls) were in bounds; only the
+   wall-clock backstop was over, in both of the two pairs the spec takes. See
+   OP2.
 
 ---
 
@@ -585,16 +587,18 @@ impact: M
 effort: S
 risk: low
 depends: []
-evidence: perf_spec frame_ratio 1.366 > 1.35 on pull request 1563, green on re-run with no change; the spec divides one MP sample by one SP sample
-target: the ratio is a median of interleaved runs; the job reports the spread
+evidence: perf_spec frame_ratio 1.366 > 1.35 on pull request 1563, green on re-run with no change; the spec already asserts work (instructions, draw calls) and takes a second SP/MP pair when only time is over, using the lower ratio; both pairs were over
+target: a time-only overage needs every pair to agree; the job reports each pair
 ```
 
-Run SP and MP alternately N times (5 is enough), compare medians, and print
-min/median/max so a real regression is distinguishable from a noisy runner.
-Keep the 1.35 line.
+The work ratios are the budget and cannot be moved by another process. The
+time ratios are a backstop for cost that is neither Lua nor draw calls. When
+only time is over, take up to three pairs in all and keep the lowest ratio:
+a real cost is over in every pair, a slow runner is not. Report every pair.
+Keep the 1.45 and 1.35 lines.
 
-**Done when:** 20 consecutive runs on main are green and the log shows the
-spread for each.
+**Done when:** 20 consecutive runs on main are green and the log shows each
+pair taken.
 
 ### OP3 — One realtime process that can restart
 
@@ -712,13 +716,13 @@ AR4: open
 AR5: open
 RT1: open
 RT2: open
-RT3: open
+RT3: in-progress (phase 33: the cache plugin refuses to share a response whose enforced policy names a nonce, so enforcement cannot ship a shared nonce; the hash-only policy that restores the edge cache after cutover is open)
 RT4: open
 DT1: open
 DT2: open
 DT3: open
 OP1: open
-OP2: open
+OP2: done (phase 33: up to three SP/MP pairs when only wall-clock time is over; each pair reported)
 OP3: open (first audit D2 in progress)
 OP4: open (owner call: box-local store or a vendor)
 OP5: see Broadsheet B1, B6

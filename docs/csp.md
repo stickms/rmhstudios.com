@@ -56,9 +56,18 @@ Resulting `script-src`:
 Cloudflare Cache Rule stores it, the body AND its CSP header are cached together, so
 every visitor in that window shares one nonce. The policy still works, but a nonce an
 attacker can read from a cached page no longer protects those pages. The Cache Rule is
-currently scoped to `/`. Before enforcing, decide: drop HTML caching for `/`, or accept
-the weaker guarantee there (hashes and `strict-dynamic` still apply). Record the decision
-in the cutover PR.
+no longer scoped to `/`: it covers the eleven index pages and the `/blog/` and `/news/`
+articles, cached for up to 150 s and a day respectively.
+
+The safe default is now in code. `carriesEnforcedNonce` in the cache plugin refuses to
+mark a response `public` when its **enforced** `Content-Security-Policy` names a nonce,
+so the day enforcement moves to Nitro (day 14 below) anonymous HTML stops being shared
+instead of sharing a nonce. Nothing changes while the nonce policy is Report-Only.
+
+To get the edge cache back after the cutover, cacheable documents need a policy with no
+nonce: hashes for the static pre-paint scripts (already computed) and loader data moved
+out of executable inline scripts (third-pass audit, RT3). Until then the cutover trades
+the anonymous edge cache for an enforced policy; say so in the cutover PR.
 
 ## Two-week rollout
 
