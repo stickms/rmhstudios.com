@@ -291,7 +291,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
           <div className="mt-7 flex items-center justify-center gap-4">
             <Button
               type="button"
-              variant="destructive"
+              variant="danger"
               className="h-14 w-14 rounded-full p-0"
               onClick={() => declineGroupCall()}
               aria-label={t('decline', { defaultValue: 'Decline' })}
@@ -300,7 +300,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
             </Button>
             <Button
               type="button"
-              variant="accent"
+              variant="default"
               className="h-14 w-14 rounded-full p-0"
               onClick={() => callId && void joinGroupCall(callId)}
               aria-label={t('accept', { defaultValue: 'Accept' })}
@@ -435,7 +435,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
 
               <Button
                 type="button"
-                variant="destructive"
+                variant="danger"
                 className="h-9 w-9 rounded-full p-0"
                 onClick={() => leaveGroupCall()}
                 aria-label={t('leave', { defaultValue: 'Leave' })}
@@ -452,7 +452,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
             {(onInvite || isHost) && (
               <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
                 {onInvite && (
-                  <Button type="button" variant="secondary" size="sm" onClick={onInvite}>
+                  <Button type="button" variant="default" size="sm" onClick={onInvite}>
                     <UserPlus className="h-4 w-4" aria-hidden />
                     {t('invite', { defaultValue: 'Invite' })}
                   </Button>
@@ -460,7 +460,7 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
                 {isHost && (
                   <Button
                     type="button"
-                    variant="destructive"
+                    variant="danger"
                     size="sm"
                     onClick={() => endGroupCall()}
                   >

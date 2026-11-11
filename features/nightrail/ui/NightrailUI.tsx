@@ -275,7 +275,7 @@ export function NightrailUI({
 
             <Button
               onClick={() => onSetUiState('tricktionary')}
-              variant="outline"
+              variant="default"
               className="w-full border-slate-600 text-slate-200 hover:bg-slate-800"
             >
               <BookOpen className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -284,7 +284,7 @@ export function NightrailUI({
 
             <Button
               onClick={quit}
-              variant="outline"
+              variant="default"
               className="w-full border-slate-600 text-slate-200 hover:bg-slate-800"
             >
               <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -525,7 +525,7 @@ export function NightrailUI({
             </Button>
             <Button
               onClick={() => onSetUiState('levelSelect')}
-              variant="outline"
+              variant="default"
               className="flex-1 border-slate-600 text-slate-200 hover:bg-slate-800"
             >
               {t('level-select', { defaultValue: 'Line Select' })}
@@ -650,7 +650,7 @@ export function NightrailUI({
             </Button>
             <Button
               onClick={() => onSetUiState('levelSelect')}
-              variant="outline"
+              variant="default"
               className="flex-1 border-slate-600 text-slate-200 hover:bg-slate-800"
             >
               {t('level-select', { defaultValue: 'Line Select' })}

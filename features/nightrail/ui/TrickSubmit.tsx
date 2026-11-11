@@ -63,7 +63,7 @@ export function TrickSubmit({ runStats }: { runStats: RunStats }) {
         })}
       </p>
       <Button
-        variant="outline"
+        variant="default"
         className="w-full border-slate-600 text-slate-200 hover:bg-slate-800"
         disabled={state !== 'idle'}
         loading={state === 'busy'}

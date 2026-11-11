@@ -309,7 +309,7 @@ export function RouletteTable({ coins }: Props) {
           {isBetting && (
             <Button
               type="button"
-              variant="secondary"
+              variant="default"
               onClick={() => handlePlaceBet('topline', [0, DOUBLE_ZERO, 1, 2, 3])}
               className="h-auto w-full min-h-7 whitespace-normal px-2 text-micro font-bold rounded"
             >
@@ -460,7 +460,7 @@ export function RouletteTable({ coins }: Props) {
             {(['column1', 'column2', 'column3'] as BetType[]).map((type, i) => (
               <Button
                 type="button"
-                variant="secondary"
+                variant="default"
                 key={type}
                 onClick={() => handlePlaceBet(type, getOutsideBetNumbers(type))}
                 disabled={!isBetting}
@@ -483,7 +483,7 @@ export function RouletteTable({ coins }: Props) {
             {(['dozen1', 'dozen2', 'dozen3'] as BetType[]).map((type, i) => (
               <Button
                 type="button"
-                variant="secondary"
+                variant="default"
                 key={type}
                 onClick={() => handlePlaceBet(type, getOutsideBetNumbers(type))}
                 disabled={!isBetting}

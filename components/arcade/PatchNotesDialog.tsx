@@ -25,7 +25,7 @@ export function PatchNotesDialog({ note, onClose }: { note: PatchNote; onClose: 
         </DialogHeader>
         <p className="whitespace-pre-wrap break-words text-sm text-site-text">{note.body}</p>
         <DialogFooter>
-          <Button variant="accent" onClick={onClose}>
+          <Button variant="default" onClick={onClose}>
             {t('patch-ok', { defaultValue: 'Got it' })}
           </Button>
         </DialogFooter>

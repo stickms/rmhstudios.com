@@ -8,7 +8,7 @@ import { AnimatePresence, m as motion } from 'framer-motion';
 import { Trophy, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SPRING } from '@/lib/motion';
+import { SPRING } from '@/lib/app-motion';
 
 export interface Balloon {
   id: string;

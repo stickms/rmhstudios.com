@@ -173,7 +173,7 @@ export function ResultsPanel({
                 ? t('rematch', { defaultValue: 'Rematch' })
                 : t('play-again', { defaultValue: 'Play again' })}
             </Button>
-            <Button size="lg" variant="outline" onClick={onMenu}>
+            <Button size="lg" variant="default" onClick={onMenu}>
               <Home className="size-4" aria-hidden="true" />
               {t('back-to-menu', { defaultValue: 'Back to menu' })}
             </Button>

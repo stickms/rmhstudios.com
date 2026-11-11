@@ -94,12 +94,12 @@ export function WalletPage({
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button asChild variant="outline" size="sm">
+              <Button asChild variant="default" size="sm">
                 <Link to="/store" search={{ tab: 'daily' }}>
                   <Store /> {t('wallet-link-store', { defaultValue: 'Store' })}
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="sm">
+              <Button asChild variant="default" size="sm">
                 <Link to="/predictions">
                   <TrendingUp /> {t('wallet-link-play', { defaultValue: 'Play & predict' })}
                 </Link>

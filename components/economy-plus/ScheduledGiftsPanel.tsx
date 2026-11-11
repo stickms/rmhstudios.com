@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { LOOP_WIGGLE, SPRING } from '@/lib/motion';
+import { transition } from '@/lib/motion';
 import type {
   ReceivedGiftView,
   ScheduledGiftsPayload,
@@ -139,7 +139,7 @@ function WrappedGift({ gift }: { gift: ReceivedGiftView }) {
       <motion.li
         initial={reduce ? false : { scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={SPRING.snappy}
+        transition={transition}
         className="glass-pane space-y-1 p-5 text-center"
         aria-live="polite"
       >
@@ -158,14 +158,12 @@ function WrappedGift({ gift }: { gift: ReceivedGiftView }) {
 
   return (
     <li className="glass-pane flex items-center gap-4 p-4">
-      <motion.div
-        animate={reduce ? undefined : { rotate: [0, -4, 4, -3, 0] }}
-        transition={LOOP_WIGGLE}
-        className="glass-fill flex size-14 shrink-0 items-center justify-center rounded-site"
+      <div
+        className="flex size-14 shrink-0 items-center justify-center rounded-site border border-site-border"
         aria-hidden
       >
         <Gift className="size-7 text-site-accent" />
-      </motion.div>
+      </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-site-text">
           {t('gifts-wrapped', {
@@ -177,7 +175,7 @@ function WrappedGift({ gift }: { gift: ReceivedGiftView }) {
           {t('gifts-wrapped-hint', { defaultValue: 'Open it to see what is inside.' })}
         </p>
       </div>
-      <Button variant="accent" size="sm" loading={unwrap.isPending} onClick={() => unwrap.mutate()}>
+      <Button variant="default" size="sm" loading={unwrap.isPending} onClick={() => unwrap.mutate()}>
         {t('gifts-unwrap', { defaultValue: 'Unwrap' })}
       </Button>
     </li>
@@ -207,7 +205,7 @@ function SentRow({ gift }: { gift: SentGiftView }) {
 
   const badge =
     gift.status === 'SCHEDULED' ? (
-      <Badge variant="accent">{t('gifts-st-scheduled', { defaultValue: 'Scheduled' })}</Badge>
+      <Badge variant="default">{t('gifts-st-scheduled', { defaultValue: 'Scheduled' })}</Badge>
     ) : gift.status === 'DELIVERED' ? (
       <Badge variant="success">
         {gift.unwrapped
@@ -235,7 +233,7 @@ function SentRow({ gift }: { gift: SentGiftView }) {
       {badge}
       {gift.status === 'SCHEDULED' ? (
         <Button
-          variant="outline"
+          variant="default"
           size="sm"
           loading={cancel.isPending}
           onClick={() => cancel.mutate()}
@@ -361,7 +359,7 @@ function SendGiftForm() {
           </p>
           <Button
             type="submit"
-            variant="accent"
+            variant="default"
             size="sm"
             disabled={!valid}
             loading={send.isPending}

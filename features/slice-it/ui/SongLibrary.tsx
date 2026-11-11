@@ -842,7 +842,7 @@ export function SongLibrary({
         {!readOnly &&
           randomDialog(
             <Button
-              variant="outline"
+              variant="default"
               className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 rounded-lg p-0 touch-target"
               aria-label={ts('random-button', { defaultValue: 'Pick a random song' })}
               title={ts('random-button', { defaultValue: 'Pick a random song' })}
@@ -1243,7 +1243,7 @@ export function SongLibrary({
           {nextCursor && (
             <div className="p-4 flex justify-center">
               <Button
-                variant="outline"
+                variant="default"
                 onClick={() => void load(nextCursor, true)}
                 disabled={loading}
                 className="rounded-xl"

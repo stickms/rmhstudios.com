@@ -113,7 +113,7 @@ export function GameTracker({ gameId, signedIn }: { gameId: string; signedIn: bo
               />
               <Button
                 size="sm"
-                variant="outline"
+                variant="default"
                 onClick={() => void save(status as PlayStatus, hours)}
               >
                 {t('save', { defaultValue: 'Save' })}

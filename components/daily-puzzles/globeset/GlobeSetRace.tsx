@@ -36,7 +36,7 @@ import {
 } from '@/lib/globeset/socket';
 import { xorAll, type Card } from '@/lib/globeset/cards';
 import { formatDuration } from '@/lib/globeset/game';
-import { APPLE_SPRING } from '@/lib/motion';
+import { APPLE_SPRING } from '@/lib/app-motion';
 import {
   MIN_RACE_PLAYERS,
   SPRINT_TARGETS,
@@ -99,7 +99,7 @@ export function GlobeSetRace({ shapes, view, attitudeRef, gyroActive }: GlobeSet
           </p>
           <Button
             type="button"
-            variant="secondary"
+            variant="default"
             size="sm"
             onClick={() => connectToGlobeSetRace()}
           >
@@ -154,7 +154,7 @@ function RoomPicker() {
         <Button type="button" onClick={() => quickplay()}>
           {t('globeset-race-quickplay', { defaultValue: 'Quick match' })}
         </Button>
-        <Button type="button" variant="secondary" onClick={() => createRoom({})}>
+        <Button type="button" variant="default" onClick={() => createRoom({})}>
           {t('globeset-race-create', { defaultValue: 'Create a room' })}
         </Button>
       </div>
@@ -180,7 +180,7 @@ function RoomPicker() {
             className="font-mono tracking-widest"
           />
         </label>
-        <Button type="submit" variant="secondary" disabled={code.trim().length < 4}>
+        <Button type="submit" variant="default" disabled={code.trim().length < 4}>
           {t('globeset-race-join', { defaultValue: 'Join' })}
         </Button>
       </form>
@@ -265,7 +265,7 @@ function Lobby({ selfId }: { selfId: string | null }) {
           <CopyButton
             value={inviteUrl}
             icon={Copy}
-            variant="secondary"
+            variant="default"
             size="sm"
             label={t('copy-invite-link', { defaultValue: 'Copy invite link' })}
           >
@@ -312,7 +312,7 @@ function Lobby({ selfId }: { selfId: string | null }) {
                 key={goal}
                 type="button"
                 size="sm"
-                variant={lobby.goal === goal ? 'accent-outline' : 'ghost'}
+                variant={lobby.goal === goal ? 'default' : 'ghost'}
                 aria-pressed={lobby.goal === goal}
                 onClick={() => updateSettings({ goal })}
               >
@@ -327,7 +327,7 @@ function Lobby({ selfId }: { selfId: string | null }) {
                   key={target}
                   type="button"
                   size="sm"
-                  variant={lobby.sprintTarget === target ? 'accent-outline' : 'ghost'}
+                  variant={lobby.sprintTarget === target ? 'default' : 'ghost'}
                   aria-pressed={lobby.sprintTarget === target}
                   onClick={() => updateSettings({ sprintTarget: target as SprintTarget })}
                 >
@@ -337,7 +337,7 @@ function Lobby({ selfId }: { selfId: string | null }) {
             <Button
               type="button"
               size="sm"
-              variant={lobby.isPublic ? 'accent-outline' : 'ghost'}
+              variant={lobby.isPublic ? 'default' : 'ghost'}
               aria-pressed={lobby.isPublic}
               onClick={() => updateSettings({ isPublic: !lobby.isPublic })}
             >
@@ -358,7 +358,7 @@ function Lobby({ selfId }: { selfId: string | null }) {
         ) : (
           <Button
             type="button"
-            variant={me?.ready ? 'secondary' : 'default'}
+            variant={me?.ready ? 'default' : 'default'}
             onClick={() => setReady(!me?.ready)}
           >
             {me?.ready

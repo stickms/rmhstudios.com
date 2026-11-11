@@ -78,7 +78,7 @@ export function AdminPatchNotes() {
           />
           <div className="flex justify-end">
             <Button
-              variant="accent"
+              variant="default"
               loading={busy}
               disabled={!version.trim() || !title.trim() || !body.trim()}
               onClick={() => void publish()}

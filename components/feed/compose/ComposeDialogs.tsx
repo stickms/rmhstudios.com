@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import { m as motion } from 'framer-motion';
 import { Coins, Lock, Type, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { modalContent } from '@/lib/motion';
+import { fade } from '@/lib/motion';
 import { Button } from '@/components/ui/button';
 import { OverlayPanel } from '@/components/ui/overlay-panel';
 import { MAX_IMAGE_ALT_LENGTH } from '@/lib/rmhark-limits';
@@ -22,7 +22,7 @@ export function UnlockPriceDialog({
   return (
     <OverlayPanel open onClose={onClose}>
       <motion.div
-        variants={modalContent}
+        variants={fade}
         initial="initial"
         animate="animate"
         className="relative w-full max-w-xs p-4 glass-overlay"
@@ -76,7 +76,7 @@ export function UnlockPriceDialog({
           >
             {t('unlock-price-clear', { defaultValue: 'Make free' })}
           </button>
-          <Button variant="accent" size="sm" onClick={onClose}>
+          <Button variant="default" size="sm" onClick={onClose}>
             {t('done', { defaultValue: 'Done' })}
           </Button>
         </div>
@@ -91,7 +91,7 @@ export function CheatSheetDialog({ onClose }: { onClose: () => void }) {
   return (
     <OverlayPanel open onClose={onClose}>
       <motion.div
-        variants={modalContent}
+        variants={fade}
         initial="initial"
         animate="animate"
         className="relative w-full max-w-sm p-4 glass-overlay"
@@ -184,7 +184,7 @@ export function AltTextDialog({
   return (
     <OverlayPanel open onClose={onClose}>
       <motion.div
-        variants={modalContent}
+        variants={fade}
         initial="initial"
         animate="animate"
         className="relative w-full max-w-md p-4 glass-overlay"
@@ -235,7 +235,7 @@ export function AltTextDialog({
           <span className="text-xs font-mono text-site-text-muted">
             {MAX_IMAGE_ALT_LENGTH - (imageAlts[index]?.length ?? 0)}
           </span>
-          <Button variant="accent" size="sm" onClick={onClose}>
+          <Button variant="default" size="sm" onClick={onClose}>
             {t('done', { defaultValue: 'Done' })}
           </Button>
         </div>

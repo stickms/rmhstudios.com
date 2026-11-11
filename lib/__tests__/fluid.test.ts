@@ -210,13 +210,13 @@ describe('springStep', () => {
 });
 
 describe('the two spring vocabularies agree', () => {
-  it('lib/fluid SPRINGS and lib/motion APPLE_SPRING describe the same motion', async () => {
+  it('lib/fluid SPRINGS and lib/app-motion APPLE_SPRING describe the same motion', async () => {
     // The site animates through two tiers: framer-motion (declarative, React)
     // and this kernel (imperative, rAF). They must not drift, or "the same"
     // spring feels different depending on which tier a surface happens to use.
     // framer-motion is parameterised by duration+bounce, so recover those from
     // the kernel's stiffness/damping and compare.
-    const { APPLE_SPRING } = await import('../motion');
+    const { APPLE_SPRING } = await import('../app-motion');
     const invert = (s: { stiffness: number; damping: number; mass: number }) => {
       const omega = Math.sqrt(s.stiffness / s.mass);
       return {

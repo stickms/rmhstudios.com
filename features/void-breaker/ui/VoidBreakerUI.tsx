@@ -605,7 +605,7 @@ export function VoidBreakerUI({
                 <Play className="w-5 h-5 mr-2" /> {saveInfo ? t("new-game", { defaultValue: "New Game" }) : t("play", { defaultValue: "Play" })}
               </Button>
             )}
-            <Button onClick={() => setShowForge(true)} variant="outline"
+            <Button onClick={() => setShowForge(true)} variant="default"
               className="w-full py-2 border-[#c9a227]/30 text-[#d4af37] hover:bg-[#d4af37]/10 hover:border-[#c9a227]/60 flex items-center justify-center gap-2">
               <Hexagon className="w-4 h-4" /> {t("void-forge", { defaultValue: "Void Forge" })}
               <span className="font-mono text-xs opacity-80">◈ {meta.cores.toLocaleString()}</span>
@@ -614,16 +614,16 @@ export function VoidBreakerUI({
             <BossRushMenu onStart={onStartBossRush} />
 
             <div className="flex gap-2">
-              <Button onClick={() => setShowHelp(true)} variant="outline"
+              <Button onClick={() => setShowHelp(true)} variant="default"
                 className="flex-1 py-2 border-[#2a2a3a] text-zinc-500 hover:text-[#d4af37] hover:border-[#c9a227]/40">
                 <Gamepad2 className="w-4 h-4 mr-2" /> {t("how-to-play", { defaultValue: "How to Play" })}
               </Button>
-              <Button onClick={() => setShowLore(true)} variant="outline"
+              <Button onClick={() => setShowLore(true)} variant="default"
                 className="flex-1 py-2 border-[#2a2a3a] text-zinc-500 hover:text-[#d4af37] hover:border-[#c9a227]/40">
                 <BookOpen className="w-4 h-4 mr-2" /> {t("story", { defaultValue: "Story" })}
               </Button>
             </div>
-            <Button onClick={quit} variant="outline"
+            <Button onClick={quit} variant="default"
               className="w-full py-2 border-[#2a2a3a] text-zinc-500 hover:text-[#d4af37] hover:border-[#c9a227]/40">
               <LogOut className="w-4 h-4 mr-2" aria-hidden /> {t("quit", { defaultValue: "Quit" })}
             </Button>
@@ -738,11 +738,11 @@ export function VoidBreakerUI({
               className="flex-1 min-w-[100px] font-bold bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] border border-[#c9a227]/40">
               <RotateCcw className="w-4 h-4 mr-1" /> {t("again", { defaultValue: "Again" })}
             </Button>
-            <Button onClick={() => setShowSettings(true)} variant="outline"
+            <Button onClick={() => setShowSettings(true)} variant="default"
               className="border-[#2a2a3a] text-zinc-500 hover:bg-[#1a1a24] hover:text-[#d4af37]">
               <Settings className="w-4 h-4" />
             </Button>
-            <Button onClick={onGoToMenu} variant="outline"
+            <Button onClick={onGoToMenu} variant="default"
               className="flex-1 min-w-[100px] border-[#2a2a3a] text-zinc-500 hover:bg-[#1a1a24] hover:text-[#d4af37]">
               {t("menu", { defaultValue: "Menu" })}
             </Button>

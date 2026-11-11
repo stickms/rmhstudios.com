@@ -25,7 +25,7 @@ const animationProps = {
   initial: { opacity: 0, y: 20 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: '-20px' },
-  transition: { duration: DURATION.slow, ease: EASE.standard },
+  transition: { duration: DURATION.overlay, ease: EASE.standard },
 } as const;
 
 type El<T extends keyof React.JSX.IntrinsicElements> = ComponentPropsWithoutRef<T>;

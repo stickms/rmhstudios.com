@@ -115,7 +115,7 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
           <div className="flex gap-2">
             {!isNew ? (
               <>
-                <Button variant="outline" size="sm" onClick={togglePublish}>
+                <Button variant="default" size="sm" onClick={togglePublish}>
                   {published ? t('unpublish', { defaultValue: 'Unpublish' }) : t('publish', { defaultValue: 'Publish' })}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={remove} className="text-site-danger">
@@ -131,7 +131,7 @@ export function GuideView({ gameId, guide }: { gameId: string; guide: GuideData 
                 {t('preview', { defaultValue: 'Preview' })}
               </Button>
             ) : null}
-            <Button variant="accent" size="sm" onClick={save} loading={busy}>
+            <Button variant="default" size="sm" onClick={save} loading={busy}>
               {t('save', { defaultValue: 'Save' })}
             </Button>
           </div>

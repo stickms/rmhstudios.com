@@ -47,7 +47,7 @@ import {
 import type { GroupCallPeerStatus } from '@/lib/groupcall/types';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { APPLE_SPRING } from '@/lib/motion';
+import { transition } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 
 /**
@@ -125,7 +125,7 @@ function RosterAvatar({ name, image, size, speaking, reducedMotion }: RosterAvat
         speaking ? 'ring-site-accent' : 'ring-transparent',
       )}
       animate={{ scale: speaking && !reducedMotion ? 1.06 : 1 }}
-      transition={APPLE_SPRING.snappy}
+      transition={transition}
     >
       <UserAvatar src={image} alt="" size={size} fallbackName={name} />
     </motion.span>

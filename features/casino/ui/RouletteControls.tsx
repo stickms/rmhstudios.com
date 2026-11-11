@@ -94,7 +94,7 @@ export function RouletteControls({ coins }: Props) {
               <Button
                 key={val}
                 type="button"
-                variant={selectedChip === val ? 'default' : 'secondary'}
+                variant={selectedChip === val ? 'default' : 'default'}
                 onClick={() => setSelectedChip(val)}
                 disabled={val > coins}
                 className={`relative size-10 sm:size-11 rounded-full p-0 text-xs font-bold ${
@@ -149,7 +149,7 @@ export function RouletteControls({ coins }: Props) {
             )}
             <Button
               onClick={handleClearBets}
-              variant="outline"
+              variant="default"
               className="w-full min-h-10 text-xs rounded-site-sm"
             >
               {t("clear-all-bets", { defaultValue: "Clear All Bets" })}

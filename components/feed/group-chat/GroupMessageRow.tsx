@@ -1,6 +1,6 @@
 import { m as motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { APPLE_SPRING } from '@/lib/motion';
+import { transition } from '@/lib/motion';
 import { ChatRichBody } from '@/components/chat-plus/ChatRichBody';
 import { ChatSystemLine } from '@/components/chat-plus/ChatSystemLine';
 import { MessageBadges, ThreadChip } from '@/components/chat-plus/MessageBadges';
@@ -57,7 +57,7 @@ export function GroupMessageRow({
     <motion.div
       initial={animateIn ? { opacity: 0, y: 8 } : false}
       animate={{ opacity: 1, y: 0 }}
-      transition={APPLE_SPRING.snappy}
+      transition={transition}
       className={`group flex gap-2 ${mine ? 'flex-row-reverse' : ''}`}
     >
       {/* Show the sender's avatar on every message — including your own

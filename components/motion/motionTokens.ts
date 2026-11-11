@@ -7,12 +7,12 @@ import type { Variants } from 'framer-motion';
 import { DURATION, EASE } from '@/lib/motion';
 
 /** Ease-out-expo: fast start, long soft settle — the signature Apple curve. */
-export const EASE_OUT_EXPO = EASE.emphasized;
+export const EASE_OUT_EXPO = EASE.standard;
 
 /** Durations (seconds). */
 export const DUR_FAST = DURATION.fast;
-export const DUR_BASE = DURATION.base;
-export const DUR_SLOW = DURATION.slow;
+export const DUR_BASE = DURATION.overlay;
+export const DUR_SLOW = DURATION.overlay;
 
 /** Stagger gaps between children (seconds). */
 export const STAGGER = 0.04;

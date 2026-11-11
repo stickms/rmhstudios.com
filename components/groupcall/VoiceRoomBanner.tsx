@@ -133,7 +133,7 @@ export function VoiceRoomBanner({ origin, originId, className }: VoiceRoomBanner
         <Button
           type="button"
           size="sm"
-          variant="accent"
+          variant="default"
           disabled={busy || room.full}
           onClick={() => void joinGroupCall(room.callId)}
         >
@@ -143,7 +143,7 @@ export function VoiceRoomBanner({ origin, originId, className }: VoiceRoomBanner
         <Button
           type="button"
           size="sm"
-          variant="outline"
+          variant="default"
           disabled={busy}
           onClick={() => void startGroupCall({ origin, originId })}
         >

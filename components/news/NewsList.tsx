@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { SearchField } from '@/components/ui/search-field';
 import { Select } from '@/components/ui/select';
 import { Reveal } from '@/components/motion';
-import { APPLE_SPRING, delayed } from '@/lib/motion';
+import { transition } from '@/lib/motion';
 import { NewsCard } from './NewsCard';
 import { NewsHero } from './NewsHero';
 import { NewsCategoryTabs } from './NewsCategoryTabs';
@@ -228,7 +228,7 @@ export function NewsList({
               defaultValue: '{{count}} results',
             })}
           </span>
-          <Button type="button" variant="accent-ghost" size="sm" onClick={clearAllFilters}>
+          <Button type="button" variant="ghost" size="sm" onClick={clearAllFilters}>
             {t('clear-filters', { defaultValue: 'Clear filters' })}
           </Button>
         </div>
@@ -250,7 +250,7 @@ export function NewsList({
               // A spring, not a 0.25s tween: `layout` reflows the grid on every
               // filter change, and a card caught mid-move retargets from where it
               // is instead of restarting.
-              transition={APPLE_SPRING.smooth}
+              transition={transition}
             >
               <NewsCard article={article} index={i} />
             </motion.div>
@@ -281,7 +281,7 @@ export function NewsList({
               }
               action={
                 hasActiveFilters ? (
-                  <Button variant="outline" onClick={clearAllFilters}>
+                  <Button variant="default" onClick={clearAllFilters}>
                     {t('clear-all-filters', { defaultValue: 'Clear all filters' })}
                   </Button>
                 ) : undefined
@@ -297,7 +297,7 @@ export function NewsList({
           className="mt-[var(--site-section-gap)]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={delayed(0.3)}
+          transition={transition}
         >
           <Pagination page={safePage} totalPages={totalPages} onPageChange={goToPage} />
         </motion.div>

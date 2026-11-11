@@ -361,12 +361,12 @@ export function GroupCallInviteDialog({
                 })}
           </p>
           <div className="flex gap-2 sm:justify-end">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="default" onClick={() => onOpenChange(false)}>
               {t('invite-cancel', { defaultValue: 'Cancel' })}
             </Button>
             <Button
               type="button"
-              variant="accent"
+              variant="default"
               disabled={chips.length === 0}
               onClick={() => onConfirm(chips.map((person) => person.id))}
             >

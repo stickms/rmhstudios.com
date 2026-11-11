@@ -7,7 +7,7 @@
  *
  * ```tsx
  * <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
- *   <div className="absolute inset-0 bg-site-media-scrim-strong" onClick={close} />
+ *   <div className="glass-scrim absolute inset-0" onClick={close} />
  *   <motion.div variants={modalContent} className="relative … glass-overlay">…</motion.div>
  * </div>
  * ```

@@ -15,16 +15,12 @@
  * adjacent buttons in the same toolbar did not look like the same control. So
  * the row is a primitive now, and the four decisions above are made once.
  *
- * ## The grammar is text rows in one rounded panel
+ * ## The grammar is text rows in one overlay (Steel S5)
  *
- * A dropdown is ONE rounded slab, not a stack of pills and not a stack of bands.
- * A row has no fill, edge or radius of its own — it is its text (and icon) —
- * and hovering it, or moving the keyboard highlight onto it, wakes a gentle
- * glow behind the text: a soft accent wash that fades to nothing at the row's
- * own edges (globals.css §7.3, `[data-slot='menu-item']::before`). The panel
- * clips its contents (`overflow`, `py-1.5`, no side padding), and row text is
- * inset `px-4` so it clears the panel's curve. A row that sits OUTSIDE a clipping
- * panel (a list inside a dialog) opts back in with its own `rounded-site-sm`.
+ * A dropdown is ONE overlay: `--site-surface`, a 1px border, 8px radius, the T4 shadow, no blur. A row has no fill,
+ * edge or radius of its own at rest. It is its text (and icon); hover and the keyboard highlight fill it with
+ * `--site-bg-subtle` in 90 ms (M1). Focus is the highlight here: the menu moves real DOM focus between rows
+ * (`role="menu"`), so the focused row must read as the highlighted one.
  *
  * ## Height is a touch target, not a font size
  *
@@ -91,14 +87,8 @@ export const MENU_ITEM_ATTR = 'data-menu-item';
 
 const ROW_BASE = cn(
   'relative flex w-full min-h-9 pointer-coarse:min-h-11 cursor-pointer select-none items-center gap-2.5',
-  'rounded-none px-4 py-2 text-left text-sm outline-none',
-  'transition-colors duration-site',
-  // Focus is the highlight here. The menu moves real DOM focus between rows
-  // (that is what `role="menu"` requires), so the focused row must read as the
-  // highlighted one — otherwise a keyboard user is navigating an invisible
-  // cursor. The global focus ring still lands on top of it. The glow is the row's
-  // eversion layer (`data-evert`, globals.css §7.3): hover, press and keyboard
-  // focus wake it.
+  'rounded-none px-3 py-2 text-left text-sm outline-none',
+  'transition-colors duration-(--m1) ease-[ease] hover:bg-site-bg-subtle focus-visible:bg-site-bg-subtle',
   'disabled:pointer-events-none disabled:opacity-50',
   // A disabled <a> is not a thing, so links opt out through the attribute the
   // menu's roving focus and the pointer both read.
@@ -161,9 +151,6 @@ export const MenuItem = React.forwardRef<HTMLElement, MenuItemProps>(function Me
   const shared = {
     [MENU_ITEM_ATTR]: '',
     'data-slot': 'menu-item',
-    'data-evert': '',
-    // A row is text, not a body: no rim slab, no soft body, no haze floor. Only the hover glow (`data-evert`) wakes.
-    'data-jelly': 'off',
     'data-tone': tone,
     role: checked === undefined ? 'menuitem' : 'menuitemradio',
     ...(checked === undefined ? {} : { 'aria-checked': checked }),
@@ -221,7 +208,7 @@ export function MenuSeparator({ className }: { className?: string }) {
     <div
       role="separator"
       aria-orientation="horizontal"
-      className={cn('mx-4 my-1.5 h-px bg-site-border/50', className)}
+      className={cn('my-1 h-px bg-site-border', className)}
     />
   );
 }
@@ -237,7 +224,7 @@ export function MenuLabel({
   return (
     <div
       className={cn(
-        'px-4 pb-1 pt-2 text-xs font-semibold text-site-text-muted',
+        'px-3 pb-1 pt-2 text-xs font-semibold text-site-text-muted',
         className,
       )}
     >

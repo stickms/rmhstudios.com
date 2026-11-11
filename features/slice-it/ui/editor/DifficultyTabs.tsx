@@ -104,7 +104,7 @@ export function DifficultyTabs() {
           </span>
           <Button
             size="xs"
-            variant="outline"
+            variant="default"
             onClick={() => apply(repairNesting(charts))}
             className="neumorphic-sm border-0"
           >

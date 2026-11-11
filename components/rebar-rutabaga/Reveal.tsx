@@ -21,7 +21,7 @@
 
 import { m as motion, type Variants } from 'framer-motion';
 import type { ReactNode } from 'react';
-import { editorialTransition } from '@/lib/motion';
+import { editorialTransition } from '@/lib/app-motion';
 import { cn } from '@/lib/utils';
 
 /**

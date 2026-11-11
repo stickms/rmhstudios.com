@@ -15,7 +15,7 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
-import { delayed } from '@/lib/motion';
+import { transition } from '@/lib/motion';
 
 const TokenGenerator = lazy(() => import('@/components/rmhcode/TokenGenerator'));
 
@@ -48,7 +48,7 @@ function CodeBlock({ code, className = '' }: { code: string; className?: string 
       <CopyButton
         value={code}
         label={t("copy-command", { defaultValue: "Copy command" })}
-        variant="outline"
+        variant="default"
         className="absolute top-3 right-3"
       />
     </div>
@@ -108,7 +108,7 @@ function RmhCodePage() {
       {/* Back Button */}
       <div className="absolute top-[calc(1rem+var(--safe-top))] left-[calc(1rem+var(--safe-left))] z-50">
         <Link to="/apps" onClick={goBack}>
-          <Button variant="outline" size="sm" className="glass-fill text-xs sm:text-sm">
+          <Button variant="default" size="sm" className="glass-fill text-xs sm:text-sm">
             <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
             <span className="hidden sm:inline">{t("back-to-builds", { defaultValue: "Back to Builds" })}</span>
           </Button>
@@ -139,7 +139,7 @@ function RmhCodePage() {
           </motion.div>
 
           {/* Install Section */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={delayed(0.1)} className="max-w-2xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={transition} className="max-w-2xl mx-auto">
             <div className="glass-fill rounded-site p-6">
               <h2 className="text-lg font-semibold text-site-text mb-2 flex items-center gap-2">
                 <Terminal className="w-5 h-5 text-site-accent" />
@@ -225,7 +225,7 @@ function RmhCodePage() {
             {isPending ? (<div className="h-12 w-full bg-site-surface-hover rounded-site-sm animate-pulse" />) : session ? (<Suspense fallback={<GameLoadingFallback />}><TokenGenerator /></Suspense>) : (
               <div className="text-center py-8 border border-dashed border-site-border rounded-site-sm">
                 <p className="text-site-text-muted mb-4">{t("sign-in-to-generate", { defaultValue: "Sign in to generate a CLI token" })}</p>
-                <Link to="/login" search={{ callbackURL: undefined }}><Button variant="accent">{t("sign-in", { defaultValue: "Sign In" })}</Button></Link>
+                <Link to="/login" search={{ callbackURL: undefined }}><Button variant="default">{t("sign-in", { defaultValue: "Sign In" })}</Button></Link>
               </div>
             )}
           </div>

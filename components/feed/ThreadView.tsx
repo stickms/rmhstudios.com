@@ -3,7 +3,7 @@ import { Link } from'@tanstack/react-router';
 import { ArrowLeft } from'lucide-react';
 import { m as motion } from'framer-motion';
 import { RMHarkCard } from'./RMHarkCard';
-import { staggerContainer, staggerItem } from'@/lib/motion';
+import { fade } from '@/lib/motion';
 import type { FeedItem } from'@/lib/feed-types';
 
 /** Renders an authored thread as a connected stack of the author's posts. */
@@ -35,13 +35,13 @@ export function ThreadView({ items }: { items: FeedItem[] }) {
  tails). MotionConfig collapses this under reduced motion. */}
  <motion.div
  className="divide-y divide-site-border"
- variants={staggerContainer(0.03)}
+ variants={fade}
  initial="initial"
  animate="animate"
  >
  {items.map((item, i) =>
  i < 8 ? (
- <motion.div key={item.id} variants={staggerItem}>
+ <motion.div key={item.id} variants={fade}>
  <RMHarkCard item={item} />
  </motion.div>
  ) : (

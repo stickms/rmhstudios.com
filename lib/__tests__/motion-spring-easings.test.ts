@@ -25,7 +25,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { spring, type Spring } from '@/lib/fluid';
-import { APPLE_SPRING, EASE, SMOOTH_EASE_CSS } from '@/lib/motion';
+import { APPLE_SPRING, EASE, SMOOTH_EASE_CSS } from '@/lib/app-motion';
 import { readCss } from './css-source';
 
 const ROOT = join(__dirname, '..', '..');

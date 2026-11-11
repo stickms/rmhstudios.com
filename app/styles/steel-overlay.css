@@ -1,0 +1,7 @@
+/* Steel M5 for third-party overlays (docs/plans/2026-11-11-steel-design-implementation.md section 11): an overlay
+   changes in 160 ms. sonner owns its own stacking transform, so the toast's travel cannot be removed without breaking
+   stacked toasts; its duration and curve are the M5 ones. */
+[data-sonner-toast] {
+  transition-duration: var(--m5) !important;
+  transition-timing-function: ease !important;
+}

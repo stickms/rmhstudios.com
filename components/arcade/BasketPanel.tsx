@@ -87,7 +87,7 @@ export function BasketPanel({
           <ShoppingBasket className="h-4 w-4" aria-hidden />
           {t('basket-heading', { defaultValue: 'Daily basket {{day}}', day: run.variant })}
         </span>
-        <Button size="xs" variant="outline" onClick={() => void share()}>
+        <Button size="xs" variant="default" onClick={() => void share()}>
           <Share2 aria-hidden />
           {t('basket-share', { defaultValue: 'Copy result grid' })}
         </Button>

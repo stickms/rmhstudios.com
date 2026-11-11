@@ -120,7 +120,7 @@ export function BlackjackLobby() {
             </Button>
             <Button
               onClick={() => setShowCreate(false)}
-              variant="outline"
+              variant="default"
               className="flex-1 rounded-site-sm text-sm"
             >
               {t("cancel", { defaultValue: "Cancel" })}
@@ -137,7 +137,7 @@ export function BlackjackLobby() {
             {t("create-room", { defaultValue: "Create Room" })}
           </Button>
           <Button
-            variant="secondary"
+            variant="default"
             size="icon"
             onClick={handleRefresh}
             className="text-site-text-muted hover:text-site-text"

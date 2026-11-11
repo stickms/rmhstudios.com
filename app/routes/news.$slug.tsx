@@ -18,7 +18,7 @@ import { ArrowLeft, Calendar, Clock, ExternalLink } from 'lucide-react';
 // on the site — defeating the LazyMotion setup for everyone, to animate one
 // article page. The rendered markup and the variants are unchanged.
 import { m as motion } from 'framer-motion';
-import { staggerContainer, staggerItem } from '@/lib/motion';
+import { fade } from '@/lib/motion';
 import { ShareButton } from '@/components/blog/ShareButton';
 import { liquidVTName } from '@/lib/view-transition';
 import { getCategoryColor } from '@/lib/news-categories';
@@ -108,11 +108,11 @@ function NewsArticlePage() {
           The container's 60ms step lands the last item at ~400ms. */}
       <motion.div
         className="container mx-auto max-w-3xl relative z-10"
-        variants={staggerContainer(0.06)}
+        variants={fade}
         initial="initial"
         animate="animate"
       >
-        <motion.div variants={staggerItem}>
+        <motion.div variants={fade}>
         <Link
           to="/news"
           className="inline-flex min-h-11 items-center gap-2 text-site-text-muted hover:text-site-text mb-6 transition-colors duration-site"
@@ -123,7 +123,7 @@ function NewsArticlePage() {
 
         {/* §5.48 liquid-open hero — the news card morphs into this header. */}
         <header className="mb-10" style={{ viewTransitionName: liquidVTName('news', slug) }}>
-          <motion.div variants={staggerItem} className="flex flex-wrap items-center gap-3 mb-4">
+          <motion.div variants={fade} className="flex flex-wrap items-center gap-3 mb-4">
             <span
               className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-boldr ${categoryColor.bg} ${categoryColor.text} ${categoryColor.border} border`}
             >
@@ -143,20 +143,20 @@ function NewsArticlePage() {
           </motion.div>
 
           <motion.h1
-            variants={staggerItem}
+            variants={fade}
             className="text-3xl md:text-5xl font-black text-site-text mb-6 tracking-tight leading-tight font-display"
           >
             {article.title}
           </motion.h1>
 
           <motion.p
-            variants={staggerItem}
+            variants={fade}
             className="text-xl text-site-text-muted leading-relaxed border-l-4 border-site-accent pl-4 sm:pl-6"
           >
             {article.description}
           </motion.p>
           {article.story && (
-            <motion.div variants={staggerItem}>
+            <motion.div variants={fade}>
               <StoryBanner story={article.story} />
             </motion.div>
           )}
@@ -164,7 +164,7 @@ function NewsArticlePage() {
 
         {article.sourceUrl && (
           <motion.div
-            variants={staggerItem}
+            variants={fade}
             className="glass-fill mb-10 p-4 sm:p-6"
           >
             <p className="text-xs font-semiboldst text-site-accent mb-2">

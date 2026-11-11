@@ -75,7 +75,7 @@ export function GameOverScreen({ score, floor, onReturnToLanding }: Props) {
         <div className="space-y-3">
           <Button
             onClick={handleViewLeaderboard}
-            variant="outline"
+            variant="default"
             className="w-full border-red-500 text-red-400 hover:bg-red-900 hover:bg-opacity-20 py-2 rounded-lg"
           >
             {t("view-leaderboard", { defaultValue: "View Leaderboard" })}

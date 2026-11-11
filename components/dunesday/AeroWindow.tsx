@@ -16,7 +16,7 @@
 import { AnimatePresence, m as motion } from 'framer-motion';
 import { createContext, useContext, useId, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { EASE } from '@/lib/motion';
+import { EASE } from '@/lib/app-motion';
 import { cn } from '@/lib/utils';
 import { sfx } from './sound';
 

@@ -34,9 +34,7 @@ const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
 >(({ className, ...props }, ref) => {
-  // `.glass-scrim` is a viewport-covering `backdrop-filter`, so keep animation
-  // off it — Chromium re-blurs the whole layer every frame that anything above
-  // it moves, whatever the damage's size or position.
+  // Steel S5: the scrim is `--site-bg` at 80% (`.glass-scrim`): no blur. It fades in 160 ms with the dialog (M5).
   return (
     <DialogPrimitive.Overlay
       ref={ref}
@@ -129,8 +127,6 @@ const DialogContent = React.forwardRef<
       const height = el.offsetHeight || 1;
       if (overlay) overlay.style.opacity = Math.max(0, 1 - (y / height) * 1.1).toFixed(3);
     },
-    // The sheet reports its drag to the jelly bus (lib/jelly/drag-report.ts).
-    jellyTarget: () => contentRef.current,
     onDismiss: () => closeRef.current?.click(),
     onSettle: () => {
       // Sprung back: hand both elements to the stylesheet again.
@@ -178,13 +174,12 @@ const DialogContent = React.forwardRef<
           className={cn(
             // 44px target centred on the title's first line: p-5 (sm:p-6) + half an 18px
             // line = 29px (33px), so top-2.5 (sm:top-3) puts the centre at 32px (34px).
-            'absolute right-3 inline-flex size-11 items-center justify-center rounded-[var(--site-control-radius)] text-site-text-muted opacity-80 transition-opacity hover:opacity-100 hover:bg-site-surface-hover outline-none focus-visible:ring-2 focus-visible:ring-site-accent/50 disabled:pointer-events-none',
+            'absolute right-3 inline-flex size-11 items-center justify-center rounded-site text-site-text-muted transition-colors duration-(--m1) ease-[ease] hover:bg-site-bg-subtle hover:text-site-text disabled:pointer-events-none',
             mobileFullscreen
               ? 'top-[max(0.5rem,env(safe-area-inset-top))] sm:top-3'
               : 'top-2.5 sm:top-3',
             hideClose && 'hidden',
           )}
-          data-fluid-press=""
         >
           <X className="h-4 w-4" aria-hidden />
           <span className="sr-only">{t('close', { defaultValue: 'Close' })}</span>
@@ -214,7 +209,7 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn('font-display text-xl font-semibold leading-snug tracking-tight', className)}
+    className={cn('t-heading', className)}
     {...props}
   />
 ));

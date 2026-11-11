@@ -3,7 +3,7 @@
 // implementation, which lands in the SHARED ENTRY CHUNK when the module is
 // reachable from a route's top level.
 import { m as motion } from 'framer-motion';
-import { scaleIn } from '@/lib/motion';
+import { scaleIn } from '@/lib/app-motion';
 import { useTranslation } from "react-i18next";
 
 interface MovieRevealProps {

@@ -1,0 +1,241 @@
+/**
+ * Motion for the full-screen games and apps (Steel L8: they keep their own look). This is the pre-Steel token set,
+ * moved here verbatim from `lib/motion.ts` so the games' and apps' feel does not change. The site tier does NOT
+ * import this: it uses `lib/motion.ts`, which holds only the Steel durations and curves of section 11 (M1 to M5).
+ * `docs/plans/2026-11-11-steel-design-implementation.md` section 15.3 lists what is deleted after phase 6.
+ */
+import type { Transition, Variants } from 'framer-motion';
+
+type Bezier = [number, number, number, number];
+
+/**
+ * Canonical durations in **seconds**. The site favours quick, responsive
+ * motion — nothing here is slower than 0.3s. Prefer these over hand-typed
+ * numbers so a global re-tune is a one-line change.
+ */
+export const DURATION = {
+  /** Micro-feedback: hovers, taps, tiny state flips. */
+  fast: 0.1,
+  /** The default for most enters/exits. */
+  base: 0.16,
+  /** Larger surfaces (dialogs, sheets) that need a touch more travel. */
+  slow: 0.22,
+} as const;
+
+/**
+ * Easing curves. `smooth` is the site's one tween curve (CSS `--ease-smooth`):
+ * it leaves at zero speed, moves quickly through the middle and lands softly,
+ * so a tween has no jolt at either end, and one that is interrupted restarts
+ * from rest at the frame it was on. The old easeOut-family curves left at full
+ * speed (22% of the distance in the first 5% of the time), which read as a
+ * jump whenever a hover or an enter was cut short and turned around.
+ * `standard`, `emphasized` and `glass` are kept as names for their callers and
+ * ride the same curve; `inOut` is for symmetric moves (a value counting, a bar
+ * filling).
+ */
+const SMOOTH: Bezier = [0.3, 0, 0.15, 1];
+export const EASE = {
+  smooth: SMOOTH,
+  standard: SMOOTH,
+  emphasized: SMOOTH,
+  inOut: [0.65, 0, 0.35, 1] as Bezier,
+  /** Long decelerating settle for slow, read-not-operated reveals (CSS twin `--ease-out-expo`). */
+  outExpo: [0.16, 1, 0.3, 1] as Bezier,
+  /**
+   * Spatial spring physics (press-release flex, dock grow, tab-capsule settle).
+   */
+  glass: SMOOTH,
+} as const;
+
+export const SMOOTH_EASE_CSS = 'cubic-bezier(0.3, 0, 0.15, 1)';
+
+/**
+ * Spring presets for physical, interruptible motion (drag, reorder, pop-in).
+ * `soft` settles gently; `snappy` is tighter for controls that must feel
+ * immediate.
+ */
+export const SPRING = {
+  soft: { type: 'spring', stiffness: 360, damping: 32, mass: 0.72 },
+  snappy: { type: 'spring', stiffness: 620, damping: 38, mass: 0.62 },
+} as const satisfies Record<string, Transition>;
+
+/**
+ * ── Apple spring physics ────────────────────────────────────────────────────
+ *
+ * SwiftUI describes a spring by **perceptual duration** (how long the motion
+ * reads as taking) and **bounce** (0 = critically damped, no overshoot; higher
+ * = springier), rather than by raw stiffness. That parameterisation is why iOS
+ * motion feels consistent across wildly different travel distances: the same
+ * spring settles in the same perceived time whether it moves 4px or 400px.
+ *
+ * framer-motion speaks the same language via `duration` + `bounce` on a spring
+ * transition, so these are the real SwiftUI presets rather than an imitation of
+ * their look with tweens. Reach for these on anything the user *acts on* —
+ * presses, drags, sheet dismissals, morphing containers — because a spring is
+ * interruptible: grab a moving element mid-flight and it retargets from its
+ * current velocity instead of snapping or fighting you. A tween cannot do that,
+ * and the difference is most of what makes native UI feel "fluid".
+ *
+ * Tweens (DURATION/EASE above) remain correct for non-interactive state changes
+ * — cross-fades, colour shifts, reveals — where there is no gesture to inherit
+ * velocity from.
+ *
+ * `smooth`, `snappy` and `sheet` have CSS twins: `--spring-smooth` /
+ * `--spring-snappy` / `--spring-sheet` (+ `--spring-*-duration`) in
+ * `globals.css` §7.1, the same springs sampled into `linear()`. Change a preset
+ * here and `lib/__tests__/motion-spring-easings.test.ts` tells you which CSS
+ * stops to regenerate.
+ */
+export const APPLE_SPRING = {
+  /** SwiftUI `.smooth` — no bounce. Default for most UI state changes. */
+  smooth: { type: 'spring', duration: 0.4, bounce: 0 },
+  /** SwiftUI `.snappy` — a touch of overshoot. Controls, toggles, selections. */
+  snappy: { type: 'spring', duration: 0.4, bounce: 0.15 },
+  /** SwiftUI `.bouncy` — playful. Reactions, badges, celebratory pops. */
+  bouncy: { type: 'spring', duration: 0.5, bounce: 0.3 },
+  /** Sheet/detent presentation: longer travel, fully settled, no wobble. */
+  sheet: { type: 'spring', duration: 0.55, bounce: 0.06 },
+  /** Press-down. Deliberately quicker than the release, as UIKit does it. */
+  press: { type: 'spring', duration: 0.22, bounce: 0 },
+  /** Plasmatic Jelly hover plump/lean — twin of `SPRINGS.jellyHover` (ζ 0.78). */
+  jellyHover: { type: 'spring', duration: 0.34, bounce: 0.22 },
+  /** Jelly press squash — twin of `SPRINGS.jellyPress`. Critically damped. */
+  jellyPress: { type: 'spring', duration: 0.18, bounce: 0 },
+  /** Jelly release wobble — twin of `SPRINGS.jellyRelease` (ζ 0.42). */
+  jellyRelease: { type: 'spring', duration: 0.44, bounce: 0.58 },
+  /** Jelly drag stretch — twin of `SPRINGS.jellyDrag` (ζ 0.55). */
+  jellyDrag: { type: 'spring', duration: 0.28, bounce: 0.45 },
+  /** Jelly neighbour nudge — twin of `SPRINGS.jellyNudge` (ζ 0.5). */
+  jellyNudge: { type: 'spring', duration: 0.4, bounce: 0.5 },
+} as const satisfies Record<string, Transition>;
+
+/**
+ * Named one-offs for the few motions that are not a state enter/exit (E7: a
+ * component never writes its own ease or duration). Each keeps the exact value
+ * its first caller shipped; reuse before adding another.
+ */
+
+/** A slow looping nudge (a scroll cue bobbing). Seconds. */
+export const LOOP_CUE: Transition = { duration: 1.8, repeat: Infinity, ease: 'easeInOut' };
+
+/** A gentle attention wiggle that repeats twice, then rests. */
+export const LOOP_WIGGLE: Transition = { duration: 1.2, repeat: 2, repeatDelay: 2.5 };
+
+/** Layout reflow of grid items (cards reordering/filtering) — pass as `transition`. */
+export const LAYOUT_SPRING: Transition = {
+  layout: { type: 'spring', stiffness: 300, damping: 30 },
+};
+
+/** A bare start delay, in seconds, on top of the default behaviour. */
+export const delayed = (seconds: number): Transition => ({ delay: seconds });
+
+/** Confetti piece `index` flying out: a slow ease-out, staggered 20 ms apiece. */
+export const burstTransition = (index: number): Transition => ({
+  duration: 1.4,
+  ease: 'easeOut',
+  delay: index * 0.02,
+});
+
+/** A slow editorial tween on the expo curve (restaurant page, long reveals). */
+export const editorialTransition = (duration: number, delay = 0): Transition => ({
+  duration,
+  ease: EASE.outExpo,
+  delay,
+});
+
+/**
+ * Press feedback, Apple-style: a small scale-down that springs back on release.
+ * The scale is subtle on purpose — the point is that the surface acknowledges
+ * the finger, not that it visibly shrinks.
+ */
+export const pressable = {
+  whileTap: { scale: 0.97 },
+  whileHover: { scale: 1.01 },
+  transition: APPLE_SPRING.press,
+} as const;
+
+/**
+ * The default transition used by the variants below: a critically damped
+ * spring (no bounce) rather than a tween. It starts from rest and settles
+ * without a final jolt, and — the reason it is a spring — when the state flips
+ * again mid-flight (an enter cancelled by an exit, a hover left early) it
+ * carries on from its current position AND speed into the new target, so one
+ * motion molds into the next instead of stopping dead and restarting.
+ */
+export const transition: Transition = { type: 'spring', duration: DURATION.slow, bounce: 0 };
+
+/** Slightly quicker for exits so dismissals feel immediate; still a spring, so a reopen turns it around smoothly. */
+export const exitTransition: Transition = { type: 'spring', duration: DURATION.base, bounce: 0 };
+
+/** Simple opacity cross-fade. Good for tab panels, tooltips, overlays. */
+export const fade: Variants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition },
+  exit: { opacity: 0, transition: exitTransition },
+};
+
+/** Fade + a small upward rise. The workhorse enter for cards, rows, sections. */
+export const fadeRise: Variants = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0, transition },
+  exit: { opacity: 0, y: 8, transition: exitTransition },
+};
+
+/** Fade + a small downward drop — for things anchored above (banners, toasts). */
+export const fadeDown: Variants = {
+  initial: { opacity: 0, y: -8 },
+  animate: { opacity: 1, y: 0, transition },
+  exit: { opacity: 0, y: -8, transition: exitTransition },
+};
+
+/** Fade + subtle scale. For popovers, menus, and modal content. */
+export const scaleIn: Variants = {
+  initial: { opacity: 0, scale: 0.96 },
+  animate: { opacity: 1, scale: 1, transition },
+  exit: { opacity: 0, scale: 0.96, transition: exitTransition },
+};
+
+/** Springy pop for playful, physical elements (badges, reaction bursts). */
+export const popIn: Variants = {
+  initial: { opacity: 0, scale: 0.85 },
+  animate: { opacity: 1, scale: 1, transition: SPRING.snappy },
+  exit: { opacity: 0, scale: 0.85, transition: exitTransition },
+};
+
+/** Dialog/backdrop overlay — a plain, quick fade behind modal content. */
+export const overlay: Variants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { type: 'spring', duration: DURATION.base, bounce: 0 } },
+  exit: { opacity: 0, transition: exitTransition },
+};
+
+/** Modal content: rise + scale for a grounded, quick entrance. */
+export const modalContent: Variants = {
+  initial: { opacity: 0, scale: 0.97, y: 8 },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: { type: 'spring', duration: DURATION.slow, bounce: 0 },
+  },
+  exit: { opacity: 0, scale: 0.97, y: 8, transition: exitTransition },
+};
+
+/**
+ * Stagger container — orchestrates children that use {@link staggerItem}.
+ * Keep the stagger short (≤ 60ms) so a list of 10 still resolves quickly.
+ *
+ * ```tsx
+ * <motion.ul variants={staggerContainer()} initial="initial" animate="animate">
+ *   {rows.map((r) => <motion.li key={r.id} variants={staggerItem} />)}
+ * </motion.ul>
+ * ```
+ */
+export const staggerContainer = (stagger = 0.04, delayChildren = 0): Variants => ({
+  initial: {},
+  animate: { transition: { staggerChildren: stagger, delayChildren } },
+  exit: {},
+});
+
+/** Item paired with {@link staggerContainer}. Same feel as {@link fadeRise}. */
+export const staggerItem: Variants = fadeRise;
