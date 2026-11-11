@@ -29,6 +29,7 @@ import anonHtmlCachePlugin, {
   CACHEABLE_ANON_PATHS,
   CACHEABLE_ANON_PREFIXES,
   anonCachePolicy,
+  carriesEnforcedNonce,
   decideCacheControl,
   isUncacheableAssetError,
 } from '@/server/nitro/anon-html-cache';
@@ -76,6 +77,8 @@ function runPlugin(options: {
   method?: string;
   contentType?: string | null;
   existingCacheControl?: string;
+  /** Extra response headers the handler set before the hook runs (e.g. a CSP). */
+  responseHeaders?: Record<string, string>;
 }): Headers {
   const resHeaders = new Headers();
   if (options.contentType !== null) {
@@ -84,6 +87,8 @@ function runPlugin(options: {
   if (options.existingCacheControl) {
     resHeaders.set('Cache-Control', options.existingCacheControl);
   }
+  for (const [name, value] of Object.entries(options.responseHeaders ?? {}))
+    resHeaders.set(name, value);
 
   const reqHeaders = new Headers();
   if (options.cookie) reqHeaders.set('cookie', options.cookie);
@@ -250,6 +255,50 @@ describe('anon-html-cache — the locale gate', () => {
       existingCacheControl: 'private, max-age=60',
     });
     expect(cacheControl(headers)).toBe('private, max-age=60');
+  });
+});
+
+describe('anon-html-cache — a nonce is never shared', () => {
+  const NONCE_POLICY = "default-src 'self'; script-src 'self' 'nonce-3q2+7w==' 'strict-dynamic'";
+
+  it('does not mark a response public when its enforced policy names a nonce', () => {
+    for (const path of ALLOWLISTED_PATHS) {
+      const headers = runPlugin({
+        path,
+        responseHeaders: { 'Content-Security-Policy': NONCE_POLICY },
+      });
+      expect(
+        headers.get('Cache-Control'),
+        `${path} would replay one nonce to every visitor`,
+      ).toBeNull();
+      expect(headers.get('Vary')).toBeNull();
+    }
+  });
+
+  it("still shares a response whose nonce policy is Report-Only (today's rollout state)", () => {
+    const headers = runPlugin({
+      path: '/',
+      responseHeaders: {
+        'Content-Security-Policy': "frame-ancestors 'self'",
+        'Content-Security-Policy-Report-Only': NONCE_POLICY,
+      },
+    });
+    expect(cacheControl(headers)).toContain('public');
+  });
+
+  it('reads only the enforced header', () => {
+    expect(carriesEnforcedNonce(new Headers({ 'Content-Security-Policy': NONCE_POLICY }))).toBe(
+      true,
+    );
+    expect(
+      carriesEnforcedNonce(new Headers({ 'Content-Security-Policy-Report-Only': NONCE_POLICY })),
+    ).toBe(false);
+    expect(
+      carriesEnforcedNonce(
+        new Headers({ 'Content-Security-Policy': "script-src 'self' 'sha256-abc='" }),
+      ),
+    ).toBe(false);
+    expect(carriesEnforcedNonce(new Headers())).toBe(false);
   });
 });
 
