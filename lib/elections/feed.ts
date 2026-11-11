@@ -14,11 +14,24 @@ export const FEED_LEAD_DAYS = 45;
 
 const ORDER: Office[] = ['president', 'senate', 'house', 'governor'];
 
+/**
+ * How long after Election Day the site keeps promoting the results: the card at the top of
+ * every feed, and the hub's "crawl me hourly" sitemap entry. The count itself runs for
+ * weeks (COUNTING_WINDOW_DAYS) and the hub at /elections stays current through all of it;
+ * two days after the polls close it is no longer the first thing every visitor should see.
+ */
+export const FEED_TAIL_DAYS = 2;
+
+const DAY_MS = 86_400_000;
+
 export function isFeedWindow(cycle: Cycle, now: Date): boolean {
   const phase = phaseOf(cycle.date, now);
   if (phase === 'archive') return false;
-  if (phase !== 'upcoming') return true;
-  return countdownTo(cycle.date, now, etDayStart(cycle.date)).days <= FEED_LEAD_DAYS;
+  if (phase === 'upcoming') {
+    return countdownTo(cycle.date, now, etDayStart(cycle.date)).days <= FEED_LEAD_DAYS;
+  }
+  // Election Day itself, then the tail.
+  return now.getTime() < etDayStart(cycle.date).getTime() + (1 + FEED_TAIL_DAYS) * DAY_MS;
 }
 
 function chamberRow(c: ChamberControl, live: boolean) {
