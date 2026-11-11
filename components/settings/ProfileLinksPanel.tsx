@@ -191,7 +191,7 @@ export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
                 <div className="flex items-center gap-1.5">
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="default"
                     size="sm"
                     onClick={() => void verify(link)}
                     loading={verifyingId === link.id}

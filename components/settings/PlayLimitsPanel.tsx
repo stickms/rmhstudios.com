@@ -201,7 +201,7 @@ export function PlayLimitsPanel() {
           {[1, 7, MAX_COOL_OFF_DAYS].map((days) => (
             <Button
               key={days}
-              variant="outline"
+              variant="default"
               onClick={() => void save({ coolOffForDays: days })}
               disabled={saving}
             >
@@ -229,7 +229,7 @@ export function PlayLimitsPanel() {
           {[30, 90, 365].map((days) => (
             <Button
               key={days}
-              variant="outline"
+              variant="default"
               onClick={() => void exclude(days)}
               disabled={saving}
             >

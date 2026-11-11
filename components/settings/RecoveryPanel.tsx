@@ -301,7 +301,7 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
             </p>
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               size="sm"
               className="mt-2"
               loading={generating}

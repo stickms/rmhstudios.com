@@ -19,6 +19,8 @@
    are deleted, not deprecated: nothing imports them. */
 @import './styles/steel-surfaces.css';
 @import './styles/steel-type.css';
+@import './styles/steel-chrome.css';
+@import './styles/steel-overlay.css';
 
 /* Scope Tailwind's content scanning to code that actually renders in the browser.
    Without this, auto-detection also scans build/test/infra/docs directories and

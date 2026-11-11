@@ -93,7 +93,7 @@ export function TiltEffectsRow() {
   }
 
   return (
-    <label htmlFor="tilt-effects-switch" className="flex items-center justify-between gap-4 py-2.5">
+    <label htmlFor="tilt-effects-switch" className="chrome-row flex items-center justify-between gap-4 py-2.5">
       <span className="min-w-0">
         <span className="block text-sm text-site-text">{label}</span>
         <span className="block text-xs text-site-text-muted">{desc}</span>

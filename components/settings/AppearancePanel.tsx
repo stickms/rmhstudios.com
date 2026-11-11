@@ -322,7 +322,7 @@ export function AppearancePanel() {
           defaultValue: 'Midnight (the default) and Daylight.',
         })}
       >
-        <Button asChild variant="outline">
+        <Button asChild variant="default">
           <Link to="/settings" hash="appearance">
             {t('browse-themes', { defaultValue: 'Browse themes' })}
           </Link>
@@ -366,7 +366,7 @@ export function ToggleRow({
   disabled?: boolean;
 }) {
   return (
-    <label className="flex items-center justify-between gap-4 py-2.5">
+    <label className="chrome-row flex items-center justify-between gap-4 py-2.5">
       <span className="min-w-0">
         <span className="block text-sm text-site-text">{label}</span>
         {description ? (
@@ -470,7 +470,7 @@ function NavTransitionRow({
       {enabled ? (
         <Button
           type="button"
-          variant="outline"
+          variant="default"
           size="sm"
           className="mt-2"
           onClick={() => window.dispatchEvent(new CustomEvent(EVERSION_PREVIEW_EVENT))}
