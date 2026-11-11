@@ -14,7 +14,7 @@ describe('reversible floating surfaces', () => {
     const rules = CSS.slice(start, end);
     expect(rules).toContain('transition:');
     expect(rules).toContain('@starting-style');
-    expect(rules).not.toMatch(/scale:|transform:|rotate:|clip-path:/);
+    expect(rules.replace(/\/\*[\s\S]*?\*\//g, '')).not.toMatch(/scale:|transform:|rotate:|clip-path:/);
   });
   it('lets Radix Presence wait for the transition without animating a second property', () => {
     expect(CSS).toMatch(/animation: motion-presence var\(--motion-collapse\)/);

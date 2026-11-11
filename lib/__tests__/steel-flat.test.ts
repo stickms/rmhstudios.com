@@ -84,7 +84,7 @@ const FLAT_BASELINE: Record<string, FlatCount> = {
   // recipe yet. Each is removed against section 10's X2 when its page is reviewed.
   'app/globals/base-interaction.css': { bf: 0, fl: 0, gr: 1 }, // .rainbow-text (game headings)
   'app/globals/comfort-suite.css': { bf: 0, fl: 2, gr: 0 }, // the RMHHomes map tint, the loader filter
-  'app/globals/components-reveal.css': { bf: 0, fl: 1, gr: 8 },
+  'app/globals/components-reveal.css': { bf: 0, fl: 1, gr: 6 },
   'app/globals/loader-print-access.css': { bf: 2, fl: 0, gr: 6 }, // `backdrop-filter: none` print resets are not counted
   'app/globals/page-motion.css': { bf: 0, fl: 2, gr: 8 }, // Dream Rift and doctrine skins live in this shared sheet
   'app/globals/tokens-themes.css': { bf: 0, fl: 0, gr: 1 }, // the scroll-fade mask
