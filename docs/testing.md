@@ -572,32 +572,20 @@ Quality workflows live in `.github/workflows/`. The release graph and operator a
 | `deploy.yml` (`ci` job)                   | typecheck → lint → production dependency audit                                          | all block the deployment                                                                                                              |
 | `deploy.yml` (`integration`)              | same as web-ci's `integration`, on the **merged** commit                                | **verifies after the deploy**: a failure triggers `post-deploy-verify`, which rolls production back via the webhook `rollback` action |
 | `web-ci.yml` (`eversion-e2e`)             | build with sourcemaps → serve → every `eversion-*.mjs` (hub per profile x theme)        | non-blocking until T37; **nightly + manual dispatch only** (not on PRs); see §7                                                       |
-| `web-ci.yml` (`jelly-e2e`)                | `jelly-interaction.mjs` fixture, without a database or frontend build                   | blocks on relevant PRs and scheduled/manual runs                                                                                      |
 | `go-microservices.yml`                    | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks                                                                                                                                |
 
 The deploy `test` job runs two isolated unit-suite shards in parallel with `ci`. The ARM64 `build` job enforces critical JS/CSS budgets and smoke-tests both production image digests. `candidate-image.yml` checks production-shaped containers on PRs; `required-checks` aggregates every applicable web check. `build-cache.yml` maintains reusable stages outside the trigger prerequisites.
 
-**The `jelly-e2e` job** (Plasmatic Jelly in a real browser) is its own job,
-not a step of `eversion-e2e`: as that job's last step it never ran, because the
-eversion scripts alone outlast its 75-minute timeout. It runs on every nightly
-and manual dispatch, and on a pull request only when the change touches the
-material — a filter step matches `lib/jelly/`, `lib/liquid/`,
-`app/jelly-*.css`, `app/glass-roles.css`, `app/globals.css`,
-`components/ui/button.tsx`, `hooks/useJellyPointer.ts`,
-`hooks/useFluidDrag.ts`, `lib/fluid.ts`, the three jelly e2e scripts
-(`frame-budget`, `jelly-interaction`, `fouc-routes`), `testing/e2e/lib/gpu.mjs`,
-`package.json`, `pnpm-lock.yaml`, `vite.config.*` and `web-ci.yml` itself
-(otherwise it writes "jelly e2e skipped" to the job summary and passes).
+**The `jelly-e2e` job is gone** (Steel phase 1, 2026-11-11). It ran
+`testing/e2e/jelly-interaction.mjs`, a browser fixture for the click arcs. Steel has
+no arcs (R1, R5): they are unmounted in `hooks/useJellyPointer.ts` and the runtime is
+deleted with the rest of the old material in phase 6. The "nothing at rest" browser
+check that replaces it arrives with the Steel shell (phase 3).
 
-- **Blocking: `testing/e2e/jelly-interaction.mjs`** — the click arcs in a real browser,
-  a fixture that needs no server (~40 s). The rest of the material is CSS, judged by the
-  unit gates and by `frame-budget.mjs`. It fails for real on every deterministic check:
-  click charge and hops, the flash ledger under a click storm, the arc layer following
-  `electricArcs` / `still` live, zero frames at rest, teardown.
 - **Non-blocking: `testing/e2e/frame-budget.mjs --gate`** against the built app
   (step-level `continue-on-error`: the step still shows its exit code, a red
   summary row and an `::error::` annotation, but the job's conclusion ignores
-  it — the deterministic `jelly-e2e` result is independent). It drives
+  it). It drives
   ~50 routes and gates the rest cadence (the globe's idle floor + 1 frame) and any
   unsanctioned perpetual animation. Pages that render `PinnedHero` (e.g. /pricing) also
   carry its scroll cue, a framer-motion `repeat: Infinity` animation that writes inline

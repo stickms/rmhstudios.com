@@ -16,7 +16,7 @@ import { useStableListMotion } from'@/hooks/useStableListMotion';
 type Announcement = FeedAnnouncementItem;
 
 const VARIANT_STYLES: Record<string, string> = {
- info:'border-site-accent/40 bg-site-accent-dim',
+ info:'border-site-accent/40 bg-site-bg-subtle',
  success:'border-site-success/40 bg-site-success/10',
  warning:'border-site-warning/40 bg-site-warning/10',
  event:'border-site-accent/40 bg-site-accent/10',

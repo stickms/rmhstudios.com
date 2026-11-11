@@ -19,10 +19,10 @@ export function FieldHeader({
         ) : (
           <p className="text-sm font-medium text-site-text">{label}</p>
         )}
-        {hint ? <p className="mt-1 text-xs text-site-text-dim">{hint}</p> : null}
+        {hint ? <p className="mt-1 text-xs text-site-text-muted">{hint}</p> : null}
       </div>
       {count ? (
-        <span className="shrink-0 font-mono text-xs text-site-text-dim">{count}</span>
+        <span className="shrink-0 font-mono text-xs text-site-text-muted">{count}</span>
       ) : null}
     </div>
   );

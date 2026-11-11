@@ -306,7 +306,7 @@ function LoginPage() {
 
   // Field glyph shared by the email/password/display-name wells.
   const fieldIcon =
-    'pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-site-text-dim z-10';
+    'pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-site-text-muted z-10';
 
   const emailForm = (
     <form onSubmit={handleCredentialsSubmit} noValidate className="space-y-3">
@@ -317,7 +317,7 @@ function LoginPage() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               aria-label={t('choose-avatar', { defaultValue: 'Choose a profile picture' })}
-              className="glass-inset relative flex size-20 items-center justify-center rounded-full border-dashed hover:border-site-border-bright transition-colors"
+              className="glass-inset relative flex size-20 items-center justify-center rounded-full border-dashed hover:border-site-text transition-colors"
             >
               <img
                 src={avatarPreview || '/images/social/default_avatar.png'}
@@ -327,7 +327,7 @@ function LoginPage() {
                   (e.target as HTMLImageElement).src = '/images/social/default_avatar.png';
                 }}
               />
-              <span className="absolute -bottom-0.5 -right-0.5 flex size-7 items-center justify-center rounded-full bg-site-accent text-site-accent-fg shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]">
+              <span className="absolute -bottom-0.5 -right-0.5 flex size-7 items-center justify-center rounded-full bg-site-accent text-site-accent-fg">
                 <Camera className="size-3.5" aria-hidden />
               </span>
             </button>

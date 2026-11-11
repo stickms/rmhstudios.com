@@ -143,7 +143,7 @@ export function LanguageSwitcher() {
         <Globe className="h-4 w-4 shrink-0" aria-hidden />
         <span className="min-w-0 truncate">{LOCALE_LABELS[locale]}</span>
         <ChevronDown
-          className={cn("h-4 w-4 shrink-0 text-site-text-dim transition-transform", open && "rotate-180")}
+          className={cn("h-4 w-4 shrink-0 text-site-text-muted transition-transform", open && "rotate-180")}
           aria-hidden
         />
       </button>

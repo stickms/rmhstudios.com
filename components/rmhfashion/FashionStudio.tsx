@@ -176,7 +176,7 @@ export function FashionStudio() {
           <Suspense
             fallback={
               <div className="rmhfash-stage glass-pane glass-bevel-sm rounded-site flex items-center justify-center">
-                <p className="px-6 text-center text-xs text-site-text-dim">
+                <p className="px-6 text-center text-xs text-site-text-muted">
                   {t('loading', { defaultValue: 'Preparing the fitting room…' })}
                 </p>
               </div>
@@ -258,10 +258,10 @@ export function FashionStudio() {
           <section className="flex flex-col gap-3">
             <SectionHeading icon={Shirt}>
               {t('wearing-heading', { defaultValue: 'Wearing' })}
-              <span className="ml-1 text-site-text-dim">({worn.length})</span>
+              <span className="ml-1 text-site-text-muted">({worn.length})</span>
             </SectionHeading>
             {worn.length === 0 ? (
-              <p className="text-sm text-site-text-dim">
+              <p className="text-sm text-site-text-muted">
                 {t('wearing-empty', {
                   defaultValue: 'Nothing on. Pick something from the wardrobe below.',
                 })}

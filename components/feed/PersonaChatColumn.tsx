@@ -156,7 +156,7 @@ export function PersonaChatColumn({
  return (
  <div className="flex h-screen flex-col">
  <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
- <Link to="/personas"className="text-site-text-dim hover:text-site-text">
+ <Link to="/personas"className="text-site-text-muted hover:text-site-text">
  <ArrowLeft className="h-5 w-5"/>
  </Link>
  {/* §5.48 liquid-open hero — the persona tile avatar morphs into this. */}
@@ -173,13 +173,13 @@ export function PersonaChatColumn({
  <div className="min-w-0 flex-1">
  <p className="truncate text-sm font-bold text-site-text">{persona.name}</p>
  {persona.tagline && (
- <p className="truncate text-xs text-site-text-dim">{persona.tagline}</p>
+ <p className="truncate text-xs text-site-text-muted">{persona.tagline}</p>
  )}
  </div>
  {persona.isOwner && (
  <button
  onClick={del}
- className="text-site-text-dim hover:text-site-danger"
+ className="text-site-text-muted hover:text-site-danger"
  title={t('delete-persona', { defaultValue:'Delete persona'})}
  aria-label={t('delete-persona', { defaultValue:'Delete persona'})}
  >
@@ -201,7 +201,7 @@ export function PersonaChatColumn({
  ))}
  {sending && (
  <Bubble role="assistant"emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
- <span className="inline-flex items-center gap-1 text-site-text-dim">
+ <span className="inline-flex items-center gap-1 text-site-text-muted">
  <Loader2 className="h-3.5 w-3.5 animate-spin"/>{''}
  {t('typing', { defaultValue:'typing…'})}
  </span>

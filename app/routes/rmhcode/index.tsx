@@ -117,7 +117,7 @@ function RmhCodePage() {
 
       {/* Hero Section */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-site-accent-dim via-transparent to-site-accent-dim" />
+        <div className="absolute inset-0 bg-gradient-to-br from-site-bg-subtle via-transparent to-site-bg-subtle" />
         
         <div className="relative max-w-4xl mx-auto px-4 py-16 md:py-24">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
@@ -132,7 +132,7 @@ function RmhCodePage() {
             <p className="text-lg text-site-text-muted max-w-xl mx-auto mb-8">
               {t("hero-description", { defaultValue: "AI-powered coding assistant with RMH integrations. Build projects with Claude, Codex, or Gemini and publish to the User Builds showcase." })}
             </p>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-site-accent-dim border border-site-border text-site-accent text-sm font-medium mb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-site-bg-subtle border border-site-border text-site-accent text-sm font-medium mb-8">
               <span className="w-2 h-2 rounded-full bg-site-accent animate-pulse" />
               Beta
             </div>
@@ -161,9 +161,9 @@ function RmhCodePage() {
               />
               {installTab === 'mac' && (
                 <div className="space-y-3">
-                  <p className="text-xs text-site-text-dim font-medium">{t("one-liner-recommended", { defaultValue: "One-liner (recommended)" })}</p>
+                  <p className="text-xs text-site-text-muted font-medium">{t("one-liner-recommended", { defaultValue: "One-liner (recommended)" })}</p>
                   <CodeBlock code={INSTALL_COMMAND_MAC} />
-                  <p className="text-xs text-site-text-dim">{t("install-note-uninstall", { defaultValue: "Note: may require an uninstall before reinstalling for updates." })}</p>
+                  <p className="text-xs text-site-text-muted">{t("install-note-uninstall", { defaultValue: "Note: may require an uninstall before reinstalling for updates." })}</p>
                   <button onClick={() => setShowManualMac(!showManualMac)} className="flex items-center gap-1.5 text-sm text-site-text-muted hover:text-site-text transition-colors">
                     {showManualMac ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                     {t("manual-install", { defaultValue: "Manual install" })}
@@ -174,14 +174,14 @@ function RmhCodePage() {
               {installTab === 'windows' && (
                 <div className="space-y-4">
                   <div>
-                    <p className="text-xs text-site-text-dim font-medium mb-2">{t("option-1-installer", { defaultValue: "Option 1: Installer (.exe)" })}</p>
-                    <a href={RELEASES_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 rounded-site-sm bg-site-accent-dim border border-site-border text-site-accent text-sm font-medium hover:bg-site-accent-dim transition-colors">
+                    <p className="text-xs text-site-text-muted font-medium mb-2">{t("option-1-installer", { defaultValue: "Option 1: Installer (.exe)" })}</p>
+                    <a href={RELEASES_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 rounded-site-sm bg-site-bg-subtle border border-site-border text-site-accent text-sm font-medium hover:bg-site-bg-subtle transition-colors">
                       <Download className="w-4 h-4" /> {t("download-from-github", { defaultValue: "Download from GitHub Releases" })}
                     </a>
-                    <p className="text-xs text-site-text-dim mt-1.5">{t("download-latest", { defaultValue: "Download the latest" })} <code className="text-site-accent">rmhcode-*-setup-x64.exe</code></p>
+                    <p className="text-xs text-site-text-muted mt-1.5">{t("download-latest", { defaultValue: "Download the latest" })} <code className="text-site-accent">rmhcode-*-setup-x64.exe</code></p>
                   </div>
                   <div>
-                    <p className="text-xs text-site-text-dim font-medium mb-2">{t("option-2-powershell", { defaultValue: "Option 2: PowerShell one-liner" })}</p>
+                    <p className="text-xs text-site-text-muted font-medium mb-2">{t("option-2-powershell", { defaultValue: "Option 2: PowerShell one-liner" })}</p>
                     <CodeBlock code={INSTALL_COMMAND_PS} />
                   </div>
                   <div>
@@ -192,7 +192,7 @@ function RmhCodePage() {
                     {showManualWin && (
                       <div className="mt-2 space-y-2">
                         <CodeBlock code={MANUAL_WIN} />
-                        <p className="text-xs text-site-text-dim">{t("manual-win-path-note", { defaultValue: "Then add" })} <code className="text-site-accent">%USERPROFILE%\.rmhcode\bin</code> {t("manual-win-path-note-2", { defaultValue: "to your PATH and create a" })} <code className="text-site-accent">rmhcode.cmd</code> {t("manual-win-wrapper", { defaultValue: "wrapper." })}</p>
+                        <p className="text-xs text-site-text-muted">{t("manual-win-path-note", { defaultValue: "Then add" })} <code className="text-site-accent">%USERPROFILE%\.rmhcode\bin</code> {t("manual-win-path-note-2", { defaultValue: "to your PATH and create a" })} <code className="text-site-accent">rmhcode.cmd</code> {t("manual-win-wrapper", { defaultValue: "wrapper." })}</p>
                       </div>
                     )}
                   </div>
@@ -235,7 +235,7 @@ function RmhCodePage() {
           <h2 className="text-xl font-semibold text-site-text mb-6">{t("features-heading", { defaultValue: "Features" })}</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {features.map((feature) => (
-              <div key={feature.title} className="glass-fill rounded-site p-5 hover:border-site-border-bright transition-colors">
+              <div key={feature.title} className="glass-fill rounded-site p-5 hover:border-site-text transition-colors">
                 <feature.icon className="w-6 h-6 text-site-accent mb-3" />
                 <h3 className="font-semibold text-site-text mb-1">{feature.title}</h3>
                 <p className="text-sm text-site-text-muted">{feature.description}</p>
@@ -248,7 +248,7 @@ function RmhCodePage() {
           <div className="glass-fill rounded-site p-6">
             <h2 className="text-lg font-semibold text-site-text mb-4 flex items-center gap-2"><Terminal className="w-5 h-5 text-site-accent" />{t("usage-heading", { defaultValue: "Usage" })}</h2>
             <CodeBlock code={`rmhcode              # launch with banner\nrmhcode --init       # generate a CLAUDE.md for your project\nrmhcode --tmux       # launch a 3-pane tmux workspace\nrmhcode --version    # show version\nrmhcode -p "prompt"  # print mode (no banner)\nrmhcode --no-banner  # suppress banner`} />
-            <p className="text-sm text-site-text-dim mt-3">{t("usage-banner-note", { defaultValue: "Set" })} <code className="text-site-accent text-xs">RMHCODE_NO_BANNER=1</code> {t("usage-banner-note-2", { defaultValue: "to always suppress the banner. All standard Claude Code arguments and flags work as normal." })}</p>
+            <p className="text-sm text-site-text-muted mt-3">{t("usage-banner-note", { defaultValue: "Set" })} <code className="text-site-accent text-xs">RMHCODE_NO_BANNER=1</code> {t("usage-banner-note-2", { defaultValue: "to always suppress the banner. All standard Claude Code arguments and flags work as normal." })}</p>
           </div>
         </motion.div>
 
@@ -260,7 +260,7 @@ function RmhCodePage() {
               <table className="w-full text-sm">
                 <thead><tr className="border-b border-site-border bg-site-surface-hover"><th className="text-left py-2.5 px-4 font-medium text-site-text">{t("col-provider", { defaultValue: "Provider" })}</th><th className="text-left py-2.5 px-4 font-medium text-site-text">{t("col-flag", { defaultValue: "Flag" })}</th><th className="text-left py-2.5 px-4 font-medium text-site-text">{t("col-requires", { defaultValue: "Requires" })}</th></tr></thead>
                 <tbody className="divide-y divide-site-border">
-                  {providers.map((p) => (<tr key={p.name}><td className="py-2.5 px-4 text-site-text-muted">{p.name}</td><td className="py-2.5 px-4 font-mono text-site-accent text-xs">{p.flag}</td><td className="py-2.5 px-4 font-mono text-site-text-dim text-xs">{p.requires}</td></tr>))}
+                  {providers.map((p) => (<tr key={p.name}><td className="py-2.5 px-4 text-site-text-muted">{p.name}</td><td className="py-2.5 px-4 font-mono text-site-accent text-xs">{p.flag}</td><td className="py-2.5 px-4 font-mono text-site-text-muted text-xs">{p.requires}</td></tr>))}
                 </tbody>
               </table>
             </div>
@@ -281,7 +281,7 @@ function RmhCodePage() {
               <h3 className="text-sm font-semibold text-site-text mb-2">{t("auto-create-repo-heading", { defaultValue: "Auto-create GitHub Repo" })}</h3>
               <p className="text-sm text-site-text-muted mb-3">{t("auto-create-repo-desc-prefix", { defaultValue: "Use" })} <code className="text-site-accent">--create-repo</code> {t("auto-create-repo-desc-suffix", { defaultValue: "to create a GitHub repository, push your code, and publish — all in one step:" })}</p>
               <CodeBlock code="rmhcode push-build --create-repo" />
-              <p className="text-xs text-site-text-dim mt-2">{t("github-pat-note", { defaultValue: "Requires" })} <code className="text-site-accent">GITHUB_PERSONAL_ACCESS_TOKEN</code> {t("github-pat-note-2", { defaultValue: "in your environment with the" })} <code className="text-site-accent">repo</code> {t("github-pat-scope", { defaultValue: "scope." })}</p>
+              <p className="text-xs text-site-text-muted mt-2">{t("github-pat-note", { defaultValue: "Requires" })} <code className="text-site-accent">GITHUB_PERSONAL_ACCESS_TOKEN</code> {t("github-pat-note-2", { defaultValue: "in your environment with the" })} <code className="text-site-accent">repo</code> {t("github-pat-scope", { defaultValue: "scope." })}</p>
             </div>
             <div>
               <h3 className="text-sm font-semibold text-site-text mb-2">{t("browsing-editing-heading", { defaultValue: "Browsing & Editing Builds" })}</h3>
@@ -336,7 +336,7 @@ function RmhCodePage() {
 
         <motion.div {...inViewProps}>
           <Link to="/user-builds">
-            <div className="glass-fill rounded-site p-6 hover:border-site-border-bright hover:border-site-border-bright transition-colors group">
+            <div className="glass-fill rounded-site p-6 hover:border-site-text hover:border-site-text transition-colors group">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-site-text mb-1 flex items-center gap-2"><Boxes className="w-5 h-5 text-site-accent" />{t("browse-builds-heading", { defaultValue: "Browse User Builds" })}</h2>
@@ -352,9 +352,9 @@ function RmhCodePage() {
           <div className="glass-fill rounded-site p-6">
             <h2 className="text-lg font-semibold text-site-text mb-4 flex items-center gap-2"><Trash2 className="w-5 h-5 text-site-text-muted" />{t("uninstall-heading", { defaultValue: "Uninstall" })}</h2>
             <div className="space-y-4">
-              <div><p className="text-xs text-site-text-dim font-medium mb-2">{t("tab-mac-linux", { defaultValue: "macOS / Linux" })}</p><CodeBlock code={UNINSTALL_MAC} /></div>
-              <div><p className="text-xs text-site-text-dim font-medium mb-2">{t("uninstall-windows-label", { defaultValue: "Windows (PowerShell install)" })}</p><CodeBlock code={UNINSTALL_WIN} /></div>
-              <p className="text-xs text-site-text-dim">{t("uninstall-windows-installer", { defaultValue: "Windows installer: Use Add/Remove Programs or run the uninstaller from the Start Menu." })}</p>
+              <div><p className="text-xs text-site-text-muted font-medium mb-2">{t("tab-mac-linux", { defaultValue: "macOS / Linux" })}</p><CodeBlock code={UNINSTALL_MAC} /></div>
+              <div><p className="text-xs text-site-text-muted font-medium mb-2">{t("uninstall-windows-label", { defaultValue: "Windows (PowerShell install)" })}</p><CodeBlock code={UNINSTALL_WIN} /></div>
+              <p className="text-xs text-site-text-muted">{t("uninstall-windows-installer", { defaultValue: "Windows installer: Use Add/Remove Programs or run the uninstaller from the Start Menu." })}</p>
             </div>
           </div>
         </motion.div>

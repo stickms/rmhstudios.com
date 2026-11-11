@@ -70,7 +70,7 @@ export function RemindersList() {
         <li key={r.id}>
           <Card interactive className="flex-row items-center gap-3 px-4 py-3">
             <a href={r.url} className="flex min-w-0 flex-1 items-center gap-3">
-              <AlarmClock className="h-5 w-5 shrink-0 text-site-text-dim" aria-hidden />
+              <AlarmClock className="h-5 w-5 shrink-0 text-site-text-muted" aria-hidden />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-site-text">{r.label}</span>
                 <span className="block truncate text-xs text-site-text-muted">

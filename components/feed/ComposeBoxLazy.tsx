@@ -136,10 +136,10 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  onFocus={activate}
  placeholder={t('compose-placeholder', { defaultValue:"What's on your mind?"})}
  aria-label={t('compose-placeholder', { defaultValue:"What's on your mind?"})}
- className="block w-full glass-inset text-site-text placeholder:text-site-text-dim text-base resize-none px-3 py-2 outline-none cursor-text"
+ className="block w-full glass-inset text-site-text placeholder:text-site-text-muted text-base resize-none px-3 py-2 outline-none cursor-text"
  />
  <div className="flex items-center justify-between mt-2"aria-hidden>
- <span className="text-xs font-mono text-site-text-dim">{MAX_RMHARK_LENGTH}</span>
+ <span className="text-xs font-mono text-site-text-muted">{MAX_RMHARK_LENGTH}</span>
  <Button variant="accent"size="sm"disabled tabIndex={-1}>
  {t('post-button', { defaultValue:'Post'})}
  </Button>

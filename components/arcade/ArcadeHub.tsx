@@ -145,14 +145,14 @@ export function ArcadeHub({
                   {t('arcade-day-streak', { defaultValue: 'day streak' })}
                 </span>
               </p>
-              <p className="mt-2 flex items-center gap-2 text-xs text-site-text-dim">
+              <p className="mt-2 flex items-center gap-2 text-xs text-site-text-muted">
                 <Trophy className="h-3 w-3" aria-hidden />
                 {t('arcade-best-streak', { best: streak.best, defaultValue: 'Best: {{best}}' })}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm text-site-text-muted" aria-live="off">
-            <Clock className="h-4 w-4 text-site-text-dim" aria-hidden />
+            <Clock className="h-4 w-4 text-site-text-muted" aria-hidden />
             <span>
               {t('arcade-resets-in', { defaultValue: 'Resets in' })}{' '}
               <span className="font-mono tabular-nums text-site-text">
@@ -231,7 +231,7 @@ function ChallengeCard({
             className="h-full w-full scale-110 object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-site-text-dim">
+          <div className="flex h-full w-full items-center justify-center text-site-text-muted">
             <Gamepad2 className="h-6 w-6" aria-hidden />
           </div>
         )}

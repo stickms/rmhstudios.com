@@ -163,7 +163,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  style={{ transform: `scaleX(${nextPct / 100})`}}
  />
  </div>
- <p className="mt-1.5 text-xs text-site-text-dim">
+ <p className="mt-1.5 text-xs text-site-text-muted">
  {next.day - streak.current === 1
  ? t('more-day-to-milestone', {
  label: next.label,
@@ -202,7 +202,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm ${
  reached
  ?'bg-site-warning/15 text-site-warning'
- :'bg-site-surface text-site-text-dim'
+ :'bg-site-surface text-site-text-muted'
  }`}
  >
  <Flame className={`h-4 w-4 ${reached ?'fill-site-warning/30':''}`} />
@@ -224,7 +224,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  </section>
  </Reveal>
 
- <p className="flex items-center justify-center gap-1.5 text-center text-xs text-site-text-dim">
+ <p className="flex items-center justify-center gap-1.5 text-center text-xs text-site-text-muted">
  <CoinIcon className="h-3.5 w-3.5"/>{''}
  {t('check-in-daily-earn-coins', {
  defaultValue:'Check in daily to earn coins — rewards grow as your streak does.',

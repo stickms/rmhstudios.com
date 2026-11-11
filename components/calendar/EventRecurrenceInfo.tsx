@@ -76,7 +76,7 @@ export function EventRecurrenceInfo({
   const hostName = rec.occurrenceHost.name ?? rec.occurrenceHost.handle;
 
   return (
-    <div className="mt-1 flex flex-col gap-2 rounded-site-sm bg-site-accent-dim/40 p-2.5 text-xs text-site-text-muted">
+    <div className="mt-1 flex flex-col gap-2 rounded-site-sm bg-site-bg-subtle/40 p-2.5 text-xs text-site-text-muted">
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <Repeat className="size-3.5 text-site-accent" aria-hidden />
         <span className="font-medium text-site-text">

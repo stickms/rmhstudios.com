@@ -163,11 +163,11 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
             <UserAvatar src={build.user.image ?? undefined} alt={build.user.name || 'User'} size={40} fallbackName={build.user.name ?? undefined} />
             <div>
               <p className="font-medium text-site-text">{build.user.name || t("anonymous", { defaultValue: "Anonymous" })}</p>
-              {build.user.username && <p className="text-sm text-site-text-dim">@{build.user.username}</p>}
+              {build.user.username && <p className="text-sm text-site-text-muted">@{build.user.username}</p>}
             </div>
           </Link>
 
-          <span aria-hidden className="text-site-text-dim">|</span>
+          <span aria-hidden className="text-site-text-muted">|</span>
 
           <span className="flex items-center gap-2 text-sm text-site-text-muted">
             <Calendar className="size-4" aria-hidden />
@@ -316,7 +316,7 @@ export function BuildDetail({ build: initialBuild }: BuildDetailProps) {
                   <Badge className="font-mono">v{version.version}</Badge>
                   <div className="min-w-0 flex-1">
                     {version.changelog && <p className="text-sm text-site-text-muted">{version.changelog}</p>}
-                    <p className="mt-1 text-xs text-site-text-dim">
+                    <p className="mt-1 text-xs text-site-text-muted">
                       {formatDate(version.createdAt)}
                       {version.commitHash && <span className="ml-2 font-mono">{version.commitHash.slice(0, 7)}</span>}
                     </p>

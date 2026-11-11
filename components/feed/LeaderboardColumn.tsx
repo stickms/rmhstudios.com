@@ -35,7 +35,7 @@ function rankClass(rank: number): string {
  if (rank === 1) return'text-site-podium-gold';
  if (rank === 2) return'text-site-podium-silver';
  if (rank === 3) return'text-site-podium-bronze';
- return'text-site-text-dim';
+ return'text-site-text-muted';
 }
 
 export function LeaderboardColumn({
@@ -86,7 +86,7 @@ export function LeaderboardColumn({
  aria-label={t('leaderboard-scope-aria', { defaultValue:'Leaderboard scope'})}
  />
 
- <p className="text-xs text-site-text-dim">
+ <p className="text-xs text-site-text-muted">
  {t('leaderboard-subtitle', {
  defaultValue:'Ranked by lifetime XP. Earn XP by posting, playing, studying, and more.',
  })}
@@ -115,7 +115,7 @@ export function LeaderboardColumn({
  key={e.userId}
  className={`flex items-center gap-3 rounded-site border p-2.5 ${LIFT_CARD} ${
  e.isViewer
- ?'border-site-accent bg-site-accent-dim'
+ ?'border-site-accent bg-site-bg-subtle'
  :'border-site-border bg-site-surface'
  }`}
  >
@@ -129,7 +129,7 @@ export function LeaderboardColumn({
  e.user.handle ||
  t('player-fallback', { defaultValue:'Player'})}
  </p>
- <p className="flex items-center gap-2 text-xs text-site-text-dim">
+ <p className="flex items-center gap-2 text-xs text-site-text-muted">
  <span className="inline-flex items-center gap-1 rounded-full bg-site-bg px-1.5 py-0.5 font-bold text-site-accent">
  <Zap className="h-3 w-3"aria-hidden />{''}
  {t('leaderboard-level', { defaultValue:'Lv {{n}}', n: e.level })}

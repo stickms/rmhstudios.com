@@ -262,7 +262,7 @@ export function ShopColumn({
               // border + a matching inner specular hairline over the base rim.
               style={{
                 borderColor: `${RARITY_COLORS[item.rarity]}55`,
-                boxShadow: `inset 0 1px 0 ${RARITY_COLORS[item.rarity]}55, var(--site-shadow-site-sm)`,
+                boxShadow: `inset 0 1px 0 ${RARITY_COLORS[item.rarity]}55`,
               }}
             >
               <div className="glass-inset flex min-h-32 items-center justify-center rounded-site-sm p-4">

@@ -71,7 +71,7 @@ export default function ScheduledGiftsPanel() {
             ))}
             {opened.map((g) => (
               <li key={g.id} className="glass-fill flex items-center gap-3 p-4">
-                <PackageOpen className="size-5 shrink-0 text-site-text-dim" aria-hidden />
+                <PackageOpen className="size-5 shrink-0 text-site-text-muted" aria-hidden />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-site-text">{g.itemName}</p>
                   <p className="truncate text-xs text-site-text-muted">

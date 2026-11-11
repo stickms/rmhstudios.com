@@ -295,7 +295,7 @@ export function PersonasTab({ seed }: { seed: number }) {
               >
                 <div
                   data-persona-avatar
-                  className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-site bg-site-accent-dim text-xl"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-site bg-site-bg-subtle text-xl"
                 >
                   {p.avatarUrl ? (
                     <img
@@ -313,7 +313,7 @@ export function PersonasTab({ seed }: { seed: number }) {
                   {p.tagline && (
                     <p className="truncate text-xs text-site-text-muted">{p.tagline}</p>
                   )}
-                  <p className="mt-0.5 text-xs text-site-text-dim">{personaMeta(p, false)}</p>
+                  <p className="mt-0.5 text-xs text-site-text-muted">{personaMeta(p, false)}</p>
                 </div>
               </Link>
             ))}

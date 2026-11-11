@@ -548,7 +548,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
                 rather than one. Flush to the edges with a single hairline under
                 it, the row and the results below it are one panel. */}
             <div className="flex items-center gap-3 border-b border-site-border px-4">
-              <Search className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
+              <Search className="h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
               <input
                 ref={inputRef}
                 autoFocus
@@ -568,9 +568,9 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
                 placeholder={t('palette-placeholder', {
                   defaultValue: 'Search pages, people, posts, games…',
                 })}
-                className="w-full bg-transparent py-4 text-body-rem text-site-text placeholder:text-site-text-dim focus:outline-none"
+                className="w-full bg-transparent py-4 text-body-rem text-site-text placeholder:text-site-text-muted focus:outline-none"
               />
-              <kbd className="hidden shrink-0 rounded-[var(--site-radius-sm)] border border-site-border px-1.5 py-0.5 text-micro font-medium uppercase text-site-text-dim sm:block">
+              <kbd className="hidden shrink-0 rounded-[var(--site-radius-sm)] border border-site-border px-1.5 py-0.5 text-micro font-medium uppercase text-site-text-muted sm:block">
                 esc
               </kbd>
             </div>
@@ -582,13 +582,13 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
               className="max-h-[50dvh] overflow-y-auto p-2"
             >
               {flat.length === 0 && (
-                <p className="px-3 py-8 text-center text-sm text-site-text-dim">
+                <p className="px-3 py-8 text-center text-sm text-site-text-muted">
                   {t('palette-no-results', { defaultValue: 'No results. Try a different search.' })}
                 </p>
               )}
               {grouped.map((group) => (
                 <div key={group.section} className="mb-1">
-                  <p className="px-3 pb-1 pt-2 text-xs font-semibold text-site-text-dim">
+                  <p className="px-3 pb-1 pt-2 text-xs font-semibold text-site-text-muted">
                     {t(SECTION_LABELS[group.section].key, {
                       defaultValue: SECTION_LABELS[group.section].fallback,
                     })}
@@ -608,7 +608,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
                         onClick={() => runCommand(cmd)}
                         className={cn(
                           'glass-interactive flex w-full items-center gap-3 rounded-site-sm px-3 py-2 text-left text-sm',
-                          active ? 'bg-site-accent-dim text-site-accent' : 'text-site-text-muted',
+                          active ? 'bg-site-bg-subtle text-site-accent' : 'text-site-text-muted',
                         )}
                       >
                         {cmd.section === 'people' ? (
@@ -620,7 +620,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
                             className="shrink-0"
                           />
                         ) : Icon ? (
-                          <Icon className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
+                          <Icon className="h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
                         ) : cmd.emoji ? (
                           <span
                             className="w-4 shrink-0 text-center text-sm leading-none"
@@ -632,7 +632,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
                         <span className="min-w-0 flex-1 truncate">
                           {cmd.label}
                           {cmd.sublabel && (
-                            <span className="ml-1.5 text-xs text-site-text-dim">
+                            <span className="ml-1.5 text-xs text-site-text-muted">
                               {cmd.sublabel}
                             </span>
                           )}
@@ -647,7 +647,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
                         )}
                         {active && (
                           <CornerDownLeft
-                            className="h-3.5 w-3.5 shrink-0 text-site-text-dim"
+                            className="h-3.5 w-3.5 shrink-0 text-site-text-muted"
                             aria-hidden
                           />
                         )}

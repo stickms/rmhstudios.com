@@ -21,7 +21,7 @@ export function PrivacySection({
       <section className="glass-fill rounded-site p-5">
         <div className="flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-start gap-3">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">
               <Eye className="size-4" aria-hidden />
             </span>
             <div>
@@ -46,7 +46,7 @@ export function PrivacySection({
 
       <section className="glass-fill rounded-site p-5">
         <div className="mb-4 flex items-start gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">
             <LockKeyhole className="size-4" aria-hidden />
           </span>
           <div>
@@ -75,7 +75,7 @@ export function PrivacySection({
           </option>
           <option value="NONE">{t('dm-none', { defaultValue: 'Nobody' })}</option>
         </Select>
-        <p className="mt-2 text-xs text-site-text-dim">
+        <p className="mt-2 text-xs text-site-text-muted">
           {dmPrivacy === 'EVERYONE'
             ? t('dm-everyone-hint', {
                 defaultValue: 'Anyone can send you a direct message.',

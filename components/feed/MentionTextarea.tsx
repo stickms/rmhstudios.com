@@ -318,7 +318,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  >
  <div>
  {loading && suggestions.length === 0 ? (
- <div className="px-3 py-2 text-xs text-site-text-dim">{tl("searching", { defaultValue:"Searching..."})}</div>
+ <div className="px-3 py-2 text-xs text-site-text-muted">{tl("searching", { defaultValue:"Searching..."})}</div>
  ) : (
  suggestions.map((suggestion, i) => {
  const active = i === activeIndex;
@@ -356,7 +356,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  {highlightMatch(u.name || u.handle, query)}
  {u.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-site-accent shrink-0"/>}
  </span>
- <span className="block text-xs text-site-text-dim truncate">
+ <span className="block text-xs text-site-text-muted truncate">
  @{highlightMatch(u.handle ?? u.username, query)}
  </span>
  </span>
@@ -403,7 +403,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  <span className="block text-sm text-site-text truncate">
  #{highlightMatch(t.tag, query)}
  </span>
- <span className="block text-xs text-site-text-dim">
+ <span className="block text-xs text-site-text-muted">
  {tl("tag-post-count", { count: t.count, defaultValue:"{{count}} posts"})}
  </span>
  </span>

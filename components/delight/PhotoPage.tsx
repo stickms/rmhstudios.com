@@ -155,7 +155,7 @@ export function PhotoPage() {
                   />
                   <p className="truncate text-sm text-site-text">
                     {n.caption || t('potd-untitled', { defaultValue: 'Untitled' })}
-                    <span className="text-site-text-dim"> - {n.by.name}</span>
+                    <span className="text-site-text-muted"> - {n.by.name}</span>
                   </p>
                   <div className="flex items-center gap-2">
                     {session && !n.mine && (

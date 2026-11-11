@@ -100,19 +100,19 @@ export function StakingCard() {
  <p className="inline-flex items-center gap-0.5 text-sm font-bold text-site-text">
  <CoinIcon className="h-3.5 w-3.5"/> {fmt(data.principal)}
  </p>
- <p className="text-micro text-site-text-dim">{t("staked", { defaultValue:"Staked"})}</p>
+ <p className="text-micro text-site-text-muted">{t("staked", { defaultValue:"Staked"})}</p>
  </div>
  <div className="rounded-site-sm bg-site-bg p-2">
  <p className="inline-flex items-center gap-0.5 text-sm font-bold text-site-accent">
  <CoinIcon className="h-3.5 w-3.5"/> {fmt(data.accrued)}
  </p>
- <p className="text-micro text-site-text-dim">{t("interest", { defaultValue:"Interest"})}</p>
+ <p className="text-micro text-site-text-muted">{t("interest", { defaultValue:"Interest"})}</p>
  </div>
  <div className="rounded-site-sm bg-site-bg p-2">
  <p className="inline-flex items-center gap-0.5 text-sm font-bold text-site-text">
  <CoinIcon className="h-3.5 w-3.5"/> {fmt(data.balance)}
  </p>
- <p className="text-micro text-site-text-dim">{t("wallet", { defaultValue:"Wallet"})}</p>
+ <p className="text-micro text-site-text-muted">{t("wallet", { defaultValue:"Wallet"})}</p>
  </div>
  </div>
 
@@ -148,7 +148,7 @@ export function StakingCard() {
  <div className="mt-3 flex items-center justify-between gap-2">
  <div className="min-w-0">
  <p id="stake-auto-reinvest" className="text-xs font-semibold text-site-text">{t("auto-reinvest", { defaultValue:"Auto-reinvest"})}</p>
- <p className="text-micro text-site-text-dim">{t("auto-reinvest-hint", { defaultValue:"Interest compounds into your stake daily"})}</p>
+ <p className="text-micro text-site-text-muted">{t("auto-reinvest-hint", { defaultValue:"Interest compounds into your stake daily"})}</p>
  </div>
  <Switch
  checked={data.autoReinvest}

@@ -100,7 +100,7 @@ export function RMHCoinsPage() {
             <div className="flex items-center gap-2">
               <CoinIcon className="size-6" />
               <span className="font-bold text-2xl text-site-warning">{coins}</span>
-              <span className="text-sm text-site-text-dim">{t("rmh-coins", { defaultValue: "RMH Coins" })}</span>
+              <span className="text-sm text-site-text-muted">{t("rmh-coins", { defaultValue: "RMH Coins" })}</span>
             </div>
             {coins < 10 && (
               <Button

@@ -125,7 +125,7 @@ function AdminMarketPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="truncate text-base font-medium text-site-text">{name}</div>
-                      <div className="text-sm text-site-text-dim">
+                      <div className="text-sm text-site-text-muted">
                         @{r.seller.handle ?? r.seller.name ?? r.seller.id.slice(0, 6)}
                         {' · '}
                         {t('market-review-listed', {

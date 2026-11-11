@@ -34,7 +34,7 @@ function FeedRow({ f }: { f: FeedSummary }) {
             : ''}
         </p>
         {f.isPublic && (
-          <p className="mt-0.5 text-xs text-site-text-dim">
+          <p className="mt-0.5 text-xs text-site-text-muted">
             {t('feeds-subscribers', {
               count: f.subscriberCount,
               defaultValue: '{{count}} subscribers',

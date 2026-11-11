@@ -114,7 +114,7 @@ function SortableRow<T extends SortableItem>({
  // in the same flex line. Guarding the handle is enough to stop it: a
  // selection that never starts cannot be extended.
  data-gesture=""
- className="cursor-grab touch-none text-site-text-dim active:cursor-grabbing"
+ className="cursor-grab touch-none text-site-text-muted active:cursor-grabbing"
  aria-hidden
  >
  <GripVertical className="h-4 w-4" />

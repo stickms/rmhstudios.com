@@ -1,5 +1,12 @@
 # Design Language — Radial Plasmatic Jelly
 
+> **Historical, superseded by Steel (2026-11-11).** This document describes the old
+> design ("Radial Plasmatic Jelly"), which Steel replaces. It is kept for the record and no longer
+> describes how the site looks or what to build. The current design is
+> [`design.md`](../design.md) and the single source
+> [`docs/plans/2026-11-11-steel-design-implementation.md`](./plans/2026-11-11-steel-design-implementation.md).
+> Where this file disagrees with the Steel plan, the plan wins.
+
 > Audience: humans **and** coding agents. This is the reference for how the site
 > looks and feels, and how to build UI that is visually native to it. For the
 > step-by-step "build a page that fits" checklist, see

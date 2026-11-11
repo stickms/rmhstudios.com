@@ -63,7 +63,7 @@ export default function TranslationsPanel() {
           {q.data?.suggestions.map((s) => (
             <li key={s.id} className="glass-fill flex items-center gap-3 rounded-site px-4 py-3">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-xs text-site-text-dim">
+                <p className="truncate text-xs text-site-text-muted">
                   {s.ns} / {s.key}
                 </p>
                 <p className="text-sm text-site-text">{s.text}</p>

@@ -26,7 +26,7 @@ function Hop({
       : t('ring-next', { defaultValue: 'Next' });
   if (!person) {
     return (
-      <span className="inline-flex items-center gap-1 text-site-text-dim" aria-hidden>
+      <span className="inline-flex items-center gap-1 text-site-text-muted" aria-hidden>
         {dir === 'prev' ? <ArrowLeft className="size-4" /> : null}
         {dir === 'next' ? <ArrowRight className="size-4" /> : null}
       </span>
@@ -101,7 +101,7 @@ export default function WebringStripModule({
               >
                 {ring.name}
               </Link>
-              <span className="shrink-0 text-xs text-site-text-dim">
+              <span className="shrink-0 text-xs text-site-text-muted">
                 {t('ring-position', {
                   position: ring.position,
                   size: ring.size,

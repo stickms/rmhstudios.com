@@ -168,7 +168,7 @@ export function AdminQotdPanel() {
                       key={row.id}
                       className="glass-fill flex items-center gap-3 rounded-site px-4 py-3"
                     >
-                      <span className="w-24 shrink-0 text-xs text-site-text-dim">
+                      <span className="w-24 shrink-0 text-xs text-site-text-muted">
                         {row.dayKey ?? t('admin-next-free', { defaultValue: 'Next free day' })}
                       </span>
                       <span className="min-w-0 flex-1 text-sm text-site-text">{row.text}</span>
@@ -196,7 +196,7 @@ export function AdminQotdPanel() {
                       key={row.id}
                       className="glass-fill flex items-center gap-3 rounded-site px-4 py-3"
                     >
-                      <span className="w-24 shrink-0 text-xs text-site-text-dim">{row.dayKey}</span>
+                      <span className="w-24 shrink-0 text-xs text-site-text-muted">{row.dayKey}</span>
                       <span className="min-w-0 flex-1 text-sm text-site-text-muted">
                         {row.text}
                       </span>

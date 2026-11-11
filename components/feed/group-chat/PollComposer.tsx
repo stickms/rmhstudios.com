@@ -24,7 +24,7 @@ export function PollComposer({
         <button
           type="button"
           onClick={onCancel}
-          className="text-site-text-dim hover:text-site-text"
+          className="text-site-text-muted hover:text-site-text"
           aria-label={t('cancel-button', { defaultValue: 'Cancel' })}
         >
           <X className="h-4 w-4" />
@@ -35,7 +35,7 @@ export function PollComposer({
         onChange={(e) => onChange({ ...draft, question: e.target.value })}
         maxLength={300}
         placeholder={t('poll-question-placeholder', { defaultValue: 'Ask a question…' })}
-        className="glass-inset border mb-2 w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+        className="glass-inset border mb-2 w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none"
       />
       <div className="flex flex-col gap-1.5">
         {draft.options.map((o, i) => (
@@ -48,7 +48,7 @@ export function PollComposer({
               index: i + 1,
               defaultValue: 'Option {{index}}',
             })}
-            className="glass-inset border w-full rounded-site-sm px-3 py-1.5 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+            className="glass-inset border w-full rounded-site-sm px-3 py-1.5 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none"
           />
         ))}
       </div>

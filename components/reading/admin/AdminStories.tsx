@@ -292,7 +292,7 @@ function StoryCard({
                 <li key={s.slug} className="flex items-center gap-2">
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-site-text">{s.title}</span>
-                    <span className="block text-xs text-site-text-dim">
+                    <span className="block text-xs text-site-text-muted">
                       {s.reason === 'tags'
                         ? t('suggest-tags', {
                             tags: s.overlap.join(', '),

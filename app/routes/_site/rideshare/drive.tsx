@@ -520,9 +520,9 @@ function RideCard({
             <span className="text-sm font-bold text-site-success">
               {formatUsd(payoutBreakdown(ride.estimatedFareCents).driverEarningsCents)}
             </span>
-            <span className="text-xs text-site-text-dim">{t('est-pay', { defaultValue: 'est. pay' })}</span>
+            <span className="text-xs text-site-text-muted">{t('est-pay', { defaultValue: 'est. pay' })}</span>
           </div>
-          <span className="mt-1 flex items-center gap-3 text-xs text-site-text-dim">
+          <span className="mt-1 flex items-center gap-3 text-xs text-site-text-muted">
             {ride.distanceMeters != null && (
               <span className="flex items-center gap-1">
                 <RouteLucide className="h-3 w-3" /> {formatDistance(ride.distanceMeters)}

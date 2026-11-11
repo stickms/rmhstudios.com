@@ -1,8 +1,8 @@
 /**
  * Every `@keyframes` in the site and app tier is on a named list (redesign E4).
  *
- * CLAUDE.md "Never fake a law": the only keyframe the Plasmatic Jelly material owns is `jelly-drift`
- * (the woken haze). Everything else here is a pre-existing animation that has an owner — a spinner, a
+ * Steel R5 and M6: nothing moves at rest and nothing else animates. The Plasmatic Jelly material's one keyframe
+ * (`jelly-drift`) went with the material. Everything here is a pre-existing animation that has an owner — a spinner, a
  * skeleton, a live dot, a one-shot route/enter effect — and is listed with the reason it exists. A new
  * `@keyframes` therefore has to be added to {@link SANCTIONED} on purpose, in the diff, with a reason.
  *
@@ -24,10 +24,8 @@ const ROOT = process.cwd();
 /** keyframe name -> why it exists (owner). */
 export const SANCTIONED: Record<string, string> = {
   // --- the material -------------------------------------------------------------------------------
-  'jelly-drift': 'the woken-haze drift on a hovered/focused glass host (app/jelly-material.css §3b)',
 
   // --- app/globals.css: site-wide ---------------------------------------------------------------
-  'toast-success-flash': 'sonner success toast: one 0.8s confirmation flash',
   'page-enter': 'route content enter (.page-root); suppressed on history POP by html.nav-pop',
   'content-item-enter': 'staggered enter of feed/list items (.content-item)',
   'motion-presence': 'no-op presence animation so Radix keeps a [data-motion] node until its exit transition ends',

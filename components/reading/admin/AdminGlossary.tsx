@@ -171,7 +171,7 @@ export default function AdminGlossary() {
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-site-text">{term.term}</p>
                 {term.aliases.length > 0 ? (
-                  <p className="text-xs text-site-text-dim">{term.aliases.join(', ')}</p>
+                  <p className="text-xs text-site-text-muted">{term.aliases.join(', ')}</p>
                 ) : null}
                 <p className="mt-1 text-sm text-site-text-muted">{term.definition}</p>
               </div>

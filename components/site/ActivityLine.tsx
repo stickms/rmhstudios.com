@@ -27,7 +27,7 @@ export function ActivityLine({
 
   if (!activity) {
     return (
-      <span className={cn('flex items-center gap-1.5 text-xs text-site-text-dim', className)}>
+      <span className={cn('flex items-center gap-1.5 text-xs text-site-text-muted', className)}>
         <Circle className="h-2 w-2 shrink-0 fill-site-success text-site-success" aria-hidden />
         <span className="truncate">{t('presence-online', { defaultValue: 'Online' })}</span>
       </span>

@@ -361,7 +361,7 @@ function PollGridImpl(props: PollGridProps) {
               mode === 'paint' &&
                 "data-[a='1']:after:content-['✓'] data-[a='2']:after:content-['?'] after:absolute after:right-0.5 after:top-0 after:text-rem-60 after:font-bold",
               highlight?.has(i) && 'outline outline-2 -outline-offset-2 outline-site-accent',
-              lockedSlots?.has(i) && 'bg-site-accent-dim',
+              lockedSlots?.has(i) && 'bg-site-bg-subtle',
             )}
           >
             {h && h.frac > 0 ? (

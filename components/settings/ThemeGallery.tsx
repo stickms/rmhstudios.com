@@ -24,9 +24,7 @@ function ThemePreviewSwatch({ styleId }: { styleId: string }) {
         'pointer-events-none border-b border-site-border [contain:layout_paint]',
       )}
     >
-      {/* --site-canvas lets gradient themes (liquid-glass) preview their real
-          backdrop; plain themes fall back to their solid --site-bg. */}
-      <div className="p-2.5" style={{ background: 'var(--site-canvas, var(--site-bg))' }}>
+      <div className="p-2.5" style={{ background: 'var(--site-bg)' }}>
         <div
           className="border p-2"
           style={{
@@ -38,7 +36,7 @@ function ThemePreviewSwatch({ styleId }: { styleId: string }) {
           <div className="h-1.5 w-3/5 rounded-full" style={{ background: 'var(--site-text)' }} />
           <div
             className="mt-1 h-1.5 w-4/5 rounded-full"
-            style={{ background: 'var(--site-text-dim)' }}
+            style={{ background: 'var(--site-text-muted)' }}
           />
           <div
             className="mt-2 h-3.5 w-9 rounded-full"

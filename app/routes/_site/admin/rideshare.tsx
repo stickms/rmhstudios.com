@@ -256,7 +256,7 @@ function AdminRidesharePage() {
                       </p>
                     </div>
                   </div>
-                  <span className="text-xs text-site-text-dim">
+                  <span className="text-xs text-site-text-muted">
                     {formatDistanceToNow(new Date(app.createdAt), { addSuffix: true })}
                   </span>
                 </div>
@@ -423,7 +423,7 @@ function RideHistory({
                   </div>
                 </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-site-border pt-3 text-xs text-site-text-dim">
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-site-border pt-3 text-xs text-site-text-muted">
                   {ride.distanceMeters != null && (
                     <span className="flex items-center gap-1">
                       <RouteIcon className="size-3" aria-hidden /> {formatDistance(ride.distanceMeters)}

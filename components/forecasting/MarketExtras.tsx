@@ -22,7 +22,7 @@ export function MarketExtras({ marketId, signedIn, held }: Props) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="inline-flex items-center gap-2 self-start text-xs text-site-text-dim hover:text-site-text transition-colors"
+        className="inline-flex items-center gap-2 self-start text-xs text-site-text-muted hover:text-site-text transition-colors"
       >
         <MessageSquare className="size-3.5" aria-hidden />
         {open

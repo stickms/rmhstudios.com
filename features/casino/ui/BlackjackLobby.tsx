@@ -90,7 +90,7 @@ export function BlackjackLobby() {
           />
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-site-text-dim">{t("max-players", { defaultValue: "Max players" })}</label>
+              <label className="text-xs text-site-text-muted">{t("max-players", { defaultValue: "Max players" })}</label>
               <Select
                 value={maxPlayers}
                 onChange={(e) => setMaxPlayers(Number(e.target.value))}
@@ -101,7 +101,7 @@ export function BlackjackLobby() {
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-site-text-dim">{t("privacy", { defaultValue: "Privacy" })}</label>
+              <label className="text-xs text-site-text-muted">{t("privacy", { defaultValue: "Privacy" })}</label>
               <Select
                 value={privacy}
                 onChange={(e) => setPrivacy(e.target.value as 'public' | 'unlisted')}
@@ -140,7 +140,7 @@ export function BlackjackLobby() {
             variant="secondary"
             size="icon"
             onClick={handleRefresh}
-            className="text-site-text-dim hover:text-site-text"
+            className="text-site-text-muted hover:text-site-text"
           >
             <RefreshCw className="w-4 h-4" />
           </Button>
@@ -150,7 +150,7 @@ export function BlackjackLobby() {
       {/* Room list */}
       {roomList.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-sm text-site-text-dim">{t("no-rooms", { defaultValue: "No rooms yet. Create one to start playing!" })}</p>
+          <p className="text-sm text-site-text-muted">{t("no-rooms", { defaultValue: "No rooms yet. Create one to start playing!" })}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -163,7 +163,7 @@ export function BlackjackLobby() {
             >
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-bold text-site-text">{room.name}</span>
-                <span className="text-xs text-site-text-dim">
+                <span className="text-xs text-site-text-muted">
                   {t("hosted-by", { defaultValue: "hosted by {{ownerName}}", ownerName: room.ownerName })}
                   {room.inProgress && (
                     <span className="ml-1.5 text-site-accent">{t("in-progress", { defaultValue: "In progress" })}</span>
@@ -171,7 +171,7 @@ export function BlackjackLobby() {
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-site-text-dim" />
+                <Users className="w-3.5 h-3.5 text-site-text-muted" />
                 <span className={`text-sm font-bold ${
                   room.playerCount >= room.maxPlayers ? 'text-site-danger' : 'text-site-text'
                 }`}>

@@ -80,7 +80,7 @@ export default function AdventCalendar() {
                     ? 'glass-pane text-site-accent hover:text-site-accent-hover'
                     : done
                       ? 'glass-inset text-site-success'
-                      : 'glass-fill text-site-text-dim'
+                      : 'glass-fill text-site-text-muted'
                 } ${past && !done ? 'opacity-60' : ''}`}
               >
                 {door}

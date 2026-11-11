@@ -63,7 +63,8 @@ describe('iOS edge contract: invariants', () => {
     });
     expect(other.classes.has('ios-webkit')).toBe(false);
     expect(other.metaCreated(), 'every other browser still gets one').toBe(true);
-    expect(other.meta.content).toBe('#000000');
+    // Steel section 2: Night's page is #0b0d10 (the new-visitor default).
+    expect(other.meta.content).toBe('#0b0d10');
     // Runtime (paintDocumentGround): on iOS it removes our tag instead of mirroring the background into it.
     expect(theme).toMatch(
       /if \(html\.classList\.contains\('ios-webkit'\)\) \{\s*marked\?\.remove\(\);/,
@@ -72,14 +73,16 @@ describe('iOS edge contract: invariants', () => {
 
   it('the full-viewport fixed decoration is not rendered on iOS WebKit', () => {
     expect(globals).toMatch(
-      /html\.ios-webkit :is\(\.site-aurora, \.radial-backdrop, \.jelly-arc-layer\) \{\s*display: none;/,
+      /html\.ios-webkit :is\(\.radial-backdrop, \.jelly-arc-layer\) \{\s*display: none;/,
     );
   });
 
-  it('the ROOT carries the page canvas on iOS (the bars tint from it), not a fixed layer', () => {
-    expect(globals).toMatch(
-      /html\.ios-webkit:not\(\.app-route\) \{\s*background-image: var\(--site-canvas\);/,
-    );
+  it('the ROOT carries the page ground on iOS (the bars tint from it), not a fixed layer', () => {
+    // Steel has no canvas (R1: a flat ground), so the root's own `--site-bg` is the whole story: there is no aurora to
+    // mirror onto it and no fixed decoration to hide beyond the radial backdrop and the arc layer above.
+    expect(globals).toMatch(/html \{[^}]*background-color: var\(--site-bg\);/);
+    expect(globals).not.toContain('--site-canvas');
+    expect(globals).not.toMatch(/html\.ios-webkit:not\(\.app-route\) \{\s*background-image/);
   });
 
   it('the top capsule floats clear of the edge on screens wide enough to hold a capsule', () => {
@@ -110,15 +113,12 @@ describe('iOS edge contract: invariants', () => {
     expect(rule).toMatch(/padding-top:\s*env\(safe-area-inset-top/);
   });
 
-  it('while the globe menu is open the ROOT carries the veil tint, so the strips behind the bars take its colour', () => {
-    // Not a fixed layer at the edge (that is the band): the same root canvas Safari already tints from, under the veil's
-    // own colour. Two rules: opaque `--site-bg` where the veil is opaque, 24% on phones where the page shows through.
-    expect(radial).toMatch(
-      /html\.ios-webkit:not\(\.app-route\):has\(\.radial-hub:is\(\[data-phase='open'\], \[data-phase='everting'\]\)\) \{\s*background-image:\s*linear-gradient\(var\(--site-bg\), var\(--site-bg\)\),\s*var\(--site-canvas\);/,
-    );
-    expect(radial).toMatch(
-      /@media \(max-width: 767\.98px\) \{\s*html\.ios-webkit:not\(\.app-route\):has\(\.radial-hub:is\(\[data-phase='open'\], \[data-phase='everting'\]\)\) \{[^}]*color-mix\(in srgb, var\(--site-bg\) 24%, transparent\)/,
-    );
+  it('while the globe menu is open the root needs no tint: the veil and the ground are the same flat colour', () => {
+    // The old design mirrored the veil's tint onto the root's canvas so the strips behind the bars matched the menu.
+    // With a flat `--site-bg` ground and a `--site-bg` veil there is nothing to mirror, and no rule may bring a root
+    // background-image back (it is the band).
+    expect(radial).not.toMatch(/html\.ios-webkit:not\(\.app-route\):has\(\.radial-hub/);
+    expect(radial).not.toContain('--site-canvas');
   });
 });
 

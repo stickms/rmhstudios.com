@@ -52,7 +52,7 @@ function RuleRow({ rule, onSaved }: { rule: RuleView; onSaved: () => void }) {
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
           <h3 className="font-semibold text-site-text">{rule.title}</h3>
-          <p className="mt-0.5 break-words font-mono text-xs text-site-text-dim">
+          <p className="mt-0.5 break-words font-mono text-xs text-site-text-muted">
             {rule.id} · {rule.metric}
             {rule.dim
               ? ` (${rule.dim === '*' ? t('rule-each', { defaultValue: 'each' }) : rule.dim})`
@@ -75,15 +75,15 @@ function RuleRow({ rule, onSaved }: { rule: RuleView; onSaved: () => void }) {
 
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-site-text-muted sm:grid-cols-3">
         <div>
-          <dt className="text-site-text-dim">{t('rule-current', { defaultValue: 'Now' })}</dt>
+          <dt className="text-site-text-muted">{t('rule-current', { defaultValue: 'Now' })}</dt>
           <dd className="tabular-nums">{formatValue(worst, rule.unit)}</dd>
         </div>
         <div>
-          <dt className="text-site-text-dim">{t('rule-window', { defaultValue: 'Window' })}</dt>
+          <dt className="text-site-text-muted">{t('rule-window', { defaultValue: 'Window' })}</dt>
           <dd>{t('rule-minutes', { defaultValue: '{{n}} min', n: rule.forMinutes })}</dd>
         </div>
         <div>
-          <dt className="text-site-text-dim">{t('rule-code', { defaultValue: 'In code' })}</dt>
+          <dt className="text-site-text-muted">{t('rule-code', { defaultValue: 'In code' })}</dt>
           <dd className="tabular-nums">{formatValue(rule.codeThreshold, rule.unit)}</dd>
         </div>
       </dl>

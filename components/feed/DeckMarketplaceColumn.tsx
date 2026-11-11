@@ -91,7 +91,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
 
  <div className="space-y-4 p-4">
  <div className="relative">
- <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-dim"/>
+ <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted"/>
  <input
  value={query}
  onChange={(e) => onQueryChange(e.target.value)}
@@ -129,7 +129,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  {deck.description}
  </p>
  )}
- <p className="mt-2 text-xs text-site-text-dim">
+ <p className="mt-2 text-xs text-site-text-muted">
  {t('deck-card-count', { defaultValue:'{{n}} cards', n: deck.cardCount })}
  {deck.user.name || deck.user.handle
  ? `· ${t('deck-by', { defaultValue:'by'})} ${deck.user.name ||'@'+ deck.user.handle}`
@@ -137,7 +137,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  </p>
  <div className="mt-3">
  {deck.isOwn ? (
- <span className="text-xs font-medium text-site-text-dim">
+ <span className="text-xs font-medium text-site-text-muted">
  {t('deck-your-deck', { defaultValue:'Your deck'})}
  </span>
  ) : added ? (

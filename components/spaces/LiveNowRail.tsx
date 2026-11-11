@@ -62,7 +62,7 @@ export function LiveNowRail({ className }: { className?: string }) {
             to="/spaces/$id"
             params={{ id: s.id }}
             className={cn(
-              'glass-fill glass-interactive flex w-56 shrink-0 flex-col gap-1 p-3 transition-colors hover:border-site-border-bright',
+              'glass-fill glass-interactive flex w-56 shrink-0 flex-col gap-1 p-3 transition-colors hover:border-site-text',
               enteringSpaces.has(s.id) && 'content-item-enter',
             )}
           >

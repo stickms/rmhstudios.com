@@ -43,7 +43,7 @@ function OptionPicker<V extends string>({
             type="button"
             onClick={onClose}
             aria-label={t('close', { defaultValue: 'Close' })}
-            className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
+            className="p-2 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -63,7 +63,7 @@ function OptionPicker<V extends string>({
                 value === optionValue ? 'text-site-accent' : 'text-site-text'
               }`}
             >
-              <Icon className="w-4 h-4 text-site-text-dim" />
+              <Icon className="w-4 h-4 text-site-text-muted" />
               <span className="flex-1 text-left">{label}</span>
               {value === optionValue && <Check className="w-4 h-4" />}
             </button>

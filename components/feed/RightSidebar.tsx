@@ -169,7 +169,7 @@ export function RightSidebar({
                   <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors truncate">
                     {build.title}
                   </p>
-                  <span className="text-xs font-semibold text-site-text-dim">
+                  <span className="text-xs font-semibold text-site-text-muted">
                     {build.status}
                   </span>
                 </div>
@@ -199,7 +199,7 @@ export function RightSidebar({
                   <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors truncate">
                     {build.title}
                   </p>
-                  <span className="text-xs font-semibold text-site-text-dim">
+                  <span className="text-xs font-semibold text-site-text-muted">
                     {build.status}
                   </span>
                 </div>
@@ -250,7 +250,7 @@ export function RightSidebar({
                     {build.title}
                   </p>
                   {build.creator && (
-                    <p className="text-xs text-site-text-dim truncate mt-0.5">
+                    <p className="text-xs text-site-text-muted truncate mt-0.5">
                       {t('build-by', {
                         creator:
                           build.creator.name ||
@@ -260,7 +260,7 @@ export function RightSidebar({
                       })}
                     </p>
                   )}
-                  <div className="flex items-center gap-2 text-xs text-site-text-dim mt-0.5">
+                  <div className="flex items-center gap-2 text-xs text-site-text-muted mt-0.5">
                     <span className="inline-flex items-center gap-1">
                       <Heart className="w-3 h-3" />
                       {build.likeCount}
@@ -316,7 +316,7 @@ export function RightSidebar({
                     <p className="text-sm font-medium text-site-text truncate">
                       {user.name || user.username || t('user', { defaultValue: 'User' })}
                     </p>
-                    <p className="text-xs text-site-text-dim">
+                    <p className="text-xs text-site-text-muted">
                       {t('follower-count', {
                         count: user.followerCount,
                         defaultValue: '{{count}} followers',
@@ -345,7 +345,7 @@ export function RightSidebar({
         <div className="space-y-3">
           {blogPosts.map((post) => (
             <Link key={post.slug} to={`/blog/${post.slug}` as string} className="block group">
-              <p className="text-xs text-site-text-dim">{post.date}</p>
+              <p className="text-xs text-site-text-muted">{post.date}</p>
               <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors line-clamp-2">
                 {post.title}
               </p>
@@ -369,7 +369,7 @@ export function RightSidebar({
       <AdSlot placement="rail" />
 
       {/* Footer */}
-      <div className="text-xs text-site-text-dim px-2 space-y-1">
+      <div className="text-xs text-site-text-muted px-2 space-y-1">
         <p>{t('footer-tagline', { defaultValue: 'RMH | The Everything Platform' })}</p>
         <div className="flex flex-wrap gap-x-2 gap-y-0.5">
           <Link to="/security" className="hover:text-site-text transition-colors">

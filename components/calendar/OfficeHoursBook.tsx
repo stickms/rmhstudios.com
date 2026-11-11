@@ -142,7 +142,7 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
           {view.blurb && (
             <p className="mt-1 whitespace-pre-wrap text-sm text-site-text-muted">{view.blurb}</p>
           )}
-          <p className="mt-1 text-xs text-site-text-dim">
+          <p className="mt-1 text-xs text-site-text-muted">
             {t('oh-slot-info', {
               defaultValue: '{{count}}-minute sessions. Times are shown in your timezone ({{tz}}).',
               count: view.slotMin,
@@ -219,7 +219,7 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
             ))
           )}
           {!signedIn && (
-            <p className="text-xs text-site-text-dim">
+            <p className="text-xs text-site-text-muted">
               {t('oh-sign-in-hint', { defaultValue: 'Sign in to book a time.' })}
             </p>
           )}

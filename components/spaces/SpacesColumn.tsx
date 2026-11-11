@@ -106,7 +106,7 @@ export function SpacesColumn() {
             </Button>
           </div>
         ) : (
-          <p className="text-sm text-site-text-dim">
+          <p className="text-sm text-site-text-muted">
             {t('spaces-signin', { defaultValue: 'Sign in to start a Space.' })}
           </p>
         )}
@@ -138,7 +138,7 @@ export function SpacesColumn() {
                   params={{ id: s.id }}
                   className="glass-fill glass-interactive flex flex-col gap-1 rounded-site px-4 py-3"
                 >
-                  <div className="flex items-center gap-2 text-xs text-site-text-dim">
+                  <div className="flex items-center gap-2 text-xs text-site-text-muted">
                     <Radio className="size-3.5 text-site-accent" aria-hidden />
                     {s.community?.name ??
                       s.host.name ??

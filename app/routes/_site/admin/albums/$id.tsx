@@ -244,7 +244,7 @@ function ManageAlbumPage() {
             >
               {t('save-details', { defaultValue: 'Save details' })}
             </Button>
-            <span className="truncate font-mono text-xs text-site-text-dim">
+            <span className="truncate font-mono text-xs text-site-text-muted">
               /library/albums/{album.slug}
             </span>
           </div>

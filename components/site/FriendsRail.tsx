@@ -101,7 +101,7 @@ const FriendRailRow = memo(
         {joinable && activity ? (
           <Link
             to={joinable.href}
-            className="glass-interactive shrink-0 rounded-full bg-site-accent-dim px-2.5 py-1 text-caption font-semibold text-site-accent"
+            className="glass-interactive shrink-0 rounded-full bg-site-bg-subtle px-2.5 py-1 text-caption font-semibold text-site-accent"
           >
             {t(`presence-context-${activity.kind}`, { defaultValue: contextVerb(activity.kind) })}
           </Link>

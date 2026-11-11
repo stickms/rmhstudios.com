@@ -184,7 +184,7 @@
   color: #f5f5f7;
   font-family: var(--site-font-display);
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.2;
   text-align: center;
   text-wrap: balance;
@@ -335,7 +335,7 @@
 }
 
 .b3d__btn:hover {
-  border-color: var(--site-border-bright);
+  border-color: var(--site-text);
   background: var(--site-surface-hover);
 }
 
@@ -347,6 +347,6 @@
 
 .b3d__btn--primary {
   border-color: var(--site-accent);
-  background: var(--site-accent-dim);
+  background: var(--site-bg-subtle);
   color: var(--site-accent);
 }

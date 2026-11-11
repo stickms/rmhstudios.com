@@ -55,14 +55,14 @@ export function SharedMediaPanel({ chat, tab }: { chat: ChatRef; tab: 'media' | 
   }
   if (q.isError) {
     return (
-      <p className="py-8 text-center text-sm text-site-text-dim">
+      <p className="py-8 text-center text-sm text-site-text-muted">
         {t('media-error', { defaultValue: 'Could not load this right now.' })}
       </p>
     );
   }
   if (items.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-site-text-dim">
+      <p className="py-8 text-center text-sm text-site-text-muted">
         {tab === 'media'
           ? t('media-empty', {
               defaultValue: 'No photos, GIFs or voice notes have been shared yet.',
@@ -124,12 +124,12 @@ export function SharedMediaPanel({ chat, tab }: { chat: ChatRef; tab: 'media' | 
                   rel="noopener noreferrer nofollow"
                   className="flex min-h-12 items-center gap-3 py-2 hover:bg-site-surface-hover focus-visible:ring-2 focus-visible:ring-site-accent"
                 >
-                  <Link2 className="size-4 shrink-0 text-site-text-dim" aria-hidden />
+                  <Link2 className="size-4 shrink-0 text-site-text-muted" aria-hidden />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm text-site-text">{host}</span>
-                    <span className="block truncate text-xs text-site-text-dim">{l.url}</span>
+                    <span className="block truncate text-xs text-site-text-muted">{l.url}</span>
                   </span>
-                  <ExternalLink className="size-4 shrink-0 text-site-text-dim" aria-hidden />
+                  <ExternalLink className="size-4 shrink-0 text-site-text-muted" aria-hidden />
                 </a>
               </li>
             );

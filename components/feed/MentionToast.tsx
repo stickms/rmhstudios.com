@@ -40,7 +40,7 @@ export function showMentionToast(n: MentionNotification, navigate: NavigateFn) {
  <span className="font-semibold">{display}</span> mentioned you
  </span>
  {n.preview && (
- <span className="block text-xs text-site-text-dim truncate mt-0.5">{n.preview}</span>
+ <span className="block text-xs text-site-text-muted truncate mt-0.5">{n.preview}</span>
  )}
  </span>
  </button>

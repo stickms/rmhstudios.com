@@ -22,14 +22,14 @@ function Tile({ entry }: { entry: TopFourEntry }) {
             className="size-full object-cover"
           />
         ) : (
-          <div className="flex size-full items-center justify-center text-site-text-dim">
+          <div className="flex size-full items-center justify-center text-site-text-muted">
             <Icon className="size-8" aria-hidden />
           </div>
         )}
       </div>
       <div className="mt-1.5 min-w-0">
         <p className="truncate text-sm font-semibold text-site-text">{entry.title}</p>
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {entry.kind === 'game'
             ? t('kind-game', { defaultValue: 'Game' })
             : t('kind-app', { defaultValue: 'App' })}

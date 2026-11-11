@@ -106,7 +106,7 @@ function AnalyticsPage() {
                         minHeight: d.count > 0 ? 2 : 0,
                       }}
                     />
-                    <span className="text-micro text-site-text-dim">{d.day.slice(5)}</span>
+                    <span className="text-micro text-site-text-muted">{d.day.slice(5)}</span>
                   </div>
                 ))}
               </div>

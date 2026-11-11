@@ -65,7 +65,7 @@ export function FriendsStrip({ className }: { className?: string }) {
             +{extra}
           </span>
         ) : null}
-        <ArrowRight className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
+        <ArrowRight className="h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
       </button>
 
       <FriendsSheet open={open} onOpenChange={setOpen} friends={friends} />
@@ -143,7 +143,7 @@ const FriendSheetRow = memo(
             <Link
               to={joinable.href}
               onClick={onNavigate}
-              className="glass-interactive shrink-0 rounded-full bg-site-accent-dim px-3 py-1.5 text-xs font-semibold text-site-accent"
+              className="glass-interactive shrink-0 rounded-full bg-site-bg-subtle px-3 py-1.5 text-xs font-semibold text-site-accent"
             >
               {t(`presence-context-${activity.kind}`, { defaultValue: contextVerb(activity.kind) })}
             </Link>

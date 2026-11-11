@@ -73,7 +73,7 @@ export function ThemePreviewBar() {
       // (BackToTop, CookieConsent), so a modal now covers it. 60 is `Select`'s
       // band precisely because a select must clear a dialog it was opened
       // INSIDE; this bar is not in that category.
-      className="glass-overlay origin-bottom fixed inset-x-0 bottom-[calc(var(--safe-bottom)+var(--site-hub-orb-size)+var(--site-hub-orb-inset)+0.75rem_+_var(--vv-follow,0px))] z-40 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] items-center gap-3 rounded-full px-4 py-2 shadow-site"
+      className="glass-overlay origin-bottom fixed inset-x-0 bottom-[calc(var(--safe-bottom)+var(--site-hub-orb-size)+var(--site-hub-orb-inset)+0.75rem_+_var(--vv-follow,0px))] z-40 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] items-center gap-3 rounded-full px-4 py-2 "
     >
       <span className="min-w-0 truncate text-sm text-site-text">
         {t('previewing', { defaultValue: 'Previewing' })}

@@ -185,7 +185,7 @@ export function NoticesTab() {
               <div className="min-w-0 space-y-1">
                 <p className="text-sm font-semibold text-site-text">{n.title}</p>
                 <p className="break-words text-sm text-site-text-muted">{n.body}</p>
-                <p className="text-xs text-site-text-dim">
+                <p className="text-xs text-site-text-muted">
                   {segLabel(n)} {' - '}
                   {t('notices-dismissed', {
                     defaultValue: '{{count}} dismissed',

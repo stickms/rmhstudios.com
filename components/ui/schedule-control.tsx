@@ -88,8 +88,8 @@ export function ScheduleControl({
       data-slot="schedule-control"
       className={cn('glass-inset flex flex-wrap items-center gap-2 px-3 py-2', className)}
     >
-      <CalendarClock className="size-4 shrink-0 text-site-text-dim" aria-hidden />
-      <label htmlFor={id} className="text-xs text-site-text-dim">
+      <CalendarClock className="size-4 shrink-0 text-site-text-muted" aria-hidden />
+      <label htmlFor={id} className="text-xs text-site-text-muted">
         {t('schedule-publish-at', { defaultValue: 'Publish at' })}
       </label>
       <input
@@ -101,7 +101,7 @@ export function ScheduleControl({
         className="rounded-site-sm glass-inset px-2 py-1 text-xs text-site-text outline-none transition-colors focus:border-site-accent"
       />
       {zone && (
-        <span className="text-xs text-site-text-dim" title={zone}>
+        <span className="text-xs text-site-text-muted" title={zone}>
           {t('schedule-timezone', { zone, defaultValue: 'Times in {{zone}}' })}
         </span>
       )}

@@ -45,7 +45,7 @@ export function ComposeAssist({ value, onChange }: { value: string; onChange: (v
 
  return (
  <div className="mt-2 flex flex-wrap items-center gap-2"role="group"aria-label={t('ai-writing-assist', { defaultValue:'AI writing assist'})}>
- <span className="flex items-center gap-1 text-xs text-site-text-dim">
+ <span className="flex items-center gap-1 text-xs text-site-text-muted">
  <Sparkles className="h-3.5 w-3.5 text-site-accent"/> AI
  </span>
  {ACTIONS.map((id) => (

@@ -72,7 +72,7 @@ export function HowToPlay({ gameId }: { gameId: string }) {
               {answer}
             </p>
           )}
-          <p className="text-xs text-site-text-dim">
+          <p className="text-xs text-site-text-muted">
             {t('howToPlay-note', {
               defaultValue: 'AI answers use only this game’s description and can be incomplete.',
             })}

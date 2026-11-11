@@ -4,8 +4,10 @@ import { describe, expect, it } from 'vitest';
 import { readCss } from './css-source';
 
 /**
- * Corner shape (see the "Corner shape" note in app/globals.css `@layer base`): every rounded corner is a squircle
- * where `corner-shape` is supported, and circles and pills stay circular. A circle is any `border-radius` that is 50% /
+ * Corner shape (see the "Corner shape" note in app/globals/base-interaction.css `@layer base`). Steel removed the
+ * squircle default from the site tier (its corners are plain 8px and 4px arcs); the games and full-screen apps keep
+ * theirs (L8), so the rule is scoped to `html.app-route` and every rounded corner there is a squircle where
+ * `corner-shape` is supported, and circles and pills stay circular. A circle is any `border-radius` that is 50% /
  * 100%, 99px or more, `calc(infinity …)`, or one of the pill tokens. Without `corner-shape: round` beside it, an
  * avatar silently becomes a rounded square.
  */
@@ -39,9 +41,13 @@ function missingNextTo(pattern: RegExp, want: RegExp, accept: (value: string) =>
 }
 
 describe('corner shape', () => {
-  it('the universal squircle default and the Tailwind full-radius override exist', () => {
+  it('the squircle default is scoped to full-screen routes, and the Tailwind full-radius override exists', () => {
     const css = readCss(`${root}app/globals.css`);
-    expect(css).toMatch(/@supports \(corner-shape: squircle\)\s*\{\s*\*,\s*::before,\s*::after\s*\{\s*corner-shape: squircle;/);
+    expect(css).toMatch(
+      /@supports \(corner-shape: squircle\)\s*\{\s*html\.app-route \*,\s*html\.app-route ::before,\s*html\.app-route ::after\s*\{\s*corner-shape: squircle;/,
+    );
+    // Steel's site tier carries no squircle: the unscoped universal rule is gone.
+    expect(css).not.toMatch(/@supports \(corner-shape: squircle\)\s*\{\s*\*,/);
     expect(css).toMatch(/@utility rounded-full\s*\{\s*corner-shape: round;/);
     expect(css).toMatch(/@utility rounded-t-full\s*\{\s*corner-shape: round;/);
   });
@@ -73,7 +79,9 @@ describe('corner shape', () => {
 
   it('the universal rule keeps pseudo-elements on their host shape, controls as capsules and the toast close round', () => {
     const css = readCss(`${root}app/globals.css`);
-    expect(css).toMatch(/::before,\s*::after\s*\{\s*corner-shape: inherit;/);
-    expect(css).toMatch(/\[data-slot='button'\][\s\S]*?\[data-sonner-toast\] \[data-close-button\]\s*\{\s*corner-shape: round;/);
+    expect(css).toMatch(/html\.app-route ::before,\s*html\.app-route ::after\s*\{\s*corner-shape: inherit;/);
+    expect(css).toMatch(
+      /\[data-slot='button'\][\s\S]*?html\.app-route \[data-sonner-toast\] \[data-close-button\]\s*\{\s*corner-shape: round;/,
+    );
   });
 });

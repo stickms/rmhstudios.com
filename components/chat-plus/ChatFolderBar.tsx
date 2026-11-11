@@ -59,7 +59,7 @@ export function ChatFolderBar({
         aria-haspopup="dialog"
         aria-label={t('folders-manage', { defaultValue: 'Manage folders' })}
         title={t('folders-manage', { defaultValue: 'Manage folders' })}
-        className="flex size-11 shrink-0 items-center justify-center rounded-full text-site-text-dim hover:bg-site-surface-hover hover:text-site-text focus-visible:ring-2 focus-visible:ring-site-accent"
+        className="flex size-11 shrink-0 items-center justify-center rounded-full text-site-text-muted hover:bg-site-surface-hover hover:text-site-text focus-visible:ring-2 focus-visible:ring-site-accent"
       >
         <FolderCog className="size-5" />
       </button>

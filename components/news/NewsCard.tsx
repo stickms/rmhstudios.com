@@ -62,7 +62,7 @@ export function NewsCard({ article, index }: NewsCardProps) {
             {article.title}
           </h3>
 
-          <div className="flex items-center gap-2 font-mono text-xs text-site-text-dim">
+          <div className="flex items-center gap-2 font-mono text-xs text-site-text-muted">
             <Calendar className="size-3" aria-hidden />
             {article.date}
           </div>

@@ -190,7 +190,7 @@ export function NewsList({
             />
 
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <label htmlFor="news-sort" className="text-sm text-site-text-dim">
+              <label htmlFor="news-sort" className="text-sm text-site-text-muted">
                 {t('sort-label', { defaultValue: 'Sort:' })}
               </label>
               <Select
@@ -207,7 +207,7 @@ export function NewsList({
                   <X aria-hidden /> {t('clear', { defaultValue: 'Clear' })}
                 </Button>
               )}
-              <span className="ms-auto font-mono text-sm text-site-text-dim">
+              <span className="ms-auto font-mono text-sm text-site-text-muted">
                 {t('article-count', {
                   count: filteredArticles.length,
                   defaultValue: '{{count}} article',

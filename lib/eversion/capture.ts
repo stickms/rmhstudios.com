@@ -56,7 +56,7 @@
  *   item 3). The class the Glass clarity "Opaque" stop applies is
  *   `html.reduce-transparency` (`app/globals.css`, `stores/themeStore.ts`:
  *   stop 0 → that class), whose rules turn `.glass-{fill,pane,chrome,
- *   chrome--aside,overlay,inset}` into `--site-surface-opaque` with the
+ *   chrome--aside,overlay,inset}` into `--site-surface` with the
  *   `--site-border` edge and zero blur, and hide the `::before`/`::after` glint
  *   layers. (`.glass-opaque` is a different thing: the full-screen takeover
  *   fill.) {@link FLOATING_GLASS_SELECTOR} + {@link OPAQUE_PSEUDO_CSS} reproduce those
@@ -793,7 +793,7 @@ class CaptureSession implements CaptureApi {
     );
 
     const surface = token('--site-surface') || '#808080';
-    const opaque = token('--site-surface-opaque') || surface;
+    const opaque = token('--site-surface') || surface;
     const border = token('--site-border');
     const fill = FILL_SVG(surface);
     const cover = document.documentElement.classList.contains(COVER_CLASS);

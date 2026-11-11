@@ -158,78 +158,34 @@ export function effectiveTextBackdrop(t: ThemeTokens): string {
 }
 
 /**
- * Derive the FULL `--site-*` glass contract from the closed token map (§14.1).
- * Everything the built-in themes set as a re-tint is derived here; the system
- * keeps the glass GEOMETRY (blur tiers, saturate, bevel, fonts) — those are
- * intentionally absent so a user theme can never break the material.
+ * Derive the `--site-*` contract from the closed token map (§14.1). Only Steel's section-2 names are written: the
+ * glass, jelly, arc, shadow, canvas and aurora tokens the v2 map used to derive are gone (Steel T3), as are
+ * `--site-surface-opaque`, `--site-border-bright`, `--site-text-dim` and `--site-accent-dim` (Appendix A). The map's
+ * material fields (`glow1..3`, `tintAlpha`, `glintStrength`) are still accepted so stored themes keep parsing, and
+ * are now unused. Whether user themes survive a two-edition design is an open question for the owner.
  */
 export function themeCssVars(tokens: ThemeTokens): Record<string, string> {
   const t = tokens;
-  const lc = relativeLuminance(t.canvasBase); // scene luminance
-  const lt = relativeLuminance(t.tint); // tint luminance drives rim/glint (§4.35.4)
 
   // Surfaces — the tint plate at rising alpha.
   const surface = rgba(t.tint, t.tintAlpha);
   const surfaceHover = rgba(t.tint, Math.min(t.tintAlpha * 1.7, 0.9));
   const surfaceActive = rgba(t.tint, Math.min(t.tintAlpha * 2.4, 0.95));
-  const surfaceOpaque = over(t.tint, t.tintAlpha, t.canvasBase); // solid mix
-
-  // Rim / glint from tint luminance: bright frost gets a brighter, more opaque
-  // rim but at a LOWER glint opacity (mirrors §4.35.4).
-  const rimBase = mix(t.tint, '#ffffff', 0.4);
-  const rimA = Math.min(0.24 + 0.62 * lt, 0.9);
-  const glintOpacity = clamp01((0.9 - 0.4 * lt) * t.glintStrength);
-
-  // Depth shadows tinted from a darkened canvasBase; lighter scenes cast softer.
-  const depthColor = mix(t.canvasBase, '#000000', 0.6);
-  const depthA = Math.min(Math.max(0.6 - 0.42 * lc, 0.18), 0.6);
-
-  // Canvas — the fixed radial template (positions/alphas copied from :root's
-  // --site-canvas), only re-colored by the four scene colors.
-  const canvasMid = mix(t.canvasBase, '#ffffff', 0.05);
-  const canvasBottom = mix(t.canvasBase, '#000000', 0.1);
-  const canvas = [
-    `radial-gradient(110% 85% at 10% -5%, ${rgba(t.glow1, 0.3)}, transparent 62%)`,
-    `radial-gradient(95% 75% at 94% 4%, ${rgba(t.glow2, 0.27)}, transparent 60%)`,
-    `radial-gradient(110% 95% at 86% 102%, ${rgba(t.glow3, 0.22)}, transparent 64%)`,
-    `radial-gradient(80% 70% at 8% 98%, ${rgba(t.glow1, 0.16)}, transparent 60%)`,
-    `linear-gradient(180deg, ${t.canvasBase} 0%, ${canvasMid} 48%, ${canvasBottom} 100%)`,
-  ].join(', ');
 
   return {
-    // Base
     '--site-bg': t.canvasBase,
     '--site-bg-subtle': rgba(t.tint, 0.08),
-    '--site-canvas': canvas,
     '--site-surface': surface,
     '--site-surface-hover': surfaceHover,
     '--site-surface-active': surfaceActive,
-    '--site-surface-opaque': surfaceOpaque,
     '--site-border': t.border,
-    '--site-border-bright': mix(t.border, t.text, 0.22),
     '--site-text': t.text,
     '--site-text-muted': t.textMuted,
-    '--site-text-dim': mix(t.textMuted, t.canvasBase, 0.35),
     '--site-accent': t.accent,
     '--site-accent-fg': t.accentFg,
     '--site-accent-hover': `color-mix(in oklab, ${t.accent} 82%, #000)`,
-    '--site-accent-dim': `color-mix(in oklab, ${t.accent} 15%, transparent)`,
     '--site-radius': `${t.radius}px`,
     '--site-radius-sm': `${Math.round(t.radius * 0.66)}px`,
-    // Glass material contract (rims/glint/depth feed --site-shadow via var()).
-    '--site-glass-tint': surface,
-    '--site-glass-tint-strong': surfaceHover,
-    '--site-glass-ink': rgba(t.canvasBase, 0.45),
-    '--site-glass-rim': rgba(rimBase, rimA),
-    '--site-glass-rim-soft': rgba(rimBase, rimA * 0.45),
-    '--site-glass-light': rgba(rimBase, Math.min(0.14 + 0.5 * lt, 0.6)),
-    '--site-glass-glint': rgba(rimBase, rimA),
-    '--glass-glint-opacity': String(Math.round(glintOpacity * 1000) / 1000),
-    '--site-glass-depth': `0 24px 64px ${rgba(depthColor, depthA)}`,
-    '--site-glass-depth-sm': `0 4px 16px ${rgba(depthColor, depthA * 0.5)}`,
-    // Aurora depth layer (§5.1) at reduced alpha.
-    '--site-aurora-far-1': rgba(t.glow1, 0.1),
-    '--site-aurora-far-2': rgba(t.glow2, 0.09),
   };
 }
 

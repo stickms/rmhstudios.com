@@ -95,7 +95,7 @@ export function ReactionMenu({ x, y, onSelect, onClose }: ReactionMenuProps) {
           <button
             type="button"
             aria-label={t('reaction-more', { defaultValue: 'More emoji' })}
-            className="ml-1 flex h-6 w-6 items-center justify-center rounded-full bg-site-surface text-site-text-dim hover:text-site-text transition-colors"
+            className="ml-1 flex h-6 w-6 items-center justify-center rounded-full bg-site-surface text-site-text-muted hover:text-site-text transition-colors"
             onClick={() => setShowFull(true)}
           >
             <Plus className="h-4 w-4" />

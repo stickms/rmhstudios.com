@@ -155,7 +155,7 @@ export function BuildGrid({
           {t('no-builds-found', { defaultValue: 'No builds found' })}
         </p>
         {search && (
-          <p className="text-sm text-site-text-dim mt-2">
+          <p className="text-sm text-site-text-muted mt-2">
             {t('try-different-search', { defaultValue: 'Try a different search term' })}
           </p>
         )}

@@ -273,7 +273,7 @@ export function DistanceFilter({ unit = 'mi', onChange }: DistanceFilterProps) {
         </>
       ) : (
         !adding && (
-          <p className="mt-3 text-sm text-site-text-dim">
+          <p className="mt-3 text-sm text-site-text-muted">
             {t('homes.distanceEmpty', {
               defaultValue:
                 'Save a place like “work” to sort and filter homes by how far they are.',
@@ -282,7 +282,7 @@ export function DistanceFilter({ unit = 'mi', onChange }: DistanceFilterProps) {
         )
       )}
 
-      <p className="mt-4 flex items-start gap-2 text-xs text-site-text-dim">
+      <p className="mt-4 flex items-start gap-2 text-xs text-site-text-muted">
         <Info className="mt-px size-3 shrink-0" aria-hidden />
         <span>
           {t('homes.distanceCaveat', {

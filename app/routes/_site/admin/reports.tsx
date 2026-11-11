@@ -163,7 +163,7 @@ function AdminReportsPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="danger">{r.reason.replace('_', ' ')}</Badge>
                     <Badge variant="outline">{r.entityType}</Badge>
-                    <span className="text-xs text-site-text-dim">
+                    <span className="text-xs text-site-text-muted">
                       {formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })}
                     </span>
                     {link && (

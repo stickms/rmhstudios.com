@@ -56,7 +56,7 @@ function CommentItem({
               <span className="text-sm font-medium text-site-text">
                 {comment.user.name || t('anonymous', { defaultValue: 'Anonymous' })}
               </span>
-              <span className="text-xs text-site-text-dim">{timeAgo(comment.createdAt)}</span>
+              <span className="text-xs text-site-text-muted">{timeAgo(comment.createdAt)}</span>
             </div>
             <p className="text-sm text-site-text-muted whitespace-pre-wrap break-words">
               {comment.content}
@@ -65,7 +65,7 @@ function CommentItem({
               variant="ghost"
               size="xs"
               onClick={() => onReply(comment.id)}
-              className="-ml-2.5 mt-1 text-site-text-dim"
+              className="-ml-2.5 mt-1 text-site-text-muted"
             >
               {t('reply', { defaultValue: 'Reply' })}
             </Button>
@@ -260,7 +260,7 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
           <Spinner />
         </div>
       ) : comments.length === 0 ? (
-        <p className="py-12 text-center text-sm text-site-text-dim">
+        <p className="py-12 text-center text-sm text-site-text-muted">
           {t('no-comments', { defaultValue: 'No comments yet. Be the first!' })}
         </p>
       ) : (

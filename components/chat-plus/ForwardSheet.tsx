@@ -147,7 +147,7 @@ export default function ForwardSheet({ target }: { target: ForwardTarget }) {
               <Spinner size={20} />
             </div>
           ) : (data ?? []).length === 0 ? (
-            <p className="py-8 text-center text-sm text-site-text-dim">
+            <p className="py-8 text-center text-sm text-site-text-muted">
               {t('forward-empty', { defaultValue: 'You have no chats to forward to yet.' })}
             </p>
           ) : (
@@ -164,11 +164,11 @@ export default function ForwardSheet({ target }: { target: ForwardTarget }) {
                       onClick={() => toggle(k)}
                       className={cn(
                         'flex min-h-11 w-full items-center gap-3 rounded-site-sm px-2 py-1.5 text-left hover:bg-site-surface-hover focus-visible:ring-2 focus-visible:ring-site-accent',
-                        on && 'bg-site-accent-dim',
+                        on && 'bg-site-bg-subtle',
                       )}
                     >
                       {d.ref.kind === 'group' ? (
-                        <span className="flex size-9 items-center justify-center rounded-full bg-site-accent-dim text-site-accent">
+                        <span className="flex size-9 items-center justify-center rounded-full bg-site-bg-subtle text-site-accent">
                           <Users className="size-4" aria-hidden />
                         </span>
                       ) : (

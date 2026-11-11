@@ -54,7 +54,7 @@ export function ListingCard({
             className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="grid h-full w-full place-items-center text-site-text-dim">
+          <div className="grid h-full w-full place-items-center text-site-text-muted">
             <ImageOff className="h-8 w-8" />
           </div>
         )}
@@ -124,7 +124,7 @@ export function ListingCard({
 
         <p className="line-clamp-1 text-sm font-medium text-site-text">{listing.title}</p>
 
-        <div className="mt-auto flex items-center justify-between gap-2 text-xs text-site-text-dim">
+        <div className="mt-auto flex items-center justify-between gap-2 text-xs text-site-text-muted">
           <span className="inline-flex min-w-0 items-center gap-1">
             <MapPin className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">{location || '—'}</span>

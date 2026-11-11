@@ -97,7 +97,7 @@ function TournamentsPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h2 className="font-semibold truncate">{tourney.name}</h2>
-                    <p className="text-sm text-site-text-dim truncate">
+                    <p className="text-sm text-site-text-muted truncate">
                       {tourney.gameTitle ?? tourney.gameId}
                       {' · '}
                       {tourney.format === 'SWISS'
@@ -114,7 +114,7 @@ function TournamentsPage() {
                     <Badge variant="success">{t('done', { defaultValue: 'Done' })}</Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-4 text-sm text-site-text-dim">
+                <div className="flex items-center gap-4 text-sm text-site-text-muted">
                   <span className="flex items-center gap-2">
                     <Coins className="size-4 text-site-warning" aria-hidden />
                     {t('prize', { defaultValue: '{{n}} prize', n: tourney.prizePoolCoins })}

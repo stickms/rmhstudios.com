@@ -33,7 +33,7 @@ function RingCard({ ring }: { ring: RingSummary }) {
         {ring.description ? (
           <p className="mt-1 line-clamp-2 text-sm text-site-text-muted">{ring.description}</p>
         ) : null}
-        <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-site-text-dim">
+        <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-site-text-muted">
           <Users className="size-3.5" aria-hidden />
           {t('ring-members', {
             count: ring.memberCount,
@@ -157,7 +157,7 @@ export default function RingsIndex() {
                 <Plus aria-hidden />
                 {t('ring-create', { defaultValue: 'Start ring' })}
               </Button>
-              <span className="text-xs text-site-text-dim">
+              <span className="text-xs text-site-text-muted">
                 {t('ring-limit', {
                   max: RING_MAX_OWNED,
                   defaultValue: 'You can run up to {{max}} rings.',

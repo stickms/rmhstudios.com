@@ -143,7 +143,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  style={{ transform: `scaleX(${lvlPct / 100})`}}
  />
  </div>
- <p className="mt-2 text-xs text-site-text-dim">
+ <p className="mt-2 text-xs text-site-text-muted">
  {t('xp-to-next-level', {
  xpIntoLevel: lvl.xpIntoLevel.toLocaleString(),
  xpForNextLevel: lvl.xpForNextLevel.toLocaleString(),
@@ -279,7 +279,7 @@ function QuestSection({
  style={{ width: `${pct}%`}}
  />
  </div>
- <div className="mt-2 flex items-center gap-2 text-xs text-site-text-dim">
+ <div className="mt-2 flex items-center gap-2 text-xs text-site-text-muted">
  <span>
  {Math.min(q.progress, q.target)} / {q.target}
  </span>
@@ -296,7 +296,7 @@ function QuestSection({
  </div>
  <div className="shrink-0 self-center">
  {q.claimed ? (
- <span className="inline-flex items-center gap-1 text-xs font-semibold text-site-text-dim">
+ <span className="inline-flex items-center gap-1 text-xs font-semibold text-site-text-muted">
  <Check className="h-3.5 w-3.5"/> {t('claimed', { defaultValue:'Claimed'})}
  </span>
  ) : (
@@ -325,7 +325,7 @@ function QuestSection({
 
 function RewardChip({ reward }: { reward: PassReward | null }) {
  if (!reward) {
- return <span className="text-xs text-site-text-dim">—</span>;
+ return <span className="text-xs text-site-text-muted">—</span>;
  }
  const Icon = reward.type ==='coins'? CoinIcon : reward.type ==='xp'? Zap : Sparkles;
  return (
@@ -362,7 +362,7 @@ function TierRow({
  >
  <div
  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm text-sm font-bold ${
- reached ?'bg-site-accent/15 text-site-accent':'bg-site-surface text-site-text-dim'
+ reached ?'bg-site-accent/15 text-site-accent':'bg-site-surface text-site-text-muted'
  }`}
  >
  {tier.tier}
@@ -423,7 +423,7 @@ function TierCell({
  <div className="min-w-0">
  <p
  className={`mb-1 inline-flex items-center gap-1 text-xs font-semibold ${
- premium ?'text-site-warning':'text-site-text-dim'
+ premium ?'text-site-warning':'text-site-text-muted'
  }`}
  >
  {premium && <Crown className="h-3 w-3"/>}
@@ -433,9 +433,9 @@ function TierCell({
  <RewardChip reward={reward} />
  {reward &&
  (claimed ? (
- <Check className="h-4 w-4 shrink-0 text-site-text-dim"/>
+ <Check className="h-4 w-4 shrink-0 text-site-text-muted"/>
  ) : locked ? (
- <Lock className="h-4 w-4 shrink-0 text-site-text-dim"/>
+ <Lock className="h-4 w-4 shrink-0 text-site-text-muted"/>
  ) : canClaim ? (
  <Button
  size="sm"

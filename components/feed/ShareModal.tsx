@@ -64,7 +64,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
  {copied ? (
  <Check className="w-5 h-5 text-site-success"/>
  ) : (
- <Link2 className="w-5 h-5 text-site-text-dim"/>
+ <Link2 className="w-5 h-5 text-site-text-muted"/>
  )}
  {copied ? t('copied', { defaultValue:'Copied!'}) : t('copy-link', { defaultValue:'Copy link'})}
  </button>
@@ -73,7 +73,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
  onClick={shareToX}
  className="flex items-center gap-3 w-full px-3 py-3 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
- <svg className="w-5 h-5 text-site-text-dim"viewBox="0 0 24 24"fill="currentColor">
+ <svg className="w-5 h-5 text-site-text-muted"viewBox="0 0 24 24"fill="currentColor">
  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
  </svg>
  {t('share-on-x', { defaultValue:'Share on X'})}
@@ -83,7 +83,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
  onClick={shareToFacebook}
  className="flex items-center gap-3 w-full px-3 py-3 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
- <svg className="w-5 h-5 text-site-text-dim"viewBox="0 0 24 24"fill="currentColor">
+ <svg className="w-5 h-5 text-site-text-muted"viewBox="0 0 24 24"fill="currentColor">
  <path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 1.09.044 1.613.115V7.78c-.344-.036-.94-.054-1.684-.054-2.39 0-3.316.905-3.316 3.26v1.058h4.612l-.683 3.667h-3.929v8.08c5.013-.838 8.828-5.12 8.828-10.311C20.4 7.216 16.472 3 12 3S3.6 7.216 3.6 13.48c0 4.785 3.274 8.778 7.694 9.954z"/>
  </svg>
  {t('share-on-facebook', { defaultValue:'Share on Facebook'})}
@@ -93,7 +93,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
  onClick={shareToEmail}
  className="flex items-center gap-3 w-full px-3 py-3 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
- <svg className="w-5 h-5 text-site-text-dim"viewBox="0 0 24 24"fill="none"stroke="currentColor"strokeWidth="2"strokeLinecap="round"strokeLinejoin="round">
+ <svg className="w-5 h-5 text-site-text-muted"viewBox="0 0 24 24"fill="none"stroke="currentColor"strokeWidth="2"strokeLinecap="round"strokeLinejoin="round">
  <rect width="20"height="16"x="2"y="4"rx="2"/>
  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
  </svg>
@@ -109,7 +109,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
  rel="noopener noreferrer"
  className="flex items-center gap-3 w-full px-3 py-3 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
- <ImageDown className="w-5 h-5 text-site-text-dim"/>
+ <ImageDown className="w-5 h-5 text-site-text-muted"/>
  {t('share-to-stories', { defaultValue:'Download story image'})}
  </a>
  )}
@@ -120,7 +120,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
  aria-expanded={showQr}
  className="flex items-center gap-3 w-full px-3 py-3 rounded-site text-sm text-site-text hover:bg-site-surface-hover transition-colors"
  >
- <QrIcon className="w-5 h-5 text-site-text-dim"/>
+ <QrIcon className="w-5 h-5 text-site-text-muted"/>
  {showQr ? t('hide-qr-code', { defaultValue:'Hide QR code'}) : t('show-qr-code', { defaultValue:'Show QR code'})}
  </button>
  {showQr && (
@@ -141,7 +141,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
  {embedCopied ? (
  <Check className="w-5 h-5 text-site-success"/>
  ) : (
- <Code2 className="w-5 h-5 text-site-text-dim"/>
+ <Code2 className="w-5 h-5 text-site-text-muted"/>
  )}
  {embedCopied ? t('embed-code-copied', { defaultValue:'Embed code copied!'}) : t('copy-embed-code', { defaultValue:'Copy embed code'})}
  </button>
@@ -150,7 +150,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
 
  {/* URL preview */}
  <div className="px-5 pb-5">
- <div className="flex items-center gap-2 glass-inset rounded-site-sm px-3 py-2 text-xs text-site-text-dim font-mono truncate">
+ <div className="flex items-center gap-2 glass-inset rounded-site-sm px-3 py-2 text-xs text-site-text-muted font-mono truncate">
  <Link2 className="w-3.5 h-3.5 shrink-0"/>
  <span className="truncate">{url}</span>
  </div>

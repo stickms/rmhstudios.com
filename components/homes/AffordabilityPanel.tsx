@@ -162,7 +162,7 @@ export function AffordabilityPanel({
             onChange={(e) => update({ annualIncome: toNumber(e.target.value) })}
             className="mt-2"
           />
-          <p className="mt-2 flex items-start gap-2 text-xs text-site-text-dim">
+          <p className="mt-2 flex items-start gap-2 text-xs text-site-text-muted">
             <Lock className="mt-px size-3 shrink-0" aria-hidden />
             <span>
               {t('homes.affordPrivacy', {
@@ -186,7 +186,7 @@ export function AffordabilityPanel({
             onChange={(e) => update({ monthlyDebts: toNumber(e.target.value) })}
             className="mt-2"
           />
-          <p className="mt-2 text-xs text-site-text-dim">
+          <p className="mt-2 text-xs text-site-text-muted">
             {t('homes.affordDebtsHint', {
               defaultValue: 'Student loans, car payments, minimum card payments.',
             })}
@@ -211,7 +211,7 @@ export function AffordabilityPanel({
             onValueChange={([v]) => update({ housingRatio: v / 100 })}
             aria-labelledby="homes-afford-ratio-label"
           />
-          <p className="mt-2 text-xs text-site-text-dim">
+          <p className="mt-2 text-xs text-site-text-muted">
             {t('homes.affordRatioHint', {
               defaultValue: 'The classic rule is 30% of gross income.',
             })}
@@ -357,7 +357,7 @@ export function AffordabilityPanel({
       )}
 
       {!known && (
-        <p className="mt-4 text-sm text-site-text-dim">
+        <p className="mt-4 text-sm text-site-text-muted">
           {t('homes.affordPrompt', {
             defaultValue: 'Enter your income to see a budget and a payment breakdown.',
           })}

@@ -111,17 +111,6 @@ html.app-route:has(.app-page) {
   scrollbar-gutter: stable;
 }
 
-/* The page's ground on iOS WebKit is the ROOT's own background: the aurora layer is not rendered
-   there (see the iOS edge note below), because a fixed full-viewport layer is what makes Safari fill
-   the strips behind its bars with one flat colour. The root canvas scrolls with the document, and
-   content runs under both bars. */
-html.ios-webkit:not(.app-route) {
-  background-image: var(--site-canvas);
-  background-repeat: no-repeat;
-  background-position: center top;
-  background-size: cover;
-}
-
 body {
   background: var(--site-bg);
   color: var(--site-text);
@@ -137,18 +126,6 @@ body {
      handled per-column — PageLayout / feed columns carry the legacy-named
      .pb-dock utility so the last content clears floating controls, the home
      indicator, and the browser bottom bar (--safe-bottom). */
-}
-
-/* The page ground is the ROOT's, not the body's. `.site-aurora` is a fixed layer at z-index -1, which paints above the
-   root's background but BELOW an in-flow body background, so the opaque `body { background }` above hid the aurora on
-   every theme: glass had nothing coloured behind it to bend, and read as a flat card. On pages that own the aurora the
-   body is transparent and `<html>` carries the solid base (`--site-bg`, repainted inline from THEME_BG before first
-   paint), so nothing about the paint-before-hydration guarantee changes. App/game routes keep their own backdrop. */
-html:not(.app-route) {
-  background-color: var(--site-bg);
-}
-html:not(.app-route) body {
-  background: transparent;
 }
 
 /* Prevent iOS Safari from auto-zooming the page when a form control is focused.
@@ -187,28 +164,24 @@ html:not(.app-route) body {
    button, a bespoke background) still wins. Unlayered, they out-specified every
    utility — `color: inherit` alone repainted accent-filled buttons in body ink. */
 @layer base {
-  /* Corner shape: every rounded SURFACE corner on the site is a continuous-curvature squircle where the browser
-     supports `corner-shape` (Chromium and recent WebKit; Firefox ignores it and keeps the circular arc). A circular
-     corner jumps from straight to curved with a visible kink, most obvious on a thin high-contrast border; a squircle
-     eases in. Three things stay circular:
-       - CIRCLES AND PILLS: `corner-shape: round` goes beside every `border-radius: 50%` / ≥ 99px / pill-token
-         declaration (lib/__tests__/corner-shape.test.ts enforces it) and on Tailwind's `rounded-full` (`@utility`).
-       - CONTROLS: a control's 24px radius clamps to a capsule up to 48px tall, and a squircle would turn the capsule
-         into a rounded rectangle, so the control primitives below are `round` (surfaces are squircles, controls are
-         capsules, as on Apple platforms).
-       - Anything with `border-radius: inherit` also says `corner-shape: inherit` (the test enforces that too),
-         and pseudo-elements inherit their host's shape, because the property is not inherited by itself. */
+  /* Corner shape: Steel's corners are plain 8px and 4px arcs on the site tier (S4, K1; the squircle default of the old
+     design is gone from it). The games and full-screen apps keep their own look (L8), and that look includes the
+     continuous-curvature squircle they were drawn with, so the rule stays, scoped to `html.app-route` (the class the
+     pre-paint script stamps on every full-screen route). Circles and pills stay circular there (`rounded-full`'s
+     `@utility`, `corner-shape: round` beside a 50% radius), controls are capsules, and anything with
+     `border-radius: inherit` says `corner-shape: inherit`. */
   @supports (corner-shape: squircle) {
-    *,
-    ::before,
-    ::after {
+    html.app-route *,
+    html.app-route ::before,
+    html.app-route ::after {
       corner-shape: squircle;
     }
-    ::before,
-    ::after {
+    html.app-route ::before,
+    html.app-route ::after {
       corner-shape: inherit;
     }
-    :is(
+    html.app-route
+      :is(
         [data-slot='button'],
         [data-slot='input'],
         [data-slot='search-field'],
@@ -216,19 +189,15 @@ html:not(.app-route) body {
         [data-slot='switch'],
         [data-slot='menu-item'],
         [data-slot='select-item'],
-        [data-slot='jelly-group'],
-        [data-slot='jelly-group-item'],
         [role='tab'],
         [role='tablist'],
         [role='switch'],
-        [class*='site-control-radius'],
         input,
         select,
-        .glass-interactive,
-        .page-heading__back
+        .glass-interactive
       ),
     /* The toast library injects `border-radius: 50%` on its close button with no corner-shape. */
-    [data-sonner-toast] [data-close-button] {
+    html.app-route [data-sonner-toast] [data-close-button] {
       corner-shape: round;
     }
   }
@@ -245,18 +214,15 @@ html:not(.app-route) body {
   /* Legacy controls and ordinary links get the same finite state transitions
      as the shared primitives. Utilities can still specialize the properties. */
   :where(.vibe-app) :is(a[href], button, summary, [role='button'], input, textarea, select) {
-    /* The shorthand, so the CSS soft body's spring hook (`--jelly-spring-t`, app/jelly-material.css §8) can join the
-       list: this rule outranks the hook's zero-specificity default on every shell control. */
     transition:
       color calc(var(--site-transition-speed) * 0.75) var(--ease-out),
       background-color calc(var(--site-transition-speed) * 0.75) var(--ease-out),
       border-color calc(var(--site-transition-speed) * 0.75) var(--ease-out),
-      opacity calc(var(--site-transition-speed) * 0.75) var(--ease-out),
-      var(--jelly-spring-t);
+      opacity calc(var(--site-transition-speed) * 0.75) var(--ease-out);
   }
 
   :where(.vibe-app) :is(input, textarea, select, button):not([data-slot]):focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--site-accent) 55%, transparent);
+    outline: 2px solid var(--site-text);
     outline-offset: 2px;
   }
 
@@ -281,22 +247,22 @@ html:not(.app-route) body {
       textarea
     ):not([data-slot]) {
     color: var(--site-text);
-    background: color-mix(in srgb, var(--site-text) 5%, var(--site-glass-tint-strong));
-    border: var(--site-border-width) solid color-mix(in srgb, var(--site-border) 60%, transparent);
+    background: var(--site-surface);
+    border: var(--site-border-width) solid var(--site-border);
     border-radius: var(--site-radius-sm);
   }
 
   :where(.vibe-app) select:not([data-slot='select']) {
     min-block-size: 2.5rem;
     color: var(--site-text);
-    background-color: color-mix(in srgb, var(--site-text) 5%, var(--site-glass-tint-strong));
-    border: var(--site-border-width) solid color-mix(in srgb, var(--site-border) 60%, transparent);
+    background-color: var(--site-surface);
+    border: var(--site-border-width) solid var(--site-border);
     border-radius: var(--site-radius-sm);
   }
 
   :where(.vibe-app) select option {
     color: var(--site-text);
-    background: var(--site-surface-opaque, var(--site-surface));
+    background: var(--site-surface);
   }
 }
 
@@ -384,7 +350,7 @@ input[type='search']::-webkit-search-results-decoration {
    ~0.54 default opacity to placeholders; pin it to 1 so the dim token reads the
    same in Gecko, Blink and WebKit. */
 ::placeholder {
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
   opacity: 1;
 }
 
@@ -392,7 +358,7 @@ input[type='search']::-webkit-search-results-decoration {
    the active theme instead of falling back to a bright OS-default palette. */
 [data-slot='select'] option {
   color: var(--site-text);
-  background: var(--site-surface-opaque, var(--site-surface));
+  background: var(--site-surface);
 }
 
 /* ==================== BROWSER AUTOFILL ====================
@@ -419,8 +385,8 @@ select:-webkit-autofill:focus {
   /* --site-surface is translucent under the glass system, so paint the opaque
      surface token instead — a translucent inset-shadow over the UA's near-white
      autofill background looks broken. */
-  -webkit-box-shadow: 0 0 0 1000px var(--site-surface-opaque, var(--site-surface)) inset;
-  box-shadow: 0 0 0 1000px var(--site-surface-opaque, var(--site-surface)) inset;
+  -webkit-box-shadow: 0 0 0 1000px var(--site-surface) inset;
+  box-shadow: 0 0 0 1000px var(--site-surface) inset;
   transition: background-color 100000s ease-in-out 0s;
 }
 
@@ -431,11 +397,9 @@ select:-webkit-autofill:focus {
  * Everything here is keyboard- or pointer-gated and respects the existing
  * prefers-reduced-motion guard further down this file. */
 
-/* Keyboard focus — a clear ring that adopts the active theme accent.
-   :focus-visible keeps it to keyboard / assistive-tech users (never on
-   mouse/tap). Button takes this ring too (amended 2026-10-20: it drew its own
-   softer box-shadow ring, which could not turn out from inside it like every
-   other control's, §7.3). */
+/* Keyboard focus (K10): `outline: 2px solid var(--site-text); outline-offset: 2px` on every focusable element, text
+   fields included. The ring is the ink, so it holds 4.5:1 or better on the page and on every surface in both editions.
+   :focus-visible keeps it to keyboard / assistive-tech users (never on mouse/tap). */
 a:focus-visible,
 button:focus-visible,
 select:focus-visible,
@@ -446,29 +410,11 @@ summary:focus-visible,
 [role='tab']:focus-visible,
 [role='link']:focus-visible,
 [role='menuitem']:focus-visible,
-[tabindex]:not([tabindex='-1']):focus-visible {
-  /* `--focus-ring` (#989): solid 2px, never the plasma glow — plasma brightens on focus
-     inside the gel, but it is decoration and never the only signal of focus. */
-  outline: 2px solid var(--focus-ring, var(--site-accent));
-  outline-offset: 2px;
-}
-
-/* Text-entry fields already signal focus with the caret + their own border, so
-   the accent ring was redundant and read as a harsh white box (most obvious on
-   Firefox). Drop it for text inputs / textareas / editable regions only — the
-   ring still applies to buttons, checkboxes, radios, links, etc. */
-textarea:focus-visible,
-input:not([type]):focus-visible,
-input[type='text']:focus-visible,
-input[type='search']:focus-visible,
-input[type='email']:focus-visible,
-input[type='password']:focus-visible,
-input[type='url']:focus-visible,
-input[type='tel']:focus-visible,
-input[type='number']:focus-visible,
 [contenteditable='true']:focus-visible,
-[contenteditable='']:focus-visible {
-  outline: none;
+[contenteditable='']:focus-visible,
+[tabindex]:not([tabindex='-1']):focus-visible {
+  outline: 2px solid var(--site-text);
+  outline-offset: 2px;
 }
 
 /* Firefox-specific native chrome that ignores our theme:
@@ -502,25 +448,18 @@ textarea,
 }
 
 /* The shared Button's own transition and plain press (components/ui/button.tsx), stated here rather than as
-   utilities so the CSS soft body's spring hook can join the list: `--jelly-spring-t` (app/jelly-material.css §8) is the
-   release / press spring on `scale` inside the jelly scope and a no-op outside it. The plain `0.98` press is the
-   press everywhere the soft body is off (native-material routes, a game in play); inside it the soft body's own press
-   outranks it. Components layer, so a caller's `transition-*` / `active:scale-*` utility still wins. */
+   utilities. Components layer, so a caller's `transition-*` / `active:scale-*` utility still wins. Phase 2 rebuilds
+   Button to K1 to K3 and takes this with it. */
 @layer components {
   [data-slot='button'] {
     transition:
       color calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out),
       background-color calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out),
       border-color calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out),
-      opacity calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out),
-      var(--jelly-spring-t);
+      opacity calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out);
   }
   [data-slot='button']:not(:disabled, [aria-disabled='true']):active {
     scale: 0.98;
-  }
-  /* Off the jelly scope the plain press eases as the button's utilities did before the soft body was CSS. */
-  html:is(.native-material, [data-game-state='playing']) [data-slot='button'] {
-    --jelly-spring-t: scale calc(var(--site-transition-speed, 200ms) * 0.75) var(--ease-out);
   }
 }
 
@@ -920,12 +859,9 @@ summary {
 /* A gentle, consistent default transition for interactive elements so hover /
    focus / active state changes are never janky. Lives in @layer base so any
    component's own transition utility (e.g. transition-transform, duration-*)
-   still wins — this only fills the gap where none was set. Colour/box-shadow/
-   opacity only: never transform or layout, so nothing shifts unexpectedly —
-   plus the CSS soft body's spring hook (`--jelly-spring-t`, app/jelly-material.css
-   §8: the press/release spring on `scale` inside the jelly scope, a no-op outside
-   it), because this rule outranks the hook's zero-specificity default on every
-   native control. The prefers-reduced-motion guard further down neutralises it. */
+   still wins — this only fills the gap where none was set. Colour/
+   opacity only: never transform or layout, so nothing shifts unexpectedly.
+   The prefers-reduced-motion guard further down neutralises it. */
 @layer base {
   a,
   button,
@@ -944,8 +880,7 @@ summary {
       background-color 0.15s ease,
       border-color 0.15s ease,
       box-shadow 0.15s ease,
-      opacity 0.15s ease,
-      var(--jelly-spring-t);
+      opacity 0.15s ease;
   }
 }
 
@@ -1024,7 +959,7 @@ summary {
    (wheel, trackpad, keyboard), which reveals it and keeps it up while you drag.
    App tiers supply their own accent through `--sb-thumb-hover`. */
 ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--sb-thumb-hover, var(--site-border-bright)) !important;
+  background-color: var(--sb-thumb-hover, var(--site-text)) !important;
 }
 
 /* Twemoji — consistent cross-platform emoji rendering */

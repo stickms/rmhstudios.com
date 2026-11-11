@@ -63,18 +63,18 @@ export function GifPicker({ onSelect, onClose, className ='', initialQuery ='' }
  <div className={`glass-fill rounded-site p-4 ${className}`}>
  <div className="flex items-center justify-between gap-2 mb-2">
  <div className="relative flex-1">
- <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-dim"/>
+ <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-muted"/>
  <input
  autoFocus
  value={query}
  onChange={(e) => setQuery(e.target.value)}
  placeholder={t('gif-search-placeholder', { defaultValue:'Search GIFs...'})}
- className="w-full glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm pl-9 pr-3 py-2 outline-none focus:border-site-accent transition-colors"
+ className="w-full glass-inset text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm pl-9 pr-3 py-2 outline-none focus:border-site-accent transition-colors"
  />
  </div>
  {onClose && (
  <button type="button"onClick={onClose} aria-label={t('close', { defaultValue:'Close'})}
- className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors">
+ className="p-2 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors">
  <X className="w-4 h-4"/>
  </button>
  )}
@@ -82,13 +82,13 @@ export function GifPicker({ onSelect, onClose, className ='', initialQuery ='' }
 
  <div className="max-h-72 overflow-y-auto">
  {error ==='failed'&& (
- <div className="flex items-center justify-center gap-2 py-6 text-site-text-dim text-xs">
+ <div className="flex items-center justify-center gap-2 py-6 text-site-text-muted text-xs">
  <ImageOff className="w-4 h-4"/>
  {t('gif-search-failed', { defaultValue:'Could not load GIFs. Try again.'})}
  </div>
  )}
  {!error && results.length === 0 && !loading && (
- <div className="py-6 text-center text-xs text-site-text-dim">
+ <div className="py-6 text-center text-xs text-site-text-muted">
  {t('gif-search-empty', { defaultValue:'No GIFs found'})}
  </div>
  )}
@@ -113,7 +113,7 @@ export function GifPicker({ onSelect, onClose, className ='', initialQuery ='' }
  <div ref={sentinelRef} className="h-2"/>
  </div>
 
- <div className="pt-1.5 text-micro text-site-text-dim text-right">
+ <div className="pt-1.5 text-micro text-site-text-muted text-right">
  {t('powered-by-klipy', { defaultValue:'Powered by KLIPY'})}
  </div>
  </div>

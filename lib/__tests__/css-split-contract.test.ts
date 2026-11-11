@@ -1,7 +1,7 @@
 /**
  * No site-tier or app-tier stylesheet is over 1,500 lines, and a split sheet stays one sheet (redesign E4).
  *
- * `app/globals.css`, `app/jelly-material.css`, `components/radial/radial.css` and `components/library/library.css`
+ * `app/globals.css`, `components/radial/radial.css` and `components/library/library.css`
  * are entry sheets: a prelude plus ordered `@import './<stem>/<part>.css'` lines. Importing the parts in file order
  * from the same entry point keeps the cascade identical to the single file they replaced (proved by diffing the
  * emitted CSS before and after). That only holds if every partial is imported exactly once and nothing but the
@@ -17,7 +17,6 @@ const ROOT = process.cwd();
 const MAX_LINES = 1500;
 const ENTRIES = [
   'app/globals.css',
-  'app/jelly-material.css',
   'components/radial/radial.css',
   'components/library/library.css',
 ];

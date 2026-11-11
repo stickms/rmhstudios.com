@@ -90,7 +90,7 @@ export function DeepseekPanel() {
           </p>
         </section>
         {state.latest.length > 0 && (
-          <p className="text-xs text-site-text-dim">
+          <p className="text-xs text-site-text-muted">
             {t('stale-history', {
               defaultValue: 'Showing history recorded before the key was removed.',
             })}
@@ -137,7 +137,7 @@ export function DeepseekPanel() {
           <RefreshCw aria-hidden className={refreshing ? 'animate-spin' : undefined} />
           {t('refresh-now', { defaultValue: 'Refresh now' })}
         </Button>
-        <span className="text-xs text-site-text-dim">
+        <span className="text-xs text-site-text-muted">
           {t('updated-at', {
             defaultValue: 'Updated {{time}}',
             time: fmtDateTime(live?.fetchedAt ?? updatedAt),

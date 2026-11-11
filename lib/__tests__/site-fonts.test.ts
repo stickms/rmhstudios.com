@@ -48,11 +48,15 @@ describe('site fonts: Geist + Geist Mono', () => {
     expect(firstToken('--font-geist-mono')).not.toMatch(generics);
   });
 
-  for (const token of ['--site-font-display', '--site-font-body']) {
-    it(`${token} is Geist then the OS face — no second webfont`, () => {
-      expect(firstToken(token)).toBe('var(--font-geist), system-ui, sans-serif');
-    });
-  }
+  it('--site-font-body is Geist then the OS face — no second webfont', () => {
+    expect(firstToken('--site-font-body')).toBe('var(--font-geist), system-ui, sans-serif');
+  });
+
+  // Steel section 3: there is no display face. The display token is the body stack, by reference, so the two cannot
+  // drift apart.
+  it('--site-font-display is the body stack', () => {
+    expect(firstToken('--site-font-display')).toBe('var(--site-font-body)');
+  });
 
   it('--site-font-mono is Geist Mono then the OS mono — no second webfont', () => {
     expect(firstToken('--site-font-mono')).toBe(

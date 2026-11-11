@@ -78,7 +78,7 @@ export default function ManageFoldersDialog({ onClose }: { onClose: () => void }
             />
           ))}
           {(folders ?? []).length === 0 && (
-            <li className="py-3 text-center text-sm text-site-text-dim">
+            <li className="py-3 text-center text-sm text-site-text-muted">
               {t('folders-none', { defaultValue: 'No folders yet.' })}
             </li>
           )}
@@ -145,7 +145,7 @@ function FolderRow({
         maxLength={FOLDER_NAME_MAX}
         className="glass-inset min-h-11 min-w-0 flex-1 rounded-site px-3 text-sm text-site-text outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
       />
-      <span className="shrink-0 text-xs tabular-nums text-site-text-dim">
+      <span className="shrink-0 text-xs tabular-nums text-site-text-muted">
         {t('folder-chat-count', {
           count: folder.scopeKeys.length,
           defaultValue: '{{count}} chats',

@@ -84,7 +84,7 @@ export function EditPostModal({
  {/* GIF section */}
  <div className="mt-3 glass-fill rounded-site px-4 py-3">
  <div className="flex items-center justify-between mb-2">
- <span className="text-xs font-semibold text-site-text-dim">
+ <span className="text-xs font-semibold text-site-text-muted">
  {t('gif-heading', { defaultValue:'GIF'})}
  </span>
  {gifUrl.trim() && (
@@ -94,7 +94,7 @@ export function EditPostModal({
  setGifUrl('');
  setShowGifPicker(false);
  }}
- className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
+ className="p-2 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
  aria-label={t('remove-gif-aria', { defaultValue:'Remove GIF'})}
  >
  <X className="w-3.5 h-3.5"/>
@@ -136,7 +136,7 @@ export function EditPostModal({
  </div>
 
  <div className="flex items-center justify-between">
- <span className={`text-xs ${remaining < 0 ?'text-site-danger':'text-site-text-dim'}`}>
+ <span className={`text-xs ${remaining < 0 ?'text-site-danger':'text-site-text-muted'}`}>
  {remaining}
  </span>
  </div>

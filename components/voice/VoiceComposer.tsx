@@ -245,7 +245,7 @@ export function VoiceComposer({
         disabled={disabled || phase === 'starting'}
         aria-busy={phase === 'starting'}
         aria-label={t('voice-record', { defaultValue: 'Record a voice message' })}
-        className="flex size-11 shrink-0 items-center justify-center rounded-site text-site-text-dim transition-colors hover:bg-site-surface-hover hover:text-site-accent disabled:opacity-50"
+        className="flex size-11 shrink-0 items-center justify-center rounded-site text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-accent disabled:opacity-50"
       >
         <Mic className="size-5" />
       </button>
@@ -273,14 +273,14 @@ export function VoiceComposer({
           <div className="min-w-0 flex-1 text-site-accent">
             <VoiceWaveform peaks={livePeaks} progress={1} />
           </div>
-          <span className="shrink-0 text-caption tabular-nums text-site-text-dim">
+          <span className="shrink-0 text-caption tabular-nums text-site-text-muted">
             −{formatDuration(remainingMs)}
           </span>
           <button
             type="button"
             onClick={reset}
             aria-label={t('voice-cancel', { defaultValue: 'Discard recording' })}
-            className="flex size-11 shrink-0 items-center justify-center rounded-site text-site-text-dim transition-colors hover:bg-site-surface-hover hover:text-site-danger"
+            className="flex size-11 shrink-0 items-center justify-center rounded-site text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-danger"
           >
             <Trash2 className="size-4" />
           </button>

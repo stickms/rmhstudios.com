@@ -23,7 +23,7 @@ export function FareBreakdown({ distanceMeters, durationSeconds, classId, compac
     return (
       <span className="inline-flex items-center gap-2">
         <span className="text-sm font-bold text-site-text">{formatUsd(fare.totalCents)}</span>
-        <span className="text-xs text-site-text-dim">{t("est", { defaultValue: "est." })}</span>
+        <span className="text-xs text-site-text-muted">{t("est", { defaultValue: "est." })}</span>
       </span>
     );
   }
@@ -51,7 +51,7 @@ export function FareBreakdown({ distanceMeters, durationSeconds, classId, compac
           </div>
         ))}
         {fare.multiplier !== 1 && (
-          <div className="flex items-center justify-between text-xs text-site-text-dim">
+          <div className="flex items-center justify-between text-xs text-site-text-muted">
             <dt>{t("class-multiplier", { defaultValue: "Class multiplier" })}</dt>
             <dd>×{fare.multiplier}</dd>
           </div>
@@ -64,7 +64,7 @@ export function FareBreakdown({ distanceMeters, durationSeconds, classId, compac
             <CircleDollarSign className="h-4 w-4 text-site-accent" />
             <span className="text-base font-bold text-site-text">{t("estimated-fare", { defaultValue: "Estimated fare" })}</span>
           </div>
-          <span className="text-xs text-site-text-dim">{t("charged-after-trip", { defaultValue: "Charged after your trip · tip optional." })}</span>
+          <span className="text-xs text-site-text-muted">{t("charged-after-trip", { defaultValue: "Charged after your trip · tip optional." })}</span>
         </div>
         <div className="text-right">
           <div className="text-lg font-bold text-site-text">{formatUsd(fare.totalCents)}</div>

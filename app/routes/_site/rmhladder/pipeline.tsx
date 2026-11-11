@@ -380,7 +380,7 @@ function ApplicationEditor({
           {interviewDates.map((date, index) => (
             <span
               key={`${date.toISOString()}-${index}`}
-              className="inline-flex items-center gap-2 rounded-site-sm border border-site-accent/30 bg-site-accent-dim py-1 pr-1 pl-3 text-sm"
+              className="inline-flex items-center gap-2 rounded-site-sm border border-site-accent/30 bg-site-bg-subtle py-1 pr-1 pl-3 text-sm"
             >
               {date.toLocaleString()}
               <button

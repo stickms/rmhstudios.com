@@ -68,7 +68,7 @@ export default function FriendlyChallenges() {
         <h2 id="friendly-heading" className="site-section-label">
           {t('fr-title', { defaultValue: 'Friendly challenge' })}
         </h2>
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('fr-blurb', {
             defaultValue:
               'Unranked: no rating changes. Where a game supports it, the lower-rated player gets a head start.',
@@ -134,14 +134,14 @@ export default function FriendlyChallenges() {
                 <span>
                   <strong>{gameName(r.game)}</strong> · {r.other.name}
                 </span>
-                <span className="text-xs text-site-text-dim">
+                <span className="text-xs text-site-text-muted">
                   {r.status === 'pending'
                     ? t('fr-pending', { defaultValue: 'Pending' })
                     : t('fr-accepted', { defaultValue: 'In play' })}
                 </span>
               </div>
               {r.handicap && (
-                <p className="text-xs text-site-text-dim">
+                <p className="text-xs text-site-text-muted">
                   {r.handicap.mine
                     ? t('fr-hp-you', {
                         defaultValue:

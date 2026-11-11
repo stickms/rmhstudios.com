@@ -171,6 +171,45 @@ export function isSiteTier(file) {
   return !FULLSCREEN_ROUTE_SEGMENTS.has(seg);
 }
 
+/**
+ * Steel phase 1 tightened `local/no-raw-palette-color` (now also `white`, `black` and colour literals in arbitrary
+ * values) and `local/no-hardcoded-radius` (now also side variants and literal arbitrary radii), so that only the
+ * section-2 tokens are allowed (docs/plans/2026-11-11-steel-design-implementation.md §17). These are the site-tier files
+ * that already broke the tightened rules. The list is a ratchet, like the CSS debt in `design-consistency.test.ts`:
+ * entries come OUT when the named phase rewrites the file, they never go in, and a new file is held to the rule from its
+ * first line. The value says which phase removes the entry and why it is there. `lib/__tests__/steel-flat.test.ts`
+ * fails when an entry no longer breaks a rule, so the list cannot go stale.
+ */
+export const STEEL_PALETTE_BASELINE = {
+  // Phase 2 (controls): shared primitives.
+  'components/ui/notification-badge.tsx': 'phase 2: badge on K9 tokens',
+  'components/ui/select.tsx': 'phase 2: select rebuilt to K4/S5 (rounded-xl, rounded-2xl)',
+  // Phase 4 and 5 (recipes): the feed, article and profile pages.
+  'components/feed/ShareModal.tsx': 'phase 4: share sheet on S5',
+  'components/blog/MDXAnimations.tsx': 'phase 5: article recipe',
+  'components/blog/ShareButton.tsx': 'phase 5: article recipe',
+  'components/creator-studio/AnalyticsDashboard.tsx': 'phase 7: long tail (rounded-t-sm chart bars)',
+  'components/library/LibraryCollections.tsx': 'phase 5: catalogue recipe (book-spine radius)',
+  'app/routes/_site/library/index.tsx': 'phase 5: catalogue recipe (book-spine radius)',
+  'components/news/NewsHero.tsx': 'phase 5: article recipe (blob radius)',
+  // Phase 7 (long tail): pages with no recipe yet, and the app-tier kit that moves under L8.
+  'components/homes/ListingCard.tsx': 'phase 7: long tail',
+  'components/party/PhoneControllerHost.tsx': 'phase 7: long tail',
+  'components/rideshare/RideMap.tsx': 'phase 7: long tail',
+  'components/rideshare/RideChat.tsx': 'phase 7: long tail (rounded-br-sm bubble tails)',
+  'components/rmhcoins/PlinkoGame.tsx': 'phase 7: long tail (casino keeps its own scheme)',
+  'features/casino/ui/RouletteTable.tsx': 'phase 7: long tail (casino keeps its own scheme)',
+  'components/kaikai-debt/stats/RhythmHeatmap.tsx': 'phase 7: long tail',
+  'components/studio/plugins/FaderControl.tsx': 'phase 7: app tier (L8), moves under FULLSCREEN_TIER_DIRS',
+  'components/shared/ChatPanel.tsx': 'phase 7: app-tier kit (L8)',
+  'components/shared/DesktopControlsGate.tsx': 'phase 7: app-tier kit (L8)',
+  'components/shared/GameErrorBoundary.tsx': 'phase 7: app-tier kit (L8)',
+  'components/shared/GameLoadingFallback.tsx': 'phase 7: app-tier kit (L8)',
+  'components/shared/WebGLUnavailable.tsx': 'phase 7: app-tier kit (L8)',
+  'components/user-builds/TechBadges.tsx': 'phase 7: long tail',
+  'app/routes/v.$slug.tsx': 'phase 7: long tail (vibe player)',
+};
+
 /** Files the class-string rules that run on the WHOLE tree look at (`transition-all`, dead animate classes). */
 export const ALL_TIER_FILES = [
   'components/**/*.tsx',
@@ -186,3 +225,6 @@ export const FULLSCREEN_IGNORES = [
   ...[...FULLSCREEN_TIER_DIRS].flatMap((d) => [`components/${d}/**`, `features/${d}/**`]),
   ...[...FULLSCREEN_ROUTE_SEGMENTS].flatMap((s) => [`app/routes/${s}/**`, `app/routes/${s}.tsx`]),
 ];
+
+/** The Steel baseline as flat-config `ignores` for the two tightened rules. */
+export const STEEL_BASELINE_IGNORES = Object.keys(STEEL_PALETTE_BASELINE);

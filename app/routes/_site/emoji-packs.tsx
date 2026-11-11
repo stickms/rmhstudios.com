@@ -90,7 +90,7 @@ function PackCard({
         <p className="line-clamp-2 text-sm text-site-text-muted">{pack.description}</p>
       )}
 
-      <p className="text-xs text-site-text-dim">
+      <p className="text-xs text-site-text-muted">
         {t('pack-counts', {
           defaultValue: '{{items}} items · {{subs}} installs',
           items: pack.itemCount,
@@ -393,7 +393,7 @@ function OwnedPackCard({ pack, onChanged }: { pack: PackSummary; onChanged: () =
         </label>
       </div>
 
-      <p className="text-xs text-site-text-dim">
+      <p className="text-xs text-site-text-muted">
         {t('pack-pending-note', {
           defaultValue: 'New and edited packs are reviewed before other people can install them.',
         })}

@@ -64,7 +64,7 @@ export function AnalyticsDashboard() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {tiles.map(({ icon: Icon, label, value }) => (
           <div key={label} className="glass-fill rounded-site px-4 py-3">
-            <div className="flex items-center gap-2 text-site-text-dim">
+            <div className="flex items-center gap-2 text-site-text-muted">
               <Icon className="size-4" aria-hidden="true" />
               <span className="text-xs font-medium">{label}</span>
             </div>
@@ -75,14 +75,14 @@ export function AnalyticsDashboard() {
 
       {/* Engagement rate */}
       <div className="glass-fill rounded-site px-4 py-3">
-        <div className="flex items-center gap-2 text-site-text-dim">
+        <div className="flex items-center gap-2 text-site-text-muted">
           <TrendingUp className="size-4" aria-hidden="true" />
           <span className="text-xs font-medium">
             {t('engagement-rate', { defaultValue: 'Engagement rate' })}
           </span>
         </div>
         <p className="mt-2 text-2xl font-bold text-site-text">{engagementPct}%</p>
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('engagement-rate-desc', {
             defaultValue: 'Interactions ÷ impressions across all your posts',
           })}
@@ -116,7 +116,7 @@ export function AnalyticsDashboard() {
           {t('top-posts', { defaultValue: 'Top posts by impressions' })}
         </h2>
         {data.topPosts.length === 0 ? (
-          <p className="text-sm text-site-text-dim">
+          <p className="text-sm text-site-text-muted">
             {t('no-posts-yet', { defaultValue: 'No posts yet. Be the first!' })}
           </p>
         ) : (
@@ -131,7 +131,7 @@ export function AnalyticsDashboard() {
                   <p className="line-clamp-2 text-sm text-site-text">
                     {p.content || t('no-text-post', { defaultValue: '(media post)' })}
                   </p>
-                  <div className="mt-3 flex flex-wrap gap-4 text-xs text-site-text-dim">
+                  <div className="mt-3 flex flex-wrap gap-4 text-xs text-site-text-muted">
                     <span className="inline-flex items-center gap-2">
                       <Eye aria-hidden className="size-3.5" />
                       {formatCount(p.views)}

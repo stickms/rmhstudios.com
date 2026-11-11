@@ -862,31 +862,21 @@ html.nav-pop .page-root > * {
   }
   [data-evert~='over']::before {
     z-index: 3;
-    background: var(--liquid-coat);
+    background: var(--site-surface-hover);
   }
 
-  /* Dropdown rows are text, not bands. A menu, select or autocomplete row has no fill, edge or radius of its own;
-     hovering it (or moving the keyboard highlight onto it) wakes a gentle glow behind the text: a soft accent wash that
-     fades to nothing at the row's own edges (`closest-side`), so it never draws a rectangle against the panel. It is the
-     same state layer as above — an opacity transition, no keyframes, no shadow, no filter — and the text is never
-     the thing that glows. Destructive rows glow in the danger colour. Selected rows are marked by their accent text and
-     check, not by a fill. */
+  /* Dropdown rows (S5, K3): a menu, select or autocomplete row has no edge or radius of its own; hovering it (or moving
+     the keyboard highlight onto it) fills it with `--site-bg-subtle`, the one hover fill. It is the same state layer as
+     above, an opacity transition (M1), and the text is never what changes. Destructive rows fill in the danger colour,
+     mixed into the overlay surface so it stays opaque. Selected rows are marked by their text weight and check. */
   [data-slot='menu-item'][data-evert]::before,
   [data-slot='select-item'][data-evert]::before,
   [data-row-glow][data-evert]::before {
     border-radius: 0;
-    background: radial-gradient(
-      ellipse closest-side at 50% 50%,
-      color-mix(in srgb, var(--site-accent) var(--row-glow-strength, 20%), transparent),
-      transparent
-    );
+    background: var(--site-bg-subtle);
   }
   [data-slot='menu-item'][data-tone='danger'][data-evert]::before {
-    background: radial-gradient(
-      ellipse closest-side at 50% 50%,
-      color-mix(in srgb, var(--site-danger) var(--row-glow-strength, 20%), transparent),
-      transparent
-    );
+    background: color-mix(in srgb, var(--site-danger) 10%, var(--site-surface));
   }
 }
 
@@ -895,7 +885,7 @@ html.nav-pop .page-root > * {
    laid over the control in its own shape. `lib/evert-auto.ts` places it with an inline `translate` and size (re-placed
    only on scroll and resize while it is up) and copies the control's radius; the hover ghost carries
    `data-liquid-glass="lit"`, so the glass engine draws the shared optical response (tilt, light, rim) on it exactly
-   as on a control that holds its own slab (app/glass-roles.css drops the static coat once that canvas is on).
+   as on a control that holds its own slab.
    Restored after a39a095e deleted these base rules with the old scale eversion while the script still creates the
    ghost — without them it fell to the end of <body> as a static block and added page height (F2, 2026-10-23).
    Adapted to the current layer and the jelly contract: it is fixed and out of flow, never takes the pointer, is an
@@ -910,7 +900,7 @@ html.nav-pop .page-root > * {
   pointer-events: none;
   contain: strict;
   isolation: isolate;
-  background: var(--liquid-coat);
+  background: var(--site-surface-hover);
   opacity: 0;
   transition: opacity var(--site-transition-speed) var(--ease-glass);
 }
@@ -977,7 +967,7 @@ html.nav-pop .page-root > * {
     --evert-rest-opacity: 1;
   }
   [data-slot='button']:is([data-variant='accent-outline'], [data-variant='accent-ghost']) {
-    --evert-tint: var(--site-accent-dim);
+    --evert-tint: var(--site-bg-subtle);
     --evert-rest-opacity: 1;
   }
   [data-slot='menu-item'][data-tone='danger'] {
@@ -1028,9 +1018,9 @@ html.nav-pop .page-root > * {
       height: 1rem;
       margin: 0;
       vertical-align: middle;
-      border: 1.5px solid var(--site-border-bright);
+      border: 1.5px solid var(--site-text);
       border-radius: calc(var(--site-radius-sm) * 0.5);
-      background: var(--site-surface-opaque);
+      background: var(--site-surface);
       color: var(--site-accent-fg);
       cursor: pointer;
       transition: border-color var(--site-transition-speed) var(--ease-glass);

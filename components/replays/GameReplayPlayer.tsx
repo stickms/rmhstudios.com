@@ -82,7 +82,7 @@ export function GameReplayPlayer({
             defaultValue:
               'This replay was recorded on an older version of the game. Showing a simplified timeline.',
           })}{' '}
-          <span className="text-site-text-dim">({version})</span>
+          <span className="text-site-text-muted">({version})</span>
         </div>
       )}
 
@@ -114,7 +114,7 @@ export function GameReplayPlayer({
           className="h-2 w-full cursor-pointer appearance-none rounded-full bg-site-bg accent-site-accent"
           disabled={total === 0}
         />
-        <div className="mt-1 flex justify-between text-xs text-site-text-dim">
+        <div className="mt-1 flex justify-between text-xs text-site-text-muted">
           <span>
             {t('replay-move', { defaultValue: 'Move' })} {step} / {total}
           </span>
@@ -274,7 +274,7 @@ function GenericTimeline({ inputs, step }: { inputs: unknown[]; step: number }) 
 
   return (
     <div className="flex w-full max-w-md flex-col gap-2">
-      <p className="text-center text-xs uppercase tracking-wide text-site-text-dim">
+      <p className="text-center text-xs uppercase tracking-wide text-site-text-muted">
         {t('replay-timeline', { defaultValue: 'Event timeline' })}
       </p>
       <ol className="flex flex-col gap-1">
@@ -291,10 +291,10 @@ function GenericTimeline({ inputs, step }: { inputs: unknown[]; step: number }) 
                   ? 'border-site-accent bg-site-accent/10 text-site-text'
                   : played
                     ? 'text-site-text-muted'
-                    : 'border-site-border/50 bg-transparent text-site-text-dim',
+                    : 'border-site-border/50 bg-transparent text-site-text-muted',
               )}
             >
-              <span className="w-8 shrink-0 text-site-text-dim">#{index + 1}</span>
+              <span className="w-8 shrink-0 text-site-text-muted">#{index + 1}</span>
               <span className="truncate">{describeEvent(event)}</span>
             </li>
           );

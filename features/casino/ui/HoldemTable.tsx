@@ -66,7 +66,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
 }) {
   const { t } = useTranslation("c-rmhcoins");
   const actionLabels: Record<string, { label: string; color: string }> = {
-    fold: { label: t("action-fold", { defaultValue: "Fold" }), color: 'text-site-text-dim' },
+    fold: { label: t("action-fold", { defaultValue: "Fold" }), color: 'text-site-text-muted' },
     check: { label: t("action-check", { defaultValue: "Check" }), color: 'text-casino-seat-1' },
     call: { label: t("action-call", { defaultValue: "Call" }), color: 'text-site-success' },
     raise: { label: t("action-raise", { defaultValue: "Raise" }), color: 'text-site-accent' },
@@ -75,7 +75,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
 
   return (
     <div className={`flex flex-col items-center gap-1 p-2 rounded-site-sm transition shrink-0 min-w-0 ${
-      isCurrentTurn ? 'ring-2 ring-site-accent bg-site-accent-dim animate-pulse' : ''
+      isCurrentTurn ? 'ring-2 ring-site-accent bg-site-bg-subtle animate-pulse' : ''
     } ${player.folded || player.sittingOut ? 'opacity-40' : ''} ${isMe ? 'bg-site-surface/50' : ''}`}>
       {/* Name + position badges */}
       <div className="flex items-center gap-1 flex-wrap justify-center">
@@ -83,12 +83,12 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
         <span className={`text-xs font-bold truncate max-w-14 sm:max-w-20 ${isMe ? 'text-site-accent' : 'text-site-text'}`}>
           {isMe ? t("you", { defaultValue: "You" }) : player.userName}
         </span>
-        {player.isDealer && <span className="text-nano sm:text-tiny font-bold bg-site-accent-dim text-site-accent px-1 rounded">D</span>}
+        {player.isDealer && <span className="text-nano sm:text-tiny font-bold bg-site-bg-subtle text-site-accent px-1 rounded">D</span>}
         {player.isSmallBlind && <span className="text-nano sm:text-tiny font-bold bg-casino-seat-1/30 text-casino-seat-1 px-1 rounded">SB</span>}
         {player.isBigBlind && <span className="text-nano sm:text-tiny font-bold bg-casino-seat-2/30 text-casino-seat-2 px-1 rounded">BB</span>}
         {isCurrentTurn && turnSeconds != null && (
           <span className={`text-nano sm:text-tiny font-bold tabular-nums px-1 rounded ${
-            turnSeconds <= 5 ? 'bg-site-danger/30 text-site-danger animate-pulse' : 'bg-site-accent-dim text-site-accent'
+            turnSeconds <= 5 ? 'bg-site-danger/30 text-site-danger animate-pulse' : 'bg-site-bg-subtle text-site-accent'
           }`}>
             {turnSeconds}s
           </span>
@@ -132,7 +132,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
       )}
 
       {player.sittingOut && <span className="text-micro text-casino-seat-3 font-bold">{t("sitting-out", { defaultValue: "Sitting Out" })}</span>}
-      {player.folded && !player.sittingOut && <span className="text-micro text-site-text-dim font-bold">{t("folded", { defaultValue: "Folded" })}</span>}
+      {player.folded && !player.sittingOut && <span className="text-micro text-site-text-muted font-bold">{t("folded", { defaultValue: "Folded" })}</span>}
       {player.allIn && <span className="text-micro text-site-danger font-bold animate-pulse">{t("action-all-in", { defaultValue: "ALL IN" })}</span>}
     </div>
   );
@@ -173,7 +173,7 @@ export function HoldemTable() {
             <CardFace key={`${card.rank}${card.suit}${i}`} card={card} delay={i * 500} />
           ))
         ) : (
-          <span className="text-xs text-site-text-dim px-4">
+          <span className="text-xs text-site-text-muted px-4">
             {phase === 'waiting' ? t("waiting-for-players", { defaultValue: "Waiting for players..." }) : t("cards-will-appear", { defaultValue: "Cards will appear here" })}
           </span>
         )}
@@ -197,10 +197,10 @@ export function HoldemTable() {
                 ) : net < 0 ? (
                   <span className="font-bold text-site-danger"> {net}</span>
                 ) : (
-                  <span className="text-site-text-dim"> {t("broke-even", { defaultValue: "broke even" })}</span>
+                  <span className="text-site-text-muted"> {t("broke-even", { defaultValue: "broke even" })}</span>
                 )}
                 {r.handRank && (
-                  <span className="text-site-text-dim"> — {HAND_RANK_LABELS[r.handRank]}</span>
+                  <span className="text-site-text-muted"> — {HAND_RANK_LABELS[r.handRank]}</span>
                 )}
               </div>
             );
@@ -226,7 +226,7 @@ export function HoldemTable() {
           </div>
         </div>
       ) : (
-        <p className="text-sm text-site-text-dim">{t("no-players", { defaultValue: "No players at the table yet." })}</p>
+        <p className="text-sm text-site-text-muted">{t("no-players", { defaultValue: "No players at the table yet." })}</p>
       )}
     </div>
   );

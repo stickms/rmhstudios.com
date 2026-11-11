@@ -108,11 +108,11 @@ export const CANVAS = '#ffffff'; // --site-bg
 export const INK = '#000000'; // --site-text, --site-accent
 export const INK_FG = '#ffffff'; // --site-accent-fg
 export const MUTED = '#565656'; // --site-text-muted
-export const DIM = '#767676'; // --site-text-dim
+export const DIM = '#767676'; // --site-text-muted
 export const HAIRLINE = 'rgba(0, 0, 0, 0.16)'; // --site-border
-export const HAIRLINE_SOFT = 'rgba(0, 0, 0, 0.08)'; // --site-glass-rim
-export const GLASS = 'rgba(255, 255, 255, 0.72)'; // --site-glass-tint
-export const GLASS_STRONG = 'rgba(255, 255, 255, 0.86)'; // --site-glass-tint-strong
+export const HAIRLINE_SOFT = 'rgba(0, 0, 0, 0.08)'; // the old glass rim
+export const GLASS = 'rgba(255, 255, 255, 0.72)'; // the old glass tint
+export const GLASS_STRONG = 'rgba(255, 255, 255, 0.86)'; // the old strong glass tint
 export const WELL = 'rgba(0, 0, 0, 0.045)'; // --site-bg-subtle
 
 /**

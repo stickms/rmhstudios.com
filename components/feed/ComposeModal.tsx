@@ -245,7 +245,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  ? t('max-images', { defaultValue:'Maximum 4 images'})
  : t('attach-images', { defaultValue:'Attach images'})
  }
- className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+ className="p-1.5 rounded-full text-site-text-muted hover:text-site-accent hover:bg-site-accent/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
  >
  <ImagePlus className="w-4.5 h-4.5"/>
  </button>
@@ -263,7 +263,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  className={`px-1.5 py-1 rounded-full text-xs font-bold leading-none border transition-colors ${
  attachment ==='gif'
  ?'border-site-accent text-site-accent bg-site-accent/10'
- :'border-site-border text-site-text-dim hover:text-site-accent hover:bg-site-accent/10'
+ :'border-site-border text-site-text-muted hover:text-site-accent hover:bg-site-accent/10'
  }`}
  >
  {t('gif-heading', { defaultValue:'GIF'})}
@@ -280,7 +280,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  aria-label={t('add-to-post-aria', { defaultValue:'Add to post'})}
  aria-haspopup="menu"
  aria-expanded={menuOpen}
- className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
+ className="p-1.5 rounded-full text-site-text-muted hover:text-site-accent hover:bg-site-accent/10 transition-colors"
  >
  <Plus className="w-4.5 h-4.5"/>
  </button>
@@ -360,7 +360,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  placeholder={t('compose-placeholder', { defaultValue:"What's on your mind?"})}
  rows={4}
  maxLength={MAX_RMHARK_LENGTH}
- className="w-full bg-transparent text-site-text placeholder:text-site-text-dim text-base resize-none border-none outline-none"
+ className="w-full bg-transparent text-site-text placeholder:text-site-text-muted text-base resize-none border-none outline-none"
  onKeyDown={(e) => {
  if (e.key ==='Enter'&& (e.metaKey || e.ctrlKey)) {
  handleSubmit();
@@ -392,7 +392,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  setAttachment(null);
  setPoll({ question:'', options: ['',''], multiSelect: false });
  }}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
+ className="p-1 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <X className="w-3.5 h-3.5"/>
  </button>
@@ -406,7 +406,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  defaultValue:'Ask a question…',
  })}
  maxLength={MAX_POLL_QUESTION_LENGTH}
- className="w-full glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors mb-2"
+ className="w-full glass-inset text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors mb-2"
  />
 
  <div className="space-y-2">
@@ -425,7 +425,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  defaultValue:'Option {{index}}',
  })}
  maxLength={MAX_POLL_OPTION_LENGTH}
- className="flex-1 glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors"
+ className="flex-1 glass-inset text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors"
  />
  {poll.options.length > MIN_POLL_OPTIONS && (
  <button
@@ -433,7 +433,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  const newOptions = poll.options.filter((_, j) => j !== i);
  setPoll((p) => ({ ...p, options: newOptions }));
  }}
- className="p-1 rounded-full text-site-text-dim hover:text-site-danger hover:bg-site-danger/10 transition-colors"
+ className="p-1 rounded-full text-site-text-muted hover:text-site-danger hover:bg-site-danger/10 transition-colors"
  >
  <X className="w-3.5 h-3.5"/>
  </button>
@@ -458,7 +458,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  onChange={(e) => setPoll((p) => ({ ...p, multiSelect: e.target.checked }))}
  className="rounded border-site-border text-site-accent focus:ring-site-accent"
  />
- <span className="text-xs text-site-text-dim">
+ <span className="text-xs text-site-text-muted">
  {t('allow-multiple-selections', {
  defaultValue:'Allow multiple selections',
  })}
@@ -480,7 +480,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  setAttachment(null);
  setGifUrl('');
  }}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
+ className="p-1 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <X className="w-3.5 h-3.5"/>
  </button>
@@ -580,7 +580,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  ?'text-site-danger'
  : remaining <= 20
  ?'text-site-warning'
- :'text-site-text-dim'
+ :'text-site-text-muted'
  }`}
  >
  {remaining}
@@ -628,10 +628,10 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  placeholder={t('alt-text-placeholder', {
  defaultValue:'e.g. A golden retriever running on a beach at sunset',
  })}
- className="w-full resize-none rounded-site-sm glass-inset px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim outline-none focus:border-site-accent transition-colors"
+ className="w-full resize-none rounded-site-sm glass-inset px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted outline-none focus:border-site-accent transition-colors"
  />
  <div className="mt-3 flex items-center justify-between">
- <span className="text-xs font-mono text-site-text-dim">
+ <span className="text-xs font-mono text-site-text-muted">
  {MAX_IMAGE_ALT_LENGTH - (imageAlts[altEditIndex]?.length ?? 0)}
  </span>
  <Button variant="accent"size="sm"onClick={() => setAltEditIndex(null)}>

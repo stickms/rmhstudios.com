@@ -136,7 +136,7 @@ export function HighlightsSection({
                 ) : null}
               </button>
               <span
-                className="mt-1.5 text-site-text-dim"
+                className="mt-1.5 text-site-text-muted"
                 title={
                   r.h.isPublic
                     ? t('public', { defaultValue: 'Public' })
@@ -246,13 +246,13 @@ export function HighlightsSection({
                   {hit ? (
                     <button
                       type="button"
-                      className="mt-0.5 line-clamp-1 text-start text-site-text-dim underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-site-accent"
+                      className="mt-0.5 line-clamp-1 text-start text-site-text-muted underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-site-accent"
                       onClick={() => kit.scrollTo(hit.start, hit.end)}
                     >
                       “{n.exact}”
                     </button>
                   ) : (
-                    <p className="line-clamp-1 text-site-text-dim">“{n.exact}”</p>
+                    <p className="line-clamp-1 text-site-text-muted">“{n.exact}”</p>
                   )}
                 </div>
               </li>
@@ -262,7 +262,7 @@ export function HighlightsSection({
       ) : null}
 
       {kit.popularShown > 0 ? (
-        <p className="text-site-text-dim">
+        <p className="text-site-text-muted">
           {t('popular-legend', {
             n: MIN_READERS_TO_SHOW,
             defaultValue: 'Dotted underlines mark passages at least {{n}} readers highlighted.',

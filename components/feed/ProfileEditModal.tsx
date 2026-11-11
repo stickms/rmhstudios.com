@@ -155,7 +155,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
             <aside className="hidden md:block">
               <div className="sticky top-0 space-y-3">
-                <div className="flex items-center gap-2 text-xs font-semibold text-site-text-dim">
+                <div className="flex items-center gap-2 text-xs font-semibold text-site-text-muted">
                   <Sparkles className="size-3.5" aria-hidden />
                   {t('live-preview', { defaultValue: 'Live preview' })}
                 </div>
@@ -166,7 +166,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                   image={form.avatarPreview}
                   banner={form.bannerPreview}
                 />
-                <p className="text-xs leading-relaxed text-site-text-dim">
+                <p className="text-xs leading-relaxed text-site-text-muted">
                   {t('live-preview-hint', {
                     defaultValue:
                       'Your theme, badges, and frame remain applied when these changes are saved.',
@@ -186,7 +186,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           ) : null}
 
           <div className="glass-fill sticky bottom-0 flex items-center justify-between gap-3 border-x-0 border-b-0 px-4 py-3 md:px-6">
-            <p className="hidden text-xs text-site-text-dim sm:block">
+            <p className="hidden text-xs text-site-text-muted sm:block">
               {dirty
                 ? t('unsaved-profile-changes', { defaultValue: 'You have unsaved changes.' })
                 : t('profile-up-to-date', { defaultValue: 'Your profile is up to date.' })}

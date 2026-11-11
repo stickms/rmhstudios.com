@@ -142,7 +142,7 @@ export function GiftCoinsButton({
                 data-jelly
                 className={`rounded-site-sm border px-3 py-1.5 text-sm font-semibold transition-colors ${
                   amount === a
-                    ? 'border-site-accent bg-site-accent-dim text-site-text'
+                    ? 'border-site-accent bg-site-bg-subtle text-site-text'
                     : 'border-site-border text-site-text-muted hover:bg-site-surface-hover'
                 }`}
               >

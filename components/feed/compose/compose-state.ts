@@ -87,7 +87,7 @@ export function counterToneClass(remaining: number): string {
     ? 'text-site-danger'
     : remaining <= 20
       ? 'text-site-warning'
-      : 'text-site-text-dim';
+      : 'text-site-text-muted';
 }
 
 export interface ComposeBodyInput {

@@ -49,8 +49,7 @@ export function RoadmapStyles() {
         border-radius: 9999px;
         background: var(--era-color);
         box-shadow:
-          0 0 0 4px color-mix(in srgb, var(--era-color) 18%, transparent),
-          var(--site-shadow-site-sm);
+          0 0 0 4px color-mix(in srgb, var(--era-color) 18%, transparent);
       }
       @media (min-width: 640px) {
         .roadmap-node { left: 3px; }

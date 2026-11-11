@@ -74,7 +74,7 @@ export function RouletteControls({ coins }: Props) {
   // Idle state
   if (tablePhase === 'idle') {
     return (
-      <div className="text-center text-site-text-dim py-4">
+      <div className="text-center text-site-text-muted py-4">
         <p className="text-sm">{t("waiting-for-next-round", { defaultValue: "Waiting for next round..." })}</p>
       </div>
     );
@@ -88,7 +88,7 @@ export function RouletteControls({ coins }: Props) {
 
         {/* Chip selector — circular chips, scrollable on tiny screens */}
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-site-text-dim text-center">{t("select-chip-value", { defaultValue: "Select chip value" })}</span>
+          <span className="text-xs text-site-text-muted text-center">{t("select-chip-value", { defaultValue: "Select chip value" })}</span>
           <div className="flex justify-center gap-2 py-1 overflow-x-auto" data-jelly-zone="playfield">
             {CHIP_VALUES.map((val) => (
               <Button
@@ -105,12 +105,12 @@ export function RouletteControls({ coins }: Props) {
               </Button>
             ))}
           </div>
-          <p className="text-caption text-site-text-dim text-center">{t("place-bets-hint", { defaultValue: "Place your bets on the board above" })}</p>
+          <p className="text-caption text-site-text-muted text-center">{t("place-bets-hint", { defaultValue: "Place your bets on the board above" })}</p>
         </div>
 
         {/* Quick bet buttons — 3 columns on mobile, 6 on desktop */}
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-site-text-dim text-center">{t("quick-bets", { defaultValue: "Quick bets" })}</span>
+          <span className="text-xs text-site-text-muted text-center">{t("quick-bets", { defaultValue: "Quick bets" })}</span>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
             {QUICK_BETS.map(({ type, label, color }) => (
               <button
@@ -129,7 +129,7 @@ export function RouletteControls({ coins }: Props) {
         {stagedBets.length > 0 && (
           <div className="glass-fill flex flex-col gap-1.5 p-2.5 rounded-site-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-site-text-dim">{t("your-bets", { defaultValue: "Your bets" })}</span>
+              <span className="text-xs text-site-text-muted">{t("your-bets", { defaultValue: "Your bets" })}</span>
               <div className="flex items-center gap-1">
                 <CoinIcon className="w-3.5 h-3.5" />
                 <span className="text-sm font-bold text-site-warning">{totalBet}</span>
@@ -140,7 +140,7 @@ export function RouletteControls({ coins }: Props) {
                 {stagedBets.map((bet, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center gap-0.5 text-micro bg-site-accent-dim text-site-accent rounded-full px-1.5 py-0.5"
+                    className="inline-flex items-center gap-0.5 text-micro bg-site-bg-subtle text-site-accent rounded-full px-1.5 py-0.5"
                   >
                     {bet.type === 'straight' ? `#${numberLabel(bet.numbers[0])}` : bet.type}: {bet.amount}
                   </span>
@@ -167,7 +167,7 @@ export function RouletteControls({ coins }: Props) {
   // Spinning phase
   if (tablePhase === 'spinning') {
     return (
-      <div className="text-center text-site-text-dim py-4">
+      <div className="text-center text-site-text-muted py-4">
         <p className="text-sm font-bold text-site-accent animate-pulse">
           {t("no-more-bets-spinning", { defaultValue: "No more bets! Spinning..." })}
         </p>
@@ -185,9 +185,9 @@ export function RouletteControls({ coins }: Props) {
         {/* Winning number */}
         {spinResult !== null && (
           <div className="flex flex-col items-center gap-1">
-            <span className="text-xs text-site-text-dim uppercase tracking-wider">{t("winning-number", { defaultValue: "Winning Number" })}</span>
+            <span className="text-xs text-site-text-muted uppercase tracking-wider">{t("winning-number", { defaultValue: "Winning Number" })}</span>
             <div
-              className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-xl sm:text-2xl font-bold text-casino-ink shadow-site ${
+              className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-xl sm:text-2xl font-bold text-casino-ink ${
                 resultColor === 'red' ? 'bg-casino-red'
                 : resultColor === 'green' ? 'bg-casino-green-hover'
                 : 'bg-casino-felt'
@@ -206,7 +206,7 @@ export function RouletteControls({ coins }: Props) {
                 <p className="text-lg font-bold text-site-success">{t("you-win", { defaultValue: "You win!" })}</p>
                 <div className="flex items-center justify-center gap-1 mt-1">
                   <CoinIcon className="w-4 h-4" />
-                  <span className="text-sm text-site-text-dim">+{myPayout.payout} {t("coins", { defaultValue: "coins" })}</span>
+                  <span className="text-sm text-site-text-muted">+{myPayout.payout} {t("coins", { defaultValue: "coins" })}</span>
                 </div>
               </>
             ) : myPayout.netGain === 0 ? (
@@ -219,14 +219,14 @@ export function RouletteControls({ coins }: Props) {
           <p className="text-sm text-site-danger">{t("no-wins-this-round", { defaultValue: "No wins this round" })}</p>
         ) : null}
 
-        <p className="text-xs text-site-text-dim">{t("next-round-starting-soon", { defaultValue: "Next round starting soon..." })}</p>
+        <p className="text-xs text-site-text-muted">{t("next-round-starting-soon", { defaultValue: "Next round starting soon..." })}</p>
       </div>
     );
   }
 
   // Fallback
   return (
-    <div className="text-center text-site-text-dim py-4">
+    <div className="text-center text-site-text-muted py-4">
       <p className="text-sm animate-pulse">{t("loading", { defaultValue: "Loading..." })}</p>
     </div>
   );

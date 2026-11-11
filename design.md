@@ -1,472 +1,125 @@
 # The RMH Studios Design Language
 
-**Radial Plasmatic Jelly.**
-
-Current material (2026-10-23): **Plasmatic Jelly** — hazy, translucent slabs with
-always-on internal motion, a soft body under the pointer, the retained 3D refracting
-rim of liquid glass, and electric arcs between nearby surfaces — with the owner's #989
-layers on top: dormant plasma that wakes under the hand, an RGB-led edge, a
-liquid-glass lens dent, and charge that hops and attracts. The implementation
-contract is [`docs/plasmatic-jelly-system.md`](docs/plasmatic-jelly-system.md); the
-binding summary is the "Design system: Plasmatic Jelly" section of
-[`CLAUDE.md`](CLAUDE.md).
-
-Current motion contract: every account and device uses the shared animation scheme.
-The website reduced-motion setting and browser/OS motion overrides are retired; the
-jelly's own ambient motion and arcs have their own material switches (§4, §7).
-
-This document is the _statement of the language_ — what the design is, why it is
-that way, and the laws that hold it together. It is written to be read start to
-finish by anyone deciding how something should look or behave.
-
-It is not the build manual. Two companions carry that load, and they are the
-authority whenever an exact value, class name or API is in question:
-
-| Document                                               | Answers                                                                                                               |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| [`docs/design-language.md`](docs/design-language.md)   | "What exactly do I type?" — the token tables, the primitive catalog, the per-component rules, the definition of done. |
-| [`docs/page-consistency.md`](docs/page-consistency.md) | "Does this page fit?" — the per-page checklist, with code.                                                            |
-
-Where this file and those disagree, **they win** — and the disagreement is a bug
-in this file. Everything here is deliberately kept to the durable layer:
-principles, structure and rationale, not values that move.
-
----
-
-## 1. The two ideas
-
-The language is one bet made twice: that an interface can be a **place** rather
-than a document, and that it can be made of a **material** rather than of paint.
-
-### Radial — the site is a place you move around in
-
-Content does not sit in a hierarchy of pages; it **radiates from a centre**. The
-RMH mark is that centre, and it is always on screen.
-
-- The home feed is a **wheel** — cards in a stable column on the document's own
-  scroll. Content and glass move together without scroll-linked tilts.
-- Navigation is a **globe**. Tap the fixed orb and it flies to the middle of the
-  screen, swells, and dissolves into a glass sphere with every destination
-  pinned to it. You _turn_ it to find where you want to go, hold on a
-  destination, and let go to travel.
-- Behind everything, a fixed **ring backdrop**, a field of soft blobs and an
-  **aurora canvas** keep the surface feeling continuous — one scene, not a stack
-  of screens. It is **still**: it neither follows you (§3) nor moves on its own.
-  It used to drift and breathe forever, and a backdrop that is never still is a
-  page that never goes idle — a full composite on every vsync, 144 or 240 times a
-  second on a high-refresh panel, for decoration nobody is watching
-  ([perf audit 2026-10-08](docs/archive/2026/performance-audit-2026-10-08.md)). Motion is
-  spent on what you touch.
-
-The consequence worth internalising: **navigating is a physical act here.** That
-raises the bar on the physics (§4) and it means chrome is never allowed to be
-inert.
-
-### Plasmatic jelly — surfaces are a material, not a colour
-
-Every surface is a slab of slightly hazy, translucent plasma-jelly. Read it from
-the inside out: a **gel** body that darkens slightly toward its base; a low-contrast
-**haze** always drifting inside it — currents, eddies and faint plasma colour at the
-crests — calm behind text and livelier at the rim; a **plasma** core that sleeps
-invisibly until the hand wakes it (hover wakes it, press and focus brighten it, a
-click's charge rings through it); and the 3D refracting, lit **edge** of liquid glass,
-its light split into red, green and blue. The edge is **molded**, not outlined: each slab
-rises out of the ground over a soft shoulder, lit on the side facing the light and
-falling into shadow on the other, with a feathered silhouette instead of a hairline. There is no
-gloss band across the face — shine lives at the edges and in the dent.
-
-The jelly is soft: hover plumps and leans it toward the cursor, and press sinks a
-smooth **lens dent** under the pointer — content beneath refracts through it, split
-into colour, with a small light dot on its far slope. Drag and the dent slides with
-you; drag off the element and the gel stretches like a rubber band. Release eases it
-all back, wobbling to rest, and a strong release nudges near neighbours by a pixel or
-two. And it is charged: nearby surfaces occasionally throw an electric arc across the
-gap; a click deposits charge that hops to a neighbour with half of it; small gaps
-break down; charged neighbours lean toward each other by Coulomb's law, never past the
-nudge bound. Text, hit areas and layout never move beyond the bounded squash. The haze is drawn by a shader or
-by transform-only CSS layers — never by native backdrop frost. The globe has a
-dielectric coat that refracts the page behind it and a dough body that dents,
-kneads and eases back.
-
-These are different capabilities behind one material language. Native HTML panels
-preserve live content and accessibility, with the haze and the rim painted behind
-it; the globe models dielectric reflection/transmission, and eversion can refract
-its captured page textures. The [implementation contract](docs/plasmatic-jelly-system.md)
-records ownership, budgets, the idle policy, fallbacks and the photosensitivity
-limits. Themes change the
-material's palette through the same tokens throughout the site.
-
-The identity is **silent, sleek, frontier AI** — calm, never busy. Its reference
-form is a near-black void, graphite surfaces, white ink and **one** electric accent,
-which is also the plasma colour, and it is the default theme (Midnight); Daylight is the same rule in daylight
-(white canvas, ink text, ink accent). No gradients on the ground, no neon or glowing
-type, no sci-fi illustration (robots, brains, circuits, sparkles). Copy is short and
-literal ("Deploy model", "Latency 42 ms"). Text is **Geist**; data is **Geist Mono**.
-There are **no eyebrows** (owner decision, 2026-11-03): no letterspaced all-caps labels;
-group headings and kickers are sentence case and a category is a soft chip. Each view has **one signal action** — the ink-gel
-`<Button variant="signal">` — and everything else on it is quieter. Restraint in the
-palette is what lets the optics be loud.
-
----
-
-## 2. The one contract everything rests on
-
-**A single set of CSS custom properties (`--site-*`), redefined by every theme.**
-
-Components never write a colour, radius, font or shadow. They consume the
-contract through Tailwind utilities (`bg-site-surface`, `text-site-text-muted`,
-`rounded-site`, `shadow-site-sm`, …). A theme is therefore a block of custom
-properties and nothing else — no per-theme component overrides, no `[data-slot]`
-special cases.
-
-Three laws follow, and almost every visual defect in this codebase's history is a
-violation of one of them:
-
-1. **Nothing is hardcoded.** No hex, no `rounded-lg`, no bespoke
-   `transition: 200ms ease`. A theme the author never opened must still look
-   deliberate.
-2. **Ink tracks its surface.** A filled surface takes _that surface's_ paired
-   foreground (`bg-site-accent` → `text-site-accent-fg`), never the page's
-   ambient text colour. `globals.css` supplies the pairings by default through
-   zero-specificity rules, and a custom accent is contrast-checked at runtime —
-   but hardcoding `text-white` on a themed surface defeats both.
-3. **Degradation is central, not per-component.** Print, the app tier's high
-   contrast and the jelly switches are handled once,
-   in the token layer and the glass classes. A component that branches on them by
-   hand is a bug. **Legibility must never depend on an optic** — text has to hold
-   on `--site-surface-opaque`.
-
-**When the system does not have what you need, extend the system.** Add the
-token, the variant, the primitive — and say so in the commit. Solving it locally
-with a magic number is how five apps ended up with five focus rings.
-
----
-
-## 3. The material: an elevation system
-
-The material is **opt-in per element, by role**, through explicit classes. Pick by
-what the surface _is_, not by how you want it to look — the tier decides the cost.
-The classes keep the `glass-*` names: "glass" names the elevation role, "jelly"
-names the material that renders every role.
-
-| Tier   | Class            | For                                                   | Cost                               |
-| ------ | ---------------- | ----------------------------------------------------- | ---------------------------------- |
-| **L1** | `.glass-fill`    | Repeated content: cards, rows, tiles                  | Slab within budget; soft body.     |
-| **L2** | `.glass-pane`    | Singular panels: heroes, composers, settings sections | Slab + haze; budgeted.             |
-| **L3** | `.glass-chrome`  | Persistent chrome: sticky headers, rails, docks       | Slab + haze; condenses on scroll.  |
-| **L4** | `.glass-overlay` | Floating UI: dialogs, popovers, menus, toasts         | Slab; quietest, densest interior.  |
-| —      | `.glass-inset`   | Fields: inputs, search fields, tab tracks             | A flush pool of jelly. Never arcs. |
-| —      | `.glass-scrim`   | Dialog and drawer backdrops                           | —                                  |
-
-Modifiers (`.glass-interactive`, `.glass-sheen-hover`, …) layer on top and each
-carries a per-page budget. They are **signature moments, not defaults**. The old
-optical modifiers (`.glass-refract`, `.glass-liquid`) are compatibility aliases
-with no effect of their own.
-
-Three properties of this system are load-bearing:
-
-**Every surface answers the light.** One scene light — a fixed "sun" above the
-page — lights every glass surface at once, and each paints a specular rim glint
-in its own border ring. This includes L1: the tier the site is mostly _made_ of
-rests at an ambient glint strength that hover raises to full. Glass that does not
-answer the light is just tinted paper.
-
-**Light, pressure and charge belong to the material.** One soft-body service
-squashes, dents and wobbles what you touch; one arc service draws the sparks and
-carries the charge; one engine clock moves the haze and wakes the plasma; and all of
-them share one frame and one pointer listener. A click discharges arcs and pulses the rim — it never changes
-layout, and neighbours move at most a bounded nudge that returns to rest. Nothing
-paints a replacement cursor, moves a gradient centre, or animates a root variable,
-and no component adds its own pointer loop, deformation or arc code. **The
-background remains still**: jelly moves, the room does not. Print removes the ambient motion and arcs
-live. The navigator globe keeps its own dough jelly, which ripples where it is pressed. See [the implementation contract](docs/plasmatic-jelly-system.md).
-
-**A tier class is not decoration you can inline.** `bg-site-surface border
-border-site-border rounded-site shadow-site-sm` renders the same _box_ as
-`.glass-fill` and none of its _material_ — no haze, no rim, no soft body, and
-nothing for the degradation tiers to switch off. Under jelly that box is visibly
-dead next to its neighbours. Reach for the tier.
-
-**Nothing is debossed.** Glass sits _on_ the page and is lit from above — the
-globe is the reference object: a specular bloom, a bright rim, depth that rises
-toward you. A dark inner shadow under a top edge reads the other way, as a slot
-carved _into_ the page, and that is not this material. Fields are the theme's ink
-at a whisper over the glass tint (`.glass-inset`): they grey slightly off a light
-page and lift slightly off a dark one, with a hairline and no shadow. An inset
-_highlight_ (a light top rim) is the glint and is fine; an inset _shadow_ is not.
-`design-consistency.test.ts` fails a site-tier `shadow-inner` or dark
-`shadow-[inset_…]` (audit: `docs/archive/2026/ui-perf-audit-2026-10-09.md`).
-
-**Budgets are real.** A rim slab, a haze canvas and a moving carrier are each
-per-element GPU work, so each has a per-tier cap (at most 24 rims, 8 animated haze
-canvases and 24 carriers on a desktop, fewer on phones); past it a surface keeps the
-static haze floor. There is no backdrop blur at all.
-
-### The one rule with teeth
-
-**Nothing may sit above a full-viewport `backdrop-filter`.** Chromium re-blurs
-such a layer _in full_ whenever anything above it moves — measured in this exact
-stack at ~10fps, with the cost tracking the blurred layer's _area_, not the blur
-radius or the damage rect. It is not tunable. The navigation globe animates
-continuously, so the overlay it sits on is a **painted veil**, not frost. Related
-rules (never `filter: url(…)` on a full-viewport layer; never chain a CSS filter
-after a `url()` reference; never paint your own cursor) are CI-gated.
-
----
-
-## 4. Motion is physics, not animation
-
-The site's motion answers to Apple's _Designing Fluid Interfaces_ (WWDC 2018
-§803): the "magical" feel of native gestures is not decoration but a handful of
-mechanics, each with a formula. Those formulas live in **[`lib/fluid.ts`](lib/fluid.ts)**,
-unit-tested, and are shared by every gesture surface. **Do not re-derive them
-locally** — a second copy is how two surfaces start disagreeing about what this
-site feels like.
-
-| Principle                              | What it means here                                                                                                                                                                                                                            |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Instantaneous response**             | A surface reacts on `pointerdown` — never on `click`, never after a recognition delay.                                                                                                                                                        |
-| **Interruptible and redirectable**     | Motion is a spring carrying position _and velocity_, so grabbing something mid-flight retargets it from where it is and how fast it is going. A duration tween structurally cannot do this, and that is most of what makes web UI feel stiff. |
-| **Momentum crosses the lift**          | The velocity the finger left with is handed to the animation, not discarded.                                                                                                                                                                  |
-| **Intent is read from the projection** | "Where would this throw come to rest?" — not "is it past the line right now?". This is why a fast flick dismisses a sheet that has barely moved.                                                                                              |
-| **Limits push back**                   | Past an edge, travel is damped asymptotically instead of stopping dead, so the surface stays alive under the finger.                                                                                                                          |
-| **Speed is evidence**                  | A gesture's speed says how sure the user was. Use it to _shorten_ a confirmation, never to skip one — the floor still has to be long enough to abandon.                                                                                       |
-
-**Springs are described by perceptual duration + bounce**, never by hand-tuned
-stiffness, so one preset settles in the same _perceived_ time whether it travels
-4px or 400px. The imperative tier (`SPRINGS` in `lib/fluid.ts`) and the
-declarative tier (`APPLE_SPRING` in `lib/motion.ts`) share one vocabulary, and a
-test asserts they cannot drift apart.
-
-**Tween or spring:** tweens for state changes with no gesture behind them
-(cross-fades, reveals, colour shifts); springs for anything the user _acts on_.
-
-**Surfaces answer being touched.** The clearest statement of this is the
-navigation globe: poke it and a wave spreads out from the exact point you
-touched, swelling the wireframe as it crosses, dying as it converges on the far
-side. The impact is recorded in the _globe's own_ coordinates, so the wave is a
-mark on the ball — keep dragging and it travels with the surface it is crossing.
-The wave's shape lives in `lib/fluid.ts` beside the spring and the rubber band,
-for the same reason they do.
-
-### The costs that constrain all of it
-
-Motion here is `transform`/`opacity` only, and four measured findings shape how
-it is written — none of which looked like a performance bug in the source:
-
-1. **A rotated 3D transform is the slow path for an antialiased curve.** Nothing
-   rasterised can be reused between frames. The globe's wireframe is one canvas
-   for this reason; as thirteen elements it halved the frame rate of the whole
-   gesture.
-2. **Reading scroll offsets in a `requestAnimationFrame` forces a synchronous
-   layout** of the whole document, every frame. Read them in the scroll _event_,
-   where the layout is still clean — or don't read them at all.
-3. **Writing an inherited custom property to `<html>` invalidates the computed
-   style of the entire document.** Custom properties have no invalidation sets,
-   and this site declares ~250 tokens on `:root`, so one such write per frame is
-   a whole-document restyle per frame. It was the single largest cost the site
-   ever had — globe drag measured 4.4fps and 624ms of input latency against
-   2.8ms of work inside the globe's own loop. Write to the element that _reads_
-   the value, never to the root.
-4. **Writing a style that is not changing still invalidates it.** Compare before
-   you write.
-5. **A gradient's position is paint, not composite.** Nothing slides a gradient;
-   moving one re-rasterises the whole box. Travelling light is a fixed layer
-   moved by `transform`.
-6. **Ambient motion is one capped loop that stops when nobody can see it** —
-   never a CSS `infinite` keyframe of your own. The jelly's haze ticks on the
-   engine's clock (60 Hz engaged, a 15 Hz floor when idle, 0 when the tab is
-   hidden, nothing hazy is on screen, or the tier is degraded), behind a governor
-   that only ever turns it down. A backdrop that never rests was the
-   [2026-10-08](docs/archive/2026/performance-audit-2026-10-08.md) failure; the jelly's floor is
-   a deliberate, budgeted reversal of that audit's "rest" limit, not a licence for
-   another perpetual layer.
-
-**Never fake a law.** Wobble, glow, ripple and flicker are forces in the
-services, never a keyframe, a `transition: transform` on a body or a second spring
-formula. The only sanctioned jelly keyframes are the haze drift, and the only
-filter on a body is the press lens, applied only while it is pressed. A new
-behaviour is a new force with a named constant for every number.
-
-**Ambient motion has a switch.** Surfaces that move on their own for more than a
-few seconds need a way to pause them (WCAG 2.2.2), and arcs are flashes (WCAG
-2.3.1). So the material carries two settings: **Jelly motion** (Lively · Calm ·
-Still, plus a one-tap "Pause ambient motion" in the quick panel) and **Electric
-arcs** (Full · Clicks only · Off), and a site-wide ledger caps arc flashes at three
-per second. These are material controls, not the retired reduced-motion setting:
-they read no OS motion preference and leave navigation transitions alone.
-
----
-
-## 5. Layout: the shell owns the frame
-
-Every standard page renders inside one shell. **Pages never add their own
-sidebars, navigation, or page frame** — and there is exactly one `<main>`
-landmark, which the shell owns.
-
-The frame is **responsive by track count**: one column on mobile, plus a
-navigation rail from 1120px, plus a live rail from 1440px. They are **grid
-tracks, not overlays**, so a rail structurally cannot ride over the content; each
-is removed from the grid entirely below the width that affords it; and the whole
-frame is capped, because filling a 34-inch window means filling it with _content_,
-not stretching one reading column across it.
-
-Three habits follow:
-
-- **Content flows on the document's own scroll.** No inner scroll region for a
-  column you read top to bottom — that is the only way mobile Safari collapses
-  its toolbars. Page-level sticky chrome is unpinned so every route flows like
-  the feed.
-- **Overlap is made structurally impossible where it can be**, not checked by
-  eye: grid tracks, `minmax(0, …)` on every track, `min-width: 0` on every flex
-  child, line clamps and `overflow-wrap` on every slot that takes user text.
-  What is left — the fixed chrome — is governed by explicit arithmetic (a shared
-  floating-control lane, a corner reserve, safe-area insets added by each
-  bottom-anchored element).
-- **Rhythm comes from tokens.** Gutters, section gaps, panel padding and sticky
-  offsets are named; repeated content floats as spaced cards, and hairline
-  dividers live _inside_ container cards, never between page-level sections.
-- **Jelly needs room.** Bodies sit at least 16px apart (`--space-4`) and keep a
-  16px unclipped margin (`--jelly-margin`) round them — no `overflow: hidden`
-  directly around a body — so the squash, the bulge opposite a dent and the rubber
-  band never get cut off.
-
-Full-screen experiences — games, login, legal pages — live outside the shell
-deliberately and own their own look.
-
----
-
-## 6. Themes are tints of one material
-
-A theme is a `.style-<id>` class on `<html>` and a block of `--site-*` values.
-That is the entire mechanism. Adding one is a CSS block plus a catalog entry;
-nothing else changes.
-
-- The **default** is strict monochrome jelly. Others are the same material in
-  their own palette over their own aurora.
-- There is **no high-contrast theme** (removed 2026-10-27); the site ships
-  Midnight and Daylight. Print and the app tier's high contrast render the material off.
-- On top of any theme, an **accent preset** overrides only the accent tokens.
-- **User themes** are the same idea taken to a marketplace: a theme is colours
-  plus a few scalar knobs, from which the full contract is _derived_ — so every
-  user theme is a correct glass tint and inherits future optics upgrades for
-  free.
-
-The test of the contract: a purchased theme nobody on the team has seen must
-render every one of ~860 components correctly, because none of them knows it
-exists.
-
----
-
-## 7. Accessibility is part of the material
-
-Not a pass at the end — the same central layer that makes theming work is what
-makes the accessible variants work.
-
-- **Focus is global and undoubled.** One `:focus-visible` treatment covers every
-  interactive element; controls that draw their own opt out explicitly. Don't add
-  a second ring on top of the one you already have. The ring is `--focus-ring`,
-  solid and 2px — never the plasma glow, which is decoration.
-- **The material is never the message.** Plasma, haze, arcs and the lens are
-  `aria-hidden` decoration and never the only signal of state; text holds 4.5:1 on
-  gel, over haze and over woken plasma in every theme.
-- **Reach for the native element or the Radix-based primitive** before
-  hand-rolling a widget. Icon-only controls are named; decorative icons are
-  hidden.
-- **Every string goes through i18n** with an English default. 16 locales ship,
-  and RTL (`ar`, `ur`) is first-class — logical spacing, mirrored directional
-  icons, `dir` set before paint.
-- **Preference switches degrade the material centrally**:
-  jelly motion and electric arcs. There is no device tier: software-rendering and
-  low-end devices get the full material (the `perf-lite` class was removed
-  2026-11-08). A capability read, `lib/low-end.ts`, stays for games, RUM and the
-  globe's CSS fallback; it is never a class on `<html>` and the material never reads it.
-- **Comfort is a settings suite, not a theme.** On top of whichever theme is
-  active, a visitor sets text size, density, a dyslexia-friendly face, a
-  jelly-motion and electric-arc switch, tilt effects, and a
-  **colour-vision mode**. Each is one more layer of the same token contract, so
-  no component knows it happened.
-- **Colour is never the only carrier of meaning.** Roughly 8% of men have some
-  colour-vision deficiency, and on this site colour _is_ state — win/loss,
-  up/down, rarity, health, moderation status. The colour-vision modes retint the
-  three semantic tokens to a palette that stays separable under each deficiency,
-  and status badges pair every variant with a distinct glyph. The retint alone
-  would not be enough.
-- **Test in at least three themes at two widths, once with jelly motion set to
-  Still.** That is the floor.
-
----
-
-## 8. There is a second tier, and it is separate on purpose
-
-Full-screen apps and games do not use `--site-*`. They use a parallel `--app-*`
-contract with its own shell, header, toaster and connection status.
-
-This is deliberate: an app owns the whole viewport, paints its own backdrop, and
-has no shared aurora to sample — so a translucent site surface there just greys
-out over whatever the game is drawing. The two contracts are structurally
-separate so neither can quietly leak into the other.
-
-That tier has its own hard-won viewport rules — edge-pinned controls add safe-area
-insets, `aspect-ratio` never sits beside a `max-*` clamp, anything that centres
-_and_ scrolls uses the safe alignment variants, a full-screen canvas clamps its
-DPR and never reallocates itself per frame, and a screen you read top to bottom
-scrolls the document. Each was a shipped bug before it was a rule; the first four
-are CI-gated.
-
----
-
-## 9. What is enforced, and what isn't
-
-Most of this language is convention. A slice of it executes in CI:
-
-- **One tab-strip grammar.** Tab strips are the shared renderer — no hand-rolled
-  `role="tablist"`, no private `layoutId` capsule, no active-state underline. A
-  source scan fails the build on each of those shapes.
-- **The token contract, on the site tier.** No raw Tailwind palette colour
-  (`bg-red-600`), no hardcoded radius (`rounded-lg`/`-xl`/`-2xl`). A
-  domain-fixed palette — a playing card, a roulette pocket — gets its own scoped
-  variable group instead. Games and the `--app-*` apps are exempt by design.
-- **Floating UI is L4.** A positioned, stacked, edge-anchored element carrying a
-  tier below `.glass-overlay` lacks the opaque legibility floor, and fails.
-- **Motion that exists.** No `transition-all` anywhere (it animates layout
-  properties nobody asked for), and no `tailwindcss-animate` class — that plugin
-  is not installed, so `animate-in`/`fade-in-0`/`zoom-in-95` compile to zero
-  rules and the element simply never animates. Both run over the whole tree,
-  games included: neither is a palette question.
-- **The full-screen viewport contract** (the four static rules above).
-- **Filter-cost rules** (no full-viewport `url()` filters, no filter chained
-  after a `url()` reference, no painted cursor).
-- **rAF-loop ownership** — frame loops belong to a sanctioned set of owners, not
-  one per feature.
-- **Accent contrast**, **user-theme token integrity**, **colour-vision mode
-  integrity** (a mode with no CSS block is a setting that appears to work and
-  changes nothing), **i18n catalog integrity**, and **no new lint warnings
-  against the base branch**.
-
-A green suite means you did not regress the enforced rules. **It does not mean
-the change looks right.** The last check is still a human looking at it in three
-themes.
-
----
-
-## 10. The short version
-
-If you remember six things:
-
-1. **Consume the token contract; never hardcode.** Extend the system when it
-   falls short, and say so.
-2. **Reach for the primitive and the tier class.** A second copy of something
-   shared is the most common defect in this repo's history.
-3. **Jelly is a material with a budget.** Pick the tier by role. The haze,
-   soft body and arcs come from one service each, on one frame and one pointer
-   listener — never a per-component loop, never a faked law, and layout never
-   moves. One accent, one signal action per view.
-4. **Motion is shared physics, and it composites.** Springs with velocity,
-   intent read from projection, response on pointer-down; the formulas live in
-   one file. `transform`/`opacity` and independent transforms only, and nothing
-   writes root variables per frame.
-5. **Degrade centrally.** Print, app high contrast and
-   the jelly switches are the token layer's and the jelly policy's job — and
-   legibility may never depend on an optic.
-6. **Look at it.** Both themes, two widths, jelly motion Still once.
+**Steel.**
+
+Steel is a flat, neutral page set in one typeface and divided by hairline rules.
+There are no cards, gradients, blurs or shadows on content. Polished chrome is the
+only material, and it appears in exactly three places: the navigation globe, the
+toggle thumb and the slider thumb. Content hangs on a thin vertical line, the
+spine. The result should read as a professional tool that happens to have one
+remarkable object in it.
+
+This file is the short statement of the language. The single source for every value,
+rule and phase is
+[`docs/plans/2026-11-11-steel-design-implementation.md`](docs/plans/2026-11-11-steel-design-implementation.md)
+(the Steel plan). Where this file and the plan disagree, the plan wins and this file
+is the bug. Steel replaces Plasmatic Jelly and the Broadsheet brief; the documents
+that describe those ([`docs/design-language.md`](docs/design-language.md),
+[`docs/plasmatic-jelly-system.md`](docs/plasmatic-jelly-system.md)) are historical.
+
+The plan is executed one phase at a time (its section 16). Phase 1, tokens and type,
+is in: the values and type classes below are real, the old material's stylesheets
+are gone, and the existing role classes (`glass-fill`, `glass-pane`, `glass-chrome`,
+`glass-overlay`, `glass-inset`) still work as names but render flat surfaces
+(`app/styles/steel-surfaces.css`). Pages look unfinished until phases 2 to 5.
+
+## 1. The five rules
+
+| ID  | Rule                                                                                                                                                           |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | **Flat first.** Page, surfaces and content use solid colours from the tokens below. No gradient, blur, glow or translucency outside the chrome elements in R2. |
+| R2  | **Chrome in three places.** The globe, the toggle thumb, the slider thumb. Nothing else is chrome: not buttons, bars, cards, avatars or icons.                 |
+| R3  | **Rules before boxes.** Separate things with a 1px rule or with space. A bordered box is for a control (button, field) or a picture, not for a group.          |
+| R4  | **One ink primary per view.** One solid-ink button marks the main action. Everything else is a bordered or borderless button.                                  |
+| R5  | **Nothing moves at rest.** No idle animation, frame loop, canvas, worker or observer runs for decoration. Motion is a response to input and ends within 360 ms. |
+
+## 2. Tokens
+
+The `--site-*` names stay, so `bg-site-bg`, `text-site-text-muted`, `border-site-border`
+and `rounded-site` keep working; only the values changed. Day is `:root` and
+`.style-default`, Night is `.style-graphite`. The values live in
+`app/globals/tokens-themes.css` and are pinned, with the contrast pairs, by
+`lib/__tests__/steel-tokens.test.ts`.
+
+| Token                  | Day       | Night     | Use                                        |
+| ---------------------- | --------- | --------- | ------------------------------------------ |
+| `--site-bg`            | `#fafafa` | `#0b0d10` | The page                                   |
+| `--site-surface`       | `#ffffff` | `#111418` | Controls and overlays only                 |
+| `--site-bg-subtle`     | `#f0f2f4` | `#161a1f` | Hover fill, picture placeholder            |
+| `--site-surface-hover` | `#f0f2f4` | `#161a1f` | Same value, kept for existing utilities    |
+| `--site-border`        | `#e3e6e9` | `#22272d` | Every rule and control border              |
+| `--site-text`          | `#0b0d10` | `#eef1f4` | Ink                                        |
+| `--site-text-muted`    | `#606873` | `#8b949e` | Secondary text, inactive tabs              |
+| `--site-accent`        | `#0b0d10` | `#eef1f4` | The ink. There is no accent colour.        |
+| `--site-accent-fg`     | `#fafafa` | `#0b0d10` | Text on an ink fill                        |
+| `--site-danger`        | `#c40016` | `#f2555a` | Errors, unread counts, destructive actions |
+| `--site-success`       | `#167d3a` | `#3fb26b` | Confirmation only                          |
+| `--site-radius`        | `8px`     | `8px`     | Controls, pictures                         |
+| `--site-radius-sm`     | `4px`     | `4px`     | Tags, small chips                          |
+| `--chrome-flat`        | `#737c87` | `#6b7480` | A chrome thumb at rest                     |
+| `--chrome-1` to `-6`   | see plan  | see plan  | The six stops of the chrome gradient       |
+
+There are no shadow tokens: the only shadows are the globe's and an overlay's
+(`0 8px 24px rgba(0,0,0,.12)`, Night `.5`). The old glass, jelly, arc and shadow
+tokens are deleted, as are the opaque-surface, bright-border, dim-text and
+dim-accent tokens: use `--site-surface`, `--site-text`, `--site-text-muted` and
+`--site-bg-subtle` (Appendix A of the plan). Every text pair holds 4.5:1 in both
+editions. Do not introduce a lighter grey for text.
+
+## 3. Type
+
+One family, **Geist**, with **Geist Mono** for timestamps, counts and small data.
+There is no display face (`--site-font-display` is the body stack). Seven classes
+carry every size (`app/styles/steel-type.css`):
+
+| Class       | Size / line    | Weight     | Tracking | Use                                  |
+| ----------- | -------------- | ---------- | -------- | ------------------------------------ |
+| `t-title`   | 28 / 1.1       | 600        | -0.025em | The page's name. One per page.       |
+| `t-heading` | 17 / 1.3       | 600        | -0.01em  | A section inside a page              |
+| `t-body`    | 14 / 1.45      | 400        | 0        | Default text and controls            |
+| `t-post`    | 15 / 1.5       | 400        | 0        | Post text                            |
+| `t-prose`   | 16 / 1.6       | 400        | 0        | Long reading                         |
+| `t-label`   | 13 / 1.3       | 600, muted | 0        | Spine station, sidebar group heading |
+| `t-meta`    | 12 / 1.3, mono | 400, muted | 0        | Time, kind, handle metadata          |
+
+Weights are 400, 500 (controls) and 600, never 700 or above (Y1). No letterspaced
+capitals anywhere; labels are sentence case (Y2). Links inside running text are
+underlined, navigation words are not (Y3).
+
+## 4. Surfaces, controls, structure
+
+Content sits on `--site-bg`; a list is rows on 1px rules; columns are divided by a 1px
+vertical rule; pictures take `--site-bg-subtle`, a 1px border and 8px radius. An overlay
+(menu, dialog, popover) is the only raised surface: `--site-surface`, 1px border, 8px
+radius, the overlay shadow, no blur; the scrim behind a dialog is `--site-bg` at 80%.
+Controls are 8px radius, 1px border, 500 weight, 14px text, 36px high (44px on touch).
+The focus ring is `outline: 2px solid var(--site-text); outline-offset: 2px` on every
+focusable element (K10). A page's one structural signature is the spine, a 1px vertical
+line with a dot per item and a hollow dot per section heading. Phone navigation is the
+globe alone; desktop navigation is a word list in a left sidebar. Controls (plan
+section 6), the spine (7), the globe and shell (8, 9) and the page recipes (10) are
+specified in the plan and arrive in phases 2 to 5.
+
+## 5. What the code enforces
+
+- `pnpm check:consistency` is the commit gate. Its executable gates are in
+  `lib/__tests__/`: `steel-tokens.test.ts` (exact token values, contrast, type classes),
+  `steel-flat.test.ts` (no `backdrop-filter`, `filter` or gradient in site-tier CSS except
+  the chrome stylesheets, no deleted token anywhere), `design-consistency.test.ts` (one
+  tab-strip grammar, no eyebrows, CSS debt ratchets) and `ios-edge-contract.test.ts`.
+- The eslint rules `local/no-raw-palette-color` (only section-2 colours: no palette
+  families, `white`, `black` or colour literals), `local/no-hardcoded-radius` (only
+  `rounded-site`, `rounded-site-sm`, `rounded-full`, `rounded-none`, or a token),
+  `local/no-transition-all` and `local/no-dead-animate-classes`. The files that still
+  break the first two are in `STEEL_PALETTE_BASELINE` in
+  `eslint-local-rules/design-scope.js`, each with the phase that removes it.
+- Full-screen games and the `--app-*` apps are outside the site design and keep their own
+  look (L8): `components/shared/app-theme.css` carries the literal palette the app tier
+  read from the old site tokens.
+
+## 6. Words
+
+Say the specific thing in short sentences. No exclamation marks, no "seamless / powerful /
+unleash", no emoji in site chrome, no invented numbers. Buttons are a verb or a verb and a
+noun ("Post", "Write a post", "Join"). An error says what happened and what to do next.
+Every string goes through `t()` with a new key when the wording changes.

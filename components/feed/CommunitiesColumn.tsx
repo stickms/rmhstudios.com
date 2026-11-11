@@ -126,7 +126,7 @@ export function CommunitiesColumn({
   };
 
   const inputCls =
-    'glass-inset w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none';
+    'glass-inset w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none';
 
   return (
     <div>
@@ -253,7 +253,7 @@ export function CommunitiesColumn({
                     <div className="flex items-center gap-2">
                       <p className="truncate text-base font-bold text-site-text">{c.name}</p>
                       {roleLabel && (
-                        <span className="shrink-0 rounded-full bg-site-accent-dim px-2 py-0.5 text-xs font-medium text-site-accent">
+                        <span className="shrink-0 rounded-full bg-site-bg-subtle px-2 py-0.5 text-xs font-medium text-site-accent">
                           {roleLabel}
                         </span>
                       )}
@@ -263,7 +263,7 @@ export function CommunitiesColumn({
                         {c.description}
                       </p>
                     )}
-                    <div className="mt-2 flex items-center gap-4 text-xs text-site-text-dim">
+                    <div className="mt-2 flex items-center gap-4 text-xs text-site-text-muted">
                       <span className="inline-flex items-center gap-1">
                         <Users className="h-3.5 w-3.5" />
                         {t('members-stat', {

@@ -29,12 +29,12 @@ export function PollEditor({
   return (
     <div className="glass-fill mt-2 rounded-site px-4 py-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold text-site-text-dim">
+        <span className="text-xs font-semibold text-site-text-muted">
           {t('poll-heading', { defaultValue: 'Poll' })}
         </span>
         <button
           onClick={onRemove}
-          className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
+          className="p-2 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -47,7 +47,7 @@ export function PollEditor({
         placeholder={t('poll-question-placeholder', { defaultValue: 'Ask a question…' })}
         aria-label={t('poll-question-aria', { defaultValue: 'Poll question' })}
         maxLength={MAX_POLL_QUESTION_LENGTH}
-        className="w-full glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors mb-2"
+        className="w-full glass-inset text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors mb-2"
       />
 
       <div className="space-y-2">
@@ -70,7 +70,7 @@ export function PollEditor({
                 defaultValue: 'Poll option {{count}}',
               })}
               maxLength={MAX_POLL_OPTION_LENGTH}
-              className="flex-1 glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors"
+              className="flex-1 glass-inset text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors"
             />
             {poll.options.length > MIN_POLL_OPTIONS && (
               <button
@@ -83,7 +83,7 @@ export function PollEditor({
                   count: i + 1,
                   defaultValue: 'Remove option {{count}}',
                 })}
-                className="p-2 rounded-full text-site-text-dim hover:text-site-danger hover:bg-site-danger/10 transition-colors"
+                className="p-2 rounded-full text-site-text-muted hover:text-site-danger hover:bg-site-danger/10 transition-colors"
               >
                 <X className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
@@ -108,13 +108,13 @@ export function PollEditor({
           onChange={(e) => setPoll((p) => ({ ...p, multiSelect: e.target.checked }))}
           className="rounded border-site-border text-site-accent focus:ring-site-accent"
         />
-        <span className="text-xs text-site-text-dim">
+        <span className="text-xs text-site-text-muted">
           {t('poll-multi-select', { defaultValue: 'Allow multiple selections' })}
         </span>
       </label>
 
       <label className="mt-3 flex items-center gap-2">
-        <span className="text-xs text-site-text-dim">
+        <span className="text-xs text-site-text-muted">
           {t('poll-length-label', { defaultValue: 'Poll length' })}
         </span>
         <Select

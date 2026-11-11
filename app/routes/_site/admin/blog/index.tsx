@@ -67,7 +67,7 @@ function AdminBlogDashboard() {
               >
                 <div className="min-w-0">
                   <h3 className="truncate font-semibold text-site-text">{post.title as string}</h3>
-                  <p className="text-sm text-site-text-dim truncate">
+                  <p className="text-sm text-site-text-muted truncate">
                     {post.date as string} · /{post.slug as string}
                   </p>
                 </div>

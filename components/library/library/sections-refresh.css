@@ -65,8 +65,7 @@
 }
 .lib-blog__tag {
   font-size: 0.625rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   padding: 2px 7px;
   border-radius: 999px;
   corner-shape: round;
@@ -75,7 +74,7 @@
 }
 .lib-blog__title {
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.25;
   color: var(--site-text);
   margin: 0;
@@ -108,8 +107,7 @@
   padding: 0 clamp(16px, 4vw, 44px);
   font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: var(--site-text-muted);
 }
 
@@ -132,10 +130,10 @@
   height: 32px;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--site-glass-rim-soft, var(--site-border));
+  border: 1px solid var(--site-border);
   border-radius: 999px;
   corner-shape: round;
-  background: var(--site-glass-tint-strong, var(--site-surface));
+  background: var(--site-surface);
   color: var(--site-text);
   cursor: pointer;
   transition:
@@ -175,7 +173,7 @@
   border-radius: 50%;
   corner-shape: round;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--site-accent-fg);
   background: var(--site-accent);
   z-index: 3;
@@ -236,8 +234,7 @@
   padding: 6px 10px 4px;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: var(--site-text-muted);
 }
 .lib-ctx__sep {
@@ -304,7 +301,7 @@
   display: block;
   margin-top: 6px;
   font-size: 12px;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
 }
 
 /* ─── Upload: AI metadata generation state ──────────────────────────────────── */
@@ -461,7 +458,7 @@
   overflow: hidden;
   background: var(--site-surface, rgba(255, 255, 255, 0.04));
   border: 1px solid var(--site-border, rgba(255, 255, 255, 0.1));
-  box-shadow: var(--site-shadow, 0 6px 20px rgba(0, 0, 0, 0.25));
+  box-shadow: none;
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease,
@@ -601,7 +598,7 @@
   text-transform: none;
 }
 .lib__section-count {
-  color: var(--site-text-dim, #77777f);
+  color: var(--site-text-muted, #77777f);
   font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
 }
@@ -672,8 +669,7 @@
   color: var(--site-text-muted, #565656);
   font-size: 0.6875rem;
   font-weight: 650;
-  letter-spacing: 0.065em;
-  text-transform: uppercase;
+  letter-spacing: 0;
 }
 .lib-book__facts span {
   display: inline-flex;
@@ -701,7 +697,7 @@
   overflow: hidden;
 }
 .lib-book__description.is-muted {
-  color: var(--site-text-dim, #66666d);
+  color: var(--site-text-muted, #66666d);
   font-style: italic;
 }
 .lib-volume .lib-book__by {
@@ -747,11 +743,10 @@
   background: var(--site-surface);
 }
 .lib-reader__eyebrow {
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
   font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 .lib-reader__identity .lib-reader__title {
   display: block;
@@ -776,7 +771,7 @@
   padding: 0;
   overflow: hidden;
   overscroll-behavior: contain;
-  scrollbar-color: var(--site-border-bright) transparent;
+  scrollbar-color: var(--site-text) transparent;
 }
 .lib-reader__viewport {
   position: absolute;
@@ -787,7 +782,7 @@
   padding: clamp(14px, 2.6vw, 30px) clamp(10px, 2.6vw, 30px) 82px;
   overflow: auto;
   overscroll-behavior: contain;
-  scrollbar-color: var(--site-border-bright) transparent;
+  scrollbar-color: var(--site-text) transparent;
 }
 .lib-canvas-wrap {
   flex: 0 0 auto;
@@ -916,11 +911,10 @@
 }
 .lib-reader__details-kicker {
   margin: 0 0 8px;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
   font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 .lib-reader__details h2 {
   margin: 0;
@@ -938,7 +932,7 @@
 }
 .lib-reader__details-uploader {
   margin: 12px 0 0;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
   font-size: 0.72rem;
 }
 .lib-reader__details-meta {
@@ -956,8 +950,7 @@
 .lib-reader__details-meta dt {
   color: var(--site-text-muted);
   font-size: 0.6875rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
 }
 .lib-reader__details-meta dd {
   margin: 5px 0 0;
@@ -972,10 +965,9 @@
 }
 .lib-reader__details-toc h3 {
   margin: 0 0 8px;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
   font-size: 0.6875rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0;
 }
 .lib-reader__details-toc button {
   display: flex;
@@ -1001,7 +993,7 @@
   flex: 1;
 }
 .lib-reader__details-toc small {
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
   font-size: 0.65rem;
 }
 
@@ -1229,7 +1221,7 @@
 
 .lib--glass-playground .lib-collections__subhead {
   margin: 0 2px 12px;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
   font-family: var(--site-font-mono);
   font-size: 0.6875rem;
 }
@@ -1273,34 +1265,32 @@
 .lib--glass-playground .lib-blog__card {
   min-height: 214px;
   padding: 16px;
-  background-color: var(--site-glass-tint);
+  background-color: var(--site-surface);
 }
 
 .lib--glass-playground .lib-album {
   gap: 12px;
   padding: 10px;
-  background-color: var(--site-glass-tint);
+  background-color: var(--site-surface);
 }
 
 .lib--glass-playground .lib-album__cover {
   border: 0;
   border-radius: calc(var(--site-radius) - 5px);
-  box-shadow: var(--site-shadow-sm);
+  box-shadow: none;
 }
 
 .lib--glass-playground .lib-album:hover .lib-album__cover {
   transform: translateZ(14px) scale(1.015);
   border-color: transparent;
-  box-shadow: var(--site-shadow);
+  box-shadow: none;
 }
 
 .lib--glass-playground .lib-album__count,
 .lib--glass-playground .lib-album__badge {
-  border: 1px solid var(--site-glass-rim-soft);
-  background: var(--site-glass-tint-strong);
+  border: 1px solid var(--site-border);
+  background: var(--site-surface);
   color: var(--site-text);
-  -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome));
-  backdrop-filter: blur(var(--site-glass-blur-chrome));
 }
 
 .lib--glass-playground .lib-volume .lib-book,
@@ -1308,7 +1298,7 @@
   gap: 0;
   height: 100%;
   padding: 10px;
-  background-color: var(--site-glass-tint);
+  background-color: var(--site-surface);
 }
 
 .lib--glass-playground .lib-volume .lib-book__3d,
@@ -1338,7 +1328,7 @@
 }
 
 .lib--glass-playground .lib-playlists .lib-orbit-card {
-  background-color: var(--site-glass-tint);
+  background-color: var(--site-surface);
 }
 
 .lib--glass-playground .lib-edit__migrate {

@@ -116,7 +116,7 @@ export function PostAwards({
         );
       })}
       {groups.length > 4 ? (
-        <span className="text-xs text-site-text-dim">
+        <span className="text-xs text-site-text-muted">
           +{groups.slice(4).reduce((s, g) => s + g.count, 0)}
         </span>
       ) : null}
@@ -147,7 +147,7 @@ export function PostAwards({
                 disabled={busy !== null}
                 onClick={() => give(def.id)}
                 className={cn(
-                  'glass-fill flex flex-col items-center gap-1 rounded-site py-3 transition-colors hover:border-site-border-bright',
+                  'glass-fill flex flex-col items-center gap-1 rounded-site py-3 transition-colors hover:border-site-text',
                   busy === def.id && 'opacity-60',
                 )}
               >

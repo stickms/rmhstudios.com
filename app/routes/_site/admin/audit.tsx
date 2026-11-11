@@ -148,7 +148,7 @@ function AuditLogPage() {
                   </p>
                   {e.detail && <p className="truncate text-xs text-site-text-muted">{e.detail}</p>}
                 </div>
-                <span className="shrink-0 text-xs text-site-text-dim">
+                <span className="shrink-0 text-xs text-site-text-muted">
                   {formatDistanceToNow(new Date(e.createdAt), { addSuffix: true })}
                 </span>
               </li>

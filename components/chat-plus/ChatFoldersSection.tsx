@@ -50,7 +50,7 @@ export function ChatFoldersSection({ chat }: { chat: ChatRef }) {
       <h3 id="opt-folders" className="text-sm font-semibold text-site-text">
         {t('folders-title', { defaultValue: 'Folders' })}
       </h3>
-      <p className="mb-2 text-xs text-site-text-dim">
+      <p className="mb-2 text-xs text-site-text-muted">
         {t('folders-help', {
           defaultValue: 'Only you see your folders. They appear as tabs above your chats.',
         })}

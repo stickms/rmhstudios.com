@@ -41,7 +41,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
             <li key={`${item.label}-${i}`} className="flex min-w-0 items-center gap-1">
               {i > 0 && (
                 <ChevronRight
-                  className="h-3 w-3 shrink-0 text-site-text-dim rtl-flip"
+                  className="h-3 w-3 shrink-0 text-site-text-muted rtl-flip"
                   aria-hidden
                 />
               )}

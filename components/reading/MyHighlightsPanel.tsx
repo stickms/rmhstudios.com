@@ -81,7 +81,7 @@ export default function MyHighlightsPanel() {
           <li key={row.id} className="glass-fill rounded-site p-5">
             <div className="flex items-start gap-3">
               <div className="min-w-0 flex-1 space-y-1">
-                <p className="text-xs font-semiboldr text-site-text-dim">
+                <p className="text-xs font-semiboldr text-site-text-muted">
                   {kindLabel(row.kind)}
                 </p>
                 <Link to={row.href} className="font-medium text-site-text hover:underline">
@@ -92,7 +92,7 @@ export default function MyHighlightsPanel() {
                 </blockquote>
                 {row.note ? <p className="text-sm text-site-text-muted">{row.note}</p> : null}
               </div>
-              <span className="mt-1 text-site-text-dim">
+              <span className="mt-1 text-site-text-muted">
                 {row.isPublic ? (
                   <Globe className="size-4" aria-hidden />
                 ) : (

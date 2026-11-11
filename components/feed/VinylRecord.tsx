@@ -26,35 +26,35 @@ export function VinylRecord({ albumArt, title, artist, isPlaying, onToggle }: Vi
  >
  {/* Vinyl disc body */}
  <div
- className="absolute inset-0 rounded-full border border-site-glass-rim-soft shadow-site-sm"
+ className="absolute inset-0 rounded-full border border-site-border "
  style={{
  background: `
  radial-gradient(circle at center,
  transparent 32%,
- var(--site-glass-rim-soft) 33%,
- var(--site-glass-ink) 34%,
+ var(--site-border) 33%,
+ var(--site-text-muted) 34%,
  transparent 35%,
  transparent 44%,
  var(--site-border) 45%,
- var(--site-glass-ink) 46%,
+ var(--site-text-muted) 46%,
  transparent 47%,
  transparent 56%,
  var(--site-border) 57%,
- var(--site-glass-ink) 58%,
+ var(--site-text-muted) 58%,
  transparent 59%,
  transparent 68%,
  var(--site-border) 69%,
- var(--site-glass-ink) 70%,
+ var(--site-text-muted) 70%,
  transparent 71%,
  transparent 80%,
  var(--site-border) 81%,
- var(--site-glass-ink) 82%,
+ var(--site-text-muted) 82%,
  transparent 83%,
  transparent 91%,
- var(--site-surface-opaque) 100%
+ var(--site-surface) 100%
  )
  `,
- backgroundColor:'var(--site-surface-opaque)',
+ backgroundColor:'var(--site-surface)',
  animation: isPlaying ?'vinyl-spin 3s linear infinite':'none',
  }}
  >
@@ -69,7 +69,7 @@ export function VinylRecord({ albumArt, title, artist, isPlaying, onToggle }: Vi
  </div>
 
  {/* Center spindle dot */}
- <div className="absolute left-1/2 top-1/2 size-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-site-surface-opaque"/>
+ <div className="absolute left-1/2 top-1/2 size-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-site-surface"/>
  </div>
 
  {/* Hover overlay */}
@@ -85,7 +85,7 @@ export function VinylRecord({ albumArt, title, artist, isPlaying, onToggle }: Vi
  {/* Song info */}
  <div className="text-center max-w-[72px]">
  <p className="text-micro text-site-text font-medium truncate leading-tight">{title}</p>
- <p className="text-tiny text-site-text-dim truncate leading-tight">{artist}</p>
+ <p className="text-tiny text-site-text-muted truncate leading-tight">{artist}</p>
  </div>
  </div>
  );

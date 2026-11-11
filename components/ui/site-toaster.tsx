@@ -44,7 +44,7 @@ export function SiteToaster({ theme }: { theme: 'light' | 'dark' }) {
         // glass role has one (docs/liquid-glass-system.md); the overlay fill is the legibility floor.
         style: {
           // The SAME expression `.glass-overlay` uses (globals.css §L4), not a third answer.
-          backgroundColor: 'var(--site-glass-overlay-fill)',
+          backgroundColor: 'var(--site-surface)',
           border: '1px solid var(--site-border)',
           // A toast is a panel, not a control: `--site-radius`, the
           // same curve every other floating panel takes.

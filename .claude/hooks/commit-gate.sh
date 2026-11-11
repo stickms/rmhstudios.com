@@ -39,9 +39,10 @@ if [ "$status" -ne 0 ]; then
     printf 'The commit gate blocked this commit — the staged change is not consistent with the site yet.\n\n'
     printf '%s\n\n' "$output"
     printf 'Fix the ✗ items, then commit again. The rules and their rationale are in\n'
-    printf 'docs/design-language.md (§0 definition of done, §13 what is enforced) and\n'
-    printf 'docs/page-consistency.md §3; the jelly material, motion and arc rules are in\n'
-    printf 'docs/plasmatic-jelly-system.md. If a rule is genuinely wrong for this change,\n'
+    printf 'design.md and docs/plans/2026-11-11-steel-design-implementation.md (the five rules\n'
+    printf 'R1 to R5, the tokens in section 2, the gates in section 17); the old material is\n'
+    printf 'historical (docs/design-language.md, docs/plasmatic-jelly-system.md). If a rule\n'
+    printf 'is genuinely wrong for this change,\n'
     printf 'change the rule in the same commit and say so in the message — do not reach\n'
     printf 'for --no-verify or RMH_SKIP_COMMIT_GATE.\n'
   } >&2

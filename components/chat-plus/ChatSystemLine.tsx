@@ -92,7 +92,7 @@ export function ChatSystemLine({
   return (
     <div
       role="note"
-      className="my-3 flex items-center justify-center gap-1.5 px-6 text-center text-xs text-site-text-dim"
+      className="my-3 flex items-center justify-center gap-1.5 px-6 text-center text-xs text-site-text-muted"
     >
       <Icon className="size-3.5 shrink-0" aria-hidden />
       <span>{text}</span>

@@ -38,7 +38,7 @@ export function CodeEmbedMenuItem({ ce, onPick }: { ce: CodeEmbedCompose; onPick
       }}
       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface-hover transition-colors"
     >
-      <Code2 className={`w-4 h-4 ${ce.embed ? 'text-site-accent' : 'text-site-text-dim'}`} />
+      <Code2 className={`w-4 h-4 ${ce.embed ? 'text-site-accent' : 'text-site-text-muted'}`} />
       <span className="flex-1 text-left">
         {t('embed-menu', { defaultValue: 'Runnable code snippet' })}
       </span>
@@ -110,7 +110,7 @@ export function CodeEmbedDialog({ ce }: { ce: CodeEmbedCompose }) {
             </label>
           ))}
           <p
-            className={`text-xs ${valid || total === 0 ? 'text-site-text-dim' : 'text-site-danger'}`}
+            className={`text-xs ${valid || total === 0 ? 'text-site-text-muted' : 'text-site-danger'}`}
           >
             {t('embed-size', {
               defaultValue: '{{used}} of {{max}} characters',

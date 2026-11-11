@@ -159,7 +159,7 @@ export function AchievementsColumn({
  <Icon
  className="h-5 w-5"
  style={{
- color: a.unlocked ? TIER_COLORS[a.tier] :'var(--site-text-dim)',
+ color: a.unlocked ? TIER_COLORS[a.tier] :'var(--site-text-muted)',
  }}
  />
  </div>
@@ -194,14 +194,14 @@ export function AchievementsColumn({
  }}
  />
  </div>
- <p className="mt-1 text-xs text-site-text-dim">
+ <p className="mt-1 text-xs text-site-text-muted">
  {a.progress} / {a.target}
  </p>
  </div>
  )}
  {!(a.secret && !a.unlocked) && <AchievementTips achievementId={a.id} name={a.name} />}
  {a.unlocked && a.coinReward > 0 && (
- <p className="mt-1 inline-flex items-center gap-1 text-xs text-site-text-dim">
+ <p className="mt-1 inline-flex items-center gap-1 text-xs text-site-text-muted">
  <Coins className="h-3 w-3 text-site-warning"/> +{a.coinReward}
  </p>
  )}

@@ -128,7 +128,7 @@ function categoryLabels(
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="px-1 pt-2 pb-1 text-xs font-semibold text-site-text-dim">{children}</p>;
+  return <p className="px-1 pt-2 pb-1 text-xs font-semibold text-site-text-muted">{children}</p>;
 }
 
 export default function EmojiPickerPanel({
@@ -275,21 +275,21 @@ export default function EmojiPickerPanel({
       {/* Search */}
       <div className="shrink-0 p-2">
         <div className="glass-inset flex items-center gap-2 rounded-site-sm px-2">
-          <Search className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
+          <Search className="h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('emoji-picker-search-placeholder', { defaultValue: 'Search emojis…' })}
             aria-label={t('emoji-picker-search-placeholder', { defaultValue: 'Search emojis…' })}
-            className="h-9 min-w-0 flex-1 bg-transparent text-sm text-site-text outline-none placeholder:text-site-text-dim"
+            className="h-9 min-w-0 flex-1 bg-transparent text-sm text-site-text outline-none placeholder:text-site-text-muted"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery('')}
               aria-label={t('emoji-picker-clear', { defaultValue: 'Clear search' })}
-              className="shrink-0 p-1 text-site-text-dim transition-colors hover:text-site-text"
+              className="shrink-0 p-1 text-site-text-muted transition-colors hover:text-site-text"
             >
               <X className="h-4 w-4" aria-hidden />
             </button>
@@ -300,12 +300,12 @@ export default function EmojiPickerPanel({
       {/* Grid */}
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
         {!shortcodes ? (
-          <p className="p-4 text-center text-sm text-site-text-dim">
+          <p className="p-4 text-center text-sm text-site-text-muted">
             {t('emoji-picker-loading', { defaultValue: 'Loading…' })}
           </p>
         ) : results ? (
           results.custom.length + results.unicode.length === 0 ? (
-            <p className="p-4 text-center text-sm text-site-text-dim">
+            <p className="p-4 text-center text-sm text-site-text-muted">
               {t('emoji-picker-no-results', { defaultValue: 'No emoji found' })}
             </p>
           ) : (
@@ -383,8 +383,8 @@ export default function EmojiPickerPanel({
             className={cn(
               'flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm transition-colors',
               !query && category === id
-                ? 'bg-site-accent-dim text-site-accent'
-                : 'text-site-text-dim hover:text-site-text',
+                ? 'bg-site-bg-subtle text-site-accent'
+                : 'text-site-text-muted hover:text-site-text',
             )}
           >
             <CategoryIcon name={CATEGORY_META[id].icon} className="h-4 w-4" />

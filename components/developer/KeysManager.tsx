@@ -213,7 +213,7 @@ export function KeysManager() {
           <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
             {scopesByGroup().map((g) => (
               <div key={g.group}>
-                <p className="text-xs font-semibold text-site-text-dim">{g.group}</p>
+                <p className="text-xs font-semibold text-site-text-muted">{g.group}</p>
                 {g.scopes.map((s) => (
                   <label
                     key={s.id}
@@ -303,10 +303,10 @@ export function KeysManager() {
             return (
               <div key={k.id} className="glass-fill rounded-site px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <KeyRound className="size-4 shrink-0 text-site-text-dim" aria-hidden />
+                  <KeyRound className="size-4 shrink-0 text-site-text-muted" aria-hidden />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-site-text">{k.name}</p>
-                    <p className="font-mono text-xs text-site-text-dim">
+                    <p className="font-mono text-xs text-site-text-muted">
                       {k.prefix}…{k.lastFour ?? ''} ·{' '}
                       {k.lastUsedAt
                         ? t('keys-last-used', {
@@ -368,7 +368,7 @@ export function KeysManager() {
         </div>
       )}
 
-      <p className="flex items-center gap-2 text-xs text-site-text-dim">
+      <p className="flex items-center gap-2 text-xs text-site-text-muted">
         <BookOpen className="size-3.5" aria-hidden />
         <span>
           {t('keys-docs-lead', { defaultValue: 'New here?' })}{' '}

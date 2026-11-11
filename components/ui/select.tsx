@@ -179,7 +179,7 @@ const TIER_CLASSES = {
     // an email address) into truncation far earlier than the box needed. The
     // mono is for code; a select is a control you read a value out of.
     trigger:
-      'glass-inset rounded-site-sm text-site-text hover:border-site-border-bright text-base sm:text-sm focus-visible:border-site-accent focus-visible:ring-2 focus-visible:ring-site-accent/30',
+      'glass-inset rounded-site-sm text-site-text hover:border-site-text text-base sm:text-sm focus-visible:border-site-accent focus-visible:ring-2 focus-visible:ring-site-accent/30',
     // `--site-radius`, NOT `--site-control-radius`. The trigger is a control and
     // takes the small radius; the POPUP is a panel — a stack of rows — and a 9999px
     // radius on it does not read as "very rounded", it reads as a lozenge, with
@@ -192,9 +192,9 @@ const TIER_CLASSES = {
     // Rows match the trigger, so the value you pick looks like the value you
     // then see sitting in the control.
     item: 'rounded-none text-sm text-site-text data-[state=checked]:text-site-accent',
-    label: 'text-site-text-dim',
-    scrollButton: 'text-site-text-dim',
-    chevron: 'text-site-text-dim',
+    label: 'text-site-text-muted',
+    scrollButton: 'text-site-text-muted',
+    chevron: 'text-site-text-muted',
   },
   slice: {
     // Inset trigger — the neumorphic rule is that a value you read out of a

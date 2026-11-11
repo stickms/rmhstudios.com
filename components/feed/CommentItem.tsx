@@ -368,10 +368,10 @@ export function CommentItem({
                 </span>
               )}
               {freshCommentUser.handle && (
-                <span className="text-site-text-dim truncate">@{freshCommentUser.handle}</span>
+                <span className="text-site-text-muted truncate">@{freshCommentUser.handle}</span>
               )}
             </Link>
-            <span className="text-site-text-dim shrink-0">
+            <span className="text-site-text-muted shrink-0">
               · <RelativeTime date={comment.createdAt} format={relativeTimeShort} />
             </span>
 
@@ -383,7 +383,7 @@ export function CommentItem({
                   onClick={() => setMenuOpen((v) => !v)}
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
-                  className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
+                  className="p-2 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
                 >
                   <MoreHorizontal className="w-3.5 h-3.5" />
                 </button>
@@ -474,10 +474,10 @@ export function CommentItem({
               {sessionUser && (
                 <button
                   onClick={() => setReplyOpen((v) => !v)}
-                  className="group flex items-center rounded-full text-site-text-dim hover:text-site-accent transition-colors duration-site-fast"
+                  className="group flex items-center rounded-full text-site-text-muted hover:text-site-accent transition-colors duration-site-fast"
                 >
                   <span
-                    className={`${engagementPill} h-6 gap-1 px-1 group-hover:bg-site-accent-dim/50 group-active:scale-95`}
+                    className={`${engagementPill} h-6 gap-1 px-1 group-hover:bg-site-bg-subtle/50 group-active:scale-95`}
                   >
                     <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
                   </span>
@@ -490,7 +490,7 @@ export function CommentItem({
                 onClick={toggleRepost}
                 aria-pressed={reposted}
                 className={`group flex min-w-11 items-center rounded-full transition-colors duration-site-fast ${
-                  reposted ? 'text-site-success' : 'text-site-text-dim'
+                  reposted ? 'text-site-success' : 'text-site-text-muted'
                 }`}
                 title={
                   reposted ? t('undo-rermhark', { defaultValue: 'Undo reRMHark' }) : 'reRMHark'
@@ -509,7 +509,7 @@ export function CommentItem({
                 onClick={toggleLike}
                 aria-pressed={liked}
                 className={`group flex min-w-11 items-center rounded-full transition-colors duration-site-fast ${
-                  liked ? 'text-site-danger' : 'text-site-text-dim'
+                  liked ? 'text-site-danger' : 'text-site-text-muted'
                 }`}
                 title={
                   liked
@@ -528,7 +528,7 @@ export function CommentItem({
               </button>
 
               {/* Views */}
-              <div className="flex min-w-11 items-center text-site-text-dim">
+              <div className="flex min-w-11 items-center text-site-text-muted">
                 <span className={`${engagementPill} h-6 gap-1 px-1`}>
                   <Eye className="w-4 h-4" />
                   <EngagementCount value={viewCount} />
@@ -561,7 +561,7 @@ export function CommentItem({
                   })}
                   rows={2}
                   maxLength={MAX_COMMENT_LENGTH}
-                  className="w-full glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm px-3 py-2 resize-none outline-none focus:border-site-accent transition-colors"
+                  className="w-full glass-inset text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 resize-none outline-none focus:border-site-accent transition-colors"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                       handleSubmitReply();
@@ -576,7 +576,7 @@ export function CommentItem({
                 <div className="flex items-center justify-between mt-2">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`text-xs font-mono ${remaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}
+                      className={`text-xs font-mono ${remaining <= 20 ? 'text-site-warning' : 'text-site-text-muted'}`}
                     >
                       {remaining}
                     </span>
@@ -586,7 +586,7 @@ export function CommentItem({
                         setReplyContent('');
                         setShowGifPicker(false);
                       }}
-                      className="text-xs text-site-text-dim hover:text-site-text transition-colors"
+                      className="text-xs text-site-text-muted hover:text-site-text transition-colors"
                     >
                       {t('cancel', { defaultValue: 'Cancel' })}
                     </button>
@@ -607,7 +607,7 @@ export function CommentItem({
                       type="button"
                       onClick={() => setShowGifPicker((v) => !v)}
                       aria-label={t('add-gif-aria', { defaultValue: 'Add a GIF' })}
-                      className="p-2 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
+                      className="p-2 rounded-full text-site-text-muted hover:text-site-accent hover:bg-site-accent/10 transition-colors"
                     >
                       <ImageIcon className="w-4 h-4" />
                     </button>

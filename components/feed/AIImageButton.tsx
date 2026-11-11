@@ -77,10 +77,10 @@ export function AIImageButton({
  aria-label={resolvedTitle}
  className={`relative p-1.5 rounded-full transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
  locked
- ?'text-site-text-dim/50 hover:text-site-text-dim hover:bg-site-surface-hover'
+ ?'text-site-text-muted/50 hover:text-site-text-muted hover:bg-site-surface-hover'
  : error
  ?'text-site-danger hover:bg-site-danger/10'
- :'text-site-text-dim hover:text-site-accent hover:bg-site-accent/10'
+ :'text-site-text-muted hover:text-site-accent hover:bg-site-accent/10'
  }`}
  >
  {loading ? (
@@ -100,7 +100,7 @@ export function AIImageButton({
  <DialogContent className="w-full max-w-sm gap-0 p-0 text-center sm:p-0">
 {/* Decorative gradient header */}
  <div className="relative bg-linear-to-br from-site-accent/30 via-site-accent/10 to-transparent px-6 pb-6 pt-8">
-  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-site border border-site-accent/30 bg-site-accent-dim">
+  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-site border border-site-accent/30 bg-site-bg-subtle">
  <Wand2 className="h-7 w-7 text-site-accent"/>
  </div>
  </div>

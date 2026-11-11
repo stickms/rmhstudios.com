@@ -190,7 +190,7 @@ function HistoryRow({ item, onRemove }: { item: HistoryView; onRemove: () => voi
           loading="lazy"
         />
       ) : (
-        <span className="flex h-12 w-16 shrink-0 items-center justify-center rounded-site-sm bg-site-surface text-xs uppercase text-site-text-dim">
+        <span className="flex h-12 w-16 shrink-0 items-center justify-center rounded-site-sm bg-site-surface text-xs uppercase text-site-text-muted">
           {item.entityType.slice(0, 4)}
         </span>
       )}
@@ -211,7 +211,7 @@ function HistoryRow({ item, onRemove }: { item: HistoryView; onRemove: () => voi
           </span>
         ) : null}
       </span>
-      <span className="shrink-0 text-xs text-site-text-dim"><RelativeTime date={item.updatedAt} format={relativeTimeShort} /></span>
+      <span className="shrink-0 text-xs text-site-text-muted"><RelativeTime date={item.updatedAt} format={relativeTimeShort} /></span>
     </>
   );
 

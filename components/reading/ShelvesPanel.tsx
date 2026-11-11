@@ -94,7 +94,7 @@ export default function ShelvesPanel() {
                 id={`rf-shelf-${shelf}`}
                 className="font-display text-lg font-semibold text-site-text"
               >
-                {labels[shelf]} <span className="text-site-text-dim">({items.length})</span>
+                {labels[shelf]} <span className="text-site-text-muted">({items.length})</span>
               </h2>
               <label
                 htmlFor={switchId}
@@ -135,7 +135,7 @@ export default function ShelvesPanel() {
                       {e.title}
                     </Link>
                     {e.finishedAt ? (
-                      <time dateTime={e.finishedAt} className="text-sm text-site-text-dim">
+                      <time dateTime={e.finishedAt} className="text-sm text-site-text-muted">
                         {new Date(e.finishedAt).toLocaleDateString()}
                       </time>
                     ) : null}

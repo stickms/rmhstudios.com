@@ -66,12 +66,12 @@ function ElectionBoard({ election }: { election: NonNullable<FeedItem['election'
  </div>
  <div className="mt-1 flex h-1.5 overflow-hidden rounded-site-sm bg-site-bg-subtle" aria-hidden>
  <div className="bg-site-accent" style={{ width: `${(c.dem / total) * 100}%` }} />
- <div className="bg-site-text-dim" style={{ width: `${(c.gop / total) * 100}%` }} />
+ <div className="bg-site-text-muted" style={{ width: `${(c.gop / total) * 100}%` }} />
  </div>
  </div>
  );
  })}
- <p className="text-xs text-site-text-dim">
+ <p className="text-xs text-site-text-muted">
  {election.live ? `${election.called} of ${election.total} races called` : 'Current control, before any votes are counted'}
  </p>
  </div>
@@ -84,7 +84,7 @@ export function AnnouncementCard({ item, variant }: AnnouncementCardProps) {
  return (
  <article className="glass-fill social-post social-announcement px-4 py-3">
  {/* System badge */}
- <div className="flex items-center gap-2 text-xs text-site-text-dim mb-2 pl-13">
+ <div className="flex items-center gap-2 text-xs text-site-text-muted mb-2 pl-13">
  <TypeIcon type={item.type} className="w-3.5 h-3.5"/>
  <span className="font-medium">RMH {typeLabel}</span>
  </div>
@@ -137,7 +137,7 @@ export function AnnouncementCard({ item, variant }: AnnouncementCardProps) {
  {item.tags.map((tag) => (
  <span
  key={tag}
- className="px-2 py-0.5 rounded-full text-xs bg-site-accent-dim text-site-accent font-medium"
+ className="px-2 py-0.5 rounded-full text-xs bg-site-bg-subtle text-site-accent font-medium"
  >
  {tag}
  </span>
@@ -146,7 +146,7 @@ export function AnnouncementCard({ item, variant }: AnnouncementCardProps) {
  )}
 
  {/* Meta info */}
- <div className="flex items-center gap-2 mt-2 text-xs text-site-text-dim">
+ <div className="flex items-center gap-2 mt-2 text-xs text-site-text-muted">
  {item.category && <span>{item.category}</span>}
  {item.sourcePublisher && (
  <>

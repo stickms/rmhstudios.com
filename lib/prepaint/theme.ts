@@ -6,17 +6,12 @@ import type { PrepaintCtx, PrepaintTheme } from './types';
 const has = (o: object, k: unknown): boolean =>
   Object.prototype.hasOwnProperty.call(o, k as string);
 
-/** The five accent custom properties, in the order the runtime writes them. */
+/** The three accent custom properties, in the order the runtime writes them. */
 function setAccent(html: HTMLElement, value: string, fg: string): void {
   const d = html.style;
   d.setProperty('--site-accent', value);
   d.setProperty('--site-accent-fg', fg);
   d.setProperty('--site-accent-hover', 'color-mix(in oklab,' + value + ' 82%, #000)');
-  d.setProperty('--site-accent-dim', 'color-mix(in oklab,' + value + ' 15%, transparent)');
-  d.setProperty(
-    '--site-glass-light',
-    'color-mix(in srgb,' + value + ' 20%, rgba(255,255,255,0.14))',
-  );
 }
 
 /**

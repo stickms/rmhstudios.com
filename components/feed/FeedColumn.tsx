@@ -249,7 +249,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
                     <ShieldCheck className="w-3.5 h-3.5 text-site-accent shrink-0" aria-hidden />
                   )}
                 </div>
-                {user.handle && <span className="text-xs text-site-text-dim">@{user.handle}</span>}
+                {user.handle && <span className="text-xs text-site-text-muted">@{user.handle}</span>}
               </div>
             </Link>
           ))}

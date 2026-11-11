@@ -106,10 +106,10 @@
   align-items: flex-end;
   justify-content: center;
   perspective: 1100px;
-  background: var(--site-glass-tint);
+  background: var(--site-surface);
 }
 .lib-volume:hover .lib-book__3d {
-  background: var(--site-glass-tint-strong);
+  background: var(--site-surface);
 }
 
 .lib-book__cover {
@@ -243,7 +243,7 @@
      treatment made these cards feel disconnected from the library UI. */
   font-family: var(--site-font-display);
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.3;
   letter-spacing: -0.025em;
   /* The cover art is a dark navy slab on EVERY theme, so its printed title must
@@ -260,7 +260,7 @@
 .lib-book__mark {
   margin-top: auto;
   font-size: 0.6875rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.16em;
   /* On the always-dark cover, keep the imprint light on every theme. */
   color: rgba(245, 245, 247, 0.72);
@@ -383,7 +383,7 @@
   outline: none;
 }
 .lib-reader__jump-input:focus {
-  border-color: var(--site-border-bright);
+  border-color: var(--site-text);
 }
 .lib-reader__jump-total {
   white-space: nowrap;
@@ -459,7 +459,7 @@
 .lib-reader__chapter-page {
   flex-shrink: 0;
   font-size: 0.72rem;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -486,16 +486,15 @@
   margin: 0;
   padding: 2px 6px;
   font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0;
   color: var(--site-text-muted);
 }
 .lib-marks__empty {
   margin: 0;
   padding: 0 6px 4px;
   font-size: 0.78rem;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
 }
 .lib-marks__list {
   margin: 0;
@@ -543,7 +542,7 @@
 .lib-marks__item-page {
   flex-shrink: 0;
   font-size: 0.72rem;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
   font-variant-numeric: tabular-nums;
 }
 .lib-marks__item--note .lib-marks__jump {
@@ -567,7 +566,7 @@
   border: 0;
   border-radius: var(--site-radius-sm);
   background: none;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
   cursor: pointer;
   transition:
     background 130ms ease,
@@ -602,7 +601,7 @@
   outline: none;
 }
 .lib-marks__textarea:focus {
-  border-color: var(--site-border-bright);
+  border-color: var(--site-text);
 }
 .lib-marks__add {
   align-self: flex-end;
@@ -752,7 +751,7 @@
   border-radius: 50%;
   corner-shape: round;
   cursor: pointer;
-  border: 1.5px solid var(--site-border-bright);
+  border: 1.5px solid var(--site-text);
   transition:
     transform 120ms ease,
     border-color 120ms ease;
@@ -832,8 +831,7 @@
 .lib-collections__subhead {
   font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: var(--site-text-muted);
   margin: 0 0 10px;
 }
@@ -1104,7 +1102,7 @@
 }
 .lib-upload__open:hover {
   background: var(--site-surface-hover);
-  border-color: var(--site-border-bright);
+  border-color: var(--site-text);
 }
 .lib-upload__open:active {
   transform: scale(0.95);
@@ -1172,7 +1170,7 @@
 .lib-upload__drop {
   width: 100%;
   padding: 40px 20px;
-  border: 1.5px dashed var(--site-border-bright);
+  border: 1.5px dashed var(--site-text);
   border-radius: var(--site-radius-sm);
   background: var(--site-surface);
   color: var(--site-text-muted);
@@ -1183,7 +1181,7 @@
     background 0.18s;
 }
 .lib-upload__drop:hover {
-  border-color: var(--site-border-bright);
+  border-color: var(--site-text);
   background: var(--site-surface);
 }
 .lib-upload__cover {
@@ -1430,7 +1428,7 @@
 }
 .lib-upload__input:focus {
   outline: none;
-  border-color: var(--site-border-bright);
+  border-color: var(--site-text);
 }
 .lib-upload__textarea {
   resize: vertical;

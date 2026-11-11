@@ -138,7 +138,7 @@ export function PasskeyManager() {
       })}
     >
       {!supported && (
-        <p className="rounded-site-sm glass-fill px-3 py-2 text-sm text-site-text-dim">
+        <p className="rounded-site-sm glass-fill px-3 py-2 text-sm text-site-text-muted">
           {t('passkeys-unsupported', {
             defaultValue: 'This browser does not support passkeys.',
           })}
@@ -150,19 +150,19 @@ export function PasskeyManager() {
           <Spinner />
         </div>
       ) : passkeys.length === 0 ? (
-        <p className="text-sm text-site-text-dim">
+        <p className="text-sm text-site-text-muted">
           {t('passkeys-empty', { defaultValue: 'You have no passkeys yet.' })}
         </p>
       ) : (
         <ul className="divide-y divide-site-border rounded-site-sm border border-site-border">
           {passkeys.map((pk) => (
             <li key={pk.id} className="flex items-center gap-3 px-3 py-2">
-              <KeyRound className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
+              <KeyRound className="h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-site-text">
                   {pk.name || t('passkey-unnamed', { defaultValue: 'Unnamed passkey' })}
                 </p>
-                <p className="text-xs text-site-text-dim">
+                <p className="text-xs text-site-text-muted">
                   {pk.createdAt
                     ? t('passkey-created', {
                         defaultValue: 'Added {{when}}',

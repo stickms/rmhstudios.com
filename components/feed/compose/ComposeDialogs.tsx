@@ -36,7 +36,7 @@ export function UnlockPriceDialog({
             type="button"
             onClick={onClose}
             aria-label={t('close', { defaultValue: 'Close' })}
-            className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
+            className="p-2 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -62,7 +62,7 @@ export function UnlockPriceDialog({
             aria-label={t('unlock-price-aria', {
               defaultValue: 'Coins required to unlock this post',
             })}
-            className="w-full bg-transparent text-sm text-site-text placeholder:text-site-text-dim focus:outline-none"
+            className="w-full bg-transparent text-sm text-site-text placeholder:text-site-text-muted focus:outline-none"
           />
         </div>
         <div className="mt-3 flex items-center justify-end gap-2">
@@ -105,14 +105,14 @@ export function CheatSheetDialog({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={onClose}
             aria-label={t('close', { defaultValue: 'Close' })}
-            className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
+            className="p-2 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="text-xs font-medium text-site-text-dim">
+            <tr className="text-xs font-medium text-site-text-muted">
               <th className="pb-2 font-medium">
                 {t('cheatsheet-col-type', { defaultValue: 'Type this' })}
               </th>
@@ -197,7 +197,7 @@ export function AltTextDialog({
             type="button"
             onClick={onClose}
             aria-label={t('close', { defaultValue: 'Close' })}
-            className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
+            className="p-2 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -229,10 +229,10 @@ export function AltTextDialog({
           placeholder={t('alt-text-placeholder', {
             defaultValue: 'e.g. A golden retriever running on a beach at sunset',
           })}
-          className="w-full resize-none rounded-site-sm glass-inset px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim outline-none focus:border-site-accent transition-colors"
+          className="w-full resize-none rounded-site-sm glass-inset px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted outline-none focus:border-site-accent transition-colors"
         />
         <div className="mt-3 flex items-center justify-between">
-          <span className="text-xs font-mono text-site-text-dim">
+          <span className="text-xs font-mono text-site-text-muted">
             {MAX_IMAGE_ALT_LENGTH - (imageAlts[index]?.length ?? 0)}
           </span>
           <Button variant="accent" size="sm" onClick={onClose}>

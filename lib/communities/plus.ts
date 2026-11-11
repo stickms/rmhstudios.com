@@ -17,7 +17,7 @@ export type FlairColor = (typeof FLAIR_COLORS)[number];
 
 /** Tailwind token classes per preset (static strings so Tailwind sees them). */
 export const FLAIR_CHIP_CLASSES: Record<FlairColor, string> = {
-  accent: 'bg-site-accent-dim text-site-accent border-site-accent/30',
+  accent: 'bg-site-bg-subtle text-site-accent border-site-accent/30',
   success: 'bg-site-success/15 text-site-success border-site-success/30',
   warning: 'bg-site-warning/15 text-site-warning border-site-warning/30',
   danger: 'bg-site-danger/15 text-site-danger border-site-danger/30',

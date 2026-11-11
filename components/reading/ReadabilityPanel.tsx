@@ -95,7 +95,7 @@ export default function ReadabilityPanel({
       </div>
 
       {lang === 'other' ? (
-        <p className="text-site-text-dim">
+        <p className="text-site-text-muted">
           {t('grade-hidden', {
             defaultValue:
               'The grade level is only calculated for English, so it is hidden rather than shown wrong.',
@@ -127,7 +127,7 @@ export default function ReadabilityPanel({
             ))}
           </ul>
           {result.longSentences.length > SHOW_SENTENCES ? (
-            <p className="mt-1.5 text-site-text-dim">
+            <p className="mt-1.5 text-site-text-muted">
               {t('more-long-sentences', {
                 count: result.longSentences.length - SHOW_SENTENCES,
                 defaultValue: '…and {{count}} more',
@@ -136,7 +136,7 @@ export default function ReadabilityPanel({
           ) : null}
         </div>
       ) : (
-        <p className="text-site-text-dim">
+        <p className="text-site-text-muted">
           {t('no-long-sentences', {
             n: LONG_SENTENCE,
             defaultValue: 'No sentences of {{n}} or more words.',

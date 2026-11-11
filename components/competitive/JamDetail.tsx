@@ -84,7 +84,7 @@ function RateForm({
   return (
     <div className="grid grid-cols-2 gap-2">
       {JAM_CATEGORIES.map((c) => (
-        <label key={c} className="flex flex-col gap-2 text-xs text-site-text-dim">
+        <label key={c} className="flex flex-col gap-2 text-xs text-site-text-muted">
           {names[c]}
           <Select
             value={scores[c] ?? ''}
@@ -152,12 +152,12 @@ export function JamDetail({ slug }: { slug: string }) {
           <PhaseBadge phase={jam.phase} />
         </div>
         <p className="text-sm">
-          <span className="text-site-text-dim">{t('jam-theme', { defaultValue: 'Theme' })}: </span>
+          <span className="text-site-text-muted">{t('jam-theme', { defaultValue: 'Theme' })}: </span>
           <strong>
             {jam.theme ?? t('jam-theme-hidden', { defaultValue: 'Revealed when the jam starts' })}
           </strong>
         </p>
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {new Date(jam.startsAt).toLocaleString()} → {new Date(jam.submitEndsAt).toLocaleString()}{' '}
           ·{' '}
           {t('jam-rating-until', {
@@ -173,7 +173,7 @@ export function JamDetail({ slug }: { slug: string }) {
             {t('jam-submit', { defaultValue: 'Submit a build' })}
           </h2>
           {jam.myBuilds.length === 0 ? (
-            <p className="text-sm text-site-text-dim">
+            <p className="text-sm text-site-text-muted">
               {t('jam-no-builds', {
                 defaultValue:
                   'Publish a public User Build during the jam, then come back to enter it.',
@@ -214,7 +214,7 @@ export function JamDetail({ slug }: { slug: string }) {
               : t('jam-entries', { defaultValue: 'Entries' })}
           </h2>
           {jam.entries.length === 0 && (
-            <p className="text-sm text-site-text-dim">
+            <p className="text-sm text-site-text-muted">
               {t('jam-no-entries', { defaultValue: 'No entries yet.' })}
             </p>
           )}
@@ -231,13 +231,13 @@ export function JamDetail({ slug }: { slug: string }) {
                 </Link>
                 {jam.results && <span className="font-medium">{e.score.toFixed(2)}</span>}
               </div>
-              <p className="text-xs text-site-text-dim">
+              <p className="text-xs text-site-text-muted">
                 {e.user.name}
                 {jam.results &&
                   ` · ${t('jam-ratings', { defaultValue: '{{n}} ratings', n: e.ratingCount })}`}
               </p>
               {jam.results && e.averages && (
-                <p className="text-xs text-site-text-dim">
+                <p className="text-xs text-site-text-muted">
                   {JAM_CATEGORIES.map((c) => `${c} ${e.averages![c].toFixed(1)}`).join(' · ')}
                 </p>
               )}

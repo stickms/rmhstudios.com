@@ -87,7 +87,7 @@ function AuthContent() {
       <div className="app-ground bg-site-bg flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
           <div className="glass-pane rounded-site p-6 text-center">
-            <div className="flex justify-center mb-4"><div className="p-4 rounded-site bg-site-accent-dim border border-site-border"><Terminal className="w-8 h-8 text-site-accent" /></div></div>
+            <div className="flex justify-center mb-4"><div className="p-4 rounded-site bg-site-bg-subtle border border-site-border"><Terminal className="w-8 h-8 text-site-accent" /></div></div>
             <h1 className="text-xl font-semibold text-site-text mb-2">{t("sign-in-to-authorize", { defaultValue: "Sign in to authorize rmhcode" })}</h1>
             <p className="text-sm text-site-text-muted mb-6">{t("sign-in-description", { defaultValue: "You need to sign in to your RMH account to authorize the CLI." })}</p>
             <Link to={loginUrl}><Button variant="accent" className="w-full">{t("sign-in-to-continue", { defaultValue: "Sign In to Continue" })}</Button></Link>
@@ -131,12 +131,12 @@ function AuthContent() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
         <div className="glass-pane rounded-site p-6">
           <div className="flex items-center gap-4 mb-6">
-            <div className="p-4 rounded-site bg-site-accent-dim border border-site-border"><Terminal className="w-8 h-8 text-site-accent" /></div>
+            <div className="p-4 rounded-site bg-site-bg-subtle border border-site-border"><Terminal className="w-8 h-8 text-site-accent" /></div>
             <div><h1 className="text-xl font-semibold text-site-text">{t("authorize-rmhcode", { defaultValue: "Authorize rmhcode" })}</h1><p className="text-sm text-site-text-muted">{t("cli-requesting-access", { defaultValue: "CLI is requesting access to your account" })}</p></div>
           </div>
           <div className="p-4 glass-inset rounded-site-sm mb-6">
             <div className="flex items-center gap-3">
-              {session.user.image ? <img src={session.user.image} alt={session.user.name || t("user", { defaultValue: "User" })} className="w-10 h-10 rounded-full" /> : <div className="w-10 h-10 rounded-full bg-site-accent-dim flex items-center justify-center text-site-accent font-bold">{(session.user.name?.[0] || 'U').toUpperCase()}</div>}
+              {session.user.image ? <img src={session.user.image} alt={session.user.name || t("user", { defaultValue: "User" })} className="w-10 h-10 rounded-full" /> : <div className="w-10 h-10 rounded-full bg-site-bg-subtle flex items-center justify-center text-site-accent font-bold">{(session.user.name?.[0] || 'U').toUpperCase()}</div>}
               <div><p className="font-medium text-site-text">{session.user.name}</p><p className="text-sm text-site-text-muted">{session.user.email}</p></div>
             </div>
           </div>
@@ -155,7 +155,7 @@ function AuthContent() {
               {authorizing ? <Loader2 className="w-4 h-4 animate-spin" /> : t("authorize", { defaultValue: "Authorize" })}
             </Button>
           </div>
-          <p className="text-xs text-site-text-dim text-center mt-4">{t("token-expiry-notice", { defaultValue: "Token expires in 30 days. You can revoke access anytime from your account settings." })}</p>
+          <p className="text-xs text-site-text-muted text-center mt-4">{t("token-expiry-notice", { defaultValue: "Token expires in 30 days. You can revoke access anytime from your account settings." })}</p>
         </div>
       </motion.div>
     </div>

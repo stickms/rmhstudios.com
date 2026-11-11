@@ -210,7 +210,7 @@ export function MutedWordsPanel() {
       </div>
 
       {!loading && words.length === 0 ? (
-        <p className="text-sm text-site-text-dim">
+        <p className="text-sm text-site-text-muted">
           {t('muted-empty', { defaultValue: 'No muted words yet.' })}
         </p>
       ) : (
@@ -227,7 +227,7 @@ export function MutedWordsPanel() {
                   onClick={() => removeWord(w)}
                   disabled={saving}
                   aria-label={t('muted-remove', { defaultValue: 'Remove {{word}}', word: w })}
-                  className="relative text-site-text-dim hover:text-site-danger disabled:opacity-50 after:absolute after:-inset-3 after:content-['']"
+                  className="relative text-site-text-muted hover:text-site-danger disabled:opacity-50 after:absolute after:-inset-3 after:content-['']"
                 >
                   <X className="h-3.5 w-3.5" aria-hidden />
                 </button>

@@ -20,7 +20,7 @@ function MyHandRank({ holeCards, communityCards }: { holeCards: (Card | null)[] 
   }, [holeCards, communityCards]);
 
   if (!handLabel) return null;
-  return <span className="text-xs text-site-text-dim">{t("your-hand", { defaultValue: "Your hand:" })} <span className="font-bold text-site-text">{handLabel}</span></span>;
+  return <span className="text-xs text-site-text-muted">{t("your-hand", { defaultValue: "Your hand:" })} <span className="font-bold text-site-text">{handLabel}</span></span>;
 }
 
 export function HoldemControls() {
@@ -98,7 +98,7 @@ export function HoldemControls() {
 
   if (phase === 'waiting') {
     return (
-      <div className="text-center text-site-text-dim py-4 flex flex-col items-center gap-2">
+      <div className="text-center text-site-text-muted py-4 flex flex-col items-center gap-2">
         {isBusted ? (
           <>
             <p className="text-sm font-semibold text-site-danger">{t("out-of-chips", { defaultValue: "You're out of chips!" })}</p>
@@ -143,9 +143,9 @@ export function HoldemControls() {
     };
 
     return (
-      <div className="text-center text-site-text-dim py-4 flex flex-col items-center gap-2">
+      <div className="text-center text-site-text-muted py-4 flex flex-col items-center gap-2">
         {countdown != null && countdown > 0 && (
-          <p className="text-xs font-mono text-site-text-dim">{t("next-hand-in", { defaultValue: "Next hand in" })} <span className="font-bold text-site-text">{countdown}s</span></p>
+          <p className="text-xs font-mono text-site-text-muted">{t("next-hand-in", { defaultValue: "Next hand in" })} <span className="font-bold text-site-text">{countdown}s</span></p>
         )}
         {isBusted ? (
           <>
@@ -157,24 +157,24 @@ export function HoldemControls() {
           <>
             {hasCards && !isSittingOut && !myPlayer.folded && (
               <div className="flex flex-col items-center gap-1.5">
-                <p className="text-xs text-site-text-dim">{t("show-your-cards", { defaultValue: "Show your cards?" })}</p>
+                <p className="text-xs text-site-text-muted">{t("show-your-cards", { defaultValue: "Show your cards?" })}</p>
                 <div className="flex gap-2">
                   <Button onClick={() => toggleCard(0)}
                     variant={showingCards[0] ? 'default' : 'secondary'}
                     aria-pressed={showingCards[0]}
-                    className={`h-auto min-h-10 px-3 py-1.5 text-xs font-semibold ${showingCards[0] ? '' : 'text-site-text-dim hover:border-site-accent'}`}>
+                    className={`h-auto min-h-10 px-3 py-1.5 text-xs font-semibold ${showingCards[0] ? '' : 'text-site-text-muted hover:border-site-accent'}`}>
                     {t("card-1", { defaultValue: "Card 1" })}
                   </Button>
                   <Button onClick={() => toggleCard(1)}
                     variant={showingCards[1] ? 'default' : 'secondary'}
                     aria-pressed={showingCards[1]}
-                    className={`h-auto min-h-10 px-3 py-1.5 text-xs font-semibold ${showingCards[1] ? '' : 'text-site-text-dim hover:border-site-accent'}`}>
+                    className={`h-auto min-h-10 px-3 py-1.5 text-xs font-semibold ${showingCards[1] ? '' : 'text-site-text-muted hover:border-site-accent'}`}>
                     {t("card-2", { defaultValue: "Card 2" })}
                   </Button>
                   <Button onClick={toggleBoth}
                     variant={showingCards[0] && showingCards[1] ? 'default' : 'secondary'}
                     aria-pressed={showingCards[0] && showingCards[1]}
-                    className={`h-auto min-h-10 px-3 py-1.5 text-xs font-semibold ${showingCards[0] && showingCards[1] ? '' : 'text-site-text-dim hover:border-site-accent'}`}>
+                    className={`h-auto min-h-10 px-3 py-1.5 text-xs font-semibold ${showingCards[0] && showingCards[1] ? '' : 'text-site-text-muted hover:border-site-accent'}`}>
                     {t("both", { defaultValue: "Both" })}
                   </Button>
                 </div>
@@ -189,7 +189,7 @@ export function HoldemControls() {
 
   if (isSittingOut) {
     return (
-      <div className="text-center text-site-text-dim py-4 flex flex-col items-center gap-2">
+      <div className="text-center text-site-text-muted py-4 flex flex-col items-center gap-2">
         {isBusted ? (
           <>
             <p className="text-sm font-semibold text-site-danger">{t("out-of-chips", { defaultValue: "You're out of chips!" })}</p>
@@ -209,7 +209,7 @@ export function HoldemControls() {
   if (!isMyTurn || !myPlayer || myPlayer.folded) {
     const currentPlayer = players.find((p) => p.userId === currentTurnUserId);
     return (
-      <div className="text-center text-site-text-dim py-4 flex flex-col items-center gap-1">
+      <div className="text-center text-site-text-muted py-4 flex flex-col items-center gap-1">
         {myPlayer?.folded ? (
           <p className="text-sm">{t("you-folded", { defaultValue: "You folded this hand." })}</p>
         ) : currentPlayer ? (
@@ -234,7 +234,7 @@ export function HoldemControls() {
     <div className="flex flex-col gap-3">
       <div className="text-center">
         <p className="text-sm text-site-accent font-bold animate-pulse">{t("your-turn", { defaultValue: "Your turn!" })}</p>
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t("your-chips", { defaultValue: "Your chips:" })} <span className="font-bold text-site-text">{myChips}</span>
           {toCall > 0 && <span> | {t("to-call", { defaultValue: "To call:" })} <span className="font-bold text-site-warning">{Math.min(toCall, myChips)}</span></span>}
         </p>
@@ -281,13 +281,13 @@ export function HoldemControls() {
               .map((p) => (
                 <Button key={p.label} onClick={() => setRaiseAmount(String(p.value))}
                   variant="secondary"
-                  className="h-auto min-h-9 px-2.5 py-1 text-xs font-semibold text-site-text-dim hover:border-site-accent hover:text-site-accent">
+                  className="h-auto min-h-9 px-2.5 py-1 text-xs font-semibold text-site-text-muted hover:border-site-accent hover:text-site-accent">
                   {p.label}
                 </Button>
               ))}
             <Button onClick={() => setRaiseAmount(String(minRaiseTotal))}
               variant="secondary"
-              className="h-auto min-h-9 px-2.5 py-1 text-xs font-semibold text-site-text-dim hover:border-site-accent hover:text-site-accent">
+              className="h-auto min-h-9 px-2.5 py-1 text-xs font-semibold text-site-text-muted hover:border-site-accent hover:text-site-accent">
               Min
             </Button>
           </div>

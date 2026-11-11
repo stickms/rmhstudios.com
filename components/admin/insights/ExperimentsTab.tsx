@@ -123,7 +123,7 @@ export function ExperimentsTab() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-site-text">{x.name}</span>
-                  <span className="font-mono text-xs text-site-text-dim">{x.key}</span>
+                  <span className="font-mono text-xs text-site-text-muted">{x.key}</span>
                   <Badge variant={x.status === 'RUNNING' ? 'success' : 'default'}>{x.status}</Badge>
                 </div>
                 {x.status === 'RUNNING' ? (
@@ -139,7 +139,7 @@ export function ExperimentsTab() {
               <dl className="grid grid-cols-2 gap-3 text-sm">
                 {(['control', 'test'] as const).map((arm) => (
                   <div key={arm}>
-                    <dt className="text-xs text-site-text-dim">
+                    <dt className="text-xs text-site-text-muted">
                       {arm === 'control'
                         ? t('exp-control', { defaultValue: 'Control' })
                         : t('exp-test', { defaultValue: 'Test ({{pct}}%)', pct: x.testPct })}

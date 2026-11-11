@@ -20,7 +20,7 @@ import { buyThemeApi, listMyThemesApi, themeShopApi } from '@/lib/themes/themes.
 function PriceChip({ coins }: { coins: number | null }) {
   if (coins == null) return null;
   return (
-    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-site-accent-dim px-2 py-0.5 text-xs font-semibold text-site-accent tabular-nums">
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-site-bg-subtle px-2 py-0.5 text-xs font-semibold text-site-accent tabular-nums">
       <Coins className="h-3 w-3" aria-hidden />
       {coins}
     </span>

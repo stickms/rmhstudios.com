@@ -118,7 +118,7 @@ export default function ThreadSheet({
     <li key={m.id} className="flex gap-2.5 py-2">
       <UserAvatar user={m.sender} size="sm" linkToProfile={false} />
       <div className="min-w-0 flex-1">
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           <span className="font-medium text-site-text">
             {m.sender.id === viewerId
               ? t('you', { defaultValue: 'You' })
@@ -149,13 +149,13 @@ export default function ThreadSheet({
               <Spinner size={20} />
             </div>
           ) : missing || !parent ? (
-            <p className="py-8 text-center text-sm text-site-text-dim">
+            <p className="py-8 text-center text-sm text-site-text-muted">
               {t('thread-missing', { defaultValue: 'This thread is no longer available.' })}
             </p>
           ) : (
             <>
               <ul className="divide-y divide-site-border">{row(parent, true)}</ul>
-              <p className="mt-2 text-xs text-site-text-dim">
+              <p className="mt-2 text-xs text-site-text-muted">
                 {t('thread-reply-count', {
                   count: replies.length,
                   defaultValue: '{{count}} replies',

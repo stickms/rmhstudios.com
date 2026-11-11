@@ -47,7 +47,7 @@ export function Kpi({ label, value, tone = 'none', hint }: KpiProps) {
           </>
         )}
       </p>
-      {hint && <p className="mt-1 text-xs text-site-text-dim">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-site-text-muted">{hint}</p>}
     </div>
   );
 }

@@ -106,7 +106,7 @@ describe('threadBlockedBy', () => {
 
 describe('counterToneClass', () => {
   it('goes dim, warning, danger as room runs out', () => {
-    expect(counterToneClass(100)).toBe('text-site-text-dim');
+    expect(counterToneClass(100)).toBe('text-site-text-muted');
     expect(counterToneClass(20)).toBe('text-site-warning');
     expect(counterToneClass(1)).toBe('text-site-warning');
     expect(counterToneClass(0)).toBe('text-site-danger');

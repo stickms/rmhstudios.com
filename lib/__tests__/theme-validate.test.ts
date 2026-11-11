@@ -34,7 +34,8 @@ describe('validateTheme — the derived stylesheet', () => {
     const r = validateTheme(DEFAULT_THEME_TOKENS);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(Object.keys(r.vars).length).toBeGreaterThan(20);
+    // Steel T3 and Appendix A cut the derivation from ~30 variables to the section-2 names (13).
+    expect(Object.keys(r.vars).length).toBe(13);
     expect(r.vars['--site-bg']).toBe(DEFAULT_THEME_TOKENS.canvasBase);
   });
 
@@ -95,12 +96,11 @@ describe('isSafeDeclaration — the closed function allowlist', () => {
     expect(ALLOWED_CSS_FUNCTIONS).not.toContain('url');
   });
 
-  it('accepts the four functions the derivation actually emits', () => {
+  it('accepts the two functions the derivation actually emits', () => {
+    // The derivation used to emit a `radial-gradient` canvas too; Steel R1 deleted it, and with it the only token that
+    // carried one. The gradient functions stay on the allowlist (a pure validator), only nothing emits them.
     expect(isSafeDeclaration('--site-surface', 'rgba(255, 255, 255, 0.1)')).toBe(true);
     expect(isSafeDeclaration('--site-accent-hover', 'color-mix(in oklab, #6cc9ff 82%, #000)')).toBe(true);
-    expect(
-      isSafeDeclaration('--site-canvas', 'radial-gradient(110% 85% at 10% -5%, rgba(1,2,3,0.3), transparent 62%)'),
-    ).toBe(true);
   });
 
   it('is case-insensitive about function names', () => {

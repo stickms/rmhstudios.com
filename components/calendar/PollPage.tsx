@@ -287,7 +287,7 @@ export default function PollPage({ id }: { id: string }) {
         {poll.description && (
           <p className="whitespace-pre-wrap text-sm text-site-text-muted">{poll.description}</p>
         )}
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('poll-by', {
             defaultValue: 'Organised by {{name}}',
             name: poll.creator.name ?? poll.creator.handle ?? '',
@@ -296,7 +296,7 @@ export default function PollPage({ id }: { id: string }) {
             ? ` · ${t('poll-community', { defaultValue: 'for {{name}}', name: poll.communityName })}`
             : ''}
         </p>
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('poll-tz', { defaultValue: 'Times are shown in your timezone ({{tz}}).', tz })}
         </p>
       </header>
@@ -370,7 +370,7 @@ export default function PollPage({ id }: { id: string }) {
             />
             {t('drag-paint', { defaultValue: 'Drag to paint on touch screens' })}
           </label>
-          <p className="text-xs text-site-text-dim" aria-live="polite">
+          <p className="text-xs text-site-text-muted" aria-live="polite">
             {saving === 'saving' && t('saving', { defaultValue: 'Saving…' })}
             {saving === 'saved' && t('saved', { defaultValue: 'Saved' })}
             {saving === 'error' && t('save-error', { defaultValue: 'Not saved' })}
@@ -378,7 +378,7 @@ export default function PollPage({ id }: { id: string }) {
         </div>
       )}
       {tab === 'mine' && !locked && (
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('grid-help', {
             defaultValue:
               'Press and drag to paint the times you can make. Keyboard: arrows to move, Space to paint, Shift+arrows to paint as you go.',
@@ -425,7 +425,7 @@ export default function PollPage({ id }: { id: string }) {
                   <UserAvatar src={p.user.image} alt="" size={20} />
                   {p.user.name ?? p.user.handle}
                   {p.maybe ? (
-                    <span className="text-xs text-site-text-dim">
+                    <span className="text-xs text-site-text-muted">
                       ({t('slot-maybe', { defaultValue: 'if need be' })})
                     </span>
                   ) : null}
@@ -457,7 +457,7 @@ export default function PollPage({ id }: { id: string }) {
               >
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-site-text">
-                    <span className="mr-2 text-site-text-dim tabular-nums">{i + 1}.</span>
+                    <span className="mr-2 text-site-text-muted tabular-nums">{i + 1}.</span>
                     {fmtRange(run.startMin, run.endMin)}
                   </p>
                   <p className="text-xs text-site-text-muted">
@@ -499,7 +499,7 @@ export default function PollPage({ id }: { id: string }) {
               <UserAvatar src={r.user.image} alt="" size={22} />
               {r.user.name ?? r.user.handle}
               {r.required && (
-                <span className="text-xs text-site-text-dim">
+                <span className="text-xs text-site-text-muted">
                   {t('required-tag', { defaultValue: 'required' })}
                 </span>
               )}

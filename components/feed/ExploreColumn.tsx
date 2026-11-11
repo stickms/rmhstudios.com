@@ -279,7 +279,7 @@ export function ExploreColumn({
             placeholder={t('search-placeholder-universal', {
               defaultValue: 'Search anything — people, posts, games, writing…',
             })}
-            trailing={loading ? <Spinner size={16} className="text-site-text-dim" /> : undefined}
+            trailing={loading ? <Spinner size={16} className="text-site-text-muted" /> : undefined}
           />
         }
       />

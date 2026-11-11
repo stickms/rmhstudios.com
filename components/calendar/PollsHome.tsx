@@ -266,7 +266,7 @@ function CreatePollForm({ attach, onCancel }: { attach: WhenSearch; onCancel: ()
           </Select>
         </label>
       </div>
-      <p className="text-xs text-site-text-dim">
+      <p className="text-xs text-site-text-muted">
         {t('form-tz', {
           defaultValue: 'Hours are in your timezone ({{tz}}). Everyone else sees them converted.',
           tz,

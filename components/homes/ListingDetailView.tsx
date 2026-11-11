@@ -184,7 +184,7 @@ export function ListingDetailView({ id }: { id: string }) {
         {/* Owner controls */}
         {listing.isOwner && (
           <div className="mb-4 glass-fill flex flex-wrap items-center gap-2 rounded-site px-4 py-3">
-            <span className="text-sm text-site-text-dim">You posted this ·</span>
+            <span className="text-sm text-site-text-muted">You posted this ·</span>
             <Select
               value={listing.status}
               disabled={savingStatus}
@@ -265,7 +265,7 @@ export function ListingDetailView({ id }: { id: string }) {
             <div className="text-3xl font-bold text-site-text font-display">
               {formatPrice(listing.price, listing.listingType)}
             </div>
-            <div className="mt-2 flex items-center gap-2 text-site-text-dim">
+            <div className="mt-2 flex items-center gap-2 text-site-text-muted">
               <MapPin className="h-4 w-4" />
               <span>{listing.address || location}</span>
             </div>
@@ -369,7 +369,7 @@ export function ListingDetailView({ id }: { id: string }) {
           <h2 className="mb-2 site-section-label">
             About this place
           </h2>
-          <p className="whitespace-pre-wrap text-site-text-dim">{listing.description}</p>
+          <p className="whitespace-pre-wrap text-site-text-muted">{listing.description}</p>
         </div>
 
         {/* Amenities */}

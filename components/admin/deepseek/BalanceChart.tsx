@@ -109,7 +109,7 @@ export function BalanceChart({ points, currency }: BalanceChartProps) {
               y={y(v) + 3}
               textAnchor="end"
               fontSize={10}
-              className="text-site-text-dim"
+              className="text-site-text-muted"
               fill="currentColor"
             >
               {v.toLocaleString(undefined, { maximumFractionDigits: 2 })}
@@ -120,7 +120,7 @@ export function BalanceChart({ points, currency }: BalanceChartProps) {
           x={PAD.left}
           y={H - 6}
           fontSize={10}
-          className="text-site-text-dim"
+          className="text-site-text-muted"
           fill="currentColor"
         >
           {fmtHour(points[0].hour)}
@@ -130,7 +130,7 @@ export function BalanceChart({ points, currency }: BalanceChartProps) {
           y={H - 6}
           textAnchor="end"
           fontSize={10}
-          className="text-site-text-dim"
+          className="text-site-text-muted"
           fill="currentColor"
         >
           {fmtHour(points[points.length - 1].hour)}

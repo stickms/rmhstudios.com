@@ -304,7 +304,7 @@ export function LiquidCarStage({ spec, name, description }: LiquidCarStageProps)
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-1">
-        <p className="text-xs text-site-text-dim">{hint}</p>
+        <p className="text-xs text-site-text-muted">{hint}</p>
         {!failed && (
           <div className="flex items-center gap-1">
             {/* The near face of the body follows the button: a positive turn

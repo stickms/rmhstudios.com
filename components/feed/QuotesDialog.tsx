@@ -43,8 +43,8 @@ function QuoteRow({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm">
           <span className="font-bold text-site-text">{item.user?.name || item.user?.handle}</span>
-          {item.user?.handle && <span className="text-site-text-dim"> @{item.user.handle}</span>}
-          <span className="text-site-text-dim">
+          {item.user?.handle && <span className="text-site-text-muted"> @{item.user.handle}</span>}
+          <span className="text-site-text-muted">
             {' · '}
             <RelativeTime date={item.createdAt} format={relativeTimeShort} />
           </span>

@@ -114,7 +114,7 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
           <UserAvatar src={wager.challenger?.image ?? null} alt={wager.challenger?.name ?? ''} size={24} fallbackName={wager.challenger?.name ?? '?'} />
           <span className="truncate">{wager.challenger?.name ?? t('someone', { defaultValue: 'Someone' })}</span>
         </div>
-        <span className="text-site-text-dim px-2">{t('vs', { defaultValue: 'vs' })}</span>
+        <span className="text-site-text-muted px-2">{t('vs', { defaultValue: 'vs' })}</span>
         <div className="flex items-center gap-2 min-w-0 justify-end">
           {wager.opponent ? (
             <>
@@ -122,13 +122,13 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
               <UserAvatar src={wager.opponent.image ?? null} alt={wager.opponent.name ?? ''} size={24} fallbackName={wager.opponent.name ?? '?'} />
             </>
           ) : (
-            <span className="text-site-text-dim italic">{t('open-seat', { defaultValue: 'Open seat' })}</span>
+            <span className="text-site-text-muted italic">{t('open-seat', { defaultValue: 'Open seat' })}</span>
           )}
         </div>
       </div>
 
       <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-2 text-site-text-dim">
+        <div className="flex items-center gap-2 text-site-text-muted">
           <Coins className="size-4 text-site-warning" aria-hidden />
           <span>
             {t('pot', { defaultValue: '{{pot}} coin pot', pot: wager.potCoins || wager.stakeCoins * 2 })}
@@ -166,7 +166,7 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
             )}
             {!wager.viewerReported && (
               <>
-                <span className="text-xs text-site-text-dim self-center">
+                <span className="text-xs text-site-text-muted self-center">
                   {t('who-won', { defaultValue: 'Who won?' })}
                 </span>
                 <Button size="sm" variant="outline" onClick={() => report(wager.challenger!.id)} loading={busy}>
@@ -178,7 +178,7 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
               </>
             )}
             {wager.viewerReported && (
-              <span className="text-xs text-site-text-dim self-center">
+              <span className="text-xs text-site-text-muted self-center">
                 {t('awaiting-opponent', { defaultValue: 'Waiting on the other player to confirm…' })}
               </span>
             )}

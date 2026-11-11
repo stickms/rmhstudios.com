@@ -86,7 +86,7 @@ export function ProfilerTab() {
             {shortUrl(r.url)}:{r.line}:{r.column}
           </span>
         ) : (
-          <span className="text-site-text-dim">—</span>
+          <span className="text-site-text-muted">—</span>
         ),
     },
     {
@@ -149,7 +149,7 @@ export function ProfilerTab() {
             {t('profile-summarise', { defaultValue: 'Capture & summarise' })}
           </Button>
         </div>
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('profile-hint', {
             defaultValue:
               'The downloaded .cpuprofile opens in Chrome DevTools: Performance tab, Load profile.',
@@ -175,7 +175,7 @@ export function ProfilerTab() {
               count: result.seconds,
             })}
           </h2>
-          <p className="text-xs text-site-text-dim">
+          <p className="text-xs text-site-text-muted">
             {t('profile-result-meta', {
               defaultValue: '{{samples}} samples; the worker was idle {{idle}}% of the time.',
               samples: fmtInt(result.sampleCount),

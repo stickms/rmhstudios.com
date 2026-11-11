@@ -190,7 +190,7 @@ export function PostArticle({
                   {freshOriginalUser.name || t('unknown-user', { defaultValue: 'Unknown' })}
                 </span>
                 {freshOriginalUser.handle && (
-                  <span className="text-site-text-dim truncate">@{freshOriginalUser.handle}</span>
+                  <span className="text-site-text-muted truncate">@{freshOriginalUser.handle}</span>
                 )}
               </Link>
             ) : (

@@ -95,7 +95,7 @@ export function DriverEarnings() {
             <s.icon className="h-4 w-4 text-site-accent" />
             <div className="mt-2 text-lg font-bold text-site-text">{s.value}</div>
             <div className="text-xs text-site-text-muted">{s.label}</div>
-            <div className="text-xs text-site-text-dim">{s.sub}</div>
+            <div className="text-xs text-site-text-muted">{s.sub}</div>
           </div>
         ))}
       </div>
@@ -122,7 +122,7 @@ export function DriverEarnings() {
                 </div>
                 <div className="shrink-0 text-right">
                   <div className="text-sm font-semibold text-site-success">{formatUsd(t.driverEarningsCents)}</div>
-                  <div className="text-xs text-site-text-dim">
+                  <div className="text-xs text-site-text-muted">
                     {tr("fare-amount", { defaultValue: "{{amount}} fare", amount: formatUsd(t.estimatedFareCents) })}{t.tipCents > 0 ? ' · ' + tr("tip-amount", { defaultValue: "+{{amount}} tip", amount: formatUsd(t.tipCents) }) : ''}
                   </div>
                 </div>

@@ -119,7 +119,7 @@ export function MessageRow({
     >
       {showDate && (
         <div className="flex items-center justify-center my-4">
-          <span className="glass-fill text-xs text-site-text-dim px-3 py-1 rounded-full">
+          <span className="glass-fill text-xs text-site-text-muted px-3 py-1 rounded-full">
             {formatDateSeparator(msg.createdAt)}
           </span>
         </div>

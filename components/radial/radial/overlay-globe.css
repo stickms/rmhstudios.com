@@ -361,30 +361,8 @@ html:root .radial-shell:has(.radial-hub:is([data-phase='open'], [data-phase='eve
   }
 }
 
-/* ── The strips behind Safari's bars while the menu is open (2026-10-29) ────────────────────────────────────────────
-   The veil and the blurred page only exist INSIDE the viewport box, but on iOS 26 Safari the status-bar strip and the
-   floating tab bar are tinted from the ROOT's canvas (globals.css "The page's ground on iOS WebKit"), which the menu
-   never touched: the menu opened as a tinted screen between two strips of untinted page. So while the menu is up the
-   root carries the veil's own tint over the canvas, and the strips take the menu's colour — with no fixed layer at the
-   edge, which is what would bring the flat bands back. It follows the veil exactly: opaque `--site-bg` where the veil is
-   opaque (iPad and wider), 24% on phones where the page stays visible behind the globe. Not on `closing`: the veil
-   shrinks away from the edges first, and the strips should be the first thing to hand the page back. */
-html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) {
-  background-image:
-    linear-gradient(var(--site-bg), var(--site-bg)),
-    var(--site-canvas);
-}
-@media (max-width: 767.98px) {
-  html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-phase='everting'])) {
-    background-image:
-      linear-gradient(
-        color-mix(in srgb, var(--site-bg) 24%, transparent),
-        color-mix(in srgb, var(--site-bg) 24%, transparent)
-      ),
-      var(--site-canvas);
-  }
-}
-
+/* iOS 26 Safari: the strips behind the status bar and the floating tab bar take the ROOT's own background. Under Steel the
+   ground is one flat `--site-bg` (no canvas), so the open menu's veil, also `--site-bg`, needs no root tint any more. */
 /* ── The liquid globe navigator ────────────────────────────────────────────
    The navigator itself: a glass sphere with one pin per destination, which you
    TURN to find where you want to go. Bring a place into the reticle at the front
@@ -640,7 +618,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
     radial-gradient(
       ellipse at 45% 38%,
       transparent 42%,
-      color-mix(in srgb, var(--site-glass-light) 55%, transparent) 60%,
+      transparent 60%,
       transparent 74%
     );
   pointer-events: none;
@@ -790,7 +768,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
   /* `--site-surface` is itself a translucent tint, so a tint of it would vanish
      over a light page. Built on the solid companion and mixed a few percent
      toward the ink, which separates the pin from the globe on every theme. */
-  background: color-mix(in srgb, var(--site-surface-opaque) 90%, var(--site-text) 10%);
+  background: color-mix(in srgb, var(--site-surface) 90%, var(--site-text) 10%);
   border: var(--site-border-width, 1px) solid var(--site-border);
   box-shadow: none;
   color: inherit;
@@ -824,7 +802,7 @@ html.ios-webkit:not(.app-route):has(.radial-hub:is([data-phase='open'], [data-ph
    of the sphere. */
 .radial-globe__pin-name {
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.15;
   letter-spacing: 0.01em;
   color: var(--site-text);
@@ -1026,7 +1004,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
 .radial-globe__wordmark {
   margin: 0;
   font-size: clamp(1.35rem, 6vw, 1.85rem);
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.025em;
   color: var(--site-text);
@@ -1202,7 +1180,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   pointer-events: none;
   /* The light's colour: the theme's haze, lifted toward white where the theme's glass light is white (Daylight), so
      the rays still show on a pale page. */
-  --sun-ray: color-mix(in srgb, var(--site-jelly-haze-strong) 40%, var(--site-glass-light, transparent));
+  --sun-ray: transparent;
   background:
     /* the glow hugging the globe */
     radial-gradient(
@@ -1414,7 +1392,7 @@ html[data-jelly-motion='still'] .radial-globe__pin[aria-current='page'] .radial-
   border-radius: 999px;
   corner-shape: round;
   color: inherit;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.82rem;
   text-decoration: none;
   transition: background-color 0.18s var(--ease-smooth);

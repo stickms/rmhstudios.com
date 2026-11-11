@@ -25,7 +25,7 @@ export function TableInvite({ game, joinCode }: { game: CasinoGame; joinCode: st
   const { t } = useTranslation('c-rmhcoins');
 
   return (
-    <span className="flex items-center gap-1 text-micro text-site-text-dim sm:text-xs">
+    <span className="flex items-center gap-1 text-micro text-site-text-muted sm:text-xs">
       <span className="hidden sm:inline">{t('code-label', { defaultValue: 'Code:' })}</span>
       <span className="font-mono font-bold text-site-accent">{joinCode}</span>
       <CopyButton

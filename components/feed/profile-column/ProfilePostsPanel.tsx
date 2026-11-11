@@ -53,7 +53,7 @@ export function ProfilePostsPanel({
       )}
 
       {!hasMore && items.length > 0 && (
-        <div className="py-8 text-center text-sm text-site-text-dim">
+        <div className="py-8 text-center text-sm text-site-text-muted">
           {t('reached-the-end', { defaultValue: "You've reached the end" })}
         </div>
       )}

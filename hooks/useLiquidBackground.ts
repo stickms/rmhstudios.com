@@ -120,6 +120,9 @@ export function useLiquidBackground(): void {
      * the shell, in which case the aurora simply stays at its resting offset.
      */
     const aurora = document.querySelector<HTMLElement>(AURORA_HOST);
+    // Steel removed the aurora (R1: no gradient on the ground), so the host is not rendered any more and there is nothing
+    // for a pointer or tilt listener to steer. Stay detached; the hook itself is deleted with the rest of the material.
+    if (!aurora) return;
     // Last offset actually written, so a pointer that jitters inside a pixel
     // writes nothing. Seeded off-grid so the first frame always lands.
     let lastMx = Number.NaN;

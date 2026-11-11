@@ -184,7 +184,7 @@ export function ProfileLinksPanel({ handle }: ProfileLinksPanelProps) {
                         })}
                       />
                     ) : null}
-                    <ExternalLink className="h-3 w-3 shrink-0 text-site-text-dim" aria-hidden />
+                    <ExternalLink className="h-3 w-3 shrink-0 text-site-text-muted" aria-hidden />
                   </div>
                   <p className="truncate text-xs text-site-text-muted">{link.url}</p>
                 </div>

@@ -97,7 +97,7 @@ export default function TokenGenerator() {
             placeholder={t("token-name-placeholder", { defaultValue: "Token name (optional)" })}
             value={tokenName}
             onChange={(e) => setTokenName(e.target.value)}
-            className="min-w-0 flex-1 basis-48 px-3 py-2 glass-inset rounded-site-sm text-site-text text-base sm:text-sm outline-none focus:border-site-border-bright transition-colors"
+            className="min-w-0 flex-1 basis-48 px-3 py-2 glass-inset rounded-site-sm text-site-text text-base sm:text-sm outline-none focus:border-site-text transition-colors"
             maxLength={100}
           />
           <Button
@@ -127,7 +127,7 @@ export default function TokenGenerator() {
 
       {/* New Token Display */}
       {newToken && (
-        <div className="p-4 rounded-site-sm bg-site-accent-dim border border-site-border">
+        <div className="p-4 rounded-site-sm bg-site-bg-subtle border border-site-border">
           <div className="flex items-center gap-2 text-sm text-site-accent mb-2">
             <Check className="w-4 h-4" />
             {t("token-generated-notice", { defaultValue: "Token generated! Copy it now - it won't be shown again." })}
@@ -138,7 +138,7 @@ export default function TokenGenerator() {
             </code>
             <CopyButton value={newToken} label={t("copy-token-label", { defaultValue: "Copy token" })} variant="outline" className="shrink-0" />
           </div>
-          <p className="text-xs text-site-text-dim mt-2">
+          <p className="text-xs text-site-text-muted mt-2">
             {t("token-auth-instruction-pre", { defaultValue: "Run" })} <code className="break-all text-site-accent">rmhcode login --token YOUR_TOKEN</code> {t("token-auth-instruction-post", { defaultValue: "to authenticate." })}
           </p>
         </div>
@@ -154,7 +154,7 @@ export default function TokenGenerator() {
             ))}
           </div>
         ) : tokens.length === 0 ? (
-          <p className="text-sm text-site-text-dim py-4 text-center border border-dashed border-site-border rounded-site-sm">
+          <p className="text-sm text-site-text-muted py-4 text-center border border-dashed border-site-border rounded-site-sm">
             {t("no-active-tokens", { defaultValue: "No active tokens. Generate one to get started." })}
           </p>
         ) : (
@@ -170,7 +170,7 @@ export default function TokenGenerator() {
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <Key className="w-4 h-4 text-site-text-dim shrink-0" />
+                    <Key className="w-4 h-4 text-site-text-muted shrink-0" />
                     <span className="text-sm font-medium text-site-text truncate">
                       {token.name || t("unnamed-token", { defaultValue: "Unnamed token" })}
                     </span>
@@ -185,7 +185,7 @@ export default function TokenGenerator() {
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-site-text-dim">
+                  <div className="flex items-center gap-3 mt-1 text-xs text-site-text-muted">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {t("created-date", { defaultValue: "Created {{date}}", date: formatDate(token.createdAt) })}
@@ -200,7 +200,7 @@ export default function TokenGenerator() {
                 </div>
                 <button
                   onClick={() => revokeToken(token.id)}
-                  className="p-2 rounded-site-sm hover:bg-site-danger/10 text-site-text-dim hover:text-site-danger transition-colors shrink-0"
+                  className="p-2 rounded-site-sm hover:bg-site-danger/10 text-site-text-muted hover:text-site-danger transition-colors shrink-0"
                   aria-label={t("revoke-token-label", { defaultValue: "Revoke token" })}
                 >
                   <Trash2 className="w-4 h-4" />

@@ -13,17 +13,12 @@
    painted in Georgia and re-shaped in front of the reader. A declaration costs
    only its text; a file downloads only when a page actually uses the face. */
 @import './fonts/site-display.css';
-@import './glass-roles.css';
 @import './app-theme-tokens.css';
-/* Plasmatic Jelly (docs/plans/plasmatic-jelly/00-master-plan.md): the material
-   (role knobs, woken haze, static haze floor, CSS rim, degradation), the
-   electric-arc layer, and the coverage adapters. After glass-roles.css on
-   purpose — jelly-material.css restates some of its role rules at the same
-   specificity and must win on source order. */
-@import './jelly-material.css';
-@import './jelly-arcs.css';
-@import './jelly-coverage.css';
-@import '../components/ui/jelly-group.css' layer(components);
+/* Steel (docs/plans/2026-11-11-steel-design-implementation.md): the role classes remapped to flat surfaces, and the
+   seven type classes. The old Plasmatic Jelly stylesheets (glass roles, jelly material, arcs, coverage, jelly-group)
+   are deleted, not deprecated: nothing imports them. */
+@import './styles/steel-surfaces.css';
+@import './styles/steel-type.css';
 
 /* Scope Tailwind's content scanning to code that actually renders in the browser.
    Without this, auto-detection also scans build/test/infra/docs directories and

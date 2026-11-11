@@ -182,7 +182,7 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  className="w-[var(--anchored-menu-anchor-w)] max-h-60"
  >
  {loading && suggestions.length === 0 ? (
- <div className="px-3 py-2 text-xs text-site-text-dim">{t("searching", { defaultValue:"Searching..."})}</div>
+ <div className="px-3 py-2 text-xs text-site-text-muted">{t("searching", { defaultValue:"Searching..."})}</div>
  ) : (
  suggestions.map((u, i) => (
  <button
@@ -219,7 +219,7 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  {highlight(u.name || u.handle, token)}
  {u.isVerified && <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-site-accent"/>}
  </span>
- <span className="block truncate text-xs text-site-text-dim">@{highlight(u.handle ?? u.username, token)}</span>
+ <span className="block truncate text-xs text-site-text-muted">@{highlight(u.handle ?? u.username, token)}</span>
  </span>
  </button>
  ))

@@ -58,7 +58,7 @@ export function BettingCountdown({ countdown }: { countdown: number | null }) {
 
   return (
     <div className="text-center">
-      <span className="text-sm text-site-text-dim">
+      <span className="text-sm text-site-text-muted">
         {t('betting-closes-in', { defaultValue: 'Betting closes in ' })}
       </span>
       <span

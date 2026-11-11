@@ -294,7 +294,7 @@ export function SeriesPage({ id }: { id: string }) {
             {items.map((item, i) => (
               <li key={item.id}>
                 <div className="mb-2 flex items-center gap-2 px-1">
-                  <span className="text-xs font-semibold text-site-text-dim">
+                  <span className="text-xs font-semibold text-site-text-muted">
                     {t('series-part-label', { defaultValue: 'Part {{k}}', k: i + 1 })}
                   </span>
                   {owner && (

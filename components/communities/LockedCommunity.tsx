@@ -77,7 +77,7 @@ export function LockedCommunityHeader({
             {community.description}
           </p>
         )}
-        <p className="mt-2 inline-flex items-center gap-1 text-xs text-site-text-dim">
+        <p className="mt-2 inline-flex items-center gap-1 text-xs text-site-text-muted">
           <Users className="h-3.5 w-3.5" aria-hidden />
           {t('locked-members', {
             count: community.memberCount,

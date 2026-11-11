@@ -126,7 +126,7 @@ export default function HomePage() {
                     'A wireframe of an RMH hall: one closed surface, ribbed by bay and drawn from a fixed three-quarter view.',
                 })}
               />
-              <p className="mt-3 text-center text-xs text-site-text-dim">
+              <p className="mt-3 text-center text-xs text-site-text-muted">
                 {t('hero-hall-caption', {
                   defaultValue: '{{code}} · {{length}} m × {{width}} m × {{height}} m',
                   code: anchor.code,
@@ -215,7 +215,7 @@ export default function HomePage() {
                     </span>
                     <span className="mt-1 block text-sm text-site-text-muted">{p.desc}</span>
                   </span>
-                  <ArrowRight className="size-4 shrink-0 text-site-text-dim" aria-hidden />
+                  <ArrowRight className="size-4 shrink-0 text-site-text-muted" aria-hidden />
                 </Link>
               </Card>
             ))}

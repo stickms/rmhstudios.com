@@ -2,8 +2,7 @@
    /security + /optimization — "store style" liquid-glass design language.
 
    Ported onto the same tokens the store (MembershipPanel) uses: the page is
-   transparent so the body aurora (--site-canvas, painted on <body> for
-   non-app routes) reads through, surfaces are frosted L2 glass panes, and the
+   transparent so the flat page ground reads through, surfaces are plain panes, and the
    signature hero is <PinnedHero>. Everything is a --site-* token so every
    theme re-tints correctly — no hardcoded colours.
 
@@ -18,8 +17,7 @@
 
   position: relative;
   min-height: 100dvh;
-  /* Transparent — let the <body> aurora canvas show through (these are not
-     app-routes, so html:not(.app-route) body already paints --site-canvas). */
+  /* Transparent — the flat page ground shows through. */
   background: transparent;
   color: var(--site-text);
   font-family: var(--site-font-body);
@@ -79,7 +77,7 @@ nav.glass-chrome.sec-nav {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
   font-size: 0.82rem;
   font-weight: 500;
   letter-spacing: -0.01em;
@@ -87,7 +85,7 @@ nav.glass-chrome.sec-nav {
   transition: color 180ms var(--sec-ease);
 }
 .sec-nav__back:hover { color: var(--site-text-muted); }
-.sec-nav__sep { color: var(--site-text-dim); font-size: 0.8rem; }
+.sec-nav__sep { color: var(--site-text-muted); font-size: 0.8rem; }
 .sec-nav__title { color: var(--site-text-muted); font-size: 0.82rem; font-weight: 500; }
 .sec-nav__cta {
   margin-left: auto;
@@ -104,7 +102,7 @@ nav.glass-chrome.sec-nav {
   text-decoration: none;
   transition: background 180ms var(--sec-ease), border-color 180ms var(--sec-ease);
 }
-.sec-nav__cta:hover { background: var(--site-surface-hover); border-color: var(--site-border-bright); }
+.sec-nav__cta:hover { background: var(--site-surface-hover); border-color: var(--site-text); }
 @media (max-width: 560px) { .sec-nav__cta { display: none; } }
 
 /* ─── Shared bits ───────────────────────────────────────────────────────────  */
@@ -113,8 +111,7 @@ nav.glass-chrome.sec-nav {
   font-family: var(--site-font-mono);
   font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: var(--site-text-muted);
 }
 .sec-shell {
@@ -150,7 +147,7 @@ nav.glass-chrome.sec-nav {
 }
 .sec-btn--ghost:hover {
   background: var(--site-surface-hover);
-  border-color: var(--site-border-bright);
+  border-color: var(--site-text);
   transform: translateY(-1px);
 }
 
@@ -178,7 +175,7 @@ nav.glass-chrome.sec-nav {
   margin: 0;
   font-size: clamp(0.72rem, 1vw, 0.82rem);
   line-height: 1.45;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
 }
 @media (max-width: 720px) {
   .sec-stats { grid-template-columns: repeat(2, 1fr); }
@@ -193,7 +190,7 @@ nav.glass-chrome.sec-nav {
   margin: 0 0 18px;
   font-family: var(--site-font-display);
   font-size: clamp(2rem, 5vw, 3.4rem);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.04;
   letter-spacing: -0.032em;
   color: var(--site-text);
@@ -214,12 +211,12 @@ nav.glass-chrome.sec-nav {
   max-width: 20ch;
   font-family: var(--site-font-display);
   font-size: clamp(2.4rem, 6.4vw, 5.4rem);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.05;
   letter-spacing: -0.04em;
   color: var(--site-text);
 }
-.sec-statement__text b { color: var(--site-accent); font-weight: 700; }
+.sec-statement__text b { color: var(--site-accent); font-weight: 600; }
 
 /* ─── Pillars grid ──────────────────────────────────────────────────────────  */
 .sec-grid {
@@ -238,7 +235,7 @@ nav.glass-chrome.sec-nav {
   transition: border-color 220ms var(--sec-ease);
 }
 a.sec-card:hover {
-  border-color: var(--site-border-bright);
+  border-color: var(--site-text);
 }
 /* Link cards (e.g. the /black-lives-matter resource list): an <a> is blockified
    as a grid item, but still needs its default underline/link color cleared. */
@@ -250,7 +247,7 @@ a.sec-card { text-decoration: none; color: inherit; display: block; }
   height: 46px;
   margin-bottom: 20px;
   border-radius: var(--site-radius-sm);
-  background: var(--site-accent-dim);
+  background: var(--site-bg-subtle);
   border: 1px solid var(--site-border);
   color: var(--site-accent);
 }
@@ -274,9 +271,8 @@ a.sec-card { text-decoration: none; color: inherit; display: block; }
   font-family: var(--site-font-mono);
   font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--site-text-dim);
+  letter-spacing: 0;
+  color: var(--site-text-muted);
 }
 /* Tag rendered as a "Visit ↗" affordance on link cards (e.g. /black-lives-matter
    resources). Inherits the mono/uppercase tag styling; adds the trailing icon. */
@@ -303,7 +299,7 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
   width: 38px;
   height: 38px;
   border-radius: var(--site-radius-sm);
-  background: var(--site-accent-dim);
+  background: var(--site-bg-subtle);
   border: 1px solid var(--site-border);
   color: var(--site-accent);
 }
@@ -342,7 +338,7 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
   max-width: 22ch;
   font-family: var(--site-font-display);
   font-size: clamp(1.7rem, 3.6vw, 2.8rem);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1.08;
   color: var(--site-text);
@@ -359,7 +355,7 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
   max-width: 60ch;
   font-size: 0.78rem;
   line-height: 1.55;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
 }
 .sec-disclosure__meta strong { color: var(--site-text-muted); }
 .sec-disclosure__meta a { color: var(--site-accent); text-underline-offset: 3px; }
@@ -398,12 +394,12 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
   font-weight: 600;
 }
 .sec-footer__brand-row svg { color: var(--site-accent); }
-.sec-footer__tagline { max-width: 260px; font-size: 0.76rem; line-height: 1.5; color: var(--site-text-dim); }
+.sec-footer__tagline { max-width: 260px; font-size: 0.76rem; line-height: 1.5; color: var(--site-text-muted); }
 .sec-footer__links { display: flex; flex-wrap: wrap; gap: clamp(18px, 3vw, 40px); align-items: center; }
 .sec-footer__link {
   font-size: 0.78rem;
   font-weight: 500;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
   text-decoration: none;
   transition: color 180ms var(--sec-ease);
 }
@@ -412,7 +408,7 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
   border-top: 1px solid var(--site-border);
   padding-top: 20px;
   font-size: 0.72rem;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
   line-height: 1.5;
 }
 
@@ -486,9 +482,8 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
   font-family: var(--site-font-mono);
   font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--site-text-dim);
+  letter-spacing: 0;
+  color: var(--site-text-muted);
 }
 .sec-tier[data-sev="critical"] .sec-tier__sev { color: var(--site-warning); }
 .sec-tier__reward {
@@ -500,7 +495,7 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
 }
 .sec-tier[data-sev="critical"] .sec-tier__reward { color: var(--site-warning); }
 .sec-tier__blurb { margin: 0 0 10px; font-size: 0.96rem; line-height: 1.5; color: var(--site-text); }
-.sec-tier__examples { margin: 0; font-size: 0.86rem; line-height: 1.55; color: var(--site-text-dim); }
+.sec-tier__examples { margin: 0; font-size: 0.86rem; line-height: 1.55; color: var(--site-text-muted); }
 
 /* ─── Bounty category table / milestone table ────────────────────────────────  */
 .sec-bounty-table-wrap {
@@ -529,9 +524,8 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
   font-family: var(--site-font-mono);
   font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--site-text-dim);
+  letter-spacing: 0;
+  color: var(--site-text-muted);
   white-space: nowrap;
 }
 .sec-bounty-table tbody th { width: 26%; font-weight: 600; color: var(--site-text); }
@@ -573,14 +567,14 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
   gap: 8px;
   margin: 0;
   font-size: 0.82rem;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
 }
 .sec-form__intro svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--site-accent); }
 .sec-form__row--split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 560px) { .sec-form__row--split { grid-template-columns: 1fr; } }
 .sec-field { display: flex; flex-direction: column; gap: 8px; }
 .sec-field__label { font-size: 0.8rem; font-weight: 550; color: var(--site-text-muted); }
-.sec-field__opt { color: var(--site-text-dim); font-weight: 400; }
+.sec-field__opt { color: var(--site-text-muted); font-weight: 400; }
 .sec-form__hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 .sec-form__error {
   display: flex;
@@ -597,7 +591,7 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
 }
 .sec-form__error svg { width: 18px; height: 18px; flex: 0 0 auto; color: var(--site-danger); }
 .sec-form__actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 4px; }
-.sec-form__note { font-size: 0.82rem; color: var(--site-text-dim); }
+.sec-form__note { font-size: 0.82rem; color: var(--site-text-muted); }
 .sec-form__note a { color: var(--site-accent); text-underline-offset: 3px; }
 .sec-form__done { text-align: center; padding: 24px 0 8px; }
 .sec-form__done-icon {
@@ -607,7 +601,7 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
   height: 54px;
   margin-bottom: 16px;
   border-radius: var(--site-radius-sm);
-  background: var(--site-accent-dim);
+  background: var(--site-bg-subtle);
   border: 1px solid var(--site-border);
   color: var(--site-accent);
 }
@@ -667,7 +661,7 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
   border-radius: 50%;
   corner-shape: round;
   border: 1px solid var(--site-border);
-  background: var(--site-accent-dim);
+  background: var(--site-bg-subtle);
   font-size: 0.9rem;
   font-weight: 650;
   color: var(--site-accent);
@@ -707,7 +701,7 @@ a.sec-card:hover .sec-card__tag--link { color: var(--site-accent-hover); }
   font-size: 1.35rem;
   font-weight: 300;
   line-height: 1;
-  color: var(--site-text-dim);
+  color: var(--site-text-muted);
   transition: transform 200ms var(--sec-ease);
 }
 .sec-faq__item[open] .sec-faq__q::after { transform: rotate(45deg); }

@@ -136,7 +136,7 @@ export function WrappedColumn({
  <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <tile.icon className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-extrabold text-site-text">{tile.value}</p>
- <p className="text-xs text-site-text-dim">{tile.label}</p>
+ <p className="text-xs text-site-text-muted">{tile.label}</p>
  </div>
  </RevealItem>
  ))}
@@ -144,7 +144,7 @@ export function WrappedColumn({
  <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <CoinIcon className="h-5 w-5"/>
  <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.coinsEarned)}</p>
- <p className="text-xs text-site-text-dim">{t('tile-coins-earned', { defaultValue:'Coins earned'})}</p>
+ <p className="text-xs text-site-text-muted">{t('tile-coins-earned', { defaultValue:'Coins earned'})}</p>
  </div>
  </RevealItem>
  {data.play ? (
@@ -153,21 +153,21 @@ export function WrappedColumn({
  <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <Gamepad2 className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-extrabold text-site-text">{hours(data.play.seconds)}</p>
- <p className="text-xs text-site-text-dim">{t('tile-time-played', { defaultValue:'Time played'})}</p>
+ <p className="text-xs text-site-text-muted">{t('tile-time-played', { defaultValue:'Time played'})}</p>
  </div>
  </RevealItem>
  <RevealItem>
  <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <Layers className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.play.cardDrops)}</p>
- <p className="text-xs text-site-text-dim">{t('tile-cards-dropped', { defaultValue:'Cards dropped'})}</p>
+ <p className="text-xs text-site-text-muted">{t('tile-cards-dropped', { defaultValue:'Cards dropped'})}</p>
  </div>
  </RevealItem>
  <RevealItem>
  <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <Award className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.play.badges)}</p>
- <p className="text-xs text-site-text-dim">{t('tile-badges-crafted', { defaultValue:'Badges crafted'})}</p>
+ <p className="text-xs text-site-text-muted">{t('tile-badges-crafted', { defaultValue:'Badges crafted'})}</p>
  </div>
  </RevealItem>
  </>
@@ -177,7 +177,7 @@ export function WrappedColumn({
  <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
  <CalendarDays className="h-5 w-5 text-site-accent"/>
  <p className="mt-2 text-2xl font-extrabold text-site-text">{data.busiestMonth}</p>
- <p className="text-xs text-site-text-dim">{t('tile-busiest-month', { defaultValue:'Busiest month'})}</p>
+ <p className="text-xs text-site-text-muted">{t('tile-busiest-month', { defaultValue:'Busiest month'})}</p>
  </div>
  </RevealItem>
  )}
@@ -196,7 +196,7 @@ export function WrappedColumn({
  <Link to="/games/$gameId" params={{ gameId: g.gameId }} className="text-site-text">
  {i + 1}. {g.title}
  </Link>
- <span className="text-xs text-site-text-dim">{hours(g.seconds)}</span>
+ <span className="text-xs text-site-text-muted">{hours(g.seconds)}</span>
  </li>
  ))}
  </ol>

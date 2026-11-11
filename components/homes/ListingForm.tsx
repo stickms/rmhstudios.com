@@ -300,7 +300,7 @@ export function ListingForm({ listing }: ListingFormProps) {
                 data-jelly
                 className={`min-h-11 rounded-full border px-4 py-2 text-xs font-medium transition-colors ${
                   on
-                    ? 'border-site-accent bg-site-accent-dim text-site-accent'
+                    ? 'border-site-accent bg-site-bg-subtle text-site-accent'
                     : 'border-site-border text-site-text-muted hover:text-site-text'
                 }`}
               >

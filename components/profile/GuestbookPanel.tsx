@@ -202,7 +202,7 @@ export default function GuestbookPanel({
             rows={2}
           />
           <div className="flex items-center justify-between">
-            <span className="text-xs tabular-nums text-site-text-dim">
+            <span className="text-xs tabular-nums text-site-text-muted">
               {draft.length}/{GUESTBOOK_BODY_MAX}
             </span>
             <Button
@@ -253,7 +253,7 @@ export default function GuestbookPanel({
                     <Link to={href} className="font-semibold text-site-text hover:underline">
                       {name}
                     </Link>{' '}
-                    <span className="text-xs text-site-text-dim">
+                    <span className="text-xs text-site-text-muted">
                       {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}
                     </span>
                   </p>

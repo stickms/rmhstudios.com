@@ -53,7 +53,7 @@ export function KeyUsage({ keyId }: { keyId: string }) {
 
   if (failed || !data) {
     return (
-      <p className="py-3 text-xs text-site-text-dim">
+      <p className="py-3 text-xs text-site-text-muted">
         {t('usage-failed', { defaultValue: 'Could not load usage for this key.' })}
       </p>
     );
@@ -61,7 +61,7 @@ export function KeyUsage({ keyId }: { keyId: string }) {
 
   if (data.totals.requests === 0) {
     return (
-      <p className="py-3 text-xs text-site-text-dim">
+      <p className="py-3 text-xs text-site-text-muted">
         {t('usage-none', {
           defaultValue: 'No requests in the last {{count}} days.',
           count: data.days,
@@ -115,7 +115,7 @@ export function KeyUsage({ keyId }: { keyId: string }) {
 
       <dl className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
         <div>
-          <dt className="text-site-text-dim">
+          <dt className="text-site-text-muted">
             {t('usage-requests', { defaultValue: 'Requests' })}
           </dt>
           <dd className="font-semibold tabular-nums text-site-text">
@@ -123,26 +123,26 @@ export function KeyUsage({ keyId }: { keyId: string }) {
           </dd>
         </div>
         <div>
-          <dt className="text-site-text-dim">{t('usage-units', { defaultValue: 'Units' })}</dt>
+          <dt className="text-site-text-muted">{t('usage-units', { defaultValue: 'Units' })}</dt>
           <dd className="font-semibold tabular-nums text-site-text">
             {nf.format(data.totals.units)}
           </dd>
         </div>
         <div>
-          <dt className="text-site-text-dim">4xx</dt>
+          <dt className="text-site-text-muted">4xx</dt>
           <dd className="font-semibold tabular-nums text-site-text">
             {nf.format(data.totals.clientErrors)}
           </dd>
         </div>
         <div>
-          <dt className="text-site-text-dim">5xx</dt>
+          <dt className="text-site-text-muted">5xx</dt>
           <dd className="font-semibold tabular-nums text-site-text">
             {nf.format(data.totals.serverErrors)}
           </dd>
         </div>
       </dl>
 
-      <p className="mt-2 text-xs leading-relaxed text-site-text-dim">
+      <p className="mt-2 text-xs leading-relaxed text-site-text-muted">
         {t('usage-note', {
           defaultValue:
             'Units are cost-weighted: heavier endpoints draw down your daily quota faster than a simple read. Counts settle within a few seconds of a request.',

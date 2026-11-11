@@ -62,7 +62,7 @@ export function HoldemGame({ coins, setCoins }: Props) {
     return (
       <div className="flex items-center justify-center py-12">
         <Spinner size={24} />
-        <span className="ml-2 text-sm text-site-text-dim">{t("connecting", { defaultValue: "Connecting..." })}</span>
+        <span className="ml-2 text-sm text-site-text-muted">{t("connecting", { defaultValue: "Connecting..." })}</span>
       </div>
     );
   }
@@ -102,17 +102,17 @@ export function HoldemGame({ coins, setCoins }: Props) {
     <div className="flex flex-col gap-4 px-3 sm:px-4 py-4 sm:py-6">
       <div className="flex items-center justify-between gap-2 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
-          <button onClick={handleLeave} className="shrink-0 min-h-8 px-2 text-xs text-site-text-dim hover:text-site-text transition-colors">
+          <button onClick={handleLeave} className="shrink-0 min-h-8 px-2 text-xs text-site-text-muted hover:text-site-text transition-colors">
             &larr; {t("leave", { defaultValue: "Leave" })}
           </button>
           <h3 className="text-sm font-bold text-site-text truncate">{roomInfo.name}</h3>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {roomInfo.joinCode && <TableInvite game="holdem" joinCode={roomInfo.joinCode} />}
-          <span className="text-micro sm:text-xs text-site-text-dim">
+          <span className="text-micro sm:text-xs text-site-text-muted">
             {roomInfo.smallBlind}/{roomInfo.bigBlind}
           </span>
-          <span className="text-micro sm:text-xs text-site-text-dim">{players.length}/{roomInfo.maxPlayers}</span>
+          <span className="text-micro sm:text-xs text-site-text-muted">{players.length}/{roomInfo.maxPlayers}</span>
           <Circle className={`h-3 w-3 fill-current shrink-0 ${statusColor}`} />
         </div>
       </div>

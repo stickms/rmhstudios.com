@@ -111,7 +111,7 @@ export function JobDetail({
                 </p>
               )}
               {verificationCheckedAt && (
-                <p className="mt-1 text-xs text-site-text-dim">
+                <p className="mt-1 text-xs text-site-text-muted">
                   {t('ladder.lastVerified', {
                     defaultValue: 'Last verified {{time}}',
                     time: timeAgo(verificationCheckedAt as Date),

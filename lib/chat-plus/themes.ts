@@ -59,25 +59,21 @@ const ACCENT_VARS: Record<Exclude<ChatAccent, 'default'>, Record<string, string>
     '--site-accent': 'var(--site-success)',
     '--site-accent-fg': 'var(--site-success-fg)',
     '--site-accent-hover': 'color-mix(in oklab, var(--site-success) 88%, var(--site-text))',
-    '--site-accent-dim': 'color-mix(in oklab, var(--site-success) 16%, transparent)',
   },
   warning: {
     '--site-accent': 'var(--site-warning)',
     '--site-accent-fg': 'var(--site-warning-fg)',
     '--site-accent-hover': 'color-mix(in oklab, var(--site-warning) 88%, var(--site-text))',
-    '--site-accent-dim': 'color-mix(in oklab, var(--site-warning) 16%, transparent)',
   },
   danger: {
     '--site-accent': 'var(--site-danger)',
     '--site-accent-fg': 'var(--site-danger-fg)',
     '--site-accent-hover': 'color-mix(in oklab, var(--site-danger) 88%, var(--site-text))',
-    '--site-accent-dim': 'color-mix(in oklab, var(--site-danger) 16%, transparent)',
   },
   mono: {
     '--site-accent': 'var(--site-text)',
     '--site-accent-fg': 'var(--site-bg)',
     '--site-accent-hover': 'color-mix(in oklab, var(--site-text) 85%, var(--site-bg))',
-    '--site-accent-dim': 'color-mix(in oklab, var(--site-text) 12%, transparent)',
   },
 };
 

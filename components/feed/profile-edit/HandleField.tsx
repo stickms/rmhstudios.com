@@ -39,7 +39,7 @@ export function HandleField({
         count={`${handle.length}/${MAX_HANDLE}`}
       />
       <div className="relative">
-        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-site-text-dim">
+        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-site-text-muted">
           @
         </span>
         <Input
@@ -77,7 +77,7 @@ export function HandleField({
             ? 'text-site-success'
             : status === 'taken' || status === 'invalid'
               ? 'text-site-danger'
-              : 'text-site-text-dim',
+              : 'text-site-text-muted',
         )}
       >
         {onCooldown

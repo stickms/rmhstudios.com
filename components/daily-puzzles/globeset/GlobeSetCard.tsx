@@ -128,11 +128,11 @@ function GlobeSetCardImpl({
       whileTap={disabled ? undefined : { scale: 0.96 }}
       className={cn(
         'group relative aspect-[10/7] w-full rounded-site outline-none',
-        'border-2 shadow-site-sm transition-[border-color,box-shadow,transform]',
+        'border-2 transition-[border-color,box-shadow,transform]',
         'duration-site focus-visible:ring-2 focus-visible:ring-site-accent focus-visible:ring-offset-2',
         'focus-visible:ring-offset-site-bg disabled:cursor-default',
         selected
-          ? 'border-site-accent shadow-[0_0_0_4px_var(--site-accent-dim)]'
+          ? 'border-site-accent shadow-[0_0_0_4px_var(--site-bg-subtle)]'
           : 'border-[var(--globeset-card-edge)] hover:border-site-accent/60',
         hinted && !selected && 'border-site-warning',
         solving && 'border-site-success',

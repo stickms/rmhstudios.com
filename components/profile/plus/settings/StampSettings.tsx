@@ -161,7 +161,7 @@ export default function StampSettings({ userId }: { userId: string }) {
         <h3 id="stamp-make" className="text-sm font-semibold text-site-text">
           {t('stamp-make', { defaultValue: 'Make a stamp' })}
         </h3>
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('stamp-make-hint', {
             edge: STAMP_MAX_EDGE,
             defaultValue:
@@ -200,7 +200,7 @@ export default function StampSettings({ userId }: { userId: string }) {
             <Upload aria-hidden />
             {t('stamp-create', { defaultValue: 'Create stamp' })}
           </Button>
-          <span className="text-xs text-site-text-dim">
+          <span className="text-xs text-site-text-muted">
             {t('stamp-quota', {
               used: mine.length,
               max: STAMP_MAX_CREATED,

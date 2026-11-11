@@ -220,7 +220,7 @@ export function QotdPage({ day }: { day?: string }) {
                       selected?.dayKey === d.dayKey && 'border-site-accent',
                     )}
                   >
-                    <span className="w-20 shrink-0 text-xs text-site-text-dim">
+                    <span className="w-20 shrink-0 text-xs text-site-text-muted">
                       {formatDay(d.dayKey, i18n.language)}
                     </span>
                     <span className="min-w-0 flex-1 text-sm text-site-text">{d.text}</span>

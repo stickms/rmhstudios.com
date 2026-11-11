@@ -152,7 +152,7 @@ export function MetricChart({
               aria-hidden
               width="16"
               height="2"
-              className={th.muted ? 'text-site-text-dim' : 'text-site-danger'}
+              className={th.muted ? 'text-site-text-muted' : 'text-site-danger'}
             >
               <line
                 x1="0"
@@ -185,7 +185,7 @@ export function MetricChart({
 
       <div className="mt-3 flex gap-2">
         <div
-          className="relative h-40 w-12 shrink-0 text-right text-micro tabular-nums text-site-text-dim"
+          className="relative h-40 w-12 shrink-0 text-right text-micro tabular-nums text-site-text-muted"
           aria-hidden
         >
           {ticks.map((v) => (
@@ -233,7 +233,7 @@ export function MetricChart({
                   x2={W}
                   y1={y(th.value)}
                   y2={y(th.value)}
-                  className={th.muted ? 'text-site-text-dim' : 'text-site-danger'}
+                  className={th.muted ? 'text-site-text-muted' : 'text-site-danger'}
                   stroke="currentColor"
                   strokeDasharray="5 4"
                   strokeOpacity={th.muted ? 0.5 : 0.8}
@@ -247,7 +247,7 @@ export function MetricChart({
                   x2={x(d.at)}
                   y1={0}
                   y2={H}
-                  className={d.status === 'success' ? 'text-site-text-dim' : 'text-site-warning'}
+                  className={d.status === 'success' ? 'text-site-text-muted' : 'text-site-warning'}
                   stroke="currentColor"
                   strokeOpacity={0.7}
                   vectorEffect="non-scaling-stroke"
@@ -283,7 +283,7 @@ export function MetricChart({
               />
             )}
           </div>
-          <div className="mt-1 flex justify-between text-micro text-site-text-dim" aria-hidden>
+          <div className="mt-1 flex justify-between text-micro text-site-text-muted" aria-hidden>
             <span>{fmtTime(t0, withDate)}</span>
             <span>{fmtTime(t1, withDate)}</span>
           </div>

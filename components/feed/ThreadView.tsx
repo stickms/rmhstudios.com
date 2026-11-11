@@ -24,7 +24,7 @@ export function ThreadView({ items }: { items: FeedItem[] }) {
  <span className="min-w-0 truncate">{t('thread-title', { defaultValue:'Thread'})}</span>
  </h1>
  </div>
- <div data-slot="page-header-action" className="text-xs text-site-text-dim">
+ <div data-slot="page-header-action" className="text-xs text-site-text-muted">
  {t('thread-count', { defaultValue:'{{n}} posts', n: items.length })}
  </div>
  </div>

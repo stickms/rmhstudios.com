@@ -37,7 +37,7 @@ const editorTheme = EditorView.theme(
       backgroundColor: 'color-mix(in oklab, var(--site-accent) 30%, transparent)',
     },
     '.cm-activeLine': { backgroundColor: 'color-mix(in oklab, var(--site-text) 4%, transparent)' },
-    '.cm-placeholder': { color: 'var(--site-text-dim)' },
+    '.cm-placeholder': { color: 'var(--site-text-muted)' },
   },
   { dark: true },
 );

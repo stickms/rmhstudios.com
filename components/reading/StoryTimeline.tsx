@@ -55,7 +55,7 @@ export function StoryTimeline({
                       {a.description}
                     </p>
                     {i === 0 ? (
-                      <span className="mt-3 block text-xs font-semibold text-site-text-dim">
+                      <span className="mt-3 block text-xs font-semibold text-site-text-muted">
                         {t('story-first', { defaultValue: 'Where the story starts' })}
                       </span>
                     ) : null}

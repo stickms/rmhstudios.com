@@ -101,7 +101,7 @@ export function PredictionCard({ market, coins, setCoins, onUpdated, signedIn }:
             )}
             {market.isAuto && (
               <span
-                className="inline-flex items-center gap-2 rounded-full bg-site-accent-dim px-2 py-0.5 text-xs font-semibold text-site-accent shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]"
+                className="inline-flex items-center gap-2 rounded-full bg-site-bg-subtle px-2 py-0.5 text-xs font-semibold text-site-accent"
                 title={t('auto-market-hint', {
                   defaultValue: 'Settles automatically from RMH data — no admin or AI judge',
                 })}
@@ -112,7 +112,7 @@ export function PredictionCard({ market, coins, setCoins, onUpdated, signedIn }:
             )}
           </div>
           {market.description && (
-            <p className="mt-2 text-sm text-site-text-dim line-clamp-3">{market.description}</p>
+            <p className="mt-2 text-sm text-site-text-muted line-clamp-3">{market.description}</p>
           )}
           {market.subjectUrl && (
             <a
@@ -127,7 +127,7 @@ export function PredictionCard({ market, coins, setCoins, onUpdated, signedIn }:
         {/* Big probability */}
         <div className="text-right shrink-0">
           <div className="text-2xl font-bold text-site-success tabular-nums">{yes}%</div>
-          <div className="text-xs text-site-text-dim">
+          <div className="text-xs text-site-text-muted">
             {t('chance-yes', { defaultValue: 'chance' })}
           </div>
         </div>
@@ -148,7 +148,7 @@ export function PredictionCard({ market, coins, setCoins, onUpdated, signedIn }:
           )}
         </div>
       ) : !tradable ? (
-        <div className="text-sm text-site-text-dim">
+        <div className="text-sm text-site-text-muted">
           {t('trading-closed', { defaultValue: 'Trading closed — awaiting resolution.' })}
         </div>
       ) : (
@@ -202,7 +202,7 @@ export function PredictionCard({ market, coins, setCoins, onUpdated, signedIn }:
       )}
 
       {/* Footer: volume + your position */}
-      <div className="flex items-center justify-between text-xs text-site-text-dim">
+      <div className="flex items-center justify-between text-xs text-site-text-muted">
         <span className="flex items-center gap-2">
           <CoinIcon className="size-3" />
           {t('volume', { defaultValue: '{{n}} vol', n: market.volume })}

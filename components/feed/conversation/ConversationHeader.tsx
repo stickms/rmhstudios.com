@@ -62,7 +62,7 @@ export function ConversationHeader({
                   {otherUser.isBot && <AutomatedBadge />}
                 </p>
                 {otherUser.username && (
-                  <p className="text-xs text-site-text-dim">@{otherUser.username}</p>
+                  <p className="text-xs text-site-text-muted">@{otherUser.username}</p>
                 )}
                 <Suspense fallback={null}>
                   <DmLocalTime userId={otherUser.id} name={otherUser.name || 'Unknown'} />

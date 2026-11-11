@@ -174,7 +174,7 @@ export function GroupChatsColumn({
  </h2>
  <button
  onClick={() => setShowForm(false)}
- className="text-site-text-dim hover:text-site-text"
+ className="text-site-text-muted hover:text-site-text"
  aria-label={t('close', { defaultValue:'Close'})}
  >
  <X className="h-4 w-4"/>
@@ -240,7 +240,7 @@ export function GroupChatsColumn({
  <p className="truncate text-sm font-semibold text-site-text">{g.name}</p>
  {g.unread && <span className="h-2 w-2 shrink-0 rounded-full bg-site-accent"/>}
  </div>
- <p className="truncate text-xs text-site-text-dim">
+ <p className="truncate text-xs text-site-text-muted">
  {g.lastMessage ??
  t('member-count', { count: g.memberCount, defaultValue:'{{count}} members'})}
  </p>

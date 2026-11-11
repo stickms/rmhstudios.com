@@ -95,10 +95,10 @@
      surface there is near-black and would sink INTO the track instead of
      sitting on it. `light-dark()` keys on each theme's own `color-scheme`. The
      first declaration is the fallback for an engine without `light-dark()`. */
-  --tab-thumb-bg: var(--site-surface-opaque);
+  --tab-thumb-bg: var(--site-surface);
   --tab-thumb-bg: light-dark(
-    var(--site-surface-opaque),
-    color-mix(in srgb, var(--site-surface-opaque) 78%, var(--site-text))
+    var(--site-surface),
+    color-mix(in srgb, var(--site-surface) 78%, var(--site-text))
   );
   --tab-thumb-ink: var(--site-text);
   --tab-thumb-border: color-mix(in srgb, var(--site-border) 80%, transparent);
@@ -160,7 +160,7 @@
    Daylight (white on near-white would vanish) and on Midnight alike. It is a
    flush fill like every field, not a recessed well — see `.glass-inset`. */
 [data-slot='liquid-tabs-sheet'] {
-  background: color-mix(in srgb, var(--site-text) 7%, var(--site-glass-tint-strong));
+  background: color-mix(in srgb, var(--site-text) 7%, var(--site-surface));
   border-radius: var(--site-control-radius);
 }
 [data-slot='liquid-tabs-sheet'] > [data-slot='liquid-tabs'] {

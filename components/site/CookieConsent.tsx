@@ -133,7 +133,7 @@ export function CookieConsent() {
       // definition of the L4 tier. `.glass-chrome` is the sticky-header tier: a
       // 32% fill with no legibility floor, tuned for something you read THROUGH
       // on the way to the content behind it. `.glass-overlay` also supplies its
-      // own shadow, so the hand-added `shadow-site` goes with it.
+      // own shadow, so the hand-added `` goes with it.
       //
       // `.glass-opaque` on top of it: L4 elevation (rim, shadow, legibility), no
       // backdrop blur. This notice sits fixed over the feed on EVERY page for

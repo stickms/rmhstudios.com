@@ -179,7 +179,7 @@ export function AdSlot({ placement, className }: AdSlotProps) {
       aria-labelledby={labelId}
       className={cn('glass-fill overflow-hidden rounded-site p-4', className)}
     >
-      <p id={labelId} className="site-kicker mb-2 text-site-text-dim">
+      <p id={labelId} className="site-kicker mb-2 text-site-text-muted">
         {t('ad-label', { defaultValue: 'Advertisement' })}
       </p>
       <ins

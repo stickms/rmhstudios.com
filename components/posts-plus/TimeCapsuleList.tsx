@@ -115,7 +115,7 @@ export function TimeCapsuleList() {
             key={c.id}
             className="glass-fill flex items-start gap-3 rounded-site px-4 py-3 opacity-90"
           >
-            <PackageOpen className="mt-0.5 h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
+            <PackageOpen className="mt-0.5 h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="text-sm text-site-text line-clamp-2 whitespace-pre-wrap">{c.content}</p>
               <p className="mt-1 text-xs text-site-text-muted">

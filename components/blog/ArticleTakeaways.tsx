@@ -58,7 +58,7 @@ export function ArticleTakeaways({ slug }: { slug: string }) {
       </ul>
       {/* Said plainly, once. A summary a reader mistakes for the author's own
           words is a summary they can't calibrate. */}
-      <p className="mt-3 text-xs text-site-text-dim">
+      <p className="mt-3 text-xs text-site-text-muted">
         {t('takeaways-disclaimer', { defaultValue: 'Summarized by AI from this post.' })}
       </p>
     </aside>

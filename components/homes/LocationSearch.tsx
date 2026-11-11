@@ -83,7 +83,7 @@ export function LocationSearch({
   return (
     <div ref={boxRef} className="relative w-full">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-dim" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted" />
         <Input
           type="text"
           value={value}
@@ -101,7 +101,7 @@ export function LocationSearch({
           className="h-11 pl-9 pr-9"
         />
         {loading ? (
-          <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-site-text-dim" />
+          <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-site-text-muted" />
         ) : (
           value && (
             <button
@@ -112,7 +112,7 @@ export function LocationSearch({
                 setResults([]);
                 setOpen(false);
               }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-site-text-dim hover:text-site-text"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-site-text-muted hover:text-site-text"
             >
               <X className="h-4 w-4" />
             </button>
@@ -153,7 +153,7 @@ export function LocationSearch({
             data-jelly="off"
             className="flex w-full min-h-9 pointer-coarse:min-h-11 items-start gap-2.5 px-4 py-2 text-left text-sm text-site-text transition-colors duration-site"
           >
-            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
             <span className="line-clamp-2">{r.label}</span>
           </button>
         ))}

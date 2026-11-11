@@ -183,7 +183,7 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
         <h2 className="text-lg font-semibold text-site-text">
           {t('membership-tiers', { defaultValue: 'Membership tiers' })}
         </h2>
-        <p className="text-sm text-site-text-dim">
+        <p className="text-sm text-site-text-muted">
           {t('membership-tiers-desc', {
             defaultValue:
               'Offer up to three tiers. Supporters pay coins every 30 days to unlock the perks you choose.',
@@ -192,7 +192,7 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
       </div>
 
       {drafts.length === 0 && (
-        <div className="rounded-site glass-fill p-6 text-center text-sm text-site-text-dim">
+        <div className="rounded-site glass-fill p-6 text-center text-sm text-site-text-muted">
           {t('no-tiers-yet', {
             defaultValue: 'No tiers yet. Add your first tier to start earning from supporters.',
           })}
@@ -206,7 +206,7 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
           return (
             <div key={d.key} className="rounded-site glass-fill p-5 space-y-4">
               <div className="flex items-start justify-between gap-3">
-                <span className="text-xs font-medium text-site-text-dim">
+                <span className="text-xs font-medium text-site-text-muted">
                   {t('tier-n', { defaultValue: 'Tier {{n}}', n: i + 1 })}
                 </span>
                 <Button
@@ -273,7 +273,7 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
                         key={key}
                         aria-label={label}
                         className={`flex items-start gap-3 rounded-site px-3 py-2.5 cursor-pointer transition-colors ${
-                          checked ? 'bg-site-accent-dim' : ' hover:bg-site-surface-hover'
+                          checked ? 'bg-site-bg-subtle' : ' hover:bg-site-surface-hover'
                         }`}
                       >
                         <input
@@ -291,7 +291,7 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
                             <Icon className="size-4 shrink-0" aria-hidden />
                             {label}
                           </span>
-                          <span className="block text-xs text-site-text-dim">{description}</span>
+                          <span className="block text-xs text-site-text-muted">{description}</span>
                         </span>
                       </label>
                     );
@@ -307,7 +307,7 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
         <Button variant="secondary" onClick={addTier} disabled={drafts.length >= MAX_TIERS}>
           <Plus aria-hidden />
           {t('add-tier', { defaultValue: 'Add tier' })}
-          <span className="text-site-text-dim">
+          <span className="text-site-text-muted">
             {drafts.length}/{MAX_TIERS}
           </span>
         </Button>

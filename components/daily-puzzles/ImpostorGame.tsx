@@ -195,7 +195,7 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
         }
         if (foundFakes.includes(puzzle.statements[index].text)) return `${TONE_TINT.danger} opacity-70 cursor-not-allowed`;
         if (confirmedReal.has(index)) return 'border-site-border opacity-50 cursor-not-allowed';
-        if (selectedStatements.has(index)) return 'border-site-accent bg-site-accent-dim';
+        if (selectedStatements.has(index)) return 'border-site-accent bg-site-bg-subtle';
         return 'glass-interactive cursor-pointer border-transparent';
     };
 

@@ -238,7 +238,7 @@ export function RankedColumn({
  value={opponent}
  onChange={setOpponent}
  placeholder={t('handle-placeholder', { defaultValue:'@handle'})}
- className="glass-inset h-11 w-full rounded-[var(--site-control-radius)] px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus-visible:border-site-accent focus-visible:outline-none"
+ className="glass-inset h-11 w-full rounded-[var(--site-control-radius)] px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus-visible:border-site-accent focus-visible:outline-none"
  />
  </div>
  <Button
@@ -273,7 +273,7 @@ export function RankedColumn({
  c.user.handle ||
  t('player-fallback', { defaultValue:'Player'})}
  </p>
- <p className="text-xs text-site-text-dim">
+ <p className="text-xs text-site-text-muted">
  {nameOf(c.game)} · {c.status}
  </p>
  </div>
@@ -327,7 +327,7 @@ export function RankedColumn({
  c.user.handle ||
  t('player-fallback', { defaultValue:'Player'})}
  </p>
- <p className="text-xs text-site-text-dim">
+ <p className="text-xs text-site-text-muted">
  {nameOf(c.game)} · {c.status}
  </p>
  </div>
@@ -356,7 +356,7 @@ export function RankedColumn({
  </span>
  <TierBadge tier={r.tier} />
  </span>
- <span className="shrink-0 text-sm text-site-text-dim">
+ <span className="shrink-0 text-sm text-site-text-muted">
  <strong className="text-site-text">{fmt(r.rating)}</strong> · {r.wins}W{' '}
  {r.losses}L {r.draws}D
  </span>
@@ -400,7 +400,7 @@ export function RankedColumn({
  key={row.user.id}
  className={`flex items-center gap-3 rounded-site glass-fill px-3 py-3 ${LIFT_CARD}`}
  >
- <span className="w-5 text-center text-xs font-bold text-site-text-dim">
+ <span className="w-5 text-center text-xs font-bold text-site-text-muted">
  {row.rank}
  </span>
  <UserAvatar user={row.user} />
@@ -410,7 +410,7 @@ export function RankedColumn({
  row.user.handle ||
  t('player-fallback', { defaultValue:'Player'})}
  </p>
- <p className="flex items-center gap-2 text-xs text-site-text-dim">
+ <p className="flex items-center gap-2 text-xs text-site-text-muted">
  <TierBadge tier={row.tier} />
  {row.wins}W {row.losses}L {row.draws}D
  </p>
@@ -438,7 +438,7 @@ function ReportButtons({
  const { t } = useTranslation('feed');
  return (
  <div className="flex items-center gap-2">
- <span className="inline-flex items-center gap-2 text-xs text-site-text-dim">
+ <span className="inline-flex items-center gap-2 text-xs text-site-text-muted">
  <Flag className="h-3 w-3"aria-hidden /> {t('report-label', { defaultValue:'report:'})}
  </span>
  <Button

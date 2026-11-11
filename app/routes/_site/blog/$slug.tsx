@@ -149,7 +149,7 @@ function BlogPost() {
         </div>
 
         {image && (
-          <div className="overflow-hidden rounded-site border border-site-border shadow-site">
+          <div className="overflow-hidden rounded-site border border-site-border ">
             <BlurImage
               src={image}
               alt={post.title as string}
@@ -186,7 +186,7 @@ function BlogPost() {
             lib/ads/adsense.ts. */}
         <AdSlot placement="article-end" />
 
-        <p className="max-w-2xl text-center text-sm text-site-text-dim italic">
+        <p className="max-w-2xl text-center text-sm text-site-text-muted italic">
           {t('end-of-log', { defaultValue: 'End of Log' })}
         </p>
       </article>

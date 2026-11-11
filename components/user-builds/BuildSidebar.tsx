@@ -27,14 +27,14 @@ function BuildMiniCard({ build }: { build: Build }) {
             className="h-12 w-16 shrink-0 rounded-site-sm object-cover"
           />
         ) : (
-          <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-site-sm bg-site-accent-dim text-xs font-bold text-site-accent">
+          <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-site-sm bg-site-bg-subtle text-xs font-bold text-site-accent">
             {build.title[0]?.toUpperCase()}
           </div>
         )}
         <div className="min-w-0 flex-1">
           <h4 className="text-sm font-medium text-site-text truncate">{build.title}</h4>
           <p className="text-xs text-site-text-muted truncate">{build.user.name}</p>
-          <div className="flex items-center gap-2 mt-1 text-xs text-site-text-dim">
+          <div className="flex items-center gap-2 mt-1 text-xs text-site-text-muted">
             <span>
               {t('likes-count', { defaultValue: '{{count}} likes', count: build.likeCount })}
             </span>

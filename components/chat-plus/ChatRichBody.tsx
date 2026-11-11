@@ -82,7 +82,7 @@ function DiceCard({ meta, authorName }: { meta: DiceMeta; authorName: string }) 
         {meta.total}
       </p>
       {meta.count > 1 && (
-        <p className="mt-1 text-xs tabular-nums text-site-text-dim">{meta.rolls.join(' + ')}</p>
+        <p className="mt-1 text-xs tabular-nums text-site-text-muted">{meta.rolls.join(' + ')}</p>
       )}
     </div>
   );
@@ -162,7 +162,7 @@ function ChecklistCard({
           <ListChecks className="size-4 shrink-0 text-site-accent" aria-hidden />
           <span className="truncate">{meta.title}</span>
         </p>
-        <span className="shrink-0 text-xs tabular-nums text-site-text-dim">
+        <span className="shrink-0 text-xs tabular-nums text-site-text-muted">
           {t('checklist-progress', {
             done,
             total: items.length,
@@ -189,7 +189,7 @@ function ChecklistCard({
                     'flex size-5 shrink-0 items-center justify-center rounded-site-sm border',
                     checked
                       ? 'border-site-accent bg-site-accent text-site-accent-fg'
-                      : 'border-site-border-bright',
+                      : 'border-site-text',
                   )}
                 >
                   {checked && <Check className="size-3.5" />}
@@ -197,7 +197,7 @@ function ChecklistCard({
                 <span
                   className={cn(
                     'min-w-0 break-words',
-                    checked && 'text-site-text-dim line-through',
+                    checked && 'text-site-text-muted line-through',
                   )}
                 >
                   {item.text}
@@ -275,25 +275,25 @@ function DmPollCard({
                 'relative overflow-hidden rounded-site-sm border px-3 py-1.5 text-left text-sm focus-visible:ring-2 focus-visible:ring-site-accent',
                 chosen
                   ? 'border-site-accent'
-                  : 'border-site-border hover:border-site-border-bright',
+                  : 'border-site-border hover:border-site-text',
               )}
             >
               {voted && (
                 <span
                   aria-hidden
-                  className="absolute inset-y-0 left-0 bg-site-accent-dim"
+                  className="absolute inset-y-0 left-0 bg-site-bg-subtle"
                   style={{ width: `${pct}%` }}
                 />
               )}
               <span className="relative flex items-center justify-between gap-2">
                 <span className={cn('truncate', chosen && 'font-semibold')}>{o.text}</span>
-                {voted && <span className="shrink-0 text-xs text-site-text-dim">{pct}%</span>}
+                {voted && <span className="shrink-0 text-xs text-site-text-muted">{pct}%</span>}
               </span>
             </button>
           );
         })}
       </div>
-      <p className="mt-2 text-xs text-site-text-dim">
+      <p className="mt-2 text-xs text-site-text-muted">
         {t('poll-votes', { count: view.totalVotes, defaultValue: '{{count}} votes' })}
       </p>
     </div>

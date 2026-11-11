@@ -49,7 +49,7 @@ export function TrashRow({ item, busy, onRestore, onPurge }: TrashRowProps) {
     <li className="glass-fill rounded-site p-5">
       <div className="flex flex-col gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <Icon className="mt-0.5 size-4 shrink-0 text-site-text-dim" aria-hidden />
+          <Icon className="mt-0.5 size-4 shrink-0 text-site-text-muted" aria-hidden />
           <div className="min-w-0 flex-1">
             <p className="text-sm break-words text-site-text">
               {item.excerpt ||
@@ -59,14 +59,14 @@ export function TrashRow({ item, busy, onRestore, onPurge }: TrashRowProps) {
               <Badge size="sm" variant={item.daysRemaining > 3 ? 'default' : 'warning'}>
                 {daysLeft}
               </Badge>
-              <span className="text-xs text-site-text-dim">
+              <span className="text-xs text-site-text-muted">
                 {t('trash-deleted-on', {
                   date: new Date(item.deletedAt).toLocaleDateString(),
                   defaultValue: 'Deleted {{date}}',
                 })}
               </span>
               {item.kind === 'post' && (item.imageCount ?? 0) > 0 ? (
-                <span className="inline-flex items-center gap-1 text-xs text-site-text-dim">
+                <span className="inline-flex items-center gap-1 text-xs text-site-text-muted">
                   <ImageIcon className="size-3" aria-hidden />
                   {item.imageCount}
                 </span>

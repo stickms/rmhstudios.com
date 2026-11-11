@@ -154,7 +154,7 @@ export function NotificationSettings() {
                     <span className="block text-sm text-site-text">{categoryLabel(t, cat)}</span>
                     <span className="block text-xs text-site-text-muted">{summary}</span>
                   </span>
-                  <span className="text-site-text-dim">{expanded ? '−' : '+'}</span>
+                  <span className="text-site-text-muted">{expanded ? '−' : '+'}</span>
                 </button>
                 {expanded ? (
                   <div className="pb-3 ps-1">
@@ -165,7 +165,7 @@ export function NotificationSettings() {
                       </label>
                     ))}
                     {CATEGORY_DEFAULTS[cat].email ? null : (
-                      <p className="text-xs text-site-text-dim">
+                      <p className="text-xs text-site-text-muted">
                         {t('email-note', {
                           defaultValue: 'Email off by default for this category.',
                         })}
@@ -207,7 +207,7 @@ export function NotificationSettings() {
             />
           </label>
         </div>
-        <p className="text-xs text-site-text-dim">{prefs.tz}</p>
+        <p className="text-xs text-site-text-muted">{prefs.tz}</p>
       </SettingsSection>
 
       <TabBadgeToggle />

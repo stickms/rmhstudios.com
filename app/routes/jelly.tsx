@@ -185,7 +185,7 @@ function JellyLab() {
                   </span>
                 </div>
                 <Mono>.{role.cls}</Mono>
-                <p className="text-xs text-site-text-dim">{role.note}</p>
+                <p className="text-xs text-site-text-muted">{role.note}</p>
               </div>
             ))}
           </div>
@@ -295,7 +295,7 @@ function JellyLab() {
           <PrimitiveGallery />
         </Section>
 
-        <footer className="flex flex-wrap gap-x-2 border-t border-site-border pt-6 text-xs text-site-text-dim">
+        <footer className="flex flex-wrap gap-x-2 border-t border-site-border pt-6 text-xs text-site-text-muted">
           <span>
             {t('jelly-footer', {
               defaultValue: 'Internal design-lab reference. The contract is',

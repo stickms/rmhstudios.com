@@ -144,7 +144,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
                   onChange({ minPrice: e.target.value === '' ? undefined : Number(e.target.value) })
                 }
                               />
-              <span className="text-site-text-dim">–</span>
+              <span className="text-site-text-muted">–</span>
               <Input
                 type="number"
                 min={0}
@@ -209,7 +209,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
                     data-jelly
                     className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium transition-colors ${
                       active
-                        ? 'border-site-accent bg-site-accent-dim text-site-accent'
+                        ? 'border-site-accent bg-site-bg-subtle text-site-accent'
                         : 'border-site-border text-site-text-muted hover:text-site-text'
                     }`}
                   >

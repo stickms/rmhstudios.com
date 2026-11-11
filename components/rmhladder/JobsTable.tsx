@@ -41,7 +41,7 @@ function formatDate(value: unknown) {
 }
 
 function Deadline({ value }: { value: unknown }) {
-  if (!value) return <span className="text-site-text-dim">—</span>;
+  if (!value) return <span className="text-site-text-muted">—</span>;
   const date = new Date(value as Date | string);
   const daysLeft = (date.getTime() - Date.now()) / 86_400_000;
   return (
@@ -291,7 +291,7 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
                     <div className="flex flex-col items-start gap-1">
                       <VerificationBadge status={job.verification?.status} />
                       {job.applyUrl && (
-                        <span className="text-xs text-site-text-dim">
+                        <span className="text-xs text-site-text-muted">
                           {sourceDomain(job.applyUrl)}
                         </span>
                       )}

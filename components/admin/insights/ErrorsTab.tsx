@@ -52,7 +52,7 @@ export function ErrorsTab() {
             {g.resolved && (
               <Badge variant="success">{t('errors-resolved', { defaultValue: 'Resolved' })}</Badge>
             )}
-            <span className="font-mono text-xs text-site-text-dim">
+            <span className="font-mono text-xs text-site-text-muted">
               {t('errors-count', { defaultValue: '{{count}} events', count: g.count })}
             </span>
           </div>
@@ -60,7 +60,7 @@ export function ErrorsTab() {
           {g.topFrame && (
             <p className="break-all font-mono text-xs text-site-text-muted">{g.topFrame}</p>
           )}
-          <p className="text-xs text-site-text-dim">
+          <p className="text-xs text-site-text-muted">
             {t('errors-seen', {
               defaultValue:
                 'First seen {{first}} in {{firstRelease}} - last seen {{last}} in {{lastRelease}}',

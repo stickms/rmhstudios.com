@@ -43,7 +43,7 @@ import { DEFAULT_LOCALE, dirFor, type Locale } from '@/lib/i18n/config';
 import { loadNamespaces, type LocaleBundle } from '@/lib/i18n/resources';
 import { parseLocaleCookie, resolveLocale } from '@/lib/i18n/resolve';
 import { PREPAINT_BODY_SCRIPT, prepaintHeadScripts } from '@/lib/prepaint/config';
-import { ROOT_HAZE_PRELOAD, ROOT_LINKS, ROOT_META } from '@/lib/root-head';
+import { ROOT_LINKS, ROOT_META } from '@/lib/root-head';
 import { appRouteHead, gameRouteHead } from '@/lib/seo-catalog';
 import { jsonLdScript, organizationSchema, websiteSchema } from '@/lib/schema';
 import {
@@ -260,7 +260,7 @@ export async function renderIslandDocument(
 
   const rootHead: HeadInput = {
     meta: ROOT_META,
-    links: [...ROOT_LINKS, ROOT_HAZE_PRELOAD],
+    links: [...ROOT_LINKS],
     scripts: [...prepaintHeadScripts({}), jsonLdScript([organizationSchema(), websiteSchema()])],
   };
   const dev = import.meta.env.DEV;

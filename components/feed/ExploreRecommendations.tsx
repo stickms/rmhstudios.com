@@ -219,7 +219,7 @@ export function ExploreRecommendations({
  >
  <Hash className="h-3 w-3 text-site-accent"/>
  {tag.tag}
- <span className="text-xs text-site-text-dim">{tag.count}</span>
+ <span className="text-xs text-site-text-muted">{tag.count}</span>
  </Link>
  <WhyTrending tag={tag.tag} />
  </span>
@@ -273,7 +273,7 @@ export function ExploreRecommendations({
  to={`/u/${l.user.handle || l.user.id}`as string}
  className="flex items-center gap-3 rounded-site-sm px-2 py-1.5 hover:bg-site-surface-hover"
  >
- <span className="w-5 text-center text-sm font-bold text-site-text-dim">{i + 1}</span>
+ <span className="w-5 text-center text-sm font-bold text-site-text-muted">{i + 1}</span>
  <UserAvatar
  src={l.user.image}
  alt={l.user.name || t('user-alt', { defaultValue:'User'})}

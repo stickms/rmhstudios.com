@@ -98,12 +98,12 @@ function AlertsPage() {
                   </div>
                   <span className="font-semibold text-site-text">{title}{company ? ` — ${company}` : ''}</span>
                   {alertText && <span className="text-sm text-site-text-muted">{alertText}</span>}
-                  <span className="text-xs text-site-text-dim">{timeAgo(alert.createdAt as Date)}</span>
+                  <span className="text-xs text-site-text-muted">{timeAgo(alert.createdAt as Date)}</span>
                 </div>
               </>
             );
             return (
-              <li key={alert.id as string} className={alert.readAt ? '' : 'bg-site-accent-dim'}>
+              <li key={alert.id as string} className={alert.readAt ? '' : 'bg-site-bg-subtle'}>
                 {alert.jobId ? (
                   <Link
                     to="/rmhladder/jobs/$jobId"

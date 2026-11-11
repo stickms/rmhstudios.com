@@ -54,7 +54,7 @@ export default function VisitorCounterModule({ title, userId }: { title: string;
             {d}
           </span>
         ))}
-        <span className="ml-2 text-xs text-site-text-dim">
+        <span className="ml-2 text-xs text-site-text-muted">
           {t('counter-caption', { defaultValue: 'visitors' })}
         </span>
       </div>

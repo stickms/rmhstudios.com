@@ -107,7 +107,7 @@ export function WatchManager() {
             <div className="truncate font-medium text-site-text">{w.label}</div>
             <div className="truncate text-xs text-site-text-muted">{summarize(w)}</div>
             {w.locationLabel && (
-              <div className="mt-0.5 inline-flex items-center gap-1 text-xs text-site-text-dim">
+              <div className="mt-0.5 inline-flex items-center gap-1 text-xs text-site-text-muted">
                 <MapPin className="h-3 w-3" />
                 <span className="truncate">
                   {w.locationLabel.split(',')[0]}

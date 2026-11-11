@@ -150,7 +150,7 @@ function ManageContent() {
                     className="h-14 w-20 shrink-0 rounded-site-sm object-cover"
                   />
                 ) : (
-                  <div className="flex h-14 w-20 shrink-0 items-center justify-center rounded-site-sm bg-site-accent-dim text-lg font-bold text-site-accent">
+                  <div className="flex h-14 w-20 shrink-0 items-center justify-center rounded-site-sm bg-site-bg-subtle text-lg font-bold text-site-accent">
                     {build.title[0]?.toUpperCase()}
                   </div>
                 )}
@@ -161,7 +161,7 @@ function ManageContent() {
                     </h3>
                   </Link>
                   <p className="truncate text-sm text-site-text-muted">{build.description}</p>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-site-text-dim">
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-site-text-muted">
                     <Badge
                       size="sm"
                       variant={
