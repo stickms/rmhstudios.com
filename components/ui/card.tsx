@@ -18,37 +18,29 @@ const PAD_Y = ['p', 'py', 'pt', 'pb'] as const;
 const PAD_X = ['p', 'px', 'ps', 'pe', 'pl', 'pr'] as const;
 const GAP = ['gap', 'gap-y'] as const;
 
-/** Shared material surface. Repeated content uses tint/rim without blur;
- * `pane` promotes a singular panel to the bounded optical renderer. The document's
- * liquid runtime owns cursor lighting. Palette, fallbacks
- * and performance budgets are defined in docs/liquid-glass-system.md.
+/**
+ * Steel S1: content sits directly on `--site-bg`, so a Card renders NO background and NO border; it is only a flex
+ * column with the shared spacing. The API (`pane`, `interactive`, the parts) is kept so call sites compile; phases 4
+ * and 5 remove the call sites page by page, and `pane` and `interactive` change nothing in the meantime.
  */
 function Card({
   className,
-  pane = false,
-  interactive = false,
+  pane: _pane = false,
+  interactive: _interactive = false,
   ...props
 }: React.ComponentProps<'div'> & {
-  /** Use the L2 `.glass-pane` (optical bevel) instead of the default L1 fill. */
+  /** Kept for call-site compatibility. No effect under Steel (S1). */
   pane?: boolean;
-  /** Add hover tint-raise + press flex + the hover-raised rim glint. */
+  /** Kept for call-site compatibility. No effect under Steel (S1). */
   interactive?: boolean;
 }) {
   return (
     <div
       data-slot="card"
-      // `firm` rather than the default: a card is a large surface, and the 4%
-      // that reads as a crisp press on a button reads as a wobble on something
-      // the width of the column. `.glass-interactive:active` remains the
-      // reduced-motion fallback (both drive the same `scale` property, so the
-      // spring simply wins while it is running — see app/glass-roles.css).
-      data-fluid-press={interactive ? 'firm' : undefined}
       className={cn(
         'flex flex-col gap-5 py-5 text-site-text',
         !setsAxis(className, GAP) && 'sm:gap-6',
         !setsAxis(className, PAD_Y) && 'sm:py-6',
-        pane ? 'glass-pane' : 'glass-fill',
-        interactive && 'glass-interactive',
         className,
       )}
       {...props}

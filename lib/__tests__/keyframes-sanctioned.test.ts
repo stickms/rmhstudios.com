@@ -29,12 +29,8 @@ export const SANCTIONED: Record<string, string> = {
   'page-enter': 'route content enter (.page-root); suppressed on history POP by html.nav-pop',
   'content-item-enter': 'staggered enter of feed/list items (.content-item)',
   'motion-presence': 'no-op presence animation so Radix keeps a [data-motion] node until its exit transition ends',
-  shimmer: 'skeleton shimmer sweep (.skeleton / .shimmer)',
-  'liquid-skeleton-drift': 'liquid-skeleton placeholder drift',
   'u-reveal-in': 'scroll-driven reveal (animation-timeline: view()) for .u-reveal',
   'u-parallax-view': 'scroll-driven parallax (animation-timeline: view()) for .u-parallax',
-  'rad-loader-pulse': 'radial shell loader: core pulse',
-  'rad-loader-orbit': 'radial shell loader: orbit',
   'vinyl-spin': 'feed VinylRecord while playing (components/feed/VinylRecord.tsx)',
   'doctrine-shake': 'doctrine page: 0.15s error shake',
   // Game / arm effects whose classes live in the global sheet (owner is the game, not the site):

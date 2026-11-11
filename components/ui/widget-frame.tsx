@@ -12,11 +12,10 @@ import { AsyncReveal } from '@/components/motion';
  * the profile showcase modules (§12) and the home dashboard widgets (§15) in
  * `docs/plans/2026-07-20-parity-qol-customization-design.md`.
  *
- * It is a single L1 `.glass-fill` `Card` (cheap, unlimited per page — these
- * blocks repeat) with a consistent header, loading skeleton, and
+ * It is a `Card` (Steel S1: no background and no border, so the block is a header
+ * rule and its rows on the page) with a consistent header, loading skeleton, and
  * `EmptyState`-backed zero state, so every modular block across the site shares
- * one glass material, one empty state, and one skeleton instead of each feature
- * reinventing them.
+ * one empty state and one skeleton instead of each feature reinventing them.
  *
  * ```tsx
  * <WidgetFrame title="Achievements" icon={Trophy} action={<Button size="xs" />}>

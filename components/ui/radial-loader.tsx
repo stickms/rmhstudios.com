@@ -1,4 +1,3 @@
-
 interface RadialLoaderProps {
   /** Pixel size of the loader box (default 24). */
   size?: number;
@@ -10,36 +9,22 @@ interface RadialLoaderProps {
 }
 
 /**
- * The site's loading mark: the radial language in miniature.
+ * The site's one loading mark (Steel M6): a plain ring with one ink quarter turning. It is a response to a wait, shown
+ * only while something loads, and it stops being drawn when the wait ends. Colour is `currentColor`, so it inherits
+ * whatever context it lands in. `prefers-reduced-motion` holds the ring still (the ring itself still reads as busy).
  *
- * Blobs orbit a pulsing core the way the hub's wedges bloom around the RMH orb,
- * so a wait reads as the same material as the rest of the UI rather than a
- * generic spinner. Inside the radial shell the whole thing runs through the goo
- * filter (see `radial.css`), which fuses the orbiting blobs into the core with
- * stretched liquid necks; anywhere else — games, `/login`, legal pages, which are
- * outside the shell and so have no filter defs — it degrades to the same motion
- * with crisp blobs. Colour comes from `currentColor`, so it inherits whatever
- * context it lands in.
- *
- * Reduced motion is handled in CSS: the orbit and pulse stop and the mark holds
- * as a static ring, so the element still reads as "busy" without animation.
+ * The file keeps its name because `Spinner` and a dozen call sites import `RadialLoader`; there is no radial loader any
+ * more.
  */
 export function RadialLoader({ size = 24, className, label, decorative }: RadialLoaderProps) {
   return (
     <span
-      // A plain join, not cn(): `rad-loader` is not a Tailwind utility, so twMerge has nothing to
-      // resolve, and cn() would pull tailwind-merge (~8 KB brotli) into every island via
-      // GameLoadingFallback.
-      className={className ? `rad-loader ${className}` : 'rad-loader'}
+      // A plain join, not cn(): tailwind-merge would ride into every island via GameLoadingFallback.
+      className={`inline-block shrink-0 align-middle animate-spin motion-reduce:animate-none rounded-full border-2 border-current border-t-transparent opacity-80${className ? ` ${className}` : ''}`}
       style={{ width: size, height: size }}
       role={decorative ? undefined : 'status'}
       aria-label={decorative ? undefined : (label ?? 'Loading')}
       aria-hidden={decorative || undefined}
-    >
-      <span className="rad-loader__core" />
-      {[0, 1, 2].map((i) => (
-        <span key={i} className="rad-loader__blob" style={{ ['--i' as string]: i }} />
-      ))}
-    </span>
+    />
   );
 }
