@@ -10,9 +10,9 @@ import type { RequestStatus } from '@/lib/requests/status';
  * tint, which is what keeps the five states distinguishable in the
  * colour-vision modes and in high contrast.
  */
-const VARIANT: Record<RequestStatus, 'default' | 'accent' | 'warning' | 'success' | 'danger'> = {
+const VARIANT: Record<RequestStatus, 'default' | 'warning' | 'success' | 'danger'> = {
   OPEN: 'default',
-  PLANNED: 'accent',
+  PLANNED: 'default',
   IN_PROGRESS: 'warning',
   SHIPPED: 'success',
   DECLINED: 'danger',
@@ -32,7 +32,7 @@ export function useRequestStatusLabels(): Record<RequestStatus, string> {
 export function RequestStatusBadge({ status }: { status: RequestStatus }) {
   const labels = useRequestStatusLabels();
   return (
-    <Badge variant={VARIANT[status]} size="sm">
+    <Badge variant={VARIANT[status]}>
       {labels[status]}
     </Badge>
   );

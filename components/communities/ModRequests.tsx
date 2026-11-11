@@ -77,7 +77,7 @@ export function ModRequests({ slug }: { slug: string }) {
               <div className="ml-auto flex gap-2">
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="default"
                   disabled={busy === r.id}
                   onClick={() => decide(r, 'deny')}
                   aria-label={t('requests-deny-named', {
@@ -89,7 +89,7 @@ export function ModRequests({ slug }: { slug: string }) {
                 </Button>
                 <Button
                   size="sm"
-                  variant="accent"
+                  variant="default"
                   disabled={busy === r.id}
                   onClick={() => decide(r, 'approve')}
                   aria-label={t('requests-approve-named', {

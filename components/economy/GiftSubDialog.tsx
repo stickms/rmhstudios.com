@@ -111,7 +111,7 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
         </div>
 
         <DialogFooter>
-          <Button variant="accent" loading={submitting} onClick={submit} className="gap-1.5">
+          <Button variant="default" loading={submitting} onClick={submit} className="gap-1.5">
             {!submitting && <Gift className="h-4 w-4" />}
             {t('gift-for', { defaultValue: 'Gift for' })} <CoinIcon className="h-4 w-4" /> {cost.toLocaleString()}
           </Button>

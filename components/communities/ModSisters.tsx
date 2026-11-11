@@ -62,7 +62,7 @@ export function ModSisters({
         />
       ))}
       <div className="flex justify-end">
-        <Button type="submit" variant="accent" size="sm" loading={saving}>
+        <Button type="submit" variant="default" size="sm" loading={saving}>
           {t('sisters-save', { defaultValue: 'Save related communities' })}
         </Button>
       </div>

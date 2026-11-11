@@ -124,7 +124,7 @@ export function ApplicationPacket({
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <CopyButton
             value={packetAsText(fields)}
-            variant="outline"
+            variant="default"
             size="sm"
             className="min-h-11"
             toastOnCopy

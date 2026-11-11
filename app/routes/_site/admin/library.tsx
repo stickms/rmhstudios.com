@@ -80,7 +80,7 @@ function AdminLibraryPage() {
         tab === 'storage' ? (
           <Button
             size="sm"
-            variant="outline"
+            variant="default"
             onClick={() => setReloadToken((n) => n + 1)}
             loading={storageLoading}
           >

@@ -212,7 +212,7 @@ function StringRow({
             <span className="min-w-0 flex-1 text-site-text">{s.text}</span>
             <Button
               size="sm"
-              variant={s.voted ? 'accent' : 'ghost'}
+              variant={s.voted ? 'default' : 'ghost'}
               onClick={() => void onVote(s.id)}
             >
               <ThumbsUp className="size-4" aria-hidden />
@@ -236,7 +236,7 @@ function StringRow({
         />
         <Button
           type="submit"
-          variant="accent"
+          variant="default"
           disabled={!text.trim() || text.trim() === mine?.text}
         >
           {mine

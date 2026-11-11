@@ -92,7 +92,7 @@ export function ProfileColumn({
           {t('user-not-found-desc', { defaultValue: "This user doesn't exist." })}
         </p>
         <Link to="/">
-          <Button variant="accent" size="sm">
+          <Button variant="default" size="sm">
             {t('go-home', { defaultValue: 'Go Home' })}
           </Button>
         </Link>

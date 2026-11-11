@@ -56,7 +56,7 @@ export function TrashRow({ item, busy, onRestore, onPurge }: TrashRowProps) {
                 t('trash-no-text', { defaultValue: '(no text — media or poll only)' })}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <Badge size="sm" variant={item.daysRemaining > 3 ? 'default' : 'warning'}>
+              <Badge variant={item.daysRemaining > 3 ? 'default' : 'warning'}>
                 {daysLeft}
               </Badge>
               <span className="text-xs text-site-text-muted">
@@ -101,7 +101,7 @@ export function TrashRow({ item, busy, onRestore, onPurge }: TrashRowProps) {
             action is ever clipped or forced into a horizontal scroll. */}
         <div className="flex flex-col gap-2 xs:flex-row xs:justify-end">
           <Button
-            variant="secondary"
+            variant="default"
             onClick={() => onRestore(item)}
             disabled={busy || !item.restorable}
           >

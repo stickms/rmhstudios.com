@@ -200,7 +200,7 @@ function QuotesPage() {
         {/* Category filter chips */}
         <div className="mb-6 flex flex-wrap justify-center gap-2">
           {categories.map((cat) => (
-            <Badge key={cat} size="lg">
+            <Badge key={cat}>
               {cat}
             </Badge>
           ))}

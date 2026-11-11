@@ -275,7 +275,7 @@ function HomesBrowsePage() {
           <div className="flex items-center gap-2">
             <WatchButton filters={filters} center={center} />
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               className="min-h-11 lg:hidden"
               onClick={() => setMobileMap((v) => !v)}
@@ -349,7 +349,7 @@ function HomesBrowsePage() {
         {!loading && !mobileMap && total > filters.pageSize && (
           <div className="mt-4 flex items-center justify-center gap-3">
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               className="min-h-11"
               disabled={filters.page <= 1}
@@ -365,7 +365,7 @@ function HomesBrowsePage() {
               })}
             </span>
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               className="min-h-11"
               disabled={filters.page >= totalPages}

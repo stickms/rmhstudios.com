@@ -143,7 +143,7 @@ export function OfflineGame() {
       </p>
       <div className="flex items-center gap-2">
         <Button
-          variant="outline"
+          variant="default"
           size="icon"
           onClick={() => move(-1)}
           aria-label={t('game-left', { defaultValue: 'Move left' })}
@@ -157,7 +157,7 @@ export function OfflineGame() {
             : t('game-start', { defaultValue: 'Play' })}
         </Button>
         <Button
-          variant="outline"
+          variant="default"
           size="icon"
           onClick={() => move(1)}
           aria-label={t('game-right', { defaultValue: 'Move right' })}

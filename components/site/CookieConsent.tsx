@@ -166,7 +166,7 @@ export function CookieConsent() {
           </a>
         </p>
         <div className="flex shrink-0 gap-2">
-          <Button variant="outline" onClick={() => choose('essential')}>
+          <Button variant="default" onClick={() => choose('essential')}>
             {t('cookie-consent-essential', { defaultValue: 'Essential only' })}
           </Button>
           <Button onClick={() => choose('all')}>

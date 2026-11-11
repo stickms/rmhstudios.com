@@ -199,7 +199,7 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
             />
           </label>
           <Button
-            variant="accent"
+            variant="default"
             size="sm"
             disabled={busy || !title.trim() || (!link.trim() && !file)}
             onClick={() => void submit()}
@@ -255,7 +255,7 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
             {c.phase === 'voting' && !e.mine && !c.myVoteEntryId && (
               <Button
                 size="xs"
-                variant="secondary"
+                variant="default"
                 className="mt-2"
                 disabled={busy}
                 onClick={() => void vote(e.id)}

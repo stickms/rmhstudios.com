@@ -125,7 +125,7 @@ function AdminPredictionsPage() {
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2 sm:shrink-0">
-                      <Button size="sm" variant="secondary" loading={busy === m.id} onClick={() => moderate(m.id, 'approve')}>
+                      <Button size="sm" variant="default" loading={busy === m.id} onClick={() => moderate(m.id, 'approve')}>
                         <Check aria-hidden /> {t('approve', { defaultValue: 'Approve' })}
                       </Button>
                       <Button size="sm" variant="danger" loading={busy === m.id} onClick={() => moderate(m.id, 'deny')}>
@@ -158,7 +158,7 @@ function AdminPredictionsPage() {
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2 sm:shrink-0">
-                      <Button size="sm" variant="secondary" loading={busy === m.id} onClick={() => resolve(m.id, 'YES')}>
+                      <Button size="sm" variant="default" loading={busy === m.id} onClick={() => resolve(m.id, 'YES')}>
                         {t('resolve-yes', { defaultValue: 'Resolve YES' })}
                       </Button>
                       <Button size="sm" variant="danger" loading={busy === m.id} onClick={() => resolve(m.id, 'NO')}>

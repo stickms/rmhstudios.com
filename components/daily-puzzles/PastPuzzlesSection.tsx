@@ -58,7 +58,7 @@ export function PastPuzzlesSection({
             {/* Back to today button when viewing past puzzle */}
             {!isToday && (
                 <div className="text-center">
-                    <Button type="button" variant="outline" size="sm" onClick={() => onSelectDate(todayKey)}>
+                    <Button type="button" variant="default" size="sm" onClick={() => onSelectDate(todayKey)}>
                         <ArrowLeft aria-hidden />
                         {t("back-to-todays-puzzle", { defaultValue: "Back to today's puzzle" })}
                     </Button>
@@ -67,7 +67,7 @@ export function PastPuzzlesSection({
 
             <Button
                 type="button"
-                variant="secondary"
+                variant="default"
                 className="w-full"
                 onClick={() => setShowHistory((prev) => !prev)}
                 aria-expanded={showHistory}
@@ -110,7 +110,7 @@ export function PastPuzzlesSection({
                                                 </span>
                                             )
                                         ) : (
-                                            <Button type="button" variant="outline" size="sm" onClick={() => onSelectDate(p.dateKey)}>
+                                            <Button type="button" variant="default" size="sm" onClick={() => onSelectDate(p.dateKey)}>
                                                 <Play aria-hidden />
                                                 {t("play", { defaultValue: "Play" })}
                                             </Button>

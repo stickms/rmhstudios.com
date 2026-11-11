@@ -263,7 +263,7 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
                                         animate={{ opacity: 1, height: 'auto' }}
                                         transition={{ delay: 0.2 + i * 0.08 }}
                                     >
-                                        <Badge variant={solution.isFake ? 'danger' : 'success'} size="sm">
+                                        <Badge variant={solution.isFake ? 'danger' : 'success'}>
                                             {solution.isFake ? t("label-fake", { defaultValue: "FAKE" }) : t("label-true", { defaultValue: "TRUE" })}
                                         </Badge>
                                         <p className="text-xs leading-relaxed text-site-text-muted">{solution.explanation}</p>
@@ -288,7 +288,7 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
                     <div className="mt-3 flex justify-center">
                         <Button
                             type="button"
-                            variant="accent"
+                            variant="default"
                             size="lg"
                             onClick={handleLockIn}
                             disabled={selectedStatements.size !== remainingToFind}

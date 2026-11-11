@@ -143,14 +143,14 @@ function CreateCensus({ slug, onCreated }: { slug: string; onCreated: () => void
       <div className="flex items-center justify-between">
         <Button
           type="button"
-          variant="outline"
+          variant="default"
           size="sm"
           disabled={questions.length >= CENSUS_MAX_QUESTIONS}
           onClick={() => setQuestions((qs) => [...qs, { prompt: '', kind: 'single', options: '' }])}
         >
           <Plus /> {t('census-add-question', { defaultValue: 'Add question' })}
         </Button>
-        <Button type="submit" variant="accent" size="sm" loading={saving} disabled={!title.trim()}>
+        <Button type="submit" variant="default" size="sm" loading={saving} disabled={!title.trim()}>
           {t('census-create', { defaultValue: 'Open census' })}
         </Button>
       </div>
@@ -233,7 +233,7 @@ function AnswerForm({
         })}
       </p>
       <div className="flex justify-end">
-        <Button type="submit" variant="accent" loading={saving} disabled={!complete}>
+        <Button type="submit" variant="default" loading={saving} disabled={!complete}>
           {t('census-submit', { defaultValue: 'Submit answers' })}
         </Button>
       </div>
@@ -316,7 +316,7 @@ export default function CensusPanel({
             : ''}
         </p>
         {isMod && !census.closed && (
-          <Button className="mt-3" size="sm" variant="outline" onClick={close}>
+          <Button className="mt-3" size="sm" variant="default" onClick={close}>
             {t('census-close', { defaultValue: 'Close and publish results' })}
           </Button>
         )}
@@ -393,7 +393,7 @@ function CreateCensusToggle({ slug, onCreated }: { slug: string; onCreated: () =
   const [open, setOpen] = useState(false);
   if (open) return <CreateCensus slug={slug} onCreated={onCreated} />;
   return (
-    <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+    <Button size="sm" variant="default" onClick={() => setOpen(true)}>
       {t('census-new', { defaultValue: 'Open a new census' })}
     </Button>
   );

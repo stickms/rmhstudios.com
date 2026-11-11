@@ -62,11 +62,11 @@ type RideStatus = 'SCHEDULED' | 'REQUESTED' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMP
 const RIDE_STATUS_FILTERS: ('ALL' | RideStatus)[] = [
   'ALL', 'REQUESTED', 'SCHEDULED', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED',
 ];
-const RIDE_STATUS_VARIANT: Record<RideStatus, 'accent' | 'warning' | 'success' | 'default'> = {
-  SCHEDULED: 'accent',
+const RIDE_STATUS_VARIANT: Record<RideStatus, 'warning' | 'success' | 'default'> = {
+  SCHEDULED: 'default',
   REQUESTED: 'warning',
-  ACCEPTED: 'accent',
-  IN_PROGRESS: 'accent',
+  ACCEPTED: 'default',
+  IN_PROGRESS: 'default',
   COMPLETED: 'success',
   CANCELLED: 'default',
 };
@@ -313,7 +313,7 @@ function AdminRidesharePage() {
                             <X aria-hidden /> {t('confirm-reject', { defaultValue: 'Confirm reject' })}
                           </Button>
                           <Button
-                            variant="outline"
+                            variant="default"
                             size="sm"
                             onClick={() => { setRejecting(null); setReason(''); }}
                           >
@@ -328,7 +328,7 @@ function AdminRidesharePage() {
                         </Button>
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant="default"
                           onClick={() => setRejecting(app.id)}
                           disabled={busy === app.id}
                           className="text-site-danger hover:bg-site-danger/10"

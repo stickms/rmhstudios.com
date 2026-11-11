@@ -55,7 +55,7 @@ export function SaveSearchDialog({ filters }: { filters: ListJobsFilters }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button type="button" size="sm" variant="outline" className="min-h-11">
+        <Button type="button" size="sm" variant="default" className="min-h-11">
           <BookmarkPlus aria-hidden /> Save this search
         </Button>
       </DialogTrigger>
@@ -91,7 +91,7 @@ export function SaveSearchDialog({ filters }: { filters: ListJobsFilters }) {
           </label>
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+          <Button type="button" variant="default" onClick={() => setOpen(false)}>
             Cancel
           </Button>
           <Button

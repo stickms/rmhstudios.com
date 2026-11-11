@@ -179,7 +179,7 @@ export function TrashPanel() {
             defaultValue: 'Something went wrong on our side. Try again in a moment.',
           })}
           action={
-            <Button variant="secondary" onClick={() => void query.refetch()}>
+            <Button variant="default" onClick={() => void query.refetch()}>
               {t('trash-retry', { defaultValue: 'Try again' })}
             </Button>
           }
@@ -207,7 +207,7 @@ export function TrashPanel() {
           </ul>
           {query.hasNextPage ? (
             <Button
-              variant="secondary"
+              variant="default"
               className="self-center"
               loading={query.isFetchingNextPage}
               onClick={() => void query.fetchNextPage()}

@@ -46,7 +46,7 @@ export function PostLockedCard({
  </div>
  <p className="text-sm font-medium text-site-text">{t('post-locked', { defaultValue:'This post is locked'})}</p>
  <Button
- variant="accent"
+ variant="default"
  size="sm"
  disabled={loading}
  onClick={(e) => {

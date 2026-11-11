@@ -152,11 +152,11 @@ function JellyLab() {
               })}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-              <Badge variant="accent">
+              <Badge variant="default">
                 {t('jelly-badge-roles', { defaultValue: 'Five roles, one material' })}
               </Badge>
               <Badge variant="default">{t('jelly-badge-soft', { defaultValue: 'Soft body' })}</Badge>
-              <Badge variant="outline">
+              <Badge variant="default">
                 {t('jelly-badge-arcs', { defaultValue: 'Electric arcs' })}
               </Badge>
             </div>
@@ -257,7 +257,7 @@ function JellyLab() {
               </span>
               <div className="grid grid-cols-4 gap-3">
                 {Array.from({ length: 12 }, (_, i) => (
-                  <Button key={i} variant="secondary">
+                  <Button key={i} variant="default">
                     {i + 1}
                   </Button>
                 ))}
@@ -350,7 +350,7 @@ function ArcsSection() {
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <Button variant="accent" onClick={onStrike}>
+        <Button variant="default" onClick={onStrike}>
           {t('jelly-arcs-strike', { defaultValue: 'Strike an arc' })}
         </Button>
         <p role="status" className="text-sm text-site-text-muted">
@@ -452,11 +452,11 @@ function PrimitiveGallery() {
         <GroupHeading>{t('jelly-gallery-buttons', { defaultValue: 'Buttons' })}</GroupHeading>
         <div className="flex flex-wrap items-center gap-3">
           <Button>{t('jelly-button-primary', { defaultValue: 'Primary' })}</Button>
-          <Button variant="accent">{t('jelly-button-accent', { defaultValue: 'Accent' })}</Button>
-          <Button variant="secondary">
+          <Button variant="default">{t('jelly-button-accent', { defaultValue: 'Accent' })}</Button>
+          <Button variant="default">
             {t('jelly-button-secondary', { defaultValue: 'Secondary' })}
           </Button>
-          <Button variant="outline">
+          <Button variant="default">
             {t('jelly-button-outline', { defaultValue: 'Outline' })}
           </Button>
           <Button variant="ghost">{t('jelly-button-ghost', { defaultValue: 'Ghost' })}</Button>

@@ -245,7 +245,7 @@ function ReviewPage() {
                           key={r.value}
                           type="button"
                           size="sm"
-                          variant="outline"
+                          variant="default"
                           className="min-h-11"
                           onClick={() => void handleResolve(task, r.value)}
                         >

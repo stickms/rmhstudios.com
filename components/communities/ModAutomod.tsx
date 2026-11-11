@@ -305,7 +305,7 @@ export function ModAutomod({ slug }: { slug: string }) {
         <div className="flex justify-end">
           <Button
             type="submit"
-            variant="accent"
+            variant="default"
             size="sm"
             loading={saving}
             disabled={!name.trim() || !hasCondition || rules.length >= AUTOMOD_MAX_RULES}

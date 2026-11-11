@@ -126,7 +126,7 @@ export function AddToPlaylistDialog({
  aria-label={t('playlist-new-label', { defaultValue:'New playlist name'})}
  className="flex-1"
  />
- <Button variant="outline"size="sm"onClick={createAndAdd} loading={creating} disabled={!newName.trim()} className="gap-1">
+ <Button variant="default"size="sm"onClick={createAndAdd} loading={creating} disabled={!newName.trim()} className="gap-1">
  <Plus className="h-4 w-4"aria-hidden /> {t('playlist-create', { defaultValue:'Create'})}
  </Button>
  </div>

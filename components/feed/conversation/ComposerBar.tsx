@@ -247,7 +247,7 @@ export function ComposerBar({
 
           {!voiceActive && (
             <Button
-              variant="accent"
+              variant="default"
               size="sm"
               disabled={(!input.trim() && !gifUrl && imageUrls.length === 0) || sending}
               onClick={handleSend}

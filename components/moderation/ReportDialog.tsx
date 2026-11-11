@@ -134,7 +134,7 @@ export function ReportDialog({ open, onOpenChange, entityType, entityId }: Repor
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>
             {t("cancel", { defaultValue: "Cancel" })}
           </Button>
-          <Button variant="accent" onClick={submit} disabled={!reason || submitting}>
+          <Button variant="default" onClick={submit} disabled={!reason || submitting}>
             {submitting ? t("submitting", { defaultValue: "Submitting…" }) : t("submit-report", { defaultValue: "Submit report" })}
           </Button>
         </DialogFooter>

@@ -95,7 +95,7 @@ export function ConnectionsHome() {
           'Sort sixteen items into four hidden groups. Members make the grids; the best become the daily.',
       })}
       headerRight={
-        <Button asChild variant="accent" size="sm">
+        <Button asChild variant="default" size="sm">
           <Link to="/connections/new">
             <Plus aria-hidden />
             {t('make-grid', { defaultValue: 'Make a grid' })}
@@ -226,7 +226,7 @@ export function ConnectionsNew() {
           </p>
         ) : null}
         <Button
-          variant="accent"
+          variant="default"
           disabled={busy || title.trim().length < 3 || !filled || !unique}
           onClick={() => void submit()}
         >
@@ -433,10 +433,10 @@ export function ConnectionsPlay({ id }: { id: string }) {
               {msg ? ` · ${msg}` : ''}
             </p>
             <div className="flex justify-center gap-2">
-              <Button variant="outline" disabled={!picked.length} onClick={() => setPicked([])}>
+              <Button variant="default" disabled={!picked.length} onClick={() => setPicked([])}>
                 {t('deselect', { defaultValue: 'Deselect' })}
               </Button>
-              <Button variant="accent" disabled={picked.length !== 4} onClick={() => void guess()}>
+              <Button variant="default" disabled={picked.length !== 4} onClick={() => void guess()}>
                 {t('submit-guess', { defaultValue: 'Submit' })}
               </Button>
             </div>
@@ -473,14 +473,14 @@ export function ConnectionsPlay({ id }: { id: string }) {
                 <Button
                   key={n}
                   size="icon-sm"
-                  variant={(grid.myRating ?? 0) >= n ? 'accent' : 'outline'}
+                  variant={(grid.myRating ?? 0) >= n ? 'default' : 'default'}
                   onClick={() => void rate(n)}
                   aria-label={t('stars', { defaultValue: '{{n}} stars', n })}
                 >
                   <Star aria-hidden />
                 </Button>
               ))}
-              <Button size="sm" variant="outline" onClick={() => void share()}>
+              <Button size="sm" variant="default" onClick={() => void share()}>
                 <Share2 aria-hidden />
                 {t('share', { defaultValue: 'Share' })}
               </Button>
@@ -508,11 +508,11 @@ export function ConnectionsPlay({ id }: { id: string }) {
               onChange={(e) => setDate(e.target.value)}
               aria-label={t('daily-date', { defaultValue: 'Daily date (UTC)' })}
             />
-            <Button size="sm" variant="accent" disabled={!date} onClick={() => void schedule(date)}>
+            <Button size="sm" variant="default" disabled={!date} onClick={() => void schedule(date)}>
               {t('schedule-daily', { defaultValue: 'Schedule as daily' })}
             </Button>
             {grid.dailyDate ? (
-              <Button size="sm" variant="outline" onClick={() => void schedule(null)}>
+              <Button size="sm" variant="default" onClick={() => void schedule(null)}>
                 {t('clear-daily', { defaultValue: 'Clear daily' })}
               </Button>
             ) : null}

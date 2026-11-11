@@ -86,7 +86,7 @@ export function OnboardingSheet({
           <Button variant="ghost" onClick={onSkip} disabled={saving}>
             {t('onboarding-skip', { defaultValue: 'Skip for now' })}
           </Button>
-          <Button variant="accent" onClick={submit} loading={saving} disabled={!complete}>
+          <Button variant="default" onClick={submit} loading={saving} disabled={!complete}>
             {t('onboarding-done', { defaultValue: 'Done' })}
           </Button>
         </div>

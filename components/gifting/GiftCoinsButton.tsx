@@ -36,7 +36,7 @@ interface GiftCoinsButtonProps {
   compact?: boolean;
   /** Extra classes for the trigger button. */
   className?: string;
-  variant?: 'accent' | 'outline' | 'ghost' | 'secondary' | 'accent-outline';
+  variant?: 'default' | 'ghost' | 'primary';
   onSent?: (amount: number) => void;
 }
 
@@ -45,7 +45,7 @@ export function GiftCoinsButton({
   recipientName,
   compact,
   className,
-  variant = 'accent-outline',
+  variant = 'default',
   onSent,
 }: GiftCoinsButtonProps) {
   const { t } = useTranslation('site');
@@ -193,7 +193,7 @@ export function GiftCoinsButton({
               {t('cancel', { defaultValue: 'Cancel' })}
             </Button>
             <Button
-              variant="accent"
+              variant="default"
               onClick={submit}
               disabled={submitting || amount < MIN || amount > MAX}
             >

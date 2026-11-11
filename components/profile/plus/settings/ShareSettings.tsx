@@ -35,7 +35,7 @@ export default function ShareSettings({ handleOrId }: { handleOrId: string }) {
             onLoad={() => setLoaded(true)}
           />
         </div>
-        <Button asChild variant="accent" size="sm">
+        <Button asChild variant="default" size="sm">
           <a href={`${src}?download=1`} download>
             <Download aria-hidden />
             {t('card-download', { defaultValue: 'Download PNG' })}
@@ -53,7 +53,7 @@ export default function ShareSettings({ handleOrId }: { handleOrId: string }) {
               'Join a ring of members who share your thing, or start your own. Rings you join show a previous / next strip on your profile.',
           })}
         </p>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="default" size="sm">
           <Link to="/rings">
             <Link2 aria-hidden />
             {t('rings-open', { defaultValue: 'Browse webrings' })}

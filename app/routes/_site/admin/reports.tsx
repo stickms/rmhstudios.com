@@ -162,7 +162,7 @@ function AdminReportsPage() {
                 <li key={r.id} className="glass-fill space-y-3 rounded-site p-5">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="danger">{r.reason.replace('_', ' ')}</Badge>
-                    <Badge variant="outline">{r.entityType}</Badge>
+                    <Badge variant="default">{r.entityType}</Badge>
                     <span className="text-xs text-site-text-muted">
                       {formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })}
                     </span>
@@ -207,15 +207,15 @@ function AdminReportsPage() {
                   {(status === 'PENDING' || status === 'REVIEWING') && (
                     <div className="flex flex-wrap gap-2">
                       {status === 'PENDING' && (
-                        <Button size="sm" variant="secondary" disabled={busyId === r.id} onClick={() => act(r.id, 'review')}>
+                        <Button size="sm" variant="default" disabled={busyId === r.id} onClick={() => act(r.id, 'review')}>
                           {t('mark-reviewing', { defaultValue: 'Mark reviewing' })}
                         </Button>
                       )}
-                      <Button size="sm" variant="accent" disabled={busyId === r.id} onClick={() => act(r.id, 'resolve')}>
+                      <Button size="sm" variant="default" disabled={busyId === r.id} onClick={() => act(r.id, 'resolve')}>
                         {t('resolve', { defaultValue: 'Resolve' })}
                       </Button>
                       {(r.entityType === 'rmhark' || r.entityType === 'comment' || r.entityType === 'stamp' || r.entityType === 'webring' || r.entityType === 'ladder-interview') && (
-                        <Button size="sm" variant="destructive" disabled={busyId === r.id} onClick={() => act(r.id, 'resolve', true)}>
+                        <Button size="sm" variant="danger" disabled={busyId === r.id} onClick={() => act(r.id, 'resolve', true)}>
                           {t('resolve-and-remove-content', { defaultValue: 'Resolve & remove content' })}
                         </Button>
                       )}

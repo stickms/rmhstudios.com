@@ -248,7 +248,7 @@ function ChartRow({
             {t('admin-rank-promote', { defaultValue: 'Promote' })}
           </Button>
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             disabled={busy || row.rankStatus === 'unranked'}
             onClick={() => onAct('demote')}
@@ -373,7 +373,7 @@ function Gate({
 
 function StateBadge({ state }: { state: string }) {
   const { t } = useTranslation('r-slice-it');
-  const variant = state === 'ranked' ? 'success' : state === 'qualified' ? 'accent' : 'default';
+  const variant = state === 'ranked' ? 'success' : state === 'qualified' ? 'solid' : 'default';
   const label =
     state === 'ranked'
       ? t('admin-rank-state-ranked', { defaultValue: 'Ranked' })

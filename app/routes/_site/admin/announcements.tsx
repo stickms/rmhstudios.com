@@ -340,7 +340,7 @@ function AdminAnnouncementsPage() {
                 <Button
                   type="button"
                   size="xs"
-                  variant="accent-ghost"
+                  variant="ghost"
                   onClick={() => setPoll((p) => ({ ...p, options: [...p.options, ''] }))}
                 >
                   {t('add-option', { defaultValue: '+ Add option' })}
@@ -471,7 +471,7 @@ function AdminAnnouncementsPage() {
             <Button
               type="button"
               size="sm"
-              variant="outline"
+              variant="default"
               onClick={() => imageInputRef.current?.click()}
               disabled={imageUrls.length >= MAX_ANNOUNCEMENT_IMAGES}
               title={
@@ -488,7 +488,7 @@ function AdminAnnouncementsPage() {
             <Button
               type="button"
               size="sm"
-              variant={attachment === 'gif' ? 'accent' : 'outline'}
+              variant={attachment === 'gif' ? 'default' : 'default'}
               aria-pressed={attachment === 'gif'}
               onClick={() => {
                 setAttachment('gif');
@@ -500,7 +500,7 @@ function AdminAnnouncementsPage() {
             <Button
               type="button"
               size="sm"
-              variant={attachment === 'poll' ? 'accent' : 'outline'}
+              variant={attachment === 'poll' ? 'default' : 'default'}
               aria-pressed={attachment === 'poll'}
               onClick={() => {
                 setAttachment('poll');
@@ -521,7 +521,7 @@ function AdminAnnouncementsPage() {
 
           <div className="flex justify-end">
             <Button
-              variant="accent"
+              variant="default"
               onClick={create}
               loading={submitting}
               disabled={!title.trim() || !body.trim() || uploadingCount > 0}
@@ -549,21 +549,21 @@ function AdminAnnouncementsPage() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1 basis-48 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge size="sm" variant="default" className="capitalize">
+                      <Badge variant="default" className="capitalize">
                         {variantLabel[a.variant as (typeof VARIANTS)[number]] ?? a.variant}
                       </Badge>
                       {!a.active && (
-                        <Badge size="sm" variant="danger">
+                        <Badge variant="danger">
                           {t('status-inactive', { defaultValue: 'Inactive' })}
                         </Badge>
                       )}
                       {a.poll && (
-                        <Badge size="sm" variant="accent">
+                        <Badge variant="default">
                           {t('poll-button', { defaultValue: 'Poll' })}
                         </Badge>
                       )}
                       {(a.imageUrls?.length ?? 0) > 0 && (
-                        <Badge size="sm" variant="accent">
+                        <Badge variant="default">
                           {t('badge-images', {
                             count: a.imageUrls!.length,
                             defaultValue: '{{count}} img',
@@ -571,7 +571,7 @@ function AdminAnnouncementsPage() {
                         </Badge>
                       )}
                       {a.gifUrl && (
-                        <Badge size="sm" variant="accent">
+                        <Badge variant="default">
                           {t('gif-button', { defaultValue: 'GIF' })}
                         </Badge>
                       )}
@@ -580,7 +580,7 @@ function AdminAnnouncementsPage() {
                     <p className="line-clamp-2 text-sm text-site-text-muted">{a.body}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <Button size="sm" variant="secondary" onClick={() => toggleActive(a)}>
+                    <Button size="sm" variant="default" onClick={() => toggleActive(a)}>
                       {a.active
                         ? t('deactivate', { defaultValue: 'Deactivate' })
                         : t('activate', { defaultValue: 'Activate' })}

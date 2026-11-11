@@ -198,7 +198,7 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
                     <li key={s.startsAt}>
                       <Button
                         size="sm"
-                        variant={s.mine ? 'accent' : 'outline'}
+                        variant={s.mine ? 'default' : 'default'}
                         disabled={s.mine}
                         onClick={() => (signedIn ? setPicked(s) : undefined)}
                         aria-label={`${day} ${timeFmt.format(new Date(s.startsAt))}`}
@@ -246,10 +246,10 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
             />
           </label>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPicked(null)}>
+            <Button variant="default" onClick={() => setPicked(null)}>
               <X /> {t('cancel', { defaultValue: 'Cancel' })}
             </Button>
-            <Button variant="accent" onClick={book} disabled={busy}>
+            <Button variant="default" onClick={book} disabled={busy}>
               {t('oh-confirm', { defaultValue: 'Book it' })}
             </Button>
           </DialogFooter>

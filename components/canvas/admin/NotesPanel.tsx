@@ -71,7 +71,7 @@ export default function NotesPanel() {
                 </span>
                 <Button
                   size="sm"
-                  variant={n.hidden ? 'secondary' : 'danger'}
+                  variant={n.hidden ? 'default' : 'danger'}
                   onClick={() => void setHidden(n, !n.hidden)}
                 >
                   {n.hidden

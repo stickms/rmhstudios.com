@@ -58,7 +58,7 @@ export function AvatarField({
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"
-            variant="secondary"
+            variant="default"
             size="sm"
             onClick={() => inputRef.current?.click()}
           >

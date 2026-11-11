@@ -36,7 +36,7 @@ export function NotFound() {
  </div>
 
  <div className="flex w-full max-w-xs flex-col gap-3 sm:max-w-xl sm:flex-row sm:justify-center">
- <Button asChild variant="accent" size="lg">
+ <Button asChild variant="default" size="lg">
  <Link to="/">
  <Home aria-hidden="true"/>
  {t('notFound.home', { defaultValue:'Go home'})}
@@ -45,7 +45,7 @@ export function NotFound() {
  {/* One link, because Explore and Search are one page now: this used to
  offer both, side by side, which was the clearest symptom of the split
  — two buttons, two icons, same destination's worth of content. */}
- <Button asChild variant="outline" size="lg">
+ <Button asChild variant="default" size="lg">
  <Link to="/explore" search={{ q:'', tab:'top'}}>
  <Compass aria-hidden="true"/>
  {t('notFound.explore-search', { defaultValue:'Explore & search'})}

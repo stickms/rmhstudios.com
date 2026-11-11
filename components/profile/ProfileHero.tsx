@@ -235,11 +235,11 @@ export function ProfileHero({
               <CopyButton
                 value={shareUrl}
                 icon={LinkIcon}
-                variant="secondary"
+                variant="default"
                 size="icon"
                 label={t('copy-profile-link', { defaultValue: 'Copy profile link' })}
               />
-              <Button asChild variant="secondary" size="icon">
+              <Button asChild variant="default" size="icon">
                 <Link
                   to={`/store/${profile.handle || profile.id}` as string}
                   aria-label={t('storefront', { defaultValue: 'Storefront' })}
@@ -293,11 +293,11 @@ export function ProfileHero({
             <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
               {profile.isOwnProfile ? (
                 <>
-                  <Button variant="accent" onClick={onEdit} className="min-w-0 flex-1 sm:flex-none">
+                  <Button variant="default" onClick={onEdit} className="min-w-0 flex-1 sm:flex-none">
                     <Pencil aria-hidden />
                     {t('edit-profile', { defaultValue: 'Edit profile' })}
                   </Button>
-                  <Button asChild variant="outline" size="icon">
+                  <Button asChild variant="default" size="icon">
                     <Link
                       to="/analytics"
                       aria-label={t('creator-analytics', { defaultValue: 'Creator analytics' })}
@@ -306,7 +306,7 @@ export function ProfileHero({
                       <BarChart3 aria-hidden />
                     </Link>
                   </Button>
-                  <Button asChild variant="outline" size="icon">
+                  <Button asChild variant="default" size="icon">
                     <Link
                       to="/settings/profile"
                       aria-label={t('profile-cosmetics-title', {
@@ -323,7 +323,7 @@ export function ProfileHero({
               ) : signedIn ? (
                 <>
                   <Button
-                    variant={profile.isFollowing ? 'outline' : 'accent'}
+                    variant={profile.isFollowing ? 'default' : 'default'}
                     onClick={onFollow}
                     aria-pressed={profile.isFollowing}
                     className="min-w-28 flex-1 sm:flex-none"
@@ -333,7 +333,7 @@ export function ProfileHero({
                       : t('follow', { defaultValue: 'Follow' })}
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="default"
                     onClick={onMessage}
                     loading={messageSending}
                     aria-label={t('message', { defaultValue: 'Message' })}
@@ -364,7 +364,7 @@ export function ProfileHero({
                   />
                   <OfficeHoursProfileButton userId={profile.id} />
                   <Button
-                    variant="outline"
+                    variant="default"
                     size="icon"
                     onClick={onTip}
                     aria-label={t('send-a-tip', { defaultValue: 'Send a tip' })}
@@ -373,7 +373,7 @@ export function ProfileHero({
                     <Coins className="text-site-warning" aria-hidden />
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="default"
                     size="icon"
                     onClick={onGift}
                     aria-label={t('gift-a-membership', { defaultValue: 'Gift a membership' })}
@@ -383,7 +383,7 @@ export function ProfileHero({
                   </Button>
                 </>
               ) : (
-                <Button asChild variant="accent" className="w-full sm:w-auto">
+                <Button asChild variant="default" className="w-full sm:w-auto">
                   <Link to="/login" search={{ callbackURL: `/u/${profile.handle || profile.id}` }}>
                     {t('sign-in-to-follow', { defaultValue: 'Sign in to follow' })}
                   </Link>
@@ -579,7 +579,7 @@ export function ProfileHero({
                       </p>
                       <Button
                         size="sm"
-                        variant="accent"
+                        variant="default"
                         className="mt-3"
                         loading={membershipBusy}
                         disabled={!signedIn}

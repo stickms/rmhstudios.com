@@ -144,7 +144,7 @@ export default function MixtapeEditor({
             defaultValue: 'You need at least one track to be drawn. Edits close at the draw.',
           })}
         </p>
-        <Button variant="accent" size="sm" loading={saving} onClick={save}>
+        <Button variant="default" size="sm" loading={saving} onClick={save}>
           {t('mixtape-save', { defaultValue: 'Save mixtape' })}
         </Button>
       </div>

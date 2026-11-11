@@ -157,7 +157,7 @@ export function ContractDock() {
     <>
       <Button
         data-floating="feature-overlay"
-        variant="secondary"
+        variant="default"
         size="sm"
         className="glass-overlay fixed end-[calc(0.75rem+var(--safe-right))] bottom-24 z-30"
         onClick={() => setOpen(true)}
@@ -223,7 +223,7 @@ export function ContractDock() {
                       })}
                     </p>
                   </div>
-                  <Button size="sm" variant="accent" onClick={() => take(c)}>
+                  <Button size="sm" variant="default" onClick={() => take(c)}>
                     {t('contract-take', { defaultValue: 'Take it' })}
                   </Button>
                 </li>

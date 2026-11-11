@@ -72,7 +72,7 @@ export function SupportTierPicker({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button variant="accent">
+          <Button variant="default">
             <Heart aria-hidden />
             {t('support', { defaultValue: 'Support' })}
           </Button>

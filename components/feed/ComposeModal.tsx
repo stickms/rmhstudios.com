@@ -315,7 +315,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  )}
  </div>
 
- <Button variant="accent"size="sm"disabled={!canSubmit} onClick={handleSubmit}>
+ <Button variant="default"size="sm"disabled={!canSubmit} onClick={handleSubmit}>
  {submitting
  ? t('posting', { defaultValue:'Posting…'})
  : t('post', { defaultValue:'Post'})}
@@ -634,7 +634,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  <span className="text-xs font-mono text-site-text-muted">
  {MAX_IMAGE_ALT_LENGTH - (imageAlts[altEditIndex]?.length ?? 0)}
  </span>
- <Button variant="accent"size="sm"onClick={() => setAltEditIndex(null)}>
+ <Button variant="default"size="sm"onClick={() => setAltEditIndex(null)}>
  {t('done', { defaultValue:'Done'})}
  </Button>
  </div>

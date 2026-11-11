@@ -96,7 +96,7 @@ function RideshareLanding() {
           animate={{ opacity: 1, y: 0 }}
           className="glass-pane flex flex-col items-start gap-4 rounded-site p-5 md:p-8"
         >
-          <Badge variant="accent" size="lg" icon={<Sparkles aria-hidden />}>
+          <Badge variant="default" icon={<Sparkles aria-hidden />}>
             {t('community-rideshare', { defaultValue: 'Community rideshare' })}
           </Badge>
           <h2 className="font-display text-3xl font-bold tracking-tight text-site-text md:text-4xl">
@@ -114,7 +114,7 @@ function RideshareLanding() {
                 <MapPin aria-hidden /> {t('request-a-ride', { defaultValue: 'Request a ride' })}
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline">
+            <Button asChild size="lg" variant="default">
               <Link to="/rideshare/drive">
                 <Car aria-hidden /> {t('become-a-driver', { defaultValue: 'Become a driver' })}
               </Link>

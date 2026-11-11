@@ -149,16 +149,16 @@ function AdminUserBuildsPage() {
                     <div className="flex items-center gap-2">
                       <IconButton
                         icon={Award}
-                        variant="outline"
+                        variant="default"
                         className={build.featured ? 'border-site-warning/40 text-site-warning' : undefined}
                         aria-pressed={build.featured}
                         onClick={() => handleToggleCurated(build.id)}
                         label={build.featured ? t("remove-curated-badge", { defaultValue: "Remove Curated badge" }) : t("add-curated-badge", { defaultValue: "Add Curated badge" })}
                       />
-                      <IconButton asChild variant="outline" label={t("view-build", { defaultValue: "View Build" })}>
+                      <IconButton asChild variant="default" label={t("view-build", { defaultValue: "View Build" })}>
                         <Link to={`/user-builds/${build.slug}` as string}><ExternalLink aria-hidden /></Link>
                       </IconButton>
-                      <IconButton asChild variant="outline" label={t("edit-build-as-admin", { defaultValue: "Edit Build as Admin" })}>
+                      <IconButton asChild variant="default" label={t("edit-build-as-admin", { defaultValue: "Edit Build as Admin" })}>
                         <Link to="/user-builds/submit" search={{ edit: build.id }}><Edit aria-hidden /></Link>
                       </IconButton>
                     </div>

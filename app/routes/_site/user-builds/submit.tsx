@@ -100,7 +100,7 @@ function SubmitBuildContent() {
           description={fetchError}
           action={
             <Link to="/user-builds/manage">
-              <Button variant="secondary">
+              <Button variant="default">
                 {t('back-to-my-builds', { defaultValue: 'Back to My Builds' })}
               </Button>
             </Link>

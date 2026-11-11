@@ -260,7 +260,7 @@ export function UserBuildsTab({ seed }: { seed: number }) {
           })}
           aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
         />
-        <Button asChild variant="outline">
+        <Button asChild variant="default">
           <Link to="/user-builds/submit">
             <Plus aria-hidden />
             {t('submit', { defaultValue: 'Submit' })}

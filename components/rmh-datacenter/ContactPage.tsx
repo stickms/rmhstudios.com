@@ -224,7 +224,7 @@ export default function ContactPage({ initialIntent }: { initialIntent?: string 
               </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-4">
-              <Button type="submit" variant="accent">
+              <Button type="submit" variant="default">
                 {t('con-submit', { defaultValue: 'Compose request' })}
               </Button>
               <p className="text-sm text-site-text-muted">

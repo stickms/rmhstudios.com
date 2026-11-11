@@ -93,7 +93,7 @@ export function SaveNoteEditor({
         }}
       />
       <div className="flex items-center gap-2">
-        <Button size="sm" variant="accent" loading={busy} onClick={() => void save()}>
+        <Button size="sm" variant="default" loading={busy} onClick={() => void save()}>
           <Check aria-hidden />
           {t('note-save', { defaultValue: 'Save note' })}
         </Button>

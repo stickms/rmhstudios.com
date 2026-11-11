@@ -104,13 +104,13 @@ export default function HomePage() {
                 })}
               </p>
               <div className="mt-4 flex flex-wrap gap-3">
-                <Button asChild variant="accent">
+                <Button asChild variant="default">
                   <Link to="/rmh-datacenter/platform">
                     {t('see-the-platform', { defaultValue: 'See the platform' })}
                     <ArrowRight className="size-4" aria-hidden />
                   </Link>
                 </Button>
-                <Button asChild variant="outline">
+                <Button asChild variant="default">
                   <Link to="/rmh-datacenter/contact">
                     {t('request-capacity', { defaultValue: 'Request capacity' })}
                   </Link>
@@ -257,7 +257,7 @@ export default function HomePage() {
             ))}
           </div>
           <div className="mt-4">
-            <Button asChild variant="accent-outline">
+            <Button asChild variant="default">
               <Link to="/rmh-datacenter/facilities">
                 {t('all-six-campuses', { defaultValue: 'All six campuses' })}
                 <ArrowRight className="size-4" aria-hidden />
@@ -278,7 +278,7 @@ export default function HomePage() {
             })}
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
-            <Button asChild variant="accent">
+            <Button asChild variant="default">
               <Link to="/rmh-datacenter/contact">
                 {t('request-capacity', { defaultValue: 'Request capacity' })}
                 <ArrowRight className="size-4" aria-hidden />

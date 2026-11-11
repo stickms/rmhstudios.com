@@ -45,7 +45,7 @@ export function RoutesTab({ routes }: { routes: RouteRow[] }) {
           <span className="font-mono text-xs text-site-text-muted">{r.method}</span>
           <span className="font-mono text-xs break-all">{r.route}</span>
           {costly.has(`${r.method} ${r.route}`) && (
-            <Badge variant="warning" size="sm">
+            <Badge variant="warning">
               {t('badge-costly', { defaultValue: 'top cost' })}
             </Badge>
           )}

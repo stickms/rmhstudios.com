@@ -502,7 +502,7 @@ export function EversionLab() {
           {projectionSetting === 'random' && (
             <Button
               size="icon-sm"
-              variant="outline"
+              variant="default"
               aria-label="Re-roll random projection"
               onClick={() => setProjection(resolveProjection('random'))}
             >
@@ -548,7 +548,7 @@ export function EversionLab() {
             <Button
               key={b.label}
               size="xs"
-              variant="outline"
+              variant="default"
               disabled={status.running}
               onClick={() => setT(Math.round(b.t))}
             >
@@ -561,13 +561,13 @@ export function EversionLab() {
           <Button size="sm" onClick={() => void play()} disabled={!ready || status.running}>
             <Play aria-hidden /> Play
           </Button>
-          <Button size="sm" variant="outline" onClick={fastForward} disabled={!status.running}>
+          <Button size="sm" variant="default" onClick={fastForward} disabled={!status.running}>
             <FastForward aria-hidden /> Fast-forward
           </Button>
-          <Button size="sm" variant="outline" onClick={afterFailed} disabled={!status.running}>
+          <Button size="sm" variant="default" onClick={afterFailed} disabled={!status.running}>
             <Pause aria-hidden /> AFTER failed
           </Button>
-          <Button size="sm" variant="outline" onClick={abort} disabled={!status.running}>
+          <Button size="sm" variant="default" onClick={abort} disabled={!status.running}>
             <Square aria-hidden /> Abort
           </Button>
         </div>

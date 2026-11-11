@@ -213,7 +213,7 @@ export function DeckStudyColumn({
  title={t('deck-not-found', { defaultValue:'Deck not found'})}
  action={
  <Link to="/study">
- <Button variant="outline">{t('back-to-decks', { defaultValue:'Back to decks'})}</Button>
+ <Button variant="default">{t('back-to-decks', { defaultValue:'Back to decks'})}</Button>
  </Link>
  }
  />
@@ -252,7 +252,7 @@ export function DeckStudyColumn({
  {GRADES.map((g) => (
  <Button
  key={g.grade}
- variant="outline"
+ variant="default"
  disabled={reviewBusy}
  onClick={() => grade(g.grade)}
  className={`flex-col ${g.cls}`}
@@ -262,7 +262,7 @@ export function DeckStudyColumn({
  ))}
  </div>
  ) : (
- <Button variant="accent"className="mt-4 w-full"onClick={() => setRevealed(true)}>
+ <Button variant="default"className="mt-4 w-full"onClick={() => setRevealed(true)}>
  {t('show-answer', { defaultValue:'Show answer'})}
  </Button>
  )}
@@ -299,7 +299,7 @@ export function DeckStudyColumn({
  {signedIn && (
  <Reveal>
  <Button
- variant="accent"
+ variant="default"
  className="w-full gap-2"
  disabled={cards.length === 0}
  loading={startingReview}
@@ -342,7 +342,7 @@ export function DeckStudyColumn({
  <div className="flex justify-end">
  <Button
  size="sm"
- variant="accent"
+ variant="default"
  disabled={adding || !front.trim() || !back.trim()}
  onClick={addCard}
  className="gap-1"

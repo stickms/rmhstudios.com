@@ -102,7 +102,7 @@ export function EventRecurrenceInfo({
             {t('rec-every-time', { defaultValue: 'RSVP every time' })}
           </label>
           {everyTime && status && (
-            <Button size="xs" variant="outline" disabled={busy} onClick={() => void sitOut()}>
+            <Button size="xs" variant="default" disabled={busy} onClick={() => void sitOut()}>
               {t('rec-not-this-time', { defaultValue: 'Not this time' })}
             </Button>
           )}

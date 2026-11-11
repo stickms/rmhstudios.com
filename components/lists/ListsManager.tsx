@@ -48,12 +48,12 @@ export function ListsManager({ initial }: { initial: ListView[] }) {
               aria-label={t('name-placeholder', { defaultValue: 'List name' })}
               autoFocus
             />
-            <Button variant="accent" onClick={create}>
+            <Button variant="default" onClick={create}>
               {t('create', { defaultValue: 'Create' })}
             </Button>
           </div>
         ) : (
-          <Button variant="accent" size="sm" onClick={() => setCreating(true)}>
+          <Button variant="default" size="sm" onClick={() => setCreating(true)}>
             <Plus aria-hidden />
             {t('new-list', { defaultValue: 'New list' })}
           </Button>

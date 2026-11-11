@@ -153,7 +153,7 @@ export function KeysManager() {
               'The developer API needs an active HARD-R plan or higher. Your access is checked on every request, so it stays in sync with your subscription.',
           })}
         </p>
-        <Button asChild variant="accent" size="sm" className="mt-3">
+        <Button asChild variant="default" size="sm" className="mt-3">
           <Link to="/store" search={{ tab: 'membership' }}>
             {t('keys-view-plans', { defaultValue: 'View plans' })}
           </Link>
@@ -188,7 +188,7 @@ export function KeysManager() {
             </code>
             <CopyButton
               value={newKey}
-              variant="accent"
+              variant="default"
               size="icon-sm"
               label={t('keys-copy-key', { defaultValue: 'Copy API key' })}
             />
@@ -275,7 +275,7 @@ export function KeysManager() {
           <div className="flex-1" />
           <Button
             size="sm"
-            variant="accent"
+            variant="default"
             loading={creating}
             disabled={!name.trim()}
             onClick={create}
@@ -356,7 +356,7 @@ export function KeysManager() {
                 {k.scopes.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {k.scopes.map((s) => (
-                      <Badge key={s} variant="outline" size="sm" className="font-mono font-normal">
+                      <Badge key={s} variant="default" className="font-mono font-normal">
                         {s}
                       </Badge>
                     ))}

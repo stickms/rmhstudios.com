@@ -94,7 +94,7 @@ export function SignedOutPrompt({
       description={description}
       action={
         <Link to="/login" search={{ callbackURL }}>
-          <Button variant="accent">{actionLabel ?? t('sign-in', { defaultValue: 'Sign in' })}</Button>
+          <Button variant="default">{actionLabel ?? t('sign-in', { defaultValue: 'Sign in' })}</Button>
         </Link>
       }
     />

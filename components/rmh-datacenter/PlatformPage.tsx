@@ -130,7 +130,7 @@ export default function PlatformPage() {
                 </span>
                 <h3 className="font-display text-lg font-semibold text-site-text">{name}</h3>
                 <p className="text-sm text-site-text-muted">{desc}</p>
-                <Badge variant="outline">{chip}</Badge>
+                <Badge variant="default">{chip}</Badge>
               </Card>
             ))}
           </div>
@@ -275,7 +275,7 @@ export default function PlatformPage() {
             })}
           </p>
           <div className="mt-4">
-            <Button asChild variant="accent">
+            <Button asChild variant="default">
               <Link to="/rmh-datacenter/contact">
                 {t('request-capacity', { defaultValue: 'Request capacity' })}
                 <ArrowRight className="size-4" aria-hidden />

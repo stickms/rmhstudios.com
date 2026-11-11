@@ -197,7 +197,7 @@ function ReportCard({
             <Badge variant="danger" className="capitalize">
               {report.severity}
             </Badge>
-            <Badge variant="outline">{securityCategoryLabel(report.category)}</Badge>
+            <Badge variant="default">{securityCategoryLabel(report.category)}</Badge>
           </div>
           <h3 className="text-base font-semibold text-site-text break-words">{report.title}</h3>
         </div>
@@ -254,7 +254,7 @@ function ReportCard({
             </option>
           ))}
         </Select>
-        <Button variant="accent" size="sm" onClick={() => onNotes(report.id, notes)} loading={busy}>
+        <Button variant="default" size="sm" onClick={() => onNotes(report.id, notes)} loading={busy}>
           {t('save-notes', { defaultValue: 'Save notes' })}
         </Button>
         <Button

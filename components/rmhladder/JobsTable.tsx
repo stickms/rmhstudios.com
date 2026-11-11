@@ -25,7 +25,7 @@ const PROGRAM_LABELS: Record<string, string> = {
 function VerificationBadge({ status }: { status: string | null | undefined }) {
   const probable = status === 'verified_probable';
   return (
-    <Badge variant={probable ? 'warning' : 'success'} size="sm">
+    <Badge variant={probable ? 'warning' : 'success'}>
       {probable ? 'Probably active' : 'Verified active'}
     </Badge>
   );
@@ -115,11 +115,11 @@ function JobActions({
           variant={
             value === 'applied'
               ? applicationStatus && applicationStatus !== 'not_applied'
-                ? 'accent'
-                : 'outline'
+                ? 'default'
+                : 'default'
               : userAction === value
-                ? 'accent'
-                : 'outline'
+                ? 'default'
+                : 'default'
           }
           aria-label={label}
           aria-pressed={
@@ -174,11 +174,11 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
               <CardHeader className="gap-3 px-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <VerificationBadge status={job.verification?.status} />
-                  <Badge variant="outline" size="sm">
+                  <Badge variant="default">
                     {job.program}
                   </Badge>
                   {job.applyUrl && (
-                    <Badge variant="outline" size="sm">
+                    <Badge variant="default">
                       {sourceDomain(job.applyUrl)}
                     </Badge>
                   )}
@@ -280,7 +280,7 @@ export function JobsTable({ rows, onRowClick, onAction }: JobsTableProps) {
                   </td>
                   <td className="px-4 py-4 text-site-text-muted">{job.location}</td>
                   <td className="px-4 py-4">
-                    <Badge variant="outline" size="sm">
+                    <Badge variant="default">
                       {job.program}
                     </Badge>
                   </td>

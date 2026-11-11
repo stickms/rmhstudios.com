@@ -78,7 +78,7 @@ export function RecapColumn({
  subtitle={recap.blurb}
  actions={
  <Link to="/wrapped">
- <Button variant="accent"size="sm">
+ <Button variant="default"size="sm">
  <Sparkles className="h-3.5 w-3.5"/>
  {t('recap-year-wrapped', { defaultValue:'Year Wrapped'})}
  </Button>

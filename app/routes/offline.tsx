@@ -40,7 +40,7 @@ function OfflinePage() {
               'RMH Studios needs a connection for this page. Check your network and try again.',
           })}
         </p>
-        <Button type="button" variant="accent" size="lg" onClick={() => window.location.reload()}>
+        <Button type="button" variant="default" size="lg" onClick={() => window.location.reload()}>
           <RotateCw aria-hidden />
           {t('offline-retry', { defaultValue: 'Try again' })}
         </Button>

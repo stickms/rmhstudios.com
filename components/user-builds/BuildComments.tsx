@@ -234,7 +234,7 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
             />
             <Button
               type="submit"
-              variant="accent"
+              variant="default"
               size="icon"
               loading={submitting}
               loadingText={<></>}

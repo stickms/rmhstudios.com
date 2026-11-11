@@ -83,7 +83,7 @@ export function SidebarEditMode() {
                   <IconButton
                     icon={isHidden ? EyeOff : Eye}
                     size="icon-sm"
-                    variant={isHidden ? 'accent' : 'ghost'}
+                    variant={isHidden ? 'default' : 'ghost'}
                     aria-pressed={isHidden}
                     onClick={() => toggleHidden(item.id)}
                     label={

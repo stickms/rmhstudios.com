@@ -97,13 +97,13 @@ export function WelcomeModal() {
  <div className="flex items-center gap-2">
  {current.to && (
  <Link to={current.to as string} onClick={dismiss}>
- <Button variant="accent-outline"size="sm">
+ <Button variant="default"size="sm">
  {current.cta}
  </Button>
  </Link>
  )}
  <Button
- variant="accent"
+ variant="default"
  size="sm"
  onClick={() => (isLast ? dismiss() : setStep((s) => s + 1))}
  >

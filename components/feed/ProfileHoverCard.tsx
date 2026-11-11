@@ -123,7 +123,7 @@ export function ProfileHoverCard({
  {!profile.isOwnProfile && (
  <Button
  size="sm"
- variant={profile.isFollowing ?'outline':'accent'}
+ variant={profile.isFollowing ?'default':'default'}
  disabled={followBusy}
  onClick={toggleFollow}
  className="rounded-full"

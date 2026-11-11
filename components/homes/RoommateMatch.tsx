@@ -61,7 +61,7 @@ export function RoommateMatch({
               'Sign in and take a one-minute quiz to see how well you match with the poster.',
           })}
         </p>
-        <Button asChild size="sm" variant="outline" className="mt-3 min-h-11">
+        <Button asChild size="sm" variant="default" className="mt-3 min-h-11">
           <Link to="/login" search={{ callbackURL: `/homes/listing/${listingId}` }}>
             {t('rm-sign-in', { defaultValue: 'Sign in' })}
           </Link>
@@ -103,7 +103,7 @@ export function RoommateMatch({
       <Button
         type="button"
         size="sm"
-        variant="outline"
+        variant="default"
         className="mt-3 min-h-11"
         aria-expanded={quizOpen}
         onClick={() => setQuizOpen((v) => !v)}

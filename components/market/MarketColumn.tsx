@@ -124,7 +124,7 @@ export function MarketColumn({
         title={t('market-title', { defaultValue: 'Marketplace' })}
         actions={
           session ? (
-            <Button size="sm" variant="accent" onClick={() => setSellOpen(true)}>
+            <Button size="sm" variant="default" onClick={() => setSellOpen(true)}>
               <Tag className="h-4 w-4" /> {t('market-sell', { defaultValue: 'Sell' })}
             </Button>
           ) : undefined

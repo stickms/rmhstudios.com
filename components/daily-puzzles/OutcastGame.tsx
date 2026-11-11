@@ -30,9 +30,9 @@ import { useSession } from '@/components/Providers';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 
-const DIFFICULTY_VARIANT: Record<string, 'success' | 'accent' | 'warning' | 'danger'> = {
+const DIFFICULTY_VARIANT: Record<string, 'default' | 'success' | 'warning' | 'danger'> = {
     easy: 'success',
-    medium: 'accent',
+    medium: 'default',
     hard: 'warning',
     expert: 'danger',
     nightmare: 'danger',
@@ -200,7 +200,7 @@ function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzl
                                 <h2 className="text-lg font-semibold text-site-text">
                                     {t("round-progress", { defaultValue: "Round {{current}}/5", current: currentRound + 1 })}
                                 </h2>
-                                <Badge variant={DIFFICULTY_VARIANT[round.difficulty] ?? 'default'} size="sm" icon={false}>
+                                <Badge variant={DIFFICULTY_VARIANT[round.difficulty] ?? 'default'} icon={false}>
                                     {round.difficulty}
                                 </Badge>
                             </div>
@@ -294,7 +294,7 @@ function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzl
                                         )}
                                     </PuzzleSection>
 
-                                    <Button type="button" variant="accent" size="lg" className="w-full" onClick={handleNextRound}>
+                                    <Button type="button" variant="default" size="lg" className="w-full" onClick={handleNextRound}>
                                         {currentRound < 4 ? (
                                             <>
                                                 {t("next-round", { defaultValue: "Next Round" })}
@@ -345,7 +345,7 @@ function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzl
                                         <div className="flex items-center justify-between gap-2">
                                             <div className="flex items-center gap-2">
                                                 <h3 className="site-section-label">{t("round-label", { defaultValue: "Round {{num}}", num: i + 1 })}</h3>
-                                                <Badge variant={DIFFICULTY_VARIANT[r.difficulty] ?? 'default'} size="sm" icon={false}>
+                                                <Badge variant={DIFFICULTY_VARIANT[r.difficulty] ?? 'default'} icon={false}>
                                                     {r.difficulty}
                                                 </Badge>
                                             </div>

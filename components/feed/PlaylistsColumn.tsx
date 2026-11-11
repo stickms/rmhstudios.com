@@ -252,7 +252,7 @@ export function PlaylistsColumn({
             })}
             action={
               <Link to="/login" search={{ callbackURL: '/playlists' }}>
-                <Button variant="accent" size="sm">
+                <Button variant="default" size="sm">
                   {t('sign-in', { defaultValue: 'Sign in' })}
                 </Button>
               </Link>
@@ -278,7 +278,7 @@ export function PlaylistsColumn({
               className="flex-1"
             />
             <Button
-              variant="accent"
+              variant="default"
               size="sm"
               onClick={create}
               loading={creating}
@@ -485,7 +485,7 @@ export function PlaylistsColumn({
                                 className="flex-1"
                               />
                               <Button
-                                variant="accent"
+                                variant="default"
                                 size="sm"
                                 onClick={() => addCollaborator(pl.id)}
                                 loading={addingCollab}

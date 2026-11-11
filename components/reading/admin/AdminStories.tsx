@@ -97,7 +97,7 @@ export default function AdminStories() {
             onChange={(e) => setSummary(e.target.value)}
           />
         </div>
-        <Button type="submit" variant="accent" size="sm" loading={create.isPending}>
+        <Button type="submit" variant="default" size="sm" loading={create.isPending}>
           <Plus aria-hidden />
           {t('story-create', { defaultValue: 'Create story' })}
         </Button>
@@ -249,7 +249,7 @@ function StoryCard({
                 <Button
                   type="button"
                   size="xs"
-                  variant="outline"
+                  variant="default"
                   disabled={linked.has(a.slug)}
                   onClick={() => link.mutate(a.slug)}
                 >
@@ -304,7 +304,7 @@ function StoryCard({
                   <Button
                     type="button"
                     size="xs"
-                    variant="outline"
+                    variant="default"
                     onClick={() => link.mutate(s.slug)}
                   >
                     {t('story-add', { defaultValue: 'Add' })}

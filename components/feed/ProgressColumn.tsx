@@ -192,7 +192,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  ) : (
  <Button
  size="sm"
- variant="accent"
+ variant="default"
  disabled={busy ==='unlock'}
  onClick={unlockPremium}
  >
@@ -302,7 +302,7 @@ function QuestSection({
  ) : (
  <Button
  size="sm"
- variant={q.completed ?'accent':'outline'}
+ variant={q.completed ?'default':'default'}
  disabled={!q.completed || busy === `q:${q.id}`}
  onClick={() => onClaim(q.id)}
  >
@@ -439,7 +439,7 @@ function TierCell({
  ) : canClaim ? (
  <Button
  size="sm"
- variant={premium ?'accent':'outline'}
+ variant={premium ?'default':'default'}
  disabled={busy === busyKey}
  onClick={onClaim}
  className="h-7 gap-1 px-2 text-xs"

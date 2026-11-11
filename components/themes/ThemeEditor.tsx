@@ -177,7 +177,7 @@ export function ThemeEditor({
             </p>
           )}
 
-          <Button variant="outline" size="sm" onClick={previewOnSite} className="w-full">
+          <Button variant="default" size="sm" onClick={previewOnSite} className="w-full">
             <Eye className="h-4 w-4" aria-hidden />
             {t('preview-on-site', { defaultValue: 'Preview on the whole site' })}
           </Button>
@@ -272,7 +272,7 @@ export function ThemeEditor({
         )}
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          <Button variant="accent" size="sm" onClick={save} loading={busy}>
+          <Button variant="default" size="sm" onClick={save} loading={busy}>
             {t('save', { defaultValue: 'Save draft' })}
           </Button>
           {!published ? (
@@ -288,7 +288,7 @@ export function ThemeEditor({
                 className="w-24"
               />
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={publish}
                 disabled={busy || issues.length > 0}

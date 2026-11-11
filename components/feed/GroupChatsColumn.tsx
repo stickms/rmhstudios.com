@@ -127,7 +127,7 @@ export function GroupChatsColumn({
  title={t('sign-in-to-use-group-chats', { defaultValue:'Sign in to use group chats'})}
  action={
  <Link to="/login"search={{ callbackURL:'/groups'}}>
- <Button variant="accent">{t('sign-in', { defaultValue:'Sign in'})}</Button>
+ <Button variant="default">{t('sign-in', { defaultValue:'Sign in'})}</Button>
  </Link>
  }
  />
@@ -201,7 +201,7 @@ export function GroupChatsColumn({
  <div className="flex justify-end">
  <Button
  size="sm"
- variant="accent"
+ variant="default"
  disabled={busy || name.trim().length < 1 || !members.trim()}
  onClick={create}
  >

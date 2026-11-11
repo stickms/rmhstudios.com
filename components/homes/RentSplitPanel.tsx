@@ -39,7 +39,7 @@ export function RentSplitPanel({
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"
-          variant="outline"
+          variant="default"
           className="min-h-11"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}

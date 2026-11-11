@@ -44,7 +44,7 @@ export function ReplyComposer({
           {t('sign-in-to-reply', { defaultValue: 'Sign in to reply' })}
         </p>
         <Link to="/login" search={{ callbackURL: pathname }}>
-          <Button variant="accent" size="sm" tabIndex={-1}>
+          <Button variant="default" size="sm" tabIndex={-1}>
             {t('sign-in', { defaultValue: 'Sign in' })}
           </Button>
         </Link>
@@ -109,7 +109,7 @@ export function ReplyComposer({
                 title={t('ai-generate-title', { defaultValue: 'Generate a reply with AI' })}
               />
               <Button
-                variant="accent"
+                variant="default"
                 size="sm"
                 disabled={!canSubmitReply(commentContent, submitting)}
                 onClick={handleSubmit}

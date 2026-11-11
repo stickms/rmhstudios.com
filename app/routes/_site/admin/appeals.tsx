@@ -165,11 +165,11 @@ function AdminAppealsPage() {
             {items.map((a) => (
               <li key={a.id} className="glass-fill rounded-site px-4 py-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="danger" size="sm">
+                  <Badge variant="danger">
                     {t('strike', { defaultValue: 'Strike' })}
                   </Badge>
                   {a.entityType && (
-                    <Badge variant="outline" size="sm">
+                    <Badge variant="default">
                       {a.entityType}
                     </Badge>
                   )}
@@ -254,7 +254,7 @@ function AdminAppealsPage() {
                     />
                     <div className="flex flex-wrap gap-2">
                       <Button
-                        variant="outline"
+                        variant="default"
                         disabled={busyId === a.id}
                         onClick={() => decide(a.id, 'overturn')}
                       >

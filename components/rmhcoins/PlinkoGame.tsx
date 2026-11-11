@@ -452,7 +452,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
             {[1, 5, 10].map((amt) => (
               <Button
                 key={amt}
-                variant="secondary"
+                variant="default"
                 onClick={() => isIdle && setQuickBet(amt)}
                 disabled={!isIdle}
                 className="h-auto min-h-10 px-0 text-xs font-bold text-site-text-muted hover:text-site-text"
@@ -461,7 +461,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
               </Button>
             ))}
             <Button
-              variant="secondary"
+              variant="default"
               onClick={() => isIdle && setQuickBet(coins)}
               disabled={!isIdle}
               className="h-auto min-h-10 px-0 text-xs font-bold text-site-accent"
@@ -476,7 +476,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         onClick={handleSubmit}
         loading={submitting}
         disabled={!isIdle || selectedBin === null}
-        variant="accent"
+        variant="default"
         className="w-full min-h-11 font-bold rounded-site text-base"
       >
         {gameState === 'dropping'

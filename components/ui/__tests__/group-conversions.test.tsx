@@ -50,7 +50,7 @@ describe('related controls are one jelly group with flat members', () => {
         onSelectAll={() => {}}
         actions={[
           { id: 'archive', label: 'Archive', onClick: () => {} },
-          { id: 'delete', label: 'Delete', onClick: () => {}, variant: 'destructive' },
+          { id: 'delete', label: 'Delete', onClick: () => {}, variant: 'danger' },
         ]}
       />,
     );

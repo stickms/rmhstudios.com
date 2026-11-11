@@ -129,7 +129,7 @@ export function GameReplayPlayer({
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button
-          variant="secondary"
+          variant="default"
           size="icon"
           onClick={() => {
             setPlaying(false);
@@ -141,7 +141,7 @@ export function GameReplayPlayer({
         </Button>
 
         <Button
-          variant="accent"
+          variant="default"
           onClick={() => {
             if (atEnd) setStep(0);
             setPlaying((p) => !p);
@@ -157,7 +157,7 @@ export function GameReplayPlayer({
         </Button>
 
         <Button
-          variant="secondary"
+          variant="default"
           size="icon"
           onClick={() => {
             setPlaying(false);

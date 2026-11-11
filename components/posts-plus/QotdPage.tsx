@@ -143,7 +143,7 @@ export function QotdPage({ day }: { day?: string }) {
             {isToday && !session && (
               <div className="mt-4">
                 <Link to="/login" search={{ callbackURL: '/qotd' }}>
-                  <Button variant="accent" size="sm">
+                  <Button variant="default" size="sm">
                     {t('qotd-sign-in', { defaultValue: 'Sign in to answer' })}
                   </Button>
                 </Link>
@@ -170,7 +170,7 @@ export function QotdPage({ day }: { day?: string }) {
               title={t('qotd-load-failed', { defaultValue: 'Could not load the answers' })}
               action={
                 <Button
-                  variant="outline"
+                  variant="default"
                   onClick={() => selectedKey && void load(selectedKey, null)}
                 >
                   {t('retry', { defaultValue: 'Try again' })}
@@ -193,7 +193,7 @@ export function QotdPage({ day }: { day?: string }) {
           {cursor && selectedKey && (
             <div className="mt-4 flex justify-center">
               <Button
-                variant="outline"
+                variant="default"
                 loading={loading}
                 onClick={() => void load(selectedKey, cursor)}
               >

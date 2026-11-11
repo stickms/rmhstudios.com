@@ -67,7 +67,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
           {t('group-not-found', { defaultValue: 'Group not found' })}
         </p>
         <Link to="/messages" search={{ tab: 'groups' }}>
-          <Button variant="outline">
+          <Button variant="default">
             {t('back-to-groups', { defaultValue: 'Back to groups' })}
           </Button>
         </Link>

@@ -124,7 +124,7 @@ export function BuildSidebar({ className = '' }: BuildSidebarProps) {
             defaultValue: 'Built something cool with rmhcode? Share it with the community!',
           })}
         </p>
-        <Button asChild variant="accent" className="w-full">
+        <Button asChild variant="default" className="w-full">
           <Link to="/user-builds/submit">
             {t('submit-a-build', { defaultValue: 'Submit a Build' })}
           </Link>

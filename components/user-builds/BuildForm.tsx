@@ -265,7 +265,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
               key={tech}
               type="button"
               size="xs"
-              variant={technologies.includes(tech) ? 'accent' : 'outline'}
+              variant={technologies.includes(tech) ? 'default' : 'default'}
               aria-pressed={technologies.includes(tech)}
               onClick={() => toggleTechnology(tech)}
               className="rounded-full"
@@ -287,7 +287,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           <Button
             type="button"
             onClick={addCustomTech}
-            variant="secondary"
+            variant="default"
             size="icon"
             aria-label={t('add-technology', { defaultValue: 'Add technology' })}
           >
@@ -297,7 +297,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         {technologies.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {technologies.map((tech) => (
-              <Badge key={tech} variant="accent" size="lg" className="gap-2 pr-1.5">
+              <Badge key={tech} variant="default" className="gap-2 pr-1.5">
                 {tech}
                 <button
                   type="button"
@@ -332,7 +332,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           <Button
             type="button"
             onClick={addTag}
-            variant="secondary"
+            variant="default"
             size="icon"
             aria-label={t('add-tag', { defaultValue: 'Add tag' })}
           >
@@ -342,7 +342,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (
-              <Badge key={tag} variant="default" size="lg" className="gap-2 pr-1.5">
+              <Badge key={tag} variant="default" className="gap-2 pr-1.5">
                 #{tag}
                 <button
                   type="button"
@@ -472,7 +472,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
 
       {/* Actions */}
       <div className="flex gap-2 border-t border-site-border pt-4">
-        <Button type="submit" variant="accent" className="w-full md:w-auto" loading={loading}>
+        <Button type="submit" variant="default" className="w-full md:w-auto" loading={loading}>
           {isEditing
             ? t('update-build', { defaultValue: 'Update Build' })
             : t('save-build', { defaultValue: 'Save Build' })}

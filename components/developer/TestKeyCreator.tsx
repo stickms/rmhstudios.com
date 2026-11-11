@@ -54,7 +54,7 @@ export function TestKeyCreator({ onCreated }: { onCreated: (plaintext: string) =
           aria-label={t('testKeys-name', { defaultValue: 'Test key name' })}
           placeholder={t('testKeys-name', { defaultValue: 'Test key name' })}
         />
-        <Button variant="accent" size="sm" disabled={busy || !name.trim()} onClick={create}>
+        <Button variant="default" size="sm" disabled={busy || !name.trim()} onClick={create}>
           {t('testKeys-create', { defaultValue: 'Create test key' })}
         </Button>
       </div>

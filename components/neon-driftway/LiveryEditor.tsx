@@ -103,7 +103,7 @@ export function LiveryEditorButton() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">
+        <Button variant="default" className="w-full">
           <Palette aria-hidden /> {t('ndw-livery-open', { defaultValue: 'Livery' })}
         </Button>
       </DialogTrigger>
@@ -136,7 +136,7 @@ export function LiveryEditorButton() {
               {encodeLivery(l)}
             </code>
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               onClick={() => {
                 navigator.clipboard?.writeText(encodeLivery(l)).then(

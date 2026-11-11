@@ -61,7 +61,7 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="accent">
+            <Badge variant="default">
               <VenueIcon aria-hidden />
               {t(venue.labelKey, { defaultValue: venue.label })}
             </Badge>

@@ -169,7 +169,7 @@ export function RentSplitCalculator({
                       key={f}
                       type="button"
                       size="sm"
-                      variant={on ? 'accent' : 'outline'}
+                      variant={on ? 'default' : 'default'}
                       aria-pressed={on}
                       className="min-h-11"
                       onClick={() =>
@@ -236,7 +236,7 @@ export function RentSplitCalculator({
           <Button
             type="button"
             size="sm"
-            variant="outline"
+            variant="default"
             className="min-h-11"
             onClick={() =>
               setRooms((cur) => [

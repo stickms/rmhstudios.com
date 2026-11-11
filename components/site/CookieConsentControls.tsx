@@ -92,14 +92,14 @@ export function CookieConsentControls() {
 
       <div className="flex flex-wrap gap-2">
         <Button
-          variant={choice === 'all' ? 'default' : 'outline'}
+          variant={choice === 'all' ? 'default' : 'default'}
           onClick={() => choose('all')}
           disabled={choice === undefined}
         >
           {t('cookie-controls-accept', { defaultValue: 'Accept all' })}
         </Button>
         <Button
-          variant={choice === 'essential' ? 'default' : 'outline'}
+          variant={choice === 'essential' ? 'default' : 'default'}
           onClick={() => choose('essential')}
           disabled={choice === undefined}
         >

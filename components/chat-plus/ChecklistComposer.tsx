@@ -159,7 +159,7 @@ export function ChecklistComposer({
               )}
               <Button
                 type="submit"
-                variant="accent"
+                variant="default"
                 disabled={!valid}
                 loading={busy}
                 className="mt-2"

@@ -57,14 +57,14 @@ export function ModQueue({ slug }: { slug: string }) {
       <div className="flex gap-2">
         <Button
           size="sm"
-          variant={view === 'pending' ? 'accent' : 'outline'}
+          variant={view === 'pending' ? 'default' : 'default'}
           onClick={() => setView('pending')}
         >
           {t('queue-pending', { defaultValue: 'Needs review' })}
         </Button>
         <Button
           size="sm"
-          variant={view === 'log' ? 'accent' : 'outline'}
+          variant={view === 'log' ? 'default' : 'default'}
           onClick={() => setView('log')}
         >
           {t('queue-log', { defaultValue: 'Resolved and removed' })}
@@ -111,7 +111,7 @@ export function ModQueue({ slug }: { slug: string }) {
                 <div className="flex justify-end gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="default"
                     disabled={busy === i.id}
                     onClick={() => decide(i, 'remove')}
                   >
@@ -121,7 +121,7 @@ export function ModQueue({ slug }: { slug: string }) {
                   </Button>
                   <Button
                     size="sm"
-                    variant="accent"
+                    variant="default"
                     disabled={busy === i.id}
                     onClick={() => decide(i, 'approve')}
                   >

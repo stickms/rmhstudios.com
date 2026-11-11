@@ -178,7 +178,7 @@ export default function StudyPlanner() {
                 </option>
               ))}
             </select>
-            <Button variant="outline" size="sm" onClick={() => setDraft(blank())}>
+            <Button variant="default" size="sm" onClick={() => setDraft(blank())}>
               <Plus /> {t('plan-new', { defaultValue: 'New plan' })}
             </Button>
             {draft.id && (
@@ -274,7 +274,7 @@ export default function StudyPlanner() {
               </p>
               {draft.topics.length < 30 && (
                 <Button
-                  variant="outline"
+                  variant="default"
                   size="xs"
                   onClick={() => patch({ topics: [...draft.topics, newTopic()] })}
                 >
@@ -358,7 +358,7 @@ export default function StudyPlanner() {
                               <span className="text-app-text-muted">- {fmt(b.minutes)}</span>
                             </span>
                             <Button
-                              variant="outline"
+                              variant="default"
                               size="xs"
                               onClick={() => startBlock(b.minutes)}
                             >

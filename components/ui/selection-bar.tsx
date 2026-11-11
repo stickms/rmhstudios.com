@@ -101,7 +101,7 @@ export function SelectionBar({
           <div className="ms-auto flex flex-wrap items-center gap-2">
             {actions.map((action) =>
               // Neutral actions lie flat on the bar (its glass is the one body); a coloured action keeps its Button.
-              !action.variant || action.variant === 'secondary' || action.variant === 'ghost' ? (
+              !action.variant || action.variant === 'ghost' ? (
                 <JellyGroup.Item
                   key={action.id}
                   disabled={action.disabled}

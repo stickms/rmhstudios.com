@@ -110,7 +110,7 @@ export default function ThreadPostPanel({ content, blockedBy, onPosted }: Thread
       )}
 
       <div className="mt-3 flex justify-end">
-        <Button variant="accent" size="sm" disabled={!canPost} loading={busy} onClick={publish}>
+        <Button variant="default" size="sm" disabled={!canPost} loading={busy} onClick={publish}>
           {t('thread-post-button', {
             n: count,
             defaultValue: 'Post as thread ({{n}} posts)',

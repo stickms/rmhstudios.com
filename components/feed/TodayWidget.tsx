@@ -191,7 +191,7 @@ export function TodayWidget({ onSettled }: { onSettled?: () => void } = {}) {
           </p>
           <Button
             type="button"
-            variant="accent-ghost"
+            variant="ghost"
             size="xs"
             onClick={buyFreeze}
             disabled={buying || data.streak.freezeTokens >= 3}

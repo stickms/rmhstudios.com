@@ -130,7 +130,7 @@ export function ThreadComposer() {
 
  <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
  <Button
- variant="outline"
+ variant="default"
  size="sm"
  onClick={addSeg}
  disabled={segments.length >= MAX_SEGMENTS}
@@ -139,7 +139,7 @@ export function ThreadComposer() {
  <Plus className="h-4 w-4"aria-hidden />{''}
  {t('thread-add-post', { defaultValue:'Add post'})}
  </Button>
- <Button variant="accent"size="sm"onClick={post} disabled={!canPost} loading={busy}>
+ <Button variant="default"size="sm"onClick={post} disabled={!canPost} loading={busy}>
  {t('post-thread', { defaultValue:'Post thread'})}
  </Button>
  </DialogFooter>

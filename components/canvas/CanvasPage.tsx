@@ -158,7 +158,7 @@ export function CanvasPage() {
                 {session ? (
                   <div className="flex flex-wrap items-center gap-3">
                     <Button
-                      variant="accent"
+                      variant="default"
                       loading={busy}
                       disabled={!selected || wait > 0}
                       onClick={() => void place()}
@@ -201,7 +201,7 @@ export function CanvasPage() {
                     <CanvasReplay event={event} />
                   </Suspense>
                 ) : (
-                  <Button variant="secondary" onClick={() => setReplay(true)}>
+                  <Button variant="default" onClick={() => setReplay(true)}>
                     <Film />
                     {t('replay', { defaultValue: 'Watch the timelapse' })}
                   </Button>
@@ -223,7 +223,7 @@ export function CanvasPage() {
                 <li key={p.id}>
                   <Button
                     size="sm"
-                    variant={event?.id === p.id ? 'accent' : 'secondary'}
+                    variant={event?.id === p.id ? 'default' : 'default'}
                     aria-pressed={event?.id === p.id}
                     onClick={() => setPicked(p.id === base?.id ? null : p.id)}
                   >

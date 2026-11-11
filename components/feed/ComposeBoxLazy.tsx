@@ -92,7 +92,7 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  lands) renders `size="sm"`, and omitting it here meant the button
  painted at the default size and visibly shrank a moment later.
  The two cards are otherwise identical — keep them that way. */}
- <Button variant="accent"size="sm">
+ <Button variant="default"size="sm">
  {t('sign-in', { defaultValue:'Sign in'})}
  </Button>
  </Link>
@@ -140,7 +140,7 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  />
  <div className="flex items-center justify-between mt-2"aria-hidden>
  <span className="text-xs font-mono text-site-text-muted">{MAX_RMHARK_LENGTH}</span>
- <Button variant="accent"size="sm"disabled tabIndex={-1}>
+ <Button variant="default"size="sm"disabled tabIndex={-1}>
  {t('post-button', { defaultValue:'Post'})}
  </Button>
  </div>

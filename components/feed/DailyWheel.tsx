@@ -119,7 +119,7 @@ export function DailyWheel() {
  {t('you-won-prefix', { defaultValue:'You won'})} <CoinIcon className="h-4 w-4"/> {won}{t('you-won-suffix', { defaultValue:'today!'})}
  </p>
  ) : (
- <Button variant="accent"disabled={!state.canSpin || spinning || !state.signedIn} onClick={spin}>
+ <Button variant="default"disabled={!state.canSpin || spinning || !state.signedIn} onClick={spin}>
  {spinning ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4"/>}
  {state.signedIn ? (spinning ? t('spinning', { defaultValue:'Spinning…'}) : t('spin', { defaultValue:'Spin'})) : t('sign-in-to-spin', { defaultValue:'Sign in to spin'})}
  </Button>

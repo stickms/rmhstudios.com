@@ -182,10 +182,10 @@ function TournamentDetailPage() {
         <Badge
           variant={
             tourney.status === 'LIVE'
-              ? 'accent'
+              ? 'default'
               : tourney.status === 'COMPLETE'
                 ? 'success'
-                : 'outline'
+                : 'default'
           }
         >
           {tourney.status === 'REGISTRATION'
@@ -272,7 +272,7 @@ function TournamentDetailPage() {
           )}
           {tourney.status === 'REGISTRATION' && tourney.viewerEntered && (
             <Button
-              variant="outline"
+              variant="default"
               onClick={() =>
                 act(
                   `/api/tournaments/${id}/withdraw`,
@@ -286,7 +286,7 @@ function TournamentDetailPage() {
           )}
           {tourney.status === 'REGISTRATION' && canManage && (
             <Button
-              variant="secondary"
+              variant="default"
               onClick={() =>
                 act(
                   `/api/tournaments/${id}/start`,

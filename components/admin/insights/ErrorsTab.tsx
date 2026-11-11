@@ -70,7 +70,7 @@ export function ErrorsTab() {
               lastRelease: g.lastRelease,
             })}
           </p>
-          <Button size="xs" variant="outline" onClick={() => toggle(g)}>
+          <Button size="xs" variant="default" onClick={() => toggle(g)}>
             {g.resolved
               ? t('errors-reopen', { defaultValue: 'Reopen' })
               : t('errors-resolve', { defaultValue: 'Mark resolved' })}

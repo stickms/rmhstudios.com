@@ -107,7 +107,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
                     <div className="flex gap-2">
                       <Button
                         size="xs"
-                        variant="outline"
+                        variant="default"
                         className="flex-1"
                         loading={reportingId === m.id}
                         onClick={() => onReport(m.id, m.entrantAId!)}
@@ -116,7 +116,7 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
                       </Button>
                       <Button
                         size="xs"
-                        variant="outline"
+                        variant="default"
                         className="flex-1"
                         loading={reportingId === m.id}
                         onClick={() => onReport(m.id, m.entrantBId!)}

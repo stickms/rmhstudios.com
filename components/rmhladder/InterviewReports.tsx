@@ -105,7 +105,7 @@ export function InterviewReports({
           <Button
             type="button"
             size="sm"
-            variant="outline"
+            variant="default"
             className="min-h-11"
             onClick={() => setFormOpen((v) => !v)}
             aria-expanded={formOpen}
@@ -113,7 +113,7 @@ export function InterviewReports({
             {t('ir-share', { defaultValue: 'Share your interview' })}
           </Button>
         ) : (
-          <Button asChild size="sm" variant="outline" className="min-h-11">
+          <Button asChild size="sm" variant="default" className="min-h-11">
             <Link to="/login" search={{ callbackURL: '/rmhladder/jobs' }}>
               {t('ir-sign-in', { defaultValue: 'Sign in to share yours' })}
             </Link>
@@ -139,7 +139,7 @@ export function InterviewReports({
             <li key={r.id} className="glass-fill rounded-site-sm p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium text-site-text">{r.roleTitle}</span>
-                <Badge variant="outline" size="sm">
+                <Badge variant="default">
                   {outcomeLabel[r.outcome as Outcome] ?? r.outcome}
                 </Badge>
                 <span className="text-xs text-site-text-muted">
@@ -164,7 +164,7 @@ export function InterviewReports({
               </div>
               <div className="mt-2 flex flex-wrap gap-1">
                 {r.questionTypes.map((q) => (
-                  <Badge key={q} variant="default" size="sm">
+                  <Badge key={q} variant="default">
                     {typeLabel[q as QuestionType] ?? q}
                   </Badge>
                 ))}
@@ -316,7 +316,7 @@ function InterviewForm({
                 key={q}
                 type="button"
                 size="sm"
-                variant={on ? 'accent' : 'outline'}
+                variant={on ? 'default' : 'default'}
                 aria-pressed={on}
                 className="min-h-11"
                 onClick={() => setTypes((cur) => (on ? cur.filter((x) => x !== q) : [...cur, q]))}

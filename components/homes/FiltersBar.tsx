@@ -113,7 +113,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
 
         <Button
           type="button"
-          variant={advanced ? 'accent-outline' : 'outline'}
+          variant={advanced ? 'default' : 'default'}
           size="sm"
           onClick={() => setAdvanced((v) => !v)}
           className="ml-auto"

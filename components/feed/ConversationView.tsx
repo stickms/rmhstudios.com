@@ -132,7 +132,7 @@ export function ConversationView({
           {t('sign-in-to-view-messages', { defaultValue: 'Sign in to view messages' })}
         </p>
         <Link to="/login" search={{ callbackURL: undefined }}>
-          <Button variant="accent" size="sm">
+          <Button variant="default" size="sm">
             {t('sign-in', { defaultValue: 'Sign in' })}
           </Button>
         </Link>
@@ -147,7 +147,7 @@ export function ConversationView({
           {t('conversation-not-found', { defaultValue: 'Conversation not found' })}
         </p>
         <Link to="/messages">
-          <Button variant="accent" size="sm">
+          <Button variant="default" size="sm">
             {t('back-to-messages', { defaultValue: 'Back to Messages' })}
           </Button>
         </Link>

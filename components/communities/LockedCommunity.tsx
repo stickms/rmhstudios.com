@@ -40,7 +40,7 @@ export interface LockedCommunityMeta {
 export function LockBadge({ className }: { className?: string }) {
   const { t } = useTranslation('f-communities-plus');
   return (
-    <Badge variant="outline" className={className}>
+    <Badge variant="default" className={className}>
       <Lock aria-hidden />
       {t('locked-badge', { defaultValue: 'Private' })}
     </Badge>
@@ -122,7 +122,7 @@ export function LockedCommunityPreview({
           slug={community.slug}
           initialState={requestState}
           size={children ? 'default' : 'sm'}
-          variant={children ? 'outline' : 'accent'}
+          variant={children ? 'default' : 'primary'}
         />
       </div>
     </div>
@@ -138,13 +138,13 @@ export function RequestToJoin({
   slug,
   initialState,
   size = 'sm',
-  variant = 'accent',
+  variant = 'primary',
   className,
 }: {
   slug: string;
   initialState: 'PENDING' | 'DENIED' | null;
   size?: 'sm' | 'default';
-  variant?: 'accent' | 'outline';
+  variant?: 'primary' | 'default';
   className?: string;
 }) {
   const { t } = useTranslation('f-communities-plus');
@@ -266,7 +266,7 @@ export function RequestToJoin({
           <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>
             {t('request-dialog-cancel', { defaultValue: 'Cancel' })}
           </Button>
-          <Button variant="accent" onClick={send} disabled={busy}>
+          <Button variant="default" onClick={send} disabled={busy}>
             {t('request-send', { defaultValue: 'Send request' })}
           </Button>
         </DialogFooter>

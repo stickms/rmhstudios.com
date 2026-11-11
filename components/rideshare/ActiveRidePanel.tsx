@@ -391,7 +391,7 @@ export function ActiveRidePanel({
 
       {/* Dismiss a finished trip */}
       {(status === 'COMPLETED' || status === 'CANCELLED') && onClose && (
-        <Button type="button" variant="outline" className="w-full" onClick={onClose}>
+        <Button type="button" variant="default" className="w-full" onClick={onClose}>
           {t("done", { defaultValue: "Done" })}
         </Button>
       )}
@@ -409,7 +409,7 @@ export function ActiveRidePanel({
               <Flag aria-hidden /> {t("complete-trip", { defaultValue: "Complete trip" })}
             </Button>
           )}
-          <Button variant="outline" className="text-site-danger" onClick={() => act('cancel')} disabled={busy}>
+          <Button variant="default" className="text-site-danger" onClick={() => act('cancel')} disabled={busy}>
             <XCircle aria-hidden /> {t("cancel", { defaultValue: "Cancel" })}
           </Button>
         </div>

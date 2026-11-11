@@ -80,14 +80,14 @@ interface Ride {
 
 const STATUS_META: Record<
   Ride['status'],
-  { label: string; variant: 'accent' | 'warning' | 'success' | 'outline' }
+  { label: string; variant: 'default' | 'warning' | 'success' }
 > = {
-  SCHEDULED: { label: 'Scheduled', variant: 'accent' },
+  SCHEDULED: { label: 'Scheduled', variant: 'default' },
   REQUESTED: { label: 'Finding a driver', variant: 'warning' },
-  ACCEPTED: { label: 'Driver on the way', variant: 'accent' },
-  IN_PROGRESS: { label: 'On your trip', variant: 'accent' },
+  ACCEPTED: { label: 'Driver on the way', variant: 'default' },
+  IN_PROGRESS: { label: 'On your trip', variant: 'default' },
   COMPLETED: { label: 'Completed', variant: 'success' },
-  CANCELLED: { label: 'Cancelled', variant: 'outline' },
+  CANCELLED: { label: 'Cancelled', variant: 'default' },
 };
 
 const ACTIVE = new Set<Ride['status']>(['REQUESTED', 'ACCEPTED', 'IN_PROGRESS']);

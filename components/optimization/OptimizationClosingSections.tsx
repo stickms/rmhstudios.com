@@ -81,7 +81,7 @@ export function OptimizationClosingSections() {
                   profiling, keep trimming, and keep the numbers honest. The bar
                   only moves one way.
                 </p>
-                <Button asChild variant="accent" size="lg">
+                <Button asChild variant="default" size="lg">
                   <a href="/security">
                   How we keep you secure
                   <ArrowRight aria-hidden="true" />

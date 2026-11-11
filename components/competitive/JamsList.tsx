@@ -37,7 +37,7 @@ export function PhaseBadge({ phase }: { phase: JamSummary['phase'] }) {
     done: t('jam-done', { defaultValue: 'Results' }),
   }[phase];
   return (
-    <Badge variant={phase === 'open' ? 'accent' : phase === 'done' ? 'success' : 'outline'}>
+    <Badge variant={phase === 'open' ? 'default' : phase === 'done' ? 'success' : 'default'}>
       {label}
     </Badge>
   );
@@ -130,7 +130,7 @@ export function JamsList() {
     <div className="space-y-4 max-w-3xl">
       {isAdmin && (
         <div className="space-y-3">
-          <Button variant="secondary" onClick={() => setShowForm((v) => !v)}>
+          <Button variant="default" onClick={() => setShowForm((v) => !v)}>
             {t('jam-new', { defaultValue: 'New jam' })}
           </Button>
           {showForm && (

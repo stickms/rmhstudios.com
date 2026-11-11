@@ -48,7 +48,7 @@ export function CohortsTab() {
             </span>
           )}
         </p>
-        <Button size="sm" variant="outline" onClick={recompute} disabled={busy}>
+        <Button size="sm" variant="default" onClick={recompute} disabled={busy}>
           <RefreshCw className="h-4 w-4" aria-hidden />
           {t('cohorts-recompute', { defaultValue: 'Recompute now' })}
         </Button>

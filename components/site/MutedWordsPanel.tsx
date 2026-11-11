@@ -187,11 +187,11 @@ export function MutedWordsPanel() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="outline" size="sm" onClick={exportWords} disabled={words.length === 0} className="gap-2">
+        <Button variant="default" size="sm" onClick={exportWords} disabled={words.length === 0} className="gap-2">
           <Download className="h-4 w-4" aria-hidden />
           {t('muted-export', { defaultValue: 'Export' })}
         </Button>
-        <Button variant="outline" size="sm" onClick={() => fileInput.current?.click()} disabled={saving} className="gap-2">
+        <Button variant="default" size="sm" onClick={() => fileInput.current?.click()} disabled={saving} className="gap-2">
           <Upload className="h-4 w-4" aria-hidden />
           {t('muted-import', { defaultValue: 'Import' })}
         </Button>

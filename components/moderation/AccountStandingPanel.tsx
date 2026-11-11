@@ -234,25 +234,25 @@ export function AccountStandingPanel() {
                 <li key={s.id} className="glass-fill rounded-site px-4 py-3">
                   <div className="flex flex-wrap items-center gap-2">
                     {s.appealStatus === 'OVERTURNED' ? (
-                      <Badge variant="success" size="sm">
+                      <Badge variant="success">
                         {t('appeal-overturned', { defaultValue: 'Overturned' })}
                       </Badge>
                     ) : s.active ? (
-                      <Badge variant="danger" size="sm">
+                      <Badge variant="danger">
                         {t('strike-active', { defaultValue: 'Active' })}
                       </Badge>
                     ) : (
-                      <Badge variant="default" size="sm">
+                      <Badge variant="default">
                         {t('strike-expired', { defaultValue: 'Expired' })}
                       </Badge>
                     )}
                     {s.appealStatus === 'PENDING' && (
-                      <Badge variant="warning" size="sm">
+                      <Badge variant="warning">
                         {t('appeal-pending', { defaultValue: 'Appeal under review' })}
                       </Badge>
                     )}
                     {s.appealStatus === 'UPHELD' && (
-                      <Badge variant="outline" size="sm">
+                      <Badge variant="default">
                         {t('appeal-upheld', { defaultValue: 'Appeal declined' })}
                       </Badge>
                     )}
@@ -337,7 +337,7 @@ export function AccountStandingPanel() {
                               : t('appeal-submit', { defaultValue: 'Submit appeal' })}
                           </Button>
                           <Button
-                            variant="outline"
+                            variant="default"
                             onClick={() => {
                               setOpenId(null);
                               setDraft('');
@@ -356,7 +356,7 @@ export function AccountStandingPanel() {
                       </div>
                     ) : (
                       <Button
-                        variant="outline"
+                        variant="default"
                         className="mt-3"
                         onClick={() => {
                           setOpenId(s.id);

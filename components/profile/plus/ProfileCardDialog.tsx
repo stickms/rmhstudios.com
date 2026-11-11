@@ -54,7 +54,7 @@ export default function ProfileCardDialog({
           />
         </div>
         <DialogFooter>
-          <Button asChild variant="accent">
+          <Button asChild variant="default">
             <a href={`${src}?download=1`} download>
               <Download aria-hidden />
               {t('card-download', { defaultValue: 'Download PNG' })}

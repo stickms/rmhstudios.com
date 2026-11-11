@@ -107,7 +107,7 @@ export function RouteErrorFallback({ error, reset, info }: RouteErrorFallbackPro
               {t('page-error-retry', { defaultValue: 'Try again' })}
             </Button>
           ) : null}
-          <Button asChild variant="outline">
+          <Button asChild variant="default">
             <Link to="/">
               <Home className="size-4" aria-hidden />
               {t('page-error-home', { defaultValue: 'Go home' })}

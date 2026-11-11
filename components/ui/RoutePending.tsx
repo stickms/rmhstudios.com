@@ -65,17 +65,17 @@ function SitePagePending() {
       >
         {/* Sticky-header-height placeholder so content below doesn't jump. */}
         <div className="mx-2 mb-2 mt-2 flex h-14 items-center glass-fill rounded-site px-3 md:mx-3 md:mb-3 md:mt-3">
-          <Skeleton shimmer className="h-5 w-36" />
+          <Skeleton className="h-5 w-36" />
         </div>
         <div className="space-y-2 px-2">
           {[0, 1, 2].map((i) => (
             <div key={i} className="glass-fill flex gap-3 rounded-site p-4">
-              <Skeleton shimmer className="size-10 shrink-0 rounded-full" />
+              <Skeleton className="size-10 shrink-0 rounded-full" />
               <div className="min-w-0 flex-1 space-y-3">
-                <Skeleton shimmer className="h-3.5 w-40" />
-                <Skeleton shimmer className="h-3.5 w-full" />
-                <Skeleton shimmer className="h-3.5 w-11/12" />
-                <Skeleton shimmer className="h-3.5 w-3/4" />
+                <Skeleton className="h-3.5 w-40" />
+                <Skeleton className="h-3.5 w-full" />
+                <Skeleton className="h-3.5 w-11/12" />
+                <Skeleton className="h-3.5 w-3/4" />
               </div>
             </div>
           ))}
@@ -97,19 +97,19 @@ function GenericPending() {
       className="mx-auto w-full max-w-2xl px-4 py-8"
     >
       <div className="flex gap-3">
-        <Skeleton shimmer className="size-10 shrink-0 rounded-full" />
+        <Skeleton className="size-10 shrink-0 rounded-full" />
         <div className="min-w-0 flex-1 space-y-3">
-          <Skeleton shimmer className="h-4 w-40" />
-          <Skeleton shimmer className="h-3.5 w-24" />
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-3.5 w-24" />
         </div>
       </div>
       <div className="mt-6 space-y-3">
-        <Skeleton shimmer className="h-3.5 w-full" />
-        <Skeleton shimmer className="h-3.5 w-11/12" />
-        <Skeleton shimmer className="h-3.5 w-4/5" />
-        <Skeleton shimmer className="h-40 w-full rounded-site" />
-        <Skeleton shimmer className="h-3.5 w-3/4" />
-        <Skeleton shimmer className="h-3.5 w-2/3" />
+        <Skeleton className="h-3.5 w-full" />
+        <Skeleton className="h-3.5 w-11/12" />
+        <Skeleton className="h-3.5 w-4/5" />
+        <Skeleton className="h-40 w-full rounded-site" />
+        <Skeleton className="h-3.5 w-3/4" />
+        <Skeleton className="h-3.5 w-2/3" />
       </div>
       <span className="sr-only">{t('loading', { defaultValue: 'Loading…' })}</span>
     </div>

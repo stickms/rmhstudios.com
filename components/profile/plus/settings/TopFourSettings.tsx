@@ -127,7 +127,7 @@ export default function TopFourSettings() {
         </Select>
       ) : null}
 
-      <Button variant="accent" loading={saving} onClick={() => void save()}>
+      <Button variant="default" loading={saving} onClick={() => void save()}>
         {t('top-four-save', { defaultValue: 'Save top four' })}
       </Button>
     </div>

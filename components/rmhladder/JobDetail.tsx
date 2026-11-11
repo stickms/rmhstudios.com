@@ -69,7 +69,7 @@ export function JobDetail({
               <ShieldCheck aria-hidden />
               {t('ladder.verifiedRole', { defaultValue: 'Verified role' })}
             </Badge>
-            {programType && <Badge variant="outline">{programType.replaceAll('_', ' ')}</Badge>}
+            {programType && <Badge variant="default">{programType.replaceAll('_', ' ')}</Badge>}
           </div>
           <div>
             <CardTitle className="text-xl leading-snug sm:text-2xl">
@@ -179,11 +179,11 @@ export function JobDetail({
                   variant={
                     value === 'applied'
                       ? applicationStatus && applicationStatus !== 'not_applied'
-                        ? 'accent'
-                        : 'outline'
+                        ? 'default'
+                        : 'default'
                       : userAction === value
-                        ? 'accent'
-                        : 'outline'
+                        ? 'default'
+                        : 'default'
                   }
                   aria-pressed={
                     value === 'applied'
@@ -207,7 +207,7 @@ export function JobDetail({
               ))}
             </div>
           ) : (
-            <Button asChild variant="outline" className="min-h-11">
+            <Button asChild variant="default" className="min-h-11">
               <Link to="/login" search={{ callbackURL: `/rmhladder/jobs/${job.id as string}` }}>
                 {t('ladder.signInToTrack', { defaultValue: 'Sign in to track this job' })}
               </Link>

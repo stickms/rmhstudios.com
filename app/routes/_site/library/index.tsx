@@ -450,7 +450,7 @@ function Library() {
           // `.lib-upload__open` pill whose label collapsed below 640px, which left
           // an unlabelled upload glyph alone on its own row under the lede.
           session.data ? (
-            <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)}>
+            <Button variant="default" size="sm" onClick={() => setUploadOpen(true)}>
               <Upload className="size-4" aria-hidden="true" />
               {t('upload-button', { defaultValue: 'Add a book' })}
             </Button>
@@ -604,7 +604,7 @@ function Library() {
                     }
                     action={
                       query ? (
-                        <Button variant="outline" onClick={() => setQuery('')}>
+                        <Button variant="default" onClick={() => setQuery('')}>
                           {t('clear-search', { defaultValue: 'Clear search' })}
                         </Button>
                       ) : undefined

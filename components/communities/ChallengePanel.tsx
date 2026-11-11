@@ -101,7 +101,7 @@ function CreateChallenge({ slug, onCreated }: { slug: string; onCreated: () => v
       <div className="flex justify-end">
         <Button
           type="submit"
-          variant="accent"
+          variant="default"
           size="sm"
           loading={saving}
           disabled={!title.trim() || !prompt.trim()}
@@ -216,7 +216,7 @@ export default function ChallengePanel({
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {challenge.phase === 'submit' && joined && !challenge.myEntryId && (
-            <Button size="sm" variant="accent" onClick={() => setEntering((v) => !v)}>
+            <Button size="sm" variant="default" onClick={() => setEntering((v) => !v)}>
               {entering
                 ? t('challenge-enter-cancel', { defaultValue: 'Hide the composer' })
                 : t('challenge-enter', { defaultValue: 'Enter the challenge' })}
@@ -228,7 +228,7 @@ export default function ChallengePanel({
             </span>
           )}
           {isMod && challenge.phase !== 'closed' && (
-            <Button size="sm" variant="outline" onClick={cancel}>
+            <Button size="sm" variant="default" onClick={cancel}>
               {t('challenge-cancel', { defaultValue: 'Cancel challenge' })}
             </Button>
           )}
@@ -301,7 +301,7 @@ export default function ChallengePanel({
                   {challenge.phase === 'vote' && joined && !e.mine && (
                     <Button
                       size="sm"
-                      variant={voted ? 'accent' : 'outline'}
+                      variant={voted ? 'default' : 'default'}
                       disabled={!!challenge.myVoteEntryId || voting !== null}
                       loading={voting === e.id}
                       onClick={() => vote(e.id)}

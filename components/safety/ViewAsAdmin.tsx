@@ -85,7 +85,7 @@ export function ViewAsAdmin() {
           placeholder={t('viewas-placeholder', { defaultValue: 'Handle or user id' })}
           aria-label={t('viewas-placeholder', { defaultValue: 'Handle or user id' })}
         />
-        <Button type="submit" variant="accent" disabled={!query.trim() || loading}>
+        <Button type="submit" variant="default" disabled={!query.trim() || loading}>
           {t('viewas-go', { defaultValue: 'View' })}
         </Button>
       </form>

@@ -120,7 +120,7 @@ export function AdminChallengePage() {
             )}
           </div>
           <Button
-            variant="accent"
+            variant="default"
             disabled={busy || !title.trim() || !file}
             onClick={() => void create()}
           >

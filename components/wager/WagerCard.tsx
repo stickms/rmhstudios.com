@@ -75,16 +75,16 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
   const statusBadge = () => {
     switch (wager.status) {
       case 'OPEN':
-        return <Badge variant="outline">{t('status-open', { defaultValue: 'Open' })}</Badge>;
+        return <Badge variant="default">{t('status-open', { defaultValue: 'Open' })}</Badge>;
       case 'ACCEPTED':
       case 'LIVE':
-        return <Badge variant="accent">{t('status-live', { defaultValue: 'In progress' })}</Badge>;
+        return <Badge variant="default">{t('status-live', { defaultValue: 'In progress' })}</Badge>;
       case 'DISPUTED':
         return <Badge variant="danger">{t('status-disputed', { defaultValue: 'Disputed' })}</Badge>;
       case 'SETTLED':
         return <Badge variant="success">{t('status-settled', { defaultValue: 'Settled' })}</Badge>;
       default:
-        return <Badge variant="outline">{wager.status}</Badge>;
+        return <Badge variant="default">{wager.status}</Badge>;
     }
   };
 
@@ -153,14 +153,14 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
           </Button>
         )}
         {wager.status === 'OPEN' && isChallenger && (
-          <Button size="sm" variant="outline" onClick={cancel} loading={busy}>
+          <Button size="sm" variant="default" onClick={cancel} loading={busy}>
             {t('cancel-refund', { defaultValue: 'Cancel & refund' })}
           </Button>
         )}
         {(wager.status === 'ACCEPTED' || wager.status === 'LIVE') && isParticipant && (
           <>
             {wager.gameHref && (
-              <Button size="sm" variant="secondary" asChild>
+              <Button size="sm" variant="default" asChild>
                 <a href={wager.gameHref}>{t('play', { defaultValue: 'Play' })}</a>
               </Button>
             )}
@@ -169,10 +169,10 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
                 <span className="text-xs text-site-text-muted self-center">
                   {t('who-won', { defaultValue: 'Who won?' })}
                 </span>
-                <Button size="sm" variant="outline" onClick={() => report(wager.challenger!.id)} loading={busy}>
+                <Button size="sm" variant="default" onClick={() => report(wager.challenger!.id)} loading={busy}>
                   {wager.challenger?.name}
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => report(wager.opponent!.id)} loading={busy}>
+                <Button size="sm" variant="default" onClick={() => report(wager.opponent!.id)} loading={busy}>
                   {wager.opponent?.name}
                 </Button>
               </>

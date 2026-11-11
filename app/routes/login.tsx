@@ -404,7 +404,7 @@ function LoginPage() {
 
       <Button
         type="submit"
-        variant="accent"
+        variant="default"
         size="lg"
         loading={pending === 'email'}
         disabled={busy}
@@ -460,7 +460,7 @@ function LoginPage() {
           {!isSignUp && (
             <Button
               type="button"
-              variant="accent"
+              variant="default"
               size="lg"
               onClick={handlePasskeySignIn}
               loading={pending === 'passkey'}
@@ -480,7 +480,7 @@ function LoginPage() {
               <Button
                 key={p.id}
                 type="button"
-                variant="secondary"
+                variant="default"
                 size="lg"
                 onClick={handleSocial(p.id)}
                 disabled={busy}
@@ -511,7 +511,7 @@ function LoginPage() {
           ) : (
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               size="lg"
               onClick={() => setShowEmail(true)}
               disabled={busy}

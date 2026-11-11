@@ -124,7 +124,7 @@ export function ModInvites({ slug }: { slug: string }) {
             <option value="">{t('invite-expires-never', { defaultValue: 'Never' })}</option>
           </Select>
         </div>
-        <Button variant="accent" onClick={create} disabled={busy}>
+        <Button variant="default" onClick={create} disabled={busy}>
           {t('invite-create', { defaultValue: 'Create link' })}
         </Button>
       </div>
@@ -158,7 +158,7 @@ export function ModInvites({ slug }: { slug: string }) {
                   />
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="default"
                     onClick={() => revoke(i)}
                     aria-label={t('invite-revoke-named', {
                       code: i.code.slice(0, 6),

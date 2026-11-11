@@ -232,7 +232,7 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
             <h2 className="font-display text-lg font-medium text-site-text">
               {t('custom-title', { defaultValue: 'Custom test' })}
             </h2>
-            <Badge variant="outline" size="sm">
+            <Badge variant="default">
               {t('not-ranked', { defaultValue: 'Not ranked' })}
             </Badge>
           </div>

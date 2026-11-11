@@ -159,7 +159,7 @@ export function PredictionCard({ market, coins, setCoins, onUpdated, signedIn }:
                 key={a}
                 type="button"
                 size="xs"
-                variant={amount === a ? 'accent-outline' : 'outline'}
+                variant={amount === a ? 'default' : 'default'}
                 aria-pressed={amount === a}
                 onClick={() => setAmount(a)}
               >
@@ -180,7 +180,7 @@ export function PredictionCard({ market, coins, setCoins, onUpdated, signedIn }:
           </div>
           <div className="grid grid-cols-2 gap-2">
             <Button
-              variant="outline"
+              variant="default"
               onClick={() => trade('YES')}
               loading={pending === 'YES'}
               disabled={!!pending}
@@ -189,7 +189,7 @@ export function PredictionCard({ market, coins, setCoins, onUpdated, signedIn }:
               {`${t('buy-yes', { defaultValue: 'Buy YES' })} · ${yes}%`}
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               onClick={() => trade('NO')}
               loading={pending === 'NO'}
               disabled={!!pending}

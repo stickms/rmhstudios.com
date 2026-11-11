@@ -79,7 +79,7 @@ export function SignedOutLobby({ game }: { game: PreviewGame }) {
                       'This one is played with RMH Coins, which are free to claim once you have an account.',
                   })}
             </p>
-            <Button asChild variant="accent" size="sm" className="mt-3">
+            <Button asChild variant="default" size="sm" className="mt-3">
               <Link to="/login" search={{ callbackURL: '/predictions?tab=games' }}>
                 {t('signed-out-lobby-cta', { defaultValue: 'Sign in' })}
               </Link>

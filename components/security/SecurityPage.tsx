@@ -302,13 +302,13 @@ export function SecurityPage() {
           that trust as the product itself — and engineer for it on every request, in every layer.
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button asChild variant="accent" size="lg">
+          <Button asChild variant="default" size="lg">
             <a href="#sec-pillars">
               See how we protect you
               <ArrowRight aria-hidden="true" />
             </a>
           </Button>
-          <Button asChild variant="outline" size="lg">
+          <Button asChild variant="default" size="lg">
             <a href="#sec-disclosure">
               <Bug aria-hidden="true" />
               Report a vulnerability

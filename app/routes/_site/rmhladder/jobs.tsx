@@ -208,7 +208,7 @@ function JobsPage() {
           {nextCursor && (
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               className="mx-auto mt-4 flex"
               loading={loadingMore}
               loadingText="Loading…"

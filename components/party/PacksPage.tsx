@@ -116,7 +116,7 @@ export function PacksPage() {
         </div>
         <div className="flex shrink-0 gap-2">
           {p.featured ? (
-            <Badge variant="accent">{t('featured', { defaultValue: 'Featured' })}</Badge>
+            <Badge variant="default">{t('featured', { defaultValue: 'Featured' })}</Badge>
           ) : null}
           {p.hidden ? (
             <Badge variant="danger">{t('hidden', { defaultValue: 'Hidden' })}</Badge>
@@ -130,7 +130,7 @@ export function PacksPage() {
         <CopyButton
           value={p.code}
           size="xs"
-          variant="outline"
+          variant="default"
           label={t('copy-code', { defaultValue: 'Copy code' })}
         />
         {signedIn && !p.mine ? (
@@ -147,13 +147,13 @@ export function PacksPage() {
         ) : null}
         {isAdmin ? (
           <>
-            <Button size="xs" variant="outline" onClick={() => void act(p, 'feature')}>
+            <Button size="xs" variant="default" onClick={() => void act(p, 'feature')}>
               <Star aria-hidden />
               {p.featured
                 ? t('unfeature', { defaultValue: 'Unfeature' })
                 : t('feature', { defaultValue: 'Feature' })}
             </Button>
-            <Button size="xs" variant="outline" onClick={() => void act(p, 'hide')}>
+            <Button size="xs" variant="default" onClick={() => void act(p, 'hide')}>
               <EyeOff aria-hidden />
               {p.hidden
                 ? t('unhide', { defaultValue: 'Unhide' })
@@ -217,7 +217,7 @@ export function PacksPage() {
                 })}
               </span>
               <Button
-                variant="accent"
+                variant="default"
                 disabled={
                   busy ||
                   name.trim().length < 3 ||

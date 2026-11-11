@@ -78,7 +78,7 @@ function MomentPage() {
     >
       <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 pt-4 pb-12">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="accent">{label}</Badge>
+          <Badge variant="default">{label}</Badge>
           <span className="text-sm text-site-text-muted">{byline}</span>
         </div>
 
@@ -94,13 +94,13 @@ function MomentPage() {
 
         <div className="flex flex-wrap items-center gap-2">
           {moment.user.handle && (
-            <Button variant="outline" asChild>
+            <Button variant="default" asChild>
               <Link to="/u/$userid" params={{ userid: moment.user.handle }}>
                 {t('moment-view-profile', { defaultValue: 'View profile' })}
               </Link>
             </Button>
           )}
-          <Button variant="accent" asChild>
+          <Button variant="default" asChild>
             <Link to="/">{t('moment-explore', { defaultValue: 'Explore RMH Studios' })}</Link>
           </Button>
         </div>

@@ -100,7 +100,7 @@ function InviteFriendsCard() {
         })}
       </p>
       <Button
-        variant="secondary"
+        variant="default"
         onClick={copyLink}
         className="h-auto w-full py-2"
       >

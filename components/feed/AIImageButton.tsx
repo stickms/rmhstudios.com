@@ -122,7 +122,7 @@ export function AIImageButton({
               search={{ tab: 'membership' }}
               onClick={() => setShowUpgrade(false)}
             >
- <Button variant="accent"className="w-full">
+ <Button variant="default"className="w-full">
  <Sparkles className="h-4 w-4"/>
  {t('ai-image-upgrade-cta', { defaultValue:'Upgrade to unlock'})}
  </Button>

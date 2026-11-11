@@ -60,7 +60,7 @@ export default function ShelvesPanel() {
         })}
         action={
           <Link to="/library">
-            <Button variant="accent" size="sm">
+            <Button variant="default" size="sm">
               {t('open-library', { defaultValue: 'Open the library' })}
             </Button>
           </Link>

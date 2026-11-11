@@ -142,7 +142,7 @@ export function CircleManager() {
         <span className="text-sm text-site-text-muted">
           {selected.size}/{MAX_CIRCLE}
         </span>
-        <Button variant="accent" onClick={save} loading={saving}>
+        <Button variant="default" onClick={save} loading={saving}>
           {t('save', { defaultValue: 'Save' })}
         </Button>
       </div>

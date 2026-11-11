@@ -131,7 +131,7 @@ export function FeedForm({
             {t('cancel', { defaultValue: 'Cancel' })}
           </Button>
         )}
-        <Button type="submit" variant="accent" size="sm" loading={busy} disabled={!valid}>
+        <Button type="submit" variant="default" size="sm" loading={busy} disabled={!valid}>
           {submitLabel}
         </Button>
       </div>

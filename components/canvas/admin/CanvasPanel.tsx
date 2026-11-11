@@ -112,7 +112,7 @@ export default function CanvasPanel() {
             />
           </label>
         </div>
-        <Button type="submit" variant="accent" loading={busy} disabled={!ready}>
+        <Button type="submit" variant="default" loading={busy} disabled={!ready}>
           {t('admin-create', { defaultValue: 'Schedule event' })}
         </Button>
       </form>

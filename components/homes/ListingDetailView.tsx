@@ -159,7 +159,7 @@ export function ListingDetailView({ id }: { id: string }) {
           icon={Home}
           title="This listing is no longer available."
           action={
-            <Button asChild variant="outline">
+            <Button asChild variant="default">
               <Link to="/homes" onClick={goBack}>
                 <ArrowLeft className="h-4 w-4" aria-hidden /> Back to browse
               </Link>
@@ -198,12 +198,12 @@ export function ListingDetailView({ id }: { id: string }) {
               <option value="REMOVED">Hidden</option>
             </Select>
             <div className="ml-auto flex items-center gap-2">
-              <Button asChild variant="outline" size="sm" className="min-h-11">
+              <Button asChild variant="default" size="sm" className="min-h-11">
                 <Link to="/homes/submit" search={{ edit: listing.id }}>
                   <Pencil className="h-4 w-4" /> Edit
                 </Link>
               </Button>
-              <Button variant="outline" size="sm" onClick={remove} className="min-h-11 text-site-danger">
+              <Button variant="default" size="sm" onClick={remove} className="min-h-11 text-site-danger">
                 <Trash2 className="h-4 w-4" /> Delete
               </Button>
             </div>
@@ -220,7 +220,7 @@ export function ListingDetailView({ id }: { id: string }) {
                 className="h-full w-full object-cover"
               />
               <div className="absolute left-3 top-3 flex gap-1">
-                <Badge variant={listing.listingType === 'RENT' ? 'accent' : 'solid'}>
+                <Badge variant={listing.listingType === 'RENT' ? 'default' : 'solid'}>
                   {listingTypeLabel(listing.listingType)}
                 </Badge>
                 {listing.status !== 'ACTIVE' && (
@@ -378,7 +378,7 @@ export function ListingDetailView({ id }: { id: string }) {
             <h2 className="mb-2 site-section-label">Amenities</h2>
             <div className="flex flex-wrap gap-2">
               {listing.amenities.map((a) => (
-                <Badge key={a} variant="outline" size="lg">
+                <Badge key={a} variant="default">
                   {a}
                 </Badge>
               ))}

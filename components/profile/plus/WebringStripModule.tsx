@@ -82,7 +82,7 @@ export default function WebringStripModule({
         defaultValue: 'Join a ring of members who share your thing.',
       })}
       emptyAction={
-        <Button asChild variant="accent" size="sm">
+        <Button asChild variant="default" size="sm">
           <Link to="/rings">{t('rings-browse', { defaultValue: 'Browse rings' })}</Link>
         </Button>
       }

@@ -152,7 +152,7 @@ export function SeedGalleryButton() {
                         })}
                       </p>
                     </div>
-                    <Button size="sm" variant="accent" onClick={() => fork(row)}>
+                    <Button size="sm" variant="default" onClick={() => fork(row)}>
                       {t('gallery-continue', { defaultValue: 'Continue this story' })}
                     </Button>
                   </div>
@@ -259,7 +259,7 @@ export function PublishSeedButton({ seed }: { seed: string }) {
             placeholder={t('publish-placeholder', { defaultValue: 'A title for your story' })}
           />
           <Button
-            variant="accent"
+            variant="default"
             loading={busy}
             disabled={title.trim().length < 3}
             onClick={() => void publish()}

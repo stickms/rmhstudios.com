@@ -269,7 +269,7 @@ export default function NetworkPage() {
             })}
           </p>
           <div className="mt-4">
-            <Button asChild variant="accent">
+            <Button asChild variant="default">
               <Link to="/rmh-datacenter/contact" search={{ intent: 'Peering' }}>
                 {t('net-cta-button', { defaultValue: 'Ask about peering' })}
                 <ArrowRight className="size-4" aria-hidden />

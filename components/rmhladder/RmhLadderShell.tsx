@@ -119,7 +119,7 @@ export default function RmhLadderShell({
             <Button
               asChild
               size="sm"
-              variant="accent-outline"
+              variant="default"
               className="ml-auto min-h-11 shrink-0"
             >
               <Link to="/login" search={{ callbackURL: pathname }}>

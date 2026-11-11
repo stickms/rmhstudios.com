@@ -197,7 +197,7 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
  {t('clear', { defaultValue:'Clear status'})}
  </Button>
  ) : null}
- <Button type="button"variant="accent"onClick={save} loading={busy}>
+ <Button type="button"variant="default"onClick={save} loading={busy}>
  {t('save', { defaultValue:'Save'})}
  </Button>
  </SheetFooter>

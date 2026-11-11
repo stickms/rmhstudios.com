@@ -173,7 +173,7 @@ export function MembershipPanel({
             {!signedOut && tier !== 'free' && (
               <Button
                 type="button"
-                variant="outline"
+                variant="default"
                 onClick={manageBilling}
                 loading={busy === 'portal'}
                 disabled={busy !== null}
@@ -183,7 +183,7 @@ export function MembershipPanel({
               </Button>
             )}
             {onCoinShop && (
-              <Button type="button" variant="outline" onClick={onCoinShop}>
+              <Button type="button" variant="default" onClick={onCoinShop}>
                 {t('coins-shop-jump', { defaultValue: 'RMH Coins shop' })}
                 <ArrowRight aria-hidden />
               </Button>
@@ -286,8 +286,7 @@ export function MembershipPanel({
                         </h3>
                         {isCurrent && (
                           <Badge
-                            variant="accent"
-                            size="sm"
+                            variant="default"
                             className="mt-1"
                           >
                             {t('current-badge', { defaultValue: 'Current' })}
@@ -362,7 +361,7 @@ export function MembershipPanel({
                         ) : plan.cta === 'current' ? (
                           <Button
                             asChild
-                            variant="accent"
+                            variant="default"
                             className="h-auto min-h-11 w-full whitespace-normal py-2.5 text-center"
                           >
                             <a href="/login">
@@ -379,7 +378,7 @@ export function MembershipPanel({
                             // Ink tracks its surface: each variant carries its own
                             // paired foreground token, so neither fill can end up
                             // painting its label in the other's colour.
-                            variant={plan.featured ? 'warning' : 'accent'}
+                            variant={plan.featured ? 'default' : 'default'}
                             className="h-auto min-h-11 w-full whitespace-normal py-2.5 text-center"
                           >
                             {cta}
@@ -388,7 +387,7 @@ export function MembershipPanel({
                         ) : (
                           <Button
                             asChild
-                            variant="outline"
+                            variant="default"
                             className="h-auto min-h-11 w-full whitespace-normal py-2.5 text-center"
                           >
                             <a href="mailto:team@rmhstudios.com?subject=Enterprise%20plan">

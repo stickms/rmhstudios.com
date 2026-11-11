@@ -195,7 +195,7 @@ export function NoticesTab() {
                 </p>
               </div>
               {!n.archived && (
-                <Button size="xs" variant="outline" onClick={() => archive(n.id)}>
+                <Button size="xs" variant="default" onClick={() => archive(n.id)}>
                   {t('notices-archive', { defaultValue: 'Archive' })}
                 </Button>
               )}

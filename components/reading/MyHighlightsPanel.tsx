@@ -117,7 +117,7 @@ export default function MyHighlightsPanel() {
       {q.hasNextPage ? (
         <div className="flex justify-center">
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             loading={q.isFetchingNextPage}
             onClick={() => void q.fetchNextPage()}

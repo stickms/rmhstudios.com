@@ -141,7 +141,7 @@ export default function HuntPanel() {
           </Button>
           <Button
             type="submit"
-            variant="accent"
+            variant="default"
             loading={busy}
             disabled={
               title.trim().length < 2 ||
@@ -171,7 +171,7 @@ export default function HuntPanel() {
             </div>
             <Button
               size="sm"
-              variant={h.active ? 'accent' : 'ghost'}
+              variant={h.active ? 'default' : 'ghost'}
               disabled={busy}
               onClick={() =>
                 void run(() =>

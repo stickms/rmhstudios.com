@@ -172,7 +172,7 @@ export function MDXEditor({
           <Button
             type="button"
             onClick={togglePreview}
-            variant="outline"
+            variant="default"
             size="sm"
             className="lg:hidden"
           >
@@ -185,7 +185,7 @@ export function MDXEditor({
             form="blog-form"
             disabled={!content.trim()}
             size="sm"
-            variant="accent"
+            variant="default"
             loading={isSubmitting}
           >
             {isSubmitting
@@ -322,7 +322,7 @@ export function MDXEditor({
                   />
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="default"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
                   >
@@ -380,7 +380,7 @@ export function MDXEditor({
                       defaultValue: 'Start typing to see the preview or click Refresh.',
                     })}
                   </p>
-                  <Button variant="outline" onClick={generatePreview}>
+                  <Button variant="default" onClick={generatePreview}>
                     {t('generate-initial-preview', { defaultValue: 'Generate Initial Preview' })}
                   </Button>
                 </div>

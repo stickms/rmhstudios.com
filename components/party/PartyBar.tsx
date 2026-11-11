@@ -79,7 +79,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
   if (!session?.user) return null;
 
   const core = !party ? (
-    <Button size="sm" variant="accent" onClick={createParty}>
+    <Button size="sm" variant="default" onClick={createParty}>
       <UserPlus className="h-4 w-4" aria-hidden />
       {t('party-start', { defaultValue: 'Start a party' })}
     </Button>
@@ -100,7 +100,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
         <Button
           ref={triggerRef}
           size="sm"
-          variant="outline"
+          variant="default"
           onClick={() => setMenuOpen((o) => !o)}
           aria-haspopup="menu"
           aria-expanded={menuOpen}

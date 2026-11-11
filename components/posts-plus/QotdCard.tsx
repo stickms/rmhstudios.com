@@ -82,7 +82,7 @@ export default function QotdCard() {
         </p>
         <p className="mt-0.5 text-sm font-medium text-site-text">{today.text}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <Button size="sm" variant="accent" onClick={answer}>
+          <Button size="sm" variant="default" onClick={answer}>
             {t('qotd-answer', { defaultValue: 'Answer' })}
           </Button>
           <Link

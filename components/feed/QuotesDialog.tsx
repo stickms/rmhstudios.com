@@ -152,7 +152,7 @@ export function QuotesDialog({
                 {t('quotes-error', { defaultValue: 'Could not load quotes.' })}
               </p>
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={() => void load(page?.nextCursor ?? null)}
               >
@@ -163,7 +163,7 @@ export function QuotesDialog({
 
           {page?.nextCursor && !loading && !failed && (
             <div className="flex justify-center px-5 py-4">
-              <Button variant="outline" size="sm" onClick={() => void load(page.nextCursor)}>
+              <Button variant="default" size="sm" onClick={() => void load(page.nextCursor)}>
                 {t('quotes-more', { defaultValue: 'Load more quotes' })}
               </Button>
             </div>

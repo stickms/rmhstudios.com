@@ -185,7 +185,7 @@ export function ModOnboarding({
           <div>
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               size="sm"
               disabled={q.options.length >= ONBOARDING_MAX_OPTIONS}
               onClick={() => setQ(i, (x) => ({ ...x, options: [...x.options, blankOption()] }))}
@@ -198,7 +198,7 @@ export function ModOnboarding({
       <div className="flex items-center justify-between">
         <Button
           type="button"
-          variant="outline"
+          variant="default"
           size="sm"
           disabled={draft.length >= ONBOARDING_MAX_QUESTIONS}
           onClick={() =>
@@ -208,7 +208,7 @@ export function ModOnboarding({
           <Plus /> {t('onb-add-question', { defaultValue: 'Add question' })}
         </Button>
         <Button
-          variant="accent"
+          variant="default"
           size="sm"
           loading={saving}
           disabled={draft.some((q) => !q.prompt.trim() || q.options.some((o) => !o.label.trim()))}

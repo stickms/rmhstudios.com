@@ -124,7 +124,7 @@ export function AskDebtPanel({ disabled }: { disabled?: boolean }) {
               'The counter and the whole log are public. Asking questions runs a model, so that part needs an account.',
           })}
         </p>
-        <Button asChild size="sm" variant="outline">
+        <Button asChild size="sm" variant="default">
           <Link to="/login" search={{ callbackURL: '/kaikaidebtcounter' }}>
             <LogIn aria-hidden />
             {t('ask.signIn', { defaultValue: 'Sign in to ask' })}

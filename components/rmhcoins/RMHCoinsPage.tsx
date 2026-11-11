@@ -106,7 +106,7 @@ export function RMHCoinsPage() {
               <Button
                 onClick={handleClaimCoins}
                 loading={claiming}
-                variant="outline"
+                variant="default"
                 size="sm"
                 className="border-site-warning/50 text-site-warning hover:bg-site-warning/10"
               >
@@ -124,7 +124,7 @@ export function RMHCoinsPage() {
                 })}
               </span>
             </div>
-            <Button asChild variant="accent" size="sm" className="shrink-0">
+            <Button asChild variant="default" size="sm" className="shrink-0">
               <Link to="/login" search={{ callbackURL: '/predictions' }}>
                 {t("sign-in", { defaultValue: "Sign in" })}
               </Link>

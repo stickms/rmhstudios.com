@@ -93,7 +93,7 @@ function HealthPage() {
   return (
     <div className="space-y-4">
       <div>
-        <Button asChild variant="outline" size="sm" className="min-h-11">
+        <Button asChild variant="default" size="sm" className="min-h-11">
           <Link to="/rmhladder/review">
             {t('ladder.health.reviewQueue', {
               defaultValue: 'Review queue · {{count}} open',
@@ -115,7 +115,7 @@ function HealthPage() {
           <ul className="divide-y divide-site-border">
             {alerts.map((a) => (
               <li key={a.code} className={rowCls}>
-                <Badge variant={a.severity === 'high' ? 'danger' : 'warning'} size="sm">
+                <Badge variant={a.severity === 'high' ? 'danger' : 'warning'}>
                   {a.severity}
                 </Badge>
                 <span className="rl-mono">{a.code}</span>
@@ -167,7 +167,7 @@ function HealthPage() {
                 <span className="min-w-44 font-semibold">
                   {((s.company as AnyRow | undefined)?.name as string) ?? (s.companyId as string)}
                 </span>
-                <Badge variant="outline" size="sm">{s.platform as string}</Badge>
+                <Badge variant="default">{s.platform as string}</Badge>
                 <span className="rl-mono">
                   {s.lastSuccessAt
                     ? t('ladder.health.lastOk', {
@@ -234,13 +234,13 @@ function HealthPage() {
                   <td className="rl-mono">{run.expiredCount as number}</td>
                   <td className="rl-mono">{run.errorCount as number}</td>
                   <td>
-                    <Badge variant="outline" size="sm">{run.trigger as string}</Badge>
+                    <Badge variant="default">{run.trigger as string}</Badge>
                   </td>
                   <td>
                     {errors.length > 0 && (
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="default"
                         size="sm"
                         aria-expanded={expanded}
                         onClick={() => setExpandedRun(expanded ? null : (run.id as string))}

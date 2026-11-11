@@ -214,7 +214,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
           <Button
             type="button"
             size="sm"
-            variant="outline"
+            variant="default"
             className="ml-auto min-h-11"
             disabled={bank.essays.length >= MAX_ESSAYS}
             onClick={() => setBank((p) => ({ ...p, essays: [...p.essays, { ...EMPTY_ESSAY }] }))}
@@ -290,7 +290,7 @@ export function AnswerBankPanel({ onSaved }: AnswerBankPanelProps) {
           <Button
             type="button"
             size="sm"
-            variant="outline"
+            variant="default"
             className="ml-auto min-h-11"
             disabled={bank.stories.length >= MAX_STORIES}
             onClick={() => setBank((p) => ({ ...p, stories: [...p.stories, { ...EMPTY_STORY }] }))}

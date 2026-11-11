@@ -65,7 +65,7 @@ export function DeleteAccountPanel() {
     >
 
       {!open ? (
-        <Button variant="destructive" onClick={() => setOpen(true)}>
+        <Button variant="danger" onClick={() => setOpen(true)}>
           {t('delete-start', { defaultValue: 'Delete my account' })}
         </Button>
       ) : (
@@ -87,13 +87,13 @@ export function DeleteAccountPanel() {
             aria-invalid={confirm.length > 0 && !matches}
           />
           <div className="flex flex-wrap gap-2">
-            <Button variant="destructive" onClick={del} disabled={!matches || busy}>
+            <Button variant="danger" onClick={del} disabled={!matches || busy}>
               {busy
                 ? t('delete-working', { defaultValue: 'Deleting…' })
                 : t('delete-permanent', { defaultValue: 'Permanently delete' })}
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               onClick={() => {
                 setOpen(false);
                 setConfirm('');

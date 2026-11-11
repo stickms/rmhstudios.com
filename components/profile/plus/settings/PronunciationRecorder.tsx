@@ -149,7 +149,7 @@ export function PronunciationRecorder({
   return (
     <div className="flex flex-wrap items-center gap-2">
       {recording ? (
-        <Button variant="destructive" size="sm" onClick={() => void finish()}>
+        <Button variant="danger" size="sm" onClick={() => void finish()}>
           <Square aria-hidden />
           {t('pron-stop', {
             seconds: (elapsed / 1000).toFixed(1),
@@ -159,7 +159,7 @@ export function PronunciationRecorder({
         </Button>
       ) : (
         <Button
-          variant="outline"
+          variant="default"
           size="sm"
           loading={busy}
           disabled={starting}

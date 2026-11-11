@@ -100,7 +100,7 @@ export function SeriesPage({ id }: { id: string }) {
           title={t('series-missing', { defaultValue: 'This series does not exist' })}
           action={
             <Link to="/">
-              <Button variant="outline">
+              <Button variant="default">
                 {t('series-home', { defaultValue: 'Back to the feed' })}
               </Button>
             </Link>
@@ -203,7 +203,7 @@ export function SeriesPage({ id }: { id: string }) {
 
           {!owner && session && (
             <Button
-              variant={series.following ? 'outline' : 'accent'}
+              variant={series.following ? 'default' : 'default'}
               size="sm"
               loading={busy}
               onClick={() => void toggleFollow()}
@@ -216,7 +216,7 @@ export function SeriesPage({ id }: { id: string }) {
           )}
           {!owner && !session && (
             <Link to="/login" search={{ callbackURL: `/series/${id}` }}>
-              <Button variant="accent" size="sm">
+              <Button variant="default" size="sm">
                 {t('series-sign-in', { defaultValue: 'Sign in to follow' })}
               </Button>
             </Link>
@@ -242,7 +242,7 @@ export function SeriesPage({ id }: { id: string }) {
                   <Button
                     type="submit"
                     size="sm"
-                    variant="accent"
+                    variant="default"
                     loading={busy}
                     disabled={title.trim().length < 2}
                   >
@@ -258,12 +258,12 @@ export function SeriesPage({ id }: { id: string }) {
                   />
                 </form>
               ) : (
-                <Button size="sm" variant="outline" onClick={() => setRenaming(true)}>
+                <Button size="sm" variant="default" onClick={() => setRenaming(true)}>
                   <Pencil aria-hidden />
                   {t('series-rename', { defaultValue: 'Rename' })}
                 </Button>
               )}
-              <Button size="sm" variant="outline" onClick={() => setAdding(true)}>
+              <Button size="sm" variant="default" onClick={() => setAdding(true)}>
                 <Plus aria-hidden />
                 {t('series-add-post', { defaultValue: 'Add a post' })}
               </Button>

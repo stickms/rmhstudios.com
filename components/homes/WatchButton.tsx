@@ -99,7 +99,7 @@ export function WatchButton({ filters, center }: WatchButtonProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="min-h-11">
+        <Button variant="default" size="sm" className="min-h-11">
           <Bell className="h-4 w-4" aria-hidden />
           <span className="hidden sm:inline">Watch</span>
           <span className="sr-only sm:hidden">Watch</span>
@@ -127,7 +127,7 @@ export function WatchButton({ filters, center }: WatchButtonProps) {
 
           <div className="flex flex-wrap gap-2">
             {criteria.map((c) => (
-              <Badge key={c} variant="outline" size="default">
+              <Badge key={c} variant="default">
                 {c}
               </Badge>
             ))}

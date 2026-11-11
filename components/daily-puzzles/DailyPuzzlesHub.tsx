@@ -426,7 +426,7 @@ export function DailyPuzzlesHub() {
           <div className="flex items-center gap-2">
             <Button
               type="button"
-              variant="secondary"
+              variant="default"
               size="sm"
               onClick={shareToday}
               disabled={!mounted || solvedToday === 0}
@@ -618,7 +618,7 @@ function PuzzleCard({
           {mode.emoji}
         </span>
         {done ? (
-          <Badge variant="success" size="sm" icon={false}>
+          <Badge variant="success" icon={false}>
             <CheckCircle2 aria-hidden />
             {scoreText}
           </Badge>

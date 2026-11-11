@@ -55,7 +55,7 @@ function InvitePage() {
               'It may have expired, been revoked or reached its limit. Ask for a new link.',
           })}
           action={
-            <Button asChild variant="outline">
+            <Button asChild variant="default">
               <Link to="/communities">
                 {t('invite-browse', { defaultValue: 'Browse communities' })}
               </Link>
@@ -73,7 +73,7 @@ function InvitePage() {
           icon={Lock}
           title={t('invite-member-title', { defaultValue: "You're already in" })}
           action={
-            <Button asChild variant="accent">
+            <Button asChild variant="default">
               <Link to={`/c/${preview.slug}` as string}>
                 {t('invite-open', { defaultValue: 'Open the community' })}
               </Link>
@@ -102,11 +102,11 @@ function InvitePage() {
       <div className="px-4 pt-4 pb-12">
         <LockedCommunityPreview community={community} requestState={community.requestState}>
           {session ? (
-            <Button variant="accent" onClick={join} loading={busy}>
+            <Button variant="default" onClick={join} loading={busy}>
               {t('invite-join', { defaultValue: 'Join' })}
             </Button>
           ) : (
-            <Button asChild variant="accent">
+            <Button asChild variant="default">
               <Link to="/login" search={{ callbackURL: `/c/${slug}/invite/${code}` }}>
                 {t('invite-signin', { defaultValue: 'Sign in to join' })}
               </Link>

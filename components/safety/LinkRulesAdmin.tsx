@@ -90,7 +90,7 @@ export function LinkRulesAdmin() {
           placeholder={t('rules-note', { defaultValue: 'Note (optional)' })}
           aria-label={t('rules-note', { defaultValue: 'Note (optional)' })}
         />
-        <Button variant="accent" disabled={domain.trim().length < 3} onClick={add}>
+        <Button variant="default" disabled={domain.trim().length < 3} onClick={add}>
           {t('rules-add', { defaultValue: 'Add rule' })}
         </Button>
       </div>
@@ -109,7 +109,7 @@ export function LinkRulesAdmin() {
               key={r.domain}
               className="glass-fill flex items-center gap-3 rounded-site px-4 py-3"
             >
-              <Badge variant="outline">
+              <Badge variant="default">
                 {r.kind === 'DENY'
                   ? t('rules-deny', { defaultValue: 'Block' })
                   : t('rules-allow', { defaultValue: 'Allow' })}

@@ -171,7 +171,7 @@ export function SellSheet({
                   </div>
                   <Button
                     size="sm"
-                    variant="accent"
+                    variant="default"
                     loading={busy === item.id}
                     disabled={busy !== null}
                     onClick={() => list(item)}

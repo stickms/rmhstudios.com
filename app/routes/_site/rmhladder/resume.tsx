@@ -183,7 +183,7 @@ function ResumeCard({
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="flex flex-wrap items-center gap-3">
-          <Badge variant="outline">{version.parseStatus.replace(/_/g, ' ')}</Badge>
+          <Badge variant="default">{version.parseStatus.replace(/_/g, ' ')}</Badge>
           <Button disabled={!aiConsent} loading={busyId === `analyze-${version.id}`} loadingText={t('ladder.resume.reviewing', { defaultValue: 'Reviewing…' })} onClick={() => void onAnalyze(resume, version)}>
             <Sparkles aria-hidden />{review?.status === 'complete' ? t('ladder.resume.reviewAgain', { defaultValue: 'Review again' }) : t('ladder.resume.review', { defaultValue: 'Review with AI' })}
           </Button>

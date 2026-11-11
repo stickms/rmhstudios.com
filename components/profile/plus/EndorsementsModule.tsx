@@ -91,7 +91,7 @@ export default function EndorsementsModule({
             return (
               <li key={s.id}>
                 <Button
-                  variant={mine ? 'accent-outline' : 'outline'}
+                  variant={mine ? 'default' : 'default'}
                   size="xs"
                   disabled={!canEndorse || pending === s.id}
                   aria-pressed={canEndorse ? mine : undefined}

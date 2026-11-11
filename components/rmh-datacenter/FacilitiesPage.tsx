@@ -234,7 +234,7 @@ export default function FacilitiesPage() {
             })}
           </p>
           <div className="mt-4">
-            <Button asChild variant="accent">
+            <Button asChild variant="default">
               <Link to="/rmh-datacenter/contact" search={{ intent: 'Site tour' }}>
                 {t('book-a-tour', { defaultValue: 'Book a tour' })}
                 <ArrowRight className="size-4" aria-hidden />

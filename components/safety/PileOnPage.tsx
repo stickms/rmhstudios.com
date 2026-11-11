@@ -91,13 +91,13 @@ export default function PileOnPage({ postId }: { postId: string }) {
                   <Button variant="ghost" disabled={busy} onClick={() => act('dismiss')}>
                     {t('pileon-dismiss', { defaultValue: 'Leave it open' })}
                   </Button>
-                  <Button variant="accent" disabled={busy} onClick={() => act('accept')}>
+                  <Button variant="default" disabled={busy} onClick={() => act('accept')}>
                     {t('pileon-accept', { defaultValue: 'Limit replies for 24h' })}
                   </Button>
                 </>
               )}
               {state.status === 'ACTIVE' && (
-                <Button variant="outline" disabled={busy} onClick={() => act('undo')}>
+                <Button variant="default" disabled={busy} onClick={() => act('undo')}>
                   {t('pileon-undo', { defaultValue: 'Open replies again' })}
                 </Button>
               )}

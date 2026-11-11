@@ -41,7 +41,7 @@ function TablePending() {
   const { t } = useTranslation('c-rmhcoins');
   return (
     <div className="px-4" role="status" aria-live="polite">
-      <Skeleton shimmer className="h-[28rem] w-full rounded-site" />
+      <Skeleton className="h-[28rem] w-full rounded-site" />
       {/* The namespace's existing `loading` key rather than a table-specific one:
           it is already translated into all 16 shipped locales, and a new string
           here would serve every locale the English default until the translation

@@ -124,7 +124,7 @@ function BuildPage() {
       <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
         {(build.status || build.tags.length > 0) && (
           <div className="flex flex-wrap items-center gap-2">
-            {build.status && <Badge variant="accent">{build.status}</Badge>}
+            {build.status && <Badge variant="default">{build.status}</Badge>}
             {build.tags.map((tag) => (
               <Badge key={tag}>#{tag}</Badge>
             ))}
@@ -132,7 +132,7 @@ function BuildPage() {
         )}
 
         <div>
-          <Button asChild variant="accent" size="lg">
+          <Button asChild variant="default" size="lg">
             <Link to={build.href}>
               {build.cta}
               <ExternalLink aria-hidden />

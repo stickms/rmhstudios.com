@@ -119,7 +119,7 @@ export function RequestBoard({ initial, signedIn, isAdmin }: RequestBoardProps) 
             })}
           </p>
         </div>
-        <Button variant="accent" size="sm" onClick={() => setComposing(true)} disabled={!signedIn}>
+        <Button variant="default" size="sm" onClick={() => setComposing(true)} disabled={!signedIn}>
           <Plus aria-hidden />
           {t('request-new', { defaultValue: 'New request' })}
         </Button>

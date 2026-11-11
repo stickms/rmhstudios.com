@@ -140,11 +140,11 @@ function AdminEmojiPacksPage() {
                   <h2 className="min-w-0 truncate text-base font-medium text-site-text">
                     {p.name}
                   </h2>
-                  <Badge variant="outline" size="sm">
+                  <Badge variant="default">
                     {kindLabel(p.kind)}
                   </Badge>
                   {p.visibility === 'unlisted' && (
-                    <Badge variant="outline" size="sm">
+                    <Badge variant="default">
                       {t('emoji-pack-unlisted', { defaultValue: 'Unlisted' })}
                     </Badge>
                   )}

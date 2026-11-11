@@ -75,7 +75,7 @@ function PerformancePage() {
             />
             {t('auto-refresh-short', { defaultValue: 'Auto-refresh' })}
           </label>
-          <Button size="xs" variant="outline" onClick={() => void reload()}>
+          <Button size="xs" variant="default" onClick={() => void reload()}>
             <RefreshCw aria-hidden />
             {t('refresh', { defaultValue: 'Refresh' })}
           </Button>

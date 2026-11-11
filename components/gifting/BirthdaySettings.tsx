@@ -101,7 +101,7 @@ export default function BirthdaySettings() {
             </option>
           ))}
         </Select>
-        <Button variant="accent" size="sm" disabled={!valid} loading={busy} onClick={save}>
+        <Button variant="default" size="sm" disabled={!valid} loading={busy} onClick={save}>
           {t('birthday-save', { defaultValue: 'Save' })}
         </Button>
         {saved ? (

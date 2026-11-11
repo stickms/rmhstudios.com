@@ -255,7 +255,7 @@ export default function OfficeHoursManage() {
               </label>
               <Button
                 type="button"
-                variant="outline"
+                variant="default"
                 size="icon"
                 aria-label={t('oh-remove-window', { defaultValue: 'Remove window' })}
                 onClick={() => set({ rows: draft.rows.filter((_, j) => j !== i) })}
@@ -267,7 +267,7 @@ export default function OfficeHoursManage() {
           {draft.rows.length < 14 && (
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               size="sm"
               onClick={() =>
                 set({ rows: [...draft.rows, { weekday: 2, start: '18:00', end: '20:00' }] })
@@ -281,7 +281,7 @@ export default function OfficeHoursManage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CopyButton
             value={publicUrl}
-            variant="outline"
+            variant="default"
             size="sm"
             label={t('oh-copy-link', { defaultValue: 'Copy booking link' })}
           >
@@ -289,11 +289,11 @@ export default function OfficeHoursManage() {
           </CopyButton>
           <div className="flex gap-2">
             <Link to="/office-hours/$userId" params={{ userId }}>
-              <Button type="button" variant="outline">
+              <Button type="button" variant="default">
                 {t('oh-preview', { defaultValue: 'View page' })}
               </Button>
             </Link>
-            <Button type="submit" variant="accent" disabled={saving}>
+            <Button type="submit" variant="default" disabled={saving}>
               {t('oh-save', { defaultValue: 'Save' })}
             </Button>
           </div>

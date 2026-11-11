@@ -112,7 +112,7 @@ export default function CalendarSettings() {
                 <Input readOnly value={feed.url} onFocus={(e) => e.currentTarget.select()} />
                 <CopyButton
                   value={feed.url}
-                  variant="outline"
+                  variant="default"
                   label={t('feed-copy', { defaultValue: 'Copy link' })}
                 />
               </div>
@@ -123,12 +123,12 @@ export default function CalendarSettings() {
                   'Anyone with this link can see your schedule. Keep it private, and make a new one if it leaks.',
               })}
             </p>
-            <Button variant="outline" size="sm" onClick={rotate} disabled={busy}>
+            <Button variant="default" size="sm" onClick={rotate} disabled={busy}>
               <RefreshCw /> {t('feed-rotate', { defaultValue: 'Make a new link' })}
             </Button>
           </div>
         ) : (
-          <Button variant="accent" onClick={() => void patch({ enabled: true })} disabled={busy}>
+          <Button variant="default" onClick={() => void patch({ enabled: true })} disabled={busy}>
             {t('feed-create', { defaultValue: 'Create my calendar link' })}
           </Button>
         )}

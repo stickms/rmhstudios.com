@@ -114,7 +114,7 @@ export function RequestAdminPanel({
         <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
           {t('request-cancel', { defaultValue: 'Cancel' })}
         </Button>
-        <Button variant="accent" size="sm" onClick={save} loading={saving} disabled={!!problem}>
+        <Button variant="default" size="sm" onClick={save} loading={saving} disabled={!!problem}>
           {t('request-save', { defaultValue: 'Save' })}
         </Button>
       </div>

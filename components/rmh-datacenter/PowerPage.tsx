@@ -243,7 +243,7 @@ export default function PowerPage() {
             })}
           </p>
           <div className="mt-4">
-            <Button asChild variant="accent">
+            <Button asChild variant="default">
               <Link to="/rmh-datacenter/contact" search={{ intent: 'Sustainability reporting' }}>
                 {t('pow-cta-button', { defaultValue: 'Ask for a sample report' })}
                 <ArrowRight className="size-4" aria-hidden />

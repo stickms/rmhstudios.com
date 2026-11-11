@@ -102,13 +102,13 @@ export function SaveReplayButton({
       <div className={className}>
         <div className="flex flex-wrap items-center gap-2">
           <Button
-            variant="secondary"
+            variant="default"
             onClick={() => navigate({ to: '/replays/$id', params: { id: savedId } })}
           >
             <Check aria-hidden />
             {t('replay-view-replay', { defaultValue: 'View replay' })}
           </Button>
-          <Button variant="accent-outline" onClick={() => shareToFeed(savedId)}>
+          <Button variant="default" onClick={() => shareToFeed(savedId)}>
             {t('replay-share-to-feed', { defaultValue: 'Share to feed' })}
           </Button>
         </div>
@@ -118,7 +118,7 @@ export function SaveReplayButton({
 
   return (
     <Button
-      variant="secondary"
+      variant="default"
       onClick={handleSave}
       loading={saving}
       disabled={disabled || saving}

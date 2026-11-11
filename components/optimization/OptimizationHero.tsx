@@ -21,13 +21,13 @@ export function OptimizationHero() {
           scrollCue="The runtime"
           actions={
             <>
-              <Button asChild variant="accent" size="lg">
+              <Button asChild variant="default" size="lg">
                 <a href="#opt-runtime">
                 How it stays fast
                 <ArrowRight aria-hidden="true" />
               </a>
               </Button>
-              <Button asChild variant="outline" size="lg">
+              <Button asChild variant="default" size="lg">
                 <a href="#opt-milestones">
                 The measured wins
               </a>

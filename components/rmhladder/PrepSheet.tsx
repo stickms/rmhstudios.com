@@ -88,7 +88,7 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
         <Button
           type="button"
           size="sm"
-          variant={sheet ? 'outline' : 'default'}
+          variant={sheet ? 'default' : 'default'}
           onClick={generate}
           loading={loading}
           className="ml-auto min-h-11"
@@ -187,7 +187,7 @@ export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps
                       <p className="min-w-0 flex-1 text-sm font-medium text-site-text">
                         {q.question}
                       </p>
-                      <Badge variant="outline">{CATEGORY_LABELS[q.category] ?? q.category}</Badge>
+                      <Badge variant="default">{CATEGORY_LABELS[q.category] ?? q.category}</Badge>
                     </div>
                     {q.why && (
                       <p className="mt-2 text-xs leading-5 text-site-text-muted">{q.why}</p>
