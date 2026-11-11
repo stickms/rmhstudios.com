@@ -12,7 +12,7 @@ import {
 } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Link, useNavigate, useRouter } from '@tanstack/react-router';
-import { usePathname } from './shell-router-state';
+import { usePathname } from '@/components/shell/shell-router-state';
 import { LogOut, Settings, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';

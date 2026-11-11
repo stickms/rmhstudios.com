@@ -1,0 +1,249 @@
+/* The site shell (docs/plans/2026-11-11-steel-design-implementation.md section 9, L1 to L7).
+
+   Markup and CSS grid only: it is complete with scripting off (B1), and no hook decides a column. Logical properties
+   throughout, so the sidebar sits on the inline-start side in RTL locales (P5).
+
+   PHONE (< 1024px, L1): one column, 18px side padding, 16px top padding plus the safe-area inset. No fixed header; the
+   page title scrolls. The globe (globe-nav.css) is the only fixed element.
+   DESKTOP (>= 1024px, L2, L3): a frame capped at 1240px and centred. 220px sidebar, the content, and (from 1280px, unless
+   the page opts out) a 320px margin. Columns are divided by 1px rules the full height of the frame: the rule is the
+   inline-start border of the content and of the margin, which run the height of the page.
+
+   A page opts out of the margin by rendering <NoMargin /> (components/shell/NoMargin.tsx), a marker this file reads
+   with :has(), so the server HTML already has the two-column frame. */
+
+.site-shell {
+  min-block-size: 100dvh;
+  background: var(--site-bg);
+  color: var(--site-text);
+}
+
+.site-skip {
+  position: absolute;
+  inset-inline-start: 12px;
+  inset-block-start: 12px;
+  z-index: var(--z-skip);
+  padding: 8px 12px;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  background: var(--site-surface);
+  color: var(--site-text);
+  font-size: 14px;
+  font-weight: 500;
+  transform: translateY(-200%);
+}
+.site-skip:focus {
+  transform: none;
+}
+
+.site-shell__frame {
+  display: block;
+}
+
+/* L1. The bottom padding clears the docked globe (64px + 18px) and the fade over the last 130px. */
+.site-main {
+  min-inline-size: 0;
+  padding-inline: 18px;
+  padding-block-start: calc(16px + env(safe-area-inset-top, 0px));
+  padding-block-end: calc(130px + env(safe-area-inset-bottom, 0px));
+  outline: none;
+}
+
+.site-sidebar,
+.site-margin {
+  display: none;
+}
+
+/* A page's chrome never pins: everything a page renders flows with the page (the feed has no pinned inner chrome).
+   `.site-sticky-pinned` is the opt-out for a surface that stops working when it scrolls away. Unlayered, so it outranks
+   the utilities layer without `!important`. */
+.site-main :is(.site-sticky-chrome, .site-sticky-secondary, [data-slot='context-rail'], .lib-explorer):not(.site-sticky-pinned),
+.site-main .sticky:not(.site-sticky-pinned) {
+  position: relative;
+  inset-block-start: auto;
+}
+
+@media (min-width: 1024px) {
+  .site-shell__frame {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    max-inline-size: 1240px;
+    margin-inline: auto;
+    min-block-size: 100dvh;
+  }
+
+  /* L4: 22px top and 24px side padding; the globe is pushed to the bottom. */
+  .site-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: sticky;
+    inset-block-start: 0;
+    block-size: 100dvh;
+    padding: 22px 24px;
+    overflow-y: auto;
+  }
+
+  /* L5 and L7: 48px side padding in the two-column frame, 26px above the page title. */
+  .site-main {
+    padding-inline: 48px;
+    padding-block-start: 26px;
+    padding-block-end: 64px;
+    border-inline-start: 1px solid var(--site-border);
+  }
+
+  /* L5: reading content is capped at 640px. A page that fills its column says so with `wide`. */
+  .site-main [data-slot='site-main-column']:not([data-wide]) {
+    max-inline-size: 640px;
+  }
+}
+
+/* L2: the three-column frame. L3: pages with no margin keep two columns at every width. */
+@media (min-width: 1280px) {
+  .site-shell__frame:not(:has([data-shell-margin='off'])) {
+    grid-template-columns: 220px minmax(0, 1fr) 320px;
+  }
+  .site-shell__frame:not(:has([data-shell-margin='off'])) .site-main {
+    padding-inline: 40px;
+  }
+  .site-shell__frame:not(:has([data-shell-margin='off'])) .site-margin {
+    display: block;
+    border-inline-start: 1px solid var(--site-border);
+    padding: 22px 24px;
+  }
+}
+
+/* The sidebar's contents (L4). */
+.site-sidebar__brand {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.site-sidebar__list {
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.site-sidebar__link {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-block: 7px;
+  color: var(--site-text-muted);
+  font-size: 15px;
+  font-weight: 400;
+  text-decoration: none;
+}
+.site-sidebar__link:hover {
+  color: var(--site-text);
+}
+.site-sidebar__link[aria-current='page'] {
+  color: var(--site-text);
+  font-weight: 600;
+}
+.site-sidebar__count {
+  color: var(--site-danger);
+  font-family: var(--site-font-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+.site-sidebar__write {
+  margin-block-start: 18px;
+  align-self: flex-start;
+}
+.site-sidebar__account {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-block-start: 22px;
+  min-block-size: 36px;
+}
+.site-sidebar__handle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-inline-size: 0;
+  color: var(--site-text);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.site-sidebar__handle-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* G10: the 72px globe, pushed to the bottom, with its contact shadow. It links to the front page. */
+.site-sidebar__globe {
+  position: relative;
+  display: block;
+  flex: none;
+  inline-size: 72px;
+  block-size: 72px;
+  margin-block-start: auto;
+  border-radius: 50%;
+  corner-shape: round;
+  overflow: hidden;
+  box-shadow:
+    inset 0 0 calc(var(--d) * 0.12) calc(var(--d) * 0.02) rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 16px 16px -9px rgba(0, 0, 0, 0.35);
+}
+
+/* The margin's contents (L6). */
+.site-margin__search {
+  margin: 0;
+}
+.site-margin__group {
+  margin-block-start: 26px;
+}
+.site-margin__list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.site-margin__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-block: 9px;
+  border-block-end: 1px solid var(--site-border);
+  color: var(--site-text);
+  font-size: 14px;
+  text-decoration: none;
+}
+.site-margin__row:hover {
+  background: var(--site-bg-subtle);
+}
+.site-margin__page {
+  margin-block-start: 26px;
+}
+
+/* /sections: rows on rules (S2). */
+.sections-list {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.sections-list__row {
+  display: block;
+  inline-size: 100%;
+  padding-block: 12px;
+  border: 0;
+  border-block-end: 1px solid var(--site-border);
+  background: none;
+  color: var(--site-text);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+.sections-list__row:hover {
+  background: var(--site-bg-subtle);
+}
+.sections-list__group {
+  margin: 26px 0 0;
+}

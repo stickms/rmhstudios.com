@@ -59,10 +59,8 @@ import {
   applyElectricArcs,
 } from '@/lib/appearance/prefs';
 import { useSpatialParallax } from '@/hooks/useSpatialParallax';
-import { useJellyPointer } from '@/hooks/useJellyPointer';
 import { useSoftRenderSettle } from '@/hooks/useSoftRenderSettle';
-import { isNativeMaterialRoute, syncNativeMaterialClass } from '@/lib/native-material-routes';
-import { useLiquidBackground } from '@/hooks/useLiquidBackground';
+import { syncNativeMaterialClass } from '@/lib/native-material-routes';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useLocaleStore, writeLocaleCookie } from '@/stores/localeStore';
 import { applyHtmlLangDir } from '@/lib/i18n/dom';
@@ -222,12 +220,6 @@ export function Providers({
   // at all on a page with no consumer for it. `pathname` re-runs that check.
   useSpatialParallax(pathname);
 
-  // The backdrop stays still; bounded material responses live on surfaces.
-  useLiquidBackground();
-  // Mounts the pointer variable (`--px` / `--py` for the CSS soft body and woken haze) and the lazy click arcs — see
-  // hooks/useJellyPointer.ts. The rest of the material is CSS.
-  // The TF2 HUD Editor is deliberately plain Team Fortress 2 — it installs none of the jelly.
-  useJellyPointer(!isNativeMaterialRoute(pathname));
   // The CSS-only material (the woken haze) has no install step to skip, so a native-material route is marked on <html>
   // instead and the material's rules are scoped off it. Stamped pre-paint by __root.tsx on a hard load; this keeps it
   // in step on client navigation and clears it on the way out.

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { useRailSlot } from '@/components/radial/rail-slot';
+import { useMarginSlot } from '@/components/shell/margin-slot';
 import { cn } from '@/lib/utils';
 
 interface ContextRailProps {
@@ -9,24 +9,20 @@ interface ContextRailProps {
 }
 
 /**
- * A page's contribution to the shell's desktop live rail.
+ * A page's contribution to the shell's margin column (Steel L6).
  *
- * Historically this rendered an `<aside>` next to the content column — but its
- * parent was never a flex/grid row, so it stacked *below* the page instead, and
- * its width came from `--site-rail-width`, a token nothing declared. Both are
- * fixed now: the rail is owned by `RadialShell` (one grid track, one width), and
- * a page's content is **portalled** into the slot at the top of it.
+ * The margin is owned by `SiteShell` (one grid track, one width), and a page's content is **portalled** into the slot
+ * below the margin's own lists.
  *
- * Renders nothing when there is no rail — during SSR, and below the breakpoint
- * where the rail exists at all — so a page must never depend on it for anything
- * load-bearing. Content, not chrome.
+ * Renders nothing when there is no margin, during SSR and below the breakpoint where the margin is displayed at all,
+ * so a page must never depend on it for anything load-bearing. Content, not chrome.
  */
 export function ContextRail({ children, className }: ContextRailProps) {
-  const slot = useRailSlot();
+  const slot = useMarginSlot();
   if (!children || !slot) return null;
 
   return createPortal(
-    <div data-slot="context-rail" className={cn('rad-rail__page-content', className)}>
+    <div data-slot="context-rail" className={cn('site-margin__page-content', className)}>
       {children}
     </div>,
     slot,

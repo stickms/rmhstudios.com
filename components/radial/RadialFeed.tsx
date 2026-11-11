@@ -7,6 +7,7 @@ import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { useCaughtUpMarker } from '@/hooks/useCaughtUpMarker';
 import { CaughtUpDivider } from '@/components/feed/CaughtUpDivider';
 import { type InitialFeed } from '@/components/feed/FeedColumn';
+import './radial/feed-cards-panels.css';
 import { ComposeBoxLazy } from '@/components/feed/ComposeBoxLazy';
 import { QotdCardLazy } from '@/components/posts-plus/QotdCardLazy';
 import { FortuneCardLazy } from '@/components/delight/FortuneCardLazy';

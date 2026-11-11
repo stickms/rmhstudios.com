@@ -1,0 +1,91 @@
+import { useEffect, useState } from 'react';
+import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { exploreApi } from '@/lib/discovery/explore.contract';
+import { useIdleReady } from '@/hooks/useIdleReady';
+
+interface ExplorePeek {
+  trendingTags: { tag: string; count: number }[];
+  suggestedUsers: { id: string; name: string | null; handle: string | null }[];
+}
+
+/** Shared across mounts so a client navigation re-uses the last payload instead of asking again. */
+let peek: ExplorePeek | null = null;
+let peekAt = 0;
+const TTL = 5 * 60_000;
+
+function useExplorePeek(active: boolean): ExplorePeek | null {
+  const [data, setData] = useState<ExplorePeek | null>(peek);
+  useEffect(() => {
+    if (!active) return;
+    if (peek && Date.now() - peekAt < TTL) {
+      setData(peek);
+      return;
+    }
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const body = await api(exploreApi, { signal: controller.signal });
+        peek = {
+          trendingTags: body.trendingTags ?? [],
+          suggestedUsers: body.suggestedUsers ?? [],
+        };
+        peekAt = Date.now();
+        setData(peek);
+      } catch {
+        // Supplementary: a failure leaves the lists out.
+      }
+    })();
+    return () => controller.abort();
+  }, [active]);
+  return data;
+}
+
+/**
+ * The margin's two short lists (Steel L6): what is trending and who to follow, each under a `t-label` heading, rows on
+ * rules, no pictures. It loads after the main column, once the browser is idle, from the Explore data the old live rail
+ * used, and only at a width that displays the margin (MarginColumn).
+ */
+export default function MarginLists() {
+  const { t } = useTranslation('feed');
+  const idle = useIdleReady();
+  const data = useExplorePeek(idle);
+  const tags = data?.trendingTags.slice(0, 5) ?? [];
+  const people = data?.suggestedUsers.slice(0, 3) ?? [];
+
+  return (
+    <>
+      {tags.length > 0 && (
+        <section className="site-margin__group">
+          <h2 className="t-label">{t('trending', { defaultValue: 'Trending' })}</h2>
+          <ul className="site-margin__list">
+            {tags.map((entry) => (
+              <li key={entry.tag}>
+                <Link to={`/tag/${entry.tag}` as string} className="site-margin__row">
+                  <span>#{entry.tag}</span>
+                  <span className="t-meta">{entry.count}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {people.length > 0 && (
+        <section className="site-margin__group">
+          <h2 className="t-label">{t('who-to-follow', { defaultValue: 'Who to follow' })}</h2>
+          <ul className="site-margin__list">
+            {people.map((person) => (
+              <li key={person.id}>
+                <Link to={`/u/${person.handle || person.id}` as string} className="site-margin__row">
+                  <span>{person.name || person.handle}</span>
+                  {person.handle && <span className="t-meta">@{person.handle}</span>}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </>
+  );
+}

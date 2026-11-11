@@ -16,12 +16,10 @@ import { isDiscordActivity } from '@/lib/discord-activity';
 import type { QueryClient } from '@tanstack/react-query';
 import { Providers } from '@/components/Providers';
 import { PREPAINT_BODY_SCRIPT, prepaintHeadScripts } from '@/lib/prepaint/config';
-import { GlassFilter } from '@/components/ui/glass-filter';
 import { SiteHeadContent } from '@/components/SiteHeadContent';
 import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
 import { NavigationProgress } from '@/components/ui/NavigationProgress';
 import { BackNavAnimation } from '@/components/ui/BackNavAnimation';
-import { EversionRoot } from '@/components/radial/eversion/EversionRoot';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { markDocumentHydrated, trackHistoryActions } from '@/components/ui/defer-on-navigate';
 import { markPageEnterComplete } from '@/lib/motion';
@@ -421,8 +419,6 @@ function RootDocument({ children }: { children: ReactNode }) {
           dangerouslySetInnerHTML={{ __html: PREPAINT_BODY_SCRIPT }}
         />
         {children}
-        {/* The tab capsule's #glass-goo host. Glass optics do not use SVG lenses. */}
-        <GlassFilter />
         <Scripts />
       </body>
     </html>
@@ -499,7 +495,6 @@ function RootComponent() {
     >
       <NavigationProgress />
       <BackNavAnimation />
-      <EversionRoot />
       <TwemojiProvider>
         <Outlet />
       </TwemojiProvider>

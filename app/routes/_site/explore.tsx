@@ -71,7 +71,7 @@ function ExplorePage() {
   const { officialBuilds, userBuilds, blogPosts } = sidebar;
 
   // No `rightSidebar`. `PageLayout` portals one into the shell's live rail
-  // (components/radial/rail-slot.tsx), and the rail is not empty to begin with —
+  // (components/shell/margin-slot.tsx), and the rail is not empty to begin with —
   // it already carries Trending and "Who to follow". Handing it `RightSidebar`
   // put a second, differently-titled copy of the same recommendations
   // ("Recommended Users") in a panel nested inside the rail, above an "Explore

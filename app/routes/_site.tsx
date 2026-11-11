@@ -11,7 +11,7 @@ import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
 import { NotFound } from '@/components/errors/NotFound';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
-import { SiteShell } from '@/components/feed/SiteShell';
+import { SiteShell } from '@/components/shell/SiteShell';
 import { CookieConsent } from '@/components/site/CookieConsent';
 import '@/components/feed/feed.css';
 

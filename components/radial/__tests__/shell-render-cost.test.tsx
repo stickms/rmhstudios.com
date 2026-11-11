@@ -24,7 +24,7 @@ import {
   selectRenderedHref,
   selectRenderedPathname,
   type ShellRouterState,
-} from '../shell-router-state';
+} from '@/components/shell/shell-router-state';
 import { RadialHub } from '../RadialHub';
 import { RadialNavRail } from '../RadialNavRail';
 import { RadialGlobeDock } from '../RadialGlobeDock';
